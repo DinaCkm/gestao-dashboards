@@ -303,6 +303,15 @@
 - [x] BUG: Competências 0% corrigido - plano_individual agora alimenta todos os dashboards
 - [x] BUG: SEBRAE PARA corrigido - empresa agora vem da tabela programs (não do nomeTurma da planilha)
 
+## Admin - Gerenciamento de Atividades (06/04/2026)
+- [ ] Adicionar campo imagemUrl na tabela atividadesCurso
+- [ ] Criar modal de visualização de atividade
+- [ ] Criar funcionalidade de editar atividade
+- [ ] Implementar upload de imagem para atividade
+- [ ] Implementar desabilitar/habilitar atividade (soft-delete com isActive)
+- [ ] Adicionar botões de ação (Editar, Visualizar, Desabilitar) na lista de atividades
+- [ ] Testar fluxo completo de edição e visualização
+
 ## Bug Reportado (12/02/2026) - NotFoundError nas Visões por Empresa
 - [x] Corrigir erro NotFoundError: removeChild ao navegar para visões por empresa
 - [x] Melhorar ErrorBoundary para resetar automaticamente na mudança de rota
@@ -3254,3 +3263,382 @@
 - [x] Reagendamento: adicionar funcionalidade de reagendamento na área do admin (AdminAgendamentos)
 - [x] Liberar mentora para criar/reagendar agendamentos com data retroativa (sem bloqueio no backend e frontend)
 - [x] Bug: mentora não consegue criar agenda retroativa - removida validação "data precisa ser hoje ou futura" no handleAddDateSlot
+
+
+---
+
+## 📚 NOVO: Módulo de Cursos com Genially (27/03/2026)
+
+### Fase 1: Banco de Dados (1-2 dias)
+- [ ] Criar tabela `competencias_modulos`
+- [ ] Criar tabela `aluno_modulo_progresso`
+- [ ] Criar tabela `aluno_modulo_relato`
+- [ ] Criar tabela `aluno_modulo_avaliacao`
+- [ ] Criar tabela `aluno_competencia_prorrogacao`
+- [ ] Executar `pnpm db:push`
+- [ ] Validar estrutura no banco
+
+### Fase 2: Backend - Rotas tRPC (2-3 dias)
+- [ ] Criar helpers em `server/db.ts` (queries)
+- [ ] Implementar rota `course.getCatalog`
+- [ ] Implementar rota `course.startModule`
+- [ ] Implementar rota `course.getModuleContent`
+- [ ] Implementar rota `course.submitReflection`
+- [ ] Implementar rota `course.submitAssessment`
+- [ ] Implementar rota `course.requestExtension`
+- [ ] Implementar rota `course.approveExtension`
+- [ ] Implementar rota `course.getMentorPanel`
+- [ ] Escrever testes unitários (Vitest)
+- [ ] Validar integração com indicadores
+
+### Fase 3: Frontend - Catálogo Netflix (2-3 dias)
+- [ ] Criar componente `CourseCatalog.tsx`
+- [ ] Implementar layout Netflix-style com Tailwind
+- [ ] Integrar com `course.getCatalog`
+- [ ] Implementar sistema de semáforo (Verde/Amarelo/Vermelho)
+- [ ] Adicionar cards de competências
+- [ ] Adicionar cards de módulos
+- [ ] Implementar indicador de progresso (X/6)
+- [ ] Adicionar botão "Iniciar" para cada módulo
+
+### Fase 4: Frontend - Estudo + Avaliação (2-3 dias)
+- [ ] Criar componente `ModuleStudy.tsx`
+- [ ] Implementar embed Genially
+- [ ] Criar formulário de reflexão
+- [ ] Criar quiz/avaliação
+- [ ] Integrar com `course.submitReflection`
+- [ ] Integrar com `course.submitAssessment`
+- [ ] Implementar cálculo de nota
+- [ ] Atualizar indicadores após conclusão
+
+### Fase 5: Frontend - Prorrogação (1-2 dias)
+- [ ] Criar componente `ExtensionRequest.tsx` (Aluno)
+- [ ] Criar componente `MentorExtensionPanel.tsx` (Mentor)
+- [ ] Implementar modal de solicitação
+- [ ] Implementar validação de datas (contrato)
+- [ ] Integrar com `course.requestExtension`
+- [ ] Integrar com `course.approveExtension`
+- [ ] Implementar painel de mentor
+- [ ] Adicionar notificações
+
+### Fase 6: Testes e Refinamento (1-2 dias)
+- [ ] Testes end-to-end
+- [ ] Validar cálculos de indicadores
+- [ ] Performance e otimizações
+- [ ] Documentação final
+- [ ] Verificar regra crítica (prorrogação não afeta performance)
+
+### Entrega e Sincronização
+- [ ] Criar checkpoint final
+- [ ] Sincronizar com GitHub
+- [ ] Deploy em produção (Heroku)
+
+
+---
+
+## ✅ MÓDULO DE CURSOS - IMPLEMENTAÇÃO COMPLETA (28/03/2026)
+
+### Fase 1: Banco de Dados ✓
+- [x] Criar tabela `competenciasModulos` (12 colunas)
+- [x] Criar tabela `alunoModuloProgresso` (14 colunas)
+- [x] Criar tabela `alunoModuloRelato` (8 colunas)
+- [x] Criar tabela `alunoModuloAvaliacao` (12 colunas)
+- [x] Criar tabela `alunoCompetenciaProrrogacao` (16 colunas)
+- [x] Executar `pnpm db:push` com sucesso
+
+### Fase 2: Backend ✓
+- [x] Criar 8 helpers em `server/db.ts`:
+  - [x] `getCourseCatalog` - Catálogo com progresso
+  - [x] `startModule` - Iniciar módulo
+  - [x] `getModuleContent` - Conteúdo do módulo
+  - [x] `submitReflection` - Salvar reflexão
+  - [x] `submitAssessment` - Salvar avaliação + atualizar indicadores
+  - [x] `requestExtension` - Solicitar prorrogação
+  - [x] `approveExtension` - Aprovar/rejeitar prorrogação
+  - [x] `getMentorExtensionPanel` - Painel do mentor
+- [x] Criar 8 rotas tRPC em `server/routers.ts`:
+  - [x] `course.getCatalog`
+  - [x] `course.startModule`
+  - [x] `course.getModuleContent`
+  - [x] `course.submitReflection`
+  - [x] `course.submitAssessment`
+  - [x] `course.requestExtension`
+  - [x] `course.approveExtension`
+  - [x] `course.getMentorPanel`
+
+### Fase 3: Frontend - Catálogo ✓
+- [x] Criar `client/src/pages/CourseCatalog.tsx`
+- [x] Layout Netflix-style com gradiente azul-escuro
+- [x] Grid de competências com status (Verde/Amarelo/Vermelho)
+- [x] Cards de módulos com semáforo
+- [x] Indicador de progresso (X/6 módulos)
+- [x] Botão "Iniciar" para cada módulo
+- [x] Integração com `trpc.course.getCatalog`
+- [x] Responsivo (mobile, tablet, desktop)
+
+### Fase 4: Frontend - Estudo + Avaliação ✓
+- [x] Criar `client/src/pages/ModuleStudy.tsx`
+- [x] Fluxo de 4 etapas:
+  - [x] Etapa 1: Conteúdo (Genially embed)
+  - [x] Etapa 2: Reflexão (formulário com validação)
+  - [x] Etapa 3: Avaliação (quiz com 3 questões)
+  - [x] Etapa 4: Conclusão (feedback)
+- [x] Validação de reflexão (mínimo 100 caracteres)
+- [x] Cálculo automático de nota (0-10)
+- [x] Integração com `trpc.course.submitReflection`
+- [x] Integração com `trpc.course.submitAssessment`
+- [x] Atualização automática de indicadores 2 e 3
+
+### Fase 5: Frontend - Prorrogação ✓
+- [x] Criar `client/src/pages/ExtensionRequest.tsx` (Modal para aluno)
+  - [x] Validação de datas (dentro do contrato)
+  - [x] Motivo obrigatório (mínimo 10 caracteres)
+  - [x] Aviso sobre cálculo de performance
+  - [x] Integração com `trpc.course.requestExtension`
+- [x] Criar `client/src/pages/MentorExtensionPanel.tsx` (Painel para mentor)
+  - [x] Abas: Pendentes | Aprovadas | Rejeitadas
+  - [x] Cards com informações de cada solicitação
+  - [x] Botões de Aprovar/Rejeitar
+  - [x] Dialog para motivo de rejeição
+  - [x] Integração com `trpc.course.approveExtension`
+  - [x] Integração com `trpc.course.getMentorPanel`
+
+### Fase 6: Testes ✓
+- [x] Criar `server/course.test.ts` com 17 testes
+- [x] Testes de helpers de banco de dados (8 testes)
+- [x] Testes de validação de dados (3 testes)
+- [x] Testes de integração completa (1 teste)
+- [x] Teste de fluxo completo de estudo
+- [x] **Resultado: 17/17 testes PASSANDO ✓**
+
+### Regra Crítica Implementada ✓
+- [x] **Prorrogação apenas desbloqueia módulos**
+- [x] **Performance é SEMPRE calculada contra prazos ORIGINAIS**
+- [x] Aviso exibido ao aluno durante solicitação
+- [x] Lógica implementada em `submitAssessment`
+
+### Arquivos Criados
+- [x] `/home/ubuntu/gestao-dashboards/drizzle/schema.ts` - 5 novas tabelas
+- [x] `/home/ubuntu/gestao-dashboards/server/db.ts` - 8 helpers
+- [x] `/home/ubuntu/gestao-dashboards/server/routers.ts` - 8 rotas tRPC
+- [x] `/home/ubuntu/gestao-dashboards/client/src/pages/CourseCatalog.tsx` - Catálogo
+- [x] `/home/ubuntu/gestao-dashboards/client/src/pages/ModuleStudy.tsx` - Estudo
+- [x] `/home/ubuntu/gestao-dashboards/client/src/pages/ExtensionRequest.tsx` - Prorrogação (Aluno)
+- [x] `/home/ubuntu/gestao-dashboards/client/src/pages/MentorExtensionPanel.tsx` - Prorrogação (Mentor)
+- [x] `/home/ubuntu/gestao-dashboards/server/course.test.ts` - 17 testes
+
+### Próximas Tarefas
+- [ ] Integrar componentes na navegação principal
+- [ ] Testes E2E (Cypress)
+- [ ] Documentação de API
+- [ ] Deploy em produção
+
+
+---
+
+## 📚 Módulo de Competências Comportamentais e Técnicas
+
+### Fase 1: Interface de Admin para Competências
+- [ ] Criar página AdminCompetencias.tsx
+- [ ] CRUD de competências (criar, listar, editar, deletar)
+- [ ] Integração com rotas tRPC
+
+### Fase 2: Interface de Admin para Atividades
+- [ ] Criar página AdminAtividades.tsx
+- [ ] CRUD de atividades (criar, listar, editar, deletar)
+- [ ] Upload de capa/thumbnail
+- [ ] Link do Genially
+- [ ] Criação de quiz/avaliação
+- [ ] Integração com rotas tRPC
+
+### Fase 3: Painel do Mentor
+- [ ] Criar página MentorAssignModules.tsx
+- [ ] Listar alunos
+- [ ] Atribuir módulos aos alunos
+- [ ] Integração com rotas tRPC
+
+### Fase 4: Integração e Testes
+- [ ] Adicionar link na navegação principal
+- [ ] Testar fluxo completo (admin → mentor → aluno)
+- [ ] Verificar se módulos aparecem corretamente na área do aluno
+
+
+## Bugs Corrigidos (01/04/2026)
+- [x] Corrigir exibição de nomes das competências na Jornada (estava mostrando "Competência #30003" em vez do nome real)
+  - Problema: A função `getAssessmentCompetenciasByPdi` retornava apenas o `competenciaId`, sem fazer JOIN com a tabela `competencias`
+  - Solução: Adicionar LEFT JOIN entre `assessment_competencias` e `competencias` para trazer o nome da competência
+  - Resultado: Agora exibe "Comunicação Assertiva", "Liderança", etc.
+- [ ] Corrigir desbloqueio do PDI no onboarding (aluno não consegue visualizar PDI após mentora criar)
+  - Problema: Etapa 7 requer que TODOS os vídeos sejam assistidos antes de mostrar o PDI
+  - Solução: Remover `todosVideosAssistidos` da condição de desbloqueio da Etapa 7
+
+- [x] Adicionar resumo de expectativas na Linha do Tempo da Jornada
+  - Mostrar número esperado de mentorias baseado na duração do contrato
+  - Mostrar número esperado de tarefas baseado na duração do contrato
+  - Mostrar número esperado de webinares baseado na duração do contrato
+  - Exibir logo abaixo do período (ex: "22 de mar. — 24 de abr. de 26")
+- [x] Corrigir fórmula de cálculo de expectativas
+  - Problema: Está usando duração do microciclo (1 mês) em vez do contrato (6 meses)
+  - Solução: Usar período do contrato para calcular: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena), tarefas = mentorias
+  - Fórmula: mentorias = (mesesTotais - 1) * 0.8 + 1; webinares = mesesTotais * 2; tarefas = mentorias (1 tarefa por mentoria)
+
+- [x] Corrigir exibição de duração da jornada no dashboard do aluno
+  - Problema: Dashboard mostra "1 Mês de Jornada" em vez de "6 Meses de Contrato"
+  - Problema: Card de "Expectativas da Sua Jornada" não aparece no dashboard
+  - Solução: Corrigir getContratoMentoriaByAluno para buscar em tabela alunos (contratoInicio/contratoFim) além de contratosAluno
+  - Resultado: Agora busca primeiro em alunos, depois em contratosAluno, garantindo que encontre o contrato do Elio
+
+- [x] Adicionar cards de mentorias, tarefas e webinares esperados no OnboardingAluno
+  - Adicionar card "Mentorias" mostrando número esperado (5 para 6 meses)
+  - Adicionar card "Tarefas" mostrando número esperado (5 para 6 meses)
+  - Adicionar card "Webinares" mostrando número esperado (12 para 6 meses)
+  - Posicionar após os cards de Competências, Trilha, Meses de Contrato e Meses de Jornada
+
+
+## Interface Admin para Vídeos de Onboarding
+- [x] Criar página admin para gerenciar vídeos de onboarding
+  - [x] Formulário para adicionar/editar URLs dos 5 vídeos (Boas-vindas, Competências, Webinars, Tarefas, Metas)
+  - [x] Campos: videoUrl (YouTube), título, descrição, textoExplicativo
+  - [x] Tabela com lista dos vídeos cadastrados
+  - [x] Botões de editar e deletar
+  - [x] Preview do vídeo ao adicionar URL
+  - [x] Rotas tRPC criadas (listar, obter, obterPorChave, criar, atualizar, deletar)
+  - [x] Menu admin atualizado com link para página de vídeos
+  - [x] Testes unitários criados
+  - [ ] Integrar vídeos no OnboardingAluno para exibir ao clicar em cada atividade
+  - [ ] Adicionar modal/dialog para exibir vídeo quando aluno clica em atividade
+
+## Atribuição de Cursos por Competência (04/04/2026)
+- [x] Criar tabela aluno_curso_atribuido com 12 colunas
+- [x] Implementar página /mentor/atribuir-cursos
+- [x] Adicionar dropdown de aluno e competência do PDI
+- [x] Adicionar lista permanente de cursos atribuídos
+- [x] Adicionar botões de editar e remover
+- [x] Corrigir query para mostrar apenas competências do PDI
+- [x] Adicionar procedure obterUrlCurso para buscar URL da primeira atividade
+- [x] Adicionar botão "Acessar Curso" na interface do aluno
+- [x] Deletar Jornada Personalizada e suas 36 competências duplicadas (CONCLUÍDO: 04/04/2026)
+- [ ] Testar fluxo completo: PDI → Atribuição → Jornada → Acesso ao Curso
+- [ ] Adicionar validação para prevenir duplicidade de competências
+- [ ] Adicionar toasts de sucesso para editar/remover
+
+## Bug: Dropdown de Cursos Vazio na Atribuição (04/04/2026)
+- [ ] Problema: Dropdown "Curso / Programa" está vazio ao selecionar competência do PDI
+- [ ] Causa: Não existem cursos cadastrados para a competência "Mentalidade Sistêmica" (ID: 210007)
+- [ ] Solução: Criar cursos na página /competencias-comp-tec antes de atribuir
+- [ ] Verificar se há cursos em outras competências
+- [ ] Adicionar validação para mostrar mensagem quando não há cursos disponíveis
+
+## Reorganização do Mural do Aluno (04/04/2026)
+- [x] Encontrar página do Mural (Portal do Aluno) - MuralAluno.tsx
+- [x] Criar nova aba PERFORMANCE na navegação - adicionado em AlunoLayout.tsx
+- [x] Criar página Performance.tsx com todos os dashboards - copiado de DashboardAluno.tsx
+- [x] Adicionar rota /performance no App.tsx
+- [ ] Remover cards de performance do Mural (se existirem) - verificar se estão em DashboardMeuPerfil.tsx
+- [ ] Manter apenas: Minha Jornada, Mentorias, Eventos, Tarefas, Mini_Cursos, Cases de Sucesso, Meu Perfil
+- [ ] Testar navegação e funcionalidades
+
+## Modal de Edição de Atividades (06/04/2026)
+- [ ] Testar modal de edição de atividades no Raiwai com acesso de admin
+- [ ] Verificar se o botão de editar aparece nas atividades listadas
+- [ ] Validar funcionalidade de editar atividade (título, tipo, URL, descrição, imagem)
+- [ ] Testar soft-delete (desabilitar atividade)
+- [ ] Verificar se atividades desabilitadas não aparecem em novas atribuições
+
+
+## Edição e Upload de Imagens de Atividades (06/04/2026) - CORRIGIDO
+- [x] Criar endpoint POST /api/upload para upload de imagens
+- [x] Integrar com S3 para armazenar imagens
+- [x] Corrigir modal de edição para abrir corretamente
+- [x] Implementar exibição de imagens nas cards de atividades (já existia em AlunoAtividade.tsx)
+- [x] Corrigir mutation criarAtividade - adicionar isActive, createdAt, updatedAt
+- [x] Corrigir AdminAtividades - enviar urlMidia em vez de urlGenially
+- [x] Testar fluxo completo: criar atividade → fazer upload de imagem → editar → visualizar
+- [ ] Testar em produção (Raiwai) com acesso de admin
+
+
+## Implementação de Procedures de Fluxo de Atividades (06/04/2026) - CONCLUÍDO
+- [x] Implementar obterAtividadesCurso com bloqueio sequencial e status correto
+- [x] Implementar iniciarAtividade com registro em alunoAtividadeProgresso
+- [x] Implementar concluirAtividade com liberação de avaliação
+- [x] Implementar submeterAvaliacao com lógica de aprovação (nota >= 8) e liberação de próxima atividade
+- [ ] Ligar frontend novo a essas procedures
+- [ ] Validar indicadores 2 e 3 considerando apenas cursos com microciclo já iniciado
+- [ ] Testar ponta a ponta: detalhe do curso → cards → iniciar → concluir → avaliar
+
+
+## Timeline de Jornadas na Página do Gestor (08/04/2026)
+- [ ] Criar procedure gestorJornadasEmpresa no mentor router inline (server/routers.ts)
+- [ ] Resolver programId do gestor: users.programId → consultors.managedProgramId → vazio
+- [ ] Criar helper getGestorJornadasEmpresa em server/db.ts
+- [ ] Atualizar BoasVindasGestor.tsx para usar nova rota e exibir timeline de jornadas
+- [ ] Build local sem erros antes de commit
+
+## Aba Ciclos_Turmas
+- [x] Criar página CiclosTurmas.tsx com o Gantt movido do DashboardVisaoGeral
+- [x] Remover bloco do Gantt do DashboardVisaoGeral.tsx
+- [x] Registrar rota /dashboard/ciclos-turmas e item no sidebar do gerente
+- [x] Build local sem erros (EXIT_CODE=0)
+
+## Bug: 41 erros em produção - tabela in_app_notifications não existe (09/04/2026)
+- [ ] Corrigir erro: table in_app_notifications doesn't exist no banco de produção
+- [x] Remover item 'Visão Geral' do sidebar do gestor
+- [ ] Criar tabela in_app_notifications no banco de produção Railway
+- [x] Adicionar DashboardLayout (sidebar/menu) na página Boas-Vindas do gestor
+- [ ] Investigar onboarding do aluno Felipe travando no cadastro
+
+## Avaliação com Questões Randômicas e Limite de Tentativas (commits do GitHub - 10/04/2026)
+- [x] Implementar lógica de 10 questões aleatórias sorteadas do banco de questões
+- [x] Exigir 80% de acerto (8 de 10 questões) para aprovação
+- [x] Implementar limite de 3 tentativas por avaliação
+- [x] Status "bloqueada" quando aluno esgota 3 tentativas sem aprovação
+- [x] Retornar questões sorteadas no endpoint iniciarAtividade
+- [x] Retornar questões sorteadas no endpoint obterAtividadeParaAvaliar
+- [x] Retornar mensagens descritivas no resultado da avaliação (aprovado, reprovado com tentativas restantes, bloqueado)
+- [x] Botão "Refazer Avaliação com Novas Questões" no frontend (AlunoCompetenciasCompTec.tsx)
+- [x] Mostrar tentativas restantes e percentual de acerto no resultado
+
+## Botão Voltar na Página de Cursos (14/04/2026)
+- [x] Adicionar botão de voltar na página Cursos Disponíveis (/meus-cursos)
+- [x] Bug: Botão Voltar na página de Cursos não navega, só acende
+- [x] Remover botão "+ Novo Assessment" da página Plano Individual
+- [x] Remover botão "Editar" do assessment na página Plano Individual
+- [x] Remover botão "Editar" da página Assessment (/assessment)
+- [x] Remover botão "Congelar" da página Assessment (/assessment)
+- [x] Remover ícone de editar (lápis) de todas as competências na página Assessment
+- [x] Renomear botão "Próximo: Competências" para "INCLUIR/EDITAR COMPETÊNCIAS" na página novo assessment
+
+## Edição de Competências Existentes no NovoAssessment (14/04/2026)
+- [x] Desbloquear checkbox de competências existentes (desmarcar = remover, marcar = reatribuir)
+- [x] Preencher campos com valores atuais do banco para competências existentes
+- [x] Tornar campos editáveis (meta, microciclo, nível, peso) para competências existentes
+- [x] Criar endpoint backend para atualizar/remover/reatribuir competências existentes
+- [x] Bug CRÍTICO: Página /assessment/novo dá erro React #185 - causa: coluna isActive no schema Drizzle não existia no banco Railway. Solução: removida coluna isActive do schema (não necessária com abordagem de remover competências)
+- [x] Bug PERSISTENTE: Página /assessment/novo - causa raiz: existingCompetenciasMap nas dependências do useEffect causava loop infinito. Solução: removido das dependências, voltando para [competenciasTrilha, selectedTrilhaId]
+
+## Atividades sem Avaliação - Aprovação Automática (14/04/2026)
+- [x] Backend: ajustar lógica de listarAtividades para considerar atividade sem avaliação como "concluída/aprovada" quando tempo cumprido
+- [x] Backend: ajustar endpoint concluirAtividade para aprovar automaticamente quando não há avaliação cadastrada
+- [x] Backend: ajustar lógica de liberação da próxima atividade para funcionar sem avaliação
+- [x] Frontend: mostrar botão "Concluir Atividade" em vez de "Fazer Avaliação" quando não há avaliação
+- [x] Frontend: ajustar exibição de status para atividades sem avaliação
+
+## Erros de Tabelas Inexistentes no Banco Dev (14/04/2026)
+- [ ] Corrigir erro: tabela in_app_notifications não existe no banco dev
+- [ ] Corrigir erro: tabela onboarding_revisoes não existe no banco dev
+- [ ] Corrigir erro: tabela upload_batches não existe no banco dev
+- [ ] Corrigir erro: tabela departments não existe no banco dev
+
+## Confirmação ao Desmarcar Competências + Bug Onboarding Felipe (14/04/2026)
+- [x] Adicionar dialog de confirmação ao desmarcar competências existentes na Seleção de Competências
+- [x] Corrigir bug onboarding Felipe: colunas pdiLiberadoPelaMentora e pdiLiberadoEm já criadas pelo deploy automático do Railway
+
+## Bug: Competências opcionais não aparecem na atribuição de curso (14/04/2026)
+- [x] Investigar por que competências opcionais atribuídas pelo mentor no assessment não aparecem quando admin atribui curso ao aluno
+
+## Competências opcionais na atribuição de curso e catálogo do aluno (14/04/2026)
+- [x] db.ts: Remover filtro isObrigatoria=1 na função getCompetenciasObrigatoriasAluno, incluir campo isObrigatoria no retorno
+- [x] AlunoCatalogo.tsx: Separar cursos em seções obrigatórias (azul) e opcionais (verde) cruzando dados no frontend
+
+## Bug: Aluno não consegue marcar presença em evento com data passada (15/04/2026)
+- [x] Corrigir trava de presença: liberar para webinars com status completed, manter bloqueio para webinars futuros (published)

@@ -7,7 +7,7 @@ import {
   PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   Legend
 } from "recharts";
-import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle, GraduationCap, PartyPopper, Info, ChevronDown, ChevronUp, User, Clock, CheckCircle2, XCircle, Snowflake } from "lucide-react";
+import { Users, TrendingUp, Award, Target, Calendar, BookOpen, Zap, ArrowLeft, HelpCircle, GraduationCap, PartyPopper, Info, ChevronDown, ChevronUp, User, Clock, CheckCircle2, XCircle, Snowflake, RefreshCw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -64,6 +64,11 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
                   <Snowflake className="h-3 w-3 mr-1" />PDI Congelado
                 </Badge>
               )}
+              {aluno.foiResetado && (
+                <Badge variant="outline" className="text-xs text-orange-700 border-orange-400 bg-orange-50">
+                  <RefreshCw className="h-3 w-3 mr-1" />Resetado · Ciclo {aluno.resetDataCiclo} arquivado
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -83,6 +88,27 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
       {/* Detalhes expandidos */}
       {expanded && (
         <div className="border-t bg-muted/30 p-4 space-y-4">
+          {/* Aviso de reset */}
+          {aluno.foiResetado && (
+            <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
+              <div className="flex items-center gap-2 mb-1">
+                <RefreshCw className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-semibold text-orange-800">Aluno em novo ciclo após reset</span>
+              </div>
+              <p className="text-xs text-orange-700 mb-1">
+                O ciclo {aluno.resetDataCiclo} foi arquivado em{' '}
+                <strong>{aluno.resetCriadoEm ? new Date(aluno.resetCriadoEm).toLocaleDateString('pt-BR') : '—'}</strong>
+                {aluno.resetAdminNome ? ` por ${aluno.resetAdminNome}` : ''}.
+                {aluno.resetInd7Snapshot != null && (
+                  <> Engajamento final do ciclo anterior: <strong>{aluno.resetInd7Snapshot.toFixed(0)}%</strong>.</>
+                )}
+              </p>
+              <p className="text-xs text-orange-600 italic">
+                Os indicadores atuais refletem o novo ciclo em andamento. O mentor precisa criar o novo PDI para iniciar o cálculo.
+              </p>
+            </div>
+          )}
+
           {/* Aviso de PDI congelado */}
           {aluno.temPdiCongelado && aluno.pdisCongelados?.length > 0 && (
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
@@ -148,7 +174,7 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold">{ciclo.percentualConclusao?.toFixed(0) || 0}%</p>
+                      <p className="text-sm font-bold">{(ciclo.ind3_competencias ?? ciclo.percentualConclusao ?? 0).toFixed(0)}%</p>
                       <Badge variant="outline" className={`text-xs ${ciclo.status === 'finalizado' ? 'text-green-600 border-green-300' : 'text-blue-600 border-blue-300'}`}>
                         {ciclo.status === 'finalizado' ? 'Finalizado' : ciclo.status === 'em_andamento' ? 'Em Andamento' : ciclo.status}
                       </Badge>
@@ -202,7 +228,7 @@ function AlunoExpandido({ aluno }: { aluno: any }) {
           {/* Link para dashboard individual */}
           {aluno.alunoDbId > 0 && (
             <div className="pt-2 border-t">
-              <Link href={`/dashboard/aluno/${aluno.alunoDbId}`}>
+              <Link href={`/dashboard/aluno?id=${aluno.alunoDbId}`}>
                 <Button variant="outline" size="sm" className="w-full">
                   Ver Dashboard Completo do Aluno
                 </Button>
@@ -305,7 +331,7 @@ export default function DashboardEmpresa() {
     );
   }
 
-  const { visaoEmpresa, porTurma } = data;
+  const { visaoEmpresa, porTurma, visaoEmpresaAnterior } = data as any;
 
   const melhorAluno = alunos.length > 0 
     ? alunos.reduce((best: any, current: any) => (current.notaFinal > best.notaFinal ? current : best), alunos[0])
@@ -425,7 +451,7 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd3 || visaoEmpresa.mediaEngajamento).toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd3 || visaoEmpresa?.mediaEngajamento) ?? 0).toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Concluídas</p>
             </CardContent>
           </Card>
@@ -437,7 +463,7 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd4 || visaoEmpresa.mediaPerformanceCompetencias).toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd4 || visaoEmpresa?.mediaPerformanceCompetencias) ?? 0).toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Entregues</p>
             </CardContent>
           </Card>
@@ -449,7 +475,7 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd5 || visaoEmpresa.mediaPerformanceAprendizado || 0).toFixed(0)}%</div>
+              <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd5 || visaoEmpresa?.mediaPerformanceAprendizado || 0) ?? 0).toFixed(0)}%</div>
               <p className="text-xs text-muted-foreground">Evolução</p>
             </CardContent>
           </Card>
@@ -457,12 +483,12 @@ export default function DashboardEmpresa() {
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <PartyPopper className="h-4 w-4" /> Ind. 6: Aplicabilidade (Bônus)
+                <PartyPopper className="h-4 w-4" /> Ind. 6: Aplicabilidade
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{(visaoEmpresa.mediaInd6 || visaoEmpresa.mediaParticipacaoEventos).toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Relatório de Impacto</p>
+              <div className="text-2xl font-bold">{((visaoEmpresa?.mediaInd6 || visaoEmpresa?.mediaParticipacaoEventos) ?? 0).toFixed(0)}%</div>
+              <p className="text-xs text-muted-foreground">Case de Impacto do Aprendizado</p>
             </CardContent>
           </Card>
 
@@ -473,12 +499,57 @@ export default function DashboardEmpresa() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary">{(visaoEmpresa.mediaInd7 || visaoEmpresa.mediaPerformanceGeral || 0).toFixed(0)}%</div>
+              <div className="text-2xl font-bold text-primary">{((visaoEmpresa?.mediaInd7 || visaoEmpresa?.mediaPerformanceGeral || 0) ?? 0).toFixed(0)}%</div>
               <Progress value={visaoEmpresa.mediaInd7 || visaoEmpresa.mediaPerformanceGeral || 0} className="h-2 mt-1" />
               <p className="text-xs text-muted-foreground mt-1">Média dos 5 indicadores</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Indicadores do Ciclo Anterior (Arquivado) */}
+        {visaoEmpresaAnterior && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-1 flex-1 bg-orange-200 rounded" />
+              <span className="text-sm font-semibold text-orange-700 flex items-center gap-1">
+                <span>↺</span> Ciclo Anterior Arquivado — {visaoEmpresaAnterior.totalAlunos} aluno(s) com histórico congelado
+              </span>
+              <div className="h-1 flex-1 bg-orange-200 rounded" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 opacity-80">
+              {[
+                { label: 'Ind. 1: Webinars', val: visaoEmpresaAnterior.mediaInd1 },
+                { label: 'Ind. 2: Avaliações', val: visaoEmpresaAnterior.mediaInd2 },
+                { label: 'Ind. 3: Competências', val: visaoEmpresaAnterior.mediaInd3 },
+                { label: 'Ind. 4: Tarefas', val: visaoEmpresaAnterior.mediaInd4 },
+                { label: 'Ind. 5: Engajamento', val: visaoEmpresaAnterior.mediaInd5 },
+                { label: 'Ind. 6: Aplicabilidade', val: visaoEmpresaAnterior.mediaInd6 },
+              ].map(({ label, val }) => (
+                <Card key={label} className="border-orange-200 bg-orange-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-orange-700">{label}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-orange-600">{(val ?? 0).toFixed(0)}%</div>
+                    <p className="text-xs text-orange-400">Média congelada</p>
+                  </CardContent>
+                </Card>
+              ))}
+              <Card className="border-2 border-orange-400 bg-orange-100">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-orange-800 flex items-center gap-2">
+                    <Target className="h-4 w-4" /> Ind. 7: Engajamento Final
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-700">{(visaoEmpresaAnterior.mediaInd7 ?? 0).toFixed(0)}%</div>
+                  <Progress value={visaoEmpresaAnterior.mediaInd7 ?? 0} className="h-2 mt-1" />
+                  <p className="text-xs text-orange-500 mt-1">Média congelada no encerramento</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
 
         {/* Gráficos */}
         <div className="grid gap-6 md:grid-cols-2">
@@ -612,7 +683,7 @@ export default function DashboardEmpresa() {
                     </DialogHeader>
                     <div className="space-y-4 text-sm">
                       <p className="text-muted-foreground">
-                        O Engajamento Final de cada aluno é calculado com base em <strong>5 indicadores</strong>, cada um com peso igual (o Ind. 6 é bônus):
+                        O Engajamento Final de cada aluno é calculado com base em <strong>5 indicadores</strong>, cada um com peso igual (Aplicabilidade é separada):
                       </p>
                       <div className="space-y-3">
                         <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
@@ -653,8 +724,8 @@ export default function DashboardEmpresa() {
                         <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
                           <span className="font-bold text-orange-600">6.</span>
                           <div>
-                            <p className="font-medium">Aplicabilidade (Bônus)</p>
-                            <p className="text-xs text-muted-foreground">Relatório de Impacto (+10% no Engajamento) — não entra na média</p>
+                            <p className="font-medium">Aplicabilidade</p>
+                            <p className="text-xs text-muted-foreground">Aplicabilidade (Tarefa + Case) é separada e não entra na média do Engajamento</p>
                           </div>
                         </div>
                       </div>

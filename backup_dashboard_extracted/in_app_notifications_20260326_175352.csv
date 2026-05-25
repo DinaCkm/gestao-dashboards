@@ -1,0 +1,1156 @@
+id,userId,title,message,type,category,link,isRead,createdAt
+1,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-08 18:17:41
+30001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-08 23:43:07
+60001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 00:44:21
+90001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 01:19:43
+90002,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 01:20:44
+120001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 02:50:36
+120002,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 02:51:14
+150001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 14:06:51
+150002,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 14:07:10
+150003,3120092,Assessment PDI Criado,Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!,success,assessment,/meu-dashboard,0,2026-03-09 16:05:54
+150004,3120092,Assessment PDI Criado,Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!,success,assessment,/meu-dashboard,0,2026-03-09 16:08:36
+150005,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 20:18:08
+150006,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 20:46:08
+150007,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-09 21:10:10
+180001,660209,Sessão de Mentoria #5 Registrada,Sua mentora registrou a sessão #5. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-10 01:52:50
+210001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-11 16:32:32
+210002,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-11 16:33:31
+210003,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-11 17:43:46
+210004,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-11 18:01:59
+210005,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-11 20:28:37
+210006,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-11 20:34:05
+240001,660146,Sessão de Mentoria #8 Registrada,Sua mentora registrou a sessão #8. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 14:48:37
+240002,660146,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 14:49:11
+240003,660146,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 14:51:43
+240004,660146,Sessão de Mentoria #11 Registrada,Sua mentora registrou a sessão #11. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 14:54:55
+240005,660149,Sessão de Mentoria #8 Registrada,Sua mentora registrou a sessão #8. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 14:58:37
+240006,660149,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 14:59:10
+240007,660149,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 15:01:52
+240008,660180,Sessão de Mentoria #8 Registrada,Sua mentora registrou a sessão #8. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 15:07:50
+240009,660180,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 15:08:19
+240010,660180,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 15:10:10
+240011,660169,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 15:21:32
+240012,660169,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 15:24:30
+240013,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 16:00:37
+240014,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 16:13:47
+240015,660193,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:24:46
+240016,660193,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:26:26
+240017,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 16:28:28
+240018,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 16:36:49
+240019,660170,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:45:55
+240020,660188,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:46:38
+240021,660171,Sessão de Mentoria #8 Registrada,Sua mentora registrou a sessão #8. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:49:11
+240022,660171,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:51:03
+240023,660171,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:52:46
+240024,660185,Sessão de Mentoria #8 Registrada,Sua mentora registrou a sessão #8. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:58:17
+240025,660185,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:58:34
+240026,660185,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 16:59:55
+240027,660161,Sessão de Mentoria #8 Registrada,Sua mentora registrou a sessão #8. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:03:24
+240028,660161,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:03:53
+240029,660161,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:04:20
+240030,660176,Sessão de Mentoria #8 Registrada,Sua mentora registrou a sessão #8. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:07:38
+240031,660176,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:07:57
+240032,660176,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:08:33
+240033,660183,Sessão de Mentoria #8 Registrada,Sua mentora registrou a sessão #8. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:09:49
+240034,660183,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:10:21
+240035,660183,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:10:45
+240036,660164,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:21:31
+240037,660164,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:22:39
+240038,660157,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:24:21
+240039,660157,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:24:56
+240040,660178,Sessão de Mentoria #9 Registrada,Sua mentora registrou a sessão #9. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:26:46
+240041,660178,Sessão de Mentoria #10 Registrada,Sua mentora registrou a sessão #10. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:28:35
+240042,660111,Sessão de Mentoria #14 Registrada,Sua mentora registrou a sessão #14. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:35:43
+240043,660111,Sessão de Mentoria #15 Registrada,Sua mentora registrou a sessão #15. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:40:59
+240044,660111,Sessão de Mentoria #16 Registrada,Sua mentora registrou a sessão #16. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:41:37
+240045,660112,Sessão de Mentoria #16 Registrada,Sua mentora registrou a sessão #16. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-16 17:43:34
+240046,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 17:57:45
+240047,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 18:56:01
+240048,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 19:14:20
+240049,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 21:42:10
+240050,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 21:47:49
+240051,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 21:56:07
+240052,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 22:19:20
+240053,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 22:22:53
+240054,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 22:28:54
+240055,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-16 22:40:12
+240056,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 00:54:22
+240057,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 01:27:05
+240058,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 01:51:43
+240059,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 02:01:26
+240060,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 02:09:12
+270001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 10:43:47
+300001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 13:46:12
+300002,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 13:54:13
+300003,660196,Sessão de Mentoria #12 Registrada,Sua mentora registrou a sessão #12. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-17 21:54:54
+300004,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 22:10:56
+300005,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 22:57:32
+300006,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 23:12:34
+300007,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 23:37:20
+300008,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 23:37:48
+300009,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-17 23:48:15
+300010,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-18 01:05:47
+300011,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-18 01:16:48
+300012,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-18 01:23:39
+330001,660191,Sessão de Mentoria #7 Registrada,Sua mentora registrou a sessão #7. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 12:24:39
+330002,660177,Sessão de Mentoria #7 Registrada,Sua mentora registrou a sessão #7. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 12:32:43
+330003,660174,Sessão de Mentoria #7 Registrada,Sua mentora registrou a sessão #7. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 12:34:32
+330004,660139,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 14:30:23
+330005,660125,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 14:49:01
+330006,660126,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 14:50:12
+330007,660117,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 14:56:23
+330008,660130,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 18:14:38
+330009,660127,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 18:15:33
+330010,660114,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 18:16:20
+330011,660138,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 19:22:06
+330012,660141,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 19:37:10
+330013,660128,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 19:37:44
+330014,660112,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 19:38:20
+330015,660137,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 19:38:55
+330016,660132,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 19:40:13
+330017,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-18 20:08:02
+330018,660113,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-18 20:10:35
+330019,4293060,Assessment PDI Criado,Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!,success,assessment,/meu-dashboard,0,2026-03-19 00:32:29
+330020,4293060,Assessment PDI Criado,Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!,success,assessment,/meu-dashboard,0,2026-03-19 00:33:41
+330021,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 00:35:23
+330022,4385515,Sessão de Mentoria #1 Registrada,Sua mentora registrou a sessão #1. Você tem uma nova tarefa para realizar!,action,mentoria,/meu-dashboard,0,2026-03-19 01:13:01
+330023,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 01:35:44
+330024,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 01:52:59
+330025,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 01:53:18
+330026,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 01:53:37
+360001,660124,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-19 14:33:14
+360002,660118,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-19 14:34:48
+390001,660111,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-19 17:28:30
+390002,660129,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-19 17:29:01
+390003,660134,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-19 17:42:42
+390004,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 18:37:33
+390005,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 19:20:55
+390006,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 19:21:16
+390007,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 19:21:37
+390008,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 20:08:55
+390009,570386,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390010,660111,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390011,660112,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390012,660113,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390013,660114,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390014,660115,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390015,660116,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390016,660118,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390017,660119,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390018,660121,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390019,660122,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390020,660123,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390021,660124,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390022,660125,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390023,660126,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390024,660127,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390025,660128,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390026,660129,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390027,660130,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390028,660131,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390029,660132,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390030,660133,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390031,660134,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390032,660135,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390033,660136,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390034,660137,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390035,660138,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390036,660139,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390037,660140,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390038,660141,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390039,660143,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390040,660144,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390041,660145,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390042,660146,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390043,660147,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390044,660148,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390045,660149,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390046,660150,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390047,660151,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390048,660152,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390049,660153,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390050,660154,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390051,660155,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390052,660156,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390053,660157,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390054,660158,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390055,660159,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390056,660160,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390057,660161,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390058,660162,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390059,660163,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390060,660164,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390061,660165,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390062,660166,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390063,660167,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390064,660168,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390065,660169,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390066,660171,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390067,660172,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390068,660173,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390069,660174,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390070,660175,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390071,660176,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390072,660177,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390073,660178,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390074,660179,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390075,660180,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390076,660181,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390077,660182,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390078,660183,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390079,660184,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390080,660185,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390081,660186,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390082,660187,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390083,660189,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390084,660190,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390085,660191,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390086,660192,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390087,660193,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390088,660194,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390089,660195,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390090,660196,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390091,660198,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390092,660199,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390093,660200,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390094,660201,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390095,660202,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390096,660203,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390097,660204,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390098,660205,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390099,660206,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390100,660207,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390101,660208,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390102,660209,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390103,2550023,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390104,2790018,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390105,2850032,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390106,3120079,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390107,3120092,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390108,4293060,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390109,4293250,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390110,4294154,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390111,4294814,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390112,4294845,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390113,4380266,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390114,4380267,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390115,4380268,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390116,4380269,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390117,4380270,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390118,4380271,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390119,4380347,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390120,4380348,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390121,4380349,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390122,4380350,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390123,4380351,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390124,4380352,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390125,4384465,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390126,4384466,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390127,4384467,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390128,4384468,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390129,4384469,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390130,4384470,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390131,4384986,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390132,4384987,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390133,4384988,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390134,4384989,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390135,4384990,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390136,4384991,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390137,4385088,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390138,4385089,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390139,4385091,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390140,4385092,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390141,4385094,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390142,4385095,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390143,4385275,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390144,4385277,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390145,4385278,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390146,4385279,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390147,4385280,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390148,4385281,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390149,4385287,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390150,4385288,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390151,4385289,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390152,4385291,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390153,4385292,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390154,4385293,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390155,4385383,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390156,4385384,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390157,4385386,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390158,4385387,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390159,4385388,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390160,4385390,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390161,4385515,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390162,4386121,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390163,4386122,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390164,4386123,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390165,4386124,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390166,4386127,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390167,4386128,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390168,4386280,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390169,4386281,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390170,4386282,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390171,4386283,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390172,4386284,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390173,4386286,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390174,4386382,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390175,4386383,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390176,4386384,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390177,4386386,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390178,4386387,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390179,4386388,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390180,4440446,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390181,4440467,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390182,4441549,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390183,4441550,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390184,4441551,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390185,4441552,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390186,4441553,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390187,4441554,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390188,4443226,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390189,4443227,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390190,4443228,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390191,4443229,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390192,4443230,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390193,4443231,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390194,4443460,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390195,4443793,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390196,4443795,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390197,4443796,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390198,4443797,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390199,4443799,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390200,4443801,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390201,4444007,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390202,4444009,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390203,4444010,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390204,4444011,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390205,4444012,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390206,4444013,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390207,4444020,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390208,4444021,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390209,4444022,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390210,4444024,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390211,4444025,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390212,4444026,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390213,4444030,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390214,4444032,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390215,4444033,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390216,4444035,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390217,4444036,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390218,4444037,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390219,4590416,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390220,4590417,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390221,4590418,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390222,4590419,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390223,4590420,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390224,4590421,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390225,4590705,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390226,4590706,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390227,4590707,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390228,4590708,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390229,4590709,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390230,4590710,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390231,4590718,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390232,4590719,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390233,4590720,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390234,4590721,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390235,4590722,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390236,4590723,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390237,4590730,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390238,4590731,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390239,4590732,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390240,4590733,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390241,4590734,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390242,4590736,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390243,4590970,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390244,4590971,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390245,4590972,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390246,4590973,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390247,4590974,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390248,4590975,Lembrete: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional,"Evento: 2026/06 - Aula 04 - Resiliência e Proatividade na Prática Organizacional
+Data: 25/03/2026 às 11:00 (horário de Brasília)
+Palestrante: Sandra Pitman
+Link: https://www.even3.com.br/202606-aula-04-Integracao-704241",action,,,0,2026-03-19 20:14:38
+390249,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 21:59:17
+390250,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 22:21:44
+390251,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 22:41:00
+390252,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 22:41:21
+390253,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-19 22:49:26
+420001,660122,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-20 13:28:40
+420002,660119,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-20 13:37:11
+420003,660134,Sessão de Mentoria #18 Registrada,Sua mentora registrou a sessão #18. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-20 13:37:46
+420004,660133,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-20 13:38:17
+420005,660123,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-20 13:54:08
+420006,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-20 16:20:31
+420007,4443460,Assessment PDI Criado,Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!,success,assessment,/meu-dashboard,0,2026-03-20 17:26:53
+420008,4443460,Assessment PDI Criado,Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!,success,assessment,/meu-dashboard,0,2026-03-20 17:29:10
+420009,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-20 23:23:12
+420010,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-20 23:56:50
+420011,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 00:22:34
+420012,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 00:43:23
+450001,4443460,Sessão de Mentoria #1 Registrada,Sua mentora registrou a sessão #1. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-21 16:50:24
+480001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 19:37:45
+480002,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 19:47:43
+480003,690412,Solicitação de Revisão do PDI,"O aluno Julia Souza Makiyama solicitou revisão do PDI: ""XXXXXXXXXXXXXXXXXXXXXXXXX""",action,revisao_pdi,/painel-revisoes,0,2026-03-21 19:54:14
+480004,30896,Solicitação de Revisão do PDI,"O aluno Julia Souza Makiyama solicitou revisão do PDI: ""XXXXXXXXXXXXXXXXXXXXXXXXX""",action,revisao_pdi,/painel-revisoes,0,2026-03-21 19:54:14
+480005,30895,Solicitação de Revisão do PDI,"O aluno Julia Souza Makiyama solicitou revisão do PDI: ""XXXXXXXXXXXXXXXXXXXXXXXXX""",action,revisao_pdi,/painel-revisoes,0,2026-03-21 19:54:14
+480006,1,Solicitação de Revisão do PDI,"O aluno Julia Souza Makiyama solicitou revisão do PDI: ""XXXXXXXXXXXXXXXXXXXXXXXXX""",action,revisao_pdi,/painel-revisoes,1,2026-03-21 19:54:14
+480007,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 19:56:54
+480008,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 20:01:19
+510001,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 22:31:49
+510002,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 22:39:59
+510003,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 22:51:48
+510004,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 22:52:10
+510005,4443460,Sessão de Mentoria #2 Registrada,Sua mentora registrou a sessão #2. Você tem uma nova tarefa para realizar!,action,mentoria,/meu-dashboard,0,2026-03-21 22:56:33
+510006,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 23:23:53
+510007,4294814,📊 Relatório de Impacto enviado por Julia Souza Makiyama,O aluno Julia Souza Makiyama enviou um Relatório de Impacto para a trilha Basic. Título: GESTÃO DE TEMPO,info,relatorio_impacto,,0,2026-03-21 23:30:48
+510008,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-21 23:42:18
+540001,4443460,Assessment PDI Criado,Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!,success,assessment,/meu-dashboard,0,2026-03-22 16:13:40
+540002,4443460,Sessão de Mentoria #3 Registrada,Sua mentora registrou a sessão #3. Você tem uma nova tarefa para realizar!,action,mentoria,/meu-dashboard,0,2026-03-22 16:26:37
+570001,720421,📊 Relatório de Impacto enviado por Luciana Carvalho de Aguiar,O aluno Luciana Carvalho de Aguiar enviou um Relatório de Impacto para a trilha Basic. Título: Case_Sucessores_Feedback e Empatia,info,relatorio_impacto,,0,2026-03-23 14:28:47
+570002,660170,📊 Relatório de Impacto enviado por Luciana Carvalho de Aguiar,O aluno Luciana Carvalho de Aguiar enviou um Relatório de Impacto para a trilha Basic. Título: Case_Sucessores_Feedback e Empatia,info,relatorio_impacto,,0,2026-03-23 14:28:47
+570003,4294845,Assessment PDI Criado,Sua mentora criou um novo Assessment PDI para você. Seu portal completo já está disponível!,success,assessment,/meu-dashboard,0,2026-03-23 14:42:02
+570004,720421,📊 Relatório de Impacto enviado por Luciana Carvalho de Aguiar,O aluno Luciana Carvalho de Aguiar enviou um Relatório de Impacto para a trilha Basic. Título: Case_Sucessores_Feedback e Empatia,info,relatorio_impacto,,0,2026-03-23 14:49:43
+570005,660170,📊 Relatório de Impacto enviado por Luciana Carvalho de Aguiar,O aluno Luciana Carvalho de Aguiar enviou um Relatório de Impacto para a trilha Basic. Título: Case_Sucessores_Feedback e Empatia,info,relatorio_impacto,,0,2026-03-23 14:49:43
+570006,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-23 14:51:10
+570007,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-23 14:51:33
+570008,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-23 15:17:09
+570009,660157,Sessão de Mentoria #11 Registrada,Sua mentora registrou a sessão #11. Você tem uma nova tarefa para realizar!,action,mentoria,/meu-dashboard,0,2026-03-23 16:35:39
+570010,660178,Sessão de Mentoria #11 Registrada,Sua mentora registrou a sessão #11. Você tem uma nova tarefa para realizar!,action,mentoria,/meu-dashboard,0,2026-03-23 17:56:53
+570011,660164,Sessão de Mentoria #12 Registrada,Sua mentora registrou a sessão #12. Você tem uma nova tarefa para realizar!,action,mentoria,/meu-dashboard,0,2026-03-23 18:06:04
+570012,4294845,Sessão de Mentoria #1 Registrada,Sua mentora registrou a sessão #1. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-23 22:28:12
+570013,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-24 00:31:33
+570014,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-24 02:31:30
+600001,660140,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 12:15:43
+600002,660116,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 12:51:05
+600003,660121,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 12:53:07
+600004,660143,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 12:54:00
+600005,660135,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 12:54:41
+600006,660120,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 12:55:37
+600007,660115,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 12:56:43
+600008,660136,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 12:58:37
+600009,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-24 15:39:44
+600010,2,Test Notification,This is a test notification,info,sistema,,1,2026-03-24 15:56:30
+600011,660131,Sessão de Mentoria #17 Registrada,Sua mentora registrou a sessão #17. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-24 19:48:42
+600012,660169,Sessão de Mentoria #11 Registrada,Sua mentora registrou a sessão #11. Você tem uma nova tarefa para realizar!,action,mentoria,/meu-dashboard,0,2026-03-24 22:42:53
+600013,660193,Sessão de Mentoria #11 Registrada,Sua mentora registrou a sessão #11. Você tem uma nova tarefa para realizar!,action,mentoria,/meu-dashboard,0,2026-03-24 22:52:22
+630001,660172,Sessão de Mentoria #7 Registrada,Sua mentora registrou a sessão #7. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-25 00:49:26
+630002,660145,Sessão de Mentoria #12 Registrada,Sua mentora registrou a sessão #12. Confira o feedback no seu portal.,info,mentoria,/meu-dashboard,0,2026-03-25 01:49:55

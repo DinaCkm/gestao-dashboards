@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square } from "lucide-react";
+import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square, RefreshCw, Layers, BookOpen, Shield } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -56,12 +56,143 @@ function getDisplayRole(user: any): string {
   return user.role;
 }
 
+// Calcula a janela de reset com base no FIM do nível
+// A janela abre no dia do fim do nível e fecha 60 dias depois
+function calcularProximoReset(nivelFim: string | null, _contratoInicio: string | null): { label: string; diasRestantes: number | null } | null {
+  if (!nivelFim) return null;
+  const fim = new Date(nivelFim);
+  if (isNaN(fim.getTime())) return null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const fechamentoJanela = new Date(fim);
+  fechamentoJanela.setDate(fechamentoJanela.getDate() + 30);
+  // Janela aberta: entre o fim do nível e 30 dias depois
+  if (hoje >= fim && hoje <= fechamentoJanela) {
+    const diasRestantes = Math.ceil((fechamentoJanela.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    return { label: `Janela de reset aberta (${diasRestantes}d restantes)`, diasRestantes: 0 };
+  }
+  // Janela futura: antes do fim do nível
+  if (hoje < fim) {
+    const diff = Math.ceil((fim.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    return { label: `Reset disponível em ${fim.toLocaleDateString('pt-BR')}`, diasRestantes: diff };
+  }
+  // Janela expirada (mais de 30 dias após o fim do nível)
+  return null;
+}
+
+// Componente para exibir níveis e macrociclos do aluno no card expandido
+function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
+  const { data: niveis = [], isLoading: loadingNiveis } = trpc.contratoNiveis.historico.useQuery({ alunoId });
+  const { data: macrociclos = [], isLoading: loadingMacros } = trpc.assessment.porAluno.useQuery(
+    { alunoId, contratoNivelId: null },
+    { enabled: !!alunoId }
+  );
+
+  const nivelRomano: Record<string, string> = { I: '1', II: '2', III: '3', IV: '4', V: '5' };
+
+  const statusBadge: Record<string, { label: string; color: string }> = {
+    planejado: { label: 'Planejado', color: 'text-gray-400' },
+    em_andamento: { label: 'Em andamento', color: 'text-blue-600 font-semibold' },
+    fechamento: { label: 'Fechamento', color: 'text-amber-600' },
+    ajustes: { label: 'Ajustes', color: 'text-orange-600' },
+    encerrado: { label: 'Encerrado', color: 'text-red-500' },
+    certificado: { label: 'Certificado', color: 'text-green-600' },
+  };
+
+  const macroStatusBadge: Record<string, { label: string; color: string }> = {
+    ativo: { label: 'Ativo', color: 'text-blue-600 font-semibold' },
+    congelado: { label: 'Congelado', color: 'text-gray-400' },
+    concluido: { label: 'Concluído', color: 'text-green-600' },
+  };
+
+  if (loadingNiveis && loadingMacros) {
+    return (
+      <div className="mt-3 pt-3 border-t">
+        <p className="text-xs text-muted-foreground">Carregando níveis e macrociclos...</p>
+      </div>
+    );
+  }
+
+  if (niveis.length === 0 && macrociclos.length === 0) return null;
+
+  // Deduplicar níveis pelo id
+  const niveisUnicos = Array.from(new Map(niveis.map((n: any) => [n.id, n])).values());
+
+  return (
+    <div className="mt-3 pt-3 border-t border-purple-200">
+      {/* Níveis do Contrato */}
+      {niveisUnicos.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-purple-700 mb-1.5 flex items-center gap-1">
+            <Layers className="h-3.5 w-3.5" /> Períodos de Nível
+          </p>
+          <div className="space-y-1">
+            {niveisUnicos.map((nivel: any) => {
+              const s = statusBadge[nivel.status] || { label: nivel.status, color: 'text-gray-500' };
+              // Usar nivelInicio/nivelFim (datas específicas do nível) com fallback para datas do contrato
+              const dataInicio = nivel.nivelInicio || nivel.dataInicio;
+              const dataFim = nivel.nivelFim || nivel.dataFim;
+              const isAtivo = nivel.status === 'em_andamento';
+              // Mostrar janela de reset para níveis em andamento OU encerrados recentemente
+              const podeReset = nivel.status === 'em_andamento' || nivel.status === 'encerrado' || nivel.status === 'fechamento';
+              const proximoReset = podeReset ? calcularProximoReset(nivel.nivelFim || nivel.dataFim, nivel.dataInicio) : null;
+              return (
+                <div key={nivel.id} className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs ${isAtivo ? 'bg-blue-50 rounded px-2 py-1' : 'px-2 py-0.5'}`}>
+                  <span className="font-semibold text-purple-800 min-w-[52px]">Nível {nivelRomano[nivel.nivel] ?? nivel.nivel}</span>
+                  <span className="text-muted-foreground">
+                    {dataInicio ? formatDateSafe(dataInicio) : '?'}
+                    <span className="mx-1 text-gray-300">····</span>
+                    {dataFim ? formatDateSafe(dataFim) : '?'}
+                  </span>
+                  <span className={`text-[10px] ${s.color}`}>{s.label}</span>
+                  {proximoReset && (
+                    <span className={`text-[10px] ml-1 ${proximoReset.diasRestantes === 0 ? 'text-green-600 font-semibold' : 'text-amber-600'}`}>
+                      {proximoReset.diasRestantes === 0
+                        ? `✓ Janela de reset aberta (${proximoReset.label.match(/\d+d/)?.[0] ?? ''} restantes)`
+                        : `⏱ ${proximoReset.label}`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Macrociclos */}
+      {macrociclos.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-indigo-700 mb-1.5 flex items-center gap-1">
+            <BookOpen className="h-3.5 w-3.5" /> Macrociclos (PDIs)
+          </p>
+          <div className="space-y-1">
+            {macrociclos.map((macro: any) => {
+              const s = macroStatusBadge[macro.status] || { label: macro.status, color: 'text-gray-500' };
+              return (
+                <div key={macro.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs px-2 py-0.5">
+                  <span className="font-medium min-w-[52px]">{macro.trilhaNome || macro.trilhaId || '-'}</span>
+                  <span className="text-muted-foreground">
+                    {macro.macroInicio ? formatDateSafe(macro.macroInicio) : '?'}
+                    <span className="mx-1 text-gray-300">····</span>
+                    {macro.macroTermino ? formatDateSafe(macro.macroTermino) : '?'}
+                  </span>
+                  <span className={`text-[10px] ${s.color}`}>{s.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminCadastros() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
   const searchString = useSearch();
   const tabFromUrl = new URLSearchParams(searchString).get("tab");
-  const validTabs = ["acesso", "empresas", "mentores", "gerentes", "gerentes-empresa"];
+  const validTabs = ["acesso", "empresas", "mentores", "gerentes", "gerentes-empresa", "administradores"];
   const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : "acesso";
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -79,6 +210,8 @@ export default function AdminCadastros() {
   const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: adminUsers, refetch: refetchAdminUsers, isLoading: loadingAdminUsers } = trpc.admin.listAdmins.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+
 
   // Mutations
   const createEmpresa = trpc.admin.createEmpresa.useMutation({
@@ -131,6 +264,27 @@ export default function AdminCadastros() {
       }
     },
     onError: (err) => toast.error(`Erro ao criar usuário: ${err.message}`),
+  });
+
+  const createAdminUser = trpc.admin.createAdmin.useMutation({
+    onSuccess: () => {
+      toast.success('Administrador criado com sucesso!');
+      refetchAdminUsers();
+    },
+    onError: (err) => toast.error(`Erro ao criar administrador: ${err.message}`),
+  });
+
+  const toggleAdminStatus = trpc.admin.toggleAdminStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.isActive ? 'Administrador habilitado!' : 'Administrador inabilitado!');
+      refetchAdminUsers();
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const setAdminPermissions = trpc.admin.setPermissions.useMutation({
+    onSuccess: () => toast.success('Permissões salvas com sucesso!'),
+    onError: (err) => toast.error(`Erro ao salvar permissões: ${err.message}`),
   });
 
   const toggleAccessUserStatus = trpc.admin.toggleAccessUserStatus.useMutation({
@@ -271,6 +425,17 @@ export default function AdminCadastros() {
     },
     onError: (err: any) => toast.error(`Erro ao liberar onboarding: ${err.message}`),
   });
+  const reverterOnboarding = trpc.admin.reverterOnboarding.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success("Onboarding revertido!", { description: "O aluno foi liberado do onboarding e pode acessar o portal normalmente." });
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao reverter onboarding");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao reverter onboarding: ${err.message}`),
+  });
   const liberarOnboardingEmMassa = trpc.admin.liberarOnboardingEmMassa.useMutation({
     onSuccess: (data: any) => {
       if (data.success) {
@@ -354,7 +519,7 @@ export default function AdminCadastros() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="acesso" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               Alunos
@@ -370,6 +535,10 @@ export default function AdminCadastros() {
             <TabsTrigger value="gerentes-empresa" className="flex items-center gap-2">
               <Crown className="h-4 w-4" />
               Gerentes
+            </TabsTrigger>
+            <TabsTrigger value="administradores" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Admins
             </TabsTrigger>
           </TabsList>
 
@@ -394,6 +563,8 @@ export default function AdminCadastros() {
               isLiberandoOnboarding={liberarOnboarding.isPending}
               onLiberarOnboardingEmMassa={liberarOnboardingEmMassa.mutate}
               isLiberandoEmMassa={liberarOnboardingEmMassa.isPending}
+              onReverterOnboarding={reverterOnboarding.mutate}
+              isRevertendoOnboarding={reverterOnboarding.isPending}
             />
           </TabsContent>
 
@@ -438,6 +609,20 @@ export default function AdminCadastros() {
               isRemoving={removeGerente.isPending}
             />
           </TabsContent>
+
+          {/* Administradores Tab */}
+          <TabsContent value="administradores">
+            <AdminsTab
+              admins={adminUsers || []}
+              loading={loadingAdminUsers}
+              onCreate={createAdminUser.mutate}
+              isCreating={createAdminUser.isPending}
+              onToggleStatus={(userId: number) => toggleAdminStatus.mutate({ userId })}
+              isTogglingStatus={toggleAdminStatus.isPending}
+              onSetPermissions={(userId: number, permissions: string[]) => setAdminPermissions.mutate({ userId, permissions })}
+              isSavingPermissions={setAdminPermissions.isPending}
+            />
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
@@ -445,7 +630,7 @@ export default function AdminCadastros() {
 }
 
 // ============ ALUNOS TAB ============
-function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa }: {
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa, onReverterOnboarding, isRevertendoOnboarding, onCreateAlunoSuccess }: {
   alunos: any[];
   empresas: any[];
   mentoresList: any[];
@@ -454,7 +639,6 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   onUpdate: (data: any) => void;
   onCreateAluno: (data: any) => void;
   isCreatingAluno: boolean;
-
   isUpdating: boolean;
   onDelete: (data: any) => void;
   isDeleting: boolean;
@@ -464,9 +648,16 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   isLiberandoOnboarding: boolean;
   onLiberarOnboardingEmMassa: (data: any) => void;
   isLiberandoEmMassa: boolean;
+  onReverterOnboarding: (data: any) => void;
+  isRevertendoOnboarding: boolean;
+  onCreateAlunoSuccess?: () => void;
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const [editAluno, setEditAluno] = useState<any>(null);
+
+  // Auditoria de resets
+  const { data: auditoriaResets = [] } = trpc.admin.auditoriaResets.useQuery(undefined);
+  const resetsPorAlunoMap = useMemo(() => new Map(auditoriaResets.map((r: any) => [Number(r.alunoId), r])), [auditoriaResets]);
 
   // Delete state
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -544,6 +735,59 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   // Selection state for mass operations
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [massConfirmOpen, setMassConfirmOpen] = useState(false);
+
+  // Modal de pré-verificação individual de liberar onboarding
+  const [liberarModalOpen, setLiberarModalOpen] = useState(false);
+  const [liberarModalAluno, setLiberarModalAluno] = useState<any>(null);
+  // Nível vigente do aluno selecionado para reset
+  const { data: nivelVigenteReset } = trpc.contratoNiveis.vigente.useQuery(
+    { alunoId: liberarModalAluno?.id ?? 0 },
+    { enabled: !!liberarModalAluno && liberarModalOpen }
+  );
+  const NIVEL_SEQUENCIA: Record<string, string> = { 'I': 'II', 'II': 'III', 'III': 'IV', 'IV': 'V' };
+  const proximoNivelReset = nivelVigenteReset ? (NIVEL_SEQUENCIA[nivelVigenteReset.nivel] ?? null) : null;
+
+  // Validação de janela de reset
+  // Meses permitidos: 3 (opcional), 6, 12, 18, 24 (obrigatórios)
+  // Janela: 30 dias a partir do início do mês correspondente
+  const calcularJanelaReset = (contratoInicio: Date | string | null) => {
+    if (!contratoInicio) return { permitido: true, proxima: null, tipo: null };
+    const inicio = new Date(contratoInicio);
+    const hoje = new Date();
+    const mesesPermitidos = [3, 6, 12, 18, 24];
+    for (const mes of mesesPermitidos) {
+      const inicioJanela = new Date(inicio);
+      inicioJanela.setMonth(inicioJanela.getMonth() + mes);
+      const fimJanela = new Date(inicioJanela);
+      fimJanela.setDate(fimJanela.getDate() + 60);
+      if (hoje >= inicioJanela && hoje <= fimJanela) {
+        return { permitido: true, proxima: null, tipo: mes === 3 ? 'opcional' : 'obrigatorio' };
+      }
+    }
+    // Encontrar próxima janela
+    for (const mes of mesesPermitidos) {
+      const inicioJanela = new Date(inicio);
+      inicioJanela.setMonth(inicioJanela.getMonth() + mes);
+      if (inicioJanela > hoje) {
+        return { permitido: false, proxima: inicioJanela, tipo: mes === 3 ? 'opcional' : 'obrigatorio' };
+      }
+    }
+    return { permitido: false, proxima: null, tipo: null };
+  };
+  const janelaReset = liberarModalAluno
+    ? calcularJanelaReset(liberarModalAluno.contratoInicio)
+    : { permitido: true, proxima: null, tipo: null };
+
+  const handleLiberarClick = (aluno: any) => {
+    setLiberarModalAluno(aluno);
+    setLiberarModalOpen(true);
+  };
+  const handleLiberarConfirm = () => {
+    if (!liberarModalAluno) return;
+    onLiberarOnboarding({ alunoId: liberarModalAluno.id });
+    setLiberarModalOpen(false);
+    setLiberarModalAluno(null);
+  };
 
   const toggleSelect = (id: number) => {
     setSelectedIds(prev => {
@@ -623,6 +867,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [onboardContratoFim, setOnboardContratoFim] = useState("");
   const [onboardTotalSessoes, setOnboardTotalSessoes] = useState("");
   const [onboardTipoMentoria, setOnboardTipoMentoria] = useState<'individual' | 'grupo'>('individual');
+  const [onboardPlataformaAulas, setOnboardPlataformaAulas] = useState<'scaffold' | 'sistema_interno'>('sistema_interno');
 
   const handleOnboardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -635,25 +880,35 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       toast.error("Selecione a empresa vinculada");
       return;
     }
-    onCreateAluno({
-      name: onboardNome,
-      email: onboardEmail,
-      externalId: idDigits,
-      programId: parseInt(onboardProgramId),
-      contratoInicio: onboardContratoInicio || undefined,
-      contratoFim: onboardContratoFim || undefined,
-      totalSessoesContratadas: onboardTotalSessoes ? parseInt(onboardTotalSessoes) : undefined,
-      tipoMentoria: onboardTipoMentoria,
-    });
-    setOnboardNome("");
-    setOnboardEmail("");
-    setOnboardId("");
-    setOnboardProgramId("");
-    setOnboardContratoInicio("");
-    setOnboardContratoFim("");
-    setOnboardTotalSessoes("");
-    setOnboardTipoMentoria('individual');
-    setOnboardOpen(false);
+    onCreateAluno(
+      {
+        name: onboardNome,
+        email: onboardEmail,
+        externalId: idDigits,
+        programId: parseInt(onboardProgramId),
+        contratoInicio: onboardContratoInicio || undefined,
+        contratoFim: onboardContratoFim || undefined,
+        totalSessoesContratadas: onboardTotalSessoes ? parseInt(onboardTotalSessoes) : undefined,
+        tipoMentoria: onboardTipoMentoria,
+        plataformaAulas: onboardPlataformaAulas,
+      },
+      {
+        onSuccess: () => {
+          // Fechar modal e limpar campos apenas após confirmação de sucesso
+          setOnboardNome("");
+          setOnboardEmail("");
+          setOnboardId("");
+          setOnboardProgramId("");
+          setOnboardContratoInicio("");
+          setOnboardContratoFim("");
+          setOnboardTotalSessoes("");
+          setOnboardTipoMentoria('individual');
+          setOnboardPlataformaAulas('sistema_interno');
+          setOnboardOpen(false);
+          onCreateAlunoSuccess?.();
+        },
+      }
+    );
   };
 
   // Cadastro Direto removido - manter apenas Cadastrar Aluno para Onboarding
@@ -675,6 +930,28 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [editAreaAtuacao, setEditAreaAtuacao] = useState("");
   const [editMinicurriculo, setEditMinicurriculo] = useState("");
   const [editQuemEVoce, setEditQuemEVoce] = useState("");
+  const [editPlataformaAulas, setEditPlataformaAulas] = useState("sistema_interno");
+
+  // Modal de troca de mentora
+  const [trocarMentoraModalOpen, setTrocarMentoraModalOpen] = useState(false);
+  const trocarMentora = trpc.onboarding.trocarMentora.useMutation({
+    onSuccess: () => {
+      toast.success("Mentora trocada com sucesso! E-mails enviados para as mentoras.");
+      setTrocarMentoraModalOpen(false);
+      setEditOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao trocar mentora: ${err.message}`);
+    },
+  });
+
+  const handleTrocarMentora = () => {
+    if (!editAluno || !editConsultorId) return;
+    trocarMentora.mutate({
+      alunoId: editAluno.id,
+      novaMentoraId: parseInt(editConsultorId),
+    });
+  };
 
   const handleEditOpen = (aluno: any) => {
     setEditAluno(aluno);
@@ -695,6 +972,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setEditAreaAtuacao(aluno.areaAtuacao || "");
     setEditMinicurriculo(aluno.minicurriculo || "");
     setEditQuemEVoce(aluno.quemEVoce || "");
+    setEditPlataformaAulas(aluno.plataformaAulas || "sistema_interno");
     setEditOpen(true);
   };
 
@@ -724,6 +1002,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       areaAtuacao: editAreaAtuacao || null,
       minicurriculo: editMinicurriculo || null,
       quemEVoce: editQuemEVoce || null,
+      plataformaAulas: editPlataformaAulas as 'scaffold' | 'sistema_interno',
     });
     setEditOpen(false);
     setEditAluno(null);
@@ -742,9 +1021,14 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           </CardDescription>
         </div>
         <div className="flex gap-2">
+
           {/* Exportar Excel */}
           <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || filteredAlunos.length === 0}>
             {isExporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exportando...</> : <><Download className="h-4 w-4 mr-2" /> Exportar Excel</>}
+          </Button>
+          {/* Editar Plataformas */}
+          <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => window.location.href = '/admin/plataforma-aulas'}>
+            <ArrowLeftRight className="h-4 w-4 mr-2" /> Editar Plataformas
           </Button>
           {/* Convite Onboarding Dialog */}
           <Dialog open={onboardOpen} onOpenChange={setOnboardOpen}>
@@ -784,6 +1068,14 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       <option value="">Selecione a empresa</option>
                       {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
                     </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Plataforma de Aulas</Label>
+                    <select value={onboardPlataformaAulas} onChange={(e) => setOnboardPlataformaAulas(e.target.value as 'scaffold' | 'sistema_interno')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="sistema_interno">Sistema Interno</option>
+                      <option value="scaffold">Plataforma Scaffold</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">Selecione a plataforma onde o aluno fara suas aulas</p>
                   </div>
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Dados do Contrato</p>
@@ -864,11 +1156,32 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Mentor(a) Vinculado(a)</Label>
-                  <select value={editConsultorId} onChange={(e) => setEditConsultorId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                    <option value="">Sem mentor atribuído</option>
-                    {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
+                  <Label>Plataforma de Aulas</Label>
+                  <select value={editPlataformaAulas} onChange={(e) => setEditPlataformaAulas(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <option value="sistema_interno">Sistema Interno</option>
+                    <option value="scaffold">Plataforma Scaffold</option>
                   </select>
+                  <p className="text-xs text-muted-foreground">Selecione onde o aluno fará as aulas: no sistema interno ou na plataforma Scaffold.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Mentor(a) Vinculado(a)</Label>
+                  <div className="flex gap-2 items-center">
+                    <select value={editConsultorId} onChange={(e) => setEditConsultorId(e.target.value)} className="flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="">Sem mentor atribuído</option>
+                      {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
+                    </select>
+                    {editConsultorId && editAluno && editConsultorId !== (editAluno.consultorId?.toString() ?? '') && (
+                      <button
+                        type="button"
+                        onClick={() => setTrocarMentoraModalOpen(true)}
+                        className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
+                      >
+                        <ArrowLeftRight className="h-3.5 w-3.5" />
+                        Trocar Mentora
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Ao trocar a mentora, e-mails serão enviados automaticamente para a mentora nova e a anterior.</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Turma</Label>
@@ -1084,6 +1397,12 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="font-medium text-sm">{aluno.name}</span>
+                        {resetsPorAlunoMap.has(aluno.id) && (
+                          <Badge variant="outline" className="ml-2 text-[10px] text-orange-700 border-orange-400 bg-orange-50 px-1.5 py-0">
+                            <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                            Resetado em {new Date(resetsPorAlunoMap.get(aluno.id)!.criadoEm).toLocaleDateString('pt-BR')}
+                          </Badge>
+                        )}
                       </div>
                       <div className="hidden sm:block text-xs text-muted-foreground truncate max-w-[200px]">
                         {aluno.programName || ''}
@@ -1168,6 +1487,41 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                             </span>
                           </div>
                         </div>
+                        {/* Dados de Reset */}
+                        {resetsPorAlunoMap.has(aluno.id) && (() => {
+                          const resetInfo = resetsPorAlunoMap.get(aluno.id)!;
+                          return (
+                            <div className="mt-3 pt-3 border-t border-orange-200">
+                              <div className="flex items-center gap-2 mb-1">
+                                <RefreshCw className="h-3.5 w-3.5 text-orange-600" />
+                                <p className="text-xs font-semibold text-orange-600">Histórico de Reset</p>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1.5 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Data do reset:</span>
+                                  <span className="font-medium">{new Date(resetInfo.criadoEm).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Ciclo arquivado:</span>
+                                  <span className="font-medium">{resetInfo.numeroCicloArquivado}</span>
+                                </div>
+                                {resetInfo.ind7Snapshot != null && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">Engajamento final:</span>
+                                    <span className="font-medium">{parseFloat(resetInfo.ind7Snapshot).toFixed(0)}%</span>
+                                  </div>
+                                )}
+                                {resetInfo.adminNome && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">Executado por:</span>
+                                    <span>{resetInfo.adminNome}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {/* Dados do Onboarding */}
                         {(aluno.telefone || aluno.cargo || aluno.areaAtuacao || aluno.minicurriculo || aluno.quemEVoce) && (
                           <div className="mt-3 pt-3 border-t border-blue-200">
@@ -1206,6 +1560,9 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                             )}
                           </div>
                         )}
+                        {/* Níveis do Contrato e Macrociclos */}
+                        <AlunoNiveisEMacrociclos alunoId={aluno.id} />
+
                         {/* Ações */}
                         <div className="flex gap-2 mt-3 pt-3 border-t">
                           <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEditOpen(aluno); }}>
@@ -1225,17 +1582,39 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                             <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
                           </Button>
                           {aluno.hasPdi && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className={aluno.onboardingLiberado === 1 ? "text-orange-600 border-orange-300 bg-orange-50" : "text-blue-600 hover:bg-blue-600 hover:text-white"}
-                              onClick={(e) => { e.stopPropagation(); onLiberarOnboarding({ alunoId: aluno.id }); }}
-                              disabled={isLiberandoOnboarding || aluno.onboardingLiberado === 1}
-                              title={aluno.onboardingLiberado === 1 ? "Onboarding j\u00e1 liberado para novo ciclo" : "Liberar onboarding para novo ciclo (renova\u00e7\u00e3o de contrato)"}
-                            >
-                              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-                              {aluno.onboardingLiberado === 1 ? "Onboarding Liberado" : "Liberar Onboarding"}
-                            </Button>
+                            aluno.onboardingLiberado === 1 ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`Reverter onboarding de ${aluno.name}?\n\nIsso irá zerar o flag onboardingLiberado, liberando o aluno para acessar o portal normalmente.`)) {
+                                    onReverterOnboarding({ alunoId: aluno.id });
+                                  }
+                                }}
+                                disabled={isRevertendoOnboarding}
+                                title="Clique para reverter: zera onboardingLiberado e libera acesso ao portal"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                                {isRevertendoOnboarding ? 'Revertendo...' : 'Onboarding Liberado ✕'}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-blue-600 hover:bg-blue-600 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLiberarClick(aluno);
+                                }}
+                                disabled={isLiberandoOnboarding}
+                                title="Liberar onboarding para novo ciclo (renovação de contrato) — RESETA o onboarding anterior"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                                Liberar Onboarding
+                              </Button>
+                            )
                           )}
                         </div>
                       </div>
@@ -1292,7 +1671,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           ) : deleteDeps ? (
             <p className="text-sm text-muted-foreground">Este aluno não possui dados relacionados. A exclusão será simples.</p>
           ) : null}
-          <DialogFooter>
+           <DialogFooter>
             <Button variant="outline" onClick={() => { setDeleteOpen(false); setDeleteTarget(null); setDeleteDeps(null); }}>Cancelar</Button>
             <Button variant="destructive" onClick={handleDeleteConfirm} disabled={depsQuery.isLoading || isDeleting}>
               {isDeleting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Excluindo...</> : "Excluir Permanentemente"}
@@ -1300,10 +1679,171 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de pré-verificação: Liberar Onboarding Individual */}
+      <Dialog open={liberarModalOpen} onOpenChange={(open) => { if (!open) { setLiberarModalOpen(false); setLiberarModalAluno(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <RotateCcw className="h-5 w-5" />
+              Liberar Novo Ciclo de Onboarding
+            </DialogTitle>
+            <DialogDescription>
+              Você está prestes a iniciar um novo ciclo para:
+            </DialogDescription>
+          </DialogHeader>
+          {liberarModalAluno && (
+            <div className="space-y-4 py-2">
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <p className="font-semibold text-gray-900">{liberarModalAluno.name}</p>
+                <p className="text-sm text-gray-500">{liberarModalAluno.email}</p>
+                {liberarModalAluno.programName && (
+                  <p className="text-xs text-gray-400 mt-0.5">{liberarModalAluno.programName} {liberarModalAluno.turmaName ? `• ${liberarModalAluno.turmaName}` : ''}</p>
+                )}
+              </div>
+              <div className="space-y-2.5">
+                <p className="text-sm font-semibold text-gray-700">O que acontece ao confirmar:</p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Ciclo atual arquivado com <strong>snapshot dos 7 indicadores</strong> na página de Evolução</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">PDI e microciclos ativos <strong>congelados</strong> (preservados para histórico)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Aluno redirecionado para o <strong>onboarding</strong> no próximo acesso</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Um <strong>novo PDI</strong> deverá ser criado após o onboarding</span>
+                  </div>
+                </div>
+              </div>
+              {/* Aviso de avanço de nível */}
+              {nivelVigenteReset && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex items-start gap-2">
+                  <span className="text-indigo-600 font-bold text-sm shrink-0 mt-0.5">📄</span>
+                  <div>
+                    <p className="text-xs font-semibold text-indigo-800">
+                      Nível vigente: <Badge className="ml-1 text-xs px-1.5 py-0 bg-indigo-100 text-indigo-700 border border-indigo-200">{nivelVigenteReset.nivel}</Badge>
+                      {proximoNivelReset && (
+                        <span className="ml-1 text-indigo-600">→ após o reset, avançará para <Badge className="text-xs px-1.5 py-0 bg-emerald-100 text-emerald-700 border border-emerald-200">{proximoNivelReset}</Badge></span>
+                      )}
+                    </p>
+                    <p className="text-xs text-indigo-600 mt-0.5">
+                      O Nível {nivelVigenteReset.nivel} será encerrado e o Nível {proximoNivelReset ?? '—'} será criado automaticamente.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {/* Alerta de janela de reset bloqueada */}
+              {!janelaReset.permitido && (
+                <div className="bg-red-50 border border-red-300 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-red-800">Reset não permitido neste momento</p>
+                      <p className="text-xs text-red-700 mt-0.5">
+                        A mudança de nível só pode ser realizada nas janelas de reset: <strong>mês 3</strong> (opcional), <strong>mês 6</strong>, <strong>mês 12</strong>, <strong>mês 18</strong> ou <strong>mês 24</strong> a partir do início do contrato. Cada janela fica aberta por 30 dias.
+                      </p>
+                      {janelaReset.proxima && (
+                        <p className="text-xs text-red-700 mt-1">
+                          Próxima janela disponível: <strong>{new Date(janelaReset.proxima).toLocaleDateString('pt-BR')}</strong>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {janelaReset.permitido && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs text-amber-800">
+                    <strong>Atenção:</strong> Esta ação é protegida contra duplicação. Se executada duas vezes, o segundo reset será ignorado automaticamente.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setLiberarModalOpen(false); setLiberarModalAluno(null); }}>Cancelar</Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleLiberarConfirm}
+              disabled={isLiberandoOnboarding || !janelaReset.permitido}
+            >
+              {isLiberandoOnboarding ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processando...</> : <><RotateCcw className="h-4 w-4 mr-2" /> Confirmar e Liberar</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmação: Trocar Mentora */}
+      <Dialog open={trocarMentoraModalOpen} onOpenChange={(open) => { if (!open) setTrocarMentoraModalOpen(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <ArrowLeftRight className="h-5 w-5" />
+              Confirmar Troca de Mentora
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação atualizará a mentora do aluno em todo o sistema.
+            </DialogDescription>
+          </DialogHeader>
+          {editAluno && (
+            <div className="space-y-4 py-2">
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <p className="font-semibold text-gray-900">{editAluno.name}</p>
+                <p className="text-sm text-gray-500">{editAluno.email}</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-500 w-20 shrink-0">Mentora atual:</span>
+                  <span className="font-medium text-red-700">{mentoresList.find((m: any) => m.id.toString() === (editAluno.consultorId?.toString() ?? ''))?.name || 'Nenhuma'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-500 w-20 shrink-0">Nova mentora:</span>
+                  <span className="font-medium text-green-700">{mentoresList.find((m: any) => m.id.toString() === editConsultorId)?.name || '-'}</span>
+                </div>
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <p className="text-xs font-semibold text-gray-700">O que acontece ao confirmar:</p>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">Mentora atualizada no perfil do aluno e no nível de contrato ativo</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">Nova mentora passa a ver este aluno na sua lista de mentorados</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">E-mail enviado para a nova mentora informando o novo aluno</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">E-mail enviado para a mentora anterior informando a remoção</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTrocarMentoraModalOpen(false)}>Cancelar</Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={handleTrocarMentora}
+              disabled={trocarMentora.isPending}
+            >
+              {trocarMentora.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processando...</> : <><ArrowLeftRight className="h-4 w-4 mr-2" /> Confirmar Troca</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
-
 // ============ EMPRESAS TAB ============
 function EmpresasTab({ empresas, loading, onCreate, isCreating, onUpdate, onToggleStatus }: {
   empresas: any[];
@@ -2613,5 +3153,408 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ============ LISTA DE PÁGINAS DO SISTEMA PARA PERMISSÕES ============
+const ADMIN_PAGE_GROUPS = [
+  {
+    group: 'Alunos',
+    pages: [
+      { path: '/onboarding-tracking', label: 'Onboarding Tracking' },
+      { path: '/admin/auditoria-resets', label: 'Auditoria de Resets' },
+      { path: '/admin/auditoria-notas-mentoria', label: 'Auditoria Notas Mentoria' },
+      { path: '/painel-revisoes', label: 'Painel de Revisões PDI' },
+      { path: '/assessment', label: 'Assessment / PDI' },
+      { path: '/plano-individual', label: 'Plano Individual' },
+      { path: '/metas', label: 'Metas de Desenvolvimento' },
+      { path: '/atividades-praticas', label: 'Atividades Práticas' },
+    ],
+  },
+  {
+    group: 'Mentores',
+    pages: [
+      { path: '/dashboard/mentor', label: 'Dashboard de Mentores' },
+      { path: '/demonstrativo-mentorias', label: 'Sessões de Mentoria' },
+      { path: '/agendamentos', label: 'Painel de Agendamentos' },
+      { path: '/editar-mentorias', label: 'Editar Mentorias' },
+      { path: '/precificacao-sessoes', label: 'Precificação de Sessões' },
+      { path: '/relatorio-mentorias', label: 'Relatório de Mentorias' },
+    ],
+  },
+  {
+    group: 'Empresas e Resultados',
+    pages: [
+      { path: '/dashboard/visao-geral', label: 'Visão Geral' },
+      { path: '/dashboard/empresa', label: 'Por Empresa' },
+    ],
+  },
+  {
+    group: 'Parametrização',
+    pages: [
+      { path: '/cadastros', label: 'Cadastros' },
+      { path: '/turmas', label: 'Turmas' },
+      { path: '/trilhas-competencias', label: 'Trilhas e Competências' },
+      { path: '/competencias-comp-tec', label: 'Cursos_Criação' },
+      { path: '/cursos', label: 'Mini-Cursos' },
+      { path: '/admin/avaliacoes', label: 'Avaliações' },
+      { path: '/atividades-extras', label: 'Atividades Extras' },
+      { path: '/formulas', label: 'Fórmulas' },
+      { path: '/biblioteca-tarefas', label: 'Biblioteca de Tarefas' },
+      { path: '/admin/atribuir-cursos', label: 'Atribuir Cursos' },
+      { path: '/admin/plataforma-aulas', label: 'Gerenciar Plataforma de Cursos' },
+      { path: '/admin/biblioteca-pedagogica', label: 'Biblioteca Pedagógica' },
+    ],
+  },
+  {
+    group: 'Conteúdo e Comunicação',
+    pages: [
+      { path: '/webinars', label: 'Webinars' },
+      { path: '/admin/onboarding-videos', label: 'Vídeos de Onboarding' },
+      { path: '/avisos', label: 'Avisos e Comunicados' },
+      { path: '/mural', label: 'Mural de Cases' },
+    ],
+  },
+  {
+    group: 'Dados e Relatórios',
+    pages: [
+      { path: '/upload', label: 'Upload de Planilhas' },
+      { path: '/relatorios', label: 'Relatórios' },
+    ],
+  },
+];
+
+// ============ ADMINS TAB ============
+function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTogglingStatus, onSetPermissions, isSavingPermissions }: {
+  admins: any[];
+  loading: boolean;
+  onCreate: (data: any) => void;
+  isCreating: boolean;
+  onToggleStatus: (userId: number) => void;
+  isTogglingStatus: boolean;
+  onSetPermissions: (userId: number, permissions: string[]) => void;
+  isSavingPermissions: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+
+  // Estado do modal de permissões
+  const [permOpen, setPermOpen] = useState(false);
+  const [permAdmin, setPermAdmin] = useState<any>(null);
+  const [selectedPerms, setSelectedPerms] = useState<string[]>([]);
+
+  // Buscar permissões do admin selecionado
+  const { data: currentPerms, isLoading: loadingPerms } = trpc.admin.getPermissions.useQuery(
+    { userId: permAdmin?.id ?? 0 },
+    { enabled: !!permAdmin }
+  );
+
+  // Sincronizar permissões quando carregadas
+  React.useEffect(() => {
+    if (currentPerms !== undefined) {
+      setSelectedPerms(currentPerms);
+    }
+  }, [currentPerms, permAdmin?.id]);
+
+  const openPermModal = (admin: any) => {
+    setPermAdmin(admin);
+    setSelectedPerms([]);
+    setPermOpen(true);
+  };
+
+  const togglePerm = (path: string) => {
+    setSelectedPerms(prev =>
+      prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path]
+    );
+  };
+
+  const toggleGroupPerms = (groupPages: { path: string }[]) => {
+    const groupPaths = groupPages.map(p => p.path);
+    const allSelected = groupPaths.every(p => selectedPerms.includes(p));
+    if (allSelected) {
+      setSelectedPerms(prev => prev.filter(p => !groupPaths.includes(p)));
+    } else {
+      setSelectedPerms(prev => [...new Set([...prev, ...groupPaths])]);
+    }
+  };
+
+  const selectAll = () => {
+    const allPaths = ADMIN_PAGE_GROUPS.flatMap(g => g.pages.map(p => p.path));
+    setSelectedPerms(allPaths);
+  };
+
+  const clearAll = () => setSelectedPerms([]);
+
+  // Estado para copiar permissões de outro admin
+  const [copyFromId, setCopyFromId] = useState<string>('');
+  const { data: copySourcePerms, refetch: fetchCopyPerms } = trpc.admin.getPermissions.useQuery(
+    { userId: Number(copyFromId) },
+    { enabled: false }
+  );
+
+  const handleCopyFrom = async () => {
+    if (!copyFromId) return;
+    const result = await fetchCopyPerms();
+    if (result.data !== undefined) {
+      setSelectedPerms(result.data);
+      toast.success('Permissões copiadas! Clique em Salvar para aplicar.');
+    }
+  };
+
+  const savePermissions = () => {
+    if (!permAdmin) return;
+    onSetPermissions(permAdmin.id, selectedPerms);
+    setPermOpen(false);
+  };
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      toast.error("A senha deve ter ao menos 6 caracteres.");
+      return;
+    }
+    onCreate({ name: nome, email, username, password });
+    setNome("");
+    setEmail("");
+    setUsername("");
+    setPassword("");
+    setOpen(false);
+  };
+
+  return (
+    <>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-purple-600" />
+            Administradores
+          </CardTitle>
+          <CardDescription>Gerencie os administradores do sistema. Apenas o admin principal pode criar ou inabilitar outros admins.</CardDescription>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" /> Novo Administrador</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleSubmit}>
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Administrador</DialogTitle>
+                <DialogDescription>Preencha os dados de acesso do novo administrador.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-nome">Nome Completo</Label>
+                  <Input id="admin-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do administrador" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email">E-mail</Label>
+                  <Input id="admin-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-username">Username (login)</Label>
+                  <Input id="admin-username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ex: ana.admin" required minLength={3} />
+                  <p className="text-xs text-muted-foreground">Usado para entrar no sistema junto com a senha.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="admin-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-2 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : admins.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">Nenhum administrador cadastrado.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>E-mail</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>CPF</TableHead>
+                  <TableHead>Último acesso</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {admins.map((admin: any) => (
+                  <TableRow key={admin.id}>
+                    <TableCell className="font-medium">{admin.name}</TableCell>
+                    <TableCell>{admin.email}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{admin.openId}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{admin.cpf ? displayCpf(admin.cpf) : '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {admin.lastSignedIn ? new Date(admin.lastSignedIn).toLocaleDateString('pt-BR') : '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={admin.isActive ? "default" : "secondary"} className={admin.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                        {admin.isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openPermModal(admin)}
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                        >
+                          <Shield className="h-4 w-4 mr-1" />
+                          Permissões
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onToggleStatus(admin.id)}
+                          disabled={isTogglingStatus}
+                          className={admin.isActive ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}
+                        >
+                          <Power className="h-4 w-4 mr-1" />
+                          {admin.isActive ? "Inabilitar" : "Habilitar"}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    {/* Modal de Permissões */}
+    <Dialog open={permOpen} onOpenChange={setPermOpen}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-purple-600" />
+            Permissões de Páginas
+          </DialogTitle>
+          <DialogDescription>
+            Defina quais páginas <strong>{permAdmin?.name}</strong> pode acessar. Admins sem permissões definidas têm acesso total.
+          </DialogDescription>
+        </DialogHeader>
+
+        {loadingPerms ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            {/* Copiar permissões de outro admin */}
+            {admins.filter((a: any) => a.id !== permAdmin?.id).length > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-sm font-medium text-blue-700 whitespace-nowrap">Copiar de:</span>
+                <Select value={copyFromId} onValueChange={setCopyFromId}>
+                  <SelectTrigger className="flex-1 h-8 text-sm">
+                    <SelectValue placeholder="Selecione um administrador..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {admins.filter((a: any) => a.id !== permAdmin?.id).map((a: any) => (
+                      <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyFrom}
+                  disabled={!copyFromId}
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100 whitespace-nowrap"
+                >
+                  Aplicar Cópia
+                </Button>
+              </div>
+            )}
+            <div className="flex gap-2 mb-2">
+              <Button variant="outline" size="sm" onClick={selectAll}>Selecionar Tudo</Button>
+              <Button variant="outline" size="sm" onClick={clearAll}>Limpar Tudo</Button>
+              <span className="ml-auto text-sm text-muted-foreground self-center">{selectedPerms.length} página(s) selecionada(s)</span>
+            </div>
+            {ADMIN_PAGE_GROUPS.map((group) => {
+              const groupPaths = group.pages.map(p => p.path);
+              const allGroupSelected = groupPaths.every(p => selectedPerms.includes(p));
+              const someGroupSelected = groupPaths.some(p => selectedPerms.includes(p));
+              return (
+                <div key={group.group} className="border rounded-lg p-3">
+                  <div
+                    className="flex items-center gap-2 cursor-pointer mb-2"
+                    onClick={() => toggleGroupPerms(group.pages)}
+                  >
+                    <Checkbox
+                      checked={allGroupSelected}
+                      className={someGroupSelected && !allGroupSelected ? 'opacity-50' : ''}
+                      onCheckedChange={() => toggleGroupPerms(group.pages)}
+                    />
+                    <span className="font-semibold text-sm">{group.group}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{groupPaths.filter(p => selectedPerms.includes(p)).length}/{groupPaths.length}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 ml-6">
+                    {group.pages.map((page) => (
+                      <div
+                        key={page.path}
+                        className="flex items-center gap-2 cursor-pointer py-1"
+                        onClick={() => togglePerm(page.path)}
+                      >
+                        <Checkbox
+                          checked={selectedPerms.includes(page.path)}
+                          onCheckedChange={() => togglePerm(page.path)}
+                        />
+                        <span className="text-sm">{page.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setPermOpen(false)}>Cancelar</Button>
+          <Button onClick={savePermissions} disabled={isSavingPermissions}>
+            {isSavingPermissions ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar Permissões'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

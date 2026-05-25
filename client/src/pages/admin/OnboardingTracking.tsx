@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Search, Users, CheckCircle2, Clock, Filter, ChevronDown, ChevronUp, Send, AlertTriangle } from 'lucide-react';
+import { Search, Users, CheckCircle2, Clock, Filter, ChevronDown, ChevronUp, Send, AlertTriangle, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STEP_LABELS = [
@@ -124,12 +124,14 @@ function ProgressBar({ steps, completedSteps, totalSteps }: { steps: Record<Step
   );
 }
 
-function StudentRow({ student, isExpanded, onToggle, onResendInvite, isResending }: {
+function StudentRow({ student, isExpanded, onToggle, onResendInvite, isResending, onCorrigirOnboarding, isCorrigindo }: {
   student: StudentTracking;
   isExpanded: boolean;
   onToggle: () => void;
   onResendInvite: (alunoId: number) => void;
   isResending: boolean;
+  onCorrigirOnboarding: (alunoId: number) => void;
+  isCorrigindo: boolean;
 }) {
   const percentage = Math.round((student.completedSteps / student.totalSteps) * 100);
   const isComplete = student.completedSteps === student.totalSteps;
@@ -188,9 +190,37 @@ function StudentRow({ student, isExpanded, onToggle, onResendInvite, isResending
             <ProgressBar steps={student.steps} completedSteps={student.completedSteps} totalSteps={student.totalSteps} />
           </div>
 
-          {/* Resend invite button - only show for students who haven't completed cadastro */}
-          {canResendInvite && (
-            <div className="mt-3 flex justify-end">
+          <div className="mt-3 flex justify-end gap-2">
+            {/* Corrigir onboarding - disponível para qualquer aluno com onboarding incompleto */}
+            {!student.steps.aceiteOnboarding && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
+                      disabled={isCorrigindo}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Corrigir onboarding de ${student.name}?\n\nIsso irá:\n• Zerar o flag onboardingLiberado\n• Marcar cadastro e aceite como concluídos\n\nUse apenas se o aluno já completou o onboarding mas está preso na tela.`)) {
+                          onCorrigirOnboarding(student.alunoId);
+                        }
+                      }}
+                    >
+                      <Wrench className="w-3.5 h-3.5" />
+                      {isCorrigindo ? 'Corrigindo...' : 'Corrigir Onboarding'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-medium">Corrigir estado do onboarding</p>
+                    <p className="text-xs text-muted-foreground">Zera onboardingLiberado e marca aceite como concluído</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {/* Resend invite button - only show for students who haven't completed cadastro */}
+            {canResendInvite && (
               <Button
                 size="sm"
                 variant="outline"
@@ -204,8 +234,8 @@ function StudentRow({ student, isExpanded, onToggle, onResendInvite, isResending
                 <Send className="w-3.5 h-3.5" />
                 {isResending ? 'Enviando...' : 'Reenviar Convite'}
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -213,13 +243,15 @@ function StudentRow({ student, isExpanded, onToggle, onResendInvite, isResending
 }
 
 export default function OnboardingTracking() {
-  const { data: students = [], isLoading } = trpc.onboardingTracking.list.useQuery();
+  const { data: students = [], isLoading, refetch } = trpc.onboardingTracking.list.useQuery();
   const resendInviteMutation = trpc.onboardingTracking.resendInvite.useMutation();
+  const corrigirOnboardingMutation = trpc.onboardingTracking.corrigirOnboarding.useMutation();
   const [searchTerm, setSearchTerm] = useState('');
   const [programFilter, setProgramFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [resendingId, setResendingId] = useState<number | null>(null);
+  const [corrigindoId, setCorrigindoId] = useState<number | null>(null);
   const handleResendInvite = async (alunoId: number) => {
     setResendingId(alunoId);
     try {
@@ -233,6 +265,23 @@ export default function OnboardingTracking() {
       });
     } finally {
       setResendingId(null);
+    }
+  };
+
+  const handleCorrigirOnboarding = async (alunoId: number) => {
+    setCorrigindoId(alunoId);
+    try {
+      await corrigirOnboardingMutation.mutateAsync({ alunoId });
+      toast.success('Onboarding corrigido!', {
+        description: 'O aluno foi liberado do onboarding. Ele pode acessar o portal normalmente.',
+      });
+      refetch();
+    } catch {
+      toast.error('Erro ao corrigir onboarding', {
+        description: 'Tente novamente mais tarde.',
+      });
+    } finally {
+      setCorrigindoId(null);
     }
   };
 
@@ -454,6 +503,8 @@ export default function OnboardingTracking() {
                   onToggle={() => toggleExpanded(student.alunoId)}
                   onResendInvite={handleResendInvite}
                   isResending={resendingId === student.alunoId}
+                  onCorrigirOnboarding={handleCorrigirOnboarding}
+                  isCorrigindo={corrigindoId === student.alunoId}
                 />
               ))}
             </div>

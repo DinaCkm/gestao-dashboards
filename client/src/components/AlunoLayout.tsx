@@ -6,7 +6,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
-import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, GraduationCap, Zap, Lock, ExternalLink } from "lucide-react";
+import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -16,18 +16,35 @@ const ALL_NAV_ITEMS = [
   { label: "Onboarding", path: "/onboarding", icon: ClipboardList, requiresAceite: false },
   { label: "Mural", path: "/mural", icon: Megaphone, requiresAceite: true },
   { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass, requiresAceite: true },
-  { label: "Cursos", path: "/meus-cursos", icon: GraduationCap, requiresAceite: true },
-  { label: "Atividades", path: "/minhas-atividades", icon: Zap, requiresAceite: true },
-  { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true },
+  // { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true }, // oculto — acesso via Portal do Aluno > Metas
+  { label: "Performance", path: "/performance", icon: TrendingUp, requiresAceite: true },
+  { label: "Evolução", path: "/evolucao", icon: Sparkles, requiresAceite: true },
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
 ];
 
 /** Rotas que ficam bloqueadas até o aceite (para alunos novos) */
 const BLOCKED_PATHS = ALL_NAV_ITEMS.filter(i => i.requiresAceite).map(i => i.path);
 
+/** Helper: seleciona a Dica da Semana dentre os anúncios ativos */
+function useDicaDaSemana() {
+  const { data: activeAnnouncements } = trpc.announcements.active.useQuery();
+  return useMemo(() => {
+    return (
+      (activeAnnouncements ?? [])
+        .filter((a: any) =>
+          a.type === "news" &&
+          Number(a.isActive) === 1 &&
+          Number(a.priority ?? 0) > 0
+        )
+        .sort((a: any, b: any) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0] ?? null
+    );
+  }, [activeAnnouncements]);
+}
+
 export default function AlunoLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
+  const dicaDaSemana = useDicaDaSemana();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => { window.location.href = "/"; },
   });
@@ -38,16 +55,13 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
   });
 
   // Determinar se o menu deve ser bloqueado
+  // Usa needsOnboarding do backend (fonte da verdade), que já considera:
+  // - Data de corte (01/03/2026)
+  // - aceiteRealizado
+  // - onboardingLiberado (reset de ciclo não bloqueia o menu)
   const menuBloqueado = useMemo(() => {
     if (!onboardingStatus) return false; // Enquanto carrega, não bloqueia
-    // Regra: só bloqueia alunos cadastrados a partir de 15/03/2026 que NÃO deram aceite
-    if (onboardingStatus.alunoCreatedAt) {
-      const createdAt = new Date(onboardingStatus.alunoCreatedAt);
-      if (createdAt >= ONBOARDING_CUTOFF_DATE && !onboardingStatus.aceiteRealizado) {
-        return true;
-      }
-    }
-    return false;
+    return !!onboardingStatus.needsOnboarding;
   }, [onboardingStatus]);
 
   // Redirecionar para onboarding se tentar acessar rota bloqueada
@@ -129,6 +143,19 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
                 </div>
               )}
             </nav>
+
+            {/* Selo Dica da Semana */}
+            {dicaDaSemana && (
+              <button
+                onClick={() => setLocation("/mural")}
+                title={dicaDaSemana.title}
+                className="relative inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 shadow-[0_0_18px_rgba(245,153,31,0.5)] animate-pulse hover:scale-105 hover:shadow-[0_0_28px_rgba(245,153,31,0.7)] transition-all duration-200 border border-orange-300/50 whitespace-nowrap cursor-pointer"
+              >
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden sm:inline">DICA DA SEMANA</span>
+                <span className="sm:hidden">DICA</span>
+              </button>
+            )}
 
             {/* Alternância de Papel (Gerente ↔ Aluno) */}
             <RoleSwitcher />
@@ -226,6 +253,17 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
           </p>
         </div>
       </footer>
+
+      {/* Botão Fixo Fale Conosco */}
+      <div className="fixed bottom-6 right-6 z-[100]">
+        <a
+          href="https://ckmtalents.com.br/fale-conosco/"
+          className="flex items-center gap-2 bg-[#F5991F] hover:bg-[#e08a1a] text-white px-5 py-3 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 font-bold text-sm group"
+        >
+          <MessageCircle className="h-5 w-5 transition-transform group-hover:rotate-12" />
+          <span>FALE CONOSCO</span>
+        </a>
+      </div>
     </div>
   );
 }

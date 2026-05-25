@@ -84,7 +84,7 @@ function IndicadorCard({
               {label}
               {tooltip && <InfoTooltip text={tooltip} />}
             </p>
-            <p className="text-xl font-bold">{valor.toFixed(0)}%</p>
+            <p className="text-xl font-bold">{(valor ?? 0).toFixed(0)}%</p>
           </div>
         </div>
         <Progress value={valor} className="mt-2 h-2" />
@@ -127,7 +127,7 @@ function CicloIndicadores({
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <div className="text-right">
-                  <p className="text-lg font-bold text-[#0A1E3E]">{ind.ind7_engajamentoFinal.toFixed(0)}%</p>
+                  <p className="text-lg font-bold text-[#0A1E3E]">{(ind?.ind7_engajamentoFinal ?? 0).toFixed(0)}%</p>
                   <p className="text-xs text-gray-400">Engajamento Final</p>
                 </div>
                 <Badge className={badgeClass}>{badgeLabel}</Badge>
@@ -149,7 +149,7 @@ function CicloIndicadores({
                     <p className="text-sm text-gray-500 flex items-center gap-1">
                       Engajamento Final <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} />
                     </p>
-                    <p className="text-2xl font-bold text-[#0A1E3E]">{ind.ind7_engajamentoFinal.toFixed(1)}%</p>
+                    <p className="text-2xl font-bold text-[#0A1E3E]">{(ind?.ind7_engajamentoFinal ?? 0).toFixed(1)}%</p>
                   </div>
                 </div>
               </div>
@@ -205,7 +205,7 @@ function CicloIndicadores({
               />
               {tipo === 'finalizado' && (
                 <IndicadorCard
-                  label="6. Relatório de Impacto (Bônus)"
+                  label="6. Aplicabilidade"
                   valor={ind.ind6_aplicabilidade}
                   descricao={INDICADORES_INFO.ind6.formula}
                   icon={Briefcase}
@@ -222,7 +222,7 @@ function CicloIndicadores({
                         <Briefcase className="h-5 w-5 text-gray-400" />
                       </div>
                       <div>
-                        <p className="text-xs text-gray-400">6. Aplicabilidade Prática (Case)</p>
+                        <p className="text-xs text-gray-400">6. Aplicabilidade (Tarefa + Case)</p>
                         <p className="text-sm text-gray-400 italic">Avaliado ao final do macrociclo</p>
                       </div>
                     </div>
@@ -586,7 +586,7 @@ export default function DashboardAluno() {
                         <span className="font-semibold">Consolidado</span>
                       </div>
                       <p className="text-2xl font-bold text-gray-900 mt-2">
-                        {v2.consolidado.ind7_engajamentoFinal.toFixed(0)}%
+                        {(v2?.consolidado?.ind7_engajamentoFinal ?? 0).toFixed(0)}%
                       </p>
                       <p className="text-sm text-gray-500">Engajamento Final</p>
                     </div>
@@ -621,7 +621,7 @@ export default function DashboardAluno() {
                       { termo: "Webinar", desc: GLOSSARIO.webinar, icon: Video, color: "bg-orange-50 border-orange-200 text-orange-700" },
                       { termo: "Mentoria", desc: GLOSSARIO.mentoria, icon: MessageSquare, color: "bg-pink-50 border-pink-200 text-pink-700" },
                       { termo: "Tarefa Prática", desc: GLOSSARIO.tarefa, icon: ClipboardCheck, color: "bg-teal-50 border-teal-200 text-teal-700" },
-                      { termo: "Relatório de Impacto", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
+                      { termo: "Case de Impacto do Aprendizado", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
                     ]).map(({ termo, desc, icon: Icon, color }) => (
                       <div key={termo} className={`p-3 rounded-lg border ${color}`}>
                         <div className="flex items-center gap-2 mb-1">
@@ -643,12 +643,12 @@ export default function DashboardAluno() {
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="h-6 w-6 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-amber-800">Alerta: Relatório de Impacto Pendente</p>
+                      <p className="font-semibold text-amber-800">Alerta: Case de Impacto do Aprendizado Pendente</p>
                       {v2.alertaCasePendente.map((alerta: any, idx: number) => (
                         <p key={idx} className="text-sm text-amber-700 mt-1">
                           O ciclo <strong>{alerta.cicloNome}</strong> está finalizando 
                           {alerta.dataFim && ` (término: ${formatDateSafe(alerta.dataFim)})`}. 
-                          O aluno precisa entregar o <strong>Relatório de Impacto</strong> para completar a avaliação do macrociclo.
+                          O aluno precisa entregar o <strong>Case de Impacto do Aprendizado</strong> para completar a avaliação do macrociclo.
                         </p>
                       ))}
                     </div>
@@ -725,7 +725,7 @@ export default function DashboardAluno() {
                               : `Filtrado por: ${filtroOpcoes.find(o => o.value === indicadorFiltro)?.label || indicadorFiltro}`}
                           </p>
                           
-                          {/* Mini resumo dos 5 indicadores + bônus case */}
+                          {/* Mini resumo dos 5 indicadores + aplicabilidade separada */}
                           <div className="grid grid-cols-3 md:grid-cols-5 gap-2 mt-4">
                             <div className="text-center p-2 bg-blue-50 rounded">
                               <p className="text-lg font-bold text-blue-700">{(v2Filtrado.ind1_webinars ?? 0).toFixed(0)}%</p>
@@ -749,7 +749,7 @@ export default function DashboardAluno() {
                             </div>
                           </div>
                           {v2Filtrado.ind6_aplicabilidade > 0 && (
-                            <p className="text-xs text-green-600 mt-2 font-medium">✅ Relatório de Impacto entregue (+10% no Engajamento)</p>
+                            <p className="text-xs text-green-600 mt-2 font-medium">✅ Case entregue (compõe a Aplicabilidade)</p>
                           )}
                         </CardContent>
                       </Card>
@@ -837,7 +837,7 @@ export default function DashboardAluno() {
                       </Card>
                       <Card>
                         <CardContent className="pt-6 text-center">
-                          <p className="text-3xl font-bold text-amber-600">{detalheAluno.mediaNotas.toFixed(1)}</p>
+                          <p className="text-3xl font-bold text-amber-600">{(detalheAluno?.mediaNotas ?? 0).toFixed(1)}</p>
                           <p className="text-sm text-gray-500">Média das Notas</p>
                         </CardContent>
                       </Card>
@@ -876,12 +876,12 @@ export default function DashboardAluno() {
                                   <TableCell className="text-center">
                                     {comp.notaAtual ? (
                                       <span className={`font-bold ${parseFloat(comp.notaAtual) >= 7 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {parseFloat(comp.notaAtual).toFixed(1)}
+                                        {(parseFloat(comp?.notaAtual ?? '0') ?? 0).toFixed(1)}
                                       </span>
                                     ) : '—'}
                                   </TableCell>
                                   <TableCell className="text-center text-gray-500">
-                                    {comp.metaNota ? parseFloat(comp.metaNota).toFixed(1) : '7.0'}
+                                    {comp?.metaNota ? (parseFloat(comp.metaNota) ?? 0).toFixed(1) : '7.0'}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     {comp.notaAtual ? (
@@ -941,7 +941,7 @@ export default function DashboardAluno() {
                         <CardContent className="pt-6 text-center">
                           <p className="text-3xl font-bold text-amber-600">
                             {detalheAluno.totalEventos > 0 
-                              ? ((detalheAluno.eventosPresente / detalheAluno.totalEventos) * 100).toFixed(0) 
+                              ? (((detalheAluno?.eventosPresente ?? 0) / (detalheAluno?.totalEventos ?? 1)) * 100).toFixed(0) 
                               : 0}%
                           </p>
                           <p className="text-sm text-gray-500">Taxa de Participação</p>

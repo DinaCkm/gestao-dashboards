@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from "react";
 import { formatDateSafe, formatDateCustomSafe } from "@/lib/dateUtils";
+import { safeToFixed, formatPercentage } from "@/_core/utils/safe-format";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -17,7 +18,7 @@ import {
   Activity, Video, MessageSquare, Minus, Info, ChevronDown, ChevronUp, PartyPopper, Filter,
   ClipboardCheck, Play, ExternalLink, FileText, Send, Route, FileBarChart,
   AlertTriangle, Briefcase, HelpCircle, Upload, Paperclip, FileUp, Bell, Lock, Snowflake,
-  Cloud, Link2, Share2, Linkedin,
+  Cloud, Link2, Share2, Linkedin, X, Flag, Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -30,7 +31,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DualIndicators from "@/components/DualIndicators";
-import { lazy, Suspense } from "react";
+import { TaskSubmissionForm } from "@/components/tasks/TaskSubmissionForm";
+import { lazy, Suspense, useCallback } from "react";
 const RelatorioAutoconhecimentoTab = lazy(() => import("./TesteDiscOnboarding").then(m => ({ default: m.default })));
 
 function getClassificacaoColor(classificacao: string): string {
@@ -97,6 +99,35 @@ function getCicloStatusLabel(status: string) {
   }
 }
 
+function getMetaStatusConfig(status?: string | null) {
+  switch (status) {
+    case "cumprida":
+      return {
+        label: "Cumprida",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-300",
+        icon: <CheckCircle2 className="h-3 w-3" />,
+      };
+    case "parcial":
+      return {
+        label: "Parcial",
+        className: "bg-amber-50 text-amber-700 border-amber-300",
+        icon: <Clock className="h-3 w-3" />,
+      };
+    case "nao_cumprida":
+      return {
+        label: "Não cumprida",
+        className: "bg-red-50 text-red-700 border-red-300",
+        icon: <XCircle className="h-3 w-3" />,
+      };
+    default:
+      return {
+        label: "Pendente",
+        className: "bg-gray-100 text-gray-600 border-gray-300",
+        icon: <Minus className="h-3 w-3" />,
+      };
+  }
+}
+
 function IndicadorCardAluno({ 
   numero, icon: Icon, label, valor, total, percentual, color, borderColor, regras 
 }: {
@@ -119,7 +150,7 @@ function IndicadorCardAluno({
             <Info className="h-3.5 w-3.5" />
           </button>
         </div>
-        <p className="text-lg font-bold text-gray-900">{percentual.toFixed(0)}%</p>
+        <p className="text-lg font-bold text-gray-900">{formatPercentage(percentual, 0)}</p>
         <Progress value={percentual} className="h-1.5 mb-1" />
         <p className="text-xs text-gray-500">{valor} de {total}</p>
         {expanded && (
@@ -130,6 +161,86 @@ function IndicadorCardAluno({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// Notificação colapsável para alerta de Case pendente
+function AlertaCasePendente({ alerta, onEnviar }: { alerta: any; onEnviar: () => void }) {
+  const [aberto, setAberto] = useState(false);
+  const [dispensado, setDispensado] = useState(false);
+
+  if (dispensado) return null;
+
+  return (
+    <div className="mt-3">
+      {/* Banner compacto — sempre visível */}
+      <button
+        onClick={() => setAberto(!aberto)}
+        className="w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-300 hover:bg-amber-100 transition-colors text-left"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <PartyPopper className="h-4 w-4 text-amber-600 shrink-0" />
+          <span className="text-sm font-semibold text-amber-900 truncate">
+            Compartilhe sua Experiência! — Trilha <strong>{alerta.trilhaNome}</strong>
+          </span>
+          {alerta.diasRestantes !== undefined && (
+            <span className="hidden sm:inline text-xs text-amber-700 bg-amber-200 px-2 py-0.5 rounded-full shrink-0">
+              {alerta.diasRestantes} dias restantes
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-xs text-amber-700">{aberto ? 'Fechar' : 'Ver detalhes'}</span>
+          <ChevronDown className={`h-4 w-4 text-amber-600 transition-transform duration-200 ${aberto ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      {/* Conteúdo expandido */}
+      {aberto && (
+        <div className="mt-1 rounded-xl bg-amber-50 border border-amber-300 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-sm text-amber-800">
+              A trilha <strong>{alerta.trilhaNome}</strong> está chegando ao final!
+              Este é o momento de documentar tudo o que você aprendeu e como aplicou na prática.
+            </p>
+            <button
+              onClick={() => setDispensado(true)}
+              className="shrink-0 text-amber-400 hover:text-amber-700 transition-colors"
+              title="Fechar notificação"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="mt-3 p-3 bg-white/70 rounded-lg border border-amber-200">
+            <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-amber-600" />
+              Aplicabilidade separada do Engajamento
+            </p>
+            <p className="text-xs text-amber-700 mt-1">
+              Ao entregar o Case de Impacto do Aprendizado, o microindicador de Case passa a compor a Aplicabilidade Final.
+              Esse indicador é separado do Engajamento e mostra sua evolução prática na trilha.
+            </p>
+          </div>
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-2 text-xs text-amber-700">
+              <Calendar className="h-3.5 w-3.5" />
+              <span>
+                Entrega até <strong>{alerta.dataLimite ? formatDateSafe(alerta.dataLimite + 'T00:00:00') : `${alerta.diasRestantes} dias`}</strong>
+                {alerta.diasRestantes !== undefined && ` (${alerta.diasRestantes} dias restantes)`}
+              </span>
+            </div>
+            <Button
+              size="sm"
+              className="bg-[#F5991F] hover:bg-[#e08a1a] text-white font-semibold"
+              onClick={onEnviar}
+            >
+              <FileUp className="h-3.5 w-3.5 mr-1.5" />
+              Enviar Case de Impacto do Aprendizado
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -151,10 +262,40 @@ export default function DashboardMeuPerfil() {
   const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
+  const [fotoPreviewPerfil, setFotoPreviewPerfil] = useState<string | null>(null);
+  const [uploadingFotoPerfil, setUploadingFotoPerfil] = useState(false);
+  const uploadFotoAlunoMutation = trpc.onboarding.uploadFotoAluno.useMutation();
+
+  const handleFotoPerfilUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande. Máximo 5MB."); return; }
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) { toast.error("Formato inválido. Use JPG, PNG ou WEBP."); return; }
+    setUploadingFotoPerfil(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const dataUrl = ev.target?.result as string;
+        const base64 = dataUrl.split(',')[1];
+        setFotoPreviewPerfil(dataUrl);
+        const alunoIdLocal = (data as any)?.aluno?.id;
+        if (!alunoIdLocal) { toast.error("Aluno não identificado."); setUploadingFotoPerfil(false); return; }
+        const res = await uploadFotoAlunoMutation.mutateAsync({ alunoId: alunoIdLocal, fotoBase64: base64, mimeType: file.type });
+        setFotoPreviewPerfil(res.url);
+        toast.success("Foto atualizada com sucesso!");
+        setUploadingFotoPerfil(false);
+      };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Erro ao enviar foto."); setUploadingFotoPerfil(false); }
+  };
   // Filtro de indicadores: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
   const [showGlossario, setShowGlossario] = useState(false);
   const [showAllTrilhasCard, setShowAllTrilhasCard] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>(
+    new URLSearchParams(window.location.search).get('tab') || 'jornada'
+  );
 
   // Dados de indicadores - declarado cedo para uso nos useMemo
   const v2 = data?.found ? ((data as any).indicadoresV2 as {
@@ -173,19 +314,102 @@ export default function DashboardMeuPerfil() {
   const { data: pastWebinars } = trpc.webinars.past.useQuery();
   const { data: myAttendance } = trpc.attendance.myAttendance.useQuery();
   const { data: pendingWebinars } = trpc.attendance.pending.useQuery();
+  
+// ===============================
+// CURSOS ATRIBUÍDOS DO ALUNO
+// ===============================
 
-  // State para relato de tarefa
-  const [relatoText, setRelatoText] = useState<Record<number, string>>({});
+function normalizarCursoAtribuido(item: any) {
+  const curso = item?.curso ?? item?.modulo ?? item?.programa ?? item ?? {};
+  const atribuicao = item?.atribuicao ?? item?.progresso ?? item ?? {};
+
+  return {
+    cursoAtribuidoId: Number(atribuicao?.id ?? item?.cursoAtribuidoId ?? item?.id ?? 0),
+    cursoId: Number(atribuicao?.cursoId ?? curso?.id ?? item?.cursoId ?? 0),
+    competenciaId: Number(
+      atribuicao?.competenciaId ??
+      item?.competenciaId ??
+      item?.competencia?.id ??
+      curso?.competenciaId ??
+      0
+    ),
+    titulo: curso?.titulo ?? curso?.nome ?? item?.titulo ?? "Curso sem título",
+    descricao: curso?.descricao ?? item?.descricao ?? "",
+    status: atribuicao?.status ?? item?.status ?? "nao_iniciado",
+    dataPrazo: atribuicao?.dataPrazo ?? item?.dataPrazo ?? null,
+    notaFinal: atribuicao?.notaFinal ?? item?.notaFinal ?? null,
+    raw: item,
+  };
+}
+
+const {
+  data: cursosAtribuidosRaw,
+  error: cursosError,
+  isLoading: cursosLoading,
+} = trpc.competenciasCompTec.aluno.getCursosAtribuidos.useQuery(undefined, {
+  enabled: !!data?.aluno?.id,
+});
+
+useEffect(() => {
+  if (cursosError) {
+    console.error("Erro ao carregar cursos atribuídos do aluno:", cursosError);
+  }
+}, [cursosError]);
+
+const cursosAtribuidosAoAluno = useMemo(() => {
+  return (cursosAtribuidosRaw ?? [])
+    .map(normalizarCursoAtribuido)
+    .filter((item: any) => item.cursoAtribuidoId > 0);
+}, [cursosAtribuidosRaw]);
+
+const acessarCursoCompetencia = useCallback((competenciaId: number) => {
+  const cursosDaCompetencia = cursosAtribuidosAoAluno.filter(
+    (c: any) => Number(c.competenciaId) === Number(competenciaId)
+  );
+
+  console.log("DEBUG: cursosAtribuidosRaw =", cursosAtribuidosRaw);
+  console.log("DEBUG: cursosAtribuidosNormalizados =", cursosAtribuidosAoAluno);
+  console.log("DEBUG: competenciaId clicada =", competenciaId);
+  console.log("DEBUG: cursosDaCompetencia =", cursosDaCompetencia);
+
+  if (cursosDaCompetencia.length === 0) {
+    toast.error("Nenhum curso atribuído para esta competência.");
+    return;
+  }
+
+  const primeiroCursoValido =
+    cursosDaCompetencia.find((c: any) => c.cursoId > 0) ?? cursosDaCompetencia[0];
+
+  const cursoId = Number(primeiroCursoValido?.cursoId ?? 0);
+  const cursoAtribuidoId = Number(primeiroCursoValido?.cursoAtribuidoId ?? 0);
+
+  console.log("DEBUG: primeiroCursoValido =", primeiroCursoValido);
+  console.log("DEBUG: cursoId final =", cursoId);
+  console.log("DEBUG: cursoAtribuidoId final =", cursoAtribuidoId);
+
+  if (cursoId <= 0 || cursoAtribuidoId <= 0) {
+    console.error("ERRO: IDs inválidos para navegação", {
+      competenciaId,
+      cursoId,
+      cursoAtribuidoId,
+      primeiroCursoValido,
+      cursosDaCompetencia,
+      cursosAtribuidosRaw,
+    });
+
+    toast.error("Não foi possível abrir o curso. O ID do curso está inválido.");
+    return;
+  }
+
+  setLocation(
+    `/aluno/competencias-comp-tec/detalhe?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
+  );
+}, [cursosAtribuidosAoAluno, cursosAtribuidosRaw, setLocation]);
+
   const [expandedTask, setExpandedTask] = useState<number | null>(null);
-  // State para envio de evidência
-  const [evidenceLink, setEvidenceLink] = useState<Record<number, string>>({});
-  const [evidenceFile, setEvidenceFile] = useState<Record<number, File | null>>({});
-  const evidenceFileRef = useRef<HTMLInputElement>(null);
   const [taskDetailOpen, setTaskDetailOpen] = useState<number | null>(null);
-
-  // State para aplicabilidade prática (Indicador 6)
-  const [aplicabilidadeText, setAplicabilidadeText] = useState<Record<number, string>>({});
-  const [aplicabilidadeNota, setAplicabilidadeNota] = useState<Record<number, number>>({});
+  const [expandedMeta, setExpandedMeta] = useState<number | null>(null);
+  const [metaDetailOpen, setMetaDetailOpen] = useState<number | null>(null);
 
   // State para reflexão de webinar e eventos importados
   const [reflexaoText, setReflexaoText] = useState<Record<number, string>>({});
@@ -194,48 +418,12 @@ export default function DashboardMeuPerfil() {
 
   // Mutations
   const utils = trpc.useUtils();
-  const submitRelato = trpc.mentor.submitRelato.useMutation({
-    onSuccess: () => {
-      utils.attendance.myTasks.invalidate();
-      setExpandedTask(null);
-    },
-  });
   const submitEvidence = trpc.attendance.submitEvidence.useMutation({
     onSuccess: () => {
       utils.attendance.myTasks.invalidate();
-      setEvidenceLink({});
-      setEvidenceFile({});
       setTaskDetailOpen(null);
     },
   });
-  const submitAplicabilidade = trpc.attendance.submitAplicabilidade.useMutation({
-    onSuccess: () => {
-      utils.attendance.myTasks.invalidate();
-    },
-  });
-
-  const handleEvidenceSubmit = async (sessionId: number) => {
-    const link = evidenceLink[sessionId];
-    const file = evidenceFile[sessionId];
-    if (!link && !file) return;
-    let base64: string | undefined;
-    let fileName: string | undefined;
-    if (file) {
-      const reader = new FileReader();
-      const result = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-      base64 = result.split(',')[1];
-      fileName = file.name;
-    }
-    await submitEvidence.mutateAsync({
-      sessionId,
-      evidenceLink: link || undefined,
-      evidenceImageBase64: base64,
-      evidenceImageName: fileName,
-    });
-  };
   const markPresence = trpc.attendance.markPresence.useMutation({
     onSuccess: () => {
       utils.attendance.myAttendance.invalidate();
@@ -246,12 +434,28 @@ export default function DashboardMeuPerfil() {
     },
   });
 
+  const metasOrdenadas = useMemo(() => {
+    const list = metasData?.metas ?? [];
+    // Ordenar crescente: a primeira meta criada é a macro meta desafiadora
+    return [...list].sort((a: any, b: any) =>
+      new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+    );
+  }, [metasData?.metas]);
+
+  const metaPrincipal = metasOrdenadas[0] ?? null;
+
+  const microMetas = useMemo(() => {
+    if (metasOrdenadas.length <= 1) return [];
+    return metasOrdenadas.slice(1);
+  }, [metasOrdenadas]);
+
   // === Case de Sucesso ===
-  // === Relatório de Impacto (antigo Case de Sucesso) ===
+  // === Case de Impacto do Aprendizado (antigo Case de Sucesso) ===
   const [caseDialogOpen, setCaseDialogOpen] = useState(false);
   const [caseTrilhaId, setCaseTrilhaId] = useState<number | null>(null);
   const [caseTrilhaNome, setCaseTrilhaNome] = useState("");
   const [caseTitulo, setCaseTitulo] = useState("");
+  const [caseResumoPublico, setCaseResumoPublico] = useState("");
   const [caseDescricao, setCaseDescricao] = useState("");
   const [caseOQueAprendi, setCaseOQueAprendi] = useState("");
   const [caseOQueMudei, setCaseOQueMudei] = useState("");
@@ -260,6 +464,7 @@ export default function DashboardMeuPerfil() {
   const [caseFile, setCaseFile] = useState<File | null>(null);
   const [caseEvidencia, setCaseEvidencia] = useState<File | null>(null);
   const [caseNotaAplicabilidade, setCaseNotaAplicabilidade] = useState<number>(5);
+  const [caseVideoLink, setCaseVideoLink] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const evidenciaInputRef = useRef<HTMLInputElement>(null);
 
@@ -268,6 +473,7 @@ export default function DashboardMeuPerfil() {
       utils.indicadores.meuDashboard.invalidate();
       setCaseDialogOpen(false);
       setCaseTitulo("");
+      setCaseResumoPublico("");
       setCaseDescricao("");
       setCaseOQueAprendi("");
       setCaseOQueMudei("");
@@ -277,6 +483,7 @@ export default function DashboardMeuPerfil() {
       setCaseEvidencia(null);
       setCaseTrilhaId(null);
       setCaseNotaAplicabilidade(5);
+      setCaseVideoLink("");
     },
   });
 
@@ -290,12 +497,17 @@ export default function DashboardMeuPerfil() {
   };
 
   const handleCaseSubmit = async () => {
-    if (!caseTrilhaId || !caseTitulo || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
+    if (!caseTrilhaId || !caseTitulo || !caseResumoPublico || !caseOQueAprendi || !caseOQueMudei || !caseResultadoMensuravel || !caseAntesVsDepois) return;
+    if (caseResumoPublico.length < 20) {
+      toast.error('O Resumo público do CASE deve ter ao menos 20 caracteres.');
+      return;
+    }
 
     const payload: any = {
       trilhaId: caseTrilhaId,
       trilhaNome: caseTrilhaNome,
       titulo: caseTitulo,
+      resumoPublico: caseResumoPublico,
       descricao: caseDescricao || undefined,
       oQueAprendi: caseOQueAprendi,
       oQueMudei: caseOQueMudei,
@@ -482,7 +694,7 @@ export default function DashboardMeuPerfil() {
   }
 
   const { aluno, indicadores, ranking, sessoes, eventos, planoIndividual, assessments } = data;
-  const performanceGeral = indicadores.performanceGeral ?? (indicadores.notaFinal * 10);
+  const performanceGeral = Number(indicadores.performanceGeral ?? (indicadores.notaFinal * 10)) || 0;
   const ciclosFinalizados = indicadores.ciclosFinalizados || [];
   const ciclosEmAndamento = indicadores.ciclosEmAndamento || [];
   // v2 já declarado acima
@@ -500,7 +712,22 @@ export default function DashboardMeuPerfil() {
           <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
+                <div className="flex items-center gap-4">
+                  {/* Foto de perfil */}
+                  <div className="relative shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 flex items-center justify-center">
+                      {(fotoPreviewPerfil || aluno.photoUrl) ? (
+                        <img src={fotoPreviewPerfil || aluno.photoUrl!} alt={aluno.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="h-8 w-8 text-white/60" />
+                      )}
+                    </div>
+                    <label className={`absolute -bottom-1 -right-1 w-6 h-6 bg-[#F5991F] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#F5991F]/90 transition-colors ${uploadingFotoPerfil ? 'opacity-60 pointer-events-none' : ''}`} title="Alterar foto">
+                      {uploadingFotoPerfil ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera className="h-3 w-3 text-white" />}
+                      <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFotoPerfilUpload} disabled={uploadingFotoPerfil} />
+                    </label>
+                  </div>
+                  <div>
                   <h1 className="text-2xl font-bold">{aluno.name}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge className="bg-white/20 text-white border-white/30">
@@ -511,6 +738,7 @@ export default function DashboardMeuPerfil() {
                         <User className="h-3 w-3 mr-1" />Mentor: {aluno.mentor}
                       </Badge>
                     )}
+                  </div>
                   </div>
                 </div>
               </div>
@@ -572,11 +800,26 @@ export default function DashboardMeuPerfil() {
     <AlunoLayout>
       <div className="space-y-6">
         {/* Header com informações do aluno */}
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="hidden flex-col lg:flex-row gap-6">
           <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white flex-1 shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <div>
+                <div className="flex items-center gap-4">
+                  {/* Foto de perfil */}
+                  <div className="relative shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/30 bg-white/10 flex items-center justify-center">
+                      {(fotoPreviewPerfil || aluno.photoUrl) ? (
+                        <img src={fotoPreviewPerfil || aluno.photoUrl!} alt={aluno.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="h-8 w-8 text-white/60" />
+                      )}
+                    </div>
+                    <label className={`absolute -bottom-1 -right-1 w-6 h-6 bg-[#F5991F] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#F5991F]/90 transition-colors ${uploadingFotoPerfil ? 'opacity-60 pointer-events-none' : ''}`} title="Alterar foto">
+                      {uploadingFotoPerfil ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera className="h-3 w-3 text-white" />}
+                      <input type="file" className="hidden" accept="image/jpeg,image/png,image/webp" onChange={handleFotoPerfilUpload} disabled={uploadingFotoPerfil} />
+                    </label>
+                  </div>
+                  <div>
                   <h1 className="text-2xl font-bold">{aluno.name}</h1>
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge className="bg-white/20 text-white border-white/30">
@@ -713,13 +956,14 @@ export default function DashboardMeuPerfil() {
                     );
                   })()}
                 </div>
-                <div className="text-right">
+                </div>
+                <div className="hidden text-right">
                   <p className="text-xs text-white/70 mb-1 flex items-center gap-1 justify-end">
                     Engajamento Final
                     <InfoTooltip text={INDICADORES_INFO.ind7.explicacao} className="text-white/50 hover:text-white/80" />
                   </p>
                   <div className="text-4xl font-black text-[#F5991F]">
-                    {(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral).toFixed(0)}%
+                    {safeToFixed(v2Filtrado?.ind7_engajamentoFinal ?? performanceGeral, 0)}%
                   </div>
                   <Badge className={`mt-1 ${getClassificacaoBadge(v2Filtrado?.classificacao ?? indicadores.classificacao)}`}>
                     {v2Filtrado?.classificacao ?? indicadores.classificacao}
@@ -728,16 +972,16 @@ export default function DashboardMeuPerfil() {
               </div>
 
               {/* Explicação do Engajamento Final */}
-              {v2Filtrado && (
+              {false && v2Filtrado && (
                 <div className="mt-3 p-3 rounded-lg bg-white/10 text-xs text-white/70">
                   <p className="font-semibold mb-1 text-white/90">Ind. 7 — Engajamento Final:</p>
-                  <p>Média dos 5 indicadores: ({(v2Filtrado.ind1_webinars ?? 0).toFixed(0)} + {(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)} + {(v2Filtrado.ind3_competencias ?? 0).toFixed(0)} + {(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)} + {(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}) / 5 = <span className="text-[#F5991F] font-bold">{(v2Filtrado.ind7_engajamentoFinal ?? 0).toFixed(0)}%</span>{(data.aplicabilidadePratica?.bonusEngajamento || v2Filtrado.ind6_aplicabilidade > 0) ? <span className="text-green-400 ml-1">(Aplicabilidade Prática: +10% no Engajamento)</span> : null}</p>
+                  <p>Média dos 5 indicadores: ({safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)} + {safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)} + {safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)} + {safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)} + {safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}) / 5 = <span className="text-[#F5991F] font-bold">{safeToFixed(v2Filtrado.ind7_engajamentoFinal ?? 0, 0)}%</span></p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="bg-white border border-gray-200 shadow-sm w-full lg:w-80">
+          <Card className="hidden bg-white border border-gray-200 shadow-sm w-full lg:w-80">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-gray-600">Radar de Performance</CardTitle>
             </CardHeader>
@@ -755,6 +999,7 @@ export default function DashboardMeuPerfil() {
         </div>
 
         {/* === INDICADORES DE DESTAQUE: Engajamento e Desenvolvimento === */}
+        <div className="hidden">
         <DualIndicators
           engajamento={
             v2?.consolidado?.ind7_engajamentoFinal ??
@@ -785,6 +1030,7 @@ export default function DashboardMeuPerfil() {
           }
           aplicabilidade={data.aplicabilidadePratica ?? null}
         />
+        </div>
 
         {/* Aviso de PDI Congelado */}
         {data.pdisCongelados && data.pdisCongelados.length > 0 && (
@@ -827,69 +1073,12 @@ export default function DashboardMeuPerfil() {
           </Card>
         )}
 
-        {/* Convite para Relatório de Impacto */}
-        {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
-          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-400 shadow-md">
-            <CardContent className="p-5">
-              {v2.alertaCasePendente.map((alerta: any, idx: number) => (
-                <div key={idx} className={`${idx > 0 ? 'mt-4 pt-4 border-t border-amber-200' : ''}`}>
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 rounded-full bg-amber-100 shrink-0">
-                      <PartyPopper className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-amber-900 text-base">Compartilhe sua Experiência!</p>
-                      <p className="text-sm text-amber-800 mt-2">
-                        A trilha <strong>{alerta.trilhaNome}</strong> está chegando ao final! 
-                        Este é o momento de documentar tudo o que você aprendeu e como aplicou na prática.
-                      </p>
-                      <div className="mt-3 p-3 bg-white/70 rounded-lg border border-amber-200">
-                        <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
-                          <Trophy className="h-4 w-4 text-amber-600" />
-                          Bônus de +10% no Engajamento
-                        </p>
-                        <p className="text-xs text-amber-700 mt-1">
-                          Ao entregar o Relatório de Impacto, você recebe um bônus de <strong>+10%</strong> no seu 
-                          Indicador 5 (Engajamento), aumentando sua nota final. É a sua chance de valorizar 
-                          ainda mais sua jornada de desenvolvimento!
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center gap-2 text-xs text-amber-700">
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span>
-                            Entrega até <strong>{alerta.dataLimite ? formatDateSafe(alerta.dataLimite + 'T00:00:00') : `${alerta.diasRestantes} dias`}</strong>
-                            {alerta.diasRestantes !== undefined && ` (${alerta.diasRestantes} dias restantes)`}
-                          </span>
-                        </div>
-                        <Button
-                          size="sm"
-                          className="bg-[#F5991F] hover:bg-[#e08a1a] text-white font-semibold"
-                          onClick={() => {
-                            setCaseTrilhaId(alerta.trilhaId);
-                            setCaseTrilhaNome(alerta.trilhaNome);
-                            setCaseTitulo('');
-                            setCaseDescricao('');
-                            setCaseFile(null);
-                            setCaseDialogOpen(true);
-                          }}
-                        >
-                          <FileUp className="h-3.5 w-3.5 mr-1.5" />
-                          Enviar Relatório de Impacto
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
 
 
 
-        {/* Glossário de Termos */}
-        <Card className="bg-white border border-gray-200 shadow-sm">
+
+        {/* Glossário de Termos - OCULTO */}
+        <Card className="hidden bg-white border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <button
               onClick={() => setShowGlossario(!showGlossario)}
@@ -912,7 +1101,7 @@ export default function DashboardMeuPerfil() {
                   { termo: "Webinar", desc: GLOSSARIO.webinar, icon: Video, color: "bg-orange-50 border-orange-200 text-orange-700" },
                   { termo: "Mentoria", desc: GLOSSARIO.mentoria, icon: MessageSquare, color: "bg-pink-50 border-pink-200 text-pink-700" },
                   { termo: "Tarefa Prática", desc: GLOSSARIO.tarefa, icon: ClipboardCheck, color: "bg-teal-50 border-teal-200 text-teal-700" },
-                  { termo: "Relatório de Impacto", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
+                  { termo: "Case de Impacto do Aprendizado", desc: GLOSSARIO.caseSucesso, icon: Briefcase, color: "bg-rose-50 border-rose-200 text-rose-700" },
                 ]).map(({ termo, desc, icon: Icon, color }) => (
                   <div key={termo} className={`p-3 rounded-lg border ${color}`}>
                     <div className="flex items-center gap-2 mb-1">
@@ -927,8 +1116,8 @@ export default function DashboardMeuPerfil() {
           </CardContent>
         </Card>
 
-        {/* Filtro de Período para Indicadores */}
-        {filtroOpcoes.length > 0 && (
+        {/* Filtro de Período para Indicadores - OCULTO */}
+        {false && filtroOpcoes.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
@@ -952,38 +1141,38 @@ export default function DashboardMeuPerfil() {
 
         {/* 6 Indicadores com Tooltips */}
         {v2Filtrado && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <IndicadorCardAluno
               numero={1} icon={Video} label="Webinars"
-              valor={`${(v2Filtrado.ind1_webinars ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind1_webinars ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind1_webinars ?? 0}
               color="bg-blue-100 text-blue-600" borderColor="border-blue-200"
               regras={[INDICADORES_INFO.ind1.explicacao, INDICADORES_INFO.ind1.formula]}
             />
             <IndicadorCardAluno
               numero={2} icon={GraduationCap} label="Avaliações"
-              valor={`${(v2Filtrado.ind2_avaliacoes ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind2_avaliacoes ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind2_avaliacoes ?? 0}
               color="bg-red-100 text-red-600" borderColor="border-red-200"
               regras={[INDICADORES_INFO.ind2.explicacao, INDICADORES_INFO.ind2.formula]}
             />
             <IndicadorCardAluno
               numero={3} icon={BookOpen} label="Competências"
-              valor={`${(v2Filtrado.ind3_competencias ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind3_competencias ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind3_competencias ?? 0}
               color="bg-purple-100 text-purple-600" borderColor="border-purple-200"
               regras={[INDICADORES_INFO.ind3.explicacao, INDICADORES_INFO.ind3.formula]}
             />
             <IndicadorCardAluno
               numero={4} icon={ClipboardCheck} label="Tarefas"
-              valor={`${(v2Filtrado.ind4_tarefas ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind4_tarefas ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind4_tarefas ?? 0}
               color="bg-emerald-100 text-emerald-600" borderColor="border-emerald-200"
               regras={[INDICADORES_INFO.ind4.explicacao, INDICADORES_INFO.ind4.formula]}
             />
             <IndicadorCardAluno
               numero={5} icon={Star} label="Engajamento"
-              valor={`${(v2Filtrado.ind5_engajamento ?? 0).toFixed(0)}%`} total="100%"
+              valor={`${safeToFixed(v2Filtrado.ind5_engajamento ?? 0, 0)}%`} total="100%"
               percentual={v2Filtrado.ind5_engajamento ?? 0}
               color="bg-amber-100 text-amber-600" borderColor="border-amber-200"
               regras={[INDICADORES_INFO.ind5.explicacao, INDICADORES_INFO.ind5.formula]}
@@ -991,15 +1180,15 @@ export default function DashboardMeuPerfil() {
             <IndicadorCardAluno
               numero={6} icon={Briefcase} label="Aplicabilidade"
               valor={data.aplicabilidadePratica?.percentual != null && data.aplicabilidadePratica.percentual > 0 ? `${data.aplicabilidadePratica.percentual}%` : (v2Filtrado.ind6_aplicabilidade > 0 ? "Entregue ✅" : "Pendente")} total="Meta: 80%"
-              percentual={data.aplicabilidadePratica?.percentual ?? v2Filtrado.ind6_aplicabilidade ?? 0}
+              percentual={Number(data.aplicabilidadePratica?.percentual ?? v2Filtrado.ind6_aplicabilidade ?? 0)}
               color="bg-rose-100 text-rose-600" borderColor="border-rose-200"
-              regras={["Avaliação da aplicabilidade prática dos conteúdos (60% mentora + 40% aluno). Meta: 80%. Bônus +10% no Engajamento se nota 8-10.", "Válido a partir de 01/04/2026. Cases e tarefas anteriores não impactam."]}
+              regras={["Aplicabilidade é macroindicador separado, com Tarefas + Case.", "Aplicabilidade Final = média dos microindicadores válidos (não altera o Engajamento)."]}
             />
           </div>
         )}
 
         {/* Meta de Certificação LÍDER NÍVEL I */}
-        <div className="mt-4 rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50/80 to-white p-5">
+        <div className="hidden mt-4 rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50/80 to-white p-5">
           <div className="flex items-center gap-2 mb-4">
             <Award className="h-5 w-5 text-purple-600" />
             <h3 className="text-sm font-bold text-purple-800 uppercase tracking-wide">Meta de Certificação — LÍDER NÍVEL I</h3>
@@ -1047,7 +1236,7 @@ export default function DashboardMeuPerfil() {
         {/* Card ECO_EVOLUIR - apenas para SEBRAE TO */}
         {aluno.programa && aluno.programa.toUpperCase().includes('SEBRAE') && aluno.programa.toUpperCase().includes('TO') && (
         <a
-          href="https://www.evoluirckm.com"
+          href="https://pdi.ecodobem.com/login"
           target="_blank"
           rel="noopener noreferrer"
           className="block relative overflow-hidden rounded-2xl border border-amber-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
@@ -1079,120 +1268,299 @@ export default function DashboardMeuPerfil() {
         </a>
         )}
 
-        {/* Card B.E.M. - Área de Aulas */}
-        <a
-          href="https://sebraeto.competenciasdobem.com.br"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50/80 to-amber-50/60" />
-          <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
-          <div className="relative flex items-center gap-4 p-4 sm:p-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
-              <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
-                alt="eco do bem"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-bold text-[#0A1E3E] mb-0.5">
-                B.E.M. - Área de Aulas
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600">
-                Acesse a área de aulas e conteúdos do programa
-              </p>
-            </div>
-            <div className="flex-shrink-0">
-              <div className="w-9 h-9 rounded-full bg-[#0A1E3E] flex items-center justify-center group-hover:bg-[#0A1E3E]/80 transition-colors shadow-lg">
-                <ExternalLink className="h-4 w-4 text-amber-400" />
-              </div>
+        {/* Tabs com seções detalhadas */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+
+          {/* JORNADA DE DESENVOLVIMENTO — grade de cards compactos */}
+          {/* Navegação por botões simples (não usa TabsList/TabsTrigger) para evitar conflito com RovingFocusGroup do Radix */}
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-[#0A1E3E] mb-3 tracking-tight">Jornada de Desenvolvimento</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-2">
+
+              {/* TabsList oculto — obrigatório para o Radix funcionar, mas sem conteúdo visual */}
+              <TabsList className="hidden">
+                <TabsTrigger value="jornada">Aulas</TabsTrigger>
+                <TabsTrigger value="mentorias">Mentorias</TabsTrigger>
+                <TabsTrigger value="eventos">Eventos</TabsTrigger>
+                <TabsTrigger value="tarefas">Tarefas</TabsTrigger>
+                <TabsTrigger value="metas">Metas</TabsTrigger>
+                <TabsTrigger value="cases">Cases</TabsTrigger>
+                <TabsTrigger value="meu-perfil-disc">Meu Perfil</TabsTrigger>
+              </TabsList>
+
+              {/* Botões visuais de navegação — simples, sem Radix */}
+
+              {/* Aulas */}
+              <button onClick={() => setActiveTab('jornada')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'jornada' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <rect x="8" y="18" width="22" height="28" rx="3" fill="#DBEAFE" stroke="#3B82F6" strokeWidth="1.5"/>
+                    <rect x="34" y="18" width="22" height="28" rx="3" fill="#EFF6FF" stroke="#3B82F6" strokeWidth="1.5"/>
+                    <line x1="30" y1="18" x2="30" y2="46" stroke="#3B82F6" strokeWidth="1.5"/>
+                    <line x1="13" y1="26" x2="25" y2="26" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="13" y1="31" x2="25" y2="31" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="13" y1="36" x2="21" y2="36" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="39" y1="26" x2="51" y2="26" stroke="#BFDBFE" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="39" y1="31" x2="51" y2="31" stroke="#BFDBFE" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="39" y1="36" x2="47" y2="36" stroke="#BFDBFE" strokeWidth="1.5" strokeLinecap="round"/>
+                    <polygon points="32,6 34,11 40,11 35,15 37,20 32,17 27,20 29,15 24,11 30,11" fill="#FCD34D" stroke="#D97706" strokeWidth="0.5"/>
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight">Aulas</span>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Competências</span>
+              </button>
+
+              {/* Mentorias */}
+              <button onClick={() => setActiveTab('mentorias')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'mentorias' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <circle cx="20" cy="18" r="9" fill="#C4B5FD" stroke="#7C3AED" strokeWidth="1.5"/>
+                    <path d="M8 42c0-6.627 5.373-12 12-12s12 5.373 12 12" fill="#DDD6FE" stroke="#7C3AED" strokeWidth="1.5"/>
+                    <circle cx="44" cy="22" r="7" fill="#A5B4FC" stroke="#6366F1" strokeWidth="1.5"/>
+                    <path d="M33 46c0-6.075 4.925-11 11-11s11 4.925 11 11" fill="#C7D2FE" stroke="#6366F1" strokeWidth="1.5"/>
+                    <path d="M29 26 Q36 22 37 27" stroke="#7C3AED" strokeWidth="1.5" strokeDasharray="2 2" fill="none"/>
+                    <circle cx="36" cy="24" r="2" fill="#7C3AED" opacity="0.6"/>
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight">Mentorias</span>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Com a mentora</span>
+              </button>
+
+              {/* Eventos */}
+              <button onClick={() => setActiveTab('eventos')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'eventos' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <rect x="6" y="10" width="52" height="34" rx="4" fill="#D1FAE5" stroke="#10B981" strokeWidth="1.5"/>
+                    <rect x="10" y="14" width="44" height="26" rx="2" fill="#A7F3D0"/>
+                    <circle cx="32" cy="24" r="6" fill="#10B981"/>
+                    <path d="M23 36c0-4.97 4.03-9 9-9s9 4.03 9 9" fill="#6EE7B7"/>
+                    <line x1="32" y1="44" x2="32" y2="52" stroke="#10B981" strokeWidth="2"/>
+                    <line x1="20" y1="52" x2="44" y2="52" stroke="#10B981" strokeWidth="2" strokeLinecap="round"/>
+                    <circle cx="52" cy="14" r="6" fill="#FCA5A5"/>
+                    <circle cx="52" cy="14" r="3" fill="#EF4444"/>
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight">Eventos</span>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Webinars</span>
+              </button>
+
+              {/* Tarefas */}
+              <button onClick={() => setActiveTab('tarefas')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'tarefas' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <rect x="12" y="14" width="40" height="44" rx="4" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5"/>
+                    <rect x="24" y="8" width="16" height="12" rx="3" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5"/>
+                    <circle cx="22" cy="30" r="4" fill="#10B981"/>
+                    <path d="M20 30 l2 2 l4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="30" y1="30" x2="46" y2="30" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="22" cy="42" r="4" fill="#10B981"/>
+                    <path d="M20 42 l2 2 l4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="30" y1="42" x2="46" y2="42" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="22" cy="52" r="4" fill="#E5E7EB" stroke="#9CA3AF" strokeWidth="1"/>
+                    <line x1="30" y1="52" x2="42" y2="52" stroke="#D1D5DB" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight">Tarefas</span>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Entregas</span>
+              </button>
+
+              {/* Metas */}
+              <button onClick={() => setActiveTab('metas')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'metas' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <circle cx="32" cy="32" r="22" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1.5" />
+                    <circle cx="32" cy="32" r="14" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5" />
+                    <circle cx="32" cy="32" r="5" fill="#F59E0B" />
+                    <line x1="32" y1="10" x2="32" y2="4" stroke="#D97706" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="32" y1="60" x2="32" y2="54" stroke="#D97706" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="10" y1="32" x2="4" y2="32" stroke="#D97706" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="60" y1="32" x2="54" y2="32" stroke="#D97706" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight">Metas</span>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Desafios</span>
+              </button>
+
+              {/* Mini_Cursos — link externo */}
+              <a
+                href="https://ecolider.ecodobem.com/meus-cursos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1 p-3 rounded-xl border border-gray-200 bg-white hover:border-[#0A1E3E] hover:shadow-md text-gray-600 transition-all shadow-sm cursor-pointer no-underline"
+              >
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <polygon points="32,12 58,26 32,40 6,26" fill="#99F6E4" stroke="#0D9488" strokeWidth="1.5" strokeLinejoin="round"/>
+                    <path d="M46 32 v10 c0 6-8 10-14 10s-14-4-14-10 V32" fill="#CCFBF1" stroke="#0D9488" strokeWidth="1.5"/>
+                    <line x1="58" y1="26" x2="58" y2="40" stroke="#0D9488" strokeWidth="2"/>
+                    <circle cx="58" cy="42" r="3" fill="#F59E0B"/>
+                    <rect x="42" y="8" width="14" height="14" rx="3" fill="#FDE68A" stroke="#F59E0B" strokeWidth="1"/>
+                    <path d="M46 18 l3-6 l3 6" stroke="#D97706" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <line x1="49" y1="12" x2="49" y2="18" stroke="#D97706" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight flex items-center gap-0.5">Dicas de Comportamento <ExternalLink className="h-2.5 w-2.5 opacity-50" /></span>
+                <span className="text-[10px] text-gray-400 leading-tight text-center hidden sm:block">Aprendizado</span>
+              </a>
+
+              {/* Cases */}
+              <button onClick={() => setActiveTab('cases')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'cases' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <rect x="24" y="48" width="16" height="6" rx="2" fill="#FCD34D" stroke="#D97706" strokeWidth="1.5"/>
+                    <rect x="20" y="54" width="24" height="4" rx="2" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/>
+                    <path d="M20 16 h24 v18 c0 9-24 9-24 0 Z" fill="#FCD34D" stroke="#D97706" strokeWidth="1.5"/>
+                    <path d="M20 22 c-8 0-8 14 0 14" fill="none" stroke="#D97706" strokeWidth="1.5"/>
+                    <path d="M44 22 c8 0 8 14 0 14" fill="none" stroke="#D97706" strokeWidth="1.5"/>
+                    <line x1="32" y1="34" x2="32" y2="48" stroke="#D97706" strokeWidth="1.5"/>
+                    <polygon points="32,20 33.5,24.5 38,24.5 34.5,27 36,31.5 32,29 28,31.5 29.5,27 26,24.5 30.5,24.5" fill="#F59E0B"/>
+                    <circle cx="12" cy="12" r="4" fill="#FCD34D" opacity="0.6"/>
+                    <circle cx="52" cy="10" r="3" fill="#FCD34D" opacity="0.6"/>
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight">Cases</span>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Resultados</span>
+              </button>
+
+              {/* Meu Perfil */}
+              <button onClick={() => setActiveTab('meu-perfil-disc')} className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all shadow-sm cursor-pointer w-full ${
+                activeTab === 'meu-perfil-disc' ? 'border-[#0A1E3E] bg-[#0A1E3E] text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-[#0A1E3E] hover:shadow-md'
+              }`}>
+                <div className="w-12 h-12 flex items-center justify-center">
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+                    <circle cx="28" cy="18" r="10" fill="#FECDD3" stroke="#F43F5E" strokeWidth="1.5"/>
+                    <path d="M12 50c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#FFE4E6" stroke="#F43F5E" strokeWidth="1.5"/>
+                    <rect x="40" y="28" width="18" height="18" rx="3" fill="#FFF1F2" stroke="#F43F5E" strokeWidth="1"/>
+                    <polyline points="43,42 46,38 49,40 52,34 55,36" stroke="#F43F5E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    <circle cx="55" cy="36" r="1.5" fill="#F43F5E"/>
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold leading-tight">Meu Perfil</span>
+                <span className="text-[10px] leading-tight text-center hidden sm:block opacity-70">Evolução</span>
+              </button>
+
             </div>
           </div>
-        </a>
 
-        {/* Tabs com seções detalhadas */}
-        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') || 'jornada'} className="w-full">
-          <TabsList className="bg-gray-100 border border-gray-200 w-full flex flex-wrap h-auto gap-1 p-1 rounded-xl">
-            <TabsTrigger value="jornada" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Route className="h-4 w-4 mr-1" /> Minha Jornada
-            </TabsTrigger>
-            <TabsTrigger value="mentorias" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <MessageSquare className="h-4 w-4 mr-1" /> Mentorias
-            </TabsTrigger>
-            <TabsTrigger value="eventos" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Video className="h-4 w-4 mr-1" /> Eventos
-            </TabsTrigger>
+          {/* Notificação colapsável — Case de Impacto do Aprendizado pendente */}
+          {v2?.alertaCasePendente && v2.alertaCasePendente.length > 0 && (
+            <>
+              {v2.alertaCasePendente.map((alerta: any, idx: number) => (
+                <AlertaCasePendente
+                  key={idx}
+                  alerta={alerta}
+                  onEnviar={() => {
+                    setCaseTrilhaId(alerta.trilhaId);
+                    setCaseTrilhaNome(alerta.trilhaNome);
+                    setCaseTitulo('');
+                    setCaseDescricao('');
+                    setCaseFile(null);
+                    setCaseDialogOpen(true);
+                  }}
+                />
+              ))}
+            </>
+          )}
 
-            <TabsTrigger value="tarefas" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <ClipboardCheck className="h-4 w-4 mr-1" /> Tarefas
-            </TabsTrigger>
-
-            <a
-              href="https://sebraeto.competenciasdobem.com.br/auth/signin"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 min-w-[120px] inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-gray-600 hover:bg-[#0A1E3E] hover:text-white cursor-pointer"
-            >
-              <GraduationCap className="h-4 w-4 mr-1" /> Mini_Cursos <ExternalLink className="h-3 w-3 ml-1 opacity-60" />
-            </a>
-            <TabsTrigger value="cases" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Briefcase className="h-4 w-4 mr-1" /> Cases de Sucesso
-            </TabsTrigger>
-            <TabsTrigger value="meu-perfil-disc" className="flex-1 min-w-[120px] data-[state=active]:bg-[#0A1E3E] data-[state=active]:text-white text-gray-600">
-              <Activity className="h-4 w-4 mr-1" /> Meu Perfil
-            </TabsTrigger>
-          </TabsList>
+          {/* Card B.E.M. - Área de Aulas - Apenas para alunos com plataforma Scaffold */}
+          {aluno?.plataformaAulas === 'scaffold' && (
+          <a
+            href="https://sebraeto.competenciasdobem.com.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block relative overflow-hidden rounded-2xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 group mt-3"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50/80 to-amber-50/60" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4" />
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4" />
+            <div className="relative flex items-center gap-4 p-4 sm:p-5">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 bg-white ring-2 ring-blue-100 shadow-lg p-2">
+                <img
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                  alt="eco do bem"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base sm:text-lg font-bold text-[#0A1E3E] mb-0.5">
+                  B.E.M. - Área de Aulas
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Acesso exclusivo para os alunos que fazem as aulas na plataforma Scaffold.
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                <div className="w-9 h-9 rounded-full bg-[#0A1E3E] flex items-center justify-center group-hover:bg-[#0A1E3E]/80 transition-colors shadow-lg">
+                  <ExternalLink className="h-4 w-4 text-amber-400" />
+                </div>
+              </div>
+            </div>
+          </a>
+          )}
 
           {/* === MINHA JORNADA (unificada: Trilha + PDI + Competências) === */}
-          <TabsContent value="jornada" className="mt-4">
+          <TabsContent value="jornada" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {jornadaData && jornadaData.macroJornadas && jornadaData.macroJornadas.length > 0 ? (
               <div className="space-y-6">
-                {/* Card de Contrato */}
-                {jornadaData.contrato && (
-                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-blue-100">
-                            <FileBarChart className="h-5 w-5 text-blue-700" />
+                {/* Card de Contrato - MOVIDO PARA ABA MENTORIAS */}
+
+                {/* Card de Expectativas da Jornada - APÓS CONTRATO - OCULTO (visível apenas em Performance) */}
+                {false && jornadaData.contrato && (() => {
+                  const periodoInicio = new Date(jornadaData.contrato.periodoInicio);
+                  const periodoFim = new Date(jornadaData.contrato.periodoTermino);
+                  const diasTotais = Math.ceil((periodoFim.getTime() - periodoInicio.getTime()) / (1000 * 60 * 60 * 24));
+                  const mesesTotais = Math.max(1, Math.ceil(diasTotais / 30));
+                  
+                  // Cálculo de expectativas baseado na duração total do contrato
+                  // Para 6 meses: 5 mentorias (1 assessment + 4 acompanhamento), 12 webinares (2 por quinzena)
+                  const mentoriasEsperadas = Math.max(1, Math.ceil((mesesTotais - 1) * 0.8 + 1)); // 1 assessment + 1 mentoria a cada 1.25 meses
+                  const tarefasEsperadas = mentoriasEsperadas; // 1 tarefa por mentoria
+                  const webinaresEsperados = Math.ceil(mesesTotais * 2); // 2 webinares por mês (1 por quinzena)
+                  
+                  return (
+                    <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-amber-100">
+                              <Target className="h-5 w-5 text-amber-700" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">Expectativas da Sua Jornada</p>
+                              <p className="text-xs text-gray-600">Baseado na duração do seu contrato ({mesesTotais} mês{mesesTotais !== 1 ? 'es' : ''})</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">Contrato Ativo</p>
-                            <p className="text-xs text-gray-600">
-                              {formatDateSafe(jornadaData.contrato.periodoInicio)} a {formatDateSafe(jornadaData.contrato.periodoTermino)}
-                            </p>
-                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 font-medium mt-1">
-                              Mentoria: {jornadaData.contrato.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}
-                            </span>
+                          <div className="flex items-center gap-6">
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-amber-700">{mentoriasEsperadas}</p>
+                              <p className="text-xs text-gray-600">Mentorias</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-orange-700">{tarefasEsperadas}</p>
+                              <p className="text-xs text-gray-600">Tarefas</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-amber-700">{webinaresEsperados}</p>
+                              <p className="text-xs text-gray-600">Webinares</p>
+                            </div>
                           </div>
                         </div>
-                        {jornadaData.saldo && (
-                          <div className="flex items-center gap-4">
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-gray-900">{jornadaData.saldo.sessoesRealizadas}</p>
-                              <p className="text-xs text-gray-500">Realizadas</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-blue-700">{jornadaData.saldo.saldoRestante}</p>
-                              <p className="text-xs text-gray-500">Restantes</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-gray-600">{jornadaData.saldo.totalContratadas}</p>
-                              <p className="text-xs text-gray-500">Total</p>
-                            </div>
-                            <div className="w-24">
-                              <Progress value={jornadaData.saldo.percentualUsado} className="h-2" />
-                              <p className="text-xs text-gray-500 text-center mt-1">{jornadaData.saldo.percentualUsado}% usado</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
 
                 {/* Alertas de Micro Ciclos com prazo próximo */}
                 {(() => {
@@ -1234,7 +1602,7 @@ export default function DashboardMeuPerfil() {
                                 <p className="text-sm font-medium text-gray-900 truncate">{a.competenciaNome}</p>
                                 <p className="text-xs text-gray-500">
                                   {a.trilhaNome} • Aulas: {a.aulasConcluidas || 0}/{a.aulasDisponiveis || '?'}
-                                  {a.notaPlataforma > 0 && ` • Nota: ${a.notaPlataforma.toFixed(0)}`}
+                                  {a.notaPlataforma > 0 && ` • Nota: ${safeToFixed(a.notaPlataforma ?? 0, 0)}`}
                                 </p>
                               </div>
                               <div className={`text-right ml-3 ${
@@ -1301,13 +1669,13 @@ export default function DashboardMeuPerfil() {
                           {macroJornada.nivelGeralAtual !== null && (
                             <div className="text-right">
                               <p className="text-xs text-gray-500">Nível Geral</p>
-                              <p className="text-lg font-bold text-gray-900">{macroJornada.nivelGeralAtual.toFixed(0)}%</p>
+                              <p className="text-lg font-bold text-gray-900">{safeToFixed(macroJornada?.nivelGeralAtual ?? 0, 0)}%</p>
                             </div>
                           )}
                           {macroJornada.metaGeralFinal !== null && (
                             <div className="text-right">
                               <p className="text-xs text-gray-500">Meta Final</p>
-                              <p className="text-lg font-bold text-blue-700">{macroJornada.metaGeralFinal.toFixed(0)}%</p>
+                              <p className="text-lg font-bold text-blue-700">{safeToFixed(macroJornada?.metaGeralFinal ?? 0, 0)}%</p>
                             </div>
                           )}
                           <Badge variant="outline" className={macroJornada.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
@@ -1396,6 +1764,12 @@ export default function DashboardMeuPerfil() {
                             aulasConc > 0 ? <TrendingUp className="h-4 w-4 text-amber-500" /> :
                             cicloStatus === 'futuro' ? <Clock className="h-4 w-4 text-gray-300" /> :
                             <Target className="h-4 w-4 text-gray-400" />;
+                          
+                          // Obter cursos atribuídos para esta competência
+                          const cursosDaCompetencia = (cursosAtribuidosAoAluno || []).filter(
+                            (c: any) => Number(c.competenciaId) === Number(micro.competenciaId)
+                          );
+                          const primeiroCurso = cursosDaCompetencia[0];
 
                           return (
                             <div key={micro.id} className={`p-3 rounded-lg border ${
@@ -1404,10 +1778,17 @@ export default function DashboardMeuPerfil() {
                               cicloStatus === 'finalizado' && aulasConc === 0 ? 'bg-red-50/50 border-red-200' :
                               'bg-white/50 border-gray-100'
                             }`}>
-                              <div className="flex items-center gap-2 mb-1.5">
+                              <div className="flex items-start gap-2 mb-1.5">
                                 {statusIcon}
-                                <span className="text-sm font-semibold text-gray-900 flex-1">{micro.competenciaNome}</span>
-                                <div className="flex items-center gap-1">
+                                <div className="flex-1">
+                                  <div className="text-sm font-semibold text-gray-900">{micro.competenciaNome}</div>
+                                  {primeiroCurso && (
+                                    <div className="text-xs text-gray-600 mt-1">
+                                      <span className="font-medium">Curso:</span> {primeiroCurso.titulo}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 flex-wrap justify-end">
                                   {cicloStatus === 'em_andamento' && diasRestantes !== null && diasRestantes <= 14 && !competenciaConcluida && micro.peso === 'obrigatoria' && (
                                     <Badge className={`text-[10px] px-1.5 py-0 ${diasRestantes <= 7 ? 'bg-red-100 text-red-700 border-red-300' : 'bg-amber-100 text-amber-700 border-amber-300'}`}>
                                       <Clock className="h-2.5 w-2.5 mr-0.5" />{diasRestantes}d
@@ -1417,11 +1798,27 @@ export default function DashboardMeuPerfil() {
                                     <Badge className="bg-red-100 text-red-700 border-red-300 text-[10px] px-1.5 py-0">Vencida</Badge>
                                   )}
                                   {competenciaConcluida && (
-                                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-[10px] px-1.5 py-0">Concluída</Badge>
+                                    <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-[10px] px-1.5 py-0">Concluida</Badge>
                                   )}
                                   <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${micro.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
-                                    {micro.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
+                                    {micro.peso === 'obrigatoria' ? 'Obrigatoria' : 'Opcional'}
                                   </Badge>
+                                  {aluno?.plataformaAulas !== 'scaffold' && (
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    className="h-7 px-2 text-xs"
+                                    onClick={() => {
+                                      if (primeiroCurso) {
+                                        acessarCursoCompetencia(micro.competenciaId);
+                                      } else {
+                                        toast.info('Desculpe ainda não há curso liberado');
+                                      }
+                                    }}
+                                  >
+                                    Cursar
+                                  </Button>
+                                  )}
                                 </div>
                               </div>
                               {/* Barra + métricas em linha */}
@@ -1430,15 +1827,15 @@ export default function DashboardMeuPerfil() {
                                   <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
                                 </div>
                                 <span className={`text-xs font-bold min-w-[35px] text-right ${competenciaConcluida ? 'text-emerald-600' : progressoAulas > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                                  {progressoAulas > 0 ? `${progressoAulas.toFixed(0)}%` : '—'}
+                                  {progressoAulas > 0 ? `${safeToFixed(progressoAulas ?? 0, 0)}%` : '—'}
                                 </span>
                               </div>
                               <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-gray-500">
                                 {aulasDisp > 0 && <span>Aulas: <strong className="text-gray-700">{aulasConc}/{aulasDisp}</strong></span>}
                                 {aulasAnd > 0 && <span>Em andamento: <strong className="text-blue-600">{aulasAnd}</strong></span>}
-                                {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{notaPlataforma.toFixed(0)}</strong></span>}
-                                {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{nivel.toFixed(0)}%</strong></span>}
-                                <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${meta.toFixed(0)}%` : '—'}</strong></span>
+                                {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{safeToFixed(notaPlataforma ?? 0, 0)}</strong></span>}
+                                {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{safeToFixed(nivel ?? 0, 0)}%</strong></span>}
+                                <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${safeToFixed(meta ?? 0, 0)}%` : '—'}</strong></span>
                               </div>
                               {micro.justificativa && (
                                 <div className="mt-1.5 p-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] text-gray-700">
@@ -1472,30 +1869,16 @@ export default function DashboardMeuPerfil() {
                               const temApenas1Comp = microsDesteCiclo.length === 1;
                               const microUnico = temApenas1Comp ? microsDesteCiclo[0] : null;
 
-                              // Se tem apenas 1 competência, renderizar tudo em uma barra única
+                              // Se tem apenas 1 competência, usar renderMicro dentro de um container de ciclo
                               if (temApenas1Comp && microUnico) {
-                                const aulasDisp = microUnico.aulasDisponiveis ?? 0;
-                                const aulasConc = microUnico.aulasConcluidas ?? 0;
-                                const aulasAnd = microUnico.aulasEmAndamento ?? 0;
-                                const competenciaConcluida = aulasDisp > 0 && aulasConc >= aulasDisp;
-                                const notaPlataforma = microUnico.notaPlataforma ?? 0;
-                                const progressoAulas = aulasDisp > 0 ? (aulasConc / aulasDisp) * 100 : 0;
-                                const nivel = microUnico.nivelAtual ?? 0;
-                                const meta = microUnico.metaFinal ?? 100;
-                                const barColor = competenciaConcluida ? "bg-emerald-500" : 
-                                  progressoAulas >= 70 ? "bg-amber-500" : 
-                                  progressoAulas > 0 ? "bg-blue-500" : "bg-gray-300";
-
                                 return (
                                   <div key={ciclo.cicloId || idx} className={`rounded-xl border overflow-hidden ${
                                     isEmAndamento ? 'border-blue-300' : 'border-gray-200'
                                   }`}>
-                                    {/* Barra única: cabeçalho + competência fundidos */}
+                                    {/* Cabeçalho do ciclo */}
                                     <div className={`px-4 py-3 ${
-                                      isEmAndamento ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : 
-                                      competenciaConcluida ? 'bg-emerald-50/50' : 'bg-gray-50'
+                                      isEmAndamento ? 'bg-gradient-to-r from-blue-50 to-indigo-50' : 'bg-gray-50'
                                     }`}>
-                                      {/* Linha 1: Nome + status + datas */}
                                       <div className="flex items-center justify-between flex-wrap gap-2">
                                         <div className="flex items-center gap-2">
                                           <div className={`w-2.5 h-2.5 rounded-full ${statusColors.bg}`} />
@@ -1514,46 +1897,16 @@ export default function DashboardMeuPerfil() {
                                               {diasRestantes} dias restantes
                                             </Badge>
                                           )}
-                                          {competenciaConcluida && (
-                                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 text-[10px] px-1.5 py-0">Concluída</Badge>
-                                          )}
-                                          {ciclo.status === 'finalizado' && !competenciaConcluida && microUnico.peso === 'obrigatoria' && (
-                                            <Badge className="bg-red-100 text-red-700 border-red-300 text-[10px] px-1.5 py-0">Vencida</Badge>
-                                          )}
-                                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${microUnico.peso === 'obrigatoria' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-gray-100 text-gray-600 border-gray-300'}`}>
-                                            {microUnico.peso === 'obrigatoria' ? 'Obrigatória' : 'Opcional'}
-                                          </Badge>
                                         </div>
                                       </div>
-
-                                      {/* Linha 2: Barra de progresso única */}
-                                      <div className="flex items-center gap-2 mt-2">
-                                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                          <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${progressoAulas}%` }} />
-                                        </div>
-                                        <span className={`text-xs font-bold min-w-[35px] text-right ${competenciaConcluida ? 'text-emerald-600' : progressoAulas > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
-                                          {progressoAulas > 0 ? `${progressoAulas.toFixed(0)}%` : '—'}
-                                        </span>
-                                      </div>
-
-                                      {/* Linha 3: Métricas em linha */}
-                                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-[10px] text-gray-500">
-                                        {aulasDisp > 0 && <span>Aulas: <strong className="text-gray-700">{aulasConc}/{aulasDisp}</strong></span>}
-                                        {aulasAnd > 0 && <span>Em andamento: <strong className="text-blue-600">{aulasAnd}</strong></span>}
-                                        {det.webinars && <span className="flex items-center gap-0.5"><Video className="h-2.5 w-2.5 text-blue-500" />{det.webinars.presentes || 0}/{det.webinars.total || 0} webinars</span>}
-                                        {det.tarefas && <span className="flex items-center gap-0.5"><ClipboardCheck className="h-2.5 w-2.5 text-emerald-500" />{det.tarefas.entregues || 0}/{det.tarefas.total || 0} tarefas</span>}
-                                        {det.avaliacoes && det.avaliacoes.provasRealizadas > 0 && <span className="flex items-center gap-0.5"><GraduationCap className="h-2.5 w-2.5 text-red-500" />{det.avaliacoes.provasRealizadas} provas</span>}
-                                        {notaPlataforma > 0 && <span>Nota: <strong className={notaPlataforma >= 70 ? 'text-emerald-600' : 'text-amber-600'}>{notaPlataforma.toFixed(0)}</strong></span>}
-                                        {nivel > 0 && <span>Nível Mentora: <strong className="text-gray-700">{nivel.toFixed(0)}%</strong></span>}
-                                        <span>Meta: <strong className="text-gray-700">{meta > 0 ? `${meta.toFixed(0)}%` : '—'}</strong></span>
-                                      </div>
-                                      {microUnico.justificativa && (
-                                        <div className="mt-1.5 p-1.5 rounded bg-blue-50 border border-blue-100 text-[10px] text-gray-700">
-                                          <strong>Justificativa:</strong> {microUnico.justificativa}
-                                        </div>
-                                      )}
                                     </div>
 
+                                    {/* Corpo: renderizar a competência única com renderMicro */}
+                                    <div className="px-4 py-3 space-y-3">
+                                      <div className="space-y-2">
+                                        {renderMicro(microUnico)}
+                                      </div>
+                                    </div>
                                   </div>
                                 );
                                }
@@ -1611,8 +1964,8 @@ export default function DashboardMeuPerfil() {
                               </div>
                             )}
 
-                            {/* Fallback: se não tem ciclos, mostrar todas as microJornadas */}
-                            {!temCiclos && microsOrfaos.length === 0 && macroJornada.microJornadas.length > 0 && (
+                            {/* Fallback: se não tem ciclos, mostrar todas as microJornadas como órfãs */}
+                            {!temCiclos && macroJornada.microJornadas.length > 0 && (
                               <div className="space-y-2">
                                 {macroJornada.microJornadas.map((micro: any) => renderMicro(micro))}
                               </div>
@@ -1640,7 +1993,51 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
 
           {/* === HISTÓRICO DE MENTORIAS === */}
-          <TabsContent value="mentorias" className="mt-4">
+          <TabsContent value="mentorias" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Card de Contrato Ativo */}
+            {jornadaData.contrato && (
+              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-sm mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-100">
+                        <FileBarChart className="h-5 w-5 text-blue-700" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">Contrato Ativo</p>
+                        <p className="text-xs text-gray-600">
+                          {formatDateSafe(jornadaData.contrato.periodoInicio)} a {formatDateSafe(jornadaData.contrato.periodoTermino)}
+                        </p>
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-200 text-blue-800 font-medium mt-1">
+                          Mentoria: {jornadaData.contrato.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}
+                        </span>
+                      </div>
+                    </div>
+                    {jornadaData.saldo && (
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-gray-900">{jornadaData.saldo.sessoesRealizadas}</p>
+                          <p className="text-xs text-gray-500">Realizadas</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-blue-700">{jornadaData.saldo.saldoRestante}</p>
+                          <p className="text-xs text-gray-500">Restantes</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-gray-600">{jornadaData.saldo.totalContratadas}</p>
+                          <p className="text-xs text-gray-500">Total</p>
+                        </div>
+                        <div className="w-24">
+                          <Progress value={jornadaData.saldo.percentualUsado} className="h-2" />
+                          <p className="text-xs text-gray-500 text-center mt-1">{jornadaData.saldo.percentualUsado}% usado</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Alerta: Faltam X mentorias para finalizar */}
             {jornadaData?.saldo && jornadaData.saldo.saldoRestante > 0 && (
               <div className="mb-4 p-4 rounded-xl border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center gap-4">
@@ -1681,7 +2078,7 @@ export default function DashboardMeuPerfil() {
             {aluno.mentorId && <MentorProfileCard mentorId={aluno.mentorId} mentorName={aluno.mentor} />}
 
             {/* Agendamento de Sessão + Convites de Grupo */}
-            {aluno.mentorId && <AlunoAgendamentoSection alunoId={aluno.id} consultorId={aluno.mentorId} mentorName={aluno.mentor} />}
+            {aluno.mentorId && <AlunoAgendamentoSection alunoId={aluno.id} consultorId={aluno.mentorId} mentorName={aluno.mentor} isEfetivo={onboardingStatus?.aceiteRealizado === true} />}
 
             <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
@@ -1836,7 +2233,7 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
 
           {/* === EVENTOS - LISTA UNIFICADA === */}
-          <TabsContent value="eventos" className="mt-4">
+          <TabsContent value="eventos" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-6">
               {/* Resumo com contadores visuais - usa apenas eventos dentro do macrociclo */}
               {(() => {
@@ -2089,11 +2486,257 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
 
 
+          {/* === METAS DESAFIADORAS === */}
+          <TabsContent value="metas" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {(() => {
+              const resumo = metasData?.resumo ?? { total: 0, cumpridas: 0, percentual: 0 };
+              const totalMicroMetas = microMetas.length;
+              const microMetasCumpridas = microMetas.filter((m: any) => m.ultimoStatus === "cumprida").length;
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <Card className="bg-blue-50 border border-blue-200 shadow-sm">
+                      <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+                          <Flag className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-blue-900">{resumo.total}</p>
+                        <p className="text-xs text-blue-700 font-medium">Total de Metas</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-emerald-50 border border-emerald-200 shadow-sm">
+                      <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mb-2">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-emerald-900">{resumo.cumpridas}</p>
+                        <p className="text-xs text-emerald-700 font-medium">Cumpridas</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-amber-50 border border-amber-200 shadow-sm">
+                      <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-2">
+                          <Target className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-amber-900">{totalMicroMetas}</p>
+                        <p className="text-xs text-amber-700 font-medium">Micro Metas</p>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-purple-50 border border-purple-200 shadow-sm">
+                      <CardContent className="pt-5 pb-5 flex flex-col items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-2">
+                          <TrendingUp className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-purple-900">{resumo.percentual}%</p>
+                        <p className="text-xs text-purple-700 font-medium">Evolução Geral</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card className="bg-white border border-gray-200 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                        <Flag className="h-4 w-4 text-[#F5991F]" />
+                        Meta Desafiadora
+                      </CardTitle>
+                      <CardDescription className="text-gray-500">
+                        Situação atual: {microMetasCumpridas} de {totalMicroMetas} micro metas cumpridas • Progresso geral {resumo.percentual}%
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {metaPrincipal ? (
+                        <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <p className="text-base font-semibold text-gray-900">{metaPrincipal.titulo}</p>
+                            <Badge variant="outline" className={getMetaStatusConfig(metaPrincipal.ultimoStatus).className}>
+                              <span className="flex items-center gap-1">
+                                {getMetaStatusConfig(metaPrincipal.ultimoStatus).icon}
+                                {getMetaStatusConfig(metaPrincipal.ultimoStatus).label}
+                              </span>
+                            </Badge>
+                          </div>
+                          {metaPrincipal.descricao && (
+                            <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{metaPrincipal.descricao}</p>
+                          )}
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-gray-500">Percentual total de evolução</span>
+                              <span className="text-xs font-semibold text-purple-700">{resumo.percentual}%</span>
+                            </div>
+                            <Progress value={resumo.percentual} className="h-2" />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-10 text-gray-500">
+                          <Flag className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                          <p>Nenhuma meta desafiadora cadastrada ainda.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-white border border-gray-200 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
+                        <Target className="h-4 w-4 text-[#F5991F]" />
+                        Micro Metas
+                      </CardTitle>
+                      <CardDescription className="text-gray-500">
+                        Envie evidências para cada micro meta usando o mesmo fluxo das tarefas práticas.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {microMetas.length === 0 ? (
+                        <div className="text-center py-10 text-gray-500">
+                          <Target className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                          <p>Você ainda não possui micro metas cadastradas.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {microMetas.map((meta: any, idx: number) => {
+                            const metaStatus = getMetaStatusConfig(meta.ultimoStatus);
+                            const tarefaVinculada = (myTasks || []).find((task: any) => Number(task.taskId) === Number(meta.taskLibraryId));
+                            const possuiEnvio = !!tarefaVinculada && (tarefaVinculada.taskStatus === "entregue" || tarefaVinculada.taskStatus === "validada") && !!(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
+                            const podeEnviar = !!tarefaVinculada && tarefaVinculada.taskStatus !== 'validada' && !(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
+
+                            return (
+                              <div key={meta.id} className="p-4 rounded-lg border bg-gray-50 border-gray-100">
+                                <div className="flex items-start justify-between gap-2 flex-wrap">
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                      <p className="text-sm font-semibold text-gray-900">{idx + 1}. {meta.titulo}</p>
+                                      <Badge variant="outline" className={metaStatus.className}>
+                                        <span className="flex items-center gap-1">{metaStatus.icon} {metaStatus.label}</span>
+                                      </Badge>
+                                    </div>
+                                    {meta.descricao && (
+                                      <p className="text-xs text-gray-600 whitespace-pre-wrap">{meta.descricao}</p>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Competência: {meta.competenciaNome} • Prazo: {meta.ultimoMes && meta.ultimoAno ? `${String(meta.ultimoMes).padStart(2, "0")}/${meta.ultimoAno}` : "não informado"}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setMetaDetailOpen(meta.id)}
+                                      disabled={!tarefaVinculada}
+                                      className="text-[#F5991F] border-[#F5991F] hover:bg-[#F5991F]/10 text-xs disabled:opacity-60"
+                                    >
+                                      <Upload className="h-3 w-3 mr-1" /> Enviar Evidência
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setExpandedMeta(expandedMeta === meta.id ? null : meta.id)}
+                                      className="text-gray-500 hover:text-gray-900"
+                                    >
+                                      {expandedMeta === meta.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {expandedMeta === meta.id && (
+                                  <div className="mt-3 space-y-2">
+                                    {tarefaVinculada ? (
+                                      <div className="p-3 rounded bg-white border border-gray-200 space-y-2">
+                                        <p className="text-xs text-gray-600">
+                                          Sessão vinculada: <strong>{tarefaVinculada.sessionNumber}</strong> • Status de validação:{" "}
+                                          <strong>{tarefaVinculada.taskStatus === "validada" ? "Validada pela mentora" : tarefaVinculada.taskStatus === "entregue" ? "Aguardando validação" : "Pendente de envio"}</strong>
+                                        </p>
+                                        {tarefaVinculada.submittedAt && (
+                                          <p className="text-xs text-gray-500">Data de envio: {new Date(tarefaVinculada.submittedAt).toLocaleString("pt-BR")}</p>
+                                        )}
+                                        {tarefaVinculada.evidenceLink && (
+                                          <a href={tarefaVinculada.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                            <ExternalLink className="h-3 w-3" /> {tarefaVinculada.evidenceLink}
+                                          </a>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <div className="p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-700">
+                                        Esta micro meta ainda não possui tarefa vinculada para envio de evidência.
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                <Dialog open={metaDetailOpen === meta.id} onOpenChange={(open) => { if (!open) setTimeout(() => setMetaDetailOpen(null), 100); }}>
+                                  <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+                                    <DialogHeader>
+                                      <DialogTitle className="text-gray-900 flex items-center gap-2">
+                                        <Flag className="h-5 w-5 text-[#F5991F]" />
+                                        Evidência da Micro Meta
+                                      </DialogTitle>
+                                      <DialogDescription className="text-gray-500">
+                                        {meta.titulo}
+                                      </DialogDescription>
+                                    </DialogHeader>
+
+                                    {!tarefaVinculada ? (
+                                      <div className="p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-700">
+                                        Não encontramos uma tarefa vinculada a esta micro meta para envio de evidência.
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {podeEnviar && (
+                                          <TaskSubmissionForm
+                                            submitLabel="Enviar evidência da micro meta"
+                                            isSubmitting={submitEvidence.isPending}
+                                            submitError={submitEvidence.error?.message}
+                                            onSubmit={async (payload) => {
+                                              await submitEvidence.mutateAsync({ sessionId: tarefaVinculada.sessionId, ...payload });
+                                            }}
+                                            onSuccess={() => setTimeout(() => setMetaDetailOpen(null), 100)}
+                                            successMessage="Evidência da micro meta enviada com sucesso!"
+                                          />
+                                        )}
+
+                                        {possuiEnvio && (
+                                          <div className="space-y-2">
+                                            <p className="text-xs text-gray-600">
+                                              Enviado em: {tarefaVinculada.submittedAt ? new Date(tarefaVinculada.submittedAt).toLocaleString("pt-BR") : "—"}
+                                            </p>
+                                            {tarefaVinculada.relatoAluno && (
+                                              <div className="p-3 rounded bg-gray-50 border border-gray-200">
+                                                <p className="text-xs font-medium text-gray-700 mb-1">Relato do aluno</p>
+                                                <p className="text-xs text-gray-600">{tarefaVinculada.relatoAluno}</p>
+                                              </div>
+                                            )}
+                                            {tarefaVinculada.evidenceImageUrl && (
+                                              <img src={tarefaVinculada.evidenceImageUrl} alt="Evidência da micro meta" className="max-w-full max-h-64 rounded-lg border" />
+                                            )}
+                                            {tarefaVinculada.evidenceLink && (
+                                              <a href={tarefaVinculada.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="h-3 w-3" /> Abrir link da evidência
+                                              </a>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })()}
+          </TabsContent>
+
           {/* === TAREFAS PRÁTICAS === */}
-          <TabsContent value="tarefas" className="mt-4">
+          <TabsContent value="tarefas" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Cards de Resumo de Tarefas */}
             {(() => {
-              const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
+              const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && !s.isAssessment);
               const totalTarefas = sessoesComTarefa.length;
               const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue').length;
               const validadas = sessoesComTarefa.filter((s: any) => s.taskStatus === 'validada').length;
@@ -2150,7 +2793,7 @@ export default function DashboardMeuPerfil() {
                 </CardTitle>
                 <CardDescription className="text-gray-500">
                   {(() => {
-                    const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && s.sessionNumber !== 1);
+                    const sessoesComTarefa = sessoes.filter((s: any) => s.taskStatus && s.taskStatus !== 'sem_tarefa' && !s.isAssessment);
                     const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue' || s.taskStatus === 'validada');
                     return `${entregues.length} de ${sessoesComTarefa.length} atividades entregues`;
                   })()}
@@ -2191,8 +2834,8 @@ export default function DashboardMeuPerfil() {
                               <Badge variant="outline" className={taskStatusConfig.className}>
                                 <span className="flex items-center gap-1">{taskStatusConfig.icon} {isAssessment ? 'Assessment' : taskStatusConfig.label}</span>
                               </Badge>
-                              {/* Botão de envio de link para sessões pendentes */}
-                              {!isAssessment && sessao.taskStatus === 'nao_entregue' && (
+                              {/* Botão de envio: aparece se não há evidência real e não está validada */}
+                              {!isAssessment && sessao.taskStatus !== 'validada' && sessao.taskStatus !== 'sem_tarefa' && !(sessao.evidenceLink || sessao.evidenceImageUrl || sessao.submittedAt) && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -2214,7 +2857,7 @@ export default function DashboardMeuPerfil() {
 
                           {/* Dialog de envio de link para a sessão */}
                           <Dialog open={taskDetailOpen === sessao.id} onOpenChange={(open) => { if (!open) setTimeout(() => setTaskDetailOpen(null), 100); }}>
-                            <DialogContent className="max-w-lg">
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
                               <DialogHeader>
                                 <DialogTitle className="text-gray-900 flex items-center gap-2">
                                   <Link2 className="h-5 w-5 text-[#F5991F]" />
@@ -2225,151 +2868,15 @@ export default function DashboardMeuPerfil() {
                                 </DialogDescription>
                               </DialogHeader>
 
-                              <div className="space-y-4">
-                                {/* Instrução de compartilhamento na nuvem */}
-                                <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-                                  <p className="text-xs font-semibold text-blue-900 mb-1 flex items-center gap-2">
-                                    <Cloud className="h-4 w-4" /> Instruções de envio
-                                  </p>
-                                  <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-                                    <li>Salve sua atividade na nuvem (Google Drive, OneDrive, Dropbox, etc.)</li>
-                                    <li>Compartilhe o arquivo com o e-mail do(a) seu(sua) mentor(a){aluno.mentorEmail ? `: ` : ''}
-                                      {aluno.mentorEmail && <strong className="text-blue-900">{aluno.mentorEmail}</strong>}
-                                    </li>
-                                    <li>Copie o link de compartilhamento e cole no campo abaixo</li>
-                                  </ol>
-                                </div>
-
-                                {/* Campo de link */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-700 flex items-center gap-1">
-                                    <Link2 className="h-3 w-3" /> Link do arquivo na nuvem
-                                  </Label>
-                                  <Input
-                                    type="url"
-                                    placeholder="https://drive.google.com/... ou https://onedrive.live.com/..."
-                                    value={evidenceLink[sessao.id] || ''}
-                                    onChange={(e) => setEvidenceLink(prev => ({ ...prev, [sessao.id]: e.target.value }))}
-                                    className="text-sm"
-                                  />
-                                </div>
-
-                                {/* Campo de imagem opcional */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-700">Imagem de evidência (opcional, máx 5MB: JPG, PNG, WebP)</Label>
-                                  <div className="flex items-center gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        const input = document.createElement('input');
-                                        input.type = 'file';
-                                        input.accept = 'image/jpeg,image/png,image/webp';
-                                        input.onchange = (e: any) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) {
-                                            if (file.size > 5 * 1024 * 1024) {
-                                              alert('Imagem deve ter no máximo 5MB');
-                                              return;
-                                            }
-                                            setEvidenceFile(prev => ({ ...prev, [sessao.id]: file }));
-                                          }
-                                        };
-                                        input.click();
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      <Paperclip className="h-3 w-3 mr-1" /> Anexar Imagem
-                                    </Button>
-                                    {evidenceFile[sessao.id] && (
-                                      <span className="text-xs text-gray-600 flex items-center gap-1">
-                                        <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                                        {evidenceFile[sessao.id]!.name}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Relato opcional */}
-                                <div className="space-y-2">
-                                  <Label className="text-xs text-gray-700">Relato (opcional)</Label>
-                                  <Textarea
-                                    placeholder="Descreva como foi a realização desta atividade..."
-                                    value={relatoText[sessao.id] || ''}
-                                    onChange={(e) => setRelatoText(prev => ({ ...prev, [sessao.id]: e.target.value }))}
-                                    className="text-sm min-h-[60px] overflow-auto"
-                                  />
-                                </div>
-
-                                {/* Aplicabilidade Prática - obrigatório a partir de 01/04/2026 */}
-                                <div className="space-y-3 border-t pt-3 mt-2">
-                                  <div className="flex items-center gap-2">
-                                    <Target className="h-4 w-4 text-amber-600" />
-                                    <Label className="text-xs font-semibold text-gray-800">Aplicabilidade Prática</Label>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-xs text-gray-700">Como você aplicou na prática o que aprendeu nesta tarefa? <span className="text-red-500">*</span></Label>
-                                    <Textarea
-                                      placeholder="Descreva uma situação real em que você aplicou o conhecimento desta tarefa no seu dia a dia..."
-                                      value={aplicabilidadeText[sessao.id] || ''}
-                                      onChange={(e) => setAplicabilidadeText(prev => ({ ...prev, [sessao.id]: e.target.value }))}
-                                      className="text-sm min-h-[80px] overflow-auto"
-                                      maxLength={500}
-                                    />
-                                    <p className="text-xs text-gray-400 text-right">{(aplicabilidadeText[sessao.id] || '').length}/500</p>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="text-xs text-gray-700">De 0 a 10, o quanto esta tarefa ampliou seu conhecimento ou habilidade prática? <span className="text-red-500">*</span></Label>
-                                    <div className="flex gap-1 flex-wrap">
-                                      {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                                        <Button
-                                          key={n}
-                                          type="button"
-                                          variant={aplicabilidadeNota[sessao.id] === n ? 'default' : 'outline'}
-                                          size="sm"
-                                          className={`w-9 h-9 text-xs ${aplicabilidadeNota[sessao.id] === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
-                                          onClick={() => setAplicabilidadeNota(prev => ({ ...prev, [sessao.id]: n }))}
-                                        >
-                                          {n}
-                                        </Button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Botão de envio */}
-                                <Button
-                                  onClick={async () => {
-                                    if (!aplicabilidadeText[sessao.id]?.trim()) {
-                                      toast.error('Preencha o campo de aplicabilidade prática');
-                                      return;
-                                    }
-                                    if (aplicabilidadeNota[sessao.id] === undefined) {
-                                      toast.error('Selecione uma nota de 0 a 10 para a aplicabilidade prática');
-                                      return;
-                                    }
-                                    if (relatoText[sessao.id]) {
-                                      await submitRelato.mutateAsync({ sessionId: sessao.id, relatoAluno: relatoText[sessao.id] });
-                                    }
-                                    await submitAplicabilidade.mutateAsync({
-                                      sessionId: sessao.id,
-                                      textoAplicabilidade: aplicabilidadeText[sessao.id],
-                                      notaAlunoAplicabilidade: aplicabilidadeNota[sessao.id],
-                                    });
-                                    await handleEvidenceSubmit(sessao.id);
-                                    toast.success('Atividade enviada com sucesso!');
-                                    setTimeout(() => setTaskDetailOpen(null), 100);
-                                  }}
-                                  disabled={(!evidenceLink[sessao.id] && !evidenceFile[sessao.id]) || submitEvidence.isPending || !aplicabilidadeText[sessao.id]?.trim() || aplicabilidadeNota[sessao.id] === undefined}
-                                  className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
-                                >
-                                  <Send className="h-4 w-4 mr-2" />
-                                  {submitEvidence.isPending ? 'Enviando...' : 'Enviar Atividade'}
-                                </Button>
-                                {submitEvidence.isError && (
-                                  <p className="text-xs text-red-600">{submitEvidence.error?.message}</p>
-                                )}
-                              </div>
+                              <TaskSubmissionForm
+                                submitLabel="Enviar atividade"
+                                isSubmitting={submitEvidence.isPending}
+                                submitError={submitEvidence.error?.message}
+                                onSubmit={async (payload) => {
+                                  await submitEvidence.mutateAsync({ sessionId: sessao.id, ...payload });
+                                }}
+                                onSuccess={() => setTimeout(() => setTaskDetailOpen(null), 100)}
+                              />
                             </DialogContent>
                           </Dialog>
                         </div>
@@ -2432,7 +2939,7 @@ export default function DashboardMeuPerfil() {
                               </p>
                             </div>
                             <div className="flex items-center gap-1">
-                              {task.taskStatus === 'nao_entregue' && (
+                              {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -2509,7 +3016,7 @@ export default function DashboardMeuPerfil() {
                                 )}
 
                                 {/* Instrução de compartilhamento na nuvem */}
-                                {task.taskStatus === 'nao_entregue' && (
+                                {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                   <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
                                     <p className="text-xs font-semibold text-blue-900 mb-1 flex items-center gap-2">
                                       <Cloud className="h-4 w-4" /> Lembre-se
@@ -2528,134 +3035,21 @@ export default function DashboardMeuPerfil() {
                                   </Badge>
                                 </div>
 
-                                {/* Se PENDENTE: formulário de envio */}
-                                {task.taskStatus === 'nao_entregue' && (
+                                {/* Formulário de envio: disponível enquanto não há evidência real e não está validada */}
+                                {task.taskStatus !== 'validada' && task.taskStatus !== 'sem_tarefa' && !(task.evidenceLink || task.evidenceImageUrl || task.submittedAt) && (
                                   <div className="space-y-3 p-4 rounded-lg bg-amber-50/50 border border-amber-200">
                                     <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                                       <Upload className="h-4 w-4 text-[#F5991F]" /> Enviar Evidência
                                     </h4>
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-gray-700 flex items-center gap-1">
-                                        <Link2 className="h-3 w-3" /> Link do arquivo na nuvem
-                                      </Label>
-                                      <Input
-                                        type="url"
-                                        placeholder="https://drive.google.com/... ou https://onedrive.live.com/..."
-                                        value={evidenceLink[task.sessionId] || ''}
-                                        onChange={(e) => setEvidenceLink(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
-                                        className="text-sm"
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-gray-700">Imagem (opcional, máx 5MB: JPG, PNG, WebP)</Label>
-                                      <div className="flex items-center gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => {
-                                            const input = document.createElement('input');
-                                            input.type = 'file';
-                                            input.accept = 'image/jpeg,image/png,image/webp';
-                                            input.onchange = (e: any) => {
-                                              const file = e.target.files?.[0];
-                                              if (file) {
-                                                if (file.size > 5 * 1024 * 1024) {
-                                                  alert('Imagem deve ter no máximo 5MB');
-                                                  return;
-                                                }
-                                                setEvidenceFile(prev => ({ ...prev, [task.sessionId]: file }));
-                                              }
-                                            };
-                                            input.click();
-                                          }}
-                                          className="text-xs"
-                                        >
-                                          <Paperclip className="h-3 w-3 mr-1" /> Anexar Imagem
-                                        </Button>
-                                        {evidenceFile[task.sessionId] && (
-                                          <span className="text-xs text-gray-600 flex items-center gap-1">
-                                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                                            {evidenceFile[task.sessionId]!.name}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-gray-700">Relato (opcional)</Label>
-                                      <Textarea
-                                        placeholder="Descreva como foi a realização desta tarefa..."
-                                        value={relatoText[task.sessionId] || ''}
-                                        onChange={(e) => setRelatoText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
-                                        className="text-sm min-h-[60px]"
-                                      />
-                                    </div>
-
-                                    {/* Aplicabilidade Prática - obrigatório */}
-                                    <div className="space-y-3 border-t pt-3 mt-2">
-                                      <div className="flex items-center gap-2">
-                                        <Target className="h-4 w-4 text-amber-600" />
-                                        <Label className="text-xs font-semibold text-gray-800">Aplicabilidade Prática</Label>
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label className="text-xs text-gray-700">Como você aplicou na prática o que aprendeu nesta tarefa? <span className="text-red-500">*</span></Label>
-                                        <Textarea
-                                          placeholder="Descreva uma situação real em que você aplicou o conhecimento desta tarefa no seu dia a dia..."
-                                          value={aplicabilidadeText[task.sessionId] || ''}
-                                          onChange={(e) => setAplicabilidadeText(prev => ({ ...prev, [task.sessionId]: e.target.value }))}
-                                          className="text-sm min-h-[80px]"
-                                          maxLength={500}
-                                        />
-                                        <p className="text-xs text-gray-400 text-right">{(aplicabilidadeText[task.sessionId] || '').length}/500</p>
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label className="text-xs text-gray-700">De 0 a 10, o quanto esta tarefa ampliou seu conhecimento ou habilidade prática? <span className="text-red-500">*</span></Label>
-                                        <div className="flex gap-1 flex-wrap">
-                                          {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
-                                            <Button
-                                              key={n}
-                                              type="button"
-                                              variant={aplicabilidadeNota[task.sessionId] === n ? 'default' : 'outline'}
-                                              size="sm"
-                                              className={`w-9 h-9 text-xs ${aplicabilidadeNota[task.sessionId] === n ? 'bg-amber-600 hover:bg-amber-700 text-white' : ''}`}
-                                              onClick={() => setAplicabilidadeNota(prev => ({ ...prev, [task.sessionId]: n }))}
-                                            >
-                                              {n}
-                                            </Button>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <Button
-                                      onClick={async () => {
-                                        if (!aplicabilidadeText[task.sessionId]?.trim()) {
-                                          toast.error('Preencha o campo de aplicabilidade prática');
-                                          return;
-                                        }
-                                        if (aplicabilidadeNota[task.sessionId] === undefined) {
-                                          toast.error('Selecione uma nota de 0 a 10 para a aplicabilidade prática');
-                                          return;
-                                        }
-                                        if (relatoText[task.sessionId]) {
-                                          await submitRelato.mutateAsync({ sessionId: task.sessionId, relatoAluno: relatoText[task.sessionId] });
-                                        }
-                                        await submitAplicabilidade.mutateAsync({
-                                          sessionId: task.sessionId,
-                                          textoAplicabilidade: aplicabilidadeText[task.sessionId],
-                                          notaAlunoAplicabilidade: aplicabilidadeNota[task.sessionId],
-                                        });
-                                        await handleEvidenceSubmit(task.sessionId);
-                                        toast.success('Evidência enviada com sucesso!');
+                                    <TaskSubmissionForm
+                                      submitLabel="Enviar evidência"
+                                      isSubmitting={submitEvidence.isPending}
+                                      submitError={submitEvidence.error?.message}
+                                      onSubmit={async (payload) => {
+                                        await submitEvidence.mutateAsync({ sessionId: task.sessionId, ...payload });
                                       }}
-                                      disabled={(!evidenceLink[task.sessionId] && !evidenceFile[task.sessionId]) || submitEvidence.isPending || !aplicabilidadeText[task.sessionId]?.trim() || aplicabilidadeNota[task.sessionId] === undefined}
-                                      className="w-full bg-[#F5991F] hover:bg-[#F5991F]/90 text-white"
-                                    >
-                                      <Send className="h-4 w-4 mr-2" />
-                                      {submitEvidence.isPending ? 'Enviando...' : 'Enviar Evidência'}
-                                    </Button>
-                                    {submitEvidence.isError && (
-                                      <p className="text-xs text-red-600">{submitEvidence.error?.message}</p>
-                                    )}
+                                      successMessage="Evidência enviada com sucesso!"
+                                    />
                                   </div>
                                 )}
 
@@ -2738,7 +3132,7 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
 
           {/* === CURSOS === */}
-          <TabsContent value="cursos" className="mt-4">
+          <TabsContent value="cursos" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-sm text-gray-700 flex items-center gap-2">
@@ -2758,7 +3152,7 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
 
           {/* === CASES DE SUCESSO === */}
-          <TabsContent value="cases" className="mt-4">
+          <TabsContent value="cases" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-4">
               {/* Explicação */}
               <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 shadow-sm">
@@ -2766,9 +3160,9 @@ export default function DashboardMeuPerfil() {
                   <div className="flex items-start gap-3">
                     <Briefcase className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-semibold text-amber-800 text-sm">Relatório de Impacto</p>
+                      <p className="font-semibold text-amber-800 text-sm">Case de Impacto do Aprendizado</p>
                       <p className="text-xs text-amber-700 mt-1">
-                        Ao final de cada trilha (Basic, Essential, Master, etc.), você deve entregar um Relatório de Impacto 
+                        Ao final de cada trilha (Basic, Essential, Master, etc.), você deve entregar um Case de Impacto do Aprendizado 
                         documentando a aplicação prática dos aprendizados. A entrega do case é obrigatória e impacta 
                         diretamente no seu Indicador 6 (Aplicabilidade Prática).
                       </p>
@@ -2795,7 +3189,7 @@ export default function DashboardMeuPerfil() {
                             </div>
                             <div>
                               <p className="font-semibold text-sm text-gray-800">Trilha {trilha.name}</p>
-                              <InfoTooltip text="Relatório de Impacto: formulário estruturado que comprova a aplicação prática dos aprendizados da trilha" />
+                              <InfoTooltip text="Case de Impacto do Aprendizado: formulário estruturado que comprova a aplicação prática dos aprendizados da trilha" />
                             </div>
                           </div>
                           <Badge className={caseEntregue?.entregue 
@@ -2832,6 +3226,13 @@ export default function DashboardMeuPerfil() {
                                 setCaseTrilhaNome(trilha.name);
                                 setCaseTitulo(caseEntregue.titulo || '');
                                 setCaseDescricao(caseEntregue.descricao || '');
+                                setCaseResumoPublico(caseEntregue.resumoPublico || '');
+                                setCaseOQueAprendi(caseEntregue.oQueAprendi || '');
+                                setCaseOQueMudei(caseEntregue.oQueMudei || '');
+                                setCaseResultadoMensuravel(caseEntregue.resultadoMensuravel || '');
+                                setCaseAntesVsDepois(caseEntregue.antesVsDepois || '');
+                                setCaseNotaAplicabilidade(caseEntregue.notaAplicabilidade ?? 5);
+                                setCaseFile(null);
                                 setCaseDialogOpen(true);
                               }}
                             >
@@ -2841,7 +3242,7 @@ export default function DashboardMeuPerfil() {
                         ) : (
                           <div className="space-y-3">
                             <p className="text-xs text-gray-500">
-                              Envie seu Relatório de Impacto para a trilha {trilha.name}. 
+                              Envie seu Case de Impacto do Aprendizado para a trilha {trilha.name}. 
                               Formatos aceitos: PDF, DOC, DOCX, PPT, PPTX (máx. 10MB).
                             </p>
                             <Button
@@ -2855,7 +3256,7 @@ export default function DashboardMeuPerfil() {
                                 setCaseDialogOpen(true);
                               }}
                             >
-                              <FileUp className="h-4 w-4 mr-2" /> Enviar Relatório de Impacto
+                              <FileUp className="h-4 w-4 mr-2" /> Enviar Case de Impacto do Aprendizado
                             </Button>
                           </div>
                         )}
@@ -2878,7 +3279,7 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
 
           {/* === MEU PERFIL DISC === */}
-          <TabsContent value="meu-perfil-disc" className="mt-4">
+          <TabsContent value="meu-perfil-disc" className="mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Suspense fallback={
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
@@ -2892,13 +3293,13 @@ export default function DashboardMeuPerfil() {
           </TabsContent>
         </Tabs>
 
-        {/* Dialog de envio de Relatório de Impacto */}
+        {/* Dialog de envio de Case de Impacto do Aprendizado */}
         <Dialog open={caseDialogOpen} onOpenChange={setCaseDialogOpen}>
           <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <FileBarChart className="h-5 w-5 text-[#5B3A7D]" />
-                Relatório de Impacto
+                Case de Impacto do Aprendizado
               </DialogTitle>
               <DialogDescription>
                 Trilha: <strong>{caseTrilhaNome}</strong> — Descreva o impacto real do que você aprendeu
@@ -2914,6 +3315,32 @@ export default function DashboardMeuPerfil() {
                   value={caseTitulo}
                   onChange={e => setCaseTitulo(e.target.value)}
                 />
+              </div>
+
+              {/* Resumo público para vitrine */}
+              <div className="space-y-2">
+                <Label htmlFor="case-resumo-publico">Resumo público do CASE *</Label>
+                <p className="text-xs text-gray-500">
+                  Escreva um resumo curto para publicação no Mural. Não cite nomes de pessoas envolvidas.
+                </p>
+                <Textarea
+                  id="case-resumo-publico"
+                  placeholder="Desperte o interesse sobre o case em poucas linhas (máx. 500 caracteres)."
+                  value={caseResumoPublico}
+                  onChange={e => setCaseResumoPublico(e.target.value.slice(0, 500))}
+                  rows={3}
+                  className={caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? "border-red-400 focus-visible:ring-red-400" : ""}
+                />
+                <div className="flex items-center justify-between">
+                  {caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? (
+                    <p className="text-[11px] text-red-500 font-medium">
+                      O resumo deve ter ao menos 20 caracteres ({20 - caseResumoPublico.length} restantes)
+                    </p>
+                  ) : (
+                    <span />
+                  )}
+                  <p className={`text-[11px] ${caseResumoPublico.length > 0 && caseResumoPublico.length < 20 ? 'text-red-400' : 'text-gray-400'}`}>{caseResumoPublico.length}/500</p>
+                </div>
               </div>
 
               {/* 1. O que aprendi */}
@@ -3019,6 +3446,31 @@ export default function DashboardMeuPerfil() {
                     }
                   }}
                 />
+              </div>
+
+              {/* Link de vídeo (opcional) — campo visual, valor salvo quando coluna existir no banco */}
+              <div className="space-y-2">
+                <Label htmlFor="case-video-link" className="flex items-center gap-1.5">
+                  <Video className="h-4 w-4 text-red-500" />
+                  Link de vídeo (opcional)
+                </Label>
+                <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800 space-y-1.5">
+                  <p className="font-semibold">Se o seu relatório for em vídeo, você pode:</p>
+                  <p>▶ <strong>YouTube:</strong> publique o vídeo como <em>Não listado</em> ou <em>Privado</em> e cole o link abaixo. Vídeos privados precisam ser compartilhados com <strong>relacionamento@ckmtalents.net</strong>.</p>
+                  <p>▶ <strong>Google Drive:</strong> faça upload do arquivo e compartilhe com permissão de <em>Visualizar e baixar</em> para <strong>relacionamento@ckmtalents.net</strong>, depois cole o link abaixo.</p>
+                </div>
+                <Input
+                  id="case-video-link"
+                  type="url"
+                  placeholder="https://youtu.be/... ou https://drive.google.com/..."
+                  value={caseVideoLink}
+                  onChange={e => setCaseVideoLink(e.target.value)}
+                />
+                {caseVideoLink && (
+                  <a href={caseVideoLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                    <ExternalLink className="h-3 w-3" /> Verificar link
+                  </a>
+                )}
               </div>
 
               {/* Arquivo complementar (opcional) */}
@@ -3169,19 +3621,20 @@ function MentorProfileCard({ mentorId, mentorName }: { mentorId: number; mentorN
 }
 
 
-function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId: number; consultorId: number; mentorName: string }) {
+function AlunoAgendamentoSection({ alunoId, consultorId, mentorName, isEfetivo = false }: { alunoId: number; consultorId: number; mentorName: string; isEfetivo?: boolean }) {
   const { data: availability } = trpc.mentor.getAvailability.useQuery({ consultorId });
+  const { data: dateAvailability } = trpc.mentor.getDateAvailability.useQuery({ consultorId });
   const { data: myAppointments } = trpc.mentor.getAppointments.useQuery({ consultorId });
   const bookMutation = trpc.mentor.bookAppointment.useMutation();
   const respondMutation = trpc.mentor.respondToInvite.useMutation();
   const utils = trpc.useUtils();
 
   const [showBooking, setShowBooking] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState<{ id?: number; startTime: string; endTime: string; googleMeetLink?: string | null } | null>(null);
+  const [selectedDateSlot, setSelectedDateSlot] = useState<{ date: string; startTime: string; endTime: string; duration: number; meetLink: string; source: 'date' | 'weekly'; availabilityId?: number } | null>(null);
   const [bookingNotes, setBookingNotes] = useState('');
 
   const DAYS_OF_WEEK = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
   // Filtrar convites de grupo pendentes para este aluno
   const pendingInvites = (myAppointments || []).filter(
@@ -3193,25 +3646,87 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
     a => a.participants.some((p: any) => p.alunoId === alunoId && (p.status === 'confirmado' || p.status === 'agendado'))
   );
 
+  // Verificar se um slot já está ocupado
+  const isSlotOccupied = (date: string, startTime: string) => {
+    if (!myAppointments) return false;
+    return myAppointments.some(appt =>
+      appt.scheduledDate === date && appt.startTime === startTime && appt.status !== 'cancelado'
+    );
+  };
+
+  // Slots de datas específicas (futuras e ativas)
+  const specificDateSlots = useMemo(() => {
+    if (!dateAvailability) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    return dateAvailability
+      .filter((s: any) => s.isActive === 1 && s.specificDate >= today && !isSlotOccupied(s.specificDate, s.startTime))
+      .sort((a: any, b: any) => a.specificDate.localeCompare(b.specificDate) || a.startTime.localeCompare(b.startTime));
+  }, [dateAvailability, myAppointments]);
+
+  // Slots recorrentes (próximos 30 dias)
+  const weeklyGeneratedSlots = useMemo(() => {
+    if (!availability) return [];
+    const activeSlots = availability.filter((a: any) => a.isActive === 1);
+    if (activeSlots.length === 0) return [];
+    const slots: { date: string; startTime: string; endTime: string; duration: number; meetLink: string; source: 'weekly'; availabilityId: number }[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 1; i <= 30; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dayOfWeek = d.getDay();
+      const dateStr = d.toISOString().slice(0, 10);
+      const hasSpecificSlot = specificDateSlots.some((s: any) => s.specificDate === dateStr);
+      if (hasSpecificSlot) continue;
+      const matchingSlots = activeSlots.filter((s: any) => s.dayOfWeek === dayOfWeek);
+      for (const slot of matchingSlots) {
+        if (!isSlotOccupied(dateStr, slot.startTime)) {
+          slots.push({ date: dateStr, startTime: slot.startTime, endTime: slot.endTime, duration: slot.slotDurationMinutes, meetLink: slot.googleMeetLink || '', source: 'weekly', availabilityId: slot.id });
+        }
+      }
+    }
+    return slots;
+  }, [availability, myAppointments, specificDateSlots]);
+
+  // Combinar e ordenar todos os slots
+  const allSlots = useMemo(() => {
+    const combined: { date: string; startTime: string; endTime: string; duration: number; meetLink: string; source: 'date' | 'weekly'; availabilityId?: number }[] = [];
+    for (const s of specificDateSlots) {
+      combined.push({ date: (s as any).specificDate, startTime: (s as any).startTime, endTime: (s as any).endTime, duration: (s as any).slotDurationMinutes, meetLink: (s as any).googleMeetLink || '', source: 'date' });
+    }
+    for (const s of weeklyGeneratedSlots) {
+      combined.push({ date: s.date, startTime: s.startTime, endTime: s.endTime, duration: s.duration, meetLink: s.meetLink, source: 'weekly', availabilityId: s.availabilityId });
+    }
+    combined.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+    return combined;
+  }, [specificDateSlots, weeklyGeneratedSlots]);
+
+  const formatSlotDate = (dateStr: string) => {
+    try {
+      const [y, m, d] = dateStr.split('-');
+      const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+      return `${DAYS_OF_WEEK[dateObj.getDay()]}, ${d} de ${MONTHS[Number(m) - 1]}`;
+    } catch { return dateStr; }
+  };
+
   const handleBook = async () => {
-    if (!selectedDate || !selectedSlot) {
+    if (!selectedDateSlot) {
       toast.error('Selecione uma data e horário');
       return;
     }
     try {
       await bookMutation.mutateAsync({
         consultorId,
-        availabilityId: selectedSlot.id || 0,
-        scheduledDate: selectedDate,
-        startTime: selectedSlot.startTime,
-        endTime: selectedSlot.endTime,
+        availabilityId: selectedDateSlot.availabilityId || 0,
+        scheduledDate: selectedDateSlot.date,
+        startTime: selectedDateSlot.startTime,
+        endTime: selectedDateSlot.endTime,
         notes: bookingNotes || undefined,
       });
       utils.mentor.getAppointments.invalidate();
       toast.success('Sessão agendada com sucesso!');
       setShowBooking(false);
-      setSelectedDate('');
-      setSelectedSlot(null);
+      setSelectedDateSlot(null);
       setBookingNotes('');
     } catch (e: any) {
       toast.error(e.message || 'Erro ao agendar sessão');
@@ -3227,9 +3742,6 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
       toast.error(e.message || 'Erro ao responder');
     }
   };
-
-  // Horários disponíveis do mentor agrupados por dia
-  const activeSlots = (availability || []).filter(a => a.isActive === 1);
 
   return (
     <div className="space-y-4 mb-4">
@@ -3330,7 +3842,7 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
       )}
 
       {/* Botão para Agendar Nova Sessão */}
-      <Card className="bg-white border border-gray-200 shadow-sm">
+      {!isEfetivo && <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-sm text-gray-700">
@@ -3349,71 +3861,58 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
         </CardHeader>
         {showBooking && (
           <CardContent className="space-y-4">
-            {activeSlots.length === 0 ? (
+            {allSlots.length === 0 ? (
               <div className="text-center py-6 text-gray-500">
                 <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
                 <p>O mentor ainda não configurou horários disponíveis.</p>
               </div>
             ) : (
               <>
-                {/* Horários disponíveis do mentor */}
+                {/* Datas e horários disponíveis */}
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Horários disponíveis do mentor:</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {DAYS_OF_WEEK.map((dayName, dayIdx) => {
-                      const daySlots = activeSlots.filter(a => a.dayOfWeek === dayIdx);
-                      if (daySlots.length === 0) return null;
+                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Selecione uma data e horário:</Label>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {allSlots.map((slot, idx) => {
+                      const isSelected = selectedDateSlot?.date === slot.date && selectedDateSlot?.startTime === slot.startTime;
                       return (
-                        <div key={dayIdx} className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-                          <p className="text-xs font-semibold text-gray-600 mb-1">{dayName}</p>
-                          {daySlots.map((slot, i) => (
-                            <button
-                              key={i}
-                              onClick={() => setSelectedSlot(slot)}
-                              className={`block w-full text-left text-sm p-2 rounded mt-1 transition-colors ${
-                                selectedSlot?.startTime === slot.startTime && selectedSlot?.endTime === slot.endTime
-                                  ? 'bg-blue-100 border border-blue-300 text-blue-800'
-                                  : 'bg-white border border-gray-200 hover:bg-blue-50 text-gray-700'
-                              }`}
-                            >
-                              {slot.startTime} — {slot.endTime}
-                              {slot.googleMeetLink && <Video className="h-3 w-3 inline ml-2 text-blue-500" />}
-                            </button>
-                          ))}
-                        </div>
+                        <button
+                          key={`${slot.date}-${slot.startTime}-${idx}`}
+                          onClick={() => setSelectedDateSlot(isSelected ? null : slot)}
+                          className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 shadow-sm'
+                              : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{formatSlotDate(slot.date)}</p>
+                              <p className="text-sm text-gray-600 flex items-center gap-1 mt-0.5">
+                                <Clock className="h-3 w-3" />
+                                {slot.startTime} — {slot.endTime}
+                                <span className="text-xs text-gray-400 ml-1">({slot.duration}min)</span>
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {slot.source === 'date' && (
+                                <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-300">Data Específica</Badge>
+                              )}
+                              {slot.meetLink && <Video className="h-4 w-4 text-blue-500" />}
+                              {isSelected && <CheckCircle2 className="h-4 w-4 text-blue-600" />}
+                            </div>
+                          </div>
+                        </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {selectedSlot && (
+                {selectedDateSlot && (
                   <>
-                    <div>
-                      <Label className="text-sm font-medium text-gray-700">Data da sessão:</Label>
-                      <Input
-                        type="date"
-                        value={selectedDate}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setSelectedDate(val);
-                        }}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="mt-1"
-                      />
-                      {/* A4 FIX: Validar dia da semana */}
-                      {selectedDate && (() => {
-                        const dateObj = new Date(selectedDate + 'T12:00:00');
-                        const dayOfWeek = dateObj.getDay();
-                        const slotDay = (activeSlots.find(s => s.startTime === selectedSlot.startTime && s.endTime === selectedSlot.endTime) as any)?.dayOfWeek;
-                        if (slotDay !== undefined && dayOfWeek !== slotDay) {
-                          return (
-                            <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                              <span>&#9888;</span> O horário selecionado é para <strong>{DAYS_OF_WEEK[slotDay]}</strong>, mas a data escolhida é <strong>{DAYS_OF_WEEK[dayOfWeek]}</strong>. Selecione uma data que caia em {DAYS_OF_WEEK[slotDay]}.
-                            </p>
-                          );
-                        }
-                        return null;
-                      })()}
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs font-semibold text-blue-700 mb-1">Sessão selecionada:</p>
+                      <p className="text-sm font-medium text-gray-900">{formatSlotDate(selectedDateSlot.date)}</p>
+                      <p className="text-sm text-gray-600">{selectedDateSlot.startTime} — {selectedDateSlot.endTime}</p>
                     </div>
                     <div>
                       <Label className="text-sm font-medium text-gray-700">Observações (opcional):</Label>
@@ -3427,14 +3926,7 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
                     <div className="flex justify-end">
                       <Button
                         onClick={handleBook}
-                        disabled={bookMutation.isPending || !selectedDate || (() => {
-                          // A4 FIX: Desabilitar se dia da semana não corresponde ao slot
-                          if (!selectedDate) return true;
-                          const dateObj = new Date(selectedDate + 'T12:00:00');
-                          const dayOfWeek = dateObj.getDay();
-                          const slotDay = (activeSlots.find(s => s.startTime === selectedSlot.startTime && s.endTime === selectedSlot.endTime) as any)?.dayOfWeek;
-                          return slotDay !== undefined && dayOfWeek !== slotDay;
-                        })()}
+                        disabled={bookMutation.isPending}
                         className="bg-[#1E3A5F] hover:bg-[#2a4f7f]"
                       >
                         <Calendar className="h-4 w-4 mr-2" /> Confirmar Agendamento
@@ -3446,7 +3938,7 @@ function AlunoAgendamentoSection({ alunoId, consultorId, mentorName }: { alunoId
             )}
           </CardContent>
         )}
-      </Card>
+      </Card>}
     </div>
   );
 }

@@ -32,6 +32,17 @@ export async function sendEmail(options: {
   text?: string;
   cc?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Envio habilitado quando SMTP_USER e SMTP_PASS estiverem configurados
+  // EMAIL_ENABLED=false desativa explicitamente (ex: ambiente de desenvolvimento sem SMTP)
+  const smtpConfigurado = !!(ENV.smtpUser && ENV.smtpPass);
+  if (!ENV.emailEnabled && !smtpConfigurado) {
+    console.log(`[Email] Envio desativado: EMAIL_ENABLED=false e sem credenciais SMTP. Destinatário: ${options.to}`);
+    return { success: false, error: "Envio de e-mails temporariamente desativado." };
+  }
+  if (!ENV.emailEnabled && smtpConfigurado) {
+    console.log(`[Email] EMAIL_ENABLED=false ignorado pois SMTP está configurado. Prosseguindo envio para: ${options.to}`);
+  }
+
   try {
     const transport = getTransporter();
     const info = await transport.sendMail({
@@ -53,6 +64,11 @@ export async function sendEmail(options: {
 // ============ VERIFY SMTP CONNECTION ============
 
 export async function verifySmtpConnection(): Promise<boolean> {
+  if (!ENV.emailEnabled) {
+    console.log("[Email] Verificação SMTP ignorada: envio desativado.");
+    return false;
+  }
+
   try {
     const transport = getTransporter();
     await transport.verify();
@@ -1612,6 +1628,671 @@ Sua autoavaliação será comparada com a avaliação da mentora e juntas formam
 Acesse a plataforma: ${data.loginUrl}
 
 © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+
+  return { subject, html, text };
+}
+
+// ============ LEMBRETE DE ACESSO - RANKING GERAL DE ENGAJAMENTO ============
+export function buildLembreteEngajamentoEmail(data: {
+  nomeAluno: string;
+  turma: string;
+  posicao: number;
+  ind1Webinars: number;
+  ind2Avaliacoes: number;
+  ind3Competencias: number;
+  ind4Tarefas: number;
+  ind5Engajamento: number;
+  engajamentoFinal: number;
+}): { subject: string; html: string; text: string } {
+  const fmt = (v: number) => `${Math.round(v)}%`;
+  const subject = "Performance de Engajamento — Ecossistema do Bem";
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; margin: 0; padding: 24px; color: #1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 680px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb;">
+    <!-- Header com logo -->
+    <tr>
+      <td style="padding: 28px 24px 16px; text-align: center; border-bottom: 1px solid #e5e7eb;">
+        <img src="${logoUrl}" alt="Ecossistema do Bem" width="160" style="display:block;margin:0 auto 12px;" />
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700; color: #0A1E3E;">Performance de Engajamento</h1>
+      </td>
+    </tr>
+    <!-- Corpo -->
+    <tr>
+      <td style="padding: 24px;">
+        <p style="margin: 0 0 20px; font-size: 15px; line-height: 1.7; color: #374151;">
+          Olá, <strong>${data.nomeAluno}</strong>! Confira abaixo o resumo da sua performance na plataforma.
+        </p>
+        <!-- Tabela de indicadores -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: #0A1E3E; color: #ffffff;">
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Posição</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #1e3a5f;">Pessoa</th>
+              <th style="padding: 10px 8px; text-align: left; border: 1px solid #1e3a5f;">Turma</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 1: Webinars</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 2: Avaliações</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 3: Competências</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 4: Tarefas</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. 5: Engajamento</th>
+              <th style="padding: 10px 8px; text-align: center; border: 1px solid #1e3a5f;">Ind. Média: Engajamento Final</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: #f0fdf4;">
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 700; color: #0A1E3E;">${data.posicao}º</td>
+              <td style="padding: 10px 8px; text-align: left; border: 1px solid #d1d5db; font-weight: 600;">${data.nomeAluno}</td>
+              <td style="padding: 10px 8px; text-align: left; border: 1px solid #d1d5db; color: #6b7280; font-size: 12px;">${data.turma}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind1Webinars)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind2Avaliacoes)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind3Competencias)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind4Tarefas)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db;">${fmt(data.ind5Engajamento)}</td>
+              <td style="padding: 10px 8px; text-align: center; border: 1px solid #d1d5db; font-weight: 700; color: #059669;">${fmt(data.engajamentoFinal)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin: 20px 0 0; font-size: 14px; line-height: 1.7; color: #374151;">
+          Acesse a plataforma e continue evoluindo: <a href="http://ecolider.ecodobem.com" style="color: #1d4ed8; text-decoration: none;">ecolider.ecodobem.com</a>
+        </p>
+      </td>
+    </tr>
+    <!-- Footer -->
+    <tr>
+      <td style="padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb; font-size: 12px; color: #9ca3af;">
+        Ecossistema do Bem &mdash; Este é um e-mail automático, por favor não responda.
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Performance de Engajamento\n\nOlá, ${data.nomeAluno}!\n\nPosição: ${data.posicao}º\nTurma: ${data.turma}\nInd. 1 Webinars: ${fmt(data.ind1Webinars)}\nInd. 2 Avaliações: ${fmt(data.ind2Avaliacoes)}\nInd. 3 Competências: ${fmt(data.ind3Competencias)}\nInd. 4 Tarefas: ${fmt(data.ind4Tarefas)}\nInd. 5 Engajamento: ${fmt(data.ind5Engajamento)}\nEngajamento Final: ${fmt(data.engajamentoFinal)}\n\nAcesse: http://ecolider.ecodobem.com`;
+
+  return { subject, html, text };
+}
+
+export function buildSolicitacaoAlteracaoMentoraEmail(data: {
+  alunoName: string;
+  alunoEmail: string;
+  mentoraAtualNome: string;
+  justificativa: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Solicitação de alteração de mentora — ${data.alunoName}`;
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: Arial, sans-serif; background: #f8fafc; padding: 24px; color: #111827;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px;">
+    <tr>
+      <td style="padding: 24px;">
+        <h2 style="margin: 0 0 16px; color: #0A1E3E;">Solicitação de alteração de mentora</h2>
+        <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6;">Um aluno enviou solicitação de alteração de mentora durante o onboarding.</p>
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+          <p style="margin: 0 0 6px; font-size: 14px;"><strong>Aluno:</strong> ${data.alunoName}</p>
+          <p style="margin: 0 0 6px; font-size: 14px;"><strong>E-mail:</strong> ${data.alunoEmail}</p>
+          <p style="margin: 0; font-size: 14px;"><strong>Mentora atual:</strong> ${data.mentoraAtualNome}</p>
+        </div>
+        <p style="margin: 0 0 6px; font-size: 14px;"><strong>Justificativa:</strong></p>
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${data.justificativa}</div>
+        <p style="margin: 18px 0 0; font-size: 13px; line-height: 1.6; color: #374151;">
+          Para efetivar a alteração, acesse <strong>Cadastros &gt; Alunos</strong> e edite o campo da mentora (<strong>consultorId</strong>) no cadastro do aluno.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Solicitação de alteração de mentora
+
+Aluno: ${data.alunoName}
+E-mail: ${data.alunoEmail}
+Mentora atual: ${data.mentoraAtualNome}
+
+Justificativa:
+${data.justificativa}
+
+Para efetivar a alteração, acesse Cadastros > Alunos e edite o campo da mentora (consultorId) no cadastro do aluno.`;
+
+  return { subject, html, text };
+}
+
+// ============ NOVO CASE EMAIL ============
+
+export function buildNovoCaseEmail(data: {
+  alunoNome: string;
+  empresaNome: string;
+  caseTitulo: string;
+  caseResumoPublico: string;
+  muralUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Novo Case de Sucesso: ${data.caseTitulo}`;
+
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+          
+          <!-- Header com Logo -->
+          <tr>
+            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 12px;" />
+              <p style="color: #6b7280; margin: 4px 0 0; font-size: 13px;">
+                Programa de Desenvolvimento e Mentoria
+              </p>
+            </td>
+          </tr>
+          <!-- Divider -->
+          <tr>
+            <td style="padding: 0 40px;">
+              <hr style="border: none; border-top: 2px solid #e8a838; margin: 0;" />
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #0f2b3c; margin: 0 0 20px; font-size: 20px;">
+                Hoje temos novidades!
+              </h2>
+              
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                <strong>${data.alunoNome}</strong> da Empresa <strong>${data.empresaNome}</strong> publicou um novo Case de Aplicabilidade Prática do seu aprendizado com o Título <strong>${data.caseTitulo}</strong>.
+              </p>
+
+              <!-- Info Box -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 25px;">
+                <tr>
+                  <td style="background-color: #f0f7fa; border: 1px solid #d1e5ed; border-radius: 8px; padding: 20px;">
+                    <p style="color: #0f2b3c; font-size: 14px; font-style: italic; margin: 0; line-height: 1.6;">
+                      "${data.caseResumoPublico}"
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 25px;">
+                Não deixe de interagir com ele(a) para saber como foi esta conquista. Sempre temos muito pra aprender com os nossos colegas de formação!!!
+              </p>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.muralUrl}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                      Ver no Mural de Cases
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
+                      Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.<br>
+                      &copy; ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Hoje temos novidades!
+
+${data.alunoNome} da Empresa ${data.empresaNome} publicou um novo Case de Aplicabilidade Prática do seu aprendizado com o Título "${data.caseTitulo}".
+
+Resumo:
+"${data.caseResumoPublico}"
+
+Não deixe de interagir com ele(a) para saber como foi esta conquista. Sempre temos muito pra aprender com os nossos colegas de formação!!!
+
+Acesse o Mural de Cases: ${data.muralUrl}
+
+Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.
+&copy; ${new Date().getFullYear()} CKM Talents`;
+
+  return { subject, html, text };
+}
+
+export function buildTarefaEmAbertoEmail(data: {
+  mentorName: string;
+  alunoName: string;
+  taskTitle: string;
+  dataSolicitacao: string;
+  taskDeadline: string | null;
+  diasEmAberto: number;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Atenção: Tarefa de ${data.alunoName} está em aberto há ${data.diasEmAberto} dias`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 12px;" />
+              <p style="color: #6b7280; margin: 4px 0 0; font-size: 13px;">Programa de Desenvolvimento e Mentoria</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #fef3c7; padding: 20px 40px; border-top: 3px solid #d97706;">
+              <p style="color: #92400e; font-size: 13px; font-weight: 700; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 1px;">Tarefa em Aberto</p>
+              <p style="color: #78350f; font-size: 22px; font-weight: 800; margin: 0;">${data.diasEmAberto} dias sem atualização</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px 40px;">
+              <p style="color: #1f2937; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                Olá, <strong>${data.mentorName}</strong>!
+              </p>
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.7; margin: 0 0 24px;">
+                Identificamos que há uma tarefa do(a) aluno(a) <strong>${data.alunoName}</strong> que foi demandada em <strong>${data.dataSolicitacao}</strong> e que, até o momento, consta como <strong style="color: #d97706;">não entregue</strong> no sistema.
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin: 0 0 24px;">
+                <tr>
+                  <td style="padding: 20px 24px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td width="50%" style="padding: 6px 0;">
+                          <p style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 3px;">Aluno(a)</p>
+                          <p style="color: #111827; font-size: 14px; font-weight: 600; margin: 0;">${data.alunoName}</p>
+                        </td>
+                        <td width="50%" style="padding: 6px 0;">
+                          <p style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 3px;">Tarefa</p>
+                          <p style="color: #111827; font-size: 14px; font-weight: 600; margin: 0;">${data.taskTitle}</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td width="50%" style="padding: 6px 0;">
+                          <p style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 3px;">Data da Solicitação</p>
+                          <p style="color: #111827; font-size: 14px; font-weight: 600; margin: 0;">${data.dataSolicitacao}</p>
+                        </td>
+                        <td width="50%" style="padding: 6px 0;">
+                          <p style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 3px;">Prazo de Entrega</p>
+                          <p style="color: ${data.taskDeadline ? '#dc2626' : '#6b7280'}; font-size: 14px; font-weight: 600; margin: 0;">${data.taskDeadline || 'Não definido'}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <div style="background-color: #fff7ed; border-left: 4px solid #f97316; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 0 0 28px;">
+                <p style="color: #7c2d12; font-size: 14px; font-weight: 700; margin: 0 0 8px;">O que fazer:</p>
+                <ul style="color: #9a3412; font-size: 13px; line-height: 1.9; margin: 0; padding-left: 18px;">
+                  <li>Verifique com o(a) aluno(a) se a tarefa foi realizada fora da plataforma</li>
+                  <li>Caso o(a) aluno(a) tenha entregado, solicite que registre a entrega na plataforma</li>
+                  <li>Caso o prazo já tenha se encerrado e a tarefa <strong>não foi entregue</strong>, atualize o status no sistema como "Não Entregue"</li>
+                </ul>
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 10px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                      Acessar Plataforma
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
+                Este e-mail foi enviado automaticamente pelo ECOSSISTEMA DO BEM.<br>
+                Administração e coordenação estão em cópia neste e-mail.<br>
+                &copy; ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Atenção: Tarefa em Aberto — ECOSSISTEMA DO BEM
+
+Olá, ${data.mentorName}!
+
+Identificamos que há uma tarefa do(a) aluno(a) ${data.alunoName} que foi demandada em ${data.dataSolicitacao} e que, até o momento, consta como não entregue no sistema.
+
+Detalhes da Tarefa:
+- Aluno(a): ${data.alunoName}
+- Tarefa: ${data.taskTitle}
+- Data da Solicitação: ${data.dataSolicitacao}
+- Prazo de Entrega: ${data.taskDeadline || 'Não definido'}
+- Dias em aberto: ${data.diasEmAberto} dias
+
+O que fazer:
+- Verifique com o(a) aluno(a) se a tarefa foi realizada fora da plataforma
+- Caso o(a) aluno(a) tenha entregado, solicite que registre a entrega na plataforma
+- Caso o prazo já tenha se encerrado e a tarefa não foi entregue, atualize o status no sistema como "Não Entregue"
+
+Acesse a plataforma: ${data.loginUrl}
+
+Este e-mail foi enviado automaticamente. Administração e coordenação estão em cópia.
+© ${new Date().getFullYear()} CKM Talents`;
+
+  return { subject, html, text };
+}
+
+
+// ============ TROCA DE MENTORA PELO ADMIN ============
+export function buildNovaAlunaEmail(data: {
+  mentoraNovaName: string;
+  alunoName: string;
+  alunoEmail?: string;
+  mentoraAntigaName: string;
+  adminName: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Você tem uma nova aluna — ${data.alunoName}`;
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#111827;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;"><tr><td style="background:linear-gradient(135deg,#0A1E3E,#2D5A87);padding:24px;border-radius:12px 12px 0 0;text-align:center;"><h2 style="margin:0;color:#ffffff;font-size:22px;">Você tem uma nova aluna!</h2></td></tr><tr><td style="padding:24px;"><p style="font-size:15px;line-height:1.6;margin:0 0 16px;">Olá, <strong>${data.mentoraNovaName}</strong>!</p><p style="font-size:15px;line-height:1.6;margin:0 0 16px;">A administração transferiu o(a) aluno(a) <strong>${data.alunoName}</strong> para a sua carteira.</p><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 6px;font-size:14px;"><strong>Aluno(a):</strong> ${data.alunoName}</p>${data.alunoEmail ? `<p style="margin:0 0 6px;font-size:14px;"><strong>E-mail:</strong> ${data.alunoEmail}</p>` : ''}<p style="margin:0;font-size:14px;"><strong>Mentora anterior:</strong> ${data.mentoraAntigaName}</p></div><div style="text-align:center;margin:24px 0;"><a href="https://ecolider.ecodobem.com/" style="display:inline-block;background:#0A1E3E;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">Acessar a Plataforma</a></div><p style="margin-top:20px;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;">Ação realizada por: ${data.adminName}.</p></td></tr></table></body></html>`;
+  const text = `Você tem uma nova aluna — ${data.alunoName}\n\nOlá, ${data.mentoraNovaName}!\n\nA administração transferiu o(a) aluno(a) ${data.alunoName} para a sua carteira.\nMentora anterior: ${data.mentoraAntigaName}\nAção realizada por: ${data.adminName}.`;
+  return { subject, html, text };
+}
+
+export function buildAlunoRemovidoEmail(data: {
+  mentoraAntigaName: string;
+  alunoName: string;
+  mentoraNovaName: string;
+  adminName: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Aluno(a) ${data.alunoName} foi transferido(a) para outra mentora`;
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#111827;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;"><tr><td style="background:#f9fafb;padding:24px;border-radius:12px 12px 0 0;border-bottom:1px solid #e5e7eb;"><h2 style="margin:0;color:#0A1E3E;font-size:20px;">Atualização na sua carteira de mentorados</h2></td></tr><tr><td style="padding:24px;"><p style="font-size:15px;line-height:1.6;margin:0 0 16px;">Olá, <strong>${data.mentoraAntigaName}</strong>!</p><p style="font-size:15px;line-height:1.6;margin:0 0 16px;">O(a) aluno(a) <strong>${data.alunoName}</strong> foi transferido(a) da sua carteira para outra mentora.</p><div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 6px;font-size:14px;"><strong>Aluno(a):</strong> ${data.alunoName}</p><p style="margin:0;font-size:14px;"><strong>Nova mentora:</strong> ${data.mentoraNovaName}</p></div><p style="margin-top:20px;font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;">Ação realizada por: ${data.adminName}.</p></td></tr></table></body></html>`;
+  const text = `Aluno(a) ${data.alunoName} foi transferido(a) para outra mentora\n\nOlá, ${data.mentoraAntigaName}!\n\nO(a) aluno(a) ${data.alunoName} foi transferido(a) da sua carteira para a mentora ${data.mentoraNovaName}.\nAção realizada por: ${data.adminName}.`;
+  return { subject, html, text };
+}
+
+
+// ============================================================
+// Template: Confirmação de Agendamento de Sessão (para o aluno)
+// ============================================================
+export function buildConfirmacaoAgendamentoEmail(data: {
+  alunoName: string;
+  mentorName: string;
+  scheduledDate: string;
+  startTime: string;
+  endTime: string;
+  meetLink?: string | null;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Sessão de mentoria confirmada — ${data.scheduledDate} às ${data.startTime}`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const meetSection = data.meetLink
+    ? `<tr><td style="padding:0 40px 20px;"><div style="text-align:center;"><a href="${data.meetLink}" style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:700;">Acessar Reunião Google Meet</a><p style="margin:8px 0 0;font-size:11px;color:#6b7280;word-break:break-all;">${data.meetLink}</p></div></td></tr>`
+    : '';
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="background:#fff;padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="padding:30px 40px 20px;"><div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;text-align:center;margin-bottom:20px;"><p style="margin:0;font-size:18px;font-weight:700;color:#15803d;">Sessao Confirmada!</p></div><p style="font-size:15px;color:#374151;margin:0 0 16px;">Ola, <strong>${data.alunoName}</strong>!</p><p style="font-size:15px;color:#374151;margin:0 0 20px;">Sua sessao de mentoria foi agendada com sucesso. Confira os detalhes abaixo:</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px;"><tr><td style="padding:6px 12px;font-size:14px;color:#6b7280;width:140px;">Mentora:</td><td style="padding:6px 12px;font-size:14px;font-weight:600;color:#0A1E3E;">${data.mentorName}</td></tr><tr><td style="padding:6px 12px;font-size:14px;color:#6b7280;">Data:</td><td style="padding:6px 12px;font-size:14px;font-weight:600;color:#0A1E3E;">${data.scheduledDate}</td></tr><tr><td style="padding:6px 12px;font-size:14px;color:#6b7280;">Horario:</td><td style="padding:6px 12px;font-size:14px;font-weight:600;color:#0A1E3E;">${data.startTime} - ${data.endTime}</td></tr></table></td></tr>${meetSection}<tr><td style="padding:0 40px 20px;"><p style="font-size:13px;color:#6b7280;margin:0;">Caso precise cancelar ou reagendar, acesse a plataforma com antecedencia.</p><div style="text-align:center;margin-top:16px;"><a href="${data.loginUrl}" style="display:inline-block;background:#0A1E3E;color:#fff;text-decoration:none;padding:10px 28px;border-radius:8px;font-size:13px;font-weight:600;">Acessar a Plataforma</a></div></td></tr><tr><td style="padding:16px 40px;border-top:1px solid #e5e7eb;"><p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">ECOSSISTEMA DO BEM - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+  const text = `Sessao de mentoria confirmada!\n\nOla, ${data.alunoName}!\nSua sessao foi agendada com sucesso.\n\nMentora: ${data.mentorName}\nData: ${data.scheduledDate}\nHorario: ${data.startTime} - ${data.endTime}${data.meetLink ? `\nLink: ${data.meetLink}` : ''}\n\nAcesse a plataforma: ${data.loginUrl}`;
+  return { subject, html, text };
+}
+
+// ============================================================
+// Template: Lembrete de Ausencia em Webinar (para o aluno)
+// ============================================================
+export function buildAusenciaWebinarEmail(data: {
+  alunoName: string;
+  webinarTitle: string;
+  eventDate: string;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Voce perdeu o webinar "${data.webinarTitle}" - fique de olho nos proximos`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="background:#fff;padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="padding:30px 40px 24px;"><div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;text-align:center;margin-bottom:20px;"><p style="margin:0;font-size:16px;font-weight:700;color:#c2410c;">Voce perdeu um webinar</p></div><p style="font-size:15px;color:#374151;margin:0 0 16px;">Ola, <strong>${data.alunoName}</strong>!</p><p style="font-size:15px;color:#374151;margin:0 0 16px;">Notamos que voce nao participou do webinar <strong>"${data.webinarTitle}"</strong> realizado em <strong>${data.eventDate}</strong>.</p><p style="font-size:15px;color:#374151;margin:0 0 20px;">A participacao nos webinares e parte importante da sua jornada de desenvolvimento. Fique de olho na agenda para nao perder os proximos!</p><div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:20px;"><p style="margin:0;font-size:14px;color:#374151;"><strong>Dica:</strong> Acesse a plataforma para ver os proximos webinares agendados e garantir sua participacao.</p></div><div style="text-align:center;margin-top:16px;"><a href="${data.loginUrl}" style="display:inline-block;background:#0A1E3E;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;">Ver Proximos Webinares</a></div></td></tr><tr><td style="padding:16px 40px;border-top:1px solid #e5e7eb;"><p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">ECOSSISTEMA DO BEM - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+  const text = `Voce perdeu o webinar "${data.webinarTitle}"\n\nOla, ${data.alunoName}!\n\nNotamos que voce nao participou do webinar "${data.webinarTitle}" realizado em ${data.eventDate}.\n\nFique de olho na agenda para nao perder os proximos!\n\nAcesse a plataforma: ${data.loginUrl}`;
+  return { subject, html, text };
+}
+
+// ============================================================
+// Template: Lembrete de Tarefa Pendente + Proxima Mentoria (para o aluno)
+// ============================================================
+export function buildLembreteTarefaMentoriaEmail(data: {
+  alunoName: string;
+  mentorName: string;
+  taskTitle: string;
+  taskDeadline?: string | null;
+  proximaSessaoDate?: string | null;
+  proximaSessaoTime?: string | null;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Lembrete: tarefa pendente e proxima sessao de mentoria`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const proximaSessaoSection = data.proximaSessaoDate
+    ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1d4ed8;">Proxima Sessao de Mentoria</p><p style="margin:0;font-size:14px;color:#374151;">Data: <strong>${data.proximaSessaoDate}</strong>${data.proximaSessaoTime ? ` as <strong>${data.proximaSessaoTime}</strong>` : ''}</p><p style="margin:4px 0 0;font-size:14px;color:#374151;">Mentora: <strong>${data.mentorName}</strong></p></div>`
+    : '';
+  const deadlineStr = data.taskDeadline ? ` (prazo: ${data.taskDeadline})` : '';
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="background:#fff;padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="padding:30px 40px 24px;"><p style="font-size:15px;color:#374151;margin:0 0 20px;">Ola, <strong>${data.alunoName}</strong>! Aqui esta um lembrete importante sobre sua jornada de desenvolvimento:</p><div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#92400e;">Tarefa Pendente</p><p style="margin:0;font-size:14px;color:#374151;"><strong>${data.taskTitle}</strong>${deadlineStr}</p><p style="margin:6px 0 0;font-size:13px;color:#6b7280;">Entregue sua tarefa antes da proxima sessao para aproveitar melhor o encontro com sua mentora.</p></div>${proximaSessaoSection}<div style="text-align:center;margin-top:20px;"><a href="${data.loginUrl}" style="display:inline-block;background:#0A1E3E;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;">Acessar a Plataforma</a></div></td></tr><tr><td style="padding:16px 40px;border-top:1px solid #e5e7eb;"><p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">ECOSSISTEMA DO BEM - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+  const text = `Lembrete: tarefa pendente e proxima sessao de mentoria\n\nOla, ${data.alunoName}!\n\nTarefa pendente: ${data.taskTitle}${deadlineStr}\n${data.proximaSessaoDate ? `\nProxima sessao: ${data.proximaSessaoDate}${data.proximaSessaoTime ? ` as ${data.proximaSessaoTime}` : ''} com ${data.mentorName}` : ''}\n\nAcesse a plataforma: ${data.loginUrl}`;
+  return { subject, html, text };
+}
+
+// ============================================================
+// RELATÓRIO DE MENTORIAS POR MENTORA
+// ============================================================
+
+export function buildRelatorioMentoriasEmail(data: {
+  mentoraNome: string;
+  periodoInicio: string;
+  periodoFim: string;
+  isFinal: boolean;
+  sessoes: Array<{
+    data: string | null;
+    aluno: string;
+    empresa: string;
+    tipo: string;
+    registroFeito: boolean;
+    valor: number;
+  }>;
+  agendadosSemRegistro: Array<{
+    data: string;
+    aluno: string;
+    empresa: string;
+    tipo: string;
+  }>;
+  totalRealizado: number;
+  totalAgendado: number;
+  totalValor: number;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const tipoRelatorio = data.isFinal ? 'Definitivo' : 'Previa';
+  const corBanner = data.isFinal ? '#065f46' : '#92400e';
+  const bgBanner = data.isFinal ? '#d1fae5' : '#fef3c7';
+  const subject = `${data.isFinal ? 'Relatorio Definitivo' : 'Previa do Relatorio'} de Mentorias - ${data.mentoraNome} - ${data.periodoInicio} a ${data.periodoFim}`;
+
+  const formatDate = (d: string | null) => {
+    if (!d) return '-';
+    const parts = d.slice(0, 10).split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  };
+
+  const formatTipo = (t: string) => {
+    const map: Record<string, string> = {
+      individual_normal: 'Individual',
+      individual_assessment: 'Assessment',
+      grupo_normal: 'Grupo',
+      grupo_assessment: 'Grupo Assessment',
+    };
+    return map[t] || t;
+  };
+
+  const sessoesRows = data.sessoes.map(s =>
+    `<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:10px 8px;font-size:13px;color:#374151;">${formatDate(s.data)}</td><td style="padding:10px 8px;font-size:13px;color:#374151;">${s.aluno}</td><td style="padding:10px 8px;font-size:13px;color:#374151;">${s.empresa}</td><td style="padding:10px 8px;font-size:13px;color:#374151;">${formatTipo(s.tipo)}</td><td style="padding:10px 8px;font-size:13px;text-align:center;">${s.registroFeito ? '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">Registrada</span>' : '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">Sem registro</span>'}</td><td style="padding:10px 8px;font-size:13px;color:#374151;text-align:right;font-weight:600;">R$ ${s.valor.toFixed(2).replace('.', ',')}</td></tr>`
+  ).join('');
+
+  const agendadosSection = data.agendadosSemRegistro.length > 0
+    ? `<tr><td colspan="6" style="padding:20px 0 8px;"><p style="color:#92400e;font-size:14px;font-weight:700;margin:0 0 6px;">Agendamentos sem registro de sessao (${data.agendadosSemRegistro.length})</p><p style="color:#b45309;font-size:13px;margin:0 0 8px;">Os agendamentos abaixo constam na agenda mas nao tem ficha de sessao preenchida. Verifique e registre se a sessao foi realizada.</p></td></tr>${data.agendadosSemRegistro.map(a => `<tr style="border-bottom:1px solid #fde68a;background-color:#fffbeb;"><td style="padding:10px 8px;font-size:13px;color:#92400e;">${formatDate(a.data)}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${a.aluno}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${a.empresa}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${formatTipo(a.tipo)}</td><td style="padding:10px 8px;font-size:13px;text-align:center;"><span style="background:#fde68a;color:#92400e;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">Pendente</span></td><td style="padding:10px 8px;font-size:13px;color:#92400e;text-align:right;">-</td></tr>`).join('')}`
+    : '';
+
+  const avisoBox = !data.isFinal
+    ? `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:16px 20px;"><p style="color:#92400e;font-size:14px;font-weight:700;margin:0 0 6px;">Esta e uma PREVIA - nao e o relatorio definitivo</p><p style="color:#b45309;font-size:13px;margin:0;line-height:1.6;">Este relatorio e uma previa do periodo <strong>${data.periodoInicio} a ${data.periodoFim}</strong>. Verifique as informacoes e nos informe qualquer ajuste necessario. No dia <strong>30</strong>, sera enviado o <strong>relatorio definitivo</strong> seguindo o mesmo processo.</p></td></tr></table></td></tr>`
+    : `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:16px 20px;"><p style="color:#065f46;font-size:14px;font-weight:700;margin:0 0 6px;">Este e o RELATORIO DEFINITIVO</p><p style="color:#047857;font-size:13px;margin:0;line-height:1.6;">Este e o relatorio definitivo do periodo <strong>${data.periodoInicio} a ${data.periodoFim}</strong>. Confirme as informacoes e nos informe qualquer divergencia em ate 3 dias uteis.</p></td></tr></table></td></tr>`;
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="700" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="background:${bgBanner};padding:20px 40px;text-align:center;"><p style="color:${corBanner};font-size:18px;font-weight:700;margin:0;">Relatorio ${tipoRelatorio} de Mentorias</p><p style="color:${corBanner};font-size:14px;margin:8px 0 0;">Periodo: ${data.periodoInicio} a ${data.periodoFim}</p></td></tr>${avisoBox}<tr><td style="padding:30px 40px 10px;"><h2 style="color:#0f2b3c;margin:0 0 12px;font-size:20px;">Ola, ${data.mentoraNome}!</h2><p style="color:#4a5568;font-size:15px;line-height:1.8;margin:0;">Segue abaixo o relatorio das suas sessoes de mentoria no periodo indicado. Por favor, <strong>confira todas as informacoes</strong> e nos informe caso haja qualquer divergencia ou ajuste necessario.</p></td></tr><tr><td style="padding:20px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="width:32%;text-align:center;background:#f0f7fa;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Sessoes Realizadas</p><p style="color:#0f2b3c;font-size:28px;font-weight:700;margin:0;">${data.totalRealizado}</p></td><td style="width:4%;"></td><td style="width:32%;text-align:center;background:#fef3c7;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Agendadas s/ Registro</p><p style="color:#92400e;font-size:28px;font-weight:700;margin:0;">${data.totalAgendado}</p></td><td style="width:4%;"></td><td style="width:32%;text-align:center;background:#d1fae5;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Valor Total</p><p style="color:#065f46;font-size:28px;font-weight:700;margin:0;">R$ ${data.totalValor.toFixed(2).replace('.', ',')}</p></td></tr></table></td></tr><tr><td style="padding:0 40px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;"><thead><tr style="background:#f9fafb;"><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Data</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Aluno</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Empresa</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Tipo</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Registro</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${sessoesRows}${agendadosSection}</tbody></table></td></tr><tr><td style="padding:0 40px 30px;text-align:center;"><a href="${data.loginUrl}" style="display:inline-block;background-color:#e8a838;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">Acessar o Sistema</a><p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">Em caso de duvidas ou divergencias, responda este e-mail ou acesse o sistema.</p></td></tr><tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+
+  const text = `Relatorio ${tipoRelatorio} de Mentorias - ${data.mentoraNome}\nPeriodo: ${data.periodoInicio} a ${data.periodoFim}\n\nSessoes Realizadas: ${data.totalRealizado}\nAgendadas sem Registro: ${data.totalAgendado}\nValor Total: R$ ${data.totalValor.toFixed(2).replace('.', ',')}\n\n${!data.isFinal ? 'ATENCAO: Esta e uma PREVIA. No dia 30 sera enviado o relatorio definitivo.' : 'Este e o RELATORIO DEFINITIVO. Confirme as informacoes em ate 3 dias uteis.'}\n\nAcesse o sistema em: ${data.loginUrl}`;
+
+  return { subject, html, text };
+}
+
+export function buildRelatorioMentoriasFinanceiroEmail(data: {
+  periodoInicio: string;
+  periodoFim: string;
+  isFinal: boolean;
+  mentoras: Array<{
+    nome: string;
+    totalRealizado: number;
+    totalAgendadoSemRegistro: number;
+    totalValor: number;
+    sessoes: Array<{
+      data: string | null;
+      aluno: string;
+      empresa: string;
+      tipo: string;
+      valor: number;
+    }>;
+    agendadosSemRegistro: Array<{
+      data: string;
+      aluno: string;
+      empresa: string;
+      tipo: string;
+    }>;
+  }>;
+  totalGeralValor: number;
+  totalGeralSessoes: number;
+}): { subject: string; html: string; text: string } {
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const tipoRelatorio = data.isFinal ? 'Definitivo' : 'Previa';
+  const subject = `[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias - ${data.periodoInicio} a ${data.periodoFim}`;
+
+  const formatDate = (d: string | null) => {
+    if (!d) return '-';
+    const parts = d.slice(0, 10).split('-');
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  };
+
+  const formatTipo = (t: string) => {
+    const map: Record<string, string> = {
+      individual_normal: 'Individual',
+      individual_assessment: 'Assessment',
+      grupo_normal: 'Grupo',
+      grupo_assessment: 'Grupo Assessment',
+    };
+    return map[t] || t;
+  };
+
+  const avisoPrevia = !data.isFinal
+    ? `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:14px 18px;"><p style="color:#92400e;font-size:13px;font-weight:700;margin:0 0 4px;">Esta e uma PREVIA - nao e o relatorio definitivo</p><p style="color:#b45309;font-size:13px;margin:0;">No dia 30 sera enviado o relatorio definitivo seguindo o mesmo processo.</p></td></tr></table></td></tr>`
+    : '';
+
+  // Resumo geral (tabela de mentoras)
+  const linhasMentorasResumo = data.mentoras.map(m =>
+    `<tr style="border-bottom:1px solid #e5e7eb;"><td style="padding:10px 12px;font-size:13px;color:#374151;font-weight:600;">${m.nome}</td><td style="padding:10px 12px;font-size:13px;color:#374151;text-align:center;">${m.totalRealizado}</td><td style="padding:10px 12px;font-size:13px;color:${m.totalAgendadoSemRegistro > 0 ? '#92400e' : '#374151'};text-align:center;font-weight:${m.totalAgendadoSemRegistro > 0 ? '700' : '400'};">${m.totalAgendadoSemRegistro > 0 ? m.totalAgendadoSemRegistro : '-'}</td><td style="padding:10px 12px;font-size:13px;color:#065f46;text-align:right;font-weight:600;">R$ ${m.totalValor.toFixed(2).replace('.', ',')}</td></tr>`
+  ).join('');
+
+  // Detalhe por mentora: sessoes agrupadas por empresa
+  const detalhesMentoras = data.mentoras.map(m => {
+    // Agrupar sessoes por empresa
+    const empresaMap = new Map<string, { sessoes: typeof m.sessoes; subtotal: number }>();
+    for (const s of m.sessoes) {
+      const emp = s.empresa || 'N/A';
+      if (!empresaMap.has(emp)) empresaMap.set(emp, { sessoes: [], subtotal: 0 });
+      const entry = empresaMap.get(emp)!;
+      entry.sessoes.push(s);
+      entry.subtotal += s.valor;
+    }
+
+    const empresaBlocks = Array.from(empresaMap.entries()).map(([empresa, { sessoes: eSessoes, subtotal }]) => {
+      const rows = eSessoes.map(s =>
+        `<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px 10px;font-size:12px;color:#374151;">${formatDate(s.data)}</td><td style="padding:8px 10px;font-size:12px;color:#374151;">${s.aluno}</td><td style="padding:8px 10px;font-size:12px;color:#374151;">${formatTipo(s.tipo)}</td><td style="padding:8px 10px;font-size:12px;color:#374151;text-align:right;">R$ ${s.valor.toFixed(2).replace('.', ',')}</td></tr>`
+      ).join('');
+      return `<tr><td colspan="4" style="padding:10px 10px 4px;background:#f0f7fa;"><span style="font-size:12px;font-weight:700;color:#0f2b3c;text-transform:uppercase;letter-spacing:0.5px;">${empresa}</span></td></tr>${rows}<tr style="background:#e8f4f0;"><td colspan="3" style="padding:8px 10px;font-size:12px;font-weight:700;color:#065f46;">Subtotal ${empresa}</td><td style="padding:8px 10px;font-size:12px;font-weight:700;color:#065f46;text-align:right;">R$ ${subtotal.toFixed(2).replace('.', ',')}</td></tr>`;
+    }).join('');
+
+    const agendadosRows = m.agendadosSemRegistro.length > 0
+      ? `<tr><td colspan="4" style="padding:10px 10px 4px;background:#fef3c7;"><span style="font-size:12px;font-weight:700;color:#92400e;">Agendamentos SEM REGISTRO (${m.agendadosSemRegistro.length})</span></td></tr>${m.agendadosSemRegistro.map(a => `<tr style="background:#fffbeb;border-bottom:1px solid #fde68a;"><td style="padding:8px 10px;font-size:12px;color:#92400e;">${formatDate(a.data)}</td><td style="padding:8px 10px;font-size:12px;color:#92400e;">${a.aluno}</td><td style="padding:8px 10px;font-size:12px;color:#92400e;">${a.empresa} — ${formatTipo(a.tipo)}</td><td style="padding:8px 10px;font-size:12px;color:#92400e;text-align:right;">-</td></tr>`).join('')}`
+      : '';
+
+    return `<tr><td style="padding:24px 40px 8px;"><p style="color:#0f2b3c;font-size:15px;font-weight:700;margin:0 0 2px;">${m.nome}</p><p style="color:#6b7280;font-size:12px;margin:0;">${m.totalRealizado} sessao(s) realizadas — R$ ${m.totalValor.toFixed(2).replace('.', ',')}</p></td></tr><tr><td style="padding:0 40px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;"><thead><tr style="background:#f9fafb;"><th style="padding:10px;font-size:11px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Data</th><th style="padding:10px;font-size:11px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Aluno</th><th style="padding:10px;font-size:11px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Tipo</th><th style="padding:10px;font-size:11px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${empresaBlocks}${agendadosRows}<tr style="background:#f9fafb;"><td colspan="3" style="padding:10px;font-size:13px;font-weight:700;color:#0f2b3c;">TOTAL ${m.nome}</td><td style="padding:10px;font-size:13px;font-weight:700;color:#065f46;text-align:right;">R$ ${m.totalValor.toFixed(2).replace('.', ',')}</td></tr></tbody></table></td></tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="700" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="background:#f0f7fa;padding:20px 40px;text-align:center;"><p style="color:#0f2b3c;font-size:18px;font-weight:700;margin:0;">[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias</p><p style="color:#4a5568;font-size:14px;margin:8px 0 0;">Periodo: ${data.periodoInicio} a ${data.periodoFim}</p></td></tr>${avisoPrevia}<tr><td style="padding:30px 40px 16px;"><p style="color:#0f2b3c;font-size:15px;font-weight:700;margin:0 0 12px;">Resumo Geral</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:8px;"><thead><tr style="background:#f9fafb;"><th style="padding:12px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Mentora</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Realizadas</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Sem Registro</th><th style="padding:12px;font-size:12px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${linhasMentorasResumo}<tr style="background:#f9fafb;font-weight:700;"><td style="padding:12px;font-size:14px;color:#0f2b3c;">TOTAL GERAL</td><td style="padding:12px;font-size:14px;color:#0f2b3c;text-align:center;">${data.totalGeralSessoes}</td><td style="padding:12px;font-size:14px;color:#0f2b3c;text-align:center;">-</td><td style="padding:12px;font-size:14px;color:#065f46;text-align:right;">R$ ${data.totalGeralValor.toFixed(2).replace('.', ',')}</td></tr></tbody></table></td></tr><tr><td style="padding:0 40px 8px;"><hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 8px;"/><p style="color:#0f2b3c;font-size:15px;font-weight:700;margin:0;">Detalhamento por Mentora</p></td></tr>${detalhesMentoras}<tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+
+  const textLines: string[] = [
+    `[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias - ${data.periodoInicio} a ${data.periodoFim}`,
+    '',
+    'RESUMO GERAL',
+    ...data.mentoras.map(m => `  ${m.nome}: ${m.totalRealizado} sessoes - R$ ${m.totalValor.toFixed(2).replace('.', ',')}`),
+    `  TOTAL: ${data.totalGeralSessoes} sessoes - R$ ${data.totalGeralValor.toFixed(2).replace('.', ',')}`,
+    '',
+    'DETALHAMENTO',
+    ...data.mentoras.flatMap(m => {
+      const empresaMap2 = new Map<string, { sessoes: typeof m.sessoes; subtotal: number }>();
+      for (const s of m.sessoes) {
+        const emp = s.empresa || 'N/A';
+        if (!empresaMap2.has(emp)) empresaMap2.set(emp, { sessoes: [], subtotal: 0 });
+        const entry = empresaMap2.get(emp)!;
+        entry.sessoes.push(s);
+        entry.subtotal += s.valor;
+      }
+      const lines: string[] = [`\n${m.nome} (${m.totalRealizado} sessoes - R$ ${m.totalValor.toFixed(2).replace('.', ',')}):`];
+      for (const [empresa, { sessoes: eSessoes, subtotal }] of Array.from(empresaMap2.entries())) {
+        lines.push(`  [${empresa}]`);
+        for (const s of eSessoes) {
+          lines.push(`    ${formatDate(s.data)} - ${s.aluno} - ${formatTipo(s.tipo)} - R$ ${s.valor.toFixed(2).replace('.', ',')}`);
+        }
+        lines.push(`    Subtotal ${empresa}: R$ ${subtotal.toFixed(2).replace('.', ',')}`);
+      }
+      if (m.agendadosSemRegistro.length > 0) {
+        lines.push(`  [SEM REGISTRO: ${m.agendadosSemRegistro.length}]`);
+        for (const a of m.agendadosSemRegistro) {
+          lines.push(`    ${formatDate(a.data)} - ${a.aluno} - ${a.empresa}`);
+        }
+      }
+      return lines;
+    }),
+  ];
+  const text = textLines.join('\n');
 
   return { subject, html, text };
 }

@@ -30,7 +30,7 @@ function MentoraGuiaBannerAssessment() {
           <span className="text-sm font-semibold text-[#0A1E3E]">Sua Guia</span>
           <Sparkles className="h-3.5 w-3.5 text-[#F5991F]" />
         </div>
-        <h3 className="text-base font-bold text-[#0A1E3E] mb-1">Hora de se conhecer melhor!</h3>
+        <h3 className="text-base font-bold text-[#0A1E3E] mb-1">Hora de se conhecer melhor! Vamos fazer abaixo 2 Testes de Avaliação de suas Potencialidades!</h3>
         <p className="text-sm text-gray-600 leading-relaxed">
           Agora vamos descobrir juntos o seu perfil comportamental e suas competências. 
           Responda com sinceridade — não existem respostas certas ou erradas. Esse é um momento só seu!
@@ -251,9 +251,11 @@ const COMPETENCIA_DESCRICOES: Record<string, { oQueE: string; impacto: string }>
 function TesteDisc({
   alunoId,
   onComplete,
+  contratoNivelId,
 }: {
   alunoId: number;
   onComplete: (scores: DiscScores, predominante: DiscDimensao, secundario: DiscDimensao) => void;
+  contratoNivelId?: number | null;
 }) {
   const { data: perguntasData } = trpc.disc.perguntas.useQuery();
   const salvarMutation = trpc.disc.salvarRespostas.useMutation();
@@ -272,6 +274,18 @@ function TesteDisc({
   const [showIntro, setShowIntro] = useState(true);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
+  // Sequência de vídeos: 0 = vídeo introdutório, 1 = vídeo DISC explicativo
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const VIDEOS = [
+    {
+      src: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663427002956/CvjchevMsVnMzcTy.mp4",
+      label: "Vídeo 1 de 2 — Apresentação",
+    },
+    {
+      src: "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4",
+      label: "Vídeo 2 de 2 — Entenda o DISC",
+    },
+  ];
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Se o aluno já assistiu antes, marcar videoCompleted como true
@@ -354,6 +368,7 @@ function TesteDisc({
 
       const resultado = await salvarMutation.mutateAsync({
         alunoId,
+        contratoNivelId: contratoNivelId ?? null,
         respostas: respostasArray,
       });
 
@@ -393,39 +408,74 @@ function TesteDisc({
               </p>
             </CardHeader>
             <CardContent className="p-6 space-y-5">
-              {/* Vídeo Player */}
+              {/* Vídeo Player - sequência de 2 vídeos */}
               {showVideoPlayer ? (
-                <div className="rounded-xl overflow-hidden shadow-md border border-gray-200 relative">
-                  <video
-                    ref={videoRef}
-                    controls
-                    autoPlay
-                    className="w-full aspect-video bg-black"
-                    src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4"
-                    onEnded={() => {
-                      setVideoCompleted(true);
-                      if (!alreadyWatched) {
-                        markVideoWatchedMutation.mutate({ alunoId });
-                      }
-                    }}
-                    onTimeUpdate={(e) => {
-                      const video = e.currentTarget;
-                      if (video.duration > 0 && video.currentTime / video.duration >= 0.9) {
-                        setVideoCompleted(true);
-                        if (!alreadyWatched) {
-                          markVideoWatchedMutation.mutate({ alunoId });
-                        }
-                      }
-                    }}
-                  >
-                    Seu navegador não suporta vídeo.
-                  </video>
-                  {videoCompleted && (
-                    <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 shadow-lg animate-in fade-in zoom-in duration-300">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Vídeo concluído
+                <div className="space-y-3">
+                  {/* Indicador de progresso dos vídeos */}
+                  {!videoCompleted && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {VIDEOS.map((v, idx) => (
+                        <div key={idx} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+                          idx === currentVideoIndex
+                            ? "bg-primary/10 text-primary border border-primary/30"
+                            : idx < currentVideoIndex
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-400"
+                        }`}>
+                          {idx < currentVideoIndex ? <CheckCircle2 className="h-3 w-3" /> : <span className="w-3 text-center">{idx + 1}</span>}
+                          <span>{v.label}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
+                  <div className="rounded-xl overflow-hidden shadow-md border border-gray-200 relative">
+                    <video
+                      key={currentVideoIndex}
+                      ref={currentVideoIndex === VIDEOS.length - 1 ? videoRef : undefined}
+                      controls
+                      autoPlay
+                      className="w-full aspect-video bg-black"
+                      src={VIDEOS[currentVideoIndex].src}
+                      onEnded={() => {
+                        if (currentVideoIndex < VIDEOS.length - 1) {
+                          setCurrentVideoIndex(currentVideoIndex + 1);
+                        } else {
+                          setVideoCompleted(true);
+                          if (!alreadyWatched) {
+                            markVideoWatchedMutation.mutate({ alunoId });
+                          }
+                        }
+                      }}
+                      onTimeUpdate={(e) => {
+                        const video = e.currentTarget;
+                        if (currentVideoIndex === VIDEOS.length - 1 && video.duration > 0 && video.currentTime / video.duration >= 0.9) {
+                          setVideoCompleted(true);
+                          if (!alreadyWatched) {
+                            markVideoWatchedMutation.mutate({ alunoId });
+                          }
+                        }
+                      }}
+                    >
+                      Seu navegador não suporta vídeo.
+                    </video>
+                    {currentVideoIndex < VIDEOS.length - 1 && (
+                      <div className="absolute bottom-3 right-3">
+                        <button
+                          onClick={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+                          className="bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 shadow-lg hover:bg-primary/90 transition-colors"
+                        >
+                          Próximo vídeo
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    {videoCompleted && (
+                      <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold flex items-center gap-1.5 shadow-lg animate-in fade-in zoom-in duration-300">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Vídeos concluídos
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <button
@@ -508,12 +558,7 @@ function TesteDisc({
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {alreadyWatched ? (
-                    <>
-                      <FastForward className="h-5 w-5 mr-2" />
-                      Pular Vídeo e Iniciar o Teste DISC
-                    </>
-                  ) : videoCompleted ? (
+                  {(alreadyWatched || videoCompleted) ? (
                     <>
                       <ArrowRight className="h-5 w-5 mr-2" />
                       Iniciar o Teste DISC
@@ -712,9 +757,11 @@ function TesteDisc({
 function ReguaAutopercepção({
   alunoId,
   onComplete,
+  contratoNivelId,
 }: {
   alunoId: number;
   onComplete: () => void;
+  contratoNivelId?: number | null;
 }) {
   const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhasData } = trpc.trilhas.list.useQuery();
@@ -789,7 +836,7 @@ function ReguaAutopercepção({
         };
       });
 
-      await salvarMutation.mutateAsync({ alunoId, avaliacoes });
+      await salvarMutation.mutateAsync({ alunoId, contratoNivelId: contratoNivelId ?? null, avaliacoes });
       toast.success("Autopercepção salva com sucesso!");
       onComplete();
     } catch {
@@ -812,19 +859,24 @@ function ReguaAutopercepção({
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#0A1E3E]/10 to-[#F5991F]/10 flex items-center justify-center">
           <Gauge className="h-8 w-8 text-[#F5991F]" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">Régua de Autopercepção</h2>
+        <h2 className="text-xl font-bold text-gray-900">Como você se enxerga hoje?</h2>
         <p className="text-gray-500 mt-1 max-w-lg mx-auto">
-          Avalie como você se percebe em cada competência. Seja honesto(a) — essa avaliação ajudará sua mentora a entender seu ponto de partida.
+          Convidamos você a fazer uma pausa e refletir honestamente sobre suas habilidades. Olhe para o seu potencial e avalie seu estágio atual de desenvolvimento:
         </p>
       </div>
 
       {/* Instrução */}
-      <div className="max-w-2xl mx-auto bg-amber-50 border border-amber-200 rounded-lg p-4">
+      <div className="max-w-2xl mx-auto bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
         <p className="text-sm text-amber-800 flex items-start gap-2">
           <Info className="h-4 w-4 mt-0.5 shrink-0" />
           <span>
-            <strong>Dica:</strong> Não se preocupe em acertar — o importante é como você se percebe hoje. 
-            Sua mentora usará essa informação como ponto de partida para construir sua trilha de desenvolvimento.
+            <strong>Marque de 0 a 3:</strong> Se você sente que ainda há espaço para crescer e quer investir no desenvolvimento desta habilidade.
+          </span>
+        </p>
+        <p className="text-sm text-amber-800 flex items-start gap-2">
+          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            <strong>Marque 4 ou 5:</strong> Se você acredita que já domina a competência e está satisfeito com sua entrega atual.
           </span>
         </p>
       </div>
@@ -993,12 +1045,14 @@ function RelatorioAutoconhecimento({
   perfilPredominante,
   perfilSecundario,
   onComplete,
+  labelContinuar = "Continuar para Escolha da Mentora",
 }: {
   alunoId: number;
   discScores: DiscScores | null;
   perfilPredominante: DiscDimensao | null;
   perfilSecundario: DiscDimensao | null;
   onComplete: () => void;
+  labelContinuar?: string;
 }) {
   const { data: perfisData } = trpc.disc.perfis.useQuery();
   const { data: autopercepcoesData } = trpc.autopercepção.porAluno.useQuery({ alunoId });
@@ -1343,7 +1397,7 @@ function RelatorioAutoconhecimento({
           className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base gap-2"
           onClick={onComplete}
         >
-          Continuar para Escolha da Mentora <ChevronRight className="h-5 w-5" />
+          {labelContinuar} <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
     </div>
@@ -1358,23 +1412,33 @@ export default function EtapaAssessmentCompleta({
   alunoId,
   onComplete,
   readOnly = false,
+  labelContinuar = "Continuar para Escolha da Mentora",
+  contratoNivelId,
 }: {
   alunoId: number;
   onComplete: () => void;
   readOnly?: boolean;
+  labelContinuar?: string;
+  contratoNivelId?: number | null;
 }) {
-  // Verificar se já fez o teste
-  const { data: discResultado } = trpc.disc.resultado.useQuery({ alunoId }, { enabled: !!alunoId });
-  const { data: autopercepcoesExistentes } = trpc.autopercepção.porAluno.useQuery({ alunoId }, { enabled: !!alunoId });
+  // Verificar se já fez o teste — filtrar pelo contratoNivelId vigente para não pegar DISC do ciclo anterior
+  const { data: discResultado } = trpc.disc.resultado.useQuery(
+    { alunoId, contratoNivelId: contratoNivelId ?? null },
+    { enabled: !!alunoId }
+  );
+  const { data: autopercepcoesExistentes } = trpc.autopercepção.porAluno.useQuery(
+    { alunoId, contratoNivelId: contratoNivelId ?? null },
+    { enabled: !!alunoId }
+  );
 
   const [subEtapa, setSubEtapa] = useState<SubEtapa>("disc");
   const [discScores, setDiscScores] = useState<DiscScores | null>(null);
   const [perfilPredominante, setPerfilPredominante] = useState<DiscDimensao | null>(null);
   const [perfilSecundario, setPerfilSecundario] = useState<DiscDimensao | null>(null);
 
-  // Se já fez o teste, ir direto para o relatório
-  useMemo(() => {
-    if (discResultado && autopercepcoesExistentes && autopercepcoesExistentes.length > 0) {
+  // Se readOnly ou já fez o teste, ir direto para o relatório
+  useEffect(() => {
+    if (discResultado) {
       setDiscScores({
         D: Number(discResultado.scoreD),
         I: Number(discResultado.scoreI),
@@ -1383,19 +1447,16 @@ export default function EtapaAssessmentCompleta({
       });
       setPerfilPredominante(discResultado.perfilPredominante as DiscDimensao);
       setPerfilSecundario(discResultado.perfilSecundario as DiscDimensao);
-      setSubEtapa("relatorio");
-    } else if (discResultado && (!autopercepcoesExistentes || autopercepcoesExistentes.length === 0)) {
-      setDiscScores({
-        D: Number(discResultado.scoreD),
-        I: Number(discResultado.scoreI),
-        S: Number(discResultado.scoreS),
-        C: Number(discResultado.scoreC),
-      });
-      setPerfilPredominante(discResultado.perfilPredominante as DiscDimensao);
-      setPerfilSecundario(discResultado.perfilSecundario as DiscDimensao);
-      setSubEtapa("autopercepção");
+      if (readOnly) {
+        // Veterano: sempre vai direto para o relatório, sem poder refazer
+        setSubEtapa("relatorio");
+      } else if (autopercepcoesExistentes && autopercepcoesExistentes.length > 0) {
+        setSubEtapa("relatorio");
+      } else {
+        setSubEtapa("autopercepção");
+      }
     }
-  }, [discResultado, autopercepcoesExistentes]);
+  }, [discResultado, autopercepcoesExistentes, readOnly]);
 
   // Sub-stepper
   const subSteps = [
@@ -1423,13 +1484,19 @@ export default function EtapaAssessmentCompleta({
             const isCompleted = idx < currentSubIndex;
             const isCurrent = idx === currentSubIndex;
             const StepIcon = step.icon;
+            // Permite navegar para etapas já concluídas clicando na bolinha
+            const canNavigate = isCompleted || (idx === 2 && discResultado && autopercepcoesExistentes && autopercepcoesExistentes.length > 0);
             return (
-              <div key={step.id} className="flex flex-col items-center relative z-10">
+              <div
+                key={step.id}
+                className={`flex flex-col items-center relative z-10 ${canNavigate ? 'cursor-pointer' : ''}`}
+                onClick={() => { if (canNavigate) setSubEtapa(step.id); }}
+              >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                   isCompleted ? "bg-emerald-500 text-white" :
                   isCurrent ? "bg-[#0A1E3E] text-white shadow-lg" :
                   "bg-gray-200 text-gray-400"
-                }`}>
+                } ${canNavigate ? 'hover:opacity-80' : ''}`}>
                   {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
                 </div>
                 <span className={`text-xs mt-2 font-medium ${
@@ -1444,33 +1511,50 @@ export default function EtapaAssessmentCompleta({
       </div>
 
       {/* Conteúdo da sub-etapa */}
-      {subEtapa === "disc" && (
-        <TesteDisc
-          alunoId={alunoId}
-          onComplete={(scores, predominante, secundario) => {
-            setDiscScores(scores);
-            setPerfilPredominante(predominante);
-            setPerfilSecundario(secundario);
-            setSubEtapa("autopercepção");
-          }}
-        />
-      )}
-
-      {subEtapa === "autopercepção" && (
-        <ReguaAutopercepção
-          alunoId={alunoId}
-          onComplete={() => setSubEtapa("relatorio")}
-        />
-      )}
-
-      {subEtapa === "relatorio" && (
+      {/* Veterano (readOnly): mostra apenas o relatório, sem poder refazer o teste */}
+      {readOnly ? (
         <RelatorioAutoconhecimento
           alunoId={alunoId}
           discScores={discScores}
           perfilPredominante={perfilPredominante}
           perfilSecundario={perfilSecundario}
           onComplete={onComplete}
+          labelContinuar={labelContinuar}
         />
+      ) : (
+        <>
+          {subEtapa === "disc" && (
+            <TesteDisc
+              alunoId={alunoId}
+              contratoNivelId={contratoNivelId}
+              onComplete={(scores, predominante, secundario) => {
+                setDiscScores(scores);
+                setPerfilPredominante(predominante);
+                setPerfilSecundario(secundario);
+                setSubEtapa("autopercepção");
+              }}
+            />
+          )}
+
+          {subEtapa === "autopercepção" && (
+            <ReguaAutopercepção
+              alunoId={alunoId}
+              contratoNivelId={contratoNivelId}
+              onComplete={() => setSubEtapa("relatorio")}
+            />
+          )}
+
+          {subEtapa === "relatorio" && (
+            <RelatorioAutoconhecimento
+              alunoId={alunoId}
+              discScores={discScores}
+              perfilPredominante={perfilPredominante}
+              perfilSecundario={perfilSecundario}
+              onComplete={onComplete}
+              labelContinuar={labelContinuar}
+            />
+          )}
+        </>
       )}
     </div>
   );

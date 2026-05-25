@@ -55,7 +55,6 @@ import {
   Compass,
   Video,
   Megaphone,
-  ExternalLink,
   Calendar,
   Flag,
   ChevronRight,
@@ -71,6 +70,11 @@ import {
   Footprints,
   Home,
   BriefcaseBusiness,
+  Monitor,
+  Trophy,
+  History,
+  Mail,
+  ClipboardList,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -114,6 +118,8 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Alunos",
     items: [
       { icon: Footprints, label: "Onboarding Tracking", path: "/onboarding-tracking" },
+      { icon: History, label: "Auditoria de Resets", path: "/admin/auditoria-resets" },
+      { icon: ClipboardList, label: "Auditoria Notas Mentoria", path: "/admin/auditoria-notas-mentoria" },
       { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes" },
       { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment" },
       { icon: Target, label: "Plano Individual", path: "/plano-individual" },
@@ -128,6 +134,9 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: BarChart3, label: "Dashboard de Mentores", path: "/dashboard/mentor" },
       { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias" },
       { icon: CalendarDays, label: "Painel de Agendamentos", path: "/agendamentos" },
+      { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
+      { icon: DollarSign, label: "Precificação de Sessões", path: "/precificacao-sessoes" },
+      { icon: Mail, label: "Relatório de Mentorias", path: "/relatorio-mentorias" },
     ],
   },
   {
@@ -152,10 +161,15 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Users, label: "Cadastros", path: "/cadastros" },
       { icon: GraduationCap, label: "Turmas", path: "/turmas" },
       { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias" },
+      { icon: BookOpen, label: "Cursos_Criação", path: "/competencias-comp-tec" },
+      { icon: BookOpen, label: "Mini-Cursos", path: "/cursos" },
+      { icon: BookOpen, label: "Avaliações", path: "/admin/avaliacoes" },
+      { icon: Zap, label: "Atividades Extras", path: "/atividades-extras" },
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
-      { icon: Edit3, label: "Editar Mentorias", path: "/editar-mentorias" },
-      { icon: DollarSign, label: "Precificação de Sessões", path: "/precificacao-sessoes" },
+      { icon: BookOpen, label: "Atribuir Cursos", path: "/admin/atribuir-cursos" },
+      { icon: Monitor, label: "Gerenciar Plataforma de Cursos", path: "/admin/plataforma-aulas" },
+      { icon: Library, label: "Biblioteca Pedagógica", path: "/admin/biblioteca-pedagogica" },
     ],
   },
   {
@@ -163,9 +177,9 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Conteúdo e Comunicação",
     items: [
       { icon: Video, label: "Webinars", path: "/webinars" },
+      { icon: Video, label: "Vídeos de Onboarding", path: "/admin/onboarding-videos" },
       { icon: Bell, label: "Avisos e Comunicados", path: "/avisos" },
-      { icon: BookOpen, label: "Cursos", path: "/cursos" },
-      { icon: Zap, label: "Atividades Extras", path: "/atividades-extras" },
+      { icon: Trophy, label: "Mural de Cases", path: "/mural" },
     ],
   },
   {
@@ -203,19 +217,26 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: CalendarDays, label: "Perfil / Agenda", path: "/mentor/configuracoes", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: Building2, label: "Dashboard Por Empresa", path: "/dashboard/empresa", roles: ["manager"], requireConsultorRole: 'mentor' },
+
   
   // === GERENTE DE EMPRESA ===
   { icon: Home, label: "Boas-Vindas", path: "/boas-vindas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: CalendarDays, label: "Ciclos & Turmas", path: "/dashboard/ciclos-turmas", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Building2, label: "Minha Empresa", path: "/dashboard/gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: BarChart3, label: "Ranking Geral de Engajamento", path: "/dashboard/ranking-geral-engajamento", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
-  
   // === PROCESSOS SELETIVOS ===
   { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos", roles: ["user", "manager"] },
+
+  
   // === ALUNO ===
   { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
   { icon: GraduationCap, label: "Cursos Disponíveis", path: "/meus-cursos", roles: ["user"] },
+  { icon: BookOpen, label: "Competências Comportamentais", path: "/aluno/competencias-comp-tec", roles: ["user"] },
   { icon: Zap, label: "Atividades Extras", path: "/minhas-atividades", roles: ["user"] },
   { icon: PlayCircle, label: "Tutoriais", path: "/tutoriais", roles: ["user"] },
 ];
@@ -292,7 +313,21 @@ function DashboardLayoutContent({
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.role === "admin2";
+  const isFullAdmin = user?.role === "admin"; // admin completo (acessa Parametrização)
+  const isAdmin2 = user?.role === "admin2"; // admin nível 2 (sem Parametrização)
+
+  // Permissões de páginas do admin logado (vazio = acesso total)
+  const { data: adminPagePerms } = trpc.admin.getPermissions.useQuery(
+    { userId: (user as any)?.id ?? 0 },
+    { enabled: isAdmin && !!(user as any)?.id }
+  );
+  const hasPageRestrictions = isAdmin && Array.isArray(adminPagePerms) && adminPagePerms.length > 0;
+  const canAccessPage = (path: string) => {
+    if (!hasPageRestrictions) return true;
+    const basePath = path.split('?')[0];
+    return adminPagePerms!.some(p => p === basePath || basePath.startsWith(p + '/'));
+  };
   const hasConsultorId = !!(user as any)?.consultorId;
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
   const isGerente = consultorRole === 'gerente' || (!hasConsultorId && user?.role === 'manager' && !(user as any)?.alunoId);
@@ -347,8 +382,10 @@ function DashboardLayoutContent({
           return consultorRole === 'mentor';
         }
         if (item.requireConsultorRole === 'gerente') {
-          // Gestor puro (consultorRole=gerente) OU gestor sem consultorId (promovido de aluno)
-          return consultorRole === 'gerente' || (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId);
+          // Gestor puro (consultorRole=gerente) OU gestor sem consultorId OU manager+aluno (gerente que também é aluno)
+          return consultorRole === 'gerente' || 
+                 (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId) ||
+                 (userRole === 'manager' && (user as any)?.alunoId);
         }
       }
       // Legacy fallback
@@ -414,6 +451,7 @@ function DashboardLayoutContent({
 
   const getRoleBadge = (role: string, cRole: string | null | undefined) => {
     if (role === 'admin') return { label: "Admin", className: "bg-primary/20 text-primary" };
+    if (role === 'admin2') return { label: "Admin N2", className: "bg-blue-100 text-blue-700" };
     if (role === 'manager' && cRole === 'mentor') return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
     if (role === 'manager') return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
     return { label: "Aluno", className: "bg-green-100 text-green-700" };
@@ -465,7 +503,8 @@ function DashboardLayoutContent({
         >
           {/* ===== HEADER ===== */}
           <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
-            <div className="flex items-center gap-3 px-2 transition-all w-full">
+            <div className="flex items-center gap-3 px-2 transition-all w-full justify-between">
+              <div className="flex items-center gap-3">
               <button
                 onClick={toggleSidebar}
                 className="h-8 w-8 flex items-center justify-center hover:bg-sidebar-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
@@ -491,6 +530,8 @@ function DashboardLayoutContent({
                   className="h-7 object-contain"
                 />
               )}
+              </div>
+              {!isCollapsed && <NotificationBell />}
             </div>
           </SidebarHeader>
 
@@ -521,8 +562,11 @@ function DashboardLayoutContent({
                 </div>
 
                 {/* 7 ÁREAS COLAPSÁVEIS */}
-                {adminMenuGroups.map((group, groupIdx) => {
+                {adminMenuGroups.filter(group => isFullAdmin || group.label !== "Parametrização").map((group, groupIdx) => {
                   const isGroupActive = activeGroupIndex === groupIdx;
+                  // Filtrar itens do grupo por permissões do admin
+                  const visibleItems = group.items.filter(item => canAccessPage(item.path));
+                  if (visibleItems.length === 0) return null;
                   return (
                     <Collapsible
                       key={group.label}
@@ -549,7 +593,7 @@ function DashboardLayoutContent({
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                               <SidebarMenuSub>
-                                {group.items.map(item => {
+                                {visibleItems.map(item => {
                                   const isActive = isPathActive(item.path);
                                   // No more placeholders - all items are functional
                                   const isPlaceholder = false;
@@ -631,21 +675,7 @@ function DashboardLayoutContent({
               </SidebarMenu>
             )}
 
-            {/* Botão P.D.I Evoluir - sai do sistema e redireciona */}
-            <SidebarMenu className="px-2 py-1 mt-2 mb-2">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  tooltip="P.D.I Evoluir"
-                  onClick={() => {
-                    window.location.href = "https://www.evoluirckm.com";
-                  }}
-                  className="h-10 transition-all font-medium bg-gradient-to-r from-orange-500/10 to-amber-500/10 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/20 hover:border-orange-500/40 text-orange-600 dark:text-orange-400 cursor-pointer"
-                >
-                  <ExternalLink className="h-4 w-4 shrink-0" />
-                  <span>P.D.I Evoluir</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
+
           </SidebarContent>
 
           {/* ===== FOOTER ===== */}
@@ -738,7 +768,16 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6">
+          {/* Proteção de rota por permissões do admin */}
+          {isAdmin && hasPageRestrictions && !canAccessPage(location) && location !== '/' ? (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-4">
+              <div className="text-6xl">🔒</div>
+              <h2 className="text-2xl font-bold text-gray-800">Acesso Restrito</h2>
+              <p className="text-muted-foreground max-w-md">Você não tem permissão para acessar esta página. Entre em contato com o administrador principal para solicitar acesso.</p>
+            </div>
+          ) : children}
+        </main>
       </SidebarInset>
     </>
   );

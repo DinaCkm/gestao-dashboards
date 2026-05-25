@@ -4,21 +4,167 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { eq, and, asc, desc, inArray } from "drizzle-orm";
+import {
+  competenciasModulos,
+  competencias,
+  alunoModuloProgresso,
+  alunoModuloRelato,
+  alunoModuloAvaliacao,
+  alunoCursoAtribuido,
+  tentativasAvaliacao,
+  atividadesCurso,
+  avaliacoesAtividade,
+  cursosCompetencias,
+  onboardingVideos,
+  alunoAtividadeProgresso,
+  sessoesEstudoAtividade,
+  users,
+  emailAlertasLog,
+} from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
 import * as XLSX from 'xlsx';
 import { calcularIndicadoresAlunoFiltrado, calcularPerformanceFiltrada, CompetenciaObrigatoria, CicloExecucaoData } from './indicatorsCalculator';
 import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularIndicadoresAlunoV2, agregarIndicadores, gerarDashboardGeral, gerarDashboardEmpresa, obterEmpresas, obterTurmas, StudentIndicatorsV2, CicloDataV2, CaseSucessoData, MacrocicloData } from './indicatorsCalculatorV2';
 import { notifyOwner } from "./_core/notification";
+import { jornadaRouter } from "./routers/jornada";
+import { fichasPedagogicasRouter } from "./routers/fichasPedagogicas";
+import { processosSeletivosRouter } from "./routers/processosSeletivos";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
-import { processosSeletivosRouter } from "./routers/processosSeletivos";
+import { gerarEEnviarRelatorioMentorias, calcularPeriodoPadrao } from "./cronRelatorioMentorias";
+import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, sendEmail } from "./emailService";
+import { cacheOrFetch, cacheInvalidate } from './dataCache';
+import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
+import { DISC_PERFIS } from "../shared/discData";
 
-// Admin-only procedure
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const next = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      result.push(current);
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  result.push(current);
+  return result.map((item) => item.trim());
+}
+
+function getVal(
+  values: string[],
+  colMap: Record<string, number>,
+  key: string
+): string | undefined {
+  const idx = colMap[key];
+  if (idx === undefined || idx < 0 || idx >= values.length) return undefined;
+
+  const raw = values[idx];
+  if (raw === undefined || raw === null) return undefined;
+
+  const value = String(raw).trim();
+  return value === "" ? undefined : value;
+}
+
+type AtividadeTempoConfig = {
+  tempoMinimoObrigatorioSegundos?: number | null;
+  tempoEstimadoMinutos?: number | null;
+  percentualMinimoLiberacao?: number | null;
+};
+
+type ProgressoTempoConfig = {
+  tempoAtivoAcumuladoSegundos?: number | null;
+  tempoMinimoExigidoSegundos?: number | null;
+  bloqueioPorTempo?: number | null;
+  liberadoParaAvaliacaoEm?: Date | null;
+  tempoCumpridoEm?: Date | null;
+};
+
+function calcularTempoMinimoExigidoSegundos(atividade: AtividadeTempoConfig): number {
+  if (atividade.tempoMinimoObrigatorioSegundos && atividade.tempoMinimoObrigatorioSegundos > 0) {
+    return atividade.tempoMinimoObrigatorioSegundos;
+  }
+
+  const tempoEstimadoMinutos = Number(atividade.tempoEstimadoMinutos ?? 0);
+  const percentualMinimoLiberacao = Number(atividade.percentualMinimoLiberacao ?? 60);
+
+  if (tempoEstimadoMinutos <= 0) return 0;
+
+  const calculado = Math.round((tempoEstimadoMinutos * 60 * percentualMinimoLiberacao) / 100);
+  return Math.max(0, calculado);
+}
+
+function normalizarSegundosHeartbeat(segundos: number | null | undefined): number {
+  const valor = Number(segundos ?? 0);
+  if (!Number.isFinite(valor) || valor <= 0) return 0;
+  return Math.min(120, Math.round(valor));
+}
+
+function montarResumoTempo(
+  atividade: AtividadeTempoConfig,
+  progresso?: ProgressoTempoConfig | null
+) {
+  const tempoMinimoExigidoSegundos =
+    Number(progresso?.tempoMinimoExigidoSegundos ?? 0) > 0
+      ? Number(progresso?.tempoMinimoExigidoSegundos ?? 0)
+      : calcularTempoMinimoExigidoSegundos(atividade);
+
+  const tempoAtivoAcumuladoSegundos = Number(progresso?.tempoAtivoAcumuladoSegundos ?? 0);
+  const tempoRestanteSegundos = Math.max(0, tempoMinimoExigidoSegundos - tempoAtivoAcumuladoSegundos);
+
+  const tempoCumprido =
+    tempoMinimoExigidoSegundos <= 0 || tempoAtivoAcumuladoSegundos >= tempoMinimoExigidoSegundos;
+
+  const percentualTempoCumprido =
+    tempoMinimoExigidoSegundos <= 0
+      ? 100
+      : Math.min(100, Math.round((tempoAtivoAcumuladoSegundos / tempoMinimoExigidoSegundos) * 100));
+
+  return {
+    tempoMinimoExigidoSegundos,
+    tempoAtivoAcumuladoSegundos,
+    tempoRestanteSegundos,
+    percentualTempoCumprido,
+    tempoCumprido,
+    bloqueioPorTempo: tempoCumprido ? 0 : 1,
+    liberadoParaAvaliacao: tempoCumprido,
+    liberadoParaAvaliacaoEm: progresso?.liberadoParaAvaliacaoEm ?? null,
+    tempoCumpridoEm: progresso?.tempoCumpridoEm ?? null,
+  };
+}
+
+// Admin-only procedure (acesso completo, inclui Parametrização)
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores' });
+  }
+  return next({ ctx });
+});
+// Admin N2 procedure (acesso a tudo exceto Parametrização)
+const adminOrAdmin2Procedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== 'admin' && ctx.user.role !== 'admin2') {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores' });
   }
   return next({ ctx });
@@ -32,10 +178,346 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+async function ensureNivelAbertoParaAtribuicao(
+  alunoId: number,
+  contratoNivelId: number | null | undefined,
+  operacao: string
+) {
+  try {
+    await db.assertNivelPermiteNovasAtribuicoes(alunoId, contratoNivelId, operacao);
+  } catch (error: any) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: error?.message || "Nível em fechamento/encerrado. Novas atribuições estão bloqueadas.",
+    });
+  }
+}
+
+function clampPercent(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(100, value));
+}
+
+function getFallbackDates(empresa?: string | null, turma?: string | null) {
+  const emp = empresa?.toLowerCase() || "";
+  const trm = turma?.toLowerCase() || "";
+
+  if (emp.includes("sebrae acre")) {
+    return { inicio: "2024-10-01", fim: "2026-10-30" };
+  }
+  
+  if (emp.includes("sebrae to")) {
+    if (trm.includes("bs1")) return { inicio: "2025-05-01", fim: "2026-04-30" };
+    if (trm.includes("bs2")) return { inicio: "2025-04-01", fim: "2026-04-30" };
+    if (trm.includes("bs3")) return { inicio: "2025-09-01", fim: "2026-08-31" };
+  }
+
+  if (emp.includes("ebrapii") || emp.includes("embrap")) {
+    return { inicio: "2025-03-24", fim: "2026-10-30" };
+  }
+
+  return { inicio: null, fim: null };
+}
+
+function classifyByPercent(percentual: number): string {
+  if (percentual >= 90) return "Excelência";
+  if (percentual >= 75) return "Avançado";
+  if (percentual >= 60) return "Intermediário";
+  if (percentual >= 40) return "Básico";
+  return "Inicial";
+}
+
+async function buildEvolucaoAlunoPayload(alunoId: number) {
+  const alunos = await db.getAlunos();
+  const aluno = alunos.find((a) => a.id === alunoId);
+  if (!aluno) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+  }
+
+  const [niveisRaw, programas, turmas, allDisc, discComparativo] = await Promise.all([
+    db.getContratoNiveisByAluno(alunoId),
+    db.getPrograms(),
+    db.getTurmas(),
+    db.getAllDiscResultadosByAluno(alunoId),
+    (async () => {
+      const resultados = await db.getAllDiscResultadosByAluno(alunoId);
+      if (resultados.length < 2) return null;
+      const primeiro = resultados[0];
+      const ultimo = resultados[resultados.length - 1];
+      return {
+        cicloInicial: {
+          ciclo: primeiro.ciclo,
+          data: primeiro.completedAt,
+          scores: { D: Number(primeiro.scoreD), I: Number(primeiro.scoreI), S: Number(primeiro.scoreS), C: Number(primeiro.scoreC) },
+          perfilPredominante: primeiro.perfilPredominante,
+        },
+        cicloAtual: {
+          ciclo: ultimo.ciclo,
+          data: ultimo.completedAt,
+          scores: { D: Number(ultimo.scoreD), I: Number(ultimo.scoreI), S: Number(ultimo.scoreS), C: Number(ultimo.scoreC) },
+          perfilPredominante: ultimo.perfilPredominante,
+        },
+        evolucao: {
+          D: Number(ultimo.scoreD) - Number(primeiro.scoreD),
+          I: Number(ultimo.scoreI) - Number(primeiro.scoreI),
+          S: Number(ultimo.scoreS) - Number(primeiro.scoreS),
+          C: Number(ultimo.scoreC) - Number(primeiro.scoreC),
+        },
+        totalCiclos: resultados.length,
+      };
+    })(),
+  ]);
+
+  const programa = aluno.programId ? programas.find((p) => p.id === aluno.programId) : null;
+  const turma = aluno.turmaId ? turmas.find((t) => t.id === aluno.turmaId) : null;
+
+  // Lógica de Fracionamento de Ciclos: 3 meses o primeiro, 6 meses os seguintes
+  const dataInicioContrato = (aluno as any).contratoInicio || (niveisRaw[0] as any)?.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio;
+  const dataFimContrato = (aluno as any).contratoFim || (niveisRaw[niveisRaw.length - 1] as any)?.dataFim || getFallbackDates(programa?.name, turma?.name).fim;
+
+  let niveisProcessados = [...niveisRaw];
+
+  // Se houver apenas um nível mas o contrato for longo, vamos simular os ciclos para a visualização
+  if (niveisRaw.length === 1 && dataInicioContrato && dataFimContrato) {
+    const inicio = new Date(dataInicioContrato);
+    const fim = new Date(dataFimContrato);
+    const hoje = new Date();
+    
+    const ciclosSimulados = [];
+    let dataReferencia = new Date(inicio);
+    let contadorNivel = 1;
+
+    while (dataReferencia < fim && dataReferencia <= hoje) {
+      const duracaoMeses = contadorNivel === 1 ? 3 : 6;
+      const dataFimCiclo = new Date(dataReferencia);
+      dataFimCiclo.setMonth(dataFimCiclo.getMonth() + duracaoMeses);
+      
+      // Não ultrapassar o fim do contrato
+      const dataFimEfetiva = dataFimCiclo > fim ? fim : dataFimCiclo;
+
+      ciclosSimulados.push({
+        id: 999000 + contadorNivel, // IDs fictícios para ciclos simulados
+        nivel: `Nível ${contadorNivel}`,
+        dataInicio: dataReferencia.toISOString(),
+        dataFim: dataFimEfetiva.toISOString(),
+        status: dataFimEfetiva < hoje ? "encerrado" : "em_andamento",
+        isSimulado: true
+      });
+
+      dataReferencia = new Date(dataFimEfetiva);
+      contadorNivel++;
+      
+      // Trava de segurança para evitar loop infinito
+      if (contadorNivel > 10) break;
+    }
+    
+    if (ciclosSimulados.length > 0) {
+      niveisProcessados = ciclosSimulados as any;
+    }
+  }
+
+  const niveis = [...niveisProcessados].sort((a, b) => {
+    const da = new Date(a.dataInicio as any).getTime();
+    const dbb = new Date(b.dataInicio as any).getTime();
+    return dbb - da; // Ordem decrescente: mais recente no topo
+  });
+
+  const itens = await Promise.all(niveis.map(async (nivel) => {
+    const [pedagogia, nivelOperacional, certificado] = await Promise.all([
+      db.getPedagogiaByNivel(alunoId, nivel.id),
+      db.getContratoNivelComStatusOperacional(alunoId, nivel.id),
+      db.getNivelCertificateByAlunoNivel(alunoId, nivel.id),
+    ]);
+
+    const dataInicioReal = (aluno as any).contratoInicio || nivel.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio;
+    const dataFimReal = (aluno as any).contratoFim || nivel.dataFim || getFallbackDates(programa?.name, turma?.name).fim;
+
+    // Se o nível for simulado e for o mais recente (em andamento), vamos buscar os dados reais da performance consolidada
+    const isSimuladoMaisRecente = (nivel as any).isSimulado && (nivel as any).status === "em_andamento";
+    
+    // getIndicadoresConsolidadosV2 não existe — indicadoresConsolidados sempre null (fallback para cálculo local)
+    const indicadoresConsolidados = null;
+
+    const assessments = pedagogia.assessments || [];
+    const plano = pedagogia.planoIndividual || [];
+    const metas = pedagogia.metas || [];
+    const mentorias = pedagogia.mentoringSessions || [];
+    const eventos = pedagogia.eventParticipation || [];
+    const cases = pedagogia.casesSucesso || [];
+    const studentPerf = pedagogia.studentPerformance || [];
+
+    const assessmentInicial = [...assessments].sort((a: any, b: any) => {
+      const da = new Date(a.createdAt || a.updatedAt || a.macroInicio || 0).getTime();
+      const dbb = new Date(b.createdAt || b.updatedAt || b.macroInicio || 0).getTime();
+      return da - dbb;
+    })[0] || null;
+
+    const obrigatorias = plano.filter((p: any) => Number(p.isObrigatoria ?? 1) === 1);
+    const obrigatoriasAprovadas = obrigatorias.filter((p: any) => {
+      const nota = Number(p.notaAtual ?? 0);
+      const meta = Number(p.metaNota ?? 7);
+      return Number.isFinite(nota) && nota >= meta;
+    }).length;
+    const metasConcluidas = metas.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length;
+    const eventosPresentes = eventos.filter((e: any) => e.status === "presente").length;
+    const avgNotaPerformance = studentPerf.length > 0
+      ? studentPerf.reduce((acc: number, p: any) => acc + Number(p.notaAvaliacao ?? 0), 0) / studentPerf.length
+      : 0;
+    const avgProgresso = studentPerf.length > 0
+      ? studentPerf.reduce((acc: number, p: any) => acc + Number(p.progressoTotal ?? 0), 0) / studentPerf.length
+      : 0;
+
+    const mentoraId = nivel.mentoraPrincipalId || mentorias.find((s: any) => s.consultorId)?.consultorId || null;
+    const mentora = mentoraId ? await db.getConsultorById(mentoraId) : null;
+
+    // Busca global de DISC: se não houver DISC vinculado ao nível, busca por data dentro do período do nível
+    const discPorNivel = allDisc
+      .filter((d: any) => {
+        if (d.contratoNivelId === nivel.id) return true;
+        if (!d.contratoNivelId && d.completedAt && dataInicioReal && dataFimReal) {
+          const dDate = new Date(d.completedAt).getTime();
+          return dDate >= new Date(dataInicioReal).getTime() && dDate <= new Date(dataFimReal).getTime();
+        }
+        return false;
+      })
+      .map((d: any) => {
+        const perfil = DISC_PERFIS[d.perfilPredominante as keyof typeof DISC_PERFIS];
+        return {
+          id: d.id,
+          ciclo: d.ciclo,
+          completedAt: d.completedAt,
+          perfilPredominante: d.perfilPredominante,
+          scores: { D: Number(d.scoreD), I: Number(d.scoreI), S: Number(d.scoreS), C: Number(d.scoreC) },
+          detalhes: perfil ? {
+            titulo: perfil.titulo,
+            descricao: perfil.descricao,
+            pontosFortes: perfil.pontosFortes,
+            areasDesenvolvimento: perfil.areasDesenvolvimento,
+            comoSeRelaciona: perfil.comoSeRelaciona,
+            cor: perfil.cor
+          } : null
+        };
+      });
+
+    const statusOperacional = (nivelOperacional as any)?.statusOperacional || nivel.status;
+    const isEmAndamento = statusOperacional === "em_andamento" || statusOperacional === "fechamento" || statusOperacional === "ajustes";
+    const elegibilidade = !isEmAndamento && obrigatorias.length > 0 && obrigatoriasAprovadas === obrigatorias.length
+      ? "elegivel_futuramente"
+      : !isEmAndamento
+        ? "aguardando_certificacao"
+        : "em_desenvolvimento";
+
+        const fallback = getFallbackDates(programa?.name, turma?.name);
+        return {
+          nivel: {
+            id: nivel.id,
+            nome: nivel.nivel,
+            dataInicio: dataInicioReal,
+            dataFim: dataFimReal,
+            statusFinal: statusOperacional,
+            emAndamento: isEmAndamento,
+          },
+      mentora: mentora ? { id: mentora.id, nome: mentora.name, email: mentora.email } : null,
+      assessmentInicial: assessmentInicial
+        ? {
+            id: assessmentInicial.id,
+            trilhaNome: (assessmentInicial as any).trilhaNome || null,
+            macroInicio: assessmentInicial.macroInicio || null,
+            macroTermino: assessmentInicial.macroTermino || null,
+            status: assessmentInicial.status || null,
+          }
+        : null,
+      pdi: {
+        totalAssessments: assessments.length,
+        totalCompetenciasDefinidas: assessments.reduce((acc: number, a: any) => acc + (a.totalCompetencias || 0), 0),
+        totalCompetenciasObrigatorias: assessments.reduce((acc: number, a: any) => acc + (a.obrigatorias || 0), 0),
+      },
+      proposto: {
+        competenciasDefinidas: obrigatorias.length,
+        metasPrevistas: metas.length,
+        sessoesPrevistas: assessmentInicial?.totalSessoesPrevistas || null,
+      },
+      obtido: {
+        competenciasAprovadas: obrigatoriasAprovadas,
+        metasConcluidas,
+        mentoriasRealizadas: mentorias.filter((s: any) => s.presence === "presente").length,
+        mentoriasTotal: mentorias.length,
+        eventosPresenca: eventosPresentes,
+        eventosTotal: eventos.length,
+        casesEntregues: cases.filter((c: any) => c.entregue === 1).length,
+        casesTotal: cases.length,
+        mediaNotaPerformance: Number.isFinite(avgNotaPerformance) ? Number(avgNotaPerformance.toFixed(2)) : 0,
+        mediaProgressoPerformance: Number.isFinite(avgProgresso) ? Number(avgProgresso.toFixed(2)) : 0,
+      },
+        resultados: {
+          competencias: {
+            total: isSimuladoMaisRecente ? 100 : obrigatorias.length,
+            aprovadas: isSimuladoMaisRecente ? (indicadoresConsolidados?.ind7_engajamentoFinal || 0) : obrigatoriasAprovadas,
+            percentualAprovacao: isSimuladoMaisRecente 
+              ? (indicadoresConsolidados?.ind7_engajamentoFinal || 0) 
+              : (obrigatorias.length > 0 ? clampPercent((obrigatoriasAprovadas / obrigatorias.length) * 100) : 0),
+          },
+          metas: {
+            total: isSimuladoMaisRecente ? 100 : metas.length,
+            concluidas: isSimuladoMaisRecente ? (indicadoresConsolidados?.ind2_avaliacoes || 0) : metasConcluidas,
+            percentualConclusao: isSimuladoMaisRecente 
+              ? (indicadoresConsolidados?.ind2_avaliacoes || 0) 
+              : (metas.length > 0 ? clampPercent((metasConcluidas / metas.length) * 100) : 0),
+          },
+          aplicabilidade: isSimuladoMaisRecente ? (indicadoresConsolidados?.ind6_aplicabilidade || 0) : null,
+          performanceFinal: isSimuladoMaisRecente ? classifyByPercent(indicadoresConsolidados?.ind7_engajamentoFinal || 0) : classifyByPercent(avgProgresso),
+        },
+      elegibilidadeCertificacaoFutura: elegibilidade,
+      certificadoEmitido: certificado
+        ? {
+            id: certificado.id,
+            status: certificado.status,
+            arquivoUrl: certificado.arquivoUrl,
+            emitidoEm: certificado.emitidoEm,
+            hashDocumento: certificado.hashDocumento,
+          }
+        : null,
+      disc: {
+        totalNoNivel: discPorNivel.length,
+        historico: discPorNivel,
+      },
+      snapshotPedagogico: {
+        contratoNivelId: pedagogia.contratoNivelId,
+        assessments,
+        planoIndividual: plano,
+        metas,
+        mentoringSessions: mentorias,
+        eventParticipation: eventos,
+        casesSucesso: cases,
+        studentPerformance: studentPerf,
+      },
+    };
+  }));
+
+  return {
+    aluno: {
+      id: aluno.id,
+      nome: aluno.name,
+      email: aluno.email,
+      programa: programa?.name || "Não definido",
+      turma: turma?.name || "Não definida",
+    },
+    resumo: {
+      totalNiveis: itens.length,
+      niveisConcluidos: itens.filter((i) => !i.nivel.emAndamento).length,
+      nivelAtual: itens.find((i) => i.nivel.emAndamento) || null,
+    },
+    discComparativo,
+    timeline: itens,
+  };
+}
+
 export const appRouter = router({
   system: systemRouter,
   processosSeletivos: processosSeletivosRouter,
-  
+  jornada: jornadaRouter,
+  fichasPedagogicas: fichasPedagogicasRouter,
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -161,18 +643,70 @@ export const appRouter = router({
         
         return { success: true, user: result.user };
       }),
+    // ============ AUTO-CADASTRO (Landing Page) ============
+    autoRegistro: publicProcedure
+      .input(z.object({
+        name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+        email: z.string().email('Email inválido'),
+        cpf: z.string().min(11, 'CPF inválido').max(14),
+        empresa: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const TURMA_EXPRESS_ID = 60002;
+        const PROGRAMA_CKM_ID = 90002;
+        let programId = PROGRAMA_CKM_ID;
+        if (input.empresa && input.empresa.trim().length > 0) {
+          const empresaNome = input.empresa.trim();
+          const allPrograms = await db.getPrograms();
+          const existing = allPrograms.find((p: any) => p.name.toLowerCase() === empresaNome.toLowerCase());
+          if (existing) {
+            programId = existing.id;
+          } else {
+            const code = empresaNome.toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 50);
+            const newProg = await db.createProgram({ name: empresaNome, code });
+            if (newProg?.id) programId = newProg.id;
+          }
+        }
+        const result = await db.createAlunoDireto({
+          name: input.name,
+          email: input.email,
+          cpf: input.cpf,
+          programId,
+          turmaId: TURMA_EXPRESS_ID,
+        });
+        if (!result.success) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: result.message || 'Erro ao criar cadastro' });
+        }
+        try {
+          const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');
+          const emailData = buildOnboardingInviteEmail({
+            alunoName: input.name,
+            alunoEmail: input.email,
+            alunoId: input.cpf.replace(/[.\-]/g, ''),
+            empresaName: input.empresa || 'Desenvolvimento Express',
+            loginUrl: 'https://ecolider.ecodobem.com/',
+          });
+          await sendEmail({ to: input.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+        } catch (e) { console.warn('[AutoRegistro] email aluno:', e); }
+        try {
+          const { sendEmail } = await import('./emailService');
+          const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
+          await sendEmail({ to: 'relacionamento@ckmtalents.net', cc: 'dina@makiyama.com.br', subject: `[Novo Aluno] ${input.name} - Desenvolvimento Express`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
+        } catch (e) { console.warn('[AutoRegistro] email admin:', e); }
+        return { success: true, alunoId: result.alunoId };
+      }),
   }),
 
   // User management
   users: router({
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllUsers();
     }),
     
     updateRole: adminProcedure
       .input(z.object({
         userId: z.number(),
-        role: z.enum(["user", "admin", "manager"])
+        role: z.enum(["user", "admin", "manager", "admin2"])
       }))
       .mutation(async ({ input }) => {
         await db.updateUserRole(input.userId, input.role);
@@ -256,7 +790,7 @@ export const appRouter = router({
         batchId: z.number(),
         fileName: z.string(),
         fileData: z.string(), // Base64 encoded
-        fileType: z.enum(["sebraeacre_mentorias", "sebraeacre_eventos", "sebraeto_mentorias", "sebraeto_eventos", "embrapii_mentorias", "embrapii_eventos", "performance"])
+        fileType: z.enum(["sebraeacre_mentorias", "sebraeacre_eventos", "sebraeto_mentorias", "sebraeto_eventos", "embrapii_mentorias", "embrapii_eventos", "performance", "pdi"])
       }))
       .mutation(async ({ ctx, input }) => {
         const buffer = Buffer.from(input.fileData, 'base64');
@@ -513,11 +1047,20 @@ export const appRouter = router({
         const batch = await db.getUploadBatchById(input.batchId);
         const files = await db.getFilesByBatchId(input.batchId);
         
-        // Notify admin
-        await notifyOwner({
-          title: "Novas planilhas carregadas",
-          content: `Um novo lote de planilhas foi carregado por ${ctx.user.name || 'Usuário'}.\n\nSemana: ${batch?.weekNumber}/${batch?.year}\nArquivos: ${files.length}\nTotal de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
-        });
+          // Notify admin (non-blocking)
+        try {
+          await notifyOwner({
+            title: "Novas planilhas carregadas",
+            content: `Um novo lote de planilhas foi carregado por ${ctx.user.name || 'Usuário'}.
+
+Semana: ${batch?.weekNumber}/${batch?.year}
+Arquivos: ${files.length}
+Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
+          });
+        } catch (error) {
+          console.warn("[Upload] Failed to notify owner:", error);
+          // Continue anyway - notification is not critical
+        }
         
         return { success: true };
       }),
@@ -537,7 +1080,7 @@ export const appRouter = router({
     // Baixar template de planilha
     downloadTemplate: publicProcedure
       .input(z.object({
-        type: z.enum(["mentorias", "eventos", "performance"])
+        type: z.enum(["mentorias", "eventos", "performance", "pdi"])
       }))
       .mutation(async ({ input }) => {
         const buffer = generateTemplate(input.type as TemplateType);
@@ -550,7 +1093,7 @@ export const appRouter = router({
     // Obter estrutura esperada do template
     getTemplateStructure: publicProcedure
       .input(z.object({
-        type: z.enum(["mentorias", "eventos", "performance"])
+        type: z.enum(["mentorias", "eventos", "performance", "pdi"])
       }))
       .query(({ input }) => {
         return TEMPLATE_STRUCTURES[input.type as TemplateType];
@@ -560,13 +1103,176 @@ export const appRouter = router({
     validateFile: protectedProcedure
       .input(z.object({
         fileData: z.string(), // Base64
-        expectedType: z.enum(["mentorias", "eventos", "performance"])
+        expectedType: z.enum(["mentorias", "eventos", "performance", "pdi"])
       }))
       .mutation(async ({ input }) => {
         const buffer = Buffer.from(input.fileData, 'base64');
         return validateSpreadsheet(buffer, input.expectedType as TemplateType);
       }),
     
+    // Upload em massa de PDIs via planilha XLSX
+    uploadPDIs: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // Base64 encoded XLSX
+        fileName: z.string(),
+        preview: z.boolean().optional(), // Se true, apenas valida sem salvar
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.fileData, 'base64');
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames.find((n: string) => n !== 'Instruções') || workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        if (rows.length < 2) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Planilha sem dados' });
+
+        const headers = (rows[0] as string[]).map((h: string) => String(h || '').trim());
+        const colIdx = (name: string) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+
+        const getVal = (row: unknown[], name: string): string => {
+          const idx = colIdx(name);
+          if (idx < 0) return '';
+          const v = row[idx];
+          return v === null || v === undefined ? '' : String(v).trim();
+        };
+
+        const parseDate = (val: string): string | null => {
+          if (!val) return null;
+          // Formato DD/MM/AAAA
+          const parts = val.split('/');
+          if (parts.length === 3) return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+          // Formato AAAA-MM-DD
+          if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+          // Formato serial do Excel
+          const num = parseFloat(val);
+          if (!isNaN(num) && num > 40000) {
+            const d = new Date((num - 25569) * 86400 * 1000);
+            return d.toISOString().slice(0, 10);
+          }
+          return null;
+        };
+
+        // Carregar dados do banco para lookup
+        const alunosList = await db.getAlunos();
+        const trilhasList = await db.getAllTrilhas();
+        const compList = await db.getAllCompetencias();
+
+        const alunoByName = new Map<string, number>();
+        const alunoByEmail = new Map<string, number>();
+        for (const a of alunosList) {
+          if (a.name) alunoByName.set(a.name.toLowerCase().trim(), a.id);
+          if (a.email) alunoByEmail.set(a.email.toLowerCase().trim(), a.id);
+        }
+        // Normaliza texto: lowercase, remove acentos, colapsa espaços
+        const normalizeText = (s: string) => s.toLowerCase().trim()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+          .replace(/\s+/g, ' ');                             // colapsa espaços
+        const trilhaByName = new Map<string, number>();
+        for (const t of trilhasList) {
+          if (t.name) {
+            trilhaByName.set(t.name.toLowerCase().trim(), t.id);
+            trilhaByName.set(normalizeText(t.name), t.id); // versão sem acentos
+          }
+        }
+        const compByName = new Map<string, number>();
+        for (const c of compList) {
+          if (c.nome) {
+            compByName.set(c.nome.toLowerCase().trim(), c.id);
+            compByName.set(normalizeText(c.nome), c.id); // versão sem acentos
+          }
+        }
+
+        const results: { row: number; aluno: string; status: 'ok' | 'erro' | 'aviso'; message: string }[] = [];
+        let created = 0;
+        let errors = 0;
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i] as unknown[];
+          if (row.every(v => !v)) continue; // linha vazia
+
+          const nomeAluno = getVal(row, 'Nome do Aluno');
+          const emailAluno = getVal(row, 'E-mail');
+          const nomeTrilha = getVal(row, 'Trilha');
+          const macroInicio = parseDate(getVal(row, 'Macro Início'));
+          const macroTermino = parseDate(getVal(row, 'Macro Término'));
+
+          // Resolver alunoId
+          let alunoId = alunoByName.get(nomeAluno.toLowerCase().trim());
+          if (!alunoId && emailAluno) alunoId = alunoByEmail.get(emailAluno.toLowerCase().trim());
+          if (!alunoId) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Aluno não encontrado: nome "${nomeAluno}"${emailAluno ? ` / e-mail "${emailAluno}"` : ''}. Verifique se o aluno está cadastrado no sistema.` }); errors++; continue; }
+
+          // Resolver trilhaId (tenta nome exato, depois sem acentos)
+          const trilhaId = trilhaByName.get(nomeTrilha.toLowerCase().trim()) ?? trilhaByName.get(normalizeText(nomeTrilha));
+          if (!trilhaId) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Trilha não encontrada: "${nomeTrilha}". Trilhas disponíveis: ${trilhasList.map(t => t.name).join(', ')}` }); errors++; continue; }
+
+          if (!macroInicio || !macroTermino) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: 'Datas de macro início/término inválidas' }); errors++; continue; }
+
+          // Montar competencias
+          const competencias: any[] = [];
+          for (let n = 1; n <= 15; n++) {
+            const nomeComp = getVal(row, `Competência ${n}`);
+            if (!nomeComp) break;
+            const compId = compByName.get(nomeComp.toLowerCase().trim()) ?? compByName.get(normalizeText(nomeComp));
+            if (!compId) { results.push({ row: i+1, aluno: nomeAluno, status: 'aviso', message: `Competência ${n} não encontrada: "${nomeComp}" (pulada)` }); continue; }
+            const peso = getVal(row, `Peso ${n}`) || 'obrigatoria';
+            const notaCorte = getVal(row, `Nota Corte ${n}`) || '70';
+            const metaFinal = getVal(row, `Meta Final ${n}`);
+            const microInicio = parseDate(getVal(row, `Micro Início ${n}`));
+            const microTermino = parseDate(getVal(row, `Micro Término ${n}`));
+            competencias.push({
+              competenciaId: compId,
+              peso: (peso === 'opcional' ? 'opcional' : 'obrigatoria') as 'obrigatoria' | 'opcional',
+              notaCorte,
+              metaFinal: metaFinal ? parseFloat(metaFinal) : null,
+              microInicio: microInicio || null,
+              microTermino: microTermino || null,
+            });
+          }
+
+          if (competencias.length === 0) { results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: 'Nenhuma competência válida encontrada' }); errors++; continue; }
+
+          if (input.preview) {
+            results.push({ row: i+1, aluno: nomeAluno, status: 'ok', message: `PDI válido: trilha "${nomeTrilha}", ${competencias.length} competência(s)` });
+            continue;
+          }
+
+          // Criar PDI no banco
+          try {
+            await db.createAssessmentPdi(
+              { alunoId, trilhaId, macroInicio: macroInicio!, macroTermino: macroTermino! },
+              competencias
+            );
+            results.push({ row: i+1, aluno: nomeAluno, status: 'ok', message: `PDI criado: trilha "${nomeTrilha}", ${competencias.length} compet\u00eancia(s)` });
+            created++;
+          } catch (err: any) {
+            results.push({ row: i+1, aluno: nomeAluno, status: 'erro', message: `Erro ao criar PDI: ${err?.message || 'Erro desconhecido'}` });
+            errors++;
+          }
+        }
+
+        // Registrar no histórico de lotes (somente quando não for preview)
+        if (!input.preview) {
+          try {
+            const now = new Date();
+            const weekNumber = Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+            const notes = [
+              `Upload PDI em Massa: ${created} PDI(s) criado(s)`,
+              errors > 0 ? `${errors} erro(s): ${results.filter(r => r.status === 'erro').map(r => `Linha ${r.row} (${r.aluno}): ${r.message}`).join(' | ')}` : null,
+            ].filter(Boolean).join(' — ');
+            await db.createUploadBatch({
+              weekNumber,
+              year: now.getFullYear(),
+              uploadedBy: ctx.user.id,
+              status: errors > 0 && created === 0 ? 'error' : 'completed',
+              totalRecords: created,
+              notes,
+            });
+          } catch (_) { /* não bloqueia o retorno se o batch falhar */ }
+        }
+
+        return { created, errors, total: results.length, results, preview: input.preview ?? false };
+      }),
+
     // Listar histórico de uploads por tipo
     getUploadHistory: protectedProcedure
       .input(z.object({
@@ -581,7 +1287,7 @@ export const appRouter = router({
   // Performance Report Upload
   performanceReport: router({
     // Upload e processar CSV de performance
-    upload: adminProcedure
+    upload: adminOrAdmin2Procedure
       .input(z.object({
         fileName: z.string(),
         fileData: z.string(), // Base64 encoded CSV
@@ -790,19 +1496,19 @@ export const appRouter = router({
       }),
     
     // Listar histórico de uploads de performance
-    listUploads: adminProcedure
+    listUploads: adminOrAdmin2Procedure
       .input(z.object({ limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getPerformanceUploads(input?.limit || 20);
       }),
     
     // Obter resumo dos dados de performance
-    summary: adminProcedure.query(async () => {
+    summary: adminOrAdmin2Procedure.query(async () => {
       return await db.getStudentPerformanceSummary();
     }),
     
     // Obter detalhes de um upload específico
-    getUpload: adminProcedure
+    getUpload: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await db.getPerformanceUploadById(input.id);
@@ -818,7 +1524,7 @@ export const appRouter = router({
 
   // Formulas management
   formulas: router({
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getActiveFormulas();
     }),
     
@@ -868,7 +1574,7 @@ export const appRouter = router({
 
   // Dashboard data
   dashboard: router({
-    adminMetrics: adminProcedure
+    adminMetrics: adminOrAdmin2Procedure
       .input(z.object({ batchId: z.number().optional() }).optional())
       .query(async ({ input }) => {
         const metrics = await db.getAdminMetrics(input?.batchId);
@@ -1149,14 +1855,22 @@ export const appRouter = router({
             }
             const studentPerfRecs = await db.getStudentPerformanceAsRecords();
             for (const spRec of studentPerfRecs) { performanceV2.push(spRec); }
+            // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+            const atividadePerfRecsReport = await db.getAlunoAtividadePerformanceAsRecords();
+            const existingPerfKeysReport = new Set(performanceV2.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+            for (const apRec of atividadePerfRecsReport) {
+              const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+              if (!existingPerfKeysReport.has(key)) { performanceV2.push(apRec); }
+            }
             
             const ciclosPorAlunoReport = await db.getAllCiclosForCalculatorV2();
             const compIdToCodigoMapReport = await db.getCompIdToCodigoMap();
+            const compIdToNomeMapReport = await db.getCompIdToNomeMap();
             const casesMapReport = await db.getCasesForCalculator();
             const casesDataReport: CaseSucessoData[] = [];
             for (const [, cases] of Array.from(casesMapReport.entries())) { casesDataReport.push(...cases); }
             const macrocicloPorAlunoReport = await db.getMacrocicloPorAluno();
-            const todosIndicadores = calcularIndicadoresTodosAlunos(mentoriasV2, eventosV2, performanceV2, ciclosPorAlunoReport, compIdToCodigoMapReport, casesDataReport, undefined, macrocicloPorAlunoReport);
+            const todosIndicadores = calcularIndicadoresTodosAlunos(mentoriasV2, eventosV2, performanceV2, ciclosPorAlunoReport, compIdToCodigoMapReport, casesDataReport, undefined, macrocicloPorAlunoReport, compIdToNomeMapReport);
             const indicadoresMap = new Map(todosIndicadores.map(i => [i.idUsuario, i]));
             
             // Sheet 0: Resumo do Mentor (apenas para relatório gerencial de mentor)
@@ -1359,15 +2073,32 @@ export const appRouter = router({
             }
           } else if (input.type === 'financeiro_mentora') {
             // ===== RELATÓRIO FINANCEIRO POR MENTORA =====
-            const pricingMap = await db.getAllMentorSessionPricing();
-            
-            // Sheet 1: Resumo por Mentora
+            // Usar precificação V2 (por tipo de sessão) como fonte principal
+            const allV2Rules = await getSessionTypePricingRules(dbConn);
+            // Fallback: precificação legada por faixa de sessão
+            const legacyPricingMap = await db.getAllMentorSessionPricing();
+
+            // Buscar agendamentos do período para todos os mentores
+            const allAppointmentsInPeriod = await db.getAllAppointments({
+              dateFrom: input.dateFrom,
+              dateTo: input.dateTo,
+            });
+
+            // Montar mapa: consultorId -> lista de agendamentos
+            const apptByConsultor = new Map<number, typeof allAppointmentsInPeriod>();
+            for (const appt of allAppointmentsInPeriod) {
+              const existing = apptByConsultor.get(appt.consultorId) || [];
+              existing.push(appt);
+              apptByConsultor.set(appt.consultorId, existing);
+            }
+
+            // Montar mapa de sessões por mentora
             const mentoraSummary: Record<number, {
               nome: string;
               valorPadrao: number;
-              sessoes: Array<{ alunoNome: string; empresaNome: string; data: string; sessionNumber: number; valor: number }>;
+              sessoes: Array<{ alunoNome: string; empresaNome: string; data: string; sessionNumber: number; valor: number; tipoSessao: string; origemPreco: string }>;
             }> = {};
-            
+
             for (const s of mentoringSessions) {
               if (!s.consultorId) continue;
               const consultor = consultorMap.get(s.consultorId);
@@ -1375,7 +2106,10 @@ export const appRouter = router({
               const aluno = s.alunoId ? alunoMap.get(s.alunoId) : null;
               const program = aluno?.programId ? programMap.get(aluno.programId) : null;
               const valorPadrao = consultor.valorSessao ? Number(consultor.valorSessao) : 0;
-              
+              const tipoSessao = (s.tipoSessao || 'individual_normal') as TipoSessao;
+              const programId = aluno?.programId || null;
+              const sessionDateStr = s.sessionDate ? String(s.sessionDate).slice(0, 10) : null;
+
               if (!mentoraSummary[s.consultorId]) {
                 mentoraSummary[s.consultorId] = {
                   nome: consultor.name || 'Desconhecido',
@@ -1383,46 +2117,94 @@ export const appRouter = router({
                   sessoes: [],
                 };
               }
-              
-              // Calcular valor usando precificação flexível
-              const rules = pricingMap.get(s.consultorId) || [];
-              const sessionNum = s.sessionNumber || 0;
-              const matchingRule = rules.find(r => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
-              const valorSessao = matchingRule ? Number(matchingRule.valor) : valorPadrao;
-              
+
+              // Calcular valor: tentar V2 primeiro, fallback para legado
+              let valorSessao = 0;
+              let origemPreco = 'zero';
+              const v2Applicable = allV2Rules.filter((r: any) => {
+                if (!r.isActive) return false;
+                if (r.tipoSessao !== tipoSessao) return false;
+                if (sessionDateStr) {
+                  if (r.validoDesde && sessionDateStr < String(r.validoDesde)) return false;
+                  if (r.validoAte && sessionDateStr > String(r.validoAte)) return false;
+                }
+                return true;
+              });
+              const v2Rule = programId
+                ? v2Applicable.find((r: any) => r.programId === programId && r.consultorId === s.consultorId)
+                : null;
+              if (v2Rule) {
+                valorSessao = Number(v2Rule.valor);
+                origemPreco = 'empresa_mentor';
+              } else {
+                // Fallback legado por faixa de sessão
+                const legacyRules = legacyPricingMap.get(s.consultorId) || [];
+                const sessionNum = s.sessionNumber || 0;
+                const legacyRule = legacyRules.find((r: any) => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
+                if (legacyRule) {
+                  valorSessao = Number(legacyRule.valor);
+                  origemPreco = 'legado_faixa';
+                } else if (valorPadrao > 0) {
+                  valorSessao = valorPadrao;
+                  origemPreco = 'legado_padrao';
+                }
+              }
+
               mentoraSummary[s.consultorId].sessoes.push({
                 alunoNome: aluno?.name || 'N/A',
                 empresaNome: program?.name || 'N/A',
                 data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString('pt-BR') : '',
                 sessionNumber: s.sessionNumber || 0,
                 valor: valorSessao,
+                tipoSessao,
+                origemPreco,
               });
             }
-            
+
             // Sheet 1: Resumo Geral por Mentora
-            const resumoMentoras = Object.values(mentoraSummary).map(m => ({
-              'Mentora': m.nome,
-              'Total de Sessões': m.sessoes.length,
-              'Valor Total (R$)': m.sessoes.reduce((sum, s) => sum + s.valor, 0).toFixed(2),
-              'Alunos Atendidos': Array.from(new Set(m.sessoes.map(s => s.alunoNome))).length,
-              'Empresas': Array.from(new Set(m.sessoes.map(s => s.empresaNome))).join(', '),
-            })).sort((a, b) => parseFloat(b['Valor Total (R$)']) - parseFloat(a['Valor Total (R$)']));
-            
+            // Coletar todos os consultorIds (sessões + agendamentos)
+            const allConsultorIds = new Set<number>([
+              ...Object.keys(mentoraSummary).map(Number),
+              ...Array.from(apptByConsultor.keys()),
+            ]);
+
+            const resumoMentoras = Array.from(allConsultorIds).map(cid => {
+              const m = mentoraSummary[cid];
+              const appts = apptByConsultor.get(cid) || [];
+              const apptNaoCancelados = appts.filter(a => a.status !== 'cancelado');
+              const nome = m?.nome || consultorMap.get(cid)?.name || 'Desconhecido';
+              const totalSessoes = m?.sessoes.length || 0;
+              const totalValor = m?.sessoes.reduce((sum, s) => sum + s.valor, 0) || 0;
+              return {
+                'Mentora': nome,
+                'Mentorias Realizadas': totalSessoes,
+                'Agendamentos no Período': appts.length,
+                'Agendamentos Realizados (não cancelados)': apptNaoCancelados.length,
+                'Agendamentos Cancelados': appts.filter(a => a.status === 'cancelado').length,
+                'Valor Total (R$)': totalValor.toFixed(2),
+                'Alunos Atendidos': Array.from(new Set((m?.sessoes || []).map(s => s.alunoNome))).length,
+                'Empresas': Array.from(new Set((m?.sessoes || []).map(s => s.empresaNome))).join(', '),
+              };
+            }).sort((a, b) => parseFloat(b['Valor Total (R$)']) - parseFloat(a['Valor Total (R$)']));
+
             const totalGeralMentoras = resumoMentoras.reduce((sum, m) => sum + parseFloat(m['Valor Total (R$)']), 0);
             resumoMentoras.push({
               'Mentora': 'TOTAL GERAL',
-              'Total de Sessões': resumoMentoras.reduce((sum, m) => sum + m['Total de Sessões'], 0),
+              'Mentorias Realizadas': resumoMentoras.reduce((sum, m) => sum + m['Mentorias Realizadas'], 0),
+              'Agendamentos no Período': resumoMentoras.reduce((sum, m) => sum + m['Agendamentos no Período'], 0),
+              'Agendamentos Realizados (não cancelados)': resumoMentoras.reduce((sum, m) => sum + m['Agendamentos Realizados (não cancelados)'], 0),
+              'Agendamentos Cancelados': resumoMentoras.reduce((sum, m) => sum + m['Agendamentos Cancelados'], 0),
               'Valor Total (R$)': totalGeralMentoras.toFixed(2),
               'Alunos Atendidos': 0,
               'Empresas': '',
             });
-            
+
             const wsResumoM = XLSX.utils.json_to_sheet(resumoMentoras);
             XLSX.utils.book_append_sheet(wb, wsResumoM, 'Resumo por Mentora');
-            
-            // Sheet 2: Detalhamento - todas as sessões
+
+            // Sheet 2: Mentorias Realizadas (mentoring_sessions)
             const detalheMentora: any[] = [];
-            for (const m of Object.values(mentoraSummary)) {
+            for (const [cid2, m] of Object.entries(mentoraSummary)) {
               for (const s of m.sessoes) {
                 detalheMentora.push({
                   'Mentora': m.nome,
@@ -1430,14 +2212,51 @@ export const appRouter = router({
                   'Empresa': s.empresaNome,
                   'Data da Sessão': s.data,
                   'Nº Sessão': s.sessionNumber,
+                  'Tipo': s.tipoSessao === 'individual_assessment' ? 'Assessment'
+                        : s.tipoSessao === 'grupo_normal' ? 'Grupal'
+                        : 'Individual',
                   'Valor (R$)': s.valor.toFixed(2),
+                  'Origem Preço': s.origemPreco === 'empresa_mentor' ? 'Tabela V2'
+                              : s.origemPreco === 'legado_faixa' ? 'Faixa (legado)'
+                              : s.origemPreco === 'legado_padrao' ? 'Padrão (legado)'
+                              : 'Sem regra',
                 });
               }
             }
-            detalheMentora.sort((a, b) => a['Mentora'].localeCompare(b['Mentora']));
+            detalheMentora.sort((a, b) => a['Mentora'].localeCompare(b['Mentora']) || a['Data da Sessão'].localeCompare(b['Data da Sessão']));
             if (detalheMentora.length > 0) {
               const wsDetalheM = XLSX.utils.json_to_sheet(detalheMentora);
-              XLSX.utils.book_append_sheet(wb, wsDetalheM, 'Detalhamento Sessões');
+              XLSX.utils.book_append_sheet(wb, wsDetalheM, 'Mentorias Realizadas');
+            }
+
+            // Sheet 3: Agendamentos do Período (mentor_appointments)
+            const detalheAgendamentos: any[] = [];
+            for (const appt of allAppointmentsInPeriod) {
+              const consultor = consultorMap.get(appt.consultorId);
+              const mentoraNome = consultor?.name || appt.mentorName || 'Desconhecido';
+              const participantes = (appt.participants || []).map((p: any) => p.alunoName).join(', ');
+              const participantesEmpresas = (appt.participants || []).map((p: any) => {
+                const al = alunoMap.get(p.alunoId);
+                return al?.programId ? (programMap.get(al.programId)?.name || 'N/A') : 'N/A';
+              }).filter((v, i, arr) => arr.indexOf(v) === i).join(', ');
+              const dataFmt = appt.scheduledDate
+                ? new Date(appt.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR')
+                : '';
+              detalheAgendamentos.push({
+                'Mentora': mentoraNome,
+                'Data': dataFmt,
+                'Horário': appt.startTime ? `${appt.startTime}${appt.endTime ? ' - ' + appt.endTime : ''}` : '',
+                'Tipo': appt.type === 'grupo' ? 'Grupo' : 'Individual',
+                'Status': appt.status || '',
+                'Título': appt.title || '',
+                'Participantes': participantes,
+                'Empresa(s)': participantesEmpresas,
+              });
+            }
+            detalheAgendamentos.sort((a, b) => a['Mentora'].localeCompare(b['Mentora']) || a['Data'].localeCompare(b['Data']));
+            if (detalheAgendamentos.length > 0) {
+              const wsAgend = XLSX.utils.json_to_sheet(detalheAgendamentos);
+              XLSX.utils.book_append_sheet(wb, wsAgend, 'Agendamentos');
             }
             
           } else if (input.type === 'financeiro_empresa') {
@@ -1551,7 +2370,7 @@ export const appRouter = router({
 
   // System stats
   stats: router({
-    overview: adminProcedure.query(async () => {
+    overview: adminOrAdmin2Procedure.query(async () => {
       return await db.getSystemStats();
     }),
   }),
@@ -1562,7 +2381,7 @@ export const appRouter = router({
       return await db.getPrograms();
     }),
     
-    stats: adminProcedure.query(async () => {
+    stats: adminOrAdmin2Procedure.query(async () => {
       return await db.getProgramStats();
     }),
   }),
@@ -1651,7 +2470,7 @@ export const appRouter = router({
         return await db.getCompetenciaById(input.id);
       }),
     
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         nome: z.string().min(1),
         trilhaId: z.number(),
@@ -1664,7 +2483,7 @@ export const appRouter = router({
         return { success: true, id };
       }),
     
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         nome: z.string().optional(),
@@ -1680,7 +2499,7 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const success = await db.deleteCompetencia(input.id);
@@ -1692,15 +2511,16 @@ export const appRouter = router({
   planoIndividual: router({
     // Buscar plano de um aluno
     byAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getPlanoIndividualByAluno(input.alunoId);
+        return await db.getPlanoIndividualByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Adicionar competência ao plano
     addCompetencia: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         competenciaId: z.number(),
         isObrigatoria: z.number().optional(),
         metaNota: z.string().optional()
@@ -1714,10 +2534,11 @@ export const appRouter = router({
     addMultiple: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         competenciaIds: z.array(z.number())
       }))
       .mutation(async ({ input }) => {
-        const success = await db.addCompetenciasToPlano(input.alunoId, input.competenciaIds);
+        const success = await db.addCompetenciasToPlano(input.alunoId, input.competenciaIds, input.contratoNivelId ?? null);
         return { success };
       }),
     
@@ -1753,7 +2574,7 @@ export const appRouter = router({
       }),
     
     // Atribuir competências em lote para uma turma inteira
-    addToTurma: adminProcedure
+    addToTurma: adminOrAdmin2Procedure
       .input(z.object({
         turmaId: z.number(),
         competenciaIds: z.array(z.number())
@@ -1780,6 +2601,473 @@ export const appRouter = router({
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
         return await db.getCompetenciasObrigatoriasAluno(input.alunoId);
+      }),
+
+    // Endpoint de diagnóstico temporário — retorna qual query falha
+    diagnosticoResumoPDI: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) return { erro: 'database null' };
+        const conn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
+        if (!conn) return { erro: '$client null' };
+        const resultados: any = {};
+        // Query 1: aluno
+        try {
+          const [r] = await conn.execute(
+            `SELECT a.id, a.name, t.name as trilhaNome, p.name as programaNome, tu.name as turmaNome, con.name as consultorNome
+             FROM alunos a
+             LEFT JOIN trilhas t ON t.id = a.trilhaId
+             LEFT JOIN programs p ON p.id = a.programId
+             LEFT JOIN turmas tu ON tu.id = a.turmaId
+             LEFT JOIN consultors con ON con.id = a.consultorId
+             WHERE a.id = ? LIMIT 1`, [input.alunoId]);
+          resultados.q1_aluno = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q1_aluno = { ok: false, erro: e.message }; }
+        // Query 2: assessment
+        try {
+          const [r] = await conn.execute(
+            `SELECT ap.id, t.name as trilhaNome FROM assessment_pdi ap
+             LEFT JOIN trilhas t ON t.id = ap.trilhaId
+             WHERE ap.alunoId = ? AND ap.status = 'ativo' ORDER BY ap.createdAt DESC LIMIT 1`, [input.alunoId]);
+          resultados.q2_assessment = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q2_assessment = { ok: false, erro: e.message }; }
+        // Query 3: competencias assessment
+        try {
+          const [r] = await conn.execute(
+            `SELECT ac.competenciaId, c.nome FROM assessment_competencias ac
+             JOIN competencias c ON c.id = ac.competenciaId
+             WHERE ac.assessmentPdiId IN (SELECT id FROM assessment_pdi WHERE alunoId = ?) LIMIT 5`, [input.alunoId]);
+          resultados.q3_competencias_assessment = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q3_competencias_assessment = { ok: false, erro: e.message }; }
+        // Query 4: plano_individual
+        try {
+          const [r] = await conn.execute(
+            `SELECT pi.id, c.nome FROM plano_individual pi JOIN competencias c ON c.id = pi.competenciaId WHERE pi.alunoId = ? LIMIT 5`, [input.alunoId]);
+          resultados.q4_plano_individual = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q4_plano_individual = { ok: false, erro: e.message }; }
+        // Query 5: cursos atribuidos
+        try {
+          const [r] = await conn.execute(
+            `SELECT aca.id, cc.titulo FROM aluno_curso_atribuido aca LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId WHERE aca.alunoId = ? LIMIT 5`, [input.alunoId]);
+          resultados.q5_cursos = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q5_cursos = { ok: false, erro: e.message }; }
+        // Query 6: contratos
+        try {
+          const [r] = await conn.execute(
+            `SELECT id FROM contratos_aluno WHERE alunoId = ? AND isActive = 1 LIMIT 1`, [input.alunoId]);
+          resultados.q6_contrato = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q6_contrato = { ok: false, erro: e.message }; }
+        // Query 7: webinares
+        try {
+          const [r] = await conn.execute(
+            `SELECT ep.id, e.title FROM event_participation ep LEFT JOIN events e ON e.id = ep.eventId WHERE ep.alunoId = ? LIMIT 5`, [input.alunoId]);
+          resultados.q7_webinares = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q7_webinares = { ok: false, erro: e.message }; }
+        // Query 8: sessoes
+        try {
+          const [r] = await conn.execute(
+            `SELECT ms.id, tl.nome FROM mentoring_sessions ms LEFT JOIN task_library tl ON tl.id = ms.taskId WHERE ms.alunoId = ? LIMIT 5`, [input.alunoId]);
+          resultados.q8_sessoes = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q8_sessoes = { ok: false, erro: e.message }; }
+        // Query 9: metas
+        try {
+          const [r] = await conn.execute(
+            `SELECT m.id, c.nome FROM metas m LEFT JOIN competencias c ON c.id = m.competenciaId WHERE m.alunoId = ? AND m.isActive = 1 LIMIT 5`, [input.alunoId]);
+          resultados.q9_metas = { ok: true, rows: (r as any[]).length };
+        } catch(e: any) { resultados.q9_metas = { ok: false, erro: e.message }; }
+        return resultados;
+      }),
+    // Mapa estático do P.D.I. do aluno — tudo que ele DEVE fazer para se certificar
+    resumoPlanoAluno: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ['database null'] };
+        const conn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
+        if (!conn) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ['$client null'] };
+        try {
+        // 1. Dados básicos do aluno + trilha + programa
+        const [alunoRows] = await conn.execute(
+          `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
+                  a.contratoInicio, a.contratoFim, a.programId, a.cargo, a.areaAtuacao,
+                  t.name as trilhaNome,
+                  p.name as programaNome,
+                  tu.name as turmaNome,
+                  con.name as consultorNome
+           FROM alunos a
+           LEFT JOIN trilhas t ON t.id = a.trilhaId
+           LEFT JOIN programs p ON p.id = a.programId
+           LEFT JOIN turmas tu ON tu.id = a.turmaId
+           LEFT JOIN consultors con ON con.id = a.consultorId
+           WHERE a.id = ? LIMIT 1`,
+          [input.alunoId]
+        );
+        const aluno = (alunoRows as any[])[0] ?? null;
+        if (!aluno) return null;
+        // 2. Assessment PDI (período macro definido pelo mentor)
+        const [apRows] = await conn.execute(
+          `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas,
+                  ap.observacoes, ap.status as assessmentStatus,
+                  t.name as trilhaNome
+           FROM assessment_pdi ap
+           LEFT JOIN trilhas t ON t.id = ap.trilhaId
+           WHERE ap.alunoId = ? AND ap.status = 'ativo'
+           ORDER BY ap.createdAt DESC LIMIT 1`,
+          [input.alunoId]
+        );
+        const assessment = (apRows as any[])[0] ?? null;
+        // 3. Competências do assessment com microciclos definidos pelo mentor
+        const assessmentId = assessment?.id;
+        let competenciasAssessment: any[] = [];
+        if (assessmentId) {
+          const [acRows] = await conn.execute(
+            `SELECT ac.competenciaId, ac.notaCorte, ac.microInicio, ac.microTermino,
+                    ac.metaFinal, ac.metaCiclo1, ac.metaCiclo2, ac.justificativa,
+                    c.nome as competenciaNome
+             FROM assessment_competencias ac
+             JOIN competencias c ON c.id = ac.competenciaId
+             WHERE ac.assessmentPdiId = ?
+             ORDER BY ac.microInicio, c.nome`,
+            [assessmentId]
+          );
+          competenciasAssessment = acRows as any[];
+        }
+        // 4. Competências do plano individual (lista completa com obrigatórias)
+        const [piRows] = await conn.execute(
+          `SELECT pi.id, pi.competenciaId, pi.isObrigatoria, pi.metaNota, pi.status,
+                  c.nome as competenciaNome
+           FROM plano_individual pi
+           JOIN competencias c ON c.id = pi.competenciaId
+           WHERE pi.alunoId = ?
+           ORDER BY pi.isObrigatoria DESC, c.nome`,
+          [input.alunoId]
+        );
+        const competenciasPlano = piRows as any[];
+        // 5. Cursos atribuídos pelo mentor
+        const [cursosRows] = await conn.execute(
+          `SELECT aca.id, aca.cursoId, aca.competenciaId, aca.dataPrazo, aca.status, aca.dataAtribuicao,
+                  cc.titulo as cursoTitulo, cc.descricao as cursoDescricao,
+                  c.nome as competenciaNome
+           FROM aluno_curso_atribuido aca
+           LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId
+           LEFT JOIN competencias c ON c.id = aca.competenciaId
+           WHERE aca.alunoId = ?
+           ORDER BY aca.dataPrazo ASC, aca.dataAtribuicao ASC`,
+          [input.alunoId]
+        );
+        const cursosAtribuidos = cursosRows as any[];
+        // 6. Contrato formal (tabela contratos_aluno)
+        const [ctRows] = await conn.execute(
+          `SELECT id, periodoInicio, periodoTermino, totalSessoesContratadas, observacoes
+           FROM contratos_aluno WHERE alunoId = ? AND isActive = 1
+           ORDER BY periodoInicio DESC LIMIT 1`,
+          [input.alunoId]
+        );
+        const contrato = (ctRows as any[])[0] ?? null;
+        // 7. Calcular metas com base no período do contrato (regra: 6 meses = 5 mentorias, 5 tarefas, 10 webinars)
+        const calcularMetas = (inicio: Date | null, fim: Date | null, sessoesContratadas: number | null) => {
+          if (!inicio || !fim) return null;
+          const meses = Math.max(1, Math.round((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+          const sessoesBase = sessoesContratadas ?? Math.max(1, Math.round(meses * (5/6)));
+          return {
+            mesesContrato: meses,
+            sessoesMinimas: sessoesBase,
+            tarefasMinimas: sessoesBase, // 1 tarefa por sessão
+            webinarsMinimos: Math.max(1, Math.round(meses * (10/6))),
+          };
+        };
+        const periodoInicio = contrato?.periodoInicio
+          ? new Date(contrato.periodoInicio)
+          : (assessment?.macroInicio ? new Date(assessment.macroInicio) : (aluno.contratoInicio ? new Date(aluno.contratoInicio) : null));
+        const periodoFim = contrato?.periodoTermino
+          ? new Date(contrato.periodoTermino)
+          : (assessment?.macroTermino ? new Date(assessment.macroTermino) : (aluno.contratoFim ? new Date(aluno.contratoFim) : null));
+        const sessoesContratadas = contrato?.totalSessoesContratadas ?? assessment?.totalSessoesPrevistas ?? aluno.totalSessoesContratadas;
+        const metas = calcularMetas(periodoInicio, periodoFim, sessoesContratadas ? Number(sessoesContratadas) : null);
+        // 8. Webinares confirmados pelo aluno
+        const [webRows] = await conn.execute(
+          `SELECT ep.id, ep.eventId, ep.status, ep.selfReportedAt,
+                  e.title as eventoTitulo, e.eventDate
+           FROM event_participation ep
+           LEFT JOIN events e ON e.id = ep.eventId
+           WHERE ep.alunoId = ?
+           ORDER BY e.eventDate DESC`,
+          [input.alunoId]
+        );
+        const webinares = webRows as any[];
+        // 9. Tarefas das sessões de mentoria
+        const [tarefasRows] = await conn.execute(
+          `SELECT ms.id as sessaoId, ms.sessionDate, ms.sessionNumber,
+                  ms.taskId, ms.taskMode, ms.customTaskTitle, ms.taskStatus, ms.taskDeadline,
+                  ms.submittedAt, ms.validatedAt, ms.presence,
+                  tl.nome as tarefaNome, tl.competencia as tarefaCompetencia
+           FROM mentoring_sessions ms
+           LEFT JOIN task_library tl ON tl.id = ms.taskId
+           WHERE ms.alunoId = ?
+           ORDER BY ms.sessionDate ASC`,
+          [input.alunoId]
+        );
+        const todasSessoes = tarefasRows as any[];
+        // Tarefas: sessões que têm tarefa associada (biblioteca, personalizada ou livre)
+        const tarefas = todasSessoes.filter((s: any) =>
+          s.taskMode && s.taskMode !== 'sem_tarefa' && (s.tarefaNome || s.customTaskTitle)
+        );
+        // 10. Data do último reset do aluno (para separar webinares por ciclo)
+        const [resetRows] = await conn.execute(
+          `SELECT MAX(criadoEm) as dataUltimoReset FROM auditoria_resets_ciclo WHERE alunoId = ?`,
+          [input.alunoId]
+        );
+        const dataUltimoReset: Date | null = (resetRows as any[])[0]?.dataUltimoReset
+          ? new Date((resetRows as any[])[0].dataUltimoReset)
+          : null;
+        // 11. Metas desafio do aluno
+        const [metasDesafioRows] = await conn.execute(
+          `SELECT m.id, m.titulo, m.descricao, m.createdAt,
+                  c.nome as competenciaNome,
+                  (SELECT ma.status FROM meta_acompanhamento ma WHERE ma.metaId = m.id ORDER BY ma.ano DESC, ma.mes DESC LIMIT 1) as ultimoStatus,
+                  (SELECT ma.mes FROM meta_acompanhamento ma WHERE ma.metaId = m.id ORDER BY ma.ano DESC, ma.mes DESC LIMIT 1) as ultimoMes,
+                  (SELECT ma.ano FROM meta_acompanhamento ma WHERE ma.metaId = m.id ORDER BY ma.ano DESC, ma.mes DESC LIMIT 1) as ultimoAno
+           FROM metas m
+           LEFT JOIN competencias c ON c.id = m.competenciaId
+           WHERE m.alunoId = ? AND m.isActive = 1
+           ORDER BY c.nome, m.createdAt`,
+          [input.alunoId]
+        );
+        const metasDesafio = metasDesafioRows as any[];
+        return {
+          aluno,
+          assessment,
+          competenciasAssessment,
+          competenciasPlano,
+          cursosAtribuidos,
+          contrato,
+          periodo: {
+            inicio: periodoInicio?.toISOString() ?? null,
+            fim: periodoFim?.toISOString() ?? null,
+          },
+          metas,
+          webinares,
+          tarefas,
+          todasSessoes,
+          metasDesafio,
+          dataUltimoReset: dataUltimoReset?.toISOString() ?? null,
+        };
+        } catch (err: any) {
+          console.error('[resumoPlanoAluno] Erro:', err?.message || err);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: err?.message || 'Erro ao carregar resumo do plano' });
+        }
+      }),
+    // Enviar P.D.I. por e-mail ao aluno (instrução 10b)
+    enviarPorEmail: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const conn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
+        if (!conn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: '$client indisponível' });
+        // Buscar dados completos do aluno
+        const [alunoRows] = await conn.execute(
+          `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
+                  a.contratoInicio, a.contratoFim, a.cargo, a.areaAtuacao,
+                  t.name as trilhaNome, p.name as programaNome,
+                  tu.name as turmaNome, con.name as consultorNome
+           FROM alunos a
+           LEFT JOIN trilhas t ON t.id = a.trilhaId
+           LEFT JOIN programs p ON p.id = a.programId
+           LEFT JOIN turmas tu ON tu.id = a.turmaId
+           LEFT JOIN consultors con ON con.id = a.consultorId
+           WHERE a.id = ? LIMIT 1`,
+          [input.alunoId]
+        );
+        const aluno = (alunoRows as any[])[0];
+        if (!aluno || !aluno.email) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado ou sem e-mail' });
+        // Buscar assessment ativo
+        const [apRows] = await conn.execute(
+          `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.observacoes,
+                  t.name as trilhaNome
+           FROM assessment_pdi ap LEFT JOIN trilhas t ON t.id = ap.trilhaId
+           WHERE ap.alunoId = ? AND ap.status = 'ativo' ORDER BY ap.createdAt DESC LIMIT 1`,
+          [input.alunoId]
+        );
+        const assessment = (apRows as any[])[0] ?? null;
+        // Buscar competencias do assessment
+        let competenciasAssessment: any[] = [];
+        if (assessment?.id) {
+          const [acRows] = await conn.execute(
+            `SELECT ac.competenciaId, ac.notaCorte, ac.microInicio, ac.microTermino,
+                    c.nome as competenciaNome
+             FROM assessment_competencias ac JOIN competencias c ON c.id = ac.competenciaId
+             WHERE ac.assessmentPdiId = ? ORDER BY ac.microInicio, c.nome`,
+            [assessment.id]
+          );
+          competenciasAssessment = acRows as any[];
+        }
+        // Buscar cursos atribuídos
+        const [cursosRows] = await conn.execute(
+          `SELECT aca.id, aca.dataPrazo, cc.titulo as cursoTitulo, c.nome as competenciaNome
+           FROM aluno_curso_atribuido aca
+           LEFT JOIN cursos_competencias cc ON cc.id = aca.cursoId
+           LEFT JOIN competencias c ON c.id = aca.competenciaId
+           WHERE aca.alunoId = ? ORDER BY aca.dataPrazo ASC`,
+          [input.alunoId]
+        );
+        const cursosAtribuidos = cursosRows as any[];
+        // Buscar contrato
+        const [ctRows] = await conn.execute(
+          `SELECT periodoInicio, periodoTermino, totalSessoesContratadas
+           FROM contratos_aluno WHERE alunoId = ? AND isActive = 1 ORDER BY periodoInicio DESC LIMIT 1`,
+          [input.alunoId]
+        );
+        const contrato = (ctRows as any[])[0] ?? null;
+        // Calcular período e metas
+        const periodoInicio = contrato?.periodoInicio ? new Date(contrato.periodoInicio)
+          : (assessment?.macroInicio ? new Date(assessment.macroInicio) : (aluno.contratoInicio ? new Date(aluno.contratoInicio) : null));
+        const periodoFim = contrato?.periodoTermino ? new Date(contrato.periodoTermino)
+          : (assessment?.macroTermino ? new Date(assessment.macroTermino) : (aluno.contratoFim ? new Date(aluno.contratoFim) : null));
+        const sessoes = Number(contrato?.totalSessoesContratadas ?? assessment?.totalSessoesPrevistas ?? aluno.totalSessoesContratadas ?? 0);
+        let metas: any = null;
+        if (periodoInicio && periodoFim) {
+          const meses = Math.max(1, Math.round((periodoFim.getTime() - periodoInicio.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+          const sessoesBase = sessoes || Math.max(1, Math.round(meses * (5/6)));
+          metas = { mesesContrato: meses, sessoesMinimas: sessoesBase, tarefasMinimas: sessoesBase, webinarsMinimos: Math.max(1, Math.round(meses * (10/6))) };
+        }
+        // Formatar data
+        const fmtDate = (d: any) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+        const fmtMes = (d: any) => d ? new Date(d).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : '—';
+        // Agrupar cursos por competência
+        const cursosAgrupados: Record<string, any[]> = {};
+        cursosAtribuidos.forEach((c: any) => {
+          const k = c.competenciaNome || 'Sem competência vinculada';
+          if (!cursosAgrupados[k]) cursosAgrupados[k] = [];
+          cursosAgrupados[k].push(c);
+        });
+        // Gerar HTML do P.D.I.
+        const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>P.D.I. — ${aluno.name}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+  .container { max-width: 680px; margin: 0 auto; background: white; }
+  .header { background: linear-gradient(135deg, #0A1E3E 0%, #1a3a6e 100%); color: white; padding: 32px 24px; text-align: center; }
+  .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .header p { font-size: 16px; opacity: 0.9; }
+  .section { padding: 20px 24px; border-bottom: 1px solid #f0f0f0; }
+  .section-title { font-size: 14px; font-weight: 700; color: #0A1E3E; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+  .card { border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #e9ecef; }
+  .card .value { font-size: 24px; font-weight: bold; margin-bottom: 4px; }
+  .card .label { font-size: 11px; color: #666; }
+  .card .sub { font-size: 10px; color: #999; margin-top: 2px; }
+  .comp-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 6px; background: #f8f9fa; margin-bottom: 6px; border: 1px solid #e9ecef; }
+  .comp-name { font-size: 13px; font-weight: 500; }
+  .comp-meta { font-size: 11px; color: #666; text-align: right; }
+  .curso-group { margin-bottom: 16px; }
+  .curso-group-title { font-size: 13px; font-weight: bold; color: #4338ca; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e7ff; }
+  .curso-item { padding: 8px 12px; background: #f8faff; border-radius: 6px; margin-bottom: 4px; border: 1px solid #e0e7ff; }
+  .curso-item p { margin: 0; font-size: 13px; }
+  .obs { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 16px; font-size: 13px; color: #92400e; }
+  .footer { background: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #999; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #d1fae5; color: #065f46; }
+  .badge-purple { background: #ede9fe; color: #5b21b6; }
+  .badge-amber { background: #fef3c7; color: #92400e; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📊 Plano de Desenvolvimento Individual</h1>
+    <p>${aluno.name}</p>
+    ${aluno.cargo ? `<p style="margin-top:4px;font-size:12px;opacity:0.7">${aluno.cargo}${aluno.areaAtuacao ? ' • ' + aluno.areaAtuacao : ''}</p>` : ''}
+  </div>
+  <!-- Informações do Plano -->
+  <div class="section">
+    <div class="section-title">📋 Informações do Plano</div>
+    <div class="grid">
+      <div class="card">
+        <div class="value" style="color:#0A1E3E;font-size:16px">${aluno.trilhaNome || '—'}</div>
+        <div class="label">Trilha</div>
+        ${aluno.programaNome ? `<div class="sub">${aluno.programaNome}</div>` : ''}
+      </div>
+      <div class="card">
+        <div class="value" style="color:#0A1E3E;font-size:16px">${fmtMes(periodoInicio)}</div>
+        <div class="label">Início</div>
+      </div>
+      <div class="card">
+        <div class="value" style="color:#d97706;font-size:16px">${fmtMes(periodoFim)}</div>
+        <div class="label">Término</div>
+      </div>
+      ${aluno.consultorNome ? `<div class="card"><div class="value" style="color:#0A1E3E;font-size:14px">${aluno.consultorNome}</div><div class="label">Mentor(a)</div></div>` : ''}
+    </div>
+  </div>
+  ${metas ? `
+  <!-- Metas do Programa -->
+  <div class="section">
+    <div class="section-title">🎯 Metas do Programa</div>
+    <div class="grid">
+      <div class="card"><div class="value" style="color:#7c3aed">${metas.mesesContrato}</div><div class="label">Meses de Contrato</div></div>
+      <div class="card"><div class="value" style="color:#059669">${metas.sessoesMinimas}</div><div class="label">Mentorias</div><div class="sub">${aluno.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}</div></div>
+      <div class="card"><div class="value" style="color:#d97706">${metas.tarefasMinimas}</div><div class="label">Tarefas Mínimas</div></div>
+      <div class="card"><div class="value" style="color:#2563eb">${metas.webinarsMinimos}</div><div class="label">Webinars Mínimos</div></div>
+    </div>
+    <p style="font-size:11px;color:#999;margin-top:12px;text-align:center">Regra: a cada 6 meses de contrato → 5 sessões de mentoria, 5 tarefas e 10 webinars mínimos</p>
+  </div>` : ''}
+  ${competenciasAssessment.length > 0 ? `
+  <!-- Competências com Microciclos -->
+  <div class="section">
+    <div class="section-title">📚 Competências — Microciclos Definidos</div>
+    ${competenciasAssessment.map((c: any) => `
+      <div class="comp-item">
+        <div>
+          <div class="comp-name">${c.competenciaNome}</div>
+        </div>
+        <div class="comp-meta">
+          ${(c.microInicio || c.microTermino) ? `<div>${fmtMes(c.microInicio)} → ${fmtMes(c.microTermino)}</div>` : ''}
+          ${c.notaCorte ? `<div><span class="badge badge-blue">Nota mín. ${Number(c.notaCorte).toFixed(1)}</span></div>` : ''}
+        </div>
+      </div>`).join('')}
+  </div>` : ''}
+  ${cursosAtribuidos.length > 0 ? `
+  <!-- Catálogo de Cursos -->
+  <div class="section">
+    <div class="section-title">📖 Catálogo de Cursos por Competência</div>
+    ${Object.entries(cursosAgrupados).map(([comp, cursos]: [string, any[]]) => `
+      <div class="curso-group">
+        <div class="curso-group-title">${comp} <span style="font-weight:normal;font-size:11px">(${cursos.length} curso${cursos.length !== 1 ? 's' : ''})</span></div>
+        ${cursos.map((c: any) => `
+          <div class="curso-item">
+            <p>${c.cursoTitulo || 'Curso sem título'}</p>
+            ${c.dataPrazo ? `<p style="font-size:11px;color:#666;margin-top:2px">Prazo: ${fmtDate(c.dataPrazo)}</p>` : ''}
+          </div>`).join('')}
+      </div>`).join('')}
+  </div>` : ''}
+  ${assessment?.observacoes ? `
+  <!-- Observações do Mentor -->
+  <div class="section">
+    <div class="section-title">💬 Observações do Mentor</div>
+    <div class="obs">${assessment.observacoes.replace(/\n/g, '<br>')}</div>
+  </div>` : ''}
+  <div class="footer">
+    P.D.I. gerado em ${new Date().toLocaleDateString('pt-BR')} • Ecossistema do Bem • Este documento é de uso exclusivo do aluno e mentor
+  </div>
+</div>
+</body>
+</html>`;
+        const { sendEmail } = await import('./emailService');
+        const result = await sendEmail({
+          to: aluno.email,
+          subject: `Seu Plano de Desenvolvimento Individual (P.D.I.) — ${aluno.name}`,
+          html,
+          text: `Olá ${aluno.name}, segue em anexo seu Plano de Desenvolvimento Individual. Acesse o sistema para visualizar todos os detalhes.`,
+        });
+        if (!result.success) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.error || 'Falha ao enviar e-mail' });
+        return { success: true, email: aluno.email };
       }),
   }),
 
@@ -1814,8 +3102,8 @@ export const appRouter = router({
 
   // Indicadores BEM
   indicadores: router({
-    // Dashboard Visão Geral (consolidado de todas as empresas)
-    visaoGeral: adminProcedure.query(async () => {
+    // Dashboard Visão Geral (consolidado de todas as empresas, ou filtrado por empresa para gerentes)
+    visaoGeral: protectedProcedure.query(async ({ ctx }) => {
       // Buscar todos os dados de mentorias e eventos
       const mentoringSessions = await db.getAllMentoringSessions();
       const eventParticipations = await db.getAllEventParticipationWithDate();
@@ -1929,10 +3217,20 @@ export const appRouter = router({
           existingPerfKeys.add(key);
         }
       }
+      // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+      const atividadePerfRecsGerencial = await db.getAlunoAtividadePerformanceAsRecords();
+      for (const apRec of atividadePerfRecsGerencial) {
+        const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+        if (!existingPerfKeys.has(key)) {
+          performance.push(apRec);
+          existingPerfKeys.add(key);
+        }
+      }
       
       // Buscar ciclos de execução (V2)
       const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
       const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+      const compIdToNomeMap = await db.getCompIdToNomeMap();
       const casesMap = await db.getCasesForCalculator();
       const casesData: CaseSucessoData[] = [];
       for (const [, cases] of Array.from(casesMap.entries())) { casesData.push(...cases); }
@@ -1940,8 +3238,28 @@ export const appRouter = router({
       // Buscar macrociclos
       const macrocicloPorAluno = await db.getMacrocicloPorAluno();
       
-      // Calcular indicadores (V2)
-      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno);
+      // Se for gerente, filtrar dados por empresa
+      const isGerente = ctx.user.role === 'manager' && (ctx.user as any).consultorRole === 'gerente';
+      if (isGerente && ctx.user.programId) {
+        const userProgram = programMap.get(ctx.user.programId);
+        if (userProgram) {
+          // Filtrar mentorias, eventos e performance apenas da empresa do gerente
+          const filteredMentorias = mentorias.filter(m => m.empresa === userProgram.name);
+          const filteredEventos = eventos.filter(e => e.empresa === userProgram.name);
+          const filteredPerformance = performance.filter(p => {
+            const aluno = alunosList.find(a => a.externalId === p.idUsuario || String(a.id) === p.idUsuario);
+            return aluno && aluno.programId === ctx.user.programId;
+          });
+          
+          // Calcular indicadores apenas com dados filtrados
+          const indicadores = calcularIndicadoresTodosAlunos(filteredMentorias, filteredEventos, filteredPerformance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno, compIdToNomeMap);
+          const dashboard = gerarDashboardGeral(indicadores);
+          return dashboard;
+        }
+      }
+      
+      // Calcular indicadores (V2) - admin vê todos
+      const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesData, undefined, macrocicloPorAluno, compIdToNomeMap);
       const dashboard = gerarDashboardGeral(indicadores);
       
       return dashboard;
@@ -2058,14 +3376,24 @@ export const appRouter = router({
             existingPerfKeys.add(key);
           }
         }
+        // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+        const atividadePerfRecsEmp = await db.getAlunoAtividadePerformanceAsRecords();
+        for (const apRec of atividadePerfRecsEmp) {
+          const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(apRec);
+            existingPerfKeys.add(key);
+          }
+        }
         
         const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const compIdToNomeMapEmp = await db.getCompIdToNomeMap();
         const casesMapEmp = await db.getCasesForCalculator();
         const casesDataEmp: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapEmp.entries())) { casesDataEmp.push(...cases); }
         const macrocicloPorAlunoEmp = await db.getMacrocicloPorAluno();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataEmp, undefined, macrocicloPorAlunoEmp);
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataEmp, undefined, macrocicloPorAlunoEmp, compIdToNomeMapEmp);
         const dashboard = gerarDashboardEmpresa(indicadores, input.empresa);
         
         // Enriquecer alunos com turma, trilha, ciclo, competências
@@ -2091,6 +3419,38 @@ export const appRouter = router({
             });
           }
         }
+        
+        // Buscar dados de reset de todos os alunos
+        const resetsPorAluno = await db.getAllResetsPorAluno();
+        
+        // Buscar históricos de ciclos para calcular médias do ciclo anterior
+        const alunoDbIds = alunosList.map(a => a.id);
+        const historicosEmpresa = await db.getHistoricoCiclosPorEmpresa(alunoDbIds);
+        // Pegar apenas o ciclo mais recente de cada aluno (já ordenado DESC por numeroCiclo)
+        const historicoMaisRecentePorAluno = new Map<number, any>();
+        for (const h of historicosEmpresa) {
+          if (!historicoMaisRecentePorAluno.has(Number(h.alunoId))) {
+            historicoMaisRecentePorAluno.set(Number(h.alunoId), h);
+          }
+        }
+        // Calcular médias do ciclo anterior (snapshot) para alunos que têm histórico
+        const historicosValidos = Array.from(historicoMaisRecentePorAluno.values()).filter(
+          h => h.snapshotEngajamento != null
+        );
+        const calcMedia = (arr: any[], field: string) => {
+          const vals = arr.map(h => parseFloat(h[field] ?? 0)).filter(v => !isNaN(v));
+          return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+        };
+        const visaoEmpresaAnterior = historicosValidos.length > 0 ? {
+          totalAlunos: historicosValidos.length,
+          mediaInd1: calcMedia(historicosValidos, 'snapshotInd1'),
+          mediaInd2: calcMedia(historicosValidos, 'snapshotInd2'),
+          mediaInd3: calcMedia(historicosValidos, 'snapshotInd3'),
+          mediaInd4: calcMedia(historicosValidos, 'snapshotInd4'),
+          mediaInd5: calcMedia(historicosValidos, 'snapshotInd5'),
+          mediaInd6: calcMedia(historicosValidos, 'snapshotAplicabilidade'),
+          mediaInd7: calcMedia(historicosValidos, 'snapshotEngajamento'),
+        } : null;
         
         const alunosEnriquecidos = dashboard.alunos.map(ind => {
           const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
@@ -2128,9 +3488,38 @@ export const appRouter = router({
           // PDIs congelados do aluno
           const pdisCongelados = alunoDb ? (pdisCongeladosPorAluno.get(alunoDb.id) || []) : [];
           
-          return {
+          // Dados de reset do aluno
+          const resetInfo = alunoDb ? resetsPorAluno.get(alunoDb.id) : undefined;
+          
+          // Para alunos resetados sem PDI ativo, usar snapshot histórico nos indicadores
+          const historicoAluno = alunoDb ? historicoMaisRecentePorAluno.get(alunoDb.id) : null;
+          const semPdiAtivo = alunoDb ? !(pdisCongeladosPorAluno.get(alunoDb.id) === undefined) && !alunosList.find(a => a.id === alunoDb.id) : false;
+          // Verificar se aluno tem PDI ativo
+          const temPdiAtivo = allAssessmentPdis.some(p => p.alunoId === alunoDb?.id && p.status === 'ativo');
+          const usarSnapshot = !!historicoAluno && !temPdiAtivo;
+
+          const snapshotInd7 = parseFloat(String(historicoAluno?.ind7EngajamentoFinal ?? historicoAluno?.snapshotEngajamento ?? '0'));
+          const indFinal = usarSnapshot ? {
             ...ind,
+            // Sobrescrever consolidado com valores do snapshot
+            consolidado: {
+              ...(ind.consolidado || {}),
+              ind1_webinars: parseFloat(historicoAluno.snapshotInd1 ?? '0'),
+              ind2_avaliacoes: parseFloat(historicoAluno.snapshotInd2 ?? '0'),
+              ind3_competencias: parseFloat(historicoAluno.snapshotInd3 ?? '0'),
+              ind4_tarefas: parseFloat(historicoAluno.snapshotInd4 ?? '0'),
+              ind5_engajamento: parseFloat(historicoAluno.snapshotInd5 ?? '0'),
+              ind6_aplicabilidade: parseFloat(historicoAluno.snapshotAplicabilidade ?? '0'),
+              ind7_engajamentoFinal: snapshotInd7,
+            },
+            notaFinal: snapshotInd7 / 10,
+            performanceGeral: snapshotInd7,
+          } : ind;
+
+          return {
+            ...indFinal,
             alunoDbId: alunoDb?.id || 0,
+            email: alunoDb?.email || null,
             turmaNome: turma?.name || 'Não definida',
             trilhaNome,
             trilhasReais,
@@ -2141,12 +3530,19 @@ export const appRouter = router({
             competenciasComNota: competencias.filter(c => c.nota !== null).length,
             pdisCongelados,
             temPdiCongelado: pdisCongelados.length > 0,
+            foiResetado: !!resetInfo,
+            usandoSnapshotHistorico: usarSnapshot,
+            resetDataCiclo: resetInfo ? resetInfo.numeroCicloArquivado : null,
+            resetCriadoEm: resetInfo ? resetInfo.criadoEm : null,
+            resetAdminNome: resetInfo ? resetInfo.adminNome : null,
+            resetInd7Snapshot: resetInfo ? resetInfo.ind7Snapshot : null,
           };
         });
         
         return {
           ...dashboard,
           alunos: alunosEnriquecidos,
+          visaoEmpresaAnterior,
         };
       }),
     
@@ -2262,14 +3658,24 @@ export const appRouter = router({
             existingPerfKeys.add(key);
           }
         }
+        // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+        const atividadePerfRecsTurma = await db.getAlunoAtividadePerformanceAsRecords();
+        for (const apRec of atividadePerfRecsTurma) {
+          const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(apRec);
+            existingPerfKeys.add(key);
+          }
+        }
         
         const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const compIdToNomeMapTurma = await db.getCompIdToNomeMap();
         const casesMapTurma = await db.getCasesForCalculator();
         const casesDataTurma: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapTurma.entries())) { casesDataTurma.push(...cases); }
         const macrocicloPorAlunoTurma = await db.getMacrocicloPorAluno();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataTurma, undefined, macrocicloPorAlunoTurma);
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataTurma, undefined, macrocicloPorAlunoTurma, compIdToNomeMapTurma);
         const agregado = agregarIndicadores(indicadores, 'turma', String(input.turmaId));
         const alunos = indicadores.filter(i => i.turma === String(input.turmaId));
         
@@ -2388,14 +3794,24 @@ export const appRouter = router({
             existingPerfKeys.add(key);
           }
         }
+        // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+        const atividadePerfRecsInd = await db.getAlunoAtividadePerformanceAsRecords();
+        for (const apRec of atividadePerfRecsInd) {
+          const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(apRec);
+            existingPerfKeys.add(key);
+          }
+        }
         
         const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const compIdToNomeMapInd = await db.getCompIdToNomeMap();
         const casesMapInd = await db.getCasesForCalculator();
         const casesDataInd: CaseSucessoData[] = [];
         for (const [, cases] of Array.from(casesMapInd.entries())) { casesDataInd.push(...cases); }
         const macrocicloPorAlunoInd = await db.getMacrocicloPorAluno();
-        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd, undefined, macrocicloPorAlunoInd);
+        const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd, undefined, macrocicloPorAlunoInd, compIdToNomeMapInd);
         const alunoIndicadores = indicadores.find(i => i.idUsuario === input.alunoId);
         
         if (!alunoIndicadores) {
@@ -2428,7 +3844,376 @@ export const appRouter = router({
       const programs = await db.getPrograms();
       return programs.map(p => ({ id: p.id, nome: p.name, codigo: p.code }));
     }),
+
+    enviarLembreteEngajamento: managerProcedure
+      .input(z.object({
+        alunoIdUsuario: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const hasConsultorId = !!(ctx.user as any)?.consultorId;
+        const consultorRole = (ctx.user as any)?.consultorRole;
+        const isGestor = ctx.user.role === 'manager' && (
+          consultorRole === 'gerente' ||
+          (!hasConsultorId && !(ctx.user as any)?.alunoId) ||
+          !!(ctx.user as any)?.alunoId
+        );
+        if (!isGestor || !ctx.user.programId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito ao gestor da empresa.' });
+        }
+
+        const programs = await db.getPrograms();
+        const program = programs.find(p => p.id === ctx.user.programId);
+        if (!program) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Empresa do gestor não encontrada.' });
+        }
+
+        const caller = appRouter.createCaller(ctx);
+        const dashboardEmpresa = await caller.indicadores.porEmpresa({ empresa: program.name });
+        const alunoRanking = dashboardEmpresa.alunos.find((a: any) => a.idUsuario === input.alunoIdUsuario);
+        if (!alunoRanking) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Aluno não pertence à empresa do gestor.' });
+        }
+
+        if (!alunoRanking.email) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Aluno sem e-mail cadastrado.' });
+        }
+
+        // Calcular posicao do aluno no ranking da empresa
+        const posicaoRanking = dashboardEmpresa.alunos
+          .sort((a: any, b: any) => b.notaFinal - a.notaFinal)
+          .findIndex((a: any) => a.idUsuario === input.alunoIdUsuario) + 1;
+
+        const emailData = buildLembreteEngajamentoEmail({
+          nomeAluno: alunoRanking.nomeAluno || alunoRanking.email || 'Aluno',
+          turma: alunoRanking.turmaNome || alunoRanking.turma || 'Não definida',
+          posicao: posicaoRanking || 1,
+          ind1Webinars: Number(alunoRanking?.consolidado?.ind1_webinars ?? 0),
+          ind2Avaliacoes: Number(alunoRanking?.consolidado?.ind2_avaliacoes ?? 0),
+          ind3Competencias: Number(alunoRanking?.consolidado?.ind3_competencias ?? 0),
+          ind4Tarefas: Number(alunoRanking?.consolidado?.ind4_tarefas ?? 0),
+          ind5Engajamento: Number(alunoRanking?.consolidado?.ind5_engajamento ?? 0),
+          engajamentoFinal: Number(alunoRanking?.consolidado?.ind7_engajamentoFinal ?? 0),
+        });
+
+        // Gestor que disparou o lembrete recebe copia
+        const gestorEmail = ctx.user.email || null;
+
+        const envio = await sendEmail({
+          to: alunoRanking.email,
+          cc: gestorEmail || undefined,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text,
+        });
+
+        const dbConn = await getDb();
+        if (dbConn) {
+          await dbConn.insert(emailAlertasLog).values({
+            alunoId: alunoRanking.alunoDbId,
+            consultorId: 0,
+            tipoAlerta: 'ranking_engajamento_lembrete',
+            diasSemSessao: 0,
+            emailEnviado: envio.success ? 1 : 0,
+            erro: envio.success ? null : (envio.error || 'Falha no envio do lembrete de ranking'),
+          });
+        }
+
+        if (!envio.success) {
+          const envioDesativado = (envio.error || '').toLowerCase().includes('temporariamente desativado');
+          if (envioDesativado) {
+            return { success: true, emailEnabled: false };
+          }
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: envio.error || 'Falha ao enviar e-mail.' });
+        }
+
+        return { success: true, emailEnabled: true };
+      }),
+
+    exportarRankingEngajamentoExcel: managerProcedure
+      .input(z.object({
+        alunoIdsUsuario: z.array(z.string().min(1)),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const hasConsultorId = !!(ctx.user as any)?.consultorId;
+        const consultorRole = (ctx.user as any)?.consultorRole;
+        const isGestor = ctx.user.role === 'manager' && (
+          consultorRole === 'gerente' ||
+          (!hasConsultorId && !(ctx.user as any)?.alunoId) ||
+          !!(ctx.user as any)?.alunoId
+        );
+        if (!isGestor || !ctx.user.programId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito ao gestor da empresa.' });
+        }
+
+        const programs = await db.getPrograms();
+        const program = programs.find(p => p.id === ctx.user.programId);
+        if (!program) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Empresa do gestor não encontrada.' });
+        }
+
+        const caller = appRouter.createCaller(ctx);
+        const dashboardEmpresa = await caller.indicadores.porEmpresa({ empresa: program.name });
+        const alunosPorId = new Map<string, any>();
+        dashboardEmpresa.alunos.forEach((a: any) => alunosPorId.set(a.idUsuario, a));
+
+        const turmasEmpresa = await db.getTurmas(ctx.user.programId);
+        const turmaMap = new Map<string, string>();
+        turmasEmpresa.forEach(t => turmaMap.set(String(t.id), t.name));
+
+        const exportRows = input.alunoIdsUsuario.map((idUsuario, index) => {
+          const aluno = alunosPorId.get(idUsuario);
+          if (!aluno) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Tentativa de exportar aluno fora do escopo da empresa.' });
+          }
+          return {
+            'Posição': index + 1,
+            'Pessoa': aluno.nomeAluno || 'Sem nome',
+            'Turma': turmaMap.get(String(aluno.turma || '')) || 'Não definida',
+            'Ind. 1: Webinars': `${Math.round(Number(aluno?.consolidado?.ind1_webinars ?? 0))}%`,
+            'Ind. 2: Avaliações': `${Math.round(Number(aluno?.consolidado?.ind2_avaliacoes ?? 0))}%`,
+            'Ind. 3: Competências': `${Math.round(Number(aluno?.consolidado?.ind3_competencias ?? 0))}%`,
+            'Ind. 4: Tarefas': `${Math.round(Number(aluno?.consolidado?.ind4_tarefas ?? 0))}%`,
+            'Ind. 5: Engajamento': `${Math.round(Number(aluno?.consolidado?.ind5_engajamento ?? 0))}%`,
+            'Ind. Média: Engajamento Final': `${Math.round(Number(aluno?.consolidado?.ind7_engajamentoFinal ?? 0))}%`,
+          };
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportRows);
+        XLSX.utils.book_append_sheet(wb, ws, 'Ranking Engajamento');
+
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+        const safeEmpresa = program.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]/g, '-');
+        const date = new Date();
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const filename = `ranking-geral-engajamento-${safeEmpresa}-${yyyy}${mm}${dd}.xlsx`;
+
+        return {
+          success: true,
+          filename,
+          base64: buffer.toString('base64'),
+        };
+      }),
     
+    performanceNivelAtual: protectedProcedure
+      .input(z.object({ alunoId: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        // Resolve aluno-alvo:
+        // - sem input: aluno da sessão
+        // - com input.alunoId: permitido para admin/manager
+        let alunoIdAlvo: number | null = null;
+        if (input?.alunoId) {
+          if (ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para consultar outro aluno." });
+          }
+          alunoIdAlvo = input.alunoId;
+        } else if (ctx.user.alunoId) {
+          alunoIdAlvo = ctx.user.alunoId;
+        } else {
+          const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+          if (alunoCtx?.id) alunoIdAlvo = alunoCtx.id;
+        }
+
+        if (!alunoIdAlvo) {
+          const byExternal = await db.getAlunoByExternalId(ctx.user.openId);
+          alunoIdAlvo = byExternal?.id ?? null;
+        }
+        if (!alunoIdAlvo) {
+          return { found: false as const, message: "Aluno não encontrado para a sessão atual." };
+        }
+
+        const alunos = await db.getAlunos();
+        const aluno = alunos.find((a) => a.id === alunoIdAlvo);
+        if (!aluno) {
+          return { found: false as const, message: "Aluno não encontrado." };
+        }
+
+        const nivelOperacional = await db.getContratoNivelComStatusOperacional(aluno.id, null);
+        let nivelReferencia = nivelOperacional;
+        if (!nivelReferencia) {
+          const historico = await db.getContratoNiveisByAluno(aluno.id);
+          nivelReferencia = historico[0]
+            ? {
+                ...historico[0],
+                statusOperacional: "encerrado" as const,
+              }
+            : null;
+        }
+
+        const pedagogia = await db.getPedagogiaByNivel(aluno.id, nivelReferencia?.id ?? null);
+        const [programas, turmas] = await Promise.all([db.getPrograms(), db.getTurmas()]);
+        const programa = aluno.programId ? (programas.find((p) => p.id === aluno.programId) || null) : null;
+        const turma = aluno.turmaId ? (turmas.find((t) => t.id === aluno.turmaId) || null) : null;
+
+        const mentorias = pedagogia.mentoringSessions || [];
+        const eventos = pedagogia.eventParticipation || [];
+        const plano = pedagogia.planoIndividual || [];
+        const assessments = pedagogia.assessments || [];
+        const metas = pedagogia.metas || [];
+        const cases = pedagogia.casesSucesso || [];
+
+        // === CÁLCULO DE INDICADORES VIA V2 (usa student_performance para Ind.2 e Ind.3) ===
+        const idUsuarioNivel = aluno.externalId || String(aluno.id);
+
+        // Montar PerformanceRecord[] a partir do student_performance do nível
+        const studentPerfNivel = (pedagogia.studentPerformance || []) as any[];
+        const performanceNivelRecs: PerformanceRecord[] = [];
+        for (const sp of studentPerfNivel) {
+          performanceNivelRecs.push({
+            idUsuario: idUsuarioNivel,
+            nomeTurma: sp.turmaName || '',
+            idCompetencia: sp.externalCompetenciaId || String(sp.competenciaId || ''),
+            nomeCompetencia: sp.competenciaName || '',
+            notaAvaliacao: sp.mediaAvaliacoesRespondidas != null ? Number(sp.mediaAvaliacoesRespondidas) / 10 : undefined,
+            aulasConcluidas: sp.aulasConcluidas || 0,
+            aulasDisponiveis: sp.aulasDisponiveis || 0,
+            aprovado: (sp.progressoTotal || 0) >= 100,
+          } as any);
+        }
+        // Complementar com plano_individual.notaAtual quando disponível
+        for (const item of plano) {
+          if ((item as any).notaAtual) {
+            const key = String((item as any).competenciaId);
+            if (!performanceNivelRecs.find(p => p.idCompetencia === key)) {
+              performanceNivelRecs.push({
+                idUsuario: idUsuarioNivel,
+                nomeTurma: '',
+                idCompetencia: key,
+                nomeCompetencia: (item as any).competenciaNome || '',
+                notaAvaliacao: parseFloat((item as any).notaAtual),
+                aprovado: parseFloat((item as any).notaAtual) >= 7,
+              } as any);
+            }
+          }
+        }
+
+        // Montar MentoringRecord[] e EventRecord[] para o V2
+        const mentoriasNivelRecs: MentoringRecord[] = mentorias.map((s: any) => ({
+          idUsuario: idUsuarioNivel,
+          nomeAluno: aluno.name,
+          empresa: programa?.name || '',
+          turma: turma?.name || '',
+          trilha: '',
+          ciclo: s.ciclo || '',
+          sessao: s.sessionNumber || 0,
+          dataSessao: s.sessionDate ? new Date(s.sessionDate) : undefined,
+          presenca: s.presence as 'presente' | 'ausente',
+          atividadeEntregue: s.isAssessment ? 'sem_tarefa' : ((s.taskStatus || 'sem_tarefa') as any),
+          engajamento: s.engagementScore || undefined,
+          feedback: s.feedback || '',
+        }));
+        const eventosNivelRecs: EventRecord[] = eventos.map((e: any) => ({
+          idUsuario: idUsuarioNivel,
+          nomeAluno: aluno.name,
+          empresa: programa?.name || '',
+          turma: '',
+          trilha: '',
+          tituloEvento: e.eventTitle || 'Evento',
+          dataEvento: e.eventDate ? new Date(e.eventDate) : undefined,
+          presenca: e.status as 'presente' | 'ausente',
+        }));
+
+        // Buscar ciclos e compIdToCodigoMap para o V2
+        const ciclosNivelCalc = await db.getCiclosForCalculator(aluno.id);
+        const ciclosV2Nivel = ciclosNivelCalc.map((c: any) => ({
+          ...c,
+          trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
+        }));
+        const compIdToCodigoMapNivel = await db.getCompIdToCodigoMap();
+        const casesDataNivel: CaseSucessoData[] = cases.map((c: any) => ({
+          alunoId: c.alunoId,
+          trilhaId: c.trilhaId,
+          trilhaNome: c.trilhaNome || '',
+          entregue: c.entregue === 1,
+        }));
+        const macrocicloPorAlunoNivel = await db.getMacrocicloPorAluno();
+        const macrocicloNivel = macrocicloPorAlunoNivel.get(idUsuarioNivel);
+        const indV2Nivel = calcularIndicadoresAlunoV2(
+          idUsuarioNivel, mentoriasNivelRecs, eventosNivelRecs, performanceNivelRecs,
+          ciclosV2Nivel, compIdToCodigoMapNivel, casesDataNivel, undefined, macrocicloNivel
+        );
+
+        // Indicadores: usar V2 para todos (Ind.1 a Ind.7)
+        const webinarsTotal = eventos.length;
+        const webinarsPresente = eventos.filter((e: any) => e.status === "presente").length;
+        const ind1_webinars = indV2Nivel.consolidado?.ind1_webinars ?? (webinarsTotal > 0 ? clampPercent((webinarsPresente / webinarsTotal) * 100) : 0);
+        const ind2_avaliacoes = indV2Nivel.consolidado?.ind2_avaliacoes ?? 0;
+        const ind3_competencias = indV2Nivel.consolidado?.ind3_competencias ?? 0;
+        const tarefasValidas = mentorias.filter((s: any) => s.taskStatus === "entregue" || s.taskStatus === "nao_entregue");
+        const tarefasEntregues = tarefasValidas.filter((s: any) => s.taskStatus === "entregue").length;
+        const ind4_tarefas = indV2Nivel.consolidado?.ind4_tarefas ?? (tarefasValidas.length > 0 ? clampPercent((tarefasEntregues / tarefasValidas.length) * 100) : 0);
+        const engajamentos = mentorias
+          .map((s: any) => (s.engagementScore == null ? null : Number(s.engagementScore)))
+          .filter((v: number | null): v is number => v != null && Number.isFinite(v));
+        const avgEngajamento = engajamentos.length > 0
+          ? engajamentos.reduce((acc: number, v: number) => acc + v, 0) / engajamentos.length
+          : 0;
+        const ind5_engajamento = indV2Nivel.consolidado?.ind5_engajamento ?? clampPercent(avgEngajamento * 20);
+        const compObrigatorias = plano.filter((c: any) => Number(c.isObrigatoria ?? 1) === 1);
+        const aplicTotal = cases.length;
+        const aplicEntregues = cases.filter((c: any) => c.entregue === 1).length;
+        const ind6_aplicabilidade = indV2Nivel.consolidado?.ind6_aplicabilidade ?? (aplicTotal > 0 ? clampPercent((aplicEntregues / aplicTotal) * 100) : 0);
+        const ind7_engajamentoFinal = indV2Nivel.consolidado?.ind7_engajamentoFinal ?? clampPercent(
+          (ind1_webinars + ind2_avaliacoes + ind3_competencias + ind4_tarefas + ind5_engajamento) / 5
+        );
+
+        const indicadoresNivel = {
+          ind1_webinars,
+          ind2_avaliacoes,
+          ind3_competencias,
+          ind4_tarefas,
+          ind5_engajamento,
+          ind6_aplicabilidade,
+          ind7_engajamentoFinal,
+          classificacao: indV2Nivel.consolidado?.classificacao ?? classifyByPercent(ind7_engajamentoFinal),
+        };
+
+        return {
+          found: true as const,
+          aluno: {
+            id: aluno.id,
+            name: aluno.name,
+            programa: programa?.name || "Não definido",
+            turma: turma?.name || "Não definida",
+            trilha: turma?.name || "Não definida",
+          },
+          nivel: nivelReferencia
+            ? {
+                id: nivelReferencia.id,
+                nome: nivelReferencia.nivel,
+                // PRIORIDADE ABSOLUTA: Cadastro do Aluno (Formulário)
+                // Depois: Datas do Nível, Depois: Regra por Empresa/Turma
+                dataInicio: (aluno as any).contratoInicio || nivelReferencia.dataInicio || getFallbackDates(programa?.name, turma?.name).inicio || null,
+                dataFim: (aluno as any).contratoFim || nivelReferencia.dataFim || getFallbackDates(programa?.name, turma?.name).fim || null,
+                statusOperacional: (nivelReferencia as any).statusOperacional || "encerrado",
+                isFallbackEncerrado: !nivelOperacional,
+              }
+            : null,
+          indicadoresNivel,
+          entregas: {
+            webinars: { total: webinarsTotal, presente: webinarsPresente },
+            avaliacoes: { total: avaliacoesTotal, concluidas: avaliacoesConcluidas },
+            competencias: { totalObrigatorias: compObrigatorias.length, aprovadas: compAprovadas },
+            tarefas: { total: tarefasValidas.length, entregues: tarefasEntregues },
+            mentorias: { total: mentorias.length },
+            metas: { total: metas.length, concluidas: metas.filter((m: any) => m.status === "concluida").length },
+            cases: { total: aplicTotal, entregues: aplicEntregues },
+          },
+          pedagogia: {
+            contratoNivelId: pedagogia.contratoNivelId,
+            assessments,
+            planoIndividual: plano,
+            metas,
+            mentoringSessions: mentorias,
+            eventParticipation: eventos,
+            casesSucesso: cases,
+            studentPerformance: pedagogia.studentPerformance || [],
+          },
+        };
+      }),
+
     // Performance Filtrada - BLOCO 3
     // Calcula indicadores considerando apenas competências obrigatórias do plano individual
     performanceFiltrada: protectedProcedure
@@ -2535,6 +4320,15 @@ export const appRouter = router({
             existingPerfKeys.add(key);
           }
         }
+        // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+        const atividadePerfRecords = await db.getAlunoAtividadePerformanceAsRecords();
+        for (const apRec of atividadePerfRecords) {
+          const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+          if (!existingPerfKeys.has(key)) {
+            performance.push(apRec);
+            existingPerfKeys.add(key);
+          }
+        }
         
         // Converter competências para o formato esperado
         const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
@@ -2565,6 +4359,7 @@ export const appRouter = router({
           trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
         }));
         const compIdToCodigoMap = await db.getCompIdToCodigoMap();
+        const compIdToNomeMapAluno = await db.getCompIdToNomeMap();
         const casesAluno = await db.getCasesSucessoByAluno(input.alunoId);
         const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
           alunoId: c.alunoId,
@@ -2576,7 +4371,7 @@ export const appRouter = router({
         const macrocicloPorAlunoMap = await db.getMacrocicloPorAluno();
         const macrocicloAluno = macrocicloPorAlunoMap.get(idUsuario);
         const indicadoresV2 = calcularIndicadoresAlunoV2(
-          idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAluno
+          idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAluno, compIdToNomeMapAluno
         );
         
         return {
@@ -2608,32 +4403,57 @@ export const appRouter = router({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário não autenticado' });
       }
 
-      // Tentar encontrar o aluno: primeiro pelo alunoId do user, depois email, depois openId
-      let aluno: Awaited<ReturnType<typeof db.getAlunoByEmail>> | undefined;
-      if (ctx.user.alunoId) {
-        const allAlunos = await db.getAlunos();
-        aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
-      }
-      if (!aluno && ctx.user.email) {
-        aluno = await db.getAlunoByEmail(ctx.user.email);
-      }
-      if (!aluno) {
-        aluno = await db.getAlunoByExternalId(ctx.user.openId);
-      }
+      // Tentar encontrar o aluno: alunoId direto → email → externalId (openId)
+      console.log('[meuDashboard] ctx.user:', JSON.stringify({ id: ctx.user.id, openId: ctx.user.openId, email: ctx.user.email, alunoId: ctx.user.alunoId, role: ctx.user.role }));
+      const aluno = await db.getAlunoFromCtx(ctx.user);
+      console.log('[meuDashboard] aluno encontrado:', aluno ? JSON.stringify({ id: aluno.id, name: aluno.name, email: aluno.email, externalId: aluno.externalId }) : 'null');
 
       if (!aluno) {
         return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
       }
 
-      // Buscar competências obrigatórias do plano individual
-      const competenciasObrigatorias = await db.getCompetenciasObrigatoriasAluno(aluno.id);
-
-      // Buscar dados globais para cálculo de indicadores e ranking
-      const allSessions = await db.getAllMentoringSessions();
-      const allEventParticipations = await db.getAllEventParticipationWithDate();
-      const alunosList = await db.getAlunos();
-      const programsList = await db.getPrograms();
-      const turmasList = await db.getTurmas();
+      // Buscar dados do aluno e dados globais em paralelo (com cache de 5min para dados globais)
+      const [
+        competenciasObrigatorias,
+        allSessions,
+        allEventParticipations,
+        alunosList,
+        programsList,
+        turmasList,
+        studentPerfRecords,
+        ciclosPorAluno,
+        compIdToCodigoMapAll,
+        compIdToNomeMapAll,
+        casesMapAll,
+        macrocicloPorAlunoGlobal,
+        macroInicioMapMeuDash,
+        ciclosAluno,
+        casesAluno,
+        planoItems,
+        sessoesAluno,
+        eventosAluno,
+        dataUltimoReset,
+      ] = await Promise.all([
+        db.getCompetenciasObrigatoriasAluno(aluno.id),
+        cacheOrFetch('allSessions', () => db.getAllMentoringSessions()),
+        cacheOrFetch('allEventParticipations', () => db.getAllEventParticipationWithDate()),
+        cacheOrFetch('alunosList', () => db.getAlunos()),
+        cacheOrFetch('programsList', () => db.getPrograms()),
+        cacheOrFetch('turmasList', () => db.getTurmas()),
+        cacheOrFetch('studentPerfRecords', () => db.getStudentPerformanceAsRecords()),
+        cacheOrFetch('ciclosPorAluno', () => db.getAllCiclosForCalculatorV2()),
+        cacheOrFetch('compIdToCodigoMap', () => db.getCompIdToCodigoMap()),
+        cacheOrFetch('compIdToNomeMap', () => db.getCompIdToNomeMap()),
+        cacheOrFetch('casesMap', () => db.getCasesForCalculator()),
+        cacheOrFetch('macrocicloPorAluno', () => db.getMacrocicloPorAluno()),
+        cacheOrFetch('macroInicioMap', () => db.getAlunoMacroInicioMap()),
+        db.getCiclosForCalculator(aluno.id),
+        db.getCasesSucessoByAluno(aluno.id),
+        db.getPlanoIndividualByAluno(aluno.id),
+        db.getMentoringSessionsByAluno(aluno.id),
+        db.getEventParticipationByAluno(aluno.id),
+        db.getDataUltimoResetAluno(aluno.id),
+      ]);
 
       const mentorias: MentoringRecord[] = [];
       const eventos: EventRecord[] = [];
@@ -2643,9 +4463,16 @@ export const appRouter = router({
       const programMap = new Map(programsList.map(p => [p.id, p]));
       const turmaMap = new Map(turmasList.map(t => [t.id, t]));
 
+      // Marco zero do ciclo atual: data do último reset (se houver), senão considera tudo
+      const marcoZeroCicloAtual: Date | null = dataUltimoReset ?? null;
+
       for (const session of allSessions) {
         const sessionAluno = alunoMap.get(session.alunoId);
         if (!sessionAluno) continue;
+        // Se o aluno sofreu reset, ignorar sessões anteriores ao reset
+        if (sessionAluno.id === aluno.id && marcoZeroCicloAtual && session.sessionDate) {
+          if (new Date(session.sessionDate) < marcoZeroCicloAtual) continue;
+        }
         const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
         const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
         mentorias.push({
@@ -2667,6 +4494,10 @@ export const appRouter = router({
       for (const ep of allEventParticipations) {
         const epAluno = alunoMap.get(ep.alunoId);
         if (!epAluno) continue;
+        // Se o aluno sofreu reset, ignorar participações em eventos anteriores ao reset
+        if (epAluno.id === aluno.id && marcoZeroCicloAtual && ep.eventDate) {
+          if (new Date(ep.eventDate) < marcoZeroCicloAtual) continue;
+        }
         const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
         eventos.push({
           idUsuario: epAluno.externalId || String(epAluno.id),
@@ -2691,13 +4522,12 @@ export const appRouter = router({
         }
         eventParticipationEventIds.get(ep.alunoId)!.add(ep.eventId);
       }
-      // Buscar todos os eventos por programa
+      // Buscar todos os eventos por programa em paralelo (com cache)
       const eventsByProgram = new Map<number, Awaited<ReturnType<typeof db.getEventsByProgram>>>();
-      for (const prog of programsList) {
-        const progEvents = await db.getEventsByProgramOrGlobal(prog.id);
+      await Promise.all(programsList.map(async prog => {
+        const progEvents = await cacheOrFetch(`eventsByProgram_${prog.id}`, () => db.getEventsByProgramOrGlobal(prog.id));
         eventsByProgram.set(prog.id, progEvents);
-      }
-      const macroInicioMapMeuDash = await db.getAlunoMacroInicioMap();
+      }));
       // Para cada aluno, adicionar eventos ausentes (sem registro de participação)
       for (const a of alunosList) {
         if (!a.programId) continue;
@@ -2706,12 +4536,16 @@ export const appRouter = router({
         const alunoIdStr = a.externalId || String(a.id);
         const program = programMap.get(a.programId);
         const macroInicioAluno = macroInicioMapMeuDash.get(a.id);
+        // Para o aluno atual: usar dataUltimoReset como marco zero se disponível
+        const marcoZeroAusencias = (a.id === aluno.id && marcoZeroCicloAtual)
+          ? marcoZeroCicloAtual
+          : macroInicioAluno ?? null;
         for (const evt of progEvents) {
           if (!alunoParticipatedEvents.has(evt.id)) {
-            // Só marcar ausência se o evento é posterior ao macroInicio do aluno
-            if (macroInicioAluno && evt.eventDate) {
+            // Só marcar ausência se o evento é posterior ao marco zero do aluno
+            if (marcoZeroAusencias && evt.eventDate) {
               const evtDate = new Date(evt.eventDate);
-              if (evtDate < macroInicioAluno) continue;
+              if (evtDate < marcoZeroAusencias) continue;
             }
             eventos.push({
               idUsuario: alunoIdStr,
@@ -2727,8 +4561,7 @@ export const appRouter = router({
         }
       }
 
-      // Buscar performance de competências do plano individual
-      const planoItems = await db.getPlanoIndividualByAluno(aluno.id);
+      // Usar planoItems já buscado em paralelo acima
       for (const item of planoItems) {
         if (item.notaAtual) {
           performance.push({
@@ -2742,8 +4575,7 @@ export const appRouter = router({
         }
       }
 
-      // Adicionar dados de performance da tabela student_performance (CSV)
-      const studentPerfRecords = await db.getStudentPerformanceAsRecords();
+      // Usar studentPerfRecords já buscado em paralelo acima (com cache)
       const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
       for (const spRec of studentPerfRecords) {
         const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
@@ -2752,7 +4584,15 @@ export const appRouter = router({
           existingPerfKeys.add(key);
         }
       }
-
+      // Fallback: adicionar dados de aluno_atividade_progresso para alunos sem student_performance
+      const atividadePerfRecs = await db.getAlunoAtividadePerformanceAsRecords();
+      for (const apRec of atividadePerfRecs) {
+        const key = `${apRec.idUsuario}|${apRec.idCompetencia}`;
+        if (!existingPerfKeys.has(key)) {
+          performance.push(apRec);
+          existingPerfKeys.add(key);
+        }
+      }
       const idUsuario = aluno.externalId || String(aluno.id);
       const compObrigatorias: CompetenciaObrigatoria[] = competenciasObrigatorias.map(c => ({
         competenciaId: c.competenciaId,
@@ -2762,8 +4602,7 @@ export const appRouter = router({
         status: c.status,
       }));
 
-      // Buscar ciclos de execução do aluno
-      const ciclosAluno = await db.getCiclosForCalculator(aluno.id);
+      // ciclosAluno já buscado em paralelo acima
 
       const indicadores = calcularIndicadoresAlunoFiltrado(
         idUsuario, mentorias, eventos, performance, compObrigatorias, ciclosAluno
@@ -2774,65 +4613,97 @@ export const appRouter = router({
         ...c,
         trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
       }));
-      const compIdToCodigoMap = await db.getCompIdToCodigoMap();
-      const casesAluno = await db.getCasesSucessoByAluno(aluno.id);
+      const compIdToCodigoMap = compIdToCodigoMapAll;
       const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
         alunoId: c.alunoId,
         trilhaId: c.trilhaId,
         trilhaNome: c.trilhaNome,
         entregue: c.entregue === 1,
       }));
-      // Buscar macrociclo do aluno
-      const macrocicloPorAlunoPortal = await db.getMacrocicloPorAluno();
-      const macrocicloAlunoPortal = macrocicloPorAlunoPortal.get(idUsuario);
+      const macrocicloAlunoPortal = macrocicloPorAlunoGlobal.get(idUsuario);
       const indicadoresV2 = calcularIndicadoresAlunoV2(
-        idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAlunoPortal
+        idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMap, casesDataAluno, undefined, macrocicloAlunoPortal, compIdToNomeMapAll
       );
 
-      // Buscar sessões individuais do aluno para histórico
-      const sessoesAluno = await db.getMentoringSessionsByAluno(aluno.id);
-
-      // Buscar participações em eventos do aluno com detalhes
-      const eventosAluno = await db.getEventParticipationByAluno(aluno.id);
-      // Buscar detalhes dos eventos
-      const allEvents = aluno.programId ? await db.getEventsByProgramOrGlobal(aluno.programId) : [];
+      // sessoesAluno e eventosAluno já buscados em paralelo acima
+      // Buscar detalhes dos eventos (com cache)
+      const allEvents = aluno.programId ? await cacheOrFetch(`eventsByProgram_${aluno.programId}`, () => db.getEventsByProgramOrGlobal(aluno.programId!)) : [];
       const eventMap = new Map(allEvents.map(e => [e.id, e]));
-      const eventosDetalhados = eventosAluno.map(ep => {
-        const evento = eventMap.get(ep.eventId);
-        return {
-          id: ep.id,
-          eventId: ep.eventId,
-          titulo: evento?.title || `Evento #${ep.eventId}`,
-          tipo: evento?.eventType || 'webinar',
-          data: evento?.eventDate || null,
-          status: ep.status,
-          reflexao: ep.reflexao || null,
-          selfReportedAt: ep.selfReportedAt || null,
-        };
+      // Eventos com registro de participação — filtrar por data do reset se houver
+      const eventosDetalhados: Array<{
+        id: number;
+        eventId: number;
+        titulo: string;
+        tipo: string;
+        data: Date | null;
+        status: string;
+        reflexao: string | null;
+        selfReportedAt: Date | null;
+      }> = eventosAluno
+        .filter(ep => {
+          // Se o aluno sofreu reset, ignorar presenças anteriores ao reset
+          if (marcoZeroCicloAtual) {
+            const evtData = eventMap.get(ep.eventId)?.eventDate;
+            if (evtData && new Date(evtData) < marcoZeroCicloAtual) return false;
+          }
+          return true;
+        })
+        .map(ep => {
+          const evento = eventMap.get(ep.eventId);
+          return {
+            id: ep.id,
+            eventId: ep.eventId,
+            titulo: evento?.title || `Evento #${ep.eventId}`,
+            tipo: evento?.eventType || 'webinar',
+            data: evento?.eventDate || null,
+            status: ep.status,
+            reflexao: ep.reflexao || null,
+            selfReportedAt: ep.selfReportedAt || null,
+          };
+        });
+      // Adicionar eventos do programa SEM registro de participação como 'ausente'
+      // Só incluir eventos posteriores ao marco zero (data do reset)
+      const eventosAlunoIds = new Set(eventosAluno.map(ep => ep.eventId));
+      for (const evt of allEvents) {
+        if (!eventosAlunoIds.has(evt.id)) {
+          // Filtrar por data do reset
+          if (marcoZeroCicloAtual && evt.eventDate && new Date(evt.eventDate) < marcoZeroCicloAtual) continue;
+          eventosDetalhados.push({
+            id: -(evt.id), // id negativo indica que não tem registro real
+            eventId: evt.id,
+            titulo: evt.title || `Evento #${evt.id}`,
+            tipo: evt.eventType || 'webinar',
+            data: evt.eventDate || null,
+            status: 'ausente',
+            reflexao: null,
+            selfReportedAt: null,
+          });
+        }
+      }
+      // Ordenar por data decrescente
+      eventosDetalhados.sort((a, b) => {
+        const da = a.data ? new Date(a.data).getTime() : 0;
+        const db2 = b.data ? new Date(b.data).getTime() : 0;
+        return db2 - da;
       });
 
       // Buscar programa, turma e mentor do aluno
       const programa = aluno.programId ? programMap.get(aluno.programId) : null;
       const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
-      // Buscar mentor: primeiro pelo consultorId do aluno, senão pela sessão de mentoria mais recente
-      let mentorAluno = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
-      if (!mentorAluno && sessoesAluno.length > 0) {
-        // Buscar o consultor da sessão mais recente
-        const sessaoComConsultor = [...sessoesAluno].reverse().find(s => s.consultorId);
-        if (sessaoComConsultor?.consultorId) {
-          mentorAluno = await db.getConsultorById(sessaoComConsultor.consultorId);
-        }
-      }
+      const sessaoComConsultor = !aluno.consultorId ? [...sessoesAluno].reverse().find(s => s.consultorId) : null;
+      const [mentorAluno] = await Promise.all([
+        aluno.consultorId
+          ? db.getConsultorById(aluno.consultorId)
+          : sessaoComConsultor?.consultorId
+            ? db.getConsultorById(sessaoComConsultor.consultorId)
+            : Promise.resolve(null),
+      ]);
 
-      // Calcular ranking na empresa usando V2 (mesma lógica do Dashboard Gestor)
-      // Isso garante que o ranking aqui seja idêntico ao mostrado no Dashboard Gestor
-      const ciclosPorAluno = await db.getAllCiclosForCalculatorV2();
-      const compIdToCodigoMapAll = await db.getCompIdToCodigoMap();
-      const casesMapAll = await db.getCasesForCalculator();
+      // Usar dados globais já buscados em paralelo com cache
       const casesDataAll: CaseSucessoData[] = [];
       for (const [, cases] of Array.from(casesMapAll.entries())) { casesDataAll.push(...cases); }
-      const macrocicloPorAlunoRanking = await db.getMacrocicloPorAluno();
-      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking);
+      const macrocicloPorAlunoRanking = macrocicloPorAlunoGlobal;
+      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking, compIdToNomeMapAll);
 
       let ranking = { posicao: 0, totalAlunos: 0 };
       if (aluno.programId) {
@@ -2876,6 +4747,10 @@ export const appRouter = router({
           mentorEmail: mentorAluno?.email || null,
           mentorEspecialidade: mentorAluno?.especialidade || null,
           mentorId: mentorAluno?.id || null,
+          plataformaAulas: (aluno as any).plataformaAulas || 'sistema_interno',
+          contratoInicio: (aluno as any).contratoInicio || null,
+          contratoFim: (aluno as any).contratoFim || null,
+          photoUrl: (aluno as any).photoUrl || null,
         },
         indicadores: {
           // Usar V2 para notaFinal e performanceGeral (consistente com Dashboard Gestor)
@@ -2918,6 +4793,7 @@ export const appRouter = router({
           taskMode: s.taskMode,
           relatoAluno: s.relatoAluno,
           ciclo: s.ciclo,
+          isAssessment: s.isAssessment ? true : false,
         })),
         eventos: eventosDetalhados,
         planoIndividual: planoItems,
@@ -2937,11 +4813,25 @@ export const appRouter = router({
           // Criar mapa de performance por codigoIntegracao para lookup rápido
           const perfByCodigoMap = new Map<string, typeof studentPerfRecords[0]>();
           const alunoExternalId = aluno!.externalId || String(aluno!.id);
+          // Primeiro: dados de student_performance (alunos scaffold/externos)
           for (const sp of studentPerfRecords) {
             if (sp.idUsuario === alunoExternalId) {
               perfByCodigoMap.set(sp.idCompetencia.toLowerCase(), sp);
               if (sp.nomeCompetencia) {
                 perfByCodigoMap.set(sp.nomeCompetencia.toLowerCase(), sp);
+              }
+            }
+          }
+          // Fallback: dados de aluno_atividade_progresso (alunos sistema_interno)
+          const atividadePerfRecsForCiclos = await db.getAlunoAtividadePerformanceAsRecords();
+          for (const ap of atividadePerfRecsForCiclos) {
+            if (ap.idUsuario === alunoExternalId) {
+              const key = ap.idCompetencia.toLowerCase();
+              if (!perfByCodigoMap.has(key)) {
+                perfByCodigoMap.set(key, ap);
+              }
+              if (ap.nomeCompetencia && !perfByCodigoMap.has(ap.nomeCompetencia.toLowerCase())) {
+                perfByCodigoMap.set(ap.nomeCompetencia.toLowerCase(), ap);
               }
             }
           }
@@ -3015,15 +4905,21 @@ export const appRouter = router({
           dataEntrega: c.dataEntrega,
           titulo: c.titulo,
           descricao: c.descricao,
+          resumoPublico: c.resumoPublico,
+          oQueAprendi: c.oQueAprendi,
+          oQueMudei: c.oQueMudei,
+          resultadoMensuravel: c.resultadoMensuravel,
+          antesVsDepois: c.antesVsDepois,
+          notaAplicabilidade: c.notaAplicabilidade,
           fileUrl: c.fileUrl,
           fileName: c.fileName,
           observacao: c.observacao,
         })),
         // === Indicador 6: Aplicabilidade Prática ===
         aplicabilidadePratica: await (async () => {
-          const CUTOFF_DATE = new Date('2026-04-01');
+          const CUTOFF_DATE = new Date('2026-01-01');
           
-          // Buscar sessões com notas de aplicabilidade (após 01/04/2026)
+          // Buscar sessões com notas de aplicabilidade (após 01/01/2026)
           const todasSessoes = await db.getMentoringSessionsByAluno(aluno!.id);
           const sessoesComAplic = todasSessoes.filter(s => {
             const dataSession = s.sessionDate ? new Date(s.sessionDate) : null;
@@ -3040,49 +4936,26 @@ export const appRouter = router({
             );
           });
           
-          // Calcular médias
-          let somaNotaAluno = 0, countNotaAluno = 0;
-          let somaNotaMentora = 0, countNotaMentora = 0;
-          
-          for (const s of sessoesComAplic) {
-            if (s.notaAlunoAplicabilidade !== null && s.notaAlunoAplicabilidade !== undefined) {
-              somaNotaAluno += Number(s.notaAlunoAplicabilidade);
-              countNotaAluno++;
-            }
-            if (s.notaMentoraAplicabilidade !== null && s.notaMentoraAplicabilidade !== undefined) {
-              somaNotaMentora += Number(s.notaMentoraAplicabilidade);
-              countNotaMentora++;
-            }
-          }
-          
-          for (const c of casesComAplic) {
-            if ((c as any).notaAlunoAplicabilidade !== null) {
-              somaNotaAluno += Number((c as any).notaAlunoAplicabilidade);
-              countNotaAluno++;
-            }
-            if ((c as any).notaMentoraAplicabilidade !== null) {
-              somaNotaMentora += Number((c as any).notaMentoraAplicabilidade);
-              countNotaMentora++;
-            }
-          }
-          
-          const mediaAluno = countNotaAluno > 0 ? somaNotaAluno / countNotaAluno : null;
-          const mediaMentora = countNotaMentora > 0 ? somaNotaMentora / countNotaMentora : null;
-          
-          // Cálculo final: 60% mentora + 40% aluno
-          let notaFinal: number | null = null;
-          let provisoria = false;
-          if (mediaMentora !== null && mediaAluno !== null) {
-            notaFinal = mediaMentora * 0.6 + mediaAluno * 0.4;
-          } else if (mediaAluno !== null) {
-            notaFinal = mediaAluno; // provisória
-            provisoria = true;
-          } else if (mediaMentora !== null) {
-            notaFinal = mediaMentora;
-          }
-          
-          const percentual = notaFinal !== null ? Math.round(notaFinal * 10) : 0;
-          const bonusEngajamento = notaFinal !== null && notaFinal >= 8; // +10% se >= 8
+          const microTarefa = calcularMicroTarefaAplicabilidade(
+            sessoesComAplic.map((s) => ({
+              notaAlunoAplicabilidade: s.notaAlunoAplicabilidade,
+              notaMentoraAplicabilidade: s.notaMentoraAplicabilidade,
+            })),
+          );
+
+          // Case é microindicador independente: entregue=100, não entregue=0, não aplicável=null
+          const caseAplicavel = casesAluno.length > 0;
+          const anyCaseEntregue = casesAluno.some((c) => c.entregue === 1);
+          const microCasePercentual = caseAplicavel ? (anyCaseEntregue ? 100 : 0) : null;
+
+          const aplicabilidade = calcularAplicabilidadeFinal({
+            microTarefaPercentual: microTarefa.percentual,
+            microCasePercentual,
+            caseAplicavel,
+            provisoria: microTarefa.provisoria,
+            totalTarefasComAplicabilidade: microTarefa.total,
+            totalCasesConsiderados: caseAplicavel ? 1 : 0,
+          });
           
           // Detalhes por sessão
           const detalhes = sessoesComAplic.map(s => ({
@@ -3093,17 +4966,29 @@ export const appRouter = router({
             notaMentora: s.notaMentoraAplicabilidade,
             textoAplicabilidade: s.textoAplicabilidade || null,
           }));
+
+          const avaliacoesAluno = sessoesComAplic.filter(s => s.notaAlunoAplicabilidade != null).length
+            + casesComAplic.filter(c => (c as any).notaAlunoAplicabilidade != null).length;
+          const avaliacoesMentora = sessoesComAplic.filter(s => s.notaMentoraAplicabilidade != null).length
+            + casesComAplic.filter(c => (c as any).notaMentoraAplicabilidade != null).length;
           
           return {
-            notaFinal: notaFinal !== null ? Math.round(notaFinal * 100) / 100 : null,
-            percentual,
-            provisoria,
-            bonusEngajamento,
-            mediaAluno: mediaAluno !== null ? Math.round(mediaAluno * 100) / 100 : null,
-            mediaMentora: mediaMentora !== null ? Math.round(mediaMentora * 100) / 100 : null,
+            percentual: aplicabilidade.percentualFinal ?? 0,
+            provisoria: aplicabilidade.provisoria,
+            bonusEngajamento: false,
+            notaFinal: aplicabilidade.percentualFinal != null ? Math.round(aplicabilidade.percentualFinal / 10 * 100) / 100 : null,
+            mediaAluno: null,
+            mediaMentora: null,
+            // Novo retorno padronizado (fonte oficial)
+            percentualFinal: aplicabilidade.percentualFinal,
+            microTarefaPercentual: aplicabilidade.microTarefaPercentual,
+            microCasePercentual: aplicabilidade.microCasePercentual,
+            caseAplicavel: aplicabilidade.caseAplicavel,
+            totalTarefasComAplicabilidade: aplicabilidade.totalTarefasComAplicabilidade,
+            totalCasesConsiderados: aplicabilidade.totalCasesConsiderados,
             totalAvaliacoes: sessoesComAplic.length + casesComAplic.length,
-            avaliacoesAluno: countNotaAluno,
-            avaliacoesMentora: countNotaMentora,
+            avaliacoesAluno,
+            avaliacoesMentora,
             detalhes,
           };
         })(),
@@ -3157,9 +5042,9 @@ export const appRouter = router({
 
     // Sessões de mentoria por aluno
     sessionsByAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getMentoringSessionsByAluno(input.alunoId);
+        return await db.getMentoringSessionsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Progresso de sessões por aluno (baseado no Assessment PDI macro ciclo)
@@ -3207,10 +5092,16 @@ export const appRouter = router({
         });
       }
 
-      const sent = await notifyOwner({
-        title: `Progresso Ciclo Macro: ${alunosFalta1.length} aluno(s) a 1 sessão de fechar`,
-        content
-      });
+      let sent = false;
+      try {
+        sent = await notifyOwner({
+          title: `Progresso Ciclo Macro: ${alunosFalta1.length} aluno(s) a 1 sessão de fechar`,
+          content
+        });
+      } catch (error) {
+        console.warn("[Ciclo Macro] Failed to notify owner:", error);
+        sent = false;
+      }
 
       return { sent, alunosFalta1: alunosFalta1.length, alunosCicloCompleto: alunosCicloCompleto.length };
     }),
@@ -3233,7 +5124,7 @@ export const appRouter = router({
         taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
         notaMentoraAplicabilidade: z.number().min(0).max(10).nullable().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { sessionId, ...data } = input;
         const updateData: any = { ...data };
         if (input.notaMentoraAplicabilidade != null) {
@@ -3243,7 +5134,54 @@ export const appRouter = router({
         if (input.taskMode && input.taskMode !== 'sem_tarefa') {
           updateData.taskStatus = 'nao_entregue';
         }
+        // Auditoria: buscar sessão atual para comparar valores antes/depois
+        const sessaoAtual = await db.getMentoringSessionById(sessionId);
         const success = await db.updateMentoringSession(sessionId, updateData);
+        // Registrar auditoria se engagementScore ou notaMentoraAplicabilidade foi alterado
+        if (sessaoAtual && (input.engagementScore !== undefined || input.notaMentoraAplicabilidade !== undefined)) {
+          const alteradoPor = ctx.user?.email || ctx.user?.openId || null;
+          const alteradoPorRole = ctx.user?.role || null;
+          // Buscar nome do aluno e consultor para o log
+          const alunoAudit = await db.getAlunoById(sessaoAtual.alunoId);
+          const consultors = await db.getConsultors();
+          const consultorAudit = sessaoAtual.consultorId ? consultors.find(c => c.id === sessaoAtual.consultorId) : null;
+          if (input.engagementScore !== undefined) {
+            const anterior = sessaoAtual.engagementScore != null ? Number(sessaoAtual.engagementScore) : null;
+            const novo = input.engagementScore != null ? Number(input.engagementScore) : null;
+            if (anterior !== novo) {
+              await db.logAuditoriaNota({
+                sessaoId: sessionId,
+                alunoId: sessaoAtual.alunoId,
+                alunoNome: alunoAudit?.name ?? null,
+                consultorId: sessaoAtual.consultorId ?? null,
+                consultorNome: consultorAudit?.name ?? null,
+                campo: 'engagementScore',
+                valorAnterior: anterior,
+                valorNovo: novo,
+                alteradoPor,
+                alteradoPorRole,
+              });
+            }
+          }
+          if (input.notaMentoraAplicabilidade !== undefined) {
+            const anterior = sessaoAtual.notaMentoraAplicabilidade != null ? Number(sessaoAtual.notaMentoraAplicabilidade) : null;
+            const novo = input.notaMentoraAplicabilidade != null ? Number(input.notaMentoraAplicabilidade) : null;
+            if (anterior !== novo) {
+              await db.logAuditoriaNota({
+                sessaoId: sessionId,
+                alunoId: sessaoAtual.alunoId,
+                alunoNome: alunoAudit?.name ?? null,
+                consultorId: sessaoAtual.consultorId ?? null,
+                consultorNome: consultorAudit?.name ?? null,
+                campo: 'notaMentoraAplicabilidade',
+                valorAnterior: anterior,
+                valorNovo: novo,
+                alteradoPor,
+                alteradoPorRole,
+              });
+            }
+          }
+        }
         return { success };
       }),
 
@@ -3290,12 +5228,30 @@ export const appRouter = router({
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
 
         // Calcular próximo número de sessão
-        const sessions = await db.getMentoringSessionsByAluno(input.alunoId);
-        const nextSessionNumber = sessions.length > 0 
-          ? Math.max(...sessions.map(s => s.sessionNumber ?? 0)) + 1 
+        // REGRA: o reset é o marco que reinicia a contagem e ativa o nível como orientador de tudo.
+        // - Se o nível vigente já tem sessões vinculadas → reset ocorreu → contar só as sessões do nível atual
+        // - Se o nível vigente NÃO tem sessões vinculadas → reset ainda não ocorreu → continuar sequência geral
+        const nivelVigenteParaSessao = await db.getContratoNivelVigenteByAluno(input.alunoId);
+        const nivelIdParaSessao = nivelVigenteParaSessao?.id ?? null;
+        // Sessões vinculadas diretamente ao nível vigente (existem somente após o reset)
+        const sessoesDoCicloAtual = nivelIdParaSessao
+          ? await db.getMentoringSessionsByAlunoAndNivel(input.alunoId, nivelIdParaSessao)
+          : [];
+        // Determinar base de contagem: se reset ocorreu, usar só o ciclo atual; senão, usar todas as sessões
+        const resetOcorreu = sessoesDoCicloAtual.length > 0;
+        const baseParaContagem = resetOcorreu
+          ? sessoesDoCicloAtual
+          : await db.getMentoringSessionsByAluno(input.alunoId);
+        const nextSessionNumber = baseParaContagem.length > 0
+          ? Math.max(...baseParaContagem.map(s => s.sessionNumber ?? 0)) + 1
           : 1;
+        // A 1ª sessão só é assessment se for realmente o início (sem histórico nenhum)
+        // ou se o reset acabou de ocorrer (início do novo ciclo)
+        const isInicioDeCiclo = baseParaContagem.length === 0;
+        const tipoSessaoEfetivo = input.tipoSessao ?? (isInicioDeCiclo ? 'individual_assessment' : 'individual_normal');
 
         // Se a mentora atribuiu uma tarefa nesta sessão, o taskStatus deve ser 'nao_entregue'
         // para que o aluno veja o botão 'Entregar' no Portal
@@ -3324,7 +5280,7 @@ export const appRouter = router({
           taskMode: input.taskMode ?? "sem_tarefa",
           notaMentoraAplicabilidade: input.notaMentoraAplicabilidade ?? null,
           aplicabilidadeAvaliadaEm: input.notaMentoraAplicabilidade != null ? new Date() : null,
-          tipoSessao: input.tipoSessao ?? "individual_normal",
+          tipoSessao: tipoSessaoEfetivo,
           appointmentId: input.appointmentId ?? null,
         });
 
@@ -3346,6 +5302,27 @@ export const appRouter = router({
             });
           }
         } catch (e) { /* notificação não deve bloquear registro */ }
+
+        // Marcar agendamento como realizado no banco + Google Calendar (assíncrono)
+        if (input.appointmentId) {
+          // Atualizar status no banco imediatamente
+          db.markAppointmentRealized(input.appointmentId).catch(err =>
+            console.warn('[Appointment] Erro ao marcar agendamento como realizado:', err)
+          );
+          // Marcar no Google Calendar
+          (async () => {
+            try {
+              const appt = await db.getAppointmentById(input.appointmentId!);
+              if (appt?.googleEventId) {
+                const { markCalendarEventRealized } = await import('./googleCalendarService');
+                await markCalendarEventRealized(appt.googleEventId);
+                console.log(`[GoogleCalendar] Evento marcado como realizado: ${appt.googleEventId}`);
+              }
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao marcar evento como realizado:', err);
+            }
+          })();
+        }
 
         return { success: true, sessionId, sessionNumber: nextSessionNumber };
       }),
@@ -3628,6 +5605,7 @@ export const appRouter = router({
         status: z.string().optional(),
         dateFrom: z.string().optional(),
         dateTo: z.string().optional(),
+        alunoId: z.number().optional(),
       }))
       .query(async ({ input }) => {
         return await db.getMentorAppointments(input.consultorId, input);
@@ -3646,7 +5624,7 @@ export const appRouter = router({
         alunoIds: z.array(z.number()).min(1),
       }))
       .mutation(async ({ input, ctx }) => {
-        return await db.createGroupAppointment({
+        const result = await db.createGroupAppointment({
           consultorId: input.consultorId,
           title: input.title,
           description: input.description || null,
@@ -3657,6 +5635,46 @@ export const appRouter = router({
           alunoIds: input.alunoIds,
           createdBy: ctx.user.id,
         });
+
+        // Integração Google Calendar (assíncrono, não bloqueia a resposta)
+        if (result.success && result.id) {
+          const appointmentId = result.id;
+          (async () => {
+            try {
+              const { createCalendarEvent } = await import('./googleCalendarService');
+              const consultor = await db.getConsultorById(input.consultorId);
+              // Buscar e-mails dos alunos
+              const attendees: { email: string; displayName?: string }[] = [];
+              if (consultor?.email) attendees.push({ email: consultor.email, displayName: consultor.name });
+              for (const alunoId of input.alunoIds) {
+                const aluno = await db.getAlunoById(alunoId);
+                if (aluno?.email) attendees.push({ email: aluno.email, displayName: aluno.name });
+              }
+              const startDateTime = `${input.scheduledDate}T${input.startTime}:00-03:00`;
+              const endDateTime = `${input.scheduledDate}T${input.endTime}:00-03:00`;
+              const calResult = await createCalendarEvent({
+                title: input.title,
+                description: input.description,
+                startDateTime,
+                endDateTime,
+                attendees,
+                meetLink: !input.googleMeetLink, // gera Meet se não tiver link próprio
+              });
+              if (calResult) {
+                await db.updateAppointmentGoogleEventId(
+                  appointmentId,
+                  calResult.googleEventId,
+                  calResult.meetLink || input.googleMeetLink || null
+                );
+                console.log(`[GoogleCalendar] Evento grupal criado: ${calResult.googleEventId}`);
+              }
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao criar evento grupal:', err);
+            }
+          })();
+        }
+
+        return result;
       }),
 
     // Aluno agenda sessão individual (escolhe horário disponível)
@@ -3687,7 +5705,7 @@ export const appRouter = router({
         const existing = await db.checkAppointmentConflict(input.consultorId, input.scheduledDate, input.startTime);
         if (existing) throw new TRPCError({ code: 'CONFLICT', message: 'Este horário já está ocupado. Escolha outro.' });
 
-        return await db.createIndividualAppointment({
+        const appointment = await db.createIndividualAppointment({
           consultorId: input.consultorId,
           availabilityId: input.availabilityId,
           scheduledDate: input.scheduledDate,
@@ -3698,6 +5716,63 @@ export const appRouter = router({
           notes: input.notes || null,
           createdBy: ctx.user.id,
         });
+
+        // Disparar e-mail de confirmação ao aluno (assíncrono, não bloqueia a resposta)
+        try {
+          const { buildConfirmacaoAgendamentoEmail } = await import('./emailService');
+          const aluno = await db.getAlunoById(alunoId);
+          const mentor = await db.getConsultorById(input.consultorId);
+          if (aluno?.email && mentor) {
+            const scheduledDateFormatted = new Date(input.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR');
+            const emailData = buildConfirmacaoAgendamentoEmail({
+              alunoName: aluno.name,
+              mentorName: mentor.name,
+              scheduledDate: scheduledDateFormatted,
+              startTime: input.startTime,
+              endTime: input.endTime,
+              meetLink: null,
+              loginUrl: 'https://ecolider.ecodobem.com',
+            });
+            sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text })
+              .catch(err => console.error('[bookAppointment] Erro ao enviar e-mail de confirmacao:', err));
+          }
+        } catch (err) {
+          console.error('[bookAppointment] Erro ao preparar e-mail de confirmacao:', err);
+        }
+
+        // Integração Google Calendar (assíncrono)
+        if (appointment?.id) {
+          const apptId = appointment.id;
+          (async () => {
+            try {
+              const { createCalendarEvent } = await import('./googleCalendarService');
+              const aluno = await db.getAlunoById(alunoId);
+              const mentor = await db.getConsultorById(input.consultorId);
+              const attendees: { email: string; displayName?: string }[] = [];
+              if (mentor?.email) attendees.push({ email: mentor.email, displayName: mentor.name });
+              if (aluno?.email) attendees.push({ email: aluno.email, displayName: aluno.name });
+              const startDateTime = `${input.scheduledDate}T${input.startTime}:00-03:00`;
+              const endDateTime = `${input.scheduledDate}T${input.endTime}:00-03:00`;
+              const eventTitle = `Mentoria Individual - ${aluno?.name || 'Aluno'} com ${mentor?.name || 'Mentor'}`;
+              const calResult = await createCalendarEvent({
+                title: eventTitle,
+                description: input.notes,
+                startDateTime,
+                endDateTime,
+                attendees,
+                meetLink: true, // sempre gera Meet para individuais
+              });
+              if (calResult) {
+                await db.updateAppointmentGoogleEventId(apptId, calResult.googleEventId, calResult.meetLink || null);
+                console.log(`[GoogleCalendar] Evento individual criado: ${calResult.googleEventId}`);
+              }
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao criar evento individual:', err);
+            }
+          })();
+        }
+
+        return appointment;
       }),
 
     // Aluno confirma/recusa convite de grupo
@@ -3717,7 +5792,22 @@ export const appRouter = router({
     cancelAppointment: protectedProcedure
       .input(z.object({ appointmentId: z.number() }))
       .mutation(async ({ input }) => {
-        return await db.cancelAppointment(input.appointmentId);
+        // Buscar googleEventId antes de cancelar
+        const appt = await db.getAppointmentById(input.appointmentId);
+        const result = await db.cancelAppointment(input.appointmentId);
+        // Remover evento do Google Calendar (assíncrono)
+        if (appt?.googleEventId) {
+          (async () => {
+            try {
+              const { deleteCalendarEvent } = await import('./googleCalendarService');
+              await deleteCalendarEvent(appt.googleEventId!);
+              console.log(`[GoogleCalendar] Evento cancelado: ${appt.googleEventId}`);
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao cancelar evento:', err);
+            }
+          })();
+        }
+        return result;
       }),
 
     // Reagendar agendamento (alterar data/horário)
@@ -3797,6 +5887,24 @@ export const appRouter = router({
             console.error('[Reagendamento] Erro ao enviar emails:', emailErr);
           }
         }
+        // Atualizar evento no Google Calendar (assíncrono)
+        if (result.success && oldAppointment?.googleEventId) {
+          (async () => {
+            try {
+              const { updateCalendarEvent } = await import('./googleCalendarService');
+              const startDateTime = `${input.scheduledDate}T${input.startTime}:00-03:00`;
+              const endDateTime = `${input.scheduledDate}T${input.endTime}:00-03:00`;
+              await updateCalendarEvent(oldAppointment.googleEventId!, {
+                startDateTime,
+                endDateTime,
+                meetLink: input.googleMeetLink,
+              });
+              console.log(`[GoogleCalendar] Evento reagendado: ${oldAppointment.googleEventId}`);
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao reagendar evento:', err);
+            }
+          })();
+        }
         return result;
       }),
 
@@ -3824,11 +5932,18 @@ export const appRouter = router({
       }))
       .query(async ({ input }) => {
         const dayOfWeek = new Date(input.date + 'T12:00:00').getDay();
-        const availability = await db.getMentorAvailability(input.consultorId);
-        const daySlots = availability.filter(a => a.dayOfWeek === dayOfWeek && a.isActive === 1);
+        
+        // 1) Buscar disponibilidade recorrente (semanal)
+        const weeklyAvailability = await db.getMentorAvailability(input.consultorId);
+        const daySlots = weeklyAvailability.filter(a => a.dayOfWeek === dayOfWeek && a.isActive === 1);
 
-        // Gerar slots baseado na duração
-        const allSlots: { startTime: string; endTime: string; availabilityId: number; googleMeetLink: string | null }[] = [];
+        // 2) Buscar disponibilidade por data específica (exceções/liberações pontuais)
+        const specificAvailability = await db.getMentorDateAvailability(input.consultorId);
+        const specificDaySlots = specificAvailability.filter(a => a.specificDate === input.date && a.isActive === 1);
+
+        const allSlots: { startTime: string; endTime: string; availabilityId: number; googleMeetLink: string | null; isSpecific?: boolean }[] = [];
+
+        // Processar slots recorrentes
         for (const slot of daySlots) {
           const [sh, sm] = slot.startTime.split(':').map(Number);
           const [eh, em] = slot.endTime.split(':').map(Number);
@@ -3849,6 +5964,37 @@ export const appRouter = router({
             });
           }
         }
+
+        // Processar slots específicos (mesclar ou sobrescrever)
+        for (const slot of specificDaySlots) {
+          const [sh, sm] = slot.startTime.split(':').map(Number);
+          const [eh, em] = slot.endTime.split(':').map(Number);
+          const startMin = sh * 60 + sm;
+          const endMin = eh * 60 + em;
+          const duration = slot.slotDurationMinutes;
+
+          for (let t = startMin; t + duration <= endMin; t += duration) {
+            const sH = String(Math.floor(t / 60)).padStart(2, '0');
+            const sM = String(t % 60).padStart(2, '0');
+            const eH = String(Math.floor((t + duration) / 60)).padStart(2, '0');
+            const eM = String((t + duration) % 60).padStart(2, '0');
+            
+            const startTime = `${sH}:${sM}`;
+            // Se já existe um slot recorrente no mesmo horário, mantemos apenas um (o específico tem prioridade de metadados se necessário)
+            if (!allSlots.some(s => s.startTime === startTime)) {
+              allSlots.push({
+                startTime,
+                endTime: `${eH}:${eM}`,
+                availabilityId: slot.id,
+                googleMeetLink: slot.googleMeetLink,
+                isSpecific: true
+              });
+            }
+          }
+        }
+
+        // Ordenar slots por horário de início
+        allSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
         // Remover slots já ocupados
         const appointments = await db.getAppointmentsForDate(input.consultorId, input.date);
@@ -3906,14 +6052,14 @@ export const appRouter = router({
       }),
 
     // CRUD Precificação V2
-    getPricingRulesV2: adminProcedure
+    getPricingRulesV2: adminOrAdmin2Procedure
       .query(async () => {
         const dbConn = await getDb();
         if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
         return await getSessionTypePricingRules(dbConn);
       }),
 
-    createPricingRuleV2: adminProcedure
+    createPricingRuleV2: adminOrAdmin2Procedure
       .input(z.object({
         programId: z.number(), // Obrigatório: empresa específica
         consultorId: z.number(), // Obrigatório: mentor específico
@@ -3950,7 +6096,7 @@ export const appRouter = router({
         return { id, success: true };
       }),
 
-    updatePricingRuleV2: adminProcedure
+    updatePricingRuleV2: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         programId: z.number().optional(), // Obrigatório na prática
@@ -3995,7 +6141,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    deletePricingRuleV2: adminProcedure
+    deletePricingRuleV2: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const dbConn = await getDb();
@@ -4115,6 +6261,107 @@ export const appRouter = router({
           totalAgendamentos: appointmentsInPeriod.length,
         };
       }),
+    // ==================== RELATÓRIO DE MENTORIAS POR MENTORA ====================
+    relatorioMentorias: router({
+      // Buscar dados do relatório (sem enviar e-mail)
+      preview: adminOrAdmin2Procedure
+        .input(z.object({
+          dateFrom: z.string().optional(),
+          dateTo: z.string().optional(),
+        }).optional())
+        .query(async ({ input }) => {
+          const dbConn = await getDb();
+          if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+          const periodo = input?.dateFrom && input?.dateTo
+            ? { inicio: input.dateFrom, fim: input.dateTo }
+            : calcularPeriodoPadrao();
+          const report = await getRelatorioFinanceiroV2(dbConn, periodo.inicio, periodo.fim);
+          const { consultors: consultorsTable, alunos: alunosTable, programs: programsTable } = await import('../drizzle/schema');
+          const todasMentoras = await dbConn.select({ id: consultorsTable.id, nome: consultorsTable.name, email: consultorsTable.email }).from(consultorsTable);
+          const emailMap = new Map(todasMentoras.map(m => [m.id, m.email || null]));
+          const todasEmpresas = await dbConn.select({ id: programsTable.id, nome: programsTable.name }).from(programsTable);
+          const empresaMap = new Map(todasEmpresas.map(e => [e.id, e.nome || '']));
+          const todosAlunos = await dbConn.select({ id: alunosTable.id, programId: alunosTable.programId }).from(alunosTable);
+          const alunoEmpresaMap = new Map(todosAlunos.map(a => [a.id, a.programId || null]));
+          return {
+            periodo: { inicio: periodo.inicio, fim: periodo.fim },
+            mentores: report.mentores.map(m => ({
+              consultorId: m.consultorId,
+              nome: m.consultorNome,
+              email: emailMap.get(m.consultorId) || null,
+              totalRealizado: m.totalSessoes,
+              totalValor: m.totalValor,
+              totalAgendadoSemRegistro: report.gapsAgendamento.filter(g => g.consultorId === m.consultorId).length,
+              sessoes: m.sessoes.map(s => ({
+                data: s.sessionDate,
+                aluno: s.alunoNome,
+                empresa: empresaMap.get(alunoEmpresaMap.get(s.alunoId) || 0) || 'N/A',
+                tipo: s.tipoSessao,
+                registroFeito: true,
+                valor: s.valor,
+              })),
+              agendadosSemRegistro: report.gapsAgendamento
+                .filter(g => g.consultorId === m.consultorId)
+                .flatMap(g => g.participantes.map(p => ({
+                  data: g.appointmentDate || '',
+                  aluno: p.alunoNome,
+                  empresa: empresaMap.get(alunoEmpresaMap.get(p.alunoId) || 0) || 'N/A',
+                  tipo: g.appointmentType || 'individual_normal',
+                }))),
+            })),
+            totalGeralSessoes: report.totalSessoesGeral,
+            totalGeralValor: report.totalGeral,
+          };
+        }),
+      // Envio manual do relatório por e-mail
+      enviarManual: adminOrAdmin2Procedure
+        .input(z.object({
+          dateFrom: z.string(),
+          dateTo: z.string(),
+          mentorIds: z.array(z.number()).optional(),
+          tipo: z.enum(['previa', 'definitivo', 'manual']).default('manual'),
+        }))
+        .mutation(async ({ input }) => {
+          const result = await gerarEEnviarRelatorioMentorias(
+            input.tipo,
+            input.dateFrom,
+            input.dateTo,
+            input.mentorIds,
+            false
+          );
+          return result;
+        }),
+      // Buscar histórico de envios
+      historico: adminOrAdmin2Procedure
+        .query(async () => {
+          const dbConn = await getDb();
+          if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+          try {
+            const { sql: sqlFn } = await import('drizzle-orm');
+            const rows = await dbConn.execute(sqlFn`
+              SELECT id, data_envio, tipo, periodo_inicio, periodo_fim,
+                     destinatarios, total_sessoes, total_valor, enviado_por
+              FROM relatorio_mentorias_log
+              ORDER BY data_envio DESC
+              LIMIT 50
+            `);
+            const data = Array.isArray(rows) ? rows[0] : [];
+            return (data as any[]).map(r => ({
+              id: r.id,
+              dataEnvio: r.data_envio ? new Date(r.data_envio).toISOString() : null,
+              tipo: r.tipo as 'previa' | 'definitivo' | 'manual',
+              periodoInicio: r.periodo_inicio ? String(r.periodo_inicio).slice(0, 10) : null,
+              periodoFim: r.periodo_fim ? String(r.periodo_fim).slice(0, 10) : null,
+              destinatarios: typeof r.destinatarios === 'string' ? JSON.parse(r.destinatarios) : (r.destinatarios || []),
+              totalSessoes: Number(r.total_sessoes),
+              totalValor: Number(r.total_valor),
+              enviadoPor: r.enviado_por || null,
+            }));
+          } catch {
+            return [];
+          }
+        }),
+    }),
   }),
 
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
@@ -4229,6 +6476,7 @@ export const appRouter = router({
           validatedByName: validador?.name || null,
           validatedAt: session.validatedAt,
           relatoAluno: session.relatoAluno,
+          createdAt: session.createdAt,
           comments,
         };
       }),
@@ -4268,11 +6516,11 @@ export const appRouter = router({
   // Admin - Cadastros
   admin: router({
     // Empresas/Programas
-    listEmpresas: adminProcedure.query(async () => {
+    listEmpresas: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllPrograms();
     }),
     
-    createEmpresa: adminProcedure
+    createEmpresa: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         code: z.string().min(1),
@@ -4282,7 +6530,7 @@ export const appRouter = router({
         return await db.createProgram(input);
       }),
 
-    updateEmpresa: adminProcedure
+    updateEmpresa: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         name: z.string().min(1).optional(),
@@ -4293,7 +6541,7 @@ export const appRouter = router({
         return await db.updateProgram(input.id, input);
       }),
 
-    toggleEmpresaStatus: adminProcedure
+    toggleEmpresaStatus: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleProgramStatus(input.id);
@@ -4301,15 +6549,15 @@ export const appRouter = router({
     
     // Mentores
     // Lista TODOS os mentores (ativos e inativos) - para tabela de Cadastros
-    listMentores: adminProcedure.query(async () => {
+    listMentores: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllMentores();
     }),
     // Lista apenas mentores ATIVOS - para dropdowns de seleção/filtro
-    listMentoresAtivos: adminProcedure.query(async () => {
+    listMentoresAtivos: adminOrAdmin2Procedure.query(async () => {
       return await db.getActiveMentores();
     }),
     
-     createMentor: adminProcedure
+     createMentor: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -4323,7 +6571,7 @@ export const appRouter = router({
         return await db.createMentor(input);
       }),
     
-    updateAcessoMentor: adminProcedure
+    updateAcessoMentor: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         loginId: z.string().nullable(),
@@ -4333,7 +6581,7 @@ export const appRouter = router({
         return await db.updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, 'mentor');
       }),
 
-    editMentor: adminProcedure
+    editMentor: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         name: z.string().optional(),
@@ -4350,7 +6598,7 @@ export const appRouter = router({
       }),
     
     // Ativar/Inativar mentor
-    toggleMentorStatus: adminProcedure
+    toggleMentorStatus: adminOrAdmin2Procedure
       .input(z.object({ consultorId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleConsultorStatus(input.consultorId);
@@ -4365,13 +6613,13 @@ export const appRouter = router({
       }),
 
     // Precificação flexível de sessões do mentor
-    getMentorPricing: adminProcedure
+    getMentorPricing: adminOrAdmin2Procedure
       .input(z.object({ consultorId: z.number() }))
       .query(async ({ input }) => {
         return await db.getMentorSessionPricing(input.consultorId);
       }),
 
-    setMentorPricing: adminProcedure
+    setMentorPricing: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         rules: z.array(z.object({
@@ -4400,11 +6648,11 @@ export const appRouter = router({
       }),
 
     // Gerentes
-    listGerentes: adminProcedure.query(async () => {
+    listGerentes: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllGerentes();
     }),
     
-    createGerente: adminProcedure
+    createGerente: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -4434,7 +6682,7 @@ export const appRouter = router({
         return gerenteResult;
       }),
     
-    updateAcessoGerente: adminProcedure
+    updateAcessoGerente: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         loginId: z.string().nullable(),
@@ -4444,7 +6692,7 @@ export const appRouter = router({
         return await db.updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, 'gerente');
       }),
 
-    editGerente: adminProcedure
+    editGerente: adminOrAdmin2Procedure
       .input(z.object({
         consultorId: z.number(),
         name: z.string().optional(),
@@ -4457,11 +6705,11 @@ export const appRouter = router({
       }),
     
     // Alunos
-    listAlunos: adminProcedure.query(async () => {
+    listAlunos: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllAlunosForAdmin();
     }),
     
-    createAluno: adminProcedure
+    createAluno: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -4471,6 +6719,7 @@ export const appRouter = router({
         contratoFim: z.string().optional(),
         totalSessoesContratadas: z.number().optional(),
         tipoMentoria: z.enum(['individual', 'grupo']).optional(),
+        plataformaAulas: z.enum(['scaffold', 'sistema_interno']).optional(),
       }))
       .mutation(async ({ input }) => {
         const result = await db.createAluno(input);
@@ -4489,7 +6738,7 @@ export const appRouter = router({
             alunoEmail: input.email,
             alunoId: input.externalId,
             empresaName,
-            loginUrl: 'https://ecolider.evoluirckm.com/',
+            loginUrl: 'https://ecolider.ecodobem.com/',
           });
           await sendEmail({
             to: input.email,
@@ -4504,7 +6753,7 @@ export const appRouter = router({
         return result;
       }),
 
-    updateAluno: adminProcedure
+    updateAluno: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         name: z.string().optional(),
@@ -4522,6 +6771,7 @@ export const appRouter = router({
         areaAtuacao: z.string().nullable().optional(),
         minicurriculo: z.string().nullable().optional(),
         quemEVoce: z.string().nullable().optional(),
+        plataformaAulas: z.enum(['scaffold', 'sistema_interno']).optional(),
       }))
       .mutation(async ({ input }) => {
         const { alunoId, contratoInicio, contratoFim, ...data } = input;
@@ -4532,16 +6782,16 @@ export const appRouter = router({
       }),
     
     // Gestão de Acesso (Email + CPF)
-    listAccessUsers: adminProcedure.query(async () => {
+    listAccessUsers: adminOrAdmin2Procedure.query(async () => {
       return await db.getAccessUsers();
     }),
     
-    createAccessUser: adminProcedure
+    createAccessUser: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
         cpf: z.string().min(1),
-        role: z.enum(["user", "admin", "manager"]),
+        role: z.enum(["user", "admin", "manager", "admin2"]),
         programId: z.number().nullable().optional(),
         isMentor: z.boolean().optional(), // true = Mentor, false/undefined = Gestor de Empresa
       }))
@@ -4574,13 +6824,13 @@ export const appRouter = router({
         return await db.createAccessUser(userData);
       }),
     
-    updateAccessUser: adminProcedure
+    updateAccessUser: adminOrAdmin2Procedure
       .input(z.object({
         userId: z.number(),
         name: z.string().optional(),
         email: z.string().email().optional(),
         cpf: z.string().optional(),
-        role: z.enum(["user", "admin", "manager"]).optional(),
+        role: z.enum(["user", "admin", "manager", "admin2"]).optional(),
         programId: z.number().nullable().optional(),
         isActive: z.number().optional(),
         consultorId: z.number().nullable().optional(),
@@ -4590,7 +6840,7 @@ export const appRouter = router({
         return await db.updateAccessUser(userId, data);
       }),
     
-    toggleAccessUserStatus: adminProcedure
+    toggleAccessUserStatus: adminOrAdmin2Procedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleAccessUserStatus(input.userId);
@@ -4599,19 +6849,19 @@ export const appRouter = router({
     // ============ GERENTES DE EMPRESA (VISÃO DUPLA) ============
     
     // Listar gerentes de empresa com info completa
-    listGerentesEmpresa: adminProcedure.query(async () => {
+    listGerentesEmpresa: adminOrAdmin2Procedure.query(async () => {
       return await db.getGerentesEmpresa();
     }),
 
     // Buscar alunos de uma empresa (para select de promoção)
-    alunosByProgram: adminProcedure
+    alunosByProgram: adminOrAdmin2Procedure
       .input(z.object({ programId: z.number() }))
       .query(async ({ input }) => {
         return await db.getAlunosByProgram(input.programId);
       }),
 
     // Promover aluno a gerente de empresa
-    promoteToGerente: adminProcedure
+    promoteToGerente: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         programId: z.number(),
@@ -4621,7 +6871,7 @@ export const appRouter = router({
       }),
 
     // Criar gerente puro (sem perfil de aluno)
-    createGerentePuro: adminProcedure
+    createGerentePuro: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -4633,14 +6883,14 @@ export const appRouter = router({
       }),
 
     // Remover papel de gerente
-    removeGerente: adminProcedure
+    removeGerente: adminOrAdmin2Procedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.removeGerenteRole(input.userId);
       }),
 
     // Cadastro Direto de Aluno pelo Admin (com bypass de onboarding)
-    createAlunoDireto: adminProcedure
+    createAlunoDireto: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
@@ -4665,7 +6915,7 @@ export const appRouter = router({
             alunoEmail: input.email,
             alunoId: input.cpf,
             empresaName: program?.name,
-            loginUrl: 'https://ecolider.evoluirckm.com/',
+            loginUrl: 'https://ecolider.ecodobem.com/',
           });
           await sendEmail({
             to: input.email,
@@ -4681,21 +6931,21 @@ export const appRouter = router({
       }),
 
     // Check aluno dependencies before deletion
-    getAlunoDependencies: adminProcedure
+    getAlunoDependencies: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .query(async ({ input }) => {
         return await db.getAlunoDependencies(input.alunoId);
       }),
 
     // Toggle ativar/inativar aluno
-    toggleAlunoStatus: adminProcedure
+    toggleAlunoStatus: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.toggleAlunoStatus(input.alunoId);
       }),
 
     // Delete aluno and all related data
-    deleteAluno: adminProcedure
+    deleteAluno: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number(), confirmCascade: z.boolean().default(false) }))
       .mutation(async ({ input }) => {
         // First check dependencies
@@ -4711,19 +6961,25 @@ export const appRouter = router({
       }),
 
     // ============ LIBERAR ONBOARDING (NOVO CICLO) ============
-    liberarOnboarding: adminProcedure
+    liberarOnboarding: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         return await db.liberarOnboardingAluno(input.alunoId);
       }),
-    liberarOnboardingEmMassa: adminProcedure
+    liberarOnboardingEmMassa: adminOrAdmin2Procedure
       .input(z.object({ alunoIds: z.array(z.number()).min(1) }))
       .mutation(async ({ input }) => {
         return await db.liberarOnboardingEmMassa(input.alunoIds);
       }),
-
-    // ============ PAINEL DE AGENDAMENTOS ============
-    allAppointments: adminProcedure
+    // Reverter onboarding liberado (desfaz liberarOnboarding)
+    reverterOnboarding: adminOrAdmin2Procedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.resetOnboardingLiberado(input.alunoId);
+        return { success: true, message: 'Onboarding revertido com sucesso.' };
+      }),
+    // ============ PAINEL DE AGENDAMENTOS =============
+    allAppointments: adminOrAdmin2Procedure
       .input(z.object({
         status: z.string().optional(),
         type: z.string().optional(),
@@ -4736,7 +6992,7 @@ export const appRouter = router({
        }),
 
     // ============ EDITAR MENTORIAS (PARAMETRIZAÇÃO) ============
-    listMentoringSessions: adminProcedure
+    listMentoringSessions: adminOrAdmin2Procedure
       .input(z.object({
         programId: z.number().optional(),
         turmaId: z.number().optional(),
@@ -4811,7 +7067,7 @@ export const appRouter = router({
         return { sessions: enrichedSessions, total };
       }),
 
-    updateSessionDate: adminProcedure
+    updateSessionDate: adminOrAdmin2Procedure
       .input(z.object({
         sessionId: z.number(),
         sessionDate: z.string().optional(),
@@ -4849,7 +7105,7 @@ export const appRouter = router({
         return { success };
       }),
 
-    deleteSession: adminProcedure
+    deleteSession: adminOrAdmin2Procedure
       .input(z.object({
         sessionId: z.number(),
       }))
@@ -4858,7 +7114,7 @@ export const appRouter = router({
         return { success };
       }),
 
-    adminCreateSession: adminProcedure
+    adminCreateSession: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         consultorId: z.number(),
@@ -4887,6 +7143,7 @@ export const appRouter = router({
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.adminCreateSession");
 
         const sessionId = await db.createMentoringSession({
           alunoId: input.alunoId,
@@ -4949,6 +7206,67 @@ export const appRouter = router({
 
         return { success: true, sessionId };
       }),
+
+    // Atualizar plataformaAulas de todos os alunos
+    updateAllAlunosPlataformaAulas: adminOrAdmin2Procedure
+      .mutation(async () => {
+        return await db.updateAllAlunosPlataformaAulas();
+      }),
+    
+    updateMultipleAlunosPlataforma: adminOrAdmin2Procedure
+      .input(z.array(z.object({
+        alunoId: z.number(),
+        plataformaAulas: z.enum(['scaffold', 'sistema_interno'])
+      })))
+      .mutation(async ({ input }) => {
+        return await db.updateMultipleAlunosPlataforma(input);
+      }),
+
+    // ============ ADMINISTRADORES ============
+    listAdmins: adminProcedure.query(async () => {
+      return await db.listAdminUsers();
+    }),
+
+    createAdmin: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        username: z.string().min(3, 'Username deve ter ao menos 3 caracteres'),
+        password: z.string().min(6, 'Senha deve ter ao menos 6 caracteres'),
+      }))
+      .mutation(async ({ input }) => {
+        const crypto = await import('crypto');
+        const passwordHash = crypto.createHash('sha256').update(input.password).digest('hex');
+        return await db.createAdminUser({
+          name: input.name,
+          email: input.email,
+          username: input.username,
+          passwordHash,
+        });
+      }),
+
+    toggleAdminStatus: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Impedir que o admin inabilite a si mesmo
+        if (ctx.user.id === input.userId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Você não pode inabilitar sua própria conta.' });
+        }
+        return await db.toggleAdminUserStatus(input.userId);
+      }),
+
+    getPermissions: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAdminPermissions(input.userId);
+      }),
+
+    setPermissions: adminProcedure
+      .input(z.object({ userId: z.number(), permissions: z.array(z.string()) }))
+      .mutation(async ({ input }) => {
+        await db.setAdminPermissions(input.userId, input.permissions);
+        return { success: true };
+      }),
   }),
   // Status de onboarding do aluno logado
   aluno: router({
@@ -4978,7 +7296,7 @@ export const appRouter = router({
       }),
 
     // Criar ciclo
-    criar: adminProcedure
+    criar: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         nomeCiclo: z.string().min(1),
@@ -4996,7 +7314,7 @@ export const appRouter = router({
       }),
 
     // Atualizar ciclo
-    atualizar: adminProcedure
+    atualizar: adminOrAdmin2Procedure
       .input(z.object({
         cicloId: z.number(),
         nomeCiclo: z.string().optional(),
@@ -5012,11 +7330,25 @@ export const appRouter = router({
       }),
 
     // Excluir ciclo
-    excluir: adminProcedure
+    excluir: adminOrAdmin2Procedure
       .input(z.object({ cicloId: z.number() }))
       .mutation(async ({ input }) => {
         const success = await db.deleteCicloExecucao(input.cicloId);
         return { success };
+      }),
+
+    // Log de auditoria de resets de ciclos
+    auditoriaResets: adminOrAdmin2Procedure
+      .input(z.object({ alunoId: z.number().optional(), limit: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        return await db.getAuditoriaResets(input ?? {});
+      }),
+
+    // Histórico de alterações de notas de mentoria (engagementScore e notaMentoraAplicabilidade)
+    auditoriaNotasMentoria: adminOrAdmin2Procedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAuditoriaNotesMentoria(input.alunoId);
       }),
   }),
 
@@ -5024,18 +7356,30 @@ export const appRouter = router({
   assessment: router({
     // Listar assessments de um aluno
     porAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getAssessmentsByAluno(input.alunoId);
+        return await db.getAssessmentsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
+     // Buscar um PDI específico por ID (incluindo congelados) — para visualização somente leitura
+    porId: protectedProcedure
+      .input(z.object({ pdiId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAssessmentById(input.pdiId);
+      }),
+
+    // Buscar TODOS os PDIs de um contratoNivelId (todas as trilhas do ciclo)
+    porContratoNivel: protectedProcedure
+      .input(z.object({ contratoNivelId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAllPdisByContratoNivel(input.contratoNivelId);
+      }),
     // Listar assessments de um programa (admin/mentor)
     porPrograma: protectedProcedure
       .input(z.object({ programId: z.number() }))
       .query(async ({ input }) => {
         return await db.getAssessmentsByProgram(input.programId);
       }),
-
     // Listar assessments dos alunos de um consultor
     porConsultor: protectedProcedure
       .input(z.object({ consultorId: z.number() }))
@@ -5047,6 +7391,7 @@ export const appRouter = router({
     criar: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         trilhaId: z.number(),
         turmaId: z.number().nullable().optional(),
         programId: z.number().nullable().optional(),
@@ -5069,6 +7414,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { competencias, ...pdiData } = input;
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "assessment.criar");
         
         // Guard: verificar se o aluno está ativo antes de criar PDI
         const alunoCheck = await db.getAlunoById(input.alunoId);
@@ -5079,6 +7425,50 @@ export const appRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não é possível criar PDI para aluno inativo. Ative o aluno primeiro.' });
         }
         
+        // ===== FIX: Verificar se já existe uma trilha ativa para este aluno =====
+        const existingPdi = await db.getExistingActivePdiByTrilha(input.alunoId, input.trilhaId);
+        
+        if (existingPdi) {
+          // TRILHA JÁ EXISTE: Adicionar competências ao assessment existente (não criar duplicada)
+          console.log(`[Assessment] Trilha ${input.trilhaId} já existe para aluno ${input.alunoId} (PDI #${existingPdi.pdiId}). Adicionando ${competencias.length} competência(s) ao existente.`);
+          
+          const added = await db.addCompetenciasToExistingAssessment(existingPdi.pdiId, competencias);
+          
+          if (added === 0) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Todas as competências selecionadas já existem nesta trilha. Nenhuma nova competência foi adicionada.',
+            });
+          }
+          
+          // Auto-sincronizar plano_individual
+          try {
+            await db.syncPlanoFromAssessment(input.alunoId);
+          } catch (e) { /* sync não deve bloquear */ }
+          
+          // Notificar o aluno sobre novas competências adicionadas
+          try {
+            const alunoInfo = await db.getAlunoById(input.alunoId);
+            if (alunoInfo) {
+              const allUsers = await db.getAllUsers();
+              const alunoUser = allUsers.find((u: any) => u.alunoId === input.alunoId);
+              if (alunoUser) {
+                await db.createNotification({
+                  userId: alunoUser.id,
+                  title: 'Novas Competências Adicionadas',
+                  message: `${added} nova(s) competência(s) foram adicionadas à sua trilha existente.`,
+                  type: 'info',
+                  category: 'assessment',
+                  link: '/meu-dashboard',
+                });
+              }
+            }
+          } catch (e) { /* notificação não deve bloquear */ }
+          
+          return { success: true, pdiId: existingPdi.pdiId, addedToExisting: true, addedCount: added };
+        }
+        
+        // ===== TRILHA NOVA: Criar normalmente =====
         // Validate macro dates
         if (pdiData.macroInicio >= pdiData.macroTermino) {
           throw new TRPCError({
@@ -5155,7 +7545,7 @@ export const appRouter = router({
               const inviteEmail = buildPdiPublishedInviteEmail({
                 alunoName: alunoForEmail.name || 'Aluno',
                 mentorName: mentorInfo?.name || 'seu(sua) mentor(a)',
-                loginUrl: 'https://ecolider.evoluirckm.com/onboarding',
+                loginUrl: 'https://ecolider.ecodobem.com/onboarding',
               });
               await sendEmailStep({ to: alunoForEmail.email, subject: inviteEmail.subject, html: inviteEmail.html, text: inviteEmail.text }).catch(() => {});
             }
@@ -5266,6 +7656,93 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Atualizar competências em lote (editar existentes, remover desmarcadas, adicionar novas)
+    atualizarCompetencias: protectedProcedure
+      .input(z.object({
+        assessmentPdiId: z.number(),
+        alunoId: z.number(),
+        updated: z.array(z.object({
+          assessmentCompetenciaId: z.number(),
+          competenciaId: z.number(),
+          peso: z.enum(['obrigatoria', 'opcional']),
+          nivelAtual: z.number().nullable(),
+          metaFinal: z.number().nullable(),
+          metaCiclo1: z.number().nullable(),
+          metaCiclo2: z.number().nullable(),
+          justificativa: z.string().nullable(),
+          microInicio: z.string().nullable(),
+          microTermino: z.string().nullable(),
+        })),
+        removed: z.array(z.number()), // assessmentCompetenciaId[]
+        added: z.array(z.object({
+          competenciaId: z.number(),
+          peso: z.enum(['obrigatoria', 'opcional']),
+          notaCorte: z.string().optional(),
+          nivelAtual: z.number().nullable(),
+          metaFinal: z.number().nullable(),
+          metaCiclo1: z.number().nullable(),
+          metaCiclo2: z.number().nullable(),
+          justificativa: z.string().nullable(),
+          microInicio: z.string().nullable(),
+          microTermino: z.string().nullable(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        let updatedCount = 0;
+        let removedCount = 0;
+        let addedCount = 0;
+
+        // 1. Atualizar competências existentes
+        for (const comp of input.updated) {
+          await db.updateAssessmentCompetencia(comp.assessmentCompetenciaId, {
+            peso: comp.peso,
+            microInicio: comp.microInicio,
+            microTermino: comp.microTermino,
+          });
+          // Atualizar campos extras via updateAssessmentCompetenciaFields
+          const extraUpdates: Record<string, any> = {};
+          if (comp.nivelAtual != null) extraUpdates.nivelAtual = String(comp.nivelAtual);
+          if (comp.metaFinal != null) extraUpdates.metaFinal = String(comp.metaFinal);
+          if (comp.metaCiclo1 != null) extraUpdates.metaCiclo1 = String(comp.metaCiclo1);
+          if (comp.metaCiclo2 != null) extraUpdates.metaCiclo2 = String(comp.metaCiclo2);
+          if (comp.justificativa) extraUpdates.justificativa = comp.justificativa;
+          if (Object.keys(extraUpdates).length > 0) {
+            await db.updateAssessmentCompetenciaFields(comp.assessmentCompetenciaId, extraUpdates);
+          }
+          updatedCount++;
+        }
+
+        // 2. Remover competências desmarcadas
+        for (const compId of input.removed) {
+          await db.removeCompetenciaFromAssessment(compId);
+          removedCount++;
+        }
+
+        // 3. Adicionar novas competências
+        for (const comp of input.added) {
+          await db.addCompetenciaToAssessment(input.assessmentPdiId, {
+            competenciaId: comp.competenciaId,
+            peso: comp.peso,
+            notaCorte: comp.notaCorte,
+            microInicio: comp.microInicio,
+            microTermino: comp.microTermino,
+            nivelAtual: comp.nivelAtual != null ? String(comp.nivelAtual) : null,
+            metaFinal: comp.metaFinal != null ? String(comp.metaFinal) : null,
+            metaCiclo1: comp.metaCiclo1 != null ? String(comp.metaCiclo1) : null,
+            metaCiclo2: comp.metaCiclo2 != null ? String(comp.metaCiclo2) : null,
+            justificativa: comp.justificativa,
+          });
+          addedCount++;
+        }
+
+        // Auto-sincronizar plano_individual
+        try {
+          await db.syncPlanoFromAssessment(input.alunoId);
+        } catch (e) { /* sync não deve bloquear */ }
+
+        return { success: true, updated: updatedCount, removed: removedCount, added: addedCount };
+      }),
+
     // Excluir assessment PDI completo
     excluir: protectedProcedure
       .input(z.object({
@@ -5279,19 +7756,19 @@ export const appRouter = router({
 
   // ==================== WEBINARS MANAGEMENT ====================
   webinars: router({
-    list: adminProcedure
+    list: adminOrAdmin2Procedure
       .input(z.object({ status: z.string().optional() }).optional())
       .query(async ({ input }) => {
         return await db.listWebinars(input?.status);
       }),
 
-    getById: adminProcedure
+    getById: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await db.getWebinarById(input.id);
       }),
 
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         title: z.string().min(1),
         description: z.string().optional(),
@@ -5325,7 +7802,7 @@ export const appRouter = router({
         return { id, success: true };
       }),
 
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         title: z.string().optional(),
@@ -5356,14 +7833,14 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteWebinar(input.id);
         return { success: true };
       }),
 
-    uploadCard: adminProcedure
+    uploadCard: adminOrAdmin2Procedure
       .input(z.object({
         webinarId: z.number(),
         fileBase64: z.string(),
@@ -5383,7 +7860,7 @@ export const appRouter = router({
         return { url, success: true };
       }),
 
-    sendReminder: adminProcedure
+    sendReminder: adminOrAdmin2Procedure
       .input(z.object({
         webinarId: z.number(),
         recipients: z.array(z.enum(['alunos', 'gerentes', 'mentores'])).min(1, 'Selecione pelo menos um grupo de destinatários'),
@@ -5447,7 +7924,7 @@ export const appRouter = router({
           : 'Horário não definido';
         
         // Determine login URL
-        const loginUrl = 'https://ecolider.evoluirckm.com';
+        const loginUrl = 'https://ecolider.ecodobem.com';
         
         // === 1. CREATE IN-APP NOTIFICATIONS FOR STUDENTS ONLY (they have user accounts) ===
         const notificationMessage = `Evento: ${webinar.title}\nData: ${eventDateStr} às ${eventTimeStr} (horário de Brasília)${webinar.speaker ? `\nPalestrante: ${webinar.speaker}` : ''}${webinar.meetingLink ? `\nLink: ${webinar.meetingLink}` : ''}`;
@@ -5529,11 +8006,21 @@ export const appRouter = router({
           console.error(`[Reminder] Erros de email:`, errors.slice(0, 5).join('; '));
         }
         
-        // === 3. NOTIFY OWNER ABOUT THE REMINDER ===
-        await notifyOwner({
-          title: `Lembrete de Webinar Enviado`,
-          content: `Lembrete do webinar "${webinar.title}" (${eventDateStr} às ${eventTimeStr}):\nDestinatários: ${Object.entries(groupCounts).map(([k, v]) => `${v} ${k}`).join(', ')}\n- ${inAppNotifications.length} notificações in-app criadas (alunos)\n- ${emailsSent} emails enviados com sucesso\n- ${emailsFailed} emails falharam${errors.length > 0 ? `\nErros: ${errors.slice(0, 3).join('; ')}` : ''}`,
-        });
+          // === 3. NOTIFY OWNER ABOUT THE REMINDER ===
+        try {
+          await notifyOwner({
+            title: `Lembrete de Webinar Enviado`,
+            content: `Lembrete do webinar "${webinar.title}" (${eventDateStr} às ${eventTimeStr}):
+Destinatários: ${Object.entries(groupCounts).map(([k, v]) => `${v} ${k}`).join(', ')}
+- ${inAppNotifications.length} notificações in-app criadas (alunos)
+- ${emailsSent} emails enviados com sucesso
+- ${emailsFailed} emails falharam${errors.length > 0 ? `
+Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
+          });
+        } catch (error) {
+          console.warn("[Webinar Reminder] Failed to notify owner:", error);
+          // Continue anyway - notification is not critical
+        }
         
         // === 4. UPDATE REMINDER STATUS ===
         await db.updateWebinar(input.webinarId, {
@@ -5570,22 +8057,22 @@ export const appRouter = router({
     // Avisos ativos para alunos (filtrado por programa)
     activeForStudent: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         return await db.listActiveAnnouncementsForStudent(aluno?.programId || undefined);
       }),
-    list: adminProcedure
+    list: adminOrAdmin2Procedure
       .input(z.object({ activeOnly: z.boolean().optional() }).optional())
       .query(async ({ input }) => {
         return await db.listAnnouncements(input?.activeOnly);
       }),
 
-    getById: adminProcedure
+    getById: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await db.getAnnouncementById(input.id);
       }),
 
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         title: z.string().min(1),
         content: z.string().optional(),
@@ -5608,7 +8095,7 @@ export const appRouter = router({
         return { id, success: true };
       }),
 
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         title: z.string().optional(),
@@ -5633,11 +8120,26 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteAnnouncement(input.id);
         return { success: true };
+      }),
+
+    // Upload de imagem de capa para avisos
+    uploadImage: adminOrAdmin2Procedure
+      .input(z.object({
+        imageBase64: z.string(),
+        mimeType: z.string().default('image/jpeg'),
+        fileName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.imageBase64, 'base64');
+        const ext = input.mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+        const key = `announcements/cover-${Date.now()}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url, success: true };
       }),
 
     // Public endpoint for students
@@ -5654,10 +8156,11 @@ export const appRouter = router({
       .input(z.object({
         eventId: z.number(),
         reflexao: z.string().min(20, 'A reflexão deve ter pelo menos 20 caracteres'),
+        contratoNivelId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Buscar alunoId pelo userId logado
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
@@ -5672,33 +8175,55 @@ export const appRouter = router({
         }
 
         // Buscar o evento na tabela events
-        const eventRecord = await db.getEventById(realEventId);
+        let eventRecord = await db.getEventById(realEventId);
         if (!eventRecord) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Evento não encontrado.' });
         }
 
+        // CORREÇÃO: Redirecionar presença para o ID canônico (o que aparece na lista do aluno)
+        const allEvents = await db.getWebinarsPendingAttendance(aluno.id);
+        const normalizedInputTitle = eventRecord?.title?.toLowerCase()?.trim() || '';
+        const inputDateStr = eventRecord?.eventDate ? new Date(eventRecord.eventDate).toISOString().split('T')[0] : 'nodate';
+        
+        const canonicalEvent = allEvents.find((e: any) => {
+          const eTitle = e.title?.toLowerCase()?.trim() || '';
+          const eDateStr = e.eventDate ? new Date(e.eventDate).toISOString().split('T')[0] : 'nodate';
+          return eTitle === normalizedInputTitle && eDateStr === inputDateStr;
+        });
+
+        if (canonicalEvent && canonicalEvent.id !== realEventId) {
+          const nextEventRecord = await db.getEventById(canonicalEvent.id);
+          if (nextEventRecord) {
+            realEventId = canonicalEvent.id;
+            eventRecord = nextEventRecord;
+          }
+        }
+
         // Verificar se é um webinário agendado (tem endDate) - verificar se já iniciou
         const allWebinars = await db.listWebinars();
-        const matchingWebinar = allWebinars.find((w: any) => 
-          w.title?.toLowerCase().trim() === eventRecord.title?.toLowerCase().trim()
-        );
+        const matchingWebinar = eventRecord?.title ? allWebinars.find((w: any) => 
+          w.title?.toLowerCase()?.trim() === eventRecord.title?.toLowerCase()?.trim()
+        ) : null;
         if (matchingWebinar) {
-          // É um webinário agendado - verificar se já iniciou (regra: libera assim que inicia)
-          const startDate = matchingWebinar.startDate || matchingWebinar.eventDate;
-          if (startDate && new Date(startDate) > new Date()) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o início do evento.' });
+          // Se o webinar já foi marcado como completed, liberar presença independente da data
+          if (matchingWebinar.status !== 'completed') {
+            // Webinar ainda não concluído - verificar se já iniciou (regra: libera assim que inicia)
+            const startDate = matchingWebinar.startDate || matchingWebinar.eventDate;
+            if (startDate && new Date(startDate) > new Date()) {
+              throw new TRPCError({ code: 'BAD_REQUEST', message: 'A marcação de presença só é liberada após o início do evento.' });
+            }
           }
         }
         // Para eventos importados (sem webinar agendado correspondente), permite marcar presença a qualquer momento
 
-        const result = await db.markWebinarAttendance(aluno.id, realEventId, input.reflexao);
+        const result = await db.markWebinarAttendance(aluno.id, realEventId, input.reflexao, input.contratoNivelId ?? null);
         return { success: true, ...result };
       }),
 
     // Listar TODOS os eventos do aluno (lista unificada com status)
     pending: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return { events: [], periodoInicio: null, periodoFim: null };
         const events = await db.getWebinarsPendingAttendance(aluno.id);
         // Buscar período do macrociclo para exibir ao aluno
@@ -5718,7 +8243,7 @@ export const appRouter = router({
       }),
 
     // Admin: atualizar videoLink de um evento importado
-    updateVideoLink: adminProcedure
+    updateVideoLink: adminOrAdmin2Procedure
       .input(z.object({
         eventId: z.number(),
         videoLink: z.string().min(1, 'Link do vídeo é obrigatório'),
@@ -5731,7 +8256,7 @@ export const appRouter = router({
     // Listar webinars já confirmados pelo aluno (com reflexão)
     myAttendance: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return [];
         const participations = await db.getEventParticipationByAluno(aluno.id);
         // Buscar events pelos IDs das participacoes (sem filtrar por programa)
@@ -5762,7 +8287,7 @@ export const appRouter = router({
     // Tarefas práticas atribuídas ao aluno pelo mentor
     myTasks: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return [];
         const sessions = await db.getMentoringSessionsByAluno(aluno.id);
         // Incluir sessões com qualquer modo de tarefa (biblioteca, personalizada, livre)
@@ -5831,12 +8356,18 @@ export const appRouter = router({
     submitEvidence: protectedProcedure
       .input(z.object({
         sessionId: z.number(),
-        evidenceLink: z.string().url().optional(),
-        evidenceImageBase64: z.string().optional(), // Base64 da imagem
+        submissionType: z.enum(["tarefa", "atualizacao_projeto"]),
+        evidenceLink: z.string().optional(),
+        evidenceImageBase64: z.string().optional(), // compatibilidade
         evidenceImageName: z.string().optional(),
+        evidenceFileBase64: z.string().optional(),
+        evidenceFileName: z.string().optional(),
+        relatoAluno: z.string().optional(),
+        textoAplicabilidade: z.string().optional(),
+        notaAlunoAplicabilidade: z.number().min(0).max(10).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
 
         // Verificar se a sessão pertence ao aluno
@@ -5850,28 +8381,53 @@ export const appRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Atividade já foi validada, não pode ser alterada' });
         }
 
-        // Exigir pelo menos link ou imagem
-        if (!input.evidenceLink && !input.evidenceImageBase64) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Envie pelo menos um link ou uma imagem como evidência' });
+        const evidenceLink = input.evidenceLink?.trim();
+        const relatoAluno = input.relatoAluno?.trim();
+        const fileBase64 = input.evidenceFileBase64 || input.evidenceImageBase64;
+        const fileName = input.evidenceFileName || input.evidenceImageName;
+
+        if (!evidenceLink && !fileBase64 && !relatoAluno) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Para enviar a atividade, preencha pelo menos um dos campos: link, anexo ou relato.' });
+        }
+
+        if (evidenceLink) {
+          try {
+            new URL(evidenceLink);
+          } catch {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Link inválido. Informe uma URL válida começando com https://.' });
+          }
+        }
+
+        if (input.submissionType === "tarefa") {
+          if (!input.textoAplicabilidade?.trim()) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Preencha a aplicabilidade prática para envios do tipo Tarefa.' });
+          }
+          if (input.notaAlunoAplicabilidade === undefined) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Informe uma nota de aplicabilidade de 0 a 10 para envios do tipo Tarefa.' });
+          }
         }
 
         let imageUrl: string | null = null;
         let imageKey: string | null = null;
 
-        // Upload de imagem para S3 se fornecida
-        if (input.evidenceImageBase64) {
-          const buffer = Buffer.from(input.evidenceImageBase64, 'base64');
-          // Validar tamanho (5MB)
-          if (buffer.length > 5 * 1024 * 1024) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Imagem deve ter no máximo 5MB' });
+        // Upload de arquivo para S3 se fornecido
+        if (fileBase64) {
+          const buffer = Buffer.from(fileBase64, 'base64');
+          if (buffer.length > 10 * 1024 * 1024) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'O anexo deve ter no máximo 10MB.' });
           }
-          const ext = input.evidenceImageName?.split('.').pop()?.toLowerCase() || 'jpg';
-          if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
-            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Formato de imagem inválido. Use JPG, PNG ou WebP' });
+          const ext = fileName?.split('.').pop()?.toLowerCase() || '';
+          if (!['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Formato de anexo inválido. Use PDF, DOC, DOCX, JPG, JPEG, PNG ou WEBP.' });
           }
           const randomSuffix = Math.random().toString(36).substring(2, 10);
-          const fileKey = `evidence/${aluno.id}-${input.sessionId}-${randomSuffix}.${ext}`;
-          const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+          const fileKey = `evidence/${aluno.id}-${input.sessionId}-${randomSuffix}.${ext || "bin"}`;
+          const contentType =
+            ext === "pdf" ? "application/pdf" :
+            ext === "doc" ? "application/msword" :
+            ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" :
+            ext === "png" ? "image/png" :
+            ext === "webp" ? "image/webp" : "image/jpeg";
           const result = await storagePut(fileKey, buffer, contentType);
           imageUrl = result.url;
           imageKey = result.key;
@@ -5879,9 +8435,12 @@ export const appRouter = router({
 
         // Atualizar sessão com evidência
         await db.updateMentoringSession(input.sessionId, {
-          evidenceLink: input.evidenceLink || null,
+          evidenceLink: evidenceLink || null,
           evidenceImageUrl: imageUrl,
           evidenceImageKey: imageKey,
+          relatoAluno: relatoAluno || undefined,
+          textoAplicabilidade: input.submissionType === "tarefa" ? input.textoAplicabilidade?.trim() : undefined,
+          notaAlunoAplicabilidade: input.submissionType === "tarefa" ? input.notaAlunoAplicabilidade ?? null : undefined,
           submittedAt: new Date(),
           taskStatus: 'entregue',
         });
@@ -5897,7 +8456,7 @@ export const appRouter = router({
         notaAlunoAplicabilidade: z.number().min(0).max(10),
       }))
       .mutation(async ({ ctx, input }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
 
         const session = await db.getMentoringSessionById(input.sessionId);
@@ -5921,7 +8480,7 @@ export const appRouter = router({
     myTaskComments: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .query(async ({ ctx, input }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return [];
         // Verificar se a sessão pertence ao aluno
         const session = await db.getMentoringSessionById(input.sessionId);
@@ -5930,7 +8489,7 @@ export const appRouter = router({
       }),
 
     // Admin: visualizar reflexões dos alunos
-    reflections: adminProcedure
+    reflections: adminOrAdmin2Procedure
       .input(z.object({ eventId: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getWebinarReflections(input?.eventId);
@@ -5954,7 +8513,7 @@ export const appRouter = router({
       }),
 
     // Criar contrato (admin)
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
         programId: z.number(),
@@ -5965,17 +8524,32 @@ export const appRouter = router({
         observacoes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const id = await db.createContrato({
+        const dataInicio = new Date(input.periodoInicio);
+        const dataFim = new Date(input.periodoTermino);
+        const contratoId = await db.createContrato({
           ...input,
-          periodoInicio: new Date(input.periodoInicio),
-          periodoTermino: new Date(input.periodoTermino),
+          periodoInicio: dataInicio,
+          periodoTermino: dataFim,
           criadoPor: ctx.user.id,
         } as any);
-        return { id, success: true };
+        // Criar automaticamente o registro em contrato_niveis (sem datas próprias — fonte única é contratos_aluno)
+        try {
+          const hoje = new Date();
+          hoje.setHours(0, 0, 0, 0);
+          await db.createContratoNivel({
+            contratoId,
+            alunoId: input.alunoId,
+            nivel: 'I',
+            status: dataFim < hoje ? 'encerrado' : 'em_andamento',
+          } as any);
+        } catch (e) {
+          console.warn('[contratos.create] Falha ao criar contrato_niveis:', e);
+        }
+        return { id: contratoId, success: true };
       }),
 
     // Atualizar contrato (admin)
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         programId: z.number().optional(),
@@ -5990,12 +8564,13 @@ export const appRouter = router({
         const updateData: any = { ...data };
         if (data.periodoInicio) updateData.periodoInicio = new Date(data.periodoInicio);
         if (data.periodoTermino) updateData.periodoTermino = new Date(data.periodoTermino);
+        // Atualizar apenas contratos_aluno — contrato_niveis lê as datas via JOIN
         await db.updateContrato(id, updateData);
         return { success: true };
       }),
 
     // Excluir contrato (soft delete - admin)
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteContrato(input.id);
@@ -6010,8 +8585,272 @@ export const appRouter = router({
       }),
   }),
 
+  // ============ NÍVEIS DO CONTRATO ============
+  contratoNiveis: router({
+    // Nível vigente do aluno (status em_andamento)
+    vigente: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContratoNivelVigenteByAluno(input.alunoId);
+      }),
+
+    statusOperacional: protectedProcedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
+      .query(async ({ input }) => {
+        const nivel = await db.getContratoNivelComStatusOperacional(input.alunoId, input.contratoNivelId ?? null);
+        return {
+          nivel,
+          bloqueadoNovasAtribuicoes: nivel ? ["fechamento", "ajustes", "encerrado"].includes(nivel.statusOperacional) : false,
+          encerrado: nivel ? nivel.statusOperacional === "encerrado" : false,
+        };
+      }),
+
+    // Histórico de níveis por aluno
+    historico: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContratoNiveisByAluno(input.alunoId);
+      }),
+
+    // Listagem de níveis por contrato (inspeção/admin)
+    byContrato: protectedProcedure
+      .input(z.object({ contratoId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getContratoNiveisByContrato(input.contratoId);
+      }),
+
+    // Criação manual de nível (admin)
+    // As datas são lidas de contratos_aluno via JOIN — não precisam ser informadas aqui
+    create: adminOrAdmin2Procedure
+      .input(z.object({
+        contratoId: z.number(),
+        alunoId: z.number(),
+        nivel: z.enum(["I", "II", "III", "IV"]),
+        status: z.enum(["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]),
+        assessmentPdiId: z.number().nullable().optional(),
+        mentoraPrincipalId: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createContratoNivel({
+          ...input,
+          assessmentPdiId: input.assessmentPdiId ?? null,
+          mentoraPrincipalId: input.mentoraPrincipalId ?? null,
+        } as any);
+        return { id, success: true };
+      }),
+  }),
+
+  pedagogiaNivel: router({
+    vigente: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const vigente = await db.getContratoNivelVigenteByAluno(input.alunoId);
+        const snapshot = await db.getPedagogiaByNivel(input.alunoId, vigente?.id ?? null);
+        return { vigente, snapshot };
+      }),
+    porNivel: protectedProcedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getPedagogiaByNivel(input.alunoId, input.contratoNivelId);
+      }),
+  }),
+
+  evolucao: router({
+    minha: protectedProcedure.query(async ({ ctx }) => {
+      let alunoId: number | null = ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) {
+        const byExternal = await db.getAlunoByExternalId(ctx.user.openId);
+        alunoId = byExternal?.id ?? null;
+      }
+      if (!alunoId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado para a sessão atual." });
+      }
+      return await buildEvolucaoAlunoPayload(alunoId);
+    }),
+
+    porAluno: managerProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        return await buildEvolucaoAlunoPayload(input.alunoId);
+      }),
+  }),
+
+  certificacao: router({
+    elegibilidade: protectedProcedure
+      .input(z.object({ contratoNivelId: z.number(), alunoId: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        let alunoId = input.alunoId ?? ctx.user.alunoId ?? null;
+        if (!alunoId) {
+          const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+          alunoId = alunoCtx?.id ?? null;
+        }
+        if (!alunoId) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+        if (input.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para consultar outro aluno." });
+        }
+        return await db.avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
+      }),
+
+    statusPorNivel: protectedProcedure
+      .input(z.object({ alunoId: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        let alunoId = input?.alunoId ?? ctx.user.alunoId ?? null;
+        if (!alunoId) {
+          const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+          alunoId = alunoCtx?.id ?? null;
+        }
+        if (!alunoId) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+        if (input?.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para consultar outro aluno." });
+        }
+
+        const niveis = await db.getContratoNiveisByAluno(alunoId);
+        const status = await Promise.all(niveis.map(async (n) => {
+          const [elig, cert] = await Promise.all([
+            db.avaliarElegibilidadeCertificacao(alunoId!, n.id),
+            db.getNivelCertificateByAlunoNivel(alunoId!, n.id),
+          ]);
+          return {
+            contratoNivelId: n.id,
+            nivel: n.nivel,
+            elegivel: elig.elegivel,
+            motivo: elig.motivo,
+            certificadoEmitido: !!cert,
+            certificado: cert,
+          };
+        }));
+        return status;
+      }),
+
+    minhas: protectedProcedure.query(async ({ ctx }) => {
+      let alunoId = ctx.user.alunoId ?? null;
+      if (!alunoId) {
+        const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+        alunoId = alunoCtx?.id ?? null;
+      }
+      if (!alunoId) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+      return await db.getNivelCertificatesByAluno(alunoId);
+    }),
+
+    emitir: protectedProcedure
+      .input(z.object({ contratoNivelId: z.number(), alunoId: z.number().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        let alunoId = input.alunoId ?? ctx.user.alunoId ?? null;
+        if (!alunoId) {
+          const alunoCtx = await db.getAlunoFromCtx(ctx.user);
+          alunoId = alunoCtx?.id ?? null;
+        }
+        if (!alunoId) throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+        if (input.alunoId && input.alunoId !== alunoId && ctx.user.role !== "admin" && ctx.user.role !== "manager") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Sem permissão para emitir para outro aluno." });
+        }
+
+        const existing = await db.getNivelCertificateByAlunoNivel(alunoId, input.contratoNivelId);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "Já existe certificado emitido para este nível." });
+        }
+
+        const elegibilidade = await db.avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
+        if (!elegibilidade.elegivel) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "Nível não elegível para certificação." });
+        }
+
+        const nivel = elegibilidade.nivel;
+        const template = await db.getActiveCertificationTemplateByNivel((nivel?.nivel || "I") as any);
+        if (!template) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este nível." });
+        }
+
+        const assinaturas = await db.getCertificationSignatures();
+        const gerente = assinaturas.find((a) => a.tipo === "gerente");
+        const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
+        if (!gerente || !gestorMaster) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigatórias (gerente/gestor_master) ausentes." });
+        }
+
+        const pedagogia = await db.getPedagogiaByNivel(alunoId, input.contratoNivelId);
+        const mentorasUnicas = Array.from(
+          new Map(
+            (pedagogia.mentoringSessions || [])
+              .filter((s: any) => s.consultorId)
+              .map((s: any) => [s.consultorId, s])
+          ).values()
+        );
+        if (mentorasUnicas.length === 0) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora válida encontrada no nível." });
+        }
+
+        const hashDocumento = `${alunoId}-${input.contratoNivelId}-${Date.now()}`;
+        const arquivoUrl = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
+        const certId = await db.createNivelCertificate(
+          {
+            alunoId,
+            contratoNivelId: input.contratoNivelId,
+            nivel: (nivel?.nivel || "I") as any,
+            templateId: template.id,
+            status: "emitido",
+            arquivoUrl,
+            emitidoPor: (ctx.user as any).id || null,
+            hashDocumento,
+          } as any,
+          mentorasUnicas.map((m: any) => ({ consultorId: m.consultorId, nomeMentora: m.consultorNome || `Mentora #${m.consultorId}` }))
+        );
+
+        return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
+      }),
+
+    templates: adminOrAdmin2Procedure.query(async () => {
+      return await db.getCertificationTemplates();
+    }),
+
+    createTemplate: adminOrAdmin2Procedure
+      .input(z.object({
+        nome: z.string().min(1),
+        nivel: z.enum(["I", "II", "III", "IV"]),
+        ativo: z.number().min(0).max(1).optional(),
+        arquivoModelo: z.string().optional(),
+        camposMapeados: z.any().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createCertificationTemplate({
+          ...input,
+          ativo: input.ativo ?? 1,
+          createdBy: (ctx.user as any).id || null,
+        } as any);
+        if ((input.ativo ?? 1) === 1) {
+          await db.setCertificationTemplateActive(id, input.nivel);
+        }
+        return { id };
+      }),
+
+    assinaturas: adminOrAdmin2Procedure.query(async () => {
+      return await db.getCertificationSignatures();
+    }),
+
+    createAssinatura: adminOrAdmin2Procedure
+      .input(z.object({
+        userId: z.number().optional(),
+        tipo: z.enum(["gerente", "mentora", "gestor_master"]),
+        nomeExibicao: z.string().min(1),
+        cargo: z.string().optional(),
+        imagemAssinaturaUrl: z.string().optional(),
+        ativo: z.number().min(0).max(1).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createCertificationSignature({
+          ...input,
+          ativo: input.ativo ?? 1,
+        } as any);
+        return { id };
+      }),
+  }),
+
   // ============ JORNADA DO ALUNO ============
-  jornada: router({
+ jornadaAntiga: router({
     // Jornada completa (Contrato + Macro Jornadas + Micro Jornadas)
     completa: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
@@ -6022,7 +8861,7 @@ export const appRouter = router({
     // Jornada do aluno logado (para o Portal do Aluno)
     minha: protectedProcedure
       .query(async ({ ctx }) => {
-        const aluno = await db.getAlunoByEmail(ctx.user.email || '');
+        const aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) return null;
         return await db.getJornadaCompleta(aluno.id);
       }),
@@ -6106,21 +8945,22 @@ export const appRouter = router({
   // Cases de Sucesso routes
   cases: router({
     // Listar cases de um aluno
-    byAluno: adminProcedure
-      .input(z.object({ alunoId: z.number() }))
+    byAluno: adminOrAdmin2Procedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getCasesSucessoByAluno(input.alunoId);
+        return await db.getCasesSucessoByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
     
     // Listar todos os cases (admin)
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllCasesSucesso();
     }),
     
     // Criar case de sucesso
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         trilhaId: z.number().optional(),
         trilhaNome: z.string().optional(),
         entregue: z.number().min(0).max(1),
@@ -6129,8 +8969,10 @@ export const appRouter = router({
         observacao: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "cases.create");
         const id = await db.createCaseSucesso({
           alunoId: input.alunoId,
+          contratoNivelId: input.contratoNivelId ?? null,
           trilhaId: input.trilhaId || null,
           trilhaNome: input.trilhaNome || null,
           entregue: input.entregue,
@@ -6143,7 +8985,7 @@ export const appRouter = router({
       }),
     
     // Atualizar case de sucesso
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         entregue: z.number().min(0).max(1).optional(),
@@ -6162,11 +9004,19 @@ export const appRouter = router({
       }),
     
     // Deletar case de sucesso
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteCaseSucesso(input.id);
         return { success: true };
+      }),
+
+    // Alternar visibilidade do case no Mural (admin) — usa campo 'entregue' existente
+    toggleVisibilidade: adminOrAdmin2Procedure
+      .input(z.object({ id: z.number(), visivel: z.number().min(0).max(1) }))
+      .mutation(async ({ input }) => {
+        await db.updateCaseSucesso(input.id, { entregue: input.visivel });
+        return { success: true, visivelNoMural: input.visivel };
       }),
 
     // === PROCEDURES DO ALUNO (protectedProcedure, não admin) ===
@@ -6179,7 +9029,7 @@ export const appRouter = router({
         const allAlunos = await db.getAlunos();
         aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
       }
-      if (!aluno && ctx.user.email) aluno = await db.getAlunoByEmail(ctx.user.email);
+      if (!aluno && ctx.user.email) aluno = await db.getAlunoFromCtx(ctx.user);
       if (!aluno) aluno = await db.getAlunoByExternalId(ctx.user.openId);
       if (!aluno) return [];
       return await db.getCasesSucessoByAluno(aluno.id);
@@ -6192,6 +9042,9 @@ export const appRouter = router({
         trilhaId: z.number(),
         trilhaNome: z.string(),
         titulo: z.string().min(1, 'T\u00edtulo \u00e9 obrigat\u00f3rio'),
+        resumoPublico: z.string()
+          .min(20, 'Resumo público deve ter ao menos 20 caracteres')
+          .max(500, 'Resumo público deve ter no máximo 500 caracteres'),
         descricao: z.string().optional(),
         // Campos estruturados do Relat\u00f3rio de Impacto
         oQueAprendi: z.string().min(1, 'Campo "O que aprendi" \u00e9 obrigat\u00f3rio'),
@@ -6208,6 +9061,7 @@ export const appRouter = router({
         evidenciaMimeType: z.string().optional(),
         // Aplicabilidade prática
         notaAlunoAplicabilidade: z.number().min(0).max(10).optional(),
+
       }))
       .mutation(async ({ ctx, input }) => {
         if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
@@ -6216,7 +9070,7 @@ export const appRouter = router({
           const allAlunos = await db.getAlunos();
           aluno = allAlunos.find(a => a.id === ctx.user!.alunoId) || undefined;
         }
-        if (!aluno && ctx.user.email) aluno = await db.getAlunoByEmail(ctx.user.email);
+        if (!aluno && ctx.user.email) aluno = await db.getAlunoFromCtx(ctx.user);
         if (!aluno) aluno = await db.getAlunoByExternalId(ctx.user.openId);
         if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Perfil de aluno n\u00e3o encontrado' });
 
@@ -6250,6 +9104,7 @@ export const appRouter = router({
 
         const caseData = {
           titulo: input.titulo,
+          resumoPublico: input.resumoPublico,
           descricao: input.descricao || null,
           fileUrl,
           fileKey,
@@ -6295,13 +9150,19 @@ export const appRouter = router({
             `O aluno **${alunoNome}** enviou um Relat\u00f3rio de Impacto para a trilha **${trilhaNome}**.`,
             ``,
             `**T\u00edtulo:** ${input.titulo}`,
+            `**Resumo público:** ${input.resumoPublico.substring(0, 150)}${input.resumoPublico.length > 150 ? '...' : ''}`,
             `**O que aprendi:** ${input.oQueAprendi.substring(0, 150)}${input.oQueAprendi.length > 150 ? '...' : ''}`,
             `**O que mudei:** ${input.oQueMudei.substring(0, 150)}${input.oQueMudei.length > 150 ? '...' : ''}`,
             `**Resultado mensur\u00e1vel:** ${input.resultadoMensuravel.substring(0, 150)}${input.resultadoMensuravel.length > 150 ? '...' : ''}`,
           ].join('\n');
 
-          // 1. Notificar o owner (admin) via notifyOwner
-          await notifyOwner({ title: notifTitle, content: notifContent });
+          // 1. Notificar o owner (admin) via notifyOwner (non-blocking)
+          try {
+            await notifyOwner({ title: notifTitle, content: notifContent });
+          } catch (error) {
+            console.warn("[Ciclo] Failed to notify owner:", error);
+            // Continue anyway - notification is not critical
+          }
 
           // 2. Notificar mentor e gestor via notifica\u00e7\u00f5es in-app
           const allConsultors = await db.getConsultors();
@@ -6342,7 +9203,138 @@ export const appRouter = router({
           // N\u00e3o falhar o envio do relat\u00f3rio por causa de notifica\u00e7\u00e3o
         }
 
+        // === E-MAIL PARA COLEGAS DA TURMA: novo case publicado ===
+        // Disparado de forma assíncrona (não bloqueia a resposta)
+        if (!updated && aluno.turmaId) {
+          (async () => {
+            try {
+              const colegas = await db.getAlunosByTurma(aluno!.turmaId!);
+              const muralUrl = 'https://ecolider.ecodobem.com/mural';
+              // Buscar nome da empresa do aluno
+              const programasList = await db.getPrograms();
+              const empresaNome = aluno!.programId
+                ? (programasList.find(p => p.id === aluno!.programId)?.name || 'Empresa')
+                : 'Empresa';
+              const emailData = buildNovoCaseEmail({
+                alunoNome: aluno!.name || 'Aluno',
+                empresaNome,
+                caseTitulo: input.titulo,
+                caseResumoPublico: input.resumoPublico,
+                muralUrl,
+              });
+              const destinatarios = colegas
+                .filter(c => c.email && c.id !== aluno!.id)
+                .map(c => c.email as string);
+              for (const emailDest of destinatarios) {
+                await sendEmail({
+                  to: emailDest,
+                  subject: emailData.subject,
+                  html: emailData.html,
+                  text: emailData.text,
+                }).catch(e => console.warn('[NovoCaseEmail] Falha ao enviar para', emailDest, e));
+              }
+              console.log(`[NovoCaseEmail] E-mail de novo case enviado para ${destinatarios.length} colegas da turma ${aluno!.turmaId}`);
+            } catch (emailErr) {
+              console.warn('[NovoCaseEmail] Erro ao disparar e-mails de novo case:', emailErr);
+            }
+          })();
+        }
+
         return { id: resultId, url: fileUrl, updated };
+      }),
+
+    // Vitrine pública de cases para o Mural do aluno
+    vitrineMural: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(200).optional() }).optional())
+      .query(async ({ input }) => {
+        const items = await db.getCasesVitrineMural(input?.limit ?? 12);
+        return items.map((i) => ({
+          caseId: i.caseId,
+          empresa: i.empresa || "Comunidade",
+          alunoNome: i.autorNome,
+          alunoFoto: (i as any).alunoFoto || null,
+          titulo: i.titulo || "Case de Sucesso",
+          resumoPublico: i.resumoPublico || "",
+          dataEntrega: i.dataEntrega,
+        }));
+      }),
+
+    // Aluno demonstra interesse em conhecer um case da vitrine
+    demonstrarInteresse: protectedProcedure
+      .input(z.object({
+        caseId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+
+        const caseSelecionado = await db.getCaseSucessoById(input.caseId);
+        if (!caseSelecionado || caseSelecionado.entregue !== 1) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Case não encontrado ou indisponível." });
+        }
+
+        const alunoInteressado = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!alunoInteressado) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Perfil de aluno interessado não encontrado." });
+        }
+
+        if (alunoInteressado.id === caseSelecionado.alunoId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Você não pode demonstrar interesse no seu próprio case." });
+        }
+
+        const mensagem = `Olá! Parabéns pelo Case de Sucesso.
+Queria conhecer o seu case.
+Poderíamos conversar para ampliar o meu aprendizado?
+
+Interessado: ${alunoInteressado.name}
+E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
+
+        const interesseId = await db.createCaseInteresse({
+          caseId: caseSelecionado.id,
+          autorAlunoId: caseSelecionado.alunoId,
+          interessadoAlunoId: alunoInteressado.id,
+          interessadoNome: alunoInteressado.name,
+          interessadoEmail: alunoInteressado.email || ctx.user.email || "nao-informado@ecossistemadobem.com",
+          mensagem,
+          status: "nao_lido",
+        });
+
+        const [autorUser] = (await db.getAllUsers())
+          .filter((u) => Number(u.alunoId) === Number(caseSelecionado.alunoId))
+          .slice(0, 1);
+
+        if (autorUser) {
+          await db.createNotification({
+            userId: autorUser.id,
+            title: "🌟 Interesse no seu Case de Sucesso",
+            message: `${alunoInteressado.name} (${alunoInteressado.email || ctx.user.email || "sem e-mail"}) quer conhecer seu case.\n\n${mensagem}`,
+            type: "action",
+            category: "case_interesse",
+            link: "/mural",
+          });
+        }
+
+        return { success: true, interesseId, mensagem };
+      }),
+
+    // Autor do case lista interesses recebidos
+    meusInteressesRecebidos: protectedProcedure
+      .input(z.object({ onlyUnread: z.boolean().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) return [];
+        return await db.getCaseInteressesByAutor(aluno.id, Boolean(input?.onlyUnread));
+      }),
+
+    // Autor do case marca interesse como lido
+    marcarInteresseLido: protectedProcedure
+      .input(z.object({ interesseId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) throw new TRPCError({ code: "NOT_FOUND", message: "Perfil do aluno não encontrado." });
+        await db.markCaseInteresseAsRead(input.interesseId, aluno.id);
+        return { success: true };
       }),
   }),
 
@@ -6352,10 +9344,11 @@ export const appRouter = router({
     listar: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
-        assessmentPdiId: z.number().optional()
+        assessmentPdiId: z.number().optional(),
+        contratoNivelId: z.number().nullable().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getMetasDetalhadas(input.alunoId);
+        return await db.getMetasDetalhadasByNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
     // Listar metas por competência específica
@@ -6375,11 +9368,13 @@ export const appRouter = router({
         assessmentCompetenciaId: z.number(),
         competenciaId: z.number(),
         assessmentPdiId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         taskLibraryId: z.number().nullable().optional(),
         titulo: z.string().min(1),
         descricao: z.string().nullable().optional()
       }))
       .mutation(async ({ input, ctx }) => {
+        await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "metas.criar");
         // Buscar consultor pelo openId do usuário logado ou pelo consultorId
         const consultors = await db.getConsultors();
         const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
@@ -6460,7 +9455,7 @@ export const appRouter = router({
         // Encontrar alunoId do user logado
         let alunoId: number | null = ctx.user.alunoId || null;
         if (!alunoId && ctx.user.email) {
-          const aluno = await db.getAlunoByEmail(ctx.user.email);
+          const aluno = await db.getAlunoFromCtx(ctx.user);
           if (aluno) alunoId = aluno.id;
         }
         if (!alunoId) {
@@ -6563,6 +9558,7 @@ Responda APENAS em JSON com o formato:
     salvarRespostas: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         respostas: z.array(z.object({
           blocoIndex: z.number(),
           maisId: z.string(),
@@ -6575,7 +9571,7 @@ Responda APENAS em JSON com o formato:
         const { calcularDiscScores } = require('../shared/discData');
         
         // Determinar ciclo
-        const existingResult = await db.getDiscResultado(input.alunoId);
+        const existingResult = await db.getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
         const ciclo = existingResult ? existingResult.ciclo + 1 : 1;
         
         // Salvar respostas no formato escolha forçada
@@ -6587,6 +9583,7 @@ Responda APENAS em JSON com o formato:
         // Salvar resultado com novos campos
         await db.saveDiscResultado({
           alunoId: input.alunoId,
+          contratoNivelId: input.contratoNivelId ?? null,
           scoreD: String(resultado.scores.D),
           scoreI: String(resultado.scores.I),
           scoreS: String(resultado.scores.S),
@@ -6625,9 +9622,9 @@ Responda APENAS em JSON com o formato:
 
     // Buscar resultado DISC de um aluno
     resultado: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getDiscResultado(input.alunoId);
+        return await db.getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
 
     // Buscar perfis DISC (descrições)
@@ -6685,7 +9682,7 @@ Responda APENAS em JSON com o formato:
       }),
 
     // Admin: resetar teste DISC de um aluno (permite refazer)
-    resetAluno: adminProcedure
+    resetAluno: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         // Verificar se o aluno existe
@@ -6748,6 +9745,7 @@ Responda APENAS em JSON com o formato:
     salvar: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         avaliacoes: z.array(z.object({
           competenciaId: z.number(),
           trilhaId: z.number(),
@@ -6760,15 +9758,15 @@ Responda APENAS em JSON com o formato:
           competenciaId: a.competenciaId,
           trilhaId: a.trilhaId,
           nota: a.nota,
-        })));
+        })), input.contratoNivelId ?? null);
         return { success: true };
       }),
 
     // Buscar autoavaliação de um aluno
     porAluno: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
-        return await db.getAutopercepcoes(input.alunoId);
+        return await db.getAutopercepcoesByNivel(input.alunoId, input.contratoNivelId ?? null);
       }),
   }),
 
@@ -6823,10 +9821,25 @@ Responda APENAS em JSON com o formato:
 
   // ============ PROGRESSO DO ONBOARDING ============
   onboarding: router({
+    contextoNivel: protectedProcedure
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().optional() }))
+      .query(async ({ input }) => {
+        const vigente = await db.getContratoNivelVigenteByAluno(input.alunoId);
+        const historico = await db.getContratoNiveisByAluno(input.alunoId);
+        const visualizandoNivelId = input.contratoNivelId ?? vigente?.id ?? null;
+        return {
+          vigente,
+          historico,
+          visualizandoNivelId,
+          isHistorico: !!(vigente?.id && visualizandoNivelId && vigente.id !== visualizandoNivelId),
+        };
+      }),
+
     // Salvar dados do cadastro (etapa 1)
     salvarCadastro: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         nome: z.string().optional(),
         email: z.string().optional(),
         telefone: z.string().optional(),
@@ -6839,7 +9852,7 @@ Responda APENAS em JSON com o formato:
         const { alunoId, nome, email, telefone, cargo, areaAtuacao, minicurriculo, quemEVoce } = input;
         // Proteção: verificar se o aluno pode editar o onboarding
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura. Aluno já possui PDI.' });
         }
         const result = await db.updateAluno(alunoId, {
@@ -6852,7 +9865,7 @@ Responda APENAS em JSON com o formato:
           quemEVoce: quemEVoce || null,
         });
         // Marcar cadastro como confirmado na tabela onboarding_jornada
-        await db.upsertOnboardingJornada(alunoId, {
+        await db.upsertOnboardingJornadaByNivel(alunoId, input.contratoNivelId ?? null, {
           cadastroConfirmado: 1,
           cadastroConfirmadoEm: new Date(),
         });
@@ -6878,6 +9891,176 @@ Responda APENAS em JSON com o formato:
         return result;
       }),
 
+    // Salvar perfil profissional complementar (etapa 1 expandida)
+    salvarPerfilProfissional: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        // Dados pessoais
+        dataNascimento: z.string().optional(),
+        estadoCivil: z.string().optional(),
+        temFilhos: z.boolean().optional(),
+        quantidadeFilhos: z.number().optional(),
+        // Expectativas
+        expectativaCurtoPrazo: z.string().optional(),
+        expectativaMedioPrazo: z.string().optional(),
+        expectativaLongoPrazo: z.string().optional(),
+        // Formação
+        formacaoSuperior: z.array(z.object({
+          area: z.string(),
+          curso: z.string(),
+          instituicao: z.string(),
+          ano: z.number().optional(),
+        })).optional(),
+        posGraduacoes: z.array(z.object({
+          tipo: z.string(),
+          area: z.string(),
+          nome: z.string(),
+          instituicao: z.string(),
+          ano: z.number().optional(),
+        })).optional(),
+        cursosExtracurriculares: z.array(z.object({
+          area: z.string(),
+          nome: z.string(),
+          instituicao: z.string(),
+          cargaHoraria: z.number(),
+          ano: z.number().optional(),
+        })).optional(),
+        // Experiências anteriores
+        experienciasAnteriores: z.array(z.object({
+          empresa: z.string(),
+          cargo: z.string(),
+          de: z.string().optional(),
+          ate: z.string().optional(),
+        })).optional(),
+        // Liderança
+        experienciaLideranca: z.boolean().optional(),
+        tipoEquipeGerenciada: z.array(z.string()).optional(),
+        gerenciouOutrosLideres: z.boolean().optional(),
+        // Redes sociais
+        linkedinUrl: z.string().optional(),
+        facebookUrl: z.string().optional(),
+        instagramUrl: z.string().optional(),
+        tiktokUrl: z.string().optional(),
+        outraRedeUrl: z.string().optional(),
+        // Currículo
+        curriculoUrl: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const sets: string[] = [];
+        const vals: any[] = [];
+        const addField = (col: string, val: any) => {
+          if (val !== undefined) { sets.push(`\`${col}\` = ?`); vals.push(val); }
+        };
+        addField('dataNascimento', input.dataNascimento ?? null);
+        addField('estadoCivil', input.estadoCivil ?? null);
+        if (input.temFilhos !== undefined) addField('temFilhos', input.temFilhos ? 1 : 0);
+        if (input.quantidadeFilhos !== undefined) addField('quantidadeFilhos', input.quantidadeFilhos);
+        addField('expectativaCurtoPrazo', input.expectativaCurtoPrazo ?? null);
+        addField('expectativaMedioPrazo', input.expectativaMedioPrazo ?? null);
+        addField('expectativaLongoPrazo', input.expectativaLongoPrazo ?? null);
+        if (input.formacaoSuperior !== undefined) addField('formacaoSuperior', JSON.stringify(input.formacaoSuperior));
+        if (input.posGraduacoes !== undefined) addField('posGraduacoes', JSON.stringify(input.posGraduacoes));
+        if (input.cursosExtracurriculares !== undefined) addField('cursosExtracurriculares', JSON.stringify(input.cursosExtracurriculares));
+        if (input.experienciasAnteriores !== undefined) addField('experienciasAnteriores', JSON.stringify(input.experienciasAnteriores));
+        if (input.experienciaLideranca !== undefined) addField('experienciaLideranca', input.experienciaLideranca ? 1 : 0);
+        if (input.tipoEquipeGerenciada !== undefined) addField('tipoEquipeGerenciada', JSON.stringify(input.tipoEquipeGerenciada));
+        if (input.gerenciouOutrosLideres !== undefined) addField('gerenciouOutrosLideres', input.gerenciouOutrosLideres ? 1 : 0);
+        addField('linkedinUrl', input.linkedinUrl ?? null);
+        addField('facebookUrl', input.facebookUrl ?? null);
+        addField('instagramUrl', input.instagramUrl ?? null);
+        addField('tiktokUrl', input.tiktokUrl ?? null);
+        addField('outraRedeUrl', input.outraRedeUrl ?? null);
+        addField('curriculoUrl', input.curriculoUrl ?? null);
+        if (sets.length === 0) return { success: true };
+        vals.push(input.alunoId);
+        const rawConn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
+        if (rawConn) {
+          await (rawConn as any).execute(`UPDATE \`alunos\` SET ${sets.join(', ')} WHERE \`id\` = ?`, vals);
+        } else {
+          // fallback: criar conexão mysql2 direta
+          const mysql2 = await import('mysql2/promise');
+          const dbUrl = new URL(process.env.DATABASE_URL || '');
+          const conn = await mysql2.createConnection({
+            host: dbUrl.hostname,
+            user: dbUrl.username,
+            password: dbUrl.password,
+            database: dbUrl.pathname.slice(1),
+            port: dbUrl.port ? parseInt(dbUrl.port) : 3306,
+          });
+          try {
+            await conn.execute(`UPDATE \`alunos\` SET ${sets.join(', ')} WHERE \`id\` = ?`, vals);
+          } finally {
+            await conn.end();
+          }
+        }
+        return { success: true };
+      }),
+
+    // Buscar perfil profissional do aluno
+    buscarPerfilProfissional: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) return null;
+        const rawConn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
+        if (rawConn) {
+          const [rows] = await (rawConn as any).execute(
+            `SELECT dataNascimento, estadoCivil, temFilhos, quantidadeFilhos,
+             expectativaCurtoPrazo, expectativaMedioPrazo, expectativaLongoPrazo,
+             formacaoSuperior, posGraduacoes, cursosExtracurriculares, experienciasAnteriores,
+             experienciaLideranca, tipoEquipeGerenciada, gerenciouOutrosLideres,
+             linkedinUrl, facebookUrl, instagramUrl, tiktokUrl, outraRedeUrl, curriculoUrl
+             FROM \`alunos\` WHERE \`id\` = ? LIMIT 1`,
+            [input.alunoId]
+          );
+          const row = (rows as any[])[0];
+          if (!row) return null;
+          const parseJson = (v: any) => { try { return typeof v === 'string' ? JSON.parse(v) : v; } catch { return []; } };
+          return {
+            ...row,
+            formacaoSuperior: parseJson(row.formacaoSuperior) || [],
+            posGraduacoes: parseJson(row.posGraduacoes) || [],
+            cursosExtracurriculares: parseJson(row.cursosExtracurriculares) || [],
+            experienciasAnteriores: parseJson(row.experienciasAnteriores) || [],
+            tipoEquipeGerenciada: parseJson(row.tipoEquipeGerenciada) || [],
+          };
+        }
+        return null;
+      }),
+
+    // Upload de currículo do aluno
+    uploadCurriculo: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        nomeArquivo: z.string(),
+        tipoMime: z.string(),
+        dados: z.string(), // base64
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.dados, 'base64');
+        const fileKey = `curriculos/${input.alunoId}-${Date.now()}-${input.nomeArquivo}`;
+        const { url } = await storagePut(fileKey, buffer, input.tipoMime);
+        return { url, success: true };
+      }),
+
+    // Upload de foto de perfil do aluno
+    uploadFotoAluno: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        fotoBase64: z.string(),
+        mimeType: z.string().default('image/jpeg'),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.fotoBase64, 'base64');
+        const ext = input.mimeType === 'image/png' ? 'png' : 'jpg';
+        const key = `alunos/${input.alunoId}/foto-${Date.now()}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        await db.updateAluno(input.alunoId, { photoUrl: url });
+        return { url, success: true };
+      }),
+
     // Escolher mentora (etapa 3)
     escolherMentora: protectedProcedure
       .input(z.object({
@@ -6888,7 +10071,7 @@ Responda APENAS em JSON com o formato:
         const { alunoId, consultorId } = input;
         // Proteção: verificar se o aluno pode editar o onboarding
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura. Aluno já possui PDI.' });
         }
         const result = await db.updateAluno(alunoId, { consultorId });
@@ -6928,7 +10111,7 @@ Responda APENAS em JSON com o formato:
                     </div>
 
                     <div style="text-align: center; margin: 24px 0;">
-                      <a href="https://ecolider.evoluirckm.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                      <a href="https://ecolider.ecodobem.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
                     </div>
 
                     <p style="font-size: 14px; color: #6b7280; line-height: 1.5;">Em breve o aluno far\u00e1 o agendamento do primeiro encontro. Voc\u00ea receber\u00e1 uma notifica\u00e7\u00e3o com a data e hor\u00e1rio escolhidos.</p>
@@ -6948,15 +10131,176 @@ Responda APENAS em JSON com o formato:
           const { notifyOwner } = await import('./_core/notification');
           const aluno = await db.getAlunoById(alunoId);
           const consultor = await db.getConsultorById(consultorId);
-          await notifyOwner({
-            title: 'Novo aluno escolheu mentora',
-            content: `O aluno ${aluno?.name || 'N/A'} escolheu a mentora ${consultor?.name || 'N/A'} durante o onboarding.`,
-          });
+          try {
+            await notifyOwner({
+              title: 'Novo aluno escolheu mentora',
+              content: `O aluno ${aluno?.name || 'N/A'} escolheu a mentora ${consultor?.name || 'N/A'} durante o onboarding.`,
+            });
+          } catch (notifErr) {
+            console.warn('[Onboarding] Erro ao notificar owner:', notifErr);
+            // Continue anyway - notification is not critical
+          }
         } catch (notifErr) {
           console.warn('[Onboarding] Erro ao notificar owner:', notifErr);
         }
 
         return result;
+      }),
+
+    // Trocar mentora do aluno (ação administrativa)
+    trocarMentora: adminOrAdmin2Procedure
+      .input(z.object({
+        alunoId: z.number(),
+        novaMentoraId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { alunoId, novaMentoraId } = input;
+        // Buscar dados atuais do aluno
+        const aluno = await db.getAlunoById(alunoId);
+        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado.' });
+        const mentoraAntiga = aluno.consultorId ? await db.getConsultorById(aluno.consultorId) : null;
+        const mentoraNova = await db.getConsultorById(novaMentoraId);
+        if (!mentoraNova) throw new TRPCError({ code: 'NOT_FOUND', message: 'Nova mentora não encontrada.' });
+        // 1. Atualizar consultorId na tabela alunos
+        await db.updateAluno(alunoId, { consultorId: novaMentoraId });
+        // 2. Atualizar mentoraPrincipalId no contrato_nivel em_andamento
+        try {
+          const rawConn = await db.getRawConnection();
+          if (rawConn) {
+            await rawConn.execute(
+              'UPDATE contrato_niveis SET mentoraPrincipalId = ?, updatedAt = NOW() WHERE alunoId = ? AND status = ?',
+              [novaMentoraId, alunoId, 'em_andamento']
+            );
+          }
+        } catch (e) {
+          console.warn('[trocarMentora] Erro ao atualizar contrato_niveis:', e);
+        }
+        // 3. Enviar e-mail para mentora nova
+        try {
+          if (mentoraNova.email) {
+            const { sendEmail, buildNovaAlunaEmail } = await import('./emailService');
+            const emailData = buildNovaAlunaEmail({
+              mentoraNovaName: mentoraNova.name,
+              alunoName: aluno.name,
+              alunoEmail: aluno.email || undefined,
+              mentoraAntigaName: mentoraAntiga?.name || 'Não atribuída',
+              adminName: (ctx.user as any)?.name || 'Administração',
+            });
+            await sendEmail({ to: mentoraNova.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+          }
+        } catch (e) {
+          console.warn('[trocarMentora] Erro ao enviar e-mail para mentora nova:', e);
+        }
+        // 4. Enviar e-mail para mentora antiga
+        try {
+          if (mentoraAntiga?.email) {
+            const { sendEmail, buildAlunoRemovidoEmail } = await import('./emailService');
+            const emailData = buildAlunoRemovidoEmail({
+              mentoraAntigaName: mentoraAntiga.name,
+              alunoName: aluno.name,
+              mentoraNovaName: mentoraNova.name,
+              adminName: (ctx.user as any)?.name || 'Administração',
+            });
+            await sendEmail({ to: mentoraAntiga.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+          }
+        } catch (e) {
+          console.warn('[trocarMentora] Erro ao enviar e-mail para mentora antiga:', e);
+        }
+        // 5. Notificar admins via sininho
+        try {
+          const allUsers = await db.getAllUsers();
+          const adminUsers = allUsers.filter((u: any) => u.role === 'admin');
+          for (const adminUser of adminUsers) {
+            await db.createNotification({
+              userId: adminUser.id,
+              title: 'Mentora trocada',
+              message: `Aluno(a) ${aluno.name} foi transferido(a) de ${mentoraAntiga?.name || 'sem mentora'} para ${mentoraNova.name}.`,
+              type: 'info',
+              category: 'onboarding',
+              link: '/cadastros',
+            });
+          }
+        } catch (e) {
+          console.warn('[trocarMentora] Erro ao criar notificações:', e);
+        }
+        return { success: true };
+      }),
+    // Solicitar alteração de mentora (sem trocar consultorId)
+    solicitarAlteracaoMentora: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        justificativa: z.string().trim().min(15, "A justificativa deve ter no mínimo 15 caracteres.").max(1000, "A justificativa deve ter no máximo 1000 caracteres."),
+      }))
+      .mutation(async ({ input }) => {
+        const { alunoId, justificativa } = input;
+
+        const aluno = await db.getAlunoById(alunoId);
+        if (!aluno) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado.' });
+        }
+
+        if (!aluno.consultorId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não há mentora confirmada para este aluno.' });
+        }
+
+        const mentoraAtual = await db.getConsultorById(aluno.consultorId);
+        const { sendEmail, buildSolicitacaoAlteracaoMentoraEmail } = await import('./emailService');
+
+        // Destinatarios: Adriana (to) e Dina (cc) — configuravel via env se necessario
+        const TO_SOLICITACAO = process.env.SOLICITACAO_MENTORA_TO || 'adriana.deus@makiyama.com.br';
+        const CC_SOLICITACAO = process.env.SOLICITACAO_MENTORA_CC || 'dina@ckmtalents.net';
+
+        const payload = buildSolicitacaoAlteracaoMentoraEmail({
+          alunoName: aluno.name || 'Aluno',
+          alunoEmail: aluno.email || 'Não informado',
+          mentoraAtualNome: mentoraAtual?.name || 'Não identificada',
+          justificativa,
+        });
+
+        console.log('[Solicitacao Alteracao Mentora] alunoId=', alunoId);
+        console.log('[Solicitacao Alteracao Mentora] aluno=', aluno?.name, aluno?.email);
+        console.log('[Solicitacao Alteracao Mentora] mentoraAtual=', mentoraAtual?.name, mentoraAtual?.email);
+        console.log('[Solicitacao Alteracao Mentora] recipients=', { to: TO_SOLICITACAO, cc: CC_SOLICITACAO });
+        console.log('[Solicitacao Alteracao Mentora] subject=', payload.subject);
+        console.log('[Solicitacao Alteracao Mentora] EMAIL_ENABLED=', process.env.EMAIL_ENABLED);
+
+        const envio = await sendEmail({
+          to: TO_SOLICITACAO,
+          cc: CC_SOLICITACAO,
+          subject: payload.subject,
+          html: payload.html,
+          text: payload.text,
+        });
+
+        console.log('[Solicitacao Alteracao Mentora] resultado envio=', JSON.stringify(envio));
+
+        if (!envio.success) {
+          console.error('[Solicitacao Alteracao Mentora] erro real no envio:', envio.error);
+          // Nao bloquear: notificacao in-app garante que admins sejam avisados mesmo sem email
+        }
+
+        // Notificar todos os admins via sininho (in-app notification)
+        try {
+          const allUsers = await db.getAllUsers();
+          const adminUsers = allUsers.filter((u: any) => u.role === 'admin');
+          const notifTitle = 'Solicitação de alteração de mentora';
+          const notifMessage = `${aluno.name || 'Aluno'} solicitou alteração de mentora. Mentora atual: ${mentoraAtual?.name || 'Não identificada'}. Justificativa: ${justificativa.substring(0, 120)}${justificativa.length > 120 ? '...' : ''}`;
+          for (const adminUser of adminUsers) {
+            await db.createNotification({
+              userId: adminUser.id,
+              title: notifTitle,
+              message: notifMessage,
+              type: 'action',
+              category: 'onboarding',
+              link: '/cadastros',
+            });
+          }
+          console.log('[Solicitacao Alteracao Mentora] Notificacoes in-app criadas para', adminUsers.length, 'admin(s)');
+        } catch (notifError) {
+          console.error('[Solicitacao Alteracao Mentora] Erro ao criar notificacoes in-app:', notifError);
+        }
+
+        return { success: true };
       }),
 
     // Criar agendamento (etapa 4)
@@ -6974,7 +10318,7 @@ Responda APENAS em JSON com o formato:
         const { alunoId, consultorId, scheduledDate, startTime, endTime, googleMeetLink, notes } = input;
         // Proteção: verificar se o aluno pode editar o onboarding
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
         // Criar o agendamento na tabela mentor_appointments
@@ -7008,10 +10352,12 @@ Responda APENAS em JSON com o formato:
         try {
           if (consultor?.email && aluno) {
             const { sendEmail } = await import('./emailService');
-            const adminEmail = process.env.SMTP_USER || '';
+            const adminEmail = 'relacionamento@ckmtalents.net';
+            const dinaEmail = 'dina@ckmtalents.net';
+            const ccList = [adminEmail, dinaEmail].join(', ');
             await sendEmail({
               to: consultor.email,
-              cc: adminEmail || undefined,
+              cc: ccList,
               subject: `Encontro Inicial agendado com ${aluno.name} - Prepare-se!`,
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -7042,7 +10388,7 @@ Responda APENAS em JSON com o formato:
                     </div>
 
                     <div style="text-align: center; margin: 24px 0;">
-                      <a href="https://ecolider.evoluirckm.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                      <a href="https://ecolider.ecodobem.com/" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
                     </div>
                     
                     <p style="margin-top: 20px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px;">Ecossistema do Bem - Programa de Mentoria</p>
@@ -7059,8 +10405,12 @@ Responda APENAS em JSON com o formato:
         try {
           if (aluno?.email && consultor) {
             const { sendEmail } = await import('./emailService');
+            const adminEmail = 'relacionamento@ckmtalents.net';
+            const dinaEmail = 'dina@ckmtalents.net';
+            const ccList = [adminEmail, dinaEmail].join(', ');
             await sendEmail({
               to: aluno.email,
+              cc: ccList,
               subject: `Agendamento confirmado - Encontro Inicial com ${consultor.name}`,
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -7090,7 +10440,7 @@ Responda APENAS em JSON com o formato:
                     </div>
 
                     <div style="text-align: center; margin: 24px 0;">
-                      <a href="https://ecolider.evoluirckm.com/onboarding" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
+                      <a href="https://ecolider.ecodobem.com/onboarding" style="display: inline-block; background: #0A1E3E; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">Acessar a Plataforma</a>
                     </div>
                     
                     <p style="margin-top: 20px; font-size: 12px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 16px;">Ecossistema do Bem - Programa de Mentoria</p>
@@ -7120,6 +10470,39 @@ Responda APENAS em JSON com o formato:
           }
         } catch (e) { console.warn('[Onboarding] Erro ao enviar email de avanço (agendamento):', e); }
 
+        // Integração Google Calendar (assíncrono, não bloqueia a resposta)
+        if (result.success && result.id) {
+          const appointmentId = result.id;
+          (async () => {
+            try {
+              const { createCalendarEvent } = await import('./googleCalendarService');
+              const attendees: { email: string; displayName?: string }[] = [];
+              if (consultor?.email) attendees.push({ email: consultor.email, displayName: consultor.name });
+              if (aluno?.email) attendees.push({ email: aluno.email, displayName: aluno.name });
+              const startDateTime = `${scheduledDate}T${startTime}:00-03:00`;
+              const endDateTime = `${scheduledDate}T${endTime}:00-03:00`;
+              const calResult = await createCalendarEvent({
+                title: 'Encontro Inicial - Onboarding',
+                description: notes || 'Primeiro encontro de mentoria agendado pelo onboarding',
+                startDateTime,
+                endDateTime,
+                attendees,
+                meetLink: !googleMeetLink, // gera Meet se não tiver link próprio
+              });
+              if (calResult) {
+                await db.updateAppointmentGoogleEventId(
+                  appointmentId,
+                  calResult.googleEventId,
+                  calResult.meetLink || googleMeetLink || null
+                );
+                console.log(`[GoogleCalendar] Evento onboarding criado: ${calResult.googleEventId}`);
+              }
+            } catch (err) {
+              console.warn('[GoogleCalendar] Erro ao criar evento de onboarding:', err);
+            }
+          })();
+        }
+
         return { success: result.success, appointmentId: result.id };
       }),
 
@@ -7140,17 +10523,18 @@ Responda APENAS em JSON com o formato:
 
     // Retorna o step atual do onboarding baseado nos dados do banco
     progresso: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .query(async ({ input }) => {
         const { alunoId } = input;
         if (!alunoId || alunoId === 0) return { step: 1, discCompleto: false, mentoraEscolhida: false, agendamentoFeito: false };
+        const contratoNivelId = input.contratoNivelId ?? (await db.getContratoNivelVigenteByAluno(alunoId))?.id ?? null;
 
         // Verificar se fez o teste DISC
-        const discResult = await db.getDiscResultado(alunoId);
+        const discResult = await db.getDiscResultadoByNivel(alunoId, contratoNivelId);
         const discCompleto = !!discResult;
 
         // Verificar se fez a autopercepção
-        const autopercepcoes = await db.getAutopercepcoes(alunoId);
+        const autopercepcoes = await db.getAutopercepcoesByNivel(alunoId, contratoNivelId);
         const autopercepCompleta = autopercepcoes.length > 0;
 
         // Verificar se tem mentora vinculada
@@ -7173,11 +10557,11 @@ Responda APENAS em JSON com o formato:
         }
 
         // Verificar se a mentora registrou presença (sessão de mentoria)
-        const sessoes = await db.getMentoringSessionsByAluno(alunoId);
+        const sessoes = await db.getMentoringSessionsByAlunoAndNivel(alunoId, contratoNivelId);
         const presencaRegistrada = sessoes.some(s => s.presence === 'presente');
 
         // Verificar se a mentora fez o assessment/PDI do aluno
-        const assessments = await db.getAssessmentsByAluno(alunoId);
+        const assessments = await db.getAssessmentsByAlunoAndNivel(alunoId, contratoNivelId);
         const assessmentFeito = assessments.length > 0;
 
         // Verificar se a mentora fez o relatório (sessão com feedback preenchido)
@@ -7193,7 +10577,7 @@ Responda APENAS em JSON com o formato:
         const encontroData = sessaoRealizada?.sessionDate ? String(sessaoRealizada.sessionDate) : null;
 
         // Buscar progresso da jornada (etapas 6-8)
-        const jornada = await db.getOnboardingJornada(alunoId);
+        const jornada = await db.getOnboardingJornadaByNivel(alunoId, contratoNivelId);
         const pdiVisualizado = !!(jornada?.pdiVisualizado);
         const todosVideosAssistidos = !!(jornada?.videoBoasVindas && jornada?.videoCompetencias && jornada?.videoWebinars && jornada?.videoTarefas && jornada?.videoMetas);
         const aceiteRealizado = !!(jornada?.aceiteRealizado);
@@ -7263,6 +10647,7 @@ Responda APENAS em JSON com o formato:
           reassessmentElegivel,
           contratoTermino,
           cicloAtual,
+          contratoNivelId,
           // Etapas 6-8
           pdiVisualizado,
           todosVideosAssistidos,
@@ -7281,13 +10666,13 @@ Responda APENAS em JSON com o formato:
 
     // Marcar PDI como visualizado (etapa 6)
     marcarPdiVisualizado: protectedProcedure
-      .input(z.object({ alunoId: z.number() }))
+      .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().nullable().optional() }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
-        await db.upsertOnboardingJornada(input.alunoId, {
+        await db.upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
           pdiVisualizado: 1,
           pdiVisualizadoEm: new Date(),
         });
@@ -7298,11 +10683,12 @@ Responda APENAS em JSON com o formato:
     marcarVideoAssistido: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         chave: z.enum(['boas_vindas', 'competencias', 'webinars', 'tarefas', 'metas']),
       }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
         const fieldMap: Record<string, string> = {
@@ -7316,7 +10702,7 @@ Responda APENAS em JSON com o formato:
         const updateData: any = { [field]: 1 };
         
         // Verificar se todos os vídeos foram assistidos após esta marcação
-        const jornada = await db.getOnboardingJornada(input.alunoId);
+        const jornada = await db.getOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null);
         const videoStates: any = {
           videoBoasVindas: jornada?.videoBoasVindas || 0,
           videoCompetencias: jornada?.videoCompetencias || 0,
@@ -7330,7 +10716,7 @@ Responda APENAS em JSON com o formato:
           updateData.todosVideosEm = new Date();
         }
         
-        await db.upsertOnboardingJornada(input.alunoId, updateData);
+        await db.upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, updateData);
         return { success: true, todosAssistidos };
       }),
 
@@ -7338,18 +10724,23 @@ Responda APENAS em JSON com o formato:
     realizarAceite: protectedProcedure
       .input(z.object({
         alunoId: z.number(),
+        contratoNivelId: z.number().nullable().optional(),
         nomeAceite: z.string().min(2),
       }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
-        await db.upsertOnboardingJornada(input.alunoId, {
+        await db.upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
           aceiteRealizado: 1,
           aceiteRealizadoEm: new Date(),
           nomeAceite: input.nomeAceite,
         });
+
+        // Zerar onboardingLiberado para que o aluno não fique preso no onboarding
+        // após concluir um novo ciclo liberado pelo admin
+        await db.resetOnboardingLiberado(input.alunoId);
 
         // Enviar emails: parabéns para aluno + notificação para mentora e admin
         try {
@@ -7405,7 +10796,7 @@ Responda APENAS em JSON com o formato:
       }))
       .mutation(async ({ input, ctx }) => {
         const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
-        if (onbStatus.hasPdi && !onbStatus.needsOnboarding) {
+        if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura.' });
         }
 
@@ -7509,6 +10900,13 @@ Responda APENAS em JSON com o formato:
     videos: protectedProcedure.query(async () => {
       return await db.getOnboardingVideos();
     }),
+    // Buscar histórico de ciclos do aluno (para a página de Evolução)
+    historicoCiclos: protectedProcedure
+      .input(z.object({ alunoId: z.number() }))
+      .query(async ({ input }) => {
+        if (!input.alunoId || input.alunoId === 0) return [];
+        return await db.getHistoricoCiclosAluno(input.alunoId);
+      }),
 
     // ============ REVISÕES DO PDI ============
     // Listar revisões com dados enriquecidos (admin/mentor)
@@ -7574,7 +10972,7 @@ Responda APENAS em JSON com o formato:
     }),
 
     // Criar notificação (admin only - para testes e envio manual)
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         userId: z.number(),
         title: z.string().min(1),
@@ -7598,11 +10996,11 @@ Responda APENAS em JSON com o formato:
 
   // ============ BIBLIOTECA DE TAREFAS ============
   taskLibrary: router({
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllTaskLibraryIncludingInactive();
     }),
 
-    getById: adminProcedure
+    getById: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const item = await db.getTaskLibraryById(input.id);
@@ -7610,7 +11008,7 @@ Responda APENAS em JSON com o formato:
         return item;
       }),
 
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         competencia: z.string().min(1, 'Competência é obrigatória'),
         nome: z.string().min(1, 'Nome é obrigatório'),
@@ -7629,7 +11027,7 @@ Responda APENAS em JSON com o formato:
         return { id, success: true };
       }),
 
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         competencia: z.string().min(1, 'Competência é obrigatória'),
@@ -7650,7 +11048,7 @@ Responda APENAS em JSON com o formato:
         return { success: true };
       }),
 
-    toggleActive: adminProcedure
+    toggleActive: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         isActive: z.number().min(0).max(1),
@@ -7660,7 +11058,7 @@ Responda APENAS em JSON com o formato:
         return { success: true };
       }),
 
-    generateWithAI: adminProcedure
+    generateWithAI: adminOrAdmin2Procedure
       .input(z.object({
         competencia: z.string().min(1, 'Competência é obrigatória'),
       }))
@@ -7723,7 +11121,7 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ CURSOS DISPONÍVEIS ============
   courses: router({
     // Lista todos os cursos (admin)
-    list: adminProcedure.query(async () => {
+    list: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllCourses();
     }),
 
@@ -7733,7 +11131,7 @@ Responda APENAS em JSON com o formato especificado.`
     }),
 
     // Buscar curso por ID
-    getById: adminProcedure
+    getById: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const course = await db.getCourseById(input.id);
@@ -7742,7 +11140,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Criar curso
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         titulo: z.string().min(1, 'Título é obrigatório'),
         descricao: z.string().nullable().optional(),
@@ -7777,7 +11175,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Atualizar curso
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         titulo: z.string().min(1, 'Título é obrigatório'),
@@ -7813,7 +11211,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Ativar/desativar curso
-    toggleActive: adminProcedure
+    toggleActive: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         isActive: z.number().min(0).max(1),
@@ -7824,7 +11222,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Deletar curso
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.deleteCourse(input.id);
@@ -7851,7 +11249,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Criar atividade (admin)
-    create: adminProcedure
+    create: adminOrAdmin2Procedure
       .input(z.object({
         titulo: z.string().min(1),
         descricao: z.string().optional(),
@@ -7885,7 +11283,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Atualizar atividade (admin)
-    update: adminProcedure
+    update: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         titulo: z.string().min(1).optional(),
@@ -7919,7 +11317,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Toggle ativo/inativo (admin)
-    toggleActive: adminProcedure
+    toggleActive: adminOrAdmin2Procedure
       .input(z.object({
         id: z.number(),
         isActive: z.number().min(0).max(1),
@@ -7930,7 +11328,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Deletar atividade (admin) - também remove vinculações de turmas
-    delete: adminProcedure
+    delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await db.setActivityTurmas(input.id, []); // Limpar vinculações
@@ -7946,7 +11344,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Obter mapa de todas as vinculações atividade-turma (admin)
-    getAllTurmasMap: adminProcedure.query(async () => {
+    getAllTurmasMap: adminOrAdmin2Procedure.query(async () => {
       const map = await db.getAllActivityTurmasMap();
       // Converter Map para objeto serializável
       const obj: Record<number, number[]> = {};
@@ -7974,7 +11372,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Listar inscrições de uma atividade (admin)
-    listRegistrations: adminProcedure
+    listRegistrations: adminOrAdmin2Procedure
       .input(z.object({ activityId: z.number() }))
       .query(async ({ input }) => {
         return db.listActivityRegistrations(input.activityId);
@@ -8018,7 +11416,7 @@ Responda APENAS em JSON com o formato especificado.`
       }),
 
     // Atualizar status de inscrição (admin)
-    updateRegistrationStatus: adminProcedure
+    updateRegistrationStatus: adminOrAdmin2Procedure
       .input(z.object({
         registrationId: z.number(),
         status: z.enum(["inscrito", "confirmado", "cancelado", "presente", "ausente"]),
@@ -8032,7 +11430,7 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ ALERTAS DE MENTORIA (EMAIL) ============
   alertasMentoria: router({
     // Verificar alunos sem mentoria há 30+ dias e enviar e-mails
-    enviarAlertas: adminProcedure
+    enviarAlertas: adminOrAdmin2Procedure
       .input(z.object({
         diasMinimo: z.number().min(1).default(30),
         dryRun: z.boolean().default(false), // Se true, apenas lista sem enviar
@@ -8128,7 +11526,7 @@ Responda APENAS em JSON com o formato especificado.`
             
             if (!dryRun && aluno.email) {
               try {
-                const loginUrl = 'https://ecolider.evoluirckm.com';
+                const loginUrl = 'https://ecolider.ecodobem.com';
                 const emailData = buildMentoringAlertEmail({
                   alunoName: aluno.name,
                   mentorName: mentor.name,
@@ -8177,7 +11575,7 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ ALERTAS DE VENCIMENTO DE CICLO (EMAIL) ============
   vencimentoCiclo: router({
     // Verificar PDIs próximos do vencimento e enviar alertas
-    enviarAlertas: adminProcedure
+    enviarAlertas: adminOrAdmin2Procedure
       .input(z.object({
         dryRun: z.boolean().default(false),
         forceResend: z.boolean().default(false),
@@ -8194,12 +11592,61 @@ Responda APENAS em JSON com o formato especificado.`
 
   // ============ ONBOARDING TRACKING (ADMIN) ============
   onboardingTracking: router({
-    list: adminProcedure
+    list: adminOrAdmin2Procedure
       .input(z.object({ programId: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getOnboardingTrackingList(input?.programId);
       }),
-    resendInvite: adminProcedure
+    /**
+     * Corrige o estado de onboarding de um aluno:
+     * - Zera onboardingLiberado (remove trava de novo ciclo)
+     * - Garante que onboarding_jornada tem cadastroConfirmado=1 e aceiteRealizado=1
+     * Útil quando o admin liberou onboarding por engano ou o registro foi perdido.
+     */
+    corrigirOnboarding: adminOrAdmin2Procedure
+      .input(z.object({ alunoId: z.number() }))
+      .mutation(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        const { alunos: alunosTable, onboardingJornada } = await import('../drizzle/schema');
+        const { eq } = await import('drizzle-orm');
+
+        // 1) Zerar onboardingLiberado
+        await database.update(alunosTable)
+          .set({ onboardingLiberado: 0, onboardingLiberadoEm: null })
+          .where(eq(alunosTable.id, input.alunoId));
+
+        // 2) Garantir registro na onboarding_jornada com aceite marcado
+        const [existing] = await database.select().from(onboardingJornada)
+          .where(eq(onboardingJornada.alunoId, input.alunoId)).limit(1);
+
+        if (existing) {
+          // Só marca aceite se ainda não foi feito
+          if (!existing.aceiteRealizado) {
+            await database.update(onboardingJornada)
+              .set({ cadastroConfirmado: 1, aceiteRealizado: 1, aceiteRealizadoEm: new Date() })
+              .where(eq(onboardingJornada.alunoId, input.alunoId));
+          } else {
+            // Apenas garante cadastroConfirmado
+            await database.update(onboardingJornada)
+              .set({ cadastroConfirmado: 1 })
+              .where(eq(onboardingJornada.alunoId, input.alunoId));
+          }
+        } else {
+          // Criar registro do zero
+          await database.insert(onboardingJornada).values({
+            alunoId: input.alunoId,
+            cadastroConfirmado: 1,
+            cadastroConfirmadoEm: new Date(),
+            aceiteRealizado: 1,
+            aceiteRealizadoEm: new Date(),
+          });
+        }
+
+        return { success: true };
+      }),
+    resendInvite: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
       .mutation(async ({ input }) => {
         const database = await db.getDb();
@@ -8216,7 +11663,7 @@ Responda APENAS em JSON com o formato especificado.`
         const program = aluno.programId ? allPrograms.find(p => p.id === aluno.programId) : null;
 
         // Build login URL
-        const loginUrl = 'https://ecolider.evoluirckm.com/';
+        const loginUrl = 'https://ecolider.ecodobem.com/';
 
         // Send invite email
         const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');
@@ -8240,49 +11687,2604 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true, email: aluno.email };
       }),
   }),
+
+  // ============ MÓDULO DE CURSOS (27/03/2026) ============
+  course: router({
+    /**
+     * Obter catálogo de cursos para um aluno
+     * Retorna competências com módulos agrupados e progresso
+     */
+    getCatalog: protectedProcedure
+      .input(z.object({
+        alunoId: z.number(),
+        microcicloId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        try {
+          const catalog = await db.getCourseCatalog(input.alunoId, input.microcicloId);
+          return catalog;
+        } catch (error) {
+          console.error("[getCatalog] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao carregar catálogo' });
+        }
+      }),
+
+    /**
+     * Iniciar um módulo
+     */
+    startModule: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+        progressoId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          await db.startModule(input.moduloId, input.moduloId, input.progressoId);
+          return { success: true };
+        } catch (error) {
+          console.error("[startModule] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao iniciar módulo' });
+        }
+      }),
+
+    /**
+     * Obter conteúdo completo de um módulo
+     */
+    getModuleContent: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        try {
+          const content = await db.getModuleContent(input.moduloId);
+          return content;
+        } catch (error) {
+          console.error("[getModuleContent] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao carregar conteúdo' });
+        }
+      }),
+
+    /**
+     * Enviar reflexão do aluno
+     */
+    submitReflection: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+        progressoId: z.number(),
+        textoRelato: z.string().min(100, "Reflexão deve ter no mínimo 100 caracteres"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const alunoId = ctx.user.alunoId || 0;
+          await db.submitReflection(alunoId, input.moduloId, input.progressoId, input.textoRelato);
+          return { success: true };
+        } catch (error) {
+          console.error("[submitReflection] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao enviar reflexão' });
+        }
+      }),
+
+    /**
+     * Enviar avaliação/quiz do módulo
+     * Atualiza automaticamente os Indicadores 2 e 3
+     */
+    submitAssessment: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+        progressoId: z.number(),
+        competenciaId: z.number(),
+        microcicloId: z.number(),
+        nota: z.number().min(0).max(10),
+        totalQuestoes: z.number().optional(),
+        questoesAcertadas: z.number().optional(),
+        tempoRespostaMinutos: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const alunoId = ctx.user.alunoId || 0;
+          const result = await db.submitAssessment(
+            alunoId,
+            input.moduloId,
+            input.progressoId,
+            input.competenciaId,
+            input.microcicloId,
+            input.nota,
+            input.totalQuestoes,
+            input.questoesAcertadas,
+            input.tempoRespostaMinutos
+          );
+          return result;
+        } catch (error) {
+          console.error("[submitAssessment] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao enviar avaliação' });
+        }
+      }),
+
+    /**
+     * Solicitar prorrogação de prazo
+     */
+    requestExtension: protectedProcedure
+      .input(z.object({
+        moduloId: z.number(),
+        progressoId: z.number(),
+        dataLimiteSolicitada: z.date(),
+        dataFimContrato: z.date(),
+        motivoSolicitacao: z.string().min(10, "Motivo deve ter no mínimo 10 caracteres"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const alunoId = ctx.user.alunoId || 0;
+          const result = await db.requestExtension(
+            alunoId,
+            input.moduloId,
+            input.progressoId,
+            input.dataLimiteSolicitada,
+            input.dataFimContrato,
+            input.motivoSolicitacao
+          );
+          return result;
+        } catch (error) {
+          console.error("[requestExtension] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao solicitar prorrogação' });
+        }
+      }),
+
+    /**
+     * Aprovar ou rejeitar prorrogação (apenas mentores)
+     */
+    approveExtension: protectedProcedure
+      .input(z.object({
+        prorrogacaoId: z.number(),
+        aprovar: z.boolean(),
+        motivoRejeicao: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          // Verificar se é mentor
+          if (ctx.user.role !== 'manager' && ctx.user.role !== 'admin') {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentores podem aprovar prorrogações' });
+          }
+
+          const result = await db.approveExtension(
+            input.prorrogacaoId,
+            input.aprovar,
+            input.motivoRejeicao
+          );
+          return result;
+        } catch (error) {
+          console.error("[approveExtension] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao processar prorrogação' });
+        }
+      }),
+
+    /**
+     * Obter painel de prorrogações para mentor
+     */
+    getMentorPanel: protectedProcedure
+      .query(async ({ ctx }) => {
+        try {
+          // Verificar se é mentor
+          if (ctx.user.role !== 'manager' && ctx.user.role !== 'admin') {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentores podem acessar este painel' });
+          }
+
+          const mentorId = ctx.user.id || 0;
+          const panel = await db.getMentorExtensionPanel(mentorId);
+          return panel;
+        } catch (error) {
+          console.error("[getMentorPanel] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao carregar painel' });
+        }
+      }),
+  }),
+
+  // Admin - Gerenciar Cursos (Competências) e Atividades (Módulos)
+  courseAdmin: router({
+    /**
+     * Listar todos os cursos (competências)
+     */
+    listCursos: adminOrAdmin2Procedure
+      .query(async () => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          const cursos = await database
+            .select()
+            .from(competencias);
+          return cursos;
+        } catch (error) {
+          console.error("[listCursos] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao listar cursos' });
+        }
+      }),
+
+    /**
+     * Listar atividades de um curso (módulos/competenciasModulos)
+     */
+    listAtividades: adminOrAdmin2Procedure
+      .input(z.object({ competenciaId: z.number() }))
+      .query(async ({ input }) => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          const atividades = await database
+            .select()
+            .from(competenciasModulos)
+            .where(eq(competenciasModulos.competenciaId, input.competenciaId));
+          return atividades;
+        } catch (error) {
+          console.error("[listAtividades] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao listar atividades' });
+        }
+      }),
+
+    /**
+     * Criar nova atividade (módulo)
+     */
+    createAtividade: adminOrAdmin2Procedure
+      .input(z.object({
+        competenciaId: z.number(),
+        titulo: z.string().min(1),
+        descricao: z.string().optional(),
+        tipoModulo: z.enum(['intro', 'filme', 'video', 'tedtalk', 'podcast', 'livro']),
+        duracaoMinutos: z.number().min(1),
+        urlGenially: z.string().optional(),
+        ordem: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          const result = await database
+            .insert(competenciasModulos)
+            .values({
+              competenciaId: input.competenciaId,
+              titulo: input.titulo,
+              descricao: input.descricao || '',
+              tipoModulo: input.tipoModulo as any,
+              duracaoMinutos: input.duracaoMinutos,
+              urlGenially: input.urlGenially || '',
+              ordem: input.ordem || 1,
+              ativo: 1,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+          return { success: true, id: (result as any).insertId };
+        } catch (error) {
+          console.error("[createAtividade] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao criar atividade' });
+        }
+      }),
+
+    /**
+     * Atualizar atividade
+     */
+    updateAtividade: adminOrAdmin2Procedure
+      .input(z.object({
+        id: z.number(),
+        titulo: z.string().min(1),
+        descricao: z.string().optional(),
+        tipoModulo: z.enum(['intro', 'filme', 'video', 'tedtalk', 'podcast', 'livro']),
+        duracaoMinutos: z.number().min(1),
+        urlGenially: z.string().optional(),
+        ordem: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          await database
+            .update(competenciasModulos)
+            .set({
+              titulo: input.titulo,
+              descricao: input.descricao || '',
+              tipoModulo: input.tipoModulo as any,
+              duracaoMinutos: input.duracaoMinutos,
+              urlGenially: input.urlGenially || '',
+              ordem: input.ordem || 1,
+              updatedAt: new Date(),
+            })
+            .where(eq(competenciasModulos.id, input.id));
+          return { success: true };
+        } catch (error) {
+          console.error("[updateAtividade] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao atualizar atividade' });
+        }
+      }),
+
+    /**
+     * Deletar atividade
+     */
+    deleteAtividade: adminOrAdmin2Procedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        try {
+          const database = await getDb();
+          if (!database) throw new Error('Database not available');
+          await database
+            .delete(competenciasModulos)
+            .where(eq(competenciasModulos.id, input.id));
+          return { success: true };
+        } catch (error) {
+          console.error("[deleteAtividade] Error:", error);
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao deletar atividade' });
+        }
+      }),
+  }),
+
+  competenciasCompTec: router({
+    admin: router({
+      listarCompetencias: protectedProcedure.query(async () => {
+        const database = await db.getDb();
+        if (!database) return [];
+
+        // Busca TODAS as competências ativas
+        const resultado = await database
+          .select({ id: competencias.id, nome: competencias.nome })
+          .from(competencias)
+          .where(eq(competencias.isActive, 1))
+          .orderBy(asc(competencias.nome));
+
+        // Remover duplicatas por ID
+        const seen = new Set();
+        return resultado
+          .filter(r => {
+            if (seen.has(r.id)) return false;
+            seen.add(r.id);
+            return true;
+          })
+          .map(r => ({ id: r.id, nome: r.nome }));
+      }),
+
+      listarCursos: protectedProcedure
+        .input(z.object({ competenciaId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(cursosCompetencias)
+            .where(
+              and(
+                eq(cursosCompetencias.competenciaId, input.competenciaId),
+                eq(cursosCompetencias.isActive, 1)
+              )
+            )
+            .orderBy(asc(cursosCompetencias.ordem), asc(cursosCompetencias.titulo));
+        }),
+
+      listarTodosCursos: protectedProcedure
+        .query(async () => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(cursosCompetencias)
+            .orderBy(asc(cursosCompetencias.competenciaId), asc(cursosCompetencias.ordem), asc(cursosCompetencias.titulo));
+        }),
+
+      obterCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const [curso] = await database
+            .select()
+            .from(cursosCompetencias)
+            .where(eq(cursosCompetencias.id, input.cursoId))
+            .limit(1);
+
+          return curso ?? null;
+        }),
+
+      criarCurso: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            competenciaId: z.number(),
+            titulo: z.string().min(1),
+            descricao: z.string().optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const result = await database.insert(cursosCompetencias).values({
+            competenciaId: input.competenciaId,
+            titulo: input.titulo,
+            descricao: input.descricao ?? null,
+            capaUrl: null,
+            ordem: 0,
+            isActive: 1,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+
+          return { success: true, id: result[0]?.insertId ?? null };
+        }),
+
+      atualizarCurso: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            cursoId: z.number(),
+            competenciaId: z.number(),
+            titulo: z.string().min(1),
+            descricao: z.string().optional(),
+            ordem: z.number().optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          await database
+            .update(cursosCompetencias)
+            .set({
+              competenciaId: input.competenciaId,
+              titulo: input.titulo,
+              descricao: input.descricao ?? null,
+              ordem: input.ordem ?? 0,
+              updatedAt: new Date(),
+            })
+            .where(eq(cursosCompetencias.id, input.cursoId));
+
+          return { success: true };
+        }),
+
+      excluirCurso: adminOrAdmin2Procedure
+        .input(z.object({ cursoId: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          await database
+            .update(cursosCompetencias)
+            .set({
+              isActive: 0,
+              updatedAt: new Date(),
+            })
+            .where(eq(cursosCompetencias.id, input.cursoId));
+
+          return { success: true };
+        }),
+
+      listarAtividadesCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(atividadesCurso.isActive, 1)
+              )
+            )
+            .orderBy(asc(atividadesCurso.ordem));
+        }),
+
+      listarCursosPorCompetencia: protectedProcedure
+        .input(z.object({ competenciaId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          if (input.competenciaId <= 0) return [];
+
+          // Buscar cursos da competência
+          return await database
+            .select()
+            .from(cursosCompetencias)
+            .where(
+              and(
+                eq(cursosCompetencias.competenciaId, input.competenciaId),
+                eq(cursosCompetencias.isActive, 1)
+              )
+            )
+            .orderBy(asc(cursosCompetencias.ordem), asc(cursosCompetencias.titulo));
+        }),
+
+      listarAtividades: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select()
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(atividadesCurso.isActive, 1)
+              )
+            )
+            .orderBy(asc(atividadesCurso.ordem));
+        }),
+
+            criarAtividade: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            cursoId: z.number(),
+            titulo: z.string().min(1),
+            tipoAtividade: z.enum([
+              "genially",
+              "video",
+              "podcast",
+              "tedtalk",
+              "livro",
+              "intro",
+            ]),
+            urlGenially: z.string().optional(),
+            urlMidia: z.string().optional(),
+            imagemUrl: z.string().optional(),
+            descricao: z.string().optional(),
+            ordem: z.number().optional(),
+            tempoMinimoObrigatorioSegundos: z.number().int().min(0).optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          try {
+            const database = await db.getDb();
+            if (!database) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Banco indisponível",
+              });
+            }
+
+            const conn = (database as any).$client.promise ? (database as any).$client.promise() : (database as any).$client;
+            if (!conn) {
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "Conexao com banco indisponivel",
+              });
+            }
+
+            const urlFinal = input.urlGenially?.trim() || input.urlMidia?.trim() || null;
+            const descricao = input.descricao?.trim() || null;
+            const ordem = Number(input.ordem ?? 0);
+
+            const tempoMinimo = input.tempoMinimoObrigatorioSegundos != null && input.tempoMinimoObrigatorioSegundos > 0
+              ? input.tempoMinimoObrigatorioSegundos
+              : null;
+
+            const query = `INSERT INTO atividades_curso (cursoId, titulo, tipoAtividade, urlGenially, urlMidia, imagemUrl, descricao, ordem, isActive, tempo_minimo_obrigatorio_segundos, createdAt, updatedAt) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+            
+            const [result] = await conn.execute(query, [
+              Number(input.cursoId),
+              input.titulo.trim(),
+              input.tipoAtividade,
+              input.urlGenially?.trim() || null,
+              input.urlMidia?.trim() || null,
+              input.imagemUrl?.trim() || null,
+              descricao,
+              ordem,
+              1,
+              tempoMinimo
+            ]);
+
+            console.log("[criarAtividade] INSERT bem-sucedido", {
+              cursoId: input.cursoId,
+              titulo: input.titulo,
+              tipoAtividade: input.tipoAtividade,
+              result,
+            });
+
+            return {
+              success: true,
+              message: "Atividade criada com sucesso",
+              id: (result as any).insertId,
+            };
+          } catch (error: any) {
+            console.error("[criarAtividade] Erro", {
+              input,
+              message: error?.message,
+              code: error?.code,
+              sqlMessage: error?.sqlMessage,
+              stack: error?.stack,
+            });
+
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: error?.message || "Erro ao criar atividade",
+            });
+          }
+        }),
+
+
+      uploadImagemAtividade: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            nomeArquivo: z.string(),
+            tipoMime: z.string(),
+            dados: z.string(), // base64 encoded
+          })
+        )
+        .mutation(async ({ input }) => {
+          try {
+            const buffer = Buffer.from(input.dados, 'base64');
+            const fileKey = `atividades/${Date.now()}-${input.nomeArquivo}`;
+            const { url, key } = await storagePut(fileKey, buffer, input.tipoMime);
+            return { url, key, success: true };
+          } catch (error) {
+            console.error("Erro ao fazer upload de imagem:", error);
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Erro ao fazer upload da imagem",
+            });
+          }
+        }),
+
+      atualizarAtividade: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            id: z.number(),
+            titulo: z.string().min(1).optional(),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]).optional(),
+            urlGenially: z.string().optional(),
+            imagemUrl: z.string().optional(),
+            descricao: z.string().optional(),
+            ordem: z.number().optional(),
+            tempoMinimoObrigatorioSegundos: z.number().int().min(0).nullish(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const updates: any = { updatedAt: new Date() };
+          if (input.titulo) updates.titulo = input.titulo;
+          if (input.tipoAtividade) updates.tipoAtividade = input.tipoAtividade;
+          if (input.urlGenially !== undefined) updates.urlGenially = input.urlGenially ?? null;
+          if (input.descricao !== undefined) updates.descricao = input.descricao ?? null;
+          if (input.ordem !== undefined) updates.ordem = input.ordem;
+          if (input.imagemUrl !== undefined) updates.imagemUrl = input.imagemUrl || null;
+          if (input.tempoMinimoObrigatorioSegundos !== undefined) {
+            updates.tempoMinimoObrigatorioSegundos =
+              input.tempoMinimoObrigatorioSegundos != null && input.tempoMinimoObrigatorioSegundos > 0
+                ? input.tempoMinimoObrigatorioSegundos
+                : null;
+          }
+
+          await database
+            .update(atividadesCurso)
+            .set(updates)
+            .where(eq(atividadesCurso.id, input.id));
+
+          return { success: true };
+        }),
+
+          deletarAtividade: adminOrAdmin2Procedure
+        .input(z.object({ atividadeId: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          await database
+            .update(atividadesCurso)
+            .set({
+              isActive: 0,
+              updatedAt: new Date(),
+            })
+            .where(eq(atividadesCurso.id, input.atividadeId));
+
+          return { success: true };
+        }),
+
+      obterAtividadeDetalhes: protectedProcedure
+        .input(z.object({ atividadeId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const result = await database
+            .select({
+              atividade: atividadesCurso,
+              avaliacoes: avaliacoesAtividade,
+            })
+            .from(atividadesCurso)
+            .leftJoin(avaliacoesAtividade, eq(atividadesCurso.id, avaliacoesAtividade.atividadeId))
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
+          if (result.length === 0) return null;
+          return result[0];
+        }),
+
+      criarAvaliacao: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            atividadeId: z.number(),
+            titulo: z.string().min(1),
+            questoes: z.array(
+              z.object({
+                id: z.string(),
+                enunciado: z.string().min(1),
+                opcoes: z.array(z.string()).min(2),
+                respostaCorreta: z.string().min(1),
+              })
+            ),
+            notaMinima: z.number().min(0).max(10).optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const qtdValidas = [10, 20, 30];
+          if (!qtdValidas.includes(input.questoes.length)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Avaliação deve ter 10, 20 ou 30 questões. Recebido: ${input.questoes.length}`,
+            });
+          }
+
+          for (const q of input.questoes) {
+            if (!q.opcoes.includes(q.respostaCorreta)) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Questão "${q.id}": resposta correta não está nas opções`,
+              });
+            }
+          }
+
+          const result = await database.insert(avaliacoesAtividade).values({
+            atividadeId: input.atividadeId,
+            titulo: input.titulo,
+            questoes: JSON.stringify(input.questoes),
+            notaMinima: input.notaMinima ?? 8,
+            isActive: 1,
+          });
+
+          return { success: true, id: result[0]?.insertId ?? null };
+        }),
+
+      listarAvaliacoesCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+          return await database
+            .select({
+              avaliacao: avaliacoesAtividade,
+              atividade: atividadesCurso,
+            })
+            .from(avaliacoesAtividade)
+            .innerJoin(atividadesCurso, eq(avaliacoesAtividade.atividadeId, atividadesCurso.id))
+            .where(
+              and(
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(avaliacoesAtividade.isActive, 1)
+              )
+            )
+            .orderBy(desc(avaliacoesAtividade.createdAt));
+        }),
+      // Sincroniza retroativamente student_performance para todos os cursos já concluídos pela plataforma
+      syncPlatformPerformance: adminOrAdmin2Procedure
+        .mutation(async () => {
+          const database = await db.getDb();
+          if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          const cursosConcluidos = await database
+            .select({ id: alunoCursoAtribuido.id, alunoId: alunoCursoAtribuido.alunoId })
+            .from(alunoCursoAtribuido)
+            .where(eq(alunoCursoAtribuido.status, "concluido"));
+          let synced = 0;
+          for (const c of cursosConcluidos) {
+            await db.syncStudentPerformanceFromPlatform(c.alunoId, c.id);
+            synced++;
+          }
+          return { success: true, synced };
+        }),
+
+      deleteAtividade: adminOrAdmin2Procedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          }
+          // Inabilitar em vez de excluir para evitar problemas de FK
+          await database
+            .update(atividadesCurso)
+            .set({ isActive: 0, updatedAt: new Date() })
+            .where(eq(atividadesCurso.id, input.id));
+          return { success: true };
+        }),
+    }),
+    mentor: router({
+      listarAlunos: protectedProcedure.query(async ({ ctx }) => {
+        const consultorId = Number(ctx.user.consultorId ?? ctx.user.id);
+        return await db.getAlunosByConsultor(consultorId);
+      }),
+
+      atribuirCurso: protectedProcedure
+        .input(
+          z.object({
+            alunoId: z.number(),
+            cursoId: z.number(),
+            competenciaId: z.number(),
+            dataPrazo: z.string().optional(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const mentorId = Number(ctx.user.consultorId ?? ctx.user.id);
+
+          const [existente] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.alunoId, input.alunoId),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (existente) {
+            await database
+              .update(alunoCursoAtribuido)
+              .set({
+                mentorId: mentorId,
+                dataPrazo: input.dataPrazo ? new Date(input.dataPrazo) : existente.dataPrazo,
+                updatedAt: new Date(),
+              })
+              .where(eq(alunoCursoAtribuido.id, existente.id));
+
+            return { success: true, id: existente.id, atualizado: true };
+          }
+
+          const result = await database.insert(alunoCursoAtribuido).values({
+            alunoId: input.alunoId,
+            cursoId: input.cursoId,
+            competenciaId: input.competenciaId,
+            mentorId: mentorId,
+            dataAtribuicao: new Date(),
+            dataPrazo: input.dataPrazo ? new Date(input.dataPrazo) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            status: "nao_iniciado",
+          });
+          return { success: true, id: result[0]?.insertId ?? null, atualizado: false };
+        }),
+
+      editarAtribuicao: protectedProcedure
+        .input(
+          z.object({
+            atribuicaoId: z.number(),
+            dataPrazo: z.string().optional(),
+            status: z.enum(["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).optional(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const updateData: any = { updatedAt: new Date() };
+          if (input.dataPrazo) updateData.dataPrazo = new Date(input.dataPrazo);
+          if (input.status) updateData.status = input.status;
+
+          await database
+            .update(alunoCursoAtribuido)
+            .set(updateData)
+            .where(eq(alunoCursoAtribuido.id, input.atribuicaoId));
+
+          return { success: true };
+        }),
+
+      removerAtribuicao: protectedProcedure
+        .input(z.object({ atribuicaoId: z.number() }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          await database
+            .delete(alunoCursoAtribuido)
+            .where(eq(alunoCursoAtribuido.id, input.atribuicaoId));
+
+          return { success: true };
+        }),
+
+      // === LIBERAR TENTATIVAS (ADMIN) - Reset de tentativas para aluno refazer curso/prova ===
+      liberarTentativas: protectedProcedure
+        .input(z.object({
+          cursoAtribuidoId: z.number(),
+          alunoId: z.number(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          // Buscar todas as atividades com progresso do aluno neste curso
+          const progressos = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, input.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              )
+            );
+
+          // Resetar tentativas e status de todas as atividades bloqueadas/reprovadas
+          for (const prog of progressos) {
+            if (prog.status === "bloqueada" || prog.status === "reprovada") {
+              await database
+                .update(alunoAtividadeProgresso)
+                .set({
+                  tentativas: 0,
+                  status: "disponivel",
+                  notaFinal: null,
+                  aprovado: 0,
+                  avaliacaoLiberada: 0,
+                  updatedAt: new Date(),
+                })
+                .where(eq(alunoAtividadeProgresso.id, prog.id));
+            }
+          }
+
+          // Atualizar status do curso atribuído para em_progresso
+          await database
+            .update(alunoCursoAtribuido)
+            .set({ status: "em_progresso" })
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+
+          return { success: true, atividadesResetadas: progressos.filter(p => p.status === "bloqueada" || p.status === "reprovada").length };
+        }),
+
+      acompanharProgresso: protectedProcedure
+        .input(z.object({ alunoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          return await database
+            .select({
+              progresso: alunoModuloProgresso,
+              modulo: competenciasModulos,
+            })
+            .from(alunoModuloProgresso)
+            .leftJoin(competenciasModulos, eq(alunoModuloProgresso.moduloId, competenciasModulos.id))
+            .where(eq(alunoModuloProgresso.alunoId, input.alunoId))
+            .orderBy(desc(alunoModuloProgresso.updatedAt));
+        }),
+
+      listarTodasAtribuicoes: protectedProcedure
+        .query(async () => {
+          const database = await db.getDb();
+          if (!database) return [];
+          const { alunos: alunosTable } = await import('../drizzle/schema');
+          const cursos = await database
+            .select({
+              id: alunoCursoAtribuido.id,
+              alunoId: alunoCursoAtribuido.alunoId,
+              alunoNome: alunosTable.name,
+              competenciaId: alunoCursoAtribuido.competenciaId,
+              cursoId: alunoCursoAtribuido.cursoId,
+              dataPrazo: alunoCursoAtribuido.dataPrazo,
+              status: alunoCursoAtribuido.status,
+              dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
+              cursoTitulo: cursosCompetencias.titulo,
+              competenciaNome: competencias.nome,
+            })
+            .from(alunoCursoAtribuido)
+            .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+            .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
+            .leftJoin(alunosTable, eq(alunoCursoAtribuido.alunoId, alunosTable.id))
+            .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+          return cursos;
+        }),
+
+       listarCursosAtribuidosAoAluno: protectedProcedure
+        .input(z.object({ alunoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+          const cursos = await database
+            .select({
+              id: alunoCursoAtribuido.id,
+              alunoId: alunoCursoAtribuido.alunoId,
+              competenciaId: alunoCursoAtribuido.competenciaId,
+              cursoId: alunoCursoAtribuido.cursoId,
+              dataPrazo: alunoCursoAtribuido.dataPrazo,
+              status: alunoCursoAtribuido.status,
+              dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
+              cursoTitulo: cursosCompetencias.titulo,
+              competenciaNome: competencias.nome,
+            })
+            .from(alunoCursoAtribuido)
+            .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+            .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
+            .where(eq(alunoCursoAtribuido.alunoId, input.alunoId))
+            .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+          // Para cada curso, verificar se tem atividades bloqueadas
+          const resultado = await Promise.all(cursos.map(async (curso) => {
+            const atividadesBloqueadas = await database
+              .select()
+              .from(alunoAtividadeProgresso)
+              .where(
+                and(
+                  eq(alunoAtividadeProgresso.alunoId, input.alunoId),
+                  eq(alunoAtividadeProgresso.cursoAtribuidoId, curso.id),
+                  eq(alunoAtividadeProgresso.status, "bloqueada"),
+                )
+              );
+            return {
+              ...curso,
+              temAtividadeBloqueada: atividadesBloqueadas.length > 0,
+              qtdAtividadesBloqueadas: atividadesBloqueadas.length,
+            };
+          }));
+          return resultado;
+        }),
+    }),
+
+    aluno: router({
+      meusCursos: protectedProcedure.query(async ({ ctx }) => {
+  const database = await db.getDb();
+  if (!database) return [];
+
+  const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+  if (!aluno) return [];
+
+  return await database
+    .select({
+      atribuicao: alunoCursoAtribuido,
+      curso: cursosCompetencias,
+      competencia: competencias,
+    })
+    .from(alunoCursoAtribuido)
+    .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+    .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
+    .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+    .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+}),
+
+      getCursosAtribuidos: protectedProcedure.query(async ({ ctx }) => {
+        const database = await db.getDb();
+        if (!database) return [];
+
+        const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+        if (!aluno) return [];
+
+        const resultados = await database
+          .select({
+            atribuicao: alunoCursoAtribuido,
+            curso: cursosCompetencias,
+            competencia: competencias,
+          })
+          .from(alunoCursoAtribuido)
+          .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+          .leftJoin(competencias, eq(cursosCompetencias.competenciaId, competencias.id))
+          .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+          .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+        // Remover duplicatas
+        const cursosUnicos = new Map();
+        for (const resultado of resultados) {
+          const chave = resultado.atribuicao.id;
+          if (!cursosUnicos.has(chave)) {
+            cursosUnicos.set(chave, resultado);
+          }
+        }
+        return Array.from(cursosUnicos.values());
+      }),
+
+      detalheCurso: protectedProcedure
+        .input(z.object({ moduloId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) return null;
+
+          const [curso] = await database
+            .select({
+              progresso: alunoModuloProgresso,
+              modulo: competenciasModulos,
+            })
+            .from(alunoModuloProgresso)
+            .leftJoin(competenciasModulos, eq(alunoModuloProgresso.moduloId, competenciasModulos.id))
+            .where(
+              and(
+                eq(alunoModuloProgresso.alunoId, aluno.id),
+                eq(alunoModuloProgresso.moduloId, input.moduloId)
+              )
+            )
+            .limit(1);
+
+          return curso ?? null;
+        }),
+
+      detalheCursoAtribuido: protectedProcedure
+        .input(z.object({ cursoId: z.number(), cursoAtribuidoId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) return null;
+
+          // Buscar dados do curso, competência e da atribuição
+          const [resultado] = await database
+            .select({
+              curso: cursosCompetencias,
+              atribuicao: alunoCursoAtribuido,
+              competencia: competencias,
+            })
+            .from(alunoCursoAtribuido)
+            .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
+            .leftJoin(competencias, eq(cursosCompetencias.competenciaId, competencias.id))
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, aluno.id),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          return resultado ?? null;
+        }),
+
+      obterAtividadesCurso: protectedProcedure
+        .input(z.object({
+          cursoId: z.number().int().positive(),
+          cursoAtribuidoId: z.number().int().positive(),
+        }))
+        .query(async ({ ctx, input }) => {
+                  const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const database = await db.getDb();
+          if (!database) return [];
+
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Aluno não identificado." });
+          }
+
+          const [atribuicao] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, user.alunoId),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId),
+              )
+            )
+            .limit(1);
+
+          if (!atribuicao) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
+          }
+
+          const atividades = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
+
+          const progressos = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              )
+            );
+
+          const atividadeIds = atividades.map((atividade) => atividade.id);
+
+          const avaliacoes = atividadeIds.length === 0
+            ? []
+            : await database
+                .select()
+                .from(avaliacoesAtividade)
+                .where(
+                  and(
+                    eq(avaliacoesAtividade.isActive, 1),
+                    inArray(avaliacoesAtividade.atividadeId, atividadeIds)
+                  )
+                );
+
+          const progressoMap = new Map(progressos.map((p) => [p.atividadeId, p]));
+
+          const avaliacaoMap = new Map(
+            avaliacoes
+              .filter((a) => atividadeIds.includes(a.atividadeId))
+              .map((a) => [a.atividadeId, a])
+          );
+
+          return atividades.map((atividade, index) => {
+            const progresso = progressoMap.get(atividade.id);
+            const avaliacao = avaliacaoMap.get(atividade.id);
+
+            const atividadeAnterior = index > 0 ? atividades[index - 1] : null;
+            const progressoAnterior = atividadeAnterior
+              ? progressoMap.get(atividadeAnterior.id)
+              : null;
+
+            const primeiraAtividade = index === 0;
+            // Para atividades sem avaliação, "concluida" também conta como aprovada
+            const avaliacaoAnterior = atividadeAnterior ? avaliacaoMap.get(atividadeAnterior.id) : null;
+            const anteriorSemAvaliacao = atividadeAnterior && !avaliacaoAnterior;
+            const anteriorAprovada =
+              !atividadeAnterior ||
+              progressoAnterior?.status === "aprovada" ||
+              Number(progressoAnterior?.notaFinal ?? 0) >= 8 ||
+              (anteriorSemAvaliacao && progressoAnterior?.status === "concluida");
+
+            let status = (progresso?.status ?? "nao_iniciado") as string;
+
+            if (!primeiraAtividade && !anteriorAprovada) {
+              status = "bloqueada";
+            } else if (!progresso || status === "nao_iniciado") {
+              status = "disponivel";
+            }
+
+            return {
+              id: atividade.id,
+              titulo: atividade.titulo,
+              descricao: atividade.descricao,
+              ordem: atividade.ordem ?? index + 1,
+              imagemUrl: atividade.imagemUrl ?? null,
+              urlGenially: atividade.urlGenially ?? null,
+              urlMidia: atividade.urlMidia ?? null,
+              status,
+              notaFinal: progresso?.notaFinal ?? null,
+              tentativas: progresso?.tentativas ?? 0,
+              avaliacaoId: avaliacao?.id ?? null,
+              temAvaliacao: !!avaliacao,
+              avaliacaoLiberada: progresso?.avaliacaoLiberada === 1,
+              permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
+              ...montarResumoTempo(atividade, progresso),
+            };
+          });
+        }),
+
+      iniciarAtividade: protectedProcedure
+        .input(z.object({
+          cursoId: z.number(),
+          cursoAtribuidoId: z.number(),
+          atividadeId: z.number(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await getDb();
+          if (!database) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco de dados indisponível",
+            });
+          }
+
+          const userId = Number(ctx.user?.id ?? 0);
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN" });
+          }
+
+          const [atribuicao] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, user.alunoId),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId),
+              )
+            )
+            .limit(1);
+
+          if (!atribuicao) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Curso atribuído não encontrado.",
+            });
+          }
+
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.id, input.atividadeId),
+                eq(atividadesCurso.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (!atividade) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Atividade não encontrada.",
+            });
+          }
+
+          const [existente] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+              )
+            )
+            .limit(1);
+
+          const tempoMinimoExigidoSegundos =
+            Number(existente?.tempoMinimoExigidoSegundos ?? 0) > 0
+              ? Number(existente?.tempoMinimoExigidoSegundos ?? 0)
+              : calcularTempoMinimoExigidoSegundos(atividade);
+
+          const resumoTempoAtual = montarResumoTempo(atividade, existente ?? {
+            tempoAtivoAcumuladoSegundos: 0,
+            tempoMinimoExigidoSegundos,
+            bloqueioPorTempo: tempoMinimoExigidoSegundos > 0 ? 1 : 0,
+          });
+
+          if (!existente) {
+            await database.insert(alunoAtividadeProgresso).values({
+              alunoId: user.alunoId,
+              cursoAtribuidoId: input.cursoAtribuidoId,
+              atividadeId: input.atividadeId,
+              status: "em_andamento",
+              iniciadoEm: new Date(),
+              avaliacaoLiberada: resumoTempoAtual.liberadoParaAvaliacao ? 1 : 0,
+              tentativas: 0,
+              tempoAtivoAcumuladoSegundos: 0,
+              tempoMinimoExigidoSegundos,
+              ultimoHeartbeatEm: null,
+              tempoCumpridoEm: resumoTempoAtual.tempoCumprido ? new Date() : null,
+              liberadoParaAvaliacaoEm: resumoTempoAtual.liberadoParaAvaliacao ? new Date() : null,
+              bloqueioPorTempo: resumoTempoAtual.bloqueioPorTempo,
+            });
+          } else {
+            const novoStatus =
+              existente.status === "aprovada"
+                ? "aprovada"
+                : "em_andamento";
+
+            await database
+              .update(alunoAtividadeProgresso)
+              .set({
+                status: novoStatus,
+                iniciadoEm: existente.iniciadoEm ?? new Date(),
+                tempoMinimoExigidoSegundos,
+                avaliacaoLiberada: resumoTempoAtual.liberadoParaAvaliacao ? 1 : 0,
+                bloqueioPorTempo: resumoTempoAtual.bloqueioPorTempo,
+                tempoCumpridoEm:
+                  resumoTempoAtual.tempoCumprido && !existente.tempoCumpridoEm
+                    ? new Date()
+                    : existente.tempoCumpridoEm ?? null,
+                liberadoParaAvaliacaoEm:
+                  resumoTempoAtual.liberadoParaAvaliacao && !existente.liberadoParaAvaliacaoEm
+                    ? new Date()
+                    : existente.liberadoParaAvaliacaoEm ?? null,
+                updatedAt: new Date(),
+              })
+              .where(eq(alunoAtividadeProgresso.id, existente.id));
+          }
+
+          const [sessaoAtiva] = await database
+            .select()
+            .from(sessoesEstudoAtividade)
+            .where(
+              and(
+                eq(sessoesEstudoAtividade.alunoId, user.alunoId),
+                eq(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+                eq(sessoesEstudoAtividade.statusSessao, "ativa")
+              )
+            )
+            .limit(1);
+
+          if (!sessaoAtiva) {
+            await database.insert(sessoesEstudoAtividade).values({
+              alunoId: user.alunoId,
+              cursoAtribuidoId: input.cursoAtribuidoId,
+              atividadeId: input.atividadeId,
+              iniciadaEm: new Date(),
+              tempoAtivoSegundos: 0,
+              statusSessao: "ativa",
+            });
+          }
+
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(eq(avaliacoesAtividade.atividadeId, input.atividadeId))
+            .limit(1);
+
+          if (!avaliacao) {
+            return {
+              success: true,
+              questoes: [],
+              avaliacao: null,
+              tempo: {
+                tempoAtivoAcumuladoSegundos: resumoTempoAtual.tempoAtivoAcumuladoSegundos,
+                tempoMinimoExigidoSegundos: resumoTempoAtual.tempoMinimoExigidoSegundos,
+                tempoRestanteSegundos: resumoTempoAtual.tempoRestanteSegundos,
+                percentualTempoCumprido: resumoTempoAtual.percentualTempoCumprido,
+                bloqueioPorTempo: resumoTempoAtual.bloqueioPorTempo,
+                liberadoParaAvaliacao: resumoTempoAtual.liberadoParaAvaliacao,
+              },
+            };
+          }
+
+          const todasQuestoes = JSON.parse(avaliacao.questoes || "[]");
+          const totalQ = todasQuestoes.length;
+          const tentativaAtual = existente?.tentativas ?? 0;
+          let questoesSelecionadas: any[];
+          if (totalQ <= 10) {
+            // 10 ou menos questões: usa todas, só embaralha a ordem
+            questoesSelecionadas = [...todasQuestoes].sort(() => 0.5 - Math.random());
+          } else if (totalQ <= 20) {
+            // 11-20 questões: alterna grupos a cada tentativa
+            const metade = Math.ceil(totalQ / 2);
+            const grupoA = todasQuestoes.slice(0, metade);
+            const grupoB = todasQuestoes.slice(metade);
+            const ciclo = tentativaAtual % 3;
+            if (ciclo === 0) {
+              // 1ª tentativa: grupo A embaralhado
+              questoesSelecionadas = [...grupoA].sort(() => 0.5 - Math.random()).slice(0, 10);
+            } else if (ciclo === 1) {
+              // 2ª tentativa: grupo B embaralhado
+              questoesSelecionadas = [...grupoB].sort(() => 0.5 - Math.random()).slice(0, 10);
+            } else {
+              // 3ª tentativa em diante: mescla aleatória de todas
+              questoesSelecionadas = [...todasQuestoes].sort(() => 0.5 - Math.random()).slice(0, 10);
+            }
+          } else {
+            // 21-30 questões: sorteia 10 aleatórias (comportamento original)
+            questoesSelecionadas = [...todasQuestoes].sort(() => 0.5 - Math.random()).slice(0, 10);
+          }
+
+          return {
+            success: true,
+            questoes: questoesSelecionadas,
+            avaliacao: {
+              ...avaliacao,
+              questoes: JSON.stringify(questoesSelecionadas),
+            },
+            tempo: {
+              tempoAtivoAcumuladoSegundos: resumoTempoAtual.tempoAtivoAcumuladoSegundos,
+              tempoMinimoExigidoSegundos: resumoTempoAtual.tempoMinimoExigidoSegundos,
+              tempoRestanteSegundos: resumoTempoAtual.tempoRestanteSegundos,
+              percentualTempoCumprido: resumoTempoAtual.percentualTempoCumprido,
+              bloqueioPorTempo: resumoTempoAtual.bloqueioPorTempo,
+              liberadoParaAvaliacao: resumoTempoAtual.liberadoParaAvaliacao,
+            },
+          };
+        }),
+
+      registrarHeartbeatAtividade: protectedProcedure
+        .input(z.object({
+          cursoAtribuidoId: z.number(),
+          atividadeId: z.number(),
+          segundosAtivos: z.number().optional(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await getDb();
+          if (!database) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco de dados indisponível",
+            });
+          }
+
+          const userId = Number(ctx.user?.id ?? 0);
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN" });
+          }
+
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+              )
+            )
+            .limit(1);
+
+          if (!progresso) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Progresso não encontrado. Inicie a atividade primeiro.",
+            });
+          }
+
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
+          if (!atividade) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Atividade não encontrada." });
+          }
+
+          const segundosParaSomar = normalizarSegundosHeartbeat(input.segundosAtivos);
+          
+          // Anti-duplicidade básica: se o último heartbeat foi há menos de 10 segundos, ignorar soma de tempo
+          const agora = new Date();
+          const ultimaBatida = progresso.ultimoHeartbeatEm ? new Date(progresso.ultimoHeartbeatEm) : null;
+          const diffSegundos = ultimaBatida ? (agora.getTime() - ultimaBatida.getTime()) / 1000 : 999;
+          
+          const deveSomarTempo = diffSegundos > 10;
+          const novoTempoAcumulado = deveSomarTempo 
+            ? (Number(progresso.tempoAtivoAcumuladoSegundos ?? 0) + segundosParaSomar)
+            : Number(progresso.tempoAtivoAcumuladoSegundos ?? 0);
+
+          const resumo = montarResumoTempo(atividade, {
+            ...progresso,
+            tempoAtivoAcumuladoSegundos: novoTempoAcumulado,
+          });
+
+          // Atualizar progresso
+          await database
+            .update(alunoAtividadeProgresso)
+            .set({
+              tempoAtivoAcumuladoSegundos: novoTempoAcumulado,
+              ultimoHeartbeatEm: agora,
+              bloqueioPorTempo: resumo.bloqueioPorTempo,
+              avaliacaoLiberada: resumo.liberadoParaAvaliacao ? 1 : (progresso.avaliacaoLiberada ?? 0),
+              tempoCumpridoEm: (resumo.tempoCumprido && !progresso.tempoCumpridoEm) ? agora : progresso.tempoCumpridoEm,
+              liberadoParaAvaliacaoEm: (resumo.liberadoParaAvaliacao && !progresso.liberadoParaAvaliacaoEm) ? agora : progresso.liberadoParaAvaliacaoEm,
+              updatedAt: agora,
+            })
+            .where(eq(alunoAtividadeProgresso.id, progresso.id));
+
+          // Atualizar sessão ativa
+          const [sessaoAtiva] = await database
+            .select()
+            .from(sessoesEstudoAtividade)
+            .where(
+              and(
+                eq(sessoesEstudoAtividade.alunoId, user.alunoId),
+                eq(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+                eq(sessoesEstudoAtividade.statusSessao, "ativa")
+              )
+            )
+            .limit(1);
+
+          if (sessaoAtiva && deveSomarTempo) {
+            await database
+              .update(sessoesEstudoAtividade)
+              .set({
+                tempoAtivoSegundos: (Number(sessaoAtiva.tempoAtivoSegundos ?? 0) + segundosParaSomar),
+                ultimaBatidaEm: agora,
+              })
+              .where(eq(sessoesEstudoAtividade.id, sessaoAtiva.id));
+          }
+
+          return {
+            success: true,
+            tempo: resumo,
+          };
+        }),
+
+      pausarSessaoAtividade: protectedProcedure
+        .input(z.object({
+          cursoAtribuidoId: z.number(),
+          atividadeId: z.number(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const database = await getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          }
+
+          const userId = Number(ctx.user?.id ?? 0);
+          const [user] = await database.select().from(users).where(eq(users.id, userId)).limit(1);
+          if (!user?.alunoId) throw new TRPCError({ code: "FORBIDDEN" });
+
+          await database
+            .update(sessoesEstudoAtividade)
+            .set({
+              statusSessao: "pausada",
+              encerradaEm: new Date(),
+            })
+            .where(
+              and(
+                eq(sessoesEstudoAtividade.alunoId, user.alunoId),
+                eq(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+                eq(sessoesEstudoAtividade.statusSessao, "ativa")
+              )
+            );
+
+          return { success: true };
+        }),
+
+      concluirAtividade: protectedProcedure
+        .input(z.object({
+          cursoId: z.number().int().positive(),
+          cursoAtribuidoId: z.number().int().positive(),
+          atividadeId: z.number().int().positive(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN" });
+          }
+
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+              )
+            )
+            .limit(1);
+
+          if (!progresso) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
+          }
+
+          const resumo = montarResumoTempo(atividade || {}, progresso);
+          if (resumo.bloqueioPorTempo === 1) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Conclusão bloqueada. Tempo mínimo não cumprido.",
+            });
+          }
+
+          // Verificar se esta atividade tem avaliação cadastrada
+          const [avaliacaoExistente] = await database
+            .select({ id: avaliacoesAtividade.id })
+            .from(avaliacoesAtividade)
+            .where(
+              and(
+                eq(avaliacoesAtividade.atividadeId, input.atividadeId),
+                eq(avaliacoesAtividade.isActive, 1)
+              )
+            )
+            .limit(1);
+
+          const temAvaliacao = !!avaliacaoExistente;
+
+          // Se NÃO tem avaliação, marcar como "aprovada" direto e liberar próxima
+          // Se TEM avaliação, marcar como "concluida" (aguardando avaliação)
+          const novoStatus = temAvaliacao ? "concluida" : "aprovada";
+
+          await database
+            .update(alunoAtividadeProgresso)
+            .set({
+              status: novoStatus,
+              concluidoEm: new Date(),
+              avaliacaoLiberada: resumo.liberadoParaAvaliacao ? 1 : 0,
+              bloqueioPorTempo: resumo.bloqueioPorTempo,
+              updatedAt: new Date(),
+            })
+            .where(eq(alunoAtividadeProgresso.id, progresso.id));
+
+          // Se não tem avaliação, liberar a próxima atividade automaticamente
+          if (!temAvaliacao) {
+            const atividades = await database
+              .select()
+              .from(atividadesCurso)
+              .where(eq(atividadesCurso.cursoId, input.cursoId))
+              .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
+
+            const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
+            const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1
+              ? atividades[atividadeIndex + 1]
+              : null;
+
+            if (proximaAtividade) {
+              const [proximaJaExiste] = await database
+                .select()
+                .from(alunoAtividadeProgresso)
+                .where(
+                  and(
+                    eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                    eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                    eq(alunoAtividadeProgresso.atividadeId, proximaAtividade.id),
+                  )
+                )
+                .limit(1);
+
+              if (!proximaJaExiste) {
+                await database.insert(alunoAtividadeProgresso).values({
+                  alunoId: user.alunoId,
+                  cursoAtribuidoId: input.cursoAtribuidoId,
+                  atividadeId: proximaAtividade.id,
+                  status: "disponivel",
+                  avaliacaoLiberada: 0,
+                  tentativas: 0,
+                });
+              }
+            }
+
+            // Verificar se todas as atividades do curso foram aprovadas
+            const todasAsAtividades = await database
+              .select()
+              .from(alunoAtividadeProgresso)
+              .where(
+                and(
+                  eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                  eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                )
+              );
+
+            const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
+
+            if (todasAprovadas && todasAsAtividades.length === atividades.length) {
+              await database
+                .update(alunoCursoAtribuido)
+                .set({
+                  status: "concluido",
+                  dataConclusao: new Date(),
+                })
+                .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+              // Sincronizar student_performance para refletir conclusão nos indicadores de Competências e Avaliações
+              await db.syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
+            }
+          }
+
+          return { success: true, aprovadaAutomaticamente: !temAvaliacao };
+        }),
+
+      obterAvaliacaoDaAtividade: protectedProcedure
+        .input(z.object({
+          cursoId: z.number().int().min(1, "cursoId inválido"),
+          cursoAtribuidoId: z.number().int().min(1, "cursoAtribuidoId inválido"),
+          atividadeId: z.number().int().min(1, "atividadeId inválido"),
+          avaliacaoId: z.number().int().min(1, "avaliacaoId inválido"),
+        }))
+        .query(async ({ ctx, input }) => {
+          const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          // Validar que o usuário é um aluno
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Usuário não é um aluno" });
+          }
+
+          // Validar que o curso atribuído pertence ao aluno
+          const [atribuicao] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, user.alunoId),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (!atribuicao) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Curso não atribuído a este aluno" });
+          }
+
+          // Validar que a atividade pertence ao curso
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.id, input.atividadeId),
+                eq(atividadesCurso.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (!atividade) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Atividade não encontrada neste curso" });
+          }
+
+          // Buscar a avaliação vinculada à atividade
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(
+              and(
+                eq(avaliacoesAtividade.id, input.avaliacaoId),
+                eq(avaliacoesAtividade.atividadeId, input.atividadeId)
+              )
+            )
+            .limit(1);
+
+          if (!avaliacao) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada para esta atividade" });
+          }
+
+          // Validar trava de tempo
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+              )
+            )
+            .limit(1);
+
+          const resumo = montarResumoTempo(atividade, progresso);
+          if (resumo.bloqueioPorTempo === 1) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: `Avaliação bloqueada por tempo. Faltam ${Math.ceil(resumo.tempoRestanteSegundos / 60)} minutos.`,
+            });
+          }
+
+          // Lógica de 10 questões aleatórias
+          const todasQuestoes = JSON.parse(avaliacao.questoes || '[]');
+          const questoesEmbaralhadas = todasQuestoes.sort(() => 0.5 - Math.random());
+          const questoesSelecionadas = questoesEmbaralhadas.slice(0, 10);
+
+          // Retornar a estrutura esperada pelo frontend com as questões selecionadas
+          return {
+            atividade,
+            avaliacoes: {
+              ...avaliacao,
+              questoes: JSON.stringify(questoesSelecionadas),
+            },
+          };
+        }),
+
+      submeterAvaliacao: protectedProcedure
+        .input(z.object({
+          cursoId: z.number().int().positive(),
+          cursoAtribuidoId: z.number().int().positive(),
+          atividadeId: z.number().int().positive(),
+          nota: z.number().min(0).max(10),
+          respostas: z.any().optional(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const userId = ctx.user?.id;
+          if (!userId) {
+            throw new TRPCError({ code: "UNAUTHORIZED" });
+          }
+
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const [user] = await database
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+
+          if (!user?.alunoId) {
+            throw new TRPCError({ code: "FORBIDDEN" });
+          }
+
+          const [progresso] = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq(alunoAtividadeProgresso.atividadeId, input.atividadeId),
+              )
+            )
+            .limit(1);
+
+          if (!progresso) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Progresso da atividade não encontrado" });
+          }
+
+          const [atividade] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeId))
+            .limit(1);
+
+          const resumo = montarResumoTempo(atividade || {}, progresso);
+          if (resumo.bloqueioPorTempo === 1) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Submissão bloqueada. Tempo mínimo não cumprido.",
+            });
+          }
+
+          if (!progresso.avaliacaoLiberada && !resumo.liberadoParaAvaliacao) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Avaliação não foi liberada para esta atividade" });
+          }
+
+          const notaNumerica = Number(input.nota);
+          const percentualAcerto = (notaNumerica / 10) * 100; // Converter para percentual (0-100)
+          const aprovado = percentualAcerto >= 80; // Exigir 80% de acerto
+          const notaPersistida = notaNumerica.toFixed(1);
+          const tentativasAtuais = (progresso.tentativas ?? 0) + 1;
+          const tentativasRestantes = 3 - tentativasAtuais;
+
+          // Verificar se atingiu o limite de 3 tentativas
+          const bloqueado = tentativasAtuais >= 3 && !aprovado;
+
+          await database
+            .update(alunoAtividadeProgresso)
+            .set({
+              notaFinal: notaPersistida,
+              status: bloqueado ? "bloqueada" : (aprovado ? "aprovada" : "reprovada"),
+              tentativas: tentativasAtuais,
+              updatedAt: new Date(),
+            })
+            .where(eq(alunoAtividadeProgresso.id, progresso.id));
+
+          const atividades = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
+
+          const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
+          const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1
+            ? atividades[atividadeIndex + 1]
+            : null;
+
+          if (aprovado && proximaAtividade) {
+            const [proximaJaExiste] = await database
+              .select()
+              .from(alunoAtividadeProgresso)
+              .where(
+                and(
+                  eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                  eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                  eq(alunoAtividadeProgresso.atividadeId, proximaAtividade.id),
+                )
+              )
+              .limit(1);
+
+            if (!proximaJaExiste) {
+              await database.insert(alunoAtividadeProgresso).values({
+                alunoId: user.alunoId,
+                cursoAtribuidoId: input.cursoAtribuidoId,
+                atividadeId: proximaAtividade.id,
+                status: "disponivel",
+                avaliacaoLiberada: 0,
+                tentativas: 0,
+              });
+            }
+          }
+
+          const todasAsAtividades = await database
+            .select()
+            .from(alunoAtividadeProgresso)
+            .where(
+              and(
+                eq(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              )
+            );
+
+          const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
+
+          if (todasAprovadas && todasAsAtividades.length === atividades.length) {
+            await database
+              .update(alunoCursoAtribuido)
+              .set({
+                status: "concluido",
+              })
+              .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+            // Sincronizar student_performance para refletir conclusão nos indicadores de Competências e Avaliações
+            await db.syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
+          }
+
+          // === ENVIAR E-MAIL AO MENTOR (COM ADMIN EM CÓPIA) QUANDO BLOQUEADO NA 3a TENTATIVA ===
+          if (bloqueado) {
+            try {
+              const { sendEmail } = await import('./emailService');
+              const adminEmail = process.env.SMTP_USER || '';
+
+              // Buscar dados do aluno
+              const alunoData = await db.getAlunoById(user.alunoId);
+              const alunoNome = alunoData?.name || 'Aluno';
+              const alunoEmail = alunoData?.email || '';
+
+              // Buscar dados do curso atribuído para pegar o mentorId
+              const [cursoAtrib] = await database
+                .select()
+                .from(alunoCursoAtribuido)
+                .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+                .limit(1);
+
+              // Buscar dados do mentor
+              const mentorData = cursoAtrib?.mentorId ? await db.getConsultorById(cursoAtrib.mentorId) : null;
+              const mentorEmail = mentorData?.email || '';
+              const mentorNome = mentorData?.name || 'Mentor';
+
+              // Buscar nome da atividade
+              const [atividadeData] = await database
+                .select()
+                .from(atividadesCurso)
+                .where(eq(atividadesCurso.id, input.atividadeId))
+                .limit(1);
+              const atividadeNome = atividadeData?.titulo || 'Atividade';
+
+              // Buscar nome do curso
+              const [cursoData] = cursoAtrib?.cursoId ? await database
+                .select()
+                .from(cursosCompetencias)
+                .where(eq(cursosCompetencias.id, cursoAtrib.cursoId))
+                .limit(1) : [null];
+              const cursoNome = (cursoData as any)?.titulo || 'Curso';
+
+              const subject = `[ECOSSISTEMA DO BEM] Aluno bloqueado - ${alunoNome} precisa de orientação`;
+              const html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: #dc2626; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0;">Aluno Bloqueado na Avaliação</h2>
+                  </div>
+                  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p>Olá <strong>${mentorNome}</strong>,</p>
+                    <p>O aluno <strong>${alunoNome}</strong> atingiu o limite de <strong>3 tentativas</strong> sem alcançar a nota mínima de 80% na avaliação e foi bloqueado.</p>
+                    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                      <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 8px; font-weight: bold;">Aluno:</td>
+                        <td style="padding: 8px;">${alunoNome} (${alunoEmail})</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 8px; font-weight: bold;">Curso:</td>
+                        <td style="padding: 8px;">${cursoNome}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 8px; font-weight: bold;">Atividade:</td>
+                        <td style="padding: 8px;">${atividadeNome}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 8px; font-weight: bold;">Último aproveitamento:</td>
+                        <td style="padding: 8px;">${percentualAcerto.toFixed(1)}%</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px; font-weight: bold;">Tentativas realizadas:</td>
+                        <td style="padding: 8px;">3 de 3</td>
+                      </tr>
+                    </table>
+                    <p><strong>Ação necessária:</strong> Entre em contato com o aluno para conversar sobre as dificuldades que ele está enfrentando em relação ao conteúdo.</p>
+                    <p>Após a conversa, o <strong>Administrador</strong> poderá liberar novas tentativas para que o aluno refaça o curso e a avaliação.</p>
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+                    <p style="color: #6b7280; font-size: 12px;">Este e-mail foi enviado automaticamente pelo sistema ECOSSISTEMA DO BEM.</p>
+                  </div>
+                </div>
+              `;
+
+              if (mentorEmail) {
+                await sendEmail({
+                  to: mentorEmail,
+                  cc: adminEmail,
+                  subject,
+                  html,
+                  text: `Aluno ${alunoNome} foi bloqueado na avaliação da atividade ${atividadeNome} do curso ${cursoNome}. Tentativas: 3/3. Aproveitamento: ${percentualAcerto.toFixed(1)}%. Entre em contato com o aluno.`,
+                }).catch((err: any) => console.error('[Email bloqueio] Erro:', err.message));
+                console.log(`[Email bloqueio] Enviado para mentor=${mentorEmail}, cc=${adminEmail}, aluno=${alunoNome}`);
+              } else {
+                // Se não tem mentor, enviar direto para admin
+                await sendEmail({
+                  to: adminEmail || 'dina@ckmtalents.net',
+                  subject,
+                  html,
+                  text: `Aluno ${alunoNome} foi bloqueado na avaliação da atividade ${atividadeNome} do curso ${cursoNome}. Tentativas: 3/3. Aproveitamento: ${percentualAcerto.toFixed(1)}%. Entre em contato com o aluno.`,
+                }).catch((err: any) => console.error('[Email bloqueio] Erro:', err.message));
+                console.log(`[Email bloqueio] Enviado para admin=${adminEmail}, aluno=${alunoNome} (sem mentor)`);
+              }
+            } catch (emailError: any) {
+              console.error('[Email bloqueio] Falha ao enviar notificação:', emailError.message);
+              // Não bloquear o fluxo por falha de e-mail
+            }
+          }
+
+          return {
+            success: true,
+            aprovado,
+            bloqueado,
+            nota: notaPersistida,
+            tentativasAtuais,
+            tentativasRestantes: Math.max(0, tentativasRestantes),
+            percentualAcerto: percentualAcerto.toFixed(1),
+            proximaAtividadeDisponivel: aprovado && !!proximaAtividade,
+            status: bloqueado ? "bloqueada" : (aprovado ? "aprovada" : "reprovada"),
+            mensagem: bloqueado 
+              ? "Você atingiu o limite de 3 tentativas. Por favor, fale com seu mentor."
+              : (aprovado 
+                ? "Parabéns! Você atingiu 80% de acerto!"
+                : `Você não atingiu 80% de acerto. Acertos: ${percentualAcerto.toFixed(1)}%. Tentativas restantes: ${tentativasRestantes}`
+              ),
+          };
+        }),
+
+      minhasTentativas: protectedProcedure
+        .input(z.object({ moduloId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) return [];
+
+          return await database
+            .select()
+            .from(alunoModuloAvaliacao)
+            .where(
+              and(
+                eq(alunoModuloAvaliacao.alunoId, aluno.id),
+                eq(alunoModuloAvaliacao.moduloId, input.moduloId)
+              )
+            )
+            .orderBy(desc(alunoModuloAvaliacao.createdAt));
+        }),
+
+      registrarReflexaoFinal: protectedProcedure
+        .input(
+          z.object({
+            cursoAtribuidoId: z.number(),
+            relato: z.string().min(1),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco indisponível",
+            });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Aluno não encontrado",
+            });
+          }
+
+          const [cursoAtribuido] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, aluno.id)
+              )
+            )
+            .limit(1);
+
+          if (!cursoAtribuido) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Curso atribuído não encontrado",
+            });
+          }
+
+          const [tentativaJoin] = await database
+            .select()
+            .from(tentativasAvaliacao)
+            .innerJoin(
+              alunoCursoAtribuido,
+              and(
+                eq(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
+                eq(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
+              )
+            )
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+            .limit(1);
+
+          if (tentativaJoin) {
+            const tentativa = tentativaJoin.tentativas_avaliacao;
+            const respostasAtuais =
+              tentativa.respostasAluno && typeof tentativa.respostasAluno === "object"
+                ? tentativa.respostasAluno
+                : {};
+
+            await database
+              .update(tentativasAvaliacao)
+              .set({
+                respostasAluno: {
+                  ...respostasAtuais,
+                  reflexaoFinal: input.relato,
+                },
+              })
+              .where(eq(tentativasAvaliacao.id, tentativa.id));
+          }
+
+          await database
+            .update(alunoCursoAtribuido)
+            .set({
+              status: "em_progresso",
+            })
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+
+          return { success: true };
+        }),
+
+      obterUrlCurso: protectedProcedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) return null;
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) return null;
+
+          // Verificar se o aluno tem acesso ao curso
+          const [cursoAtribuido] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.alunoId, aluno.id),
+                eq(alunoCursoAtribuido.cursoId, input.cursoId)
+              )
+            )
+            .limit(1);
+
+          if (!cursoAtribuido) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Acesso negado a este curso",
+            });
+          }
+
+          // Obter a primeira atividade do curso
+          const [atividade] = await database
+            .select({
+              id: atividadesCurso.id,
+              titulo: atividadesCurso.titulo,
+              tipoAtividade: atividadesCurso.tipoAtividade,
+              urlGenially: atividadesCurso.urlGenially,
+              urlMidia: atividadesCurso.urlMidia,
+            })
+            .from(atividadesCurso)
+            .where(
+              and(
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(atividadesCurso.isActive, 1)
+              )
+            )
+            .orderBy(asc(atividadesCurso.ordem))
+            .limit(1);
+
+          if (!atividade) {
+            return null;
+          }
+
+          // Retornar a URL apropriada baseado no tipo de atividade
+          const url = atividade.urlGenially || atividade.urlMidia;
+          return {
+            id: atividade.id,
+            titulo: atividade.titulo,
+            tipoAtividade: atividade.tipoAtividade,
+            url: url || null,
+          };
+        }),
+
+      concluirCurso: protectedProcedure
+        .input(
+          z.object({
+            cursoAtribuidoId: z.number(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Banco indisponível",
+            });
+          }
+
+          const aluno = await db.getAlunoByUserId(Number(ctx.user.id));
+          if (!aluno) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Aluno não encontrado",
+            });
+          }
+
+          const [cursoAtribuido] = await database
+            .select()
+            .from(alunoCursoAtribuido)
+            .where(
+              and(
+                eq(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+                eq(alunoCursoAtribuido.alunoId, aluno.id)
+              )
+            )
+            .limit(1);
+
+          if (!cursoAtribuido) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Curso atribuído não encontrado",
+            });
+          }
+
+          const [ultimaTentativaJoin] = await database
+            .select()
+            .from(tentativasAvaliacao)
+            .innerJoin(
+              alunoCursoAtribuido,
+              and(
+                eq(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
+                eq(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
+              )
+            )
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+            .limit(1);
+
+          const notaFinal = ultimaTentativaJoin?.tentativas_avaliacao?.nota ?? null;
+          const notaNumerica = Number(notaFinal ?? 0);
+          const aprovado = notaNumerica >= 8;
+
+          await database
+            .update(alunoCursoAtribuido)
+            .set({
+              status: aprovado ? "concluido" : "em_progresso",
+              notaFinal: notaNumerica.toFixed(1),
+              dataConclusao: aprovado ? new Date() : null,
+            })
+            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+
+          return {
+            success: true,
+            aprovado,
+            notaFinal,
+          };
+        }),
+      updateAtividade: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            id: z.number(),
+            titulo: z.string(),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]),
+            urlGenially: z.string().optional(),
+            urlMidia: z.string().optional(),
+            imagemUrl: z.string().optional(),
+            descricao: z.string().optional(),
+            isActive: z.number(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          }
+
+          const updateData: any = {
+            titulo: input.titulo,
+            tipoAtividade: input.tipoAtividade,
+            descricao: input.descricao || null,
+            isActive: input.isActive,
+            updatedAt: new Date(),
+          };
+
+          if (input.tipoAtividade === "genially") {
+            updateData.urlGenially = input.urlGenially || null;
+          } else {
+            updateData.urlMidia = input.urlMidia || null;
+          }
+
+          if (input.imagemUrl) {
+            updateData.imagemUrl = input.imagemUrl;
+          }
+
+          await database
+            .update(atividadesCurso)
+            .set(updateData)
+            .where(eq(atividadesCurso.id, input.id));
+
+          return { success: true };
+        }),
+
+      deleteAtividade: adminOrAdmin2Procedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          }
+          // Inabilitar em vez de excluir para evitar problemas de FK
+          await database
+            .update(atividadesCurso)
+            .set({ isActive: 0, updatedAt: new Date() })
+            .where(eq(atividadesCurso.id, input.id));
+          return { success: true };
+        }),
+    }),
+  }),
+
+  onboardingVideos: router({
+    listar: publicProcedure.query(async () => {
+      const database = await getDb();
+      if (!database) return [];
+      const videos = await database
+        .select()
+        .from(onboardingVideos)
+        .where(eq(onboardingVideos.isActive, 1))
+        .orderBy(asc(onboardingVideos.ordem));
+      return videos;
+    }),
+
+    obter: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return null;
+        const video = await database
+          .select()
+          .from(onboardingVideos)
+          .where(eq(onboardingVideos.id, input.id))
+          .limit(1);
+        return video[0] || null;
+      }),
+
+    obterPorChave: publicProcedure
+      .input(z.object({ chave: z.string() }))
+      .query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return null;
+        const video = await database
+          .select()
+          .from(onboardingVideos)
+          .where(and(eq(onboardingVideos.chave, input.chave), eq(onboardingVideos.isActive, 1)))
+          .limit(1);
+        return video[0] || null;
+      }),
+
+    criar: adminOrAdmin2Procedure
+      .input(z.object({
+        chave: z.string(),
+        titulo: z.string(),
+        descricao: z.string().optional(),
+        videoUrl: z.string(),
+        textoExplicativo: z.string().optional(),
+        ordem: z.number().default(0),
+      }))
+      .mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const result = await database
+          .insert(onboardingVideos)
+          .values({
+            chave: input.chave,
+            titulo: input.titulo,
+            descricao: input.descricao,
+            videoUrl: input.videoUrl,
+            textoExplicativo: input.textoExplicativo,
+            ordem: input.ordem,
+            isActive: 1,
+          });
+        return result;
+      }),
+
+    atualizar: adminOrAdmin2Procedure
+      .input(z.object({
+        id: z.number(),
+        chave: z.string().optional(),
+        titulo: z.string().optional(),
+        descricao: z.string().optional(),
+        videoUrl: z.string().optional(),
+        textoExplicativo: z.string().optional(),
+        ordem: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const { id, ...updates } = input;
+        const result = await database
+          .update(onboardingVideos)
+          .set(updates)
+          .where(eq(onboardingVideos.id, id));
+        return result;
+      }),
+
+    deletar: adminOrAdmin2Procedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco indisponível' });
+        const result = await database
+          .delete(onboardingVideos)
+          .where(eq(onboardingVideos.id, input.id));
+        return result;
+      }),
+  }),
 });
-
-export type AppRouter = typeof appRouter;
-
-// ============ CSV HELPER FUNCTIONS ============
-
-/**
- * Parse a CSV line respecting quoted fields
- */
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    
-    if (char === '"') {
-      if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
-        current += '"';
-        i++; // Skip next quote
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  
-  result.push(current.trim());
-  return result;
-}
-
-/**
- * Get value from parsed CSV row by column name
- */
-function getVal(values: string[], colMap: Record<string, number>, colName: string): string | undefined {
-  const idx = colMap[colName];
-  if (idx === undefined || idx >= values.length) return undefined;
-  const val = values[idx]?.trim();
-  if (!val || val === '-') return undefined;
-  return val;
-}

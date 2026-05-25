@@ -1,0 +1,101 @@
+id,alunoId,assessmentCompetenciaId,competenciaId,assessmentPdiId,taskLibraryId,titulo,descricao,definidaPor,isActive,createdAt,updatedAt
+30001,90013,90004,30012,90002,,Liderar um projeto de mudança,Trazer um relato da experiencia para o mentor na reunião de mentoria.,39,1,2026-03-07 22:18:01,2026-03-07 22:18:01
+60001,90013,90005,30014,90002,,Desafio 3P: Posicionamento Ponderado e Persuasivo,"Durante as próximas 4 semanas, identifique 3 situações por semana onde você normalmente se calaria ou seria passiva. Nelas, pratique expressar sua opinião ou necessidade de forma clara, objetiva e respeitosa, utilizando a estrutura 'Eu sinto/penso X sobre Y, e sugiro Z'. Ao final do mês, analise o impacto dessas intervenções e os aprendizados sobre sua comunicação.",39,1,2026-03-08 00:10:56,2026-03-08 00:10:56
+90001,90013,120001,30006,120001,41,Rotina Matinal,,39,1,2026-03-08 15:43:01,2026-03-08 15:43:01
+120001,570031,180002,30012,180002,,Desafio de Adaptação a Mudanças de Prioridade,"Nos próximos 30 dias, identifique proativamente e adapte-se a pelo menos 3 mudanças inesperadas de prioridade em seus projetos ou tarefas. Para cada mudança, documente como você ajustou seu plano inicial, comunicou a alteração às partes interessadas e avalie a eficácia de sua adaptação para garantir a entrega, buscando feedback de um colega ou líder.",,1,2026-03-19 00:37:08,2026-03-19 00:37:08
+120002,570031,180002,30012,180002,32,Plano de Aprendizado,,,1,2026-03-19 00:37:19,2026-03-19 00:37:19
+120003,570031,180002,30012,180002,,Implementar 2 novas ferramentas ou processos em 30 dias,"Nos próximos 30 dias, identifique e implemente ativamente duas novas ferramentas, metodologias ou processos de trabalho em sua rotina, mesmo que não sejam obrigatórios. Ao final, avalie o impacto e sua curva de aprendizado para desenvolver resiliência a mudanças.",,1,2026-03-19 00:37:39,2026-03-19 00:37:39
+120004,570031,180001,30003,180001,,Implementar a Técnica Pomodoro e Análise de Tempo,"Durante 30 dias, utilize a Técnica Pomodoro (25 min de foco, 5 min de pausa) para todas as tarefas que exijam concentração. Ao final de cada semana, analise como o tempo foi gasto e identifique 2-3 oportunidades de melhoria para a semana seguinte, visando otimizar a produtividade e reduzir interrupções.",,1,2026-03-19 00:38:07,2026-03-19 00:38:07
+120005,570031,180001,30003,180001,,Desafio de Gestão do Tempo: Bloco de Foco Ininterrupto,"Durante as próximas 3 semanas, reserve 90 minutos ininterruptos diariamente para uma tarefa prioritária, sem checar e-mails, mensagens ou atender chamadas. Ao final de cada semana, avalie o impacto na sua produtividade e na conclusão de projetos importantes.",,1,2026-03-19 00:38:26,2026-03-19 00:38:26
+150001,660014,210004,30014,210002,,Realizar Palestra na Comunidade que participa,,39,1,2026-03-20 17:43:59,2026-03-20 17:43:59
+150002,660014,210004,30014,210002,,Participar ativamente nas reuniões da empresa,,39,1,2026-03-20 17:45:29,2026-03-20 17:45:29
+180001,570089,270003,30007,270001,31,Escuta Ativa,,28,0,2026-03-23 14:43:30,2026-03-23 14:51:33
+180002,570089,270003,30007,270001,,Atividade Prática de Escuta Ativa,"Realizar uma escuta ativa numa conversa de pelo menos 10 minutos sem interrupção.
+Executando anotações de como se sentiu, quais as dificuldades encontrou e como percebeu o outro.",28,0,2026-03-23 14:48:06,2026-03-23 14:52:49
+180003,570089,270003,30007,270001,,Técnica do “Espelhamento”,"Após alguém falar, vocês deve responder começando com:
+
+“Se eu entendi bem, você quis dizer que…”
+
+Regra:
+Não opinar
+Não corrigir
+Só validar entendimento
+
+Objetivo:
+Treinar escuta real",28,0,2026-03-23 14:50:04,2026-03-23 14:53:58
+180004,570089,270003,30007,270001,,Regra dos 70/30,"Em toda conversa importante:
+Falar no máximo 30%
+Ouvir 70%
+
+Como praticar:
+Antes de responder, contar mentalmente 3 segundos
+Só falar depois que o outro terminar completamente",28,0,2026-03-23 14:51:06,2026-03-23 14:54:31
+180005,570089,270004,30008,270001,,Exercício de Escuta Ativa,"Realizar uma escuta ativa numa conversa de pelo menos 10 minutos sem interrupção.
+Executando anotações de como se sentiu, quais as dificuldades encontrou e como percebeu o outro.",28,0,2026-03-23 14:52:41,2026-03-23 22:11:32
+180006,570089,270004,30008,270001,,Técnica do “Espelhamento”,"Após alguém falar, vocês deve responder começando com:
+
+“Se eu entendi bem, você quis dizer que…” 
+
+Regra:
+Não opinar 
+Não corrigir 
+Só validar entendimento 
+
+Objetivo: Treinar escuta real",28,0,2026-03-23 14:53:52,2026-03-23 22:11:35
+180007,570089,270004,30008,270001,,Regra dos 70/30,"Em toda conversa importante:
+Falar no máximo 30%
+Ouvir 70% 
+
+Como praticar: Antes de responder, contar mentalmente 3 segundos Só falar depois que o outro terminar completamente",28,0,2026-03-23 14:54:26,2026-03-23 22:11:38
+180008,570089,270003,30007,270001,,Troca de Perspectiva,"Em qualquer situação de conflito ou divergência:
+
+Perguntar a si mesmo:
+
+“Se eu estivesse no lugar dessa pessoa, o que eu estaria sentindo?”
+“O que poderia estar motivando esse comportamento?”
+
+Regra: responder antes de reagir
+
+Objetivo:
+Quebrar o padrão de julgamento rápido (muito comum no D alto)",28,0,2026-03-23 14:58:36,2026-03-23 22:15:14
+180009,570089,270003,30007,270001,,Mapa da Pessoa (exercício prático),"Escolher 1 pessoa por semana (trabalho ou família) e responder:
+
+O que essa pessoa valoriza?
+O que ela teme?
+O que motiva ela?
+Como ela gosta de ser tratada?
+
+Objetivo:
+Desenvolver empatia cognitiva (entender o outro)",28,0,2026-03-23 15:00:19,2026-03-23 22:15:17
+180010,570089,270001,30003,270001,30003,Desafio 30 Dias de Gestão do Tempo Focada,,28,1,2026-03-23 15:01:45,2026-03-23 15:01:45
+180011,570089,270001,30003,270001,3,Revisão da Agenda Semanal,,28,1,2026-03-23 15:02:11,2026-03-23 15:02:11
+180012,570089,270002,30004,270001,30001,Jogos de Tabuleiro,,28,1,2026-03-23 15:02:37,2026-03-23 15:02:37
+180013,570089,270004,30008,270001,,Praticar Escuta Ativa,"Praticar escuta ativa em pelo menos 3 interações por semana, utilizando técnicas de não interrupção e validação do entendimento.
+
+Critérios de sucesso:
+
+1) Não interromper a pessoa (Conversa de 5 a 10 minutos sem interrupção);
+2) Fazer pelo menos 1 pergunta antes de opinar;
+3) Usar pelo menos 1 frase de espelhamento (“Se entendi bem, você quis dizer…”).
+
+Indicador:
+Registrar 3 situações reais por semana
+
+- Como medir (simples):
+✔️ Conseguiu aplicar? (Sim/Não)
+✔️ A pessoa se sentiu ouvida? (feedback rápido)",28,1,2026-03-23 22:14:50,2026-03-23 22:14:50
+180014,570089,270003,30007,270001,,Praticar Empatia,"Demonstrar empatia em pelo menos 2 interações por semana, identificando e validando emoções do outro antes de apresentar soluções.
+
+Critérios de sucesso:
+
+1) Identificar a emoção da pessoa;
+2) Validar com uma frase (ex: “Entendo que isso foi difícil”);
+3) Evitar julgamento ou solução imediata.
+
+- Indicador:
+Registrar 2 situações reais por semana
+
+- Como medir:
+✔️ Validou emoção? (Sim/Não)
+✔️ Perguntou antes de opinar? (Sim/Não)
+✔️ Feedback da pessoa (0 a 10)",28,1,2026-03-23 22:16:47,2026-03-23 22:16:47

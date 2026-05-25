@@ -7,19 +7,33 @@ interface ContratoInfoReadonlyProps {
   alunoId: number;
 }
 
+/**
+ * Formata uma data sem conversão de fuso horário.
+ * Aceita string "YYYY-MM-DD", Date ou timestamp.
+ */
+function formatDateLocal(d: any): string {
+  if (!d) return "—";
+  const str = typeof d === "string" ? d : (d instanceof Date ? d.toISOString() : String(d));
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+  return new Date(str).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+}
+
 export default function ContratoInfoReadonly({ alunoId }: ContratoInfoReadonlyProps) {
-  const { data: contratos, isLoading } = trpc.contratos.byAluno.useQuery(
+  const { data: contratos, isLoading: isLoadingContratos } = trpc.contratos.byAluno.useQuery(
     { alunoId },
     { enabled: !!alunoId }
   );
 
-  // Buscar dados do aluno para fallback inline
-  const { data: alunoData } = trpc.planoIndividual.alunosWithPlano.useQuery();
+  // Buscar dados do aluno — fonte primária para contrato, sessões e tipo de mentoria
+  const { data: alunoData, isLoading: isLoadingAluno } = trpc.planoIndividual.alunosWithPlano.useQuery();
   const aluno = alunoData?.find((a: any) => a.id === alunoId) as any;
 
   const contratoAtivo = contratos?.find((c: any) => c.isActive === 1) || contratos?.[0];
 
-  if (isLoading) {
+  if (isLoadingContratos || isLoadingAluno) {
     return (
       <div className="space-y-2">
         <p className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -30,75 +44,46 @@ export default function ContratoInfoReadonly({ alunoId }: ContratoInfoReadonlyPr
     );
   }
 
-  const formatDate = (d: any) => {
-    if (!d) return "—";
-    const date = new Date(d);
-    return date.toLocaleDateString("pt-BR");
-  };
+  // Dados do cadastro do aluno (fonte primária)
+  const alunoContratoInicio = aluno?.contratoInicio;
+  const alunoContratoFim = aluno?.contratoFim;
+  const alunoSessoes = aluno?.totalSessoesContratadas;
+  const alunoTipoMentoria = aluno?.tipoMentoria;
 
-  // Se não tem contrato na tabela contratos_aluno, usar dados inline do aluno
-  if (!contratoAtivo) {
-    const cInicio = aluno?.contratoInicio;
-    const cFim = aluno?.contratoFim;
-    const sessoes = aluno?.totalSessoesContratadas;
-    const tipoM = aluno?.tipoMentoria;
-    const hasInlineData = cInicio || cFim || sessoes || tipoM;
+  // Período: prioridade para cadastro do aluno; fallback para contratos_aluno
+  const periodoInicio = alunoContratoInicio || contratoAtivo?.periodoInicio;
+  const periodoFim = alunoContratoFim || contratoAtivo?.periodoTermino;
 
-    if (hasInlineData) {
-      return (
-        <Card className="border-blue-200 bg-blue-50/30">
-          <CardContent className="p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-blue-800 flex items-center gap-1.5">
-                <FileText className="h-3.5 w-3.5" />
-                Dados do Contrato
-              </p>
-              <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
-                Cadastro do Aluno
-              </Badge>
-            </div>
+  // Total de sessões: prioridade para cadastro do aluno (quando > 0); fallback para contratos_aluno
+  const totalSessoes = (alunoSessoes && alunoSessoes > 0)
+    ? alunoSessoes
+    : (contratoAtivo?.totalSessoesContratadas && contratoAtivo.totalSessoesContratadas > 0
+        ? contratoAtivo.totalSessoesContratadas
+        : null);
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">Período:</span>
-                <span className="font-medium">
-                  {formatDate(cInicio)} — {formatDate(cFim)}
-                </span>
-              </div>
+  // Tipo de mentoria: vem do cadastro do aluno
+  const tipoMentoria = alunoTipoMentoria;
 
-              <div className="flex items-center gap-1.5">
-                <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">Sessões de Mentoria:</span>
-                <span className="font-medium">{sessoes || "—"}</span>
-              </div>
+  const hasData = periodoInicio || periodoFim || totalSessoes || tipoMentoria;
 
-              <div className="flex items-center gap-1.5">
-                <Users2 className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">Tipo de Mentoria:</span>
-                <span className="font-medium">
-                  {tipoM === 'grupo' ? 'Em Grupo' : tipoM === 'individual' ? 'Individual' : tipoM === 'sem_mentoria' ? 'Sem Mentoria' : '—'}
-                </span>
-              </div>
-            </div>
+  // Campos faltantes no cadastro do aluno — geram avisos para o administrador
+  const camposFaltantes: string[] = [];
+  if (!alunoContratoInicio) camposFaltantes.push("data de início do contrato");
+  if (!alunoContratoFim) camposFaltantes.push("data de término do contrato");
+  if (!alunoSessoes || alunoSessoes === 0) camposFaltantes.push("total de sessões de mentoria");
+  if (!alunoTipoMentoria) camposFaltantes.push("tipo de mentoria");
 
-            <p className="text-xs text-muted-foreground italic">
-              Dados do cadastro do aluno. Para registrar um contrato formal, use a seção de Contratos no Plano Individual.
-            </p>
-          </CardContent>
-        </Card>
-      );
-    }
-
+  // Sem nenhum dado em nenhuma fonte
+  if (!hasData && !contratoAtivo) {
     return (
-      <Card className="border-amber-200 bg-amber-50/50">
+      <Card className="border-red-200 bg-red-50/50">
         <CardContent className="p-3">
           <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm font-medium text-amber-800">Sem contrato ativo</p>
-              <p className="text-xs text-amber-600">
-                O administrador precisa cadastrar o contrato do aluno (período, sessões de mentoria e tipo) no cadastro do aluno ou na seção de Contratos.
+              <p className="text-sm font-medium text-red-800">Contrato não cadastrado</p>
+              <p className="text-xs text-red-600 mt-0.5">
+                O administrador precisa preencher no cadastro do aluno: período do contrato, total de sessões de mentoria e tipo de mentoria.
               </p>
             </div>
           </div>
@@ -107,51 +92,93 @@ export default function ContratoInfoReadonly({ alunoId }: ContratoInfoReadonlyPr
     );
   }
 
-  const totalSessoes = contratoAtivo.totalSessoesContratadas;
+  const isAtivo = contratoAtivo ? contratoAtivo.isActive === 1 : true;
 
   return (
-    <Card className="border-blue-200 bg-blue-50/30">
-      <CardContent className="p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-blue-800 flex items-center gap-1.5">
-            <FileText className="h-3.5 w-3.5" />
-            Dados do Contrato
-          </p>
-          <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
-            Definido pelo Admin
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Período:</span>
-            <span className="font-medium">
-              {formatDate(contratoAtivo.periodoInicio)} — {formatDate(contratoAtivo.periodoTermino)}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">Total de Sessões:</span>
-            <span className="font-medium">{totalSessoes || "—"}</span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground">Status:</span>
-            <Badge
-              variant={contratoAtivo.isActive === 1 ? 'default' : 'secondary'}
-              className={`text-xs ${contratoAtivo.isActive === 1 ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : ''}`}
-            >
-              {contratoAtivo.isActive === 1 ? 'Ativo' : 'Inativo'}
+    <div className="space-y-2">
+      <Card className="border-blue-200 bg-blue-50/30">
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-blue-800 flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
+              Dados do Contrato
+            </p>
+            <Badge variant="outline" className="text-xs border-blue-300 text-blue-700">
+              Definido pelo Admin
             </Badge>
           </div>
-        </div>
 
-        <p className="text-xs text-muted-foreground italic">
-          Esses dados são definidos pelo administrador no cadastro do contrato e não podem ser alterados aqui.
-        </p>
-      </CardContent>
-    </Card>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">Período:</span>
+              <span className="font-medium">
+                {formatDateLocal(periodoInicio)} — {formatDateLocal(periodoFim)}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-muted-foreground">Total de Sessões:</span>
+              <span className={`font-medium ${totalSessoes == null ? "text-amber-600" : ""}`}>
+                {totalSessoes != null ? `${totalSessoes} sessões` : "—"}
+              </span>
+            </div>
+
+            {tipoMentoria ? (
+              <div className="flex items-center gap-1.5">
+                <Users2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-muted-foreground">Tipo de Mentoria:</span>
+                <span className="font-medium">
+                  {tipoMentoria === 'grupo' ? 'Em Grupo' : tipoMentoria === 'individual' ? 'Individual' : tipoMentoria === 'sem_mentoria' ? 'Sem Mentoria' : tipoMentoria}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Users2 className="h-3.5 w-3.5 text-amber-500" />
+                <span className="text-muted-foreground">Tipo de Mentoria:</span>
+                <span className="font-medium text-amber-600">—</span>
+              </div>
+            )}
+
+            {contratoAtivo && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Status:</span>
+                <Badge
+                  variant={isAtivo ? 'default' : 'secondary'}
+                  className={`text-xs ${isAtivo ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : ''}`}
+                >
+                  {isAtivo ? 'Ativo' : 'Inativo'}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-muted-foreground italic">
+            Esses dados são definidos pelo administrador no cadastro do aluno e não podem ser alterados aqui.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Aviso para o administrador quando campos estiverem faltando no cadastro do aluno */}
+      {camposFaltantes.length > 0 && (
+        <Card className="border-amber-300 bg-amber-50/60">
+          <CardContent className="p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">
+                  Atenção: dados incompletos no cadastro do aluno
+                </p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  O administrador precisa preencher no cadastro do aluno:{" "}
+                  <span className="font-medium">{camposFaltantes.join(", ")}</span>.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

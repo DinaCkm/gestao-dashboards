@@ -8,7 +8,7 @@
  * 3. Performance nas Competências: % competências/cursos finalizados por ciclo
  * 4. Tarefas Práticas: Entregue=100, Não entregue=0, média das entregas
  * 5. Engajamento (Nota da Mentora): Média notas 0-100 por sessão
- * 6. Aplicabilidade Prática (Case de Sucesso): Informativo apenas (não entra na média). Quem entrega recebe +10% no Ind. 5 (limitado a 100)
+ * 6. Aplicabilidade Prática: macroindicador separado (tarefa+case), não altera o Engajamento
  * 7. Engajamento Final: Média dos 5 indicadores (1 a 5), POR CICLO
  */
 
@@ -188,6 +188,90 @@ function diasEntre(data1: string, data2: Date): number {
   return Math.ceil((d1.getTime() - data2.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function normalizeEventTitleBase(title?: string): string {
+  if (!title) return '';
+
+  let normalized = title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/["'`´“”‘’]/g, '')
+    .trim()
+    .replace(/[.,;:!?]+$/g, '');
+
+  // Remove sufixos comuns com nome do palestrante no final
+  // Ex.: ", com Cintia Gandarely" / " com a palestrante X"
+  normalized = normalized.replace(/\s*[,:;\-–—]?\s*com\s+(?:o\s+|a\s+)?(?:palestrante\s+)?[^,.!?;:()\[\]{}]+\s*$/i, '');
+
+  // Remover prefixos usuais de ciclo/aula no início
+  normalized = normalized.replace(/^\s*(\d{4}\s*[\/-]\s*\d{1,2})\s*[-–—:]\s*/g, '');
+  normalized = normalized.replace(/^\s*aula\s*\d+\s*[-–—:]\s*/g, '');
+
+  // Padronizar separadores/espaços e limpar pontuação final
+  normalized = normalized
+    .replace(/[–—-]/g, ' ')
+    .replace(/[.,;:!?()\[\]{}]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return normalized;
+}
+
+function eventDateKey(dataEvento?: Date): string {
+  if (!dataEvento) return 'sem-data';
+  const date = new Date(dataEvento);
+  if (Number.isNaN(date.getTime())) return 'sem-data';
+  return date.toISOString().slice(0, 10);
+}
+
+function eventScore(evento: EventRecord): number {
+  let score = 0;
+  if (evento.presenca === 'presente') score += 100;
+  if (evento.tipoEvento && evento.tipoEvento !== 'Evento') score += 10;
+  if (evento.tituloEvento) score += Math.min(20, normalizeEventTitleBase(evento.tituloEvento).length / 4);
+  if (evento.dataEvento) score += 5;
+  return score;
+}
+
+function deduplicarEventosParaIndicador(eventos: EventRecord[]): EventRecord[] {
+  const grupos = new Map<string, EventRecord>();
+
+  for (const evento of eventos) {
+    const baseTitle = normalizeEventTitleBase(evento.tituloEvento);
+    // CORREÇÃO DEFINITIVA: Deduplicar apenas pelo título base para eliminar fantasmas.
+    // Se o título for o mesmo, tratamos como o mesmo evento para o indicador.
+    const key = baseTitle || 'sem-titulo';
+    const atual = grupos.get(key);
+
+    if (!atual) {
+      grupos.set(key, evento);
+      continue;
+    }
+
+    // Se qualquer um dos duplicados tiver presença, o registro unificado deve ter presença.
+    if (evento.presenca === 'presente' && atual.presenca !== 'presente') {
+      grupos.set(key, evento);
+      continue;
+    }
+
+    const atualScore = eventScore(atual);
+    const novoScore = eventScore(evento);
+    if (novoScore > atualScore) {
+      grupos.set(key, evento);
+      continue;
+    }
+
+    // Desempate por data mais recente (se houver)
+    if (novoScore === atualScore) {
+      const atualDate = atual.dataEvento ? new Date(atual.dataEvento).getTime() : 0;
+      const novoDate = evento.dataEvento ? new Date(evento.dataEvento).getTime() : 0;
+      if (novoDate > atualDate) grupos.set(key, evento);
+    }
+  }
+
+  return Array.from(grupos.values());
+}
+
 // ============================================================
 // CALCULADOR PRINCIPAL
 // ============================================================
@@ -203,7 +287,8 @@ export function calcularIndicadoresCiclo(
   performance: PerformanceRecord[],
   compIdToCodigoMap: Map<number, string>,
   casesData: CaseSucessoData[],
-  hoje?: Date
+  hoje?: Date,
+  compIdToNomeMap?: Map<number, string>
 ): IndicadoresCiclo {
   const status = determinarStatusCiclo(ciclo.dataInicio, ciclo.dataFim, hoje);
   
@@ -222,7 +307,7 @@ export function calcularIndicadoresCiclo(
     return true;
   });
   
-  const eventosAluno = eventos.filter(e => {
+  const eventosAlunoRaw = eventos.filter(e => {
     if (e.idUsuario !== idUsuario) return false;
     // Se tem data do evento, filtrar pelo período do ciclo
     if (e.dataEvento) {
@@ -232,6 +317,7 @@ export function calcularIndicadoresCiclo(
     // Se não tem data, incluir (fallback para dados antigos sem data)
     return true;
   });
+  const eventosAluno = deduplicarEventosParaIndicador(eventosAlunoRaw);
   
   const performanceAluno = performance.filter(p => p.idUsuario === idUsuario);
   
@@ -254,7 +340,11 @@ export function calcularIndicadoresCiclo(
   let somaNotasProvas = 0;
   let provasRealizadas = 0;
   
-  for (const compId of ciclo.competenciaIds) {
+  // Ind. 2 e Ind. 3 usam APENAS competências obrigatórias (ciclo.competenciaIds).
+  // Competências opcionais NÃO entram no cálculo dos indicadores.
+  const compIdsParaCalculo = ciclo.competenciaIds;
+  
+  for (const compId of compIdsParaCalculo) {
     const codigo = compIdToCodigoMap.get(compId);
     const perfComp = performanceAluno.find(p => {
       if (codigo) {
@@ -282,12 +372,12 @@ export function calcularIndicadoresCiclo(
   // % competências/cursos finalizados por ciclo
   // Finalizado = todas as aulas disponíveis concluídas
   // ============================================================
-  let totalComps = ciclo.competenciaIds.length;
+  let totalComps = compIdsParaCalculo.length;
   let compsFinalizadas = 0;
   let compsEmAndamento = 0;
   const competenciasDetalhe: CompetenciaDetalhe[] = [];
   
-  for (const compId of ciclo.competenciaIds) {
+  for (const compId of compIdsParaCalculo) {
     const codigo = compIdToCodigoMap.get(compId);
     const perfComp = performanceAluno.find(p => {
       if (codigo) {
@@ -309,7 +399,7 @@ export function calcularIndicadoresCiclo(
     
     competenciasDetalhe.push({
       competenciaId: compId,
-      nome: perfComp?.nomeCompetencia || codigo || `Comp ${compId}`,
+      nome: perfComp?.nomeCompetencia || compIdToNomeMap?.get(compId) || codigo || `Comp ${compId}`,
       aulasConcluidas,
       aulasDisponiveis,
       notaAvaliacao,
@@ -337,7 +427,7 @@ export function calcularIndicadoresCiclo(
   // IND 5: Engajamento (Nota da Mentora)
   // Média das notas 0-100 por sessão
   // Nota original é 0-10, converter para 0-100
-  // BÔNUS: Se o aluno entregou o Case de Sucesso da trilha, +10% (limitado a 100)
+  // Não há bônus de case no engajamento
   // ============================================================
   const notasEngajamento = mentoriasAluno
     .filter(m => m.engajamento !== undefined && m.engajamento !== null)
@@ -351,8 +441,7 @@ export function calcularIndicadoresCiclo(
   
   // ============================================================
   // IND 6: Aplicabilidade Prática (Case de Sucesso)
-  // Campo INFORMATIVO apenas — NÃO entra na média dos indicadores
-  // Quem entrega o case recebe +10% no Ind. 5 (Engajamento), limitado a 100
+  // Campo separado — NÃO entra na média do Engajamento
   // ============================================================
   const isMacrocicloFinalizado = status === 'finalizado';
   const caseAluno = casesData.find(c => 
@@ -366,16 +455,12 @@ export function calcularIndicadoresCiclo(
     ind6_aplicabilidade = caseEntregue ? 100 : 0;
   }
   
-  // Aplicar bônus de +10% no Ind. 5 se o case foi entregue (limitado a 100)
-  let ind5_engajamento = ind5_engajamento_base;
-  if (caseEntregue && ind5_engajamento_base > 0) {
-    ind5_engajamento = Math.min(100, ind5_engajamento_base * 1.10);
-  }
+  const ind5_engajamento = ind5_engajamento_base;
   
   // ============================================================
   // IND 7: Engajamento Final
   // Média dos 5 indicadores (1 a 5), POR CICLO
-  // Case NÃO entra na média — é apenas bônus no Ind. 5
+  // Case NÃO entra na média do engajamento
   // ============================================================
   const somaIndicadores = ind1_webinars + ind2_avaliacoes + ind3_competencias + ind4_tarefas + ind5_engajamento;
   const numIndicadores = 5;
@@ -426,11 +511,13 @@ export function calcularIndicadoresAluno(
   compIdToCodigoMap: Map<number, string>,
   casesData: CaseSucessoData[],
   hoje?: Date,
-  macrociclo?: MacrocicloData
+  macrociclo?: MacrocicloData,
+  compIdToNomeMap?: Map<number, string>
 ): StudentIndicatorsV2 {
   // Filtrar registros do aluno
   const mentoriasAluno = mentorias.filter(m => m.idUsuario === idUsuario);
-  const eventosAluno = eventos.filter(e => e.idUsuario === idUsuario);
+  const eventosAlunoRaw = eventos.filter(e => e.idUsuario === idUsuario);
+  const eventosAluno = deduplicarEventosParaIndicador(eventosAlunoRaw);
   
   // Dados básicos
   const primeiroRegistro = mentoriasAluno[0] || eventosAluno[0];
@@ -438,7 +525,48 @@ export function calcularIndicadoresAluno(
   const empresa = primeiroRegistro?.empresa || 'Desconhecida';
   const turma = mentoriasAluno[0]?.turma || eventosAluno[0]?.turma;
   const trilha = mentoriasAluno[0]?.trilha || eventosAluno[0]?.trilha;
-  
+
+  // ============================================================
+  // REGRA: Sem PDI ativo (macrociclo ausente) = novo ciclo sem dados ainda
+  // Retornar todos os indicadores como zero para não contaminar médias
+  // com dados históricos do ciclo anterior
+  // ============================================================
+  if (!macrociclo) {
+    const zeroConsolidado: IndicadoresCiclo = {
+      cicloId: 0, nomeCiclo: 'Consolidado', trilhaNome: trilha || 'Geral',
+      status: 'em_andamento', dataInicio: '', dataFim: '',
+      ind1_webinars: 0, ind2_avaliacoes: 0, ind3_competencias: 0,
+      ind4_tarefas: 0, ind5_engajamento: 0, ind6_aplicabilidade: 0,
+      ind7_engajamentoFinal: 0,
+      detalhes: {
+        webinars: { total: 0, presentes: 0 },
+        avaliacoes: { total: 0, realizadas: 0, somaNotas: 0 },
+        competencias: { total: 0, finalizadas: 0, emAndamento: 0, competenciasDetalhe: [] },
+        tarefas: { total: 0, entregues: 0 },
+        engajamento: { sessoes: 0, somaNotas: 0 },
+        case: { entregue: false, obrigatorio: false },
+      },
+      classificacao: 'Inicial',
+    };
+    return {
+      idUsuario, nomeAluno, empresa, turma, trilha,
+      ciclosFinalizados: [], ciclosEmAndamento: [],
+      consolidado: zeroConsolidado,
+      participacaoMentorias: 0, atividadesPraticas: 0, engajamento: 0,
+      performanceCompetencias: 0, performanceAprendizado: 0,
+      participacaoEventos: 0, performanceGeral: 0,
+      classificacao: 'Inicial', notaFinal: 0,
+      totalMentorias: 0, mentoriasPresente: 0,
+      totalAtividades: 0, atividadesEntregues: 0,
+      totalEventos: 0, eventosPresente: 0,
+      totalCompetencias: 0, competenciasAprovadas: 0,
+      mediaEngajamentoRaw: 0,
+      engajamentoComponentes: { presenca: 0, atividades: 0, notaMentora: 0 },
+      ciclosFinalizadosLegacy: [], ciclosEmAndamentoLegacy: [],
+      alertaCasePendente: [],
+    };
+  }
+
   // ============================================================
   // IND.1, IND.4, IND.5: Calculados pelo MACROCICLO (período da jornada)
   // Não dependem dos microciclos, usam TODAS as sessões/eventos do período
@@ -491,11 +619,7 @@ export function calcularIndicadoresAluno(
   let macroInd5Base = macroTotalSessoesEng > 0
     ? (macroSomaEng / macroTotalSessoesEng) * 10
     : 0;
-  // Aplicar bônus de +10% se algum case foi entregue
-  const anyCaseEntregue = casesData.some(c => c.entregue);
-  const macroInd5 = anyCaseEntregue && macroInd5Base > 0
-    ? Math.round(Math.min(100, macroInd5Base * 1.10) * 100) / 100
-    : Math.round(macroInd5Base * 100) / 100;
+  const macroInd5 = Math.round(macroInd5Base * 100) / 100;
   
   // Calcular indicadores por ciclo (para Ind.2 e Ind.3 que dependem de competências)
   const todosCiclos: IndicadoresCiclo[] = [];
@@ -504,7 +628,7 @@ export function calcularIndicadoresAluno(
   
   for (const ciclo of ciclos) {
     const indicadoresCiclo = calcularIndicadoresCiclo(
-      idUsuario, ciclo, mentorias, eventos, performance, compIdToCodigoMap, casesData, hoje
+      idUsuario, ciclo, mentorias, eventos, performance, compIdToCodigoMap, casesData, hoje, compIdToNomeMap
     );
     
     if (indicadoresCiclo.status === 'futuro') continue; // Ignorar ciclos futuros
@@ -530,19 +654,22 @@ export function calcularIndicadoresAluno(
   //   (dependem das competências específicas de cada ciclo)
   // ============================================================
   
-  // Ciclos finalizados COM competências obrigatórias (para Ind.2 e Ind.3)
-  const ciclosFinalizadosComObrig = ciclosFinalizados
+  // Apenas ciclos com competências obrigatórias entram no cálculo do Ind.2 e Ind.3
+  const ciclosFinalizadosComComps = ciclosFinalizados
     .filter(c => {
       const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
-      return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
+      if (!cicloOriginal) return false;
+      // Incluir APENAS se tem obrigatórias
+      return cicloOriginal.competenciaIds.length > 0;
     });
   
-  // Consolidar Ind.2 e Ind.3 pelos microciclos (apenas os com competências obrigatórias)
-  const ciclosParaInd2Ind3 = ciclosFinalizadosComObrig.length > 0
-    ? ciclosFinalizadosComObrig
+  // Consolidar Ind.2 e Ind.3 pelos microciclos (apenas com competências obrigatórias)
+  const ciclosParaInd2Ind3 = ciclosFinalizadosComComps.length > 0
+    ? ciclosFinalizadosComComps
     : [...ciclosFinalizados, ...ciclosEmAndamento].filter(c => {
         const cicloOriginal = ciclos.find(co => co.nomeCiclo === c.nomeCiclo);
-        return cicloOriginal ? cicloOriginal.competenciaIds.length > 0 : true;
+        if (!cicloOriginal) return false;
+        return cicloOriginal.competenciaIds.length > 0;
       });
   
   const consolidadoMicro = consolidarCiclos(ciclosParaInd2Ind3, trilha || 'Geral');
@@ -881,7 +1008,8 @@ export function calcularIndicadoresTodosAlunos(
   compIdToCodigoMap: Map<number, string>,
   casesData: CaseSucessoData[],
   hoje?: Date,
-  macrocicloPorAluno?: Map<string, MacrocicloData>
+  macrocicloPorAluno?: Map<string, MacrocicloData>,
+  compIdToNomeMap?: Map<number, string>
 ): StudentIndicatorsV2[] {
   // Coletar todos os IDs únicos
   const idsUsuarios = new Set<string>();
@@ -897,7 +1025,7 @@ export function calcularIndicadoresTodosAlunos(
     const macrocicloAluno = macrocicloPorAluno?.get(idUsuario);
     
     const indicadores = calcularIndicadoresAluno(
-      idUsuario, mentorias, eventos, performance, ciclosAluno, compIdToCodigoMap, casesAluno, hoje, macrocicloAluno
+      idUsuario, mentorias, eventos, performance, ciclosAluno, compIdToCodigoMap, casesAluno, hoje, macrocicloAluno, compIdToNomeMap
     );
     
     resultados.push(indicadores);

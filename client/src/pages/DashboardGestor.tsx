@@ -435,7 +435,7 @@ export default function DashboardGestor() {
                     <SelectItem value="todos">Todos os alunos</SelectItem>
                     {availableAlunos.map(a => (
                       <SelectItem key={a.idUsuario} value={a.idUsuario}>
-                        {a.nomeAluno} ({a.notaFinal.toFixed(1)})
+                        {a.nomeAluno} ({(a?.notaFinal ?? 0).toFixed(1)})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -480,7 +480,7 @@ export default function DashboardGestor() {
               <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{filteredKPIs.mediaNotaFinal.toFixed(1)}</div>
+              <div className="text-2xl font-bold">{(filteredKPIs?.mediaNotaFinal ?? 0).toFixed(1)}</div>
               <p className="text-xs text-muted-foreground">De 0 a 10 pontos</p>
             </CardContent>
           </Card>
@@ -496,9 +496,9 @@ export default function DashboardGestor() {
             <CardContent>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-green-600">
-                  {filteredKPIs.melhorAluno ? filteredKPIs.melhorAluno.notaFinal.toFixed(1) : '0.0'}
+                  {filteredKPIs?.melhorAluno ? (filteredKPIs.melhorAluno?.notaFinal ?? 0).toFixed(1) : '0.0'}
                 </span>
-                <span className="text-sm text-muted-foreground">/ {META_EXCELENCIA.toFixed(1)}</span>
+                <span className="text-sm text-muted-foreground">/ {(META_EXCELENCIA ?? 0).toFixed(1)}</span>
               </div>
               <p className="text-xs text-muted-foreground truncate" title={filteredKPIs.melhorAluno?.nomeAluno}>
                 {filteredKPIs.melhorAluno ? filteredKPIs.melhorAluno.nomeAluno : 'Nenhum aluno'}
@@ -522,7 +522,7 @@ export default function DashboardGestor() {
                     Engajamento Final (Média da Empresa)
                     <InfoTooltip text={INDICADORES_INFO.ind7.explicacao + " Fórmula: " + INDICADORES_INFO.ind7.formula} />
                   </p>
-                  <p className="text-3xl font-bold text-[#0A1E3E]">{filteredKPIs.mediaInd7.toFixed(0)}%</p>
+                          <p className="text-3xl font-bold text-[#0A1E3E]">{(filteredKPIs?.mediaInd7 ?? 0).toFixed(0)}%</p>
                 </div>
               </div>
             </div>
@@ -531,42 +531,42 @@ export default function DashboardGestor() {
               {isFiltered ? "Média dos alunos filtrados" : "Média de todos os alunos da empresa"} — Apenas ciclos finalizados
             </p>
             
-            {/* Mini resumo dos 5 indicadores V2 + bônus case — idêntico ao DashboardAluno */}
+            {/* Mini resumo dos 5 indicadores V2 + aplicabilidade separada */}
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mt-4">
               <div className="text-center p-2 bg-blue-50 rounded">
-                <p className="text-lg font-bold text-blue-700">{filteredKPIs.mediaInd1.toFixed(0)}%</p>
+                <p className="text-lg font-bold text-blue-700">{(filteredKPIs?.mediaInd1 ?? 0).toFixed(0)}%</p>
                 <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
                   Webinars <InfoTooltip text={INDICADORES_INFO.ind1.explicacao + " | Fórmula: " + INDICADORES_INFO.ind1.formula} />
                 </p>
               </div>
               <div className="text-center p-2 bg-red-50 rounded">
-                <p className="text-lg font-bold text-red-700">{filteredKPIs.mediaInd2.toFixed(0)}%</p>
+                <p className="text-lg font-bold text-red-700">{(filteredKPIs?.mediaInd2 ?? 0).toFixed(0)}%</p>
                 <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
                   Avaliações <InfoTooltip text={INDICADORES_INFO.ind2.explicacao + " | Fórmula: " + INDICADORES_INFO.ind2.formula} />
                 </p>
               </div>
               <div className="text-center p-2 bg-purple-50 rounded">
-                <p className="text-lg font-bold text-purple-700">{filteredKPIs.mediaInd3.toFixed(0)}%</p>
+                <p className="text-lg font-bold text-purple-700">{(filteredKPIs?.mediaInd3 ?? 0).toFixed(0)}%</p>
                 <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
                   Competências <InfoTooltip text={INDICADORES_INFO.ind3.explicacao + " | Fórmula: " + INDICADORES_INFO.ind3.formula} />
                 </p>
               </div>
               <div className="text-center p-2 bg-emerald-50 rounded">
-                <p className="text-lg font-bold text-emerald-700">{filteredKPIs.mediaInd4.toFixed(0)}%</p>
+                <p className="text-lg font-bold text-emerald-700">{(filteredKPIs?.mediaInd4 ?? 0).toFixed(0)}%</p>
                 <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
                   Tarefas <InfoTooltip text={INDICADORES_INFO.ind4.explicacao + " | Fórmula: " + INDICADORES_INFO.ind4.formula} />
                 </p>
               </div>
               <div className="text-center p-2 bg-amber-50 rounded">
-                <p className="text-lg font-bold text-amber-700">{filteredKPIs.mediaInd5.toFixed(0)}%</p>
+                <p className="text-lg font-bold text-amber-700">{(filteredKPIs?.mediaInd5 ?? 0).toFixed(0)}%</p>
                 <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
                   Engajamento <InfoTooltip text={INDICADORES_INFO.ind5.explicacao + " | Fórmula: " + INDICADORES_INFO.ind5.formula} />
                 </p>
               </div>
               <div className="text-center p-2 bg-green-50 rounded">
-                <p className="text-lg font-bold text-green-700">{filteredKPIs.mediaInd6.toFixed(0)}%</p>
+                <p className="text-lg font-bold text-green-700">{(filteredKPIs?.mediaInd6 ?? 0).toFixed(0)}%</p>
                 <p className="text-[10px] text-gray-500 flex items-center justify-center gap-0.5">
-                  Case <InfoTooltip text={INDICADORES_INFO.ind6.explicacao} />
+                  Aplicabilidade <InfoTooltip text={INDICADORES_INFO.ind6.explicacao} />
                 </p>
               </div>
             </div>
@@ -598,7 +598,7 @@ export default function DashboardGestor() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-[#0A1E3E]">{turmaCode}</p>
                           <p className="text-xs text-gray-500">{trilhaNome}</p>
-                          <p className="text-2xl font-bold text-[#0A1E3E]">{turma.mediaInd7.toFixed(0)}%</p>
+                          <p className="text-2xl font-bold text-[#0A1E3E]">{(turma?.mediaInd7 ?? 0).toFixed(0)}%</p>
                         </div>
                         <Badge variant="outline" className="text-xs">
                           {turma.totalAlunos} alunos
@@ -607,27 +607,27 @@ export default function DashboardGestor() {
                       <Progress value={turma.mediaInd7} className="h-2 mb-3" />
                       <div className="grid grid-cols-3 md:grid-cols-6 gap-1">
                         <div className="text-center p-1 bg-blue-50 rounded">
-                          <p className="text-sm font-bold text-blue-700">{turma.mediaInd1.toFixed(0)}%</p>
+                          <p className="text-sm font-bold text-blue-700">{(turma?.mediaInd1 ?? 0).toFixed(0)}%</p>
                           <p className="text-[9px] text-gray-500">Webinars</p>
                         </div>
                         <div className="text-center p-1 bg-red-50 rounded">
-                          <p className="text-sm font-bold text-red-700">{turma.mediaInd2.toFixed(0)}%</p>
+                          <p className="text-sm font-bold text-red-700">{(turma?.mediaInd2 ?? 0).toFixed(0)}%</p>
                           <p className="text-[9px] text-gray-500">Avaliações</p>
                         </div>
                         <div className="text-center p-1 bg-purple-50 rounded">
-                          <p className="text-sm font-bold text-purple-700">{turma.mediaInd3.toFixed(0)}%</p>
+                          <p className="text-sm font-bold text-purple-700">{(turma?.mediaInd3 ?? 0).toFixed(0)}%</p>
                           <p className="text-[9px] text-gray-500">Competências</p>
                         </div>
                         <div className="text-center p-1 bg-emerald-50 rounded">
-                          <p className="text-sm font-bold text-emerald-700">{turma.mediaInd4.toFixed(0)}%</p>
+                          <p className="text-sm font-bold text-emerald-700">{(turma?.mediaInd4 ?? 0).toFixed(0)}%</p>
                           <p className="text-[9px] text-gray-500">Tarefas</p>
                         </div>
                         <div className="text-center p-1 bg-amber-50 rounded">
-                          <p className="text-sm font-bold text-amber-700">{turma.mediaInd5.toFixed(0)}%</p>
+                          <p className="text-sm font-bold text-amber-700">{(turma?.mediaInd5 ?? 0).toFixed(0)}%</p>
                           <p className="text-[9px] text-gray-500">Engajamento</p>
                         </div>
                         <div className="text-center p-1 bg-green-50 rounded">
-                          <p className="text-sm font-bold text-green-700">{turma.mediaInd6.toFixed(0)}%</p>
+                          <p className="text-sm font-bold text-green-700">{(turma?.mediaInd6 ?? 0).toFixed(0)}%</p>
                           <p className="text-[9px] text-gray-500">Case</p>
                         </div>
                       </div>
@@ -711,7 +711,7 @@ export default function DashboardGestor() {
                               <div className={`h-full ${bgCor} rounded-full transition-all`} style={{ width: `${(nota / 10) * 100}%` }} />
                             </div>
                           </div>
-                          <span className={`font-bold text-lg min-w-[3rem] text-right ${cor}`}>{nota.toFixed(1)}</span>
+                          <span className={`font-bold text-lg min-w-[3rem] text-right ${cor}`}>{(nota ?? 0).toFixed(1)}</span>
                         </div>
                       </div>
                     );
@@ -977,7 +977,7 @@ export default function DashboardGestor() {
                       </div>
                     </div>
                     <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
-                      <p className="font-medium text-green-700">Bônus: {INDICADORES_INFO.ind6.nome}</p>
+                      <p className="font-medium text-green-700">Aplicabilidade: {INDICADORES_INFO.ind6.nome}</p>
                       <p className="text-xs text-muted-foreground">{INDICADORES_INFO.ind6.explicacao}</p>
                     </div>
                     <div className="border-t pt-4">
@@ -1067,7 +1067,7 @@ export default function DashboardGestor() {
                             aluno.notaFinal >= 7 ? 'text-green-600' : 
                             aluno.notaFinal >= 5 ? 'text-yellow-600' : 'text-red-500'
                           }`}>
-                            {aluno.notaFinal.toFixed(1)}
+                            {(aluno?.notaFinal ?? 0).toFixed(1)}
                           </p>
                           <Badge variant="outline" className="text-xs">
                             {aluno.classificacao}

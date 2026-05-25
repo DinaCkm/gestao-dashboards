@@ -82,7 +82,7 @@ export default function PorEmpresa() {
                 <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{(visaoGeral.visaoGeral.mediaInd7 || visaoGeral.visaoGeral.mediaPerformanceGeral || visaoGeral.visaoGeral.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
+                <div className="text-2xl font-bold">{((visaoGeral?.visaoGeral?.mediaInd7 || visaoGeral?.visaoGeral?.mediaPerformanceGeral || (visaoGeral?.visaoGeral?.mediaNotaFinal ?? 0) * 10 || 0) ?? 0).toFixed(0)}%</div>
                 <p className="text-xs text-muted-foreground">
                   Média dos 5 indicadores
                 </p>
@@ -98,7 +98,7 @@ export default function PorEmpresa() {
                 <div className="text-2xl font-bold text-green-600">{visaoGeral.visaoGeral.alunosExcelencia}</div>
                 <p className="text-xs text-muted-foreground">
                   {visaoGeral.visaoGeral.totalAlunos > 0 
-                    ? `${((visaoGeral.visaoGeral.alunosExcelencia / visaoGeral.visaoGeral.totalAlunos) * 100).toFixed(0)}% do total`
+                    ? `${(((visaoGeral?.visaoGeral?.alunosExcelencia ?? 0) / (visaoGeral?.visaoGeral?.totalAlunos ?? 1)) * 100).toFixed(0)}% do total`
                     : '0% do total'}
                 </p>
               </CardContent>
@@ -139,11 +139,11 @@ export default function PorEmpresa() {
                               </div>
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Engajamento:</span>
-                                <span className="font-medium">{(empresaData.mediaInd7 || empresaData.mediaPerformanceGeral || empresaData.mediaNotaFinal * 10 || 0).toFixed(0)}%</span>
+                                <span className="font-medium">{((empresaData?.mediaInd7 || empresaData?.mediaPerformanceGeral || (empresaData?.mediaNotaFinal ?? 0) * 10 || 0) ?? 0).toFixed(0)}%</span>
                               </div>
                               <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Webinars:</span>
-                                <span className="font-medium">{(empresaData.mediaInd1 || empresaData.mediaParticipacaoMentorias).toFixed(0)}%</span>
+                                <span className="font-medium">{((empresaData?.mediaInd1 || empresaData?.mediaParticipacaoMentorias) ?? 0).toFixed(0)}%</span>
                               </div>
                             </div>
                           ) : (

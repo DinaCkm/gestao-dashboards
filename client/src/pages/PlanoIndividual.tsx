@@ -20,8 +20,8 @@ import { SelectContentNoPortal } from "@/components/ui/select";
 import {
   Search, Plus, Trash2, BookOpen, Target, CheckCircle2, Clock, AlertCircle,
   Users, Building2, TrendingUp, Award, BarChart3, Calendar, Edit2, ChevronRight,
-  Circle, ChevronDown, Flag, User, Loader2, Library, Sparkles, Edit3,
-  MessageSquare, XCircle, FileText, Snowflake, Play, ArrowLeft, ListChecks, AlertTriangle
+  Circle, ChevronDown, ChevronUp, Flag, User, Loader2, Library, Sparkles, Edit3,
+  MessageSquare, XCircle, FileText, Snowflake, Play, ArrowLeft, ListChecks, AlertTriangle, Gauge, Mail, History
 } from "lucide-react";
 import DualIndicators from "@/components/DualIndicators";
 import EditAssessmentDialog from "@/components/EditAssessmentDialog";
@@ -212,8 +212,19 @@ function PlanoContent() {
     enabled: showAddMetaDialog
   });
 
+  // Resumo do plano do aluno (cursos, sessões, webinars)
+  const { data: resumoPlano } = trpc.planoIndividual.resumoPlanoAluno.useQuery(
+    { alunoId: selectedAluno! },
+    { enabled: !!selectedAluno }
+  );
   // DISC
   const { data: discResultado } = trpc.disc.resultado.useQuery(
+    { alunoId: selectedAluno! },
+    { enabled: !!selectedAluno }
+  );
+
+  // Autopercepção de competências
+  const { data: autopercepcoesData = [] } = (trpc as any).autopercepção.porAluno.useQuery(
     { alunoId: selectedAluno! },
     { enabled: !!selectedAluno }
   );
@@ -289,10 +300,20 @@ function PlanoContent() {
     onError: (err) => toast.error("Erro ao gerar sugestão: " + err.message),
   });
 
+  // Enviar P.D.I. por e-mail (instrução 10b)
+  const enviarPdiEmailMutation = trpc.planoIndividual.enviarPorEmail.useMutation({
+    onSuccess: (data: any) => toast.success(`P.D.I. enviado com sucesso para ${data.email}`),
+    onError: (err: any) => toast.error(`Erro ao enviar e-mail: ${err.message}`),
+  });
+
   // Criar assessment mutation
   const criarAssessmentMutation = trpc.assessment.criar.useMutation({
-    onSuccess: () => {
-      toast.success("Assessment/PDI criado com sucesso!");
+    onSuccess: (data: any) => {
+      if (data?.addedToExisting) {
+        toast.success(`${data.addedCount} competência(s) adicionada(s) à trilha existente!`);
+      } else {
+        toast.success("Assessment/PDI criado com sucesso!");
+      }
       refetchAssessments(); refetchPlano(); refetchAlunos();
       resetNovoAssessmentForm();
     },
@@ -459,50 +480,72 @@ function PlanoContent() {
     else if (selectedAlunoData && (selectedAlunoData as any).consultorId) setNovoConsultorId(String((selectedAlunoData as any).consultorId));
     setShowNovoAssessment(true);
   }
+  // FIX: Detectar trilhas que já existem para este aluno (ativas)
+  const existingTrilhaIds = new Set(
+    assessments
+      .filter((a: any) => a.status === 'ativo')
+      .map((a: any) => a.trilhaId)
+  );
+  const novoTrilhaExists = novoTrilhaId ? existingTrilhaIds.has(parseInt(novoTrilhaId)) : false;
+  const existingCompetenciaIdsNovo = new Set(
+    assessments
+      .filter((a: any) => a.status === 'ativo' && a.trilhaId === parseInt(novoTrilhaId))
+      .flatMap((a: any) => (a.competencias || []).map((c: any) => c.competenciaId))
+  );
+
   // Sync competencias when trilha changes
   const compsByTrilhaKey = useMemo(() => compsByTrilha.map((c: any) => c.id).join(","), [compsByTrilha]);
   useEffect(() => {
     if (!compsByTrilhaKey) { setNovoCompConfig([]); return; }
-    setNovoCompConfig(compsByTrilha.map((c: any) => ({
-      competenciaId: c.id,
-      nome: c.nome || "Sem nome",
-      selected: true,
-      peso: "obrigatoria" as const,
-      notaCorte: "80",
-      microInicio: "",
-      microTermino: "",
-    })));
+    setNovoCompConfig(compsByTrilha.map((c: any) => {
+      const alreadyExists = existingCompetenciaIdsNovo.has(c.id);
+      return {
+        competenciaId: c.id,
+        nome: c.nome || "Sem nome",
+        selected: !alreadyExists,
+        peso: "obrigatoria" as const,
+        notaCorte: "80",
+        microInicio: "",
+        microTermino: "",
+      };
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [compsByTrilhaKey]);
+  }, [compsByTrilhaKey, novoTrilhaId]);
 
   function handleSubmitNovoAssessment() {
-    if (!selectedAluno || !novoTrilhaId || !novoMacroInicio || !novoMacroTermino) {
-      toast.error("Preencha a trilha e as datas da Macro Jornada"); return;
+    if (!selectedAluno || !novoTrilhaId) {
+      toast.error("Selecione uma trilha"); return;
     }
-    if (novoMacroInicio >= novoMacroTermino) {
+    if (!novoTrilhaExists && (!novoMacroInicio || !novoMacroTermino)) {
+      toast.error("Preencha as datas da Macro Jornada"); return;
+    }
+    if (!novoTrilhaExists && novoMacroInicio >= novoMacroTermino) {
       toast.error("Data de início deve ser anterior à data de término"); return;
     }
     const selectedComps = novoCompConfig.filter(c => c.selected);
     if (selectedComps.length === 0) {
       toast.error("Selecione pelo menos uma competência"); return;
     }
-    for (const comp of selectedComps) {
-      if (comp.microInicio && comp.microInicio < novoMacroInicio) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`); return;
-      }
-      if (comp.microTermino && comp.microTermino > novoMacroTermino) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`); return;
+    if (!novoTrilhaExists) {
+      for (const comp of selectedComps) {
+        if (comp.microInicio && comp.microInicio < novoMacroInicio) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`); return;
+        }
+        if (comp.microTermino && comp.microTermino > novoMacroTermino) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`); return;
+        }
       }
     }
+    const effectiveMacroInicio = novoTrilhaExists ? '2000-01-01' : novoMacroInicio;
+    const effectiveMacroTermino = novoTrilhaExists ? '2099-12-31' : novoMacroTermino;
     criarAssessmentMutation.mutate({
       alunoId: selectedAluno,
       trilhaId: parseInt(novoTrilhaId),
       turmaId: (selectedAlunoData as any)?.turmaId || null,
       programId: (selectedAlunoData as any)?.programId || null,
       consultorId: novoConsultorId ? parseInt(novoConsultorId) : null,
-      macroInicio: novoMacroInicio,
-      macroTermino: novoMacroTermino,
-      // totalSessoesPrevistas removido - definido pelo admin no contrato
+      macroInicio: effectiveMacroInicio,
+      macroTermino: effectiveMacroTermino,
       competencias: selectedComps.map(c => ({
         competenciaId: c.competenciaId,
         peso: c.peso,
@@ -748,7 +791,7 @@ function PlanoContent() {
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg font-bold">{selectedAlunoData?.name}</h2>
                       <p className="text-sm text-muted-foreground">
-                        ID: {selectedAlunoData?.externalId} | {selectedAlunoData?.competenciasObrigatorias} competências obrigatórias | {selectedAlunoData?.competenciasConcluidas} concluídas
+                        ID: {selectedAlunoData?.externalId} | {selectedAlunoData?.competenciasObrigatorias} competências obrigatórias
                       </p>
                       <div className="flex items-center gap-3 mt-1">
                         <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">
@@ -775,103 +818,26 @@ function PlanoContent() {
                         })()}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => setSelectedAluno(null)}>Trocar aluno</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* ===== SEÇÃO 1: CONTRATO ===== */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-base">Contrato</CardTitle>
-                    </div>
-                    {isAdmin && (
-                      <Button size="sm" variant="outline" onClick={() => { resetContratoForm(); setShowContratoDialog(true); }}>
-                        <Plus className="h-4 w-4 mr-1" /> Novo Contrato
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 border-blue-300 text-blue-700 hover:bg-blue-50"
+                        onClick={() => { if (selectedAluno) enviarPdiEmailMutation.mutate({ alunoId: selectedAluno }); }}
+                        disabled={enviarPdiEmailMutation.isPending || !selectedAluno}
+                        title="Envia o P.D.I. completo por e-mail ao aluno"
+                      >
+                        {enviarPdiEmailMutation.isPending
+                          ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                          : <><Mail className="h-4 w-4" /> Enviar P.D.I. por e-mail</>}
                       </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {contratos.length === 0 ? (
-                    (() => {
-                      const cInicio = (selectedAlunoData as any)?.contratoInicio;
-                      const cFim = (selectedAlunoData as any)?.contratoFim;
-                      const sessoes = (selectedAlunoData as any)?.totalSessoesContratadas;
-                      const tipoM = (selectedAlunoData as any)?.tipoMentoria;
-                      const hasInlineData = cInicio || cFim || sessoes || tipoM;
-                      return hasInlineData ? (
-                        <div className="space-y-3">
-                          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                            <p className="text-xs font-medium text-amber-700 mb-3">Dados do cadastro do aluno (nenhum contrato formal registrado)</p>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-primary">{cInicio ? new Date(cInicio).toLocaleDateString('pt-BR') : '—'}</p>
-                                <p className="text-xs text-muted-foreground">Início</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-primary">{cFim ? new Date(cFim).toLocaleDateString('pt-BR') : '—'}</p>
-                                <p className="text-xs text-muted-foreground">Término</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-emerald-600">{sessoes || '—'}</p>
-                                <p className="text-xs text-muted-foreground">Sessões Contratadas</p>
-                              </div>
-                              <div className="text-center">
-                                <p className="text-lg font-bold text-blue-600">{tipoM === 'grupo' ? 'Em Grupo' : tipoM === 'individual' ? 'Individual' : '—'}</p>
-                                <p className="text-xs text-muted-foreground">Tipo Mentoria</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">Nenhum contrato registrado</p>
-                      );
-                    })()
-                  ) : (
-                    <div className="space-y-3">
-                      {/* Saldo resumo */}
-                      {saldoSessoes && (
-                        <div className="grid grid-cols-3 gap-3 mb-3">
-                          <div className="p-3 bg-primary/5 rounded-lg text-center">
-                            <p className="text-xl font-bold text-primary">{saldoSessoes.totalContratadas}</p>
-                            <p className="text-xs text-muted-foreground">Contratadas</p>
-                          </div>
-                          <div className="p-3 bg-green-50 rounded-lg text-center">
-                            <p className="text-xl font-bold text-green-600">{saldoSessoes.sessoesRealizadas}</p>
-                            <p className="text-xs text-muted-foreground">Realizadas</p>
-                          </div>
-                          <div className="p-3 bg-secondary/10 rounded-lg text-center">
-                            <p className="text-xl font-bold text-secondary">{saldoSessoes.saldoRestante}</p>
-                            <p className="text-xs text-muted-foreground">Saldo</p>
-                          </div>
-                        </div>
-                      )}
-                      {contratos.map((c: any) => (
-                        <div key={c.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-sm font-medium">{formatDate(c.periodoInicio)} — {formatDate(c.periodoTermino)}</span>
-                              {c.totalSessoesContratadas && <Badge variant="outline" className="text-xs">{c.totalSessoesContratadas} sessões</Badge>}
-
-                            </div>
-                            {c.observacoes && <p className="text-xs text-muted-foreground mt-1">{c.observacoes}</p>}
-                          </div>
-                          {isAdmin && (
-                            <div className="flex gap-1 shrink-0">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditContrato(c)}><Edit2 className="h-4 w-4" /></Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500" onClick={() => { if (confirm("Excluir este contrato?")) excluirContratoMutation.mutate({ id: c.id }); }}><Trash2 className="h-4 w-4" /></Button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      <Button variant="outline" size="sm" onClick={() => setSelectedAluno(null)}>Trocar aluno</Button>
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
+
+              {/* ===== SEÇÃO 1: CONTRATO — REMOVIDA (instrução 02) ===== */}
 
               {/* ===== SEÇÃO 2: JORNADA / ASSESSMENT PDI ===== */}
               <Card>
@@ -881,9 +847,7 @@ function PlanoContent() {
                       <Calendar className="h-5 w-5 text-primary" />
                       <CardTitle className="text-base">Jornada / Assessment PDI</CardTitle>
                     </div>
-                    <Button size="sm" variant="outline" onClick={openNovoAssessment}>
-                      <Plus className="h-4 w-4 mr-1" /> Novo Assessment
-                    </Button>
+
                   </div>
                   <CardDescription>Trilhas, competências vinculadas, níveis e metas por ciclo</CardDescription>
                 </CardHeader>
@@ -903,16 +867,18 @@ function PlanoContent() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {assessments.map((ass: any) => (
+                      {/* PDIs ATIVOS — ciclo atual, exibidos primeiro */}
+                      {assessments.filter((a: any) => a.status === 'ativo').map((ass: any) => (
                         <div key={ass.id} className="border rounded-lg overflow-hidden">
-                          {/* Assessment header */}
                           <div className="p-4 bg-muted/30 flex items-center justify-between">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  PDI {String(ass.numeroPdi ?? 1).padStart(3, '0')}
+                                </span>
                                 <h4 className="font-semibold text-sm">{ass.trilhaNome || "Trilha"}</h4>
-                                <Badge className={ass.status === 'ativo' ? 'bg-green-500' : ass.status === 'congelado' ? 'bg-blue-400' : 'bg-gray-400'}>
-                                  {ass.status === 'ativo' ? <Play className="h-3 w-3 mr-1" /> : ass.status === 'congelado' ? <Snowflake className="h-3 w-3 mr-1" /> : null}
-                                  {ass.status}
+                                <Badge className="bg-green-500">
+                                  <Play className="h-3 w-3 mr-1" /> ativo
                                 </Badge>
                                 {ass.consultorNome && <span className="text-xs text-muted-foreground">Mentora: {ass.consultorNome}</span>}
                               </div>
@@ -922,11 +888,7 @@ function PlanoContent() {
                                 <span>{(ass.competencias || []).length} competências</span>
                               </div>
                             </div>
-                            <Button variant="outline" size="sm" onClick={() => setEditAssessment(ass)}>
-                              <Edit2 className="h-4 w-4 mr-1" /> Editar
-                            </Button>
                           </div>
-                          {/* Competencias table */}
                           {(ass.competencias || []).length > 0 && (
                             <div className="overflow-x-auto">
                               <Table>
@@ -963,12 +925,92 @@ function PlanoContent() {
                           )}
                         </div>
                       ))}
+
+                      {/* PDIs CONGELADOS — ciclos anteriores, colapsados por padrão */}
+                      {assessments.filter((a: any) => a.status === 'congelado').length > 0 && (() => {
+                        const congelados = assessments.filter((a: any) => a.status === 'congelado');
+                        return (
+                          <details className="group">
+                            <summary className="cursor-pointer list-none">
+                              <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                                <History className="h-4 w-4 text-gray-500" />
+                                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                                  Ciclos Anteriores — PDIs Congelados ({congelados.length})
+                                </span>
+                                <ChevronDown className="h-4 w-4 text-gray-400 ml-auto group-open:hidden" />
+                                <ChevronUp className="h-4 w-4 text-gray-400 ml-auto hidden group-open:block" />
+                              </div>
+                            </summary>
+                            <div className="mt-2 space-y-3 pl-2 border-l-2 border-gray-200 dark:border-gray-700">
+                              {congelados.map((ass: any) => (
+                                <div key={ass.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden opacity-80">
+                                  <div className="p-4 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-mono text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                                          PDI {String(ass.numeroPdi ?? 1).padStart(3, '0')}
+                                        </span>
+                                        <h4 className="font-semibold text-sm text-gray-600 dark:text-gray-400">{ass.trilhaNome || "Trilha"}</h4>
+                                        <Badge className="bg-gray-400 text-white text-xs">
+                                          <Snowflake className="h-3 w-3 mr-1" /> Ciclo Anterior — PDI Congelado
+                                        </Badge>
+                                        {ass.congeladoEm && (
+                                          <span className="text-xs text-gray-400">Congelado em {formatDate(ass.congeladoEm)}</span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-400">
+                                        <span>Macro: {formatDate(ass.macroInicio)} — {formatDate(ass.macroTermino)}</span>
+                                        <span>{(ass.competencias || []).length} competências</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {(ass.competencias || []).length > 0 && (
+                                    <div className="overflow-x-auto">
+                                      <Table>
+                                        <TableHeader>
+                                          <TableRow className="bg-gray-50 dark:bg-gray-900">
+                                            <TableHead className="text-xs text-gray-400">Competência</TableHead>
+                                            <TableHead className="text-xs w-20 text-gray-400">Peso</TableHead>
+                                            <TableHead className="text-xs w-20 text-gray-400">Nível</TableHead>
+                                            <TableHead className="text-xs w-20 text-gray-400">Meta Final</TableHead>
+                                            <TableHead className="text-xs w-40 text-gray-400">Micro Jornada</TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {(ass.competencias || []).map((comp: any) => (
+                                            <TableRow key={comp.id} className="opacity-70">
+                                              <TableCell className="text-sm font-medium text-gray-500">{comp.competenciaNome}</TableCell>
+                                              <TableCell>
+                                                <Badge variant={comp.peso === 'obrigatoria' ? 'default' : 'outline'} className="text-xs opacity-60">
+                                                  {comp.peso === 'obrigatoria' ? 'Obrig.' : 'Opc.'}
+                                                </Badge>
+                                              </TableCell>
+                                              <TableCell className="text-sm text-gray-500">{comp.nivelAtualEfetivo ?? comp.nivelAtual ?? "—"}%</TableCell>
+                                              <TableCell className="text-sm text-gray-500">{comp.metaFinal ?? "—"}%</TableCell>
+                                              <TableCell className="text-xs text-gray-400">
+                                                {comp.microInicio || comp.microTermino
+                                                  ? `${formatDate(comp.microInicio)} — ${formatDate(comp.microTermino)}`
+                                                  : "—"}
+                                              </TableCell>
+                                            </TableRow>
+                                          ))}
+                                        </TableBody>
+                                      </Table>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        );
+                      })()}
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              {/* ===== SEÇÃO 3: COMPETÊNCIAS DO PLANO ===== */}
+              {/* ===== SEÇÃO 3: COMPETÊNCIAS DO PLANO — OCULTA (instrução 04) ===== */}
+              {false && (
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -1076,6 +1118,8 @@ function PlanoContent() {
                 </CardContent>
               </Card>
 
+              )}
+
               {/* ===== SEÇÃO 4: DISC ===== */}
               {discResultado && (
                 <Card className="border-secondary/30 bg-gradient-to-r from-secondary/5 to-transparent">
@@ -1096,7 +1140,7 @@ function PlanoContent() {
                           <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden">
                             <div className={`h-full rounded-full ${dim.color}`} style={{ width: `${Math.min(Number(dim.score), 100)}%` }} />
                           </div>
-                          <div className="text-sm font-bold mt-1">{Number(dim.score).toFixed(0)}%</div>
+                          <div className="text-sm font-bold mt-1">{(Number(dim?.score ?? 0) ?? 0).toFixed(0)}%</div>
                         </div>
                       ))}
                     </div>
@@ -1110,58 +1154,101 @@ function PlanoContent() {
                 </Card>
               )}
 
-              {/* ===== SEÇÃO 6: INDICADORES DUAIS ===== */}
-              {metasResumo && (
-                <DualIndicators
-                  engajamento={performanceFiltrada?.indicadoresV2?.consolidado?.ind7_engajamentoFinal ?? performanceFiltrada?.indicadores?.performanceGeral ?? 0}
-                  desenvolvimento={metasResumo.percentual}
-                  engajamentoDetalhes={performanceFiltrada?.indicadoresV2?.consolidado ? {
-                    ind1_webinars: performanceFiltrada.indicadoresV2.consolidado.ind1_webinars,
-                    ind2_avaliacoes: performanceFiltrada.indicadoresV2.consolidado.ind2_avaliacoes,
-                    ind3_competencias: performanceFiltrada.indicadoresV2.consolidado.ind3_competencias,
-                    ind4_tarefas: performanceFiltrada.indicadoresV2.consolidado.ind4_tarefas,
-                    ind5_engajamento: performanceFiltrada.indicadoresV2.consolidado.ind5_engajamento,
-                  } : undefined}
-                  desenvolvimentoDetalhes={{ total: metasResumo.total, cumpridas: metasResumo.cumpridas }}
-                />
-              )}
+              {/* ===== SEÇÃO 6: INDICADORES DUAIS — OCULTA (instrução 06) ===== */}
 
-              {/* ===== SEÇÃO 7: METAS DE DESENVOLVIMENTO ===== */}
-              <Card>
+              {/* ===== SEÇÃO 5: AUTOPERCEPÇÃO DE COMPETÊNCIAS (instrução 08b) ===== */}
+              {autopercepcoesData.length > 0 && competencias && trilhas && (() => {
+                const TRILHAS_BASE = ["Basic", "Essential", "Master"];
+                const notaLabels: Record<number, string> = {
+                  1: "Preciso desenvolver muito",
+                  2: "Preciso desenvolver",
+                  3: "Razoável",
+                  4: "Bom domínio",
+                  5: "Domino com excelência",
+                };
+                const notaCores: Record<number, string> = {
+                  1: "bg-red-500", 2: "bg-orange-400", 3: "bg-yellow-400", 4: "bg-emerald-400", 5: "bg-emerald-600"
+                };
+                const trilhaCoresMap: Record<string, string> = {
+                  "Basic": "#3B82F6", "Essential": "#10B981", "Master": "#8B5CF6", "Visão de Futuro": "#F59E0B",
+                };
+                const trilhasComAuto = new Set((autopercepcoesData as any[]).map((a: any) => a.trilhaId));
+                const trilhasOrdenadas = [...(trilhas as any[])]
+                  .filter((t: any) => TRILHAS_BASE.includes(t.name) || trilhasComAuto.has(t.id))
+                  .sort((a: any, b: any) => (a.ordem || 0) - (b.ordem || 0));
+                const porTrilha = trilhasOrdenadas.map((trilha: any) => {
+                  const comps = (competencias as any[]).filter((c: any) => c.trilhaId === trilha.id);
+                  const avaliacoes = comps.map((c: any) => {
+                    const av = (autopercepcoesData as any[]).find((a: any) => a.competenciaId === c.id);
+                    return { competencia: c, nota: av?.nota || 0 };
+                  }).filter((a: any) => a.nota > 0);
+                  const media = avaliacoes.length > 0
+                    ? avaliacoes.reduce((sum: number, a: any) => sum + a.nota, 0) / avaliacoes.length
+                    : 0;
+                  return { trilha, avaliacoes, media };
+                }).filter(t => t.avaliacoes.length > 0);
+
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <Gauge className="h-5 w-5" /> Autopercepção de Competências
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">Como o aluno se avalia em cada competência das trilhas de desenvolvimento</p>
+                    </div>
+                    <CardContent className="pt-5 space-y-5">
+                      {porTrilha.map(({ trilha, avaliacoes, media }: any) => (
+                        <div key={trilha.id} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: trilhaCoresMap[trilha.name] || "#6B7280" }} />
+                              <h4 className="font-semibold text-sm text-gray-800">{trilha.name}</h4>
+                            </div>
+                            <Badge variant="outline" className="text-xs">Média: {media.toFixed(1)}/5</Badge>
+                          </div>
+                          <div className="space-y-1.5">
+                            {avaliacoes.map(({ competencia, nota }: any) => (
+                              <div key={competencia.id} className="flex items-center gap-3">
+                                <span className="text-xs text-gray-600 w-44 shrink-0 truncate" title={competencia.nome}>{competencia.nome}</span>
+                                <div className="flex-1 flex items-center gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((n) => (
+                                    <div key={n} className={`h-3.5 flex-1 rounded-sm ${
+                                      n <= nota ? notaCores[nota] : "bg-gray-200"
+                                    }`} />
+                                  ))}
+                                </div>
+                                <span className="text-xs font-medium text-gray-700 w-8 text-right">{nota}/5</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="border-t pt-3">
+                        <p className="text-xs text-muted-foreground font-medium mb-2">Legenda:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <div key={n} className="flex items-center gap-1">
+                              <div className={`w-3 h-3 rounded-sm ${notaCores[n]}`} />
+                              <span className="text-xs text-gray-600">{n} — {notaLabels[n]}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 7: METAS DE DESENVOLVIMENTO — OCULTA ===== */}
+              {false && <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
                     <Flag className="h-5 w-5 text-primary" />
                     <CardTitle className="text-base">Metas de Desenvolvimento</CardTitle>
                   </div>
-                  <CardDescription>Metas por competência com acompanhamento mensal</CardDescription>
+                  <CardDescription>Objetivo macro por competência e micrometas para atingí-lo</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Resumo de metas */}
-                  {metasResumo && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                      <div className="p-3 bg-muted/30 rounded-lg text-center">
-                        <p className="text-xl font-bold">{metasResumo.total}</p>
-                        <p className="text-xs text-muted-foreground">Total</p>
-                      </div>
-                      <div className="p-3 bg-emerald-50 rounded-lg text-center">
-                        <p className="text-xl font-bold text-emerald-600">{metasResumo.cumpridas}</p>
-                        <p className="text-xs text-muted-foreground">Cumpridas</p>
-                      </div>
-                      <div className="p-3 bg-red-50 rounded-lg text-center">
-                        <p className="text-xl font-bold text-red-500">{metasResumo.total - metasResumo.cumpridas}</p>
-                        <p className="text-xs text-muted-foreground">Não Cumpridas</p>
-                      </div>
-                      <div className="p-3 bg-primary/5 rounded-lg text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <TrendingUp className="h-4 w-4 text-primary" />
-                          <p className="text-xl font-bold text-primary">{metasResumo.percentual}%</p>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Atingimento</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Competências e metas */}
                   {assessments.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">O aluno precisa ter um Assessment/PDI para criar metas.</p>
                   ) : metasByCompetencia.length === 0 ? (
@@ -1170,11 +1257,15 @@ function PlanoContent() {
                     <div className="space-y-2">
                       {metasByCompetencia.map((comp) => {
                         const isExpanded = expandedCompId === comp.competenciaId;
-                        const totalMetas = comp.metas.length;
-                        const cumpridas = comp.metas.filter((m: any) => m.ultimoStatus === "cumprida").length;
-                        const pctComp = totalMetas > 0 ? Math.round((cumpridas / totalMetas) * 100) : 0;
+                        // Separar meta macro (primeira sem número) das micrometas (numeradas)
+                        const metaMacro = comp.metas.find((m: any) => !/^\d+\./.test(m.titulo.trim()));
+                        const micrometas = comp.metas.filter((m: any) => /^\d+\./.test(m.titulo.trim()));
+                        const totalMicro = micrometas.length;
+                        const microCumpridas = micrometas.filter((m: any) => m.ultimoStatus === 'cumprida').length;
+                        const pctMicro = totalMicro > 0 ? Math.round((microCumpridas / totalMicro) * 100) : 0;
                         return (
                           <div key={comp.competenciaId} className="border rounded-lg overflow-hidden">
+                            {/* Cabeçalho da competência */}
                             <button
                               onClick={() => setExpandedCompId(isExpanded ? null : comp.competenciaId)}
                               className="w-full flex items-center gap-3 p-3 hover:bg-accent/30 transition-colors text-left"
@@ -1185,49 +1276,93 @@ function PlanoContent() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="font-medium text-sm">{comp.competenciaNome}</p>
-                                  <Badge variant="outline" className="text-xs">{totalMetas} meta{totalMetas !== 1 ? "s" : ""}</Badge>
+                                  {totalMicro > 0 && (
+                                    <Badge variant="outline" className="text-xs">{microCumpridas}/{totalMicro} micrometa{totalMicro !== 1 ? 's' : ''}</Badge>
+                                  )}
+                                  {comp.metas.length === 0 && (
+                                    <Badge variant="outline" className="text-xs text-muted-foreground">0 metas</Badge>
+                                  )}
                                 </div>
-                                {totalMetas > 0 && (
+                                {totalMicro > 0 && (
                                   <div className="flex items-center gap-2 mt-1">
-                                    <Progress value={pctComp} className="h-1.5 flex-1 max-w-32" />
-                                    <span className="text-xs text-muted-foreground">{pctComp}%</span>
+                                    <Progress value={pctMicro} className="h-1.5 flex-1 max-w-32" />
+                                    <span className="text-xs text-muted-foreground">{pctMicro}%</span>
                                   </div>
                                 )}
                               </div>
                               {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                             </button>
+
                             {isExpanded && (
                               <div className="border-t bg-muted/10">
                                 {comp.metas.length === 0 ? (
                                   <div className="p-4 text-center text-sm text-muted-foreground">Nenhuma meta definida</div>
                                 ) : (
-                                  <div className="divide-y">
-                                    {comp.metas.map((meta: any) => (
-                                      <div key={meta.id} className="p-3 flex items-start gap-3">
-                                        <div className="mt-0.5">{getMetaStatusIcon(meta.ultimoStatus || "")}</div>
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <p className="text-sm font-medium">{meta.titulo}</p>
-                                            {meta.taskLibraryId && <Badge variant="secondary" className="text-xs gap-1"><Library className="h-3 w-3" />Biblioteca</Badge>}
-                                          </div>
-                                          {meta.descricao && <p className="text-xs text-muted-foreground mt-1">{meta.descricao}</p>}
-                                          {meta.ultimoStatus && (
-                                            <div className="flex items-center gap-2 mt-1">
-                                              <Badge className={`text-xs ${getMetaStatusColor(meta.ultimoStatus)}`}>{getMetaStatusLabel(meta.ultimoStatus)}</Badge>
-                                              {meta.ultimoMes && meta.ultimoAno && <span className="text-xs text-muted-foreground">{meses[(meta.ultimoMes as number) - 1]} {meta.ultimoAno}</span>}
+                                  <div className="p-3 space-y-3">
+                                    {/* META MACRO */}
+                                    {metaMacro && (
+                                      <div className="rounded-lg border-l-4 border-primary bg-primary/5 p-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="flex items-start gap-2 flex-1 min-w-0">
+                                            <Flag className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-0.5">Objetivo Principal</p>
+                                              <p className="text-sm font-medium">{metaMacro.titulo}</p>
+                                              {metaMacro.descricao && (
+                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-3">{metaMacro.descricao}</p>
+                                              )}
+                                              {metaMacro.ultimoStatus && (
+                                                <div className="flex items-center gap-2 mt-1.5">
+                                                  <Badge className={`text-xs ${getMetaStatusColor(metaMacro.ultimoStatus)}`}>{getMetaStatusLabel(metaMacro.ultimoStatus)}</Badge>
+                                                  {metaMacro.ultimoMes && metaMacro.ultimoAno && <span className="text-xs text-muted-foreground">{meses[(metaMacro.ultimoMes as number) - 1]} {metaMacro.ultimoAno}</span>}
+                                                </div>
+                                              )}
                                             </div>
-                                          )}
-                                        </div>
-                                        <div className="flex items-center gap-1 shrink-0">
-                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="Acompanhamento" onClick={() => handleOpenAcomp(meta.id, meta.titulo)}>
-                                            <Calendar className="h-4 w-4" />
-                                          </Button>
-                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500" title="Remover" onClick={() => { if (confirm("Remover esta meta?")) removerMeta.mutate({ id: meta.id }); }}>
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
+                                          </div>
+                                          <div className="flex items-center gap-1 shrink-0">
+                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Acompanhamento" onClick={() => handleOpenAcomp(metaMacro.id, metaMacro.titulo)}>
+                                              <Calendar className="h-3.5 w-3.5" />
+                                            </Button>
+                                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500" title="Remover" onClick={() => { if (confirm('Remover esta meta?')) removerMeta.mutate({ id: metaMacro.id }); }}>
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                          </div>
                                         </div>
                                       </div>
-                                    ))}
+                                    )}
+
+                                    {/* MICROMETAS */}
+                                    {micrometas.length > 0 && (
+                                      <div className="ml-3 space-y-1.5">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Micrometas</p>
+                                        {micrometas.map((meta: any) => (
+                                          <div key={meta.id} className="flex items-start gap-2 p-2.5 rounded-lg border bg-card">
+                                            <div className="mt-0.5 shrink-0">{getMetaStatusIcon(meta.ultimoStatus || '')}</div>
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="text-sm">{meta.titulo}</p>
+                                                {meta.taskLibraryId && <Badge variant="secondary" className="text-xs gap-1"><Library className="h-3 w-3" />Biblioteca</Badge>}
+                                              </div>
+                                              {meta.descricao && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{meta.descricao}</p>}
+                                              {meta.ultimoStatus && (
+                                                <div className="flex items-center gap-2 mt-1">
+                                                  <Badge className={`text-xs ${getMetaStatusColor(meta.ultimoStatus)}`}>{getMetaStatusLabel(meta.ultimoStatus)}</Badge>
+                                                  {meta.ultimoMes && meta.ultimoAno && <span className="text-xs text-muted-foreground">{meses[(meta.ultimoMes as number) - 1]} {meta.ultimoAno}</span>}
+                                                </div>
+                                              )}
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Acompanhamento" onClick={() => handleOpenAcomp(meta.id, meta.titulo)}>
+                                                <Calendar className="h-3.5 w-3.5" />
+                                              </Button>
+                                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-500" title="Remover" onClick={() => { if (confirm('Remover esta meta?')) removerMeta.mutate({ id: meta.id }); }}>
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                                 <div className="p-2 border-t">
@@ -1243,10 +1378,10 @@ function PlanoContent() {
                     </div>
                   )}
                 </CardContent>
-              </Card>
+              </Card>}
 
-              {/* ===== SEÇÃO 8: PERFORMANCE FILTRADA ===== */}
-              {performanceFiltrada && planoAluno && planoAluno.length > 0 && (
+              {/* ===== SEÇÃO 8: PERFORMANCE FILTRADA — OCULTA (instrução 08a) ===== */}
+              {false && performanceFiltrada && planoAluno && planoAluno.length > 0 && (
                 <Card>
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-2">
@@ -1268,10 +1403,10 @@ function PlanoContent() {
                       <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-lg text-center">
                         <p className="text-2xl font-bold text-green-700">{performanceFiltrada.planoIndividual.competenciasAprovadas}/{performanceFiltrada.planoIndividual.totalCompetencias}</p>
                         <p className="text-xs text-muted-foreground">Competências Aprovadas</p>
-                        <p className="text-xs text-green-600 mt-1">{performanceFiltrada.planoIndividual.percentualAprovacao.toFixed(0)}%</p>
+                        <p className="text-xs text-green-600 mt-1">{(performanceFiltrada?.planoIndividual?.percentualAprovacao ?? 0).toFixed(0)}%</p>
                       </div>
                       <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-purple-700">{performanceFiltrada.planoIndividual.mediaNotas.toFixed(1)}</p>
+                        <p className="text-2xl font-bold text-purple-700">{(performanceFiltrada?.planoIndividual?.mediaNotas ?? 0).toFixed(1)}</p>
                         <p className="text-xs text-muted-foreground">Média Notas</p>
                       </div>
                       <div className="p-3 bg-gradient-to-br from-secondary/5 to-secondary/10 rounded-lg text-center">
@@ -1287,12 +1422,12 @@ function PlanoContent() {
                         { label: "3. Competências", value: performanceFiltrada.indicadoresV2?.consolidado?.ind3_competencias ?? performanceFiltrada.indicadores.engajamento },
                         { label: "4. Tarefas", value: performanceFiltrada.indicadoresV2?.consolidado?.ind4_tarefas ?? performanceFiltrada.indicadores.performanceCompetencias },
                         { label: "5. Engajamento", value: performanceFiltrada.indicadoresV2?.consolidado?.ind5_engajamento ?? (performanceFiltrada.indicadores as any).performanceAprendizado ?? 0 },
-                        { label: "6. Aplicabilidade (Bônus)", value: performanceFiltrada.indicadoresV2?.consolidado?.ind6_aplicabilidade ?? performanceFiltrada.indicadores.participacaoEventos },
+                        { label: "6. Aplicabilidade", value: performanceFiltrada.indicadoresV2?.consolidado?.ind6_aplicabilidade ?? performanceFiltrada.indicadores.participacaoEventos },
                       ].map(ind => (
                         <div key={ind.label}>
                           <div className="flex justify-between mb-1">
                             <span className="text-xs text-muted-foreground">{ind.label}</span>
-                            <span className="text-xs font-medium">{ind.value.toFixed(0)}%</span>
+                            <span className="text-xs font-medium">{(ind?.value ?? 0).toFixed(0)}%</span>
                           </div>
                           <Progress value={ind.value} className="h-1.5" />
                         </div>
@@ -1306,6 +1441,488 @@ function PlanoContent() {
                         <Progress value={performanceFiltrada.indicadoresV2?.consolidado?.ind7_engajamentoFinal ?? performanceFiltrada.indicadores.notaFinal} className="h-2.5" />
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ===== SEÇÃO 9: MAPA RESUMO DO PLANO (instrução 09) ===== */}
+              {resumoPlano && (
+                <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary to-primary/80 p-4 text-white">
+                    <h3 className="text-base font-bold flex items-center gap-2">
+                      <Target className="h-5 w-5" /> Mapa do Plano de Desenvolvimento
+                    </h3>
+                    <p className="text-white/80 text-xs mt-1">Visão geral de tudo que o aluno deve realizar durante a jornada</p>
+                  </div>
+                  <CardContent className="pt-5">
+                    {/* Linha 1: Trilha + Programa + Período */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Trilha</p>
+                        <p className="text-sm font-bold text-primary">{resumoPlano.aluno?.trilhaNome || '—'}</p>
+                        {resumoPlano.aluno?.programaNome && <p className="text-xs text-muted-foreground mt-0.5">{resumoPlano.aluno.programaNome}</p>}
+                      </div>
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Início</p>
+                        <p className="text-sm font-bold text-primary">
+                          {resumoPlano.periodo?.inicio ? new Date(resumoPlano.periodo.inicio).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : '—'}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Término</p>
+                        <p className="text-sm font-bold text-amber-600">
+                          {resumoPlano.periodo?.fim ? new Date(resumoPlano.periodo.fim).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }) : '—'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Linha 2: Metas numéricas do contrato */}
+                    {resumoPlano.metas && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div className="p-3 bg-purple-50 rounded-xl text-center border border-purple-100">
+                          <Calendar className="w-4 h-4 text-purple-600 mx-auto mb-1" />
+                          <p className="text-2xl font-bold text-purple-700">{resumoPlano.metas.mesesContrato}</p>
+                          <p className="text-xs font-medium text-purple-800">Meses de Contrato</p>
+                        </div>
+                        <div className="p-3 bg-emerald-50 rounded-xl text-center border border-emerald-100">
+                          <Users className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+                          <p className="text-2xl font-bold text-emerald-700">{resumoPlano.metas.sessoesMinimas}</p>
+                          <p className="text-xs font-medium text-emerald-800">Mentorias</p>
+                          <p className="text-xs text-muted-foreground">{resumoPlano.aluno?.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'}</p>
+                        </div>
+                        <div className="p-3 bg-amber-50 rounded-xl text-center border border-amber-100">
+                          <ListChecks className="w-4 h-4 text-amber-600 mx-auto mb-1" />
+                          <p className="text-2xl font-bold text-amber-700">{resumoPlano.metas.tarefasMinimas}</p>
+                          <p className="text-xs font-medium text-amber-800">Tarefas Mínimas</p>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-xl text-center border border-blue-100">
+                          <Play className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                          <p className="text-2xl font-bold text-blue-700">{resumoPlano.metas.webinarsMinimos}</p>
+                          <p className="text-xs font-medium text-blue-800">Webinars Mínimos</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Linha 3: Competências + Cursos + Metas */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <BookOpen className="w-4 h-4 text-primary mx-auto mb-1" />
+                        <p className="text-2xl font-bold text-primary">{resumoPlano.competenciasAssessment?.length ?? 0}</p>
+                        <p className="text-xs font-medium text-gray-700">Competências</p>
+                        <p className="text-xs text-muted-foreground">no plano</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <BarChart3 className="w-4 h-4 text-indigo-600 mx-auto mb-1" />
+                        <p className="text-2xl font-bold text-indigo-700">{resumoPlano.cursosAtribuidos?.length ?? 0}</p>
+                        <p className="text-xs font-medium text-gray-700">Cursos</p>
+                        <p className="text-xs text-muted-foreground">atribuídos</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-xl text-center border shadow-sm">
+                        <Flag className="w-4 h-4 text-rose-600 mx-auto mb-1" />
+                        <p className="text-2xl font-bold text-rose-700">{metasDetalhadas?.length ?? 0}</p>
+                        <p className="text-xs font-medium text-gray-700">Metas</p>
+                        <p className="text-xs text-muted-foreground">de desenvolvimento</p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground mt-4 text-center border-t pt-3">
+                      Regra: a cada 6 meses de contrato → 5 sessões de mentoria, 5 tarefas e 10 webinars mínimos
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ===== SEÇÃO 10: COMPETÊNCIAS COM MICROCICLOS (ASSESSMENT) ===== */}
+              {/* Card ocultado a pedido — dados já aparecem no PDI ativo acima */}
+              {false && resumoPlano?.competenciasAssessment && resumoPlano.competenciasAssessment.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-base">Competências — Microciclos Definidos</CardTitle>
+                    </div>
+                    <CardDescription>
+                      Competências que o aluno deve desenvolver, com período e nota mínima exigida pelo mentor
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {resumoPlano.competenciasAssessment.map((comp: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                              <Target className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm">{comp.competenciaNome}</p>
+                              {comp.categoria && <p className="text-xs text-muted-foreground">{comp.categoria}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 shrink-0 ml-3 text-right">
+                            {(comp.microInicio || comp.microTermino) && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Período</p>
+                                <p className="text-xs font-medium">
+                                  {comp.microInicio ? new Date(comp.microInicio).toLocaleDateString('pt-BR', {month:'short',year:'numeric'}) : '—'}
+                                  {' → '}
+                                  {comp.microTermino ? new Date(comp.microTermino).toLocaleDateString('pt-BR', {month:'short',year:'numeric'}) : '—'}
+                                </p>
+                              </div>
+                            )}
+                            {comp.notaCorte && (
+                              <div>
+                                <p className="text-xs text-muted-foreground">Nota mín.</p>
+                                <p className="text-xs font-bold text-primary">{Number(comp.notaCorte).toFixed(1)}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ===== SEÇÃO 11: CATÁLOGO DE CURSOS POR COMPETÊNCIA (instrução 10a) ===== */}
+              {resumoPlano?.cursosAtribuidos && resumoPlano.cursosAtribuidos.length > 0 && (() => {
+                // Agrupar cursos por competência
+                const cursosAgrupados: Record<string, { competenciaNome: string; cursos: any[] }> = {};
+                resumoPlano.cursosAtribuidos.forEach((curso: any) => {
+                  const chave = curso.competenciaNome || 'Sem competência vinculada';
+                  if (!cursosAgrupados[chave]) cursosAgrupados[chave] = { competenciaNome: chave, cursos: [] };
+                  cursosAgrupados[chave].cursos.push(curso);
+                });
+                const grupos = Object.values(cursosAgrupados);
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <BookOpen className="h-5 w-5" /> Catálogo de Cursos por Competência
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">
+                        {resumoPlano.cursosAtribuidos.length} curso{resumoPlano.cursosAtribuidos.length !== 1 ? 's' : ''} atribuído{resumoPlano.cursosAtribuidos.length !== 1 ? 's' : ''} em {grupos.length} competência{grupos.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <CardContent className="pt-4 space-y-4">
+                      {grupos.map((grupo) => (
+                        <div key={grupo.competenciaNome}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="h-6 w-6 rounded-md bg-indigo-100 flex items-center justify-center shrink-0">
+                              <Target className="h-3.5 w-3.5 text-indigo-600" />
+                            </div>
+                            <h4 className="font-semibold text-sm text-gray-800">{grupo.competenciaNome}</h4>
+                            <Badge variant="outline" className="text-xs ml-auto">{grupo.cursos.length} curso{grupo.cursos.length !== 1 ? 's' : ''}</Badge>
+                          </div>
+                          <div className="space-y-1.5 ml-8">
+                            {grupo.cursos.map((curso: any) => (
+                              <div key={curso.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-gray-50/50">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="h-6 w-6 rounded bg-blue-100 flex items-center justify-center shrink-0">
+                                    <BookOpen className="h-3 w-3 text-blue-600" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium truncate">{curso.cursoTitulo || 'Curso sem título'}</p>
+                                    {curso.cursoDescricao && <p className="text-xs text-muted-foreground truncate">{curso.cursoDescricao}</p>}
+                                  </div>
+                                </div>
+                                {curso.dataPrazo && (
+                                  <div className="text-right shrink-0 ml-3">
+                                    <p className="text-xs text-muted-foreground">Prazo</p>
+                                    <p className="text-xs font-medium">{new Date(curso.dataPrazo).toLocaleDateString('pt-BR')}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 12: WEBINARES DO ALUNO ===== */}
+              {resumoPlano?.webinares && resumoPlano.webinares.length > 0 && (() => {
+                const dataReset = resumoPlano.dataUltimoReset ? new Date(resumoPlano.dataUltimoReset) : null;
+
+                // Separar webinares por ciclo (se houver reset)
+                const webinaresCicloAtual = dataReset
+                  ? resumoPlano.webinares.filter((w: any) => w.eventDate && new Date(w.eventDate) >= dataReset)
+                  : resumoPlano.webinares;
+                const webinaresHistorico = dataReset
+                  ? resumoPlano.webinares.filter((w: any) => !w.eventDate || new Date(w.eventDate) < dataReset)
+                  : [];
+
+                const renderListaWebinares = (lista: any[], corBg: string, metaWebinars?: number) => {
+                  const presentes = lista.filter((w: any) => w.status === 'presente');
+                  const ausentes = lista.filter((w: any) => w.status !== 'presente');
+                  return (
+                    <>
+                      <div className={`flex items-center gap-4 mb-3 p-3 ${corBg} rounded-lg`}>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-blue-700">{presentes.length}</p>
+                          <p className="text-xs text-blue-600">Presenças</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-500">{ausentes.length}</p>
+                          <p className="text-xs text-gray-500">Ausências</p>
+                        </div>
+                        {metaWebinars && (
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-emerald-700">
+                              {Math.round((presentes.length / metaWebinars) * 100)}%
+                            </p>
+                            <p className="text-xs text-emerald-600">da meta ({metaWebinars})</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                        {lista.map((w: any) => (
+                          <div key={w.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-gray-50/50">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {w.status === 'presente'
+                                ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                : <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
+                              <p className="text-sm truncate">{w.eventoTitulo || 'Evento sem título'}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-2">
+                              {w.eventDate && <span className="text-xs text-muted-foreground">{new Date(w.eventDate).toLocaleDateString('pt-BR')}</span>}
+                              <Badge variant={w.status === 'presente' ? 'default' : 'secondary'} className="text-xs">
+                                {w.status === 'presente' ? 'Presente' : 'Ausente'}
+                              </Badge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                };
+
+                return (
+                  <div className="space-y-4">
+                    {/* Ciclo Atual */}
+                    <Card className="overflow-hidden">
+                      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
+                        <h3 className="text-base font-bold flex items-center gap-2">
+                          <Play className="h-5 w-5" />
+                          Webinares {dataReset ? '— Ciclo Atual' : ''}
+                        </h3>
+                        <p className="text-white/80 text-xs mt-1">
+                          {dataReset
+                            ? `A partir de ${dataReset.toLocaleDateString('pt-BR')} (pós-reset)`
+                            : `${webinaresCicloAtual.filter((w: any) => w.status === 'presente').length} presença(s) de ${webinaresCicloAtual.length} evento(s)`}
+                        </p>
+                      </div>
+                      <CardContent className="pt-4">
+                        {webinaresCicloAtual.length > 0
+                          ? renderListaWebinares(webinaresCicloAtual, 'bg-blue-50', resumoPlano.metas?.webinarsMinimos)
+                          : <p className="text-sm text-muted-foreground text-center py-4">Nenhum webinar registrado neste ciclo ainda.</p>
+                        }
+                      </CardContent>
+                    </Card>
+
+                    {/* Histórico (pré-reset) */}
+                    {dataReset && webinaresHistorico.length > 0 && (
+                      <details className="group">
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                            <History className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                              Webinares — Ciclos Anteriores ({webinaresHistorico.length} evento{webinaresHistorico.length !== 1 ? 's' : ''})
+                            </span>
+                            <ChevronDown className="h-4 w-4 text-gray-400 ml-auto group-open:hidden" />
+                            <ChevronUp className="h-4 w-4 text-gray-400 ml-auto hidden group-open:block" />
+                          </div>
+                        </summary>
+                        <div className="mt-2">
+                          <Card className="overflow-hidden opacity-80">
+                            <div className="bg-gray-400 p-4 text-white">
+                              <h3 className="text-base font-bold flex items-center gap-2">
+                                <History className="h-5 w-5" /> Webinares — Histórico (pré-reset)
+                              </h3>
+                              <p className="text-white/80 text-xs mt-1">
+                                Antes de {dataReset.toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                            <CardContent className="pt-4">
+                              {renderListaWebinares(webinaresHistorico, 'bg-gray-50')}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 13: TAREFAS DO ALUNO ===== */}
+              {resumoPlano?.todasSessoes && resumoPlano.todasSessoes.length > 0 && (() => {
+                const sessoesComTarefa = resumoPlano.todasSessoes.filter((s: any) =>
+                  s.taskMode && s.taskMode !== 'sem_tarefa' && (s.tarefaNome || s.customTaskTitle)
+                );
+                if (sessoesComTarefa.length === 0) return null;
+                const entregues = sessoesComTarefa.filter((s: any) => s.taskStatus === 'entregue' || s.taskStatus === 'validada');
+                const pendentes = sessoesComTarefa.filter((s: any) => s.taskStatus !== 'entregue' && s.taskStatus !== 'validada');
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <ListChecks className="h-5 w-5" /> Tarefas Práticas
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">
+                        {entregues.length} entregue{entregues.length !== 1 ? 's' : ''} de {sessoesComTarefa.length} tarefa{sessoesComTarefa.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <CardContent className="pt-4">
+                      <div className="flex items-center gap-4 mb-3 p-3 bg-amber-50 rounded-lg">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-amber-700">{sessoesComTarefa.length}</p>
+                          <p className="text-xs text-amber-600">Total</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-emerald-700">{entregues.length}</p>
+                          <p className="text-xs text-emerald-600">Entregues</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-red-500">{pendentes.length}</p>
+                          <p className="text-xs text-red-500">Pendentes</p>
+                        </div>
+                        {resumoPlano.metas?.tarefasMinimas && (
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-blue-700">
+                              {Math.round((entregues.length / resumoPlano.metas.tarefasMinimas) * 100)}%
+                            </p>
+                            <p className="text-xs text-blue-600">da meta ({resumoPlano.metas.tarefasMinimas})</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                        {sessoesComTarefa.map((s: any) => {
+                          const nome = s.customTaskTitle || s.tarefaNome || 'Tarefa sem título';
+                          const isEntregue = s.taskStatus === 'entregue' || s.taskStatus === 'validada';
+                          return (
+                            <div key={s.sessaoId} className="flex items-center justify-between p-2.5 rounded-lg border bg-gray-50/50">
+                              <div className="flex items-center gap-2 min-w-0">
+                                {isEntregue
+                                  ? <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                  : <Clock className="h-4 w-4 text-amber-500 shrink-0" />}
+                                <div className="min-w-0">
+                                  <p className="text-sm truncate">{nome}</p>
+                                  {s.tarefaCompetencia && <p className="text-xs text-muted-foreground">{s.tarefaCompetencia}</p>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0 ml-2">
+                                {s.sessionDate && <span className="text-xs text-muted-foreground">{new Date(s.sessionDate).toLocaleDateString('pt-BR')}</span>}
+                                <Badge variant={isEntregue ? 'default' : 'secondary'} className="text-xs">
+                                  {s.taskStatus === 'validada' ? 'Validada' : s.taskStatus === 'entregue' ? 'Entregue' : 'Pendente'}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 14: METAS DESAFIO ===== */}
+              {resumoPlano?.metasDesafio && resumoPlano.metasDesafio.length > 0 && (() => {
+                // Agrupar por competência
+                const porComp: Record<string, any[]> = {};
+                resumoPlano.metasDesafio.forEach((m: any) => {
+                  const k = m.competenciaNome || 'Sem competência';
+                  if (!porComp[k]) porComp[k] = [];
+                  porComp[k].push(m);
+                });
+                // Contar apenas micrometas (numeradas) para o resumo
+                const todasMicro = resumoPlano.metasDesafio.filter((m: any) => /^\d+\./.test(m.titulo.trim()));
+                const microCumpridas = todasMicro.filter((m: any) => m.ultimoStatus === 'cumprida');
+                const totalComps = Object.keys(porComp).length;
+                return (
+                  <Card className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-rose-600 to-rose-700 p-4 text-white">
+                      <h3 className="text-base font-bold flex items-center gap-2">
+                        <Flag className="h-5 w-5" /> Metas de Desenvolvimento
+                      </h3>
+                      <p className="text-white/80 text-xs mt-1">
+                        {totalComps} competência{totalComps !== 1 ? 's' : ''} • {microCumpridas.length}/{todasMicro.length} micrometa{todasMicro.length !== 1 ? 's' : ''} cumprida{microCumpridas.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <CardContent className="pt-4">
+                      <div className="space-y-4">
+                        {Object.entries(porComp).map(([comp, metas]: [string, any[]]) => {
+                          const macro = metas.find((m: any) => !/^\d+\./.test(m.titulo.trim()));
+                          const micros = metas.filter((m: any) => /^\d+\./.test(m.titulo.trim()));
+                          const microsCumpridas = micros.filter((m: any) => m.ultimoStatus === 'cumprida').length;
+                          return (
+                          <div key={comp} className="border rounded-lg overflow-hidden">
+                            <div className="flex items-center gap-2 p-3 bg-rose-50/50">
+                              <Target className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                              <h4 className="font-semibold text-xs text-gray-700 uppercase tracking-wide flex-1">{comp}</h4>
+                              {micros.length > 0 && <Badge variant="outline" className="text-xs">{microsCumpridas}/{micros.length} micrometas</Badge>}
+                            </div>
+                            {/* Objetivo Principal (macro) */}
+                            {macro && (
+                              <div className="mx-3 mb-2 mt-1 rounded-lg border-l-4 border-rose-400 bg-rose-50/60 p-2.5">
+                                <p className="text-xs font-semibold text-rose-600 uppercase tracking-wide mb-0.5">Objetivo Principal</p>
+                                <p className="text-sm font-medium">{macro.titulo}</p>
+                                {macro.descricao && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{macro.descricao}</p>}
+                              </div>
+                            )}
+                            {/* Micrometas */}
+                            {micros.length > 0 && (
+                              <div className="mx-3 mb-3 space-y-1.5">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Micrometas</p>
+                                {micros.map((m: any) => (
+                                  <div key={m.id} className="flex items-start justify-between p-2 rounded-lg border bg-gray-50/50">
+                                    <div className="flex items-start gap-2 min-w-0">
+                                      {m.ultimoStatus === 'cumprida'
+                                        ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                        : m.ultimoStatus === 'nao_cumprida'
+                                          ? <XCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+                                          : m.ultimoStatus === 'parcial'
+                                            ? <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                                            : <Circle className="h-3.5 w-3.5 text-gray-300 shrink-0 mt-0.5" />}
+                                      <p className="text-sm">{m.titulo}</p>
+                                    </div>
+                                    {m.ultimoStatus && (
+                                      <Badge
+                                        className={`text-xs shrink-0 ml-2 ${
+                                          m.ultimoStatus === 'cumprida' ? 'bg-emerald-100 text-emerald-700'
+                                          : m.ultimoStatus === 'nao_cumprida' ? 'bg-red-100 text-red-700'
+                                          : 'bg-amber-100 text-amber-700'
+                                        }`}
+                                      >
+                                        {m.ultimoStatus === 'cumprida' ? 'Cumprida'
+                                          : m.ultimoStatus === 'nao_cumprida' ? 'Não cumprida'
+                                          : 'Parcial'}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
+              {/* ===== SEÇÃO 15: OBSERVAÇÕES DO MENTOR ===== */}
+              {resumoPlano?.assessment?.observacoes && (
+                <Card className="border-dashed">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5 text-muted-foreground" />
+                      <CardTitle className="text-base text-muted-foreground">Observações do Mentor</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{resumoPlano.assessment.observacoes}</p>
                   </CardContent>
                 </Card>
               )}

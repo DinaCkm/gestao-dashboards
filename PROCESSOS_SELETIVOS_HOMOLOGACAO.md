@@ -49,5 +49,5 @@ pnpm db:migrate
 - O deploy esta na branch `feature/processos-seletivos`.
 - A base conectada e a base MySQL do Railway de teste.
 - A producao continua na branch/ambiente atual.
-- A migracao aplicada foi `0061_processos_seletivos.sql`.
+- A migracao aplicada foi `0084_processos_seletivos.sql`.
 - O sistema antigo continua acessivel sem mudancas de fluxo.

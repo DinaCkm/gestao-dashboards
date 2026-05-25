@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
+import { int, tinyint, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -12,7 +12,7 @@ export const users = mysqlTable("users", {
   passwordHash: varchar("passwordHash", { length: 255 }), // Para login tradicional com senha
   cpf: varchar("cpf", { length: 14 }), // CPF para login universal (formato: 12345678900)
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin", "manager"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "admin", "manager", "admin2"]).default("user").notNull(),
   programId: int("programId"), // Empresa vinculada (para gestores e alunos)
   alunoId: int("alunoId"), // Referência ao aluno (para perfil aluno)
   consultorId: int("consultorId"), // Referência ao consultor/gerente (para perfil gestor)
@@ -158,6 +158,7 @@ export type InsertCicloCompetencia = typeof cicloCompetencias.$inferInsert;
 export const planoIndividual = mysqlTable("plano_individual", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   competenciaId: int("competenciaId").notNull(), // FK para competencias
   isObrigatoria: int("isObrigatoria").default(1).notNull(), // 1 = obrigatória, 0 = opcional
   notaAtual: decimal("notaAtual", { precision: 5, scale: 2 }), // Nota atual na competência
@@ -199,6 +200,29 @@ export const alunos = mysqlTable("alunos", {
   minicurriculo: text("minicurriculo"),
   quemEVoce: text("quemEVoce"),
   discVideoWatchedAt: timestamp("discVideoWatchedAt"), // Data/hora em que o aluno assistiu o video DISC pela 1a vez
+  plataformaAulas: mysqlEnum("plataformaAulas", ["scaffold", "sistema_interno"]).default("sistema_interno"), // Plataforma onde o aluno faz as aulas
+  // Campos de perfil pessoal e profissional (preenchidos no onboarding)
+  dataNascimento: date("dataNascimento"),
+  estadoCivil: varchar("estadoCivil", { length: 30 }),
+  temFilhos: tinyint("temFilhos").default(0),
+  quantidadeFilhos: int("quantidadeFilhos").default(0),
+  expectativaCurtoPrazo: text("expectativaCurtoPrazo"),
+  expectativaMedioPrazo: text("expectativaMedioPrazo"),
+  expectativaLongoPrazo: text("expectativaLongoPrazo"),
+  formacaoSuperior: json("formacaoSuperior"),
+  posGraduacoes: json("posGraduacoes"),
+  cursosExtracurriculares: json("cursosExtracurriculares"),
+  experienciasAnteriores: json("experienciasAnteriores"),
+  experienciaLideranca: tinyint("experienciaLideranca").default(0),
+  tipoEquipeGerenciada: json("tipoEquipeGerenciada"),
+  gerenciouOutrosLideres: tinyint("gerenciouOutrosLideres").default(0),
+  linkedinUrl: varchar("linkedinUrl", { length: 500 }),
+  facebookUrl: varchar("facebookUrl", { length: 500 }),
+  instagramUrl: varchar("instagramUrl", { length: 500 }),
+  tiktokUrl: varchar("tiktokUrl", { length: 500 }),
+  outraRedeUrl: varchar("outraRedeUrl", { length: 500 }),
+  curriculoUrl: varchar("curriculoUrl", { length: 1000 }),
+  photoUrl: text("photoUrl"), // URL da foto de perfil do aluno (S3)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -212,6 +236,7 @@ export type InsertAluno = typeof alunos.$inferInsert;
 export const mentoringSessions = mysqlTable("mentoring_sessions", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   consultorId: int("consultorId").notNull(),
   turmaId: int("turmaId"),
   trilhaId: int("trilhaId"),
@@ -279,6 +304,7 @@ export const eventParticipation = mysqlTable("event_participation", {
   id: int("id").autoincrement().primaryKey(),
   eventId: int("eventId").notNull(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   status: mysqlEnum("status", ["presente", "ausente"]).notNull(),
   reflexao: text("reflexao"), // Reflexão do aluno após assistir o webinar
   selfReportedAt: timestamp("selfReportedAt"), // Data/hora que o aluno marcou presença
@@ -380,6 +406,7 @@ export type InsertReport = typeof reports.$inferInsert;
 export const assessmentPdi = mysqlTable("assessment_pdi", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   trilhaId: int("trilhaId").notNull(), // FK para trilhas (Básica, Essencial, Master, Visão de Futuro)
   turmaId: int("turmaId"), // FK para turmas (BS1, BS2, BS3, etc.)
   consultorId: int("consultorId"), // FK para consultors (mentora que criou o assessment)
@@ -387,6 +414,7 @@ export const assessmentPdi = mysqlTable("assessment_pdi", {
   macroInicio: date("macroInicio", { mode: "string" }).notNull(), // Data início do macro ciclo (jornada)
   macroTermino: date("macroTermino", { mode: "string" }).notNull(), // Data término do macro ciclo (jornada)
   totalSessoesPrevistas: int("totalSessoesPrevistas"), // Total de sessões de mentoria previstas para o período do contrato (se null, calcula pela diferença de meses)
+  numeroPdi: int("numeroPdi").default(1).notNull(), // Número sequencial do PDI por aluno (001, 002...)
   status: mysqlEnum("status", ["ativo", "congelado"]).default("ativo").notNull(),
   observacoes: text("observacoes"),
   congeladoEm: timestamp("congeladoEm"), // Data em que a mentora congelou a trilha
@@ -643,6 +671,96 @@ export type ContratoAluno = typeof contratosAluno.$inferSelect;
 export type InsertContratoAluno = typeof contratosAluno.$inferInsert;
 
 /**
+ * Contrato Níveis - Histórico formal dos níveis do aluno dentro de um contrato
+ * Fase 1: camada nova, sem substituir contratos_aluno e fluxos existentes.
+ */
+export const contratoNiveis = mysqlTable("contrato_niveis", {
+  id: int("id").autoincrement().primaryKey(),
+  contratoId: int("contratoId").notNull(), // FK para contratos_aluno (fonte única das datas)
+  alunoId: int("alunoId").notNull(), // FK para alunos (desnormalizado para consultas rápidas)
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  // dataInicio e dataFim removidos — lidos de contratos_aluno.periodoInicio / periodoTermino via JOIN
+  status: mysqlEnum("status", ["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]).default("planejado").notNull(),
+  assessmentPdiId: int("assessmentPdiId"), // FK opcional para assessment_pdi (fase futura)
+  nivelInicio: date("nivelInicio"), // Início do período deste nível específico
+  nivelFim: date("nivelFim"),     // Fim do período deste nível específico
+  mentoraPrincipalId: int("mentoraPrincipalId"), // FK opcional para consultors
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ContratoNivel = typeof contratoNiveis.$inferSelect;
+export type InsertContratoNivel = typeof contratoNiveis.$inferInsert;
+
+/**
+ * Templates de certificado por nível.
+ * Um template ativo por nível por vez.
+ */
+export const certificationTemplates = mysqlTable("certification_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  ativo: int("ativo").default(1).notNull(),
+  arquivoModelo: text("arquivoModelo"), // URL/chave do modelo
+  camposMapeados: json("camposMapeados"), // mapeamento dinâmico de campos
+  createdBy: int("createdBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CertificationTemplate = typeof certificationTemplates.$inferSelect;
+export type InsertCertificationTemplate = typeof certificationTemplates.$inferInsert;
+
+/**
+ * Assinaturas formais utilizadas na emissão.
+ */
+export const certificationSignatures = mysqlTable("certification_signatures", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"), // pode apontar para users/consultors conforme contexto
+  tipo: mysqlEnum("tipo", ["gerente", "mentora", "gestor_master"]).notNull(),
+  nomeExibicao: varchar("nomeExibicao", { length: 255 }).notNull(),
+  cargo: varchar("cargo", { length: 255 }),
+  imagemAssinaturaUrl: text("imagemAssinaturaUrl"),
+  ativo: int("ativo").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CertificationSignature = typeof certificationSignatures.$inferSelect;
+export type InsertCertificationSignature = typeof certificationSignatures.$inferInsert;
+
+/**
+ * Certificados emitidos por nível.
+ */
+export const nivelCertificates = mysqlTable("nivel_certificates", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId").notNull(),
+  nivel: mysqlEnum("nivel", ["I", "II", "III", "IV"]).notNull(),
+  templateId: int("templateId").notNull(),
+  status: mysqlEnum("status", ["emitido", "revogado"]).default("emitido").notNull(),
+  arquivoUrl: text("arquivoUrl"),
+  emitidoEm: timestamp("emitidoEm").defaultNow().notNull(),
+  emitidoPor: int("emitidoPor"),
+  hashDocumento: varchar("hashDocumento", { length: 128 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type NivelCertificate = typeof nivelCertificates.$inferSelect;
+export type InsertNivelCertificate = typeof nivelCertificates.$inferInsert;
+
+/**
+ * Mentoras vinculadas ao certificado emitido (suporta múltiplas mentoras).
+ */
+export const nivelCertificateMentoras = mysqlTable("nivel_certificate_mentoras", {
+  id: int("id").autoincrement().primaryKey(),
+  certificateId: int("certificateId").notNull(),
+  consultorId: int("consultorId").notNull(),
+  nomeMentora: varchar("nomeMentora", { length: 255 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type NivelCertificateMentora = typeof nivelCertificateMentoras.$inferSelect;
+export type InsertNivelCertificateMentora = typeof nivelCertificateMentoras.$inferInsert;
+
+/**
  * Histórico de Nível de Competência - Registra a evolução do nível do aluno
  * A mentora atualiza o nível atual a cada 3 sessões de mentoria
  */
@@ -669,11 +787,13 @@ export type InsertHistoricoNivelCompetencia = typeof historicoNivelCompetencia.$
 export const casesSucesso = mysqlTable("cases_sucesso", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   trilhaId: int("trilhaId"), // FK para trilhas (macrociclo: Básicas, Essenciais, etc.)
   trilhaNome: varchar("trilhaNome", { length: 255 }), // Nome do macrociclo para referência rápida
   entregue: int("entregue").default(0).notNull(), // 1 = entregue, 0 = não entregue
   dataEntrega: timestamp("dataEntrega"), // Data em que o case foi entregue
   titulo: varchar("titulo", { length: 500 }), // Título do case
+  resumoPublico: varchar("resumoPublico", { length: 500 }), // Resumo curto público para vitrine no mural (sem dados sensíveis)
   descricao: text("descricao"), // Descrição/resumo do case
   avaliadoPor: int("avaliadoPor"), // FK para consultors (mentora que avaliou)
   observacao: text("observacao"), // Observação da mentora
@@ -697,6 +817,26 @@ export const casesSucesso = mysqlTable("cases_sucesso", {
 });
 export type CaseSucesso = typeof casesSucesso.$inferSelect;
 export type InsertCaseSucesso = typeof casesSucesso.$inferInsert;
+
+/**
+ * Interesse em Case de Sucesso (vitrine do mural)
+ * Registra quando um aluno demonstra interesse em conhecer o case de outro aluno.
+ */
+export const caseInteresses = mysqlTable("case_interesses", {
+  id: int("id").autoincrement().primaryKey(),
+  caseId: int("caseId").notNull(), // FK para cases_sucesso
+  autorAlunoId: int("autorAlunoId").notNull(), // Aluno autor do case
+  interessadoAlunoId: int("interessadoAlunoId").notNull(), // Aluno que demonstrou interesse
+  interessadoNome: varchar("interessadoNome", { length: 255 }).notNull(),
+  interessadoEmail: varchar("interessadoEmail", { length: 320 }).notNull(),
+  mensagem: text("mensagem").notNull(),
+  status: mysqlEnum("status", ["nao_lido", "lido"]).default("nao_lido").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CaseInteresse = typeof caseInteresses.$inferSelect;
+export type InsertCaseInteresse = typeof caseInteresses.$inferInsert;
 
 /**
  * Comentários em Atividades Práticas
@@ -748,6 +888,7 @@ export const mentorAppointments = mysqlTable("mentor_appointments", {
   startTime: varchar("startTime", { length: 5 }).notNull(), // "09:00"
   endTime: varchar("endTime", { length: 5 }).notNull(), // "10:00"
   googleMeetLink: varchar("googleMeetLink", { length: 500 }), // Link do Google Meet
+  googleEventId: varchar("googleEventId", { length: 255 }), // ID do evento no Google Calendar
   type: mysqlEnum("type", ["individual", "grupo"]).default("individual").notNull(),
   title: varchar("title", { length: 255 }), // Título da sessão (obrigatório para grupo)
   description: text("description"), // Descrição/pauta da sessão
@@ -783,6 +924,7 @@ export type InsertAppointmentParticipant = typeof appointmentParticipants.$infer
 export const metas = mysqlTable("metas", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis
   assessmentCompetenciaId: int("assessmentCompetenciaId").notNull(), // FK para assessment_competencias
   competenciaId: int("competenciaId").notNull(), // FK para competencias (desnormalizado para queries rápidas)
   assessmentPdiId: int("assessmentPdiId").notNull(), // FK para assessment_pdi
@@ -845,6 +987,7 @@ export type InsertDiscResposta = typeof discRespostas.$inferInsert;
 export const discResultados = mysqlTable("disc_resultados", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (ciclo por nível)
   ciclo: int("ciclo").default(1).notNull(), // Ciclo do assessment (1 = inicial, 2 = reassessment, etc.)
   scoreD: decimal("scoreD", { precision: 5, scale: 2 }).notNull(), // Score Dominância normalizado (0-100)
   scoreI: decimal("scoreI", { precision: 5, scale: 2 }).notNull(), // Score Influência normalizado (0-100)
@@ -874,6 +1017,7 @@ export type InsertDiscResultado = typeof discResultados.$inferInsert;
 export const autopercepcoesCompetencias = mysqlTable("autopercepcoes_competencias", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(), // FK para alunos
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   competenciaId: int("competenciaId").notNull(), // FK para competencias
   trilhaId: int("trilhaId").notNull(), // FK para trilhas (desnormalizado)
   nota: int("nota").notNull(), // Autoavaliação 1-5
@@ -1093,6 +1237,7 @@ export type InsertEmailAlertaLog = typeof emailAlertasLog.$inferInsert;
 export const onboardingJornada = mysqlTable("onboarding_jornada", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(),
+  contratoNivelId: int("contratoNivelId"), // FK opcional para contrato_niveis (onboarding por nível)
   ciclo: int("ciclo").default(1).notNull(), // Número do ciclo de onboarding (1 = primeiro, 2 = renovação, etc.)
   // Etapa 1 - Cadastro confirmado pelo aluno
   cadastroConfirmado: int("cadastroConfirmado").default(0).notNull(), // 1 = aluno revisou e confirmou seus dados
@@ -1100,6 +1245,8 @@ export const onboardingJornada = mysqlTable("onboarding_jornada", {
   // Etapa 6 - Meu PDI
   pdiVisualizado: int("pdiVisualizado").default(0).notNull(), // 1 = visualizou o PDI
   pdiVisualizadoEm: timestamp("pdiVisualizadoEm"),
+  pdiLiberadoPelaMentora: int("pdiLiberadoPelaMentora").default(0).notNull(), // 1 = mentora liberou para visualizar
+  pdiLiberadoEm: timestamp("pdiLiberadoEm"), // quando a mentora liberou
   // Etapa 7 - Sua Jornada (vídeos)
   videoBoasVindas: int("videoBoasVindas").default(0).notNull(), // 1 = assistiu
   videoCompetencias: int("videoCompetencias").default(0).notNull(),
@@ -1155,6 +1302,413 @@ export const onboardingRevisoes = mysqlTable("onboarding_revisoes", {
 });
 export type OnboardingRevisao = typeof onboardingRevisoes.$inferSelect;
 export type InsertOnboardingRevisao = typeof onboardingRevisoes.$inferInsert;
+
+
+/**
+ * ============================================================================
+ * MÓDULO DE CURSOS COM GENIALLY (27/03/2026)
+ * ============================================================================
+ * Tabelas para gerenciar cursos, progresso dos alunos, reflexões, avaliações
+ * e prorrogações de prazos com integração aos Indicadores 2 e 3.
+ * ============================================================================
+ */
+
+/**
+ * 1. competencias_modulos - Estrutura de conteúdo dos cursos
+ * 6 módulos por competência: Intro, Filme, Vídeo, TedTalk, Podcast, Livro
+ */
+export const competenciasModulos = mysqlTable("competencias_modulos", {
+  id: int("id").autoincrement().primaryKey(),
+  competenciaId: int("competencia_id").notNull(),
+  tipoModulo: mysqlEnum("tipo_modulo", [
+    "intro",
+    "filme",
+    "video",
+    "tedtalk",
+    "podcast",
+    "livro",
+  ])
+    .notNull()
+    .default("intro"),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  urlGenially: varchar("url_genially", { length: 500 }),
+  urlThumbnail: varchar("url_thumbnail", { length: 500 }),
+  duracaoMinutos: int("duracao_minutos").default(15),
+  ordem: int("ordem").default(0),
+  ativo: int("ativo").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CompetenciaModulo = typeof competenciasModulos.$inferSelect;
+export type InsertCompetenciaModulo = typeof competenciasModulos.$inferInsert;
+
+/**
+ * 2. aluno_modulo_progresso - Rastreamento de progresso do aluno
+ * Controla status, prazos originais/prorrogados e indicadores visuais
+ */
+export const alunoModuloProgresso = mysqlTable("aluno_modulo_progresso", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("aluno_id").notNull(),
+  moduloId: int("modulo_id").notNull(),
+  competenciaId: int("competencia_id").notNull(),
+  microcicloId: int("microciclo_id").notNull(),
+
+  // Status do módulo
+  status: mysqlEnum("status", [
+    "nao_iniciado",
+    "em_progresso",
+    "concluido",
+  ])
+    .default("nao_iniciado")
+    .notNull(),
+  dataInicio: timestamp("data_inicio"),
+  dataConclusao: timestamp("data_conclusao"),
+
+  // Controle de prazos
+  dataLimiteOriginal: timestamp("data_limite_original").notNull(),
+  dataLimiteProrrogada: timestamp("data_limite_prorrogada"),
+
+  // Indicadores visuais
+  diasRestantes: int("dias_restantes"),
+  statusSemaforo: mysqlEnum("status_semaforo", [
+    "verde",
+    "amarelo",
+    "vermelho",
+  ])
+    .default("verde")
+    .notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AlunoModuloProgresso = typeof alunoModuloProgresso.$inferSelect;
+export type InsertAlunoModuloProgresso =
+  typeof alunoModuloProgresso.$inferInsert;
+
+/**
+ * 3. aluno_modulo_relato - Reflexão/relatório do aluno após estudar
+ * Obrigatório: aluno deve escrever reflexão antes de fazer avaliação
+ */
+export const alunoModuloRelato = mysqlTable("aluno_modulo_relato", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("aluno_id").notNull(),
+  moduloId: int("modulo_id").notNull(),
+  progressoId: int("progresso_id").notNull(),
+
+  // Reflexão obrigatória
+  textoRelato: text("texto_relato").notNull(),
+  dataEnvio: timestamp("data_envio").notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AlunoModuloRelato = typeof alunoModuloRelato.$inferSelect;
+export type InsertAlunoModuloRelato = typeof alunoModuloRelato.$inferInsert;
+
+/**
+ * 4. aluno_modulo_avaliacao - Avaliação/quiz do módulo com nota
+ * Captura nota que alimenta o Indicador 2 (Avaliações)
+ */
+export const alunoModuloAvaliacao = mysqlTable("aluno_modulo_avaliacao", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("aluno_id").notNull(),
+  moduloId: int("modulo_id").notNull(),
+  progressoId: int("progresso_id").notNull(),
+
+  // Avaliação
+  nota: decimal("nota", { precision: 5, scale: 2 }).notNull(),
+  totalQuestoes: int("total_questoes"),
+  questoesAcertadas: int("questoes_acertadas"),
+  tempoRespostaMinutos: int("tempo_resposta_minutos"),
+
+  // Resultado
+  aprovado: int("aprovado").default(1).notNull(),
+  dataAvaliacao: timestamp("data_avaliacao").notNull(),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AlunoModuloAvaliacao = typeof alunoModuloAvaliacao.$inferSelect;
+export type InsertAlunoModuloAvaliacao =
+  typeof alunoModuloAvaliacao.$inferInsert;
+
+/**
+ * 5. aluno_competencia_prorrogacao - Requisições de prorrogação de prazos
+ * Sistema de prorrogação com aprovação de mentor
+ * REGRA CRÍTICA: Prorrogação apenas desbloqueia módulos.
+ * Performance é SEMPRE calculada contra prazos ORIGINAIS.
+ */
+export const alunoCompetenciaProrrogacao = mysqlTable(
+  "aluno_competencia_prorrogacao",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    alunoId: int("aluno_id").notNull(),
+    moduloId: int("modulo_id").notNull(),
+    progressoId: int("progresso_id").notNull(),
+    mentorId: int("mentor_id"),
+
+    // Datas
+    dataSolicitacao: timestamp("data_solicitacao").notNull(),
+    dataLimiteOriginal: timestamp("data_limite_original").notNull(),
+    dataLimiteSolicitada: timestamp("data_limite_solicitada").notNull(),
+    dataLimiteAprovada: timestamp("data_limite_aprovada"),
+
+    // Controle
+    status: mysqlEnum("status", [
+      "pendente",
+      "aprovada",
+      "rejeitada",
+      "cancelada",
+    ])
+      .default("pendente")
+      .notNull(),
+    motivoSolicitacao: text("motivo_solicitacao"),
+    motivoRejeicao: text("motivo_rejeicao"),
+
+    // Validação
+    dentroContrato: int("dentro_contrato").default(1).notNull(),
+    dataFimContrato: timestamp("data_fim_contrato"),
+
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  }
+);
+export type AlunoCompetenciaProrrogacao =
+  typeof alunoCompetenciaProrrogacao.$inferSelect;
+export type InsertAlunoCompetenciaProrrogacao =
+  typeof alunoCompetenciaProrrogacao.$inferInsert;
+
+
+/**
+ * ITEM 1: Tabela de Cursos de Competências
+ * Armazena cursos criados para cada competência
+ */
+export const cursosCompetencias = mysqlTable("cursos_competencias", {
+  id: int("id").autoincrement().primaryKey(),
+  competenciaId: int("competenciaId").notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  ordem: int("ordem").default(0).notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CursoCompetencia = typeof cursosCompetencias.$inferSelect;
+export type InsertCursoCompetencia = typeof cursosCompetencias.$inferInsert;
+
+/**
+ * ITEM 2: Tabela de Atividades do Curso
+ * Armazena atividades (Genially, Vídeo, Podcast, TedTalk, Livro, Intro)
+ */
+export const atividadesCurso = mysqlTable("atividades_curso", {
+  id: int("id").autoincrement().primaryKey(),
+  cursoId: int("cursoId").notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  tipoAtividade: mysqlEnum("tipoAtividade", ["genially", "video", "podcast", "tedtalk", "livro", "intro"]).notNull(),
+  urlGenially: text("urlGenially"),
+  urlMidia: text("urlMidia"),
+  imagemUrl: text("imagemUrl"), // URL da imagem do card da atividade (S3)
+  descricao: text("descricao"),
+  ordem: int("ordem").default(0).notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  tempoEstimadoMinutos: int("tempo_estimado_minutos"),
+  percentualMinimoLiberacao: int("percentual_minimo_liberacao").default(60),
+  tempoMinimoObrigatorioSegundos: int("tempo_minimo_obrigatorio_segundos"),
+  permitirAberturaExterna: int("permitir_abertura_externa").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AtividadeCurso = typeof atividadesCurso.$inferSelect;
+export type InsertAtividadeCurso = typeof atividadesCurso.$inferInsert;
+
+// Tipos de atividade disponíveis
+export const TIPOS_ATIVIDADE = ["introducao", "videos", "podcast", "tedtalks", "filmes", "livros", "ead", "outros"] as const;
+export type TipoAtividade = typeof TIPOS_ATIVIDADE[number];
+
+/**
+ * ITEM 3: Tabela de Avaliações de Atividade
+ * Armazena 30 questões por atividade
+ */
+export const avaliacoesAtividade = mysqlTable("avaliacoes_atividade", {
+  id: int("id").autoincrement().primaryKey(),
+  atividadeId: int("atividadeId").notNull(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  questoes: json("questoes").notNull(), // Array com 30 questões
+  notaMinima: decimal("notaMinima", { precision: 3, scale: 1 }).default("8.0").notNull(),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AvaliacaoAtividade = typeof avaliacoesAtividade.$inferSelect;
+export type InsertAvaliacaoAtividade = typeof avaliacoesAtividade.$inferInsert;
+
+/**
+ * ITEM 4: Tabela de Tentativas de Avaliação
+ * Registra cada tentativa do aluno (15 questões aleatórias de 30)
+ */
+export const tentativasAvaliacao = mysqlTable("tentativas_avaliacao", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  atividadeId: int("atividadeId").notNull(),
+  avaliacaoId: int("avaliacaoId").notNull(),
+  questoesSelecionadas: json("questoesSelecionadas").notNull(), // 15 questões aleatórias
+  respostasAluno: json("respostasAluno").notNull(),
+  nota: decimal("nota", { precision: 3, scale: 1 }),
+  aprovado: int("aprovado").default(0).notNull(),
+  dataTentativa: timestamp("dataTentativa").defaultNow().notNull(),
+  dataProximaTentativa: timestamp("dataProximaTentativa"),
+});
+export type TentativaAvaliacao = typeof tentativasAvaliacao.$inferSelect;
+export type InsertTentativaAvaliacao = typeof tentativasAvaliacao.$inferInsert;
+
+/**
+ * ITEM 5: Tabela de Cursos Atribuídos ao Aluno
+ * Rastreia qual aluno deve fazer qual curso
+ */
+export const alunoCursoAtribuido = mysqlTable("aluno_curso_atribuido", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  cursoId: int("cursoId").notNull(),
+  competenciaId: int("competenciaId").notNull(),
+  mentorId: int("mentorId").notNull(),
+  dataAtribuicao: timestamp("dataAtribuicao").defaultNow().notNull(),
+  dataPrazo: timestamp("dataPrazo").notNull(),
+  status: mysqlEnum("status", ["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).default("nao_iniciado").notNull(),
+  notaFinal: decimal("notaFinal", { precision: 3, scale: 1 }),
+  dataConclusao: timestamp("dataConclusao"),
+  indicador2Updated: int("indicador2Updated").default(0).notNull(),
+  indicador3Updated: int("indicador3Updated").default(0).notNull(),
+});
+export type AlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferSelect;
+export type InsertAlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferInsert;
+
+/**
+ * Aluno Atividade Progresso - Rastreamento de progresso do aluno em cada atividade de um curso
+ * Tabela reintroduzida para suportar o fluxo de atividades com bloqueio sequencial
+ */
+export const alunoAtividadeProgresso = mysqlTable("aluno_atividade_progresso", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  cursoAtribuidoId: int("cursoAtribuidoId").notNull(),
+  atividadeId: int("atividadeId").notNull(),
+  status: mysqlEnum("status", ["bloqueada", "disponivel", "em_andamento", "concluida", "aprovada", "reprovada"]).default("bloqueada").notNull(),
+  iniciadoEm: timestamp("iniciadoEm"),
+  concluidoEm: timestamp("concluidoEm"),
+  avaliacaoLiberada: int("avaliacaoLiberada").default(0).notNull(),
+  notaFinal: decimal("notaFinal", { precision: 3, scale: 1 }),
+  aprovado: int("aprovado").default(0).notNull(),
+  tentativas: int("tentativas").default(0).notNull(),
+  tempoAtivoAcumuladoSegundos: int("tempo_ativo_acumulado_segundos"),
+  tempoMinimoExigidoSegundos: int("tempo_minimo_exigido_segundos"),
+  ultimoHeartbeatEm: timestamp("ultimo_heartbeat_em"),
+  tempoCumpridoEm: timestamp("tempo_cumprido_em"),
+  liberadoParaAvaliacaoEm: timestamp("liberado_para_avaliacao_em"),
+  bloqueioPorTempo: int("bloqueio_por_tempo"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AlunoAtividadeProgresso = typeof alunoAtividadeProgresso.$inferSelect;
+export type InsertAlunoAtividadeProgresso = typeof alunoAtividadeProgresso.$inferInsert;
+
+/**
+ * Sessoes Estudo Atividade - Registro de sessões de estudo individuais
+ */
+export const sessoesEstudoAtividade = mysqlTable("sessoes_estudo_atividade", {
+  id: int("id").autoincrement().primaryKey(),
+  atividadeId: int("atividade_id").notNull(),
+  alunoId: int("aluno_id").notNull(),
+  cursoAtribuidoId: int("curso_atribuido_id").notNull(),
+  iniciadaEm: timestamp("iniciada_em").defaultNow().notNull(),
+  encerradaEm: timestamp("encerrada_em"),
+  tempoAtivoSegundos: int("tempo_ativo_segundos").default(0),
+  statusSessao: varchar("status_sessao", { length: 50 }).default("ativa"),
+});
+
+export type SessaoEstudoAtividade = typeof sessoesEstudoAtividade.$inferSelect;
+export type InsertSessaoEstudoAtividade = typeof sessoesEstudoAtividade.$inferInsert;
+
+// ============ BIBLIOTECA PEDAGÓGICA ============
+/**
+ * Fichas Pedagógicas das Competências
+ * Uma competência pode ter no máximo uma ficha publicada.
+ */
+export const fichasPedagogicasCompetencias = mysqlTable("fichas_pedagogicas_competencias", {
+  id: int("id").autoincrement().primaryKey(),
+  competenciaId: int("competenciaId").notNull(),
+  linhaDesenvolvimento: text("linhaDesenvolvimento").notNull(),
+  objetivoPedagogico: text("objetivoPedagogico").notNull(),
+  oQueEnsina: text("oQueEnsina").notNull(),
+  quandoIndicar: text("quandoIndicar").notNull(),
+  sinaisObservaveis: text("sinaisObservaveis").notNull(),
+  cuidadoIndicacao: text("cuidadoIndicacao"),
+  resumoMentor: text("resumoMentor").notNull(),
+  descricaoAluno: text("descricaoAluno").notNull(),
+  sugestaoDesenvolvimentoCompetencia: text("sugestaoDesenvolvimentoCompetencia").notNull(),
+  status: mysqlEnum("status", ["rascunho", "publicada", "inativa"]).notNull().default("rascunho"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdBy: varchar("createdBy", { length: 255 }),
+  updatedBy: varchar("updatedBy", { length: 255 }),
+});
+export type FichaPedagogicaCompetencia = typeof fichasPedagogicasCompetencias.$inferSelect;
+export type InsertFichaPedagogicaCompetencia = typeof fichasPedagogicasCompetencias.$inferInsert;
+
+/**
+ * Fichas Pedagógicas dos Cursos/Conteúdos
+ * Um conteúdo pode ter no máximo uma ficha publicada por competência.
+ * conteudoId aponta para competencias_modulos.
+ */
+export const fichasPedagogicasConteudos = mysqlTable("fichas_pedagogicas_conteudos", {
+  id: int("id").autoincrement().primaryKey(),
+  competenciaId: int("competenciaId").notNull(),
+  conteudoId: int("conteudoId").notNull(),
+  tipoConteudo: mysqlEnum("tipoConteudo", ["intro", "filme", "video", "tedtalk", "podcast", "livro", "curso", "outro"]).notNull(),
+  nomeConteudo: varchar("nomeConteudo", { length: 255 }).notNull(),
+  linkConteudo: varchar("linkConteudo", { length: 1000 }),
+  papelPedagogico: text("papelPedagogico").notNull(),
+  oQueAlunoAprende: text("oQueAlunoAprende").notNull(),
+  reflexaoEsperada: text("reflexaoEsperada").notNull(),
+  quandoUsar: text("quandoUsar"),
+  orientacaoMentor: text("orientacaoMentor").notNull(),
+  descricaoAluno: text("descricaoAluno").notNull(),
+  status: mysqlEnum("status", ["rascunho", "publicada", "inativa"]).notNull().default("rascunho"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdBy: varchar("createdBy", { length: 255 }),
+  updatedBy: varchar("updatedBy", { length: 255 }),
+});
+export type FichaPedagogicaConteudo = typeof fichasPedagogicasConteudos.$inferSelect;
+export type InsertFichaPedagogicaConteudo = typeof fichasPedagogicasConteudos.$inferInsert;
+
+/**
+ * Histórico de Ciclos do Aluno - Registra cada ciclo de onboarding concluído
+ * Criado quando o admin libera novo ciclo de onboarding (arquiva DISC + PDI do ciclo anterior)
+ */
+export const historicoCiclosAluno = mysqlTable("historico_ciclos_aluno", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(), // FK para alunos
+  numeroCiclo: int("numeroCiclo").notNull(), // 1 = primeiro ciclo, 2 = segundo, etc.
+  discResultadoId: int("discResultadoId"), // FK para disc_resultados (resultado DISC deste ciclo)
+  assessmentPdiId: int("assessmentPdiId"), // FK para assessment_pdi (PDI deste ciclo)
+  dataInicio: timestamp("dataInicio"), // Quando o ciclo começou (aceite do onboarding)
+  dataConclusao: timestamp("dataConclusao"), // Quando o ciclo foi arquivado (admin liberou novo ciclo)
+  observacoes: text("observacoes"), // Observações do admin ao arquivar
+  // Snapshot dos 7 indicadores no momento do encerramento do ciclo
+  ind1Webinars: int("ind1Webinars"), // % de webinars assistidos
+  ind2Avaliacoes: int("ind2Avaliacoes"), // % de avaliações aprovadas
+  ind3Competencias: int("ind3Competencias"), // % de competências concluídas
+  ind4Tarefas: int("ind4Tarefas"), // % de tarefas entregues
+  ind5Engajamento: int("ind5Engajamento"), // nota da mentora (0-100)
+  ind6Aplicabilidade: int("ind6Aplicabilidade"), // % de cases entregues
+  ind7EngajamentoFinal: int("ind7EngajamentoFinal"), // engajamento final calculado
+  metasTotal: int("metasTotal"), // total de metas no PDI
+  metasCumpridas: int("metasCumpridas"), // metas com status concluida
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type HistoricoCicloAluno = typeof historicoCiclosAluno.$inferSelect;
+export type InsertHistoricoCicloAluno = typeof historicoCiclosAluno.$inferInsert;
 
 /**
  * Processos Seletivos - modulo isolado para operacoes de selecao de clientes.
@@ -1330,4 +1884,3 @@ export const processoLogs = mysqlTable("processo_logs", {
 });
 export type ProcessoLog = typeof processoLogs.$inferSelect;
 export type InsertProcessoLog = typeof processoLogs.$inferInsert;
-

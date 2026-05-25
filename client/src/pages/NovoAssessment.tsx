@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
@@ -25,6 +26,9 @@ import {
   User,
   FileText,
   Info,
+  CalendarRange,
+  AlertCircle,
+  Layers,
 } from "lucide-react";
 
 // ============ Step Indicator ============
@@ -236,7 +240,11 @@ export default function NovoAssessment() {
     justificativa: string;
     microInicio: string;
     microTermino: string;
+    isExisting: boolean; // true se já está atribuída ao aluno
+    assessmentCompetenciaId: number | null; // ID no banco para update/delete
+    wasOriginallySelected: boolean; // estado original para detectar mudanças
   }>>([]);
+  const [confirmRemoveDialog, setConfirmRemoveDialog] = useState<{ open: boolean; idx: number; nome: string }>({ open: false, idx: -1, nome: '' });
 
   // Get user's consultorId for non-admin
   const { data: userRecord } = trpc.auth.me.useQuery();
@@ -249,6 +257,16 @@ export default function NovoAssessment() {
 
   // Fetch contract data for this student (Item 2.3)
   const { data: contratos = [] } = trpc.contratos.byAluno.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
+  // Nível vigente do aluno
+  const { data: nivelVigente } = trpc.contratoNiveis.vigente.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
+  // Histórico de todos os níveis do aluno
+  const { data: niveisAluno = [] } = trpc.contratoNiveis.historico.useQuery(
     { alunoId },
     { enabled: alunoId > 0 }
   );
@@ -282,84 +300,209 @@ export default function NovoAssessment() {
     { enabled: !!selectedTrilhaId }
   );
 
+  // FIX: Buscar assessments existentes do aluno para detectar trilhas duplicadas
+  const { data: existingAssessments = [] } = trpc.assessment.porAluno.useQuery(
+    { alunoId },
+    { enabled: alunoId > 0 }
+  );
+  const existingTrilhaIds = new Set(
+    existingAssessments
+      .filter((a: any) => a.status === 'ativo')
+      .map((a: any) => a.trilhaId)
+  );
+  const selectedTrilhaExists = selectedTrilhaId ? existingTrilhaIds.has(parseInt(selectedTrilhaId)) : false;
+  const existingCompetenciaIds = new Set(
+    existingAssessments
+      .filter((a: any) => a.status === 'ativo' && a.trilhaId === parseInt(selectedTrilhaId))
+      .flatMap((a: any) => (a.competencias || []).map((c: any) => c.competenciaId))
+  );
+
+  // Mapa de competências existentes com seus dados atuais
+  const existingCompetenciasMap = useMemo(() => {
+    const map = new Map<number, any>();
+    existingAssessments
+      .filter((a: any) => a.status === 'ativo' && a.trilhaId === parseInt(selectedTrilhaId))
+      .forEach((a: any) => {
+        (a.competencias || []).forEach((c: any) => {
+          map.set(c.competenciaId, c);
+        });
+      });
+    return map;
+  }, [existingAssessments, selectedTrilhaId]);
+
   useEffect(() => {
     if (competenciasTrilha.length > 0) {
       setCompetenciasConfig(
-        competenciasTrilha.map((c: any) => ({
-          competenciaId: c.id,
-          nome: c.nome || c.name || "Sem nome",
-          selected: true,
-          peso: "obrigatoria" as const,
-          notaCorte: "80",
-          nivelAtual: "",
-          metaFinal: "",
-          metaCiclo1: "",
-          metaCiclo2: "",
-          justificativa: "",
-          microInicio: "",
-          microTermino: "",
-        }))
+        competenciasTrilha.map((c: any) => {
+          const existingComp = existingCompetenciasMap.get(c.id);
+          const alreadyExists = !!existingComp;
+          return {
+            competenciaId: c.id,
+            nome: c.nome || c.name || "Sem nome",
+            selected: alreadyExists ? true : false, // existentes começam marcadas, novas desmarcadas
+            peso: alreadyExists ? (existingComp.peso || "obrigatoria") : "obrigatoria" as const,
+            notaCorte: alreadyExists ? String(existingComp.notaCorte || "80") : "80",
+            nivelAtual: alreadyExists && existingComp.nivelAtual != null ? String(existingComp.nivelAtual) : "",
+            metaFinal: alreadyExists && existingComp.metaFinal != null ? String(existingComp.metaFinal) : "",
+            metaCiclo1: alreadyExists && existingComp.metaCiclo1 != null ? String(existingComp.metaCiclo1) : "",
+            metaCiclo2: alreadyExists && existingComp.metaCiclo2 != null ? String(existingComp.metaCiclo2) : "",
+            justificativa: alreadyExists ? (existingComp.justificativa || "") : "",
+            microInicio: alreadyExists && existingComp.microInicio
+              ? (existingComp.microInicio instanceof Date
+                ? existingComp.microInicio.toISOString().split('T')[0]
+                : typeof existingComp.microInicio === 'string' && existingComp.microInicio.includes('T')
+                  ? existingComp.microInicio.split('T')[0]
+                  : String(existingComp.microInicio))
+              : "",
+            microTermino: alreadyExists && existingComp.microTermino
+              ? (existingComp.microTermino instanceof Date
+                ? existingComp.microTermino.toISOString().split('T')[0]
+                : typeof existingComp.microTermino === 'string' && existingComp.microTermino.includes('T')
+                  ? existingComp.microTermino.split('T')[0]
+                  : String(existingComp.microTermino))
+              : "",
+            isExisting: alreadyExists,
+            assessmentCompetenciaId: alreadyExists ? existingComp.id : null,
+            wasOriginallySelected: alreadyExists,
+          };
+        })
       );
     }
-  }, [competenciasTrilha]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [competenciasTrilha, selectedTrilhaId]);
 
   const criarMutation = trpc.assessment.criar.useMutation({
-    onSuccess: () => {
-      toast.success("Assessment criado com sucesso!");
+    onSuccess: (data: any) => {
+      if (data?.addedToExisting) {
+        toast.success(`${data.addedCount} competência(s) adicionada(s) à trilha existente!`);
+      } else {
+        toast.success("Assessment criado com sucesso!");
+      }
+      navigate("/assessment");
+    },
+    onError: (err: { message: string }) => toast.error(err.message),
+  });
+
+  // Mutation para atualizar competências existentes
+  const atualizarMutation = trpc.assessment.atualizarCompetencias.useMutation({
+    onSuccess: (data: any) => {
+      const msgs: string[] = [];
+      if (data?.updated > 0) msgs.push(`${data.updated} competência(s) atualizada(s)`);
+      if (data?.removed > 0) msgs.push(`${data.removed} competência(s) removida(s)`);
+      if (data?.added > 0) msgs.push(`${data.added} competência(s) adicionada(s)`);
+      toast.success(msgs.join(', ') || 'Alterações salvas!');
       navigate("/assessment");
     },
     onError: (err: { message: string }) => toast.error(err.message),
   });
 
   const handleSubmit = () => {
-    if (!selectedTrilhaId || !macroInicio || !macroTermino) {
-      toast.error("Preencha a trilha e as datas da Macro Jornada");
+    if (!selectedTrilhaId) {
+      toast.error("Selecione uma trilha");
       return;
     }
 
-    if (macroInicio >= macroTermino) {
+    if (!selectedTrilhaExists && (!macroInicio || !macroTermino)) {
+      toast.error("Preencha as datas da Macro Jornada");
+      return;
+    }
+
+    if (!selectedTrilhaExists && macroInicio >= macroTermino) {
       toast.error("Data de início deve ser anterior à data de término");
       return;
     }
 
     const selectedComps = competenciasConfig.filter(c => c.selected);
-    if (selectedComps.length === 0) {
-      toast.error("Selecione pelo menos uma competência");
+    const newComps = selectedComps.filter(c => !c.isExisting);
+    const existingUpdatedComps = selectedComps.filter(c => c.isExisting);
+    const removedComps = competenciasConfig.filter(c => !c.selected && c.isExisting && c.wasOriginallySelected);
+
+    // Se não há novas e não há existentes selecionadas e não há removidas
+    if (newComps.length === 0 && existingUpdatedComps.length === 0 && removedComps.length === 0) {
+      toast.error("Nenhuma alteração detectada");
       return;
     }
 
-    for (const comp of selectedComps) {
-      if (comp.microInicio && comp.microInicio < macroInicio) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`);
+    // Se há competências existentes para atualizar/remover OU novas para adicionar a trilha existente
+    if (selectedTrilhaExists) {
+      // Buscar o assessmentPdiId da trilha existente
+      const existingAssessment = existingAssessments.find(
+        (a: any) => a.status === 'ativo' && a.trilhaId === parseInt(selectedTrilhaId)
+      );
+      if (!existingAssessment) {
+        toast.error("Assessment não encontrado");
         return;
       }
-      if (comp.microTermino && comp.microTermino > macroTermino) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`);
-        return;
-      }
-    }
 
-    criarMutation.mutate({
-      alunoId,
-      trilhaId: parseInt(selectedTrilhaId),
-      turmaId: selectedAluno?.turmaId || null,
-      programId: selectedAluno?.programId || null,
-      consultorId: selectedConsultorId ? parseInt(selectedConsultorId) : null,
-      macroInicio,
-      macroTermino,
-      competencias: selectedComps.map(c => ({
-        competenciaId: c.competenciaId,
-        peso: c.peso,
-        notaCorte: c.notaCorte,
-        nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
-        metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
-        metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
-        metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
-        justificativa: c.justificativa || null,
-        microInicio: c.microInicio || null,
-        microTermino: c.microTermino || null,
-      })),
-    });
+      atualizarMutation.mutate({
+        assessmentPdiId: existingAssessment.id,
+        alunoId,
+        updated: existingUpdatedComps.map(c => ({
+          assessmentCompetenciaId: c.assessmentCompetenciaId!,
+          competenciaId: c.competenciaId,
+          peso: c.peso,
+          nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+          metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+          metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+          metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
+          justificativa: c.justificativa || null,
+          microInicio: c.microInicio || null,
+          microTermino: c.microTermino || null,
+        })),
+        removed: removedComps.map(c => c.assessmentCompetenciaId!),
+        added: newComps.map(c => ({
+          competenciaId: c.competenciaId,
+          peso: c.peso,
+          notaCorte: c.notaCorte,
+          nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+          metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+          metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+          metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
+          justificativa: c.justificativa || null,
+          microInicio: c.microInicio || null,
+          microTermino: c.microTermino || null,
+        })),
+      });
+    } else {
+      // Trilha nova: usar o fluxo original de criação
+      if (selectedComps.length === 0) {
+        toast.error("Selecione pelo menos uma competência");
+        return;
+      }
+
+      for (const comp of selectedComps) {
+        if (comp.microInicio && comp.microInicio < macroInicio) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`);
+          return;
+        }
+        if (comp.microTermino && comp.microTermino > macroTermino) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`);
+          return;
+        }
+      }
+
+      criarMutation.mutate({
+        alunoId,
+        trilhaId: parseInt(selectedTrilhaId),
+        turmaId: selectedAluno?.turmaId || null,
+        programId: selectedAluno?.programId || null,
+        consultorId: selectedConsultorId ? parseInt(selectedConsultorId) : null,
+        macroInicio,
+        macroTermino,
+        competencias: selectedComps.map(c => ({
+          competenciaId: c.competenciaId,
+          peso: c.peso,
+          notaCorte: c.notaCorte,
+          nivelAtual: c.nivelAtual ? parseFloat(c.nivelAtual) : null,
+          metaFinal: c.metaFinal ? parseFloat(c.metaFinal) : null,
+          metaCiclo1: c.metaCiclo1 ? parseFloat(c.metaCiclo1) : null,
+          metaCiclo2: c.metaCiclo2 ? parseFloat(c.metaCiclo2) : null,
+          justificativa: c.justificativa || null,
+          microInicio: c.microInicio || null,
+          microTermino: c.microTermino || null,
+        })),
+      });
+    }
   };
 
   const toggleAll = (selected: boolean) => {
@@ -375,6 +518,19 @@ export default function NovoAssessment() {
   // Expanded competencia detail state
   const [expandedComp, setExpandedComp] = useState<number | null>(null);
 
+  // Validação de datas contra o período do nível vigente
+  const toDateStr = (v: any): string | null => {
+    if (!v) return null;
+    if (typeof v === 'string') return v.includes('T') ? v.split('T')[0] : v;
+    if (v instanceof Date) return v.toISOString().split('T')[0];
+    return null;
+  };
+  const nv = nivelVigente as any;
+  const nivelLimiteInicio = toDateStr(nv?.nivelInicio ?? nv?.dataInicio);
+  const nivelLimiteFim = toDateStr(nv?.nivelFim ?? nv?.dataFim);
+  const inicioForaDoNivel = !!macroInicio && !!nivelLimiteInicio && macroInicio < nivelLimiteInicio;
+  const fimForaDoNivel = !!macroTermino && !!nivelLimiteFim && macroTermino > nivelLimiteFim;
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto">
@@ -385,11 +541,31 @@ export default function NovoAssessment() {
             Voltar
           </Button>
           <Separator orientation="vertical" className="h-6" />
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <ClipboardCheck className="h-6 w-6 text-secondary" />
-              Novo Assessment
-            </h1>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <ClipboardCheck className="h-6 w-6 text-secondary" />
+                Novo Assessment
+              </h1>
+              {nivelVigente && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 bg-indigo-600 text-white px-3 py-1.5 rounded-full shadow-sm">
+                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Ciclo</span>
+                    <span className="text-sm font-extrabold">Nível {nivelVigente.nivel}</span>
+                  </div>
+                  {(nivelVigente as any).nivelInicio && (nivelVigente as any).nivelFim && (
+                    <div className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+                      <CalendarRange className="h-3.5 w-3.5" />
+                      <span>
+                        {new Date((nivelVigente as any).nivelInicio + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {' → '}
+                        {new Date((nivelVigente as any).nivelFim + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             {selectedAluno && (
               <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
                 <User className="h-3.5 w-3.5" />
@@ -402,6 +578,19 @@ export default function NovoAssessment() {
 
         {/* Contract Info Card (Item 2.3) */}
         <ContratoInfoCard contratos={contratos} alunoName={selectedAluno?.name || "este aluno"} tipoMentoria={selectedAluno?.tipoMentoria} aluno={selectedAluno} />
+
+        {/* Callout: Aviso sobre liberação do plano */}
+        <div className="my-4 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl leading-none mt-0.5">⚠️</span>
+            <div>
+              <p className="font-semibold text-amber-800 text-sm">Atenção: Liberação do Plano de Desenvolvimento</p>
+              <p className="text-amber-700 text-sm mt-1 leading-relaxed">
+                Para que o aluno visualize o plano criado no portal, é indispensável realizar o registro da <strong>Sessão de Mentoria nº 1 — Assessment</strong>. Sem esse registro, o conteúdo permanecerá oculto para o aluno durante o onboarding.
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* Step Indicator */}
         <StepIndicator currentStep={step} />
@@ -432,6 +621,15 @@ export default function NovoAssessment() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedTrilhaExists && (
+                    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-amber-800">
+                        <p className="font-medium">Esta trilha já existe para este aluno.</p>
+                        <p className="text-xs mt-0.5">As novas competências serão adicionadas à trilha existente. Os campos de Macro Jornada não serão utilizados.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -462,19 +660,124 @@ export default function NovoAssessment() {
 
               <Separator />
 
+              {/* Card: Jornada de Níveis */}
+              {(niveisAluno as any[]).length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm flex items-center gap-2 text-slate-700">
+                    <Layers className="h-4 w-4 text-purple-600" />
+                    Jornada de Níveis
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {(niveisAluno as any[]).map((nivel: any) => {
+                      const hoje = new Date();
+                      hoje.setHours(0, 0, 0, 0);
+                      const dataInicioDate = nivel.dataInicio ? new Date(nivel.dataInicio) : null;
+                      const dataFimDate = nivel.dataFim ? new Date(nivel.dataFim) : null;
+                      if (dataFimDate) dataFimDate.setHours(23, 59, 59, 999);
+                      const futuro = dataInicioDate ? dataInicioDate > hoje : false;
+                      const emAndamento = !futuro && dataFimDate ? dataFimDate >= hoje : false;
+                      const encerrado = !futuro && !emAndamento;
+                      const inicio = nivel.dataInicio
+                        ? new Date(nivel.dataInicio).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+                        : null;
+                      const fim = nivel.dataFim
+                        ? new Date(nivel.dataFim).toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+                        : null;
+                      return (
+                        <div
+                          key={nivel.id}
+                          className={`rounded-xl p-3 border-2 flex flex-col gap-1 ${
+                            emAndamento
+                              ? 'border-emerald-300 bg-emerald-50'
+                              : encerrado
+                              ? 'border-gray-200 bg-gray-50'
+                              : 'border-blue-100 bg-blue-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-black ${
+                              emAndamento ? 'text-emerald-700' : 'text-gray-500'
+                            }`}>
+                              Nível {nivel.nivel}
+                            </span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                              emAndamento
+                                ? 'bg-emerald-200 text-emerald-800'
+                                : encerrado
+                                ? 'bg-gray-200 text-gray-600'
+                                : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {futuro ? 'Futuro' : emAndamento ? 'Em andamento' : 'Encerrado'}
+                            </span>
+                          </div>
+                          {(inicio || fim) && (
+                            <p className="text-[10px] text-gray-400 leading-tight">
+                              {inicio}{inicio && fim ? ' → ' : ''}{fim}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
+
               <div className="space-y-3">
                 <Label className="font-medium flex items-center gap-1.5 text-base">
                   <Calendar className="h-4 w-4 text-secondary" />
                   Macro Jornada (Duração da Trilha)
                 </Label>
+                {/* Aviso fixo: período do nível vigente */}
+                {nivelVigente && nivelLimiteInicio && nivelLimiteFim && (
+                  <div className="flex items-start gap-3 bg-amber-50 border-2 border-amber-400 rounded-xl px-4 py-3 text-sm text-amber-900 shadow-sm">
+                    <AlertCircle className="h-5 w-5 mt-0.5 shrink-0 text-amber-500" />
+                    <div>
+                      <p className="font-bold text-amber-800 uppercase tracking-wide text-xs mb-0.5">Atenção</p>
+                      <p>
+                        O <strong>Macro Ciclo</strong> selecionado deve ficar dentro do período do nível que o aluno está cursando.
+                      </p>
+                      <p className="mt-1 font-semibold">
+                        Nível {nivelVigente.nivel} em andamento:{' '}
+                        {new Date(nivelLimiteInicio + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}
+                        {' → '}
+                        {new Date(nivelLimiteFim + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label className="text-sm text-muted-foreground">Data de Início *</Label>
-                    <Input type="date" value={macroInicio} onChange={e => setMacroInicio(e.target.value)} className="h-11" />
+                    <Input
+                      type="date"
+                      value={macroInicio}
+                      onChange={e => setMacroInicio(e.target.value)}
+                      className={`h-11 ${inicioForaDoNivel ? 'border-red-500 bg-red-50' : ''}`}
+                    />
+                    {inicioForaDoNivel && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Data anterior ao início do Nível {nivelVigente?.nivel} ({new Date(nivelLimiteInicio + 'T00:00:00').toLocaleDateString('pt-BR')})
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm text-muted-foreground">Data de Término *</Label>
-                    <Input type="date" value={macroTermino} onChange={e => setMacroTermino(e.target.value)} className="h-11" />
+                    <Input
+                      type="date"
+                      value={macroTermino}
+                      onChange={e => setMacroTermino(e.target.value)}
+                      className={`h-11 ${fimForaDoNivel ? 'border-red-500 bg-red-50' : ''}`}
+                    />
+                    {fimForaDoNivel && (
+                      <p className="text-xs text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Data após o fim do Nível {nivelVigente?.nivel} ({new Date(nivelLimiteFim + 'T00:00:00').toLocaleDateString('pt-BR')})
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -488,11 +791,17 @@ export default function NovoAssessment() {
                 </Button>
                 <Button
                   onClick={() => setStep(2)}
-                  disabled={!selectedTrilhaId || !macroInicio || !macroTermino}
+                  disabled={(() => {
+                    if (!selectedTrilhaId) return true;
+                    if (!selectedTrilhaExists && (!macroInicio || !macroTermino)) return true;
+                    // Valida datas contra o período do nível vigente
+                    if (inicioForaDoNivel || fimForaDoNivel) return true;
+                    return false;
+                  })()}
                   className="bg-secondary hover:bg-secondary/90 gap-1.5"
                   size="lg"
                 >
-                  Próximo: Competências
+                  INCLUIR/EDITAR COMPETÊNCIAS
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -540,22 +849,34 @@ export default function NovoAssessment() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {competenciasConfig.map((comp, idx) => (
+                    {competenciasConfig.map((comp, idx) => {
+                      return (
                       <>
-                        <TableRow key={comp.competenciaId} className={`${!comp.selected ? "opacity-40 bg-muted/20" : "hover:bg-muted/10"}`}>
+                        <TableRow key={comp.competenciaId} className={`${!comp.selected ? "opacity-40 bg-muted/20" : "hover:bg-muted/10"} ${comp.isExisting && comp.selected ? "bg-blue-50/50" : ""}`}>
                           <TableCell className="text-center">
                             <Checkbox
                               checked={comp.selected}
                               onCheckedChange={(checked) => {
-                                setCompetenciasConfig(prev => {
-                                  const next = [...prev];
-                                  next[idx] = { ...next[idx], selected: !!checked };
-                                  return next;
-                                });
+                                if (!checked && comp.isExisting && comp.wasOriginallySelected) {
+                                  setConfirmRemoveDialog({ open: true, idx, nome: comp.nome });
+                                } else {
+                                  setCompetenciasConfig(prev => {
+                                    const next = [...prev];
+                                    next[idx] = { ...next[idx], selected: !!checked };
+                                    return next;
+                                  });
+                                }
                               }}
                             />
                           </TableCell>
-                          <TableCell className="font-medium">{comp.nome}</TableCell>
+                          <TableCell className="font-medium">
+                            {comp.nome}
+                            {comp.isExisting && (
+                              <span className={`ml-2 text-xs font-normal ${comp.selected ? 'text-blue-600' : 'text-red-500'}`}>
+                                {comp.selected ? '(atribuída)' : '(será removida)'}
+                              </span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-center">
                             <select
                               value={comp.peso}
@@ -723,7 +1044,8 @@ export default function NovoAssessment() {
                           </TableRow>
                         )}
                       </>
-                    ))}
+                    );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -750,14 +1072,14 @@ export default function NovoAssessment() {
                 </div>
                 <Button
                   onClick={handleSubmit}
-                  disabled={competenciasConfig.filter(c => c.selected).length === 0 || criarMutation.isPending}
+                  disabled={criarMutation.isPending || atualizarMutation.isPending}
                   className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
                   size="lg"
                 >
-                  {criarMutation.isPending ? "Criando..." : (
+                  {(criarMutation.isPending || atualizarMutation.isPending) ? "Salvando..." : (
                     <>
                       <CheckCircle2 className="h-4 w-4" />
-                      Criar Assessment e Liberar Trilha
+                      {selectedTrilhaExists ? "Salvar Alterações" : "Criar Assessment e Liberar Trilha"}
                     </>
                   )}
                 </Button>
@@ -766,6 +1088,32 @@ export default function NovoAssessment() {
           </Card>
         )}
       </div>
+      <AlertDialog open={confirmRemoveDialog.open} onOpenChange={(open) => !open && setConfirmRemoveDialog({ open: false, idx: -1, nome: '' })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover Competência</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover a competência <strong>{confirmRemoveDialog.nome}</strong> da trilha deste aluno? Esta ação será aplicada ao salvar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                setCompetenciasConfig(prev => {
+                  const next = [...prev];
+                  next[confirmRemoveDialog.idx] = { ...next[confirmRemoveDialog.idx], selected: false };
+                  return next;
+                });
+                setConfirmRemoveDialog({ open: false, idx: -1, nome: '' });
+              }}
+            >
+              Sim, Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

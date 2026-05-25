@@ -1,0 +1,41 @@
+id,programId,consultorId,tipoSessao,valor,descricao,validoDesde,validoAte,isActive,createdBy,createdAt,updatedAt
+4,90002,39,individual_normal,80.00,,2026-03-01 00:00:00,2027-03-01 00:00:00,0,1,2026-03-24 01:00:20,2026-03-24 01:09:31
+6,90002,39,grupo_assessment,100.00,,2026-03-01 00:00:00,2027-03-01 00:00:00,0,1,2026-03-24 01:02:56,2026-03-24 01:35:39
+7,90002,39,individual_normal,85.00,,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 01:10:12,2026-03-24 01:33:09
+8,90002,39,individual_normal,1500.00,Regra atualizada pelo teste,2099-01-01 00:00:00,2099-12-31 00:00:00,0,1,2026-03-24 01:17:51,2026-03-24 01:17:51
+9,90002,39,individual_assessment,150.00,Sessões de Assessment iniciais e finais ,2026-03-24 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 01:34:13,2026-03-24 01:34:13
+10,90002,39,grupo_normal,100.00,,2026-03-24 00:00:00,2027-01-31 00:00:00,1,1,2026-03-24 01:35:19,2026-03-24 01:35:19
+11,90002,39,individual_normal,1500.00,Regra atualizada pelo teste,2099-01-01 00:00:00,2099-12-31 00:00:00,0,1,2026-03-24 02:31:21,2026-03-24 02:31:21
+30001,16,28,individual_normal,85.00,O programa de mentoria tem previsão de 1 tutoria mês com duração de 00:h45,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 11:58:53,2026-03-24 11:58:53
+30002,16,28,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 12:02:33,2026-03-24 12:38:10
+30003,16,28,grupo_normal,150.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 12:04:27,2026-03-24 12:04:27
+30004,17,28,individual_normal,85.00,O programa de mentoria tem previsão de 1 tutoria mês com duração de 00:h45,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 12:05:44,2026-03-24 12:05:44
+30005,17,28,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 12:06:38,2026-03-24 12:38:31
+30006,17,28,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 12:08:20,2026-03-24 12:08:20
+30007,18,28,individual_normal,85.00,O programa de mentoria tem previsão de 1 tutoria mês com duração de 00:h45,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 12:12:56,2026-03-24 12:12:56
+30008,18,28,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:13:37,2026-03-24 12:38:49
+30009,18,28,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00,2026-03-01 00:00:00,2027-03-30 00:00:00,1,1,2026-03-24 12:14:32,2026-03-24 12:14:32
+30010,60001,28,individual_normal,85.00,O programa de mentoria tem previsão de 1 mentoria mês com duração de 00:h45.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:19:43,2026-03-24 12:19:43
+30011,60001,28,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:21:40,2026-03-24 12:39:07
+30012,60001,28,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:22:29,2026-03-24 12:22:29
+30013,18,35,individual_normal,85.00,O programa de mentoria tem previsão de 1 mentoria mês com duração de 00:h45.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:33:57,2026-03-24 12:33:57
+30014,18,35,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:37:39,2026-03-24 12:41:39
+30015,18,35,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:43:49,2026-03-24 12:43:49
+30016,17,35,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:45:20,2026-03-24 12:45:20
+30017,17,35,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:46:54,2026-03-24 12:46:54
+30018,17,35,individual_normal,85.00,O programa de mentoria tem previsão de 1 mentoria mês com duração de 00:h45.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:48:09,2026-03-24 12:48:09
+30019,17,32,individual_normal,85.00,O programa de mentoria tem previsão de 1 mentoria mês com duração de 00:h45.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:53:56,2026-03-24 12:53:56
+30020,17,32,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:54:59,2026-03-24 12:54:59
+30021,17,32,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:55:42,2026-03-24 12:55:42
+30022,18,32,individual_normal,85.00,O programa de mentoria tem previsão de 1 mentoria mês com duração de 00:h45.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:56:59,2026-03-24 12:56:59
+30023,18,32,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:57:31,2026-03-24 12:57:31
+30024,18,32,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:58:15,2026-03-24 12:58:15
+30025,17,29,individual_normal,85.00,O programa de mentoria tem previsão de 1 mentoria mês com duração de 00:h45.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:58:59,2026-03-24 12:58:59
+30026,17,29,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 12:59:29,2026-03-24 12:59:29
+30027,17,29,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 13:00:04,2026-03-24 13:00:04
+30028,18,29,individual_normal,85.00,O programa de mentoria tem previsão de 1 mentoria mês com duração de 00:h45.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 13:00:45,2026-03-24 13:00:45
+30029,18,29,individual_assessment,100.00,O programa de mentoria prevê esta sesssão Alinhamento de Trilha com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 13:01:22,2026-03-24 13:01:22
+30030,18,29,grupo_normal,100.00,O programa de mentoria prevê sessões em grupo mensais com duração de 1h00.,2026-03-01 00:00:00,2027-03-31 00:00:00,1,1,2026-03-24 13:02:09,2026-03-24 13:02:09
+30031,90002,39,individual_normal,1500.00,Regra atualizada pelo teste,2099-01-01 00:00:00,2099-12-31 00:00:00,0,1,2026-03-24 15:39:34,2026-03-24 15:39:34
+30032,90002,39,individual_normal,1500.00,Regra atualizada pelo teste,2099-01-01 00:00:00,2099-12-31 00:00:00,0,1,2026-03-24 15:56:21,2026-03-24 15:56:21
+60001,90002,39,individual_normal,1500.00,Regra atualizada pelo teste,2099-01-01 00:00:00,2099-12-31 00:00:00,0,1,2026-03-26 14:58:18,2026-03-26 14:58:18

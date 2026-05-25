@@ -152,7 +152,7 @@ export async function verificarEEnviarAlertasMentoria(options?: {
 
       if (!dryRun) {
         try {
-          const loginUrl = 'https://ecolider.evoluirckm.com';
+          const loginUrl = 'https://ecolider.ecodobem.com';
           const emailData = buildMentoringAlertEmail({
             alunoName: aluno.name,
             mentorName: mentor.name,
@@ -161,12 +161,10 @@ export async function verificarEEnviarAlertasMentoria(options?: {
             loginUrl,
           });
 
-          // Build CC list: mentor + admin
-          const ccList = [mentor.email, smtpUser].filter(Boolean).join(', ');
-
+          // Send email ONLY to mentor (not to aluno)
+          // Mentor needs to know about students without mentoring sessions
           const result = await sendEmail({
-            to: aluno.email,
-            cc: ccList,
+            to: mentor.email,
             subject: emailData.subject,
             html: emailData.html,
             text: emailData.text,

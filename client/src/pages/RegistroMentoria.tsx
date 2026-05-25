@@ -89,6 +89,10 @@ export default function RegistroMentoria() {
   // Aplicabilidade Prática - nota da mentora
   const [newNotaMentoraAplic, setNewNotaMentoraAplic] = useState<number | null>(null);
   const [editNotaMentoraAplic, setEditNotaMentoraAplic] = useState<number | null>(null);
+  // Tipo de sessão
+  const [newTipoSessao, setNewTipoSessao] = useState<"individual_normal" | "individual_assessment" | "grupo_normal">("individual_normal");
+  // Agendamento vinculado
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
 
   // Queries
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
@@ -117,6 +121,21 @@ export default function RegistroMentoria() {
     { enabled: !!selectedAlunoId }
   );
   const { data: taskLibrary = [] } = trpc.mentor.getTaskLibrary.useQuery();
+
+  // Agendamentos do consultor (para vincular ao registro de sessão)
+  const consultorIdForAppt = userConsultorId;
+  // Busca agendamentos ativos do aluno selecionado com esta mentora (para vincular ao registro)
+  const { data: mentorAppointments = [] } = trpc.mentor.getAppointments.useQuery(
+    { 
+      consultorId: consultorIdForAppt!,
+      alunoId: selectedAlunoId ?? undefined,
+    },
+    { enabled: !!consultorIdForAppt && showNewSession && !!selectedAlunoId }
+  );
+  // Agendamentos pendentes (agendado ou confirmado) para o aluno selecionado
+  const pendingAppointments = mentorAppointments.filter(
+    (a: any) => a.status === 'agendado' || a.status === 'confirmado'
+  );
 
   // Alerta de atualização de metas
   const { data: alertaMetas } = trpc.metas.alertaAtualizacao.useQuery(
@@ -321,6 +340,8 @@ export default function RegistroMentoria() {
     setNewCustomTaskTitle("");
     setNewCustomTaskDescription("");
     setNewNotaMentoraAplic(null);
+    setNewTipoSessao("individual_normal");
+    setSelectedAppointmentId(null);
   };
 
   const handleCreateSession = () => {
@@ -352,6 +373,8 @@ export default function RegistroMentoria() {
       customTaskTitle: newCustomTaskTitle || null,
       customTaskDescription: newCustomTaskDescription || null,
       notaMentoraAplicabilidade: newNotaMentoraAplic ?? undefined,
+      tipoSessao: newTipoSessao,
+      appointmentId: selectedAppointmentId ?? undefined,
     });
   };
 
@@ -909,6 +932,87 @@ export default function RegistroMentoria() {
                       <h4 className="text-base font-bold text-[#0A1E3E]">Parte 1 — Registro da Sessão Atual</h4>
                     </div>
 
+                    {/* Vincular a um Agendamento */}
+                    {pendingAppointments.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+                        <Label className="flex items-center gap-2 text-blue-800 font-semibold">
+                          <Calendar className="h-4 w-4" />
+                          Vincular a um Agendamento
+                        </Label>
+                        <p className="text-xs text-blue-700">
+                          Selecione o agendamento correspondente a esta sessão. O evento no Google Calendar será marcado como realizado automaticamente.
+                        </p>
+                        <div className="space-y-2">
+                          {/* Opção: sem vínculo */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedAppointmentId(null);
+                            }}
+                            className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
+                              selectedAppointmentId === null
+                                ? 'border-gray-400 bg-gray-100 text-gray-700 font-medium'
+                                : 'border-gray-200 bg-white hover:border-gray-300 text-gray-500'
+                            }`}
+                          >
+                            <X className="h-4 w-4 flex-shrink-0" />
+                            <span>Sem vínculo (sessão avulsa)</span>
+                          </button>
+                          {/* Lista de agendamentos pendentes */}
+                          {pendingAppointments.map((appt: any) => {
+                            const [year, month, day] = appt.scheduledDate.split('-');
+                            const dateLabel = `${day}/${month}/${year}`;
+                            const typeLabel = appt.type === 'grupo' ? 'Grupal' : 'Individual';
+                            const meetLink = appt.googleMeetLink?.startsWith('http') ? appt.googleMeetLink : null;
+                            return (
+                              <button
+                                key={appt.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedAppointmentId(appt.id);
+                                  setNewSessionDate(appt.scheduledDate);
+                                  if (appt.type === 'grupo') setNewTipoSessao('grupo_normal');
+                                  else setNewTipoSessao('individual_normal');
+                                }}
+                                className={`w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-lg border-2 transition-all ${
+                                  selectedAppointmentId === appt.id
+                                    ? 'border-blue-500 bg-blue-100 text-blue-900'
+                                    : 'border-gray-200 bg-white hover:border-blue-300 text-gray-700'
+                                }`}
+                              >
+                                <Calendar className="h-4 w-4 flex-shrink-0 mt-0.5 text-blue-600" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-semibold text-sm">{dateLabel} às {appt.startTime}</span>
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                                      appt.type === 'grupo' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                    }`}>{typeLabel}</span>
+                                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                      appt.status === 'confirmado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                    }`}>{appt.status === 'confirmado' ? 'Confirmado' : 'Agendado'}</span>
+                                  </div>
+                                  {appt.title && (
+                                    <p className="text-xs text-gray-500 mt-0.5 truncate">{appt.title}</p>
+                                  )}
+                                  {meetLink && (
+                                    <a
+                                      href={meetLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5"
+                                    >
+                                      <ExternalLink className="h-3 w-3" /> Abrir Meet
+                                    </a>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Data da Sessão */}
                     <div>
                       <Label className="flex items-center gap-2 mb-2">
@@ -918,11 +1022,48 @@ export default function RegistroMentoria() {
                       <Input type="date" value={newSessionDate} onChange={(e) => setNewSessionDate(e.target.value)} className="max-w-xs" />
                     </div>
 
-                    {/* Presença */}
+                    {/* Tipo de Sessão */}
+                    <div>
+                      <Label className="flex items-center gap-2 mb-2">
+                        <Users className="h-4 w-4 text-[#0A1E3E]" />
+                        Tipo de Sessão *
+                      </Label>
+                      <div className="flex gap-3 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setNewTipoSessao("individual_normal")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                            newTipoSessao === "individual_normal" ? "border-[#0A1E3E] bg-[#0A1E3E]/10 text-[#0A1E3E] font-semibold" : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                        >
+                          <User className="h-4 w-4" /> Individual
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTipoSessao("individual_assessment")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                            newTipoSessao === "individual_assessment" ? "border-purple-600 bg-purple-50 text-purple-800 font-semibold" : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                        >
+                          <ClipboardCheck className="h-4 w-4" /> Assessment
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTipoSessao("grupo_normal")}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+                            newTipoSessao === "grupo_normal" ? "border-emerald-600 bg-emerald-50 text-emerald-800 font-semibold" : "border-gray-200 bg-white hover:border-gray-300"
+                          }`}
+                        >
+                          <Users className="h-4 w-4" /> Grupal
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Presênça */}
                     <div>
                       <Label className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-4 w-4 text-[#0A1E3E]" />
-                        Presença *
+                        Presênça *
                       </Label>
                       <div className="flex gap-3">
                         <button
@@ -1632,7 +1773,7 @@ export default function RegistroMentoria() {
                                             ? 'bg-amber-100 text-amber-800' 
                                             : 'bg-red-100 text-red-800'
                                       }`}>
-                                        \u00d8{(((session as any).notaAlunoAplicabilidade + (session as any).notaMentoraAplicabilidade) / 2).toFixed(1)}
+                                        {(((((session as any)?.notaAlunoAplicabilidade ?? 0) + ((session as any)?.notaMentoraAplicabilidade ?? 0)) / 2) ?? 0).toFixed(1)}
                                       </Badge>
                                     )}
                                   </div>
@@ -1803,7 +1944,7 @@ export default function RegistroMentoria() {
                             <p className="text-xs text-gray-500 mb-1">M\u00e9dia (Indicador de Aplicabilidade)</p>
                             <span className={`font-bold text-xl ${Number(avg) >= 8 ? 'text-emerald-700' : Number(avg) >= 5 ? 'text-amber-600' : 'text-red-600'}`}>{avg}/10</span>
                             {Number(avg) >= 8 && (
-                              <p className="text-xs text-emerald-600 mt-1 font-medium">B\u00f4nus de +10% no engajamento!</p>
+                              <p className="text-xs text-emerald-600 mt-1 font-medium">Boa aplicabilidade prática registrada.</p>
                             )}
                           </div>
                         )}

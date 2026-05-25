@@ -60,7 +60,7 @@ describe('cronLembreteAplicabilidade', () => {
         appointmentDate: '2026-03-25',
         appointmentTime: '09:00',
         tarefaTitulo: 'Praticar escuta ativa',
-        loginUrl: 'https://ecolider.evoluirckm.com',
+        loginUrl: 'https://ecolider.ecodobem.com',
       });
 
       expect(result.subject).toContain('25/03/2026');
@@ -70,7 +70,7 @@ describe('cronLembreteAplicabilidade', () => {
       expect(result.html).toContain('Praticar escuta ativa');
       expect(result.html).toContain('25/03/2026');
       expect(result.html).toContain('09:00');
-      expect(result.html).toContain('https://ecolider.evoluirckm.com');
+      expect(result.html).toContain('https://ecolider.ecodobem.com');
       expect(result.text).toContain('João Silva');
       expect(result.text).toContain('Maria Santos');
       expect(result.text).toContain('Praticar escuta ativa');

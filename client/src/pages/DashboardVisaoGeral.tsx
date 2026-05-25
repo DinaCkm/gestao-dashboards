@@ -1,11 +1,14 @@
-import { useState } from "react";
+"use client";
+
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
-import { Users, Building2, TrendingUp, Award, Target, Calendar, BookOpen, Zap, GraduationCap, PartyPopper, ChevronDown, ChevronUp, Info, AlertTriangle, Clock, Trophy } from "lucide-react";
+import { Users, Building2, TrendingUp, Award, Target, Calendar, BookOpen, Zap, GraduationCap, PartyPopper, ChevronDown, ChevronUp, Info, AlertTriangle, Clock, Trophy, Video, ClipboardCheck, Star } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +16,14 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Bell } from "lucide-react";
+import DualIndicators from "@/components/DualIndicators";
+
+const turmaColors = ['#1E3A5F', '#F5A623', '#2E7D32', '#D32F2F', '#7B1FA2', '#00838F', '#FF6F00', '#0097A7'];
+
+const fmtDate = (d: string | Date | null) => {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('pt-BR');
+};
 
 
 
@@ -42,7 +53,7 @@ function IndicadorCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold" style={{ color: cor }}>{valor.toFixed(0)}%</div>
+        <div className="text-2xl font-bold" style={{ color: cor }}>{(valor ?? 0).toFixed(0)}%</div>
         <Progress value={valor} className="h-2 mt-2" />
         <p className="text-xs text-muted-foreground mt-1">{descricao}</p>
         
@@ -60,10 +71,21 @@ function IndicadorCard({
 }
 
 export default function DashboardVisaoGeral() {
+  const { user } = useAuth();
   const { data, isLoading, error } = trpc.indicadores.visaoGeral.useQuery();
   const { data: empresas } = trpc.indicadores.empresas.useQuery();
   const { data: allProgress = [] } = trpc.mentor.allSessionProgress.useQuery();
   const notificarMutation = trpc.mentor.notificarCicloQuaseFechando.useMutation();
+
+  // Determinar se é gerente e qual é sua empresa
+  const isGerente = (user as any)?.consultorRole === 'gerente';
+  const empresaNome = useMemo(() => {
+    if (!isGerente || !empresas || !user?.programId) return null;
+    const empresa = empresas.find(e => e.id === user.programId);
+    return empresa?.nome || null;
+  }, [empresas, user?.programId, isGerente]);
+
+
 
   // Alunos que faltam 1 sessão para fechar o ciclo
   const alunosFalta1 = allProgress.filter((p: any) => p.faltaUmaSessao);
@@ -126,9 +148,11 @@ export default function DashboardVisaoGeral() {
   // Dados para o gráfico de barras por empresa
   const empresaData = porEmpresa.map(emp => ({
     nome: emp.identificador,
-    nota: parseFloat(((emp.mediaInd7 || emp.mediaPerformanceGeral || emp.mediaNotaFinal * 10) || 0).toFixed(1)),
+    nota: parseFloat((((emp?.mediaInd7 || emp?.mediaPerformanceGeral || (emp?.mediaNotaFinal ?? 0) * 10) || 0) ?? 0).toFixed(1)),
     alunos: emp.totalAlunos
   }));
+
+
 
   return (
     <DashboardLayout>
@@ -139,7 +163,7 @@ export default function DashboardVisaoGeral() {
             Dashboard <span className="text-primary">Visão Geral</span>
           </h1>
           <p className="text-muted-foreground">
-            Consolidado de performance de todas as empresas do ECOSSISTEMA DO BEM
+            {isGerente ? `Consolidado da empresa: ${empresaNome}` : 'Consolidado de performance de todas as empresas do ECOSSISTEMA DO BEM'}
           </p>
         </div>
 
@@ -149,36 +173,262 @@ export default function DashboardVisaoGeral() {
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2 text-amber-800">
                 <AlertTriangle className="h-5 w-5" />
-                Atenção: {alunosFalta1.length} aluno{alunosFalta1.length !== 1 ? 's' : ''} a 1 sessão de fechar o ciclo macro
+                Alunos a 1 Sessão de Fechar o Ciclo
               </CardTitle>
-              <div className="flex items-center justify-between">
-                <CardDescription className="text-amber-700">
-                  Estes alunos precisam de apenas mais 1 sessão de mentoria para completar o ciclo
-                </CardDescription>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="border-amber-400 text-amber-800 hover:bg-amber-100"
-                  onClick={handleEnviarNotificacao}
-                  disabled={notificarMutation.isPending}
-                >
-                  <Bell className="h-4 w-4 mr-1" />
-                  {notificarMutation.isPending ? 'Enviando...' : 'Enviar Notificação'}
-                </Button>
-              </div>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <p className="text-sm text-amber-700">
+                <strong>{alunosFalta1.length}</strong> aluno(s) faltam apenas 1 sessão para completar o ciclo macro.
+              </p>
+              <Button 
+                onClick={handleEnviarNotificacao}
+                disabled={notificarMutation.isPending}
+                variant="outline"
+                size="sm"
+                className="border-amber-300 hover:bg-amber-100"
+              >
+                <Bell className="h-4 w-4 mr-2" />
+                {notificarMutation.isPending ? 'Enviando...' : 'Notificar'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Alerta: Alunos com ciclo completo */}
+        {alunosCicloCompleto.length > 0 && (
+          <Card className="border-green-300 bg-green-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-green-800">
+                <PartyPopper className="h-5 w-5" />
+                Alunos com Ciclo Completo
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                {alunosFalta1.map((p: any) => (
-                  <div key={p.alunoId} className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-200">
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">{p.alunoNome}</p>
-                      <p className="text-xs text-gray-500">{p.programaNome || 'Sem programa'}</p>
-                      {p.consultorNome && <p className="text-xs text-gray-400">Mentor: {p.consultorNome}</p>}
+              <p className="text-sm text-green-700">
+                <strong>{alunosCicloCompleto.length}</strong> aluno(s) completaram o ciclo macro com sucesso! 🎉
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Cards de Resumo Principais */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Total de Alunos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{visaoGeral.totalAlunos || 0}</div>
+              <p className="text-xs text-muted-foreground">Alunos ativos no sistema</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                Alunos em Excelência
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{visaoGeral.alunosExcelencia || 0}</div>
+              <p className="text-xs text-muted-foreground">Engajamento ≥ 90%</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Alunos em Atenção
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{visaoGeral.alunosAtencao || 0}</div>
+              <p className="text-xs text-muted-foreground">Engajamento &lt; 50%</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Indicadores de Destaque (Engajamento, Metas e Aplicabilidade) */}
+        <DualIndicators
+          engajamento={visaoGeral.mediaInd7 || visaoGeral.mediaEngajamento || 0}
+          desenvolvimento={visaoGeral.percentualMetas || 0}
+          engajamentoDetalhes={{
+            ind1_webinars: visaoGeral.mediaInd1,
+            ind2_avaliacoes: visaoGeral.mediaInd2,
+            ind3_competencias: visaoGeral.mediaInd3,
+            ind4_tarefas: visaoGeral.mediaInd4,
+            ind5_engajamento: visaoGeral.mediaInd5,
+          }}
+          desenvolvimentoDetalhes={{
+            total: visaoGeral.totalMetas || 0,
+            cumpridas: visaoGeral.metasCumpridas || 0,
+          }}
+          aplicabilidade={{
+            percentual: visaoGeral.mediaInd6 || 0,
+            provisoria: false,
+            totalAvaliacoes: visaoGeral.totalAvaliacoesAplicabilidade || 0,
+            microTarefaPercentual: visaoGeral.mediaInd6,
+            microCasePercentual: visaoGeral.mediaInd6,
+            caseAplicavel: true,
+            notaFinal: visaoGeral.mediaInd6,
+            mediaAluno: visaoGeral.mediaInd6,
+            mediaMentora: visaoGeral.mediaInd6,
+            avaliacoesAluno: 0,
+            avaliacoesMentora: 0
+          }}
+        />
+
+
+
+        {/* Indicadores Detalhados */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Indicadores Detalhados</h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <IndicadorCard
+              numero={1}
+              titulo="Webinars"
+              valor={visaoGeral.mediaInd1 || 0}
+              icone={<Video className="h-4 w-4" />}
+              cor="#1976D2"
+              descricao="Presença em webinários e eventos coletivos"
+              regras={[
+                "Fórmula: (Eventos presentes / Total de eventos) × 100",
+                "Cada evento é avaliado de forma binária: Presente=100, Ausente=0"
+              ]}
+            />
+            <IndicadorCard
+              numero={2}
+              titulo="Avaliações"
+              valor={visaoGeral.mediaInd2 || 0}
+              icone={<GraduationCap className="h-4 w-4" />}
+              cor="#D32F2F"
+              descricao="Performance nas avaliações de conteúdo"
+              regras={[
+                "Fórmula: (Soma das notas das provas / Total de provas realizadas) × 100",
+                "Apenas provas de ciclos finalizados entram no cálculo"
+              ]}
+            />
+            <IndicadorCard
+              numero={3}
+              titulo="Competências"
+              valor={visaoGeral.mediaInd3 || 0}
+              icone={<BookOpen className="h-4 w-4" />}
+              cor="#2E7D32"
+              descricao="Progresso de conclusão das aulas"
+              regras={[
+                "Fórmula: (Aulas concluídas / Total de aulas da competência) × 100",
+                "Média dos percentuais de todas as competências de ciclos finalizados"
+              ]}
+            />
+            <IndicadorCard
+              numero={4}
+              titulo="Tarefas"
+              valor={visaoGeral.mediaInd4 || 0}
+              icone={<ClipboardCheck className="h-4 w-4" />}
+              cor="#7B1FA2"
+              descricao="Entrega de atividades práticas das mentorias"
+              regras={[
+                "Fórmula: (Atividades entregues / Total de atividades previstas) × 100",
+                "A 1ª sessão (Assessment) é excluída do cálculo"
+              ]}
+            />
+            <IndicadorCard
+              numero={5}
+              titulo="Engajamento"
+              valor={visaoGeral.mediaInd5 || 0}
+              icone={<Star className="h-4 w-4" />}
+              cor="#F5A623"
+              descricao="Nota de evolução atribuída pela mentora"
+              regras={[
+                "Média das notas (0-10) convertidas para base 100",
+                "Avaliação qualitativa do envolvimento ativo do participante"
+              ]}
+            />
+            <IndicadorCard
+              numero={6}
+              titulo="Aplicabilidade"
+              valor={visaoGeral.mediaInd6 || 0}
+              icone={<Target className="h-4 w-4" />}
+              cor="#00838F"
+              descricao="Aplicabilidade prática (Tarefa + Case)"
+              regras={[
+                "Indicador separado que mede a aplicação real do aprendizado",
+                "Não compõe a média do Engajamento Final (Ind. 7)"
+              ]}
+            />
+            <IndicadorCard
+              numero={7}
+              titulo="Engajamento Final"
+              valor={visaoGeral.mediaInd7 || visaoGeral.mediaEngajamento || 0}
+              icone={<TrendingUp className="h-4 w-4" />}
+              cor="#1E3A5F"
+              descricao="Média consolidada dos indicadores 1 a 5"
+              regras={[
+                "Fórmula: (Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5) / 5",
+                "Representa a performance global do aluno no programa"
+              ]}
+            />
+          </div>
+        </div>
+
+        {/* Gráfico de barras por empresa */}
+        {!isGerente && empresaData.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Performance Geral por Empresa
+              </CardTitle>
+              <CardDescription>
+                Nota média de desempenho por empresa
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={empresaData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="nome" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="nota" fill="#1976D2" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Top Alunos */}
+        {topAlunos && topAlunos.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5" />
+                Top 5 Alunos com Melhor Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {topAlunos.map((aluno: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="w-8 h-8 flex items-center justify-center rounded-full">
+                        {idx + 1}
+                      </Badge>
+                      <div>
+                        <p className="font-medium text-sm">{aluno.nomeAluno || aluno.nome}</p>
+                        <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
+                      </div>
                     </div>
-                    <Badge className="bg-amber-100 text-amber-800 border-0 whitespace-nowrap">
-                      {p.sessoesRealizadas}/{p.totalSessoesEsperadas}
-                    </Badge>
+                    <div className="text-right">
+                      <p className="font-bold text-lg" style={{ color: '#2E7D32' }}>
+                        {(aluno.notaFinal !== undefined ? (aluno.notaFinal * 10) : (aluno.performanceGeral || aluno.mediaEngajamento || 0)).toFixed(0)}%
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -186,318 +436,42 @@ export default function DashboardVisaoGeral() {
           </Card>
         )}
 
-        {/* Alunos com ciclo completo */}
-        {alunosCicloCompleto.length > 0 && (
-          <Card className="border-emerald-300 bg-emerald-50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2 text-emerald-800">
-                <Trophy className="h-5 w-5" />
-                {alunosCicloCompleto.length} aluno{alunosCicloCompleto.length !== 1 ? 's' : ''} completaram o ciclo macro
+        {/* Alunos em Atenção */}
+        {alunosAtencao && alunosAtencao.length > 0 && (
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                Alunos em Atenção (Engajamento &lt; 50%)
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {alunosCicloCompleto.map((p: any) => (
-                  <Badge key={p.alunoId} className="bg-emerald-100 text-emerald-800 border-0">
-                    {p.alunoNome} ({p.sessoesRealizadas}/{p.totalSessoesEsperadas})
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Cards de resumo */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Alunos</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{visaoGeral.totalAlunos}</div>
-              <p className="text-xs text-muted-foreground">Em {porEmpresa.length} empresas</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Engajamento Final</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{(visaoGeral.mediaInd7 || visaoGeral.mediaPerformanceGeral || visaoGeral.mediaNotaFinal * 10 || 0).toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">Engajamento Final (Média dos 5 indicadores)</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Alunos Excelência</CardTitle>
-              <Award className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{visaoGeral.alunosExcelencia}</div>
-              <p className="text-xs text-muted-foreground">
-                {visaoGeral.totalAlunos > 0 
-                  ? `${((visaoGeral.alunosExcelencia / visaoGeral.totalAlunos) * 100).toFixed(0)}% do total`
-                  : '0% do total'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Precisam Atenção</CardTitle>
-              <TrendingUp className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-orange-500">
-                {visaoGeral.alunosBasico + visaoGeral.alunosInicial}
-              </div>
-              <p className="text-xs text-muted-foreground">Básico ou Inicial</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 7 Indicadores com explicações */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            Indicadores de Performance V2
-            <Badge variant="outline" className="ml-2">Clique no ℹ️ para ver a explicação</Badge>
-          </h2>
-          
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            <IndicadorCard
-              numero={1}
-              titulo="Webinars / Eventos"
-              valor={visaoGeral.mediaInd1 || visaoGeral.mediaParticipacaoMentorias}
-              icone={<Calendar className="h-4 w-4" />}
-              cor="#1E3A5F"
-              descricao="Participação em webinars e eventos coletivos"
-              regras={[
-                "Fórmula: (Eventos presentes / Total de eventos) × 100",
-                "Presente = 100%, Ausente = 0%",
-                "Média de todos os alunos"
-              ]}
-            />
-            <IndicadorCard
-              numero={2}
-              titulo="Avaliações"
-              valor={visaoGeral.mediaInd2 || visaoGeral.mediaAtividadesPraticas}
-              icone={<BookOpen className="h-4 w-4" />}
-              cor="#F5A623"
-              descricao="Notas das avaliações por competência"
-              regras={[
-                "Fórmula: Nota obtida na avaliação de cada aula",
-                "Somente ciclos finalizados entram no cálculo",
-                "Notas são convertidas para percentual (base 100)"
-              ]}
-            />
-            <IndicadorCard
-              numero={3}
-              titulo="Competências"
-              valor={visaoGeral.mediaInd3 || visaoGeral.mediaEngajamento}
-              icone={<Zap className="h-4 w-4" />}
-              cor="#2E7D32"
-              descricao="% de conteúdos concluídos por competência"
-              regras={[
-                "Fórmula: (Conteúdos concluídos / Total de conteúdos) × 100",
-                "Somente ciclos finalizados entram no cálculo",
-                "Competências não liberadas são ignoradas"
-              ]}
-            />
-            <IndicadorCard
-              numero={4}
-              titulo="Tarefas"
-              valor={visaoGeral.mediaInd4 || visaoGeral.mediaPerformanceCompetencias}
-              icone={<Award className="h-4 w-4" />}
-              cor="#7B1FA2"
-              descricao="Entrega de atividades práticas"
-              regras={[
-                "Fórmula: (Atividades entregues / Total de atividades) × 100",
-                "1ª mentoria (Assessment) é excluída do cálculo",
-                "Sessões sem tarefa não contam no total"
-              ]}
-            />
-            <IndicadorCard
-              numero={5}
-              titulo="Engajamento"
-              valor={visaoGeral.mediaInd5 || visaoGeral.mediaPerformanceAprendizado || 0}
-              icone={<GraduationCap className="h-4 w-4" />}
-              cor="#D32F2F"
-              descricao="Evolução e engajamento geral"
-              regras={[
-                "Média de 3 componentes, todos convertidos para base 100:",
-                "1) Presença nas Mentorias: presente=100, ausente=0",
-                "2) Entrega de Tarefas: entregue=100, não entregue=0",
-                "3) Nota de Evolução da Mentora (0-10, convertida para base 100)",
-                "Fórmula: (Comp.1 + Comp.2 + Comp.3) / 3"
-              ]}
-            />
-            <IndicadorCard
-              numero={6}
-              titulo="Aplicabilidade (Bônus)"
-              valor={visaoGeral.mediaInd6 || visaoGeral.mediaParticipacaoEventos}
-              icone={<PartyPopper className="h-4 w-4" />}
-              cor="#1976D2"
-              descricao="Relatório de Impacto (bônus de +10% no Engajamento)"
-              regras={[
-                "Relatório entregue = +10% no indicador de Engajamento",
-                "Não entra na média dos 5 indicadores",
-                "É um bônus adicional"
-              ]}
-            />
-            {/* Indicador 7: Engajamento Final (destaque) */}
-            <IndicadorCard
-              numero={7}
-              titulo="Engajamento Final"
-              valor={visaoGeral.mediaInd7 || visaoGeral.mediaPerformanceGeral || 0}
-              icone={<Target className="h-4 w-4" />}
-              cor="#1565C0"
-              descricao="Média dos 5 indicadores (exceto bônus)"
-              regras={[
-                "Fórmula: (Ind.1 + Ind.2 + Ind.3 + Ind.4 + Ind.5) / 5",
-                "Ind.6 (Aplicabilidade) é bônus, não entra na média",
-                "Resultado em percentual (0-100%)"
-              ]}
-            />
-          </div>
-        </div>
-
-
-
-        {/* Performance por Empresa */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance por Empresa</CardTitle>
-            <CardDescription>Engajamento Final médio por empresa</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={empresaData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
-                  <YAxis dataKey="nome" type="category" width={120} />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => [
-                      name === 'nota' ? `${value}%` : `${value} alunos`,
-                      name === 'nota' ? 'Engajamento Final' : 'Total de Alunos'
-                    ]}
-                  />
-                  <Bar dataKey="nota" fill="#1E3A5F" name="Engajamento Final" isAnimationActive={false} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Links para empresas */}
-        {empresas && empresas.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Acessar por Empresa</CardTitle>
-              <CardDescription>Clique para ver detalhes de cada empresa</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                {empresas.map(empresa => (
-                  <Link key={empresa.id} href={`/dashboard/empresa/${empresa.codigo}`}>
-                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          <Building2 className="h-5 w-5 text-primary" />
-                          {empresa.nome}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">Clique para ver detalhes</p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Top Alunos e Alunos que precisam de atenção */}
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5 text-green-600" />
-                Top 10 Alunos
-              </CardTitle>
-              <CardDescription>Melhores performances</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {topAlunos.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum dado disponível</p>
-                ) : (
-                  topAlunos.map((aluno, index) => (
-                    <div key={aluno.idUsuario} className="flex items-center justify-between py-2 border-b last:border-0">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-muted-foreground w-6">{index + 1}º</span>
-                        <div>
-                          <p className="font-medium">{aluno.nomeAluno}</p>
-                          <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
-                          {aluno.turma && <p className="text-xs text-muted-foreground">Turma: {aluno.turma} {aluno.trilha ? `| ${aluno.trilha}` : ''}</p>}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-green-600">{(aluno.consolidado?.ind7_engajamentoFinal || aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>
-                        <p className="text-xs text-muted-foreground">{aluno.classificacao}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-orange-500" />
-                Precisam de Atenção
-              </CardTitle>
-              <CardDescription>Alunos com performance abaixo de 50%</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {alunosAtencao.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum aluno precisa de atenção especial</p>
-                ) : (
-                  alunosAtencao.map((aluno) => (
-                    <div key={aluno.idUsuario} className="flex items-center justify-between py-2 border-b last:border-0">
+              <div className="space-y-3">
+                {alunosAtencao.map((aluno: any, idx: number) => (
+                  <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
                       <div>
-                        <p className="font-medium">{aluno.nomeAluno}</p>
+                        <p className="font-medium text-sm">{aluno.nomeAluno || aluno.nome}</p>
                         <p className="text-xs text-muted-foreground">{aluno.empresa}</p>
-                        {aluno.turma && <p className="text-xs text-muted-foreground">Turma: {aluno.turma} {aluno.trilha ? `| ${aluno.trilha}` : ''}</p>}
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-orange-500">{(aluno.consolidado?.ind7_engajamentoFinal || aluno.performanceGeral || aluno.notaFinal * 10).toFixed(0)}%</p>
-                        <p className="text-xs text-muted-foreground">{aluno.classificacao}</p>
                       </div>
                     </div>
-                  ))
-                )}
+                    <div className="text-right">
+                      <p className="font-bold text-lg text-red-600">
+                        {(aluno.notaFinal !== undefined ? (aluno.notaFinal * 10) : (aluno.performanceGeral || aluno.mediaEngajamento || 0)).toFixed(0)}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
 
-        {/* Tabela de Classificação */}
+        {/* Legenda de Classificação */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5 text-muted-foreground" />
-              Tabela de Classificação
-            </CardTitle>
+            <CardTitle>Legenda de Classificação</CardTitle>
             <CardDescription>Faixas de classificação do Engajamento Final</CardDescription>
           </CardHeader>
           <CardContent>
@@ -522,3 +496,6 @@ export default function DashboardVisaoGeral() {
     </DashboardLayout>
   );
 }
+
+import { UserCheck } from "lucide-react";
+import { BarChart3 } from "lucide-react";

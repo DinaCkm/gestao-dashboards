@@ -49,6 +49,7 @@ import {
   Star,
   RotateCcw,
   Trash2,
+  GraduationCap,
 } from "lucide-react";
 import EditAssessmentDialog from "@/components/EditAssessmentDialog";
 
@@ -301,6 +302,20 @@ function AssessmentContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Aviso: novo ciclo liberado, aguardando PDI */}
+      {selectedAlunoId && (selectedAluno as any)?.onboardingLiberado === 1 && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+          <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-amber-900 text-sm">Novo ciclo liberado — aguardando PDI</p>
+            <p className="text-amber-700 text-xs mt-0.5">
+              O onboarding deste aluno foi reiniciado. O ciclo anterior foi arquivado na página de Evolução.
+              Crie um novo PDI para iniciar o próximo ciclo de desenvolvimento.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Resumo de Metas de Desenvolvimento */}
       {selectedAlunoId && metasResumo && metasResumo.total > 0 && (
@@ -621,6 +636,223 @@ function AssessmentContent() {
               )}
             </div>
 
+            {/* 5. Perfil Pessoal */}
+            {(() => {
+              const a = selectedAluno as any;
+              const hasData = a.dataNascimento || a.estadoCivil || a.temFilhos != null;
+              if (!hasData) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4 text-[#F5991F]" />
+                    5. Perfil Pessoal
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                    {a.dataNascimento && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Data de Nascimento</p>
+                        <p className="font-medium">{new Date(a.dataNascimento).toLocaleDateString('pt-BR')}</p>
+                      </div>
+                    )}
+                    {a.estadoCivil && (
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Estado Civil</p>
+                        <p className="font-medium capitalize">{a.estadoCivil}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Filhos</p>
+                      <p className="font-medium">{a.temFilhos ? `Sim (${a.quantidadeFilhos || 0})` : 'Não'}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 6. Formação e Escolaridade */}
+            {(() => {
+              const a = selectedAluno as any;
+              const formacoes = Array.isArray(a.formacaoSuperior) ? a.formacaoSuperior : (a.formacaoSuperior ? [a.formacaoSuperior] : []);
+              const posGrads = Array.isArray(a.posGraduacoes) ? a.posGraduacoes : (a.posGraduacoes ? [a.posGraduacoes] : []);
+              const cursos = Array.isArray(a.cursosExtracurriculares) ? a.cursosExtracurriculares : (a.cursosExtracurriculares ? [a.cursosExtracurriculares] : []);
+              if (formacoes.length === 0 && posGrads.length === 0 && cursos.length === 0) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-[#F5991F]" />
+                    6. Formação e Escolaridade
+                  </h4>
+                  <div className="space-y-3">
+                    {formacoes.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Formação Superior</p>
+                        {formacoes.map((f: any, i: number) => (
+                          <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md mb-1">
+                            {typeof f === 'string' ? f : `${f.curso || ''} ${f.instituicao ? `— ${f.instituicao}` : ''} ${f.ano ? `(${f.ano})` : ''}`.trim()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {posGrads.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Pós-Graduações</p>
+                        {posGrads.map((p: any, i: number) => (
+                          <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md mb-1">
+                            {typeof p === 'string' ? p : `${p.curso || ''} ${p.instituicao ? `— ${p.instituicao}` : ''} ${p.ano ? `(${p.ano})` : ''}`.trim()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    {cursos.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Cursos Extracurriculares</p>
+                        {cursos.map((c: any, i: number) => (
+                          <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md mb-1">
+                            {typeof c === 'string' ? c : `${c.curso || c.nome || ''} ${c.instituicao ? `— ${c.instituicao}` : ''} ${c.ano ? `(${c.ano})` : ''}`.trim()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 7. Experiência Profissional */}
+            {(() => {
+              const a = selectedAluno as any;
+              const experiencias = Array.isArray(a.experienciasAnteriores) ? a.experienciasAnteriores : (a.experienciasAnteriores ? [a.experienciasAnteriores] : []);
+              const tiposEquipe = Array.isArray(a.tipoEquipeGerenciada) ? a.tipoEquipeGerenciada : (a.tipoEquipeGerenciada ? [a.tipoEquipeGerenciada] : []);
+              if (experiencias.length === 0 && !a.experienciaLideranca && tiposEquipe.length === 0) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-[#F5991F]" />
+                    7. Experiência Profissional
+                  </h4>
+                  <div className="space-y-3">
+                    {a.experienciaLideranca != null && (
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Experiência em Liderança:</p>
+                        <p className="text-sm font-medium">{a.experienciaLideranca ? 'Sim' : 'Não'}</p>
+                        {a.gerenciouOutrosLideres ? <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Gerenciou outros líderes</span> : null}
+                      </div>
+                    )}
+                    {tiposEquipe.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Tipo de Equipe Gerenciada</p>
+                        <div className="flex flex-wrap gap-1">
+                          {tiposEquipe.map((t: any, i: number) => (
+                            <span key={i} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{typeof t === 'string' ? t : JSON.stringify(t)}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {experiencias.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Experiências Anteriores</p>
+                        {experiencias.map((e: any, i: number) => (
+                          <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md mb-1">
+                            {typeof e === 'string' ? e : `${e.cargo || e.funcao || ''} ${e.empresa ? `— ${e.empresa}` : ''} ${e.periodo ? `(${e.periodo})` : ''}`.trim()}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 8. Expectativas Profissionais */}
+            {(() => {
+              const a = selectedAluno as any;
+              const hasData = a.expectativaCurtoPrazo || a.expectativaMedioPrazo || a.expectativaLongoPrazo;
+              if (!hasData) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-[#F5991F]" />
+                    6. Expectativas Profissionais
+                  </h4>
+                  <div className="space-y-3">
+                    {a.expectativaCurtoPrazo && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Curto Prazo</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">{a.expectativaCurtoPrazo}</p>
+                      </div>
+                    )}
+                    {a.expectativaMedioPrazo && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Médio Prazo</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">{a.expectativaMedioPrazo}</p>
+                      </div>
+                    )}
+                    {a.expectativaLongoPrazo && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Longo Prazo</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">{a.expectativaLongoPrazo}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 7. Redes Sociais e Currículo */}
+            {(() => {
+              const a = selectedAluno as any;
+              const hasRedes = a.linkedinUrl || a.facebookUrl || a.instagramUrl || a.tiktokUrl || a.outraRedeUrl;
+              const hasCurriculo = a.curriculoUrl;
+              if (!hasRedes && !hasCurriculo) return null;
+              return (
+                <div className="border rounded-lg p-4 bg-white/60">
+                  <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+                    <Star className="h-4 w-4 text-[#F5991F]" />
+                    7. Redes Sociais e Currículo
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {a.linkedinUrl && (
+                      <a href={a.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors">
+                        LinkedIn
+                      </a>
+                    )}
+                    {a.instagramUrl && (
+                      <a href={a.instagramUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors">
+                        Instagram
+                      </a>
+                    )}
+                    {a.facebookUrl && (
+                      <a href={a.facebookUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-blue-800 text-white rounded-full hover:bg-blue-900 transition-colors">
+                        Facebook
+                      </a>
+                    )}
+                    {a.tiktokUrl && (
+                      <a href={a.tiktokUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-black text-white rounded-full hover:bg-gray-900 transition-colors">
+                        TikTok
+                      </a>
+                    )}
+                    {a.outraRedeUrl && (
+                      <a href={a.outraRedeUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-gray-600 text-white rounded-full hover:bg-gray-700 transition-colors">
+                        Outra Rede
+                      </a>
+                    )}
+                    {a.curriculoUrl && (
+                      <a href={a.curriculoUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition-colors">
+                        <FileText className="h-3 w-3" />
+                        Ver Currículo
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
           </CardContent>
         </Card>
       )}
@@ -767,26 +999,84 @@ function AssessmentContent() {
                 </p>
               </CardContent>
             </Card>
-          ) : (
-            <div className="space-y-4">
-              {assessments.map((pdi: any) => (
-                <AssessmentCard
-                  key={pdi.id}
-                  pdi={pdi}
-                  isExpanded={expandedPdiId === pdi.id}
-                  onToggle={() => setExpandedPdiId(expandedPdiId === pdi.id ? null : pdi.id)}
-                  onCongelar={() => handleCongelarClick(pdi.id)}
-                  onDescongelar={() => handleDescongelar(pdi.id)}
-                  isDescongelando={descongelarMutation.isPending}
-                  formatDate={formatDate}
-                  refetch={refetchAssessments}
-                  onEdit={() => setEditPdi(pdi)}
-                />
-              ))}
-            </div>
-          )}
+          ) : (() => {
+            const pdisAtivos = assessments.filter((p: any) => p.status !== 'congelado');
+            const pdisCongelados = assessments.filter((p: any) => p.status === 'congelado');
+            return (
+              <div className="space-y-6">
+                {/* Ciclo Atual */}
+                {pdisAtivos.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block" />
+                        Ciclo Atual
+                      </span>
+                    </div>
+                    <div className="space-y-4">
+                      {pdisAtivos.map((pdi: any) => (
+                        <AssessmentCard
+                          key={pdi.id}
+                          pdi={pdi}
+                          isExpanded={expandedPdiId === pdi.id}
+                          onToggle={() => setExpandedPdiId(expandedPdiId === pdi.id ? null : pdi.id)}
+                          onCongelar={() => handleCongelarClick(pdi.id)}
+                          onDescongelar={() => handleDescongelar(pdi.id)}
+                          isDescongelando={descongelarMutation.isPending}
+                          formatDate={formatDate}
+                          refetch={refetchAssessments}
+                          onEdit={() => setEditPdi(pdi)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {/* Ciclos Anteriores (congelados) */}
+                {pdisCongelados.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-200 rounded-full px-3 py-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-gray-400 inline-block" />
+                        Ciclos Anteriores
+                      </span>
+                      <span className="text-xs text-gray-400">{pdisCongelados.length} PDI{pdisCongelados.length !== 1 ? 's' : ''} congelado{pdisCongelados.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="space-y-4">
+                      {pdisCongelados.map((pdi: any) => (
+                        <AssessmentCard
+                          key={pdi.id}
+                          pdi={pdi}
+                          isExpanded={expandedPdiId === pdi.id}
+                          onToggle={() => setExpandedPdiId(expandedPdiId === pdi.id ? null : pdi.id)}
+                          onCongelar={() => handleCongelarClick(pdi.id)}
+                          onDescongelar={() => handleDescongelar(pdi.id)}
+                          isDescongelando={descongelarMutation.isPending}
+                          formatDate={formatDate}
+                          refetch={refetchAssessments}
+                          onEdit={() => setEditPdi(pdi)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </>
       )}
+
+      {/* Callout: Aviso sobre liberação do plano */}
+      <div className="my-4 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl leading-none mt-0.5">⚠️</span>
+          <div>
+            <p className="font-semibold text-amber-800 text-sm">Atenção: Liberação do Plano de Desenvolvimento</p>
+            <p className="text-amber-700 text-sm mt-1 leading-relaxed">
+              Para que o aluno visualize o plano criado no portal, é indispensável realizar o registro da <strong>Sessão de Mentoria nº 1 — Assessment</strong>. Sem esse registro, o conteúdo permanecerá oculto para o aluno durante o onboarding.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Guia do Mentor - Vídeo e Resumo */}
       <Card className="border-secondary/30 overflow-hidden">
@@ -893,6 +1183,7 @@ function AssessmentContent() {
           programs={programs}
           mentores={mentores}
           isAdmin={isAdmin}
+          existingAssessments={assessments}
           onSuccess={() => {
             refetchAssessments();
             setTimeout(() => setShowCreateDialog(false), 100);
@@ -1104,6 +1395,9 @@ function AssessmentCard({
             </div>
             <div>
               <CardTitle className="text-base flex items-center gap-2">
+                <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  PDI {String(pdi.numeroPdi ?? 1).padStart(3, '0')}
+                </span>
                 {pdi.trilhaNome}
                 <Badge variant={isCongelado ? "secondary" : isExpirado ? "destructive" : "default"} className="text-[10px]">
                   {isCongelado ? "Finalizada" : isExpirado ? "Expirada" : "Em Andamento"}
@@ -1129,37 +1423,7 @@ function AssessmentCard({
               <div>{pdi.obrigatorias} obrigatórias</div>
               <div>{pdi.opcionais} opcionais</div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => { e.stopPropagation(); onEdit(); }}
-              className="text-secondary border-secondary/30 hover:bg-secondary/10"
-            >
-              <Pencil className="h-3.5 w-3.5 mr-1" />
-              Editar
-            </Button>
-            {!isCongelado ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => { e.stopPropagation(); onCongelar(); }}
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
-              >
-                <Lock className="h-3.5 w-3.5 mr-1" />
-                Congelar
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => { e.stopPropagation(); onDescongelar(); }}
-                disabled={isDescongelando}
-                className="text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-              >
-                <LockOpen className="h-3.5 w-3.5 mr-1" />
-                {isDescongelando ? "Descongelando..." : "Descongelar"}
-              </Button>
-            )}
+
             {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
           </div>
         </div>
@@ -1168,6 +1432,19 @@ function AssessmentCard({
       {isExpanded && pdi.competencias && (
         <CardContent className="pt-0">
           <Separator className="mb-4" />
+
+          {/* Botão de edição do PDI */}
+          <div className="flex justify-end mb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="text-xs border-secondary/40 text-secondary hover:bg-secondary/10 hover:text-secondary"
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+              Editar PDI
+            </Button>
+          </div>
 
           {/* Info de congelamento */}
           {isCongelado && (
@@ -1343,11 +1620,7 @@ function AssessmentCard({
                                 Micro Jornada: {formatDate(comp.microInicio)} → {formatDate(comp.microTermino)}
                               </span>
                             )}
-                            {!isCongelado && (
-                              <Button variant="ghost" size="sm" onClick={() => startEdit(comp)} className="h-7 w-7 p-0">
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
+
                           </div>
                         </div>
 
@@ -1397,6 +1670,7 @@ function CreateAssessmentDialog({
   mentores,
   onSuccess,
   isAdmin,
+  existingAssessments = [],
 }: {
   open: boolean;
   onClose: () => void;
@@ -1410,6 +1684,7 @@ function CreateAssessmentDialog({
   mentores: any[];
   onSuccess: () => void;
   isAdmin: boolean;
+  existingAssessments?: any[];
 }) {
   const [step, setStep] = useState(1);
   const [selectedTrilhaId, setSelectedTrilhaId] = useState<string>("");
@@ -1417,6 +1692,20 @@ function CreateAssessmentDialog({
   const [macroInicio, setMacroInicio] = useState("");
   const [macroTermino, setMacroTermino] = useState("");
   // Campo totalSessoesPrevistas removido - definido pelo admin no contrato
+  
+  // FIX: Detectar trilhas que já existem para este aluno (ativas)
+  const existingTrilhaIds = new Set(
+    existingAssessments
+      .filter((a: any) => a.status === 'ativo')
+      .map((a: any) => a.trilhaId)
+  );
+  const selectedTrilhaExists = selectedTrilhaId ? existingTrilhaIds.has(parseInt(selectedTrilhaId)) : false;
+  // Obter competências já existentes na trilha selecionada (para filtrar no step 2)
+  const existingCompetenciaIds = new Set(
+    existingAssessments
+      .filter((a: any) => a.status === 'ativo' && a.trilhaId === parseInt(selectedTrilhaId))
+      .flatMap((a: any) => (a.competencias || []).map((c: any) => c.competenciaId))
+  );
   const [competenciasConfig, setCompetenciasConfig] = useState<Array<{
     competenciaId: number;
     nome: string;
@@ -1440,39 +1729,62 @@ function CreateAssessmentDialog({
   useEffect(() => {
     if (competenciasTrilha.length > 0) {
       setCompetenciasConfig(
-        competenciasTrilha.map((c: any) => ({
-          competenciaId: c.id,
-          nome: c.nome || c.name || "Sem nome",
-          selected: true,
-          peso: "obrigatoria" as const,
-          notaCorte: "80",
-          nivelAtual: "",
-          metaCiclo1: "",
-          metaCiclo2: "",
-          metaFinal: "",
-          justificativa: "",
-          microInicio: "",
-          microTermino: "",
-        }))
+        competenciasTrilha.map((c: any) => {
+          const alreadyExists = existingCompetenciaIds.has(c.id);
+          return {
+            competenciaId: c.id,
+            nome: c.nome || c.name || "Sem nome",
+            selected: !alreadyExists, // Não selecionar competências que já existem
+            peso: "obrigatoria" as const,
+            notaCorte: "80",
+            nivelAtual: "",
+            metaCiclo1: "",
+            metaCiclo2: "",
+            metaFinal: "",
+            justificativa: "",
+            microInicio: "",
+            microTermino: "",
+          };
+        })
       );
     }
-  }, [competenciasTrilha]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [competenciasTrilha, selectedTrilhaId]);
+
+  // Verificar se o contrato do aluno está completo no cadastro
+  const { data: alunoDataForContrato } = trpc.planoIndividual.alunosWithPlano.useQuery();
+  const alunoParaContrato = alunoDataForContrato?.find((a: any) => a.id === alunoId) as any;
+  const contratoIncompleto = !alunoParaContrato?.contratoInicio ||
+    !alunoParaContrato?.contratoFim ||
+    !alunoParaContrato?.totalSessoesContratadas ||
+    alunoParaContrato?.totalSessoesContratadas === 0 ||
+    !alunoParaContrato?.tipoMentoria;
 
   const criarMutation = trpc.assessment.criar.useMutation({
-    onSuccess: () => {
-      toast.success("Assessment criado com sucesso!");
+    onSuccess: (data: any) => {
+      if (data?.addedToExisting) {
+        toast.success(`${data.addedCount} competência(s) adicionada(s) à trilha existente!`);
+      } else {
+        toast.success("Assessment criado com sucesso!");
+      }
       onSuccess();
     },
     onError: (err: { message: string }) => toast.error(err.message),
   });
 
   const handleSubmit = () => {
-    if (!selectedTrilhaId || !macroInicio || !macroTermino) {
-      toast.error("Preencha a trilha e as datas da Macro Jornada");
+    if (!selectedTrilhaId) {
+      toast.error("Selecione uma trilha");
+      return;
+    }
+    
+    // Macro Jornada só é obrigatória para trilhas NOVAS
+    if (!selectedTrilhaExists && (!macroInicio || !macroTermino)) {
+      toast.error("Preencha as datas da Macro Jornada");
       return;
     }
 
-    if (macroInicio >= macroTermino) {
+    if (!selectedTrilhaExists && macroInicio >= macroTermino) {
       toast.error("Data de início deve ser anterior à data de término");
       return;
     }
@@ -1483,16 +1795,22 @@ function CreateAssessmentDialog({
       return;
     }
 
-    for (const comp of selectedComps) {
-      if (comp.microInicio && comp.microInicio < macroInicio) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`);
-        return;
-      }
-      if (comp.microTermino && comp.microTermino > macroTermino) {
-        toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`);
-        return;
+    if (!selectedTrilhaExists) {
+      for (const comp of selectedComps) {
+        if (comp.microInicio && comp.microInicio < macroInicio) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode iniciar antes da Macro Jornada`);
+          return;
+        }
+        if (comp.microTermino && comp.microTermino > macroTermino) {
+          toast.error(`Micro Jornada de "${comp.nome}" não pode terminar depois da Macro Jornada`);
+          return;
+        }
       }
     }
+
+    // Usar datas placeholder quando trilha já existe (o backend ignora e usa as do PDI existente)
+    const effectiveMacroInicio = selectedTrilhaExists ? '2000-01-01' : macroInicio;
+    const effectiveMacroTermino = selectedTrilhaExists ? '2099-12-31' : macroTermino;
 
     criarMutation.mutate({
       alunoId,
@@ -1500,9 +1818,8 @@ function CreateAssessmentDialog({
       turmaId: turmaId || null,
       programId: programId || null,
       consultorId: selectedConsultorId ? parseInt(selectedConsultorId) : null,
-      macroInicio,
-      macroTermino,
-      // totalSessoesPrevistas removido - definido pelo admin no contrato
+      macroInicio: effectiveMacroInicio,
+      macroTermino: effectiveMacroTermino,
       competencias: selectedComps.map(c => ({
         competenciaId: c.competenciaId,
         peso: c.peso,
@@ -1540,7 +1857,7 @@ function CreateAssessmentDialog({
             Novo Assessment — {alunoName}
           </DialogTitle>
           <DialogDescription>
-            {step === 1 ? "Defina a trilha e o período da Macro Jornada" : step === 2 ? "Selecione as competências e defina os pesos" : "Defina os níveis e metas de cada competência"}
+            {step === 1 ? (selectedTrilhaExists ? "Trilha já existente — selecione novas competências para adicionar" : "Defina a trilha e o período da Macro Jornada") : step === 2 ? "Selecione as competências e defina os pesos" : "Defina os níveis e metas de cada competência"}
           </DialogDescription>
         </DialogHeader>
 
@@ -1558,6 +1875,15 @@ function CreateAssessmentDialog({
                   ))}
                 </SelectContentNoPortal>
               </Select>
+              {selectedTrilhaExists && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-amber-800">
+                    <p className="font-medium">Esta trilha já existe para este aluno.</p>
+                    <p className="text-xs mt-0.5">As novas competências serão adicionadas à trilha existente. Os campos de Macro Jornada abaixo não serão utilizados (as datas do assessment original serão mantidas).</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -1605,14 +1931,24 @@ function CreateAssessmentDialog({
             {/* Info do contrato - somente leitura (definido pelo admin) */}
             <ContratoInfoReadonly alunoId={alunoId} />
 
+            {contratoIncompleto && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-red-800">
+                  <p className="font-semibold">Dados do contrato incompletos</p>
+                  <p className="text-xs mt-0.5">Fale com o Administrador — esta informação é imprescindível para criar o plano de desenvolvimento do aluno.</p>
+                </div>
+              </div>
+            )}
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button
                 onClick={() => setStep(2)}
-                disabled={!selectedTrilhaId || !macroInicio || !macroTermino}
+                disabled={contratoIncompleto || !selectedTrilhaId || (!selectedTrilhaExists && (!macroInicio || !macroTermino))}
+                title={contratoIncompleto ? "Fale com o Administrador: dados do contrato incompletos no cadastro do aluno" : undefined}
                 className="bg-secondary hover:bg-secondary/90"
               >
-                Próximo: Competências
+                {contratoIncompleto ? "Fale com o Administrador" : "Próximo: Competências"}
               </Button>
             </DialogFooter>
           </div>
@@ -1646,11 +1982,14 @@ function CreateAssessmentDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {competenciasConfig.map((comp, idx) => (
-                      <TableRow key={comp.competenciaId} className={!comp.selected ? "opacity-50" : ""}>
+                    {competenciasConfig.map((comp, idx) => {
+                      const isAlreadyInAssessment = existingCompetenciaIds.has(comp.competenciaId);
+                      return (
+                      <TableRow key={comp.competenciaId} className={`${!comp.selected ? "opacity-50" : ""} ${isAlreadyInAssessment ? "bg-muted/40" : ""}`}>
                         <TableCell className="text-center">
                           <Checkbox
                             checked={comp.selected}
+                            disabled={isAlreadyInAssessment}
                             onCheckedChange={(checked) => {
                               setCompetenciasConfig(prev => {
                                 const next = [...prev];
@@ -1660,7 +1999,12 @@ function CreateAssessmentDialog({
                             }}
                           />
                         </TableCell>
-                        <TableCell className="text-sm font-medium">{comp.nome}</TableCell>
+                        <TableCell className="text-sm font-medium">
+                          {comp.nome}
+                          {isAlreadyInAssessment && (
+                            <span className="ml-2 text-xs text-amber-600 font-normal">(já existe)</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-center">
                           <select
                             value={comp.peso}
@@ -1713,7 +2057,8 @@ function CreateAssessmentDialog({
                           />
                         </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -1876,10 +2221,10 @@ function CreateAssessmentDialog({
                 disabled={criarMutation.isPending}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                {criarMutation.isPending ? "Criando..." : (
+                {criarMutation.isPending ? (selectedTrilhaExists ? "Adicionando..." : "Criando...") : (
                   <>
                     <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Salvar e Liberar Trilha
+                    {selectedTrilhaExists ? "Adicionar Competências à Trilha" : "Salvar e Liberar Trilha"}
                   </>
                 )}
               </Button>

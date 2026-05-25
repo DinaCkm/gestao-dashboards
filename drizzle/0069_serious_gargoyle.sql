@@ -1,0 +1,1 @@
+ALTER TABLE `atividades_curso` ADD `imagemUrl` text;
