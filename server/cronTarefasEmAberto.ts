@@ -62,17 +62,37 @@ export async function verificarEEnviarAlertasTarefasEmAberto(options?: {
   // Data limite: tarefas criadas há mais de 45 dias
   const dataLimite = new Date(Date.now() - diasMinimo * 24 * 60 * 60 * 1000);
 
-  // Buscar todas as sessões com tarefas pendentes (não entregues) criadas há mais de 45 dias
+  // Buscar todas as sessões e agrupar por aluno
   const allSessions = await db.select().from(mentoringSessions);
-  const tarefasEmAberto = allSessions.filter(s => {
-    if (!s.createdAt) return false;
-    const criada = new Date(s.createdAt);
-    if (criada >= dataLimite) return false; // Menos de 45 dias
-    if (s.taskMode === 'sem_tarefa') return false; // Sem tarefa
-    if (s.taskStatus === 'entregue' || s.taskStatus === 'validada') return false; // Já entregue/validada
-    if (!alunoMap.has(s.alunoId)) return false; // Aluno inativo
-    return true;
-  });
+
+  // Para cada aluno, verificar se a sessão mais recente COM TAREFA está pendente
+  // Se a última sessão com tarefa está entregue/validada, não enviar alerta (mesmo que haja sessões antigas pendentes)
+  const sessoesPorAluno = new Map<number, typeof allSessions>();
+  for (const s of allSessions) {
+    if (!alunoMap.has(s.alunoId)) continue;
+    if (!sessoesPorAluno.has(s.alunoId)) sessoesPorAluno.set(s.alunoId, []);
+    sessoesPorAluno.get(s.alunoId)!.push(s);
+  }
+
+  const tarefasEmAberto = [];
+  for (const [alunoId, sessoes] of sessoesPorAluno) {
+    // Ordenar por data decrescente
+    const ordenadas = sessoes.sort((a, b) => {
+      const da = a.sessionDate ? new Date(a.sessionDate).getTime() : 0;
+      const db2 = b.sessionDate ? new Date(b.sessionDate).getTime() : 0;
+      return db2 - da;
+    });
+    // Pegar a sessão mais recente que tem tarefa (taskMode != 'sem_tarefa')
+    const ultimaComTarefa = ordenadas.find(s => s.taskMode !== 'sem_tarefa');
+    if (!ultimaComTarefa) continue; // Aluno não tem sessão com tarefa
+    // Se a última sessão com tarefa está entregue ou validada, não enviar alerta
+    if (ultimaComTarefa.taskStatus === 'entregue' || ultimaComTarefa.taskStatus === 'validada') continue;
+    // Verificar se a tarefa está em aberto há mais de 45 dias
+    if (!ultimaComTarefa.createdAt) continue;
+    const criada = new Date(ultimaComTarefa.createdAt);
+    if (criada >= dataLimite) continue; // Menos de 45 dias
+    tarefasEmAberto.push(ultimaComTarefa);
+  }
 
   if (tarefasEmAberto.length === 0) {
     return { success: true, totalTarefas: 0, totalAlertas: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, alertas: [] };
