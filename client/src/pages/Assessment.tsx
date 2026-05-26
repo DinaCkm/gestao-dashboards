@@ -1201,8 +1201,13 @@ function AssessmentContent() {
           programs={programs}
           mentores={mentores}
           isAdmin={isAdmin}
-          onSuccess={() => {
-            refetchAssessments();
+          onSuccess={async () => {
+            const result = await refetchAssessments();
+            // Atualizar editPdi com os dados frescos para refletir mudanças no modal
+            if (result.data && editPdi) {
+              const updated = (result.data as any[]).find((a: any) => a.id === editPdi.id);
+              if (updated) setEditPdi(updated);
+            }
           }}
         />
       )}
