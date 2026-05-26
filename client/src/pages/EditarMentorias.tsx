@@ -80,9 +80,10 @@ export default function EditarMentorias() {
     programId: programFilter ? Number(programFilter) : undefined,
     turmaId: turmaFilter ? Number(turmaFilter) : undefined,
     consultorId: consultorFilter ? Number(consultorFilter) : undefined,
+    alunoNome: searchTerm.trim() || undefined,
     page,
     pageSize,
-  }), [programFilter, turmaFilter, consultorFilter, page]);
+  }), [programFilter, turmaFilter, consultorFilter, searchTerm, page]);
 
   const { data: sessionsData, isLoading: loadingSessions, refetch } = trpc.admin.listMentoringSessions.useQuery(queryInput, {
     enabled: !loading && !!user && user.role === "admin",
@@ -165,18 +166,11 @@ export default function EditarMentorias() {
     return list.filter((a: any) => a.name?.toLowerCase().includes(term));
   }, [allAlunos, createTurmaFilter, createAlunoSearch, turmasData, progressData]);
 
-  // Client-side search filter on the results
+  // Sessions are now filtered server-side; just use the returned list
   const filteredSessions = useMemo(() => {
     if (!sessionsData?.sessions) return [];
-    if (!searchTerm.trim()) return sessionsData.sessions;
-    const term = searchTerm.toLowerCase();
-    return sessionsData.sessions.filter((s: any) =>
-      s.alunoNome?.toLowerCase().includes(term) ||
-      s.consultorNome?.toLowerCase().includes(term) ||
-      s.turmaNome?.toLowerCase().includes(term) ||
-      String(s.sessionNumber).includes(term)
-    );
-  }, [sessionsData, searchTerm]);
+    return sessionsData.sessions;
+  }, [sessionsData]);
 
   const totalPages = sessionsData ? Math.ceil(sessionsData.total / pageSize) : 0;
 

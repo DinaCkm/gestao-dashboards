@@ -6997,12 +6997,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
        }),
 
     // ============ EDITAR MENTORIAS (PARAMETRIZAÇÃO) ============
-    listMentoringSessions: adminOrAdmin2Procedure
+     listMentoringSessions: adminOrAdmin2Procedure
       .input(z.object({
         programId: z.number().optional(),
         turmaId: z.number().optional(),
         alunoId: z.number().optional(),
         consultorId: z.number().optional(),
+        alunoNome: z.string().optional(),
         page: z.number().default(1),
         pageSize: z.number().default(50),
       }))
@@ -7011,19 +7012,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const page = filters.page || 1;
         const pageSize = filters.pageSize || 50;
         const offset = (page - 1) * pageSize;
-
         const dbInstance = await (await import('./db')).getDb();
         if (!dbInstance) return { sessions: [], total: 0 };
-
         const { mentoringSessions, alunos: alunosTable, consultors: consultorsTable, turmas: turmasTable, programs: programsTable, trilhas: trilhasTable } = await import('../drizzle/schema');
-        const { eq, and, sql, desc, asc } = await import('drizzle-orm');
-
+        const { eq, and, sql, desc, asc, like } = await import('drizzle-orm');
         // Build conditions
         const conditions: any[] = [];
         if (filters.alunoId) conditions.push(eq(mentoringSessions.alunoId, filters.alunoId));
         if (filters.consultorId) conditions.push(eq(mentoringSessions.consultorId, filters.consultorId));
         if (filters.turmaId) conditions.push(eq(mentoringSessions.turmaId, filters.turmaId));
-
+        // If alunoNome filter, resolve to alunoIds first
+        if (filters.alunoNome && filters.alunoNome.trim()) {
+          const matchingAlunos = await dbInstance.select({ id: alunosTable.id }).from(alunosTable).where(sql`LOWER(${alunosTable.name}) LIKE ${('%' + filters.alunoNome.toLowerCase() + '%')}`);
+          const matchingIds = matchingAlunos.map(a => a.id);
+          if (matchingIds.length === 0) return { sessions: [], total: 0 };
+          conditions.push(sql`${mentoringSessions.alunoId} IN (${sql.raw(matchingIds.join(','))})`);
+        }
         // If programId filter, get turma IDs for that program
         if (filters.programId && !filters.turmaId) {
           const turmasForProgram = await dbInstance.select({ id: turmasTable.id }).from(turmasTable).where(eq(turmasTable.programId, filters.programId));
