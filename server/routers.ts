@@ -626,6 +626,13 @@ export const appRouter = router({
           loginMethod: `custom_${input.type}`,
           role: result.user.role as "user" | "admin" | "manager",
           lastSignedIn: new Date(),
+          // Vincular consultorId para mentores/gerentes e alunoId para alunos
+          ...(input.type === 'mentor' || input.type === 'gerente'
+            ? { consultorId: result.user.id }
+            : {}),
+          ...(input.type === 'aluno'
+            ? { alunoId: result.user.id }
+            : {}),
         });
         
         // Usar o SDK para criar token de sessão

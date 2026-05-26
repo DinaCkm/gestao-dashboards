@@ -184,6 +184,14 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values.departmentId = user.departmentId;
       updateSet.departmentId = user.departmentId;
     }
+    if (user.consultorId !== undefined) {
+      values.consultorId = user.consultorId;
+      updateSet.consultorId = user.consultorId;
+    }
+    if (user.alunoId !== undefined) {
+      values.alunoId = user.alunoId;
+      updateSet.alunoId = user.alunoId;
+    }
 
     if (!values.lastSignedIn) {
       values.lastSignedIn = new Date();
