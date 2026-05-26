@@ -1,12 +1,12 @@
 /**
  * Cron Job: Alertas de Vencimento de Macrociclo (PDI)
- * Roda diariamente para verificar alunos cujo macroTermino está a 30, 15 ou 7 dias de vencer
+ * Roda diariamente para verificar alunos cujo macroTermino está a 10 ou 7 dias de vencer
  * Envia e-mail para:
  *   - Aluno (destinatário principal)
  *   - Mentor (CC)
  *   - Admin: relacionamento@ckmtalents.net (CC)
  *   - Dina: dina@ckmtalents.net (CC)
- * Controle: só envia 1 alerta por aluno por faixa (30/15/7) a cada 7 dias
+ * Controle: só envia 1 alerta por aluno por faixa (10/7) a cada 7 dias
  */
 
 import { getDb } from './db';
@@ -16,7 +16,7 @@ import { eq, and, gte } from 'drizzle-orm';
 import { sendEmail, buildCycleDeadlineAlertEmail } from './emailService';
 import { trilhas } from '../drizzle/schema';
 
-const FAIXAS_ALERTA = [30, 15, 7]; // Dias antes do vencimento
+const FAIXAS_ALERTA = [10, 7]; // Dias antes do vencimento
 const DIAS_ENTRE_ALERTAS = 7; // Não reenviar alerta para o mesmo aluno/faixa em menos de 7 dias
 
 export interface VencimentoCicloResult {
@@ -29,7 +29,7 @@ export interface VencimentoCicloResult {
   programaNome: string;
   macroTermino: string;
   diasRestantes: number;
-  faixaAlerta: number; // 30, 15 ou 7
+  faixaAlerta: number; // 10 ou 7
   emailEnviado: boolean;
   erro?: string;
   jaEnviado?: boolean;
@@ -112,13 +112,12 @@ export async function verificarEEnviarAlertasVencimentoCiclo(options?: {
     const diasRestantes = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
     // Skip if already expired or too far away
-    if (diasRestantes < 0 || diasRestantes > 31) continue;
+    if (diasRestantes < 0 || diasRestantes > 11) continue;
 
     // Check which alert bands apply
     for (const faixa of FAIXAS_ALERTA) {
       // Only trigger if diasRestantes is within the band window
-      // 30 days: trigger when 28-30 days remaining
-      // 15 days: trigger when 13-15 days remaining
+      // 10 days: trigger when 8-10 days remaining
       // 7 days: trigger when 5-7 days remaining
       const lowerBound = faixa - 2;
       if (diasRestantes < lowerBound || diasRestantes > faixa) continue;
