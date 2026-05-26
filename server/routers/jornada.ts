@@ -34,7 +34,7 @@ import { calcularIndicadoresTodosAlunos, CaseSucessoData } from '../indicatorsCa
 import { cacheOrFetch } from '../dataCache';
 import type { MentoringRecord, EventRecord, PerformanceRecord } from '../excelProcessor';
 import * as schema from '../../drizzle/schema';
-const { programs, ciclosExecucao } = schema;
+const { programs } = schema;
 
 const CalcularIndicadoresInput = z.object({
   alunoId: z.number().int().positive(),
@@ -222,12 +222,8 @@ export const jornadaRouter = router({
             comp.metaCiclo2 != null
           ).length;
 
-        // 1 ciclo definido pela mentora = 1 case previsto
-        const ciclosAluno = await db
-          .select({ id: ciclosExecucao.id })
-          .from(ciclosExecucao)
-          .where(eq(ciclosExecucao.alunoId, aluno.id));
-        const casesPrevistos = ciclosAluno.length;
+        // 1 case previsto por trilha (PDI) do aluno
+        const casesPrevistos = macroJornadas.length;
 
         return {
           macroJornadas,
