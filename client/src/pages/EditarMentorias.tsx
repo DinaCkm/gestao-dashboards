@@ -33,6 +33,9 @@ export default function EditarMentorias() {
   const [editConsultorId, setEditConsultorId] = useState("");
   const [editTaskStatus, setEditTaskStatus] = useState("");
   const [editPresence, setEditPresence] = useState("");
+  const [editNotaEvolucao, setEditNotaEvolucao] = useState("");
+  const [editFeedback, setEditFeedback] = useState("");
+  const [editNotaMentoraAplicabilidade, setEditNotaMentoraAplicabilidade] = useState("");
 
   // Delete confirmation dialog state
   const [deleteSession, setDeleteSession] = useState<any | null>(null);
@@ -198,6 +201,9 @@ export default function EditarMentorias() {
     setEditConsultorId(session.consultorId ? String(session.consultorId) : "");
     setEditTaskStatus(session.taskStatus || "sem_tarefa");
     setEditPresence(session.presence || "presente");
+    setEditNotaEvolucao(session.notaEvolucao != null ? String(session.notaEvolucao) : "");
+    setEditFeedback(session.feedback || "");
+    setEditNotaMentoraAplicabilidade(session.notaMentoraAplicabilidade != null ? String(session.notaMentoraAplicabilidade) : "");
   }
 
   function closeEditDialog() {
@@ -207,6 +213,9 @@ export default function EditarMentorias() {
     setEditConsultorId("");
     setEditTaskStatus("");
     setEditPresence("");
+    setEditNotaEvolucao("");
+    setEditFeedback("");
+    setEditNotaMentoraAplicabilidade("");
   }
 
   function handleSaveEdit() {
@@ -238,6 +247,22 @@ export default function EditarMentorias() {
 
     if (editPresence && editPresence !== editSession.presence) {
       payload.presence = editPresence;
+    }
+
+    const newNota = editNotaEvolucao !== "" ? Number(editNotaEvolucao) : null;
+    const origNota = editSession.notaEvolucao ?? null;
+    if (newNota !== origNota) {
+      payload.notaEvolucao = newNota;
+    }
+
+    if (editFeedback !== (editSession.feedback || "")) {
+      payload.feedback = editFeedback;
+    }
+
+    const newNotaAplicab = editNotaMentoraAplicabilidade !== "" ? Number(editNotaMentoraAplicabilidade) : null;
+    const origNotaAplicab = editSession.notaMentoraAplicabilidade ?? null;
+    if (newNotaAplicab !== origNotaAplicab) {
+      payload.notaMentoraAplicabilidade = newNotaAplicab;
     }
 
     if (Object.keys(payload).length <= 1) {
@@ -712,6 +737,46 @@ export default function EditarMentorias() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editNotaEvolucao" className="text-sm">Nota de Evolução <span className="text-xs text-muted-foreground">(0–10)</span></Label>
+                    <Input
+                      id="editNotaEvolucao"
+                      type="number"
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      placeholder="Ex: 7"
+                      value={editNotaEvolucao}
+                      onChange={(e) => setEditNotaEvolucao(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="editNotaAplicab" className="text-sm">Nota Aplicabilidade <span className="text-xs text-muted-foreground">(0–10)</span></Label>
+                    <Input
+                      id="editNotaAplicab"
+                      type="number"
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      placeholder="Ex: 8"
+                      value={editNotaMentoraAplicabilidade}
+                      onChange={(e) => setEditNotaMentoraAplicabilidade(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="editFeedback" className="text-sm">Parecer/Feedback <span className="text-xs text-muted-foreground">(opcional)</span></Label>
+                  <textarea
+                    id="editFeedback"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Observações sobre a sessão..."
+                    value={editFeedback}
+                    onChange={(e) => setEditFeedback(e.target.value)}
+                  />
                 </div>
               </div>
             )}

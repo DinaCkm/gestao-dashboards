@@ -7080,6 +7080,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         consultorId: z.number().optional(),
         taskStatus: z.enum(["entregue", "nao_entregue", "sem_tarefa", "validada"]).optional(),
         presence: z.enum(["presente", "ausente"]).optional(),
+        notaEvolucao: z.number().min(0).max(10).nullable().optional(),
+        feedback: z.string().optional(),
+        notaMentoraAplicabilidade: z.number().min(0).max(10).nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         // If sessionNumber is being changed, validate no duplicate for same aluno
@@ -7105,6 +7108,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (input.consultorId !== undefined) updateData.consultorId = input.consultorId;
         if (input.taskStatus !== undefined) updateData.taskStatus = input.taskStatus;
         if (input.presence !== undefined) updateData.presence = input.presence;
+        if (input.notaEvolucao !== undefined) updateData.notaEvolucao = input.notaEvolucao;
+        if (input.feedback !== undefined) updateData.feedback = input.feedback;
+        if (input.notaMentoraAplicabilidade !== undefined) updateData.notaMentoraAplicabilidade = input.notaMentoraAplicabilidade;
 
         const success = await db.updateMentoringSession(input.sessionId, updateData);
         return { success };
