@@ -659,12 +659,11 @@ export default function DashboardAluno() {
 
             {/* Tabs de Conteúdo */}
             <Tabs defaultValue="indicadores" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="indicadores">Indicadores</TabsTrigger>
                 <TabsTrigger value="competencias">Competências</TabsTrigger>
                 <TabsTrigger value="eventos">Eventos</TabsTrigger>
                 <TabsTrigger value="ciclos">Mentoria</TabsTrigger>
-                <TabsTrigger value="historico">Histórico</TabsTrigger>
               </TabsList>
 
               {/* Tab Indicadores - Por Ciclo */}
@@ -1248,85 +1247,6 @@ export default function DashboardAluno() {
                 )}
               </TabsContent>
 
-              {/* Tab Histórico */}
-              <TabsContent value="historico" className="space-y-4">
-                {/* Sessões de Mentoria */}
-                {detalheAluno && detalheAluno.sessoes.length > 0 ? (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-[#0A1E3E]" />
-                        Sessões de Mentoria
-                      </CardTitle>
-                      <CardDescription>
-                        {detalheAluno.mentoriasPresente} presenças de {detalheAluno.totalMentorias} sessões
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-16">Sessão</TableHead>
-                            <TableHead className="w-24">Ciclo</TableHead>
-                            <TableHead className="w-28">Data</TableHead>
-                            <TableHead className="w-24 text-center">Presença</TableHead>
-                            <TableHead className="w-28 text-center">Atividade</TableHead>
-                            <TableHead className="w-32 text-center">Nível de Engajamento</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {detalheAluno.sessoes.map((sessao) => (
-                            <TableRow key={sessao.id}>
-                              <TableCell className="font-medium">#{sessao.sessionNumber || '—'}</TableCell>
-                              <TableCell>{sessao.ciclo || '—'}</TableCell>
-                              <TableCell className="text-gray-500">{formatDate(sessao.sessionDate)}</TableCell>
-                              <TableCell className="text-center">
-                                {sessao.presence === 'presente' ? (
-                                  <Badge className="bg-emerald-100 text-emerald-800">Presente</Badge>
-                                ) : (
-                                  <Badge className="bg-red-100 text-red-800">Ausente</Badge>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {sessao.taskStatus === 'entregue' ? (
-                                  <Badge className="bg-emerald-100 text-emerald-800">Entregue</Badge>
-                                ) : sessao.taskStatus === 'nao_entregue' ? (
-                                  <Badge className="bg-red-100 text-red-800">Não entregue</Badge>
-                                ) : (
-                                  <span className="text-gray-400">—</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                {sessao.sessionNumber === 1 ? (
-                                  <span className="text-gray-400 text-xs italic">N/A (1ª sessão)</span>
-                                ) : (() => {
-                                  const nota = sessao.notaEvolucao ?? sessao.engagementScore;
-                                  if (nota == null) return <span className="text-gray-400">—</span>;
-                                  const stageLabel = nota >= 9 ? 'Excelência' : nota >= 7 ? 'Avançado' : nota >= 5 ? 'Intermediário' : nota >= 3 ? 'Básico' : 'Inicial';
-                                  const stageColor = nota >= 9 ? 'bg-emerald-100 text-emerald-800' : nota >= 7 ? 'bg-blue-100 text-blue-800' : nota >= 5 ? 'bg-amber-100 text-amber-800' : nota >= 3 ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800';
-                                  return (
-                                    <div className="flex flex-col items-center gap-0.5">
-                                      <span className="font-bold">{nota}/10</span>
-                                      <Badge className={`text-xs ${stageColor}`}>{stageLabel}</Badge>
-                                    </div>
-                                  );
-                                })()}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardContent className="py-8 text-center text-gray-500">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>Nenhuma sessão de mentoria registrada.</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
             </Tabs>
           </>
         )}
