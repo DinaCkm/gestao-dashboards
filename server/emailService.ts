@@ -2296,3 +2296,129 @@ export function buildRelatorioMentoriasFinanceiroEmail(data: {
 
   return { subject, html, text };
 }
+
+// ============================================================
+// E-mail de convite cancelado (5º envio — aluno não acessou)
+// ============================================================
+export function buildConviteCanceladoEmail(data: {
+  alunoName: string;
+  alunoEmail: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Que pena! Seu convite para o ECOSSISTEMA DO BEM sera cancelado`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const contatoEmail = 'relacionamento@ckmtalents.net';
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:40px 20px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <tr><td style="background-color:#ffffff;padding:30px 40px;text-align:center;">
+          <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;" />
+          <p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p>
+        </td></tr>
+        <tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;" /></td></tr>
+        <tr><td style="padding:36px 40px;">
+          <h2 style="color:#1a1a2e;font-size:22px;margin:0 0 16px;">Que pena, ${data.alunoName}!</h2>
+          <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 16px;">
+            Enviamos varios convites para voce acessar o <strong>ECOSSISTEMA DO BEM</strong>, mas infelizmente nao identificamos nenhum acesso a plataforma ate o momento.
+          </p>
+          <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 16px;">
+            Por esse motivo, <strong>seu convite sera cancelado</strong>. Sabemos que imprevistos acontecem, e lamentamos muito nao ter podido acompanhar sua jornada de desenvolvimento.
+          </p>
+          <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 24px;">
+            Caso queira reverter essa situacao ou tenha alguma duvida, entre em contato conosco pelo e-mail:
+          </p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:24px;">
+            <tr><td style="padding:20px 24px;">
+              <p style="margin:0;font-size:14px;color:#6b7280;">E-mail de contato:</p>
+              <p style="margin:6px 0 0;font-size:16px;font-weight:600;color:#1a1a2e;">
+                <a href="mailto:${contatoEmail}" style="color:#e8a838;text-decoration:none;">${contatoEmail}</a>
+              </p>
+            </td></tr>
+          </table>
+          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">Esperamos poder contar com voce em uma proxima oportunidade. Cuide-se!</p>
+        </td></tr>
+        <tr><td style="background-color:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+          <p style="color:#9ca3af;font-size:12px;margin:0;">© ECOSSISTEMA DO BEM — Todos os direitos reservados</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Que pena, ${data.alunoName}!\n\nEnviamos varios convites mas nao identificamos acesso a plataforma. Seu convite sera cancelado.\n\nCaso queira reverter, entre em contato: ${contatoEmail}`;
+
+  return { subject, html, text };
+}
+
+// ============================================================
+// E-mail de alerta ao admin — aluno sem acesso apos 15 dias
+// ============================================================
+export function buildAdminAlunoSemAcessoEmail(data: {
+  alunoName: string;
+  alunoEmail: string;
+  diasSemAcesso: number;
+  programaNome?: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Aluno sem acesso apos ${data.diasSemAcesso} dias: ${data.alunoName}`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:40px 20px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <tr><td style="background-color:#ffffff;padding:30px 40px;text-align:center;">
+          <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;" />
+        </td></tr>
+        <tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #ef4444;margin:0;" /></td></tr>
+        <tr><td style="padding:36px 40px;">
+          <h2 style="color:#dc2626;font-size:20px;margin:0 0 16px;">Aluno sem acesso — acao necessaria</h2>
+          <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 16px;">
+            O aluno abaixo recebeu todos os e-mails de convite mas <strong>nao acessou a plataforma</strong> nos ultimos <strong>${data.diasSemAcesso} dias</strong>. A situacao deve ser analisada.
+          </p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef2f2;border-radius:8px;border:1px solid #fecaca;margin-bottom:24px;">
+            <tr><td style="padding:20px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:4px 0;font-size:14px;color:#6b7280;width:140px;">Aluno(a):</td>
+                  <td style="padding:4px 0;font-size:14px;font-weight:600;color:#1a1a2e;">${data.alunoName}</td>
+                </tr>
+                <tr>
+                  <td style="padding:4px 0;font-size:14px;color:#6b7280;">E-mail:</td>
+                  <td style="padding:4px 0;font-size:14px;color:#1a1a2e;">${data.alunoEmail}</td>
+                </tr>
+                ${data.programaNome ? `<tr>
+                  <td style="padding:4px 0;font-size:14px;color:#6b7280;">Programa:</td>
+                  <td style="padding:4px 0;font-size:14px;color:#1a1a2e;">${data.programaNome}</td>
+                </tr>` : ''}
+                <tr>
+                  <td style="padding:4px 0;font-size:14px;color:#6b7280;">Dias sem acesso:</td>
+                  <td style="padding:4px 0;font-size:14px;font-weight:700;color:#dc2626;">${data.diasSemAcesso} dias</td>
+                </tr>
+              </table>
+            </td></tr>
+          </table>
+          <p style="color:#374151;font-size:14px;line-height:1.6;margin:0;">
+            Por favor, entre em contato com o aluno diretamente ou verifique se ha algum impedimento tecnico ou pessoal que esteja dificultando o acesso.
+          </p>
+        </td></tr>
+        <tr><td style="background-color:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+          <p style="color:#9ca3af;font-size:12px;margin:0;">© ECOSSISTEMA DO BEM — Alerta automatico do sistema</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `ALUNO SEM ACESSO — ACAO NECESSARIA\n\nAluno: ${data.alunoName}\nE-mail: ${data.alunoEmail}\n${data.programaNome ? `Programa: ${data.programaNome}\n` : ''}Dias sem acesso: ${data.diasSemAcesso} dias\n\nPor favor, analise a situacao e entre em contato com o aluno.`;
+
+  return { subject, html, text };
+}

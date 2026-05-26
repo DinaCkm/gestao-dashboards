@@ -1,156 +1,184 @@
 /**
- * Cron Job: Lembretes de Onboarding (24h)
- * Roda a cada hora para verificar alunos parados há 24h+ na mesma etapa do onboarding
- * Envia lembrete motivacional para o aluno
- * Controle: só envia 1 lembrete por etapa pendente a cada 24h
- * Regra: NÃO envia para alunos que já possuem PDI publicado
+ * Cron Job: Sequência de boas-vindas para alunos novos
+ *
+ * Lógica:
+ *  - Roda a cada hora
+ *  - Para cada aluno sem PDI (onboarding incompleto), envia até 5 e-mails de boas-vindas
+ *  - Intervalo entre envios: 3 dias (dias 0, 3, 6, 9, 12 desde o cadastro)
+ *  - 5º e-mail (dia 12): mensagem de lamento + aviso de cancelamento do convite
+ *  - Dia 15 sem acesso: envia alerta ao admin (apenas uma vez) e para envios ao aluno
+ *  - Controle de envios via emailAlertasLog:
+ *      tipoAlerta = 'onboarding_seq_1' … 'onboarding_seq_5'  (e-mails ao aluno)
+ *      tipoAlerta = 'onboarding_sem_acesso_15d'              (alerta ao admin)
+ *  - "Acesso" = aluno preencheu cadastro (cadastroPreenchido === true)
  */
 
 import { getDb } from './db';
 import { getOnboardingTrackingList } from './db';
 import { emailAlertasLog } from '../drizzle/schema';
-import { eq, and, gte } from 'drizzle-orm';
-import { sendEmail, buildOnboardingReminderEmail, buildOnboardingInviteEmail } from './emailService';
+import { eq, and, inArray } from 'drizzle-orm';
+import {
+  sendEmail,
+  buildOnboardingInviteEmail,
+  buildConviteCanceladoEmail,
+  buildAdminAlunoSemAcessoEmail,
+} from './emailService';
 
-const HORAS_SEM_AVANCO = 24;
-const HORAS_ENTRE_LEMBRETES = 24; // Não reenviar lembrete para o mesmo aluno em menos de 24h
+// ── Configurações ────────────────────────────────────────────
+const DIAS_ENTRE_ENVIOS = 3;          // intervalo entre cada e-mail da sequência
+const TOTAL_EMAILS_SEQUENCIA = 5;     // total de e-mails antes de parar
+const DIAS_ALERTA_ADMIN = 15;         // dia em que o admin é notificado
+const ADMIN_EMAIL = 'relacionamento@ckmtalents.net';
+const DINA_EMAIL  = 'dina@ckmtalents.net';
+const LOGIN_URL   = 'https://ecolider.ecodobem.com';
 
-// Map step keys to human-readable labels for the email
-const STEP_LABELS: Record<string, string> = {
-  conviteEnviado: 'confirmar seu cadastro na plataforma',
-  cadastroPreenchido: 'realizar o teste de autopercepção (DISC)',
-  testeRealizado: 'agendar sua mentoria',
-  mentoriaAgendada: 'participar da sua sessão de mentoria',
-  aceiteOnboarding: 'assinar o Termo de Compromisso',
-};
+// tipoAlerta para cada e-mail da sequência (1 a 5)
+function tipoSeq(n: number): string {
+  return `onboarding_seq_${n}`;
+}
+const TIPO_ADMIN_ALERTA = 'onboarding_sem_acesso_15d';
 
-export interface OnboardingReminderResult {
-  alunoId: number;
-  alunoName: string;
-  alunoEmail: string;
-  etapaPendente: string;
-  emailEnviado: boolean;
-  erro?: string;
-  jaEnviado?: boolean;
+// ── Helpers ──────────────────────────────────────────────────
+
+/** Dias desde o cadastro do aluno */
+function diasDesde(date: Date | null | undefined): number {
+  if (!date) return 0;
+  return Math.floor((Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24));
 }
 
-/**
- * Finds the first incomplete step for a student
- */
-function getNextPendingStep(steps: Record<string, boolean>): string | null {
-  const stepOrder = ['conviteEnviado', 'cadastroPreenchido', 'testeRealizado', 'mentoriaAgendada', 'aceiteOnboarding'];
-  for (const key of stepOrder) {
-    if (!steps[key]) {
-      return key;
-    }
-  }
-  return null; // All steps completed
+/** Verifica se um tipoAlerta já foi registrado (com sucesso) para o aluno */
+async function jaEnviado(
+  db: Awaited<ReturnType<typeof getDb>>,
+  alunoId: number,
+  tipo: string,
+): Promise<boolean> {
+  if (!db) return false;
+  const rows = await db
+    .select({ id: emailAlertasLog.id })
+    .from(emailAlertasLog)
+    .where(
+      and(
+        eq(emailAlertasLog.alunoId, alunoId),
+        eq(emailAlertasLog.tipoAlerta, tipo),
+        eq(emailAlertasLog.emailEnviado, 1),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0;
 }
+
+/** Registra o envio (ou falha) no log */
+async function logEnvio(
+  db: Awaited<ReturnType<typeof getDb>>,
+  alunoId: number,
+  tipo: string,
+  success: boolean,
+  erro?: string,
+): Promise<void> {
+  if (!db) return;
+  await db.insert(emailAlertasLog).values({
+    alunoId,
+    consultorId: 0,
+    tipoAlerta: tipo,
+    diasSemSessao: 0,
+    emailEnviado: success ? 1 : 0,
+    erro: success ? null : (erro || null),
+  }).catch((e: any) => console.error('[Cron Onboarding] Erro ao gravar log:', e.message));
+}
+
+// ── Função principal ─────────────────────────────────────────
 
 export async function verificarEEnviarLembretesOnboarding(options?: {
   dryRun?: boolean;
-  forceResend?: boolean;
 }): Promise<{
   success: boolean;
   totalAlunos: number;
-  totalLembretes: number;
   emailsEnviados: number;
-  jaEnviadosIgnorados: number;
-  lembretes: OnboardingReminderResult[];
+  alertasAdmin: number;
 }> {
   const dryRun = options?.dryRun || false;
-  const forceResend = options?.forceResend || false;
-
   const db = await getDb();
-  if (!db) return { success: false, totalAlunos: 0, totalLembretes: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, lembretes: [] };
+  if (!db) return { success: false, totalAlunos: 0, emailsEnviados: 0, alertasAdmin: 0 };
 
-  // Get all students WITHOUT PDI (the tracking list already filters them)
   const students = await getOnboardingTrackingList();
-
   if (students.length === 0) {
-    return { success: true, totalAlunos: 0, totalLembretes: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, lembretes: [] };
+    return { success: true, totalAlunos: 0, emailsEnviados: 0, alertasAdmin: 0 };
   }
 
-  // Check recent reminders to avoid duplicates
-  const twentyFourHoursAgo = new Date(Date.now() - HORAS_ENTRE_LEMBRETES * 60 * 60 * 1000);
-  const recentReminders = await db.select().from(emailAlertasLog)
-    .where(and(
-      eq(emailAlertasLog.tipoAlerta, 'onboarding_lembrete_24h'),
-      eq(emailAlertasLog.emailEnviado, 1),
-      gte(emailAlertasLog.createdAt, twentyFourHoursAgo)
-    ));
-  const recentReminderAlunoIds = new Set(recentReminders.map(r => r.alunoId));
-
-  const lembretes: OnboardingReminderResult[] = [];
-  let jaEnviadosIgnorados = 0;
-  const loginUrl = 'https://ecolider.ecodobem.com';
+  let emailsEnviados = 0;
+  let alertasAdmin = 0;
 
   for (const student of students) {
     if (!student.email) continue;
 
-    // Skip students who completed all steps (they're just waiting for PDI from mentor)
-    if (student.completedSteps >= student.totalSteps) continue;
+    // "Acesso" = aluno preencheu o cadastro (confirmou o convite)
+    const acessou = student.steps.cadastroPreenchido;
 
-    // Find the next pending step
-    const pendingStepKey = getNextPendingStep(student.steps as Record<string, boolean>);
-    if (!pendingStepKey) continue;
+    // Se o aluno já acessou, não há mais necessidade de enviar a sequência de boas-vindas
+    if (acessou) continue;
 
-    // Step 1 (conviteEnviado) is admin's responsibility, skip it
-    if (pendingStepKey === 'conviteEnviado') continue;
+    const diasCadastro = diasDesde(student.createdAt);
 
-    // O lembrete de 'assinar o Termo de Compromisso' (aceiteOnboarding) só deve ser enviado
-    // APÓS a mentora ter liberado o PDI para o aluno visualizar.
-    // Sem PDI liberado, o aluno ainda não tem como avançar para essa etapa.
-    if (pendingStepKey === 'aceiteOnboarding' && !(student as any).pdiLiberadoPelaMentora) continue;
-
-    // Check if already sent recently
-    if (!forceResend && recentReminderAlunoIds.has(student.alunoId)) {
-      lembretes.push({
-        alunoId: student.alunoId,
-        alunoName: student.name,
-        alunoEmail: student.email,
-        etapaPendente: STEP_LABELS[pendingStepKey] || pendingStepKey,
-        emailEnviado: false,
-        jaEnviado: true,
-      });
-      jaEnviadosIgnorados++;
+    // ── Alerta ao admin no dia 15 ────────────────────────────
+    if (diasCadastro >= DIAS_ALERTA_ADMIN) {
+      const adminJaNotificado = await jaEnviado(db, student.alunoId, TIPO_ADMIN_ALERTA);
+      if (!adminJaNotificado && !dryRun) {
+        const emailData = buildAdminAlunoSemAcessoEmail({
+          alunoName: student.name,
+          alunoEmail: student.email,
+          diasSemAcesso: diasCadastro,
+          programaNome: student.programName || undefined,
+        });
+        const result = await sendEmail({
+          to: ADMIN_EMAIL,
+          cc: DINA_EMAIL,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text,
+        });
+        await logEnvio(db, student.alunoId, TIPO_ADMIN_ALERTA, result.success, result.error);
+        if (result.success) alertasAdmin++;
+        console.log(`[Cron Onboarding] Alerta admin enviado para aluno ${student.alunoId} (${student.name}) — ${diasCadastro} dias sem acesso`);
+      }
+      // Após o dia 15, não envia mais e-mails ao aluno
       continue;
     }
 
-    const etapaPendente = STEP_LABELS[pendingStepKey] || pendingStepKey;
+    // ── Determinar qual e-mail da sequência enviar ───────────
+    // Sequência: e-mail N é enviado quando diasCadastro >= (N-1) * DIAS_ENTRE_ENVIOS
+    // e-mail 1 → dia 0, e-mail 2 → dia 3, e-mail 3 → dia 6, e-mail 4 → dia 9, e-mail 5 → dia 12
+    for (let n = TOTAL_EMAILS_SEQUENCIA; n >= 1; n--) {
+      const diaEnvio = (n - 1) * DIAS_ENTRE_ENVIOS;
+      if (diasCadastro < diaEnvio) continue; // ainda não chegou o dia deste e-mail
 
-    const lembreteItem: OnboardingReminderResult = {
-      alunoId: student.alunoId,
-      alunoName: student.name,
-      alunoEmail: student.email,
-      etapaPendente,
-      emailEnviado: false,
-    };
+      const tipo = tipoSeq(n);
+      const enviado = await jaEnviado(db, student.alunoId, tipo);
+      if (enviado) break; // este e-mail já foi enviado; os anteriores também foram
 
-    if (!dryRun) {
-      try {
-        // Se o aluno ainda não confirmou o cadastro (nunca acessou o sistema),
-        // reenviar o email de boas-vindas/convite em vez do lembrete genérico.
+      // Enviar e-mail N
+      if (!dryRun) {
         let emailData: { subject: string; html: string; text: string };
-        if (pendingStepKey === 'cadastroPreenchido') {
+
+        if (n === TOTAL_EMAILS_SEQUENCIA) {
+          // 5º e-mail: lamento + cancelamento
+          emailData = buildConviteCanceladoEmail({
+            alunoName: student.name,
+            alunoEmail: student.email,
+          });
+        } else {
+          // 1º ao 4º e-mail: convite/boas-vindas
           emailData = buildOnboardingInviteEmail({
             alunoName: student.name,
             alunoEmail: student.email,
-            alunoId: (student as any).externalId || String(student.alunoId),
+            alunoId: student.externalId || String(student.alunoId),
             empresaName: student.programName || undefined,
-            loginUrl,
-          });
-        } else {
-          emailData = buildOnboardingReminderEmail({
-            alunoName: student.name,
-            etapaPendente,
-            loginUrl,
+            loginUrl: LOGIN_URL,
           });
         }
 
-        const adminEmail = 'relacionamento@ckmtalents.net';
-        const dinaEmail = 'dina@ckmtalents.net';
-        const ccList = [adminEmail, dinaEmail].join(', ');
+        // Para o 5º e-mail (lamento), não colocar admin em CC
+        const ccList = n < TOTAL_EMAILS_SEQUENCIA ? [ADMIN_EMAIL, DINA_EMAIL].join(', ') : undefined;
+
         const result = await sendEmail({
           to: student.email,
           cc: ccList,
@@ -159,72 +187,47 @@ export async function verificarEEnviarLembretesOnboarding(options?: {
           text: emailData.text,
         });
 
-        lembreteItem.emailEnviado = result.success;
-        if (!result.success) lembreteItem.erro = result.error;
-
-        // Log the reminder (reusing emailAlertasLog with different tipoAlerta)
-        await db.insert(emailAlertasLog).values({
-          alunoId: student.alunoId,
-          consultorId: 0, // No mentor involved in this reminder
-          tipoAlerta: 'onboarding_lembrete_24h',
-          diasSemSessao: 0, // Not applicable, but field is required
-          emailEnviado: result.success ? 1 : 0,
-          erro: result.success ? null : (result.error || null),
-        });
-      } catch (err: any) {
-        lembreteItem.erro = err.message;
-        await db.insert(emailAlertasLog).values({
-          alunoId: student.alunoId,
-          consultorId: 0,
-          tipoAlerta: 'onboarding_lembrete_24h',
-          diasSemSessao: 0,
-          emailEnviado: 0,
-          erro: err.message,
-        }).catch(() => {});
+        await logEnvio(db, student.alunoId, tipo, result.success, result.error);
+        if (result.success) emailsEnviados++;
+        console.log(`[Cron Onboarding] E-mail ${n}/${TOTAL_EMAILS_SEQUENCIA} enviado para ${student.name} (dia ${diasCadastro}) — ${result.success ? 'OK' : 'FALHOU'}`);
       }
+      break; // só envia um e-mail por aluno por execução do cron
     }
-
-    lembretes.push(lembreteItem);
   }
 
-  return {
-    success: true,
-    totalAlunos: students.length,
-    totalLembretes: lembretes.length,
-    emailsEnviados: lembretes.filter(l => l.emailEnviado).length,
-    jaEnviadosIgnorados,
-    lembretes,
-  };
+  return { success: true, totalAlunos: students.length, emailsEnviados, alertasAdmin };
 }
 
+// ── Cron ─────────────────────────────────────────────────────
+
 /**
- * Inicia o cron job de lembretes de onboarding
- * Roda a cada 1 hora (verifica quem está parado há 24h+)
+ * Inicia o cron job de sequência de boas-vindas.
+ * Roda a cada 1 hora para verificar alunos sem acesso.
  */
 export function iniciarCronOnboardingReminders() {
   const INTERVALO_MS = 60 * 60 * 1000; // 1 hora
 
-  // Primeira execução: 60 segundos após o servidor iniciar
+  // Primeira execução: 90 segundos após o servidor iniciar
   setTimeout(async () => {
-    console.log('[Cron Onboarding] Executando verificação inicial de lembretes de onboarding...');
+    console.log('[Cron Onboarding] Executando verificação inicial...');
     try {
       const result = await verificarEEnviarLembretesOnboarding();
-      console.log(`[Cron Onboarding] Resultado: ${result.totalLembretes} lembretes, ${result.emailsEnviados} e-mails enviados, ${result.jaEnviadosIgnorados} ignorados (já enviados)`);
+      console.log(`[Cron Onboarding] Resultado: ${result.emailsEnviados} e-mails enviados, ${result.alertasAdmin} alertas admin`);
     } catch (err) {
       console.error('[Cron Onboarding] Erro na verificação inicial:', err);
     }
-  }, 60000);
+  }, 90000);
 
   // Execuções subsequentes: a cada 1 hora
   setInterval(async () => {
-    console.log('[Cron Onboarding] Executando verificação de lembretes de onboarding...');
+    console.log('[Cron Onboarding] Executando verificação de lembretes...');
     try {
       const result = await verificarEEnviarLembretesOnboarding();
-      console.log(`[Cron Onboarding] Resultado: ${result.totalLembretes} lembretes, ${result.emailsEnviados} e-mails enviados, ${result.jaEnviadosIgnorados} ignorados (já enviados)`);
+      console.log(`[Cron Onboarding] Resultado: ${result.emailsEnviados} e-mails enviados, ${result.alertasAdmin} alertas admin`);
     } catch (err) {
       console.error('[Cron Onboarding] Erro na verificação:', err);
     }
   }, INTERVALO_MS);
 
-  console.log('[Cron Onboarding] Cron job de lembretes de onboarding iniciado (intervalo: 1h)');
+  console.log('[Cron Onboarding] Cron job de sequência de boas-vindas iniciado (intervalo: 1h)');
 }
