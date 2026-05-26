@@ -3030,16 +3030,28 @@ function EtapaSuaJornada({ onComplete, alunoId, readOnly = false, assessmentPdiF
       </Card>
 
       {!readOnly && todosAssistidos && (
-        <div className="flex justify-center">
-          <Button
-            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
-            onClick={onComplete}
-          >
-            <Award className="h-5 w-5 mr-2" />
-            Estou pronta! Vamos ao compromisso!
-            <ArrowRight className="h-5 w-5 ml-2" />
-          </Button>
-        </div>
+        <>
+          <div className="flex justify-center">
+            <Button
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white px-10 py-4 text-lg shadow-lg"
+              onClick={onComplete}
+            >
+              <Award className="h-5 w-5 mr-2" />
+              Estou pronta! Vamos ao compromisso!
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </div>
+          {/* Botão flutuante fixo no rodapé para garantir visibilidade */}
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+            <Button
+              className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white px-8 py-3 text-base shadow-2xl rounded-full border-2 border-white animate-pulse"
+              onClick={onComplete}
+            >
+              <Award className="h-5 w-5 mr-2" />
+              Próximo passo: Meu PDI →
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
