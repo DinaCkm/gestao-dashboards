@@ -791,6 +791,87 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
               </Suspense>
             </CardContent>
           </Card>
+
+          {/* Webinares - liberados mesmo sem assessment */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Video className="h-5 w-5 text-primary" />
+                Webinares / Eventos
+              </CardTitle>
+              <CardDescription>Confirme sua presença nos webinares mesmo enquanto aguarda o assessment</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingWebinars?.events && pendingWebinars.events.length > 0 ? (
+                <div className="space-y-3">
+                  {pendingWebinars.events.map((evt: any) => (
+                    <div key={evt.eventId} className="border rounded-lg overflow-hidden">
+                      <div
+                        className={`flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                          evt.status === 'presente' ? 'bg-emerald-50 border-emerald-200' : 'bg-white'
+                        }`}
+                        onClick={() => setExpandedWebinar(expandedWebinar === evt.eventId ? null : evt.eventId)}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {evt.status === 'presente'
+                            ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                            : <XCircle className="h-4 w-4 text-red-400 shrink-0" />}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">{evt.title}</p>
+                            <p className="text-xs text-gray-500">{formatDateSafe(evt.eventDate)}</p>
+                          </div>
+                        </div>
+                        <Badge variant={evt.status === 'presente' ? 'default' : 'outline'} className={`text-xs shrink-0 ml-2 ${evt.status === 'presente' ? 'bg-emerald-600' : 'text-red-500 border-red-300'}`}>
+                          {evt.status === 'presente' ? 'Presente' : 'Ausente'}
+                        </Badge>
+                      </div>
+                      {evt.status === 'ausente' && expandedWebinar === evt.eventId && (
+                        <div className="px-4 pb-4 space-y-3 border-t border-red-100 bg-white/80">
+                          {evt.videoLink && (
+                            <div className="flex items-center gap-2 pt-3 pb-1">
+                              <Video className="h-4 w-4 text-blue-600" />
+                              <a href={evt.videoLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline font-medium">
+                                Clique aqui para assistir a gravação antes de marcar presença
+                              </a>
+                            </div>
+                          )}
+                          <p className={`text-xs text-gray-600 ${!evt.videoLink ? 'pt-3' : ''}`}>Escreva uma reflexão sobre o evento (mínimo 20 caracteres):</p>
+                          <Textarea
+                            placeholder="O que você aprendeu neste evento? Como pretende aplicar no seu dia a dia?"
+                            value={reflexaoText[evt.eventId] || ""}
+                            onChange={(e) => setReflexaoText(prev => ({ ...prev, [evt.eventId]: e.target.value }))}
+                            className="border-gray-200 focus:border-amber-400 text-gray-900 text-sm min-h-[80px] bg-white"
+                          />
+                          <div className="flex items-center gap-3">
+                            <Button
+                              size="sm"
+                              onClick={() => markPresence.mutate({ eventId: evt.eventId, reflexao: reflexaoText[evt.eventId] || "" })}
+                              disabled={!reflexaoText[evt.eventId] || reflexaoText[evt.eventId].length < 20 || markPresence.isPending}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            >
+                              <Send className="h-3 w-3 mr-1.5" />
+                              {markPresence.isPending ? "Enviando..." : "Confirmar Presença"}
+                            </Button>
+                            {reflexaoText[evt.eventId] && reflexaoText[evt.eventId].length < 20 && (
+                              <p className="text-xs text-amber-600">{20 - (reflexaoText[evt.eventId]?.length || 0)} caracteres restantes</p>
+                            )}
+                          </div>
+                          {markPresence.isError && (
+                            <p className="text-xs text-red-600">{markPresence.error?.message || "Erro ao marcar presença"}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <Video className="h-10 w-10 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">Nenhum evento registrado ainda</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </AlunoLayout>
     );
