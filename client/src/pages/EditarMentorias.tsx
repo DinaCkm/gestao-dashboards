@@ -836,7 +836,30 @@ export default function EditarMentorias() {
                     <span className="text-muted-foreground">Data:</span>
                     <span className="font-medium">{formatDateSafe(deleteSession.sessionDate)}</span>
                   </div>
+                  {deleteSession.taskStatus && deleteSession.taskStatus !== 'sem_tarefa' && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Tarefa:</span>
+                      <span className={`font-medium ${
+                        deleteSession.taskStatus === 'validada' ? 'text-emerald-700' :
+                        deleteSession.taskStatus === 'entregue' ? 'text-blue-700' : 'text-orange-700'
+                      }`}>
+                        {deleteSession.taskStatus === 'validada' ? 'Validada' :
+                         deleteSession.taskStatus === 'entregue' ? 'Entregue' : 'Não entregue'}
+                      </span>
+                    </div>
+                  )}
                 </div>
+                {(deleteSession.taskStatus === 'validada' || deleteSession.taskStatus === 'entregue') && (
+                  <div className="flex items-start gap-2 rounded-lg bg-amber-50 border border-amber-300 p-3">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-sm text-amber-800">
+                      {deleteSession.taskStatus === 'validada'
+                        ? <><strong>Atenção:</strong> Esta sessão possui uma tarefa <strong>validada pela mentora</strong>. Ao excluir, o histórico de entrega, evidências e validação serão perdidos permanentemente.</>
+                        : <><strong>Atenção:</strong> Esta sessão possui uma tarefa <strong>entregue pelo aluno</strong>. Ao excluir, o histórico de entrega e evidências serão perdidos permanentemente.</>
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
