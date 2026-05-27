@@ -1115,10 +1115,21 @@ function RelatorioAutoconhecimento({
 
 
 
-  if (!perfis || !discScores) {
+  if (!perfis) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  if (!discScores) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+          <AlertCircle className="h-8 w-8 text-amber-500" />
+        </div>
+        <p className="text-base font-semibold text-gray-700">Teste DISC ainda não preenchido</p>
+        <p className="text-sm text-gray-500 max-w-xs">O relatório de autoconhecimento estará disponível após a realização do Teste DISC no Onboarding.</p>
       </div>
     );
   }
