@@ -45,7 +45,8 @@ import {
   Ban,
   ArrowRight,
   Info,
-  ListChecks
+  ListChecks,
+  Users
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
