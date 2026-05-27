@@ -775,7 +775,15 @@ export default function EditarMentorias() {
               </div>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button
+                variant="destructive"
+                onClick={() => { if (editSession) { setDeleteSession(editSession); closeEditDialog(); } }}
+                className="sm:mr-auto"
+              >
+                <Trash2 className="h-4 w-4 mr-1.5" />
+                Excluir Sessão
+              </Button>
               <Button variant="outline" onClick={closeEditDialog}>
                 Cancelar
               </Button>

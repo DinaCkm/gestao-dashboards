@@ -885,7 +885,24 @@ export async function updateMentoringSession(sessionId: number, data: {
 export async function deleteMentoringSession(sessionId: number): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
+  // Buscar a sessão para saber o alunoId antes de deletar
+  const [session] = await db.select().from(mentoringSessions).where(eq(mentoringSessions.id, sessionId)).limit(1);
+  if (!session) return false;
+  const alunoId = session.alunoId;
+  // Deletar a sessão
   await db.delete(mentoringSessions).where(eq(mentoringSessions.id, sessionId));
+  // Renumerar todas as sessões restantes do aluno por ordem de data
+  const restantes = await db
+    .select()
+    .from(mentoringSessions)
+    .where(eq(mentoringSessions.alunoId, alunoId))
+    .orderBy(asc(mentoringSessions.sessionDate), asc(mentoringSessions.id));
+  for (let i = 0; i < restantes.length; i++) {
+    await db
+      .update(mentoringSessions)
+      .set({ sessionNumber: i + 1 })
+      .where(eq(mentoringSessions.id, restantes[i].id));
+  }
   return true;
 }
 
