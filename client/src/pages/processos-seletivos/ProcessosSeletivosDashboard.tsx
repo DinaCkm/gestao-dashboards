@@ -262,13 +262,9 @@ function ProcessosSeletivosContent() {
   const handleCreateAgenda = (event: SimpleFormEvent) => {
     event.preventDefault();
     if (!selectedProcessoId) return;
-    if (!agendaForm.regiaoId) {
-      toast.error("Selecione uma região para gerar os slots.");
-      return;
-    }
     criarAgenda.mutate({
       processoId: selectedProcessoId,
-      regiaoId: Number(agendaForm.regiaoId),
+      regiaoId: null,
       vagaId: agendaForm.vagaId === "none" ? null : Number(agendaForm.vagaId),
       nomeGrupo: agendaForm.nomeGrupo,
       dataAgenda: agendaForm.dataAgenda,
@@ -511,15 +507,6 @@ function ProcessosSeletivosContent() {
               <CardContent>
                 <form className="grid gap-3 md:grid-cols-4 lg:grid-cols-8" onSubmit={handleCreateAgenda}>
                   <Input className="lg:col-span-2" placeholder="Nome do grupo" value={agendaForm.nomeGrupo} onChange={(event) => setAgendaForm((form) => ({ ...form, nomeGrupo: event.target.value }))} required />
-                  <Select value={agendaForm.regiaoId} onValueChange={(value) => setAgendaForm((form) => ({ ...form, regiaoId: value }))}>
-                    <SelectTrigger className={!agendaForm.regiaoId ? "border-orange-400" : ""}>
-                      <SelectValue placeholder="⚠️ Selecione a região *" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {regioes.length === 0 && <SelectItem value="" disabled>Nenhuma região cadastrada</SelectItem>}
-                      {regioes.map((regiao) => <SelectItem key={regiao.id} value={String(regiao.id)}>{regiao.nome}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
                   <Select value={agendaForm.vagaId} onValueChange={(value) => setAgendaForm((form) => ({ ...form, vagaId: value }))}>
                     <SelectTrigger><SelectValue placeholder="Vaga" /></SelectTrigger>
                     <SelectContent>

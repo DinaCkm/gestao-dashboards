@@ -487,7 +487,7 @@ export const processosSeletivosRouter = router({
   criarAgendaGrupo: protectedProcedure
     .input(
       processoIdInput.extend({
-        regiaoId: z.number(),
+        regiaoId: z.number().optional().nullable(),
         vagaId: z.number().optional().nullable(),
         nomeGrupo: z.string().min(1),
         dataAgenda: z.string().min(10),
@@ -504,7 +504,7 @@ export const processosSeletivosRouter = router({
       const database = await requireDatabase();
       const result = await database.insert(processoAgendasGrupo).values({
         processoId: input.processoId,
-        regiaoId: input.regiaoId,
+        regiaoId: input.regiaoId ?? null,
         vagaId: input.vagaId ?? null,
         nomeGrupo: input.nomeGrupo,
         dataAgenda: input.dataAgenda,
@@ -520,7 +520,7 @@ export const processosSeletivosRouter = router({
       const slots = generateSlots(input).map((slot) => ({
         processoId: input.processoId,
         agendaGrupoId,
-        regiaoId: input.regiaoId,
+        regiaoId: input.regiaoId ?? null,
         vagaId: input.vagaId ?? null,
         dataAgenda: slot.dataAgenda,
         inicio: slot.inicio,
