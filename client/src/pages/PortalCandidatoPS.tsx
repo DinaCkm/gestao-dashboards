@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -9,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  CheckCircle2, Circle, Lock, CalendarClock, ClipboardList, Brain, Calendar
+  CheckCircle2, Lock, CalendarClock, ClipboardList, Brain, Calendar
 } from "lucide-react";
 
 // ─── Stepper ────────────────────────────────────────────────────────────────
@@ -169,37 +168,58 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
 
 export default function PortalCandidatoPS() {
   const { user } = useAuth();
+
+  // onboardingStatus retorna alunoId e processoSeletivoId
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
     enabled: !!user,
   });
-  const { data: dashData, refetch: refetchDash } = trpc.indicadores.meuDashboard.useQuery();
-  const { data: candidato, refetch: refetchCandidato } = trpc.processosSeletivos.meusDadosCandidato.useQuery();
 
-  const alunoId = dashData?.found ? dashData.aluno?.id || 0 : 0;
+  // meusDadosBasicos retorna nome, telefone e cargo do aluno (fonte de verdade para cadastroCompleto)
+  const { data: dadosBasicos, refetch: refetchDadosBasicos } = trpc.onboarding.meusDadosBasicos.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  // meusDadosCandidato retorna os dados do candidato no processo (statusTeste, statusEntrevista)
+  const { data: candidato, refetch: refetchCandidato } = trpc.processosSeletivos.meusDadosCandidato.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  const alunoId = onboardingStatus?.alunoId ?? 0;
   const processoId = onboardingStatus?.processoSeletivoId ?? 0;
 
-  const { data: discResultado } = trpc.disc.resultado.useQuery(
-    { alunoId: alunoId || 0 },
+  // Buscar resultado DISC e autopercepções apenas quando alunoId estiver disponível
+  const { data: discResultado, refetch: refetchDisc } = trpc.disc.resultado.useQuery(
+    { alunoId },
     { enabled: alunoId > 0 }
   );
-  const { data: autopercepData } = trpc["autopercepção"].porAluno.useQuery(
-    { alunoId: alunoId || 0 },
+  const { data: autopercepData, refetch: refetchAutopercep } = trpc["autopercepção"].porAluno.useQuery(
+    { alunoId },
     { enabled: alunoId > 0 }
   );
 
-  // Determinar etapa atual
-  // Cadastro completo: aluno tem telefone ou cargo preenchido (campos do EtapaCadastro)
-  const cadastroCompleto = !!(dashData?.aluno?.telefone || dashData?.aluno?.cargo);
+  // Nome do candidato: vem dos dados básicos do aluno
+  const nomeCompleto = dadosBasicos?.nome || candidato?.nome || user?.name || "";
+  const primeiroNome = nomeCompleto.split(" ")[0];
+
+  // Cadastro completo: aluno preencheu telefone ou cargo na ficha
+  const cadastroCompleto = !!(dadosBasicos?.telefone || dadosBasicos?.cargo);
+
   const discCompleto = !!(discResultado && (discResultado as any).scoreD);
   const autopercepCompleto = !!(autopercepData && (autopercepData as any[]).length > 0);
-  // Testes completos: candidato.statusTeste === 'concluido' OU ambos os testes foram feitos
-  const testesCompletos = candidato?.statusTeste === 'concluido' || (discCompleto && autopercepCompleto);
+  const testesCompletos = candidato?.statusTeste === "concluido" || (discCompleto && autopercepCompleto);
 
   const currentStep = !cadastroCompleto ? 1 : !testesCompletos ? 2 : 3;
 
-  const processoNome = onboardingStatus?.processoSeletivoId
-    ? `Processo Seletivo #${onboardingStatus.processoSeletivoId}`
-    : "Processo Seletivo";
+  // Enquanto os dados essenciais não chegaram, mostrar loading
+  if (!onboardingStatus && user) {
+    return (
+      <AlunoLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
+        </div>
+      </AlunoLayout>
+    );
+  }
 
   return (
     <AlunoLayout>
@@ -207,9 +227,11 @@ export default function PortalCandidatoPS() {
         {/* Cabeçalho */}
         <div className="mb-6 text-center">
           <Badge variant="outline" className="mb-2 text-xs text-[#0A1E3E] border-[#0A1E3E]">
-            {processoNome}
+            Processo Seletivo
           </Badge>
-          <h1 className="text-2xl font-bold text-[#0A1E3E]">Bem-vindo(a), {user?.name?.split(" ")[0]}!</h1>
+          <h1 className="text-2xl font-bold text-[#0A1E3E]">
+            Bem-vindo(a){primeiroNome ? `, ${primeiroNome}` : ""}!
+          </h1>
           <p className="text-gray-500 text-sm mt-1">
             Siga as etapas abaixo para concluir sua candidatura.
           </p>
@@ -223,25 +245,32 @@ export default function PortalCandidatoPS() {
           {currentStep === 1 && alunoId > 0 && (
             <EtapaCadastro
               alunoId={alunoId}
-              onComplete={() => { refetchDash(); refetchCandidato(); }}
+              onComplete={() => {
+                refetchDadosBasicos();
+                refetchCandidato();
+              }}
             />
           )}
 
           {currentStep === 2 && alunoId > 0 && (
             <EtapaAssessmentCompleta
               alunoId={alunoId}
-              onComplete={() => refetchCandidato()}
+              onComplete={() => {
+                refetchCandidato();
+                refetchDisc();
+                refetchAutopercep();
+              }}
               readOnly={false}
               labelContinuar="Continuar para Agendamento"
               hideRelatorio={true}
             />
           )}
 
-          {currentStep === 3 && candidato && processoId > 0 && (
+          {currentStep === 3 && processoId > 0 && (
             <EtapaAgendamento candidato={candidato} processoId={processoId} />
           )}
 
-          {currentStep === 3 && (!candidato || processoId === 0) && (
+          {currentStep === 3 && processoId === 0 && (
             <div className="text-center py-8 text-gray-400">
               <CalendarClock className="h-10 w-10 mx-auto mb-3 opacity-40" />
               <p>Carregando informações do processo...</p>

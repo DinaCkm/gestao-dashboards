@@ -63,7 +63,7 @@ export default function BoasVindasBC({ nomeAluno, modo }: BoasVindasBCProps) {
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%", marginBottom: "40px" }}>
             {[
               { icon: ClipboardList, num: "1", title: "Preencha a ficha de cadastro", desc: "Complete seus dados pessoais e profissionais na plataforma." },
-              { icon: FlaskConical, num: "2", title: "Realize os testes", desc: "Faça o teste de perfil DISC para que possamos conhecer melhor você." },
+              { icon: FlaskConical, num: "2", title: "Realize o teste de perfil", desc: "Faça o teste de perfil em um local calmo e sem interrupções. O tempo máximo de realização é de 15 minutos." },
               { icon: CalendarCheck, num: "3", title: "Agende sua entrevista", desc: "Escolha o melhor horário disponível para a sua entrevista com a mentora." },
             ].map((step) => (
               <div key={step.num} style={{ display: "flex", alignItems: "flex-start", gap: "16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "18px 20px", textAlign: "left" }}>

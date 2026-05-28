@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { formatDateSafe } from "@/lib/dateUtils";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -300,6 +300,71 @@ function TesteDisc({
   const [blocoAtual, setBlocoAtual] = useState(0);
   const topRef = useRef<HTMLDivElement>(null);
 
+  // ── Temporizador de 15 minutos ──────────────────────────────────────────
+  const TEMPO_TOTAL = 15 * 60; // 15 minutos em segundos
+  const [tempoRestante, setTempoRestante] = useState(TEMPO_TOTAL);
+  const [timerAtivo, setTimerAtivo] = useState(false); // inicia quando o teste começa
+  const [tempoEsgotado, setTempoEsgotado] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const minutos = Math.floor(tempoRestante / 60);
+  const segundos = tempoRestante % 60;
+  const ultimoMinuto = tempoRestante <= 60 && tempoRestante > 0;
+  const tempoFormatado = `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
+
+  const handleFinalizarPorTempo = useCallback(async () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTempoEsgotado(true);
+    toast.error("Tempo esgotado! Suas respostas foram enviadas automaticamente.");
+    // Enviar o que foi respondido até agora
+    try {
+      const respostasArray = blocos
+        .filter((bloco) => {
+          const r = respostas[bloco.index];
+          return r && r.maisId && r.menosId;
+        })
+        .map((bloco) => {
+          const r = respostas[bloco.index]!;
+          const maisOpcao = bloco.opcoes.find((o) => o.id === r.maisId)!;
+          const menosOpcao = bloco.opcoes.find((o) => o.id === r.menosId)!;
+          return {
+            blocoIndex: bloco.index,
+            maisId: r.maisId!,
+            menosId: r.menosId!,
+            maisDimensao: maisOpcao.dimensao,
+            menosDimensao: menosOpcao.dimensao,
+          };
+        });
+      if (respostasArray.length > 0) {
+        const resultado = await salvarMutation.mutateAsync({
+          alunoId,
+          contratoNivelId: contratoNivelId ?? null,
+          respostas: respostasArray,
+        });
+        onComplete(resultado.scores, resultado.perfilPredominante as DiscDimensao, resultado.perfilSecundario as DiscDimensao);
+      }
+    } catch {
+      // silencioso
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocos, respostas, alunoId, contratoNivelId]);
+
+  useEffect(() => {
+    if (!timerAtivo) return;
+    timerRef.current = setInterval(() => {
+      setTempoRestante((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current!);
+          handleFinalizarPorTempo();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerAtivo, handleFinalizarPorTempo]);
+  // ─────────────────────────────────────────────────────────────────────────
+
   const BLOCOS_POR_PAGINA = 4;
   const totalPaginas = Math.ceil(blocos.length / BLOCOS_POR_PAGINA);
   const paginaAtual = Math.floor(blocoAtual / BLOCOS_POR_PAGINA);
@@ -550,7 +615,7 @@ function TesteDisc({
               <div className="flex flex-col gap-3">
                 {/* Botão Iniciar (sempre disponível se já assistiu OU se completou agora) */}
                 <Button
-                  onClick={() => setShowIntro(false)}
+                  onClick={() => { setShowIntro(false); setTimerAtivo(true); }}
                   disabled={!videoCompleted}
                   className={`w-full py-6 text-lg font-bold shadow-lg transition-all duration-300 ${
                     videoCompleted
@@ -606,6 +671,23 @@ function TesteDisc({
             </div>
             <span className="text-gray-600">= Menos parecido comigo</span>
           </div>
+        </div>
+      </div>
+
+      {/* Temporizador */}
+      <div className="max-w-2xl mx-auto flex justify-center">
+        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-mono text-sm font-bold transition-all duration-300 ${
+          tempoEsgotado
+            ? 'bg-gray-200 text-gray-500'
+            : ultimoMinuto
+            ? 'bg-red-100 text-red-700 border-2 border-red-400 animate-pulse shadow-lg shadow-red-200'
+            : 'bg-[#0A1E3E]/5 text-[#0A1E3E] border border-[#0A1E3E]/20'
+        }`}>
+          <Clock className={`h-4 w-4 ${ultimoMinuto && !tempoEsgotado ? 'text-red-600' : ''}`} />
+          {tempoEsgotado ? 'Tempo esgotado' : tempoFormatado}
+          {ultimoMinuto && !tempoEsgotado && (
+            <span className="text-xs font-semibold text-red-600 ml-1">Atenção!</span>
+          )}
         </div>
       </div>
 

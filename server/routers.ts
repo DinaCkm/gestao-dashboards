@@ -9896,6 +9896,19 @@ Responda APENAS em JSON com o formato:
         };
       }),
 
+    // Buscar dados básicos do aluno logado (para o portal PS)
+    meusDadosBasicos: protectedProcedure.query(async ({ ctx }) => {
+      const aluno = await db.getAlunoFromCtx(ctx.user);
+      if (!aluno) return null;
+      return {
+        id: aluno.id,
+        nome: aluno.name || null,
+        email: aluno.email || null,
+        telefone: aluno.telefone || null,
+        cargo: aluno.cargo || null,
+      };
+    }),
+
     // Salvar dados do cadastro (etapa 1)
     salvarCadastro: protectedProcedure
       .input(z.object({
