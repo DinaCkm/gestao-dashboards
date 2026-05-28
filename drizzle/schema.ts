@@ -1789,7 +1789,7 @@ export const processoCandidatos = mysqlTable("processo_candidatos", {
   id: int("id").autoincrement().primaryKey(),
   processoId: int("processoId").notNull(),
   vagaId: int("vagaId"),
-  regiaoId: int("regiaoId").notNull(),
+  regiaoId: int("regiaoId"),
   userId: int("userId"),
   nome: varchar("nome", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),

@@ -422,7 +422,7 @@ export const processosSeletivosRouter = router({
         telefone: z.string().optional(),
         cpf: z.string().optional(),
         vagaId: z.number().optional().nullable(),
-        regiaoId: z.number(),
+        regiaoId: z.number().optional().nullable(),
         userId: z.number().optional().nullable(),
       }),
     )
@@ -436,7 +436,7 @@ export const processosSeletivosRouter = router({
         telefone: input.telefone || null,
         cpf: input.cpf || null,
         vagaId: input.vagaId ?? null,
-        regiaoId: input.regiaoId,
+        regiaoId: input.regiaoId ?? null,
         userId: input.userId ?? null,
         statusCadastro: "importado",
       });
@@ -455,7 +455,7 @@ export const processosSeletivosRouter = router({
             telefone: z.string().optional(),
             cpf: z.string().optional(),
             vagaId: z.number().optional().nullable(),
-            regiaoId: z.number(),
+            regiaoId: z.number().optional().nullable(),
           }),
         ).min(1),
       }),
@@ -471,7 +471,7 @@ export const processosSeletivosRouter = router({
           telefone: candidate.telefone || null,
           cpf: candidate.cpf || null,
           vagaId: candidate.vagaId ?? null,
-          regiaoId: candidate.regiaoId,
+          regiaoId: candidate.regiaoId ?? null,
           statusCadastro: "importado" as const,
         })),
       );
@@ -762,7 +762,7 @@ export const processosSeletivosRouter = router({
 
   // Cliente/Admin: mover candidato para outra região
   moverCandidato: protectedProcedure
-    .input(z.object({ candidatoId: z.number(), novaRegiaoId: z.number(), novaVagaId: z.number().optional().nullable() }))
+    .input(z.object({ candidatoId: z.number(), novaRegiaoId: z.number().nullable(), novaVagaId: z.number().optional().nullable() }))
     .mutation(async ({ ctx, input }) => {
       const database = await requireDatabase();
       const [candidate] = await database
@@ -775,13 +775,15 @@ export const processosSeletivosRouter = router({
       // Apenas admin ou cliente vinculado pode mover (não o próprio candidato)
       const isCandidate = candidate.userId === ctx.user.id && !isCkmAdmin(ctx.user.role);
       if (isCandidate) throw new TRPCError({ code: "FORBIDDEN", message: "Candidatos nao podem alterar propria regiao" });
-      // Verificar que a nova região pertence ao mesmo processo
-      const [regiao] = await database
-        .select({ id: processoRegioes.id })
-        .from(processoRegioes)
-        .where(and(eq(processoRegioes.id, input.novaRegiaoId), eq(processoRegioes.processoId, candidate.processoId)))
-        .limit(1);
-      if (!regiao) throw new TRPCError({ code: "NOT_FOUND", message: "Regiao nao encontrada neste processo" });
+      // Se novaRegiaoId não é null, verificar que a nova região pertence ao mesmo processo
+      if (input.novaRegiaoId !== null) {
+        const [regiao] = await database
+          .select({ id: processoRegioes.id })
+          .from(processoRegioes)
+          .where(and(eq(processoRegioes.id, input.novaRegiaoId), eq(processoRegioes.processoId, candidate.processoId)))
+          .limit(1);
+        if (!regiao) throw new TRPCError({ code: "NOT_FOUND", message: "Regiao nao encontrada neste processo" });
+      }
       const regiaoAnterior = candidate.regiaoId;
       await database
         .update(processoCandidatos)
@@ -792,7 +794,7 @@ export const processosSeletivosRouter = router({
         candidatoId: input.candidatoId,
         userId: ctx.user.id,
         acao: "candidato_movido",
-        detalhe: `Regiao ${regiaoAnterior} → ${input.novaRegiaoId}`,
+        detalhe: `Regiao ${regiaoAnterior ?? 'sem regiao'} → ${input.novaRegiaoId ?? 'sem regiao'}`,
       });
       return { success: true };
     }),
