@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight, Link2, Copy, CheckCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -58,6 +58,16 @@ function ProcessosSeletivosContent() {
     linkPadrao: "",
   });
   const [modoManual, setModoManual] = useState(true);
+  const [linkCopiado, setLinkCopiado] = useState<number | null>(null);
+
+  const BASE_URL = "https://ecolider.ecodobem.com";
+  const getLinkConvite = (processoId: number) => `${BASE_URL}/registro?ps=${processoId}`;
+  const copiarLink = (processoId: number) => {
+    navigator.clipboard.writeText(getLinkConvite(processoId));
+    setLinkCopiado(processoId);
+    setTimeout(() => setLinkCopiado(null), 2500);
+    toast.success("Link de convite copiado!");
+  };
   const [nomeGrupoManual, setNomeGrupoManual] = useState("Entrevistas");
   const [linkPadraoManual, setLinkPadraoManual] = useState("");
   type SlotManual = { id: number; dataAgenda: string; inicio: string; fim: string; link: string };
@@ -107,7 +117,16 @@ function ProcessosSeletivosContent() {
 
   const criarProcesso = trpc.processosSeletivos.criarProcesso.useMutation({
     onSuccess: async (result) => {
-      toast.success("Processo seletivo criado.");
+      const link = getLinkConvite(result.id);
+      navigator.clipboard.writeText(link).catch(() => {});
+      toast.success(
+        <div className="space-y-1">
+          <p className="font-semibold">Processo criado!</p>
+          <p className="text-xs text-muted-foreground">Link de convite copiado:</p>
+          <p className="text-xs font-mono bg-gray-100 rounded px-2 py-1 break-all">{link}</p>
+        </div>,
+        { duration: 8000 }
+      );
       setProcessoForm(emptyProcesso);
       await utils.processosSeletivos.listarProcessos.invalidate();
       setSelectedProcessoId(result.id);
@@ -399,7 +418,18 @@ function ProcessosSeletivosContent() {
                   {selectedProcesso.nome}
                   <ProcessoStatusBadge status={selectedProcesso.status} />
                 </CardTitle>
-                <CardDescription>{selectedProcesso.clienteNome} {selectedProcesso.clienteEmail ? `- ${selectedProcesso.clienteEmail}` : ""}</CardDescription>
+                <CardDescription className="flex items-center gap-3 flex-wrap">
+                  <span>{selectedProcesso.clienteNome} {selectedProcesso.clienteEmail ? `- ${selectedProcesso.clienteEmail}` : ""}</span>
+                  <button
+                    type="button"
+                    onClick={() => copiarLink(selectedProcesso.id)}
+                    className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors"
+                    title="Copiar link de convite para candidatos"
+                  >
+                    {linkCopiado === selectedProcesso.id ? <CheckCheck className="h-3 w-3" /> : <Link2 className="h-3 w-3" />}
+                    {linkCopiado === selectedProcesso.id ? "Copiado!" : "Link de convite"}
+                  </button>
+                </CardDescription>
               </div>
               {isAdmin && (
                 <div className="flex gap-2 flex-wrap mt-2">

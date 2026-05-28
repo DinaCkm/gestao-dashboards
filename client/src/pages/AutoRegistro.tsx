@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Loader2, AlertCircle, User, Mail, Fingerprint, Building2, MessageCircle, ChevronDown, Briefcase, GraduationCap, ArrowLeft } from "lucide-react";
 import BoasVindasBC from "./BoasVindasBC";
@@ -14,12 +14,15 @@ function formatCpf(value: string): string {
 type Modo = null | "desenvolvimento" | "processo_seletivo";
 
 export default function AutoRegistro() {
-  const [modo, setModo] = useState<Modo>(null);
+  // Ler ?ps= da URL para pré-selecionar o processo
+  const psParam = new URLSearchParams(window.location.search).get("ps") ?? "";
+  const [modo, setModo] = useState<Modo>(psParam ? "processo_seletivo" : null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
   const [empresa, setEmpresa] = useState("");
-  const [processoId, setProcessoId] = useState<string>("");
+  const [processoId, setProcessoId] = useState<string>(psParam);
+  const processoTravado = Boolean(psParam); // quando veio pelo link, não pode trocar
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -381,18 +384,30 @@ export default function AutoRegistro() {
                       <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
                         Processo Seletivo *
                       </label>
-                      <div style={{ position: "relative" }}>
-                        <Briefcase size={15} style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", zIndex: 1 }} />
-                        <ChevronDown size={15} style={{ position: "absolute", right: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", zIndex: 1 }} />
-                        <select value={processoId} onChange={e => setProcessoId(e.target.value)} style={selectStyle} required
-                          onFocus={e => (e.target.style.borderColor = "#0f2b3c")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} disabled={loadingProcessos}>
-                          <option value="">— Selecione o processo —</option>
-                          {(processos || []).map((p: any) => (
-                            <option key={p.id} value={String(p.id)}>{p.nome}</option>
-                          ))}
-                        </select>
-                      </div>
-                      {!loadingProcessos && processos?.length === 0 && (
+                      {processoTravado ? (
+                        // Processo pré-selecionado via link — exibe como texto, não editável
+                        <div style={{ position: "relative" }}>
+                          <Briefcase size={15} style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#0f2b3c" }} />
+                          <div style={{ ...inputStyle, paddingLeft: "40px", background: "#f0f4f8", color: "#0f2b3c", fontWeight: "600", cursor: "default" }}>
+                            {loadingProcessos
+                              ? "Carregando..."
+                              : (processos || []).find((p: any) => String(p.id) === processoId)?.nome || `Processo #${processoId}`}
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ position: "relative" }}>
+                          <Briefcase size={15} style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", zIndex: 1 }} />
+                          <ChevronDown size={15} style={{ position: "absolute", right: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", zIndex: 1 }} />
+                          <select value={processoId} onChange={e => setProcessoId(e.target.value)} style={selectStyle} required
+                            onFocus={e => (e.target.style.borderColor = "#0f2b3c")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} disabled={loadingProcessos}>
+                            <option value="">— Selecione o processo —</option>
+                            {(processos || []).map((p: any) => (
+                              <option key={p.id} value={String(p.id)}>{p.nome}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {!loadingProcessos && processos?.length === 0 && !processoTravado && (
                         <p style={{ fontSize: "12px", color: "#ef4444", marginTop: "6px" }}>Nenhum processo seletivo ativo no momento.</p>
                       )}
                     </div>
