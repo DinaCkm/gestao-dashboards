@@ -23,6 +23,7 @@ const emptyProcesso = {
   clienteNome: "",
   clienteEmail: "",
   descricao: "",
+  mentorId: "",
 };
 
 export default function ProcessosSeletivosDashboard() {
@@ -58,6 +59,7 @@ function ProcessosSeletivosContent() {
   });
 
   const { data: processos = [], isLoading: loadingProcessos } = trpc.processosSeletivos.listarProcessos.useQuery();
+  const { data: mentoresAtivos = [] } = trpc.admin.listMentoresAtivos.useQuery(undefined, { enabled: isAdmin });
 
   useEffect(() => {
     if (!selectedProcessoId && processos.length > 0) {
@@ -180,7 +182,14 @@ function ProcessosSeletivosContent() {
 
   const handleCreateProcesso = (event: SimpleFormEvent) => {
     event.preventDefault();
-    criarProcesso.mutate({ ...processoForm, status: "ativo" });
+    criarProcesso.mutate({
+      nome: processoForm.nome,
+      clienteNome: processoForm.clienteNome,
+      clienteEmail: processoForm.clienteEmail || undefined,
+      descricao: processoForm.descricao || undefined,
+      mentorId: processoForm.mentorId ? Number(processoForm.mentorId) : undefined,
+      status: "ativo",
+    });
   };
 
   const handleCreateVaga = (event: SimpleFormEvent) => {
@@ -252,7 +261,11 @@ function ProcessosSeletivosContent() {
 
   const handleCreateAgenda = (event: SimpleFormEvent) => {
     event.preventDefault();
-    if (!selectedProcessoId || !agendaForm.regiaoId) return;
+    if (!selectedProcessoId) return;
+    if (!agendaForm.regiaoId) {
+      toast.error("Selecione uma região para gerar os slots.");
+      return;
+    }
     criarAgenda.mutate({
       processoId: selectedProcessoId,
       regiaoId: Number(agendaForm.regiaoId),
@@ -309,11 +322,20 @@ function ProcessosSeletivosContent() {
             <CardDescription>Crie um processo isolado para o cliente. As demais entidades ficarao vinculadas ao processoId.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-3 md:grid-cols-5" onSubmit={handleCreateProcesso}>
+            <form className="grid gap-3 md:grid-cols-6" onSubmit={handleCreateProcesso}>
               <Input placeholder="Nome do processo" value={processoForm.nome} onChange={(event) => setProcessoForm((form) => ({ ...form, nome: event.target.value }))} required />
               <Input placeholder="Cliente" value={processoForm.clienteNome} onChange={(event) => setProcessoForm((form) => ({ ...form, clienteNome: event.target.value }))} required />
               <Input placeholder="Email do cliente" type="email" value={processoForm.clienteEmail} onChange={(event) => setProcessoForm((form) => ({ ...form, clienteEmail: event.target.value }))} />
-              <Input className="md:col-span-1" placeholder="Descricao curta" value={processoForm.descricao} onChange={(event) => setProcessoForm((form) => ({ ...form, descricao: event.target.value }))} />
+              <Input placeholder="Descricao curta" value={processoForm.descricao} onChange={(event) => setProcessoForm((form) => ({ ...form, descricao: event.target.value }))} />
+              <Select value={processoForm.mentorId} onValueChange={(value) => setProcessoForm((form) => ({ ...form, mentorId: value }))}>
+                <SelectTrigger><SelectValue placeholder="Selecionadora (opcional)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem selecionadora</SelectItem>
+                  {mentoresAtivos.map((m: any) => (
+                    <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button type="submit" disabled={criarProcesso.isPending}>
                 <Plus className="mr-2 h-4 w-4" />
                 Criar
@@ -484,14 +506,19 @@ function ProcessosSeletivosContent() {
             <Card className="rounded-lg">
               <CardHeader>
                 <CardTitle>Agenda por grupo/regiao</CardTitle>
-                <CardDescription>Ao criar a agenda, os slots sao gerados automaticamente e respeitam intervalo de pausa.</CardDescription>
+                <CardDescription>Selecione a região, configure data/hora de início e fim, intervalo de almoço e duração de cada slot. Os slots são gerados automaticamente.</CardDescription>
               </CardHeader>
               <CardContent>
                 <form className="grid gap-3 md:grid-cols-4 lg:grid-cols-8" onSubmit={handleCreateAgenda}>
                   <Input className="lg:col-span-2" placeholder="Nome do grupo" value={agendaForm.nomeGrupo} onChange={(event) => setAgendaForm((form) => ({ ...form, nomeGrupo: event.target.value }))} required />
                   <Select value={agendaForm.regiaoId} onValueChange={(value) => setAgendaForm((form) => ({ ...form, regiaoId: value }))}>
-                    <SelectTrigger><SelectValue placeholder="Regiao" /></SelectTrigger>
-                    <SelectContent>{regioes.map((regiao) => <SelectItem key={regiao.id} value={String(regiao.id)}>{regiao.nome}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className={!agendaForm.regiaoId ? "border-orange-400" : ""}>
+                      <SelectValue placeholder="⚠️ Selecione a região *" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regioes.length === 0 && <SelectItem value="" disabled>Nenhuma região cadastrada</SelectItem>}
+                      {regioes.map((regiao) => <SelectItem key={regiao.id} value={String(regiao.id)}>{regiao.nome}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                   <Select value={agendaForm.vagaId} onValueChange={(value) => setAgendaForm((form) => ({ ...form, vagaId: value }))}>
                     <SelectTrigger><SelectValue placeholder="Vaga" /></SelectTrigger>
