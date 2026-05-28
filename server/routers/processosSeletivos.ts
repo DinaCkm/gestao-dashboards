@@ -17,6 +17,7 @@ import {
 } from "../../drizzle/schema";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
+import { buildPsConfirmacaoAgendamentoEmail, sendEmail } from "../emailService";
 
 const adminRoles = new Set(["admin", "admin2"]);
 
@@ -692,6 +693,28 @@ export const processosSeletivosRouter = router({
         acao: "candidato_agendou",
         detalhe: `Slot ${slot.dataAgenda} ${slot.inicio}`,
       });
+      // Enviar e-mail de confirmação ao candidato
+      try {
+        const [processo] = await database.select().from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
+        if (processo && candidate.email) {
+          const dataFormatada = slot.dataAgenda
+            ? new Date(slot.dataAgenda + 'T00:00:00').toLocaleDateString('pt-BR')
+            : slot.dataAgenda;
+          const emailData = buildPsConfirmacaoAgendamentoEmail({
+            candidatoNome: candidate.nome,
+            processoNome: processo.nome,
+            clienteNome: processo.clienteNome,
+            dataEntrevista: dataFormatada,
+            horaInicio: slot.inicio,
+            horaFim: slot.fim,
+            linkEntrevista: slot.linkEntrevista ?? null,
+            loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/candidato-ps`,
+          });
+          await sendEmail({ to: candidate.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+        }
+      } catch (emailErr) {
+        console.error('[PS] Erro ao enviar e-mail de confirmação:', emailErr);
+      }
       return { success: true, slot };
     }),
 

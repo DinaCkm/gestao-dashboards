@@ -15,6 +15,7 @@ import { iniciarCronTarefasEmAberto } from "../cronTarefasEmAberto";
 import { iniciarCronAusenciaWebinar } from "../cronAusenciaWebinar";
 import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria";
 import { iniciarCronRelatorioMentorias } from "../cronRelatorioMentorias";
+import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
 import { ENV } from "./env";
 import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns } from "../db";
 
@@ -97,6 +98,8 @@ async function startServer() {
       iniciarCronLembreteTarefaMentoria();
       // Iniciar cron job de relatório de mentorias (dia 25 = prévia, dia 30 = definitivo)
       iniciarCronRelatorioMentorias();
+      // Iniciar cron job de lembrete D-1 para entrevistas do Processo Seletivo
+      iniciarCronPsLembreteD1();
     } else {
       console.log("Cron jobs de e-mail desativados temporariamente.");
     }

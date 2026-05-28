@@ -2422,3 +2422,133 @@ export function buildAdminAlunoSemAcessoEmail(data: {
 
   return { subject, html, text };
 }
+
+// ============ PROCESSO SELETIVO — CONFIRMAÇÃO DE AGENDAMENTO ============
+
+export function buildPsConfirmacaoAgendamentoEmail(data: {
+  candidatoNome: string;
+  processoNome: string;
+  clienteNome: string;
+  dataEntrevista: string; // ex: "02/06/2025"
+  horaInicio: string;     // ex: "14:00"
+  horaFim: string;        // ex: "14:30"
+  linkEntrevista: string | null;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Entrevista confirmada — ${data.processoNome}`;
+
+  const linkBlock = data.linkEntrevista
+    ? `<tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Link da entrevista:</td>
+       <td style="padding:4px 0;font-size:14px;"><a href="${data.linkEntrevista}" style="color:#1d4ed8;">${data.linkEntrevista}</a></td></tr>`
+    : "";
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+      <tr><td style="padding:30px 40px;text-align:center;background:#0f2b3c;">
+        <p style="color:#e8a838;font-size:20px;font-weight:700;margin:0;">ECOSSISTEMA DO BEM</p>
+        <p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Processo Seletivo</p>
+      </td></tr>
+      <tr><td style="background:#10b981;padding:16px 40px;text-align:center;">
+        <p style="color:#fff;font-size:18px;font-weight:700;margin:0;">Entrevista Confirmada!</p>
+      </td></tr>
+      <tr><td style="padding:30px 40px;">
+        <h2 style="color:#0f2b3c;margin:0 0 12px;font-size:18px;">Olá, ${data.candidatoNome}!</h2>
+        <p style="color:#4a5568;font-size:15px;line-height:1.8;margin:0 0 20px;">
+          Sua entrevista para o processo seletivo <strong>${data.processoNome}</strong> — ${data.clienteNome} foi confirmada com sucesso.
+        </p>
+        <table cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;width:100%;">
+          <tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Data:</td>
+              <td style="padding:4px 0;font-size:14px;font-weight:700;color:#0f2b3c;">${data.dataEntrevista}</td></tr>
+          <tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Horário:</td>
+              <td style="padding:4px 0;font-size:14px;font-weight:700;color:#0f2b3c;">${data.horaInicio} – ${data.horaFim}</td></tr>
+          ${linkBlock}
+        </table>
+        <p style="color:#4a5568;font-size:14px;line-height:1.7;margin:20px 0 0;">
+          Você receberá um lembrete no dia anterior à entrevista. Caso precise reagendar, entre em contato com a equipe.
+        </p>
+      </td></tr>
+      <tr><td style="padding:0 40px 30px;text-align:center;">
+        <a href="${data.loginUrl}" style="display:inline-block;background:#e8a838;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Acessar o Portal
+        </a>
+      </td></tr>
+      <tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+        <p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem — Processo Seletivo</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+
+  const text = `Entrevista Confirmada!\n\nOlá, ${data.candidatoNome}!\n\nSua entrevista para o processo seletivo "${data.processoNome}" — ${data.clienteNome} foi confirmada.\n\nData: ${data.dataEntrevista}\nHorário: ${data.horaInicio} – ${data.horaFim}\n${data.linkEntrevista ? `Link: ${data.linkEntrevista}\n` : ""}\nVocê receberá um lembrete no dia anterior.`;
+
+  return { subject, html, text };
+}
+
+// ============ PROCESSO SELETIVO — LEMBRETE D-1 ============
+
+export function buildPsLembreteD1Email(data: {
+  candidatoNome: string;
+  processoNome: string;
+  clienteNome: string;
+  dataEntrevista: string;
+  horaInicio: string;
+  horaFim: string;
+  linkEntrevista: string | null;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Lembrete: sua entrevista é amanhã — ${data.processoNome}`;
+
+  const linkBlock = data.linkEntrevista
+    ? `<tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Link da entrevista:</td>
+       <td style="padding:4px 0;font-size:14px;"><a href="${data.linkEntrevista}" style="color:#1d4ed8;">${data.linkEntrevista}</a></td></tr>`
+    : "";
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+      <tr><td style="padding:30px 40px;text-align:center;background:#0f2b3c;">
+        <p style="color:#e8a838;font-size:20px;font-weight:700;margin:0;">ECOSSISTEMA DO BEM</p>
+        <p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Processo Seletivo</p>
+      </td></tr>
+      <tr><td style="background:#f59e0b;padding:16px 40px;text-align:center;">
+        <p style="color:#fff;font-size:18px;font-weight:700;margin:0;">Lembrete: sua entrevista é amanhã!</p>
+      </td></tr>
+      <tr><td style="padding:30px 40px;">
+        <h2 style="color:#0f2b3c;margin:0 0 12px;font-size:18px;">Olá, ${data.candidatoNome}!</h2>
+        <p style="color:#4a5568;font-size:15px;line-height:1.8;margin:0 0 20px;">
+          Este é um lembrete de que sua entrevista para o processo seletivo <strong>${data.processoNome}</strong> — ${data.clienteNome} acontece <strong>amanhã</strong>.
+        </p>
+        <table cellpadding="0" cellspacing="0" style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:16px;width:100%;">
+          <tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Data:</td>
+              <td style="padding:4px 0;font-size:14px;font-weight:700;color:#0f2b3c;">${data.dataEntrevista}</td></tr>
+          <tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Horário:</td>
+              <td style="padding:4px 0;font-size:14px;font-weight:700;color:#0f2b3c;">${data.horaInicio} – ${data.horaFim}</td></tr>
+          ${linkBlock}
+        </table>
+        <p style="color:#4a5568;font-size:14px;line-height:1.7;margin:20px 0 0;">
+          Prepare-se bem e boa sorte! Caso tenha alguma dúvida, entre em contato com a equipe.
+        </p>
+      </td></tr>
+      <tr><td style="padding:0 40px 30px;text-align:center;">
+        <a href="${data.loginUrl}" style="display:inline-block;background:#e8a838;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Acessar o Portal
+        </a>
+      </td></tr>
+      <tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+        <p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem — Processo Seletivo</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+
+  const text = `Lembrete: sua entrevista é amanhã!\n\nOlá, ${data.candidatoNome}!\n\nSua entrevista para o processo seletivo "${data.processoNome}" — ${data.clienteNome} acontece amanhã.\n\nData: ${data.dataEntrevista}\nHorário: ${data.horaInicio} – ${data.horaFim}\n${data.linkEntrevista ? `Link: ${data.linkEntrevista}\n` : ""}\nBoa sorte!`;
+
+  return { subject, html, text };
+}

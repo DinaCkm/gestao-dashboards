@@ -1229,6 +1229,20 @@ export const emailAlertasLog = mysqlTable("email_alertas_log", {
 export type EmailAlertaLog = typeof emailAlertasLog.$inferSelect;
 export type InsertEmailAlertaLog = typeof emailAlertasLog.$inferInsert;
 
+/**
+ * PS Email Log - Rastreamento de e-mails enviados no Processo Seletivo
+ */
+export const psEmailLog = mysqlTable("ps_email_log", {
+  id: int("id").autoincrement().primaryKey(),
+  candidatoId: int("candidatoId").notNull(),
+  tipoAlerta: varchar("tipoAlerta", { length: 50 }).notNull(),
+  emailEnviado: int("emailEnviado").default(1).notNull(),
+  erro: text("erro"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PsEmailLog = typeof psEmailLog.$inferSelect;
+export type InsertPsEmailLog = typeof psEmailLog.$inferInsert;
+
 
 /**
  * Onboarding Jornada - Rastreamento das etapas 6, 7 e 8 do onboarding
