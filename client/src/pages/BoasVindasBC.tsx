@@ -55,18 +55,8 @@ export default function BoasVindasBC({ nomeAluno, modo }: BoasVindasBCProps) {
 
         {/* Conteúdo */}
         <main style={{ flex: 1, width: "100%", maxWidth: "680px", padding: "48px clamp(20px, 5vw, 40px) 40px", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative", zIndex: 1 }}>
-          {/* Badge */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: "7px", background: "rgba(232,168,56,0.12)", border: "1px solid rgba(232,168,56,0.3)", borderRadius: "50px", padding: "6px 16px", marginBottom: "20px" }}>
-            <Star size={11} fill="#e8a838" color="#e8a838" />
-            <span style={{ color: "#e8a838", fontSize: "11px", fontWeight: "700", letterSpacing: "1.5px", textTransform: "uppercase" }}>Cadastro realizado com sucesso</span>
-          </div>
-
-          <h1 style={{ fontSize: "clamp(22px, 4vw, 30px)", fontWeight: "800", color: "#ffffff", lineHeight: "1.3", marginBottom: "10px" }}>
-            {firstName ? `${firstName}, sua` : "Sua"} inscrição foi confirmada!
-          </h1>
-
           <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", maxWidth: "480px", lineHeight: "1.7", marginBottom: "40px" }}>
-            Agora siga os próximos passos para concluir sua participação no processo seletivo.
+            Siga os próximos passos para concluir sua participação no processo seletivo.
           </p>
 
           {/* Passos */}
