@@ -68,7 +68,7 @@ export default function AutoRegistro() {
   };
 
   if (success) {
-    return <BoasVindasBC nomeAluno={nomeRegistrado} />;
+    return <BoasVindasBC nomeAluno={nomeRegistrado} modo={modo === "processo_seletivo" ? "processo_seletivo" : "desenvolvimento"} />;
   }
 
   const inputStyle: React.CSSProperties = {
@@ -124,7 +124,7 @@ export default function AutoRegistro() {
         <div style={{
           flex: "1 1 320px",
           background: modo === "processo_seletivo"
-            ? "linear-gradient(160deg, #0a2a1a 0%, #0d4a2e 35%, #1a6b3c 70%, #0a4a28 100%)"
+            ? "linear-gradient(160deg, #0a1628 0%, #0f2b3c 35%, #1a3a52 70%, #0d2438 100%)"
             : "linear-gradient(160deg, #1a0a3c 0%, #2d1b69 35%, #0d4a6b 70%, #0a3d52 100%)",
           display: "flex",
           flexDirection: "column",
@@ -142,14 +142,14 @@ export default function AutoRegistro() {
             height: "clamp(110px, 14vw, 180px)",
             borderRadius: "50%",
             background: modo === "processo_seletivo"
-              ? "linear-gradient(135deg, #0d8a4a 0%, #00D97A 100%)"
+              ? "linear-gradient(135deg, #e8a838 0%, #f5c842 100%)"
               : "linear-gradient(135deg, #5B2EFF 0%, #00B8D9 100%)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: "28px",
             boxShadow: modo === "processo_seletivo"
-              ? "0 0 50px rgba(13,138,74,0.4), 0 0 100px rgba(0,217,122,0.15)"
+              ? "0 0 50px rgba(232,168,56,0.4), 0 0 100px rgba(245,200,66,0.15)"
               : "0 0 50px rgba(91,46,255,0.4), 0 0 100px rgba(0,184,217,0.15)",
             position: "relative",
             zIndex: 1,
@@ -161,13 +161,13 @@ export default function AutoRegistro() {
           <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
             <div style={{
               display: "inline-block",
-              background: modo === "processo_seletivo" ? "rgba(0,217,122,0.15)" : "rgba(0,184,217,0.15)",
-              border: `1px solid ${modo === "processo_seletivo" ? "rgba(0,217,122,0.3)" : "rgba(0,184,217,0.3)"}`,
+              background: modo === "processo_seletivo" ? "rgba(232,168,56,0.15)" : "rgba(0,184,217,0.15)",
+              border: `1px solid ${modo === "processo_seletivo" ? "rgba(232,168,56,0.3)" : "rgba(0,184,217,0.3)"}`,
               borderRadius: "50px",
               padding: "5px 16px",
               marginBottom: "16px",
             }}>
-              <span style={{ color: modo === "processo_seletivo" ? "#00D97A" : "#00B8D9", fontSize: "11px", fontWeight: "600", letterSpacing: "1.5px", textTransform: "uppercase" }}>
+              <span style={{ color: modo === "processo_seletivo" ? "#e8a838" : "#00B8D9", fontSize: "11px", fontWeight: "600", letterSpacing: "1.5px", textTransform: "uppercase" }}>
                 {leftBadge}
               </span>
             </div>
@@ -276,10 +276,10 @@ export default function AutoRegistro() {
                     textAlign: "left",
                     transition: "all 0.2s",
                   }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#0d8a4a"; (e.currentTarget as HTMLButtonElement).style.background = "#f0fdf4"; }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#0f2b3c"; (e.currentTarget as HTMLButtonElement).style.background = "#f0f4f8"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
                 >
-                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "linear-gradient(135deg, #0d8a4a, #00D97A)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "linear-gradient(135deg, #0f2b3c, #1a3a52)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Briefcase size={22} color="#fff" />
                   </div>
                   <div>
@@ -385,7 +385,7 @@ export default function AutoRegistro() {
                         <Briefcase size={15} style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", zIndex: 1 }} />
                         <ChevronDown size={15} style={{ position: "absolute", right: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", zIndex: 1 }} />
                         <select value={processoId} onChange={e => setProcessoId(e.target.value)} style={selectStyle} required
-                          onFocus={e => (e.target.style.borderColor = "#0d8a4a")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} disabled={loadingProcessos}>
+                          onFocus={e => (e.target.style.borderColor = "#0f2b3c")} onBlur={e => (e.target.style.borderColor = "#e5e7eb")} disabled={loadingProcessos}>
                           <option value="">— Selecione o processo —</option>
                           {(processos || []).map((p: any) => (
                             <option key={p.id} value={String(p.id)}>{p.nome}</option>
@@ -405,7 +405,7 @@ export default function AutoRegistro() {
                       width: "100%",
                       padding: "14px",
                       background: loading ? "#9ca3af" : modo === "processo_seletivo"
-                        ? "linear-gradient(135deg, #0d8a4a, #00D97A)"
+                        ? "linear-gradient(135deg, #0f2b3c, #1a3a52)"
                         : "linear-gradient(135deg, #5B2EFF, #00B8D9)",
                       border: "none",
                       borderRadius: "12px",
@@ -417,7 +417,7 @@ export default function AutoRegistro() {
                       alignItems: "center",
                       justifyContent: "center",
                       gap: "10px",
-                      boxShadow: loading ? "none" : "0 4px 20px rgba(91,46,255,0.35)",
+                      boxShadow: loading ? "none" : modo === "processo_seletivo" ? "0 4px 20px rgba(15,43,60,0.35)" : "0 4px 20px rgba(91,46,255,0.35)",
                       letterSpacing: "0.3px",
                     }}
                   >
