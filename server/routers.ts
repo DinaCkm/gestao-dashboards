@@ -662,13 +662,16 @@ export const appRouter = router({
         let programId = PROGRAMA_CKM_ID;
         if (input.empresa && input.empresa.trim().length > 0) {
           const empresaNome = input.empresa.trim();
+          const empresaCode = empresaNome.toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 50);
           const allPrograms = await db.getPrograms();
-          const existing = allPrograms.find((p: any) => p.name.toLowerCase() === empresaNome.toLowerCase());
+          const existing = allPrograms.find((p: any) =>
+            p.name.toLowerCase() === empresaNome.toLowerCase() ||
+            (p.code && p.code.toUpperCase() === empresaCode)
+          );
           if (existing) {
             programId = existing.id;
           } else {
-            const code = empresaNome.toUpperCase().replace(/[^A-Z0-9]/g, '_').substring(0, 50);
-            const newProg = await db.createProgram({ name: empresaNome, code });
+            const newProg = await db.createProgram({ name: empresaNome, code: empresaCode });
             if (newProg?.id) programId = newProg.id;
           }
         }
