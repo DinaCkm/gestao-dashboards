@@ -136,16 +136,21 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
     throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
   }
 
+  // Quando regiaoId é null (processo sem regiões), busca qualquer slot disponível do processo
+  const regiaoFilter = candidate.regiaoId != null
+    ? eq(processoAgendaSlots.regiaoId, candidate.regiaoId)
+    : isNull(processoAgendaSlots.regiaoId);
+
   const slotWhere = candidate.vagaId
     ? and(
         eq(processoAgendaSlots.processoId, candidate.processoId),
-        eq(processoAgendaSlots.regiaoId, candidate.regiaoId),
+        regiaoFilter,
         or(isNull(processoAgendaSlots.vagaId), eq(processoAgendaSlots.vagaId, candidate.vagaId)),
         eq(processoAgendaSlots.status, "disponivel"),
       )
     : and(
         eq(processoAgendaSlots.processoId, candidate.processoId),
-        eq(processoAgendaSlots.regiaoId, candidate.regiaoId),
+        regiaoFilter,
         eq(processoAgendaSlots.status, "disponivel"),
       );
 

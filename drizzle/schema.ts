@@ -1810,7 +1810,7 @@ export type InsertProcessoCandidato = typeof processoCandidatos.$inferInsert;
 export const processoAgendasGrupo = mysqlTable("processo_agendas_grupo", {
   id: int("id").autoincrement().primaryKey(),
   processoId: int("processoId").notNull(),
-  regiaoId: int("regiaoId").notNull(),
+  regiaoId: int("regiaoId"),
   vagaId: int("vagaId"),
   nomeGrupo: varchar("nomeGrupo", { length: 255 }).notNull(),
   dataAgenda: date("dataAgenda", { mode: "string" }).notNull(),
@@ -1832,7 +1832,7 @@ export const processoAgendaSlots = mysqlTable("processo_agenda_slots", {
   id: int("id").autoincrement().primaryKey(),
   processoId: int("processoId").notNull(),
   agendaGrupoId: int("agendaGrupoId").notNull(),
-  regiaoId: int("regiaoId").notNull(),
+  regiaoId: int("regiaoId"),
   vagaId: int("vagaId"),
   candidatoId: int("candidatoId"),
   dataAgenda: date("dataAgenda", { mode: "string" }).notNull(),
