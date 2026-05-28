@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -134,6 +134,14 @@ function ProcessosSeletivosContent() {
       setImportacaoTexto("");
       setImportacaoForm({ regiaoId: "", vagaId: "none" });
       await invalidateProcesso();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const atualizarProcesso = trpc.processosSeletivos.atualizarProcesso.useMutation({
+    onSuccess: () => {
+      utils.processosSeletivos.listarProcessos.invalidate();
+      toast.success("Status do processo atualizado.");
     },
     onError: (err) => toast.error(err.message),
   });
@@ -318,6 +326,28 @@ function ProcessosSeletivosContent() {
                 </CardTitle>
                 <CardDescription>{selectedProcesso.clienteNome} {selectedProcesso.clienteEmail ? `- ${selectedProcesso.clienteEmail}` : ""}</CardDescription>
               </div>
+              {isAdmin && (
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {selectedProcesso.status !== "ativo" && (
+                    <Button size="sm" variant="outline" className="gap-1 text-green-700 border-green-300 hover:bg-green-50" disabled={atualizarProcesso.isPending}
+                      onClick={() => atualizarProcesso.mutate({ processoId: selectedProcesso.id, status: "ativo" })}>
+                      <PlayCircle size={14} /> Ativar
+                    </Button>
+                  )}
+                  {selectedProcesso.status === "ativo" && (
+                    <Button size="sm" variant="outline" className="gap-1 text-yellow-700 border-yellow-300 hover:bg-yellow-50" disabled={atualizarProcesso.isPending}
+                      onClick={() => atualizarProcesso.mutate({ processoId: selectedProcesso.id, status: "pausado" })}>
+                      <PauseCircle size={14} /> Pausar
+                    </Button>
+                  )}
+                  {selectedProcesso.status !== "encerrado" && (
+                    <Button size="sm" variant="outline" className="gap-1 text-red-700 border-red-300 hover:bg-red-50" disabled={atualizarProcesso.isPending}
+                      onClick={() => { if (confirm("Encerrar este processo? Ninguém mais poderá se inscrever.")) atualizarProcesso.mutate({ processoId: selectedProcesso.id, status: "encerrado" }); }}>
+                      <Ban size={14} /> Encerrar
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <ResumoProcessoCards resumo={resumo} />
