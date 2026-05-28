@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Loader2, AlertCircle, User, Mail, Fingerprint, Building2, MessageCircle } from "lucide-react";
+import { Loader2, AlertCircle, User, Mail, Fingerprint, Building2, MessageCircle, ChevronDown } from "lucide-react";
 import BoasVindasBC from "./BoasVindasBC";
 
 function formatCpf(value: string): string {
@@ -15,11 +15,13 @@ export default function AutoRegistro() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
-  const [empresa, setEmpresa] = useState("");
+  const [empresa, setEmpresa] = useState(""); // nome da empresa selecionada
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [nomeRegistrado, setNomeRegistrado] = useState("");
+
+  const { data: empresas, isLoading: loadingEmpresas } = trpc.auth.listEmpresas.useQuery();
 
   const registroMutation = trpc.auth.autoRegistro.useMutation({
     onSuccess: (data) => {
@@ -44,7 +46,12 @@ export default function AutoRegistro() {
     if (!email.includes("@")) { setError("Informe um email válido."); return; }
     if (cpfDigits.length < 11) { setError("CPF deve ter 11 dígitos."); return; }
     setLoading(true);
-    registroMutation.mutate({ name: name.trim(), email: email.trim().toLowerCase(), cpf: cpfDigits, empresa: empresa.trim() || undefined });
+    registroMutation.mutate({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      cpf: cpfDigits,
+      empresa: empresa || undefined,
+    });
   };
 
   if (success) {
@@ -62,6 +69,14 @@ export default function AutoRegistro() {
     outline: "none",
     boxSizing: "border-box",
     transition: "border-color 0.2s",
+  };
+
+  const selectStyle: React.CSSProperties = {
+    ...inputStyle,
+    padding: "12px 36px 12px 40px",
+    appearance: "none",
+    WebkitAppearance: "none",
+    cursor: "pointer",
   };
 
   return (
@@ -304,22 +319,27 @@ export default function AutoRegistro() {
                 </div>
               </div>
 
-              {/* Empresa */}
+              {/* Empresa — select */}
               <div style={{ marginBottom: "24px" }}>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>
                   Empresa <span style={{ fontWeight: "400", color: "#9ca3af" }}>(opcional)</span>
                 </label>
                 <div style={{ position: "relative" }}>
-                  <Building2 size={15} style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
-                  <input
-                    type="text"
-                    placeholder="Nome da sua empresa"
+                  <Building2 size={15} style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", zIndex: 1 }} />
+                  <ChevronDown size={15} style={{ position: "absolute", right: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", zIndex: 1 }} />
+                  <select
                     value={empresa}
                     onChange={e => setEmpresa(e.target.value)}
-                    style={inputStyle}
+                    style={selectStyle}
                     onFocus={e => (e.target.style.borderColor = "#5B2EFF")}
                     onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
-                  />
+                    disabled={loadingEmpresas}
+                  >
+                    <option value="">— Nenhuma / Desenvolvimento Individual —</option>
+                    {(empresas || []).map((emp: any) => (
+                      <option key={emp.id} value={emp.name}>{emp.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

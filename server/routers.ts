@@ -701,10 +701,18 @@ export const appRouter = router({
           const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
           await sendEmail({ to: 'relacionamento@ckmtalents.net', cc: 'dina@makiyama.com.br', subject: `[Novo Aluno] ${input.name} - Desenvolvimento Express`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
         } catch (e) { console.warn('[AutoRegistro] email admin:', e); }
-        return { success: true, alunoId: result.alunoId };
+                return { success: true, alunoId: result.alunoId };
       }),
+    listEmpresas: publicProcedure.query(async () => {
+      const programs = await db.getPrograms();
+      // Retornar apenas programas ativos, excluindo os internos (CKM Express e similares)
+      const INTERNAL_IDS = [90002, 60002];
+      return programs
+        .filter((p: any) => p.isActive !== 0 && !INTERNAL_IDS.includes(p.id))
+        .map((p: any) => ({ id: p.id, name: p.name }))
+        .sort((a: any, b: any) => a.name.localeCompare(b.name, 'pt-BR'));
+    }),
   }),
-
   // User management
   users: router({
     list: adminOrAdmin2Procedure.query(async () => {
