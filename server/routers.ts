@@ -30,6 +30,7 @@ import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularInd
 import { notifyOwner } from "./_core/notification";
 import { jornadaRouter } from "./routers/jornada";
 import { fichasPedagogicasRouter } from "./routers/fichasPedagogicas";
+import { processosSeletivosRouter } from "./routers/processosSeletivos";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
@@ -513,6 +514,7 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
 
 export const appRouter = router({
   system: systemRouter,
+  processosSeletivos: processosSeletivosRouter,
   jornada: jornadaRouter,
   fichasPedagogicas: fichasPedagogicasRouter,
 

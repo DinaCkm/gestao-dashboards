@@ -61,6 +61,7 @@ import OnboardingTracking from "./pages/admin/OnboardingTracking";
 import PainelRevisoes from "./pages/admin/PainelRevisoes";
 import BoasVindasGestor from "./pages/BoasVindasGestor";
 import PrecificacaoSessoes from "./pages/PrecificacaoSessoes";
+import ProcessosSeletivosDashboard from "./pages/processos-seletivos/ProcessosSeletivosDashboard";
 import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
 import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
@@ -145,6 +146,9 @@ function Router() {
       <Route path={"/boas-vindas-gestor"} component={BoasVindasGestor} />
       <Route path={"/dashboard/ciclos-turmas"} component={CiclosTurmas} />
       <Route path={"/precificacao-sessoes"} component={PrecificacaoSessoes} />
+      <Route path={"/processos-seletivos"} component={ProcessosSeletivosDashboard} />
+      <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
+      <Route path={"/portal-candidato-processo"} component={ProcessosSeletivosDashboard} />
       <Route path={"/competencias-comp-tec"} component={CompetenciasCompTec} />
       <Route path={"/mentor/competencias-comp-tec"} component={MentorCompetenciasCompTec} />
       <Route path={"/aluno/competencias-comp-tec"} component={AlunoCatalogo} />

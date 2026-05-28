@@ -69,6 +69,7 @@ import {
   Edit3,
   Footprints,
   Home,
+  BriefcaseBusiness,
   Monitor,
   Trophy,
   History,
@@ -144,6 +145,13 @@ const adminMenuGroups: MenuGroup[] = [
     items: [
       { icon: BarChart3, label: "Visão Geral", path: "/dashboard/visao-geral" },
       { icon: Building2, label: "Por Empresa", path: "/dashboard/empresa" },
+    ],
+  },
+  {
+    icon: BriefcaseBusiness,
+    label: "Processos Seletivos",
+    items: [
+      { icon: BriefcaseBusiness, label: "Painel de Processos", path: "/processos-seletivos" },
     ],
   },
   {
@@ -233,6 +241,9 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
+  // === PROCESSOS SELETIVOS ===
+  { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos", roles: ["user", "manager"] },
+
   
   // === ALUNO ===
   { icon: Compass, label: "Portal do Aluno", path: "/meu-dashboard", roles: ["user"] },
