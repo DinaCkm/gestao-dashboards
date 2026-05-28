@@ -521,7 +521,7 @@ function ProcessosSeletivosContent() {
                   <Input type="time" value={agendaForm.intervaloInicio} onChange={(event) => setAgendaForm((form) => ({ ...form, intervaloInicio: event.target.value }))} />
                   <Input type="time" value={agendaForm.intervaloFim} onChange={(event) => setAgendaForm((form) => ({ ...form, intervaloFim: event.target.value }))} />
                   <Input className="md:col-span-2 lg:col-span-5" placeholder="Link padrao da entrevista" value={agendaForm.linkPadrao} onChange={(event) => setAgendaForm((form) => ({ ...form, linkPadrao: event.target.value }))} />
-                  <Button type="submit" disabled={criarAgenda.isPending || regioes.length === 0}>
+                  <Button type="submit" disabled={criarAgenda.isPending}>
                     <CalendarDays className="mr-2 h-4 w-4" />
                     Gerar slots
                   </Button>
