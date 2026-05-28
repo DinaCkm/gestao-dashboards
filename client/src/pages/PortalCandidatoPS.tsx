@@ -263,6 +263,7 @@ export default function PortalCandidatoPS() {
               readOnly={false}
               labelContinuar="Continuar para Agendamento"
               hideRelatorio={true}
+              hideVideo1={true}
             />
           )}
 

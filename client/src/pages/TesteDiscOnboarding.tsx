@@ -252,10 +252,12 @@ function TesteDisc({
   alunoId,
   onComplete,
   contratoNivelId,
+  hideVideo1 = false,
 }: {
   alunoId: number;
   onComplete: (scores: DiscScores, predominante: DiscDimensao, secundario: DiscDimensao) => void;
   contratoNivelId?: number | null;
+  hideVideo1?: boolean;
 }) {
   const { data: perguntasData } = trpc.disc.perguntas.useQuery();
   const salvarMutation = trpc.disc.salvarRespostas.useMutation();
@@ -275,7 +277,8 @@ function TesteDisc({
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
   // Sequência de vídeos: 0 = vídeo introdutório, 1 = vídeo DISC explicativo
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  // Se hideVideo1, começa direto no vídeo 2
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(hideVideo1 ? 1 : 0);
   const VIDEOS = [
     {
       src: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663427002956/CvjchevMsVnMzcTy.mp4",
@@ -477,7 +480,7 @@ function TesteDisc({
               {showVideoPlayer ? (
                 <div className="space-y-3">
                   {/* Indicador de progresso dos vídeos */}
-                  {!videoCompleted && (
+                  {!videoCompleted && !hideVideo1 && (
                     <div className="flex items-center gap-2 flex-wrap">
                       {VIDEOS.map((v, idx) => (
                         <div key={idx} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
@@ -1506,6 +1509,7 @@ export default function EtapaAssessmentCompleta({
   onComplete,
   readOnly = false,
   hideRelatorio = false,
+  hideVideo1 = false,
   labelContinuar = "Continuar para Escolha da Mentora",
   contratoNivelId,
 }: {
@@ -1513,6 +1517,7 @@ export default function EtapaAssessmentCompleta({
   onComplete: () => void;
   readOnly?: boolean;
   hideRelatorio?: boolean;
+  hideVideo1?: boolean;
   labelContinuar?: string;
   contratoNivelId?: number | null;
 }) {
@@ -1627,6 +1632,7 @@ export default function EtapaAssessmentCompleta({
             <TesteDisc
               alunoId={alunoId}
               contratoNivelId={contratoNivelId}
+              hideVideo1={hideVideo1}
               onComplete={(scores, predominante, secundario) => {
                 setDiscScores(scores);
                 setPerfilPredominante(predominante);
