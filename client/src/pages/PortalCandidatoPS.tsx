@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  CheckCircle2, Lock, CalendarClock, ClipboardList, Brain, Calendar
+  CheckCircle2, Lock, CalendarClock, ClipboardList, Brain, Calendar, Video, AlertCircle
 } from "lucide-react";
 
 // ─── Stepper ────────────────────────────────────────────────────────────────
@@ -64,51 +64,68 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
     onError: (err) => toast.error(err.message),
   });
 
-  if (minhaEntrevista?.slot) {
-    const slot = minhaEntrevista.slot;
-    const dataFormatada = new Date(slot.dataAgenda + "T00:00:00").toLocaleDateString("pt-BR", {
-      weekday: "long", year: "numeric", month: "long", day: "numeric"
-    });
+  if (minhaEntrevista?.slot || candidato?.statusEntrevista === "agendada") {
+    const slot = minhaEntrevista?.slot;
+    const dataFormatada = slot
+      ? new Date(slot.dataAgenda + "T00:00:00").toLocaleDateString("pt-BR", {
+          weekday: "long", year: "numeric", month: "long", day: "numeric",
+        })
+      : null;
     return (
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-lg mx-auto space-y-4">
+        {/* Confirmação */}
         <Card className="border-green-200 bg-green-50">
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <CheckCircle2 className="h-8 w-8 text-green-600 shrink-0" />
               <div>
                 <CardTitle className="text-green-800">Entrevista Agendada!</CardTitle>
-                <CardDescription className="text-green-700">Você receberá um lembrete por e-mail um dia antes.</CardDescription>
+                <CardDescription className="text-green-700">Sua vaga está reservada. Boa sorte!</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="bg-white rounded-lg p-4 border border-green-200 space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <CalendarClock className="h-4 w-4 text-green-600" />
-                <span className="font-semibold">{dataFormatada}</span>
+            {slot && (
+              <div className="bg-white rounded-lg p-4 border border-green-200 space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <CalendarClock className="h-4 w-4 text-green-600" />
+                  <span className="font-semibold capitalize">{dataFormatada}</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Horário: <span className="font-medium">{slot.inicio} – {slot.fim}</span>
+                </div>
+                {slot.linkEntrevista && (
+                  <a
+                    href={slot.linkEntrevista}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-1 px-3 py-2 rounded-md bg-[#0A1E3E] text-white text-sm font-medium hover:bg-[#0A1E3E]/90 transition-colors"
+                  >
+                    <Video className="h-4 w-4" />
+                    Acessar sala da entrevista
+                  </a>
+                )}
               </div>
-              <div className="text-sm text-gray-600">
-                Horário: <span className="font-medium">{slot.inicio} – {slot.fim}</span>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Aviso de preparação */}
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-amber-800">Importante — leia com atenção</p>
+                <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside">
+                  <li>Esteja disponível <strong>15 minutos antes</strong> do horário agendado.</li>
+                  <li>Acesse o link da sala e aguarde a Consultora <strong>aceitar sua entrada</strong>.</li>
+                  <li>Certifique-se de estar em um local tranquilo, com boa iluminação e conexão estável.</li>
+                </ul>
               </div>
-              {slot.linkEntrevista && (
-                <a href={slot.linkEntrevista} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
-                  Acessar link da entrevista
-                </a>
-              )}
             </div>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  if (candidato?.statusEntrevista === "agendada") {
-    return (
-      <div className="max-w-lg mx-auto text-center py-8">
-        <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
-        <p className="text-lg font-semibold text-green-700">Entrevista já agendada!</p>
-        <p className="text-sm text-gray-500 mt-1">Verifique seu e-mail para os detalhes.</p>
       </div>
     );
   }
