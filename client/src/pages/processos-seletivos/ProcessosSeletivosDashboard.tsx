@@ -168,6 +168,14 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(err.message),
   });
 
+  const excluirSlot = trpc.processosSeletivos.excluirSlot.useMutation({
+    onSuccess: async () => {
+      toast.success("Slot excluído.");
+      await invalidateProcesso();
+    },
+    onError: (err) => toast.error(`Erro ao excluir: ${err.message}`),
+  });
+
   const criarSlotsManual = trpc.processosSeletivos.criarSlotsManual.useMutation({
     onSuccess: async (result) => {
       toast.success(`${result.slotsCriados} slot(s) salvos com sucesso!`);
@@ -730,12 +738,13 @@ function ProcessosSeletivosContent() {
                       <TableHead>Regiao</TableHead>
                       <TableHead>Candidato</TableHead>
                       <TableHead>Status</TableHead>
+                      {isAdmin && <TableHead className="w-10" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {slots.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">Nenhum slot gerado.</TableCell>
+                        <TableCell colSpan={isAdmin ? 5 : 4} className="h-20 text-center text-muted-foreground">Nenhum slot gerado.</TableCell>
                       </TableRow>
                     ) : (
                       slots.map((slot) => {
@@ -749,6 +758,25 @@ function ProcessosSeletivosContent() {
                             <TableCell>{regionById.get(slot.regiaoId) || slot.regiaoId}</TableCell>
                             <TableCell>{candidate?.nome || "Disponivel"}</TableCell>
                             <TableCell><ProcessoStatusBadge status={slot.status} /></TableCell>
+                            {isAdmin && (
+                              <TableCell>
+                                {slot.status === "disponivel" && (
+                                  <button
+                                    type="button"
+                                    title="Excluir slot"
+                                    disabled={excluirSlot.isPending}
+                                    onClick={() => {
+                                      if (confirm(`Excluir slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim}?`)) {
+                                        excluirSlot.mutate({ slotId: slot.id });
+                                      }
+                                    }}
+                                    className="flex h-7 w-7 items-center justify-center rounded text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })

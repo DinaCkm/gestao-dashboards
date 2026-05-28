@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   discResultados,
@@ -596,6 +596,30 @@ export const processosSeletivosRouter = router({
         detalhe: `${input.nomeGrupo} (manual): ${slotRows.length} slots`,
       });
       return { id: agendaGrupoId, slotsCriados: slotRows.length, success: true };
+    }),
+
+  excluirSlot: protectedProcedure
+    .input(z.object({ slotId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [slot] = await database
+        .select()
+        .from(processoAgendaSlots)
+        .where(eq(processoAgendaSlots.id, input.slotId))
+        .limit(1);
+      if (!slot) throw new TRPCError({ code: "NOT_FOUND", message: "Slot nao encontrado" });
+      if (slot.status !== "disponivel") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Nao e possivel excluir um slot ja reservado ou com entrevista agendada" });
+      }
+      await database.delete(processoAgendaSlots).where(eq(processoAgendaSlots.id, input.slotId));
+      await writeLog(database, {
+        processoId: slot.processoId,
+        userId: ctx.user.id,
+        acao: "slot_excluido",
+        detalhe: `Slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim} excluido`,
+      });
+      return { success: true };
     }),
 
   listarAgendasGrupo: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
