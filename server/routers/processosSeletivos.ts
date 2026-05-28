@@ -540,6 +540,64 @@ export const processosSeletivosRouter = router({
       return { id: agendaGrupoId, slotsCriados: slots.length, success: true };
     }),
 
+  criarSlotsManual: protectedProcedure
+    .input(
+      processoIdInput.extend({
+        nomeGrupo: z.string().min(1),
+        linkPadrao: z.string().optional().nullable(),
+        slots: z.array(
+          z.object({
+            dataAgenda: z.string().min(10),
+            inicio: z.string().min(5),
+            fim: z.string().min(5),
+            link: z.string().optional().nullable(),
+          }),
+        ).min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      // Cria o grupo de agenda com data do primeiro slot
+      const primeiraData = input.slots[0].dataAgenda;
+      const primeiroInicio = input.slots[0].inicio;
+      const ultimoFim = input.slots[input.slots.length - 1].fim;
+      const result = await database.insert(processoAgendasGrupo).values({
+        processoId: input.processoId,
+        regiaoId: null,
+        vagaId: null,
+        nomeGrupo: input.nomeGrupo,
+        dataAgenda: primeiraData,
+        inicio: primeiroInicio,
+        fim: ultimoFim,
+        intervaloInicio: null,
+        intervaloFim: null,
+        duracaoMinutos: 30,
+        linkPadrao: input.linkPadrao || null,
+        criadoPor: ctx.user.id,
+      });
+      const agendaGrupoId = Number(result[0].insertId);
+      const slotRows = input.slots.map((slot) => ({
+        processoId: input.processoId,
+        agendaGrupoId,
+        regiaoId: null as number | null,
+        vagaId: null as number | null,
+        dataAgenda: slot.dataAgenda,
+        inicio: slot.inicio,
+        fim: slot.fim,
+        linkEntrevista: slot.link || input.linkPadrao || null,
+        status: "disponivel" as const,
+      }));
+      await database.insert(processoAgendaSlots).values(slotRows);
+      await writeLog(database, {
+        processoId: input.processoId,
+        userId: ctx.user.id,
+        acao: "agenda_criada",
+        detalhe: `${input.nomeGrupo} (manual): ${slotRows.length} slots`,
+      });
+      return { id: agendaGrupoId, slotsCriados: slotRows.length, success: true };
+    }),
+
   listarAgendasGrupo: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);

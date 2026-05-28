@@ -285,8 +285,12 @@ function TesteDisc({
       label: "Vídeo 1 de 2 — Apresentação",
     },
     {
-      src: "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4",
-      label: "Vídeo 2 de 2 — Entenda o DISC",
+      // Processo Seletivo usa vídeo específico (desmitificando os testes)
+      // Fluxo normal usa o vídeo explicativo do DISC
+      src: hideVideo1
+        ? "https://files.manuscdn.com/user_upload_by_module/session_file/310519663427002956/PTWiqzpIYbgvTLqp.mp4"
+        : "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4",
+      label: hideVideo1 ? "Prepare-se para o teste" : "Vídeo 2 de 2 — Entenda o DISC",
     },
   ];
   const videoRef = useRef<HTMLVideoElement>(null);
