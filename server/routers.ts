@@ -7347,7 +7347,41 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       if (!ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
-      return await db.getAlunoOnboardingStatus(ctx.user);
+      const status = await db.getAlunoOnboardingStatus(ctx.user);
+      // Auto-registrar candidato em processo_candidatos se ainda não existir
+      if (status.processoSeletivoId && status.alunoId) {
+        try {
+          const database = await getDb();
+          const { processoCandidatos } = await import('../drizzle/schema');
+          const [existing] = await database
+            .select({ id: processoCandidatos.id })
+            .from(processoCandidatos)
+            .where(and(
+              eq(processoCandidatos.processoId, status.processoSeletivoId),
+              eq(processoCandidatos.email, (ctx.user.email ?? '').toLowerCase())
+            ))
+            .limit(1);
+          if (!existing) {
+            await database.insert(processoCandidatos).values({
+              processoId: status.processoSeletivoId,
+              nome: ctx.user.name ?? '',
+              email: (ctx.user.email ?? '').toLowerCase(),
+              userId: status.alunoId,
+              statusCadastro: 'ativo',
+            });
+            console.log(`[AutoRegistro PS] Candidato criado em processo_candidatos: ${ctx.user.email} → processo ${status.processoSeletivoId}`);
+          } else if (!existing || (existing as any).userId == null) {
+            // Vincular userId se o registro existe mas não tem userId
+            await database
+              .update(processoCandidatos)
+              .set({ userId: status.alunoId })
+              .where(eq(processoCandidatos.id, existing.id));
+          }
+        } catch (e) {
+          console.warn('[AutoRegistro PS] onboardingStatus:', e);
+        }
+      }
+      return status;
     }),
   }),
 
