@@ -760,6 +760,43 @@ export const processosSeletivosRouter = router({
       .where(eq(processoResultados.processoId, input.processoId));
   }),
 
+  // Cliente/Admin: mover candidato para outra região
+  moverCandidato: protectedProcedure
+    .input(z.object({ candidatoId: z.number(), novaRegiaoId: z.number(), novaVagaId: z.number().optional().nullable() }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+      // Apenas admin ou cliente vinculado pode mover (não o próprio candidato)
+      const isCandidate = candidate.userId === ctx.user.id && !isCkmAdmin(ctx.user.role);
+      if (isCandidate) throw new TRPCError({ code: "FORBIDDEN", message: "Candidatos nao podem alterar propria regiao" });
+      // Verificar que a nova região pertence ao mesmo processo
+      const [regiao] = await database
+        .select({ id: processoRegioes.id })
+        .from(processoRegioes)
+        .where(and(eq(processoRegioes.id, input.novaRegiaoId), eq(processoRegioes.processoId, candidate.processoId)))
+        .limit(1);
+      if (!regiao) throw new TRPCError({ code: "NOT_FOUND", message: "Regiao nao encontrada neste processo" });
+      const regiaoAnterior = candidate.regiaoId;
+      await database
+        .update(processoCandidatos)
+        .set({ regiaoId: input.novaRegiaoId, vagaId: input.novaVagaId ?? null })
+        .where(eq(processoCandidatos.id, input.candidatoId));
+      await writeLog(database, {
+        processoId: candidate.processoId,
+        candidatoId: input.candidatoId,
+        userId: ctx.user.id,
+        acao: "candidato_movido",
+        detalhe: `Regiao ${regiaoAnterior} → ${input.novaRegiaoId}`,
+      });
+      return { success: true };
+    }),
+
   // Obter entrevista agendada do candidato
   minhaEntrevista: protectedProcedure.query(async ({ ctx }) => {
     const database = await requireDatabase();

@@ -170,6 +170,14 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(err.message),
   });
 
+  const moverCandidato = trpc.processosSeletivos.moverCandidato.useMutation({
+    onSuccess: async () => {
+      toast.success("Candidato movido para a nova região.");
+      await invalidateProcesso();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   const handleCreateProcesso = (event: SimpleFormEvent) => {
     event.preventDefault();
     criarProcesso.mutate({ ...processoForm, status: "ativo" });
@@ -517,10 +525,12 @@ function ProcessosSeletivosContent() {
               <CardContent>
                 <TabelaCandidatosProcesso
                   candidatos={candidatos}
+                  regioes={regioes}
                   isAdmin={isAdmin}
-                  isBusy={concluirTeste.isPending || registrarResultado.isPending}
+                  isBusy={concluirTeste.isPending || registrarResultado.isPending || moverCandidato.isPending}
                   onConcluirTeste={(id) => concluirTeste.mutate({ candidatoId: id })}
                   onAprovar={(id) => registrarResultado.mutate({ candidatoId: id, resultado: "aprovado" })}
+                  onMoverRegiao={(candidatoId, novaRegiaoId) => moverCandidato.mutate({ candidatoId, novaRegiaoId })}
                 />
               </CardContent>
             </Card>
