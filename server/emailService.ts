@@ -2552,3 +2552,163 @@ export function buildPsLembreteD1Email(data: {
 
   return { subject, html, text };
 }
+
+
+// ============ BOAS-VINDAS PROCESSO SELETIVO ============
+
+export function buildBoasVindasPSEmail(data: {
+  candidatoName: string;
+  candidatoEmail: string;
+  cpf: string;
+  processoNome?: string;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `Sua inscrição foi recebida — Processo Seletivo`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#0f2b3c;padding:30px 40px;text-align:center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="140" style="display:block;margin:0 auto 10px;" />
+              <p style="color:#e8a838;margin:4px 0 0;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;">
+                Processo Seletivo
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="color:#0f2b3c;margin:0 0 20px;font-size:22px;">
+                Olá, ${data.candidatoName}!
+              </h2>
+
+              <p style="color:#4a5568;font-size:15px;line-height:1.8;margin:0 0 16px;">
+                Recebemos sua inscrição${data.processoNome ? ` para o processo seletivo <strong>${data.processoNome}</strong>` : ""}. Agora siga os próximos passos para concluir sua candidatura:
+              </p>
+
+              <!-- Passos -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+                <tr>
+                  <td style="background:#f0f7fa;border-left:4px solid #e8a838;border-radius:6px;padding:14px 18px;margin-bottom:10px;">
+                    <p style="margin:0;font-size:14px;color:#0f2b3c;font-weight:700;">Passo 1 — Preencha sua ficha de cadastro</p>
+                    <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Complete seus dados pessoais e profissionais na plataforma.</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+                <tr>
+                  <td style="background:#f0f7fa;border-left:4px solid #e8a838;border-radius:6px;padding:14px 18px;">
+                    <p style="margin:0;font-size:14px;color:#0f2b3c;font-weight:700;">Passo 2 — Realize o teste de perfil</p>
+                    <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Faça o teste em um local calmo e sem interrupções. O tempo máximo é de 15 minutos.</p>
+                  </td>
+                </tr>
+              </table>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 30px;">
+                <tr>
+                  <td style="background:#f0f7fa;border-left:4px solid #e8a838;border-radius:6px;padding:14px 18px;">
+                    <p style="margin:0;font-size:14px;color:#0f2b3c;font-weight:700;">Passo 3 — Agende sua entrevista</p>
+                    <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">Escolha o melhor horário disponível para a sua entrevista online.</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Credentials -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 30px;">
+                <tr>
+                  <td style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:18px;">
+                    <p style="color:#0f2b3c;font-size:14px;font-weight:600;margin:0 0 10px;">🔑 Seus dados de acesso:</p>
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="color:#6b7280;font-size:14px;padding:3px 0;width:80px;">📧 Login:</td>
+                        <td style="color:#0f2b3c;font-size:14px;font-weight:600;padding:3px 0;">${data.candidatoEmail}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#6b7280;font-size:14px;padding:3px 0;">🔒 Senha:</td>
+                        <td style="color:#0f2b3c;font-size:14px;font-weight:600;padding:3px 0;">Seu CPF (somente números)</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.loginUrl}"
+                       style="display:inline-block;background:linear-gradient(135deg,#0f2b3c 0%,#1a3a52 100%);color:#e8a838;text-decoration:none;padding:16px 48px;border-radius:8px;font-size:16px;font-weight:700;letter-spacing:0.5px;">
+                      Acessar o Portal
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color:#9ca3af;font-size:13px;line-height:1.6;margin:0;text-align:center;">
+                Caso o botão não funcione, acesse:<br>
+                <a href="${data.loginUrl}" style="color:#1a4a5e;">${data.loginUrl}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer Banner -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0f2b3c 0%,#1a3a52 100%);padding:20px 40px;text-align:center;">
+              <p style="color:#e8a838;font-size:14px;font-weight:600;margin:0;">
+                Boa sorte na sua candidatura! 🌟
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f8fafc;padding:20px 40px;border-top:1px solid #e5e7eb;text-align:center;">
+              <p style="color:#9ca3af;font-size:12px;line-height:1.5;margin:0;">
+                Este é um e-mail automático do Ecossistema do Bem — Processo Seletivo.<br>
+                Em caso de dúvidas, entre em contato com a equipe.<br>
+                © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `Olá, ${data.candidatoName}!
+
+Recebemos sua inscrição${data.processoNome ? ` para o processo seletivo "${data.processoNome}"` : ""}. Siga os próximos passos para concluir sua candidatura:
+
+Passo 1 — Preencha sua ficha de cadastro
+Passo 2 — Realize o teste de perfil (local calmo, máximo 15 minutos)
+Passo 3 — Agende sua entrevista online
+
+Seus dados de acesso:
+- Login: ${data.candidatoEmail}
+- Senha: Seu CPF (somente números)
+
+Acesse o portal: ${data.loginUrl}
+
+Boa sorte na sua candidatura!
+
+Este é um e-mail automático do Ecossistema do Bem.
+© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+
+  return { subject, html, text };
+}

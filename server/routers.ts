@@ -721,14 +721,26 @@ export const appRouter = router({
           } catch (e) { console.warn('[AutoRegistro] criar candidato PS:', e); }
         }
         try {
-          const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');
-          const emailData = buildOnboardingInviteEmail({
-            alunoName: input.name,
-            alunoEmail: input.email,
-            alunoId: input.cpf.replace(/[.\-]/g, ''),
-            empresaName: input.empresa || 'Desenvolvimento Express',
-            loginUrl: 'https://ecolider.ecodobem.com/',
-          });
+          const { sendEmail, buildOnboardingInviteEmail, buildBoasVindasPSEmail } = await import('./emailService');
+          let emailData;
+          if (input.processoSeletivoId) {
+            // Candidato de processo seletivo — e-mail específico sem mencionar trilha de desenvolvimento
+            emailData = buildBoasVindasPSEmail({
+              candidatoName: input.name,
+              candidatoEmail: input.email,
+              cpf: input.cpf.replace(/[.\-]/g, ''),
+              loginUrl: 'https://ecolider.ecodobem.com/candidato-ps',
+            });
+          } else {
+            // Aluno da trilha de desenvolvimento
+            emailData = buildOnboardingInviteEmail({
+              alunoName: input.name,
+              alunoEmail: input.email,
+              alunoId: input.cpf.replace(/[.\-]/g, ''),
+              empresaName: input.empresa || 'Desenvolvimento Express',
+              loginUrl: 'https://ecolider.ecodobem.com/',
+            });
+          }
           await sendEmail({ to: input.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
         } catch (e) { console.warn('[AutoRegistro] email aluno:', e); }
         try {
