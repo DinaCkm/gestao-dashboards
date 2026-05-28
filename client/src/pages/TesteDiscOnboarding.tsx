@@ -1423,12 +1423,14 @@ export default function EtapaAssessmentCompleta({
   alunoId,
   onComplete,
   readOnly = false,
+  hideRelatorio = false,
   labelContinuar = "Continuar para Escolha da Mentora",
   contratoNivelId,
 }: {
   alunoId: number;
   onComplete: () => void;
   readOnly?: boolean;
+  hideRelatorio?: boolean;
   labelContinuar?: string;
   contratoNivelId?: number | null;
 }) {
@@ -1462,18 +1464,23 @@ export default function EtapaAssessmentCompleta({
         // Veterano: sempre vai direto para o relatório, sem poder refazer
         setSubEtapa("relatorio");
       } else if (autopercepcoesExistentes && autopercepcoesExistentes.length > 0) {
-        setSubEtapa("relatorio");
+        // Se hideRelatorio, ao completar autopercepção chama onComplete diretamente
+        if (hideRelatorio) {
+          onComplete();
+        } else {
+          setSubEtapa("relatorio");
+        }
       } else {
         setSubEtapa("autopercepção");
       }
     }
-  }, [discResultado, autopercepcoesExistentes, readOnly]);
+  }, [discResultado, autopercepcoesExistentes, readOnly, hideRelatorio]);
 
   // Sub-stepper
   const subSteps = [
     { id: "disc" as SubEtapa, label: "Teste DISC", icon: Brain },
     { id: "autopercepção" as SubEtapa, label: "Autopercepção", icon: Gauge },
-    { id: "relatorio" as SubEtapa, label: "Relatório", icon: BarChart3 },
+    ...(hideRelatorio ? [] : [{ id: "relatorio" as SubEtapa, label: "Relatório", icon: BarChart3 }]),
   ];
 
   const currentSubIndex = subSteps.findIndex((s) => s.id === subEtapa);
@@ -1551,11 +1558,11 @@ export default function EtapaAssessmentCompleta({
             <ReguaAutopercepção
               alunoId={alunoId}
               contratoNivelId={contratoNivelId}
-              onComplete={() => setSubEtapa("relatorio")}
+              onComplete={() => hideRelatorio ? onComplete() : setSubEtapa("relatorio")}
             />
           )}
 
-          {subEtapa === "relatorio" && (
+          {subEtapa === "relatorio" && !hideRelatorio && (
             <RelatorioAutoconhecimento
               alunoId={alunoId}
               discScores={discScores}

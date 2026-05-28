@@ -87,12 +87,14 @@ import AuditoriaResets from "./pages/admin/AuditoriaResets";
 import AuditoriaNotesMentoria from "./pages/admin/AuditoriaNotesMentoria";
 import VisualizarPDI from "./pages/VisualizarPDI";
 import AutoRegistro from "./pages/AutoRegistro";
+import PortalCandidatoPS from "./pages/PortalCandidatoPS";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/login"} component={Login} />
       <Route path={"/registro"} component={AutoRegistro} />
+      <Route path={"/candidato-ps"} component={PortalCandidatoPS} />
       <Route path={"/"} component={Home} />
       <Route path={"/upload"} component={Upload} />
       <Route path={"/dashboard/admin"} component={AdminDashboard} />
