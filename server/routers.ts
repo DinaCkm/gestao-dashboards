@@ -657,6 +657,7 @@ export const appRouter = router({
         email: z.string().email('Email inválido'),
         cpf: z.string().min(11, 'CPF inválido').max(14),
         empresa: z.string().optional(),
+        processoSeletivoId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
         const TURMA_EXPRESS_ID = 60002;
@@ -683,9 +684,41 @@ export const appRouter = router({
           cpf: input.cpf,
           programId,
           turmaId: TURMA_EXPRESS_ID,
+          tipoPortal: input.processoSeletivoId ? 'processo_seletivo' : 'desenvolvimento',
+          processoSeletivoId: input.processoSeletivoId ?? null,
         });
         if (!result.success) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: result.message || 'Erro ao criar cadastro' });
+        }
+        // Se for processo seletivo, criar/vincular candidato na tabela processo_candidatos
+        if (input.processoSeletivoId && result.alunoId) {
+          try {
+            const database = await getDb();
+            const { processoCandidatos } = await import('../drizzle/schema');
+            const [existingCand] = await database
+              .select({ id: processoCandidatos.id })
+              .from(processoCandidatos)
+              .where(and(
+                eq(processoCandidatos.processoId, input.processoSeletivoId),
+                eq(processoCandidatos.email, input.email.trim().toLowerCase())
+              ))
+              .limit(1);
+            if (existingCand) {
+              await database
+                .update(processoCandidatos)
+                .set({ userId: result.alunoId, statusCadastro: 'cadastrado' })
+                .where(eq(processoCandidatos.id, existingCand.id));
+            } else {
+              await database.insert(processoCandidatos).values({
+                processoId: input.processoSeletivoId,
+                nome: input.name,
+                email: input.email.trim().toLowerCase(),
+                cpf: input.cpf,
+                userId: result.alunoId,
+                statusCadastro: 'cadastrado',
+              });
+            }
+          } catch (e) { console.warn('[AutoRegistro] criar candidato PS:', e); }
         }
         try {
           const { sendEmail, buildOnboardingInviteEmail } = await import('./emailService');
@@ -703,7 +736,7 @@ export const appRouter = router({
           const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
           await sendEmail({ to: 'relacionamento@ckmtalents.net', cc: 'dina@makiyama.com.br', subject: `[Novo Aluno] ${input.name} - Desenvolvimento Express`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
         } catch (e) { console.warn('[AutoRegistro] email admin:', e); }
-                return { success: true, alunoId: result.alunoId };
+        return { success: true, alunoId: result.alunoId };
       }),
     listEmpresas: publicProcedure.query(async () => {
       const programs = await db.getPrograms();

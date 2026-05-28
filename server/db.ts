@@ -7498,6 +7498,8 @@ export async function createAlunoDireto(data: {
   turmaId?: number | null;
   contratoInicio?: string;
   contratoFim?: string;
+  tipoPortal?: string | null;
+  processoSeletivoId?: number | null;
 }): Promise<{ success: boolean; alunoId?: number; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -7538,6 +7540,8 @@ export async function createAlunoDireto(data: {
     isActive: 1,
     contratoInicio: data.contratoInicio ? new Date(data.contratoInicio) : null,
     contratoFim: data.contratoFim ? new Date(data.contratoFim) : null,
+    tipoPortal: data.tipoPortal ?? null,
+    processoSeletivoId: data.processoSeletivoId ?? null,
   });
 
   const alunoId = alunoResult.insertId;
@@ -7738,13 +7742,15 @@ export async function getAlunoOnboardingStatus(user: {
   alunoId: number | null;
   aceiteRealizado: boolean;
   alunoCreatedAt: string | null;
+  tipoPortal: string | null;
+  processoSeletivoId: number | null;
 }> {
   const db = await getDb();
-  if (!db) return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null };
+  if (!db) return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null, tipoPortal: null, processoSeletivoId: null };
 
   // Só se aplica a alunos (role === 'user') ou managers com alunoId (visão dupla)
   if (user.role !== 'user' && !(user.role === 'manager' && user.alunoId)) {
-    return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null };
+    return { needsOnboarding: false, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null, tipoPortal: null, processoSeletivoId: null };
   }
 
   // Buscar aluno: primeiro pelo alunoId, depois pelo email
@@ -7768,7 +7774,7 @@ export async function getAlunoOnboardingStatus(user: {
 
   if (!aluno) {
     // Aluno não encontrado na tabela alunos - precisa de onboarding
-    return { needsOnboarding: true, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null };
+    return { needsOnboarding: true, hasMentor: false, hasPdi: false, onboardingLiberado: false, alunoId: null, aceiteRealizado: false, alunoCreatedAt: null, tipoPortal: null, processoSeletivoId: null };
   }
 
   const hasMentor = !!aluno.consultorId;
@@ -7812,6 +7818,8 @@ export async function getAlunoOnboardingStatus(user: {
     alunoId: aluno.id,
     aceiteRealizado,
     alunoCreatedAt,
+    tipoPortal: aluno.tipoPortal ?? 'desenvolvimento',
+    processoSeletivoId: aluno.processoSeletivoId ?? null,
   };
 }
 

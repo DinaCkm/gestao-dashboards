@@ -457,7 +457,7 @@ const AREAS_CURSOS = [
   "Empreendedorismo", "Inovação", "Outras"
 ];
 
-function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const alunoReal = dashData?.found ? dashData.aluno : null;
   const salvarCadastro = trpc.onboarding.salvarCadastro.useMutation();

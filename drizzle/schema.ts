@@ -223,6 +223,8 @@ export const alunos = mysqlTable("alunos", {
   outraRedeUrl: varchar("outraRedeUrl", { length: 500 }),
   curriculoUrl: varchar("curriculoUrl", { length: 1000 }),
   photoUrl: text("photoUrl"), // URL da foto de perfil do aluno (S3)
+  tipoPortal: varchar("tipoPortal", { length: 50 }).default("desenvolvimento"), // 'desenvolvimento' | 'processo_seletivo'
+  processoSeletivoId: int("processoSeletivoId"), // FK para processos_seletivos (quando tipoPortal = 'processo_seletivo')
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1724,6 +1726,7 @@ export const processosSeletivos = mysqlTable("processos_seletivos", {
   dataInicio: date("dataInicio", { mode: "string" }),
   dataFim: date("dataFim", { mode: "string" }),
   responsavelCkmId: int("responsavelCkmId"),
+  mentorId: int("mentorId"), // FK para consultors - mentora responsável pelas entrevistas
   criadoPor: int("criadoPor").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -1782,7 +1785,7 @@ export const processoCandidatos = mysqlTable("processo_candidatos", {
   statusTeste: mysqlEnum("statusTeste", ["nao_enviado", "enviado", "em_andamento", "concluido", "expirado"]).default("nao_enviado").notNull(),
   testeConcluidoEm: timestamp("testeConcluidoEm"),
   statusEntrevista: mysqlEnum("statusEntrevista", ["nao_agendada", "aguardando_agenda", "agendada", "realizada", "cancelada", "reagendada"]).default("nao_agendada").notNull(),
-  statusResultado: mysqlEnum("statusResultado", ["pendente", "aprovado", "reprovado", "suplente", "desistente"]).default("pendente").notNull(),
+  statusResultado: mysqlEnum("statusResultado", ["pendente", "aprovado", "reprovado", "em_analise", "desistente"]).default("pendente").notNull(),
   observacoes: text("observacoes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -1850,7 +1853,7 @@ export const processoResultados = mysqlTable("processo_resultados", {
   id: int("id").autoincrement().primaryKey(),
   processoId: int("processoId").notNull(),
   candidatoId: int("candidatoId").notNull(),
-  resultado: mysqlEnum("resultado", ["pendente", "aprovado", "reprovado", "suplente", "desistente"]).default("pendente").notNull(),
+  resultado: mysqlEnum("resultado", ["pendente", "aprovado", "reprovado", "em_analise", "desistente"]).default("pendente").notNull(),
   notaEntrevista: int("notaEntrevista"),
   parecer: text("parecer"),
   registradoPor: int("registradoPor").notNull(),

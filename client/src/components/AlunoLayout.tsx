@@ -12,6 +12,11 @@ import RoleSwitcher from "@/components/RoleSwitcher";
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
 const ONBOARDING_CUTOFF_DATE = new Date("2026-03-01T00:00:00Z");
 
+/** Itens de menu para candidatos de processo seletivo */
+const PS_NAV_ITEMS = [
+  { label: "Meu Cadastro", path: "/candidato-ps", icon: ClipboardList, requiresAceite: false },
+];
+
 const ALL_NAV_ITEMS = [
   { label: "Onboarding", path: "/onboarding", icon: ClipboardList, requiresAceite: false },
   { label: "Mural", path: "/mural", icon: Megaphone, requiresAceite: true },
@@ -64,18 +69,32 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
     return !!onboardingStatus.needsOnboarding;
   }, [onboardingStatus]);
 
-  // Redirecionar para onboarding se tentar acessar rota bloqueada
+  // Detectar se é candidato de processo seletivo
+  const isCandidatoPS = onboardingStatus?.tipoPortal === 'processo_seletivo';
+
+  // Redirecionar candidato PS para a área correta
   useEffect(() => {
+    if (!onboardingStatus) return;
+    if (isCandidatoPS) {
+      const psRoutes = ['/candidato-ps'];
+      const isInPsRoute = psRoutes.some(r => location.startsWith(r));
+      if (!isInPsRoute) {
+        setLocation('/candidato-ps');
+      }
+      return;
+    }
+    // Redirecionar para onboarding se tentar acessar rota bloqueada
     if (menuBloqueado && BLOCKED_PATHS.some(p => location === p)) {
       setLocation("/onboarding");
     }
-  }, [menuBloqueado, location, setLocation]);
+  }, [menuBloqueado, isCandidatoPS, location, setLocation, onboardingStatus]);
 
   // Filtrar itens de navegação
   const navItems = useMemo(() => {
+    if (isCandidatoPS) return PS_NAV_ITEMS;
     if (!menuBloqueado) return ALL_NAV_ITEMS;
     return ALL_NAV_ITEMS.filter(item => !item.requiresAceite);
-  }, [menuBloqueado]);
+  }, [menuBloqueado, isCandidatoPS]);
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()

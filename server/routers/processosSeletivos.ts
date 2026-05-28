@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
+  discResultados,
   processoAgendaSlots,
   processoAgendasGrupo,
   processoCandidatos,
@@ -12,8 +13,9 @@ import {
   processoResultados,
   processosSeletivos,
   processoVagas,
+  users,
 } from "../../drizzle/schema";
-import { protectedProcedure, router } from "../_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 
 const adminRoles = new Set(["admin", "admin2"]);
@@ -36,8 +38,18 @@ const requireCkmAdmin = (role?: string | null) => {
 
 type DbClient = Awaited<ReturnType<typeof requireDatabase>>;
 
-async function hasProcessAccess(database: DbClient, user: { id: number; role?: string | null }, processoId: number) {
+async function hasProcessAccess(database: DbClient, user: { id: number; role?: string | null; consultorId?: number | null }, processoId: number) {
   if (isCkmAdmin(user.role)) return true;
+
+  // Mentora: acesso se o processo tem mentorId vinculado ao consultorId do usuário
+  if (user.consultorId) {
+    const [processo] = await database
+      .select({ mentorId: processosSeletivos.mentorId })
+      .from(processosSeletivos)
+      .where(eq(processosSeletivos.id, processoId))
+      .limit(1);
+    if (processo?.mentorId === user.consultorId) return true;
+  }
 
   const [cliente] = await database
     .select({ id: processoClienteUsuarios.id })
@@ -55,7 +67,7 @@ async function hasProcessAccess(database: DbClient, user: { id: number; role?: s
   return Boolean(candidato);
 }
 
-async function ensureProcessAccess(database: DbClient, user: { id: number; role?: string | null }, processoId: number) {
+async function ensureProcessAccess(database: DbClient, user: { id: number; role?: string | null; consultorId?: number | null }, processoId: number) {
   const allowed = await hasProcessAccess(database, user, processoId);
   if (!allowed) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Voce nao tem acesso a este processo seletivo" });
@@ -196,6 +208,7 @@ const processoInput = z.object({
   status: z.enum(["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho"),
   dataInicio: z.string().optional().nullable(),
   dataFim: z.string().optional().nullable(),
+  mentorId: z.number().optional().nullable(),
 });
 
 const processoIdInput = z.object({ processoId: z.number() });
@@ -206,6 +219,16 @@ export const processosSeletivosRouter = router({
 
     if (isCkmAdmin(ctx.user.role)) {
       return database.select().from(processosSeletivos).orderBy(desc(processosSeletivos.createdAt));
+    }
+
+    // Mentora: ver processos onde ela é a mentora responsável
+    const userConsultorId = (ctx.user as any).consultorId as number | null;
+    if (userConsultorId) {
+      return database
+        .select()
+        .from(processosSeletivos)
+        .where(eq(processosSeletivos.mentorId, userConsultorId))
+        .orderBy(desc(processosSeletivos.createdAt));
     }
 
     const clienteLinks = await database
@@ -280,12 +303,33 @@ export const processosSeletivosRouter = router({
       status: input.status,
       dataInicio: input.dataInicio || null,
       dataFim: input.dataFim || null,
+      mentorId: input.mentorId ?? null,
       criadoPor: ctx.user.id,
     });
     const id = Number(result[0].insertId);
     await writeLog(database, { processoId: id, userId: ctx.user.id, acao: "processo_criado", detalhe: input.nome });
     return { id, success: true };
   }),
+
+  atualizarProcesso: protectedProcedure
+    .input(processoIdInput.extend(processoInput.partial().shape))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const { processoId, ...data } = input;
+      await database.update(processosSeletivos).set({
+        ...(data.nome !== undefined && { nome: data.nome }),
+        ...(data.clienteNome !== undefined && { clienteNome: data.clienteNome }),
+        ...(data.clienteEmail !== undefined && { clienteEmail: data.clienteEmail || null }),
+        ...(data.descricao !== undefined && { descricao: data.descricao || null }),
+        ...(data.status !== undefined && { status: data.status }),
+        ...(data.dataInicio !== undefined && { dataInicio: data.dataInicio || null }),
+        ...(data.dataFim !== undefined && { dataFim: data.dataFim || null }),
+        ...(data.mentorId !== undefined && { mentorId: data.mentorId ?? null }),
+      }).where(eq(processosSeletivos.id, processoId));
+      await writeLog(database, { processoId, userId: ctx.user.id, acao: "processo_atualizado" });
+      return { success: true };
+    }),
 
   vincularClienteUsuario: protectedProcedure
     .input(processoIdInput.extend({ userId: z.number(), permissao: z.enum(["leitura", "comentario"]).default("leitura") }))
@@ -354,6 +398,12 @@ export const processosSeletivosRouter = router({
     await ensureProcessAccess(database, ctx.user, input.processoId);
     const rows = await database.select().from(processoCandidatos).where(eq(processoCandidatos.processoId, input.processoId)).orderBy(asc(processoCandidatos.nome));
     if (isCkmAdmin(ctx.user.role)) return rows;
+    // Mentora: ver todos os candidatos do processo
+    const userConsultorId = (ctx.user as any).consultorId as number | null;
+    if (userConsultorId) {
+      const [processo] = await database.select({ mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
+      if (processo?.mentorId === userConsultorId) return rows;
+    }
     const isCliente = await database
       .select({ id: processoClienteUsuarios.id })
       .from(processoClienteUsuarios)
@@ -534,12 +584,18 @@ export const processosSeletivosRouter = router({
   }),
 
   registrarResultado: protectedProcedure
-    .input(z.object({ candidatoId: z.number(), resultado: z.enum(["pendente", "aprovado", "reprovado", "suplente", "desistente"]), notaEntrevista: z.number().optional().nullable(), parecer: z.string().optional() }))
+    .input(z.object({ candidatoId: z.number(), resultado: z.enum(["pendente", "aprovado", "reprovado", "em_analise", "desistente"]), notaEntrevista: z.number().optional().nullable(), parecer: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
-      requireCkmAdmin(ctx.user.role);
       const database = await requireDatabase();
       const [candidate] = await database.select().from(processoCandidatos).where(eq(processoCandidatos.id, input.candidatoId)).limit(1);
       if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      // Admin CKM ou mentora do processo podem registrar resultado
+      const userConsultorId = (ctx.user as any).consultorId as number | null;
+      if (!isCkmAdmin(ctx.user.role)) {
+        if (!userConsultorId) throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito" });
+        const [processo] = await database.select({ mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq(processosSeletivos.id, candidate.processoId)).limit(1);
+        if (processo?.mentorId !== userConsultorId) throw new TRPCError({ code: "FORBIDDEN", message: "Voce nao e a mentora deste processo" });
+      }
       const [existingResult] = await database
         .select({ id: processoResultados.id })
         .from(processoResultados)
@@ -564,4 +620,144 @@ export const processosSeletivosRouter = router({
       await writeLog(database, { processoId: candidate.processoId, candidatoId: input.candidatoId, userId: ctx.user.id, acao: "resultado_registrado", detalhe: input.resultado });
       return { success: true };
     }),
+
+  // Rota pública: lista processos ativos para o formulário de auto-registro
+  listProcessosAtivos: publicProcedure.query(async () => {
+    const database = await requireDatabase();
+    const rows = await database
+      .select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome })
+      .from(processosSeletivos)
+      .where(eq(processosSeletivos.status, "ativo"))
+      .orderBy(asc(processosSeletivos.nome));
+    return rows;
+  }),
+
+  // Rota pública: retorna slots disponíveis de um processo para o candidato agendar
+  listarSlotsDisponiveis: publicProcedure
+    .input(z.object({ processoId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      const slots = await database
+        .select()
+        .from(processoAgendaSlots)
+        .where(and(eq(processoAgendaSlots.processoId, input.processoId), eq(processoAgendaSlots.status, "disponivel")))
+        .orderBy(asc(processoAgendaSlots.dataAgenda), asc(processoAgendaSlots.inicio));
+      return slots;
+    }),
+
+  // Candidato agendando seu próprio slot após concluir os testes
+  candidatoAgendar: protectedProcedure
+    .input(z.object({ slotId: z.number(), processoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      // Verificar se o candidato pertence ao processo
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.userId, ctx.user.id)))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado neste processo" });
+      if (candidate.statusTeste !== "concluido") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Voce precisa concluir os testes antes de agendar" });
+      }
+      // Verificar se o slot está disponível
+      const [slot] = await database
+        .select()
+        .from(processoAgendaSlots)
+        .where(and(eq(processoAgendaSlots.id, input.slotId), eq(processoAgendaSlots.status, "disponivel")))
+        .limit(1);
+      if (!slot) throw new TRPCError({ code: "NOT_FOUND", message: "Slot nao disponivel" });
+      // Reservar o slot
+      await database
+        .update(processoAgendaSlots)
+        .set({ candidatoId: candidate.id, status: "reservado" })
+        .where(eq(processoAgendaSlots.id, input.slotId));
+      // Criar entrevista
+      await database.insert(processoEntrevistas).values({
+        processoId: input.processoId,
+        candidatoId: candidate.id,
+        agendaSlotId: input.slotId,
+        linkEntrevista: slot.linkEntrevista,
+        status: "agendada",
+      });
+      // Atualizar status do candidato
+      await database
+        .update(processoCandidatos)
+        .set({ statusEntrevista: "agendada" })
+        .where(eq(processoCandidatos.id, candidate.id));
+      await writeLog(database, {
+        processoId: input.processoId,
+        candidatoId: candidate.id,
+        userId: ctx.user.id,
+        acao: "candidato_agendou",
+        detalhe: `Slot ${slot.dataAgenda} ${slot.inicio}`,
+      });
+      return { success: true, slot };
+    }),
+
+  // Obter dados do candidato pelo userId (para o portal do candidato)
+  meusDadosCandidato: protectedProcedure.query(async ({ ctx }) => {
+    const database = await requireDatabase();
+    const [candidate] = await database
+      .select()
+      .from(processoCandidatos)
+      .where(eq(processoCandidatos.userId, ctx.user.id))
+      .limit(1);
+    return candidate ?? null;
+  }),
+
+  // Mentora: buscar DISC de um candidato pelo candidatoId do processo
+  discCandidato: protectedProcedure
+    .input(z.object({ candidatoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database.select().from(processoCandidatos).where(eq(processoCandidatos.id, input.candidatoId)).limit(1);
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+      if (!candidate.userId) return null;
+      // Buscar alunoId via users
+      const [userRow] = await database.select({ alunoId: users.alunoId }).from(users).where(eq(users.id, candidate.userId)).limit(1);
+      if (!userRow?.alunoId) return null;
+      const [disc] = await database
+        .select()
+        .from(discResultados)
+        .where(eq(discResultados.alunoId, userRow.alunoId))
+        .orderBy(desc(discResultados.completedAt))
+        .limit(1);
+      return disc ?? null;
+    }),
+
+  // Mentora: listar resultados registrados de um processo
+  listarResultados: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
+    const database = await requireDatabase();
+    await ensureProcessAccess(database, ctx.user, input.processoId);
+    return database
+      .select()
+      .from(processoResultados)
+      .where(eq(processoResultados.processoId, input.processoId));
+  }),
+
+  // Obter entrevista agendada do candidato
+  minhaEntrevista: protectedProcedure.query(async ({ ctx }) => {
+    const database = await requireDatabase();
+    const [candidate] = await database
+      .select({ id: processoCandidatos.id, processoId: processoCandidatos.processoId })
+      .from(processoCandidatos)
+      .where(eq(processoCandidatos.userId, ctx.user.id))
+      .limit(1);
+    if (!candidate) return null;
+    const [entrevista] = await database
+      .select()
+      .from(processoEntrevistas)
+      .where(eq(processoEntrevistas.candidatoId, candidate.id))
+      .orderBy(desc(processoEntrevistas.createdAt))
+      .limit(1);
+    if (!entrevista) return null;
+    const [slot] = await database
+      .select()
+      .from(processoAgendaSlots)
+      .where(eq(processoAgendaSlots.id, entrevista.agendaSlotId))
+      .limit(1);
+    return { entrevista, slot: slot ?? null };
+  }),
 });
