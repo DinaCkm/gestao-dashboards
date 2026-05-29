@@ -175,6 +175,14 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(err.message),
   });
 
+  const excluirProcesso = trpc.processosSeletivos.excluirProcesso.useMutation({
+    onSuccess: () => {
+      utils.processosSeletivos.listarProcessos.invalidate();
+      setSelectedProcessoId(null);
+      toast.success("Processo excluído com sucesso.");
+    },
+    onError: (err) => toast.error(err.message),
+  });
   const atualizarProcesso = trpc.processosSeletivos.atualizarProcesso.useMutation({
     onSuccess: () => {
       utils.processosSeletivos.listarProcessos.invalidate();
@@ -382,6 +390,66 @@ function ProcessosSeletivosContent() {
           </Select>
         </div>
       </div>
+
+      {isAdmin && processos.length > 0 && (
+        <Card className="rounded-lg">
+          <CardHeader>
+            <CardTitle>Lista de Processos</CardTitle>
+            <CardDescription>Gerencie, inative ou exclua processos seletivos.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {processos.map((processo) => (
+                  <TableRow key={processo.id}>
+                    <TableCell className="font-medium">{processo.nome}</TableCell>
+                    <TableCell>{processo.clienteNome}</TableCell>
+                    <TableCell><ProcessoStatusBadge status={processo.status} /></TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-1 justify-end">
+                        {processo.status !== "ativo" && (
+                          <Button size="sm" variant="outline" className="gap-1 text-green-700 border-green-300 hover:bg-green-50 h-7 px-2 text-xs"
+                            disabled={atualizarProcesso.isPending}
+                            onClick={() => atualizarProcesso.mutate({ processoId: processo.id, status: "ativo" })}>
+                            <PlayCircle size={12} /> Ativar
+                          </Button>
+                        )}
+                        {processo.status === "ativo" && (
+                          <Button size="sm" variant="outline" className="gap-1 text-yellow-700 border-yellow-300 hover:bg-yellow-50 h-7 px-2 text-xs"
+                            disabled={atualizarProcesso.isPending}
+                            onClick={() => atualizarProcesso.mutate({ processoId: processo.id, status: "pausado" })}>
+                            <PauseCircle size={12} /> Pausar
+                          </Button>
+                        )}
+                        {processo.status !== "encerrado" && (
+                          <Button size="sm" variant="outline" className="gap-1 text-orange-700 border-orange-300 hover:bg-orange-50 h-7 px-2 text-xs"
+                            disabled={atualizarProcesso.isPending}
+                            onClick={() => { if (confirm("Encerrar este processo?")) atualizarProcesso.mutate({ processoId: processo.id, status: "encerrado" }); }}>
+                            <Ban size={12} /> Encerrar
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" className="gap-1 text-red-700 border-red-300 hover:bg-red-50 h-7 px-2 text-xs"
+                          disabled={excluirProcesso.isPending}
+                          onClick={() => { if (confirm(`Excluir permanentemente "${processo.nome}"? Esta ação não pode ser desfeita.`)) excluirProcesso.mutate({ processoId: processo.id }); }}>
+                          <Trash2 size={12} /> Excluir
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {isAdmin && (
         <Card className="rounded-lg">

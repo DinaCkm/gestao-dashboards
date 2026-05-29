@@ -357,7 +357,22 @@ export const processosSeletivosRouter = router({
         ...(data.dataFim !== undefined && { dataFim: data.dataFim || null }),
         ...(data.mentorId !== undefined && { mentorId: data.mentorId ?? null }),
       }).where(eq(processosSeletivos.id, processoId));
-      await writeLog(database, { processoId, userId: ctx.user.id, acao: "processo_atualizado" });
+            await writeLog(database, { processoId, userId: ctx.user.id, acao: "processo_atualizado" });
+      return { success: true };
+    }),
+
+  excluirProcesso: protectedProcedure
+    .input(processoIdInput)
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const { processoId } = input;
+      // Excluir dados dependentes antes de excluir o processo
+      await database.delete(processoRegioes).where(eq(processoRegioes.processoId, processoId));
+      await database.delete(processoVagas).where(eq(processoVagas.processoId, processoId));
+      await database.delete(processoCandidatos).where(eq(processoCandidatos.processoId, processoId));
+      await database.delete(processoClienteUsuarios).where(eq(processoClienteUsuarios.processoId, processoId));
+      await database.delete(processosSeletivos).where(eq(processosSeletivos.id, processoId));
       return { success: true };
     }),
 
