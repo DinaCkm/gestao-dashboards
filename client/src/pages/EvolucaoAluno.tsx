@@ -82,7 +82,7 @@ function CicloCard({ ciclo, index, niveisAluno }: { ciclo: any; index: number; n
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-[#0A1E3E] text-lg">Ciclo {ciclo.numeroCiclo}</h3>
                 <Badge className="text-white border-0 text-xs" style={{ backgroundColor: corPredominante }}>
-                  {perfilPredominante ? `Perfil ${perfilPredominante}` : "Sem DISC"}
+                  {perfilPredominante ? `Perfil ${perfilPredominante}` : "Sem Avaliação"}
                 </Badge>
               </div>
               <p className="text-sm text-gray-500 mt-0.5">
@@ -113,7 +113,7 @@ function CicloCard({ ciclo, index, niveisAluno }: { ciclo: any; index: number; n
             <div className="space-y-4">
               <h4 className="font-bold text-[#0A1E3E] flex items-center gap-2">
                 <Brain className="h-4 w-4 text-purple-600" />
-                Perfil DISC
+                Perfil Comportamental
                 {discData && <span className="text-xs font-normal text-gray-400 ml-1">— realizado em {discData}</span>}
               </h4>
               <div className="space-y-2.5">
@@ -153,7 +153,7 @@ function CicloCard({ ciclo, index, niveisAluno }: { ciclo: any; index: number; n
           ) : (
             <div className="text-center py-6 text-gray-400">
               <Brain className="h-10 w-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">Teste DISC não realizado neste ciclo</p>
+              <p className="text-sm">Avaliação de Perfil Comportamental não realizada neste ciclo</p>
             </div>
           )}
 
@@ -416,7 +416,7 @@ export default function EvolucaoAluno() {
                 <h2 className="text-xl font-bold mb-2">Seu histórico está sendo construído</h2>
                 <p className="text-blue-100/80 text-sm leading-relaxed max-w-sm mx-auto">
                   Quando você concluir seu primeiro ciclo de desenvolvimento e um novo ciclo for iniciado,
-                  o histórico aparecerá aqui com todos os seus resultados DISC e PDI.
+                  o histórico aparecerá aqui com todos os seus resultados da Avaliação de Perfil Comportamental e PDI.
                 </p>
               </div>
               {discAtual && (
@@ -447,7 +447,7 @@ export default function EvolucaoAluno() {
                   {historico.length} ciclo{historico.length > 1 ? "s" : ""} de desenvolvimento registrado{historico.length > 1 ? "s" : ""}
                 </p>
                 <p className="text-amber-700 text-xs mt-0.5">
-                  Cada ciclo representa uma jornada completa de onboarding com DISC e PDI.
+                  Cada ciclo representa uma jornada completa de onboarding com Avaliação de Perfil Comportamental e PDI.
                 </p>
               </div>
             </div>

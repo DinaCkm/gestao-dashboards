@@ -215,7 +215,7 @@ function MetasContent() {
     { enabled: !!selectedAlunoId }
   );
 
-  // Buscar resultado do teste DISC do aluno
+  // Buscar resultado da Avaliação de Perfil Comportamental do aluno
   const { data: discResultado } = trpc.disc.resultado.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
@@ -710,13 +710,13 @@ function MetasContent() {
         </CardContent>
       </Card>
 
-      {/* Relatório DISC do Aluno */}
+      {/* Relatório de Avaliação de Perfil Comportamental do Aluno */}
       {selectedAlunoId && discResultado && (
         <Card className="border-[#F5991F]/30 bg-gradient-to-r from-[#F5991F]/5 to-transparent border-2">
           <CardContent className="py-4">
             <h4 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
-              Perfil Comportamental DISC
+              Avaliação de Perfil Comportamental
             </h4>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
               {[

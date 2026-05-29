@@ -334,7 +334,7 @@ function ProcessosMentoraContent() {
                   Candidatos
                 </CardTitle>
                 <CardDescription>
-                  Clique em um candidato para ver o DISC e registrar o parecer
+                  Clique em um candidato para ver a Avaliação de Perfil Comportamental e registrar o parecer
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -417,12 +417,12 @@ function ProcessosMentoraContent() {
                 </div>
               </div>
 
-              {/* DISC */}
+              {/* Avaliação de Perfil Comportamental */}
               {candidatoSelecionado.statusTeste === "concluido" ? (
                 dadosDisc ? (
                   <Card>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-semibold">Perfil DISC</CardTitle>
+                      <CardTitle className="text-sm font-semibold">Perfil Comportamental</CardTitle>
                       <CardDescription>
                         Perfil predominante:{" "}
                         <span
@@ -470,14 +470,14 @@ function ProcessosMentoraContent() {
                 ) : (
                   <Card className="border-dashed">
                     <CardContent className="pt-4 pb-4 text-center text-muted-foreground text-sm">
-                      Resultado DISC não disponível para este candidato.
+                      Resultado da Avaliação de Perfil Comportamental não disponível para este candidato.
                     </CardContent>
                   </Card>
                 )
               ) : (
                 <Card className="border-dashed border-amber-200 bg-amber-50/50">
                   <CardContent className="pt-4 pb-4 text-center text-amber-700 text-sm">
-                    O candidato ainda não concluiu os testes. O DISC estará disponível após a conclusão.
+                    O candidato ainda não concluiu os testes. A Avaliação de Perfil Comportamental estará disponível após a conclusão.
                   </CardContent>
                 </Card>
               )}

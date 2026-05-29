@@ -1120,13 +1120,13 @@ function PlanoContent() {
 
               )}
 
-              {/* ===== SEÇÃO 4: DISC ===== */}
+              {/* ===== SEÇÃO 4: Avaliação de Perfil Comportamental ===== */}
               {discResultado && (
                 <Card className="border-secondary/30 bg-gradient-to-r from-secondary/5 to-transparent">
                   <CardContent className="py-4">
                     <h4 className="font-semibold mb-3 flex items-center gap-2 text-sm">
                       <BookOpen className="h-4 w-4" />
-                      Perfil Comportamental DISC
+                      Avaliação de Perfil Comportamental
                     </h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                       {[

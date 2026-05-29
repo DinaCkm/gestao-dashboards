@@ -245,7 +245,7 @@ const COMPETENCIA_DESCRICOES: Record<string, { oQueE: string; impacto: string }>
 };
 
 // ============================================================
-// COMPONENTE: TESTE DISC (Escolha Forçada / Ipsativo)
+// COMPONENTE: AVALIAÇÃO DE PERFIL COMPORTAMENTAL (Escolha Forçada / Ipsativo)
 // ============================================================
 
 function TesteDisc({
@@ -262,7 +262,7 @@ function TesteDisc({
   const { data: perguntasData } = trpc.disc.perguntas.useQuery();
   const salvarMutation = trpc.disc.salvarRespostas.useMutation();
 
-  // Verificar se o aluno já assistiu o vídeo DISC antes
+  // Verificar se o aluno já assistiu o vídeo da Avaliação de Perfil Comportamental antes
   const { data: videoWatchedData } = trpc.onboarding.hasWatchedDiscVideo.useQuery(
     { alunoId },
     { enabled: !!alunoId }
@@ -276,7 +276,7 @@ function TesteDisc({
   const [showIntro, setShowIntro] = useState(true);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
-  // Sequência de vídeos: 0 = vídeo introdutório, 1 = vídeo DISC explicativo
+  // Sequência de vídeos: 0 = vídeo introdutório, 1 = vídeo explicativo da Avaliação de Perfil Comportamental
   // Se hideVideo1, começa direto no vídeo 2
   const [currentVideoIndex, setCurrentVideoIndex] = useState(hideVideo1 ? 1 : 0);
   const VIDEOS = [
@@ -290,7 +290,7 @@ function TesteDisc({
       src: hideVideo1
         ? "https://files.manuscdn.com/user_upload_by_module/session_file/310519663427002956/PTWiqzpIYbgvTLqp.mp4"
         : "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4",
-      label: hideVideo1 ? "Prepare-se para o teste" : "Vídeo 2 de 2 — Entenda o DISC",
+      label: hideVideo1 ? "Prepare-se para o teste" : "Vídeo 2 de 2 — Entenda a Avaliação de Perfil Comportamental",
     },
   ];
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -444,7 +444,7 @@ function TesteDisc({
         respostas: respostasArray,
       });
 
-      toast.success("Teste DISC concluído com sucesso!");
+      toast.success("Avaliação de Perfil Comportamental concluída com sucesso!");
       onComplete(resultado.scores, resultado.perfilPredominante as DiscDimensao, resultado.perfilSecundario as DiscDimensao);
     } catch {
       toast.error("Erro ao salvar respostas. Tente novamente.");
@@ -473,9 +473,9 @@ function TesteDisc({
               <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#0A1E3E] to-[#2D5A87] flex items-center justify-center shadow-lg">
                 <Brain className="h-8 w-8 text-white" />
               </div>
-              <CardTitle className="text-xl text-[#0A1E3E]">Antes de começar o Teste DISC</CardTitle>
+              <CardTitle className="text-xl text-[#0A1E3E]">Antes de começar a Avaliação de Perfil Comportamental</CardTitle>
               <p className="text-gray-600 mt-2 text-sm leading-relaxed">
-                Assista ao vídeo abaixo (4 minutos) para entender como funciona o teste DISC e como responder da melhor forma. 
+                Assista ao vídeo abaixo (4 minutos) para entender como funciona a Avaliação de Perfil Comportamental e como responder da melhor forma. 
                 Isso vai te ajudar a ter resultados mais precisos!
               </p>
             </CardHeader>
@@ -562,7 +562,7 @@ function TesteDisc({
                       <p className="text-white font-bold text-lg">Assistir Vídeo Explicativo</p>
                       <p className="text-white/70 text-sm flex items-center justify-center gap-1.5 mt-1">
                         <Video className="h-4 w-4" />
-                        Entenda como funciona o DISC
+                        Entenda como funciona a Avaliação de Perfil Comportamental
                       </p>
                       <p className="text-white/50 text-xs flex items-center justify-center gap-1 mt-1">
                         <Clock className="h-3 w-3" />
@@ -633,7 +633,7 @@ function TesteDisc({
                   {(alreadyWatched || videoCompleted) ? (
                     <>
                       <ArrowRight className="h-5 w-5 mr-2" />
-                      Iniciar o Teste DISC
+                      Iniciar a Avaliação de Perfil Comportamental
                     </>
                   ) : (
                     <>
@@ -657,7 +657,7 @@ function TesteDisc({
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#0A1E3E]/10 to-[#F5991F]/10 flex items-center justify-center">
           <Brain className="h-8 w-8 text-[#0A1E3E]" />
         </div>
-        <h2 className="text-xl font-bold text-gray-900">Teste de Perfil DISC</h2>
+        <h2 className="text-xl font-bold text-gray-900">Avaliação de Perfil Comportamental</h2>
         <p className="text-gray-500 mt-1 max-w-lg mx-auto">
           Em cada bloco, escolha a afirmação que <strong>MAIS</strong> descreve você e a que <strong>MENOS</strong> descreve você. Não existem respostas certas ou erradas.
         </p>
@@ -830,7 +830,7 @@ function TesteDisc({
             disabled={!todosRespondidos || salvarMutation.isPending}
             className="bg-[#F5991F] hover:bg-[#F5991F]/90 text-white gap-2"
           >
-            {salvarMutation.isPending ? "Salvando..." : "Finalizar Teste DISC"}
+            {salvarMutation.isPending ? "Salvando..." : "Finalizar Avaliação de Perfil Comportamental"}
             <CheckCircle2 className="h-4 w-4" />
           </Button>
         )}
@@ -1217,8 +1217,8 @@ function RelatorioAutoconhecimento({
         <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
           <AlertCircle className="h-8 w-8 text-amber-500" />
         </div>
-        <p className="text-base font-semibold text-gray-700">Teste DISC ainda não preenchido</p>
-        <p className="text-sm text-gray-500 max-w-xs">O relatório de autoconhecimento estará disponível após a realização do Teste DISC no Onboarding.</p>
+        <p className="text-base font-semibold text-gray-700">Avaliação de Perfil Comportamental ainda não preenchida</p>
+        <p className="text-sm text-gray-500 max-w-xs">O relatório de autoconhecimento estará disponível após a realização da Avaliação de Perfil Comportamental no Onboarding.</p>
       </div>
     );
   }
@@ -1260,16 +1260,16 @@ function RelatorioAutoconhecimento({
         </div>
       </div>
 
-      {/* ===== SEÇÃO 1: PERFIL DISC ===== */}
+      {/* ===== SEÇÃO 1: AVALIAÇÃO DE PERFIL COMPORTAMENTAL ===== */}
       <Card className="max-w-3xl mx-auto overflow-hidden">
         <div className="bg-gradient-to-r from-[#0A1E3E] to-[#2a5a8a] p-5 text-white">
           <h3 className="text-lg font-bold flex items-center gap-2">
-            <Brain className="h-5 w-5" /> Seu Perfil DISC
+            <Brain className="h-5 w-5" /> Seu Perfil Comportamental
           </h3>
           <p className="text-white/70 text-sm mt-1">Resultado baseado nas suas respostas ao teste comportamental</p>
         </div>
         <CardContent className="pt-6 space-y-6">
-          {/* Gráfico de barras DISC */}
+          {/* Gráfico de barras do Perfil Comportamental */}
           <div className="space-y-3">
             {(["D", "I", "S", "C"] as DiscDimensao[]).map((dim) => {
               const score = discScores[dim];
@@ -1363,7 +1363,7 @@ function RelatorioAutoconhecimento({
             </div>
           )}
 
-          {/* Contribuições da mentora sobre DISC */}
+          {/* Contribuições da mentora sobre o Perfil Comportamental */}
           {contribuicoesDisc.length > 0 && (
             <div className="border-t pt-4">
               <h5 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
@@ -1474,7 +1474,7 @@ function RelatorioAutoconhecimento({
         <ul className="space-y-2 text-sm text-blue-700">
           <li className="flex items-start gap-2">
             <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            Revise seu perfil DISC e reflita sobre como ele se manifesta no seu dia a dia
+            Revise seu Perfil Comportamental e reflita sobre como ele se manifesta no seu dia a dia
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
@@ -1569,7 +1569,7 @@ export default function EtapaAssessmentCompleta({
 
   // Sub-stepper
   const subSteps = [
-    { id: "disc" as SubEtapa, label: "Teste DISC", icon: Brain },
+    { id: "disc" as SubEtapa, label: "Avaliação de Perfil Comportamental", icon: Brain },
     { id: "autopercepção" as SubEtapa, label: "Autopercepção", icon: Gauge },
     ...(hideRelatorio ? [] : [{ id: "relatorio" as SubEtapa, label: "Relatório", icon: BarChart3 }]),
   ];

@@ -493,7 +493,7 @@ export default function Performance() {
                   </p>
                   <ul className="text-sm text-gray-500 mt-2 space-y-1 text-left">
                     <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /> Seu cadastro foi realizado com sucesso</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /> Seu perfil DISC foi preenchido</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" /> Seu Avaliação de Perfil Comportamental foi preenchida</li>
                     <li className="flex items-center gap-2"><Clock className="h-4 w-4 text-amber-500 shrink-0" /> Aguardando assessment da mentora</li>
                     <li className="flex items-center gap-2"><Lock className="h-4 w-4 text-gray-400 shrink-0" /> Portal completo será liberado após o assessment</li>
                   </ul>
@@ -507,14 +507,14 @@ export default function Performance() {
             </CardContent>
           </Card>
 
-          {/* Aba de Autoconhecimento (DISC) - permitir acesso mesmo sem assessment */}
+          {/* Aba de Autoconhecimento - permitir acesso mesmo sem assessment */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileBarChart className="h-5 w-5 text-primary" />
-                Relatório de Autoconhecimento (DISC)
+                Relatório de Autoconhecimento
               </CardTitle>
-              <CardDescription>Visualize seu perfil DISC preenchido durante o onboarding</CardDescription>
+              <CardDescription>Visualize seu Perfil Comportamental preenchido durante o onboarding</CardDescription>
             </CardHeader>
             <CardContent>
               <Suspense fallback={<div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
@@ -2734,7 +2734,7 @@ export default function Performance() {
             </div>
           </TabsContent>
 
-          {/* === MEU PERFIL DISC === */}
+          {/* === MINHA AVALIAÇÃO DE PERFIL COMPORTAMENTAL === */}
           <TabsContent value="meu-perfil-disc" className="mt-4">
             <Suspense fallback={
               <div className="flex items-center justify-center py-20">

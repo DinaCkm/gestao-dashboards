@@ -135,7 +135,7 @@ function AssessmentContent() {
     { enabled: !!selectedAlunoId }
   );
 
-  // Buscar resultado do teste DISC do aluno
+  // Buscar resultado da Avaliação de Perfil Comportamental do aluno
   const { data: discResultado, refetch: refetchDisc } = trpc.disc.resultado.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
@@ -157,11 +157,11 @@ function AssessmentContent() {
   );
   const [, setLocation] = useLocation();
 
-  // ---- Reset DISC: diálogo de confirmação ----
+  // ---- Reset da Avaliação de Perfil Comportamental: diálogo de confirmação ----
   const [resetDiscDialogOpen, setResetDiscDialogOpen] = useState(false);
   const resetDiscMutation = trpc.disc.resetAluno.useMutation({
     onSuccess: (data) => {
-      toast.success(`Teste DISC de ${data.alunoNome} foi resetado. O aluno poderá refazer o teste.`);
+      toast.success(`Avaliação de Perfil Comportamental de ${data.alunoNome} foi resetado. O aluno poderá refazer o teste.`);
       setResetDiscDialogOpen(false);
       refetchDisc();
     },
@@ -404,16 +404,16 @@ function AssessmentContent() {
               <FileText className="h-5 w-5" />
               Relatório Completo do Aluno
             </CardTitle>
-            <CardDescription>Visão consolidada: DISC, Autopercepção, Minicurrículo e Perfil Pessoal</CardDescription>
+            <CardDescription>Visão consolidada: Avaliação de Perfil Comportamental, Autopercepção, Minicurrículo e Perfil Pessoal</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
 
-            {/* 1. DISC */}
+            {/* 1. Avaliação de Perfil Comportamental */}
             <div className="border rounded-lg p-4 bg-white/60">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-[#0A1E3E] flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-[#F5991F]" />
-                  1. Perfil Comportamental DISC
+                  1. Avaliação de Perfil Comportamental
                 </h4>
                 {isAdmin && discResultado && (
                   <Button
@@ -472,9 +472,9 @@ function AssessmentContent() {
                 <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-amber-800">Teste DISC não realizado</p>
+                    <p className="text-sm font-medium text-amber-800">Avaliação de Perfil Comportamental não realizada</p>
                     <p className="text-xs text-amber-600 mt-0.5">
-                      Este aluno ainda não completou o teste de perfil comportamental DISC no Onboarding.
+                      Este aluno ainda não completou o Avaliação de Perfil Comportamental no Onboarding.
                     </p>
                   </div>
                 </div>
@@ -1268,17 +1268,17 @@ function AssessmentContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo de Confirmação de Reset DISC */}
+      {/* Diálogo de Confirmação de Reset da Avaliação de Perfil Comportamental */}
       <Dialog open={resetDiscDialogOpen} onOpenChange={(open) => { if (!open) setResetDiscDialogOpen(false); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-amber-700">
               <RotateCcw className="h-5 w-5" />
-              Solicitar que Aluno Refaça o Teste DISC
+              Solicitar que Aluno Refaça a Avaliação de Perfil Comportamental
             </DialogTitle>
             <DialogDescription>
-              Esta ação irá <strong>remover todas as respostas e resultados DISC</strong> do aluno <strong>{selectedAluno?.name}</strong>.
-              O aluno verá o teste DISC novamente no Onboarding e poderá refazê-lo.
+              Esta ação irá <strong>remover todas as respostas e resultados da Avaliação de Perfil Comportamental</strong> do aluno <strong>{selectedAluno?.name}</strong>.
+              O aluno verá o Avaliação de Perfil Comportamental novamente no Onboarding e poderá refazê-lo.
             </DialogDescription>
           </DialogHeader>
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">

@@ -1662,7 +1662,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                 {deleteDeps.participations > 0 && <div>Participações em eventos: <strong>{deleteDeps.participations}</strong></div>}
                 {deleteDeps.performance > 0 && <div>Registros de performance: <strong>{deleteDeps.performance}</strong></div>}
                 {deleteDeps.ciclos > 0 && <div>Ciclos de execução: <strong>{deleteDeps.ciclos}</strong></div>}
-                {deleteDeps.disc > 0 && <div>Resultados DISC: <strong>{deleteDeps.disc}</strong></div>}
+                {deleteDeps.disc > 0 && <div>Resultados da Avaliação de Perfil Comportamental: <strong>{deleteDeps.disc}</strong></div>}
                 {deleteDeps.metas > 0 && <div>Metas: <strong>{deleteDeps.metas}</strong></div>}
                 {deleteDeps.contratos > 0 && <div>Contratos: <strong>{deleteDeps.contratos}</strong></div>}
               </div>

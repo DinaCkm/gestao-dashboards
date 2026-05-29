@@ -1051,7 +1051,7 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onCom
 }
 
 // ============================================================
-// ETAPA 2: ASSESSMENT (DISC + Autopercepção + Relatório)
+// ETAPA 2: ASSESSMENT (Avaliação de Perfil Comportamental + Autopercepção + Relatório)
 // Componente importado de TesteDiscOnboarding.tsx
 // ============================================================
 
@@ -3531,7 +3531,7 @@ export default function OnboardingAluno() {
     { enabled: alunoId > 0 }
   );
 
-  // Buscar o contratoNivelId vigente para vincular DISC e autopercepção ao ciclo correto
+  // Buscar o contratoNivelId vigente para vincular Avaliação de Perfil Comportamental e autopercepção ao ciclo correto
   const { data: nivelVigente } = trpc.contratoNiveis.vigente.useQuery(
     { alunoId },
     { enabled: alunoId > 0 }
