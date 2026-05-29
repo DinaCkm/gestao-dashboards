@@ -152,6 +152,7 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Processos Seletivos",
     items: [
       { icon: BriefcaseBusiness, label: "Painel de Processos", path: "/processos-seletivos" },
+      { icon: ClipboardCheck, label: "Avaliação", path: "/processos-seletivos/avaliacao" },
     ],
   },
   {

@@ -1,7 +1,10 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
+  alunos,
+  autopercepcoesCompetencias,
+  competencias,
   discResultados,
   processoAgendaSlots,
   processoAgendasGrupo,
@@ -17,7 +20,7 @@ import {
 } from "../../drizzle/schema";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
-import { buildPsConfirmacaoAgendamentoEmail, sendEmail } from "../emailService";
+import { buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, sendEmail } from "../emailService";
 
 const adminRoles = new Set(["admin", "admin2"]);
 
@@ -910,6 +913,338 @@ export const processosSeletivosRouter = router({
         detalhe: `Regiao ${regiaoAnterior ?? 'sem regiao'} → ${input.novaRegiaoId ?? 'sem regiao'}`,
       });
       return { success: true };
+    }),
+
+  // ── AVALIAÇÃO: Listar entrevistas agendadas de um processo ──
+  listarEntrevistasProcesso: protectedProcedure
+    .input(processoIdInput)
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      await ensureProcessAccess(database, ctx.user, input.processoId);
+      const rows = await database
+        .select({
+          entrevistaId: processoEntrevistas.id,
+          candidatoId: processoEntrevistas.candidatoId,
+          agendaSlotId: processoEntrevistas.agendaSlotId,
+          status: processoEntrevistas.status,
+          linkEntrevista: processoEntrevistas.linkEntrevista,
+          candidatoNome: processoCandidatos.nome,
+          candidatoEmail: processoCandidatos.email,
+          statusResultado: processoCandidatos.statusResultado,
+          dataAgenda: processoAgendaSlots.dataAgenda,
+          inicio: processoAgendaSlots.inicio,
+          fim: processoAgendaSlots.fim,
+        })
+        .from(processoEntrevistas)
+        .innerJoin(processoCandidatos, eq(processoCandidatos.id, processoEntrevistas.candidatoId))
+        .innerJoin(processoAgendaSlots, eq(processoAgendaSlots.id, processoEntrevistas.agendaSlotId))
+        .where(eq(processoEntrevistas.processoId, input.processoId))
+        .orderBy(asc(processoAgendaSlots.dataAgenda), asc(processoAgendaSlots.inicio));
+      return rows;
+    }),
+
+  // ── AVALIAÇÃO: Perfil completo do candidato (DISC + autopercepções < 4 + minicurrículo) ──
+  perfilCandidatoCompleto: protectedProcedure
+    .input(z.object({ candidatoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+
+      // Buscar alunoId via users
+      let alunoId: number | null = null;
+      let minicurriculo: string | null = null;
+      if (candidate.userId) {
+        const [userRow] = await database
+          .select({ alunoId: users.alunoId })
+          .from(users)
+          .where(eq(users.id, candidate.userId))
+          .limit(1);
+        if (userRow?.alunoId) {
+          alunoId = userRow.alunoId;
+          const [alunoRow] = await database
+            .select({ minicurriculo: alunos.minicurriculo })
+            .from(alunos)
+            .where(eq(alunos.id, alunoId))
+            .limit(1);
+          minicurriculo = alunoRow?.minicurriculo ?? null;
+        }
+      }
+
+      // Buscar resultado DISC mais recente
+      let disc = null;
+      if (alunoId) {
+        const [discRow] = await database
+          .select()
+          .from(discResultados)
+          .where(eq(discResultados.alunoId, alunoId))
+          .orderBy(desc(discResultados.completedAt))
+          .limit(1);
+        disc = discRow ?? null;
+      }
+
+      // Buscar autopercepções com nota < 4
+      let autopercepcoesBaixas: { competenciaNome: string; nota: number }[] = [];
+      if (alunoId) {
+        const rows = await database
+          .select({
+            competenciaNome: competencias.nome,
+            nota: autopercepcoesCompetencias.nota,
+          })
+          .from(autopercepcoesCompetencias)
+          .innerJoin(competencias, eq(competencias.id, autopercepcoesCompetencias.competenciaId))
+          .where(
+            and(
+              eq(autopercepcoesCompetencias.alunoId, alunoId),
+              lt(autopercepcoesCompetencias.nota, 4)
+            )
+          )
+          .orderBy(asc(autopercepcoesCompetencias.nota));
+        autopercepcoesBaixas = rows;
+      }
+
+      return {
+        candidato: {
+          id: candidate.id,
+          nome: candidate.nome,
+          email: candidate.email,
+          telefone: candidate.telefone,
+          minicurriculo,
+        },
+        disc,
+        autopercepcoesBaixas,
+      };
+    }),
+
+  // ── AVALIAÇÃO: Reagendar entrevista pelo admin/gestor ──
+  reagendarEntrevista: protectedProcedure
+    .input(z.object({
+      candidatoId: z.number(),
+      novoSlotId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+      // Apenas admin CKM pode reagendar (não o próprio candidato)
+      if (!isCkmAdmin(ctx.user.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem reagendar entrevistas" });
+      }
+
+      // Verificar novo slot
+      const [novoSlot] = await database
+        .select()
+        .from(processoAgendaSlots)
+        .where(eq(processoAgendaSlots.id, input.novoSlotId))
+        .limit(1);
+      if (!novoSlot) throw new TRPCError({ code: "NOT_FOUND", message: "Slot nao encontrado" });
+      if (novoSlot.candidatoId && novoSlot.candidatoId !== input.candidatoId) {
+        throw new TRPCError({ code: "CONFLICT", message: "Este horario ja esta reservado por outro candidato" });
+      }
+
+      // Buscar entrevista atual
+      const [entrevistaAtual] = await database
+        .select()
+        .from(processoEntrevistas)
+        .where(eq(processoEntrevistas.candidatoId, input.candidatoId))
+        .orderBy(desc(processoEntrevistas.createdAt))
+        .limit(1);
+
+      // Liberar slot anterior
+      if (entrevistaAtual) {
+        await database
+          .update(processoAgendaSlots)
+          .set({ candidatoId: null, status: "disponivel" })
+          .where(eq(processoAgendaSlots.id, entrevistaAtual.agendaSlotId));
+        // Atualizar entrevista existente
+        await database
+          .update(processoEntrevistas)
+          .set({
+            agendaSlotId: input.novoSlotId,
+            linkEntrevista: novoSlot.linkEntrevista ?? entrevistaAtual.linkEntrevista,
+            status: "reagendada",
+          })
+          .where(eq(processoEntrevistas.id, entrevistaAtual.id));
+      } else {
+        // Criar nova entrevista
+        await database.insert(processoEntrevistas).values({
+          processoId: candidate.processoId,
+          candidatoId: input.candidatoId,
+          agendaSlotId: input.novoSlotId,
+          linkEntrevista: novoSlot.linkEntrevista ?? null,
+          status: "agendada",
+        });
+      }
+
+      // Reservar novo slot
+      await database
+        .update(processoAgendaSlots)
+        .set({ candidatoId: input.candidatoId, status: "reservado" })
+        .where(eq(processoAgendaSlots.id, input.novoSlotId));
+
+      // Atualizar statusEntrevista do candidato
+      await database
+        .update(processoCandidatos)
+        .set({ statusEntrevista: "agendada" })
+        .where(eq(processoCandidatos.id, input.candidatoId));
+
+      // Registrar log
+      await writeLog(database, {
+        processoId: candidate.processoId,
+        candidatoId: input.candidatoId,
+        userId: ctx.user.id,
+        acao: "reagendamento_admin",
+        detalhe: `Reagendado para ${novoSlot.dataAgenda} ${novoSlot.inicio}–${novoSlot.fim}`,
+      });
+
+      // Buscar processo para o e-mail
+      const [processo] = await database
+        .select({ nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome })
+        .from(processosSeletivos)
+        .where(eq(processosSeletivos.id, candidate.processoId))
+        .limit(1);
+
+      // Formatar data
+      const [ano, mes, dia] = novoSlot.dataAgenda.split("-");
+      const dataFormatada = `${dia}/${mes}/${ano}`;
+
+      // Enviar e-mail ao candidato
+      if (candidate.email) {
+        const emailData = buildPsReagendamentoEmail({
+          candidatoNome: candidate.nome,
+          processoNome: processo?.nome ?? "Processo Seletivo",
+          clienteNome: processo?.clienteNome ?? "",
+          dataEntrevista: dataFormatada,
+          horaInicio: novoSlot.inicio,
+          horaFim: novoSlot.fim,
+          linkEntrevista: novoSlot.linkEntrevista ?? null,
+          loginUrl: "https://ecolider.ecodobem.com/login",
+        });
+        await sendEmail({
+          to: candidate.email,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text,
+        });
+      }
+
+      return { success: true, novoSlot };
+    }),
+
+  // ── AVALIAÇÃO: Registrar decisão com justificativa obrigatória ──
+  registrarDecisao: protectedProcedure
+    .input(z.object({
+      candidatoId: z.number(),
+      decisao: z.enum(["aprovado", "reprovado"]),
+      justificativa: z.string().min(1, "Justificativa é obrigatória"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+      if (!isCkmAdmin(ctx.user.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores CKM podem registrar decisoes" });
+      }
+
+      const decisaoAnterior = candidate.statusResultado;
+
+      // Upsert em processo_resultados
+      const [existingResult] = await database
+        .select({ id: processoResultados.id })
+        .from(processoResultados)
+        .where(eq(processoResultados.candidatoId, input.candidatoId))
+        .limit(1);
+      if (existingResult) {
+        await database
+          .update(processoResultados)
+          .set({ resultado: input.decisao, parecer: input.justificativa, registradoPor: ctx.user.id })
+          .where(eq(processoResultados.id, existingResult.id));
+      } else {
+        await database.insert(processoResultados).values({
+          processoId: candidate.processoId,
+          candidatoId: input.candidatoId,
+          resultado: input.decisao,
+          parecer: input.justificativa,
+          registradoPor: ctx.user.id,
+        });
+      }
+
+      // Atualizar statusResultado no candidato
+      await database
+        .update(processoCandidatos)
+        .set({ statusResultado: input.decisao })
+        .where(eq(processoCandidatos.id, input.candidatoId));
+
+      // Registrar no histórico (processo_logs)
+      await writeLog(database, {
+        processoId: candidate.processoId,
+        candidatoId: input.candidatoId,
+        userId: ctx.user.id,
+        acao: decisaoAnterior === "pendente" ? "decisao_registrada" : "decisao_alterada",
+        detalhe: input.decisao,
+        metadata: {
+          decisaoAnterior,
+          novaDecisao: input.decisao,
+          justificativa: input.justificativa,
+          tipo: decisaoAnterior === "pendente" ? "primeira_decisao" : "alteracao",
+        },
+      });
+
+      return { success: true };
+    }),
+
+  // ── AVALIAÇÃO: Histórico de decisões de um candidato ──
+  historicoDecisoesCandidato: protectedProcedure
+    .input(z.object({ candidatoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select({ processoId: processoCandidatos.processoId })
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+
+      const logs = await database
+        .select({
+          id: processoLogs.id,
+          acao: processoLogs.acao,
+          detalhe: processoLogs.detalhe,
+          metadata: processoLogs.metadata,
+          createdAt: processoLogs.createdAt,
+          userId: processoLogs.userId,
+          userName: users.name,
+        })
+        .from(processoLogs)
+        .leftJoin(users, eq(users.id, processoLogs.userId))
+        .where(
+          and(
+            eq(processoLogs.candidatoId, input.candidatoId),
+            or(
+              eq(processoLogs.acao, "decisao_registrada"),
+              eq(processoLogs.acao, "decisao_alterada")
+            )
+          )
+        )
+        .orderBy(desc(processoLogs.createdAt));
+
+      return logs;
     }),
 
   // Obter entrevista agendada do candidato
