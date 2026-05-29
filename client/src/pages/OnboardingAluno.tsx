@@ -603,6 +603,15 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onCom
 
   const handleSalvar = async () => {
     if (!alunoId || alunoId === 0) { toast.error("Erro: aluno não identificado."); return; }
+    if (!perfil.telefone || perfil.telefone.trim().length < 8) {
+      toast.error("O campo Telefone é obrigatório."); return;
+    }
+    if (!perfil.cargo || perfil.cargo.trim().length < 2) {
+      toast.error("O campo Cargo é obrigatório."); return;
+    }
+    if (!perfil.areaAtuacao || perfil.areaAtuacao.trim().length < 2) {
+      toast.error("O campo Área de Atuação é obrigatório."); return;
+    }
     if (!perfil.minicurriculo || perfil.minicurriculo.trim().length < 10) {
       toast.error("O campo Minicurrículo é obrigatório (mínimo 10 caracteres)."); return;
     }
@@ -707,7 +716,7 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onCom
                 <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} disabled={readOnly} /></div>
               <div><label className="text-sm font-medium text-gray-700">Email</label>
                 <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly} /></div>
-              <div><label className="text-sm font-medium text-gray-700">Telefone</label>
+              <div><label className="text-sm font-medium text-gray-700">Telefone <span className="text-red-500">*</span></label>
                 <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} /></div>
               <div><label className="text-sm font-medium text-gray-700">Empresa</label>
                 <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} /></div>
@@ -745,9 +754,9 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onCom
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-sm font-medium text-gray-700">Cargo</label>
+              <div><label className="text-sm font-medium text-gray-700">Cargo <span className="text-red-500">*</span></label>
                 <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} disabled={readOnly} /></div>
-              <div><label className="text-sm font-medium text-gray-700">Área de Atuação</label>
+              <div><label className="text-sm font-medium text-gray-700">Área de Atuação <span className="text-red-500">*</span></label>
                 <Input value={perfil.areaAtuacao} onChange={(e) => setPerfil({...perfil, areaAtuacao: e.target.value})} disabled={readOnly} /></div>
             </div>
             <div><label className="text-sm font-medium text-gray-700">Minicurrículo <span className="text-red-500">*</span></label>
