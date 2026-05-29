@@ -738,7 +738,7 @@ export const appRouter = router({
               candidatoName: input.name,
               candidatoEmail: input.email,
               cpf: input.cpf.replace(/[.\-]/g, ''),
-              loginUrl: 'https://ecolider.ecodobem.com/candidato-ps',
+              loginUrl: 'https://ecolider.ecodobem.com/login',
             });
           } else {
             // Aluno da trilha de desenvolvimento

@@ -142,7 +142,7 @@ export async function verificarEEnviarLembreteD1(dryRun = false): Promise<{
           horaInicio: e.inicio,
           horaFim: e.fim,
           linkEntrevista: e.linkEntrevista ?? null,
-          loginUrl: `${LOGIN_URL}/candidato-ps`,
+          loginUrl: `${LOGIN_URL}/login`,
         });
         const result = await sendEmail({
           to: e.candidatoEmail,

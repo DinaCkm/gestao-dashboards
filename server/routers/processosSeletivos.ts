@@ -795,7 +795,7 @@ export const processosSeletivosRouter = router({
             horaInicio: slot.inicio,
             horaFim: slot.fim,
             linkEntrevista: slot.linkEntrevista ?? null,
-            loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/candidato-ps`,
+            loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/login`,
           });
           await sendEmail({ to: candidate.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
         }
