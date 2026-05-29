@@ -384,7 +384,7 @@ export const processosSeletivosRouter = router({
   listarRegioes: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);
-    return database.select().from(processoRegioes).where(eq(processoRegioes.processoId, input.processoId));
+    return database.select().from(processoRegioes).where(and(eq(processoRegioes.processoId, input.processoId), ne(processoRegioes.status, "encerrada")));
   }),
 
   criarRegiao: protectedProcedure
@@ -402,10 +402,36 @@ export const processosSeletivosRouter = router({
       return { id: Number(result[0].insertId), success: true };
     }),
 
+  inativarRegiao: protectedProcedure
+    .input(z.object({ regiaoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [regiao] = await database.select({ id: processoRegioes.id, processoId: processoRegioes.processoId, nome: processoRegioes.nome })
+        .from(processoRegioes).where(eq(processoRegioes.id, input.regiaoId)).limit(1);
+      if (!regiao) throw new TRPCError({ code: "NOT_FOUND", message: "Regiao nao encontrada" });
+      await database.update(processoRegioes).set({ status: "encerrada" }).where(eq(processoRegioes.id, input.regiaoId));
+      await writeLog(database, { processoId: regiao.processoId, userId: ctx.user.id, acao: "regiao_inativada", detalhe: regiao.nome });
+      return { success: true };
+    }),
+
+  inativarCandidato: protectedProcedure
+    .input(z.object({ candidatoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [candidato] = await database.select({ id: processoCandidatos.id, processoId: processoCandidatos.processoId, nome: processoCandidatos.nome })
+        .from(processoCandidatos).where(eq(processoCandidatos.id, input.candidatoId)).limit(1);
+      if (!candidato) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await database.update(processoCandidatos).set({ statusCadastro: "inativo" }).where(eq(processoCandidatos.id, input.candidatoId));
+      await writeLog(database, { processoId: candidato.processoId, userId: ctx.user.id, acao: "candidato_inativado", detalhe: candidato.nome });
+      return { success: true };
+    }),
+
   listarCandidatos: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);
-    const rows = await database.select().from(processoCandidatos).where(eq(processoCandidatos.processoId, input.processoId)).orderBy(asc(processoCandidatos.nome));
+    const rows = await database.select().from(processoCandidatos).where(and(eq(processoCandidatos.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo"))).orderBy(asc(processoCandidatos.nome));
     if (isCkmAdmin(ctx.user.role)) return rows;
     // Mentora: ver todos os candidatos do processo
     const userConsultorId = (ctx.user as any).consultorId as number | null;

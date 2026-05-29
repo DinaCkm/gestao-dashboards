@@ -184,6 +184,13 @@ function AvaliacaoContent() {
     },
     onError: (e) => toast.error(e.message),
   });
+  const inativarCandidato = trpc.processosSeletivos.inativarCandidato.useMutation({
+    onSuccess: () => {
+      toast.success("Candidato removido da lista.");
+      utils.processosSeletivos.listarCandidatos.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const reagendarEntrevista = trpc.processosSeletivos.reagendarEntrevista.useMutation({
     onSuccess: () => {
@@ -596,6 +603,19 @@ function AvaliacaoContent() {
                               <History className="h-3.5 w-3.5" />
                             </Button>
 
+                            {/* Remover da lista */}
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                title="Remover da lista"
+                                className="text-muted-foreground hover:text-destructive h-7 w-7 p-0"
+                                disabled={inativarCandidato.isPending}
+                                onClick={() => { if (confirm(`Remover "${c.nome}" da lista de avaliação?`)) inativarCandidato.mutate({ candidatoId: c.id }); }}
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                             {/* Habilitar / Inabilitar / Alterar */}
                             {isAdmin && (
                               <>

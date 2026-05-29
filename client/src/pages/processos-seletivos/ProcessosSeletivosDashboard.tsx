@@ -151,6 +151,10 @@ function ProcessosSeletivosContent() {
     },
     onError: (err) => toast.error(err.message),
   });
+  const inativarRegiao = trpc.processosSeletivos.inativarRegiao.useMutation({
+    onSuccess: async () => { toast.success("Regiao inativada."); await invalidateProcesso(); },
+    onError: (err) => toast.error(err.message),
+  });
 
   const criarCandidato = trpc.processosSeletivos.criarCandidato.useMutation({
     onSuccess: async () => {
@@ -506,10 +510,21 @@ function ProcessosSeletivosContent() {
                     {regioes.map((regiao) => (
                       <div key={regiao.id} className="flex items-center gap-3 rounded-lg border p-3 text-sm">
                         <MapPin className="h-4 w-4 text-primary" />
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium">{regiao.nome}</div>
                           <div className="text-muted-foreground">{regiao.vagasPrevistas} vagas previstas</div>
                         </div>
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            title="Inativar região"
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            disabled={inativarRegiao.isPending}
+                            onClick={() => { if (confirm(`Inativar a região "${regiao.nome}"? Ela deixará de aparecer nas listas.`)) inativarRegiao.mutate({ regiaoId: regiao.id }); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
