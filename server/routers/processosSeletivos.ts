@@ -284,22 +284,23 @@ export const processosSeletivosRouter = router({
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);
 
+    const ativo = ne(processoCandidatos.statusCadastro, "inativo");
     const [candidatos] = await database
       .select({ total: sql<number>`count(*)` })
       .from(processoCandidatos)
-      .where(eq(processoCandidatos.processoId, input.processoId));
+      .where(and(eq(processoCandidatos.processoId, input.processoId), ativo));
     const [testesConcluidos] = await database
       .select({ total: sql<number>`count(*)` })
       .from(processoCandidatos)
-      .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.statusTeste, "concluido")));
+      .where(and(eq(processoCandidatos.processoId, input.processoId), ativo, eq(processoCandidatos.statusTeste, "concluido")));
     const [entrevistasAgendadas] = await database
       .select({ total: sql<number>`count(*)` })
       .from(processoCandidatos)
-      .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.statusEntrevista, "agendada")));
+      .where(and(eq(processoCandidatos.processoId, input.processoId), ativo, eq(processoCandidatos.statusEntrevista, "agendada")));
     const [aprovados] = await database
       .select({ total: sql<number>`count(*)` })
       .from(processoCandidatos)
-      .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.statusResultado, "aprovado")));
+      .where(and(eq(processoCandidatos.processoId, input.processoId), ativo, eq(processoCandidatos.statusResultado, "aprovado")));
     const [slotsLivres] = await database
       .select({ total: sql<number>`count(*)` })
       .from(processoAgendaSlots)
