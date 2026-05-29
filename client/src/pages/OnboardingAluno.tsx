@@ -603,20 +603,41 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onCom
 
   const handleSalvar = async () => {
     if (!alunoId || alunoId === 0) { toast.error("Erro: aluno não identificado."); return; }
+    // Dados Pessoais obrigatórios
     if (!perfil.telefone || perfil.telefone.trim().length < 8) {
-      toast.error("O campo Telefone é obrigatório."); return;
+      toast.error("Preencha o campo Telefone."); return;
     }
+    if (!perfil.empresa || perfil.empresa.trim().length < 2) {
+      toast.error("Preencha o campo Empresa."); return;
+    }
+    if (!dataNascimento) {
+      toast.error("Preencha o campo Data de Nascimento."); return;
+    }
+    if (!estadoCivil) {
+      toast.error("Preencha o campo Estado Civil."); return;
+    }
+    // Dados Profissionais obrigatórios
     if (!perfil.cargo || perfil.cargo.trim().length < 2) {
-      toast.error("O campo Cargo é obrigatório."); return;
+      toast.error("Preencha o campo Cargo."); return;
     }
     if (!perfil.areaAtuacao || perfil.areaAtuacao.trim().length < 2) {
-      toast.error("O campo Área de Atuação é obrigatório."); return;
+      toast.error("Preencha o campo Área de Atuação."); return;
     }
     if (!perfil.minicurriculo || perfil.minicurriculo.trim().length < 10) {
-      toast.error("O campo Minicurrículo é obrigatório (mínimo 10 caracteres)."); return;
+      toast.error("Preencha o campo Minicurrículo (mínimo 10 caracteres)."); return;
     }
     if (!perfil.quemEVoce || perfil.quemEVoce.trim().length < 10) {
-      toast.error("O campo 'Quem é você' é obrigatório (mínimo 10 caracteres)."); return;
+      toast.error("Preencha o campo 'Quem é você?' (mínimo 10 caracteres)."); return;
+    }
+    // Expectativas obrigatórias
+    if (!expectCurto || expectCurto.trim().length < 5) {
+      toast.error("Preencha o campo Expectativa de Curto Prazo."); return;
+    }
+    if (!expectMedio || expectMedio.trim().length < 5) {
+      toast.error("Preencha o campo Expectativa de Médio Prazo."); return;
+    }
+    if (!expectLongo || expectLongo.trim().length < 5) {
+      toast.error("Preencha o campo Expectativa de Longo Prazo."); return;
     }
     // Validar cursos extracurriculares: máx 3 e carga horária > 16h
     const cursosInvalidos = cursos.filter(c => parseInt(c.cargaHoraria) <= 16);
@@ -718,11 +739,11 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onCom
                 <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly} /></div>
               <div><label className="text-sm font-medium text-gray-700">Telefone <span className="text-red-500">*</span></label>
                 <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} /></div>
-              <div><label className="text-sm font-medium text-gray-700">Empresa</label>
+              <div><label className="text-sm font-medium text-gray-700">Empresa <span className="text-red-500">*</span></label>
                 <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} /></div>
-              <div><label className="text-sm font-medium text-gray-700">Data de Nascimento</label>
+              <div><label className="text-sm font-medium text-gray-700">Data de Nascimento <span className="text-red-500">*</span></label>
                 <Input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} disabled={readOnly} /></div>
-              <div><label className="text-sm font-medium text-gray-700">Estado Civil</label>
+              <div><label className="text-sm font-medium text-gray-700">Estado Civil <span className="text-red-500">*</span></label>
                 <Select value={estadoCivil} onValueChange={setEstadoCivil} disabled={readOnly}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
@@ -775,11 +796,11 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onCom
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div><label className="text-sm font-medium text-gray-700">Curto prazo (até 1 ano)</label>
+          <div><label className="text-sm font-medium text-gray-700">Curto prazo (até 1 ano) <span className="text-red-500">*</span></label>
             <Textarea value={expectCurto} onChange={(e) => setExpectCurto(e.target.value)} placeholder="O que você espera alcançar no curto prazo?" rows={2} className="resize-none" disabled={readOnly} /></div>
-          <div><label className="text-sm font-medium text-gray-700">Médio prazo (1 a 3 anos)</label>
+          <div><label className="text-sm font-medium text-gray-700">Médio prazo (1 a 3 anos) <span className="text-red-500">*</span></label>
             <Textarea value={expectMedio} onChange={(e) => setExpectMedio(e.target.value)} placeholder="Quais são seus objetivos para os próximos 1 a 3 anos?" rows={2} className="resize-none" disabled={readOnly} /></div>
-          <div><label className="text-sm font-medium text-gray-700">Longo prazo (acima de 3 anos)</label>
+          <div><label className="text-sm font-medium text-gray-700">Longo prazo (acima de 3 anos) <span className="text-red-500">*</span></label>
             <Textarea value={expectLongo} onChange={(e) => setExpectLongo(e.target.value)} placeholder="Qual é a sua visão de futuro profissional a longo prazo?" rows={2} className="resize-none" disabled={readOnly} /></div>
         </CardContent>
       </Card>
