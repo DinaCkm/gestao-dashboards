@@ -197,6 +197,7 @@ function AvaliacaoContent() {
   });
 
   const [novoSlotId, setNovoSlotId] = useState<number | null>(null);
+  const [filtroRegiaoAprovados, setFiltroRegiaoAprovados] = useState<string>("todas");
 
   // ── Candidatos filtrados ──────────────────────────────────────────────────────
 
@@ -653,6 +654,100 @@ function AvaliacaoContent() {
               )}
             </CardContent>
           </Card>
+          {/* ── Aprovados por Região ── */}
+          {(() => {
+            const regioesList = regioes as Regiao[];
+            const candidatosList = candidatos as Candidato[];
+
+            // Candidatos aprovados (habilitados)
+            const aprovados = candidatosList.filter((c) => c.statusResultado === "aprovado");
+
+            // Regiões que têm pelo menos um aprovado (para o seletor)
+            const regioesComAprovados = regioesList.filter((r) =>
+              aprovados.some((c) => c.regiaoId === r.id)
+            );
+            // Também incluir "sem região" se houver aprovados sem região
+            const aprovadosSemRegiao = aprovados.filter((c) => !c.regiaoId);
+
+            // Filtrar aprovados pela região selecionada
+            const aprovadosFiltrados =
+              filtroRegiaoAprovados === "todas"
+                ? aprovados
+                : filtroRegiaoAprovados === "sem_regiao"
+                ? aprovadosSemRegiao
+                : aprovados.filter((c) => String(c.regiaoId) === filtroRegiaoAprovados);
+
+            if (aprovados.length === 0) return null;
+
+            return (
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      Aprovados por Região ({aprovadosFiltrados.length})
+                    </CardTitle>
+                    <Select value={filtroRegiaoAprovados} onValueChange={setFiltroRegiaoAprovados}>
+                      <SelectTrigger className="h-8 text-xs w-48">
+                        <SelectValue placeholder="Todas as regiões" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todas">Todas as regiões</SelectItem>
+                        {regioesComAprovados.map((r) => (
+                          <SelectItem key={r.id} value={String(r.id)}>{r.nome}</SelectItem>
+                        ))}
+                        {aprovadosSemRegiao.length > 0 && (
+                          <SelectItem value="sem_regiao">Sem região definida</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {aprovadosFiltrados.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-6">
+                      Nenhum candidato habilitado nesta região.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {aprovadosFiltrados.map((c) => {
+                        const regiaoNome = regioesList.find((r) => r.id === c.regiaoId)?.nome;
+                        const entrevistaCandidato = (entrevistas as Entrevista[]).find(
+                          (e) => e.candidatoId === c.id
+                        );
+                        return (
+                          <div
+                            key={c.id}
+                            className="border border-emerald-200 bg-emerald-50 rounded-lg p-4 space-y-2"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-semibold text-sm text-[#0f2b3c]">{c.nome}</p>
+                                <p className="text-xs text-muted-foreground">{c.email}</p>
+                              </div>
+                              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 shrink-0">
+                                Habilitado
+                              </Badge>
+                            </div>
+                            {regiaoNome && (
+                              <p className="text-xs text-slate-500">
+                                📍 {regiaoNome}
+                              </p>
+                            )}
+                            {entrevistaCandidato && (
+                              <p className="text-xs text-slate-500">
+                                📅 {formatarData(entrevistaCandidato.dataAgenda)} · {entrevistaCandidato.inicio}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
         </>
       )}
 
