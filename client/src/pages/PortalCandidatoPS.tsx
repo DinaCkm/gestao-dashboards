@@ -203,6 +203,11 @@ export default function PortalCandidatoPS() {
   const { data: candidato, refetch: refetchCandidato } = trpc.processosSeletivos.meusDadosCandidato.useQuery(undefined, {
     enabled: !!user,
   });
+  // Mutation para registrar conclusão dos testes no banco
+  const registrarConclusaoMutation = trpc.processosSeletivos.registrarConclusaoTeste.useMutation({
+    onSuccess: () => { refetchCandidato(); },
+    onError: () => { /* ignora erro silenciosamente, a lógica local já avança */ },
+  });
 
   const alunoId = onboardingStatus?.alunoId ?? 0;
   const processoId = onboardingStatus?.processoSeletivoId ?? 0;
@@ -287,6 +292,10 @@ export default function PortalCandidatoPS() {
                 refetchCandidato();
                 refetchDisc();
                 refetchAutopercep();
+                // Registrar conclusão no banco (processo_candidatos.statusTeste = 'concluido')
+                if (candidato?.id) {
+                  registrarConclusaoMutation.mutate({ candidatoId: candidato.id });
+                }
               }}
               readOnly={false}
               labelContinuar="Continuar para Agendamento"
