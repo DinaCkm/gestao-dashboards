@@ -31,6 +31,8 @@ export default function AutoRegistro() {
   const { data: empresas, isLoading: loadingEmpresas } = trpc.auth.listEmpresas.useQuery(undefined, { enabled: modo === "desenvolvimento" });
   const { data: processos, isLoading: loadingProcessos } = trpc.processosSeletivos.listProcessosAtivos.useQuery(undefined, { enabled: modo === "processo_seletivo" });
 
+  const [emailJaExiste, setEmailJaExiste] = useState(false);
+
   const registroMutation = trpc.auth.autoRegistro.useMutation({
     onSuccess: (data) => {
       if (data.success) {
@@ -41,7 +43,15 @@ export default function AutoRegistro() {
       setLoading(false);
     },
     onError: (err) => {
-      setError(err.message || "Erro ao criar cadastro. Tente novamente.");
+      const msg = err.message || "";
+      // Detectar se o erro é de email já cadastrado
+      if (msg.includes("já existe") || msg.includes("já cadastrado") || msg.includes("already")) {
+        setEmailJaExiste(true);
+        setError(null);
+      } else {
+        setError(msg || "Erro ao criar cadastro. Tente novamente.");
+        setEmailJaExiste(false);
+      }
       setLoading(false);
     },
   });
@@ -291,6 +301,23 @@ export default function AutoRegistro() {
                     ? "Preencha seus dados para participar do processo seletivo."
                     : "Preencha seus dados para acessar a plataforma de desenvolvimento."}
                 </p>
+
+                {emailJaExiste && (
+                  <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: "12px", padding: "16px", marginBottom: "20px", textAlign: "center" }}>
+                    <div style={{ fontSize: "15px", fontWeight: "700", color: "#92400e", marginBottom: "6px" }}>
+                      Este e-mail já está cadastrado
+                    </div>
+                    <div style={{ fontSize: "13px", color: "#78350f", marginBottom: "14px", lineHeight: "1.5" }}>
+                      Você já possui acesso. Use seu e-mail e CPF para entrar no portal.
+                    </div>
+                    <a
+                      href="/login"
+                      style={{ display: "inline-block", background: "#0A1E3E", color: "#fff", fontWeight: "700", fontSize: "14px", borderRadius: "8px", padding: "10px 24px", textDecoration: "none" }}
+                    >
+                      Ir para o login
+                    </a>
+                  </div>
+                )}
 
                 {error && (
                   <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "10px", padding: "12px 14px", marginBottom: "20px", color: "#dc2626", fontSize: "14px", lineHeight: "1.4" }}>

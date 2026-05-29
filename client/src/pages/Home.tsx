@@ -70,8 +70,11 @@ export default function Home() {
     if (user.role === "user") {
       // Verificar se precisa de onboarding
       if (onboardingStatus) {
-        if (onboardingStatus.needsOnboarding) {
-          // Aluno sem PDI ou admin liberou novo ciclo → vai para onboarding
+        // Candidato de processo seletivo → sempre vai para o portal PS
+        if ((onboardingStatus as any).tipoPortal === 'processo_seletivo') {
+          setLocation('/candidato-ps');
+        } else if (onboardingStatus.needsOnboarding) {
+          // Aluno novo sem aceite → vai para onboarding
           setLocation("/onboarding");
         } else {
           // Aluno com PDI → vai direto para o mural
