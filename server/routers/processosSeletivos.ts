@@ -16,6 +16,7 @@ import {
   processoResultados,
   processosSeletivos,
   processoVagas,
+  programs,
   users,
 } from "../../drizzle/schema";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
@@ -231,15 +232,33 @@ export const processosSeletivosRouter = router({
     }
 
     // Mentora: ver processos onde ela é a mentora responsável
-    // Gerente NÃO entra neste bloco — usa o filtro por processoClienteUsuarios abaixo
+    // Gerente NÃO entra neste bloco — usa o filtro por empresa abaixo
     const userConsultorId = (ctx.user as any).consultorId as number | null;
     const userConsultorRole = (ctx.user as any).consultorRole as string | null;
+    const userManagedProgramId = (ctx.user as any).managedProgramId as number | null;
     if (userConsultorId && userConsultorRole !== 'gerente') {
       return database
         .select()
         .from(processosSeletivos)
         .where(eq(processosSeletivos.mentorId, userConsultorId))
         .orderBy(desc(processosSeletivos.createdAt));
+    }
+
+    // Gerente: filtrar por empresa (clienteNome = nome do programa gerenciado)
+    if (userConsultorRole === 'gerente' && userManagedProgramId) {
+      const [prog] = await database
+        .select({ name: programs.name })
+        .from(programs)
+        .where(eq(programs.id, userManagedProgramId))
+        .limit(1);
+      if (prog?.name) {
+        return database
+          .select()
+          .from(processosSeletivos)
+          .where(eq(processosSeletivos.clienteNome, prog.name))
+          .orderBy(desc(processosSeletivos.createdAt));
+      }
+      return [];
     }
 
     const clienteLinks = await database

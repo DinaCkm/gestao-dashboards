@@ -216,12 +216,12 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   if (result.length === 0) return undefined;
   const user = result[0];
-  // Enriquecer com consultorRole (mentor/gerente) se o user tem consultorId
+  // Enriquecer com consultorRole e managedProgramId se o user tem consultorId
   if (user.consultorId) {
-    const [consultor] = await db.select({ role: consultors.role }).from(consultors).where(eq(consultors.id, user.consultorId)).limit(1);
-    return { ...user, consultorRole: consultor?.role || null } as typeof user & { consultorRole: string | null };
+    const [consultor] = await db.select({ role: consultors.role, managedProgramId: consultors.managedProgramId }).from(consultors).where(eq(consultors.id, user.consultorId)).limit(1);
+    return { ...user, consultorRole: consultor?.role || null, managedProgramId: consultor?.managedProgramId || null } as typeof user & { consultorRole: string | null; managedProgramId: number | null };
   }
-  return { ...user, consultorRole: null } as typeof user & { consultorRole: string | null };
+  return { ...user, consultorRole: null, managedProgramId: null } as typeof user & { consultorRole: string | null; managedProgramId: number | null };
 }
 
 export async function getAllUsers() {
