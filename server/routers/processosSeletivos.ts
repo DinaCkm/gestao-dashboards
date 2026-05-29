@@ -745,8 +745,27 @@ export const processosSeletivosRouter = router({
         .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.userId, ctx.user.id)))
         .limit(1);
       if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado neste processo" });
+      // Verificar se testes foram concluídos: statusTeste=concluido OU candidato tem resultado DISC no banco
       if (candidate.statusTeste !== "concluido") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Voce precisa concluir os testes antes de agendar" });
+        // Verificar se há resultado DISC para o aluno (fonte de verdade alternativa)
+        const alunoId = (ctx.user as any).alunoId as number | null;
+        let discOk = false;
+        if (alunoId) {
+          const [discRow] = await database
+            .select({ id: discResultados.id })
+            .from(discResultados)
+            .where(eq(discResultados.alunoId, alunoId))
+            .limit(1);
+          discOk = !!discRow;
+        }
+        if (!discOk) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Voce precisa concluir os testes antes de agendar" });
+        }
+        // Testes concluídos mas statusTeste desatualizado — corrigir automaticamente
+        await database
+          .update(processoCandidatos)
+          .set({ statusTeste: "concluido", testeConcluidoEm: new Date() })
+          .where(eq(processoCandidatos.id, candidate.id));
       }
       // Verificar se o slot está disponível
       const [slot] = await database
