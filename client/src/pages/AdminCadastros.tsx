@@ -3190,6 +3190,13 @@ const ADMIN_PAGE_GROUPS = [
     ],
   },
   {
+    group: 'Processos Seletivos',
+    pages: [
+      { path: '/processos-seletivos', label: 'Painel de Processos' },
+      { path: '/processos-seletivos/avaliacao', label: 'Avaliação' },
+    ],
+  },
+  {
     group: 'Parametrização',
     pages: [
       { path: '/cadastros', label: 'Cadastros' },
