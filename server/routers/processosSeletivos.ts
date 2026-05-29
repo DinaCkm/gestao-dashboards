@@ -231,8 +231,10 @@ export const processosSeletivosRouter = router({
     }
 
     // Mentora: ver processos onde ela é a mentora responsável
+    // Gerente NÃO entra neste bloco — usa o filtro por processoClienteUsuarios abaixo
     const userConsultorId = (ctx.user as any).consultorId as number | null;
-    if (userConsultorId) {
+    const userConsultorRole = (ctx.user as any).consultorRole as string | null;
+    if (userConsultorId && userConsultorRole !== 'gerente') {
       return database
         .select()
         .from(processosSeletivos)

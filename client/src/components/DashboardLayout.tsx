@@ -244,8 +244,8 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: ClipboardCheck, label: "Avaliação PS", path: "/processos-seletivos/avaliacao", roles: ["manager"], requireConsultorRole: 'gerente' },
-  // === PROCESSOS SELETIVOS (apenas aluno) ===
-  { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos", roles: ["user"] },
+  // === PROCESSOS SELETIVOS ===
+  { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos", roles: ["user", "manager"] },
 
   
   // === ALUNO ===
