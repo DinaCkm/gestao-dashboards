@@ -1026,7 +1026,7 @@ export const processosSeletivosRouter = router({
         .from(processoEntrevistas)
         .innerJoin(processoCandidatos, eq(processoCandidatos.id, processoEntrevistas.candidatoId))
         .innerJoin(processoAgendaSlots, eq(processoAgendaSlots.id, processoEntrevistas.agendaSlotId))
-        .where(eq(processoEntrevistas.processoId, input.processoId))
+        .where(and(eq(processoEntrevistas.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo")))
         .orderBy(asc(processoAgendaSlots.dataAgenda), asc(processoAgendaSlots.inicio));
       return rows;
     }),
