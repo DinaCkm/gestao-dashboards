@@ -460,6 +460,18 @@ export const processosSeletivosRouter = router({
         .from(processoCandidatos).where(eq(processoCandidatos.id, input.candidatoId)).limit(1);
       if (!candidato) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
       await database.update(processoCandidatos).set({ statusCadastro: "inativo" }).where(eq(processoCandidatos.id, input.candidatoId));
+      // Liberar slots de entrevista reservados para este candidato
+      const entrevistas = await database
+        .select({ agendaSlotId: processoEntrevistas.agendaSlotId })
+        .from(processoEntrevistas)
+        .where(eq(processoEntrevistas.candidatoId, input.candidatoId));
+      for (const e of entrevistas) {
+        if (e.agendaSlotId) {
+          await database.update(processoAgendaSlots)
+            .set({ status: "disponivel", candidatoId: null })
+            .where(eq(processoAgendaSlots.id, e.agendaSlotId));
+        }
+      }
       await writeLog(database, { processoId: candidato.processoId, userId: ctx.user.id, acao: "candidato_inativado", detalhe: candidato.nome });
       return { success: true };
     }),
