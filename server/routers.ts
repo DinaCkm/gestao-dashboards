@@ -694,7 +694,15 @@ export const appRouter = router({
         if (input.processoSeletivoId && result.alunoId) {
           try {
             const database = await getDb();
-            const { processoCandidatos } = await import('../drizzle/schema');
+            const { processoCandidatos, users: usersTable } = await import('../drizzle/schema');
+            // IMPORTANTE: userId em processo_candidatos deve ser users.id (não alunos.id)
+            // Buscar o users.id correspondente ao email recém-cadastrado
+            const [userRow] = await database
+              .select({ id: usersTable.id })
+              .from(usersTable)
+              .where(eq(usersTable.email, input.email.trim().toLowerCase()))
+              .limit(1);
+            const correctUserId = userRow?.id ?? null;
             const [existingCand] = await database
               .select({ id: processoCandidatos.id })
               .from(processoCandidatos)
@@ -706,7 +714,7 @@ export const appRouter = router({
             if (existingCand) {
               await database
                 .update(processoCandidatos)
-                .set({ userId: result.alunoId, statusCadastro: 'cadastrado' })
+                .set({ userId: correctUserId, statusCadastro: 'cadastrado' })
                 .where(eq(processoCandidatos.id, existingCand.id));
             } else {
               await database.insert(processoCandidatos).values({
@@ -714,10 +722,11 @@ export const appRouter = router({
                 nome: input.name,
                 email: input.email.trim().toLowerCase(),
                 cpf: input.cpf,
-                userId: result.alunoId,
+                userId: correctUserId,
                 statusCadastro: 'cadastrado',
               });
             }
+            console.log(`[AutoRegistro PS] candidato criado: email=${input.email}, alunos.id=${result.alunoId}, users.id=${correctUserId}`);
           } catch (e) { console.warn('[AutoRegistro] criar candidato PS:', e); }
         }
         try {

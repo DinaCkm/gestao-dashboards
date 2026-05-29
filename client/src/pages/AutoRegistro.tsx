@@ -247,7 +247,7 @@ export default function AutoRegistro() {
                     display: "flex",
                     alignItems: "center",
                     gap: "16px",
-                    marginBottom: "16px",
+                    marginBottom: "32px",
                     textAlign: "left",
                     transition: "all 0.2s",
                   }}
@@ -263,34 +263,7 @@ export default function AutoRegistro() {
                   </div>
                 </button>
 
-                {/* Opção 2: Processo Seletivo */}
-                <button
-                  onClick={() => setModo("processo_seletivo")}
-                  style={{
-                    width: "100%",
-                    padding: "20px",
-                    border: "2px solid #e5e7eb",
-                    borderRadius: "16px",
-                    background: "#f9fafb",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "16px",
-                    marginBottom: "32px",
-                    textAlign: "left",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#0f2b3c"; (e.currentTarget as HTMLButtonElement).style.background = "#f0f4f8"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLButtonElement).style.background = "#f9fafb"; }}
-                >
-                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "linear-gradient(135deg, #0f2b3c, #1a3a52)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Briefcase size={22} color="#fff" />
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: "700", fontSize: "15px", color: "#0d1117", marginBottom: "4px" }}>Processo Seletivo</div>
-                    <div style={{ fontSize: "13px", color: "#6b7280", lineHeight: "1.4" }}>Cadastre-se para participar de um processo seletivo</div>
-                  </div>
-                </button>
+                {/* Opção Processo Seletivo: apenas acessível via link ?ps=ID — não exibida aqui */}
 
                 <p style={{ textAlign: "center", color: "#9ca3af", fontSize: "13px" }}>
                   Já tem acesso?{" "}
