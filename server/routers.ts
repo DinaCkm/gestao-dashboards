@@ -7366,15 +7366,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               processoId: status.processoSeletivoId,
               nome: ctx.user.name ?? '',
               email: (ctx.user.email ?? '').toLowerCase(),
-              userId: status.alunoId,
+              userId: ctx.user.id,
               statusCadastro: 'ativo',
             });
             console.log(`[AutoRegistro PS] Candidato criado em processo_candidatos: ${ctx.user.email} → processo ${status.processoSeletivoId}`);
-          } else if (!existing || (existing as any).userId == null) {
+          } else if ((existing as any).userId == null) {
             // Vincular userId se o registro existe mas não tem userId
             await database
               .update(processoCandidatos)
-              .set({ userId: status.alunoId })
+              .set({ userId: ctx.user.id })
               .where(eq(processoCandidatos.id, existing.id));
           }
         } catch (e) {
