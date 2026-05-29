@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -185,6 +186,8 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
 
 export default function PortalCandidatoPS() {
   const { user } = useAuth();
+  // Estado local para forçar avanço após salvar cadastro (independente de telefone/cargo)
+  const [cadastroSalvo, setCadastroSalvo] = React.useState(false);
 
   // onboardingStatus retorna alunoId e processoSeletivoId
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
@@ -218,8 +221,8 @@ export default function PortalCandidatoPS() {
   const nomeCompleto = dadosBasicos?.nome || candidato?.nome || user?.name || "";
   const primeiroNome = nomeCompleto.split(" ")[0];
 
-  // Cadastro completo: aluno preencheu telefone ou cargo na ficha
-  const cadastroCompleto = !!(dadosBasicos?.telefone || dadosBasicos?.cargo);
+  // Cadastro completo: aluno salvou o formulário (estado local) OU já tem telefone/cargo no banco
+  const cadastroCompleto = cadastroSalvo || !!(dadosBasicos?.telefone || dadosBasicos?.cargo);
 
   const discCompleto = !!(discResultado && (discResultado as any).scoreD);
   const autopercepCompleto = !!(autopercepData && (autopercepData as any[]).length > 0);
@@ -263,6 +266,7 @@ export default function PortalCandidatoPS() {
             <EtapaCadastro
               alunoId={alunoId}
               onComplete={() => {
+                setCadastroSalvo(true);
                 refetchDadosBasicos();
                 refetchCandidato();
               }}
