@@ -700,8 +700,9 @@ export const processosSeletivosRouter = router({
         .where(eq(processoAgendaSlots.id, input.slotId))
         .limit(1);
       if (!slot) throw new TRPCError({ code: "NOT_FOUND", message: "Slot nao encontrado" });
-      if (slot.status !== "disponivel") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Nao e possivel excluir um slot ja reservado ou com entrevista agendada" });
+      // Permite excluir slots disponíveis e reservados (órfãos de candidatos inativados)
+      if (slot.status !== "disponivel" && slot.status !== "reservado") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Nao e possivel excluir um slot com entrevista confirmada ou realizada" });
       }
       await database.delete(processoAgendaSlots).where(eq(processoAgendaSlots.id, input.slotId));
       await writeLog(database, {

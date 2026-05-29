@@ -891,7 +891,7 @@ function ProcessosSeletivosContent() {
                             <TableCell><ProcessoStatusBadge status={slot.status} /></TableCell>
                             {isAdmin && (
                               <TableCell>
-                                {slot.status === "disponivel" && (
+                                {(slot.status === "disponivel" || slot.status === "reservado") && (
                                   <button
                                     type="button"
                                     title="Excluir slot"
