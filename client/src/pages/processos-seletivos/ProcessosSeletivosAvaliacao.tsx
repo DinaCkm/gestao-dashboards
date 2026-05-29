@@ -177,6 +177,14 @@ function AvaliacaoContent() {
     onError: (e) => toast.error(e.message),
   });
 
+  const moverCandidato = trpc.processosSeletivos.moverCandidato.useMutation({
+    onSuccess: () => {
+      toast.success("Região atualizada.");
+      utils.processosSeletivos.listarCandidatos.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const reagendarEntrevista = trpc.processosSeletivos.reagendarEntrevista.useMutation({
     onSuccess: () => {
       toast.success("Entrevista reagendada. E-mail enviado ao candidato.");
@@ -542,9 +550,21 @@ function AvaliacaoContent() {
                           </button>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {(regioes as Regiao[]).find((r) => r.id === c.regiaoId)?.nome ?? (
-                            <span className="text-xs text-muted-foreground italic">Não definida</span>
-                          )}
+                          <Select
+                            value={c.regiaoId ? String(c.regiaoId) : ""}
+                            onValueChange={(val) =>
+                              moverCandidato.mutate({ candidatoId: c.id, novaRegiaoId: val ? Number(val) : null })
+                            }
+                          >
+                            <SelectTrigger className="h-7 text-xs min-w-[130px] border-dashed">
+                              <SelectValue placeholder="Não definida" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(regioes as Regiao[]).map((r) => (
+                                <SelectItem key={r.id} value={String(r.id)}>{r.nome}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell>
                           <ProcessoStatusBadge status={c.statusTeste} />
