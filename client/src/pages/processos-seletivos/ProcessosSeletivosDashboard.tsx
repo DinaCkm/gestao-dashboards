@@ -175,6 +175,10 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(err.message),
   });
 
+  const inativarCandidato = trpc.processosSeletivos.inativarCandidato.useMutation({
+    onSuccess: async () => { toast.success("Candidato inativado."); await invalidateProcesso(); },
+    onError: (err) => toast.error(err.message),
+  });
   const excluirProcesso = trpc.processosSeletivos.excluirProcesso.useMutation({
     onSuccess: () => {
       utils.processosSeletivos.listarProcessos.invalidate();
@@ -834,6 +838,7 @@ function ProcessosSeletivosContent() {
                   onConcluirTeste={(id) => concluirTeste.mutate({ candidatoId: id })}
                   onAprovar={(id) => registrarResultado.mutate({ candidatoId: id, resultado: "aprovado" })}
                   onMoverRegiao={(candidatoId, novaRegiaoId) => moverCandidato.mutate({ candidatoId, novaRegiaoId })}
+                  onInativar={(id) => inativarCandidato.mutate({ candidatoId: id })}
                 />
               </CardContent>
             </Card>

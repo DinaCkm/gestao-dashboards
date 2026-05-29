@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter } from "lucide-react";
+import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter, UserMinus } from "lucide-react";
 import ProcessoStatusBadge from "./ProcessoStatusBadge";
 
 type Candidate = {
@@ -29,6 +29,7 @@ export default function TabelaCandidatosProcesso({
   onConcluirTeste,
   onAprovar,
   onMoverRegiao,
+  onInativar,
   isBusy,
 }: {
   candidatos: Candidate[];
@@ -38,12 +39,11 @@ export default function TabelaCandidatosProcesso({
   onConcluirTeste: (id: number) => void;
   onAprovar: (id: number) => void;
   onMoverRegiao?: (candidatoId: number, novaRegiaoId: number | null) => void;
+  onInativar?: (id: number) => void;
   isBusy: boolean;
 }) {
-  // Estado local para controlar qual candidato está com o select de região aberto
   const [movendo, setMovendo] = useState<number | null>(null);
   const [novaRegiao, setNovaRegiao] = useState<string>("");
-  // Filtro por região
   const [filtroRegiao, setFiltroRegiao] = useState<string>("todas");
 
   const podeEditarRegiao = isAdmin || isMentora;
@@ -61,7 +61,6 @@ export default function TabelaCandidatosProcesso({
     setNovaRegiao("");
   }
 
-  // Filtrar candidatos por região selecionada
   const candidatosFiltrados = filtroRegiao === "todas"
     ? candidatos
     : filtroRegiao === "sem_regiao"
@@ -72,7 +71,6 @@ export default function TabelaCandidatosProcesso({
 
   return (
     <div className="space-y-3">
-      {/* Filtro por região */}
       {temRegioes && (
         <div className="flex items-center gap-2 flex-wrap">
           <Filter className="h-4 w-4 text-muted-foreground" />
@@ -185,7 +183,6 @@ export default function TabelaCandidatosProcesso({
                 <TableCell><ProcessoStatusBadge status={candidate.statusResultado} /></TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2 flex-wrap">
-                    {/* Botão Mover Região — disponível para admin e mentora */}
                     {podeEditarRegiao && onMoverRegiao && temRegioes && movendo !== candidate.id && (
                       <Button
                         size="sm"
@@ -218,6 +215,21 @@ export default function TabelaCandidatosProcesso({
                           <Trophy className="mr-1 h-3 w-3" />
                           Aprovar
                         </Button>
+                        {onInativar && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                            disabled={isBusy}
+                            onClick={() => {
+                              if (confirm(`Inativar "${candidate.nome}" do processo? Ele não aparecerá mais na lista.`))
+                                onInativar(candidate.id);
+                            }}
+                          >
+                            <UserMinus className="mr-1 h-3 w-3" />
+                            Inativar
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>
