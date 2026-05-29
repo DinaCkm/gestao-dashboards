@@ -813,7 +813,14 @@ export const processosSeletivosRouter = router({
       .from(processoCandidatos)
       .where(eq(processoCandidatos.userId, ctx.user.id))
       .limit(1);
-    return candidate ?? null;
+    if (!candidate) return null;
+    // Buscar nome do processo
+    const [processo] = await database
+      .select({ nome: processosSeletivos.nome })
+      .from(processosSeletivos)
+      .where(eq(processosSeletivos.id, candidate.processoId))
+      .limit(1);
+    return { ...candidate, processoNome: processo?.nome ?? null };
   }),
 
   // Mentora: buscar DISC de um candidato pelo candidatoId do processo

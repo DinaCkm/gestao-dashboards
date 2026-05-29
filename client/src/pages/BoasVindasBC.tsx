@@ -4,9 +4,10 @@ import { MessageCircle, ArrowRight, Star, ClipboardList, FlaskConical, CalendarC
 interface BoasVindasBCProps {
   nomeAluno?: string;
   modo?: "desenvolvimento" | "processo_seletivo";
+  nomeProcesso?: string;
 }
 
-export default function BoasVindasBC({ nomeAluno, modo }: BoasVindasBCProps) {
+export default function BoasVindasBC({ nomeAluno, modo, nomeProcesso }: BoasVindasBCProps) {
   const [nome, setNome] = useState(nomeAluno || "");
   const firstName = nome ? nome.split(" ")[0] : "";
 
@@ -55,9 +56,22 @@ export default function BoasVindasBC({ nomeAluno, modo }: BoasVindasBCProps) {
 
         {/* Conteúdo */}
         <main style={{ flex: 1, width: "100%", maxWidth: "680px", padding: "48px clamp(20px, 5vw, 40px) 40px", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative", zIndex: 1 }}>
-          <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", maxWidth: "480px", lineHeight: "1.7", marginBottom: "40px" }}>
-            Siga os próximos passos para concluir sua participação no processo seletivo.
-          </p>
+          {/* Nome do candidato e do processo */}
+          <div style={{ marginBottom: "32px", textAlign: "center" }}>
+            {firstName && (
+              <h1 style={{ fontSize: "28px", fontWeight: "800", color: "#ffffff", marginBottom: "8px" }}>
+                Bem-vindo(a), <span style={{ color: "#e8a838" }}>{firstName}</span>!
+              </h1>
+            )}
+            {nomeProcesso && (
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "rgba(232,168,56,0.1)", border: "1px solid rgba(232,168,56,0.25)", borderRadius: "50px", padding: "5px 14px", marginBottom: "10px" }}>
+                <span style={{ color: "#e8a838", fontSize: "12px", fontWeight: "700", letterSpacing: "0.5px" }}>{nomeProcesso}</span>
+              </div>
+            )}
+            <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.55)", maxWidth: "480px", lineHeight: "1.7", margin: "0 auto" }}>
+              Siga os próximos passos para concluir sua participação no processo seletivo.
+            </p>
+          </div>
 
           {/* Passos */}
           <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%", marginBottom: "40px" }}>

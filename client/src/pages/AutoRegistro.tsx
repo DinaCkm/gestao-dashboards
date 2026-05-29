@@ -71,7 +71,8 @@ export default function AutoRegistro() {
   };
 
   if (success) {
-    return <BoasVindasBC nomeAluno={nomeRegistrado} modo={modo === "processo_seletivo" ? "processo_seletivo" : "desenvolvimento"} />;
+    const processoSelecionadoNome = processos?.find((p: any) => String(p.id) === processoId)?.nome;
+    return <BoasVindasBC nomeAluno={nomeRegistrado} modo={modo === "processo_seletivo" ? "processo_seletivo" : "desenvolvimento"} nomeProcesso={processoSelecionadoNome} />;
   }
 
   const inputStyle: React.CSSProperties = {

@@ -244,7 +244,7 @@ export default function PortalCandidatoPS() {
         {/* Cabeçalho */}
         <div className="mb-6 text-center">
           <Badge variant="outline" className="mb-2 text-xs text-[#0A1E3E] border-[#0A1E3E]">
-            Processo Seletivo
+            {(candidato as any)?.processoNome || "Processo Seletivo"}
           </Badge>
           <h1 className="text-2xl font-bold text-[#0A1E3E]">
             Bem-vindo(a){primeiroNome ? `, ${primeiroNome}` : ""}!
@@ -267,6 +267,13 @@ export default function PortalCandidatoPS() {
                 refetchCandidato();
               }}
             />
+          )}
+
+          {/* Enquanto alunoId ainda não chegou na etapa 1, mostrar loading */}
+          {currentStep === 1 && alunoId === 0 && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
+            </div>
           )}
 
           {currentStep === 2 && alunoId > 0 && (
