@@ -10164,16 +10164,23 @@ export async function getOnboardingTrackingList(programId?: number) {
   const database = await getDb();
   if (!database) return [];
 
-  // Base query: all active students
+  // Base query: alunos ativos da trilha de desenvolvimento (excluir candidatos PS)
   let alunosList;
   if (programId) {
     alunosList = await database.select()
       .from(alunos)
-      .where(and(eq(alunos.isActive, 1), eq(alunos.programId, programId)));
+      .where(and(
+        eq(alunos.isActive, 1),
+        eq(alunos.programId, programId),
+        sql`(${alunos.tipoPortal} IS NULL OR ${alunos.tipoPortal} != 'processo_seletivo')`
+      ));
   } else {
     alunosList = await database.select()
       .from(alunos)
-      .where(eq(alunos.isActive, 1));
+      .where(and(
+        eq(alunos.isActive, 1),
+        sql`(${alunos.tipoPortal} IS NULL OR ${alunos.tipoPortal} != 'processo_seletivo')`
+      ));
   }
 
   if (alunosList.length === 0) return [];
