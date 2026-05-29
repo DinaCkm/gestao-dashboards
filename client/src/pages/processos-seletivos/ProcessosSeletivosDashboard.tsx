@@ -134,6 +134,10 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(err.message),
   });
 
+  const excluirVaga = trpc.processosSeletivos.excluirVaga.useMutation({
+    onSuccess: async () => { toast.success("Vaga excluída."); await invalidateProcesso(); },
+    onError: (err) => toast.error(err.message),
+  });
   const criarVaga = trpc.processosSeletivos.criarVaga.useMutation({
     onSuccess: async () => {
       toast.success("Vaga cadastrada.");
@@ -554,9 +558,18 @@ function ProcessosSeletivosContent() {
                   <Separator />
                   <div className="space-y-2">
                     {vagas.map((vaga) => (
-                      <div key={vaga.id} className="rounded-lg border p-3 text-sm">
-                        <div className="font-medium">{vaga.titulo}</div>
-                        <div className="text-muted-foreground">{vaga.codigo || "Sem codigo"} - {vaga.quantidadeVagas} vaga(s)</div>
+                      <div key={vaga.id} className="rounded-lg border p-3 text-sm flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{vaga.titulo}</div>
+                          <div className="text-muted-foreground">{vaga.codigo || "Sem codigo"} - {vaga.quantidadeVagas} vaga(s)</div>
+                        </div>
+                        {isAdmin && (
+                          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
+                            disabled={excluirVaga.isPending}
+                            onClick={() => { if (confirm(`Excluir vaga "${vaga.titulo}"?`)) excluirVaga.mutate({ vagaId: vaga.id }); }}>
+                            <Trash2 size={14} />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>

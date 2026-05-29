@@ -418,6 +418,19 @@ export const processosSeletivosRouter = router({
       return { id: Number(result[0].insertId), success: true };
     }),
 
+  excluirVaga: protectedProcedure
+    .input(z.object({ vagaId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [vaga] = await database.select({ processoId: processoVagas.processoId, titulo: processoVagas.titulo })
+        .from(processoVagas).where(eq(processoVagas.id, input.vagaId)).limit(1);
+      if (!vaga) throw new TRPCError({ code: "NOT_FOUND", message: "Vaga nao encontrada" });
+      await database.delete(processoVagas).where(eq(processoVagas.id, input.vagaId));
+      await writeLog(database, { processoId: vaga.processoId, userId: ctx.user.id, acao: "vaga_excluida", detalhe: vaga.titulo });
+      return { success: true };
+    }),
+
   listarRegioes: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);
