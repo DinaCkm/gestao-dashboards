@@ -183,7 +183,7 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
   await database
     .update(processoAgendaSlots)
     .set({ candidatoId, status: "reservado" })
-    .where(and(eq(processoAgendaSlots.id, slot.id), eq(processoAgendaSlots.status, "disponivel")));
+    .where(eq(processoAgendaSlots.id, slot.id));
 
   await database
     .update(processoCandidatos)
