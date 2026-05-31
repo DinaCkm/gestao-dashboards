@@ -305,6 +305,39 @@ export default function PortalCandidatoPS() {
     );
   }
 
+  // Candidatura inativa — encerrada pelo admin
+  if (candidato && candidato.statusCadastro === "inativo") {
+    return (
+      <AlunoLayout>
+        <div className="max-w-lg mx-auto px-4 py-16 text-center">
+          <Card className="border-gray-200 bg-gray-50">
+            <CardContent className="pt-10 pb-10 space-y-4">
+              <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
+                <Lock className="h-8 w-8 text-gray-400" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-700 text-lg">Candidatura encerrada</p>
+                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                  Sua participação neste processo seletivo foi encerrada.
+                  Se acredita que houve um engano ou deseja mais informações, entre em contato conosco.
+                </p>
+              </div>
+              <a
+                href="https://ckmtalents.com.br/fale-conosco/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0A1E3E] text-white text-sm font-semibold hover:bg-[#0A1E3E]/90 transition-colors"
+              >
+                <AlertCircle className="h-4 w-4" />
+                Fale Conosco
+              </a>
+            </CardContent>
+          </Card>
+        </div>
+      </AlunoLayout>
+    );
+  }
+
   return (
     <AlunoLayout>
       <div className="max-w-4xl mx-auto px-4 py-8">
