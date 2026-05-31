@@ -185,7 +185,7 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
 // ─── Portal principal ────────────────────────────────────────────────────────
 
 export default function PortalCandidatoPS() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   // Estado local para forçar avanço após salvar cadastro (independente de telefone/cargo)
   const [cadastroSalvo, setCadastroSalvo] = React.useState(false);
 
@@ -235,6 +235,19 @@ export default function PortalCandidatoPS() {
 
   const currentStep = !cadastroCompleto ? 1 : !testesCompletos ? 2 : 3;
 
+  // Enquanto a sessão está sendo verificada, mostrar spinner simples (sem AlunoLayout)
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  // Sem sessão após verificação — redirecionar para login
+  if (!user) {
+    window.location.href = "/login";
+    return null;
+  }
   // Enquanto os dados essenciais não chegaram, mostrar loading
   if (!onboardingStatus && user) {
     return (
