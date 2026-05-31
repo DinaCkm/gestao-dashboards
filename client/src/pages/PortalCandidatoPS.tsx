@@ -65,13 +65,12 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
     onError: (err) => toast.error(err.message),
   });
 
-  if (minhaEntrevista?.slot || candidato?.statusEntrevista === "agendada") {
-    const slot = minhaEntrevista?.slot;
-    const dataFormatada = slot
-      ? new Date(slot.dataAgenda + "T00:00:00").toLocaleDateString("pt-BR", {
-          weekday: "long", year: "numeric", month: "long", day: "numeric",
-        })
-      : null;
+  // Entrevista agendada com slot válido
+  if (minhaEntrevista?.slot) {
+    const slot = minhaEntrevista.slot;
+    const dataFormatada = new Date(slot.dataAgenda + "T00:00:00").toLocaleDateString("pt-BR", {
+      weekday: "long", year: "numeric", month: "long", day: "numeric",
+    });
     return (
       <div className="max-w-lg mx-auto space-y-4">
         {/* Confirmação */}
@@ -86,28 +85,26 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {slot && (
-              <div className="bg-white rounded-lg p-4 border border-green-200 space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <CalendarClock className="h-4 w-4 text-green-600" />
-                  <span className="font-semibold capitalize">{dataFormatada}</span>
-                </div>
-                <div className="text-sm text-gray-600">
-                  Horário: <span className="font-medium">{slot.inicio} – {slot.fim}</span>
-                </div>
-                {slot.linkEntrevista && (
-                  <a
-                    href={slot.linkEntrevista}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 mt-1 px-3 py-2 rounded-md bg-[#0A1E3E] text-white text-sm font-medium hover:bg-[#0A1E3E]/90 transition-colors"
-                  >
-                    <Video className="h-4 w-4" />
-                    Acessar sala da entrevista
-                  </a>
-                )}
+            <div className="bg-white rounded-lg p-4 border border-green-200 space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <CalendarClock className="h-4 w-4 text-green-600" />
+                <span className="font-semibold capitalize">{dataFormatada}</span>
               </div>
-            )}
+              <div className="text-sm text-gray-600">
+                Horário: <span className="font-medium">{slot.inicio} – {slot.fim}</span>
+              </div>
+              {slot.linkEntrevista && (
+                <a
+                  href={slot.linkEntrevista}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 mt-1 px-3 py-2 rounded-md bg-[#0A1E3E] text-white text-sm font-medium hover:bg-[#0A1E3E]/90 transition-colors"
+                >
+                  <Video className="h-4 w-4" />
+                  Acessar sala da entrevista
+                </a>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -125,6 +122,38 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
                 </ul>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // statusEntrevista = agendada mas slot foi removido pelo admin — aguardando novo agendamento
+  if (candidato?.statusEntrevista === "agendada" && !minhaEntrevista?.slot) {
+    return (
+      <div className="max-w-lg mx-auto">
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6 pb-6 text-center space-y-4">
+            <CalendarClock className="h-12 w-12 text-orange-500 mx-auto" />
+            <div>
+              <p className="font-semibold text-orange-800 text-base">Aguardando confirmação de horário</p>
+              <p className="text-sm text-orange-700 mt-2 leading-relaxed">
+                Seu agendamento está sendo processado pela nossa equipe.
+                Em breve você receberá um e-mail com os detalhes da sua entrevista.
+              </p>
+              <p className="text-sm text-orange-700 mt-2">
+                Se precisar de ajuda, entre em contato conosco.
+              </p>
+            </div>
+            <a
+              href="https://ckmtalents.com.br/fale-conosco/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0A1E3E] text-white text-sm font-semibold hover:bg-[#0A1E3E]/90 transition-colors"
+            >
+              <AlertCircle className="h-4 w-4" />
+              Fale Conosco
+            </a>
           </CardContent>
         </Card>
       </div>
