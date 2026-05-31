@@ -8171,7 +8171,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
   // ==================== ANNOUNCEMENTS ====================
   announcements: router({
     // Avisos ativos para alunos (filtrado por programa)
-    activeForStudent: protectedProcedure
+    active: protectedProcedure
       .query(async ({ ctx }) => {
         const aluno = await db.getAlunoFromCtx(ctx.user);
         return await db.listActiveAnnouncementsForStudent(aluno?.programId || undefined);
@@ -8258,11 +8258,6 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return { url, success: true };
       }),
 
-    // Public endpoint for students
-    active: protectedProcedure
-      .query(async () => {
-        return await db.listActiveAnnouncementsForStudent();
-      }),
   }),
 
   // ==================== ATTENDANCE (Presença + Reflexão) ====================
