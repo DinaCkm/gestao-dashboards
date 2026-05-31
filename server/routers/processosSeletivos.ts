@@ -235,11 +235,19 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
     .set({ statusEntrevista: "agendada" })
     .where(eq(processoCandidatos.id, candidatoId));
 
+  // Buscar o processo para pegar o linkEntrevista do nível do processo
+  const [processoParaLink] = await database
+    .select({ linkEntrevista: processosSeletivos.linkEntrevista })
+    .from(processosSeletivos)
+    .where(eq(processosSeletivos.id, candidate.processoId))
+    .limit(1);
+  const linkFinal = processoParaLink?.linkEntrevista || slot.linkEntrevista || null;
+
   await database.insert(processoEntrevistas).values({
     processoId: candidate.processoId,
     candidatoId,
     agendaSlotId: slot.id,
-    linkEntrevista: slot.linkEntrevista,
+    linkEntrevista: linkFinal,
     status: "agendada",
   });
 
@@ -270,7 +278,7 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
         dataEntrevista: dataFormatada,
         horaInicio: slot.inicio,
         horaFim: slot.fim,
-        linkEntrevista: slot.linkEntrevista ?? null,
+        linkEntrevista: processo.linkEntrevista || slot.linkEntrevista || null,
         loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/login`,
       });
       await sendEmail({ to: candidate.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
@@ -286,6 +294,7 @@ const processoInput = z.object({
   nome: z.string().min(1),
   clienteNome: z.string().min(1),
   clienteEmail: z.string().email().optional().or(z.literal("")),
+  linkEntrevista: z.string().url().optional().or(z.literal("")),
   descricao: z.string().optional(),
   status: z.enum(["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho"),
   dataInicio: z.string().optional().nullable(),
@@ -402,6 +411,7 @@ export const processosSeletivosRouter = router({
       nome: input.nome,
       clienteNome: input.clienteNome,
       clienteEmail: input.clienteEmail || null,
+      linkEntrevista: input.linkEntrevista || null,
       descricao: input.descricao || null,
       status: input.status,
       dataInicio: input.dataInicio || null,
@@ -424,6 +434,7 @@ export const processosSeletivosRouter = router({
         ...(data.nome !== undefined && { nome: data.nome }),
         ...(data.clienteNome !== undefined && { clienteNome: data.clienteNome }),
         ...(data.clienteEmail !== undefined && { clienteEmail: data.clienteEmail || null }),
+        ...(data.linkEntrevista !== undefined && { linkEntrevista: data.linkEntrevista || null }),
         ...(data.descricao !== undefined && { descricao: data.descricao || null }),
         ...(data.status !== undefined && { status: data.status }),
         ...(data.dataInicio !== undefined && { dataInicio: data.dataInicio || null }),

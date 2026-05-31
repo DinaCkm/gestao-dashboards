@@ -1735,6 +1735,7 @@ export const processosSeletivos = mysqlTable("processos_seletivos", {
   nome: varchar("nome", { length: 255 }).notNull(),
   clienteNome: varchar("clienteNome", { length: 255 }).notNull(),
   clienteEmail: varchar("clienteEmail", { length: 320 }),
+  linkEntrevista: varchar("linkEntrevista", { length: 500 }),
   descricao: text("descricao"),
   status: mysqlEnum("status", ["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho").notNull(),
   dataInicio: date("dataInicio", { mode: "string" }),

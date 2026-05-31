@@ -22,6 +22,7 @@ const emptyProcesso = {
   nome: "",
   clienteNome: "",
   clienteEmail: "",
+  linkEntrevista: "",
   descricao: "",
   mentorId: "",
 };
@@ -274,6 +275,7 @@ function ProcessosSeletivosContent() {
       nome: processoForm.nome,
       clienteNome: processoForm.clienteNome,
       clienteEmail: processoForm.clienteEmail || undefined,
+      linkEntrevista: processoForm.linkEntrevista || undefined,
       descricao: processoForm.descricao || undefined,
       mentorId: processoForm.mentorId ? Number(processoForm.mentorId) : undefined,
       status: "ativo",
@@ -470,6 +472,7 @@ function ProcessosSeletivosContent() {
               <Input placeholder="Nome do processo" value={processoForm.nome} onChange={(event) => setProcessoForm((form) => ({ ...form, nome: event.target.value }))} required />
               <Input placeholder="Cliente" value={processoForm.clienteNome} onChange={(event) => setProcessoForm((form) => ({ ...form, clienteNome: event.target.value }))} required />
               <Input placeholder="Email do cliente" type="email" value={processoForm.clienteEmail} onChange={(event) => setProcessoForm((form) => ({ ...form, clienteEmail: event.target.value }))} />
+              <Input placeholder="Link da sala de entrevista (ex: meet.google.com/...)" type="url" value={processoForm.linkEntrevista} onChange={(event) => setProcessoForm((form) => ({ ...form, linkEntrevista: event.target.value }))} />
               <Input placeholder="Descricao curta" value={processoForm.descricao} onChange={(event) => setProcessoForm((form) => ({ ...form, descricao: event.target.value }))} />
               <Select value={processoForm.mentorId} onValueChange={(value) => setProcessoForm((form) => ({ ...form, mentorId: value }))}>
                 <SelectTrigger><SelectValue placeholder="Selecionadora (opcional)" /></SelectTrigger>
@@ -510,6 +513,23 @@ function ProcessosSeletivosContent() {
                     {linkCopiado === selectedProcesso.id ? "Copiado!" : "Link de convite"}
                   </button>
                 </CardDescription>
+                {isAdmin && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">Link da sala:</span>
+                    <Input
+                      type="url"
+                      placeholder="https://meet.google.com/..."
+                      defaultValue={(selectedProcesso as any).linkEntrevista ?? ""}
+                      className="h-7 text-xs max-w-xs"
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        if (val !== ((selectedProcesso as any).linkEntrevista ?? "")) {
+                          atualizarProcesso.mutate({ processoId: selectedProcesso.id, linkEntrevista: val || undefined });
+                        }
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               {isAdmin && (
                 <div className="flex gap-2 flex-wrap mt-2">
