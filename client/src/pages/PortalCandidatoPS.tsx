@@ -283,6 +283,7 @@ export default function PortalCandidatoPS() {
           {currentStep === 1 && alunoId > 0 && (
             <EtapaCadastro
               alunoId={alunoId}
+              lockNomeEmail={true}
               onComplete={() => {
                 setCadastroSalvo(true);
                 refetchDadosBasicos();

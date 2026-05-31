@@ -457,7 +457,7 @@ const AREAS_CURSOS = [
   "Empreendedorismo", "Inovação", "Outras"
 ];
 
-export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean }) {
+export function EtapaCadastro({ onComplete, alunoId, readOnly = false, lockNomeEmail = false }: { onComplete: () => void; alunoId: number; readOnly?: boolean; lockNomeEmail?: boolean }) {
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
   const alunoReal = dashData?.found ? dashData.aluno : null;
   const salvarCadastro = trpc.onboarding.salvarCadastro.useMutation();
@@ -734,9 +734,9 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false }: { onCom
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div><label className="text-sm font-medium text-gray-700">Nome Completo</label>
-                <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} disabled={readOnly} /></div>
+                <Input value={perfil.nome} onChange={(e) => setPerfil({...perfil, nome: e.target.value})} disabled={readOnly || lockNomeEmail} className={(lockNomeEmail || readOnly) ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""} /></div>
               <div><label className="text-sm font-medium text-gray-700">Email</label>
-                <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly} /></div>
+                <Input value={perfil.email} onChange={(e) => setPerfil({...perfil, email: e.target.value})} disabled={readOnly || lockNomeEmail} className={(lockNomeEmail || readOnly) ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""} /></div>
               <div><label className="text-sm font-medium text-gray-700">Telefone <span className="text-red-500">*</span></label>
                 <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} /></div>
               <div><label className="text-sm font-medium text-gray-700">Empresa <span className="text-red-500">*</span></label>
