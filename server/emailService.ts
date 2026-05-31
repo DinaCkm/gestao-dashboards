@@ -2774,3 +2774,61 @@ export function buildPsReagendamentoEmail(data: {
   const text = `Alteração de Horário de Entrevista\n\nOlá, ${data.candidatoNome}!\n\nSeu horário de entrevista no processo seletivo "${data.processoNome}" — ${data.clienteNome} foi alterado.\n\nNova data: ${data.dataEntrevista}\nNovo horário: ${data.horaInicio} – ${data.horaFim}\n${data.linkEntrevista ? `Link: ${data.linkEntrevista}\n` : ""}\nPor favor, responda este e-mail confirmando ciência da alteração.\n\nAtenciosamente,\nEquipe CKM Talents`;
   return { subject, html, text };
 }
+
+// ============ PROCESSO SELETIVO — ALERTA ADMIN SEM SLOT ============
+export function buildPsAlertaAdminSemSlotEmail(data: {
+  candidatoNome: string;
+  candidatoEmail: string;
+  processoNome: string;
+  clienteNome: string;
+  regiaoNome?: string | null;
+  vagaNome?: string | null;
+  painelUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `⚠️ Candidato sem horário disponível — ${data.processoNome}`;
+  const regiaoBlock = data.regiaoNome ? `<tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Região:</td><td style="padding:4px 0;font-size:14px;font-weight:700;color:#0f2b3c;">${data.regiaoNome}</td></tr>` : "";
+  const vagaBlock = data.vagaNome ? `<tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Vaga:</td><td style="padding:4px 0;font-size:14px;font-weight:700;color:#0f2b3c;">${data.vagaNome}</td></tr>` : "";
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+      <tr><td style="padding:30px 40px;text-align:center;background:#0f2b3c;">
+        <p style="color:#e8a838;font-size:20px;font-weight:700;margin:0;">ECOSSISTEMA DO BEM</p>
+        <p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Processo Seletivo — Alerta Administrativo</p>
+      </td></tr>
+      <tr><td style="background:#dc2626;padding:16px 40px;text-align:center;">
+        <p style="color:#fff;font-size:18px;font-weight:700;margin:0;">⚠️ Candidato sem horário disponível</p>
+      </td></tr>
+      <tr><td style="padding:30px 40px;">
+        <p style="color:#4a5568;font-size:15px;line-height:1.8;margin:0 0 20px;">
+          Um candidato concluiu os testes do processo seletivo mas <strong>não há horários de entrevista disponíveis</strong> para alocação. É necessário criar novos slots imediatamente.
+        </p>
+        <table cellpadding="0" cellspacing="0" style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;width:100%;">
+          <tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Candidato:</td><td style="padding:4px 0;font-size:14px;font-weight:700;color:#0f2b3c;">${data.candidatoNome}</td></tr>
+          <tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">E-mail:</td><td style="padding:4px 0;font-size:14px;color:#1d4ed8;"><a href="mailto:${data.candidatoEmail}" style="color:#1d4ed8;">${data.candidatoEmail}</a></td></tr>
+          <tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Processo:</td><td style="padding:4px 0;font-size:14px;font-weight:700;color:#0f2b3c;">${data.processoNome}</td></tr>
+          <tr><td style="padding:4px 0;font-size:14px;color:#6b7280;">Cliente:</td><td style="padding:4px 0;font-size:14px;color:#0f2b3c;">${data.clienteNome}</td></tr>
+          ${regiaoBlock}
+          ${vagaBlock}
+        </table>
+        <p style="color:#4a5568;font-size:14px;line-height:1.7;margin:20px 0 0;">
+          O candidato foi orientado a entrar em contato pelo botão <strong>Fale Conosco</strong> no portal. Acesse o painel administrativo e crie novos slots de entrevista para este processo.
+        </p>
+      </td></tr>
+      <tr><td style="padding:0 40px 30px;text-align:center;">
+        <a href="${data.painelUrl}" style="display:inline-block;background:#dc2626;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Ver no Painel Administrativo
+        </a>
+      </td></tr>
+      <tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+        <p style="color:#9ca3af;font-size:12px;margin:0;">Este é um alerta automático do Ecossistema do Bem — Processo Seletivo.</p>
+        <p style="color:#9ca3af;font-size:12px;margin:4px 0 0;">© 2026 CKM Talents — Todos os direitos reservados.</p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+  const text = `⚠️ Candidato sem horário disponível\n\nUm candidato concluiu os testes mas não há slots de entrevista disponíveis.\n\nCandidato: ${data.candidatoNome}\nE-mail: ${data.candidatoEmail}\nProcesso: ${data.processoNome}\nCliente: ${data.clienteNome}${data.regiaoNome ? `\nRegião: ${data.regiaoNome}` : ""}${data.vagaNome ? `\nVaga: ${data.vagaNome}` : ""}\n\nAcesse o painel e crie novos slots imediatamente: ${data.painelUrl}`;
+  return { subject, html, text };
+}

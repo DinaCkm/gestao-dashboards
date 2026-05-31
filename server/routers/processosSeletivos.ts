@@ -21,7 +21,7 @@ import {
 } from "../../drizzle/schema";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
-import { buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, sendEmail } from "../emailService";
+import { buildPsAlertaAdminSemSlotEmail, buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, sendEmail } from "../emailService";
 
 const adminRoles = new Set(["admin", "admin2"]);
 
@@ -177,6 +177,51 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
       acao: "alocacao_sem_slot",
       detalhe: `Candidato ${candidate.nome} ficou aguardando agenda na regiao ${candidate.regiaoId}.`,
     });
+    // Buscar dados do processo para o e-mail de alerta
+    try {
+      const [processo] = await database
+        .select()
+        .from(processosSeletivos)
+        .where(eq(processosSeletivos.id, candidate.processoId))
+        .limit(1);
+      let regiaoNome: string | null = null;
+      if (candidate.regiaoId) {
+        const [regiao] = await database
+          .select()
+          .from(processoRegioes)
+          .where(eq(processoRegioes.id, candidate.regiaoId))
+          .limit(1);
+        regiaoNome = regiao?.nome ?? null;
+      }
+      let vagaNome: string | null = null;
+      if (candidate.vagaId) {
+        const [vaga] = await database
+          .select()
+          .from(processoVagas)
+          .where(eq(processoVagas.id, candidate.vagaId))
+          .limit(1);
+        vagaNome = vaga?.nome ?? null;
+      }
+      if (processo) {
+        const alertaEmail = buildPsAlertaAdminSemSlotEmail({
+          candidatoNome: candidate.nome,
+          candidatoEmail: candidate.email,
+          processoNome: processo.nome,
+          clienteNome: processo.clienteNome,
+          regiaoNome,
+          vagaNome,
+          painelUrl: "https://ecolider.ecodobem.com",
+        });
+        await sendEmail({
+          to: "relacionamento@ckmtalents.net",
+          subject: alertaEmail.subject,
+          html: alertaEmail.html,
+          text: alertaEmail.text,
+        });
+      }
+    } catch (emailErr) {
+      console.error("[allocateCandidate] Erro ao enviar e-mail de alerta sem slot:", emailErr);
+    }
     return { status: "aguardando_agenda" as const, slot: null };
   }
 

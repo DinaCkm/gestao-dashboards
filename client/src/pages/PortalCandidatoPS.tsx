@@ -143,11 +143,28 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
       )}
 
       {!isLoading && (!slots || slots.length === 0) && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="pt-6 text-center">
-            <CalendarClock className="h-10 w-10 text-yellow-500 mx-auto mb-3" />
-            <p className="font-medium text-yellow-800">Nenhum horário disponível no momento</p>
-            <p className="text-sm text-yellow-700 mt-1">Em breve novos horários serão disponibilizados. Fique atento ao seu e-mail.</p>
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="pt-6 pb-6 text-center space-y-4">
+            <CalendarClock className="h-12 w-12 text-orange-500 mx-auto" />
+            <div>
+              <p className="font-semibold text-orange-800 text-base">Nenhum horário disponível no momento</p>
+              <p className="text-sm text-orange-700 mt-2 leading-relaxed">
+                Nossa equipe foi notificada e está trabalhando para liberar novos horários de entrevista para você.
+                Em breve você receberá um e-mail com a confirmação do agendamento.
+              </p>
+              <p className="text-sm text-orange-700 mt-2">
+                Se precisar de ajuda ou tiver dúvidas, entre em contato conosco.
+              </p>
+            </div>
+            <a
+              href="https://ckmtalents.com.br/fale-conosco/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0A1E3E] text-white text-sm font-semibold hover:bg-[#0A1E3E]/90 transition-colors"
+            >
+              <AlertCircle className="h-4 w-4" />
+              Fale Conosco
+            </a>
           </CardContent>
         </Card>
       )}
