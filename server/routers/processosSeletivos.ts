@@ -252,6 +252,33 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
     metadata: { slotId: slot.id, regiaoId: slot.regiaoId, vagaId: slot.vagaId },
   });
 
+  // Enviar e-mail de confirmação ao candidato
+  try {
+    const [processo] = await database
+      .select()
+      .from(processosSeletivos)
+      .where(eq(processosSeletivos.id, candidate.processoId))
+      .limit(1);
+    if (processo && candidate.email) {
+      const dataFormatada = slot.dataAgenda
+        ? new Date(slot.dataAgenda + 'T00:00:00').toLocaleDateString('pt-BR')
+        : slot.dataAgenda;
+      const emailData = buildPsConfirmacaoAgendamentoEmail({
+        candidatoNome: candidate.nome,
+        processoNome: processo.nome,
+        clienteNome: processo.clienteNome,
+        dataEntrevista: dataFormatada,
+        horaInicio: slot.inicio,
+        horaFim: slot.fim,
+        linkEntrevista: slot.linkEntrevista ?? null,
+        loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/login`,
+      });
+      await sendEmail({ to: candidate.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+    }
+  } catch (emailErr) {
+    console.error('[allocateCandidate] Erro ao enviar e-mail de confirmação ao candidato:', emailErr);
+  }
+
   return { status: "agendada" as const, slot };
 }
 
