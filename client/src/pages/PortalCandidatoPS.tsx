@@ -55,8 +55,8 @@ function Stepper({ currentStep }: { currentStep: number }) {
 // ─── Etapa 3: Agendamento ────────────────────────────────────────────────────
 
 function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoId: number }) {
-  const { data: slots, isLoading } = trpc.processosSeletivos.listarSlotsDisponiveis.useQuery({ processoId });
-  const { data: minhaEntrevista, refetch } = trpc.processosSeletivos.minhaEntrevista.useQuery();
+  const { data: slots, isLoading: slotsLoading } = trpc.processosSeletivos.listarSlotsDisponiveis.useQuery({ processoId });
+  const { data: minhaEntrevista, isLoading: entrevistaLoading, refetch } = trpc.processosSeletivos.minhaEntrevista.useQuery();
   const agendarMutation = trpc.processosSeletivos.candidatoAgendar.useMutation({
     onSuccess: (data) => {
       toast.success(`Entrevista agendada para ${data.slot.dataAgenda} às ${data.slot.inicio}!`);
@@ -64,6 +64,15 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
     },
     onError: (err) => toast.error(err.message),
   });
+
+  // Aguardar dados da entrevista antes de renderizar qualquer coisa
+  if (entrevistaLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin h-8 w-8 border-4 border-[#0A1E3E] border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   // Entrevista agendada com slot válido
   if (minhaEntrevista?.slot) {
@@ -167,11 +176,11 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
         <p className="text-sm text-gray-500 mt-1">Selecione um dos horários disponíveis abaixo.</p>
       </div>
 
-      {isLoading && (
+      {slotsLoading && (
         <div className="text-center py-8 text-gray-400">Carregando horários disponíveis...</div>
       )}
 
-      {!isLoading && (!slots || slots.length === 0) && (
+      {!slotsLoading && (!slots || slots.length === 0) && (
         <Card className="border-orange-200 bg-orange-50">
           <CardContent className="pt-6 pb-6 text-center space-y-4">
             <CalendarClock className="h-12 w-12 text-orange-500 mx-auto" />
