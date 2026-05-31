@@ -33,12 +33,28 @@ export default function AutoRegistro() {
 
   const [emailJaExiste, setEmailJaExiste] = useState(false);
 
+  // Login automático após cadastro bem-sucedido
+  const loginMutation = trpc.auth.emailCpfLogin.useMutation({
+    onSuccess: (loginData) => {
+      if (loginData.success) {
+        window.location.href = "/candidato-ps";
+      } else {
+        setSuccess(true);
+      }
+    },
+    onError: () => {
+      setSuccess(true);
+    },
+  });
+
   const registroMutation = trpc.auth.autoRegistro.useMutation({
     onSuccess: (data) => {
       if (data.success) {
         setNomeRegistrado(name.trim());
         localStorage.setItem("bc_nome_aluno", name.trim());
-        setSuccess(true);
+        // Login automático com email e CPF recém-cadastrados
+        const cpfDigitsForLogin = cpf.replace(/\D/g, '');
+        loginMutation.mutate({ email: email.trim().toLowerCase(), credential: cpfDigitsForLogin });
       }
       setLoading(false);
     },
