@@ -714,7 +714,7 @@ export const appRouter = router({
             if (existingCand) {
               await database
                 .update(processoCandidatos)
-                .set({ userId: correctUserId, statusCadastro: 'cadastrado' })
+                .set({ userId: correctUserId, statusCadastro: 'ativo' })
                 .where(eq(processoCandidatos.id, existingCand.id));
             } else {
               await database.insert(processoCandidatos).values({
@@ -723,7 +723,7 @@ export const appRouter = router({
                 email: input.email.trim().toLowerCase(),
                 cpf: input.cpf,
                 userId: correctUserId,
-                statusCadastro: 'cadastrado',
+                statusCadastro: 'ativo',
               });
             }
             console.log(`[AutoRegistro PS] candidato criado: email=${input.email}, alunos.id=${result.alunoId}, users.id=${correctUserId}`);
