@@ -757,6 +757,19 @@ export const appRouter = router({
           const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
           await sendEmail({ to: 'relacionamento@ckmtalents.net', cc: 'dina@makiyama.com.br', subject: `[Novo Aluno] ${input.name} - Desenvolvimento Express`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
         } catch (e) { console.warn('[AutoRegistro] email admin:', e); }
+        // Criar sessão automaticamente para o candidato recém-cadastrado
+        try {
+          const { sdk } = await import('./_core/sdk');
+          const { ONE_YEAR_MS } = await import('@shared/const');
+          const normalizedCpf = input.cpf.replace(/[.\-]/g, '');
+          const openId = `access_user_${normalizedCpf}`;
+          const token = await sdk.createSessionToken(openId, {
+            name: input.name,
+            expiresInMs: ONE_YEAR_MS,
+          });
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        } catch (e) { console.warn('[AutoRegistro] criar sessão:', e); }
         return { success: true, alunoId: result.alunoId };
       }),
     listEmpresas: publicProcedure.query(async () => {
