@@ -6,28 +6,47 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { 
-  GraduationCap, 
-  Building2, 
-  Users, 
+import {
+  GraduationCap,
+  Building2,
+  Users,
   Search,
   Calendar,
   Loader2,
   Snowflake,
   Lock,
   Unlock,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 
+function formatDate(dateStr: string | null | any) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  }
+  const parts = String(dateStr).split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : String(dateStr);
+}
+
 export default function Turmas() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmpresa, setSelectedEmpresa] = useState<string>("all");
+  const [expandedGrupos, setExpandedGrupos] = useState<Set<string>>(new Set());
 
-  // Dialog de congelamento
-  const [congelarDialog, setCongelarDialog] = useState<{ open: boolean; turmaId: number; turmaNome: string; dataAtual: string | null }>({
-    open: false, turmaId: 0, turmaNome: "", dataAtual: null,
-  });
+  // Dialog de congelamento — agora por codigoTurma
+  const [congelarDialog, setCongelarDialog] = useState<{
+    open: boolean;
+    codigoTurma: string;
+    nomeTurma: string;
+    dataAtual: string | null;
+  }>({ open: false, codigoTurma: "", nomeTurma: "", dataAtual: null });
   const [dataCongelamentoInput, setDataCongelamentoInput] = useState("");
 
   const utils = trpc.useUtils();
@@ -35,7 +54,7 @@ export default function Turmas() {
   const setCongelamento = trpc.turmas.setCongelamento.useMutation({
     onSuccess: () => {
       utils.turmas.listWithDetails.invalidate();
-      setCongelarDialog({ open: false, turmaId: 0, turmaNome: "", dataAtual: null });
+      setCongelarDialog({ open: false, codigoTurma: "", nomeTurma: "", dataAtual: null });
       toast.success("Configuração de congelamento salva com sucesso.");
     },
     onError: (err) => {
@@ -43,70 +62,81 @@ export default function Turmas() {
     },
   });
 
-  // Extrair empresas únicas para o filtro
+  // Empresas únicas para filtro
   const empresas = useMemo(() => {
     if (!turmas) return [];
-    const uniqueEmpresas = Array.from(new Set(turmas.map(t => t.programName)));
-    return uniqueEmpresas.sort();
+    return Array.from(new Set(turmas.map(t => t.programName))).sort();
   }, [turmas]);
-  
-  // Filtrar turmas
+
+  // Turmas filtradas
   const filteredTurmas = useMemo(() => {
     if (!turmas) return [];
     return turmas.filter(turma => {
-      const matchesSearch = turma.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           turma.programName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        turma.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        turma.programName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (turma.codigoTurma || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesEmpresa = selectedEmpresa === "all" || turma.programName === selectedEmpresa;
       return matchesSearch && matchesEmpresa;
     });
   }, [turmas, searchTerm, selectedEmpresa]);
-  
-  // Agrupar por empresa
+
+  // Agrupar por empresa e depois por codigoTurma
   const turmasByEmpresa = useMemo(() => {
-    const grouped: Record<string, typeof filteredTurmas> = {};
+    const grouped: Record<string, {
+      semCodigo: typeof filteredTurmas;
+      porCodigo: Record<string, typeof filteredTurmas>;
+    }> = {};
+
     filteredTurmas.forEach(turma => {
-      if (!grouped[turma.programName]) {
-        grouped[turma.programName] = [];
+      const empresa = turma.programName;
+      if (!grouped[empresa]) {
+        grouped[empresa] = { semCodigo: [], porCodigo: {} };
       }
-      grouped[turma.programName].push(turma);
+      if (turma.codigoTurma) {
+        if (!grouped[empresa].porCodigo[turma.codigoTurma]) {
+          grouped[empresa].porCodigo[turma.codigoTurma] = [];
+        }
+        grouped[empresa].porCodigo[turma.codigoTurma].push(turma);
+      } else {
+        grouped[empresa].semCodigo.push(turma);
+      }
     });
     return grouped;
   }, [filteredTurmas]);
-  
+
   // Estatísticas
   const stats = useMemo(() => {
     if (!turmas) return { totalTurmas: 0, totalAlunos: 0, totalEmpresas: 0, totalCongeladas: 0 };
+    // Contar grupos únicos congelados (por codigoTurma)
+    const gruposCongelados = new Set(
+      turmas.filter(t => t.dataCongelamento && t.codigoTurma).map(t => t.codigoTurma)
+    );
     return {
       totalTurmas: turmas.length,
       totalAlunos: turmas.reduce((sum, t) => sum + t.totalAlunos, 0),
       totalEmpresas: empresas.length,
-      totalCongeladas: turmas.filter(t => t.dataCongelamento).length,
+      totalCongeladas: gruposCongelados.size + turmas.filter(t => t.dataCongelamento && !t.codigoTurma).length,
     };
   }, [turmas, empresas]);
 
-  function formatDate(dateStr: string | null | any) {
-    if (!dateStr) return null;
-    // Se for objeto Date ou string ISO com timestamp (ex: "Sun May 31 2026 00:00:00...")
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) {
-      const day = String(d.getUTCDate()).padStart(2, '0');
-      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-      const year = d.getUTCFullYear();
-      return `${day}/${month}/${year}`;
-    }
-    // Fallback: string no formato YYYY-MM-DD
-    const parts = String(dateStr).split('-');
-    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : String(dateStr);
+  function toggleGrupo(key: string) {
+    setExpandedGrupos(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   }
 
-  function abrirDialogCongelar(turma: { id: number; name: string; dataCongelamento: string | null }) {
-    setDataCongelamentoInput(turma.dataCongelamento || "");
-    setCongelarDialog({ open: true, turmaId: turma.id, turmaNome: turma.name, dataAtual: turma.dataCongelamento });
+  function abrirDialogCongelar(codigoTurma: string, nomeTurma: string, dataAtual: string | null) {
+    setDataCongelamentoInput(dataAtual || "");
+    setCongelarDialog({ open: true, codigoTurma, nomeTurma, dataAtual });
   }
 
   function salvarCongelamento() {
     setCongelamento.mutate({
-      turmaId: congelarDialog.turmaId,
+      codigoTurma: congelarDialog.codigoTurma,
       dataCongelamento: dataCongelamentoInput.trim() || null,
     });
   }
@@ -121,7 +151,7 @@ export default function Turmas() {
             <span className="text-secondary">Empresa</span>
           </h1>
           <p className="text-muted-foreground mt-1">
-            Visualize todas as turmas cadastradas e gerencie o congelamento de indicadores
+            Visualize todas as turmas e gerencie o congelamento de indicadores por turma
           </p>
         </div>
 
@@ -180,7 +210,7 @@ export default function Turmas() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar turma ou empresa..."
+                  placeholder="Buscar turma, empresa ou código (BS1, BS2...)..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
@@ -190,9 +220,7 @@ export default function Turmas() {
                 <button
                   onClick={() => setSelectedEmpresa("all")}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedEmpresa === "all"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted hover:bg-muted/80"
+                    selectedEmpresa === "all" ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"
                   }`}
                 >
                   Todas
@@ -202,9 +230,7 @@ export default function Turmas() {
                     key={empresa}
                     onClick={() => setSelectedEmpresa(empresa)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedEmpresa === empresa
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted hover:bg-muted/80"
+                      selectedEmpresa === empresa ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"
                     }`}
                   >
                     {empresa}
@@ -229,7 +255,7 @@ export default function Turmas() {
             </CardContent>
           </Card>
         ) : (
-          Object.entries(turmasByEmpresa).map(([empresa, turmasEmpresa]) => (
+          Object.entries(turmasByEmpresa).map(([empresa, { semCodigo, porCodigo }]) => (
             <Card key={empresa} className="gradient-card">
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -239,89 +265,195 @@ export default function Turmas() {
                   <div>
                     <CardTitle className="text-xl">{empresa}</CardTitle>
                     <CardDescription>
-                      {turmasEmpresa.length} turma{turmasEmpresa.length !== 1 ? 's' : ''} • {' '}
-                      {turmasEmpresa.reduce((sum, t) => sum + t.totalAlunos, 0)} alunos
+                      {Object.keys(porCodigo).length + semCodigo.length} grupo(s) de turma •{' '}
+                      {[...Object.values(porCodigo).flat(), ...semCodigo].reduce((s, t) => s + t.totalAlunos, 0)} alunos
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-left p-3 text-sm font-medium">Turma</th>
-                        <th className="text-left p-3 text-sm font-medium hidden sm:table-cell">Código</th>
-                        <th className="text-center p-3 text-sm font-medium">Ano</th>
-                        <th className="text-center p-3 text-sm font-medium">Alunos</th>
-                        <th className="text-center p-3 text-sm font-medium">Status</th>
-                        <th className="text-center p-3 text-sm font-medium">Ação</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {turmasEmpresa.map((turma, index) => (
-                        <tr 
-                          key={turma.id} 
-                          className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}
-                        >
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              <GraduationCap className="h-4 w-4 text-secondary shrink-0" />
-                              <span className="font-medium">{turma.name}</span>
-                            </div>
-                          </td>
-                          <td className="p-3 hidden sm:table-cell">
-                            <span className="text-xs font-mono bg-muted px-2 py-1 rounded">
-                              {turma.externalId || '-'}
-                            </span>
-                          </td>
-                          <td className="p-3 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span>{turma.year}</span>
-                            </div>
-                          </td>
-                          <td className="p-3 text-center">
-                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-medium ${
-                              turma.totalAlunos > 0 
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                : 'bg-muted text-muted-foreground'
-                            }`}>
-                              <Users className="h-3.5 w-3.5" />
-                              {turma.totalAlunos}
-                            </span>
-                          </td>
-                          <td className="p-3 text-center">
-                            {turma.dataCongelamento ? (
-                              <Badge className="bg-blue-100 text-blue-700 border-blue-300 gap-1">
-                                <Snowflake className="h-3 w-3" />
-                                Congelado em {formatDate(turma.dataCongelamento)}
-                              </Badge>
+              <CardContent className="space-y-4">
+
+                {/* Grupos com codigoTurma (BS1, BS2, BS3...) */}
+                {Object.entries(porCodigo).map(([codigo, trilhas]) => {
+                  const grupoKey = `${empresa}__${codigo}`;
+                  const isExpanded = expandedGrupos.has(grupoKey);
+                  const dataCongelamento = trilhas.find(t => t.dataCongelamento)?.dataCongelamento || null;
+                  const totalAlunos = trilhas.reduce((s, t) => s + t.totalAlunos, 0);
+
+                  return (
+                    <div key={codigo} className={`border rounded-lg overflow-hidden ${dataCongelamento ? 'border-blue-200 bg-blue-50/30' : 'border-border'}`}>
+                      {/* Cabeçalho do grupo de turma */}
+                      <div className="flex items-center justify-between p-4 bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm ${dataCongelamento ? 'bg-blue-100 text-blue-700' : 'bg-primary/10 text-primary'}`}>
+                            {codigo}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">Turma {codigo}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {trilhas.length} trilha{trilhas.length !== 1 ? 's' : ''} • {totalAlunos} aluno{totalAlunos !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          {dataCongelamento ? (
+                            <Badge className="bg-blue-100 text-blue-700 border-blue-300 gap-1 ml-2">
+                              <Snowflake className="h-3 w-3" />
+                              Congelado em {formatDate(dataCongelamento)}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground ml-2">Ativo</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => abrirDialogCongelar(codigo, `Turma ${codigo}`, dataCongelamento)}
+                            className={dataCongelamento ? "text-blue-600 border-blue-300 hover:bg-blue-50" : ""}
+                          >
+                            {dataCongelamento ? (
+                              <><Unlock className="h-3.5 w-3.5 mr-1" />Editar Congelamento</>
                             ) : (
-                              <Badge variant="outline" className="text-muted-foreground">
-                                Ativo
-                              </Badge>
+                              <><Lock className="h-3.5 w-3.5 mr-1" />Congelar Turma</>
                             )}
-                          </td>
-                          <td className="p-3 text-center">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => abrirDialogCongelar(turma)}
-                              className={turma.dataCongelamento ? "text-blue-600 border-blue-300 hover:bg-blue-50" : ""}
-                            >
-                              {turma.dataCongelamento ? (
-                                <><Unlock className="h-3.5 w-3.5 mr-1" />Editar</>
-                              ) : (
-                                <><Lock className="h-3.5 w-3.5 mr-1" />Congelar</>
-                              )}
-                            </Button>
-                          </td>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleGrupo(grupoKey)}
+                            className="text-muted-foreground"
+                          >
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            {isExpanded ? 'Recolher' : 'Ver trilhas'}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Trilhas do grupo (expansível) */}
+                      {isExpanded && (
+                        <table className="w-full">
+                          <thead className="bg-muted/20">
+                            <tr>
+                              <th className="text-left p-3 text-xs font-medium text-muted-foreground">Trilha</th>
+                              <th className="text-left p-3 text-xs font-medium text-muted-foreground hidden sm:table-cell">Código</th>
+                              <th className="text-center p-3 text-xs font-medium text-muted-foreground">Ano</th>
+                              <th className="text-center p-3 text-xs font-medium text-muted-foreground">Alunos</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {trilhas.map((turma, index) => (
+                              <tr key={turma.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/10'}>
+                                <td className="p-3">
+                                  <div className="flex items-center gap-2">
+                                    <GraduationCap className="h-4 w-4 text-secondary shrink-0" />
+                                    <span className="text-sm">{turma.name}</span>
+                                  </div>
+                                </td>
+                                <td className="p-3 hidden sm:table-cell">
+                                  <span className="text-xs font-mono bg-muted px-2 py-1 rounded">
+                                    {turma.externalId || '-'}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-center">
+                                  <div className="flex items-center justify-center gap-1 text-sm">
+                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                    {turma.year}
+                                  </div>
+                                </td>
+                                <td className="p-3 text-center">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${
+                                    turma.totalAlunos > 0
+                                      ? 'bg-green-100 text-green-700'
+                                      : 'bg-muted text-muted-foreground'
+                                  }`}>
+                                    <Users className="h-3 w-3" />
+                                    {turma.totalAlunos}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Turmas sem codigoTurma (outras empresas) */}
+                {semCodigo.length > 0 && (
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left p-3 text-sm font-medium">Turma</th>
+                          <th className="text-left p-3 text-sm font-medium hidden sm:table-cell">Código</th>
+                          <th className="text-center p-3 text-sm font-medium">Ano</th>
+                          <th className="text-center p-3 text-sm font-medium">Alunos</th>
+                          <th className="text-center p-3 text-sm font-medium">Status</th>
+                          <th className="text-center p-3 text-sm font-medium">Ação</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {semCodigo.map((turma, index) => (
+                          <tr key={turma.id} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                <GraduationCap className="h-4 w-4 text-secondary shrink-0" />
+                                <span className="font-medium">{turma.name}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 hidden sm:table-cell">
+                              <span className="text-xs font-mono bg-muted px-2 py-1 rounded">
+                                {turma.externalId || '-'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span>{turma.year}</span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-medium ${
+                                turma.totalAlunos > 0 ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'
+                              }`}>
+                                <Users className="h-3.5 w-3.5" />
+                                {turma.totalAlunos}
+                              </span>
+                            </td>
+                            <td className="p-3 text-center">
+                              {turma.dataCongelamento ? (
+                                <Badge className="bg-blue-100 text-blue-700 border-blue-300 gap-1">
+                                  <Snowflake className="h-3 w-3" />
+                                  Congelado em {formatDate(turma.dataCongelamento)}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-muted-foreground">Ativo</Badge>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => abrirDialogCongelar(
+                                  turma.externalId || String(turma.id),
+                                  turma.name,
+                                  turma.dataCongelamento
+                                )}
+                                className={turma.dataCongelamento ? "text-blue-600 border-blue-300 hover:bg-blue-50" : ""}
+                              >
+                                {turma.dataCongelamento ? (
+                                  <><Unlock className="h-3.5 w-3.5 mr-1" />Editar</>
+                                ) : (
+                                  <><Lock className="h-3.5 w-3.5 mr-1" />Congelar</>
+                                )}
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))
@@ -334,10 +466,11 @@ export default function Turmas() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Snowflake className="h-5 w-5 text-blue-500" />
-              Congelar Indicadores — {congelarDialog.turmaNome}
+              Congelar Indicadores — {congelarDialog.nomeTurma}
             </DialogTitle>
             <DialogDescription>
-              Defina a data de congelamento dos indicadores desta turma. Atividades realizadas após essa data não serão contabilizadas. Deixe em branco para remover o congelamento.
+              Defina a data de congelamento. Todas as trilhas desta turma serão congeladas na mesma data.
+              Atividades realizadas após essa data não serão contabilizadas nos indicadores.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -348,7 +481,6 @@ export default function Turmas() {
                 type="date"
                 value={dataCongelamentoInput}
                 onChange={(e) => setDataCongelamentoInput(e.target.value)}
-                placeholder="YYYY-MM-DD"
               />
               <p className="text-xs text-muted-foreground">
                 Deixe em branco para <strong>remover o congelamento</strong> e retornar ao modo normal.
@@ -371,7 +503,7 @@ export default function Turmas() {
                 className="text-red-600 border-red-300 hover:bg-red-50"
                 onClick={() => {
                   setDataCongelamentoInput("");
-                  setCongelamento.mutate({ turmaId: congelarDialog.turmaId, dataCongelamento: null });
+                  setCongelamento.mutate({ codigoTurma: congelarDialog.codigoTurma, dataCongelamento: null });
                 }}
                 disabled={setCongelamento.isPending}
               >

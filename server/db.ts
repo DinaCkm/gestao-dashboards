@@ -590,6 +590,7 @@ export async function getTurmasWithDetails(): Promise<Array<{
   programCode: string;
   totalAlunos: number;
   isActive: number;
+  codigoTurma: string | null;
   dataCongelamento: string | null;
 }>> {
   const db = await getDb();
@@ -605,6 +606,7 @@ export async function getTurmasWithDetails(): Promise<Array<{
       programName: programs.name,
       programCode: programs.code,
       isActive: turmas.isActive,
+      codigoTurma: (turmas as any).codigoTurma,
       dataCongelamento: turmas.dataCongelamento,
     })
     .from(turmas)
@@ -625,6 +627,7 @@ export async function getTurmasWithDetails(): Promise<Array<{
         programName: turma.programName || 'Sem Empresa',
         programCode: turma.programCode || 'N/A',
         totalAlunos: alunosCount[0]?.count || 0,
+        codigoTurma: (turma as any).codigoTurma ? String((turma as any).codigoTurma) : null,
         dataCongelamento: turma.dataCongelamento ? String(turma.dataCongelamento) : null,
       };
     })
@@ -641,9 +644,7 @@ export async function getTurmaByExternalId(externalId: string): Promise<Turma | 
 }
 
 /**
- * Define ou remove a data de congelamento de uma turma.
- * Quando dataCongelamento é uma string (YYYY-MM-DD), os indicadores ficam congelados nessa data.
- * Quando dataCongelamento é null, o congelamento é removido (turma volta ao normal).
+ * Define ou remove a data de congelamento de uma turma individual.
  */
 export async function setDataCongelamentoTurma(turmaId: number, dataCongelamento: string | null): Promise<void> {
   const db = await getDb();
@@ -652,6 +653,19 @@ export async function setDataCongelamentoTurma(turmaId: number, dataCongelamento
     .update(turmas)
     .set({ dataCongelamento: dataCongelamento as any })
     .where(eq(turmas.id, turmaId));
+}
+
+/**
+ * Define ou remove a data de congelamento de TODAS as turmas com o mesmo codigoTurma.
+ * Isso garante que o congelamento seja por turma (BS1/BS2/BS3), não por trilha individual.
+ */
+export async function setDataCongelamentoPorCodigoTurma(codigoTurma: string, dataCongelamento: string | null): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(turmas)
+    .set({ dataCongelamento: dataCongelamento as any })
+    .where(eq((turmas as any).codigoTurma, codigoTurma));
 }
 
 export async function upsertTurma(turma: InsertTurma): Promise<number | null> {

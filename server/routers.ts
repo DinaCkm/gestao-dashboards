@@ -2486,11 +2486,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // Congelar ou descongelar indicadores de uma turma
     setCongelamento: adminProcedure
       .input(z.object({
-        turmaId: z.number(),
+        codigoTurma: z.string(), // ex: 'BS1', 'BS2', 'BS3'
         dataCongelamento: z.string().nullable(), // formato YYYY-MM-DD ou null para descongelar
       }))
       .mutation(async ({ input }) => {
-        await db.setDataCongelamentoTurma(input.turmaId, input.dataCongelamento);
+        // Aplica o congelamento em TODAS as turmas com o mesmo codigoTurma
+        await db.setDataCongelamentoPorCodigoTurma(input.codigoTurma, input.dataCongelamento);
         return { success: true };
       }),
   }),
@@ -4565,11 +4566,31 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const marcoZeroCicloAtual: Date | null = dataUltimoReset ?? null;
 
       // === CONGELAMENTO DE TURMA ===
-      // Se a turma do aluno tem dataCongelamento preenchida, os indicadores ficam
-      // congelados nessa data — nenhuma atividade posterior é contabilizada.
+      // O congelamento é por TURMA (ex: BS1, BS2, BS3), não por linha individual de turma+trilha.
+      // Um aluno pertence a uma turma via turmaId. Essa turma tem um codigoTurma (ex: 'BS1').
+      // Se qualquer turma com esse mesmo codigoTurma tiver dataCongelamento preenchida,
+      // todos os alunos daquela turma ficam congelados nessa data.
       const turmaAlunoDados = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
-      const dataCongelamentoTurma: Date | null = turmaAlunoDados?.dataCongelamento
-        ? new Date((turmaAlunoDados.dataCongelamento as any) + 'T23:59:59')
+      const codigoTurmaAluno = (turmaAlunoDados as any)?.codigoTurma ?? null;
+      // Buscar a data de congelamento do grupo de turmas (pelo codigoTurma)
+      const dataCongelamentoTurma: Date | null = (() => {
+        if (!codigoTurmaAluno) {
+          // Sem codigoTurma: usar dataCongelamento da própria turma (fallback)
+          return turmaAlunoDados?.dataCongelamento
+            ? new Date((turmaAlunoDados.dataCongelamento as any) + 'T23:59:59')
+            : null;
+        }
+        // Encontrar a dataCongelamento de qualquer turma com o mesmo codigoTurma
+        const turmaDoGrupo = turmasList.find(
+          (t: any) => t.codigoTurma === codigoTurmaAluno && t.dataCongelamento
+        );
+        return turmaDoGrupo?.dataCongelamento
+          ? new Date((turmaDoGrupo.dataCongelamento as any) + 'T23:59:59')
+          : null;
+      })();
+      // Turma representativa do grupo (para exibir nome no banner)
+      const turmaCongeladaRepresentativa = dataCongelamentoTurma
+        ? (turmasList.find((t: any) => t.codigoTurma === codigoTurmaAluno && t.dataCongelamento) || turmaAlunoDados)
         : null;
 
       for (const session of allSessions) {
@@ -4907,10 +4928,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         resultadoCongelado: dataCongelamentoTurma
           ? {
               congelado: true,
-              dataCongelamento: turmaAlunoDados!.dataCongelamento as string,
-              nomeTurma: turmaAlunoDados!.name,
+              dataCongelamento: (turmaCongeladaRepresentativa as any)?.dataCongelamento as string,
+              codigoTurma: codigoTurmaAluno,
+              nomeTurma: codigoTurmaAluno ? `Turma ${codigoTurmaAluno}` : (turmaCongeladaRepresentativa as any)?.name,
             }
-          : { congelado: false, dataCongelamento: null, nomeTurma: null },
+          : { congelado: false, dataCongelamento: null, codigoTurma: null, nomeTurma: null },
         sessoes: sessoesAluno
           .filter(s => {
             // Se a turma está congelada, excluir sessões posteriores ao congelamento
