@@ -26,14 +26,16 @@ __export(const_exports, {
   COOKIE_NAME: () => COOKIE_NAME,
   NOT_ADMIN_ERR_MSG: () => NOT_ADMIN_ERR_MSG,
   ONE_YEAR_MS: () => ONE_YEAR_MS,
+  TWO_HOURS_MS: () => TWO_HOURS_MS,
   UNAUTHED_ERR_MSG: () => UNAUTHED_ERR_MSG
 });
-var COOKIE_NAME, ONE_YEAR_MS, AXIOS_TIMEOUT_MS, UNAUTHED_ERR_MSG, NOT_ADMIN_ERR_MSG;
+var COOKIE_NAME, ONE_YEAR_MS, TWO_HOURS_MS, AXIOS_TIMEOUT_MS, UNAUTHED_ERR_MSG, NOT_ADMIN_ERR_MSG;
 var init_const = __esm({
   "shared/const.ts"() {
     "use strict";
     COOKIE_NAME = "app_session_id";
     ONE_YEAR_MS = 1e3 * 60 * 60 * 24 * 365;
+    TWO_HOURS_MS = 1e3 * 60 * 60 * 2;
     AXIOS_TIMEOUT_MS = 3e4;
     UNAUTHED_ERR_MSG = "Please login (10001)";
     NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
@@ -11189,7 +11191,7 @@ var init_sdk = __esm({
       }
       async signSession(payload, options = {}) {
         const issuedAt = Date.now();
-        const expiresInMs = options.expiresInMs ?? ONE_YEAR_MS;
+        const expiresInMs = options.expiresInMs ?? TWO_HOURS_MS;
         const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1e3);
         const secretKey = this.getSessionSecret();
         return new SignJWT({
@@ -15121,10 +15123,10 @@ function registerOAuthRoutes(app) {
       });
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS
+        expiresInMs: TWO_HOURS_MS
       });
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: TWO_HOURS_MS });
       res.redirect(302, "/");
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
@@ -20004,13 +20006,13 @@ var appRouter = router({
         return { success: false, message: result.message };
       }
       const { sdk: sdk2 } = await Promise.resolve().then(() => (init_sdk(), sdk_exports));
-      const { ONE_YEAR_MS: ONE_YEAR_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
+      const { TWO_HOURS_MS: TWO_HOURS_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
       const token = await sdk2.createSessionToken(result.user.openId, {
         name: result.user.name || "",
-        expiresInMs: ONE_YEAR_MS2
+        expiresInMs: TWO_HOURS_MS2
       });
       const cookieOptions = getSessionCookieOptions(ctx2.req);
-      ctx2.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS2 });
+      ctx2.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS2 });
       return { success: true, user: result.user };
     }),
     // Login universal por Email + CPF
@@ -20024,13 +20026,13 @@ var appRouter = router({
         return { success: false, message: result.message };
       }
       const { sdk: sdk2 } = await Promise.resolve().then(() => (init_sdk(), sdk_exports));
-      const { ONE_YEAR_MS: ONE_YEAR_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
+      const { TWO_HOURS_MS: TWO_HOURS_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
       const token = await sdk2.createSessionToken(result.user.openId, {
         name: result.user.name || "",
-        expiresInMs: ONE_YEAR_MS2
+        expiresInMs: TWO_HOURS_MS2
       });
       const cookieOptions = getSessionCookieOptions(ctx2.req);
-      ctx2.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS2 });
+      ctx2.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS2 });
       return { success: true, user: result.user };
     }),
     // Login customizado para Alunos, Mentores e Gerentes
@@ -20073,13 +20075,13 @@ var appRouter = router({
         ...input.type === "aluno" ? { alunoId: result.user.id } : {}
       });
       const { sdk: sdk2 } = await Promise.resolve().then(() => (init_sdk(), sdk_exports));
-      const { ONE_YEAR_MS: ONE_YEAR_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
+      const { TWO_HOURS_MS: TWO_HOURS_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
       const token = await sdk2.createSessionToken(openId, {
         name: result.user.name || "",
-        expiresInMs: ONE_YEAR_MS2
+        expiresInMs: TWO_HOURS_MS2
       });
       const cookieOptions = getSessionCookieOptions(ctx2.req);
-      ctx2.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS2 });
+      ctx2.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS2 });
       return { success: true, user: result.user };
     }),
     // ============ AUTO-CADASTRO (Landing Page) ============
@@ -20178,15 +20180,15 @@ var appRouter = router({
       }
       try {
         const { sdk: sdk2 } = await Promise.resolve().then(() => (init_sdk(), sdk_exports));
-        const { ONE_YEAR_MS: ONE_YEAR_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
+        const { TWO_HOURS_MS: TWO_HOURS_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
         const normalizedCpf = input.cpf.replace(/[.\-]/g, "");
         const openId = `access_user_${normalizedCpf}`;
         const token = await sdk2.createSessionToken(openId, {
           name: input.name,
-          expiresInMs: ONE_YEAR_MS2
+          expiresInMs: TWO_HOURS_MS2
         });
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS2 });
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS2 });
       } catch (e) {
         console.warn("[AutoRegistro] criar sess\xE3o:", e);
       }

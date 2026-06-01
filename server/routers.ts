@@ -545,14 +545,14 @@ export const appRouter = router({
         
         // Criar sessão
         const { sdk } = await import("./_core/sdk");
-        const { ONE_YEAR_MS } = await import("@shared/const");
+        const { TWO_HOURS_MS } = await import("@shared/const");
         const token = await sdk.createSessionToken(result.user.openId, {
           name: result.user.name || "",
-          expiresInMs: ONE_YEAR_MS,
+          expiresInMs: TWO_HOURS_MS,
         });
         
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS });
         
         return { success: true, user: result.user };
       }),
@@ -572,14 +572,14 @@ export const appRouter = router({
         
         // Criar sessão
         const { sdk } = await import("./_core/sdk");
-        const { ONE_YEAR_MS } = await import("@shared/const");
+        const { TWO_HOURS_MS } = await import("@shared/const");
         const token = await sdk.createSessionToken(result.user.openId, {
           name: result.user.name || "",
-          expiresInMs: ONE_YEAR_MS,
+          expiresInMs: TWO_HOURS_MS,
         });
         
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS });
         
         return { success: true, user: result.user };
       }),
@@ -639,14 +639,14 @@ export const appRouter = router({
         
         // Usar o SDK para criar token de sessão
         const { sdk } = await import("./_core/sdk");
-        const { ONE_YEAR_MS } = await import("@shared/const");
+        const { TWO_HOURS_MS } = await import("@shared/const");
         const token = await sdk.createSessionToken(openId, {
           name: result.user.name || "",
-          expiresInMs: ONE_YEAR_MS,
+          expiresInMs: TWO_HOURS_MS,
         });
         
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS });
         
         return { success: true, user: result.user };
       }),
@@ -760,15 +760,15 @@ export const appRouter = router({
         // Criar sessão automaticamente para o candidato recém-cadastrado
         try {
           const { sdk } = await import('./_core/sdk');
-          const { ONE_YEAR_MS } = await import('@shared/const');
+          const { TWO_HOURS_MS } = await import('@shared/const');
           const normalizedCpf = input.cpf.replace(/[.\-]/g, '');
           const openId = `access_user_${normalizedCpf}`;
           const token = await sdk.createSessionToken(openId, {
             name: input.name,
-            expiresInMs: ONE_YEAR_MS,
+            expiresInMs: TWO_HOURS_MS,
           });
           const cookieOptions = getSessionCookieOptions(ctx.req);
-          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS });
         } catch (e) { console.warn('[AutoRegistro] criar sessão:', e); }
         return { success: true, alunoId: result.alunoId };
       }),
