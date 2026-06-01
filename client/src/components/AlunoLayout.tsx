@@ -89,12 +89,23 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
     }
   }, [menuBloqueado, isCandidatoPS, location, setLocation, onboardingStatus]);
 
+  // Determinar se o aluno é veterano com PDI e sem onboarding liberado
+  // Nesse caso, o item Onboarding é ocultado do menu
+  const isVeteranSemOnboarding = useMemo(() => {
+    if (!onboardingStatus) return false;
+    return !!(onboardingStatus.hasPdi && !onboardingStatus.onboardingLiberado);
+  }, [onboardingStatus]);
+
   // Filtrar itens de navegação
   const navItems = useMemo(() => {
     if (isCandidatoPS) return PS_NAV_ITEMS;
-    if (!menuBloqueado) return ALL_NAV_ITEMS;
-    return ALL_NAV_ITEMS.filter(item => !item.requiresAceite);
-  }, [menuBloqueado, isCandidatoPS]);
+    // Veterano com PDI e sem onboarding liberado: ocultar item Onboarding
+    const items = isVeteranSemOnboarding
+      ? ALL_NAV_ITEMS.filter(item => item.path !== '/onboarding')
+      : ALL_NAV_ITEMS;
+    if (!menuBloqueado) return items;
+    return items.filter(item => !item.requiresAceite);
+  }, [menuBloqueado, isCandidatoPS, isVeteranSemOnboarding]);
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
