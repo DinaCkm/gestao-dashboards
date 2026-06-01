@@ -23,6 +23,8 @@ export default function EditarMentorias() {
   const [turmaFilter, setTurmaFilter] = useState<string>("");
   const [consultorFilter, setConsultorFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [presencaFilter, setPresencaFilter] = useState("");
+  const [taskStatusFilter, setTaskStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const pageSize = 30;
 
@@ -81,9 +83,11 @@ export default function EditarMentorias() {
     turmaId: turmaFilter ? Number(turmaFilter) : undefined,
     consultorId: consultorFilter ? Number(consultorFilter) : undefined,
     alunoNome: searchTerm.trim() || undefined,
+    presenca: presencaFilter || undefined,
+    taskStatus: taskStatusFilter || undefined,
     page,
     pageSize,
-  }), [programFilter, turmaFilter, consultorFilter, searchTerm, page]);
+  }), [programFilter, turmaFilter, consultorFilter, searchTerm, presencaFilter, taskStatusFilter, page]);
 
   const { data: sessionsData, isLoading: loadingSessions, refetch } = trpc.admin.listMentoringSessions.useQuery(queryInput, {
     enabled: !loading && !!user && user.role === "admin",
@@ -335,6 +339,8 @@ export default function EditarMentorias() {
     setTurmaFilter("");
     setConsultorFilter("");
     setSearchTerm("");
+    setPresencaFilter("");
+    setTaskStatusFilter("");
     setPage(1);
   }
 
@@ -416,7 +422,7 @@ export default function EditarMentorias() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {/* Empresa */}
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Empresa</Label>
@@ -475,10 +481,42 @@ export default function EditarMentorias() {
                   />
                 </div>
               </div>
+
+              {/* Presença */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Status da Sessão</Label>
+                <Select value={presencaFilter} onValueChange={(v) => { setPresencaFilter(v === "all" ? "" : v); setPage(1); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Presente/Ausente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="presente">Presente</SelectItem>
+                    <SelectItem value="ausente">Ausente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Status da Tarefa */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Status da Tarefa</Label>
+                <Select value={taskStatusFilter} onValueChange={(v) => { setTaskStatusFilter(v === "all" ? "" : v); setPage(1); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Entregue/Não entregue" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="entregue">Entregue</SelectItem>
+                    <SelectItem value="nao_entregue">Não entregue</SelectItem>
+                    <SelectItem value="sem_tarefa">Sem tarefa</SelectItem>
+                    <SelectItem value="validada">Validada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Clear filters */}
-            {(programFilter || turmaFilter || consultorFilter || searchTerm) && (
+            {(programFilter || turmaFilter || consultorFilter || searchTerm || presencaFilter || taskStatusFilter) && (
               <div className="mt-3 flex justify-end">
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
                   <X className="h-3 w-3 mr-1" />

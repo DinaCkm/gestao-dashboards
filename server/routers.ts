@@ -7084,6 +7084,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         alunoId: z.number().optional(),
         consultorId: z.number().optional(),
         alunoNome: z.string().optional(),
+        presenca: z.string().optional(),
+        taskStatus: z.string().optional(),
         page: z.number().default(1),
         pageSize: z.number().default(50),
       }))
@@ -7101,6 +7103,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (filters.alunoId) conditions.push(eq(mentoringSessions.alunoId, filters.alunoId));
         if (filters.consultorId) conditions.push(eq(mentoringSessions.consultorId, filters.consultorId));
         if (filters.turmaId) conditions.push(eq(mentoringSessions.turmaId, filters.turmaId));
+        if (filters.presenca) conditions.push(eq(mentoringSessions.presence, filters.presenca));
+        if (filters.taskStatus) conditions.push(eq(mentoringSessions.taskStatus, filters.taskStatus as any));
         // If alunoNome filter, resolve to alunoIds first
         if (filters.alunoNome && filters.alunoNome.trim()) {
           const matchingAlunos = await dbInstance.select({ id: alunosTable.id }).from(alunosTable).where(sql`LOWER(${alunosTable.name}) LIKE ${('%' + filters.alunoNome.toLowerCase() + '%')}`);
