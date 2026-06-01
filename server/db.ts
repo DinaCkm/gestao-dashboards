@@ -614,19 +614,38 @@ export async function getTurmasWithDetails(): Promise<Array<{
     .where(eq(turmas.isActive, 1))
     .orderBy(programs.name, turmas.name);
   
-  // Buscar contagem de alunos para cada turma
+  // Buscar contagem de alunos por trilha usando PDIs ativos como fonte de verdade.
+  // Isso é necessário porque um aluno pode ter turmaId apontando para uma trilha
+  // mas ter PDIs ativos em outra trilha da mesma turma (ex: BS1 Basic + BS1 Essential).
   const turmasWithCount = await Promise.all(
     result.map(async (turma) => {
-      const alunosCount = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(alunos)
-        .where(eq(alunos.turmaId, turma.id));
+      // Contar alunos distintos com PDI ativo nesta turma
+      const pdiCount = await db
+        .select({ count: sql<number>`count(DISTINCT ${assessmentPdi.alunoId})` })
+        .from(assessmentPdi)
+        .where(
+          and(
+            eq(assessmentPdi.turmaId, turma.id),
+            eq(assessmentPdi.status, 'ativo')
+          )
+        );
       
+      // Fallback: se não há PDIs, usar contagem pelo turmaId do aluno
+      const totalPorPdi = pdiCount[0]?.count || 0;
+      let totalAlunos = totalPorPdi;
+      if (totalAlunos === 0) {
+        const alunosCount = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(alunos)
+          .where(eq(alunos.turmaId, turma.id));
+        totalAlunos = alunosCount[0]?.count || 0;
+      }
+
       return {
         ...turma,
         programName: turma.programName || 'Sem Empresa',
         programCode: turma.programCode || 'N/A',
-        totalAlunos: alunosCount[0]?.count || 0,
+        totalAlunos,
         codigoTurma: (turma as any).codigoTurma ? String((turma as any).codigoTurma) : null,
         dataCongelamento: turma.dataCongelamento ? String(turma.dataCongelamento) : null,
       };
