@@ -13990,6 +13990,7 @@ Acesse o painel: ${data.loginUrl}`;
   return { subject, html, text: text2 };
 }
 function buildPsRelatorioEmail(data) {
+  const logoUrl = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
   const subject = `\u{1F4CB} Relat\xF3rio do Processo Seletivo \u2014 ${data.processoNome} (${data.dataEnvio})`;
   const linhas = data.candidatos.map((c) => `
     <tr>
@@ -14003,7 +14004,8 @@ function buildPsRelatorioEmail(data) {
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;">
     <table width="680" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-      <tr><td style="background:#0f2b3c;padding:28px 40px;">
+      <tr><td style="background:#0f2b3c;padding:28px 40px;text-align:center;">
+        <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="140" style="display:block;margin:0 auto 16px;" />
         <h1 style="color:#fff;font-size:20px;margin:0;">\u{1F4CB} Relat\xF3rio do Processo Seletivo</h1>
         <p style="color:#93c5fd;font-size:14px;margin:6px 0 0;">${data.processoNome} \u2014 ${data.dataEnvio}</p>
       </td></tr>
