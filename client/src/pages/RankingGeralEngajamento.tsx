@@ -91,14 +91,35 @@ export default function RankingGeralEngajamento() {
     return map;
   }, [turmas]);
 
-  // Mapa de codigoTurma -> dataCongelamento (ex: { BS1: '2026-05-31', BS2: '2026-05-31' })
+  // Formata dataCongelamento para DD/MM/AAAA (padrão brasileiro)
+  // Aceita string ISO 'YYYY-MM-DD', objeto Date ou string com timestamp
+  const formatarDataCongelamento = (raw: any): string => {
+    if (!raw) return '';
+    const s = String(raw);
+    // Se vier no formato YYYY-MM-DD (com ou sem timestamp)
+    const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoMatch) {
+      return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+    }
+    // Fallback: tentar converter via Date
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) {
+      const dd = String(d.getUTCDate()).padStart(2, '0');
+      const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const yyyy = d.getUTCFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    return s;
+  };
+
+  // Mapa de codigoTurma -> dataCongelamento formatada (ex: { BS1: '31/05/2026' })
   const congelamentoMap = useMemo(() => {
     const map = new Map<string, string>();
     if (turmas) {
       turmas.forEach((t: any) => {
         const codigo = extrairCodigoTurma(t.name);
         if (t.dataCongelamento && !map.has(codigo)) {
-          map.set(codigo, t.dataCongelamento);
+          map.set(codigo, formatarDataCongelamento(t.dataCongelamento));
         }
       });
     }
@@ -347,10 +368,10 @@ export default function RankingGeralEngajamento() {
                               {congelamentoMap.has(aluno.turmaNome) && (
                                 <span
                                   className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700"
-                                  title={`Resultado congelado em ${new Date(congelamentoMap.get(aluno.turmaNome)! + 'T00:00:00').toLocaleDateString('pt-BR')}`}
+                                  title={`Resultado congelado em ${congelamentoMap.get(aluno.turmaNome)}`}
                                 >
                                   <Snowflake className="h-3 w-3" />
-                                  {new Date(congelamentoMap.get(aluno.turmaNome)! + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                  {congelamentoMap.get(aluno.turmaNome)}
                                 </span>
                               )}
                             </div>
