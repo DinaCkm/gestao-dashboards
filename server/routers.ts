@@ -4212,6 +4212,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           trilhaId: c.trilhaId,
           trilhaNome: c.trilhaNome || '',
           entregue: c.entregue === 1,
+          dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : null,
         }));
         const macrocicloPorAlunoNivel = await db.getMacrocicloPorAluno();
         const macrocicloNivel = macrocicloPorAlunoNivel.get(idUsuarioNivel);
@@ -4451,6 +4452,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           trilhaId: c.trilhaId,
           trilhaNome: c.trilhaNome,
           entregue: c.entregue === 1,
+          dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : null,
         }));
         // Buscar macrociclo do aluno
         const macrocicloPorAlunoMap = await db.getMacrocicloPorAluno();
@@ -4704,6 +4706,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         trilhaId: c.trilhaId,
         trilhaNome: c.trilhaNome,
         entregue: c.entregue === 1,
+        dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : null,
       }));
       const macrocicloAlunoPortal = macrocicloPorAlunoGlobal.get(idUsuario);
       const indicadoresV2 = calcularIndicadoresAlunoV2(

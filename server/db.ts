@@ -12120,19 +12120,29 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   )) as any;
   const discRow = Array.isArray(discRows) ? discRows[0] : null;
 
-  // Buscar o PDI ativo mais recente do aluno
+  // Buscar o PDI ativo mais recente do aluno (com macroInicio e macroTermino)
   const [pdiActiveRows] = await db.execute(sql.raw(
-    `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo' ORDER BY createdAt DESC LIMIT 1`
+    `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo' ORDER BY createdAt DESC LIMIT 1`
   )) as any;
   const pdiActiveRow = Array.isArray(pdiActiveRows) ? pdiActiveRows[0] : null;
-  // Fallback: qualquer PDI mais recente
+  // Fallback: qualquer PDI mais recente (para alunos sem PDI ativo no momento do arquivamento)
   let pdiId: number | null = pdiActiveRow?.id || null;
+  let pdiFallbackRow: any = null;
   if (!pdiId) {
     const [pdiAnyRows] = await db.execute(sql.raw(
-      `SELECT id FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
+      `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} ORDER BY createdAt DESC LIMIT 1`
     )) as any;
-    pdiId = Array.isArray(pdiAnyRows) && pdiAnyRows[0]?.id ? pdiAnyRows[0].id : null;
+    pdiFallbackRow = Array.isArray(pdiAnyRows) ? pdiAnyRows[0] : null;
+    pdiId = pdiFallbackRow?.id ?? null;
   }
+  // Extrair macroInicio e macroTermino do PDI (ativo ou fallback)
+  const pdiMacroRow = pdiActiveRow || pdiFallbackRow || null;
+  const macroInicioStr: string | null = pdiMacroRow?.macroInicio
+    ? String(pdiMacroRow.macroInicio).split('T')[0]
+    : null;
+  const macroTerminoStr: string | null = pdiMacroRow?.macroTermino
+    ? String(pdiMacroRow.macroTermino).split('T')[0]
+    : null;
 
   // Buscar o aceite do onboarding para pegar dataInicio
   const [jornadaRows] = await db.execute(sql.raw(
@@ -12162,13 +12172,24 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   // === 3. CALCULAR SNAPSHOT DOS INDICADORES ===
   // Cálculo direto via SQL para evitar dependência circular com indicatorsCalculatorV2
 
-  // Ind.1: Webinars (% de presenças em eventos)
+  // Filtros de macrociclo para os indicadores baseados em período
+  // Se o PDI tem macroInicio/macroTermino, filtrar eventos/sessões/cases dentro do período
+  const macroInicioFilter = macroInicioStr ? `AND ep.eventDate >= '${macroInicioStr}'` : '';
+  const macroTerminoFilterEp = macroTerminoStr ? `AND ep.eventDate <= '${macroTerminoStr}'` : '';
+  const macroInicioFilterMs = macroInicioStr ? `AND ms.sessionDate >= '${macroInicioStr}'` : '';
+  const macroTerminoFilterMs = macroTerminoStr ? `AND ms.sessionDate <= '${macroTerminoStr}'` : '';
+  const macroInicioFilterCs = macroInicioStr ? `AND cs.dataEntrega >= '${macroInicioStr}'` : '';
+  const macroTerminoFilterCs = macroTerminoStr ? `AND cs.dataEntrega <= '${macroTerminoStr}'` : '';
+
+  // Ind.1: Webinars (% de presenças em eventos dentro do macrociclo)
   const [webinarRows] = await db.execute(sql.raw(`
     SELECT
       COUNT(*) as total,
       SUM(CASE WHEN ep.status = 'presente' THEN 1 ELSE 0 END) as presentes
     FROM event_participation ep
     WHERE ep.alunoId = ${alunoId}
+      ${macroInicioFilter}
+      ${macroTerminoFilterEp}
   `)) as any;
   const webinarData = Array.isArray(webinarRows) ? webinarRows[0] : null;
   const ind1Webinars = webinarData?.total > 0
@@ -12215,36 +12236,42 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     // tabela pode não existir no banco de staging — retorna 0
   }
 
-  // Ind.4: Tarefas (% de tarefas entregues)
+  // Ind.4: Tarefas (% de tarefas entregues dentro do macrociclo)
   const [tarefaRows] = await db.execute(sql.raw(`
     SELECT
       COUNT(*) as total,
       SUM(CASE WHEN ms.taskStatus = 'entregue' THEN 1 ELSE 0 END) as entregues
     FROM mentoring_sessions ms
     WHERE ms.alunoId = ${alunoId} AND ms.taskStatus IN ('entregue', 'nao_entregue')
+      ${macroInicioFilterMs}
+      ${macroTerminoFilterMs}
   `)) as any;
   const tarefaData = Array.isArray(tarefaRows) ? tarefaRows[0] : null;
   const ind4Tarefas = tarefaData?.total > 0
     ? Math.round((Number(tarefaData.entregues) / Number(tarefaData.total)) * 100)
     : 0;
 
-  // Ind.5: Engajamento (média das notas da mentora, convertida de 0-10 para 0-100)
+  // Ind.5: Engajamento (média das notas da mentora dentro do macrociclo, convertida de 0-10 para 0-100)
   const [engRows] = await db.execute(sql.raw(`
     SELECT AVG(ms.engagementScore) as mediaEng
     FROM mentoring_sessions ms
     WHERE ms.alunoId = ${alunoId} AND ms.engagementScore IS NOT NULL
+      ${macroInicioFilterMs}
+      ${macroTerminoFilterMs}
   `)) as any;
   const engData = Array.isArray(engRows) ? engRows[0] : null;
   const mediaEngRaw = engData?.mediaEng != null ? Number(engData.mediaEng) : 0;
   const ind5Engajamento = Math.round(Math.min(100, Math.max(0, mediaEngRaw * 10)));
 
-  // Ind.6: Aplicabilidade (% de cases entregues)
+  // Ind.6: Aplicabilidade (% de cases entregues dentro do macrociclo)
   const [caseRows] = await db.execute(sql.raw(`
     SELECT
       COUNT(*) as total,
       SUM(CASE WHEN cs.entregue = 1 THEN 1 ELSE 0 END) as entregues
     FROM cases_sucesso cs
     WHERE cs.alunoId = ${alunoId}
+      ${macroInicioFilterCs}
+      ${macroTerminoFilterCs}
   `)) as any;
   const caseData = Array.isArray(caseRows) ? caseRows[0] : null;
   const ind6Aplicabilidade = caseData?.total > 0
@@ -12296,14 +12323,19 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     : 0;
 
   // Macro 3: Aplicabilidade Prática = calculado igual ao endpoint meuDashboard
+  // Usa macroInicio/macroTermino do PDI como período de referência (sem hardcode)
   let snapshotAplicabilidade = 0;
   try {
-    const CUTOFF_DATE = new Date('2026-01-01');
+    const macroInicioFilterSessAplic = macroInicioStr ? `AND sessionDate >= '${macroInicioStr}'` : '';
+    const macroTerminoFilterSessAplic = macroTerminoStr ? `AND sessionDate <= '${macroTerminoStr}'` : '';
+    const macroInicioFilterCasesAplic = macroInicioStr ? `AND dataEntrega >= '${macroInicioStr}'` : '';
+    const macroTerminoFilterCasesAplic = macroTerminoStr ? `AND dataEntrega <= '${macroTerminoStr}'` : '';
     const [sessAplic] = await db.execute(sql.raw(`
       SELECT notaAlunoAplicabilidade, notaMentoraAplicabilidade
       FROM mentoring_sessions
       WHERE alunoId = ${alunoId}
-        AND sessionDate >= '2026-01-01'
+        ${macroInicioFilterSessAplic}
+        ${macroTerminoFilterSessAplic}
         AND (notaAlunoAplicabilidade IS NOT NULL OR notaMentoraAplicabilidade IS NOT NULL)
     `)) as any;
     const sessoesComAplic = Array.isArray(sessAplic) ? sessAplic : [];
@@ -12312,14 +12344,18 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
       SELECT notaAlunoAplicabilidade, notaMentoraAplicabilidade, entregue
       FROM cases_sucesso
       WHERE alunoId = ${alunoId} AND entregue = 1
-        AND dataEntrega >= '2026-01-01'
+        ${macroInicioFilterCasesAplic}
+        ${macroTerminoFilterCasesAplic}
         AND (notaAlunoAplicabilidade IS NOT NULL OR notaMentoraAplicabilidade IS NOT NULL)
     `)) as any;
     const casesComAplic = Array.isArray(casesAplic) ? casesAplic : [];
 
-    const [casesAll] = await db.execute(sql.raw(
-      `SELECT entregue FROM cases_sucesso WHERE alunoId = ${alunoId}`
-    )) as any;
+    const [casesAll] = await db.execute(sql.raw(`
+      SELECT entregue FROM cases_sucesso
+      WHERE alunoId = ${alunoId}
+        ${macroInicioFilterCasesAplic}
+        ${macroTerminoFilterCasesAplic}
+    `)) as any;
     const todosOsCases = Array.isArray(casesAll) ? casesAll : [];
 
     const microTarefa = calcularMicroTarefaAplicabilidade(
