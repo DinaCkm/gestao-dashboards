@@ -17953,7 +17953,6 @@ var processoInput = z4.object({
   descricao: z4.string().optional(),
   status: z4.enum(["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho"),
   dataInicio: z4.string().optional().nullable(),
-  dataFim: z4.string().optional().nullable(),
   emailsRelatorio: z4.string().optional().nullable(),
   mentorId: z4.number().optional().nullable()
 });
@@ -17961,19 +17960,33 @@ var processoIdInput = z4.object({ processoId: z4.number() });
 var processosSeletivosRouter = router({
   listarProcessos: protectedProcedure.query(async ({ ctx: ctx2 }) => {
     const database = await requireDatabase();
+    const safeSelect = {
+      id: processosSeletivos.id,
+      nome: processosSeletivos.nome,
+      clienteNome: processosSeletivos.clienteNome,
+      clienteEmail: processosSeletivos.clienteEmail,
+      linkEntrevista: processosSeletivos.linkEntrevista,
+      descricao: processosSeletivos.descricao,
+      status: processosSeletivos.status,
+      dataInicio: processosSeletivos.dataInicio,
+      responsavelCkmId: processosSeletivos.responsavelCkmId,
+      criadoPor: processosSeletivos.criadoPor,
+      createdAt: processosSeletivos.createdAt,
+      updatedAt: processosSeletivos.updatedAt
+    };
     if (isCkmAdmin(ctx2.user.role)) {
-      return database.select().from(processosSeletivos).orderBy(desc2(processosSeletivos.createdAt));
+      return database.select(safeSelect).from(processosSeletivos).orderBy(desc2(processosSeletivos.createdAt));
     }
     const userConsultorId = ctx2.user.consultorId;
     const userConsultorRole = ctx2.user.consultorRole;
     const userManagedProgramId = ctx2.user.managedProgramId;
     if (userConsultorId && userConsultorRole !== "gerente") {
-      return database.select().from(processosSeletivos).where(eq4(processosSeletivos.mentorId, userConsultorId)).orderBy(desc2(processosSeletivos.createdAt));
+      return database.select(safeSelect).from(processosSeletivos).where(sql2`${processosSeletivos.id} IN (SELECT id FROM processos_seletivos WHERE mentorId = ${userConsultorId})`).orderBy(desc2(processosSeletivos.createdAt));
     }
     if (userConsultorRole === "gerente" && userManagedProgramId) {
       const [prog] = await database.select({ name: programs.name }).from(programs).where(eq4(programs.id, userManagedProgramId)).limit(1);
       if (prog?.name) {
-        return database.select().from(processosSeletivos).where(eq4(processosSeletivos.clienteNome, prog.name)).orderBy(desc2(processosSeletivos.createdAt));
+        return database.select(safeSelect).from(processosSeletivos).where(eq4(processosSeletivos.clienteNome, prog.name)).orderBy(desc2(processosSeletivos.createdAt));
       }
       return [];
     }
@@ -17981,7 +17994,7 @@ var processosSeletivosRouter = router({
     const candidaturas = await database.select({ processoId: processoCandidatos.processoId }).from(processoCandidatos).where(eq4(processoCandidatos.userId, ctx2.user.id));
     const ids = Array.from(new Set([...clienteLinks, ...candidaturas].map((item) => item.processoId)));
     if (ids.length === 0) return [];
-    return database.select().from(processosSeletivos).where(inArray3(processosSeletivos.id, ids)).orderBy(desc2(processosSeletivos.createdAt));
+    return database.select(safeSelect).from(processosSeletivos).where(inArray3(processosSeletivos.id, ids)).orderBy(desc2(processosSeletivos.createdAt));
   }),
   resumo: protectedProcedure.input(processoIdInput).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
@@ -18018,7 +18031,6 @@ var processosSeletivosRouter = router({
       descricao: input.descricao || null,
       status: input.status,
       dataInicio: input.dataInicio || null,
-      dataFim: input.dataFim || null,
       emailsRelatorio: input.emailsRelatorio || null,
       mentorId: input.mentorId ?? null,
       criadoPor: ctx2.user.id
@@ -18039,7 +18051,6 @@ var processosSeletivosRouter = router({
       ...data.descricao !== void 0 && { descricao: data.descricao || null },
       ...data.status !== void 0 && { status: data.status },
       ...data.dataInicio !== void 0 && { dataInicio: data.dataInicio || null },
-      ...data.dataFim !== void 0 && { dataFim: data.dataFim || null },
       ...data.emailsRelatorio !== void 0 && { emailsRelatorio: data.emailsRelatorio || null },
       ...data.mentorId !== void 0 && { mentorId: data.mentorId ?? null }
     }).where(eq4(processosSeletivos.id, processoId));
@@ -18722,8 +18733,27 @@ var processosSeletivosRouter = router({
   enviarRelatorio: protectedProcedure.input(processoIdInput).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
-    const [processo] = await database.select().from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
+    const [processo] = await database.select({
+      id: processosSeletivos.id,
+      nome: processosSeletivos.nome,
+      clienteNome: processosSeletivos.clienteNome,
+      clienteEmail: processosSeletivos.clienteEmail,
+      linkEntrevista: processosSeletivos.linkEntrevista,
+      descricao: processosSeletivos.descricao,
+      status: processosSeletivos.status,
+      dataInicio: processosSeletivos.dataInicio,
+      responsavelCkmId: processosSeletivos.responsavelCkmId,
+      criadoPor: processosSeletivos.criadoPor,
+      createdAt: processosSeletivos.createdAt,
+      updatedAt: processosSeletivos.updatedAt
+    }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
     if (!processo) throw new TRPCError4({ code: "NOT_FOUND", message: "Processo nao encontrado" });
+    let emailsRelatorio = null;
+    try {
+      const [psExtra] = await database.select({ emailsRelatorio: processosSeletivos.emailsRelatorio }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
+      emailsRelatorio = psExtra?.emailsRelatorio ?? null;
+    } catch {
+    }
     const candidatos = await database.select({
       id: processoCandidatos.id,
       nome: processoCandidatos.nome,
@@ -18769,8 +18799,8 @@ var processosSeletivosRouter = router({
       loginUrl: "https://ecolider.ecodobem.com/processos-seletivos"
     });
     const destinatarios = ["relacionamento@ckmtalents.net"];
-    if (processo.emailsRelatorio) {
-      const extras = processo.emailsRelatorio.split(/[,;\n]/).map((e) => e.trim()).filter(Boolean);
+    if (emailsRelatorio) {
+      const extras = emailsRelatorio.split(/[,;\n]/).map((e) => e.trim()).filter(Boolean);
       destinatarios.push(...extras);
     }
     const uniqueDestinatarios = [...new Set(destinatarios)];

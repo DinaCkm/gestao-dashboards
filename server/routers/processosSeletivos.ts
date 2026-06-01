@@ -310,7 +310,6 @@ const processoInput = z.object({
   descricao: z.string().optional(),
   status: z.enum(["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho"),
   dataInicio: z.string().optional().nullable(),
-  dataFim: z.string().optional().nullable(),
   emailsRelatorio: z.string().optional().nullable(),
   mentorId: z.number().optional().nullable(),
 });
@@ -321,8 +320,24 @@ export const processosSeletivosRouter = router({
   listarProcessos: protectedProcedure.query(async ({ ctx }) => {
     const database = await requireDatabase();
 
+    // Colunas seguras: não inclui dataFim/mentorId/emailsRelatorio que podem não existir no banco ainda
+    const safeSelect = {
+      id: processosSeletivos.id,
+      nome: processosSeletivos.nome,
+      clienteNome: processosSeletivos.clienteNome,
+      clienteEmail: processosSeletivos.clienteEmail,
+      linkEntrevista: processosSeletivos.linkEntrevista,
+      descricao: processosSeletivos.descricao,
+      status: processosSeletivos.status,
+      dataInicio: processosSeletivos.dataInicio,
+      responsavelCkmId: processosSeletivos.responsavelCkmId,
+      criadoPor: processosSeletivos.criadoPor,
+      createdAt: processosSeletivos.createdAt,
+      updatedAt: processosSeletivos.updatedAt,
+    };
+
     if (isCkmAdmin(ctx.user.role)) {
-      return database.select().from(processosSeletivos).orderBy(desc(processosSeletivos.createdAt));
+      return database.select(safeSelect).from(processosSeletivos).orderBy(desc(processosSeletivos.createdAt));
     }
 
     // Mentora: ver processos onde ela é a mentora responsável
@@ -331,10 +346,11 @@ export const processosSeletivosRouter = router({
     const userConsultorRole = (ctx.user as any).consultorRole as string | null;
     const userManagedProgramId = (ctx.user as any).managedProgramId as number | null;
     if (userConsultorId && userConsultorRole !== 'gerente') {
+      // Filtra por mentorId via SQL raw para não depender da coluna no schema
       return database
-        .select()
+        .select(safeSelect)
         .from(processosSeletivos)
-        .where(eq(processosSeletivos.mentorId, userConsultorId))
+        .where(sql`${processosSeletivos.id} IN (SELECT id FROM processos_seletivos WHERE mentorId = ${userConsultorId})`)
         .orderBy(desc(processosSeletivos.createdAt));
     }
 
@@ -347,7 +363,7 @@ export const processosSeletivosRouter = router({
         .limit(1);
       if (prog?.name) {
         return database
-          .select()
+          .select(safeSelect)
           .from(processosSeletivos)
           .where(eq(processosSeletivos.clienteNome, prog.name))
           .orderBy(desc(processosSeletivos.createdAt));
@@ -368,7 +384,7 @@ export const processosSeletivosRouter = router({
     if (ids.length === 0) return [];
 
     return database
-      .select()
+      .select(safeSelect)
       .from(processosSeletivos)
       .where(inArray(processosSeletivos.id, ids))
       .orderBy(desc(processosSeletivos.createdAt));
@@ -428,7 +444,6 @@ export const processosSeletivosRouter = router({
       descricao: input.descricao || null,
       status: input.status,
       dataInicio: input.dataInicio || null,
-      dataFim: input.dataFim || null,
       emailsRelatorio: input.emailsRelatorio || null,
       mentorId: input.mentorId ?? null,
       criadoPor: ctx.user.id,
@@ -452,7 +467,6 @@ export const processosSeletivosRouter = router({
         ...(data.descricao !== undefined && { descricao: data.descricao || null }),
         ...(data.status !== undefined && { status: data.status }),
         ...(data.dataInicio !== undefined && { dataInicio: data.dataInicio || null }),
-        ...(data.dataFim !== undefined && { dataFim: data.dataFim || null }),
         ...(data.emailsRelatorio !== undefined && { emailsRelatorio: data.emailsRelatorio || null }),
         ...(data.mentorId !== undefined && { mentorId: data.mentorId ?? null }),
       }).where(eq(processosSeletivos.id, processoId));
@@ -1441,11 +1455,34 @@ export const processosSeletivosRouter = router({
       requireCkmAdmin(ctx.user.role);
       const database = await requireDatabase();
       const [processo] = await database
-        .select()
+        .select({
+          id: processosSeletivos.id,
+          nome: processosSeletivos.nome,
+          clienteNome: processosSeletivos.clienteNome,
+          clienteEmail: processosSeletivos.clienteEmail,
+          linkEntrevista: processosSeletivos.linkEntrevista,
+          descricao: processosSeletivos.descricao,
+          status: processosSeletivos.status,
+          dataInicio: processosSeletivos.dataInicio,
+          responsavelCkmId: processosSeletivos.responsavelCkmId,
+          criadoPor: processosSeletivos.criadoPor,
+          createdAt: processosSeletivos.createdAt,
+          updatedAt: processosSeletivos.updatedAt,
+        })
         .from(processosSeletivos)
         .where(eq(processosSeletivos.id, input.processoId))
         .limit(1);
       if (!processo) throw new TRPCError({ code: "NOT_FOUND", message: "Processo nao encontrado" });
+      // Buscar emailsRelatorio separadamente (coluna pode não existir em bancos antigos)
+      let emailsRelatorio: string | null = null;
+      try {
+        const [psExtra] = await database
+          .select({ emailsRelatorio: processosSeletivos.emailsRelatorio })
+          .from(processosSeletivos)
+          .where(eq(processosSeletivos.id, input.processoId))
+          .limit(1);
+        emailsRelatorio = psExtra?.emailsRelatorio ?? null;
+      } catch { /* coluna ainda não existe no banco */ }
       // Buscar candidatos ativos com região
       const candidatos = await database
         .select({
@@ -1501,8 +1538,8 @@ export const processosSeletivosRouter = router({
       });
       // Destinatários: emailsRelatorio do processo + e-mail fixo da CKM
       const destinatarios: string[] = ["relacionamento@ckmtalents.net"];
-      if (processo.emailsRelatorio) {
-        const extras = processo.emailsRelatorio.split(/[,;\n]/).map((e) => e.trim()).filter(Boolean);
+      if (emailsRelatorio) {
+        const extras = emailsRelatorio.split(/[,;\n]/).map((e) => e.trim()).filter(Boolean);
         destinatarios.push(...extras);
       }
       const uniqueDestinatarios = [...new Set(destinatarios)];

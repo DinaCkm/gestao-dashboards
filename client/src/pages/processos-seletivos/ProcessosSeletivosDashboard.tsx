@@ -25,7 +25,6 @@ const emptyProcesso = {
   linkEntrevista: "",
   descricao: "",
   mentorId: "",
-  dataFim: "",
   emailsRelatorio: "",
 };
 
@@ -292,7 +291,6 @@ function ProcessosSeletivosContent() {
       clienteEmail: processoForm.clienteEmail || undefined,
       linkEntrevista: processoForm.linkEntrevista || undefined,
       descricao: processoForm.descricao || undefined,
-      dataFim: processoForm.dataFim || undefined,
       emailsRelatorio: processoForm.emailsRelatorio || undefined,
       mentorId: processoForm.mentorId ? Number(processoForm.mentorId) : undefined,
       status: "ativo",
@@ -491,7 +489,6 @@ function ProcessosSeletivosContent() {
               <Input placeholder="Email do cliente" type="email" value={processoForm.clienteEmail} onChange={(event) => setProcessoForm((form) => ({ ...form, clienteEmail: event.target.value }))} />
               <Input placeholder="Link da sala de entrevista (ex: meet.google.com/...)" type="url" value={processoForm.linkEntrevista} onChange={(event) => setProcessoForm((form) => ({ ...form, linkEntrevista: event.target.value }))} />
               <Input placeholder="Descricao curta" value={processoForm.descricao} onChange={(event) => setProcessoForm((form) => ({ ...form, descricao: event.target.value }))} />
-              <Input placeholder="Data fim do processo (AAAA-MM-DD)" type="date" value={processoForm.dataFim} onChange={(event) => setProcessoForm((form) => ({ ...form, dataFim: event.target.value }))} />
               <Input placeholder="E-mails para relatório (separados por vírgula)" value={processoForm.emailsRelatorio} onChange={(event) => setProcessoForm((form) => ({ ...form, emailsRelatorio: event.target.value }))} />
               <Select value={processoForm.mentorId} onValueChange={(value) => setProcessoForm((form) => ({ ...form, mentorId: value }))}>
                 <SelectTrigger><SelectValue placeholder="Selecionadora (opcional)" /></SelectTrigger>
