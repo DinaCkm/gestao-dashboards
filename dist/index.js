@@ -10990,7 +10990,9 @@ async function ensureProcessoSeletivoColumns() {
   const db2 = await getDb();
   if (!db2) return;
   const columns = [
-    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `emailsRelatorio` text COMMENT 'E-mails separados por v\xEDrgula para receber relat\xF3rio do processo'"
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `dataFim` date NULL COMMENT 'Data de encerramento do processo'",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `emailsRelatorio` text NULL COMMENT 'E-mails separados por v\xEDrgula para receber relat\xF3rio do processo'",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `mentorId` int NULL COMMENT 'ID do mentor/selecionadora respons\xE1vel'"
   ];
   for (const col of columns) {
     try {

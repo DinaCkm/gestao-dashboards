@@ -13064,7 +13064,9 @@ export async function ensureProcessoSeletivoColumns(): Promise<void> {
   const db = await getDb();
   if (!db) return;
   const columns = [
-    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `emailsRelatorio` text COMMENT 'E-mails separados por vírgula para receber relatório do processo'",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `dataFim` date NULL COMMENT 'Data de encerramento do processo'",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `emailsRelatorio` text NULL COMMENT 'E-mails separados por vírgula para receber relatório do processo'",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `mentorId` int NULL COMMENT 'ID do mentor/selecionadora responsável'",
   ];
   for (const col of columns) {
     try {
