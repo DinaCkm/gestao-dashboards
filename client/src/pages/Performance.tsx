@@ -532,9 +532,11 @@ export default function Performance() {
       <div className="space-y-6">
         {/* Banner: Resultado Congelado */}
         {(data as any).resultadoCongelado?.congelado && (() => {
-          const dc = (data as any).resultadoCongelado.dataCongelamento as string;
-          const parts = dc.split('-');
-          const dataFormatada = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dc;
+          const dc = (data as any).resultadoCongelado.dataCongelamento;
+          const d = new Date(dc);
+          const dataFormatada = !isNaN(d.getTime())
+            ? `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`
+            : (() => { const p = String(dc).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(dc); })();
           return (
             <div className="flex items-start gap-3 bg-blue-50 border-2 border-blue-300 rounded-xl p-4 shadow-sm">
               <Snowflake className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />

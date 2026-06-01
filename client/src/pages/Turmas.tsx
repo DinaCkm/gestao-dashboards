@@ -84,10 +84,19 @@ export default function Turmas() {
     };
   }, [turmas, empresas]);
 
-  function formatDate(dateStr: string | null) {
+  function formatDate(dateStr: string | null | any) {
     if (!dateStr) return null;
+    // Se for objeto Date ou string ISO com timestamp (ex: "Sun May 31 2026 00:00:00...")
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const year = d.getUTCFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    // Fallback: string no formato YYYY-MM-DD
     const parts = String(dateStr).split('-');
-    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : String(dateStr);
   }
 
   function abrirDialogCongelar(turma: { id: number; name: string; dataCongelamento: string | null }) {
