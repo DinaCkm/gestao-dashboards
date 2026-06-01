@@ -25788,6 +25788,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     setPermissions: adminProcedure3.input(z5.object({ userId: z5.number(), permissions: z5.array(z5.string()) })).mutation(async ({ input }) => {
       await setAdminPermissions(input.userId, input.permissions);
       return { success: true };
+    }),
+    updateAdminPassword: adminProcedure3.input(z5.object({
+      userId: z5.number(),
+      newPassword: z5.string().min(6, "Senha deve ter ao menos 6 caracteres")
+    })).mutation(async ({ input }) => {
+      const crypto = await import("crypto");
+      const passwordHash = crypto.createHash("sha256").update(input.newPassword).digest("hex");
+      const database = await getDb();
+      const { users: users2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      await database.update(users2).set({ passwordHash }).where(eq8(users2.id, input.userId));
+      return { success: true };
     })
   }),
   // Status de onboarding do aluno logado

@@ -7498,6 +7498,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         await db.setAdminPermissions(input.userId, input.permissions);
         return { success: true };
       }),
+
+    updateAdminPassword: adminProcedure
+      .input(z.object({
+        userId: z.number(),
+        newPassword: z.string().min(6, 'Senha deve ter ao menos 6 caracteres'),
+      }))
+      .mutation(async ({ input }) => {
+        const crypto = await import('crypto');
+        const passwordHash = crypto.createHash('sha256').update(input.newPassword).digest('hex');
+        const database = await getDb();
+        const { users } = await import('../drizzle/schema');
+        await database
+          .update(users)
+          .set({ passwordHash })
+          .where(eq(users.id, input.userId));
+        return { success: true };
+      }),
   }),
   // Status de onboarding do aluno logado
   aluno: router({

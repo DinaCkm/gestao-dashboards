@@ -3328,6 +3328,37 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Estado do modal de editar senha
+  const [editSenhaOpen, setEditSenhaOpen] = useState(false);
+  const [editSenhaAdmin, setEditSenhaAdmin] = useState<any>(null);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [showNovaSenha, setShowNovaSenha] = useState(false);
+
+  const updateAdminPassword = trpc.admin.updateAdminPassword.useMutation({
+    onSuccess: () => {
+      toast.success('Senha alterada com sucesso!');
+      setEditSenhaOpen(false);
+      setNovaSenha("");
+      setEditSenhaAdmin(null);
+    },
+    onError: (err) => toast.error(`Erro ao alterar senha: ${err.message}`),
+  });
+
+  const openEditSenha = (admin: any) => {
+    setEditSenhaAdmin(admin);
+    setNovaSenha("");
+    setShowNovaSenha(false);
+    setEditSenhaOpen(true);
+  };
+
+  const handleSaveSenha = () => {
+    if (!editSenhaAdmin || novaSenha.length < 6) {
+      toast.error('A senha deve ter ao menos 6 caracteres.');
+      return;
+    }
+    updateAdminPassword.mutate({ userId: editSenhaAdmin.id, newPassword: novaSenha });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 6) {
@@ -3458,6 +3489,15 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => openEditSenha(admin)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <KeyRound className="h-4 w-4 mr-1" />
+                          Senha
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => onToggleStatus(admin.id)}
                           disabled={isTogglingStatus}
                           className={admin.isActive ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}
@@ -3568,6 +3608,47 @@ function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTo
           <Button variant="outline" onClick={() => setPermOpen(false)}>Cancelar</Button>
           <Button onClick={savePermissions} disabled={isSavingPermissions}>
             {isSavingPermissions ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar Permissões'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Modal de Editar Senha */}
+    <Dialog open={editSenhaOpen} onOpenChange={setEditSenhaOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Alterar Senha — {editSenhaAdmin?.name}</DialogTitle>
+          <DialogDescription>Digite a nova senha para este administrador.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="nova-senha">Nova Senha</Label>
+            <div className="relative">
+              <Input
+                id="nova-senha"
+                type={showNovaSenha ? "text" : "password"}
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowNovaSenha(v => !v)}
+              >
+                {showNovaSenha ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setEditSenhaOpen(false)}>Cancelar</Button>
+          <Button
+            onClick={handleSaveSenha}
+            disabled={updateAdminPassword.isPending || novaSenha.length < 6}
+          >
+            {updateAdminPassword.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar'}
           </Button>
         </DialogFooter>
       </DialogContent>
