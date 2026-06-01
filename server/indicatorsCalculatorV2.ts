@@ -130,6 +130,7 @@ export interface CaseSucessoData {
   trilhaId: number | null;
   trilhaNome: string | null;
   entregue: boolean;
+  dataEntrega?: Date | null; // Data de entrega do case (para filtro por macrociclo)
 }
 
 /**
@@ -442,12 +443,23 @@ export function calcularIndicadoresCiclo(
   // ============================================================
   // IND 6: Aplicabilidade Prática (Case de Sucesso)
   // Campo separado — NÃO entra na média do Engajamento
+  // Respeita o macrociclo: só conta se dataEntrega <= cicloFim
   // ============================================================
   const isMacrocicloFinalizado = status === 'finalizado';
   const caseAluno = casesData.find(c => 
     c.trilhaNome?.toLowerCase() === ciclo.trilhaNome?.toLowerCase()
   );
-  const caseEntregue = caseAluno?.entregue || false;
+  // Verificar se o case foi entregue dentro do período do ciclo
+  let caseEntregue = false;
+  if (caseAluno?.entregue) {
+    if (caseAluno.dataEntrega) {
+      // Se tem data de entrega, verificar se está dentro do período do ciclo
+      caseEntregue = new Date(caseAluno.dataEntrega) <= cicloFim;
+    } else {
+      // Sem data de entrega: aceitar (fallback para dados antigos)
+      caseEntregue = true;
+    }
+  }
   const caseObrigatorio = isMacrocicloFinalizado; // Informativo: macrociclo finalizado
   
   let ind6_aplicabilidade = 0;
@@ -572,6 +584,20 @@ export function calcularIndicadoresAluno(
   // Não dependem dos microciclos, usam TODAS as sessões/eventos do período
   // ============================================================
   
+  // Filtrar performance (Ind.2 e Ind.3) pelo macroTermino
+  // Garante que notas e conclusões de cursos após o fim do contrato não alterem os indicadores
+  let performanceFiltrada = performance.filter(p => p.idUsuario === idUsuario);
+  if (macrociclo) {
+    const macroTerminoPerf = new Date(macrociclo.macroTermino + 'T23:59:59');
+    performanceFiltrada = performanceFiltrada.filter(p => {
+      const p2 = p as any;
+      if (p2.dataConclusao) {
+        return new Date(p2.dataConclusao) <= macroTerminoPerf;
+      }
+      return true; // fallback: sem data, incluir (dados antigos)
+    });
+  }
+
   // Filtrar mentorias e eventos pelo período do macrociclo (se disponível)
   let mentoriasMacro = mentoriasAluno;
   let eventosMacro = eventosAluno;
@@ -628,7 +654,7 @@ export function calcularIndicadoresAluno(
   
   for (const ciclo of ciclos) {
     const indicadoresCiclo = calcularIndicadoresCiclo(
-      idUsuario, ciclo, mentorias, eventos, performance, compIdToCodigoMap, casesData, hoje, compIdToNomeMap
+      idUsuario, ciclo, mentorias, eventos, performanceFiltrada, compIdToCodigoMap, casesData, hoje, compIdToNomeMap
     );
     
     if (indicadoresCiclo.status === 'futuro') continue; // Ignorar ciclos futuros

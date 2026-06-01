@@ -7258,9 +7258,9 @@ export async function deleteCaseSucesso(id: number) {
  * Get cases data formatted for the V2 calculator
  * Returns a map: alunoId -> CaseSucessoData[]
  */
-export async function getCasesForCalculator(): Promise<Map<number, { alunoId: number; trilhaId: number | null; trilhaNome: string | null; entregue: boolean }[]>> {
+export async function getCasesForCalculator(): Promise<Map<number, { alunoId: number; trilhaId: number | null; trilhaNome: string | null; entregue: boolean; dataEntrega?: Date | null }[]>> {
   const db = await getDb();
-  const result = new Map<number, { alunoId: number; trilhaId: number | null; trilhaNome: string | null; entregue: boolean }[]>();
+  const result = new Map<number, { alunoId: number; trilhaId: number | null; trilhaNome: string | null; entregue: boolean; dataEntrega?: Date | null }[]>();
   if (!db) return result;
   
   const allCases = await db.select().from(casesSucesso);
@@ -7272,6 +7272,7 @@ export async function getCasesForCalculator(): Promise<Map<number, { alunoId: nu
       trilhaId: c.trilhaId,
       trilhaNome: c.trilhaNome,
       entregue: c.entregue === 1,
+      dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : (c.updatedAt ? new Date(c.updatedAt) : null),
     });
     result.set(c.alunoId, existing);
   }
