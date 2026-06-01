@@ -590,6 +590,7 @@ export async function getTurmasWithDetails(): Promise<Array<{
   programCode: string;
   totalAlunos: number;
   isActive: number;
+  dataCongelamento: string | null;
 }>> {
   const db = await getDb();
   if (!db) return [];
@@ -604,6 +605,7 @@ export async function getTurmasWithDetails(): Promise<Array<{
       programName: programs.name,
       programCode: programs.code,
       isActive: turmas.isActive,
+      dataCongelamento: turmas.dataCongelamento,
     })
     .from(turmas)
     .leftJoin(programs, eq(turmas.programId, programs.id))
@@ -623,6 +625,7 @@ export async function getTurmasWithDetails(): Promise<Array<{
         programName: turma.programName || 'Sem Empresa',
         programCode: turma.programCode || 'N/A',
         totalAlunos: alunosCount[0]?.count || 0,
+        dataCongelamento: turma.dataCongelamento ? String(turma.dataCongelamento) : null,
       };
     })
   );
@@ -635,6 +638,20 @@ export async function getTurmaByExternalId(externalId: string): Promise<Turma | 
   if (!db) return undefined;
   const result = await db.select().from(turmas).where(eq(turmas.externalId, externalId)).limit(1);
   return result[0];
+}
+
+/**
+ * Define ou remove a data de congelamento de uma turma.
+ * Quando dataCongelamento é uma string (YYYY-MM-DD), os indicadores ficam congelados nessa data.
+ * Quando dataCongelamento é null, o congelamento é removido (turma volta ao normal).
+ */
+export async function setDataCongelamentoTurma(turmaId: number, dataCongelamento: string | null): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(turmas)
+    .set({ dataCongelamento: dataCongelamento as any })
+    .where(eq(turmas.id, turmaId));
 }
 
 export async function upsertTurma(turma: InsertTurma): Promise<number | null> {

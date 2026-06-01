@@ -530,6 +530,25 @@ export default function Performance() {
   return (
     <AlunoLayout>
       <div className="space-y-6">
+        {/* Banner: Resultado Congelado */}
+        {(data as any).resultadoCongelado?.congelado && (() => {
+          const dc = (data as any).resultadoCongelado.dataCongelamento as string;
+          const parts = dc.split('-');
+          const dataFormatada = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dc;
+          return (
+            <div className="flex items-start gap-3 bg-blue-50 border-2 border-blue-300 rounded-xl p-4 shadow-sm">
+              <Snowflake className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-blue-900 text-sm">Resultado congelado em {dataFormatada}</p>
+                <p className="text-blue-700 text-xs mt-0.5">
+                  Os indicadores abaixo refletem o desempenho registrado até {dataFormatada}, data de encerramento da turma <strong>{(data as any).resultadoCongelado.nomeTurma}</strong>.
+                  Atividades realizadas após essa data não são contabilizadas.
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Aviso: novo ciclo liberado */}
         {onboardingStatus?.onboardingLiberado && (
           <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">

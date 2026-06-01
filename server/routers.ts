@@ -2482,6 +2482,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listWithDetails: protectedProcedure.query(async () => {
       return await db.getTurmasWithDetails();
     }),
+
+    // Congelar ou descongelar indicadores de uma turma
+    setCongelamento: adminProcedure
+      .input(z.object({
+        turmaId: z.number(),
+        dataCongelamento: z.string().nullable(), // formato YYYY-MM-DD ou null para descongelar
+      }))
+      .mutation(async ({ input }) => {
+        await db.setDataCongelamentoTurma(input.turmaId, input.dataCongelamento);
+        return { success: true };
+      }),
   }),
 
   // Trilhas (Catálogo de Trilhas)
@@ -4553,12 +4564,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // Marco zero do ciclo atual: data do último reset (se houver), senão considera tudo
       const marcoZeroCicloAtual: Date | null = dataUltimoReset ?? null;
 
+      // === CONGELAMENTO DE TURMA ===
+      // Se a turma do aluno tem dataCongelamento preenchida, os indicadores ficam
+      // congelados nessa data — nenhuma atividade posterior é contabilizada.
+      const turmaAlunoDados = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
+      const dataCongelamentoTurma: Date | null = turmaAlunoDados?.dataCongelamento
+        ? new Date((turmaAlunoDados.dataCongelamento as any) + 'T23:59:59')
+        : null;
+
       for (const session of allSessions) {
         const sessionAluno = alunoMap.get(session.alunoId);
         if (!sessionAluno) continue;
         // Se o aluno sofreu reset, ignorar sessões anteriores ao reset
         if (sessionAluno.id === aluno.id && marcoZeroCicloAtual && session.sessionDate) {
           if (new Date(session.sessionDate) < marcoZeroCicloAtual) continue;
+        }
+        // Se a turma está congelada, ignorar sessões posteriores à data de congelamento
+        if (sessionAluno.id === aluno.id && dataCongelamentoTurma && session.sessionDate) {
+          if (new Date(session.sessionDate) > dataCongelamentoTurma) continue;
         }
         const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
         const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
@@ -4584,6 +4607,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // Se o aluno sofreu reset, ignorar participações em eventos anteriores ao reset
         if (epAluno.id === aluno.id && marcoZeroCicloAtual && ep.eventDate) {
           if (new Date(ep.eventDate) < marcoZeroCicloAtual) continue;
+        }
+        // Se a turma está congelada, ignorar eventos posteriores à data de congelamento
+        if (epAluno.id === aluno.id && dataCongelamentoTurma && ep.eventDate) {
+          if (new Date(ep.eventDate) > dataCongelamentoTurma) continue;
         }
         const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
         eventos.push({
@@ -4633,6 +4660,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             if (marcoZeroAusencias && evt.eventDate) {
               const evtDate = new Date(evt.eventDate);
               if (evtDate < marcoZeroAusencias) continue;
+            }
+            // Se a turma está congelada, não marcar ausência em eventos posteriores ao congelamento
+            if (a.id === aluno.id && dataCongelamentoTurma && evt.eventDate) {
+              if (new Date(evt.eventDate) > dataCongelamentoTurma) continue;
             }
             eventos.push({
               idUsuario: alunoIdStr,
@@ -4734,6 +4765,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             const evtData = eventMap.get(ep.eventId)?.eventDate;
             if (evtData && new Date(evtData) < marcoZeroCicloAtual) return false;
           }
+          // Se a turma está congelada, ignorar presenças posteriores ao congelamento
+          if (dataCongelamentoTurma) {
+            const evtData = eventMap.get(ep.eventId)?.eventDate;
+            if (evtData && new Date(evtData) > dataCongelamentoTurma) return false;
+          }
           return true;
         })
         .map(ep => {
@@ -4756,6 +4792,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (!eventosAlunoIds.has(evt.id)) {
           // Filtrar por data do reset
           if (marcoZeroCicloAtual && evt.eventDate && new Date(evt.eventDate) < marcoZeroCicloAtual) continue;
+          // Se a turma está congelada, não incluir eventos posteriores ao congelamento
+          if (dataCongelamentoTurma && evt.eventDate && new Date(evt.eventDate) > dataCongelamentoTurma) continue;
           eventosDetalhados.push({
             id: -(evt.id), // id negativo indica que não tem registro real
             eventId: evt.id,
@@ -4865,7 +4903,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           ciclosEmAndamento: indicadores.ciclosEmAndamento,
         },
         ranking,
-        sessoes: sessoesAluno.map(s => ({
+        // Informação de congelamento da turma para exibição no frontend
+        resultadoCongelado: dataCongelamentoTurma
+          ? {
+              congelado: true,
+              dataCongelamento: turmaAlunoDados!.dataCongelamento as string,
+              nomeTurma: turmaAlunoDados!.name,
+            }
+          : { congelado: false, dataCongelamento: null, nomeTurma: null },
+        sessoes: sessoesAluno
+          .filter(s => {
+            // Se a turma está congelada, excluir sessões posteriores ao congelamento
+            if (dataCongelamentoTurma && s.sessionDate) {
+              return new Date(s.sessionDate) <= dataCongelamentoTurma;
+            }
+            return true;
+          })
+          .map(s => ({
           id: s.id,
           sessionNumber: s.sessionNumber,
           sessionDate: s.sessionDate,

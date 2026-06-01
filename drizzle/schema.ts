@@ -77,6 +77,7 @@ export const turmas = mysqlTable("turmas", {
   programId: int("programId").notNull(),
   year: int("year").notNull(),
   isActive: int("isActive").default(1).notNull(),
+  dataCongelamento: date("dataCongelamento"), // Data de congelamento dos indicadores. Quando preenchida, indicadores ficam congelados nesta data.
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
