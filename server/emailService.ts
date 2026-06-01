@@ -2832,3 +2832,104 @@ export function buildPsAlertaAdminSemSlotEmail(data: {
   const text = `⚠️ Candidato sem horário disponível\n\nUm candidato concluiu os testes mas não há slots de entrevista disponíveis.\n\nCandidato: ${data.candidatoNome}\nE-mail: ${data.candidatoEmail}\nProcesso: ${data.processoNome}\nCliente: ${data.clienteNome}${data.regiaoNome ? `\nRegião: ${data.regiaoNome}` : ""}${data.vagaNome ? `\nVaga: ${data.vagaNome}` : ""}\n\nAcesse o painel e crie novos slots imediatamente: ${data.painelUrl}`;
   return { subject, html, text };
 }
+
+// ============ CONGELAMENTO DE TURMA ============
+
+export function buildCongelamentoTurmaEmail(data: {
+  codigoTurma: string;       // ex: 'BS1'
+  dataCongelamento: string;  // formato YYYY-MM-DD
+  realizadoPor: string;      // nome do admin que executou
+  acao: 'congelado' | 'descongelado';
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const dataFormatada = (() => {
+    const d = new Date(data.dataCongelamento + 'T12:00:00');
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  })();
+
+  const isCongelado = data.acao === 'congelado';
+  const bannerBg = isCongelado ? '#eff6ff' : '#f0fdf4';
+  const bannerBorder = isCongelado ? '#3b82f6' : '#22c55e';
+  const bannerText = isCongelado ? '#1e40af' : '#15803d';
+  const iconEmoji = isCongelado ? '❄️' : '🔓';
+  const acaoLabel = isCongelado ? 'CONGELADO' : 'DESCONGELADO';
+  const acaoDesc = isCongelado
+    ? `Os indicadores de desempenho de todos os alunos da <strong>Turma ${data.codigoTurma}</strong> foram <strong>congelados em ${dataFormatada}</strong>. Atividades realizadas após essa data não serão contabilizadas.`
+    : `O congelamento dos indicadores da <strong>Turma ${data.codigoTurma}</strong> foi <strong>removido</strong>. Os indicadores voltam a ser calculados normalmente a partir de agora.`;
+
+  const subject = `${iconEmoji} Turma ${data.codigoTurma} ${acaoLabel} — Ecossistema do Bem`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f8;padding:40px 20px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr><td style="background-color:#ffffff;padding:30px 40px;text-align:center;">
+          <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;" />
+          <p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p>
+        </td></tr>
+
+        <!-- Banner de status -->
+        <tr><td style="padding:0 40px;">
+          <div style="background:${bannerBg};border-left:4px solid ${bannerBorder};border-radius:8px;padding:20px 24px;">
+            <p style="color:${bannerText};font-size:22px;font-weight:700;margin:0 0 6px;">${iconEmoji} Turma ${data.codigoTurma} — ${acaoLabel}</p>
+            ${isCongelado ? `<p style="color:${bannerText};font-size:15px;margin:0;">Data de congelamento: <strong>${dataFormatada}</strong></p>` : ''}
+          </div>
+        </td></tr>
+
+        <!-- Corpo -->
+        <tr><td style="padding:28px 40px;">
+          <p style="color:#374151;font-size:15px;line-height:1.7;margin:0 0 16px;">
+            ${acaoDesc}
+          </p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
+            <tr>
+              <td style="color:#6b7280;font-size:13px;padding:4px 0;">Turma</td>
+              <td style="color:#111827;font-size:13px;font-weight:600;text-align:right;padding:4px 0;">${data.codigoTurma}</td>
+            </tr>
+            ${isCongelado ? `
+            <tr>
+              <td style="color:#6b7280;font-size:13px;padding:4px 0;">Data de congelamento</td>
+              <td style="color:#111827;font-size:13px;font-weight:600;text-align:right;padding:4px 0;">${dataFormatada}</td>
+            </tr>` : ''}
+            <tr>
+              <td style="color:#6b7280;font-size:13px;padding:4px 0;">Ação realizada por</td>
+              <td style="color:#111827;font-size:13px;font-weight:600;text-align:right;padding:4px 0;">${data.realizadoPor}</td>
+            </tr>
+          </table>
+          <p style="color:#6b7280;font-size:13px;line-height:1.6;margin:0;">
+            Para alterar esta configuração, acesse o painel administrativo em <strong>Parametrização &gt; Turmas</strong>.
+          </p>
+        </td></tr>
+
+        <!-- CTA -->
+        <tr><td style="padding:0 40px 30px;text-align:center;">
+          <a href="${data.loginUrl}" style="display:inline-block;background:#0f2b3c;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">
+            Acessar Painel Administrativo
+          </a>
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+          <p style="color:#9ca3af;font-size:12px;margin:0;">Este é um aviso automático do Ecossistema do Bem.</p>
+          <p style="color:#9ca3af;font-size:12px;margin:4px 0 0;">© 2026 CKM Talents — Todos os direitos reservados.</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  const text = `${iconEmoji} Turma ${data.codigoTurma} ${acaoLabel}\n\n${isCongelado ? `Data de congelamento: ${dataFormatada}\n` : ''}Ação realizada por: ${data.realizadoPor}\n\n${isCongelado ? `Os indicadores de todos os alunos da Turma ${data.codigoTurma} foram congelados em ${dataFormatada}. Atividades realizadas após essa data não serão contabilizadas.` : `O congelamento da Turma ${data.codigoTurma} foi removido. Os indicadores voltam a ser calculados normalmente.`}\n\nAcesse o painel: ${data.loginUrl}`;
+
+  return { subject, html, text };
+}

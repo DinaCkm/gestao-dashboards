@@ -36,7 +36,7 @@ import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
 import { gerarEEnviarRelatorioMentorias, calcularPeriodoPadrao } from "./cronRelatorioMentorias";
-import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, sendEmail } from "./emailService";
+import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, buildCongelamentoTurmaEmail, sendEmail } from "./emailService";
 import { cacheOrFetch, cacheInvalidate } from './dataCache';
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 import { DISC_PERFIS } from "../shared/discData";
@@ -2488,10 +2488,39 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .input(z.object({
         codigoTurma: z.string(), // ex: 'BS1', 'BS2', 'BS3'
         dataCongelamento: z.string().nullable(), // formato YYYY-MM-DD ou null para descongelar
+        realizadoPorNome: z.string().optional(), // nome do admin que executou (para o e-mail)
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         // Aplica o congelamento em TODAS as turmas com o mesmo codigoTurma
         await db.setDataCongelamentoPorCodigoTurma(input.codigoTurma, input.dataCongelamento);
+
+        // Enviar e-mail de notificação para todos os admins e gestores
+        try {
+          const allUsers = await db.getAllUsers();
+          const destinatarios = allUsers.filter(
+            (u: any) => u.email && ['admin', 'admin2', 'manager'].includes(u.role)
+          );
+          const acao = input.dataCongelamento ? 'congelado' : 'descongelado';
+          const realizadoPor = input.realizadoPorNome || ctx.user?.name || 'Administrador';
+          const loginUrl = process.env.APP_URL || 'https://ecolider.ecodobem.com';
+          const emailData = buildCongelamentoTurmaEmail({
+            codigoTurma: input.codigoTurma,
+            dataCongelamento: input.dataCongelamento || new Date().toISOString().split('T')[0],
+            realizadoPor,
+            acao,
+            loginUrl,
+          });
+          await Promise.allSettled(
+            destinatarios.map((u: any) =>
+              sendEmail({ to: u.email, subject: emailData.subject, html: emailData.html, text: emailData.text })
+            )
+          );
+          console.log(`[Congelamento] E-mail enviado para ${destinatarios.length} destinatário(s) — Turma ${input.codigoTurma} ${acao}`);
+        } catch (emailErr: any) {
+          console.error('[Congelamento] Erro ao enviar e-mail de notificação:', emailErr?.message);
+          // Não falha a mutation por causa do e-mail
+        }
+
         return { success: true };
       }),
   }),
