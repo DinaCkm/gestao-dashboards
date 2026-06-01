@@ -118,12 +118,24 @@ export function generateSlots(input: {
   const breakStart = input.intervaloInicio ? toMinutes(input.intervaloInicio) : null;
   const breakEnd = input.intervaloFim ? toMinutes(input.intervaloFim) : null;
 
-  for (let cursor = start; cursor + input.duracaoMinutos <= end; cursor += input.duracaoMinutos) {
+  let cursor = start;
+  while (cursor + input.duracaoMinutos <= end) {
+    // Se o cursor caiu dentro do intervalo de almoço, pula direto para o fim do intervalo
+    if (breakStart !== null && breakEnd !== null && cursor >= breakStart && cursor < breakEnd) {
+      cursor = breakEnd;
+      continue;
+    }
     const slotEnd = cursor + input.duracaoMinutos;
+    // Verifica se o slot se sobrepõe ao intervalo
     const overlapsBreak = breakStart !== null && breakEnd !== null && cursor < breakEnd && slotEnd > breakStart;
     if (!overlapsBreak) {
       slots.push({ dataAgenda: input.dataAgenda, inicio: toTime(cursor), fim: toTime(slotEnd) });
+    } else {
+      // Slot começa antes do intervalo mas termina dentro dele: pula para o fim do intervalo
+      cursor = breakEnd;
+      continue;
     }
+    cursor += input.duracaoMinutos;
   }
 
   return slots;
