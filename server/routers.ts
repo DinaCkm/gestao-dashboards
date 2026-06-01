@@ -9827,9 +9827,13 @@ Responda APENAS em JSON com o formato:
           menosDimensao: z.enum(["D", "I", "S", "C"]),
         }))
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        // Proteção: aluno com PDI e sem onboardingLiberado não pode fazer o DISC
+        const onbStatus = await db.getAlunoOnboardingStatus(ctx.user);
+        if (onbStatus.hasPdi && !onbStatus.onboardingLiberado) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Onboarding em modo somente leitura. Aluno já possui PDI.' });
+        }
         const { calcularDiscScores } = require('../shared/discData');
-        
         // Determinar ciclo
         const existingResult = await db.getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
         const ciclo = existingResult ? existingResult.ciclo + 1 : 1;

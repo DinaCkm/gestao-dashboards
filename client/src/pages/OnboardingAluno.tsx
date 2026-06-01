@@ -3686,12 +3686,12 @@ export default function OnboardingAluno() {
         )}
 
         {/* Banner de reassessment elegível */}
-        {readOnly && reassessmentElegivel && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
-            <Sparkles className="h-5 w-5 text-green-600 shrink-0" />
+        {globalReadOnly && reassessmentElegivel && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3">
+            <Lock className="h-5 w-5 text-blue-600 shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-green-800">Novo Assessment Disponível!</p>
-              <p className="text-xs text-green-600">Seu programa chegou ao fim. Você pode refazer o assessment para avaliar sua evolução. Clique na etapa "Assessment" para começar.</p>
+              <p className="text-sm font-semibold text-blue-800">Onboarding em modo de visualização</p>
+              <p className="text-xs text-blue-600">Você está visualizando seu onboarding. Para refazer o assessment, aguarde a liberação pelo administrador.</p>
             </div>
           </div>
         )}
@@ -3702,7 +3702,7 @@ export default function OnboardingAluno() {
           <EtapaAssessmentCompleta
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             onComplete={handleStepComplete}
-            readOnly={readOnly && !reassessmentElegivel}
+            readOnly={readOnly}
             labelContinuar={emNovoCiclo ? "Continuar para Agendamento" : "Continuar para Escolha da Mentora"}
             contratoNivelId={contratoNivelIdVigente}
           />

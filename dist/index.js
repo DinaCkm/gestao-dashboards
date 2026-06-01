@@ -27629,7 +27629,11 @@ Responda APENAS em JSON com o formato:
         maisDimensao: z5.enum(["D", "I", "S", "C"]),
         menosDimensao: z5.enum(["D", "I", "S", "C"])
       }))
-    })).mutation(async ({ input }) => {
+    })).mutation(async ({ input, ctx: ctx2 }) => {
+      const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
+      if (onbStatus.hasPdi && !onbStatus.onboardingLiberado) {
+        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
+      }
       const { calcularDiscScores: calcularDiscScores2 } = (init_discData(), __toCommonJS(discData_exports));
       const existingResult = await getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
       const ciclo = existingResult ? existingResult.ciclo + 1 : 1;
