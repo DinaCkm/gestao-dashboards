@@ -4184,8 +4184,8 @@ export async function getAssessmentsByAluno(alunoId: number) {
   const pdis = await db.select().from(assessmentPdi)
     .where(and(
       eq(assessmentPdi.alunoId, alunoId),
-      // Ignorar PDIs congelados — eles pertencem ao ciclo anterior e aparecem na Evolução
-      sql`${assessmentPdi.status} != 'congelado'`,
+      // Ignorar PDIs congelados e encerrados — congelados pertencem ao ciclo anterior, encerrados são PDIs duplicados inativados
+      sql`${assessmentPdi.status} NOT IN ('congelado', 'encerrado')`,
     ))
     .orderBy(desc(assessmentPdi.createdAt));
   
@@ -4523,8 +4523,8 @@ export async function getAssessmentsByAlunoAndNivel(alunoId: number, contratoNiv
     .where(and(
       eq(assessmentPdi.alunoId, alunoId),
       eq(assessmentPdi.contratoNivelId, contratoNivelId),
-      // Ignorar PDIs congelados — eles pertencem ao ciclo anterior e aparecem na Evolução
-      sql`${assessmentPdi.status} != 'congelado'`,
+      // Ignorar PDIs congelados e encerrados — congelados pertencem ao ciclo anterior, encerrados são PDIs duplicados inativados
+      sql`${assessmentPdi.status} NOT IN ('congelado', 'encerrado')`,
     ))
     .orderBy(desc(assessmentPdi.createdAt));
 
@@ -11257,8 +11257,8 @@ export async function getAssessmentPdiByAluno(alunoId: number) {
       .from(assessmentPdi)
       .where(and(
         eq(assessmentPdi.alunoId, alunoId),
-        // Excluir PDIs congelados — pertencem ao ciclo anterior e só devem aparecer na Evolução
-        sql`${assessmentPdi.status} != 'congelado'`,
+        // Excluir PDIs congelados e encerrados — congelados pertencem ao ciclo anterior, encerrados são PDIs duplicados inativados
+        sql`${assessmentPdi.status} NOT IN ('congelado', 'encerrado')`,
       ));
     
     return pdis || [];
