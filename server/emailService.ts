@@ -2933,3 +2933,61 @@ export function buildCongelamentoTurmaEmail(data: {
 
   return { subject, html, text };
 }
+
+export function buildPsRelatorioEmail(data: {
+  processoNome: string;
+  dataEnvio: string;
+  candidatos: Array<{
+    nome: string;
+    regiao: string;
+    inscrito: boolean;
+    testePerfil: boolean;
+    entrevista: string;
+    status: string;
+  }>;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `📋 Relatório do Processo Seletivo — ${data.processoNome} (${data.dataEnvio})`;
+  const linhas = data.candidatos.map(c => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${c.nome}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${c.regiao || '—'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.inscrito ? '✅ Sim' : '❌ Não'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.testePerfil ? '✅ Sim' : '❌ Não'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.entrevista}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.status}</td>
+    </tr>`).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;">
+    <table width="680" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <tr><td style="background:#0f2b3c;padding:28px 40px;">
+        <h1 style="color:#fff;font-size:20px;margin:0;">📋 Relatório do Processo Seletivo</h1>
+        <p style="color:#93c5fd;font-size:14px;margin:6px 0 0;">${data.processoNome} — ${data.dataEnvio}</p>
+      </td></tr>
+      <tr><td style="padding:24px 40px;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+          <thead>
+            <tr style="background:#f9fafb;">
+              <th style="padding:10px 12px;text-align:left;font-size:13px;color:#374151;">Nome</th>
+              <th style="padding:10px 12px;text-align:left;font-size:13px;color:#374151;">Região</th>
+              <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Inscrito</th>
+              <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Teste de Perfil</th>
+              <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Entrevista</th>
+              <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Status</th>
+            </tr>
+          </thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </td></tr>
+      <tr><td style="padding:0 40px 28px;text-align:center;">
+        <a href="${data.loginUrl}" style="display:inline-block;background:#0f2b3c;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">Acessar Painel</a>
+      </td></tr>
+      <tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+        <p style="color:#9ca3af;font-size:12px;margin:0;">Relatório automático do Ecossistema do Bem.</p>
+      </td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+  const text = `Relatório — ${data.processoNome} (${data.dataEnvio})\n\n${data.candidatos.map(c => `${c.nome} | ${c.regiao} | Inscrito: ${c.inscrito ? 'Sim' : 'Não'} | Teste: ${c.testePerfil ? 'Sim' : 'Não'} | Entrevista: ${c.entrevista} | Status: ${c.status}`).join('\n')}\n\nAcesse: ${data.loginUrl}`;
+  return { subject, html, text };
+}

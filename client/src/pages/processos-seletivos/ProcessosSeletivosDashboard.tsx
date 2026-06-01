@@ -263,6 +263,19 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(err.message),
   });
 
+  const enviarRelatorio = trpc.processosSeletivos.enviarRelatorio.useMutation({
+    onSuccess: (result) => toast.success(`Relatório enviado para: ${result.destinatarios.join(", ")}`),
+    onError: (err) => toast.error(`Erro ao enviar relatório: ${err.message}`),
+  });
+
+  const finalizarProcesso = trpc.processosSeletivos.finalizarProcesso.useMutation({
+    onSuccess: async () => {
+      toast.success("Processo finalizado com sucesso.");
+      await utils.processosSeletivos.listarProcessos.invalidate();
+    },
+    onError: (err) => toast.error(`Erro ao finalizar: ${err.message}`),
+  });
+
   const moverCandidato = trpc.processosSeletivos.moverCandidato.useMutation({
     onSuccess: async () => {
       toast.success("Candidato movido para a nova região.");
@@ -555,6 +568,16 @@ function ProcessosSeletivosContent() {
                     <Button size="sm" variant="outline" className="gap-1 text-red-700 border-red-300 hover:bg-red-50" disabled={atualizarProcesso.isPending}
                       onClick={() => { if (confirm("Encerrar este processo? Ninguém mais poderá se inscrever.")) atualizarProcesso.mutate({ processoId: selectedProcesso.id, status: "encerrado" }); }}>
                       <Ban size={14} /> Encerrar
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" className="gap-1 text-blue-700 border-blue-300 hover:bg-blue-50" disabled={enviarRelatorio.isPending}
+                    onClick={() => { if (confirm("Enviar relatório do processo por e-mail agora?")) enviarRelatorio.mutate({ processoId: selectedProcesso.id }); }}>
+                    📋 Enviar Relatório
+                  </Button>
+                  {selectedProcesso.status !== "encerrado" && (
+                    <Button size="sm" variant="outline" className="gap-1 text-purple-700 border-purple-300 hover:bg-purple-50" disabled={finalizarProcesso.isPending}
+                      onClick={() => { if (confirm("Finalizar este processo? O status será alterado para Encerrado.")) finalizarProcesso.mutate({ processoId: selectedProcesso.id }); }}>
+                      ✅ Finalizar Processo
                     </Button>
                   )}
                 </div>
@@ -894,6 +917,7 @@ function ProcessosSeletivosContent() {
                       <TableHead>Horario</TableHead>
                       <TableHead>Regiao</TableHead>
                       <TableHead>Candidato</TableHead>
+                      <TableHead>Link</TableHead>
                       <TableHead>Status</TableHead>
                       {isAdmin && <TableHead className="w-10" />}
                     </TableRow>
@@ -901,11 +925,12 @@ function ProcessosSeletivosContent() {
                   <TableBody>
                     {slots.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={isAdmin ? 5 : 4} className="h-20 text-center text-muted-foreground">Nenhum slot gerado.</TableCell>
+                        <TableCell colSpan={isAdmin ? 6 : 5} className="h-20 text-center text-muted-foreground">Nenhum slot gerado.</TableCell>
                       </TableRow>
                     ) : (
                       slots.map((slot) => {
                         const candidate = slot.candidatoId ? candidateById.get(slot.candidatoId) : null;
+                        const linkSlot = (slot as any).linkEntrevista || (selectedProcesso as any)?.linkEntrevista || null;
                         return (
                           <TableRow key={slot.id}>
                             <TableCell>
@@ -914,6 +939,15 @@ function ProcessosSeletivosContent() {
                             </TableCell>
                             <TableCell>{regionById.get(slot.regiaoId) || slot.regiaoId}</TableCell>
                             <TableCell>{candidate?.nome || "Disponivel"}</TableCell>
+                            <TableCell>
+                              {linkSlot ? (
+                                <a href={linkSlot} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline hover:text-blue-800 break-all">
+                                  Abrir sala
+                                </a>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
                             <TableCell><ProcessoStatusBadge status={slot.status} /></TableCell>
                             {isAdmin && (
                               <TableCell>

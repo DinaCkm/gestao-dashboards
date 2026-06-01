@@ -392,6 +392,7 @@ function AvaliacaoContent() {
                       <TableHead>Data</TableHead>
                       <TableHead>Horário</TableHead>
                       <TableHead>Candidato</TableHead>
+                      <TableHead>Link</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Resultado</TableHead>
                       {isAdmin && <TableHead className="text-right">Ações</TableHead>}
@@ -410,6 +411,15 @@ function AvaliacaoContent() {
                         <TableCell>
                           <div className="font-medium text-sm">{e.candidatoNome}</div>
                           <div className="text-xs text-muted-foreground">{e.candidatoEmail}</div>
+                        </TableCell>
+                        <TableCell>
+                          {e.linkEntrevista ? (
+                            <a href={e.linkEntrevista} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline hover:text-blue-800 break-all">
+                              Abrir sala
+                            </a>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <ProcessoStatusBadge status={e.status} />

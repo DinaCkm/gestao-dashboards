@@ -21,7 +21,7 @@ import {
 } from "../../drizzle/schema";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
-import { buildPsAlertaAdminSemSlotEmail, buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, sendEmail } from "../emailService";
+import { buildPsAlertaAdminSemSlotEmail, buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, buildPsRelatorioEmail, sendEmail } from "../emailService";
 
 const adminRoles = new Set(["admin", "admin2"]);
 
@@ -1432,6 +1432,103 @@ export const processosSeletivosRouter = router({
         .orderBy(desc(processoLogs.createdAt));
 
       return logs;
+    }),
+
+  // ── Enviar relatório do processo por e-mail ──
+  enviarRelatorio: protectedProcedure
+    .input(processoIdInput)
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [processo] = await database
+        .select()
+        .from(processosSeletivos)
+        .where(eq(processosSeletivos.id, input.processoId))
+        .limit(1);
+      if (!processo) throw new TRPCError({ code: "NOT_FOUND", message: "Processo nao encontrado" });
+      // Buscar candidatos ativos com região
+      const candidatos = await database
+        .select({
+          id: processoCandidatos.id,
+          nome: processoCandidatos.nome,
+          regiaoId: processoCandidatos.regiaoId,
+          statusCadastro: processoCandidatos.statusCadastro,
+          statusTeste: processoCandidatos.statusTeste,
+          statusEntrevista: processoCandidatos.statusEntrevista,
+          statusResultado: processoCandidatos.statusResultado,
+        })
+        .from(processoCandidatos)
+        .where(and(eq(processoCandidatos.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo")))
+        .orderBy(asc(processoCandidatos.nome));
+      // Buscar regiões para mapear nomes
+      const regioes = await database
+        .select({ id: processoRegioes.id, nome: processoRegioes.nome })
+        .from(processoRegioes)
+        .where(eq(processoRegioes.processoId, input.processoId));
+      const regiaoMap = new Map(regioes.map((r) => [r.id, r.nome]));
+      const labelEntrevista = (s: string) => {
+        if (s === "realizada") return "Presente";
+        if (s === "agendada") return "Agendada";
+        if (s === "cancelada") return "Cancelada";
+        if (s === "reagendada") return "Reagendada";
+        if (s === "nao_agendada") return "N\u00e3o agendada";
+        if (s === "aguardando_agenda") return "Aguardando agenda";
+        return s;
+      };
+      const labelResultado = (s: string) => {
+        if (s === "aprovado") return "Habilitado";
+        if (s === "reprovado") return "Inabilitado";
+        if (s === "pendente") return "Pendente";
+        if (s === "em_analise") return "Em an\u00e1lise";
+        if (s === "desistente") return "Desistente";
+        return s;
+      };
+      const dadosCandidatos = candidatos.map((c) => ({
+        nome: c.nome,
+        regiao: c.regiaoId ? (regiaoMap.get(c.regiaoId) ?? "\u2014") : "\u2014",
+        inscrito: c.statusCadastro === "ativo",
+        testePerfil: c.statusTeste === "concluido",
+        entrevista: labelEntrevista(c.statusEntrevista),
+        status: labelResultado(c.statusResultado),
+      }));
+      const agora = new Date();
+      const dataEnvio = agora.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" });
+      const emailData = buildPsRelatorioEmail({
+        processoNome: processo.nome,
+        dataEnvio,
+        candidatos: dadosCandidatos,
+        loginUrl: "https://ecolider.ecodobem.com/processos-seletivos",
+      });
+      // Destinatários: emailsRelatorio do processo + e-mail fixo da CKM
+      const destinatarios: string[] = ["relacionamento@ckmtalents.net"];
+      if (processo.emailsRelatorio) {
+        const extras = processo.emailsRelatorio.split(/[,;\n]/).map((e) => e.trim()).filter(Boolean);
+        destinatarios.push(...extras);
+      }
+      const uniqueDestinatarios = [...new Set(destinatarios)];
+      await Promise.all(
+        uniqueDestinatarios.map((to) =>
+          sendEmail({ to, subject: emailData.subject, html: emailData.html, text: emailData.text }).catch((err) =>
+            console.error(`[enviarRelatorio] Erro ao enviar para ${to}:`, err)
+          )
+        )
+      );
+      await writeLog(database, { processoId: input.processoId, userId: ctx.user.id, acao: "relatorio_enviado", detalhe: `Enviado para: ${uniqueDestinatarios.join(", ")}` });
+      return { success: true, destinatarios: uniqueDestinatarios };
+    }),
+
+  // ── Finalizar processo (setar status encerrado) ──
+  finalizarProcesso: protectedProcedure
+    .input(processoIdInput)
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      await database
+        .update(processosSeletivos)
+        .set({ status: "encerrado" })
+        .where(eq(processosSeletivos.id, input.processoId));
+      await writeLog(database, { processoId: input.processoId, userId: ctx.user.id, acao: "processo_encerrado" });
+      return { success: true };
     }),
 
   // Obter entrevista agendada do candidato
