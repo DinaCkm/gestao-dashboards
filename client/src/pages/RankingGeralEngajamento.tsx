@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Mail, Download } from "lucide-react";
+import { Mail, Download, Snowflake } from "lucide-react";
 import { toast } from "sonner";
 
 type RankingAluno = {
@@ -86,6 +86,20 @@ export default function RankingGeralEngajamento() {
     if (turmas) {
       turmas.forEach(t => {
         map.set(String(t.id), t.name);
+      });
+    }
+    return map;
+  }, [turmas]);
+
+  // Mapa de codigoTurma -> dataCongelamento (ex: { BS1: '2026-05-31', BS2: '2026-05-31' })
+  const congelamentoMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (turmas) {
+      turmas.forEach((t: any) => {
+        const codigo = extrairCodigoTurma(t.name);
+        if (t.dataCongelamento && !map.has(codigo)) {
+          map.set(codigo, t.dataCongelamento);
+        }
       });
     }
     return map;
@@ -327,7 +341,20 @@ export default function RankingGeralEngajamento() {
                               </Button>
                             </div>
                           </TableCell>
-                          <TableCell>{aluno.turmaNome}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span>{aluno.turmaNome}</span>
+                              {congelamentoMap.has(aluno.turmaNome) && (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700"
+                                  title={`Resultado congelado em ${new Date(congelamentoMap.get(aluno.turmaNome)! + 'T00:00:00').toLocaleDateString('pt-BR')}`}
+                                >
+                                  <Snowflake className="h-3 w-3" />
+                                  {new Date(congelamentoMap.get(aluno.turmaNome)! + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>{toPercent(aluno.ind1)}</TableCell>
                           <TableCell>{toPercent(aluno.ind2)}</TableCell>
                           <TableCell>{toPercent(aluno.ind3)}</TableCell>
