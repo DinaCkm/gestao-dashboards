@@ -4084,17 +4084,41 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
         const turmasEmpresa = await db.getTurmas(ctx.user.programId);
         const turmaMap = new Map<string, string>();
-        turmasEmpresa.forEach(t => turmaMap.set(String(t.id), t.name));
+        const turmaCongelamentoMap = new Map<string, string>(); // turmaId -> dataCongelamento
+        turmasEmpresa.forEach(t => {
+          turmaMap.set(String(t.id), t.name);
+          if ((t as any).dataCongelamento) {
+            turmaCongelamentoMap.set(String(t.id), (t as any).dataCongelamento);
+          }
+        });
+        // Mapa por codigoTurma (ex: BS1 -> 2026-05-31)
+        const codigoCongelamentoMap = new Map<string, string>();
+        turmasEmpresa.forEach(t => {
+          const nome = t.name || '';
+          const match = nome.match(/\[([^\]]+)\]\s*$/);
+          const codigo = match ? match[1] : nome;
+          if ((t as any).dataCongelamento && !codigoCongelamentoMap.has(codigo)) {
+            codigoCongelamentoMap.set(codigo, (t as any).dataCongelamento);
+          }
+        });
 
         const exportRows = input.alunoIdsUsuario.map((idUsuario, index) => {
           const aluno = alunosPorId.get(idUsuario);
           if (!aluno) {
             throw new TRPCError({ code: 'FORBIDDEN', message: 'Tentativa de exportar aluno fora do escopo da empresa.' });
           }
+          const turmaNomeCompleto = turmaMap.get(String(aluno.turma || '')) || '';
+          const turmaNomeMatch = turmaNomeCompleto.match(/\[([^\]]+)\]\s*$/);
+          const codigoTurmaAluno = turmaNomeMatch ? turmaNomeMatch[1] : turmaNomeCompleto;
+          const dataCongelamentoAluno = codigoCongelamentoMap.get(codigoTurmaAluno);
+          const statusCongelamento = dataCongelamentoAluno
+            ? `Congelado em ${new Date(dataCongelamentoAluno + 'T00:00:00').toLocaleDateString('pt-BR')}`
+            : 'Ativo';
           return {
             'Posição': index + 1,
             'Pessoa': aluno.nomeAluno || 'Sem nome',
-            'Turma': turmaMap.get(String(aluno.turma || '')) || 'Não definida',
+            'Turma': codigoTurmaAluno || 'Não definida',
+            'Status': statusCongelamento,
             'Ind. 1: Webinars': `${Math.round(Number(aluno?.consolidado?.ind1_webinars ?? 0))}%`,
             'Ind. 2: Avaliações': `${Math.round(Number(aluno?.consolidado?.ind2_avaliacoes ?? 0))}%`,
             'Ind. 3: Competências': `${Math.round(Number(aluno?.consolidado?.ind3_competencias ?? 0))}%`,
