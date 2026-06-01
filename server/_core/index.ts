@@ -17,7 +17,7 @@ import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria
 import { iniciarCronRelatorioMentorias } from "../cronRelatorioMentorias";
 import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
 import { ENV } from "./env";
-import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -46,6 +46,7 @@ async function startServer() {
   await ensureRelatorioMentoriasLogTable();
   await ensureAuditoriaNotesMentoriaTable();
   await ensureGoogleCalendarColumns();
+  await ensureProcessoSeletivoColumns();
 
   const app = express();
   const server = createServer(app);

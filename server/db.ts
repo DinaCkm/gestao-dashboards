@@ -13058,3 +13058,22 @@ export async function markAppointmentRealized(appointmentId: number): Promise<vo
     .set({ status: 'realizado' })
     .where(eq(mentorAppointments.id, appointmentId));
 }
+
+// ============ PROCESSO SELETIVO: GARANTIR COLUNAS ============
+export async function ensureProcessoSeletivoColumns(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const columns = [
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `emailsRelatorio` text COMMENT 'E-mails separados por vírgula para receber relatório do processo'",
+  ];
+  for (const col of columns) {
+    try {
+      await db.execute(sql.raw(col));
+    } catch (e: any) {
+      if (!e?.message?.includes("Duplicate column")) {
+        console.warn("[DB] ensureProcessoSeletivoColumns:", e?.message);
+      }
+    }
+  }
+  console.log("[DB] Colunas do Processo Seletivo verificadas/criadas com sucesso.");
+}

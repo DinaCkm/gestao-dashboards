@@ -311,6 +311,7 @@ const processoInput = z.object({
   status: z.enum(["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho"),
   dataInicio: z.string().optional().nullable(),
   dataFim: z.string().optional().nullable(),
+  emailsRelatorio: z.string().optional().nullable(),
   mentorId: z.number().optional().nullable(),
 });
 
@@ -428,6 +429,7 @@ export const processosSeletivosRouter = router({
       status: input.status,
       dataInicio: input.dataInicio || null,
       dataFim: input.dataFim || null,
+      emailsRelatorio: input.emailsRelatorio || null,
       mentorId: input.mentorId ?? null,
       criadoPor: ctx.user.id,
     });
@@ -451,6 +453,7 @@ export const processosSeletivosRouter = router({
         ...(data.status !== undefined && { status: data.status }),
         ...(data.dataInicio !== undefined && { dataInicio: data.dataInicio || null }),
         ...(data.dataFim !== undefined && { dataFim: data.dataFim || null }),
+        ...(data.emailsRelatorio !== undefined && { emailsRelatorio: data.emailsRelatorio || null }),
         ...(data.mentorId !== undefined && { mentorId: data.mentorId ?? null }),
       }).where(eq(processosSeletivos.id, processoId));
             await writeLog(database, { processoId, userId: ctx.user.id, acao: "processo_atualizado" });
