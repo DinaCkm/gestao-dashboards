@@ -234,6 +234,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: Building2, label: "Dashboard Por Empresa", path: "/dashboard/empresa", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos/mentora", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: BriefcaseBusiness, label: "Painel de Processos", path: "/processos-seletivos", roles: ["manager"], requireConsultorRole: 'mentor' },
 
   
   // === GERENTE DE EMPRESA ===
@@ -245,8 +246,8 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: ClipboardCheck, label: "Avaliação PS", path: "/processos-seletivos/avaliacao", roles: ["manager"], requireConsultorRole: 'gerente' },
-  // === PROCESSOS SELETIVOS (apenas para candidatos/alunos, não para mentoras ou gerentes que já têm item próprio) ===
-  { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos", roles: ["user", "manager"], hideIfConsultorId: true },
+  // === PROCESSOS SELETIVOS (apenas para candidatos/alunos sem consultorId) ===
+  { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos", roles: ["user"], hideIfConsultorId: true },
 
   
   // === ALUNO ===
