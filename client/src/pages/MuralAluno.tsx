@@ -561,6 +561,11 @@ export default function MuralAluno() {
   const VITRINE_INICIAL = 6;
   const [vitrineExpandida, setVitrineExpandida] = useState(false);
   const isAdmin = user?.role === 'admin';
+  const consultorRoleMural = (user as any)?.consultorRole as string | null | undefined;
+  const isMentorMural = consultorRoleMural === 'mentor';
+
+  // Contagem de livros para o card da Biblioteca
+  const { data: bibliotecaCount } = trpc.bibliotecaLivros.contar.useQuery(undefined, { enabled: !!user });
   const toggleVisibilidadeMutation = trpc.cases.toggleVisibilidade.useMutation({
     onSuccess: (data) => {
       refetchCasesVitrine();
@@ -973,6 +978,18 @@ E-mail: ${email}`;
                 countColor="text-amber-700"
                 labelColor="text-amber-600/70"
                 onClick={() => setCurrentView("avisos")}
+              />
+              <StatCard
+                icon={BookOpen}
+                count={bibliotecaCount?.total ?? 0}
+                label="Biblioteca"
+                gradientFrom="from-purple-50"
+                gradientBorder="border-purple-100"
+                iconBg="bg-purple-100"
+                iconColor="text-purple-600"
+                countColor="text-purple-700"
+                labelColor="text-purple-600/70"
+                onClick={() => setLocation(isAdmin ? '/admin/biblioteca-livros' : '/biblioteca')}
               />
             </div>
           </div>

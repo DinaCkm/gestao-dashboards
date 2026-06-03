@@ -30,6 +30,7 @@ import { calcularIndicadoresTodosAlunos, calcularIndicadoresAluno as calcularInd
 import { notifyOwner } from "./_core/notification";
 import { jornadaRouter } from "./routers/jornada";
 import { fichasPedagogicasRouter } from "./routers/fichasPedagogicas";
+import { bibliotecaLivrosRouter } from "./routers/bibliotecaLivros";
 import { processosSeletivosRouter } from "./routers/processosSeletivos";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
@@ -517,6 +518,7 @@ export const appRouter = router({
   processosSeletivos: processosSeletivosRouter,
   jornada: jornadaRouter,
   fichasPedagogicas: fichasPedagogicasRouter,
+  bibliotecaLivros: bibliotecaLivrosRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

@@ -15204,8 +15204,8 @@ var systemRouter = router({
 // server/routers.ts
 init_schema();
 init_db();
-import { TRPCError as TRPCError5 } from "@trpc/server";
-import { z as z5 } from "zod";
+import { TRPCError as TRPCError6 } from "@trpc/server";
+import { z as z6 } from "zod";
 import { eq as eq8, and as and6, asc as asc3, desc as desc3, inArray as inArray4 } from "drizzle-orm";
 
 // server/excelProcessor.ts
@@ -17768,11 +17768,168 @@ var fichasPedagogicasRouter = router({
   })
 });
 
+// server/routers/bibliotecaLivros.ts
+import { z as z4 } from "zod";
+init_db();
+import { TRPCError as TRPCError4 } from "@trpc/server";
+import { nanoid as nanoid2 } from "nanoid";
+function mimeForExt(ext) {
+  const map = {
+    pdf: "application/pdf",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    gif: "image/gif"
+  };
+  return map[ext.toLowerCase()] || "application/octet-stream";
+}
+async function getRawConn() {
+  const database = await getDb();
+  if (!database) throw new TRPCError4({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+  const conn = database.$client?.promise ? database.$client.promise() : database.$client;
+  if (!conn) throw new TRPCError4({ code: "INTERNAL_SERVER_ERROR", message: "Conex\xE3o indispon\xEDvel" });
+  return conn;
+}
+var bibliotecaLivrosRouter = router({
+  // Listar livros — acessível a todos os usuários autenticados
+  listar: protectedProcedure.input(
+    z4.object({
+      busca: z4.string().optional(),
+      categoria: z4.string().optional(),
+      apenasAtivos: z4.boolean().optional().default(true)
+    })
+  ).query(async ({ input }) => {
+    const conn = await getRawConn();
+    let query = `
+        SELECT id, titulo, autor, descricao, categoria, capa_url, pdf_url, link_externo, ativo, ordem, criado_em
+        FROM biblioteca_livros
+        WHERE 1=1
+      `;
+    const params = [];
+    if (input.apenasAtivos) {
+      query += " AND ativo = 1";
+    }
+    if (input.busca) {
+      query += " AND (titulo LIKE ? OR autor LIKE ? OR descricao LIKE ? OR categoria LIKE ?)";
+      const like = `%${input.busca}%`;
+      params.push(like, like, like, like);
+    }
+    if (input.categoria) {
+      query += " AND categoria = ?";
+      params.push(input.categoria);
+    }
+    query += " ORDER BY ordem ASC, criado_em DESC";
+    const [rows] = await conn.execute(query, params);
+    return rows;
+  }),
+  // Listar categorias únicas — acessível a todos
+  listarCategorias: protectedProcedure.query(async () => {
+    const conn = await getRawConn();
+    const [rows] = await conn.execute(
+      "SELECT DISTINCT categoria FROM biblioteca_livros WHERE ativo = 1 AND categoria IS NOT NULL AND categoria != '' ORDER BY categoria ASC"
+    );
+    return rows.map((r) => r.categoria);
+  }),
+  // Contar livros ativos — para o card do Mural
+  contar: protectedProcedure.query(async () => {
+    const conn = await getRawConn();
+    const [rows] = await conn.execute("SELECT COUNT(*) as total FROM biblioteca_livros WHERE ativo = 1");
+    return { total: Number(rows[0]?.total ?? 0) };
+  }),
+  // Upload de arquivo (PDF ou imagem de capa) — apenas admin
+  uploadArquivo: adminProcedure.input(
+    z4.object({
+      fileName: z4.string(),
+      fileData: z4.string(),
+      // Base64
+      tipo: z4.enum(["pdf", "capa"])
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    const buffer = Buffer.from(input.fileData, "base64");
+    const ext = input.fileName.split(".").pop() || (input.tipo === "pdf" ? "pdf" : "jpg");
+    const key = `biblioteca/${ctx2.user.id}/${Date.now()}-${nanoid2(8)}.${ext}`;
+    const contentType = mimeForExt(ext);
+    const result = await storagePut(key, buffer, contentType);
+    return { url: result.url, key: result.key };
+  }),
+  // Criar livro — apenas admin
+  criar: adminProcedure.input(
+    z4.object({
+      titulo: z4.string().min(1),
+      autor: z4.string().optional(),
+      descricao: z4.string().optional(),
+      categoria: z4.string().optional(),
+      capa_url: z4.string().optional(),
+      pdf_url: z4.string().optional(),
+      link_externo: z4.string().optional(),
+      ordem: z4.number().optional().default(0)
+    })
+  ).mutation(async ({ input }) => {
+    const conn = await getRawConn();
+    const [result] = await conn.execute(
+      `INSERT INTO biblioteca_livros (titulo, autor, descricao, categoria, capa_url, pdf_url, link_externo, ordem)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        input.titulo,
+        input.autor || null,
+        input.descricao || null,
+        input.categoria || null,
+        input.capa_url || null,
+        input.pdf_url || null,
+        input.link_externo || null,
+        input.ordem ?? 0
+      ]
+    );
+    return { id: result.insertId };
+  }),
+  // Editar livro — apenas admin
+  editar: adminProcedure.input(
+    z4.object({
+      id: z4.number(),
+      titulo: z4.string().min(1),
+      autor: z4.string().optional(),
+      descricao: z4.string().optional(),
+      categoria: z4.string().optional(),
+      capa_url: z4.string().optional(),
+      pdf_url: z4.string().optional(),
+      link_externo: z4.string().optional(),
+      ativo: z4.boolean().optional().default(true),
+      ordem: z4.number().optional().default(0)
+    })
+  ).mutation(async ({ input }) => {
+    const conn = await getRawConn();
+    await conn.execute(
+      `UPDATE biblioteca_livros SET titulo=?, autor=?, descricao=?, categoria=?, capa_url=?, pdf_url=?, link_externo=?, ativo=?, ordem=?
+         WHERE id=?`,
+      [
+        input.titulo,
+        input.autor || null,
+        input.descricao || null,
+        input.categoria || null,
+        input.capa_url || null,
+        input.pdf_url || null,
+        input.link_externo || null,
+        input.ativo ? 1 : 0,
+        input.ordem ?? 0,
+        input.id
+      ]
+    );
+    return { ok: true };
+  }),
+  // Excluir livro — apenas admin
+  excluir: adminProcedure.input(z4.object({ id: z4.number() })).mutation(async ({ input }) => {
+    const conn = await getRawConn();
+    await conn.execute("DELETE FROM biblioteca_livros WHERE id = ?", [input.id]);
+    return { ok: true };
+  })
+});
+
 // server/routers/processosSeletivos.ts
 init_schema();
-import { TRPCError as TRPCError4 } from "@trpc/server";
+import { TRPCError as TRPCError5 } from "@trpc/server";
 import { and as and3, asc as asc2, desc as desc2, eq as eq4, inArray as inArray3, isNull as isNull2, lt as lt2, ne as ne2, or as or2, sql as sql2 } from "drizzle-orm";
-import { z as z4 } from "zod";
+import { z as z5 } from "zod";
 init_db();
 init_emailService();
 var adminRoles = /* @__PURE__ */ new Set(["admin", "admin2"]);
@@ -17780,13 +17937,13 @@ var isCkmAdmin = (role) => adminRoles.has(role ?? "");
 var requireDatabase = async () => {
   const database = await getDb();
   if (!database) {
-    throw new TRPCError4({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+    throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
   }
   return database;
 };
 var requireCkmAdmin = (role) => {
   if (!isCkmAdmin(role)) {
-    throw new TRPCError4({ code: "FORBIDDEN", message: "Acesso restrito a administradores CKM" });
+    throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito a administradores CKM" });
   }
 };
 async function hasProcessAccess(database, user, processoId) {
@@ -17803,7 +17960,7 @@ async function hasProcessAccess(database, user, processoId) {
 async function ensureProcessAccess(database, user, processoId) {
   const allowed = await hasProcessAccess(database, user, processoId);
   if (!allowed) {
-    throw new TRPCError4({ code: "FORBIDDEN", message: "Voce nao tem acesso a este processo seletivo" });
+    throw new TRPCError5({ code: "FORBIDDEN", message: "Voce nao tem acesso a este processo seletivo" });
   }
 }
 async function writeLog(database, data) {
@@ -17852,7 +18009,7 @@ function generateSlots(input) {
 async function allocateCandidate(database, candidatoId, actorUserId) {
   const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, candidatoId)).limit(1);
   if (!candidate) {
-    throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
   }
   const regiaoFilter = candidate.regiaoId != null ? eq4(processoAgendaSlots.regiaoId, candidate.regiaoId) : isNull2(processoAgendaSlots.regiaoId);
   const slotWhere = candidate.vagaId ? and3(
@@ -17949,18 +18106,18 @@ async function allocateCandidate(database, candidatoId, actorUserId) {
   }
   return { status: "agendada", slot };
 }
-var processoInput = z4.object({
-  nome: z4.string().min(1),
-  clienteNome: z4.string().min(1),
-  clienteEmail: z4.string().email().optional().or(z4.literal("")),
-  linkEntrevista: z4.string().url().optional().or(z4.literal("")),
-  descricao: z4.string().optional(),
-  status: z4.enum(["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho"),
-  dataInicio: z4.string().optional().nullable(),
-  emailsRelatorio: z4.string().optional().nullable(),
-  mentorId: z4.number().optional().nullable()
+var processoInput = z5.object({
+  nome: z5.string().min(1),
+  clienteNome: z5.string().min(1),
+  clienteEmail: z5.string().email().optional().or(z5.literal("")),
+  linkEntrevista: z5.string().url().optional().or(z5.literal("")),
+  descricao: z5.string().optional(),
+  status: z5.enum(["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho"),
+  dataInicio: z5.string().optional().nullable(),
+  emailsRelatorio: z5.string().optional().nullable(),
+  mentorId: z5.number().optional().nullable()
 });
-var processoIdInput = z4.object({ processoId: z4.number() });
+var processoIdInput = z5.object({ processoId: z5.number() });
 var processosSeletivosRouter = router({
   listarProcessos: protectedProcedure.query(async ({ ctx: ctx2 }) => {
     const database = await requireDatabase();
@@ -18021,7 +18178,7 @@ var processosSeletivosRouter = router({
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx2.user, input.processoId);
     const [processo] = await database.select().from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
-    if (!processo) throw new TRPCError4({ code: "NOT_FOUND", message: "Processo nao encontrado" });
+    if (!processo) throw new TRPCError5({ code: "NOT_FOUND", message: "Processo nao encontrado" });
     return processo;
   }),
   criarProcesso: protectedProcedure.input(processoInput).mutation(async ({ ctx: ctx2, input }) => {
@@ -18072,7 +18229,7 @@ var processosSeletivosRouter = router({
     await database.delete(processosSeletivos).where(eq4(processosSeletivos.id, processoId));
     return { success: true };
   }),
-  vincularClienteUsuario: protectedProcedure.input(processoIdInput.extend({ userId: z4.number(), permissao: z4.enum(["leitura", "comentario"]).default("leitura") })).mutation(async ({ ctx: ctx2, input }) => {
+  vincularClienteUsuario: protectedProcedure.input(processoIdInput.extend({ userId: z5.number(), permissao: z5.enum(["leitura", "comentario"]).default("leitura") })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
     await database.insert(processoClienteUsuarios).values({
@@ -18093,7 +18250,7 @@ var processosSeletivosRouter = router({
     await ensureProcessAccess(database, ctx2.user, input.processoId);
     return database.select().from(processoVagas).where(eq4(processoVagas.processoId, input.processoId));
   }),
-  criarVaga: protectedProcedure.input(processoIdInput.extend({ titulo: z4.string().min(1), codigo: z4.string().optional(), descricao: z4.string().optional(), quantidadeVagas: z4.number().min(1).default(1) })).mutation(async ({ ctx: ctx2, input }) => {
+  criarVaga: protectedProcedure.input(processoIdInput.extend({ titulo: z5.string().min(1), codigo: z5.string().optional(), descricao: z5.string().optional(), quantidadeVagas: z5.number().min(1).default(1) })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
     const result = await database.insert(processoVagas).values({
@@ -18106,11 +18263,11 @@ var processosSeletivosRouter = router({
     await writeLog(database, { processoId: input.processoId, userId: ctx2.user.id, acao: "vaga_criada", detalhe: input.titulo });
     return { id: Number(result[0].insertId), success: true };
   }),
-  excluirVaga: protectedProcedure.input(z4.object({ vagaId: z4.number() })).mutation(async ({ ctx: ctx2, input }) => {
+  excluirVaga: protectedProcedure.input(z5.object({ vagaId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
     const [vaga] = await database.select({ processoId: processoVagas.processoId, titulo: processoVagas.titulo }).from(processoVagas).where(eq4(processoVagas.id, input.vagaId)).limit(1);
-    if (!vaga) throw new TRPCError4({ code: "NOT_FOUND", message: "Vaga nao encontrada" });
+    if (!vaga) throw new TRPCError5({ code: "NOT_FOUND", message: "Vaga nao encontrada" });
     await database.delete(processoVagas).where(eq4(processoVagas.id, input.vagaId));
     await writeLog(database, { processoId: vaga.processoId, userId: ctx2.user.id, acao: "vaga_excluida", detalhe: vaga.titulo });
     return { success: true };
@@ -18120,7 +18277,7 @@ var processosSeletivosRouter = router({
     await ensureProcessAccess(database, ctx2.user, input.processoId);
     return database.select().from(processoRegioes).where(and3(eq4(processoRegioes.processoId, input.processoId), ne2(processoRegioes.status, "encerrada")));
   }),
-  criarRegiao: protectedProcedure.input(processoIdInput.extend({ nome: z4.string().min(1), codigo: z4.string().optional(), vagasPrevistas: z4.number().min(0).default(0) })).mutation(async ({ ctx: ctx2, input }) => {
+  criarRegiao: protectedProcedure.input(processoIdInput.extend({ nome: z5.string().min(1), codigo: z5.string().optional(), vagasPrevistas: z5.number().min(0).default(0) })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
     const result = await database.insert(processoRegioes).values({
@@ -18132,20 +18289,20 @@ var processosSeletivosRouter = router({
     await writeLog(database, { processoId: input.processoId, userId: ctx2.user.id, acao: "regiao_criada", detalhe: input.nome });
     return { id: Number(result[0].insertId), success: true };
   }),
-  inativarRegiao: protectedProcedure.input(z4.object({ regiaoId: z4.number() })).mutation(async ({ ctx: ctx2, input }) => {
+  inativarRegiao: protectedProcedure.input(z5.object({ regiaoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
     const [regiao] = await database.select({ id: processoRegioes.id, processoId: processoRegioes.processoId, nome: processoRegioes.nome }).from(processoRegioes).where(eq4(processoRegioes.id, input.regiaoId)).limit(1);
-    if (!regiao) throw new TRPCError4({ code: "NOT_FOUND", message: "Regiao nao encontrada" });
+    if (!regiao) throw new TRPCError5({ code: "NOT_FOUND", message: "Regiao nao encontrada" });
     await database.update(processoRegioes).set({ status: "encerrada" }).where(eq4(processoRegioes.id, input.regiaoId));
     await writeLog(database, { processoId: regiao.processoId, userId: ctx2.user.id, acao: "regiao_inativada", detalhe: regiao.nome });
     return { success: true };
   }),
-  inativarCandidato: protectedProcedure.input(z4.object({ candidatoId: z4.number() })).mutation(async ({ ctx: ctx2, input }) => {
+  inativarCandidato: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
     const [candidato] = await database.select({ id: processoCandidatos.id, processoId: processoCandidatos.processoId, nome: processoCandidatos.nome }).from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidato) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidato) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await database.update(processoCandidatos).set({ statusCadastro: "inativo" }).where(eq4(processoCandidatos.id, input.candidatoId));
     const entrevistas = await database.select({ agendaSlotId: processoEntrevistas.agendaSlotId }).from(processoEntrevistas).where(eq4(processoEntrevistas.candidatoId, input.candidatoId));
     for (const e of entrevistas) {
@@ -18172,13 +18329,13 @@ var processosSeletivosRouter = router({
   }),
   criarCandidato: protectedProcedure.input(
     processoIdInput.extend({
-      nome: z4.string().min(1),
-      email: z4.string().email(),
-      telefone: z4.string().optional(),
-      cpf: z4.string().optional(),
-      vagaId: z4.number().optional().nullable(),
-      regiaoId: z4.number().optional().nullable(),
-      userId: z4.number().optional().nullable()
+      nome: z5.string().min(1),
+      email: z5.string().email(),
+      telefone: z5.string().optional(),
+      cpf: z5.string().optional(),
+      vagaId: z5.number().optional().nullable(),
+      regiaoId: z5.number().optional().nullable(),
+      userId: z5.number().optional().nullable()
     })
   ).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
@@ -18200,14 +18357,14 @@ var processosSeletivosRouter = router({
   }),
   importarCandidatos: protectedProcedure.input(
     processoIdInput.extend({
-      candidatos: z4.array(
-        z4.object({
-          nome: z4.string().min(1),
-          email: z4.string().email(),
-          telefone: z4.string().optional(),
-          cpf: z4.string().optional(),
-          vagaId: z4.number().optional().nullable(),
-          regiaoId: z4.number().optional().nullable()
+      candidatos: z5.array(
+        z5.object({
+          nome: z5.string().min(1),
+          email: z5.string().email(),
+          telefone: z5.string().optional(),
+          cpf: z5.string().optional(),
+          vagaId: z5.number().optional().nullable(),
+          regiaoId: z5.number().optional().nullable()
         })
       ).min(1)
     })
@@ -18236,16 +18393,16 @@ var processosSeletivosRouter = router({
   }),
   criarAgendaGrupo: protectedProcedure.input(
     processoIdInput.extend({
-      regiaoId: z4.number().optional().nullable(),
-      vagaId: z4.number().optional().nullable(),
-      nomeGrupo: z4.string().min(1),
-      dataAgenda: z4.string().min(10),
-      inicio: z4.string().min(5),
-      fim: z4.string().min(5),
-      intervaloInicio: z4.string().optional().nullable(),
-      intervaloFim: z4.string().optional().nullable(),
-      duracaoMinutos: z4.number().min(10).max(240).default(30),
-      linkPadrao: z4.string().optional().nullable()
+      regiaoId: z5.number().optional().nullable(),
+      vagaId: z5.number().optional().nullable(),
+      nomeGrupo: z5.string().min(1),
+      dataAgenda: z5.string().min(10),
+      inicio: z5.string().min(5),
+      fim: z5.string().min(5),
+      intervaloInicio: z5.string().optional().nullable(),
+      intervaloFim: z5.string().optional().nullable(),
+      duracaoMinutos: z5.number().min(10).max(240).default(30),
+      linkPadrao: z5.string().optional().nullable()
     })
   ).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
@@ -18284,14 +18441,14 @@ var processosSeletivosRouter = router({
   }),
   criarSlotsManual: protectedProcedure.input(
     processoIdInput.extend({
-      nomeGrupo: z4.string().min(1),
-      linkPadrao: z4.string().optional().nullable(),
-      slots: z4.array(
-        z4.object({
-          dataAgenda: z4.string().min(10),
-          inicio: z4.string().min(5),
-          fim: z4.string().min(5),
-          link: z4.string().optional().nullable()
+      nomeGrupo: z5.string().min(1),
+      linkPadrao: z5.string().optional().nullable(),
+      slots: z5.array(
+        z5.object({
+          dataAgenda: z5.string().min(10),
+          inicio: z5.string().min(5),
+          fim: z5.string().min(5),
+          link: z5.string().optional().nullable()
         })
       ).min(1)
     })
@@ -18336,13 +18493,13 @@ var processosSeletivosRouter = router({
     });
     return { id: agendaGrupoId, slotsCriados: slotRows.length, success: true };
   }),
-  excluirSlot: protectedProcedure.input(z4.object({ slotId: z4.number() })).mutation(async ({ ctx: ctx2, input }) => {
+  excluirSlot: protectedProcedure.input(z5.object({ slotId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
     const [slot] = await database.select().from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, input.slotId)).limit(1);
-    if (!slot) throw new TRPCError4({ code: "NOT_FOUND", message: "Slot nao encontrado" });
+    if (!slot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot nao encontrado" });
     if (slot.status !== "disponivel" && slot.status !== "reservado") {
-      throw new TRPCError4({ code: "BAD_REQUEST", message: "Nao e possivel excluir um slot com entrevista confirmada ou realizada" });
+      throw new TRPCError5({ code: "BAD_REQUEST", message: "Nao e possivel excluir um slot com entrevista confirmada ou realizada" });
     }
     await database.delete(processoAgendaSlots).where(eq4(processoAgendaSlots.id, input.slotId));
     await writeLog(database, {
@@ -18358,7 +18515,7 @@ var processosSeletivosRouter = router({
     await ensureProcessAccess(database, ctx2.user, input.processoId);
     return database.select().from(processoAgendasGrupo).where(eq4(processoAgendasGrupo.processoId, input.processoId)).orderBy(asc2(processoAgendasGrupo.dataAgenda));
   }),
-  listarSlotsAgenda: protectedProcedure.input(processoIdInput.extend({ agendaGrupoId: z4.number().optional() })).query(async ({ ctx: ctx2, input }) => {
+  listarSlotsAgenda: protectedProcedure.input(processoIdInput.extend({ agendaGrupoId: z5.number().optional() })).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx2.user, input.processoId);
     const where = input.agendaGrupoId ? and3(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.agendaGrupoId, input.agendaGrupoId)) : eq4(processoAgendaSlots.processoId, input.processoId);
@@ -18369,34 +18526,34 @@ var processosSeletivosRouter = router({
     await ensureProcessAccess(database, ctx2.user, input.processoId);
     return database.select().from(processoLogs).where(eq4(processoLogs.processoId, input.processoId)).orderBy(desc2(processoLogs.createdAt));
   }),
-  registrarConclusaoTeste: protectedProcedure.input(z4.object({ candidatoId: z4.number() })).mutation(async ({ ctx: ctx2, input }) => {
+  registrarConclusaoTeste: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
     if (!isCkmAdmin(ctx2.user.role) && candidate.userId !== ctx2.user.id) {
-      throw new TRPCError4({ code: "FORBIDDEN", message: "Voce so pode concluir o proprio teste" });
+      throw new TRPCError5({ code: "FORBIDDEN", message: "Voce so pode concluir o proprio teste" });
     }
     await database.update(processoCandidatos).set({ statusTeste: "concluido", testeConcluidoEm: /* @__PURE__ */ new Date() }).where(eq4(processoCandidatos.id, input.candidatoId));
     await writeLog(database, { processoId: candidate.processoId, candidatoId: input.candidatoId, userId: ctx2.user.id, acao: "teste_concluido" });
     const allocation = await allocateCandidate(database, input.candidatoId, ctx2.user.id);
     return { success: true, allocation };
   }),
-  alocarCandidatoAutomaticamente: protectedProcedure.input(z4.object({ candidatoId: z4.number() })).mutation(async ({ ctx: ctx2, input }) => {
+  alocarCandidatoAutomaticamente: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
     const database = await requireDatabase();
     const allocation = await allocateCandidate(database, input.candidatoId, ctx2.user.id);
     return { success: true, allocation };
   }),
-  registrarResultado: protectedProcedure.input(z4.object({ candidatoId: z4.number(), resultado: z4.enum(["pendente", "aprovado", "reprovado", "em_analise", "desistente"]), notaEntrevista: z4.number().optional().nullable(), parecer: z4.string().optional() })).mutation(async ({ ctx: ctx2, input }) => {
+  registrarResultado: protectedProcedure.input(z5.object({ candidatoId: z5.number(), resultado: z5.enum(["pendente", "aprovado", "reprovado", "em_analise", "desistente"]), notaEntrevista: z5.number().optional().nullable(), parecer: z5.string().optional() })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     const userConsultorId = ctx2.user.consultorId;
     if (!isCkmAdmin(ctx2.user.role)) {
-      if (!userConsultorId) throw new TRPCError4({ code: "FORBIDDEN", message: "Acesso restrito" });
+      if (!userConsultorId) throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito" });
       const [processo] = await database.select({ mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
-      if (processo?.mentorId !== userConsultorId) throw new TRPCError4({ code: "FORBIDDEN", message: "Voce nao e a mentora deste processo" });
+      if (processo?.mentorId !== userConsultorId) throw new TRPCError5({ code: "FORBIDDEN", message: "Voce nao e a mentora deste processo" });
     }
     const [existingResult] = await database.select({ id: processoResultados.id }).from(processoResultados).where(eq4(processoResultados.candidatoId, input.candidatoId)).limit(1);
     const resultData = {
@@ -18425,16 +18582,16 @@ var processosSeletivosRouter = router({
     return rows;
   }),
   // Rota pública: retorna slots disponíveis de um processo para o candidato agendar
-  listarSlotsDisponiveis: publicProcedure.input(z4.object({ processoId: z4.number() })).query(async ({ input }) => {
+  listarSlotsDisponiveis: publicProcedure.input(z5.object({ processoId: z5.number() })).query(async ({ input }) => {
     const database = await requireDatabase();
     const slots = await database.select().from(processoAgendaSlots).where(and3(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.status, "disponivel"))).orderBy(asc2(processoAgendaSlots.dataAgenda), asc2(processoAgendaSlots.inicio));
     return slots;
   }),
   // Candidato agendando seu próprio slot após concluir os testes
-  candidatoAgendar: protectedProcedure.input(z4.object({ slotId: z4.number(), processoId: z4.number() })).mutation(async ({ ctx: ctx2, input }) => {
+  candidatoAgendar: protectedProcedure.input(z5.object({ slotId: z5.number(), processoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, input.processoId), eq4(processoCandidatos.userId, ctx2.user.id))).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado neste processo" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado neste processo" });
     if (candidate.statusTeste !== "concluido") {
       const alunoId = ctx2.user.alunoId;
       let discOk = false;
@@ -18443,12 +18600,12 @@ var processosSeletivosRouter = router({
         discOk = !!discRow;
       }
       if (!discOk) {
-        throw new TRPCError4({ code: "FORBIDDEN", message: "Voce precisa concluir os testes antes de agendar" });
+        throw new TRPCError5({ code: "FORBIDDEN", message: "Voce precisa concluir os testes antes de agendar" });
       }
       await database.update(processoCandidatos).set({ statusTeste: "concluido", testeConcluidoEm: /* @__PURE__ */ new Date() }).where(eq4(processoCandidatos.id, candidate.id));
     }
     const [slot] = await database.select().from(processoAgendaSlots).where(and3(eq4(processoAgendaSlots.id, input.slotId), eq4(processoAgendaSlots.status, "disponivel"))).limit(1);
-    if (!slot) throw new TRPCError4({ code: "NOT_FOUND", message: "Slot nao disponivel" });
+    if (!slot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot nao disponivel" });
     await database.update(processoAgendaSlots).set({ candidatoId: candidate.id, status: "reservado" }).where(eq4(processoAgendaSlots.id, input.slotId));
     await database.insert(processoEntrevistas).values({
       processoId: input.processoId,
@@ -18495,10 +18652,10 @@ var processosSeletivosRouter = router({
     return { ...candidate, processoNome: processo?.nome ?? null };
   }),
   // Mentora: buscar DISC de um candidato pelo candidatoId do processo
-  discCandidato: protectedProcedure.input(z4.object({ candidatoId: z4.number() })).query(async ({ ctx: ctx2, input }) => {
+  discCandidato: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
     if (!candidate.userId) return null;
     const [userRow] = await database.select({ alunoId: users.alunoId }).from(users).where(eq4(users.id, candidate.userId)).limit(1);
@@ -18513,16 +18670,16 @@ var processosSeletivosRouter = router({
     return database.select().from(processoResultados).where(eq4(processoResultados.processoId, input.processoId));
   }),
   // Cliente/Admin: mover candidato para outra região
-  moverCandidato: protectedProcedure.input(z4.object({ candidatoId: z4.number(), novaRegiaoId: z4.number().nullable(), novaVagaId: z4.number().optional().nullable() })).mutation(async ({ ctx: ctx2, input }) => {
+  moverCandidato: protectedProcedure.input(z5.object({ candidatoId: z5.number(), novaRegiaoId: z5.number().nullable(), novaVagaId: z5.number().optional().nullable() })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
     const isCandidate = candidate.userId === ctx2.user.id && !isCkmAdmin(ctx2.user.role);
-    if (isCandidate) throw new TRPCError4({ code: "FORBIDDEN", message: "Candidatos nao podem alterar propria regiao" });
+    if (isCandidate) throw new TRPCError5({ code: "FORBIDDEN", message: "Candidatos nao podem alterar propria regiao" });
     if (input.novaRegiaoId !== null) {
       const [regiao] = await database.select({ id: processoRegioes.id }).from(processoRegioes).where(and3(eq4(processoRegioes.id, input.novaRegiaoId), eq4(processoRegioes.processoId, candidate.processoId))).limit(1);
-      if (!regiao) throw new TRPCError4({ code: "NOT_FOUND", message: "Regiao nao encontrada neste processo" });
+      if (!regiao) throw new TRPCError5({ code: "NOT_FOUND", message: "Regiao nao encontrada neste processo" });
     }
     const regiaoAnterior = candidate.regiaoId;
     await database.update(processoCandidatos).set({ regiaoId: input.novaRegiaoId, vagaId: input.novaVagaId ?? null }).where(eq4(processoCandidatos.id, input.candidatoId));
@@ -18555,10 +18712,10 @@ var processosSeletivosRouter = router({
     return rows;
   }),
   // ── AVALIAÇÃO: Perfil completo do candidato (DISC + autopercepções < 4 + minicurrículo) ──
-  perfilCandidatoCompleto: protectedProcedure.input(z4.object({ candidatoId: z4.number() })).query(async ({ ctx: ctx2, input }) => {
+  perfilCandidatoCompleto: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
     let alunoId = null;
     let minicurriculo = null;
@@ -18601,21 +18758,21 @@ var processosSeletivosRouter = router({
     };
   }),
   // ── AVALIAÇÃO: Reagendar entrevista pelo admin/gestor ──
-  reagendarEntrevista: protectedProcedure.input(z4.object({
-    candidatoId: z4.number(),
-    novoSlotId: z4.number()
+  reagendarEntrevista: protectedProcedure.input(z5.object({
+    candidatoId: z5.number(),
+    novoSlotId: z5.number()
   })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
     if (!isCkmAdmin(ctx2.user.role)) {
-      throw new TRPCError4({ code: "FORBIDDEN", message: "Apenas administradores podem reagendar entrevistas" });
+      throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas administradores podem reagendar entrevistas" });
     }
     const [novoSlot] = await database.select().from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, input.novoSlotId)).limit(1);
-    if (!novoSlot) throw new TRPCError4({ code: "NOT_FOUND", message: "Slot nao encontrado" });
+    if (!novoSlot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot nao encontrado" });
     if (novoSlot.candidatoId && novoSlot.candidatoId !== input.candidatoId) {
-      throw new TRPCError4({ code: "CONFLICT", message: "Este horario ja esta reservado por outro candidato" });
+      throw new TRPCError5({ code: "CONFLICT", message: "Este horario ja esta reservado por outro candidato" });
     }
     const [entrevistaAtual] = await database.select().from(processoEntrevistas).where(eq4(processoEntrevistas.candidatoId, input.candidatoId)).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
     if (entrevistaAtual) {
@@ -18667,17 +18824,17 @@ var processosSeletivosRouter = router({
     return { success: true, novoSlot };
   }),
   // ── AVALIAÇÃO: Registrar decisão com justificativa obrigatória ──
-  registrarDecisao: protectedProcedure.input(z4.object({
-    candidatoId: z4.number(),
-    decisao: z4.enum(["aprovado", "reprovado"]),
-    justificativa: z4.string().min(1, "Justificativa \xE9 obrigat\xF3ria")
+  registrarDecisao: protectedProcedure.input(z5.object({
+    candidatoId: z5.number(),
+    decisao: z5.enum(["aprovado", "reprovado"]),
+    justificativa: z5.string().min(1, "Justificativa \xE9 obrigat\xF3ria")
   })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
     if (!isCkmAdmin(ctx2.user.role)) {
-      throw new TRPCError4({ code: "FORBIDDEN", message: "Apenas administradores CKM podem registrar decisoes" });
+      throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas administradores CKM podem registrar decisoes" });
     }
     const decisaoAnterior = candidate.statusResultado;
     const [existingResult] = await database.select({ id: processoResultados.id }).from(processoResultados).where(eq4(processoResultados.candidatoId, input.candidatoId)).limit(1);
@@ -18709,10 +18866,10 @@ var processosSeletivosRouter = router({
     return { success: true };
   }),
   // ── AVALIAÇÃO: Histórico de decisões de um candidato ──
-  historicoDecisoesCandidato: protectedProcedure.input(z4.object({ candidatoId: z4.number() })).query(async ({ ctx: ctx2, input }) => {
+  historicoDecisoesCandidato: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select({ processoId: processoCandidatos.processoId }).from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
-    if (!candidate) throw new TRPCError4({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
     const logs = await database.select({
       id: processoLogs.id,
@@ -18751,7 +18908,7 @@ var processosSeletivosRouter = router({
       createdAt: processosSeletivos.createdAt,
       updatedAt: processosSeletivos.updatedAt
     }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
-    if (!processo) throw new TRPCError4({ code: "NOT_FOUND", message: "Processo nao encontrado" });
+    if (!processo) throw new TRPCError5({ code: "NOT_FOUND", message: "Processo nao encontrado" });
     let emailsRelatorio = null;
     try {
       const [psExtra] = await database.select({ emailsRelatorio: processosSeletivos.emailsRelatorio }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
@@ -19694,19 +19851,19 @@ function montarResumoTempo(atividade, progresso) {
 }
 var adminProcedure3 = protectedProcedure.use(({ ctx: ctx2, next }) => {
   if (ctx2.user.role !== "admin") {
-    throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
+    throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
   }
   return next({ ctx: ctx2 });
 });
 var adminOrAdmin2Procedure = protectedProcedure.use(({ ctx: ctx2, next }) => {
   if (ctx2.user.role !== "admin" && ctx2.user.role !== "admin2") {
-    throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
+    throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
   }
   return next({ ctx: ctx2 });
 });
 var managerProcedure = protectedProcedure.use(({ ctx: ctx2, next }) => {
   if (ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-    throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito a gerentes e administradores" });
+    throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a gerentes e administradores" });
   }
   return next({ ctx: ctx2 });
 });
@@ -19714,7 +19871,7 @@ async function ensureNivelAbertoParaAtribuicao(alunoId, contratoNivelId, operaca
   try {
     await assertNivelPermiteNovasAtribuicoes(alunoId, contratoNivelId, operacao);
   } catch (error) {
-    throw new TRPCError5({
+    throw new TRPCError6({
       code: "FORBIDDEN",
       message: error?.message || "N\xEDvel em fechamento/encerrado. Novas atribui\xE7\xF5es est\xE3o bloqueadas."
     });
@@ -19751,7 +19908,7 @@ async function buildEvolucaoAlunoPayload(alunoId) {
   const alunos2 = await getAlunos();
   const aluno = alunos2.find((a) => a.id === alunoId);
   if (!aluno) {
-    throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+    throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
   }
   const [niveisRaw, programas, turmas2, allDisc, discComparativo] = await Promise.all([
     getContratoNiveisByAluno(alunoId),
@@ -19987,6 +20144,7 @@ var appRouter = router({
   processosSeletivos: processosSeletivosRouter,
   jornada: jornadaRouter,
   fichasPedagogicas: fichasPedagogicasRouter,
+  bibliotecaLivros: bibliotecaLivrosRouter,
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx: ctx2 }) => {
@@ -19995,9 +20153,9 @@ var appRouter = router({
       return { success: true };
     }),
     // Login para administrador com usuário e senha
-    adminLogin: publicProcedure.input(z5.object({
-      username: z5.string().min(1),
-      password: z5.string().min(1)
+    adminLogin: publicProcedure.input(z6.object({
+      username: z6.string().min(1),
+      password: z6.string().min(1)
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const crypto = await import("crypto");
       const passwordHash = crypto.createHash("sha256").update(input.password).digest("hex");
@@ -20016,9 +20174,9 @@ var appRouter = router({
       return { success: true, user: result.user };
     }),
     // Login universal por Email + CPF
-    emailCpfLogin: publicProcedure.input(z5.object({
-      email: z5.string().email(),
-      credential: z5.string().min(1)
+    emailCpfLogin: publicProcedure.input(z6.object({
+      email: z6.string().email(),
+      credential: z6.string().min(1)
       // CPF ou ID do aluno
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const result = await authenticateByEmailCpf(input.email, input.credential);
@@ -20036,10 +20194,10 @@ var appRouter = router({
       return { success: true, user: result.user };
     }),
     // Login customizado para Alunos, Mentores e Gerentes
-    customLogin: publicProcedure.input(z5.object({
-      type: z5.enum(["aluno", "mentor", "gerente"]),
-      id: z5.string().min(1),
-      email: z5.string().email()
+    customLogin: publicProcedure.input(z6.object({
+      type: z6.enum(["aluno", "mentor", "gerente"]),
+      id: z6.string().min(1),
+      email: z6.string().email()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       let result;
       switch (input.type) {
@@ -20085,12 +20243,12 @@ var appRouter = router({
       return { success: true, user: result.user };
     }),
     // ============ AUTO-CADASTRO (Landing Page) ============
-    autoRegistro: publicProcedure.input(z5.object({
-      name: z5.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-      email: z5.string().email("Email inv\xE1lido"),
-      cpf: z5.string().min(11, "CPF inv\xE1lido").max(14),
-      empresa: z5.string().optional(),
-      processoSeletivoId: z5.number().optional()
+    autoRegistro: publicProcedure.input(z6.object({
+      name: z6.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+      email: z6.string().email("Email inv\xE1lido"),
+      cpf: z6.string().min(11, "CPF inv\xE1lido").max(14),
+      empresa: z6.string().optional(),
+      processoSeletivoId: z6.number().optional()
     })).mutation(async ({ input }) => {
       const TURMA_EXPRESS_ID = 60002;
       const PROGRAMA_CKM_ID = 90002;
@@ -20119,7 +20277,7 @@ var appRouter = router({
         processoSeletivoId: input.processoSeletivoId ?? null
       });
       if (!result.success) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: result.message || "Erro ao criar cadastro" });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: result.message || "Erro ao criar cadastro" });
       }
       if (input.processoSeletivoId && result.alunoId) {
         try {
@@ -20205,21 +20363,21 @@ var appRouter = router({
     list: adminOrAdmin2Procedure.query(async () => {
       return await getAllUsers();
     }),
-    updateRole: adminProcedure3.input(z5.object({
-      userId: z5.number(),
-      role: z5.enum(["user", "admin", "manager", "admin2"])
+    updateRole: adminProcedure3.input(z6.object({
+      userId: z6.number(),
+      role: z6.enum(["user", "admin", "manager", "admin2"])
     })).mutation(async ({ input }) => {
       await updateUserRole(input.userId, input.role);
       return { success: true };
     }),
-    updateDepartment: adminProcedure3.input(z5.object({
-      userId: z5.number(),
-      departmentId: z5.number().nullable()
+    updateDepartment: adminProcedure3.input(z6.object({
+      userId: z6.number(),
+      departmentId: z6.number().nullable()
     })).mutation(async ({ input }) => {
       await updateUserDepartment(input.userId, input.departmentId);
       return { success: true };
     }),
-    byDepartment: managerProcedure.input(z5.object({ departmentId: z5.number() })).query(async ({ input }) => {
+    byDepartment: managerProcedure.input(z6.object({ departmentId: z6.number() })).query(async ({ input }) => {
       return await getUsersByDepartment(input.departmentId);
     })
   }),
@@ -20228,35 +20386,35 @@ var appRouter = router({
     list: protectedProcedure.query(async () => {
       return await getAllDepartments();
     }),
-    create: adminProcedure3.input(z5.object({
-      name: z5.string().min(1),
-      description: z5.string().optional(),
-      managerId: z5.number().optional()
+    create: adminProcedure3.input(z6.object({
+      name: z6.string().min(1),
+      description: z6.string().optional(),
+      managerId: z6.number().optional()
     })).mutation(async ({ input }) => {
       const id = await createDepartment(input);
       return { id, success: true };
     }),
-    update: adminProcedure3.input(z5.object({
-      id: z5.number(),
-      name: z5.string().min(1).optional(),
-      description: z5.string().optional(),
-      managerId: z5.number().nullable().optional()
+    update: adminProcedure3.input(z6.object({
+      id: z6.number(),
+      name: z6.string().min(1).optional(),
+      description: z6.string().optional(),
+      managerId: z6.number().nullable().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateDepartment(id, data);
       return { success: true };
     }),
-    delete: adminProcedure3.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminProcedure3.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteDepartment(input.id);
       return { success: true };
     })
   }),
   // Upload management
   uploads: router({
-    createBatch: protectedProcedure.input(z5.object({
-      weekNumber: z5.number(),
-      year: z5.number(),
-      notes: z5.string().optional()
+    createBatch: protectedProcedure.input(z6.object({
+      weekNumber: z6.number(),
+      year: z6.number(),
+      notes: z6.string().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const id = await createUploadBatch({
         ...input,
@@ -20265,25 +20423,25 @@ var appRouter = router({
       });
       return { id, success: true };
     }),
-    uploadFile: protectedProcedure.input(z5.object({
-      batchId: z5.number(),
-      fileName: z5.string(),
-      fileData: z5.string(),
+    uploadFile: protectedProcedure.input(z6.object({
+      batchId: z6.number(),
+      fileName: z6.string(),
+      fileData: z6.string(),
       // Base64 encoded
-      fileType: z5.enum(["sebraeacre_mentorias", "sebraeacre_eventos", "sebraeto_mentorias", "sebraeto_eventos", "embrapii_mentorias", "embrapii_eventos", "performance", "pdi"])
+      fileType: z6.enum(["sebraeacre_mentorias", "sebraeacre_eventos", "sebraeto_mentorias", "sebraeto_eventos", "embrapii_mentorias", "embrapii_eventos", "performance", "pdi"])
     })).mutation(async ({ ctx: ctx2, input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
       const { fileKey, fileUrl } = await uploadExcelToStorage(buffer, input.fileName, ctx2.user.id);
       const result = processExcelBuffer(buffer);
       if (!result.success) {
-        throw new TRPCError5({
+        throw new TRPCError6({
           code: "BAD_REQUEST",
           message: result.error || "Erro ao processar arquivo"
         });
       }
       const validation = validateExcelStructure(result.sheets);
       if (!validation.valid) {
-        throw new TRPCError5({
+        throw new TRPCError6({
           code: "BAD_REQUEST",
           message: validation.errors.join("; ")
         });
@@ -20473,7 +20631,7 @@ var appRouter = router({
         }))
       };
     }),
-    completeBatch: protectedProcedure.input(z5.object({ batchId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    completeBatch: protectedProcedure.input(z6.object({ batchId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
       await updateUploadBatchStatus(input.batchId, "completed");
       const batch = await getUploadBatchById(input.batchId);
       const files = await getFilesByBatchId(input.batchId);
@@ -20491,15 +20649,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return { success: true };
     }),
-    listBatches: protectedProcedure.input(z5.object({ limit: z5.number().optional() }).optional()).query(async ({ input }) => {
+    listBatches: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getUploadBatches(input?.limit || 50);
     }),
-    getBatchFiles: protectedProcedure.input(z5.object({ batchId: z5.number() })).query(async ({ input }) => {
+    getBatchFiles: protectedProcedure.input(z6.object({ batchId: z6.number() })).query(async ({ input }) => {
       return await getFilesByBatchId(input.batchId);
     }),
     // Baixar template de planilha
-    downloadTemplate: publicProcedure.input(z5.object({
-      type: z5.enum(["mentorias", "eventos", "performance", "pdi"])
+    downloadTemplate: publicProcedure.input(z6.object({
+      type: z6.enum(["mentorias", "eventos", "performance", "pdi"])
     })).mutation(async ({ input }) => {
       const buffer = generateTemplate(input.type);
       return {
@@ -20508,26 +20666,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Obter estrutura esperada do template
-    getTemplateStructure: publicProcedure.input(z5.object({
-      type: z5.enum(["mentorias", "eventos", "performance", "pdi"])
+    getTemplateStructure: publicProcedure.input(z6.object({
+      type: z6.enum(["mentorias", "eventos", "performance", "pdi"])
     })).query(({ input }) => {
       return TEMPLATE_STRUCTURES[input.type];
     }),
     // Validar planilha antes do upload
-    validateFile: protectedProcedure.input(z5.object({
-      fileData: z5.string(),
+    validateFile: protectedProcedure.input(z6.object({
+      fileData: z6.string(),
       // Base64
-      expectedType: z5.enum(["mentorias", "eventos", "performance", "pdi"])
+      expectedType: z6.enum(["mentorias", "eventos", "performance", "pdi"])
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
       return validateSpreadsheet(buffer, input.expectedType);
     }),
     // Upload em massa de PDIs via planilha XLSX
-    uploadPDIs: protectedProcedure.input(z5.object({
-      fileData: z5.string(),
+    uploadPDIs: protectedProcedure.input(z6.object({
+      fileData: z6.string(),
       // Base64 encoded XLSX
-      fileName: z5.string(),
-      preview: z5.boolean().optional()
+      fileName: z6.string(),
+      preview: z6.boolean().optional()
       // Se true, apenas valida sem salvar
     })).mutation(async ({ ctx: ctx2, input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
@@ -20535,7 +20693,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const sheetName = workbook.SheetNames.find((n) => n !== "Instru\xE7\xF5es") || workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const rows = XLSX4.utils.sheet_to_json(sheet, { header: 1 });
-      if (rows.length < 2) throw new TRPCError5({ code: "BAD_REQUEST", message: "Planilha sem dados" });
+      if (rows.length < 2) throw new TRPCError6({ code: "BAD_REQUEST", message: "Planilha sem dados" });
       const headers = rows[0].map((h) => String(h || "").trim());
       const colIdx = (name) => headers.findIndex((h) => h.toLowerCase() === name.toLowerCase());
       const getVal2 = (row, name) => {
@@ -20675,9 +20833,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { created, errors, total: results.length, results, preview: input.preview ?? false };
     }),
     // Listar histórico de uploads por tipo
-    getUploadHistory: protectedProcedure.input(z5.object({
-      fileType: z5.string().optional(),
-      limit: z5.number().optional()
+    getUploadHistory: protectedProcedure.input(z6.object({
+      fileType: z6.string().optional(),
+      limit: z6.number().optional()
     }).optional()).query(async ({ input }) => {
       return await getUploadHistory(input?.fileType, input?.limit || 10);
     })
@@ -20685,11 +20843,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Performance Report Upload
   performanceReport: router({
     // Upload e processar CSV de performance
-    upload: adminOrAdmin2Procedure.input(z5.object({
-      fileName: z5.string(),
-      fileData: z5.string(),
+    upload: adminOrAdmin2Procedure.input(z6.object({
+      fileName: z6.string(),
+      fileData: z6.string(),
       // Base64 encoded CSV
-      replaceAll: z5.boolean().default(true)
+      replaceAll: z6.boolean().default(true)
       // Substituir todos os dados existentes
     })).mutation(async ({ ctx: ctx2, input }) => {
       const uploadId = await createPerformanceUpload({
@@ -20847,14 +21005,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           status: "error",
           errorMessage: error instanceof Error ? error.message : "Erro desconhecido"
         });
-        throw new TRPCError5({
+        throw new TRPCError6({
           code: "INTERNAL_SERVER_ERROR",
           message: `Erro ao processar CSV: ${error instanceof Error ? error.message : "Erro desconhecido"}`
         });
       }
     }),
     // Listar histórico de uploads de performance
-    listUploads: adminOrAdmin2Procedure.input(z5.object({ limit: z5.number().optional() }).optional()).query(async ({ input }) => {
+    listUploads: adminOrAdmin2Procedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getPerformanceUploads(input?.limit || 20);
     }),
     // Obter resumo dos dados de performance
@@ -20862,11 +21020,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getStudentPerformanceSummary();
     }),
     // Obter detalhes de um upload específico
-    getUpload: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getUpload: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       return await getPerformanceUploadById(input.id);
     }),
     // Obter performance de um aluno específico
-    byAluno: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    byAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getStudentPerformanceByAluno(input.alunoId);
     })
   }),
@@ -20875,11 +21033,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     list: adminOrAdmin2Procedure.query(async () => {
       return await getActiveFormulas();
     }),
-    create: adminProcedure3.input(z5.object({
-      name: z5.string().min(1),
-      description: z5.string().optional(),
-      formula: z5.string().min(1),
-      variables: z5.record(z5.string(), z5.unknown()).optional()
+    create: adminProcedure3.input(z6.object({
+      name: z6.string().min(1),
+      description: z6.string().optional(),
+      formula: z6.string().min(1),
+      variables: z6.record(z6.string(), z6.unknown()).optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const id = await createFormula({
         ...input,
@@ -20887,52 +21045,52 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       });
       return { id, success: true };
     }),
-    update: adminProcedure3.input(z5.object({
-      id: z5.number(),
-      name: z5.string().min(1).optional(),
-      description: z5.string().optional(),
-      formula: z5.string().min(1).optional(),
-      variables: z5.record(z5.string(), z5.unknown()).optional()
+    update: adminProcedure3.input(z6.object({
+      id: z6.number(),
+      name: z6.string().min(1).optional(),
+      description: z6.string().optional(),
+      formula: z6.string().min(1).optional(),
+      variables: z6.record(z6.string(), z6.unknown()).optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateFormula(id, data);
       return { success: true };
     }),
-    deactivate: adminProcedure3.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    deactivate: adminProcedure3.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deactivateFormula(input.id);
       return { success: true };
     }),
-    delete: adminProcedure3.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminProcedure3.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteFormula(input.id);
       return { success: true };
     })
   }),
   // Dashboard data
   dashboard: router({
-    adminMetrics: adminOrAdmin2Procedure.input(z5.object({ batchId: z5.number().optional() }).optional()).query(async ({ input }) => {
+    adminMetrics: adminOrAdmin2Procedure.input(z6.object({ batchId: z6.number().optional() }).optional()).query(async ({ input }) => {
       const metrics = await getAdminMetrics(input?.batchId);
       const stats = await getSystemStats();
       return { metrics, stats };
     }),
-    managerMetrics: managerProcedure.input(z5.object({
-      departmentId: z5.number(),
-      batchId: z5.number().optional()
+    managerMetrics: managerProcedure.input(z6.object({
+      departmentId: z6.number(),
+      batchId: z6.number().optional()
     })).query(async ({ input }) => {
       return await getManagerMetrics(input.departmentId, input.batchId);
     }),
-    individualMetrics: protectedProcedure.input(z5.object({ batchId: z5.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    individualMetrics: protectedProcedure.input(z6.object({ batchId: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       return await getIndividualMetrics(ctx2.user.id, input?.batchId);
     }),
-    history: protectedProcedure.input(z5.object({
-      scope: z5.enum(["admin", "manager", "individual"]),
-      scopeId: z5.number().optional(),
-      limit: z5.number().optional()
+    history: protectedProcedure.input(z6.object({
+      scope: z6.enum(["admin", "manager", "individual"]),
+      scopeId: z6.number().optional(),
+      limit: z6.number().optional()
     })).query(async ({ ctx: ctx2, input }) => {
       if (input.scope === "admin" && ctx2.user.role !== "admin") {
-        throw new TRPCError5({ code: "FORBIDDEN" });
+        throw new TRPCError6({ code: "FORBIDDEN" });
       }
       if (input.scope === "manager" && ctx2.user.role === "user") {
-        throw new TRPCError5({ code: "FORBIDDEN" });
+        throw new TRPCError6({ code: "FORBIDDEN" });
       }
       const scopeId = input.scope === "individual" ? ctx2.user.id : input.scopeId;
       return await getMetricsHistory(input.scope, scopeId, input.limit);
@@ -20943,25 +21101,25 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   }),
   // Reports
   reports: router({
-    generate: protectedProcedure.input(z5.object({
-      name: z5.string().min(1),
-      type: z5.enum(["admin", "manager", "individual", "financeiro_mentora", "financeiro_empresa"]),
-      format: z5.enum(["pdf", "excel"]),
-      scopeId: z5.number().optional(),
-      dateFrom: z5.string().optional(),
+    generate: protectedProcedure.input(z6.object({
+      name: z6.string().min(1),
+      type: z6.enum(["admin", "manager", "individual", "financeiro_mentora", "financeiro_empresa"]),
+      format: z6.enum(["pdf", "excel"]),
+      scopeId: z6.number().optional(),
+      dateFrom: z6.string().optional(),
       // YYYY-MM-DD
-      dateTo: z5.string().optional(),
+      dateTo: z6.string().optional(),
       // YYYY-MM-DD
-      parameters: z5.record(z5.string(), z5.unknown()).optional()
+      parameters: z6.record(z6.string(), z6.unknown()).optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       if (input.type === "admin" && ctx2.user.role !== "admin") {
-        throw new TRPCError5({ code: "FORBIDDEN" });
+        throw new TRPCError6({ code: "FORBIDDEN" });
       }
       if (input.type === "manager" && ctx2.user.role === "user") {
-        throw new TRPCError5({ code: "FORBIDDEN" });
+        throw new TRPCError6({ code: "FORBIDDEN" });
       }
       if ((input.type === "financeiro_mentora" || input.type === "financeiro_empresa") && ctx2.user.role !== "admin") {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Relat\xF3rios financeiros s\xE3o restritos ao administrador" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Relat\xF3rios financeiros s\xE3o restritos ao administrador" });
       }
       const id = await createReport({
         ...input,
@@ -21001,7 +21159,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const dataEmissao = (/* @__PURE__ */ new Date()).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
         if (input.type === "individual" && input.scopeId) {
           const aluno = alunosList.find((a) => a.id === input.scopeId);
-          if (!aluno) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+          if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
           const program = aluno.programId ? programMap.get(aluno.programId) : null;
           const turma = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
           const consultor = aluno.consultorId ? consultorMap.get(aluno.consultorId) : null;
@@ -21565,7 +21723,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return { id, success: true };
     }),
-    list: protectedProcedure.input(z5.object({ limit: z5.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    list: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       if (ctx2.user.role === "admin") {
         return await getAllReports(input?.limit);
       }
@@ -21589,19 +21747,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   }),
   // Turmas
   turmas: router({
-    list: protectedProcedure.input(z5.object({ programId: z5.number().optional() }).optional()).query(async ({ input }) => {
+    list: protectedProcedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getTurmas(input?.programId);
     }),
     listWithDetails: protectedProcedure.query(async () => {
       return await getTurmasWithDetails();
     }),
     // Congelar ou descongelar indicadores de uma turma
-    setCongelamento: adminProcedure3.input(z5.object({
-      codigoTurma: z5.string(),
+    setCongelamento: adminProcedure3.input(z6.object({
+      codigoTurma: z6.string(),
       // ex: 'BS1', 'BS2', 'BS3'
-      dataCongelamento: z5.string().nullable(),
+      dataCongelamento: z6.string().nullable(),
       // formato YYYY-MM-DD ou null para descongelar
-      realizadoPorNome: z5.string().optional()
+      realizadoPorNome: z6.string().optional()
       // nome do admin que executou (para o e-mail)
     })).mutation(async ({ input, ctx: ctx2 }) => {
       await setDataCongelamentoPorCodigoTurma(input.codigoTurma, input.dataCongelamento);
@@ -21637,33 +21795,33 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     list: protectedProcedure.query(async () => {
       return await getAllTrilhas();
     }),
-    getById: protectedProcedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       return await getTrilhaById(input.id);
     }),
-    create: adminProcedure3.input(z5.object({
-      name: z5.string().min(1),
-      codigo: z5.string().optional(),
-      ordem: z5.number().optional(),
-      programId: z5.number().optional()
+    create: adminProcedure3.input(z6.object({
+      name: z6.string().min(1),
+      codigo: z6.string().optional(),
+      ordem: z6.number().optional(),
+      programId: z6.number().optional()
     })).mutation(async ({ input }) => {
       const id = await createTrilha(input);
       return { success: true, id };
     }),
-    update: adminProcedure3.input(z5.object({
-      id: z5.number(),
-      name: z5.string().optional(),
-      codigo: z5.string().optional(),
-      ordem: z5.number().optional(),
-      isActive: z5.number().optional()
+    update: adminProcedure3.input(z6.object({
+      id: z6.number(),
+      name: z6.string().optional(),
+      codigo: z6.string().optional(),
+      ordem: z6.number().optional(),
+      isActive: z6.number().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateTrilha(id, data);
       return { success: true };
     }),
-    delete: adminProcedure3.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminProcedure3.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       const success = await deleteTrilha(input.id);
       if (!success) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel excluir trilha com compet\xEAncias vinculadas" });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel excluir trilha com compet\xEAncias vinculadas" });
       }
       return { success: true };
     })
@@ -21676,36 +21834,36 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listWithTrilha: protectedProcedure.query(async () => {
       return await getCompetenciasWithTrilha();
     }),
-    byTrilha: protectedProcedure.input(z5.object({ trilhaId: z5.number() })).query(async ({ input }) => {
+    byTrilha: protectedProcedure.input(z6.object({ trilhaId: z6.number() })).query(async ({ input }) => {
       return await getCompetenciasByTrilha(input.trilhaId);
     }),
-    getById: protectedProcedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       return await getCompetenciaById(input.id);
     }),
-    create: adminOrAdmin2Procedure.input(z5.object({
-      nome: z5.string().min(1),
-      trilhaId: z5.number(),
-      codigoIntegracao: z5.string().optional(),
-      descricao: z5.string().optional(),
-      ordem: z5.number().optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      nome: z6.string().min(1),
+      trilhaId: z6.number(),
+      codigoIntegracao: z6.string().optional(),
+      descricao: z6.string().optional(),
+      ordem: z6.number().optional()
     })).mutation(async ({ input }) => {
       const id = await createCompetencia(input);
       return { success: true, id };
     }),
-    update: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      nome: z5.string().optional(),
-      trilhaId: z5.number().optional(),
-      codigoIntegracao: z5.string().optional(),
-      descricao: z5.string().optional(),
-      ordem: z5.number().optional(),
-      isActive: z5.number().optional()
+    update: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      nome: z6.string().optional(),
+      trilhaId: z6.number().optional(),
+      codigoIntegracao: z6.string().optional(),
+      descricao: z6.string().optional(),
+      ordem: z6.number().optional(),
+      isActive: z6.number().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateCompetencia(id, data);
       return { success: true };
     }),
-    delete: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       const success = await deleteCompetencia(input.id);
       return { success };
     })
@@ -21713,55 +21871,55 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Plano Individual (Competências obrigatórias por aluno)
   planoIndividual: router({
     // Buscar plano de um aluno
-    byAluno: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).query(async ({ input }) => {
+    byAluno: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
       return await getPlanoIndividualByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Adicionar competência ao plano
-    addCompetencia: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      competenciaId: z5.number(),
-      isObrigatoria: z5.number().optional(),
-      metaNota: z5.string().optional()
+    addCompetencia: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      competenciaId: z6.number(),
+      isObrigatoria: z6.number().optional(),
+      metaNota: z6.string().optional()
     })).mutation(async ({ input }) => {
       const id = await addCompetenciaToPlano(input);
       return { success: true, id };
     }),
     // Adicionar múltiplas competências
-    addMultiple: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      competenciaIds: z5.array(z5.number())
+    addMultiple: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      competenciaIds: z6.array(z6.number())
     })).mutation(async ({ input }) => {
       const success = await addCompetenciasToPlano(input.alunoId, input.competenciaIds, input.contratoNivelId ?? null);
       return { success };
     }),
     // Remover competência do plano
-    remove: protectedProcedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    remove: protectedProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       const success = await removeCompetenciaFromPlano(input.id);
       return { success };
     }),
     // Atualizar item do plano
-    update: protectedProcedure.input(z5.object({
-      id: z5.number(),
-      isObrigatoria: z5.number().optional(),
-      notaAtual: z5.string().optional(),
-      metaNota: z5.string().optional(),
-      status: z5.enum(["pendente", "em_progresso", "concluida"]).optional()
+    update: protectedProcedure.input(z6.object({
+      id: z6.number(),
+      isObrigatoria: z6.number().optional(),
+      notaAtual: z6.string().optional(),
+      metaNota: z6.string().optional(),
+      status: z6.enum(["pendente", "em_progresso", "concluida"]).optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const success = await updatePlanoIndividualItem(id, data);
       return { success };
     }),
     // Limpar plano de um aluno
-    clear: protectedProcedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input }) => {
+    clear: protectedProcedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
       const success = await clearPlanoIndividual(input.alunoId);
       return { success };
     }),
     // Atribuir competências em lote para uma turma inteira
-    addToTurma: adminOrAdmin2Procedure.input(z5.object({
-      turmaId: z5.number(),
-      competenciaIds: z5.array(z5.number())
+    addToTurma: adminOrAdmin2Procedure.input(z6.object({
+      turmaId: z6.number(),
+      competenciaIds: z6.array(z6.number())
     })).mutation(async ({ input }) => {
       const alunos2 = await getAlunosByTurma(input.turmaId);
       let totalAdded = 0;
@@ -21772,15 +21930,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, alunosAtualizados: totalAdded, totalAlunos: alunos2.length };
     }),
     // Listar alunos com progresso do plano
-    alunosWithPlano: protectedProcedure.input(z5.object({ programId: z5.number().optional() }).optional()).query(async ({ input }) => {
+    alunosWithPlano: protectedProcedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getAlunosWithPlano(input?.programId);
     }),
     // Buscar competências obrigatórias de um aluno
-    competenciasObrigatorias: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    competenciasObrigatorias: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getCompetenciasObrigatoriasAluno(input.alunoId);
     }),
     // Endpoint de diagnóstico temporário — retorna qual query falha
-    diagnosticoResumoPDI: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    diagnosticoResumoPDI: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return { erro: "database null" };
       const conn = database.$client.promise ? database.$client.promise() : database.$client;
@@ -21880,7 +22038,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return resultados;
     }),
     // Mapa estático do P.D.I. do aluno — tudo que ele DEVE fazer para se certificar
-    resumoPlanoAluno: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    resumoPlanoAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ["database null"] };
       const conn = database.$client.promise ? database.$client.promise() : database.$client;
@@ -22037,15 +22195,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         };
       } catch (err) {
         console.error("[resumoPlanoAluno] Erro:", err?.message || err);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: err?.message || "Erro ao carregar resumo do plano" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: err?.message || "Erro ao carregar resumo do plano" });
       }
     }),
     // Enviar P.D.I. por e-mail ao aluno (instrução 10b)
-    enviarPorEmail: protectedProcedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input, ctx: ctx2 }) => {
+    enviarPorEmail: protectedProcedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input, ctx: ctx2 }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const conn = database.$client.promise ? database.$client.promise() : database.$client;
-      if (!conn) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "$client indispon\xEDvel" });
+      if (!conn) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "$client indispon\xEDvel" });
       const [alunoRows] = await conn.execute(
         `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.cargo, a.areaAtuacao,
@@ -22060,7 +22218,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         [input.alunoId]
       );
       const aluno = alunoRows[0];
-      if (!aluno || !aluno.email) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado ou sem e-mail" });
+      if (!aluno || !aluno.email) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado ou sem e-mail" });
       const [apRows] = await conn.execute(
         `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.observacoes,
                   t.name as trilhaNome
@@ -22235,24 +22393,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         html,
         text: `Ol\xE1 ${aluno.name}, segue em anexo seu Plano de Desenvolvimento Individual. Acesse o sistema para visualizar todos os detalhes.`
       });
-      if (!result.success) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: result.error || "Falha ao enviar e-mail" });
+      if (!result.success) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: result.error || "Falha ao enviar e-mail" });
       return { success: true, email: aluno.email };
     })
   }),
   // Alunos
   alunos: router({
-    list: protectedProcedure.input(z5.object({ programId: z5.number().optional() }).optional()).query(async ({ input }) => {
+    list: protectedProcedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getAlunos(input?.programId);
     }),
-    byTurma: protectedProcedure.input(z5.object({ turmaId: z5.number() })).query(async ({ input }) => {
+    byTurma: protectedProcedure.input(z6.object({ turmaId: z6.number() })).query(async ({ input }) => {
       return await getAlunosByTurma(input.turmaId);
     }),
     // Alunos vinculados a um mentor (via sessões de mentoria)
-    byConsultor: protectedProcedure.input(z5.object({ consultorId: z5.number(), programId: z5.number().optional() })).query(async ({ input }) => {
+    byConsultor: protectedProcedure.input(z6.object({ consultorId: z6.number(), programId: z6.number().optional() })).query(async ({ input }) => {
       return await getAlunosByConsultor(input.consultorId, input.programId);
     }),
     // Empresas/programas de um mentor (via alunos atendidos)
-    programsByConsultor: protectedProcedure.input(z5.object({ consultorId: z5.number() })).query(async ({ input }) => {
+    programsByConsultor: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
       return await getProgramsByConsultor(input.consultorId);
     })
   }),
@@ -22394,7 +22552,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return dashboard;
     }),
     // Dashboard por Empresa
-    porEmpresa: managerProcedure.input(z5.object({ empresa: z5.string() })).query(async ({ input }) => {
+    porEmpresa: managerProcedure.input(z6.object({ empresa: z6.string() })).query(async ({ input }) => {
       const mentoringSessions2 = await getAllMentoringSessions();
       const eventParticipations = await getAllEventParticipationWithDate();
       const alunosList = await getAlunos();
@@ -22630,7 +22788,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Dashboard por Turma
-    porTurma: managerProcedure.input(z5.object({ turmaId: z5.number() })).query(async ({ input }) => {
+    porTurma: managerProcedure.input(z6.object({ turmaId: z6.number() })).query(async ({ input }) => {
       const mentoringSessions2 = await getAllMentoringSessions();
       const eventParticipations = await getAllEventParticipationWithDate();
       const alunosList = await getAlunosByTurma(input.turmaId);
@@ -22751,7 +22909,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { visaoTurma: agregado, alunos: alunos2 };
     }),
     // Dashboard Individual (por aluno)
-    porAluno: protectedProcedure.input(z5.object({ alunoId: z5.string() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.string() })).query(async ({ input }) => {
       const mentoringSessions2 = await getAllMentoringSessions();
       const eventParticipations = await getAllEventParticipationWithDate();
       const alunosList = await getAlunos();
@@ -22869,20 +23027,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd, void 0, macrocicloPorAlunoInd, compIdToNomeMapInd);
       const alunoIndicadores = indicadores.find((i) => i.idUsuario === input.alunoId);
       if (!alunoIndicadores) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       return alunoIndicadores;
     }),
     // Detalhe completo de um aluno (competências, eventos, turma, trilha, ciclo)
-    detalheAluno: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    detalheAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const detalhe = await getAlunoDetalheCompleto(input.alunoId);
       if (!detalhe) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       return detalhe;
     }),
     // Resumo de todos os alunos (turma, trilha, programa, competências)
-    alunosResumo: protectedProcedure.input(z5.object({ programId: z5.number().optional() }).optional()).query(async ({ input }) => {
+    alunosResumo: protectedProcedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getAlunosResumo(input?.programId);
     }),
     // Lista de empresas disponíveis
@@ -22890,28 +23048,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const programs3 = await getPrograms();
       return programs3.map((p) => ({ id: p.id, nome: p.name, codigo: p.code }));
     }),
-    enviarLembreteEngajamento: managerProcedure.input(z5.object({
-      alunoIdUsuario: z5.string().min(1)
+    enviarLembreteEngajamento: managerProcedure.input(z6.object({
+      alunoIdUsuario: z6.string().min(1)
     })).mutation(async ({ ctx: ctx2, input }) => {
       const hasConsultorId = !!ctx2.user?.consultorId;
       const consultorRole = ctx2.user?.consultorRole;
       const isGestor = ctx2.user.role === "manager" && (consultorRole === "gerente" || !hasConsultorId && !ctx2.user?.alunoId || !!ctx2.user?.alunoId);
       if (!isGestor || !ctx2.user.programId) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito ao gestor da empresa." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito ao gestor da empresa." });
       }
       const programs3 = await getPrograms();
       const program = programs3.find((p) => p.id === ctx2.user.programId);
       if (!program) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Empresa do gestor n\xE3o encontrada." });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Empresa do gestor n\xE3o encontrada." });
       }
       const caller = appRouter.createCaller(ctx2);
       const dashboardEmpresa = await caller.indicadores.porEmpresa({ empresa: program.name });
       const alunoRanking = dashboardEmpresa.alunos.find((a) => a.idUsuario === input.alunoIdUsuario);
       if (!alunoRanking) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Aluno n\xE3o pertence \xE0 empresa do gestor." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Aluno n\xE3o pertence \xE0 empresa do gestor." });
       }
       if (!alunoRanking.email) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "Aluno sem e-mail cadastrado." });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "Aluno sem e-mail cadastrado." });
       }
       const posicaoRanking = dashboardEmpresa.alunos.sort((a, b) => b.notaFinal - a.notaFinal).findIndex((a) => a.idUsuario === input.alunoIdUsuario) + 1;
       const emailData = buildLembreteEngajamentoEmail({
@@ -22949,23 +23107,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (envioDesativado) {
           return { success: true, emailEnabled: false };
         }
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: envio.error || "Falha ao enviar e-mail." });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: envio.error || "Falha ao enviar e-mail." });
       }
       return { success: true, emailEnabled: true };
     }),
-    exportarRankingEngajamentoExcel: managerProcedure.input(z5.object({
-      alunoIdsUsuario: z5.array(z5.string().min(1))
+    exportarRankingEngajamentoExcel: managerProcedure.input(z6.object({
+      alunoIdsUsuario: z6.array(z6.string().min(1))
     })).mutation(async ({ ctx: ctx2, input }) => {
       const hasConsultorId = !!ctx2.user?.consultorId;
       const consultorRole = ctx2.user?.consultorRole;
       const isGestor = ctx2.user.role === "manager" && (consultorRole === "gerente" || !hasConsultorId && !ctx2.user?.alunoId || !!ctx2.user?.alunoId);
       if (!isGestor || !ctx2.user.programId) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito ao gestor da empresa." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito ao gestor da empresa." });
       }
       const programs3 = await getPrograms();
       const program = programs3.find((p) => p.id === ctx2.user.programId);
       if (!program) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Empresa do gestor n\xE3o encontrada." });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Empresa do gestor n\xE3o encontrada." });
       }
       const caller = appRouter.createCaller(ctx2);
       const dashboardEmpresa = await caller.indicadores.porEmpresa({ empresa: program.name });
@@ -22992,7 +23150,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const exportRows = input.alunoIdsUsuario.map((idUsuario, index) => {
         const aluno = alunosPorId.get(idUsuario);
         if (!aluno) {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Tentativa de exportar aluno fora do escopo da empresa." });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Tentativa de exportar aluno fora do escopo da empresa." });
         }
         const turmaNomeCompleto = turmaMap.get(String(aluno.turma || "")) || "";
         const turmaNomeMatch = turmaNomeCompleto.match(/\[([^\]]+)\]\s*$/);
@@ -23028,11 +23186,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         base64: buffer.toString("base64")
       };
     }),
-    performanceNivelAtual: protectedProcedure.input(z5.object({ alunoId: z5.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    performanceNivelAtual: protectedProcedure.input(z6.object({ alunoId: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       let alunoIdAlvo = null;
       if (input?.alunoId) {
         if (ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
         }
         alunoIdAlvo = input.alunoId;
       } else if (ctx2.user.alunoId) {
@@ -23223,11 +23381,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     }),
     // Performance Filtrada - BLOCO 3
     // Calcula indicadores considerando apenas competências obrigatórias do plano individual
-    performanceFiltrada: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    performanceFiltrada: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const alunosList = await getAlunos();
       const aluno = alunosList.find((a) => a.id === input.alunoId);
       if (!aluno) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       const competenciasObrigatorias = await getCompetenciasObrigatoriasAluno(input.alunoId);
       const mentoringSessions2 = await getAllMentoringSessions();
@@ -23389,7 +23547,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // Meu Dashboard - dados do aluno logado
     meuDashboard: protectedProcedure.query(async ({ ctx: ctx2 }) => {
       if (!ctx2.user) {
-        throw new TRPCError5({ code: "UNAUTHORIZED", message: "Usu\xE1rio n\xE3o autenticado" });
+        throw new TRPCError6({ code: "UNAUTHORIZED", message: "Usu\xE1rio n\xE3o autenticado" });
       }
       console.log("[meuDashboard] ctx.user:", JSON.stringify({ id: ctx2.user.id, openId: ctx2.user.openId, email: ctx2.user.email, alunoId: ctx2.user.alunoId, role: ctx2.user.role }));
       const aluno = await getAlunoFromCtx(ctx2.user);
@@ -23965,27 +24123,27 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getActiveMentorsForOnboarding();
     }),
     // Detalhes de um mentor específico
-    getById: protectedProcedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       const consultor = await getConsultorById(input.id);
       if (!consultor) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
       }
       return consultor;
     }),
     // Estatísticas completas de um mentor
-    stats: protectedProcedure.input(z5.object({ consultorId: z5.number() })).query(async ({ input }) => {
+    stats: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
       const stats = await getConsultorStats(input.consultorId);
       if (!stats) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Estat\xEDsticas n\xE3o encontradas" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Estat\xEDsticas n\xE3o encontradas" });
       }
       return stats;
     }),
     // Sessões de mentoria por aluno
-    sessionsByAluno: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).query(async ({ input }) => {
+    sessionsByAluno: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
       return await getMentoringSessionsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Progresso de sessões por aluno (baseado no Assessment PDI macro ciclo)
-    sessionProgress: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    sessionProgress: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getSessionProgressByAluno(input.alunoId);
     }),
     // Progresso de sessões de todos os alunos (para admin/gerente)
@@ -23993,7 +24151,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getAllStudentsSessionProgress();
     }),
     // Estatísticas da equipe do gestor (colaboradores, mentorias, competências, top competências)
-    gestorTeamStats: managerProcedure.input(z5.object({ programId: z5.number() })).query(async ({ input }) => {
+    gestorTeamStats: managerProcedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
       return await getGestorTeamStats(input.programId);
     }),
     // Enviar notificação ao admin sobre alunos a 1 sessão de fechar o ciclo
@@ -24038,21 +24196,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { sent, alunosFalta1: alunosFalta1.length, alunosCicloCompleto: alunosCicloCompleto.length };
     }),
     // Atualizar sessão de mentoria
-    updateSession: protectedProcedure.input(z5.object({
-      sessionId: z5.number(),
-      sessionDate: z5.string().optional(),
-      notaEvolucao: z5.number().min(0).max(10).optional(),
-      engagementScore: z5.number().min(0).max(10).optional(),
-      feedback: z5.string().optional(),
-      mensagemAluno: z5.string().optional(),
-      taskId: z5.number().nullable().optional(),
-      taskDeadline: z5.string().nullable().optional(),
-      taskStatus: z5.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
-      presence: z5.enum(["presente", "ausente"]).optional(),
-      customTaskTitle: z5.string().nullable().optional(),
-      customTaskDescription: z5.string().nullable().optional(),
-      taskMode: z5.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
-      notaMentoraAplicabilidade: z5.number().min(0).max(10).nullable().optional()
+    updateSession: protectedProcedure.input(z6.object({
+      sessionId: z6.number(),
+      sessionDate: z6.string().optional(),
+      notaEvolucao: z6.number().min(0).max(10).optional(),
+      engagementScore: z6.number().min(0).max(10).optional(),
+      feedback: z6.string().optional(),
+      mensagemAluno: z6.string().optional(),
+      taskId: z6.number().nullable().optional(),
+      taskDeadline: z6.string().nullable().optional(),
+      taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
+      presence: z6.enum(["presente", "ausente"]).optional(),
+      customTaskTitle: z6.string().nullable().optional(),
+      customTaskDescription: z6.string().nullable().optional(),
+      taskMode: z6.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
+      notaMentoraAplicabilidade: z6.number().min(0).max(10).nullable().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const { sessionId, ...data } = input;
       const updateData = { ...data };
@@ -24110,23 +24268,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success };
     }),
     // Criar nova sessão de mentoria
-    createSession: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      sessionDate: z5.string(),
-      presence: z5.enum(["presente", "ausente"]),
-      taskStatus: z5.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
-      engagementScore: z5.number().min(0).max(10).nullable().optional(),
-      notaEvolucao: z5.number().min(0).max(10).nullable().optional(),
-      feedback: z5.string().optional(),
-      mensagemAluno: z5.string().optional(),
-      taskId: z5.number().nullable().optional(),
-      taskDeadline: z5.string().nullable().optional(),
-      customTaskTitle: z5.string().nullable().optional(),
-      customTaskDescription: z5.string().nullable().optional(),
-      taskMode: z5.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
-      notaMentoraAplicabilidade: z5.number().min(0).max(10).nullable().optional(),
-      tipoSessao: z5.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
-      appointmentId: z5.number().nullable().optional()
+    createSession: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      sessionDate: z6.string(),
+      presence: z6.enum(["presente", "ausente"]),
+      taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
+      engagementScore: z6.number().min(0).max(10).nullable().optional(),
+      notaEvolucao: z6.number().min(0).max(10).nullable().optional(),
+      feedback: z6.string().optional(),
+      mensagemAluno: z6.string().optional(),
+      taskId: z6.number().nullable().optional(),
+      taskDeadline: z6.string().nullable().optional(),
+      customTaskTitle: z6.string().nullable().optional(),
+      customTaskDescription: z6.string().nullable().optional(),
+      taskMode: z6.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
+      notaMentoraAplicabilidade: z6.number().min(0).max(10).nullable().optional(),
+      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+      appointmentId: z6.number().nullable().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const consultors2 = await getConsultors();
       const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
@@ -24138,11 +24296,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
       }
       if (!consultorId) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Voc\xEA n\xE3o est\xE1 vinculado como mentor" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA n\xE3o est\xE1 vinculado como mentor" });
       }
       const aluno = await getAlunoById(input.alunoId);
       if (!aluno) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
       const nivelVigenteParaSessao = await getContratoNivelVigenteByAluno(input.alunoId);
@@ -24218,9 +24376,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getAllTaskLibrary();
     }),
     // Aluno envia relato da tarefa
-    submitRelato: protectedProcedure.input(z5.object({
-      sessionId: z5.number(),
-      relatoAluno: z5.string().min(1)
+    submitRelato: protectedProcedure.input(z6.object({
+      sessionId: z6.number(),
+      relatoAluno: z6.string().min(1)
     })).mutation(async ({ input }) => {
       const success = await updateMentoringSession(input.sessionId, {
         relatoAluno: input.relatoAluno
@@ -24228,21 +24386,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success };
     }),
     // Mentor valida a entrega de uma atividade prática (idempotente)
-    validateTask: protectedProcedure.input(z5.object({ sessionId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    validateTask: protectedProcedure.input(z6.object({ sessionId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
       const consultors2 = await getConsultors();
       const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
       if (!consultor && ctx2.user.role !== "admin") {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas mentores podem validar atividades" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Apenas mentores podem validar atividades" });
       }
       const session = await getMentoringSessionById(input.sessionId);
       if (!session) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
       }
       if (session.taskStatus === "validada") {
         return { success: true, alreadyValidated: true };
       }
       if (session.taskStatus !== "entregue") {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "S\xF3 \xE9 poss\xEDvel validar atividades com status ENTREGUE" });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "S\xF3 \xE9 poss\xEDvel validar atividades com status ENTREGUE" });
       }
       await updateMentoringSession(input.sessionId, {
         taskStatus: "validada",
@@ -24252,9 +24410,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, alreadyValidated: false };
     }),
     // Mentor visualiza detalhe da entrega de um aluno
-    getSubmissionDetail: protectedProcedure.input(z5.object({ sessionId: z5.number() })).query(async ({ input }) => {
+    getSubmissionDetail: protectedProcedure.input(z6.object({ sessionId: z6.number() })).query(async ({ input }) => {
       const session = await getMentoringSessionById(input.sessionId);
-      if (!session) throw new TRPCError5({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
+      if (!session) throw new TRPCError6({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
       const task = session.taskId ? await getTaskLibraryById(session.taskId) : null;
       const comments = await getCommentsBySessionId(input.sessionId);
       const allAlunos = await getAlunos();
@@ -24285,9 +24443,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Mentor adiciona comentário em uma entrega
-    addTaskComment: protectedProcedure.input(z5.object({
-      sessionId: z5.number(),
-      comment: z5.string().min(1)
+    addTaskComment: protectedProcedure.input(z6.object({
+      sessionId: z6.number(),
+      comment: z6.string().min(1)
     })).mutation(async ({ ctx: ctx2, input }) => {
       const consultors2 = await getConsultors();
       const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
@@ -24303,8 +24461,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, commentId: id };
     }),
     // Mentor: listar sessões com tarefas dos seus alunos (para acompanhamento)
-    taskSubmissions: protectedProcedure.input(z5.object({
-      status: z5.string().optional()
+    taskSubmissions: protectedProcedure.input(z6.object({
+      status: z6.string().optional()
     }).optional()).query(async ({ ctx: ctx2, input }) => {
       const consultors2 = await getConsultors();
       const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
@@ -24338,10 +24496,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Perfil do mentor (foto + minicurrículo)
-    getProfile: protectedProcedure.input(z5.object({ consultorId: z5.number() })).query(async ({ input }) => {
+    getProfile: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
       const consultor = await getConsultorById(input.consultorId);
       if (!consultor) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
       }
       return {
         id: consultor.id,
@@ -24353,20 +24511,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Atualizar perfil do mentor (foto + minicurrículo)
-    updateProfile: protectedProcedure.input(z5.object({
-      consultorId: z5.number(),
-      miniCurriculo: z5.string().optional(),
-      especialidade: z5.string().optional()
+    updateProfile: protectedProcedure.input(z6.object({
+      consultorId: z6.number(),
+      miniCurriculo: z6.string().optional(),
+      especialidade: z6.string().optional()
     })).mutation(async ({ input }) => {
       const { consultorId, ...data } = input;
       const success = await updateConsultor(consultorId, data);
       return { success };
     }),
     // Upload de foto do mentor
-    uploadPhoto: protectedProcedure.input(z5.object({
-      consultorId: z5.number(),
-      photoBase64: z5.string(),
-      mimeType: z5.string().default("image/jpeg")
+    uploadPhoto: protectedProcedure.input(z6.object({
+      consultorId: z6.number(),
+      photoBase64: z6.string(),
+      mimeType: z6.string().default("image/jpeg")
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.photoBase64, "base64");
       const ext = input.mimeType === "image/png" ? "png" : "jpg";
@@ -24377,73 +24535,73 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     }),
     // ==================== AGENDA DO MENTOR ====================
     // Listar disponibilidade do mentor
-    getAvailability: protectedProcedure.input(z5.object({ consultorId: z5.number() })).query(async ({ input }) => {
+    getAvailability: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
       return await getMentorAvailability(input.consultorId);
     }),
     // Salvar/atualizar disponibilidade do mentor
-    saveAvailability: managerProcedure.input(z5.object({
-      consultorId: z5.number(),
-      slots: z5.array(z5.object({
-        id: z5.number().optional(),
+    saveAvailability: managerProcedure.input(z6.object({
+      consultorId: z6.number(),
+      slots: z6.array(z6.object({
+        id: z6.number().optional(),
         // Se existir, atualiza; se não, cria
-        dayOfWeek: z5.number().min(0).max(6),
-        startTime: z5.string().regex(/^\d{2}:\d{2}$/),
-        endTime: z5.string().regex(/^\d{2}:\d{2}$/),
-        slotDurationMinutes: z5.number().min(15).max(240).default(60),
-        googleMeetLink: z5.string().optional(),
-        isActive: z5.number().default(1)
+        dayOfWeek: z6.number().min(0).max(6),
+        startTime: z6.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z6.string().regex(/^\d{2}:\d{2}$/),
+        slotDurationMinutes: z6.number().min(15).max(240).default(60),
+        googleMeetLink: z6.string().optional(),
+        isActive: z6.number().default(1)
       }))
     })).mutation(async ({ input }) => {
       return await saveMentorAvailability(input.consultorId, input.slots);
     }),
     // Remover slot de disponibilidade
-    removeAvailability: managerProcedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    removeAvailability: managerProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       return await removeMentorAvailability(input.id);
     }),
     // ===== AGENDA POR DATA ESPECÍFICA =====
     // Listar disponibilidade por data específica do mentor
-    getDateAvailability: protectedProcedure.input(z5.object({ consultorId: z5.number() })).query(async ({ input }) => {
+    getDateAvailability: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
       return await getMentorDateAvailability(input.consultorId);
     }),
     // Salvar/atualizar disponibilidade por data específica
-    saveDateAvailability: managerProcedure.input(z5.object({
-      consultorId: z5.number(),
-      slots: z5.array(z5.object({
-        id: z5.number().optional(),
-        specificDate: z5.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        startTime: z5.string().regex(/^\d{2}:\d{2}$/),
-        endTime: z5.string().regex(/^\d{2}:\d{2}$/),
-        slotDurationMinutes: z5.number().min(15).max(240).default(60),
-        googleMeetLink: z5.string().optional(),
-        isActive: z5.number().default(1)
+    saveDateAvailability: managerProcedure.input(z6.object({
+      consultorId: z6.number(),
+      slots: z6.array(z6.object({
+        id: z6.number().optional(),
+        specificDate: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        startTime: z6.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z6.string().regex(/^\d{2}:\d{2}$/),
+        slotDurationMinutes: z6.number().min(15).max(240).default(60),
+        googleMeetLink: z6.string().optional(),
+        isActive: z6.number().default(1)
       }))
     })).mutation(async ({ input }) => {
       return await saveMentorDateAvailability(input.consultorId, input.slots);
     }),
     // Remover slot de data específica
-    removeDateAvailability: managerProcedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    removeDateAvailability: managerProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       return await removeMentorDateAvailability(input.id);
     }),
     // Listar agendamentos do mentor
-    getAppointments: protectedProcedure.input(z5.object({
-      consultorId: z5.number(),
-      status: z5.string().optional(),
-      dateFrom: z5.string().optional(),
-      dateTo: z5.string().optional(),
-      alunoId: z5.number().optional()
+    getAppointments: protectedProcedure.input(z6.object({
+      consultorId: z6.number(),
+      status: z6.string().optional(),
+      dateFrom: z6.string().optional(),
+      dateTo: z6.string().optional(),
+      alunoId: z6.number().optional()
     })).query(async ({ input }) => {
       return await getMentorAppointments(input.consultorId, input);
     }),
     // Criar sessão de grupo (mentor define data/hora, convida alunos)
-    createGroupSession: managerProcedure.input(z5.object({
-      consultorId: z5.number(),
-      title: z5.string().min(3),
-      description: z5.string().optional(),
-      scheduledDate: z5.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      startTime: z5.string().regex(/^\d{2}:\d{2}$/),
-      endTime: z5.string().regex(/^\d{2}:\d{2}$/),
-      googleMeetLink: z5.string().optional(),
-      alunoIds: z5.array(z5.number()).min(1)
+    createGroupSession: managerProcedure.input(z6.object({
+      consultorId: z6.number(),
+      title: z6.string().min(3),
+      description: z6.string().optional(),
+      scheduledDate: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      startTime: z6.string().regex(/^\d{2}:\d{2}$/),
+      endTime: z6.string().regex(/^\d{2}:\d{2}$/),
+      googleMeetLink: z6.string().optional(),
+      alunoIds: z6.array(z6.number()).min(1)
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const result = await createGroupAppointment({
         consultorId: input.consultorId,
@@ -24495,25 +24653,25 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Aluno agenda sessão individual (escolhe horário disponível)
-    bookAppointment: protectedProcedure.input(z5.object({
-      consultorId: z5.number(),
-      availabilityId: z5.number(),
-      scheduledDate: z5.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      startTime: z5.string().regex(/^\d{2}:\d{2}$/),
-      endTime: z5.string().regex(/^\d{2}:\d{2}$/),
-      notes: z5.string().optional()
+    bookAppointment: protectedProcedure.input(z6.object({
+      consultorId: z6.number(),
+      availabilityId: z6.number(),
+      scheduledDate: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      startTime: z6.string().regex(/^\d{2}:\d{2}$/),
+      endTime: z6.string().regex(/^\d{2}:\d{2}$/),
+      notes: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const alunoId = ctx2.user.alunoId;
-      if (!alunoId) throw new TRPCError5({ code: "BAD_REQUEST", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
+      if (!alunoId) throw new TRPCError6({ code: "BAD_REQUEST", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
       const avail = await getMentorAvailability(input.consultorId);
       const dateObj = /* @__PURE__ */ new Date(input.scheduledDate + "T12:00:00");
       const dayOfWeek = dateObj.getDay();
       const matchingSlot = avail.find((a) => a.dayOfWeek === dayOfWeek && a.startTime === input.startTime && a.isActive === 1);
       if (!matchingSlot) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "O mentor n\xE3o tem disponibilidade neste dia/hor\xE1rio. Verifique a agenda." });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "O mentor n\xE3o tem disponibilidade neste dia/hor\xE1rio. Verifique a agenda." });
       }
       const existing = await checkAppointmentConflict(input.consultorId, input.scheduledDate, input.startTime);
-      if (existing) throw new TRPCError5({ code: "CONFLICT", message: "Este hor\xE1rio j\xE1 est\xE1 ocupado. Escolha outro." });
+      if (existing) throw new TRPCError6({ code: "CONFLICT", message: "Este hor\xE1rio j\xE1 est\xE1 ocupado. Escolha outro." });
       const appointment = await createIndividualAppointment({
         consultorId: input.consultorId,
         availabilityId: input.availabilityId,
@@ -24580,17 +24738,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return appointment;
     }),
     // Aluno confirma/recusa convite de grupo
-    respondToInvite: protectedProcedure.input(z5.object({
-      appointmentId: z5.number(),
-      response: z5.enum(["confirmado", "recusado"]),
-      notes: z5.string().optional()
+    respondToInvite: protectedProcedure.input(z6.object({
+      appointmentId: z6.number(),
+      response: z6.enum(["confirmado", "recusado"]),
+      notes: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const alunoId = ctx2.user.alunoId;
-      if (!alunoId) throw new TRPCError5({ code: "BAD_REQUEST", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
+      if (!alunoId) throw new TRPCError6({ code: "BAD_REQUEST", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
       return await respondToAppointmentInvite(input.appointmentId, alunoId, input.response, input.notes || null);
     }),
     // Cancelar agendamento
-    cancelAppointment: protectedProcedure.input(z5.object({ appointmentId: z5.number() })).mutation(async ({ input }) => {
+    cancelAppointment: protectedProcedure.input(z6.object({ appointmentId: z6.number() })).mutation(async ({ input }) => {
       const appt = await getAppointmentById(input.appointmentId);
       const result = await cancelAppointment(input.appointmentId);
       if (appt?.googleEventId) {
@@ -24607,16 +24765,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Reagendar agendamento (alterar data/horário)
-    updateAppointment: protectedProcedure.input(z5.object({
-      appointmentId: z5.number(),
-      scheduledDate: z5.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      startTime: z5.string().regex(/^\d{2}:\d{2}$/),
-      endTime: z5.string().regex(/^\d{2}:\d{2}$/),
-      googleMeetLink: z5.string().optional()
+    updateAppointment: protectedProcedure.input(z6.object({
+      appointmentId: z6.number(),
+      scheduledDate: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      startTime: z6.string().regex(/^\d{2}:\d{2}$/),
+      endTime: z6.string().regex(/^\d{2}:\d{2}$/),
+      googleMeetLink: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const userRole = ctx2.user.role;
       if (userRole !== "admin" && userRole !== "manager") {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Sem permiss\xE3o para reagendar" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para reagendar" });
       }
       const oldAppointment = await getAppointmentById(input.appointmentId);
       const result = await updateAppointmentSchedule(input.appointmentId, {
@@ -24710,9 +24868,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getAlunoAppointments(alunoId);
     }),
     // Obter slots disponíveis para uma data específica
-    getAvailableSlots: protectedProcedure.input(z5.object({
-      consultorId: z5.number(),
-      date: z5.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+    getAvailableSlots: protectedProcedure.input(z6.object({
+      consultorId: z6.number(),
+      date: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/)
     })).query(async ({ input }) => {
       const dayOfWeek = (/* @__PURE__ */ new Date(input.date + "T12:00:00")).getDay();
       const weeklyAvailability = await getMentorAvailability(input.consultorId);
@@ -24791,48 +24949,48 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Relatório financeiro de mentorias por período (LEGADO - mantido para compatibilidade)
-    relatorioFinanceiro: managerProcedure.input(z5.object({
-      dateFrom: z5.string().optional(),
-      dateTo: z5.string().optional()
+    relatorioFinanceiro: managerProcedure.input(z6.object({
+      dateFrom: z6.string().optional(),
+      dateTo: z6.string().optional()
     }).optional()).query(async ({ input }) => {
       return await getRelatorioFinanceiroMentorias(input?.dateFrom, input?.dateTo);
     }),
     // Relatório financeiro V2 (nova lógica de precificação)
-    relatorioFinanceiroV2: managerProcedure.input(z5.object({
-      dateFrom: z5.string().optional(),
-      dateTo: z5.string().optional()
+    relatorioFinanceiroV2: managerProcedure.input(z6.object({
+      dateFrom: z6.string().optional(),
+      dateTo: z6.string().optional()
     }).optional()).query(async ({ input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       return await getRelatorioFinanceiroV2(dbConn2, input?.dateFrom, input?.dateTo);
     }),
     // CRUD Precificação V2
     getPricingRulesV2: adminOrAdmin2Procedure.query(async () => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       return await getSessionTypePricingRules(dbConn2);
     }),
-    createPricingRuleV2: adminOrAdmin2Procedure.input(z5.object({
-      programId: z5.number(),
+    createPricingRuleV2: adminOrAdmin2Procedure.input(z6.object({
+      programId: z6.number(),
       // Obrigatório: empresa específica
-      consultorId: z5.number(),
+      consultorId: z6.number(),
       // Obrigatório: mentor específico
-      tipoSessao: z5.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]),
-      valor: z5.string(),
-      descricao: z5.string().optional(),
-      validoDesde: z5.string(),
+      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]),
+      valor: z6.string(),
+      descricao: z6.string().optional(),
+      validoDesde: z6.string(),
       // YYYY-MM-DD
-      validoAte: z5.string().nullable().optional()
+      validoAte: z6.string().nullable().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const existing = await getSessionTypePricingRules(dbConn2);
       const conflito = existing.find(
         (r) => r.programId === input.programId && r.consultorId === input.consultorId && r.tipoSessao === input.tipoSessao && r.isActive === 1 && // Verificar sobreposição de datas
         (!r.validoAte || !input.validoDesde || String(r.validoAte) >= input.validoDesde) && (!input.validoAte || !r.validoDesde || input.validoAte >= String(r.validoDesde))
       );
       if (conflito) {
-        throw new TRPCError5({
+        throw new TRPCError6({
           code: "CONFLICT",
           message: `J\xE1 existe uma regra ativa para esta combina\xE7\xE3o (Empresa + Mentor + Tipo) com datas sobrepostas (ID ${conflito.id}). Desative ou edite a regra existente.`
         });
@@ -24843,21 +25001,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       });
       return { id, success: true };
     }),
-    updatePricingRuleV2: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      programId: z5.number().optional(),
+    updatePricingRuleV2: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      programId: z6.number().optional(),
       // Obrigatório na prática
-      consultorId: z5.number().optional(),
+      consultorId: z6.number().optional(),
       // Obrigatório na prática
-      tipoSessao: z5.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
-      valor: z5.string().optional(),
-      descricao: z5.string().optional(),
-      validoDesde: z5.string().optional(),
-      validoAte: z5.string().nullable().optional(),
-      isActive: z5.number().optional()
+      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+      valor: z6.string().optional(),
+      descricao: z6.string().optional(),
+      validoDesde: z6.string().optional(),
+      validoAte: z6.string().nullable().optional(),
+      isActive: z6.number().optional()
     })).mutation(async ({ input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const { id, ...data } = input;
       if (data.programId !== void 0 || data.consultorId !== void 0 || data.tipoSessao !== void 0) {
         const existing = await getSessionTypePricingRules(dbConn2);
@@ -24871,7 +25029,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           (r) => r.id !== id && r.programId === checkProgramId && r.consultorId === checkConsultorId && r.tipoSessao === checkTipo && r.isActive === 1 && (!r.validoAte || !checkDesde || String(r.validoAte) >= checkDesde) && (!checkAte || !r.validoDesde || checkAte >= String(r.validoDesde))
         );
         if (conflito) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "CONFLICT",
             message: `J\xE1 existe outra regra ativa para esta combina\xE7\xE3o com datas sobrepostas (ID ${conflito.id}).`
           });
@@ -24880,24 +25038,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       await updateSessionTypePricingRule(dbConn2, id, data);
       return { success: true };
     }),
-    deletePricingRuleV2: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    deletePricingRuleV2: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       await deleteSessionTypePricingRule(dbConn2, input.id);
       return { success: true };
     }),
     // Relatório detalhado por mentor com dados de agendamento, sessão, participantes e valor
-    relatorioDetalhadoMentor: managerProcedure.input(z5.object({
-      consultorId: z5.number(),
-      dateFrom: z5.string(),
+    relatorioDetalhadoMentor: managerProcedure.input(z6.object({
+      consultorId: z6.number(),
+      dateFrom: z6.string(),
       // YYYY-MM-DD
-      dateTo: z5.string()
+      dateTo: z6.string()
       // YYYY-MM-DD
     })).query(async ({ input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const mentor = await getConsultorById(input.consultorId);
-      if (!mentor) throw new TRPCError5({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
+      if (!mentor) throw new TRPCError6({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
       const report = await getRelatorioFinanceiroV2(dbConn2, input.dateFrom, input.dateTo);
       const mentorData = report.mentores.find((m) => m.consultorId === input.consultorId);
       const allAppointments = await getMentorAppointments(input.consultorId);
@@ -24966,12 +25124,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // ==================== RELATÓRIO DE MENTORIAS POR MENTORA ====================
     relatorioMentorias: router({
       // Buscar dados do relatório (sem enviar e-mail)
-      preview: adminOrAdmin2Procedure.input(z5.object({
-        dateFrom: z5.string().optional(),
-        dateTo: z5.string().optional()
+      preview: adminOrAdmin2Procedure.input(z6.object({
+        dateFrom: z6.string().optional(),
+        dateTo: z6.string().optional()
       }).optional()).query(async ({ input }) => {
         const dbConn2 = await getDb();
-        if (!dbConn2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const periodo = input?.dateFrom && input?.dateTo ? { inicio: input.dateFrom, fim: input.dateTo } : calcularPeriodoPadrao();
         const report = await getRelatorioFinanceiroV2(dbConn2, periodo.inicio, periodo.fim);
         const { consultors: consultorsTable, alunos: alunosTable, programs: programsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
@@ -25010,11 +25168,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         };
       }),
       // Envio manual do relatório por e-mail
-      enviarManual: adminOrAdmin2Procedure.input(z5.object({
-        dateFrom: z5.string(),
-        dateTo: z5.string(),
-        mentorIds: z5.array(z5.number()).optional(),
-        tipo: z5.enum(["previa", "definitivo", "manual"]).default("manual")
+      enviarManual: adminOrAdmin2Procedure.input(z6.object({
+        dateFrom: z6.string(),
+        dateTo: z6.string(),
+        mentorIds: z6.array(z6.number()).optional(),
+        tipo: z6.enum(["previa", "definitivo", "manual"]).default("manual")
       })).mutation(async ({ input }) => {
         const result = await gerarEEnviarRelatorioMentorias(
           input.tipo,
@@ -25028,7 +25186,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // Buscar histórico de envios
       historico: adminOrAdmin2Procedure.query(async () => {
         const dbConn2 = await getDb();
-        if (!dbConn2) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         try {
           const { sql: sqlFn } = await import("drizzle-orm");
           const rows = await dbConn2.execute(sqlFn`
@@ -25059,19 +25217,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
   practicalActivities: router({
     // Admin + Mentor: consulta de entregas com filtros
-    submissions: protectedProcedure.input(z5.object({
-      consultorId: z5.number().optional(),
-      alunoId: z5.number().optional(),
-      turmaId: z5.number().optional(),
-      programId: z5.number().optional(),
-      status: z5.string().optional(),
-      dateFrom: z5.string().optional(),
-      dateTo: z5.string().optional()
+    submissions: protectedProcedure.input(z6.object({
+      consultorId: z6.number().optional(),
+      alunoId: z6.number().optional(),
+      turmaId: z6.number().optional(),
+      programId: z6.number().optional(),
+      status: z6.string().optional(),
+      dateFrom: z6.string().optional(),
+      dateTo: z6.string().optional()
     }).optional()).query(async ({ ctx: ctx2, input }) => {
       const isAdmin = ctx2.user.role === "admin";
       const isMentor = ctx2.user.role === "manager" && ctx2.user.consultorId;
       if (!isAdmin && !isMentor) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
       }
       const filters = { ...input };
       if (isMentor) {
@@ -25117,16 +25275,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Admin + Mentor: detalhe de uma entrega
-    submissionDetail: protectedProcedure.input(z5.object({ sessionId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+    submissionDetail: protectedProcedure.input(z6.object({ sessionId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
       const isAdmin = ctx2.user.role === "admin";
       const isMentor = ctx2.user.role === "manager" && ctx2.user.consultorId;
       if (!isAdmin && !isMentor) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
       }
       const session = await getMentoringSessionById(input.sessionId);
-      if (!session) throw new TRPCError5({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
+      if (!session) throw new TRPCError6({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
       if (isMentor && session.consultorId !== ctx2.user.consultorId) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode ver atividades dos seus alunos" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode ver atividades dos seus alunos" });
       }
       const task = session.taskId ? await getTaskLibraryById(session.taskId) : null;
       const comments = await getCommentsBySessionId(input.sessionId);
@@ -25164,19 +25322,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Admin + Mentor: adicionar comentário
-    addComment: protectedProcedure.input(z5.object({
-      sessionId: z5.number(),
-      comment: z5.string().min(1)
+    addComment: protectedProcedure.input(z6.object({
+      sessionId: z6.number(),
+      comment: z6.string().min(1)
     })).mutation(async ({ ctx: ctx2, input }) => {
       const isAdmin = ctx2.user.role === "admin";
       const isMentor = ctx2.user.role === "manager" && ctx2.user.consultorId;
       if (!isAdmin && !isMentor) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
       }
       if (isMentor) {
         const session = await getMentoringSessionById(input.sessionId);
         if (!session || session.consultorId !== ctx2.user.consultorId) {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode comentar atividades dos seus alunos" });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode comentar atividades dos seus alunos" });
         }
       }
       const authorRole = isAdmin ? "admin" : "mentor";
@@ -25197,22 +25355,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listEmpresas: adminOrAdmin2Procedure.query(async () => {
       return await getAllPrograms();
     }),
-    createEmpresa: adminOrAdmin2Procedure.input(z5.object({
-      name: z5.string().min(1),
-      code: z5.string().min(1),
-      description: z5.string().optional()
+    createEmpresa: adminOrAdmin2Procedure.input(z6.object({
+      name: z6.string().min(1),
+      code: z6.string().min(1),
+      description: z6.string().optional()
     })).mutation(async ({ input }) => {
       return await createProgram(input);
     }),
-    updateEmpresa: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      name: z5.string().min(1).optional(),
-      code: z5.string().min(1).optional(),
-      description: z5.string().optional()
+    updateEmpresa: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      name: z6.string().min(1).optional(),
+      code: z6.string().min(1).optional(),
+      description: z6.string().optional()
     })).mutation(async ({ input }) => {
       return await updateProgram(input.id, input);
     }),
-    toggleEmpresaStatus: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    toggleEmpresaStatus: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       return await toggleProgramStatus(input.id);
     }),
     // Mentores
@@ -25224,57 +25382,57 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listMentoresAtivos: adminOrAdmin2Procedure.query(async () => {
       return await getActiveMentores();
     }),
-    createMentor: adminOrAdmin2Procedure.input(z5.object({
-      name: z5.string().min(1),
-      email: z5.string().email(),
-      cpf: z5.string().min(11, "CPF deve conter 11 d\xEDgitos"),
-      especialidade: z5.string().optional(),
-      loginId: z5.string().optional(),
-      programId: z5.number().optional(),
-      valorSessao: z5.string().optional()
+    createMentor: adminOrAdmin2Procedure.input(z6.object({
+      name: z6.string().min(1),
+      email: z6.string().email(),
+      cpf: z6.string().min(11, "CPF deve conter 11 d\xEDgitos"),
+      especialidade: z6.string().optional(),
+      loginId: z6.string().optional(),
+      programId: z6.number().optional(),
+      valorSessao: z6.string().optional()
     })).mutation(async ({ input }) => {
       return await createMentor(input);
     }),
-    updateAcessoMentor: adminOrAdmin2Procedure.input(z5.object({
-      consultorId: z5.number(),
-      loginId: z5.string().nullable(),
-      canLogin: z5.boolean()
+    updateAcessoMentor: adminOrAdmin2Procedure.input(z6.object({
+      consultorId: z6.number(),
+      loginId: z6.string().nullable(),
+      canLogin: z6.boolean()
     })).mutation(async ({ input }) => {
       return await updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, "mentor");
     }),
-    editMentor: adminOrAdmin2Procedure.input(z5.object({
-      consultorId: z5.number(),
-      name: z5.string().optional(),
-      email: z5.string().email().optional(),
-      cpf: z5.string().optional(),
-      especialidade: z5.string().optional(),
-      programId: z5.number().optional(),
-      valorSessao: z5.string().optional(),
-      miniCurriculo: z5.string().optional()
+    editMentor: adminOrAdmin2Procedure.input(z6.object({
+      consultorId: z6.number(),
+      name: z6.string().optional(),
+      email: z6.string().email().optional(),
+      cpf: z6.string().optional(),
+      especialidade: z6.string().optional(),
+      programId: z6.number().optional(),
+      valorSessao: z6.string().optional(),
+      miniCurriculo: z6.string().optional()
     })).mutation(async ({ input }) => {
       const { consultorId, ...data } = input;
       return await updateConsultor(consultorId, data);
     }),
     // Ativar/Inativar mentor
-    toggleMentorStatus: adminOrAdmin2Procedure.input(z5.object({ consultorId: z5.number() })).mutation(async ({ input }) => {
+    toggleMentorStatus: adminOrAdmin2Procedure.input(z6.object({ consultorId: z6.number() })).mutation(async ({ input }) => {
       return await toggleConsultorStatus(input.consultorId);
     }),
     // Verificar se mentor tem agenda disponível nos próximos 10 dias
-    checkAvailabilityNext10Days: protectedProcedure.input(z5.object({ consultorId: z5.number() })).query(async ({ input }) => {
+    checkAvailabilityNext10Days: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
       const hasAvailability = await checkMentorHasAvailabilityNext10Days(input.consultorId);
       return { hasAvailability };
     }),
     // Precificação flexível de sessões do mentor
-    getMentorPricing: adminOrAdmin2Procedure.input(z5.object({ consultorId: z5.number() })).query(async ({ input }) => {
+    getMentorPricing: adminOrAdmin2Procedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
       return await getMentorSessionPricing(input.consultorId);
     }),
-    setMentorPricing: adminOrAdmin2Procedure.input(z5.object({
-      consultorId: z5.number(),
-      rules: z5.array(z5.object({
-        sessionFrom: z5.number().min(1),
-        sessionTo: z5.number().min(1),
-        valor: z5.string(),
-        descricao: z5.string().optional()
+    setMentorPricing: adminOrAdmin2Procedure.input(z6.object({
+      consultorId: z6.number(),
+      rules: z6.array(z6.object({
+        sessionFrom: z6.number().min(1),
+        sessionTo: z6.number().min(1),
+        valor: z6.string(),
+        descricao: z6.string().optional()
       }))
     })).mutation(async ({ input }) => {
       for (const rule of input.rules) {
@@ -25295,12 +25453,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listGerentes: adminOrAdmin2Procedure.query(async () => {
       return await getAllGerentes();
     }),
-    createGerente: adminOrAdmin2Procedure.input(z5.object({
-      name: z5.string().min(1),
-      email: z5.string().email(),
-      cpf: z5.string().min(11).optional(),
-      loginId: z5.string().optional(),
-      managedProgramId: z5.number()
+    createGerente: adminOrAdmin2Procedure.input(z6.object({
+      name: z6.string().min(1),
+      email: z6.string().email(),
+      cpf: z6.string().min(11).optional(),
+      loginId: z6.string().optional(),
+      managedProgramId: z6.number()
     })).mutation(async ({ input }) => {
       const gerenteResult = await createGerente(input);
       if (input.cpf) {
@@ -25316,18 +25474,18 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return gerenteResult;
     }),
-    updateAcessoGerente: adminOrAdmin2Procedure.input(z5.object({
-      consultorId: z5.number(),
-      loginId: z5.string().nullable(),
-      canLogin: z5.boolean()
+    updateAcessoGerente: adminOrAdmin2Procedure.input(z6.object({
+      consultorId: z6.number(),
+      loginId: z6.string().nullable(),
+      canLogin: z6.boolean()
     })).mutation(async ({ input }) => {
       return await updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, "gerente");
     }),
-    editGerente: adminOrAdmin2Procedure.input(z5.object({
-      consultorId: z5.number(),
-      name: z5.string().optional(),
-      email: z5.string().email().optional(),
-      managedProgramId: z5.number().optional()
+    editGerente: adminOrAdmin2Procedure.input(z6.object({
+      consultorId: z6.number(),
+      name: z6.string().optional(),
+      email: z6.string().email().optional(),
+      managedProgramId: z6.number().optional()
     })).mutation(async ({ input }) => {
       const { consultorId, ...data } = input;
       return await updateConsultor(consultorId, data);
@@ -25336,16 +25494,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listAlunos: adminOrAdmin2Procedure.query(async () => {
       return await getAllAlunosForAdmin();
     }),
-    createAluno: adminOrAdmin2Procedure.input(z5.object({
-      name: z5.string().min(1),
-      email: z5.string().email(),
-      externalId: z5.string().min(1),
-      programId: z5.number().optional(),
-      contratoInicio: z5.string().optional(),
-      contratoFim: z5.string().optional(),
-      totalSessoesContratadas: z5.number().optional(),
-      tipoMentoria: z5.enum(["individual", "grupo"]).optional(),
-      plataformaAulas: z5.enum(["scaffold", "sistema_interno"]).optional()
+    createAluno: adminOrAdmin2Procedure.input(z6.object({
+      name: z6.string().min(1),
+      email: z6.string().email(),
+      externalId: z6.string().min(1),
+      programId: z6.number().optional(),
+      contratoInicio: z6.string().optional(),
+      contratoFim: z6.string().optional(),
+      totalSessoesContratadas: z6.number().optional(),
+      tipoMentoria: z6.enum(["individual", "grupo"]).optional(),
+      plataformaAulas: z6.enum(["scaffold", "sistema_interno"]).optional()
     })).mutation(async ({ input }) => {
       const result = await createAluno(input);
       try {
@@ -25374,24 +25532,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return result;
     }),
-    updateAluno: adminOrAdmin2Procedure.input(z5.object({
-      alunoId: z5.number(),
-      name: z5.string().optional(),
-      email: z5.string().email().optional(),
-      cpf: z5.string().nullable().optional(),
-      programId: z5.number().nullable().optional(),
-      consultorId: z5.number().nullable().optional(),
-      turmaId: z5.number().nullable().optional(),
-      contratoInicio: z5.string().nullable().optional(),
-      contratoFim: z5.string().nullable().optional(),
-      tipoMentoria: z5.enum(["individual", "grupo"]).nullable().optional(),
-      totalSessoesContratadas: z5.number().nullable().optional(),
-      telefone: z5.string().nullable().optional(),
-      cargo: z5.string().nullable().optional(),
-      areaAtuacao: z5.string().nullable().optional(),
-      minicurriculo: z5.string().nullable().optional(),
-      quemEVoce: z5.string().nullable().optional(),
-      plataformaAulas: z5.enum(["scaffold", "sistema_interno"]).optional()
+    updateAluno: adminOrAdmin2Procedure.input(z6.object({
+      alunoId: z6.number(),
+      name: z6.string().optional(),
+      email: z6.string().email().optional(),
+      cpf: z6.string().nullable().optional(),
+      programId: z6.number().nullable().optional(),
+      consultorId: z6.number().nullable().optional(),
+      turmaId: z6.number().nullable().optional(),
+      contratoInicio: z6.string().nullable().optional(),
+      contratoFim: z6.string().nullable().optional(),
+      tipoMentoria: z6.enum(["individual", "grupo"]).nullable().optional(),
+      totalSessoesContratadas: z6.number().nullable().optional(),
+      telefone: z6.string().nullable().optional(),
+      cargo: z6.string().nullable().optional(),
+      areaAtuacao: z6.string().nullable().optional(),
+      minicurriculo: z6.string().nullable().optional(),
+      quemEVoce: z6.string().nullable().optional(),
+      plataformaAulas: z6.enum(["scaffold", "sistema_interno"]).optional()
     })).mutation(async ({ input }) => {
       const { alunoId, contratoInicio, contratoFim, ...data } = input;
       const updateData = { ...data };
@@ -25403,13 +25561,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listAccessUsers: adminOrAdmin2Procedure.query(async () => {
       return await getAccessUsers();
     }),
-    createAccessUser: adminOrAdmin2Procedure.input(z5.object({
-      name: z5.string().min(1),
-      email: z5.string().email(),
-      cpf: z5.string().min(1),
-      role: z5.enum(["user", "admin", "manager", "admin2"]),
-      programId: z5.number().nullable().optional(),
-      isMentor: z5.boolean().optional()
+    createAccessUser: adminOrAdmin2Procedure.input(z6.object({
+      name: z6.string().min(1),
+      email: z6.string().email(),
+      cpf: z6.string().min(1),
+      role: z6.enum(["user", "admin", "manager", "admin2"]),
+      programId: z6.number().nullable().optional(),
+      isMentor: z6.boolean().optional()
       // true = Mentor, false/undefined = Gestor de Empresa
     })).mutation(async ({ input }) => {
       const { isMentor, ...userData } = input;
@@ -25434,20 +25592,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return await createAccessUser(userData);
     }),
-    updateAccessUser: adminOrAdmin2Procedure.input(z5.object({
-      userId: z5.number(),
-      name: z5.string().optional(),
-      email: z5.string().email().optional(),
-      cpf: z5.string().optional(),
-      role: z5.enum(["user", "admin", "manager", "admin2"]).optional(),
-      programId: z5.number().nullable().optional(),
-      isActive: z5.number().optional(),
-      consultorId: z5.number().nullable().optional()
+    updateAccessUser: adminOrAdmin2Procedure.input(z6.object({
+      userId: z6.number(),
+      name: z6.string().optional(),
+      email: z6.string().email().optional(),
+      cpf: z6.string().optional(),
+      role: z6.enum(["user", "admin", "manager", "admin2"]).optional(),
+      programId: z6.number().nullable().optional(),
+      isActive: z6.number().optional(),
+      consultorId: z6.number().nullable().optional()
     })).mutation(async ({ input }) => {
       const { userId, ...data } = input;
       return await updateAccessUser(userId, data);
     }),
-    toggleAccessUserStatus: adminOrAdmin2Procedure.input(z5.object({ userId: z5.number() })).mutation(async ({ input }) => {
+    toggleAccessUserStatus: adminOrAdmin2Procedure.input(z6.object({ userId: z6.number() })).mutation(async ({ input }) => {
       return await toggleAccessUserStatus(input.userId);
     }),
     // ============ GERENTES DE EMPRESA (VISÃO DUPLA) ============
@@ -25456,41 +25614,41 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getGerentesEmpresa();
     }),
     // Buscar alunos de uma empresa (para select de promoção)
-    alunosByProgram: adminOrAdmin2Procedure.input(z5.object({ programId: z5.number() })).query(async ({ input }) => {
+    alunosByProgram: adminOrAdmin2Procedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
       return await getAlunosByProgram(input.programId);
     }),
     // Promover aluno a gerente de empresa
-    promoteToGerente: adminOrAdmin2Procedure.input(z5.object({
-      alunoId: z5.number(),
-      programId: z5.number()
+    promoteToGerente: adminOrAdmin2Procedure.input(z6.object({
+      alunoId: z6.number(),
+      programId: z6.number()
     })).mutation(async ({ input }) => {
       return await promoteAlunoToGerente(input.alunoId, input.programId);
     }),
     // Criar gerente puro (sem perfil de aluno)
-    createGerentePuro: adminOrAdmin2Procedure.input(z5.object({
-      name: z5.string().min(1),
-      email: z5.string().email(),
-      cpf: z5.string().optional(),
-      programId: z5.number()
+    createGerentePuro: adminOrAdmin2Procedure.input(z6.object({
+      name: z6.string().min(1),
+      email: z6.string().email(),
+      cpf: z6.string().optional(),
+      programId: z6.number()
     })).mutation(async ({ input }) => {
       return await createGerentePuro(input);
     }),
     // Remover papel de gerente
-    removeGerente: adminOrAdmin2Procedure.input(z5.object({ userId: z5.number() })).mutation(async ({ input }) => {
+    removeGerente: adminOrAdmin2Procedure.input(z6.object({ userId: z6.number() })).mutation(async ({ input }) => {
       return await removeGerenteRole(input.userId);
     }),
     // Cadastro Direto de Aluno pelo Admin (com bypass de onboarding)
-    createAlunoDireto: adminOrAdmin2Procedure.input(z5.object({
-      name: z5.string().min(1),
-      email: z5.string().email(),
-      cpf: z5.string().min(1),
-      programId: z5.number(),
-      consultorId: z5.number().nullable().optional(),
+    createAlunoDireto: adminOrAdmin2Procedure.input(z6.object({
+      name: z6.string().min(1),
+      email: z6.string().email(),
+      cpf: z6.string().min(1),
+      programId: z6.number(),
+      consultorId: z6.number().nullable().optional(),
       // mentor agora é opcional — aluno escolhe no onboarding
-      turmaId: z5.number().nullable().optional(),
-      contratoInicio: z5.string().optional(),
-      contratoFim: z5.string().optional(),
-      totalSessoesContratadas: z5.number().optional()
+      turmaId: z6.number().nullable().optional(),
+      contratoInicio: z6.string().optional(),
+      contratoFim: z6.string().optional(),
+      totalSessoesContratadas: z6.number().optional()
     })).mutation(async ({ input }) => {
       const result = await createAlunoDireto(input);
       try {
@@ -25516,15 +25674,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Check aluno dependencies before deletion
-    getAlunoDependencies: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    getAlunoDependencies: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getAlunoDependencies(input.alunoId);
     }),
     // Toggle ativar/inativar aluno
-    toggleAlunoStatus: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input }) => {
+    toggleAlunoStatus: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
       return await toggleAlunoStatus(input.alunoId);
     }),
     // Delete aluno and all related data
-    deleteAluno: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number(), confirmCascade: z5.boolean().default(false) })).mutation(async ({ input }) => {
+    deleteAluno: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number(), confirmCascade: z6.boolean().default(false) })).mutation(async ({ input }) => {
       const deps = await getAlunoDependencies(input.alunoId);
       if (!deps) return { success: false, message: "Erro ao verificar depend\xEAncias" };
       if (deps.totalRelated > 0 && !input.confirmCascade) {
@@ -25533,38 +25691,38 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await deleteAluno(input.alunoId);
     }),
     // ============ LIBERAR ONBOARDING (NOVO CICLO) ============
-    liberarOnboarding: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input }) => {
+    liberarOnboarding: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
       return await liberarOnboardingAluno(input.alunoId);
     }),
-    liberarOnboardingEmMassa: adminOrAdmin2Procedure.input(z5.object({ alunoIds: z5.array(z5.number()).min(1) })).mutation(async ({ input }) => {
+    liberarOnboardingEmMassa: adminOrAdmin2Procedure.input(z6.object({ alunoIds: z6.array(z6.number()).min(1) })).mutation(async ({ input }) => {
       return await liberarOnboardingEmMassa(input.alunoIds);
     }),
     // Reverter onboarding liberado (desfaz liberarOnboarding)
-    reverterOnboarding: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input }) => {
+    reverterOnboarding: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
       await resetOnboardingLiberado(input.alunoId);
       return { success: true, message: "Onboarding revertido com sucesso." };
     }),
     // ============ PAINEL DE AGENDAMENTOS =============
-    allAppointments: adminOrAdmin2Procedure.input(z5.object({
-      status: z5.string().optional(),
-      type: z5.string().optional(),
-      dateFrom: z5.string().optional(),
-      dateTo: z5.string().optional(),
-      consultorId: z5.number().optional()
+    allAppointments: adminOrAdmin2Procedure.input(z6.object({
+      status: z6.string().optional(),
+      type: z6.string().optional(),
+      dateFrom: z6.string().optional(),
+      dateTo: z6.string().optional(),
+      consultorId: z6.number().optional()
     }).optional()).query(async ({ input }) => {
       return await getAllAppointments(input);
     }),
     // ============ EDITAR MENTORIAS (PARAMETRIZAÇÃO) ============
-    listMentoringSessions: adminOrAdmin2Procedure.input(z5.object({
-      programId: z5.number().optional(),
-      turmaId: z5.number().optional(),
-      alunoId: z5.number().optional(),
-      consultorId: z5.number().optional(),
-      alunoNome: z5.string().optional(),
-      presenca: z5.string().optional(),
-      taskStatus: z5.string().optional(),
-      page: z5.number().default(1),
-      pageSize: z5.number().default(50)
+    listMentoringSessions: adminOrAdmin2Procedure.input(z6.object({
+      programId: z6.number().optional(),
+      turmaId: z6.number().optional(),
+      alunoId: z6.number().optional(),
+      consultorId: z6.number().optional(),
+      alunoNome: z6.string().optional(),
+      presenca: z6.string().optional(),
+      taskStatus: z6.string().optional(),
+      page: z6.number().default(1),
+      pageSize: z6.number().default(50)
     })).query(async ({ input }) => {
       const filters = input;
       const page = filters.page || 1;
@@ -25621,16 +25779,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }));
       return { sessions: enrichedSessions, total };
     }),
-    updateSessionDate: adminOrAdmin2Procedure.input(z5.object({
-      sessionId: z5.number(),
-      sessionDate: z5.string().optional(),
-      sessionNumber: z5.number().optional(),
-      consultorId: z5.number().optional(),
-      taskStatus: z5.enum(["entregue", "nao_entregue", "sem_tarefa", "validada"]).optional(),
-      presence: z5.enum(["presente", "ausente"]).optional(),
-      notaEvolucao: z5.number().min(0).max(10).nullable().optional(),
-      feedback: z5.string().optional(),
-      notaMentoraAplicabilidade: z5.number().min(0).max(10).nullable().optional()
+    updateSessionDate: adminOrAdmin2Procedure.input(z6.object({
+      sessionId: z6.number(),
+      sessionDate: z6.string().optional(),
+      sessionNumber: z6.number().optional(),
+      consultorId: z6.number().optional(),
+      taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa", "validada"]).optional(),
+      presence: z6.enum(["presente", "ausente"]).optional(),
+      notaEvolucao: z6.number().min(0).max(10).nullable().optional(),
+      feedback: z6.string().optional(),
+      notaMentoraAplicabilidade: z6.number().min(0).max(10).nullable().optional()
     })).mutation(async ({ input }) => {
       if (input.sessionNumber !== void 0) {
         const session = await getMentoringSessionById(input.sessionId);
@@ -25640,7 +25798,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             (s) => s.sessionNumber === input.sessionNumber && s.id !== input.sessionId
           );
           if (duplicate) {
-            throw new TRPCError5({
+            throw new TRPCError6({
               code: "CONFLICT",
               message: `Este aluno j\xE1 possui uma sess\xE3o #${input.sessionNumber}. Escolha outro n\xFAmero.`
             });
@@ -25659,35 +25817,35 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const success = await updateMentoringSession(input.sessionId, updateData);
       return { success };
     }),
-    deleteSession: adminOrAdmin2Procedure.input(z5.object({
-      sessionId: z5.number()
+    deleteSession: adminOrAdmin2Procedure.input(z6.object({
+      sessionId: z6.number()
     })).mutation(async ({ input }) => {
       const success = await deleteMentoringSession(input.sessionId);
       return { success };
     }),
-    adminCreateSession: adminOrAdmin2Procedure.input(z5.object({
-      alunoId: z5.number(),
-      consultorId: z5.number(),
-      sessionDate: z5.string(),
-      sessionNumber: z5.number().min(1),
-      presence: z5.enum(["presente", "ausente"]),
-      taskStatus: z5.enum(["entregue", "nao_entregue", "sem_tarefa"]),
-      notaEvolucao: z5.number().min(0).max(10).nullable().optional(),
-      feedback: z5.string().optional(),
-      tipoSessao: z5.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
-      appointmentId: z5.number().nullable().optional()
+    adminCreateSession: adminOrAdmin2Procedure.input(z6.object({
+      alunoId: z6.number(),
+      consultorId: z6.number(),
+      sessionDate: z6.string(),
+      sessionNumber: z6.number().min(1),
+      presence: z6.enum(["presente", "ausente"]),
+      taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa"]),
+      notaEvolucao: z6.number().min(0).max(10).nullable().optional(),
+      feedback: z6.string().optional(),
+      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+      appointmentId: z6.number().nullable().optional()
     })).mutation(async ({ input }) => {
       const existingSessions = await getMentoringSessionsByAluno(input.alunoId);
       const duplicate = existingSessions.find((s) => s.sessionNumber === input.sessionNumber);
       if (duplicate) {
-        throw new TRPCError5({
+        throw new TRPCError6({
           code: "CONFLICT",
           message: `J\xE1 existe uma sess\xE3o #${input.sessionNumber} para este aluno`
         });
       }
       const aluno = await getAlunoById(input.alunoId);
       if (!aluno) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.adminCreateSession");
       const sessionId = await createMentoringSession({
@@ -25751,9 +25909,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     updateAllAlunosPlataformaAulas: adminOrAdmin2Procedure.mutation(async () => {
       return await updateAllAlunosPlataformaAulas();
     }),
-    updateMultipleAlunosPlataforma: adminOrAdmin2Procedure.input(z5.array(z5.object({
-      alunoId: z5.number(),
-      plataformaAulas: z5.enum(["scaffold", "sistema_interno"])
+    updateMultipleAlunosPlataforma: adminOrAdmin2Procedure.input(z6.array(z6.object({
+      alunoId: z6.number(),
+      plataformaAulas: z6.enum(["scaffold", "sistema_interno"])
     }))).mutation(async ({ input }) => {
       return await updateMultipleAlunosPlataforma(input);
     }),
@@ -25761,11 +25919,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listAdmins: adminProcedure3.query(async () => {
       return await listAdminUsers();
     }),
-    createAdmin: adminProcedure3.input(z5.object({
-      name: z5.string().min(1),
-      email: z5.string().email(),
-      username: z5.string().min(3, "Username deve ter ao menos 3 caracteres"),
-      password: z5.string().min(6, "Senha deve ter ao menos 6 caracteres")
+    createAdmin: adminProcedure3.input(z6.object({
+      name: z6.string().min(1),
+      email: z6.string().email(),
+      username: z6.string().min(3, "Username deve ter ao menos 3 caracteres"),
+      password: z6.string().min(6, "Senha deve ter ao menos 6 caracteres")
     })).mutation(async ({ input }) => {
       const crypto = await import("crypto");
       const passwordHash = crypto.createHash("sha256").update(input.password).digest("hex");
@@ -25776,22 +25934,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         passwordHash
       });
     }),
-    toggleAdminStatus: adminProcedure3.input(z5.object({ userId: z5.number() })).mutation(async ({ input, ctx: ctx2 }) => {
+    toggleAdminStatus: adminProcedure3.input(z6.object({ userId: z6.number() })).mutation(async ({ input, ctx: ctx2 }) => {
       if (ctx2.user.id === input.userId) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "Voc\xEA n\xE3o pode inabilitar sua pr\xF3pria conta." });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "Voc\xEA n\xE3o pode inabilitar sua pr\xF3pria conta." });
       }
       return await toggleAdminUserStatus(input.userId);
     }),
-    getPermissions: adminProcedure3.input(z5.object({ userId: z5.number() })).query(async ({ input }) => {
+    getPermissions: adminProcedure3.input(z6.object({ userId: z6.number() })).query(async ({ input }) => {
       return await getAdminPermissions(input.userId);
     }),
-    setPermissions: adminProcedure3.input(z5.object({ userId: z5.number(), permissions: z5.array(z5.string()) })).mutation(async ({ input }) => {
+    setPermissions: adminProcedure3.input(z6.object({ userId: z6.number(), permissions: z6.array(z6.string()) })).mutation(async ({ input }) => {
       await setAdminPermissions(input.userId, input.permissions);
       return { success: true };
     }),
-    updateAdminPassword: adminProcedure3.input(z5.object({
-      userId: z5.number(),
-      newPassword: z5.string().min(6, "Senha deve ter ao menos 6 caracteres")
+    updateAdminPassword: adminProcedure3.input(z6.object({
+      userId: z6.number(),
+      newPassword: z6.string().min(6, "Senha deve ter ao menos 6 caracteres")
     })).mutation(async ({ input }) => {
       const crypto = await import("crypto");
       const passwordHash = crypto.createHash("sha256").update(input.newPassword).digest("hex");
@@ -25805,7 +25963,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   aluno: router({
     onboardingStatus: protectedProcedure.query(async ({ ctx: ctx2 }) => {
       if (!ctx2.user) {
-        throw new TRPCError5({ code: "UNAUTHORIZED" });
+        throw new TRPCError6({ code: "UNAUTHORIZED" });
       }
       const status = await getAlunoOnboardingStatus(ctx2.user);
       if (status.processoSeletivoId && status.alunoId) {
@@ -25838,7 +25996,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Ciclos de Execução da Trilha
   ciclos: router({
     // Listar ciclos de um aluno (manual ou derivados do PDI)
-    porAluno: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const ciclosManuais = await getCiclosByAluno(input.alunoId);
       if (ciclosManuais.length > 0) {
         return ciclosManuais.map((c) => ({ ...c, fonte: "manual" }));
@@ -25847,13 +26005,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return ciclosDerivados;
     }),
     // Criar ciclo
-    criar: adminOrAdmin2Procedure.input(z5.object({
-      alunoId: z5.number(),
-      nomeCiclo: z5.string().min(1),
-      dataInicio: z5.string(),
-      dataFim: z5.string(),
-      competenciaIds: z5.array(z5.number()).min(1),
-      observacoes: z5.string().optional()
+    criar: adminOrAdmin2Procedure.input(z6.object({
+      alunoId: z6.number(),
+      nomeCiclo: z6.string().min(1),
+      dataInicio: z6.string(),
+      dataFim: z6.string(),
+      competenciaIds: z6.array(z6.number()).min(1),
+      observacoes: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const cicloId = await createCicloExecucao({
         ...input,
@@ -25862,93 +26020,93 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, cicloId };
     }),
     // Atualizar ciclo
-    atualizar: adminOrAdmin2Procedure.input(z5.object({
-      cicloId: z5.number(),
-      nomeCiclo: z5.string().optional(),
-      dataInicio: z5.string().optional(),
-      dataFim: z5.string().optional(),
-      competenciaIds: z5.array(z5.number()).optional(),
-      observacoes: z5.string().optional()
+    atualizar: adminOrAdmin2Procedure.input(z6.object({
+      cicloId: z6.number(),
+      nomeCiclo: z6.string().optional(),
+      dataInicio: z6.string().optional(),
+      dataFim: z6.string().optional(),
+      competenciaIds: z6.array(z6.number()).optional(),
+      observacoes: z6.string().optional()
     })).mutation(async ({ input }) => {
       const { cicloId, ...data } = input;
       const success = await updateCicloExecucao(cicloId, data);
       return { success };
     }),
     // Excluir ciclo
-    excluir: adminOrAdmin2Procedure.input(z5.object({ cicloId: z5.number() })).mutation(async ({ input }) => {
+    excluir: adminOrAdmin2Procedure.input(z6.object({ cicloId: z6.number() })).mutation(async ({ input }) => {
       const success = await deleteCicloExecucao(input.cicloId);
       return { success };
     }),
     // Log de auditoria de resets de ciclos
-    auditoriaResets: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number().optional(), limit: z5.number().optional() }).optional()).query(async ({ input }) => {
+    auditoriaResets: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number().optional(), limit: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getAuditoriaResets(input ?? {});
     }),
     // Histórico de alterações de notas de mentoria (engagementScore e notaMentoraAplicabilidade)
-    auditoriaNotasMentoria: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    auditoriaNotasMentoria: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getAuditoriaNotesMentoria(input.alunoId);
     })
   }),
   // ============ ASSESSMENT PDI ============
   assessment: router({
     // Listar assessments de um aluno
-    porAluno: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
       return await getAssessmentsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Buscar um PDI específico por ID (incluindo congelados) — para visualização somente leitura
-    porId: protectedProcedure.input(z5.object({ pdiId: z5.number() })).query(async ({ input }) => {
+    porId: protectedProcedure.input(z6.object({ pdiId: z6.number() })).query(async ({ input }) => {
       return await getAssessmentById(input.pdiId);
     }),
     // Buscar TODOS os PDIs de um contratoNivelId (todas as trilhas do ciclo)
-    porContratoNivel: protectedProcedure.input(z5.object({ contratoNivelId: z5.number() })).query(async ({ input }) => {
+    porContratoNivel: protectedProcedure.input(z6.object({ contratoNivelId: z6.number() })).query(async ({ input }) => {
       return await getAllPdisByContratoNivel(input.contratoNivelId);
     }),
     // Listar assessments de um programa (admin/mentor)
-    porPrograma: protectedProcedure.input(z5.object({ programId: z5.number() })).query(async ({ input }) => {
+    porPrograma: protectedProcedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
       return await getAssessmentsByProgram(input.programId);
     }),
     // Listar assessments dos alunos de um consultor
-    porConsultor: protectedProcedure.input(z5.object({ consultorId: z5.number() })).query(async ({ input }) => {
+    porConsultor: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
       return await getAssessmentsByConsultor(input.consultorId);
     }),
     // Criar novo assessment PDI
-    criar: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      trilhaId: z5.number(),
-      turmaId: z5.number().nullable().optional(),
-      programId: z5.number().nullable().optional(),
-      consultorId: z5.number().nullable().optional(),
-      macroInicio: z5.string(),
-      macroTermino: z5.string(),
-      totalSessoesPrevistas: z5.number().min(1).nullable().optional(),
-      competencias: z5.array(z5.object({
-        competenciaId: z5.number(),
-        peso: z5.enum(["obrigatoria", "opcional"]),
-        notaCorte: z5.string(),
-        nivelAtual: z5.number().nullable().optional(),
-        metaCiclo1: z5.number().nullable().optional(),
-        metaCiclo2: z5.number().nullable().optional(),
-        metaFinal: z5.number().nullable().optional(),
-        justificativa: z5.string().nullable().optional(),
-        microInicio: z5.string().nullable().optional(),
-        microTermino: z5.string().nullable().optional()
+    criar: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      trilhaId: z6.number(),
+      turmaId: z6.number().nullable().optional(),
+      programId: z6.number().nullable().optional(),
+      consultorId: z6.number().nullable().optional(),
+      macroInicio: z6.string(),
+      macroTermino: z6.string(),
+      totalSessoesPrevistas: z6.number().min(1).nullable().optional(),
+      competencias: z6.array(z6.object({
+        competenciaId: z6.number(),
+        peso: z6.enum(["obrigatoria", "opcional"]),
+        notaCorte: z6.string(),
+        nivelAtual: z6.number().nullable().optional(),
+        metaCiclo1: z6.number().nullable().optional(),
+        metaCiclo2: z6.number().nullable().optional(),
+        metaFinal: z6.number().nullable().optional(),
+        justificativa: z6.string().nullable().optional(),
+        microInicio: z6.string().nullable().optional(),
+        microTermino: z6.string().nullable().optional()
       }))
     })).mutation(async ({ input }) => {
       const { competencias: competencias2, ...pdiData } = input;
       await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "assessment.criar");
       const alunoCheck = await getAlunoById(input.alunoId);
       if (!alunoCheck) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       if (alunoCheck.isActive === 0) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel criar PDI para aluno inativo. Ative o aluno primeiro." });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel criar PDI para aluno inativo. Ative o aluno primeiro." });
       }
       const existingPdi = await getExistingActivePdiByTrilha(input.alunoId, input.trilhaId);
       if (existingPdi) {
         console.log(`[Assessment] Trilha ${input.trilhaId} j\xE1 existe para aluno ${input.alunoId} (PDI #${existingPdi.pdiId}). Adicionando ${competencias2.length} compet\xEAncia(s) ao existente.`);
         const added = await addCompetenciasToExistingAssessment(existingPdi.pdiId, competencias2);
         if (added === 0) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "BAD_REQUEST",
             message: "Todas as compet\xEAncias selecionadas j\xE1 existem nesta trilha. Nenhuma nova compet\xEAncia foi adicionada."
           });
@@ -25978,20 +26136,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true, pdiId: existingPdi.pdiId, addedToExisting: true, addedCount: added };
       }
       if (pdiData.macroInicio >= pdiData.macroTermino) {
-        throw new TRPCError5({
+        throw new TRPCError6({
           code: "BAD_REQUEST",
           message: "Data de in\xEDcio do macro ciclo deve ser anterior \xE0 data de t\xE9rmino"
         });
       }
       for (const comp of competencias2) {
         if (comp.microInicio && comp.microInicio < pdiData.macroInicio) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "BAD_REQUEST",
             message: `Micro ciclo in\xEDcio n\xE3o pode ser anterior ao macro ciclo in\xEDcio (${pdiData.macroInicio})`
           });
         }
         if (comp.microTermino && comp.microTermino > pdiData.macroTermino) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "BAD_REQUEST",
             message: `Micro ciclo t\xE9rmino n\xE3o pode ser posterior ao macro ciclo t\xE9rmino (${pdiData.macroTermino})`
           });
@@ -26051,49 +26209,49 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, pdiId };
     }),
     // Congelar assessment PDI (com motivo obrigatório)
-    congelar: protectedProcedure.input(z5.object({
-      pdiId: z5.number(),
-      consultorId: z5.number(),
-      motivo: z5.string().min(1, "Motivo \xE9 obrigat\xF3rio")
+    congelar: protectedProcedure.input(z6.object({
+      pdiId: z6.number(),
+      consultorId: z6.number(),
+      motivo: z6.string().min(1, "Motivo \xE9 obrigat\xF3rio")
     })).mutation(async ({ input }) => {
       await congelarAssessmentPdi(input.pdiId, input.consultorId, input.motivo);
       return { success: true };
     }),
     // Descongelar assessment PDI (reverter para ativo)
-    descongelar: protectedProcedure.input(z5.object({
-      pdiId: z5.number(),
-      consultorId: z5.number()
+    descongelar: protectedProcedure.input(z6.object({
+      pdiId: z6.number(),
+      consultorId: z6.number()
     })).mutation(async ({ input }) => {
       await descongelarAssessmentPdi(input.pdiId, input.consultorId);
       return { success: true };
     }),
     // Atualizar competência do assessment (micro ciclo, peso, nota de corte)
-    atualizarCompetencia: protectedProcedure.input(z5.object({
-      id: z5.number(),
-      peso: z5.enum(["obrigatoria", "opcional"]).optional(),
-      notaCorte: z5.string().optional(),
-      microInicio: z5.string().nullable().optional(),
-      microTermino: z5.string().nullable().optional()
+    atualizarCompetencia: protectedProcedure.input(z6.object({
+      id: z6.number(),
+      peso: z6.enum(["obrigatoria", "opcional"]).optional(),
+      notaCorte: z6.string().optional(),
+      microInicio: z6.string().nullable().optional(),
+      microTermino: z6.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateAssessmentCompetencia(id, data);
       return { success: true };
     }),
     // Atualizar assessment PDI (trilha, datas macro, mentora, etc.)
-    atualizar: protectedProcedure.input(z5.object({
-      pdiId: z5.number(),
-      trilhaId: z5.number().optional(),
-      consultorId: z5.number().nullable().optional(),
-      turmaId: z5.number().nullable().optional(),
-      programId: z5.number().nullable().optional(),
-      macroInicio: z5.string().optional(),
-      macroTermino: z5.string().optional(),
-      totalSessoesPrevistas: z5.number().min(1).nullable().optional(),
-      observacoes: z5.string().nullable().optional()
+    atualizar: protectedProcedure.input(z6.object({
+      pdiId: z6.number(),
+      trilhaId: z6.number().optional(),
+      consultorId: z6.number().nullable().optional(),
+      turmaId: z6.number().nullable().optional(),
+      programId: z6.number().nullable().optional(),
+      macroInicio: z6.string().optional(),
+      macroTermino: z6.string().optional(),
+      totalSessoesPrevistas: z6.number().min(1).nullable().optional(),
+      observacoes: z6.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { pdiId, ...data } = input;
       if (data.macroInicio && data.macroTermino && data.macroInicio >= data.macroTermino) {
-        throw new TRPCError5({
+        throw new TRPCError6({
           code: "BAD_REQUEST",
           message: "Data de in\xEDcio deve ser anterior \xE0 data de t\xE9rmino"
         });
@@ -26102,18 +26260,18 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true };
     }),
     // Adicionar competência a um assessment existente
-    adicionarCompetencia: protectedProcedure.input(z5.object({
-      assessmentPdiId: z5.number(),
-      competenciaId: z5.number(),
-      peso: z5.enum(["obrigatoria", "opcional"]),
-      notaCorte: z5.string().optional(),
-      microInicio: z5.string().nullable().optional(),
-      microTermino: z5.string().nullable().optional(),
-      nivelAtual: z5.string().nullable().optional(),
-      metaCiclo1: z5.string().nullable().optional(),
-      metaCiclo2: z5.string().nullable().optional(),
-      metaFinal: z5.string().nullable().optional(),
-      justificativa: z5.string().nullable().optional()
+    adicionarCompetencia: protectedProcedure.input(z6.object({
+      assessmentPdiId: z6.number(),
+      competenciaId: z6.number(),
+      peso: z6.enum(["obrigatoria", "opcional"]),
+      notaCorte: z6.string().optional(),
+      microInicio: z6.string().nullable().optional(),
+      microTermino: z6.string().nullable().optional(),
+      nivelAtual: z6.string().nullable().optional(),
+      metaCiclo1: z6.string().nullable().optional(),
+      metaCiclo2: z6.string().nullable().optional(),
+      metaFinal: z6.string().nullable().optional(),
+      justificativa: z6.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { assessmentPdiId, ...data } = input;
       const id = await addCompetenciaToAssessment(assessmentPdiId, data);
@@ -26126,41 +26284,41 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, id };
     }),
     // Remover competência de um assessment
-    removerCompetencia: protectedProcedure.input(z5.object({
-      assessmentCompetenciaId: z5.number()
+    removerCompetencia: protectedProcedure.input(z6.object({
+      assessmentCompetenciaId: z6.number()
     })).mutation(async ({ input }) => {
       await removeCompetenciaFromAssessment(input.assessmentCompetenciaId);
       return { success: true };
     }),
     // Atualizar competências em lote (editar existentes, remover desmarcadas, adicionar novas)
-    atualizarCompetencias: protectedProcedure.input(z5.object({
-      assessmentPdiId: z5.number(),
-      alunoId: z5.number(),
-      updated: z5.array(z5.object({
-        assessmentCompetenciaId: z5.number(),
-        competenciaId: z5.number(),
-        peso: z5.enum(["obrigatoria", "opcional"]),
-        nivelAtual: z5.number().nullable(),
-        metaFinal: z5.number().nullable(),
-        metaCiclo1: z5.number().nullable(),
-        metaCiclo2: z5.number().nullable(),
-        justificativa: z5.string().nullable(),
-        microInicio: z5.string().nullable(),
-        microTermino: z5.string().nullable()
+    atualizarCompetencias: protectedProcedure.input(z6.object({
+      assessmentPdiId: z6.number(),
+      alunoId: z6.number(),
+      updated: z6.array(z6.object({
+        assessmentCompetenciaId: z6.number(),
+        competenciaId: z6.number(),
+        peso: z6.enum(["obrigatoria", "opcional"]),
+        nivelAtual: z6.number().nullable(),
+        metaFinal: z6.number().nullable(),
+        metaCiclo1: z6.number().nullable(),
+        metaCiclo2: z6.number().nullable(),
+        justificativa: z6.string().nullable(),
+        microInicio: z6.string().nullable(),
+        microTermino: z6.string().nullable()
       })),
-      removed: z5.array(z5.number()),
+      removed: z6.array(z6.number()),
       // assessmentCompetenciaId[]
-      added: z5.array(z5.object({
-        competenciaId: z5.number(),
-        peso: z5.enum(["obrigatoria", "opcional"]),
-        notaCorte: z5.string().optional(),
-        nivelAtual: z5.number().nullable(),
-        metaFinal: z5.number().nullable(),
-        metaCiclo1: z5.number().nullable(),
-        metaCiclo2: z5.number().nullable(),
-        justificativa: z5.string().nullable(),
-        microInicio: z5.string().nullable(),
-        microTermino: z5.string().nullable()
+      added: z6.array(z6.object({
+        competenciaId: z6.number(),
+        peso: z6.enum(["obrigatoria", "opcional"]),
+        notaCorte: z6.string().optional(),
+        nivelAtual: z6.number().nullable(),
+        metaFinal: z6.number().nullable(),
+        metaCiclo1: z6.number().nullable(),
+        metaCiclo2: z6.number().nullable(),
+        justificativa: z6.string().nullable(),
+        microInicio: z6.string().nullable(),
+        microTermino: z6.string().nullable()
       }))
     })).mutation(async ({ input }) => {
       let updatedCount = 0;
@@ -26209,8 +26367,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, updated: updatedCount, removed: removedCount, added: addedCount };
     }),
     // Excluir assessment PDI completo
-    excluir: protectedProcedure.input(z5.object({
-      pdiId: z5.number()
+    excluir: protectedProcedure.input(z6.object({
+      pdiId: z6.number()
     })).mutation(async ({ input }) => {
       await deleteAssessmentPdi(input.pdiId);
       return { success: true };
@@ -26218,26 +26376,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   }),
   // ==================== WEBINARS MANAGEMENT ====================
   webinars: router({
-    list: adminOrAdmin2Procedure.input(z5.object({ status: z5.string().optional() }).optional()).query(async ({ input }) => {
+    list: adminOrAdmin2Procedure.input(z6.object({ status: z6.string().optional() }).optional()).query(async ({ input }) => {
       return await listWebinars(input?.status);
     }),
-    getById: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getById: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       return await getWebinarById(input.id);
     }),
-    create: adminOrAdmin2Procedure.input(z5.object({
-      title: z5.string().min(1),
-      description: z5.string().optional(),
-      theme: z5.string().optional(),
-      speaker: z5.string().optional(),
-      speakerBio: z5.string().optional(),
-      eventDate: z5.string(),
-      startDate: z5.string().optional(),
-      endDate: z5.string().optional(),
-      duration: z5.number().optional(),
-      meetingLink: z5.string().optional(),
-      youtubeLink: z5.string().optional(),
-      targetAudience: z5.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
-      status: z5.enum(["draft", "published", "completed", "cancelled"]).optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      title: z6.string().min(1),
+      description: z6.string().optional(),
+      theme: z6.string().optional(),
+      speaker: z6.string().optional(),
+      speakerBio: z6.string().optional(),
+      eventDate: z6.string(),
+      startDate: z6.string().optional(),
+      endDate: z6.string().optional(),
+      duration: z6.number().optional(),
+      meetingLink: z6.string().optional(),
+      youtubeLink: z6.string().optional(),
+      targetAudience: z6.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
+      status: z6.enum(["draft", "published", "completed", "cancelled"]).optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const eventDate = new Date(input.eventDate);
       const startDate = input.startDate ? new Date(input.startDate) : eventDate;
@@ -26254,21 +26412,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return { id, success: true };
     }),
-    update: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      title: z5.string().optional(),
-      description: z5.string().optional(),
-      theme: z5.string().optional(),
-      speaker: z5.string().optional(),
-      speakerBio: z5.string().optional(),
-      eventDate: z5.string().optional(),
-      startDate: z5.string().optional().nullable(),
-      endDate: z5.string().optional().nullable(),
-      duration: z5.number().optional(),
-      meetingLink: z5.string().optional(),
-      youtubeLink: z5.string().optional(),
-      targetAudience: z5.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
-      status: z5.enum(["draft", "published", "completed", "cancelled"]).optional()
+    update: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      title: z6.string().optional(),
+      description: z6.string().optional(),
+      theme: z6.string().optional(),
+      speaker: z6.string().optional(),
+      speakerBio: z6.string().optional(),
+      eventDate: z6.string().optional(),
+      startDate: z6.string().optional().nullable(),
+      endDate: z6.string().optional().nullable(),
+      duration: z6.number().optional(),
+      meetingLink: z6.string().optional(),
+      youtubeLink: z6.string().optional(),
+      targetAudience: z6.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
+      status: z6.enum(["draft", "published", "completed", "cancelled"]).optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const updateData = { ...data };
@@ -26281,15 +26439,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return { success: true };
     }),
-    delete: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteWebinar(input.id);
       return { success: true };
     }),
-    uploadCard: adminOrAdmin2Procedure.input(z5.object({
-      webinarId: z5.number(),
-      fileBase64: z5.string(),
-      fileName: z5.string(),
-      mimeType: z5.string()
+    uploadCard: adminOrAdmin2Procedure.input(z6.object({
+      webinarId: z6.number(),
+      fileBase64: z6.string(),
+      fileName: z6.string(),
+      mimeType: z6.string()
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileBase64, "base64");
       const ext = input.fileName.split(".").pop() || "png";
@@ -26302,12 +26460,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       });
       return { url, success: true };
     }),
-    sendReminder: adminOrAdmin2Procedure.input(z5.object({
-      webinarId: z5.number(),
-      recipients: z5.array(z5.enum(["alunos", "gerentes", "mentores"])).min(1, "Selecione pelo menos um grupo de destinat\xE1rios")
+    sendReminder: adminOrAdmin2Procedure.input(z6.object({
+      webinarId: z6.number(),
+      recipients: z6.array(z6.enum(["alunos", "gerentes", "mentores"])).min(1, "Selecione pelo menos um grupo de destinat\xE1rios")
     })).mutation(async ({ input }) => {
       const webinar = await getWebinarById(input.webinarId);
-      if (!webinar) throw new TRPCError5({ code: "NOT_FOUND", message: "Webinar n\xE3o encontrado" });
+      if (!webinar) throw new TRPCError6({ code: "NOT_FOUND", message: "Webinar n\xE3o encontrado" });
       const allRecipients = [];
       const groupCounts = {};
       if (input.recipients.includes("alunos")) {
@@ -26340,7 +26498,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         seen.add(adminEmail.toLowerCase());
       }
       if (uniqueRecipients.length === 0) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "Nenhum destinat\xE1rio com email cadastrado encontrado nos grupos selecionados" });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "Nenhum destinat\xE1rio com email cadastrado encontrado nos grupos selecionados" });
       }
       const eventDate = webinar.eventDate ? new Date(webinar.eventDate) : null;
       const eventDateStr = eventDate ? eventDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "Data n\xE3o definida";
@@ -26438,10 +26596,10 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       };
     }),
     // Public endpoint for students to see upcoming webinars
-    upcoming: protectedProcedure.input(z5.object({ limit: z5.number().optional() }).optional()).query(async ({ input }) => {
+    upcoming: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await listUpcomingWebinars(input?.limit || 10);
     }),
-    past: protectedProcedure.input(z5.object({ limit: z5.number().optional() }).optional()).query(async ({ input }) => {
+    past: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await listPastWebinars(input?.limit || 10);
     })
   }),
@@ -26452,25 +26610,25 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       const aluno = await getAlunoFromCtx(ctx2.user);
       return await listActiveAnnouncementsForStudent(aluno?.programId || void 0);
     }),
-    list: adminOrAdmin2Procedure.input(z5.object({ activeOnly: z5.boolean().optional() }).optional()).query(async ({ input }) => {
+    list: adminOrAdmin2Procedure.input(z6.object({ activeOnly: z6.boolean().optional() }).optional()).query(async ({ input }) => {
       return await listAnnouncements(input?.activeOnly);
     }),
-    getById: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getById: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       return await getAnnouncementById(input.id);
     }),
-    create: adminOrAdmin2Procedure.input(z5.object({
-      title: z5.string().min(1),
-      content: z5.string().optional(),
-      type: z5.enum(["webinar", "course", "activity", "notice", "news"]),
-      imageUrl: z5.string().optional(),
-      actionUrl: z5.string().optional(),
-      actionLabel: z5.string().optional(),
-      targetAudience: z5.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
-      priority: z5.number().optional(),
-      publishAt: z5.string().optional(),
-      expiresAt: z5.string().optional(),
-      isActive: z5.number().optional(),
-      webinarId: z5.number().optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      title: z6.string().min(1),
+      content: z6.string().optional(),
+      type: z6.enum(["webinar", "course", "activity", "notice", "news"]),
+      imageUrl: z6.string().optional(),
+      actionUrl: z6.string().optional(),
+      actionLabel: z6.string().optional(),
+      targetAudience: z6.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
+      priority: z6.number().optional(),
+      publishAt: z6.string().optional(),
+      expiresAt: z6.string().optional(),
+      isActive: z6.number().optional(),
+      webinarId: z6.number().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const data = { ...input, createdBy: ctx2.user.id };
       if (input.publishAt) data.publishAt = new Date(input.publishAt);
@@ -26478,20 +26636,20 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       const id = await createAnnouncement(data);
       return { id, success: true };
     }),
-    update: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      title: z5.string().optional(),
-      content: z5.string().optional(),
-      type: z5.enum(["webinar", "course", "activity", "notice", "news"]).optional(),
-      imageUrl: z5.string().optional(),
-      actionUrl: z5.string().optional(),
-      actionLabel: z5.string().optional(),
-      targetAudience: z5.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
-      priority: z5.number().optional(),
-      publishAt: z5.string().optional(),
-      expiresAt: z5.string().optional(),
-      isActive: z5.number().optional(),
-      webinarId: z5.number().optional()
+    update: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      title: z6.string().optional(),
+      content: z6.string().optional(),
+      type: z6.enum(["webinar", "course", "activity", "notice", "news"]).optional(),
+      imageUrl: z6.string().optional(),
+      actionUrl: z6.string().optional(),
+      actionLabel: z6.string().optional(),
+      targetAudience: z6.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
+      priority: z6.number().optional(),
+      publishAt: z6.string().optional(),
+      expiresAt: z6.string().optional(),
+      isActive: z6.number().optional(),
+      webinarId: z6.number().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const updateData = { ...data };
@@ -26500,15 +26658,15 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       await updateAnnouncement(id, updateData);
       return { success: true };
     }),
-    delete: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteAnnouncement(input.id);
       return { success: true };
     }),
     // Upload de imagem de capa para avisos
-    uploadImage: adminOrAdmin2Procedure.input(z5.object({
-      imageBase64: z5.string(),
-      mimeType: z5.string().default("image/jpeg"),
-      fileName: z5.string().optional()
+    uploadImage: adminOrAdmin2Procedure.input(z6.object({
+      imageBase64: z6.string(),
+      mimeType: z6.string().default("image/jpeg"),
+      fileName: z6.string().optional()
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.imageBase64, "base64");
       const ext = input.mimeType.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
@@ -26520,14 +26678,14 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
   // ==================== ATTENDANCE (Presença + Reflexão) ====================
   attendance: router({
     // Aluno marca presença e envia reflexão (funciona para webinários agendados e eventos importados)
-    markPresence: protectedProcedure.input(z5.object({
-      eventId: z5.number(),
-      reflexao: z5.string().min(20, "A reflex\xE3o deve ter pelo menos 20 caracteres"),
-      contratoNivelId: z5.number().nullable().optional()
+    markPresence: protectedProcedure.input(z6.object({
+      eventId: z6.number(),
+      reflexao: z6.string().min(20, "A reflex\xE3o deve ter pelo menos 20 caracteres"),
+      contratoNivelId: z6.number().nullable().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const aluno = await getAlunoFromCtx(ctx2.user);
       if (!aluno) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       let realEventId = input.eventId;
       if (input.eventId > 9e5) {
@@ -26536,7 +26694,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       }
       let eventRecord = await getEventById(realEventId);
       if (!eventRecord) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Evento n\xE3o encontrado." });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Evento n\xE3o encontrado." });
       }
       const allEvents = await getWebinarsPendingAttendance(aluno.id);
       const normalizedInputTitle = eventRecord?.title?.toLowerCase()?.trim() || "";
@@ -26561,7 +26719,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         if (matchingWebinar.status !== "completed") {
           const startDate = matchingWebinar.startDate || matchingWebinar.eventDate;
           if (startDate && new Date(startDate) > /* @__PURE__ */ new Date()) {
-            throw new TRPCError5({ code: "BAD_REQUEST", message: "A marca\xE7\xE3o de presen\xE7a s\xF3 \xE9 liberada ap\xF3s o in\xEDcio do evento." });
+            throw new TRPCError6({ code: "BAD_REQUEST", message: "A marca\xE7\xE3o de presen\xE7a s\xF3 \xE9 liberada ap\xF3s o in\xEDcio do evento." });
           }
         }
       }
@@ -26587,9 +26745,9 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       };
     }),
     // Admin: atualizar videoLink de um evento importado
-    updateVideoLink: adminOrAdmin2Procedure.input(z5.object({
-      eventId: z5.number(),
-      videoLink: z5.string().min(1, "Link do v\xEDdeo \xE9 obrigat\xF3rio")
+    updateVideoLink: adminOrAdmin2Procedure.input(z6.object({
+      eventId: z6.number(),
+      videoLink: z6.string().min(1, "Link do v\xEDdeo \xE9 obrigat\xF3rio")
     })).mutation(async ({ input }) => {
       await updateEventVideoLink(input.eventId, input.videoLink);
       return { success: true };
@@ -26675,48 +26833,48 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return tasks;
     }),
     // Aluno envia evidência (link e/ou imagem) para uma tarefa
-    submitEvidence: protectedProcedure.input(z5.object({
-      sessionId: z5.number(),
-      submissionType: z5.enum(["tarefa", "atualizacao_projeto"]),
-      evidenceLink: z5.string().optional(),
-      evidenceImageBase64: z5.string().optional(),
+    submitEvidence: protectedProcedure.input(z6.object({
+      sessionId: z6.number(),
+      submissionType: z6.enum(["tarefa", "atualizacao_projeto"]),
+      evidenceLink: z6.string().optional(),
+      evidenceImageBase64: z6.string().optional(),
       // compatibilidade
-      evidenceImageName: z5.string().optional(),
-      evidenceFileBase64: z5.string().optional(),
-      evidenceFileName: z5.string().optional(),
-      relatoAluno: z5.string().optional(),
-      textoAplicabilidade: z5.string().optional(),
-      notaAlunoAplicabilidade: z5.number().min(0).max(10).optional()
+      evidenceImageName: z6.string().optional(),
+      evidenceFileBase64: z6.string().optional(),
+      evidenceFileName: z6.string().optional(),
+      relatoAluno: z6.string().optional(),
+      textoAplicabilidade: z6.string().optional(),
+      notaAlunoAplicabilidade: z6.number().min(0).max(10).optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const aluno = await getAlunoFromCtx(ctx2.user);
-      if (!aluno) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       const session = await getMentoringSessionById(input.sessionId);
       if (!session || session.alunoId !== aluno.id) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Sess\xE3o n\xE3o pertence a este aluno" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Sess\xE3o n\xE3o pertence a este aluno" });
       }
       if (session.taskStatus === "validada") {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "Atividade j\xE1 foi validada, n\xE3o pode ser alterada" });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "Atividade j\xE1 foi validada, n\xE3o pode ser alterada" });
       }
       const evidenceLink = input.evidenceLink?.trim();
       const relatoAluno = input.relatoAluno?.trim();
       const fileBase64 = input.evidenceFileBase64 || input.evidenceImageBase64;
       const fileName = input.evidenceFileName || input.evidenceImageName;
       if (!evidenceLink && !fileBase64 && !relatoAluno) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "Para enviar a atividade, preencha pelo menos um dos campos: link, anexo ou relato." });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "Para enviar a atividade, preencha pelo menos um dos campos: link, anexo ou relato." });
       }
       if (evidenceLink) {
         try {
           new URL(evidenceLink);
         } catch {
-          throw new TRPCError5({ code: "BAD_REQUEST", message: "Link inv\xE1lido. Informe uma URL v\xE1lida come\xE7ando com https://." });
+          throw new TRPCError6({ code: "BAD_REQUEST", message: "Link inv\xE1lido. Informe uma URL v\xE1lida come\xE7ando com https://." });
         }
       }
       if (input.submissionType === "tarefa") {
         if (!input.textoAplicabilidade?.trim()) {
-          throw new TRPCError5({ code: "BAD_REQUEST", message: "Preencha a aplicabilidade pr\xE1tica para envios do tipo Tarefa." });
+          throw new TRPCError6({ code: "BAD_REQUEST", message: "Preencha a aplicabilidade pr\xE1tica para envios do tipo Tarefa." });
         }
         if (input.notaAlunoAplicabilidade === void 0) {
-          throw new TRPCError5({ code: "BAD_REQUEST", message: "Informe uma nota de aplicabilidade de 0 a 10 para envios do tipo Tarefa." });
+          throw new TRPCError6({ code: "BAD_REQUEST", message: "Informe uma nota de aplicabilidade de 0 a 10 para envios do tipo Tarefa." });
         }
       }
       let imageUrl = null;
@@ -26724,11 +26882,11 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       if (fileBase64) {
         const buffer = Buffer.from(fileBase64, "base64");
         if (buffer.length > 10 * 1024 * 1024) {
-          throw new TRPCError5({ code: "BAD_REQUEST", message: "O anexo deve ter no m\xE1ximo 10MB." });
+          throw new TRPCError6({ code: "BAD_REQUEST", message: "O anexo deve ter no m\xE1ximo 10MB." });
         }
         const ext = fileName?.split(".").pop()?.toLowerCase() || "";
         if (!["pdf", "doc", "docx", "jpg", "jpeg", "png", "webp"].includes(ext)) {
-          throw new TRPCError5({ code: "BAD_REQUEST", message: "Formato de anexo inv\xE1lido. Use PDF, DOC, DOCX, JPG, JPEG, PNG ou WEBP." });
+          throw new TRPCError6({ code: "BAD_REQUEST", message: "Formato de anexo inv\xE1lido. Use PDF, DOC, DOCX, JPG, JPEG, PNG ou WEBP." });
         }
         const randomSuffix = Math.random().toString(36).substring(2, 10);
         const fileKey = `evidence/${aluno.id}-${input.sessionId}-${randomSuffix}.${ext || "bin"}`;
@@ -26750,19 +26908,19 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Aluno envia avaliação de aplicabilidade prática ao concluir tarefa
-    submitAplicabilidade: protectedProcedure.input(z5.object({
-      sessionId: z5.number(),
-      textoAplicabilidade: z5.string().min(1, "Descreva como aplicou na pr\xE1tica"),
-      notaAlunoAplicabilidade: z5.number().min(0).max(10)
+    submitAplicabilidade: protectedProcedure.input(z6.object({
+      sessionId: z6.number(),
+      textoAplicabilidade: z6.string().min(1, "Descreva como aplicou na pr\xE1tica"),
+      notaAlunoAplicabilidade: z6.number().min(0).max(10)
     })).mutation(async ({ ctx: ctx2, input }) => {
       const aluno = await getAlunoFromCtx(ctx2.user);
-      if (!aluno) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       const session = await getMentoringSessionById(input.sessionId);
       if (!session || session.alunoId !== aluno.id) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Sess\xE3o n\xE3o pertence a este aluno" });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Sess\xE3o n\xE3o pertence a este aluno" });
       }
       if (session.taskStatus === "validada") {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "Atividade j\xE1 foi validada, n\xE3o pode ser alterada" });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "Atividade j\xE1 foi validada, n\xE3o pode ser alterada" });
       }
       await updateMentoringSession(input.sessionId, {
         textoAplicabilidade: input.textoAplicabilidade,
@@ -26771,7 +26929,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Aluno visualiza comentários de uma sessão
-    myTaskComments: protectedProcedure.input(z5.object({ sessionId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+    myTaskComments: protectedProcedure.input(z6.object({ sessionId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
       const aluno = await getAlunoFromCtx(ctx2.user);
       if (!aluno) return [];
       const session = await getMentoringSessionById(input.sessionId);
@@ -26779,29 +26937,29 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return await getCommentsBySessionId(input.sessionId);
     }),
     // Admin: visualizar reflexões dos alunos
-    reflections: adminOrAdmin2Procedure.input(z5.object({ eventId: z5.number().optional() }).optional()).query(async ({ input }) => {
+    reflections: adminOrAdmin2Procedure.input(z6.object({ eventId: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getWebinarReflections(input?.eventId);
     })
   }),
   // ============ CONTRATOS DO ALUNO ============
   contratos: router({
     // Listar contratos de um aluno
-    byAluno: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    byAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getContratosByAluno(input.alunoId);
     }),
     // Obter contrato por ID
-    byId: protectedProcedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    byId: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       return await getContratoById(input.id);
     }),
     // Criar contrato (admin)
-    create: adminOrAdmin2Procedure.input(z5.object({
-      alunoId: z5.number(),
-      programId: z5.number(),
-      turmaId: z5.number().optional(),
-      periodoInicio: z5.string(),
-      periodoTermino: z5.string(),
-      totalSessoesContratadas: z5.number().min(1),
-      observacoes: z5.string().optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      alunoId: z6.number(),
+      programId: z6.number(),
+      turmaId: z6.number().optional(),
+      periodoInicio: z6.string(),
+      periodoTermino: z6.string(),
+      totalSessoesContratadas: z6.number().min(1),
+      observacoes: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const dataInicio = new Date(input.periodoInicio);
       const dataFim = new Date(input.periodoTermino);
@@ -26826,14 +26984,14 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { id: contratoId, success: true };
     }),
     // Atualizar contrato (admin)
-    update: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      programId: z5.number().optional(),
-      turmaId: z5.number().optional(),
-      periodoInicio: z5.string().optional(),
-      periodoTermino: z5.string().optional(),
-      totalSessoesContratadas: z5.number().min(1).optional(),
-      observacoes: z5.string().optional()
+    update: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      programId: z6.number().optional(),
+      turmaId: z6.number().optional(),
+      periodoInicio: z6.string().optional(),
+      periodoTermino: z6.string().optional(),
+      totalSessoesContratadas: z6.number().min(1).optional(),
+      observacoes: z6.string().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const updateData = { ...data };
@@ -26843,22 +27001,22 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Excluir contrato (soft delete - admin)
-    delete: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteContrato(input.id);
       return { success: true };
     }),
     // Saldo de sessões do aluno
-    saldo: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    saldo: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getSaldoSessoes(input.alunoId);
     })
   }),
   // ============ NÍVEIS DO CONTRATO ============
   contratoNiveis: router({
     // Nível vigente do aluno (status em_andamento)
-    vigente: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    vigente: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getContratoNivelVigenteByAluno(input.alunoId);
     }),
-    statusOperacional: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).query(async ({ input }) => {
+    statusOperacional: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
       const nivel = await getContratoNivelComStatusOperacional(input.alunoId, input.contratoNivelId ?? null);
       return {
         nivel,
@@ -26867,22 +27025,22 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       };
     }),
     // Histórico de níveis por aluno
-    historico: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    historico: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getContratoNiveisByAluno(input.alunoId);
     }),
     // Listagem de níveis por contrato (inspeção/admin)
-    byContrato: protectedProcedure.input(z5.object({ contratoId: z5.number() })).query(async ({ input }) => {
+    byContrato: protectedProcedure.input(z6.object({ contratoId: z6.number() })).query(async ({ input }) => {
       return await getContratoNiveisByContrato(input.contratoId);
     }),
     // Criação manual de nível (admin)
     // As datas são lidas de contratos_aluno via JOIN — não precisam ser informadas aqui
-    create: adminOrAdmin2Procedure.input(z5.object({
-      contratoId: z5.number(),
-      alunoId: z5.number(),
-      nivel: z5.enum(["I", "II", "III", "IV"]),
-      status: z5.enum(["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]),
-      assessmentPdiId: z5.number().nullable().optional(),
-      mentoraPrincipalId: z5.number().nullable().optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      contratoId: z6.number(),
+      alunoId: z6.number(),
+      nivel: z6.enum(["I", "II", "III", "IV"]),
+      status: z6.enum(["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]),
+      assessmentPdiId: z6.number().nullable().optional(),
+      mentoraPrincipalId: z6.number().nullable().optional()
     })).mutation(async ({ input }) => {
       const id = await createContratoNivel({
         ...input,
@@ -26893,12 +27051,12 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     })
   }),
   pedagogiaNivel: router({
-    vigente: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    vigente: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const vigente = await getContratoNivelVigenteByAluno(input.alunoId);
       const snapshot = await getPedagogiaByNivel(input.alunoId, vigente?.id ?? null);
       return { vigente, snapshot };
     }),
-    porNivel: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number() })).query(async ({ input }) => {
+    porNivel: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number() })).query(async ({ input }) => {
       return await getPedagogiaByNivel(input.alunoId, input.contratoNivelId);
     })
   }),
@@ -26914,36 +27072,36 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         alunoId = byExternal?.id ?? null;
       }
       if (!alunoId) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado para a sess\xE3o atual." });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado para a sess\xE3o atual." });
       }
       return await buildEvolucaoAlunoPayload(alunoId);
     }),
-    porAluno: managerProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    porAluno: managerProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await buildEvolucaoAlunoPayload(input.alunoId);
     })
   }),
   certificacao: router({
-    elegibilidade: protectedProcedure.input(z5.object({ contratoNivelId: z5.number(), alunoId: z5.number().optional() })).query(async ({ ctx: ctx2, input }) => {
+    elegibilidade: protectedProcedure.input(z6.object({ contratoNivelId: z6.number(), alunoId: z6.number().optional() })).query(async ({ ctx: ctx2, input }) => {
       let alunoId = input.alunoId ?? ctx2.user.alunoId ?? null;
       if (!alunoId) {
         const alunoCtx = await getAlunoFromCtx(ctx2.user);
         alunoId = alunoCtx?.id ?? null;
       }
-      if (!alunoId) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!alunoId) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       if (input.alunoId && input.alunoId !== alunoId && ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
       }
       return await avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
     }),
-    statusPorNivel: protectedProcedure.input(z5.object({ alunoId: z5.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    statusPorNivel: protectedProcedure.input(z6.object({ alunoId: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       let alunoId = input?.alunoId ?? ctx2.user.alunoId ?? null;
       if (!alunoId) {
         const alunoCtx = await getAlunoFromCtx(ctx2.user);
         alunoId = alunoCtx?.id ?? null;
       }
-      if (!alunoId) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!alunoId) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       if (input?.alunoId && input.alunoId !== alunoId && ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
       }
       const niveis = await getContratoNiveisByAluno(alunoId);
       const status = await Promise.all(niveis.map(async (n) => {
@@ -26968,37 +27126,37 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         const alunoCtx = await getAlunoFromCtx(ctx2.user);
         alunoId = alunoCtx?.id ?? null;
       }
-      if (!alunoId) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!alunoId) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       return await getNivelCertificatesByAluno(alunoId);
     }),
-    emitir: protectedProcedure.input(z5.object({ contratoNivelId: z5.number(), alunoId: z5.number().optional() })).mutation(async ({ ctx: ctx2, input }) => {
+    emitir: protectedProcedure.input(z6.object({ contratoNivelId: z6.number(), alunoId: z6.number().optional() })).mutation(async ({ ctx: ctx2, input }) => {
       let alunoId = input.alunoId ?? ctx2.user.alunoId ?? null;
       if (!alunoId) {
         const alunoCtx = await getAlunoFromCtx(ctx2.user);
         alunoId = alunoCtx?.id ?? null;
       }
-      if (!alunoId) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!alunoId) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       if (input.alunoId && input.alunoId !== alunoId && ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Sem permiss\xE3o para emitir para outro aluno." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para emitir para outro aluno." });
       }
       const existing = await getNivelCertificateByAlunoNivel(alunoId, input.contratoNivelId);
       if (existing) {
-        throw new TRPCError5({ code: "CONFLICT", message: "J\xE1 existe certificado emitido para este n\xEDvel." });
+        throw new TRPCError6({ code: "CONFLICT", message: "J\xE1 existe certificado emitido para este n\xEDvel." });
       }
       const elegibilidade = await avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
       if (!elegibilidade.elegivel) {
-        throw new TRPCError5({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "N\xEDvel n\xE3o eleg\xEDvel para certifica\xE7\xE3o." });
+        throw new TRPCError6({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "N\xEDvel n\xE3o eleg\xEDvel para certifica\xE7\xE3o." });
       }
       const nivel = elegibilidade.nivel;
       const template = await getActiveCertificationTemplateByNivel(nivel?.nivel || "I");
       if (!template) {
-        throw new TRPCError5({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este n\xEDvel." });
+        throw new TRPCError6({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este n\xEDvel." });
       }
       const assinaturas = await getCertificationSignatures();
       const gerente = assinaturas.find((a) => a.tipo === "gerente");
       const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
       if (!gerente || !gestorMaster) {
-        throw new TRPCError5({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigat\xF3rias (gerente/gestor_master) ausentes." });
+        throw new TRPCError6({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigat\xF3rias (gerente/gestor_master) ausentes." });
       }
       const pedagogia = await getPedagogiaByNivel(alunoId, input.contratoNivelId);
       const mentorasUnicas = Array.from(
@@ -27007,7 +27165,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         ).values()
       );
       if (mentorasUnicas.length === 0) {
-        throw new TRPCError5({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora v\xE1lida encontrada no n\xEDvel." });
+        throw new TRPCError6({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora v\xE1lida encontrada no n\xEDvel." });
       }
       const hashDocumento = `${alunoId}-${input.contratoNivelId}-${Date.now()}`;
       const arquivoUrl = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
@@ -27029,12 +27187,12 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     templates: adminOrAdmin2Procedure.query(async () => {
       return await getCertificationTemplates();
     }),
-    createTemplate: adminOrAdmin2Procedure.input(z5.object({
-      nome: z5.string().min(1),
-      nivel: z5.enum(["I", "II", "III", "IV"]),
-      ativo: z5.number().min(0).max(1).optional(),
-      arquivoModelo: z5.string().optional(),
-      camposMapeados: z5.any().optional()
+    createTemplate: adminOrAdmin2Procedure.input(z6.object({
+      nome: z6.string().min(1),
+      nivel: z6.enum(["I", "II", "III", "IV"]),
+      ativo: z6.number().min(0).max(1).optional(),
+      arquivoModelo: z6.string().optional(),
+      camposMapeados: z6.any().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const id = await createCertificationTemplate({
         ...input,
@@ -27049,13 +27207,13 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     assinaturas: adminOrAdmin2Procedure.query(async () => {
       return await getCertificationSignatures();
     }),
-    createAssinatura: adminOrAdmin2Procedure.input(z5.object({
-      userId: z5.number().optional(),
-      tipo: z5.enum(["gerente", "mentora", "gestor_master"]),
-      nomeExibicao: z5.string().min(1),
-      cargo: z5.string().optional(),
-      imagemAssinaturaUrl: z5.string().optional(),
-      ativo: z5.number().min(0).max(1).optional()
+    createAssinatura: adminOrAdmin2Procedure.input(z6.object({
+      userId: z6.number().optional(),
+      tipo: z6.enum(["gerente", "mentora", "gestor_master"]),
+      nomeExibicao: z6.string().min(1),
+      cargo: z6.string().optional(),
+      imagemAssinaturaUrl: z6.string().optional(),
+      ativo: z6.number().min(0).max(1).optional()
     })).mutation(async ({ input }) => {
       const id = await createCertificationSignature({
         ...input,
@@ -27067,7 +27225,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
   // ============ JORNADA DO ALUNO ============
   jornadaAntiga: router({
     // Jornada completa (Contrato + Macro Jornadas + Micro Jornadas)
-    completa: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    completa: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getJornadaCompleta(input.alunoId);
     }),
     // Jornada do aluno logado (para o Portal do Aluno)
@@ -27077,15 +27235,15 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return await getJornadaCompleta(aluno.id);
     }),
     // Atualizar nível e metas de competência (mentora)
-    updateNivel: protectedProcedure.input(z5.object({
-      assessmentCompetenciaId: z5.number(),
-      nivelAtual: z5.number().min(0).max(100).optional(),
-      metaCiclo1: z5.number().min(0).max(100).optional(),
-      metaCiclo2: z5.number().min(0).max(100).optional(),
-      metaFinal: z5.number().min(0).max(100).optional(),
-      justificativa: z5.string().optional(),
-      sessaoReferencia: z5.number().optional(),
-      observacao: z5.string().optional()
+    updateNivel: protectedProcedure.input(z6.object({
+      assessmentCompetenciaId: z6.number(),
+      nivelAtual: z6.number().min(0).max(100).optional(),
+      metaCiclo1: z6.number().min(0).max(100).optional(),
+      metaCiclo2: z6.number().min(0).max(100).optional(),
+      metaFinal: z6.number().min(0).max(100).optional(),
+      justificativa: z6.string().optional(),
+      sessaoReferencia: z6.number().optional(),
+      observacao: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const updates = {};
       if (input.nivelAtual !== void 0) updates.nivelAtual = String(input.nivelAtual);
@@ -27108,10 +27266,10 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Definir meta final de competência (mentora - no assessment)
-    setMeta: protectedProcedure.input(z5.object({
-      assessmentCompetenciaId: z5.number(),
-      metaFinal: z5.number().min(0).max(100),
-      justificativa: z5.string().optional()
+    setMeta: protectedProcedure.input(z6.object({
+      assessmentCompetenciaId: z6.number(),
+      metaFinal: z6.number().min(0).max(100),
+      justificativa: z6.string().optional()
     })).mutation(async ({ input }) => {
       await setMetaFinalCompetencia(
         input.assessmentCompetenciaId,
@@ -27121,22 +27279,22 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Histórico de evolução de uma competência
-    historico: protectedProcedure.input(z5.object({ assessmentCompetenciaId: z5.number() })).query(async ({ input }) => {
+    historico: protectedProcedure.input(z6.object({ assessmentCompetenciaId: z6.number() })).query(async ({ input }) => {
       return await getHistoricoNivel(input.assessmentCompetenciaId);
     }),
     // Verificar se precisa reavaliar (gatilho a cada 3 sessões)
-    checkReavaliacao: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    checkReavaliacao: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await checkReavaliacaoPendente(input.alunoId);
     }),
     // Jornadas agrupadas por turma (para Dashboard Gestor)
-    porTurma: managerProcedure.input(z5.object({ empresa: z5.string().optional() })).query(async ({ input }) => {
+    porTurma: managerProcedure.input(z6.object({ empresa: z6.string().optional() })).query(async ({ input }) => {
       return await getJornadasPorTurma(input.empresa);
     })
   }),
   // Cases de Sucesso routes
   cases: router({
     // Listar cases de um aluno
-    byAluno: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).query(async ({ input }) => {
+    byAluno: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
       return await getCasesSucessoByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Listar todos os cases (admin)
@@ -27144,15 +27302,15 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return await getAllCasesSucesso();
     }),
     // Criar case de sucesso
-    create: adminOrAdmin2Procedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      trilhaId: z5.number().optional(),
-      trilhaNome: z5.string().optional(),
-      entregue: z5.number().min(0).max(1),
-      titulo: z5.string().optional(),
-      descricao: z5.string().optional(),
-      observacao: z5.string().optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      trilhaId: z6.number().optional(),
+      trilhaNome: z6.string().optional(),
+      entregue: z6.number().min(0).max(1),
+      titulo: z6.string().optional(),
+      descricao: z6.string().optional(),
+      observacao: z6.string().optional()
     })).mutation(async ({ input }) => {
       await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "cases.create");
       const id = await createCaseSucesso({
@@ -27169,12 +27327,12 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { id };
     }),
     // Atualizar case de sucesso
-    update: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      entregue: z5.number().min(0).max(1).optional(),
-      titulo: z5.string().optional(),
-      descricao: z5.string().optional(),
-      observacao: z5.string().optional()
+    update: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      entregue: z6.number().min(0).max(1).optional(),
+      titulo: z6.string().optional(),
+      descricao: z6.string().optional(),
+      observacao: z6.string().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const updateData = { ...data };
@@ -27185,19 +27343,19 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Deletar case de sucesso
-    delete: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteCaseSucesso(input.id);
       return { success: true };
     }),
     // Alternar visibilidade do case no Mural (admin) — usa campo 'entregue' existente
-    toggleVisibilidade: adminOrAdmin2Procedure.input(z5.object({ id: z5.number(), visivel: z5.number().min(0).max(1) })).mutation(async ({ input }) => {
+    toggleVisibilidade: adminOrAdmin2Procedure.input(z6.object({ id: z6.number(), visivel: z6.number().min(0).max(1) })).mutation(async ({ input }) => {
       await updateCaseSucesso(input.id, { entregue: input.visivel });
       return { success: true, visivelNoMural: input.visivel };
     }),
     // === PROCEDURES DO ALUNO (protectedProcedure, não admin) ===
     // Listar meus cases (aluno logado)
     meusCases: protectedProcedure.query(async ({ ctx: ctx2 }) => {
-      if (!ctx2.user) throw new TRPCError5({ code: "UNAUTHORIZED" });
+      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
       let aluno;
       if (ctx2.user.alunoId) {
         const allAlunos = await getAlunos();
@@ -27210,29 +27368,29 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     }),
     // Enviar case de sucesso (aluno logado)
     // Enviar Relatório de Impacto (antigo Case de Sucesso) - aluno logado
-    enviar: protectedProcedure.input(z5.object({
-      trilhaId: z5.number(),
-      trilhaNome: z5.string(),
-      titulo: z5.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
-      resumoPublico: z5.string().min(20, "Resumo p\xFAblico deve ter ao menos 20 caracteres").max(500, "Resumo p\xFAblico deve ter no m\xE1ximo 500 caracteres"),
-      descricao: z5.string().optional(),
+    enviar: protectedProcedure.input(z6.object({
+      trilhaId: z6.number(),
+      trilhaNome: z6.string(),
+      titulo: z6.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
+      resumoPublico: z6.string().min(20, "Resumo p\xFAblico deve ter ao menos 20 caracteres").max(500, "Resumo p\xFAblico deve ter no m\xE1ximo 500 caracteres"),
+      descricao: z6.string().optional(),
       // Campos estruturados do Relat\u00f3rio de Impacto
-      oQueAprendi: z5.string().min(1, 'Campo "O que aprendi" \xE9 obrigat\xF3rio'),
-      oQueMudei: z5.string().min(1, 'Campo "O que mudei" \xE9 obrigat\xF3rio'),
-      resultadoMensuravel: z5.string().min(1, 'Campo "Resultado mensur\xE1vel" \xE9 obrigat\xF3rio'),
-      antesVsDepois: z5.string().min(1, 'Campo "Antes vs. Depois" \xE9 obrigat\xF3rio'),
+      oQueAprendi: z6.string().min(1, 'Campo "O que aprendi" \xE9 obrigat\xF3rio'),
+      oQueMudei: z6.string().min(1, 'Campo "O que mudei" \xE9 obrigat\xF3rio'),
+      resultadoMensuravel: z6.string().min(1, 'Campo "Resultado mensur\xE1vel" \xE9 obrigat\xF3rio'),
+      antesVsDepois: z6.string().min(1, 'Campo "Antes vs. Depois" \xE9 obrigat\xF3rio'),
       // Arquivo principal (opcional agora, pois o relat\u00f3rio \u00e9 o formul\u00e1rio)
-      fileBase64: z5.string().optional(),
-      fileName: z5.string().optional(),
-      mimeType: z5.string().optional(),
+      fileBase64: z6.string().optional(),
+      fileName: z6.string().optional(),
+      mimeType: z6.string().optional(),
       // Evidência (foto, print, documento)
-      evidenciaBase64: z5.string().optional(),
-      evidenciaFileName: z5.string().optional(),
-      evidenciaMimeType: z5.string().optional(),
+      evidenciaBase64: z6.string().optional(),
+      evidenciaFileName: z6.string().optional(),
+      evidenciaMimeType: z6.string().optional(),
       // Aplicabilidade prática
-      notaAlunoAplicabilidade: z5.number().min(0).max(10).optional()
+      notaAlunoAplicabilidade: z6.number().min(0).max(10).optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
-      if (!ctx2.user) throw new TRPCError5({ code: "UNAUTHORIZED" });
+      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
       let aluno;
       if (ctx2.user.alunoId) {
         const allAlunos = await getAlunos();
@@ -27240,7 +27398,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       }
       if (!aluno && ctx2.user.email) aluno = await getAlunoFromCtx(ctx2.user);
       if (!aluno) aluno = await getAlunoByExternalId(ctx2.user.openId);
-      if (!aluno) throw new TRPCError5({ code: "NOT_FOUND", message: "Perfil de aluno n\xE3o encontrado" });
+      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Perfil de aluno n\xE3o encontrado" });
       let fileUrl = null;
       let fileKey = null;
       let fileNameSaved = null;
@@ -27381,7 +27539,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { id: resultId, url: fileUrl, updated };
     }),
     // Vitrine pública de cases para o Mural do aluno
-    vitrineMural: protectedProcedure.input(z5.object({ limit: z5.number().min(1).max(200).optional() }).optional()).query(async ({ input }) => {
+    vitrineMural: protectedProcedure.input(z6.object({ limit: z6.number().min(1).max(200).optional() }).optional()).query(async ({ input }) => {
       const items = await getCasesVitrineMural(input?.limit ?? 12);
       return items.map((i) => ({
         caseId: i.caseId,
@@ -27394,20 +27552,20 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       }));
     }),
     // Aluno demonstra interesse em conhecer um case da vitrine
-    demonstrarInteresse: protectedProcedure.input(z5.object({
-      caseId: z5.number()
+    demonstrarInteresse: protectedProcedure.input(z6.object({
+      caseId: z6.number()
     })).mutation(async ({ ctx: ctx2, input }) => {
-      if (!ctx2.user) throw new TRPCError5({ code: "UNAUTHORIZED" });
+      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
       const caseSelecionado = await getCaseSucessoById(input.caseId);
       if (!caseSelecionado || caseSelecionado.entregue !== 1) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Case n\xE3o encontrado ou indispon\xEDvel." });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Case n\xE3o encontrado ou indispon\xEDvel." });
       }
       const alunoInteressado = await getAlunoByUserId(Number(ctx2.user.id));
       if (!alunoInteressado) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Perfil de aluno interessado n\xE3o encontrado." });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Perfil de aluno interessado n\xE3o encontrado." });
       }
       if (alunoInteressado.id === caseSelecionado.alunoId) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "Voc\xEA n\xE3o pode demonstrar interesse no seu pr\xF3prio case." });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "Voc\xEA n\xE3o pode demonstrar interesse no seu pr\xF3prio case." });
       }
       const mensagem = `Ol\xE1! Parab\xE9ns pelo Case de Sucesso.
 Queria conhecer o seu case.
@@ -27440,17 +27598,17 @@ ${mensagem}`,
       return { success: true, interesseId, mensagem };
     }),
     // Autor do case lista interesses recebidos
-    meusInteressesRecebidos: protectedProcedure.input(z5.object({ onlyUnread: z5.boolean().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
-      if (!ctx2.user) throw new TRPCError5({ code: "UNAUTHORIZED" });
+    meusInteressesRecebidos: protectedProcedure.input(z6.object({ onlyUnread: z6.boolean().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
       const aluno = await getAlunoByUserId(Number(ctx2.user.id));
       if (!aluno) return [];
       return await getCaseInteressesByAutor(aluno.id, Boolean(input?.onlyUnread));
     }),
     // Autor do case marca interesse como lido
-    marcarInteresseLido: protectedProcedure.input(z5.object({ interesseId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
-      if (!ctx2.user) throw new TRPCError5({ code: "UNAUTHORIZED" });
+    marcarInteresseLido: protectedProcedure.input(z6.object({ interesseId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
       const aluno = await getAlunoByUserId(Number(ctx2.user.id));
-      if (!aluno) throw new TRPCError5({ code: "NOT_FOUND", message: "Perfil do aluno n\xE3o encontrado." });
+      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Perfil do aluno n\xE3o encontrado." });
       await markCaseInteresseAsRead(input.interesseId, aluno.id);
       return { success: true };
     })
@@ -27458,30 +27616,30 @@ ${mensagem}`,
   // ============ METAS DE DESENVOLVIMENTO ============
   metas: router({
     // Listar metas de um aluno (para mentora e gestor)
-    listar: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      assessmentPdiId: z5.number().optional(),
-      contratoNivelId: z5.number().nullable().optional()
+    listar: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      assessmentPdiId: z6.number().optional(),
+      contratoNivelId: z6.number().nullable().optional()
     })).query(async ({ input }) => {
       return await getMetasDetalhadasByNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Listar metas por competência específica
-    porCompetencia: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      assessmentCompetenciaId: z5.number()
+    porCompetencia: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      assessmentCompetenciaId: z6.number()
     })).query(async ({ input }) => {
       return await getMetasByCompetencia(input.alunoId, input.assessmentCompetenciaId);
     }),
     // Criar nova meta (mentora)
-    criar: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      assessmentCompetenciaId: z5.number(),
-      competenciaId: z5.number(),
-      assessmentPdiId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      taskLibraryId: z5.number().nullable().optional(),
-      titulo: z5.string().min(1),
-      descricao: z5.string().nullable().optional()
+    criar: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      assessmentCompetenciaId: z6.number(),
+      competenciaId: z6.number(),
+      assessmentPdiId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      taskLibraryId: z6.number().nullable().optional(),
+      titulo: z6.string().min(1),
+      descricao: z6.string().nullable().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "metas.criar");
       const consultors2 = await getConsultors();
@@ -27494,26 +27652,26 @@ ${mensagem}`,
       });
     }),
     // Atualizar meta existente
-    atualizar: protectedProcedure.input(z5.object({
-      id: z5.number(),
-      titulo: z5.string().min(1).optional(),
-      descricao: z5.string().nullable().optional()
+    atualizar: protectedProcedure.input(z6.object({
+      id: z6.number(),
+      titulo: z6.string().min(1).optional(),
+      descricao: z6.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       return await updateMeta(id, data);
     }),
     // Remover meta (soft delete)
-    remover: protectedProcedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    remover: protectedProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       return await deleteMeta(input.id);
     }),
     // Registrar acompanhamento mensal
-    registrarAcompanhamento: protectedProcedure.input(z5.object({
-      metaId: z5.number(),
-      alunoId: z5.number(),
-      mes: z5.number().min(1).max(12),
-      ano: z5.number().min(2024).max(2030),
-      status: z5.enum(["cumprida", "nao_cumprida", "parcial"]),
-      observacao: z5.string().nullable().optional()
+    registrarAcompanhamento: protectedProcedure.input(z6.object({
+      metaId: z6.number(),
+      alunoId: z6.number(),
+      mes: z6.number().min(1).max(12),
+      ano: z6.number().min(2024).max(2030),
+      status: z6.enum(["cumprida", "nao_cumprida", "parcial"]),
+      observacao: z6.string().nullable().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const consultors2 = await getConsultors();
       const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
@@ -27524,14 +27682,14 @@ ${mensagem}`,
       });
     }),
     // Listar acompanhamentos de uma meta
-    acompanhamentos: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      metaId: z5.number().optional()
+    acompanhamentos: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      metaId: z6.number().optional()
     })).query(async ({ input }) => {
       return await getMetaAcompanhamentos(input.alunoId, input.metaId);
     }),
     // Resumo de metas de um aluno (para cards e dashboards)
-    resumo: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    resumo: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getMetasResumo(input.alunoId);
     }),
     // Resumo de metas de todos os alunos (para Dashboard Gestor)
@@ -27540,7 +27698,7 @@ ${mensagem}`,
     }),
     // Minhas metas (para o aluno logado ver no seu dashboard)
     minhas: protectedProcedure.query(async ({ ctx: ctx2 }) => {
-      if (!ctx2.user) throw new TRPCError5({ code: "UNAUTHORIZED" });
+      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
       let alunoId = ctx2.user.alunoId || null;
       if (!alunoId && ctx2.user.email) {
         const aluno = await getAlunoFromCtx(ctx2.user);
@@ -27556,8 +27714,8 @@ ${mensagem}`,
       return { alunoId, metas: metasDetalhadas, resumo };
     }),
     // Listar itens da biblioteca de ações (para seleção)
-    biblioteca: protectedProcedure.input(z5.object({
-      competencia: z5.string().optional()
+    biblioteca: protectedProcedure.input(z6.object({
+      competencia: z6.string().optional()
     }).optional()).query(async ({ input }) => {
       const all = await getAllTaskLibrary();
       if (input?.competencia) {
@@ -27566,9 +27724,9 @@ ${mensagem}`,
       return all;
     }),
     // Sugerir meta/desafio com IA para uma competência
-    sugerirComIA: protectedProcedure.input(z5.object({
-      competencia: z5.string(),
-      alunoNome: z5.string().optional()
+    sugerirComIA: protectedProcedure.input(z6.object({
+      competencia: z6.string(),
+      alunoNome: z6.string().optional()
     })).mutation(async ({ input }) => {
       const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
       const response = await invokeLLM2({
@@ -27610,16 +27768,16 @@ Responda APENAS em JSON com o formato:
         }
       });
       const content = response.choices?.[0]?.message?.content;
-      if (!content) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar sugest\xE3o com IA" });
+      if (!content) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar sugest\xE3o com IA" });
       const contentStr = typeof content === "string" ? content : JSON.stringify(content);
       try {
         return JSON.parse(contentStr);
       } catch {
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inv\xE1lido" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inv\xE1lido" });
       }
     }),
     // Verificar se precisa atualizar metas (a cada 3 meses ou 3 sessões)
-    alertaAtualizacao: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    alertaAtualizacao: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const { alunoId } = input;
       return await getAlertaAtualizacaoMetas(alunoId);
     })
@@ -27632,20 +27790,20 @@ Responda APENAS em JSON com o formato:
       return { blocos: DISC_BLOCOS2, totalBlocos: DISC_BLOCOS2.length };
     }),
     // Salvar respostas e calcular resultado DISC (escolha forçada)
-    salvarRespostas: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      respostas: z5.array(z5.object({
-        blocoIndex: z5.number(),
-        maisId: z5.string(),
-        menosId: z5.string(),
-        maisDimensao: z5.enum(["D", "I", "S", "C"]),
-        menosDimensao: z5.enum(["D", "I", "S", "C"])
+    salvarRespostas: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      respostas: z6.array(z6.object({
+        blocoIndex: z6.number(),
+        maisId: z6.string(),
+        menosId: z6.string(),
+        maisDimensao: z6.enum(["D", "I", "S", "C"]),
+        menosDimensao: z6.enum(["D", "I", "S", "C"])
       }))
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.onboardingLiberado) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
       }
       const { calcularDiscScores: calcularDiscScores2 } = (init_discData(), __toCommonJS(discData_exports));
       const existingResult = await getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
@@ -27690,7 +27848,7 @@ Responda APENAS em JSON com o formato:
       return resultado;
     }),
     // Buscar resultado DISC de um aluno
-    resultado: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).query(async ({ input }) => {
+    resultado: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
       return await getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Buscar perfis DISC (descrições)
@@ -27699,11 +27857,11 @@ Responda APENAS em JSON com o formato:
       return DISC_PERFIS2;
     }),
     // Buscar histórico completo de resultados DISC de um aluno (todos os ciclos)
-    historico: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    historico: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getAllDiscResultadosByAluno(input.alunoId);
     }),
     // Comparativo de evolução entre ciclos DISC
-    comparativo: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    comparativo: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const resultados = await getAllDiscResultadosByAluno(input.alunoId);
       if (resultados.length < 2) return null;
       const primeiro = resultados[0];
@@ -27738,10 +27896,10 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Admin: resetar teste DISC de um aluno (permite refazer)
-    resetAluno: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input }) => {
+    resetAluno: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
       const aluno = await getAlunoById(input.alunoId);
       if (!aluno) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       const resultado = await resetDiscAluno(input.alunoId);
       return {
@@ -27752,7 +27910,7 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Verificar se o aluno é elegível para reassessment (contrato vencido ou próximo do vencimento)
-    verificarReassessment: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    verificarReassessment: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const contratos = await getContratosByAluno(input.alunoId);
       if (!contratos || contratos.length === 0) {
         return { elegivel: false, motivo: "Sem contrato ativo" };
@@ -27778,13 +27936,13 @@ Responda APENAS em JSON com o formato:
   // ============ AUTOPERCEPÇÃO DE COMPETÊNCIAS ============
   autopercep\u00E7\u00E3o: router({
     // Salvar autoavaliação de competências
-    salvar: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      avaliacoes: z5.array(z5.object({
-        competenciaId: z5.number(),
-        trilhaId: z5.number(),
-        nota: z5.number().min(1).max(5)
+    salvar: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      avaliacoes: z6.array(z6.object({
+        competenciaId: z6.number(),
+        trilhaId: z6.number(),
+        nota: z6.number().min(1).max(5)
       }))
     })).mutation(async ({ input }) => {
       await saveAutopercepcoes(input.alunoId, input.avaliacoes.map((a) => ({
@@ -27796,19 +27954,19 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Buscar autoavaliação de um aluno
-    porAluno: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
       return await getAutopercepcoesByNivel(input.alunoId, input.contratoNivelId ?? null);
     })
   }),
   // ============ CONTRIBUIÇÕES DA MENTORA ============
   contribuicoesMentora: router({
     // Adicionar contribuição
-    adicionar: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      consultorId: z5.number(),
-      tipo: z5.enum(["disc", "competencia", "geral"]),
-      competenciaId: z5.number().nullable().optional(),
-      conteudo: z5.string().min(1)
+    adicionar: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      consultorId: z6.number(),
+      tipo: z6.enum(["disc", "competencia", "geral"]),
+      competenciaId: z6.number().nullable().optional(),
+      conteudo: z6.string().min(1)
     })).mutation(async ({ input }) => {
       await saveContribuicaoMentora({
         alunoId: input.alunoId,
@@ -27820,26 +27978,26 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Atualizar contribuição
-    atualizar: protectedProcedure.input(z5.object({
-      id: z5.number(),
-      conteudo: z5.string().min(1)
+    atualizar: protectedProcedure.input(z6.object({
+      id: z6.number(),
+      conteudo: z6.string().min(1)
     })).mutation(async ({ input }) => {
       await updateContribuicaoMentora(input.id, input.conteudo);
       return { success: true };
     }),
     // Remover contribuição
-    remover: protectedProcedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    remover: protectedProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteContribuicaoMentora(input.id);
       return { success: true };
     }),
     // Listar contribuições de um aluno
-    porAluno: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       return await getContribuicoesMentora(input.alunoId);
     })
   }),
   // ============ PROGRESSO DO ONBOARDING ============
   onboarding: router({
-    contextoNivel: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().optional() })).query(async ({ input }) => {
+    contextoNivel: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().optional() })).query(async ({ input }) => {
       const vigente = await getContratoNivelVigenteByAluno(input.alunoId);
       const historico = await getContratoNiveisByAluno(input.alunoId);
       const visualizandoNivelId = input.contratoNivelId ?? vigente?.id ?? null;
@@ -27863,21 +28021,21 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Salvar dados do cadastro (etapa 1)
-    salvarCadastro: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      nome: z5.string().optional(),
-      email: z5.string().optional(),
-      telefone: z5.string().optional(),
-      cargo: z5.string().optional(),
-      areaAtuacao: z5.string().optional(),
-      minicurriculo: z5.string().optional(),
-      quemEVoce: z5.string().optional()
+    salvarCadastro: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      nome: z6.string().optional(),
+      email: z6.string().optional(),
+      telefone: z6.string().optional(),
+      cargo: z6.string().optional(),
+      areaAtuacao: z6.string().optional(),
+      minicurriculo: z6.string().optional(),
+      quemEVoce: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { alunoId, nome, email, telefone, cargo, areaAtuacao, minicurriculo, quemEVoce } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
       }
       const result = await updateAluno(alunoId, {
         name: nome,
@@ -27913,60 +28071,60 @@ Responda APENAS em JSON com o formato:
       return result;
     }),
     // Salvar perfil profissional complementar (etapa 1 expandida)
-    salvarPerfilProfissional: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
+    salvarPerfilProfissional: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
       // Dados pessoais
-      dataNascimento: z5.string().optional(),
-      estadoCivil: z5.string().optional(),
-      temFilhos: z5.boolean().optional(),
-      quantidadeFilhos: z5.number().optional(),
+      dataNascimento: z6.string().optional(),
+      estadoCivil: z6.string().optional(),
+      temFilhos: z6.boolean().optional(),
+      quantidadeFilhos: z6.number().optional(),
       // Expectativas
-      expectativaCurtoPrazo: z5.string().optional(),
-      expectativaMedioPrazo: z5.string().optional(),
-      expectativaLongoPrazo: z5.string().optional(),
+      expectativaCurtoPrazo: z6.string().optional(),
+      expectativaMedioPrazo: z6.string().optional(),
+      expectativaLongoPrazo: z6.string().optional(),
       // Formação
-      formacaoSuperior: z5.array(z5.object({
-        area: z5.string(),
-        curso: z5.string(),
-        instituicao: z5.string(),
-        ano: z5.number().optional()
+      formacaoSuperior: z6.array(z6.object({
+        area: z6.string(),
+        curso: z6.string(),
+        instituicao: z6.string(),
+        ano: z6.number().optional()
       })).optional(),
-      posGraduacoes: z5.array(z5.object({
-        tipo: z5.string(),
-        area: z5.string(),
-        nome: z5.string(),
-        instituicao: z5.string(),
-        ano: z5.number().optional()
+      posGraduacoes: z6.array(z6.object({
+        tipo: z6.string(),
+        area: z6.string(),
+        nome: z6.string(),
+        instituicao: z6.string(),
+        ano: z6.number().optional()
       })).optional(),
-      cursosExtracurriculares: z5.array(z5.object({
-        area: z5.string(),
-        nome: z5.string(),
-        instituicao: z5.string(),
-        cargaHoraria: z5.number(),
-        ano: z5.number().optional()
+      cursosExtracurriculares: z6.array(z6.object({
+        area: z6.string(),
+        nome: z6.string(),
+        instituicao: z6.string(),
+        cargaHoraria: z6.number(),
+        ano: z6.number().optional()
       })).optional(),
       // Experiências anteriores
-      experienciasAnteriores: z5.array(z5.object({
-        empresa: z5.string(),
-        cargo: z5.string(),
-        de: z5.string().optional(),
-        ate: z5.string().optional()
+      experienciasAnteriores: z6.array(z6.object({
+        empresa: z6.string(),
+        cargo: z6.string(),
+        de: z6.string().optional(),
+        ate: z6.string().optional()
       })).optional(),
       // Liderança
-      experienciaLideranca: z5.boolean().optional(),
-      tipoEquipeGerenciada: z5.array(z5.string()).optional(),
-      gerenciouOutrosLideres: z5.boolean().optional(),
+      experienciaLideranca: z6.boolean().optional(),
+      tipoEquipeGerenciada: z6.array(z6.string()).optional(),
+      gerenciouOutrosLideres: z6.boolean().optional(),
       // Redes sociais
-      linkedinUrl: z5.string().optional(),
-      facebookUrl: z5.string().optional(),
-      instagramUrl: z5.string().optional(),
-      tiktokUrl: z5.string().optional(),
-      outraRedeUrl: z5.string().optional(),
+      linkedinUrl: z6.string().optional(),
+      facebookUrl: z6.string().optional(),
+      instagramUrl: z6.string().optional(),
+      tiktokUrl: z6.string().optional(),
+      outraRedeUrl: z6.string().optional(),
       // Currículo
-      curriculoUrl: z5.string().optional()
+      curriculoUrl: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const sets = [];
       const vals = [];
       const addField = (col, val) => {
@@ -28019,7 +28177,7 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Buscar perfil profissional do aluno
-    buscarPerfilProfissional: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    buscarPerfilProfissional: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return null;
       const rawConn = database.$client.promise ? database.$client.promise() : database.$client;
@@ -28054,11 +28212,11 @@ Responda APENAS em JSON com o formato:
       return null;
     }),
     // Upload de currículo do aluno
-    uploadCurriculo: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      nomeArquivo: z5.string(),
-      tipoMime: z5.string(),
-      dados: z5.string()
+    uploadCurriculo: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      nomeArquivo: z6.string(),
+      tipoMime: z6.string(),
+      dados: z6.string()
       // base64
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.dados, "base64");
@@ -28067,10 +28225,10 @@ Responda APENAS em JSON com o formato:
       return { url, success: true };
     }),
     // Upload de foto de perfil do aluno
-    uploadFotoAluno: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      fotoBase64: z5.string(),
-      mimeType: z5.string().default("image/jpeg")
+    uploadFotoAluno: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      fotoBase64: z6.string(),
+      mimeType: z6.string().default("image/jpeg")
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fotoBase64, "base64");
       const ext = input.mimeType === "image/png" ? "png" : "jpg";
@@ -28080,14 +28238,14 @@ Responda APENAS em JSON com o formato:
       return { url, success: true };
     }),
     // Escolher mentora (etapa 3)
-    escolherMentora: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      consultorId: z5.number()
+    escolherMentora: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      consultorId: z6.number()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { alunoId, consultorId } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
       }
       const result = await updateAluno(alunoId, { consultorId });
       try {
@@ -28156,16 +28314,16 @@ Responda APENAS em JSON com o formato:
       return result;
     }),
     // Trocar mentora do aluno (ação administrativa)
-    trocarMentora: adminOrAdmin2Procedure.input(z5.object({
-      alunoId: z5.number(),
-      novaMentoraId: z5.number()
+    trocarMentora: adminOrAdmin2Procedure.input(z6.object({
+      alunoId: z6.number(),
+      novaMentoraId: z6.number()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { alunoId, novaMentoraId } = input;
       const aluno = await getAlunoById(alunoId);
-      if (!aluno) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       const mentoraAntiga = aluno.consultorId ? await getConsultorById(aluno.consultorId) : null;
       const mentoraNova = await getConsultorById(novaMentoraId);
-      if (!mentoraNova) throw new TRPCError5({ code: "NOT_FOUND", message: "Nova mentora n\xE3o encontrada." });
+      if (!mentoraNova) throw new TRPCError6({ code: "NOT_FOUND", message: "Nova mentora n\xE3o encontrada." });
       await updateAluno(alunoId, { consultorId: novaMentoraId });
       try {
         const rawConn = await getRawConnection();
@@ -28226,17 +28384,17 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Solicitar alteração de mentora (sem trocar consultorId)
-    solicitarAlteracaoMentora: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      justificativa: z5.string().trim().min(15, "A justificativa deve ter no m\xEDnimo 15 caracteres.").max(1e3, "A justificativa deve ter no m\xE1ximo 1000 caracteres.")
+    solicitarAlteracaoMentora: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      justificativa: z6.string().trim().min(15, "A justificativa deve ter no m\xEDnimo 15 caracteres.").max(1e3, "A justificativa deve ter no m\xE1ximo 1000 caracteres.")
     })).mutation(async ({ input }) => {
       const { alunoId, justificativa } = input;
       const aluno = await getAlunoById(alunoId);
       if (!aluno) {
-        throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       }
       if (!aluno.consultorId) {
-        throw new TRPCError5({ code: "BAD_REQUEST", message: "N\xE3o h\xE1 mentora confirmada para este aluno." });
+        throw new TRPCError6({ code: "BAD_REQUEST", message: "N\xE3o h\xE1 mentora confirmada para este aluno." });
       }
       const mentoraAtual = await getConsultorById(aluno.consultorId);
       const { sendEmail: sendEmail2, buildSolicitacaoAlteracaoMentoraEmail: buildSolicitacaoAlteracaoMentoraEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
@@ -28287,19 +28445,19 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Criar agendamento (etapa 4)
-    criarAgendamento: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      consultorId: z5.number(),
-      scheduledDate: z5.string(),
-      startTime: z5.string(),
-      endTime: z5.string(),
-      googleMeetLink: z5.string().optional(),
-      notes: z5.string().optional()
+    criarAgendamento: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      consultorId: z6.number(),
+      scheduledDate: z6.string(),
+      startTime: z6.string(),
+      endTime: z6.string(),
+      googleMeetLink: z6.string().optional(),
+      notes: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { alunoId, consultorId, scheduledDate, startTime, endTime, googleMeetLink, notes } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const result = await createGroupAppointment({
         consultorId,
@@ -28478,16 +28636,16 @@ Responda APENAS em JSON com o formato:
       return { success: result.success, appointmentId: result.id };
     }),
     // Marcar que o aluno assistiu o vídeo DISC
-    markDiscVideoWatched: protectedProcedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input }) => {
+    markDiscVideoWatched: protectedProcedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
       return await markDiscVideoWatched(input.alunoId);
     }),
     // Verificar se o aluno já assistiu o vídeo DISC
-    hasWatchedDiscVideo: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    hasWatchedDiscVideo: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const watched = await hasWatchedDiscVideo(input.alunoId);
       return { watched };
     }),
     // Retorna o step atual do onboarding baseado nos dados do banco
-    progresso: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).query(async ({ input }) => {
+    progresso: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
       const { alunoId } = input;
       if (!alunoId || alunoId === 0) return { step: 1, discCompleto: false, mentoraEscolhida: false, agendamentoFeito: false };
       const contratoNivelId = input.contratoNivelId ?? (await getContratoNivelVigenteByAluno(alunoId))?.id ?? null;
@@ -28582,10 +28740,10 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Marcar PDI como visualizado (etapa 6)
-    marcarPdiVisualizado: protectedProcedure.input(z5.object({ alunoId: z5.number(), contratoNivelId: z5.number().nullable().optional() })).mutation(async ({ input, ctx: ctx2 }) => {
+    marcarPdiVisualizado: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
         pdiVisualizado: 1,
@@ -28594,14 +28752,14 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Marcar vídeo como assistido (etapa 7)
-    marcarVideoAssistido: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      chave: z5.enum(["boas_vindas", "competencias", "webinars", "tarefas", "metas"])
+    marcarVideoAssistido: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      chave: z6.enum(["boas_vindas", "competencias", "webinars", "tarefas", "metas"])
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const fieldMap = {
         boas_vindas: "videoBoasVindas",
@@ -28629,14 +28787,14 @@ Responda APENAS em JSON com o formato:
       return { success: true, todosAssistidos };
     }),
     // Realizar aceite formal (etapa 8) — "De Acordo"
-    realizarAceite: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      contratoNivelId: z5.number().nullable().optional(),
-      nomeAceite: z5.string().min(2)
+    realizarAceite: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      contratoNivelId: z6.number().nullable().optional(),
+      nomeAceite: z6.string().min(2)
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
         aceiteRealizado: 1,
@@ -28683,17 +28841,17 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Solicitar revisão do aceite ("Gostaria de Rever") — envia justificativa para mentora e admin
-    solicitarRevisaoAceite: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      justificativa: z5.string().min(5, "Por favor, explique o que gostaria de rever.")
+    solicitarRevisaoAceite: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      justificativa: z6.string().min(5, "Por favor, explique o que gostaria de rever.")
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const totalRevisoes = await onboardingRevisoesDb.countByAluno(input.alunoId);
       if (totalRevisoes >= 5) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Voc\xEA atingiu o limite de 5 solicita\xE7\xF5es de revis\xE3o." });
+        throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA atingiu o limite de 5 solicita\xE7\xF5es de revis\xE3o." });
       }
       let emailEnviado = false;
       try {
@@ -28776,13 +28934,13 @@ Responda APENAS em JSON com o formato:
       return await getOnboardingVideos();
     }),
     // Buscar histórico de ciclos do aluno (para a página de Evolução)
-    historicoCiclos: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+    historicoCiclos: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       if (!input.alunoId || input.alunoId === 0) return [];
       return await getHistoricoCiclosAluno(input.alunoId);
     }),
     // ============ REVISÕES DO PDI ============
     // Listar revisões com dados enriquecidos (admin/mentor)
-    listarRevisoes: managerProcedure.input(z5.object({ status: z5.enum(["pendente", "em_analise", "resolvida", "cancelada"]).optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    listarRevisoes: managerProcedure.input(z6.object({ status: z6.enum(["pendente", "em_analise", "resolvida", "cancelada"]).optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       const consultorId = ctx2.user.role === "admin" ? void 0 : ctx2.user.consultorId;
       return await onboardingRevisoesDb.getEnriquecidas(input?.status, consultorId);
     }),
@@ -28793,10 +28951,10 @@ Responda APENAS em JSON com o formato:
       return { count: pendentes.length };
     }),
     // Responder/atualizar uma revisão
-    responderRevisao: managerProcedure.input(z5.object({
-      revisaoId: z5.number(),
-      status: z5.enum(["em_analise", "resolvida", "cancelada"]),
-      respostaAdmin: z5.string().optional()
+    responderRevisao: managerProcedure.input(z6.object({
+      revisaoId: z6.number(),
+      status: z6.enum(["em_analise", "resolvida", "cancelada"]),
+      respostaAdmin: z6.string().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       await onboardingRevisoesDb.update(input.revisaoId, {
         status: input.status,
@@ -28809,7 +28967,7 @@ Responda APENAS em JSON com o formato:
   // ============ IN-APP NOTIFICATIONS ============
   notifications: router({
     // Listar notificações do usuário logado
-    list: protectedProcedure.input(z5.object({ limit: z5.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    list: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       return await getNotificationsByUser(ctx2.user.id, input?.limit || 50);
     }),
     // Contar notificações não lidas
@@ -28817,7 +28975,7 @@ Responda APENAS em JSON com o formato:
       return await getUnreadNotificationCount(ctx2.user.id);
     }),
     // Marcar uma notificação como lida
-    markRead: protectedProcedure.input(z5.object({ notificationId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    markRead: protectedProcedure.input(z6.object({ notificationId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
       await markNotificationRead(input.notificationId, ctx2.user.id);
       return { success: true };
     }),
@@ -28827,13 +28985,13 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Criar notificação (admin only - para testes e envio manual)
-    create: adminOrAdmin2Procedure.input(z5.object({
-      userId: z5.number(),
-      title: z5.string().min(1),
-      message: z5.string().min(1),
-      type: z5.enum(["info", "warning", "success", "action"]).optional(),
-      category: z5.string().optional(),
-      link: z5.string().optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      userId: z6.number(),
+      title: z6.string().min(1),
+      message: z6.string().min(1),
+      type: z6.enum(["info", "warning", "success", "action"]).optional(),
+      category: z6.string().optional(),
+      link: z6.string().optional()
     })).mutation(async ({ input }) => {
       const id = await createNotification({
         userId: input.userId,
@@ -28851,17 +29009,17 @@ Responda APENAS em JSON com o formato:
     list: adminOrAdmin2Procedure.query(async () => {
       return await getAllTaskLibraryIncludingInactive();
     }),
-    getById: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getById: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       const item = await getTaskLibraryById(input.id);
-      if (!item) throw new TRPCError5({ code: "NOT_FOUND", message: "Tarefa n\xE3o encontrada" });
+      if (!item) throw new TRPCError6({ code: "NOT_FOUND", message: "Tarefa n\xE3o encontrada" });
       return item;
     }),
-    create: adminOrAdmin2Procedure.input(z5.object({
-      competencia: z5.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria"),
-      nome: z5.string().min(1, "Nome \xE9 obrigat\xF3rio"),
-      resumo: z5.string().nullable().optional(),
-      oQueFazer: z5.string().nullable().optional(),
-      oQueGanha: z5.string().nullable().optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      competencia: z6.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria"),
+      nome: z6.string().min(1, "Nome \xE9 obrigat\xF3rio"),
+      resumo: z6.string().nullable().optional(),
+      oQueFazer: z6.string().nullable().optional(),
+      oQueGanha: z6.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const id = await createTaskLibraryItem({
         competencia: input.competencia,
@@ -28872,13 +29030,13 @@ Responda APENAS em JSON com o formato:
       });
       return { id, success: true };
     }),
-    update: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      competencia: z5.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria"),
-      nome: z5.string().min(1, "Nome \xE9 obrigat\xF3rio"),
-      resumo: z5.string().nullable().optional(),
-      oQueFazer: z5.string().nullable().optional(),
-      oQueGanha: z5.string().nullable().optional()
+    update: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      competencia: z6.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria"),
+      nome: z6.string().min(1, "Nome \xE9 obrigat\xF3rio"),
+      resumo: z6.string().nullable().optional(),
+      oQueFazer: z6.string().nullable().optional(),
+      oQueGanha: z6.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateTaskLibraryItem(id, {
@@ -28890,15 +29048,15 @@ Responda APENAS em JSON com o formato:
       });
       return { success: true };
     }),
-    toggleActive: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      isActive: z5.number().min(0).max(1)
+    toggleActive: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      isActive: z6.number().min(0).max(1)
     })).mutation(async ({ input }) => {
       await toggleTaskLibraryActive(input.id, input.isActive);
       return { success: true };
     }),
-    generateWithAI: adminOrAdmin2Procedure.input(z5.object({
-      competencia: z5.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria")
+    generateWithAI: adminOrAdmin2Procedure.input(z6.object({
+      competencia: z6.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria")
     })).mutation(async ({ input }) => {
       const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
       const response = await invokeLLM2({
@@ -28945,12 +29103,12 @@ Responda APENAS em JSON com o formato especificado.`
         }
       });
       const content = response.choices?.[0]?.message?.content;
-      if (!content) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar tarefa com IA" });
+      if (!content) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar tarefa com IA" });
       const contentStr = typeof content === "string" ? content : JSON.stringify(content);
       try {
         return JSON.parse(contentStr);
       } catch {
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inv\xE1lido" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inv\xE1lido" });
       }
     })
   }),
@@ -28965,25 +29123,25 @@ Responda APENAS em JSON com o formato especificado.`
       return await getActiveCourses();
     }),
     // Buscar curso por ID
-    getById: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getById: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       const course = await getCourseById(input.id);
-      if (!course) throw new TRPCError5({ code: "NOT_FOUND", message: "Curso n\xE3o encontrado" });
+      if (!course) throw new TRPCError6({ code: "NOT_FOUND", message: "Curso n\xE3o encontrado" });
       return course;
     }),
     // Criar curso
-    create: adminOrAdmin2Procedure.input(z5.object({
-      titulo: z5.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
-      descricao: z5.string().nullable().optional(),
-      categoria: z5.string().nullable().optional(),
-      competenciaRelacionada: z5.string().nullable().optional(),
-      tipo: z5.enum(["gratuito", "online_pago", "presencial"]).default("gratuito"),
-      youtubeUrl: z5.string().nullable().optional(),
-      thumbnailUrl: z5.string().nullable().optional(),
-      duracao: z5.string().nullable().optional(),
-      instrutor: z5.string().nullable().optional(),
-      nivel: z5.enum(["iniciante", "intermediario", "avancado"]).default("iniciante"),
-      programId: z5.number().nullable().optional(),
-      ordem: z5.number().default(0)
+    create: adminOrAdmin2Procedure.input(z6.object({
+      titulo: z6.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
+      descricao: z6.string().nullable().optional(),
+      categoria: z6.string().nullable().optional(),
+      competenciaRelacionada: z6.string().nullable().optional(),
+      tipo: z6.enum(["gratuito", "online_pago", "presencial"]).default("gratuito"),
+      youtubeUrl: z6.string().nullable().optional(),
+      thumbnailUrl: z6.string().nullable().optional(),
+      duracao: z6.string().nullable().optional(),
+      instrutor: z6.string().nullable().optional(),
+      nivel: z6.enum(["iniciante", "intermediario", "avancado"]).default("iniciante"),
+      programId: z6.number().nullable().optional(),
+      ordem: z6.number().default(0)
     })).mutation(async ({ ctx: ctx2, input }) => {
       const id = await createCourse({
         titulo: input.titulo,
@@ -29003,20 +29161,20 @@ Responda APENAS em JSON com o formato especificado.`
       return { id, success: true };
     }),
     // Atualizar curso
-    update: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      titulo: z5.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
-      descricao: z5.string().nullable().optional(),
-      categoria: z5.string().nullable().optional(),
-      competenciaRelacionada: z5.string().nullable().optional(),
-      tipo: z5.enum(["gratuito", "online_pago", "presencial"]).default("gratuito"),
-      youtubeUrl: z5.string().nullable().optional(),
-      thumbnailUrl: z5.string().nullable().optional(),
-      duracao: z5.string().nullable().optional(),
-      instrutor: z5.string().nullable().optional(),
-      nivel: z5.enum(["iniciante", "intermediario", "avancado"]).default("iniciante"),
-      programId: z5.number().nullable().optional(),
-      ordem: z5.number().default(0)
+    update: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      titulo: z6.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
+      descricao: z6.string().nullable().optional(),
+      categoria: z6.string().nullable().optional(),
+      competenciaRelacionada: z6.string().nullable().optional(),
+      tipo: z6.enum(["gratuito", "online_pago", "presencial"]).default("gratuito"),
+      youtubeUrl: z6.string().nullable().optional(),
+      thumbnailUrl: z6.string().nullable().optional(),
+      duracao: z6.string().nullable().optional(),
+      instrutor: z6.string().nullable().optional(),
+      nivel: z6.enum(["iniciante", "intermediario", "avancado"]).default("iniciante"),
+      programId: z6.number().nullable().optional(),
+      ordem: z6.number().default(0)
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateCourse(id, {
@@ -29036,15 +29194,15 @@ Responda APENAS em JSON com o formato especificado.`
       return { success: true };
     }),
     // Ativar/desativar curso
-    toggleActive: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      isActive: z5.number().min(0).max(1)
+    toggleActive: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      isActive: z6.number().min(0).max(1)
     })).mutation(async ({ input }) => {
       await toggleCourseActive(input.id, input.isActive);
       return { success: true };
     }),
     // Deletar curso
-    delete: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteCourse(input.id);
       return { success: true };
     })
@@ -29060,24 +29218,24 @@ Responda APENAS em JSON com o formato especificado.`
       return all.filter((a) => a.isActive === 1);
     }),
     // Obter atividade por ID
-    getById: protectedProcedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       return getActivityById(input.id);
     }),
     // Criar atividade (admin)
-    create: adminOrAdmin2Procedure.input(z5.object({
-      titulo: z5.string().min(1),
-      descricao: z5.string().optional(),
-      tipo: z5.enum(["workshop", "treinamento", "palestra", "evento", "outro"]),
-      modalidade: z5.enum(["presencial", "online", "hibrido"]),
-      dataInicio: z5.string().optional(),
-      dataFim: z5.string().optional(),
-      local: z5.string().optional(),
-      vagas: z5.number().optional(),
-      instrutor: z5.string().optional(),
-      imagemUrl: z5.string().optional(),
-      competenciaRelacionada: z5.string().optional(),
-      programId: z5.number().optional(),
-      turmaIds: z5.array(z5.number()).optional()
+    create: adminOrAdmin2Procedure.input(z6.object({
+      titulo: z6.string().min(1),
+      descricao: z6.string().optional(),
+      tipo: z6.enum(["workshop", "treinamento", "palestra", "evento", "outro"]),
+      modalidade: z6.enum(["presencial", "online", "hibrido"]),
+      dataInicio: z6.string().optional(),
+      dataFim: z6.string().optional(),
+      local: z6.string().optional(),
+      vagas: z6.number().optional(),
+      instrutor: z6.string().optional(),
+      imagemUrl: z6.string().optional(),
+      competenciaRelacionada: z6.string().optional(),
+      programId: z6.number().optional(),
+      turmaIds: z6.array(z6.number()).optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { turmaIds, ...rest } = input;
       const id = await createActivity({
@@ -29094,21 +29252,21 @@ Responda APENAS em JSON com o formato especificado.`
       return { id };
     }),
     // Atualizar atividade (admin)
-    update: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      titulo: z5.string().min(1).optional(),
-      descricao: z5.string().optional(),
-      tipo: z5.enum(["workshop", "treinamento", "palestra", "evento", "outro"]).optional(),
-      modalidade: z5.enum(["presencial", "online", "hibrido"]).optional(),
-      dataInicio: z5.string().optional().nullable(),
-      dataFim: z5.string().optional().nullable(),
-      local: z5.string().optional(),
-      vagas: z5.number().optional().nullable(),
-      instrutor: z5.string().optional(),
-      imagemUrl: z5.string().optional(),
-      competenciaRelacionada: z5.string().optional(),
-      programId: z5.number().optional().nullable(),
-      turmaIds: z5.array(z5.number()).optional()
+    update: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      titulo: z6.string().min(1).optional(),
+      descricao: z6.string().optional(),
+      tipo: z6.enum(["workshop", "treinamento", "palestra", "evento", "outro"]).optional(),
+      modalidade: z6.enum(["presencial", "online", "hibrido"]).optional(),
+      dataInicio: z6.string().optional().nullable(),
+      dataFim: z6.string().optional().nullable(),
+      local: z6.string().optional(),
+      vagas: z6.number().optional().nullable(),
+      instrutor: z6.string().optional(),
+      imagemUrl: z6.string().optional(),
+      competenciaRelacionada: z6.string().optional(),
+      programId: z6.number().optional().nullable(),
+      turmaIds: z6.array(z6.number()).optional()
     })).mutation(async ({ input }) => {
       const { id, dataInicio, dataFim, turmaIds, ...rest } = input;
       const updateData = { ...rest };
@@ -29123,21 +29281,21 @@ Responda APENAS em JSON com o formato especificado.`
       return { success: true };
     }),
     // Toggle ativo/inativo (admin)
-    toggleActive: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      isActive: z5.number().min(0).max(1)
+    toggleActive: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      isActive: z6.number().min(0).max(1)
     })).mutation(async ({ input }) => {
       await toggleActivityActive(input.id, input.isActive);
       return { success: true };
     }),
     // Deletar atividade (admin) - também remove vinculações de turmas
-    delete: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await setActivityTurmas(input.id, []);
       await deleteActivity(input.id);
       return { success: true };
     }),
     // Obter turmas vinculadas a uma atividade
-    getTurmas: protectedProcedure.input(z5.object({ activityId: z5.number() })).query(async ({ input }) => {
+    getTurmas: protectedProcedure.input(z6.object({ activityId: z6.number() })).query(async ({ input }) => {
       return getActivityTurmas(input.activityId);
     }),
     // Obter mapa de todas as vinculações atividade-turma (admin)
@@ -29159,26 +29317,26 @@ Responda APENAS em JSON com o formato especificado.`
       return all.filter((a) => a.isActive === 1);
     }),
     // Contar inscrições de uma atividade
-    countRegistrations: protectedProcedure.input(z5.object({ activityId: z5.number() })).query(async ({ input }) => {
+    countRegistrations: protectedProcedure.input(z6.object({ activityId: z6.number() })).query(async ({ input }) => {
       return countRegistrations(input.activityId);
     }),
     // Listar inscrições de uma atividade (admin)
-    listRegistrations: adminOrAdmin2Procedure.input(z5.object({ activityId: z5.number() })).query(async ({ input }) => {
+    listRegistrations: adminOrAdmin2Procedure.input(z6.object({ activityId: z6.number() })).query(async ({ input }) => {
       return listActivityRegistrations(input.activityId);
     }),
     // Verificar se o usuário está inscrito
-    myRegistration: protectedProcedure.input(z5.object({ activityId: z5.number() })).query(async ({ input, ctx: ctx2 }) => {
+    myRegistration: protectedProcedure.input(z6.object({ activityId: z6.number() })).query(async ({ input, ctx: ctx2 }) => {
       return getRegistrationByUserAndActivity(ctx2.user.id, input.activityId);
     }),
     // Inscrever-se em uma atividade
-    register: protectedProcedure.input(z5.object({ activityId: z5.number() })).mutation(async ({ input, ctx: ctx2 }) => {
+    register: protectedProcedure.input(z6.object({ activityId: z6.number() })).mutation(async ({ input, ctx: ctx2 }) => {
       const existing = await getRegistrationByUserAndActivity(ctx2.user.id, input.activityId);
-      if (existing) throw new TRPCError5({ code: "CONFLICT", message: "Voc\xEA j\xE1 est\xE1 inscrito nesta atividade" });
+      if (existing) throw new TRPCError6({ code: "CONFLICT", message: "Voc\xEA j\xE1 est\xE1 inscrito nesta atividade" });
       const activity = await getActivityById(input.activityId);
-      if (!activity) throw new TRPCError5({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada" });
+      if (!activity) throw new TRPCError6({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada" });
       if (activity.vagas) {
         const count = await countRegistrations(input.activityId);
-        if (count >= activity.vagas) throw new TRPCError5({ code: "PRECONDITION_FAILED", message: "Vagas esgotadas" });
+        if (count >= activity.vagas) throw new TRPCError6({ code: "PRECONDITION_FAILED", message: "Vagas esgotadas" });
       }
       const id = await registerForActivity({
         activityId: input.activityId,
@@ -29188,14 +29346,14 @@ Responda APENAS em JSON com o formato especificado.`
       return { id };
     }),
     // Cancelar inscrição
-    unregister: protectedProcedure.input(z5.object({ activityId: z5.number() })).mutation(async ({ input, ctx: ctx2 }) => {
+    unregister: protectedProcedure.input(z6.object({ activityId: z6.number() })).mutation(async ({ input, ctx: ctx2 }) => {
       await cancelRegistration(ctx2.user.id, input.activityId);
       return { success: true };
     }),
     // Atualizar status de inscrição (admin)
-    updateRegistrationStatus: adminOrAdmin2Procedure.input(z5.object({
-      registrationId: z5.number(),
-      status: z5.enum(["inscrito", "confirmado", "cancelado", "presente", "ausente"])
+    updateRegistrationStatus: adminOrAdmin2Procedure.input(z6.object({
+      registrationId: z6.number(),
+      status: z6.enum(["inscrito", "confirmado", "cancelado", "presente", "ausente"])
     })).mutation(async ({ input }) => {
       await updateRegistrationStatus(input.registrationId, input.status);
       return { success: true };
@@ -29204,9 +29362,9 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ ALERTAS DE MENTORIA (EMAIL) ============
   alertasMentoria: router({
     // Verificar alunos sem mentoria há 30+ dias e enviar e-mails
-    enviarAlertas: adminOrAdmin2Procedure.input(z5.object({
-      diasMinimo: z5.number().min(1).default(30),
-      dryRun: z5.boolean().default(false)
+    enviarAlertas: adminOrAdmin2Procedure.input(z6.object({
+      diasMinimo: z6.number().min(1).default(30),
+      dryRun: z6.boolean().default(false)
       // Se true, apenas lista sem enviar
     }).optional()).mutation(async ({ input }) => {
       const diasMinimo = input?.diasMinimo || 30;
@@ -29305,9 +29463,9 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ ALERTAS DE VENCIMENTO DE CICLO (EMAIL) ============
   vencimentoCiclo: router({
     // Verificar PDIs próximos do vencimento e enviar alertas
-    enviarAlertas: adminOrAdmin2Procedure.input(z5.object({
-      dryRun: z5.boolean().default(false),
-      forceResend: z5.boolean().default(false)
+    enviarAlertas: adminOrAdmin2Procedure.input(z6.object({
+      dryRun: z6.boolean().default(false),
+      forceResend: z6.boolean().default(false)
     }).optional()).mutation(async ({ input }) => {
       const { verificarEEnviarAlertasVencimentoCiclo: verificarEEnviarAlertasVencimentoCiclo2 } = await Promise.resolve().then(() => (init_cronVencimentoCiclo(), cronVencimentoCiclo_exports));
       const result = await verificarEEnviarAlertasVencimentoCiclo2({
@@ -29319,7 +29477,7 @@ Responda APENAS em JSON com o formato especificado.`
   }),
   // ============ ONBOARDING TRACKING (ADMIN) ============
   onboardingTracking: router({
-    list: adminOrAdmin2Procedure.input(z5.object({ programId: z5.number().optional() }).optional()).query(async ({ input }) => {
+    list: adminOrAdmin2Procedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
       return await getOnboardingTrackingList(input?.programId);
     }),
     /**
@@ -29328,9 +29486,9 @@ Responda APENAS em JSON com o formato especificado.`
      * - Garante que onboarding_jornada tem cadastroConfirmado=1 e aceiteRealizado=1
      * Útil quando o admin liberou onboarding por engano ou o registro foi perdido.
      */
-    corrigirOnboarding: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input }) => {
+    corrigirOnboarding: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const { alunos: alunosTable, onboardingJornada: onboardingJornada2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
       const { eq: eq16 } = await import("drizzle-orm");
       await database.update(alunosTable).set({ onboardingLiberado: 0, onboardingLiberadoEm: null }).where(eq16(alunosTable.id, input.alunoId));
@@ -29352,13 +29510,13 @@ Responda APENAS em JSON com o formato especificado.`
       }
       return { success: true };
     }),
-    resendInvite: adminOrAdmin2Procedure.input(z5.object({ alunoId: z5.number() })).mutation(async ({ input }) => {
+    resendInvite: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const { alunos: alunosTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
       const { eq: eq16 } = await import("drizzle-orm");
       const [aluno] = await database.select().from(alunosTable).where(eq16(alunosTable.id, input.alunoId));
-      if (!aluno) throw new TRPCError5({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       const allPrograms = await getPrograms();
       const program = aluno.programId ? allPrograms.find((p) => p.id === aluno.programId) : null;
       const loginUrl = "https://ecolider.ecodobem.com/";
@@ -29387,54 +29545,54 @@ Responda APENAS em JSON com o formato especificado.`
      * Obter catálogo de cursos para um aluno
      * Retorna competências com módulos agrupados e progresso
      */
-    getCatalog: protectedProcedure.input(z5.object({
-      alunoId: z5.number(),
-      microcicloId: z5.number()
+    getCatalog: protectedProcedure.input(z6.object({
+      alunoId: z6.number(),
+      microcicloId: z6.number()
     })).query(async ({ input }) => {
       try {
         const catalog = await getCourseCatalog(input.alunoId, input.microcicloId);
         return catalog;
       } catch (error) {
         console.error("[getCatalog] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar cat\xE1logo" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar cat\xE1logo" });
       }
     }),
     /**
      * Iniciar um módulo
      */
-    startModule: protectedProcedure.input(z5.object({
-      moduloId: z5.number(),
-      progressoId: z5.number()
+    startModule: protectedProcedure.input(z6.object({
+      moduloId: z6.number(),
+      progressoId: z6.number()
     })).mutation(async ({ input }) => {
       try {
         await startModule(input.moduloId, input.moduloId, input.progressoId);
         return { success: true };
       } catch (error) {
         console.error("[startModule] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao iniciar m\xF3dulo" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao iniciar m\xF3dulo" });
       }
     }),
     /**
      * Obter conteúdo completo de um módulo
      */
-    getModuleContent: protectedProcedure.input(z5.object({
-      moduloId: z5.number()
+    getModuleContent: protectedProcedure.input(z6.object({
+      moduloId: z6.number()
     })).query(async ({ input }) => {
       try {
         const content = await getModuleContent(input.moduloId);
         return content;
       } catch (error) {
         console.error("[getModuleContent] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar conte\xFAdo" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar conte\xFAdo" });
       }
     }),
     /**
      * Enviar reflexão do aluno
      */
-    submitReflection: protectedProcedure.input(z5.object({
-      moduloId: z5.number(),
-      progressoId: z5.number(),
-      textoRelato: z5.string().min(100, "Reflex\xE3o deve ter no m\xEDnimo 100 caracteres")
+    submitReflection: protectedProcedure.input(z6.object({
+      moduloId: z6.number(),
+      progressoId: z6.number(),
+      textoRelato: z6.string().min(100, "Reflex\xE3o deve ter no m\xEDnimo 100 caracteres")
     })).mutation(async ({ input, ctx: ctx2 }) => {
       try {
         const alunoId = ctx2.user.alunoId || 0;
@@ -29442,22 +29600,22 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true };
       } catch (error) {
         console.error("[submitReflection] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao enviar reflex\xE3o" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao enviar reflex\xE3o" });
       }
     }),
     /**
      * Enviar avaliação/quiz do módulo
      * Atualiza automaticamente os Indicadores 2 e 3
      */
-    submitAssessment: protectedProcedure.input(z5.object({
-      moduloId: z5.number(),
-      progressoId: z5.number(),
-      competenciaId: z5.number(),
-      microcicloId: z5.number(),
-      nota: z5.number().min(0).max(10),
-      totalQuestoes: z5.number().optional(),
-      questoesAcertadas: z5.number().optional(),
-      tempoRespostaMinutos: z5.number().optional()
+    submitAssessment: protectedProcedure.input(z6.object({
+      moduloId: z6.number(),
+      progressoId: z6.number(),
+      competenciaId: z6.number(),
+      microcicloId: z6.number(),
+      nota: z6.number().min(0).max(10),
+      totalQuestoes: z6.number().optional(),
+      questoesAcertadas: z6.number().optional(),
+      tempoRespostaMinutos: z6.number().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       try {
         const alunoId = ctx2.user.alunoId || 0;
@@ -29475,18 +29633,18 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       } catch (error) {
         console.error("[submitAssessment] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao enviar avalia\xE7\xE3o" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao enviar avalia\xE7\xE3o" });
       }
     }),
     /**
      * Solicitar prorrogação de prazo
      */
-    requestExtension: protectedProcedure.input(z5.object({
-      moduloId: z5.number(),
-      progressoId: z5.number(),
-      dataLimiteSolicitada: z5.date(),
-      dataFimContrato: z5.date(),
-      motivoSolicitacao: z5.string().min(10, "Motivo deve ter no m\xEDnimo 10 caracteres")
+    requestExtension: protectedProcedure.input(z6.object({
+      moduloId: z6.number(),
+      progressoId: z6.number(),
+      dataLimiteSolicitada: z6.date(),
+      dataFimContrato: z6.date(),
+      motivoSolicitacao: z6.string().min(10, "Motivo deve ter no m\xEDnimo 10 caracteres")
     })).mutation(async ({ input, ctx: ctx2 }) => {
       try {
         const alunoId = ctx2.user.alunoId || 0;
@@ -29501,20 +29659,20 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       } catch (error) {
         console.error("[requestExtension] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao solicitar prorroga\xE7\xE3o" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao solicitar prorroga\xE7\xE3o" });
       }
     }),
     /**
      * Aprovar ou rejeitar prorrogação (apenas mentores)
      */
-    approveExtension: protectedProcedure.input(z5.object({
-      prorrogacaoId: z5.number(),
-      aprovar: z5.boolean(),
-      motivoRejeicao: z5.string().optional()
+    approveExtension: protectedProcedure.input(z6.object({
+      prorrogacaoId: z6.number(),
+      aprovar: z6.boolean(),
+      motivoRejeicao: z6.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       try {
         if (ctx2.user.role !== "manager" && ctx2.user.role !== "admin") {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas mentores podem aprovar prorroga\xE7\xF5es" });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Apenas mentores podem aprovar prorroga\xE7\xF5es" });
         }
         const result = await approveExtension(
           input.prorrogacaoId,
@@ -29524,7 +29682,7 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       } catch (error) {
         console.error("[approveExtension] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao processar prorroga\xE7\xE3o" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao processar prorroga\xE7\xE3o" });
       }
     }),
     /**
@@ -29533,14 +29691,14 @@ Responda APENAS em JSON com o formato especificado.`
     getMentorPanel: protectedProcedure.query(async ({ ctx: ctx2 }) => {
       try {
         if (ctx2.user.role !== "manager" && ctx2.user.role !== "admin") {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas mentores podem acessar este painel" });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Apenas mentores podem acessar este painel" });
         }
         const mentorId = ctx2.user.id || 0;
         const panel = await getMentorExtensionPanel(mentorId);
         return panel;
       } catch (error) {
         console.error("[getMentorPanel] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar painel" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar painel" });
       }
     })
   }),
@@ -29557,13 +29715,13 @@ Responda APENAS em JSON com o formato especificado.`
         return cursos;
       } catch (error) {
         console.error("[listCursos] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao listar cursos" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao listar cursos" });
       }
     }),
     /**
      * Listar atividades de um curso (módulos/competenciasModulos)
      */
-    listAtividades: adminOrAdmin2Procedure.input(z5.object({ competenciaId: z5.number() })).query(async ({ input }) => {
+    listAtividades: adminOrAdmin2Procedure.input(z6.object({ competenciaId: z6.number() })).query(async ({ input }) => {
       try {
         const database = await getDb();
         if (!database) throw new Error("Database not available");
@@ -29571,20 +29729,20 @@ Responda APENAS em JSON com o formato especificado.`
         return atividades;
       } catch (error) {
         console.error("[listAtividades] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao listar atividades" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao listar atividades" });
       }
     }),
     /**
      * Criar nova atividade (módulo)
      */
-    createAtividade: adminOrAdmin2Procedure.input(z5.object({
-      competenciaId: z5.number(),
-      titulo: z5.string().min(1),
-      descricao: z5.string().optional(),
-      tipoModulo: z5.enum(["intro", "filme", "video", "tedtalk", "podcast", "livro"]),
-      duracaoMinutos: z5.number().min(1),
-      urlGenially: z5.string().optional(),
-      ordem: z5.number().optional()
+    createAtividade: adminOrAdmin2Procedure.input(z6.object({
+      competenciaId: z6.number(),
+      titulo: z6.string().min(1),
+      descricao: z6.string().optional(),
+      tipoModulo: z6.enum(["intro", "filme", "video", "tedtalk", "podcast", "livro"]),
+      duracaoMinutos: z6.number().min(1),
+      urlGenially: z6.string().optional(),
+      ordem: z6.number().optional()
     })).mutation(async ({ input }) => {
       try {
         const database = await getDb();
@@ -29604,20 +29762,20 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true, id: result.insertId };
       } catch (error) {
         console.error("[createAtividade] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao criar atividade" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao criar atividade" });
       }
     }),
     /**
      * Atualizar atividade
      */
-    updateAtividade: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      titulo: z5.string().min(1),
-      descricao: z5.string().optional(),
-      tipoModulo: z5.enum(["intro", "filme", "video", "tedtalk", "podcast", "livro"]),
-      duracaoMinutos: z5.number().min(1),
-      urlGenially: z5.string().optional(),
-      ordem: z5.number().optional()
+    updateAtividade: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      titulo: z6.string().min(1),
+      descricao: z6.string().optional(),
+      tipoModulo: z6.enum(["intro", "filme", "video", "tedtalk", "podcast", "livro"]),
+      duracaoMinutos: z6.number().min(1),
+      urlGenially: z6.string().optional(),
+      ordem: z6.number().optional()
     })).mutation(async ({ input }) => {
       try {
         const database = await getDb();
@@ -29634,13 +29792,13 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true };
       } catch (error) {
         console.error("[updateAtividade] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atualizar atividade" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atualizar atividade" });
       }
     }),
     /**
      * Deletar atividade
      */
-    deleteAtividade: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    deleteAtividade: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       try {
         const database = await getDb();
         if (!database) throw new Error("Database not available");
@@ -29648,7 +29806,7 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true };
       } catch (error) {
         console.error("[deleteAtividade] Error:", error);
-        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao deletar atividade" });
+        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao deletar atividade" });
       }
     })
   }),
@@ -29665,7 +29823,7 @@ Responda APENAS em JSON com o formato especificado.`
           return true;
         }).map((r) => ({ id: r.id, nome: r.nome }));
       }),
-      listarCursos: protectedProcedure.input(z5.object({ competenciaId: z5.number() })).query(async ({ input }) => {
+      listarCursos: protectedProcedure.input(z6.object({ competenciaId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(cursosCompetencias).where(
@@ -29680,22 +29838,22 @@ Responda APENAS em JSON com o formato especificado.`
         if (!database) return [];
         return await database.select().from(cursosCompetencias).orderBy(asc3(cursosCompetencias.competenciaId), asc3(cursosCompetencias.ordem), asc3(cursosCompetencias.titulo));
       }),
-      obterCurso: protectedProcedure.input(z5.object({ cursoId: z5.number() })).query(async ({ input }) => {
+      obterCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return null;
         const [curso] = await database.select().from(cursosCompetencias).where(eq8(cursosCompetencias.id, input.cursoId)).limit(1);
         return curso ?? null;
       }),
       criarCurso: adminOrAdmin2Procedure.input(
-        z5.object({
-          competenciaId: z5.number(),
-          titulo: z5.string().min(1),
-          descricao: z5.string().optional()
+        z6.object({
+          competenciaId: z6.number(),
+          titulo: z6.string().min(1),
+          descricao: z6.string().optional()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const result = await database.insert(cursosCompetencias).values({
           competenciaId: input.competenciaId,
@@ -29710,17 +29868,17 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true, id: result[0]?.insertId ?? null };
       }),
       atualizarCurso: adminOrAdmin2Procedure.input(
-        z5.object({
-          cursoId: z5.number(),
-          competenciaId: z5.number(),
-          titulo: z5.string().min(1),
-          descricao: z5.string().optional(),
-          ordem: z5.number().optional()
+        z6.object({
+          cursoId: z6.number(),
+          competenciaId: z6.number(),
+          titulo: z6.string().min(1),
+          descricao: z6.string().optional(),
+          ordem: z6.number().optional()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         await database.update(cursosCompetencias).set({
           competenciaId: input.competenciaId,
@@ -29731,10 +29889,10 @@ Responda APENAS em JSON com o formato especificado.`
         }).where(eq8(cursosCompetencias.id, input.cursoId));
         return { success: true };
       }),
-      excluirCurso: adminOrAdmin2Procedure.input(z5.object({ cursoId: z5.number() })).mutation(async ({ input }) => {
+      excluirCurso: adminOrAdmin2Procedure.input(z6.object({ cursoId: z6.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         await database.update(cursosCompetencias).set({
           isActive: 0,
@@ -29742,7 +29900,7 @@ Responda APENAS em JSON com o formato especificado.`
         }).where(eq8(cursosCompetencias.id, input.cursoId));
         return { success: true };
       }),
-      listarAtividadesCurso: protectedProcedure.input(z5.object({ cursoId: z5.number() })).query(async ({ input }) => {
+      listarAtividadesCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(atividadesCurso).where(
@@ -29752,7 +29910,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).orderBy(asc3(atividadesCurso.ordem));
       }),
-      listarCursosPorCompetencia: protectedProcedure.input(z5.object({ competenciaId: z5.number() })).query(async ({ input }) => {
+      listarCursosPorCompetencia: protectedProcedure.input(z6.object({ competenciaId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         if (input.competenciaId <= 0) return [];
@@ -29763,7 +29921,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).orderBy(asc3(cursosCompetencias.ordem), asc3(cursosCompetencias.titulo));
       }),
-      listarAtividades: protectedProcedure.input(z5.object({ cursoId: z5.number() })).query(async ({ input }) => {
+      listarAtividades: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(atividadesCurso).where(
@@ -29774,10 +29932,10 @@ Responda APENAS em JSON com o formato especificado.`
         ).orderBy(asc3(atividadesCurso.ordem));
       }),
       criarAtividade: adminOrAdmin2Procedure.input(
-        z5.object({
-          cursoId: z5.number(),
-          titulo: z5.string().min(1),
-          tipoAtividade: z5.enum([
+        z6.object({
+          cursoId: z6.number(),
+          titulo: z6.string().min(1),
+          tipoAtividade: z6.enum([
             "genially",
             "video",
             "podcast",
@@ -29785,25 +29943,25 @@ Responda APENAS em JSON com o formato especificado.`
             "livro",
             "intro"
           ]),
-          urlGenially: z5.string().optional(),
-          urlMidia: z5.string().optional(),
-          imagemUrl: z5.string().optional(),
-          descricao: z5.string().optional(),
-          ordem: z5.number().optional(),
-          tempoMinimoObrigatorioSegundos: z5.number().int().min(0).optional()
+          urlGenially: z6.string().optional(),
+          urlMidia: z6.string().optional(),
+          imagemUrl: z6.string().optional(),
+          descricao: z6.string().optional(),
+          ordem: z6.number().optional(),
+          tempoMinimoObrigatorioSegundos: z6.number().int().min(0).optional()
         })
       ).mutation(async ({ input }) => {
         try {
           const database = await getDb();
           if (!database) {
-            throw new TRPCError5({
+            throw new TRPCError6({
               code: "INTERNAL_SERVER_ERROR",
               message: "Banco indispon\xEDvel"
             });
           }
           const conn = database.$client.promise ? database.$client.promise() : database.$client;
           if (!conn) {
-            throw new TRPCError5({
+            throw new TRPCError6({
               code: "INTERNAL_SERVER_ERROR",
               message: "Conexao com banco indisponivel"
             });
@@ -29845,17 +30003,17 @@ Responda APENAS em JSON com o formato especificado.`
             sqlMessage: error?.sqlMessage,
             stack: error?.stack
           });
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "INTERNAL_SERVER_ERROR",
             message: error?.message || "Erro ao criar atividade"
           });
         }
       }),
       uploadImagemAtividade: adminOrAdmin2Procedure.input(
-        z5.object({
-          nomeArquivo: z5.string(),
-          tipoMime: z5.string(),
-          dados: z5.string()
+        z6.object({
+          nomeArquivo: z6.string(),
+          tipoMime: z6.string(),
+          dados: z6.string()
           // base64 encoded
         })
       ).mutation(async ({ input }) => {
@@ -29866,27 +30024,27 @@ Responda APENAS em JSON com o formato especificado.`
           return { url, key, success: true };
         } catch (error) {
           console.error("Erro ao fazer upload de imagem:", error);
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "INTERNAL_SERVER_ERROR",
             message: "Erro ao fazer upload da imagem"
           });
         }
       }),
       atualizarAtividade: adminOrAdmin2Procedure.input(
-        z5.object({
-          id: z5.number(),
-          titulo: z5.string().min(1).optional(),
-          tipoAtividade: z5.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]).optional(),
-          urlGenially: z5.string().optional(),
-          imagemUrl: z5.string().optional(),
-          descricao: z5.string().optional(),
-          ordem: z5.number().optional(),
-          tempoMinimoObrigatorioSegundos: z5.number().int().min(0).nullish()
+        z6.object({
+          id: z6.number(),
+          titulo: z6.string().min(1).optional(),
+          tipoAtividade: z6.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]).optional(),
+          urlGenially: z6.string().optional(),
+          imagemUrl: z6.string().optional(),
+          descricao: z6.string().optional(),
+          ordem: z6.number().optional(),
+          tempoMinimoObrigatorioSegundos: z6.number().int().min(0).nullish()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const updates = { updatedAt: /* @__PURE__ */ new Date() };
         if (input.titulo) updates.titulo = input.titulo;
@@ -29901,10 +30059,10 @@ Responda APENAS em JSON com o formato especificado.`
         await database.update(atividadesCurso).set(updates).where(eq8(atividadesCurso.id, input.id));
         return { success: true };
       }),
-      deletarAtividade: adminOrAdmin2Procedure.input(z5.object({ atividadeId: z5.number() })).mutation(async ({ input }) => {
+      deletarAtividade: adminOrAdmin2Procedure.input(z6.object({ atividadeId: z6.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         await database.update(atividadesCurso).set({
           isActive: 0,
@@ -29912,7 +30070,7 @@ Responda APENAS em JSON com o formato especificado.`
         }).where(eq8(atividadesCurso.id, input.atividadeId));
         return { success: true };
       }),
-      obterAtividadeDetalhes: protectedProcedure.input(z5.object({ atividadeId: z5.number() })).query(async ({ input }) => {
+      obterAtividadeDetalhes: protectedProcedure.input(z6.object({ atividadeId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return null;
         const result = await database.select({
@@ -29923,34 +30081,34 @@ Responda APENAS em JSON com o formato especificado.`
         return result[0];
       }),
       criarAvaliacao: adminOrAdmin2Procedure.input(
-        z5.object({
-          atividadeId: z5.number(),
-          titulo: z5.string().min(1),
-          questoes: z5.array(
-            z5.object({
-              id: z5.string(),
-              enunciado: z5.string().min(1),
-              opcoes: z5.array(z5.string()).min(2),
-              respostaCorreta: z5.string().min(1)
+        z6.object({
+          atividadeId: z6.number(),
+          titulo: z6.string().min(1),
+          questoes: z6.array(
+            z6.object({
+              id: z6.string(),
+              enunciado: z6.string().min(1),
+              opcoes: z6.array(z6.string()).min(2),
+              respostaCorreta: z6.string().min(1)
             })
           ),
-          notaMinima: z5.number().min(0).max(10).optional()
+          notaMinima: z6.number().min(0).max(10).optional()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const qtdValidas = [10, 20, 30];
         if (!qtdValidas.includes(input.questoes.length)) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "BAD_REQUEST",
             message: `Avalia\xE7\xE3o deve ter 10, 20 ou 30 quest\xF5es. Recebido: ${input.questoes.length}`
           });
         }
         for (const q of input.questoes) {
           if (!q.opcoes.includes(q.respostaCorreta)) {
-            throw new TRPCError5({
+            throw new TRPCError6({
               code: "BAD_REQUEST",
               message: `Quest\xE3o "${q.id}": resposta correta n\xE3o est\xE1 nas op\xE7\xF5es`
             });
@@ -29965,7 +30123,7 @@ Responda APENAS em JSON com o formato especificado.`
         });
         return { success: true, id: result[0]?.insertId ?? null };
       }),
-      listarAvaliacoesCurso: protectedProcedure.input(z5.object({ cursoId: z5.number() })).query(async ({ input }) => {
+      listarAvaliacoesCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select({
@@ -29981,7 +30139,7 @@ Responda APENAS em JSON com o formato especificado.`
       // Sincroniza retroativamente student_performance para todos os cursos já concluídos pela plataforma
       syncPlatformPerformance: adminOrAdmin2Procedure.mutation(async () => {
         const database = await getDb();
-        if (!database) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR" });
+        if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR" });
         const cursosConcluidos = await database.select({ id: alunoCursoAtribuido.id, alunoId: alunoCursoAtribuido.alunoId }).from(alunoCursoAtribuido).where(eq8(alunoCursoAtribuido.status, "concluido"));
         let synced = 0;
         for (const c of cursosConcluidos) {
@@ -29990,10 +30148,10 @@ Responda APENAS em JSON com o formato especificado.`
         }
         return { success: true, synced };
       }),
-      deleteAtividade: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+      deleteAtividade: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
         }
         await database.update(atividadesCurso).set({ isActive: 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(atividadesCurso.id, input.id));
         return { success: true };
@@ -30005,16 +30163,16 @@ Responda APENAS em JSON com o formato especificado.`
         return await getAlunosByConsultor(consultorId);
       }),
       atribuirCurso: protectedProcedure.input(
-        z5.object({
-          alunoId: z5.number(),
-          cursoId: z5.number(),
-          competenciaId: z5.number(),
-          dataPrazo: z5.string().optional()
+        z6.object({
+          alunoId: z6.number(),
+          cursoId: z6.number(),
+          competenciaId: z6.number(),
+          dataPrazo: z6.string().optional()
         })
       ).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const mentorId = Number(ctx2.user.consultorId ?? ctx2.user.id);
         const [existente] = await database.select().from(alunoCursoAtribuido).where(
@@ -30043,15 +30201,15 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true, id: result[0]?.insertId ?? null, atualizado: false };
       }),
       editarAtribuicao: protectedProcedure.input(
-        z5.object({
-          atribuicaoId: z5.number(),
-          dataPrazo: z5.string().optional(),
-          status: z5.enum(["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).optional()
+        z6.object({
+          atribuicaoId: z6.number(),
+          dataPrazo: z6.string().optional(),
+          status: z6.enum(["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).optional()
         })
       ).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const updateData = { updatedAt: /* @__PURE__ */ new Date() };
         if (input.dataPrazo) updateData.dataPrazo = new Date(input.dataPrazo);
@@ -30059,22 +30217,22 @@ Responda APENAS em JSON com o formato especificado.`
         await database.update(alunoCursoAtribuido).set(updateData).where(eq8(alunoCursoAtribuido.id, input.atribuicaoId));
         return { success: true };
       }),
-      removerAtribuicao: protectedProcedure.input(z5.object({ atribuicaoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+      removerAtribuicao: protectedProcedure.input(z6.object({ atribuicaoId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         await database.delete(alunoCursoAtribuido).where(eq8(alunoCursoAtribuido.id, input.atribuicaoId));
         return { success: true };
       }),
       // === LIBERAR TENTATIVAS (ADMIN) - Reset de tentativas para aluno refazer curso/prova ===
-      liberarTentativas: protectedProcedure.input(z5.object({
-        cursoAtribuidoId: z5.number(),
-        alunoId: z5.number()
+      liberarTentativas: protectedProcedure.input(z6.object({
+        cursoAtribuidoId: z6.number(),
+        alunoId: z6.number()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const progressos = await database.select().from(alunoAtividadeProgresso).where(
           and6(
@@ -30097,7 +30255,7 @@ Responda APENAS em JSON com o formato especificado.`
         await database.update(alunoCursoAtribuido).set({ status: "em_progresso" }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
         return { success: true, atividadesResetadas: progressos.filter((p) => p.status === "bloqueada" || p.status === "reprovada").length };
       }),
-      acompanharProgresso: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+      acompanharProgresso: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select({
@@ -30123,7 +30281,7 @@ Responda APENAS em JSON com o formato especificado.`
         }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(alunoCursoAtribuido.competenciaId, competencias.id)).leftJoin(alunosTable, eq8(alunoCursoAtribuido.alunoId, alunosTable.id)).orderBy(desc3(alunoCursoAtribuido.dataAtribuicao));
         return cursos;
       }),
-      listarCursosAtribuidosAoAluno: protectedProcedure.input(z5.object({ alunoId: z5.number() })).query(async ({ input }) => {
+      listarCursosAtribuidosAoAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         const cursos = await database.select({
@@ -30185,7 +30343,7 @@ Responda APENAS em JSON com o formato especificado.`
         }
         return Array.from(cursosUnicos.values());
       }),
-      detalheCurso: protectedProcedure.input(z5.object({ moduloId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+      detalheCurso: protectedProcedure.input(z6.object({ moduloId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) return null;
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
@@ -30201,7 +30359,7 @@ Responda APENAS em JSON com o formato especificado.`
         ).limit(1);
         return curso ?? null;
       }),
-      detalheCursoAtribuido: protectedProcedure.input(z5.object({ cursoId: z5.number(), cursoAtribuidoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+      detalheCursoAtribuido: protectedProcedure.input(z6.object({ cursoId: z6.number(), cursoAtribuidoId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) return null;
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
@@ -30219,19 +30377,19 @@ Responda APENAS em JSON com o formato especificado.`
         ).limit(1);
         return resultado ?? null;
       }),
-      obterAtividadesCurso: protectedProcedure.input(z5.object({
-        cursoId: z5.number().int().positive(),
-        cursoAtribuidoId: z5.number().int().positive()
+      obterAtividadesCurso: protectedProcedure.input(z6.object({
+        cursoId: z6.number().int().positive(),
+        cursoAtribuidoId: z6.number().int().positive()
       })).query(async ({ ctx: ctx2, input }) => {
         const userId = ctx2.user?.id;
         if (!userId) {
-          throw new TRPCError5({ code: "UNAUTHORIZED" });
+          throw new TRPCError6({ code: "UNAUTHORIZED" });
         }
         const database = await getDb();
         if (!database) return [];
         const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Aluno n\xE3o identificado." });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Aluno n\xE3o identificado." });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
           and6(
@@ -30241,7 +30399,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!atribuicao) {
-          throw new TRPCError5({ code: "NOT_FOUND", message: "Curso atribu\xEDdo n\xE3o encontrado." });
+          throw new TRPCError6({ code: "NOT_FOUND", message: "Curso atribu\xEDdo n\xE3o encontrado." });
         }
         const atividades = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
         const progressos = await database.select().from(alunoAtividadeProgresso).where(
@@ -30295,25 +30453,25 @@ Responda APENAS em JSON com o formato especificado.`
           };
         });
       }),
-      iniciarAtividade: protectedProcedure.input(z5.object({
-        cursoId: z5.number(),
-        cursoAtribuidoId: z5.number(),
-        atividadeId: z5.number()
+      iniciarAtividade: protectedProcedure.input(z6.object({
+        cursoId: z6.number(),
+        cursoAtribuidoId: z6.number(),
+        atividadeId: z6.number()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "INTERNAL_SERVER_ERROR",
             message: "Banco de dados indispon\xEDvel"
           });
         }
         const userId = Number(ctx2.user?.id ?? 0);
         if (!userId) {
-          throw new TRPCError5({ code: "UNAUTHORIZED" });
+          throw new TRPCError6({ code: "UNAUTHORIZED" });
         }
         const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError5({ code: "FORBIDDEN" });
+          throw new TRPCError6({ code: "FORBIDDEN" });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
           and6(
@@ -30323,7 +30481,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!atribuicao) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "NOT_FOUND",
             message: "Curso atribu\xEDdo n\xE3o encontrado."
           });
@@ -30335,7 +30493,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!atividade) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "NOT_FOUND",
             message: "Atividade n\xE3o encontrada."
           });
@@ -30454,25 +30612,25 @@ Responda APENAS em JSON com o formato especificado.`
           }
         };
       }),
-      registrarHeartbeatAtividade: protectedProcedure.input(z5.object({
-        cursoAtribuidoId: z5.number(),
-        atividadeId: z5.number(),
-        segundosAtivos: z5.number().optional()
+      registrarHeartbeatAtividade: protectedProcedure.input(z6.object({
+        cursoAtribuidoId: z6.number(),
+        atividadeId: z6.number(),
+        segundosAtivos: z6.number().optional()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "INTERNAL_SERVER_ERROR",
             message: "Banco de dados indispon\xEDvel"
           });
         }
         const userId = Number(ctx2.user?.id ?? 0);
         if (!userId) {
-          throw new TRPCError5({ code: "UNAUTHORIZED" });
+          throw new TRPCError6({ code: "UNAUTHORIZED" });
         }
         const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError5({ code: "FORBIDDEN" });
+          throw new TRPCError6({ code: "FORBIDDEN" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
           and6(
@@ -30482,14 +30640,14 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!progresso) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "NOT_FOUND",
             message: "Progresso n\xE3o encontrado. Inicie a atividade primeiro."
           });
         }
         const [atividade] = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
         if (!atividade) {
-          throw new TRPCError5({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada." });
+          throw new TRPCError6({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada." });
         }
         const segundosParaSomar = normalizarSegundosHeartbeat(input.segundosAtivos);
         const agora = /* @__PURE__ */ new Date();
@@ -30529,17 +30687,17 @@ Responda APENAS em JSON com o formato especificado.`
           tempo: resumo
         };
       }),
-      pausarSessaoAtividade: protectedProcedure.input(z5.object({
-        cursoAtribuidoId: z5.number(),
-        atividadeId: z5.number()
+      pausarSessaoAtividade: protectedProcedure.input(z6.object({
+        cursoAtribuidoId: z6.number(),
+        atividadeId: z6.number()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR" });
         }
         const userId = Number(ctx2.user?.id ?? 0);
         const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
-        if (!user?.alunoId) throw new TRPCError5({ code: "FORBIDDEN" });
+        if (!user?.alunoId) throw new TRPCError6({ code: "FORBIDDEN" });
         await database.update(sessoesEstudoAtividade).set({
           statusSessao: "pausada",
           encerradaEm: /* @__PURE__ */ new Date()
@@ -30553,22 +30711,22 @@ Responda APENAS em JSON com o formato especificado.`
         );
         return { success: true };
       }),
-      concluirAtividade: protectedProcedure.input(z5.object({
-        cursoId: z5.number().int().positive(),
-        cursoAtribuidoId: z5.number().int().positive(),
-        atividadeId: z5.number().int().positive()
+      concluirAtividade: protectedProcedure.input(z6.object({
+        cursoId: z6.number().int().positive(),
+        cursoAtribuidoId: z6.number().int().positive(),
+        atividadeId: z6.number().int().positive()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const userId = ctx2.user?.id;
         if (!userId) {
-          throw new TRPCError5({ code: "UNAUTHORIZED" });
+          throw new TRPCError6({ code: "UNAUTHORIZED" });
         }
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError5({ code: "FORBIDDEN" });
+          throw new TRPCError6({ code: "FORBIDDEN" });
         }
         const [atividade] = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
@@ -30579,11 +30737,11 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!progresso) {
-          throw new TRPCError5({ code: "NOT_FOUND", message: "Progresso da atividade n\xE3o encontrado" });
+          throw new TRPCError6({ code: "NOT_FOUND", message: "Progresso da atividade n\xE3o encontrado" });
         }
         const resumo = montarResumoTempo(atividade || {}, progresso);
         if (resumo.bloqueioPorTempo === 1) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "FORBIDDEN",
             message: "Conclus\xE3o bloqueada. Tempo m\xEDnimo n\xE3o cumprido."
           });
@@ -30643,23 +30801,23 @@ Responda APENAS em JSON com o formato especificado.`
         }
         return { success: true, aprovadaAutomaticamente: !temAvaliacao };
       }),
-      obterAvaliacaoDaAtividade: protectedProcedure.input(z5.object({
-        cursoId: z5.number().int().min(1, "cursoId inv\xE1lido"),
-        cursoAtribuidoId: z5.number().int().min(1, "cursoAtribuidoId inv\xE1lido"),
-        atividadeId: z5.number().int().min(1, "atividadeId inv\xE1lido"),
-        avaliacaoId: z5.number().int().min(1, "avaliacaoId inv\xE1lido")
+      obterAvaliacaoDaAtividade: protectedProcedure.input(z6.object({
+        cursoId: z6.number().int().min(1, "cursoId inv\xE1lido"),
+        cursoAtribuidoId: z6.number().int().min(1, "cursoAtribuidoId inv\xE1lido"),
+        atividadeId: z6.number().int().min(1, "atividadeId inv\xE1lido"),
+        avaliacaoId: z6.number().int().min(1, "avaliacaoId inv\xE1lido")
       })).query(async ({ ctx: ctx2, input }) => {
         const userId = ctx2.user?.id;
         if (!userId) {
-          throw new TRPCError5({ code: "UNAUTHORIZED" });
+          throw new TRPCError6({ code: "UNAUTHORIZED" });
         }
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
           and6(
@@ -30669,7 +30827,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!atribuicao) {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Curso n\xE3o atribu\xEDdo a este aluno" });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Curso n\xE3o atribu\xEDdo a este aluno" });
         }
         const [atividade] = await database.select().from(atividadesCurso).where(
           and6(
@@ -30678,7 +30836,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!atividade) {
-          throw new TRPCError5({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada neste curso" });
+          throw new TRPCError6({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada neste curso" });
         }
         const [avaliacao] = await database.select().from(avaliacoesAtividade).where(
           and6(
@@ -30687,7 +30845,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!avaliacao) {
-          throw new TRPCError5({ code: "NOT_FOUND", message: "Avalia\xE7\xE3o n\xE3o encontrada para esta atividade" });
+          throw new TRPCError6({ code: "NOT_FOUND", message: "Avalia\xE7\xE3o n\xE3o encontrada para esta atividade" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
           and6(
@@ -30698,7 +30856,7 @@ Responda APENAS em JSON com o formato especificado.`
         ).limit(1);
         const resumo = montarResumoTempo(atividade, progresso);
         if (resumo.bloqueioPorTempo === 1) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "FORBIDDEN",
             message: `Avalia\xE7\xE3o bloqueada por tempo. Faltam ${Math.ceil(resumo.tempoRestanteSegundos / 60)} minutos.`
           });
@@ -30714,24 +30872,24 @@ Responda APENAS em JSON com o formato especificado.`
           }
         };
       }),
-      submeterAvaliacao: protectedProcedure.input(z5.object({
-        cursoId: z5.number().int().positive(),
-        cursoAtribuidoId: z5.number().int().positive(),
-        atividadeId: z5.number().int().positive(),
-        nota: z5.number().min(0).max(10),
-        respostas: z5.any().optional()
+      submeterAvaliacao: protectedProcedure.input(z6.object({
+        cursoId: z6.number().int().positive(),
+        cursoAtribuidoId: z6.number().int().positive(),
+        atividadeId: z6.number().int().positive(),
+        nota: z6.number().min(0).max(10),
+        respostas: z6.any().optional()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const userId = ctx2.user?.id;
         if (!userId) {
-          throw new TRPCError5({ code: "UNAUTHORIZED" });
+          throw new TRPCError6({ code: "UNAUTHORIZED" });
         }
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError5({ code: "FORBIDDEN" });
+          throw new TRPCError6({ code: "FORBIDDEN" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
           and6(
@@ -30741,18 +30899,18 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!progresso) {
-          throw new TRPCError5({ code: "NOT_FOUND", message: "Progresso da atividade n\xE3o encontrado" });
+          throw new TRPCError6({ code: "NOT_FOUND", message: "Progresso da atividade n\xE3o encontrado" });
         }
         const [atividade] = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
         const resumo = montarResumoTempo(atividade || {}, progresso);
         if (resumo.bloqueioPorTempo === 1) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "FORBIDDEN",
             message: "Submiss\xE3o bloqueada. Tempo m\xEDnimo n\xE3o cumprido."
           });
         }
         if (!progresso.avaliacaoLiberada && !resumo.liberadoParaAvaliacao) {
-          throw new TRPCError5({ code: "FORBIDDEN", message: "Avalia\xE7\xE3o n\xE3o foi liberada para esta atividade" });
+          throw new TRPCError6({ code: "FORBIDDEN", message: "Avalia\xE7\xE3o n\xE3o foi liberada para esta atividade" });
         }
         const notaNumerica = Number(input.nota);
         const percentualAcerto = notaNumerica / 10 * 100;
@@ -30890,7 +31048,7 @@ Responda APENAS em JSON com o formato especificado.`
           mensagem: bloqueado ? "Voc\xEA atingiu o limite de 3 tentativas. Por favor, fale com seu mentor." : aprovado ? "Parab\xE9ns! Voc\xEA atingiu 80% de acerto!" : `Voc\xEA n\xE3o atingiu 80% de acerto. Acertos: ${percentualAcerto.toFixed(1)}%. Tentativas restantes: ${tentativasRestantes}`
         };
       }),
-      minhasTentativas: protectedProcedure.input(z5.object({ moduloId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+      minhasTentativas: protectedProcedure.input(z6.object({ moduloId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) return [];
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
@@ -30903,21 +31061,21 @@ Responda APENAS em JSON com o formato especificado.`
         ).orderBy(desc3(alunoModuloAvaliacao.createdAt));
       }),
       registrarReflexaoFinal: protectedProcedure.input(
-        z5.object({
-          cursoAtribuidoId: z5.number(),
-          relato: z5.string().min(1)
+        z6.object({
+          cursoAtribuidoId: z6.number(),
+          relato: z6.string().min(1)
         })
       ).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "INTERNAL_SERVER_ERROR",
             message: "Banco indispon\xEDvel"
           });
         }
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
         if (!aluno) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "NOT_FOUND",
             message: "Aluno n\xE3o encontrado"
           });
@@ -30929,7 +31087,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!cursoAtribuido) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "NOT_FOUND",
             message: "Curso atribu\xEDdo n\xE3o encontrado"
           });
@@ -30956,7 +31114,7 @@ Responda APENAS em JSON com o formato especificado.`
         }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
         return { success: true };
       }),
-      obterUrlCurso: protectedProcedure.input(z5.object({ cursoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+      obterUrlCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) return null;
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
@@ -30968,7 +31126,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!cursoAtribuido) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "FORBIDDEN",
             message: "Acesso negado a este curso"
           });
@@ -30997,20 +31155,20 @@ Responda APENAS em JSON com o formato especificado.`
         };
       }),
       concluirCurso: protectedProcedure.input(
-        z5.object({
-          cursoAtribuidoId: z5.number()
+        z6.object({
+          cursoAtribuidoId: z6.number()
         })
       ).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "INTERNAL_SERVER_ERROR",
             message: "Banco indispon\xEDvel"
           });
         }
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
         if (!aluno) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "NOT_FOUND",
             message: "Aluno n\xE3o encontrado"
           });
@@ -31022,7 +31180,7 @@ Responda APENAS em JSON com o formato especificado.`
           )
         ).limit(1);
         if (!cursoAtribuido) {
-          throw new TRPCError5({
+          throw new TRPCError6({
             code: "NOT_FOUND",
             message: "Curso atribu\xEDdo n\xE3o encontrado"
           });
@@ -31049,20 +31207,20 @@ Responda APENAS em JSON com o formato especificado.`
         };
       }),
       updateAtividade: adminOrAdmin2Procedure.input(
-        z5.object({
-          id: z5.number(),
-          titulo: z5.string(),
-          tipoAtividade: z5.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]),
-          urlGenially: z5.string().optional(),
-          urlMidia: z5.string().optional(),
-          imagemUrl: z5.string().optional(),
-          descricao: z5.string().optional(),
-          isActive: z5.number()
+        z6.object({
+          id: z6.number(),
+          titulo: z6.string(),
+          tipoAtividade: z6.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]),
+          urlGenially: z6.string().optional(),
+          urlMidia: z6.string().optional(),
+          imagemUrl: z6.string().optional(),
+          descricao: z6.string().optional(),
+          isActive: z6.number()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
         }
         const updateData = {
           titulo: input.titulo,
@@ -31082,10 +31240,10 @@ Responda APENAS em JSON com o formato especificado.`
         await database.update(atividadesCurso).set(updateData).where(eq8(atividadesCurso.id, input.id));
         return { success: true };
       }),
-      deleteAtividade: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+      deleteAtividade: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
         }
         await database.update(atividadesCurso).set({ isActive: 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(atividadesCurso.id, input.id));
         return { success: true };
@@ -31099,28 +31257,28 @@ Responda APENAS em JSON com o formato especificado.`
       const videos = await database.select().from(onboardingVideos).where(eq8(onboardingVideos.isActive, 1)).orderBy(asc3(onboardingVideos.ordem));
       return videos;
     }),
-    obter: publicProcedure.input(z5.object({ id: z5.number() })).query(async ({ input }) => {
+    obter: publicProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return null;
       const video = await database.select().from(onboardingVideos).where(eq8(onboardingVideos.id, input.id)).limit(1);
       return video[0] || null;
     }),
-    obterPorChave: publicProcedure.input(z5.object({ chave: z5.string() })).query(async ({ input }) => {
+    obterPorChave: publicProcedure.input(z6.object({ chave: z6.string() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return null;
       const video = await database.select().from(onboardingVideos).where(and6(eq8(onboardingVideos.chave, input.chave), eq8(onboardingVideos.isActive, 1))).limit(1);
       return video[0] || null;
     }),
-    criar: adminOrAdmin2Procedure.input(z5.object({
-      chave: z5.string(),
-      titulo: z5.string(),
-      descricao: z5.string().optional(),
-      videoUrl: z5.string(),
-      textoExplicativo: z5.string().optional(),
-      ordem: z5.number().default(0)
+    criar: adminOrAdmin2Procedure.input(z6.object({
+      chave: z6.string(),
+      titulo: z6.string(),
+      descricao: z6.string().optional(),
+      videoUrl: z6.string(),
+      textoExplicativo: z6.string().optional(),
+      ordem: z6.number().default(0)
     })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const result = await database.insert(onboardingVideos).values({
         chave: input.chave,
         titulo: input.titulo,
@@ -31132,24 +31290,24 @@ Responda APENAS em JSON com o formato especificado.`
       });
       return result;
     }),
-    atualizar: adminOrAdmin2Procedure.input(z5.object({
-      id: z5.number(),
-      chave: z5.string().optional(),
-      titulo: z5.string().optional(),
-      descricao: z5.string().optional(),
-      videoUrl: z5.string().optional(),
-      textoExplicativo: z5.string().optional(),
-      ordem: z5.number().optional()
+    atualizar: adminOrAdmin2Procedure.input(z6.object({
+      id: z6.number(),
+      chave: z6.string().optional(),
+      titulo: z6.string().optional(),
+      descricao: z6.string().optional(),
+      videoUrl: z6.string().optional(),
+      textoExplicativo: z6.string().optional(),
+      ordem: z6.number().optional()
     })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const { id, ...updates } = input;
       const result = await database.update(onboardingVideos).set(updates).where(eq8(onboardingVideos.id, id));
       return result;
     }),
-    deletar: adminOrAdmin2Procedure.input(z5.object({ id: z5.number() })).mutation(async ({ input }) => {
+    deletar: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const result = await database.delete(onboardingVideos).where(eq8(onboardingVideos.id, input.id));
       return result;
     })
@@ -31175,7 +31333,7 @@ async function createContext(opts) {
 // server/_core/vite.ts
 import express from "express";
 import fs2 from "fs";
-import { nanoid as nanoid2 } from "nanoid";
+import { nanoid as nanoid3 } from "nanoid";
 import path2 from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
@@ -31358,7 +31516,7 @@ async function setupVite(app, server) {
       let template = await fs2.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(
         `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid2()}"`
+        `src="/src/main.tsx?v=${nanoid3()}"`
       );
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);

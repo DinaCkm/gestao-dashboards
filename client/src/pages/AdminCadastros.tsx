@@ -3211,6 +3211,7 @@ const ADMIN_PAGE_GROUPS = [
       { path: '/admin/atribuir-cursos', label: 'Atribuir Cursos' },
       { path: '/admin/plataforma-aulas', label: 'Gerenciar Plataforma de Cursos' },
       { path: '/admin/biblioteca-pedagogica', label: 'Biblioteca Pedagógica' },
+      { path: '/admin/biblioteca-livros', label: 'Biblioteca de Livros' },
     ],
   },
   {

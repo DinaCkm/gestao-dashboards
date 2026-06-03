@@ -85,6 +85,8 @@ import AlunoResultadoAvaliacao from "./pages/aluno/AlunoResultadoAvaliacao";
 import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
 import OnboardingVideos from "./pages/admin/OnboardingVideos";
 import BibliotecaPedagogica from "./pages/admin/BibliotecaPedagogica";
+import AdminBibliotecaLivros from "./pages/admin/BibliotecaLivros";
+import BibliotecaLivros from "./pages/BibliotecaLivros";
 import AuditoriaResets from "./pages/admin/AuditoriaResets";
 import AuditoriaNotesMentoria from "./pages/admin/AuditoriaNotesMentoria";
 import VisualizarPDI from "./pages/VisualizarPDI";
@@ -179,6 +181,8 @@ function Router() {
       <Route path={"/aluno/competencias-comp-tec/reflexao"} component={AlunoReflexaoFinal} />
       <Route path={"/admin/onboarding-videos"} component={OnboardingVideos} />
       <Route path={"/admin/biblioteca-pedagogica"} component={BibliotecaPedagogica} />
+      <Route path={"/admin/biblioteca-livros"} component={AdminBibliotecaLivros} />
+      <Route path={"/biblioteca"} component={BibliotecaLivros} />
       <Route path={"/admin/auditoria-resets"} component={AuditoriaResets} />
       <Route path={"/admin/auditoria-notas-mentoria"} component={AuditoriaNotesMentoria} />
       <Route path={"/pdi/nivel/:contratoNivelId"} component={VisualizarPDI} />
