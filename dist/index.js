@@ -17773,7 +17773,6 @@ import { z as z4 } from "zod";
 init_db();
 import { TRPCError as TRPCError4 } from "@trpc/server";
 import { nanoid as nanoid2 } from "nanoid";
-var TIPOS = ["livro", "filme", "material"];
 function mimeForExt(ext) {
   const map = {
     pdf: "application/pdf",
@@ -17788,17 +17787,19 @@ function mimeForExt(ext) {
     ppt: "application/vnd.ms-powerpoint",
     pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     xls: "application/vnd.ms-excel",
-    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    zip: "application/zip"
   };
   return map[ext.toLowerCase()] || "application/octet-stream";
 }
-async function getRawConn() {
+async function getConn() {
   const database = await getDb();
   if (!database) throw new TRPCError4({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
   const conn = database.$client?.promise ? database.$client.promise() : database.$client;
   if (!conn) throw new TRPCError4({ code: "INTERNAL_SERVER_ERROR", message: "Conex\xE3o indispon\xEDvel" });
   return conn;
 }
+var TIPOS = ["livro", "filme", "material"];
 var bibliotecaLivrosRouter = router({
   // Listar itens — acessível a todos os usuários autenticados
   listar: protectedProcedure.input(
@@ -17809,9 +17810,10 @@ var bibliotecaLivrosRouter = router({
       apenasAtivos: z4.boolean().optional().default(true)
     })
   ).query(async ({ input }) => {
-    const conn = await getRawConn();
+    const conn = await getConn();
     let query = `
-        SELECT id, tipo, titulo, autor, descricao, comentario, categoria, capa_url, pdf_url, link_externo, trailer_url, ativo, ordem, criado_em
+        SELECT id, tipo, titulo, autor, descricao, comentario, categoria,
+               capa_url, pdf_url, link_externo, trailer_url, ativo, ordem, criado_em
         FROM biblioteca_livros
         WHERE 1=1
       `;
@@ -17836,9 +17838,9 @@ var bibliotecaLivrosRouter = router({
     const [rows] = await conn.execute(query, params);
     return rows;
   }),
-  // Listar categorias por tipo — acessível a todos
+  // Listar categorias por tipo
   listarCategorias: protectedProcedure.input(z4.object({ tipo: z4.enum(TIPOS).optional() })).query(async ({ input }) => {
-    const conn = await getRawConn();
+    const conn = await getConn();
     let query = "SELECT DISTINCT categoria FROM biblioteca_livros WHERE ativo = 1 AND categoria IS NOT NULL AND categoria != ''";
     const params = [];
     if (input.tipo) {
@@ -17851,7 +17853,7 @@ var bibliotecaLivrosRouter = router({
   }),
   // Contar por tipo — para os cards do Mural
   contar: protectedProcedure.query(async () => {
-    const conn = await getRawConn();
+    const conn = await getConn();
     const [rows] = await conn.execute(
       "SELECT tipo, COUNT(*) as total FROM biblioteca_livros WHERE ativo = 1 GROUP BY tipo"
     );
@@ -17873,7 +17875,8 @@ var bibliotecaLivrosRouter = router({
   ).mutation(async ({ ctx: ctx2, input }) => {
     const buffer = Buffer.from(input.fileData, "base64");
     const ext = input.fileName.split(".").pop() || "bin";
-    const key = `biblioteca/${ctx2.user.id}/${Date.now()}-${nanoid2(8)}.${ext}`;
+    const userId = ctx2.user.id || ctx2.user.openId || "admin";
+    const key = `biblioteca/${userId}/${Date.now()}-${nanoid2(8)}.${ext}`;
     const contentType = mimeForExt(ext);
     const result = await storagePut(key, buffer, contentType);
     return { url: result.url, key: result.key };
@@ -17894,7 +17897,7 @@ var bibliotecaLivrosRouter = router({
       ordem: z4.number().optional().default(0)
     })
   ).mutation(async ({ input }) => {
-    const conn = await getRawConn();
+    const conn = await getConn();
     const [result] = await conn.execute(
       `INSERT INTO biblioteca_livros (tipo, titulo, autor, descricao, comentario, categoria, capa_url, pdf_url, link_externo, trailer_url, ordem)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -17932,9 +17935,11 @@ var bibliotecaLivrosRouter = router({
       ordem: z4.number().optional().default(0)
     })
   ).mutation(async ({ input }) => {
-    const conn = await getRawConn();
+    const conn = await getConn();
     await conn.execute(
-      `UPDATE biblioteca_livros SET tipo=?, titulo=?, autor=?, descricao=?, comentario=?, categoria=?, capa_url=?, pdf_url=?, link_externo=?, trailer_url=?, ativo=?, ordem=?
+      `UPDATE biblioteca_livros
+         SET tipo=?, titulo=?, autor=?, descricao=?, comentario=?, categoria=?,
+             capa_url=?, pdf_url=?, link_externo=?, trailer_url=?, ativo=?, ordem=?
          WHERE id=?`,
       [
         input.tipo,
@@ -17956,7 +17961,7 @@ var bibliotecaLivrosRouter = router({
   }),
   // Excluir item — apenas admin
   excluir: adminProcedure.input(z4.object({ id: z4.number() })).mutation(async ({ input }) => {
-    const conn = await getRawConn();
+    const conn = await getConn();
     await conn.execute("DELETE FROM biblioteca_livros WHERE id = ?", [input.id]);
     return { ok: true };
   })

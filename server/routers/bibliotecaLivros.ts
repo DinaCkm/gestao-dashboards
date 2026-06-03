@@ -5,9 +5,6 @@ import { getDb } from "../db";
 import { storagePut } from "../storage";
 import { nanoid } from "nanoid";
 
-const TIPOS = ["livro", "filme", "material"] as const;
-type Tipo = typeof TIPOS[number];
-
 // ============ HELPERS ============
 function mimeForExt(ext: string): string {
   const map: Record<string, string> = {
@@ -24,11 +21,12 @@ function mimeForExt(ext: string): string {
     pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     xls: "application/vnd.ms-excel",
     xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    zip: "application/zip",
   };
   return map[ext.toLowerCase()] || "application/octet-stream";
 }
 
-async function getRawConn() {
+async function getConn() {
   const database = await getDb();
   if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
   const conn = (database as any).$client?.promise
@@ -38,8 +36,11 @@ async function getRawConn() {
   return conn as { execute: (sql: string, params?: any[]) => Promise<[any[], any]> };
 }
 
+const TIPOS = ["livro", "filme", "material"] as const;
+
 // ============ ROUTER ============
 export const bibliotecaLivrosRouter = router({
+
   // Listar itens — acessível a todos os usuários autenticados
   listar: protectedProcedure
     .input(
@@ -51,9 +52,10 @@ export const bibliotecaLivrosRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const conn = await getRawConn();
+      const conn = await getConn();
       let query = `
-        SELECT id, tipo, titulo, autor, descricao, comentario, categoria, capa_url, pdf_url, link_externo, trailer_url, ativo, ordem, criado_em
+        SELECT id, tipo, titulo, autor, descricao, comentario, categoria,
+               capa_url, pdf_url, link_externo, trailer_url, ativo, ordem, criado_em
         FROM biblioteca_livros
         WHERE 1=1
       `;
@@ -81,11 +83,11 @@ export const bibliotecaLivrosRouter = router({
       return rows as any[];
     }),
 
-  // Listar categorias por tipo — acessível a todos
+  // Listar categorias por tipo
   listarCategorias: protectedProcedure
     .input(z.object({ tipo: z.enum(TIPOS).optional() }))
     .query(async ({ input }) => {
-      const conn = await getRawConn();
+      const conn = await getConn();
       let query = "SELECT DISTINCT categoria FROM biblioteca_livros WHERE ativo = 1 AND categoria IS NOT NULL AND categoria != ''";
       const params: any[] = [];
       if (input.tipo) {
@@ -99,7 +101,7 @@ export const bibliotecaLivrosRouter = router({
 
   // Contar por tipo — para os cards do Mural
   contar: protectedProcedure.query(async () => {
-    const conn = await getRawConn();
+    const conn = await getConn();
     const [rows] = await conn.execute(
       "SELECT tipo, COUNT(*) as total FROM biblioteca_livros WHERE ativo = 1 GROUP BY tipo"
     );
@@ -123,7 +125,8 @@ export const bibliotecaLivrosRouter = router({
     .mutation(async ({ ctx, input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
       const ext = input.fileName.split(".").pop() || "bin";
-      const key = `biblioteca/${ctx.user.id}/${Date.now()}-${nanoid(8)}.${ext}`;
+      const userId = (ctx.user as any).id || (ctx.user as any).openId || "admin";
+      const key = `biblioteca/${userId}/${Date.now()}-${nanoid(8)}.${ext}`;
       const contentType = mimeForExt(ext);
       const result = await storagePut(key, buffer, contentType);
       return { url: result.url, key: result.key };
@@ -147,7 +150,7 @@ export const bibliotecaLivrosRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const conn = await getRawConn();
+      const conn = await getConn();
       const [result] = await conn.execute(
         `INSERT INTO biblioteca_livros (tipo, titulo, autor, descricao, comentario, categoria, capa_url, pdf_url, link_externo, trailer_url, ordem)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -188,9 +191,11 @@ export const bibliotecaLivrosRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const conn = await getRawConn();
+      const conn = await getConn();
       await conn.execute(
-        `UPDATE biblioteca_livros SET tipo=?, titulo=?, autor=?, descricao=?, comentario=?, categoria=?, capa_url=?, pdf_url=?, link_externo=?, trailer_url=?, ativo=?, ordem=?
+        `UPDATE biblioteca_livros
+         SET tipo=?, titulo=?, autor=?, descricao=?, comentario=?, categoria=?,
+             capa_url=?, pdf_url=?, link_externo=?, trailer_url=?, ativo=?, ordem=?
          WHERE id=?`,
         [
           input.tipo,
@@ -215,7 +220,7 @@ export const bibliotecaLivrosRouter = router({
   excluir: adminProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const conn = await getRawConn();
+      const conn = await getConn();
       await conn.execute("DELETE FROM biblioteca_livros WHERE id = ?", [input.id]);
       return { ok: true };
     }),
