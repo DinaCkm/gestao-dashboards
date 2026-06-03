@@ -233,8 +233,8 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: Building2, label: "Dashboard Por Empresa", path: "/dashboard/empresa", roles: ["manager"], requireConsultorRole: 'mentor' },
-  { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos/mentora", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: BriefcaseBusiness, label: "Painel de Processos", path: "/processos-seletivos", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: ClipboardCheck, label: "Avaliação PS", path: "/processos-seletivos/avaliacao", roles: ["manager"], requireConsultorRole: 'mentor' },
 
   
   // === GERENTE DE EMPRESA ===
