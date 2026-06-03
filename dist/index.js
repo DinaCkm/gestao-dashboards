@@ -20536,7 +20536,6 @@ var appRouter = router({
             for (const c of compList) {
               if (c.nome) compByName.set(c.nome.toLowerCase().trim(), c.id);
             }
-            await deleteAllStudentPerformance();
             const getXlsxVal = (row, colName) => {
               const idx = colMap[colName];
               if (idx === void 0 || idx >= row.length) return void 0;
@@ -20636,6 +20635,25 @@ var appRouter = router({
                 naoConcluidoEmAtraso: getXlsxVal(row, "N\xE3o Conclu\xEDdo e em atraso (%)") || null,
                 uploadId: perfUploadId
               });
+            }
+            if (records.length > 0) {
+              const externalIdsNaPlanilha = [...new Set(records.map((r) => r.externalUserId).filter(Boolean))];
+              if (externalIdsNaPlanilha.length > 0) {
+                const database = await getDb();
+                if (database) {
+                  const conn = database.$client?.promise ? database.$client.promise() : database.$client;
+                  if (conn) {
+                    for (let i = 0; i < externalIdsNaPlanilha.length; i += 500) {
+                      const lote = externalIdsNaPlanilha.slice(i, i + 500);
+                      const placeholders = lote.map(() => "?").join(",");
+                      await conn.execute(
+                        `DELETE FROM student_performance WHERE externalUserId IN (${placeholders})`,
+                        lote
+                      );
+                    }
+                  }
+                }
+              }
             }
             performanceInserted = await insertStudentPerformanceBatch(records);
             await updatePerformanceUpload(perfUploadId, {

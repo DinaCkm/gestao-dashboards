@@ -964,8 +964,9 @@ export const appRouter = router({
                 if (c.nome) compByName.set(c.nome.toLowerCase().trim(), c.id);
               }
               
-              // Delete existing data (replaceAll)
-              await db.deleteAllStudentPerformance();
+              // NÃO apagar todos os dados — apenas deletar registros dos alunos/turmas presentes na planilha
+              // Isso preserva dados de alunos que não estão na planilha atual
+              // (será feito após montar a lista de externalUserIds da planilha)
               
               const getXlsxVal = (row: unknown[], colName: string): string | undefined => {
                 const idx = colMap[colName];
@@ -1082,6 +1083,31 @@ export const appRouter = router({
                 });
               }
               
+              // Deletar apenas os registros dos externalUserIds presentes na planilha atual
+              // Isso preserva dados de alunos que não estão nesta planilha
+              if (records.length > 0) {
+                const externalIdsNaPlanilha = [...new Set(records.map((r: any) => r.externalUserId).filter(Boolean))];
+                if (externalIdsNaPlanilha.length > 0) {
+                  const database = await getDb();
+                  if (database) {
+                    const conn = (database as any).$client?.promise
+                      ? (database as any).$client.promise()
+                      : (database as any).$client;
+                    if (conn) {
+                      // Deletar em lotes de 500 para evitar query muito grande
+                      for (let i = 0; i < externalIdsNaPlanilha.length; i += 500) {
+                        const lote = externalIdsNaPlanilha.slice(i, i + 500);
+                        const placeholders = lote.map(() => '?').join(',');
+                        await conn.execute(
+                          `DELETE FROM student_performance WHERE externalUserId IN (${placeholders})`,
+                          lote
+                        );
+                      }
+                    }
+                  }
+                }
+              }
+
               // Insert all records
               performanceInserted = await db.insertStudentPerformanceBatch(records);
               
