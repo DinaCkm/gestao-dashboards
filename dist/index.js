@@ -17773,6 +17773,7 @@ import { z as z4 } from "zod";
 init_db();
 import { TRPCError as TRPCError4 } from "@trpc/server";
 import { nanoid as nanoid2 } from "nanoid";
+var TIPOS = ["livro", "filme", "material"];
 function mimeForExt(ext) {
   const map = {
     pdf: "application/pdf",
@@ -17780,7 +17781,14 @@ function mimeForExt(ext) {
     jpeg: "image/jpeg",
     png: "image/png",
     webp: "image/webp",
-    gif: "image/gif"
+    gif: "image/gif",
+    mp4: "video/mp4",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ppt: "application/vnd.ms-powerpoint",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   };
   return map[ext.toLowerCase()] || "application/octet-stream";
 }
@@ -17792,9 +17800,10 @@ async function getRawConn() {
   return conn;
 }
 var bibliotecaLivrosRouter = router({
-  // Listar livros — acessível a todos os usuários autenticados
+  // Listar itens — acessível a todos os usuários autenticados
   listar: protectedProcedure.input(
     z4.object({
+      tipo: z4.enum(TIPOS).optional(),
       busca: z4.string().optional(),
       categoria: z4.string().optional(),
       apenasAtivos: z4.boolean().optional().default(true)
@@ -17802,7 +17811,7 @@ var bibliotecaLivrosRouter = router({
   ).query(async ({ input }) => {
     const conn = await getRawConn();
     let query = `
-        SELECT id, titulo, autor, descricao, categoria, capa_url, pdf_url, link_externo, ativo, ordem, criado_em
+        SELECT id, tipo, titulo, autor, descricao, comentario, categoria, capa_url, pdf_url, link_externo, trailer_url, ativo, ordem, criado_em
         FROM biblioteca_livros
         WHERE 1=1
       `;
@@ -17810,10 +17819,14 @@ var bibliotecaLivrosRouter = router({
     if (input.apenasAtivos) {
       query += " AND ativo = 1";
     }
+    if (input.tipo) {
+      query += " AND tipo = ?";
+      params.push(input.tipo);
+    }
     if (input.busca) {
-      query += " AND (titulo LIKE ? OR autor LIKE ? OR descricao LIKE ? OR categoria LIKE ?)";
+      query += " AND (titulo LIKE ? OR autor LIKE ? OR descricao LIKE ? OR comentario LIKE ? OR categoria LIKE ?)";
       const like = `%${input.busca}%`;
-      params.push(like, like, like, like);
+      params.push(like, like, like, like, like);
     }
     if (input.categoria) {
       query += " AND categoria = ?";
@@ -17823,93 +17836,117 @@ var bibliotecaLivrosRouter = router({
     const [rows] = await conn.execute(query, params);
     return rows;
   }),
-  // Listar categorias únicas — acessível a todos
-  listarCategorias: protectedProcedure.query(async () => {
+  // Listar categorias por tipo — acessível a todos
+  listarCategorias: protectedProcedure.input(z4.object({ tipo: z4.enum(TIPOS).optional() })).query(async ({ input }) => {
     const conn = await getRawConn();
-    const [rows] = await conn.execute(
-      "SELECT DISTINCT categoria FROM biblioteca_livros WHERE ativo = 1 AND categoria IS NOT NULL AND categoria != '' ORDER BY categoria ASC"
-    );
+    let query = "SELECT DISTINCT categoria FROM biblioteca_livros WHERE ativo = 1 AND categoria IS NOT NULL AND categoria != ''";
+    const params = [];
+    if (input.tipo) {
+      query += " AND tipo = ?";
+      params.push(input.tipo);
+    }
+    query += " ORDER BY categoria ASC";
+    const [rows] = await conn.execute(query, params);
     return rows.map((r) => r.categoria);
   }),
-  // Contar livros ativos — para o card do Mural
+  // Contar por tipo — para os cards do Mural
   contar: protectedProcedure.query(async () => {
     const conn = await getRawConn();
-    const [rows] = await conn.execute("SELECT COUNT(*) as total FROM biblioteca_livros WHERE ativo = 1");
-    return { total: Number(rows[0]?.total ?? 0) };
+    const [rows] = await conn.execute(
+      "SELECT tipo, COUNT(*) as total FROM biblioteca_livros WHERE ativo = 1 GROUP BY tipo"
+    );
+    const result = { livro: 0, filme: 0, material: 0, total: 0 };
+    for (const r of rows) {
+      result[r.tipo] = Number(r.total);
+      result.total += Number(r.total);
+    }
+    return result;
   }),
-  // Upload de arquivo (PDF ou imagem de capa) — apenas admin
+  // Upload de arquivo — apenas admin
   uploadArquivo: adminProcedure.input(
     z4.object({
       fileName: z4.string(),
       fileData: z4.string(),
       // Base64
-      tipo: z4.enum(["pdf", "capa"])
+      tipo: z4.enum(["pdf", "capa", "material"])
     })
   ).mutation(async ({ ctx: ctx2, input }) => {
     const buffer = Buffer.from(input.fileData, "base64");
-    const ext = input.fileName.split(".").pop() || (input.tipo === "pdf" ? "pdf" : "jpg");
+    const ext = input.fileName.split(".").pop() || "bin";
     const key = `biblioteca/${ctx2.user.id}/${Date.now()}-${nanoid2(8)}.${ext}`;
     const contentType = mimeForExt(ext);
     const result = await storagePut(key, buffer, contentType);
     return { url: result.url, key: result.key };
   }),
-  // Criar livro — apenas admin
+  // Criar item — apenas admin
   criar: adminProcedure.input(
     z4.object({
+      tipo: z4.enum(TIPOS).default("livro"),
       titulo: z4.string().min(1),
       autor: z4.string().optional(),
       descricao: z4.string().optional(),
+      comentario: z4.string().optional(),
       categoria: z4.string().optional(),
       capa_url: z4.string().optional(),
       pdf_url: z4.string().optional(),
       link_externo: z4.string().optional(),
+      trailer_url: z4.string().optional(),
       ordem: z4.number().optional().default(0)
     })
   ).mutation(async ({ input }) => {
     const conn = await getRawConn();
     const [result] = await conn.execute(
-      `INSERT INTO biblioteca_livros (titulo, autor, descricao, categoria, capa_url, pdf_url, link_externo, ordem)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO biblioteca_livros (tipo, titulo, autor, descricao, comentario, categoria, capa_url, pdf_url, link_externo, trailer_url, ordem)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        input.tipo,
         input.titulo,
         input.autor || null,
         input.descricao || null,
+        input.comentario || null,
         input.categoria || null,
         input.capa_url || null,
         input.pdf_url || null,
         input.link_externo || null,
+        input.trailer_url || null,
         input.ordem ?? 0
       ]
     );
     return { id: result.insertId };
   }),
-  // Editar livro — apenas admin
+  // Editar item — apenas admin
   editar: adminProcedure.input(
     z4.object({
       id: z4.number(),
+      tipo: z4.enum(TIPOS).default("livro"),
       titulo: z4.string().min(1),
       autor: z4.string().optional(),
       descricao: z4.string().optional(),
+      comentario: z4.string().optional(),
       categoria: z4.string().optional(),
       capa_url: z4.string().optional(),
       pdf_url: z4.string().optional(),
       link_externo: z4.string().optional(),
+      trailer_url: z4.string().optional(),
       ativo: z4.boolean().optional().default(true),
       ordem: z4.number().optional().default(0)
     })
   ).mutation(async ({ input }) => {
     const conn = await getRawConn();
     await conn.execute(
-      `UPDATE biblioteca_livros SET titulo=?, autor=?, descricao=?, categoria=?, capa_url=?, pdf_url=?, link_externo=?, ativo=?, ordem=?
+      `UPDATE biblioteca_livros SET tipo=?, titulo=?, autor=?, descricao=?, comentario=?, categoria=?, capa_url=?, pdf_url=?, link_externo=?, trailer_url=?, ativo=?, ordem=?
          WHERE id=?`,
       [
+        input.tipo,
         input.titulo,
         input.autor || null,
         input.descricao || null,
+        input.comentario || null,
         input.categoria || null,
         input.capa_url || null,
         input.pdf_url || null,
         input.link_externo || null,
+        input.trailer_url || null,
         input.ativo ? 1 : 0,
         input.ordem ?? 0,
         input.id
@@ -17917,7 +17954,7 @@ var bibliotecaLivrosRouter = router({
     );
     return { ok: true };
   }),
-  // Excluir livro — apenas admin
+  // Excluir item — apenas admin
   excluir: adminProcedure.input(z4.object({ id: z4.number() })).mutation(async ({ input }) => {
     const conn = await getRawConn();
     await conn.execute("DELETE FROM biblioteca_livros WHERE id = ?", [input.id]);
