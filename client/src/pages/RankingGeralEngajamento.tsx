@@ -55,25 +55,42 @@ export default function RankingGeralEngajamento() {
   const { user } = useAuth();
   const [pessoaFiltro, setPessoaFiltro] = useState("");
   const [turmaFiltro, setTurmaFiltro] = useState("todas");
+  const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<number | null>(null);
+
+  const isAdmin = user?.role === "admin" || user?.role === "admin2";
+  const consultorRole = (user as any)?.consultorRole;
+  const hasConsultorId = !!(user as any)?.consultorId;
+  const isGestor =
+    isAdmin ||
+    (user?.role === "manager" &&
+      (consultorRole === "gerente" ||
+        (!hasConsultorId && !(user as any)?.alunoId) ||
+        !!(user as any)?.alunoId));
 
   const {
     data: empresas,
     isLoading: loadingEmpresas,
     error: errorEmpresas,
   } = trpc.indicadores.empresas.useQuery();
+
+  // Para admin: usa empresa selecionada no dropdown; para gestor: usa programId do usuário
+  const programIdEfetivo = isAdmin
+    ? (empresaSelecionadaId || null)
+    : (user?.programId || null);
+
   const empresaNome = useMemo(() => {
-    if (!empresas || !user?.programId) return null;
-    const empresa = empresas.find(e => e.id === user.programId);
+    if (!empresas || !programIdEfetivo) return null;
+    const empresa = empresas.find(e => e.id === programIdEfetivo);
     return empresa?.nome || null;
-  }, [empresas, user?.programId]);
+  }, [empresas, programIdEfetivo]);
 
   const {
     data: turmas,
     isLoading: loadingTurmas,
     error: errorTurmas,
   } = trpc.turmas.list.useQuery(
-    { programId: user?.programId || 0 },
-    { enabled: !!user?.programId }
+    { programId: programIdEfetivo || 0 },
+    { enabled: !!programIdEfetivo }
   );
 
   const { data, isLoading, error } = trpc.indicadores.porEmpresa.useQuery(
@@ -92,16 +109,13 @@ export default function RankingGeralEngajamento() {
   }, [turmas]);
 
   // Formata dataCongelamento para DD/MM/AAAA (padrão brasileiro)
-  // Aceita string ISO 'YYYY-MM-DD', objeto Date ou string com timestamp
   const formatarDataCongelamento = (raw: any): string => {
     if (!raw) return '';
     const s = String(raw);
-    // Se vier no formato YYYY-MM-DD (com ou sem timestamp)
     const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (isoMatch) {
       return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
     }
-    // Fallback: tentar converter via Date
     const d = new Date(raw);
     if (!isNaN(d.getTime())) {
       const dd = String(d.getUTCDate()).padStart(2, '0');
@@ -112,7 +126,7 @@ export default function RankingGeralEngajamento() {
     return s;
   };
 
-  // Mapa de codigoTurma -> dataCongelamento formatada (ex: { BS1: '31/05/2026' })
+  // Mapa de codigoTurma -> dataCongelamento formatada
   const congelamentoMap = useMemo(() => {
     const map = new Map<string, string>();
     if (turmas) {
@@ -126,7 +140,7 @@ export default function RankingGeralEngajamento() {
     return map;
   }, [turmas]);
 
-  // Lista de códigos únicos de turma para o filtro (ex: ["BS1", "BS2", "BS3"])
+  // Lista de códigos únicos de turma para o filtro
   const codigosTurmaUnicos = useMemo(() => {
     if (!turmas) return [];
     const codigos = new Set<string>();
@@ -225,13 +239,6 @@ export default function RankingGeralEngajamento() {
     URL.revokeObjectURL(url);
   };
 
-  const consultorRole = (user as any)?.consultorRole;
-  const hasConsultorId = !!(user as any)?.consultorId;
-  const isGestor =
-    user?.role === "manager" &&
-    (consultorRole === "gerente" ||
-      (!hasConsultorId && !(user as any)?.alunoId) ||
-      !!(user as any)?.alunoId);
   const semTurma = !loadingTurmas && (turmas?.length || 0) === 0;
   const semAluno = !isLoading && !error && rankingBase.length === 0;
   const semResultadoFiltro =
@@ -264,8 +271,7 @@ export default function RankingGeralEngajamento() {
                 disabled={
                   rankingFiltrado.length === 0 ||
                   semTurma ||
-                  exportarExcel.isPending ||
-                  !isGestor
+                  exportarExcel.isPending
                 }
               >
                 <Download className="mr-2 h-4 w-4" />
@@ -274,6 +280,32 @@ export default function RankingGeralEngajamento() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Seletor de empresa para admins */}
+            {isAdmin && (
+              <div>
+                <label className="mb-2 block text-sm font-medium">Empresa</label>
+                <Select
+                  value={empresaSelecionadaId ? String(empresaSelecionadaId) : ""}
+                  onValueChange={val => {
+                    setEmpresaSelecionadaId(Number(val));
+                    setTurmaFiltro("todas");
+                    setPessoaFiltro("");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma empresa..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(empresas || []).map((e: any) => (
+                      <SelectItem key={e.id} value={String(e.id)}>
+                        {e.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium">Pessoa</label>
@@ -304,6 +336,10 @@ export default function RankingGeralEngajamento() {
             {!isGestor ? (
               <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                 Acesso restrito a gestores.
+              </div>
+            ) : isAdmin && !empresaSelecionadaId ? (
+              <div className="rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
+                Selecione uma empresa acima para visualizar o ranking.
               </div>
             ) : loadingEmpresas || loadingTurmas || isLoading ? (
               <div className="rounded-md border bg-muted/30 p-4 text-sm">
