@@ -19353,7 +19353,7 @@ async function getRelatorioFinanceiroV2(db2, dateFrom, dateTo) {
   const programMap = new Map(allPrograms.map((p) => [p.id, p]));
   const globalAlertas = [];
   const byMentor = {};
-  const agendamentosGrupaisContabilizados = /* @__PURE__ */ new Set();
+  const agendamentosGrupaisContabilizados = /* @__PURE__ */ new Map();
   for (const s of filtered) {
     if (!s.consultorId) continue;
     const valorPadrao = s.valorSessaoPadrao ? Number(s.valorSessaoPadrao) : 0;
@@ -19372,26 +19372,42 @@ async function getRelatorioFinanceiroV2(db2, dateFrom, dateTo) {
         sessoes: []
       };
     }
+    if (isGrupal && s.appointmentId && agendamentosGrupaisContabilizados.has(s.appointmentId)) {
+      const ref = agendamentosGrupaisContabilizados.get(s.appointmentId);
+      const mentorSessoes = byMentor[ref.consultorId]?.sessoes;
+      if (mentorSessoes) {
+        const sessaoExistente = mentorSessoes[ref.sessaoIndex];
+        if (sessaoExistente) {
+          if (!sessaoExistente.participantes) {
+            sessaoExistente.participantes = [{
+              alunoId: sessaoExistente.alunoId,
+              alunoNome: sessaoExistente.alunoNome,
+              programId: sessaoExistente.programId,
+              programNome: sessaoExistente.programNome
+            }];
+          }
+          sessaoExistente.participantes.push({
+            alunoId: s.alunoId,
+            alunoNome: s.alunoNome || "N/A",
+            programId,
+            programNome
+          });
+          sessaoExistente.alunoNome = sessaoExistente.participantes.map((p) => p.alunoNome).join(", ");
+        }
+      }
+      continue;
+    }
     let valor = 0;
     let origemPreco = "zero";
-    if (isGrupal && s.appointmentId && agendamentosGrupaisContabilizados.has(s.appointmentId)) {
-      valor = 0;
-      origemPreco = "empresa_mentor";
-      alertas.push("Sess\xE3o grupal j\xE1 contabilizada no agendamento");
+    const v2Result = findBestPricingRule(allV2Rules, s.consultorId, programId, tipoSessao, s.sessionDate ? String(s.sessionDate) : null);
+    if (v2Result.rule) {
+      valor = Number(v2Result.rule.valor);
+      origemPreco = v2Result.origem;
     } else {
-      const v2Result = findBestPricingRule(allV2Rules, s.consultorId, programId, tipoSessao, s.sessionDate ? String(s.sessionDate) : null);
-      if (v2Result.rule) {
-        valor = Number(v2Result.rule.valor);
-        origemPreco = v2Result.origem;
-      } else {
-        const legacyRules = legacyMap.get(s.consultorId) || [];
-        const legacyResult = calcularValorLegado(s.sessionNumber, valorPadrao, legacyRules);
-        valor = legacyResult.valor;
-        origemPreco = legacyResult.origem;
-      }
-      if (isGrupal && s.appointmentId) {
-        agendamentosGrupaisContabilizados.add(s.appointmentId);
-      }
+      const legacyRules = legacyMap.get(s.consultorId) || [];
+      const legacyResult = calcularValorLegado(s.sessionNumber, valorPadrao, legacyRules);
+      valor = legacyResult.valor;
+      origemPreco = legacyResult.origem;
     }
     if (isPendente) {
       alertas.push("Sess\xE3o sem agendamento vinculado");
@@ -19399,7 +19415,7 @@ async function getRelatorioFinanceiroV2(db2, dateFrom, dateTo) {
     if (valor === 0 && origemPreco === "zero") {
       alertas.push("Nenhuma regra de precifica\xE7\xE3o encontrada");
     }
-    byMentor[s.consultorId].sessoes.push({
+    const novaSessao = {
       sessionId: s.sessionId,
       sessionDate: s.sessionDate ? String(s.sessionDate) : null,
       sessionNumber: s.sessionNumber,
@@ -19417,7 +19433,12 @@ async function getRelatorioFinanceiroV2(db2, dateFrom, dateTo) {
       isGrupal,
       isPendente,
       alertas
-    });
+    };
+    const sessaoIndex = byMentor[s.consultorId].sessoes.length;
+    byMentor[s.consultorId].sessoes.push(novaSessao);
+    if (isGrupal && s.appointmentId) {
+      agendamentosGrupaisContabilizados.set(s.appointmentId, { consultorId: s.consultorId, sessaoIndex });
+    }
   }
   const mentores = Object.values(byMentor).map((m) => {
     const totalValor = m.sessoes.reduce((sum, s) => sum + s.valor, 0);

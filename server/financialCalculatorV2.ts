@@ -35,6 +35,8 @@ export interface SessionFinancialInfo {
   sessionNumber: number | null;
   alunoId: number;
   alunoNome: string;
+  // Para sessões grupais, lista todos os participantes do grupo
+  participantes?: Array<{ alunoId: number; alunoNome: string; programId: number | null; programNome: string }>;
   consultorId: number;
   consultorNome: string;
   programId: number | null;
@@ -214,8 +216,9 @@ export async function getRelatorioFinanceiroV2(
     sessoes: SessionFinancialInfo[];
   }> = {};
 
-  // Rastrear agendamentos grupais já contabilizados (para não duplicar)
-  const agendamentosGrupaisContabilizados = new Set<number>();
+  // Rastrear agendamentos grupais já contabilizados (para colapsar em 1 entrada)
+  // Mapa: appointmentId → índice da sessão no array do mentor
+  const agendamentosGrupaisContabilizados = new Map<number, { consultorId: number; sessaoIndex: number }>();
 
   for (const s of filtered) {
     if (!s.consultorId) continue;
@@ -239,34 +242,53 @@ export async function getRelatorioFinanceiroV2(
       };
     }
 
+    // Sessão grupal com appointmentId já contabilizado: apenas adiciona o participante à entrada existente
+    if (isGrupal && s.appointmentId && agendamentosGrupaisContabilizados.has(s.appointmentId)) {
+      const ref = agendamentosGrupaisContabilizados.get(s.appointmentId)!;
+      const mentorSessoes = byMentor[ref.consultorId]?.sessoes;
+      if (mentorSessoes) {
+        const sessaoExistente = mentorSessoes[ref.sessaoIndex];
+        if (sessaoExistente) {
+          if (!sessaoExistente.participantes) {
+            // Inicializar lista de participantes com o primeiro participante já registrado
+            sessaoExistente.participantes = [{
+              alunoId: sessaoExistente.alunoId,
+              alunoNome: sessaoExistente.alunoNome,
+              programId: sessaoExistente.programId,
+              programNome: sessaoExistente.programNome,
+            }];
+          }
+          // Adicionar este participante à entrada grupal existente
+          sessaoExistente.participantes.push({
+            alunoId: s.alunoId,
+            alunoNome: s.alunoNome || "N/A",
+            programId,
+            programNome,
+          });
+          // Atualizar o nome do aluno para indicar que é um grupo
+          sessaoExistente.alunoNome = sessaoExistente.participantes.map(p => p.alunoNome).join(", ");
+        }
+      }
+      // Não adiciona nova entrada — apenas atualiza a existente
+      continue;
+    }
+
     // Calcular valor
     let valor = 0;
     let origemPreco: SessionFinancialInfo["origemPreco"] = "zero";
 
-    // Se é sessão grupal e já contabilizamos esse agendamento, valor = 0 (já pago)
-    if (isGrupal && s.appointmentId && agendamentosGrupaisContabilizados.has(s.appointmentId)) {
-      valor = 0;
-      origemPreco = "empresa_mentor"; // mantém a origem, mas valor 0 (já contabilizado)
-      alertas.push("Sessão grupal já contabilizada no agendamento");
+    // Tentar regra V2 primeiro
+    const v2Result = findBestPricingRule(allV2Rules, s.consultorId, programId, tipoSessao, s.sessionDate ? String(s.sessionDate) : null);
+    
+    if (v2Result.rule) {
+      valor = Number(v2Result.rule.valor);
+      origemPreco = v2Result.origem;
     } else {
-      // Tentar regra V2 primeiro
-      const v2Result = findBestPricingRule(allV2Rules, s.consultorId, programId, tipoSessao, s.sessionDate ? String(s.sessionDate) : null);
-      
-      if (v2Result.rule) {
-        valor = Number(v2Result.rule.valor);
-        origemPreco = v2Result.origem;
-      } else {
-        // Fallback para cálculo legado
-        const legacyRules = legacyMap.get(s.consultorId) || [];
-        const legacyResult = calcularValorLegado(s.sessionNumber, valorPadrao, legacyRules);
-        valor = legacyResult.valor;
-        origemPreco = legacyResult.origem;
-      }
-
-      // Marcar agendamento grupal como contabilizado
-      if (isGrupal && s.appointmentId) {
-        agendamentosGrupaisContabilizados.add(s.appointmentId);
-      }
+      // Fallback para cálculo legado
+      const legacyRules = legacyMap.get(s.consultorId) || [];
+      const legacyResult = calcularValorLegado(s.sessionNumber, valorPadrao, legacyRules);
+      valor = legacyResult.valor;
+      origemPreco = legacyResult.origem;
     }
 
     // Alertas
@@ -277,7 +299,7 @@ export async function getRelatorioFinanceiroV2(
       alertas.push("Nenhuma regra de precificação encontrada");
     }
 
-    byMentor[s.consultorId].sessoes.push({
+    const novaSessao: SessionFinancialInfo = {
       sessionId: s.sessionId,
       sessionDate: s.sessionDate ? String(s.sessionDate) : null,
       sessionNumber: s.sessionNumber,
@@ -295,7 +317,15 @@ export async function getRelatorioFinanceiroV2(
       isGrupal,
       isPendente,
       alertas,
-    });
+    };
+
+    const sessaoIndex = byMentor[s.consultorId].sessoes.length;
+    byMentor[s.consultorId].sessoes.push(novaSessao);
+
+    // Registrar agendamento grupal como contabilizado (aponta para esta entrada)
+    if (isGrupal && s.appointmentId) {
+      agendamentosGrupaisContabilizados.set(s.appointmentId, { consultorId: s.consultorId, sessaoIndex });
+    }
   }
 
   // 8. Montar resultado
