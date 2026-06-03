@@ -94,6 +94,14 @@ export default function RegistroMentoria() {
   const [newTipoSessao, setNewTipoSessao] = useState<"individual_normal" | "individual_assessment" | "grupo_normal">("individual_normal");
   // Agendamento vinculado
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+  // Formulário grupal — dados individuais por participante
+  const [groupParticipantsData, setGroupParticipantsData] = useState<Record<number, {
+    presence: "presente" | "ausente";
+    taskStatus: "entregue" | "nao_entregue" | "sem_tarefa";
+    engagementScore: number | null;
+    feedback: string;
+    mensagemAluno: string;
+  }>>({}); 
 
   // Queries
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
@@ -169,6 +177,22 @@ export default function RegistroMentoria() {
       toast.error(`Erro ao criar sessão: ${error.message}`);
     }
   });
+
+  const createGroupSessions = trpc.mentor.createGroupSessions.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Sessão grupal registrada para ${data.count} participantes!`);
+      refetchSessions();
+      resetNewSessionForm();
+    },
+    onError: (error: { message: string }) => {
+      toast.error(`Erro ao criar sessão grupal: ${error.message}`);
+    }
+  });
+
+  const { data: groupParticipants = [] } = trpc.mentor.getGroupParticipants.useQuery(
+    { appointmentId: selectedAppointmentId! },
+    { enabled: !!selectedAppointmentId && newTipoSessao === 'grupo_normal' }
+  );
 
   const validateTask = trpc.mentor.validateTask.useMutation({
     onSuccess: () => {
@@ -345,7 +369,50 @@ export default function RegistroMentoria() {
     setSelectedAppointmentId(null);
   };
 
+  // Inicializa dados individuais dos participantes quando o grupo é carregado
+  const initGroupParticipant = (alunoId: number) => {
+    setGroupParticipantsData(prev => {
+      if (prev[alunoId]) return prev;
+      return { ...prev, [alunoId]: { presence: 'presente', taskStatus: 'sem_tarefa', engagementScore: null, feedback: '', mensagemAluno: '' } };
+    });
+  };
+  const updateGroupParticipant = (alunoId: number, field: string, value: any) => {
+    setGroupParticipantsData(prev => ({ ...prev, [alunoId]: { ...prev[alunoId], [field]: value } }));
+  };
+
   const handleCreateSession = () => {
+    // SESSÃO GRUPAL
+    if (newTipoSessao === 'grupo_normal') {
+      if (!newSessionDate) { toast.error('Preencha a data da sessão'); return; }
+      if (!selectedAppointmentId) { toast.error('Selecione um agendamento grupal'); return; }
+      if (groupParticipants.length === 0) { toast.error('Nenhum participante encontrado para este grupo'); return; }
+      const nota = newSelectedStage ? getNotaFromStage(newSelectedStage) : null;
+      const participants = groupParticipants.map((p: any) => {
+        const pd = groupParticipantsData[p.alunoId] || { presence: 'presente', taskStatus: 'sem_tarefa', engagementScore: null, feedback: '', mensagemAluno: '' };
+        return {
+          alunoId: p.alunoId,
+          presence: pd.presence,
+          taskStatus: pd.taskStatus,
+          engagementScore: pd.engagementScore,
+          feedback: pd.feedback || undefined,
+          mensagemAluno: pd.mensagemAluno || undefined,
+        };
+      });
+      createGroupSessions.mutate({
+        appointmentId: selectedAppointmentId,
+        sessionDate: newSessionDate,
+        participants,
+        // campos compartilhados
+        taskId: newTaskId,
+        taskDeadline: newTaskDeadline || null,
+        taskMode: newTaskMode,
+        customTaskTitle: newCustomTaskTitle || null,
+        customTaskDescription: newCustomTaskDescription || null,
+        notaMentoraAplicabilidade: newNotaMentoraAplic ?? undefined,
+        tipoSessao: 'grupo_normal',
+      });
+      return;
+    }
     if (!selectedAlunoId || !newSessionDate) {
       toast.error("Preencha a data da sessão");
       return;
@@ -1060,7 +1127,112 @@ export default function RegistroMentoria() {
                       </div>
                     </div>
 
-                    {/* Presênça */}
+                    {/* FORMULÁRIO GRUPAL — campos individuais por participante */}
+                    {newTipoSessao === 'grupo_normal' && (
+                      <div className="space-y-4">
+                        {groupParticipants.length === 0 && selectedAppointmentId && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                            Carregando participantes do grupo...
+                          </div>
+                        )}
+                        {groupParticipants.length === 0 && !selectedAppointmentId && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                            Selecione um agendamento grupal acima para carregar os participantes.
+                          </div>
+                        )}
+                        {groupParticipants.map((p: any) => {
+                          initGroupParticipant(p.alunoId);
+                          const pd = groupParticipantsData[p.alunoId] || { presence: 'presente', taskStatus: 'sem_tarefa', engagementScore: null, feedback: '', mensagemAluno: '' };
+                          return (
+                            <div key={p.alunoId} className="border-2 border-emerald-200 rounded-xl p-4 bg-emerald-50/30 space-y-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-8 w-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-sm font-bold">
+                                  {p.alunoName?.charAt(0)}
+                                </div>
+                                <span className="font-semibold text-gray-900">{p.alunoName}</span>
+                              </div>
+                              {/* Presença individual */}
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Presença</Label>
+                                <div className="flex gap-2">
+                                  {(['presente', 'ausente'] as const).map(v => (
+                                    <button key={v} type="button"
+                                      onClick={() => updateGroupParticipant(p.alunoId, 'presence', v)}
+                                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${
+                                        pd.presence === v
+                                          ? v === 'presente' ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-semibold' : 'border-red-500 bg-red-50 text-red-800 font-semibold'
+                                          : 'border-gray-200 bg-white hover:border-gray-300'
+                                      }`}
+                                    >
+                                      {v === 'presente' ? <><CheckCircle2 className="h-3.5 w-3.5" /> Presente</> : <><XCircle className="h-3.5 w-3.5" /> Ausente</>}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              {/* Tarefa entregue individual */}
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Tarefa entregue?</Label>
+                                <div className="flex gap-2 flex-wrap">
+                                  {(['entregue', 'nao_entregue', 'sem_tarefa'] as const).map(v => (
+                                    <button key={v} type="button"
+                                      onClick={() => updateGroupParticipant(p.alunoId, 'taskStatus', v)}
+                                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 text-sm transition-all ${
+                                        pd.taskStatus === v
+                                          ? v === 'entregue' ? 'border-emerald-500 bg-emerald-50 text-emerald-800 font-semibold'
+                                            : v === 'nao_entregue' ? 'border-red-500 bg-red-50 text-red-800 font-semibold'
+                                            : 'border-gray-500 bg-gray-50 text-gray-800 font-semibold'
+                                          : 'border-gray-200 bg-white hover:border-gray-300'
+                                      }`}
+                                    >
+                                      {v === 'entregue' ? 'Entregue' : v === 'nao_entregue' ? 'Não Entregue' : 'Sem Tarefa'}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              {/* Nota de engajamento individual */}
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Nota de Engajamento (0-10)</Label>
+                                <div className="flex gap-1 flex-wrap">
+                                  {[0,1,2,3,4,5,6,7,8,9,10].map(n => (
+                                    <button key={n} type="button"
+                                      onClick={() => updateGroupParticipant(p.alunoId, 'engagementScore', n)}
+                                      className={`w-8 h-8 rounded-lg border-2 text-xs font-medium transition-all ${
+                                        pd.engagementScore === n ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-gray-200 bg-white hover:border-emerald-300'
+                                      }`}
+                                    >{n}</button>
+                                  ))}
+                                </div>
+                              </div>
+                              {/* Feedback individual */}
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Feedback Individual (visível ao aluno)</Label>
+                                <textarea
+                                  value={pd.mensagemAluno}
+                                  onChange={e => updateGroupParticipant(p.alunoId, 'mensagemAluno', e.target.value)}
+                                  placeholder="Feedback para este participante..."
+                                  rows={2}
+                                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                />
+                              </div>
+                              {/* Observações internas individuais */}
+                              <div>
+                                <Label className="text-xs text-gray-600 mb-1 block">Observações Internas (não visível ao aluno)</Label>
+                                <textarea
+                                  value={pd.feedback}
+                                  onChange={e => updateGroupParticipant(p.alunoId, 'feedback', e.target.value)}
+                                  placeholder="Observações internas..."
+                                  rows={2}
+                                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Presênça (somente para sessões individuais) */}
+                    {newTipoSessao !== 'grupo_normal' && (
                     <div>
                       <Label className="flex items-center gap-2 mb-2">
                         <CheckCircle2 className="h-4 w-4 text-[#0A1E3E]" />
@@ -1087,8 +1259,10 @@ export default function RegistroMentoria() {
                         </button>
                       </div>
                     </div>
+                    )}
 
-                    {/* Avaliação da Tarefa da Sessão Anterior */}
+                    {/* Avaliação da Tarefa da Sessão Anterior (somente individual) */}
+                    {newTipoSessao !== 'grupo_normal' && (
                     <div className="space-y-3">
                       <Label className="flex items-center gap-2 mb-1">
                         <ClipboardCheck className="h-4 w-4 text-[#0A1E3E]" />
@@ -1223,8 +1397,10 @@ export default function RegistroMentoria() {
                         </div>
                       )}
                     </div>
+                    )}
 
-                    {/* Avaliação de Aplicabilidade Prática */}
+                    {/* Avaliação de Aplicabilidade Prática (somente individual) */}
+                    {newTipoSessao !== 'grupo_normal' && (
                     <div className="space-y-3 border rounded-lg p-4 bg-amber-50/50">
                       <Label className="flex items-center gap-2 text-amber-800 font-semibold">
                         <Target className="h-4 w-4" />
@@ -1288,11 +1464,15 @@ export default function RegistroMentoria() {
                         <p className="text-sm font-medium text-amber-700">Nota selecionada: {newNotaMentoraAplic}/10</p>
                       )}
                     </div>
+                    )}
 
-                    {/* Nível de Engajamento */}
+                    {/* Nível de Engajamento (somente individual) */}
+                    {newTipoSessao !== 'grupo_normal' && (
                     <StageSelector value={newSelectedStage} onChange={setNewSelectedStage} />
+                    )}
 
-                    {/* Feedback ao Aluno */}
+                    {/* Feedback ao Aluno (somente individual) */}
+                    {newTipoSessao !== 'grupo_normal' && (
                     <div>
                       <Label className="flex items-center gap-2">
                         <BookOpen className="h-4 w-4 text-[#0A1E3E]" />
@@ -1306,8 +1486,8 @@ export default function RegistroMentoria() {
                         rows={3}
                       />
                     </div>
-
-                    {/* Observações internas */}
+                    )}
+                    {newTipoSessao !== 'grupo_normal' && (
                     <div>
                       <Label>Observações Internas (não visível ao aluno)</Label>
                       <Textarea
@@ -1317,6 +1497,7 @@ export default function RegistroMentoria() {
                         rows={2}
                       />
                     </div>
+                    )}
                   </div>
 
                   {/* ═══════════════════════════════════════════════════════════ */}

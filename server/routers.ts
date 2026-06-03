@@ -6606,7 +6606,95 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             return [];
           }
         }),
-    }),
+
+    // Buscar participantes de um agendamento grupal
+    getGroupParticipants: protectedProcedure
+      .input(z.object({ appointmentId: z.number() }))
+      .query(async ({ input }) => {
+        const participants = await db.getAppointmentParticipants(input.appointmentId);
+        const result = [];
+        for (const p of participants) {
+          const aluno = await db.getAlunoById(p.alunoId);
+          if (aluno) result.push({ alunoId: p.alunoId, alunoName: aluno.name, email: aluno.email });
+        }
+        return result;
+      }),
+
+    // Criar sessões em lote para mentoria em grupo
+    createGroupSessions: protectedProcedure
+      .input(z.object({
+        appointmentId: z.number(),
+        sessionDate: z.string(),
+        taskId: z.number().nullable().optional(),
+        taskDeadline: z.string().nullable().optional(),
+        taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
+        customTaskTitle: z.string().nullable().optional(),
+        customTaskDescription: z.string().nullable().optional(),
+        participants: z.array(z.object({
+          alunoId: z.number(),
+          presence: z.enum(["presente", "ausente"]),
+          taskStatus: z.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
+          engagementScore: z.number().min(0).max(10).nullable().optional(),
+          notaEvolucao: z.number().min(0).max(10).nullable().optional(),
+          feedback: z.string().optional(),
+          mensagemAluno: z.string().optional(),
+        })).min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
+        let consultorId = consultor?.id;
+        if (!consultorId && ctx.user.role === 'admin') {
+          const firstAluno = input.participants[0];
+          const sessions = await db.getMentoringSessionsByAluno(firstAluno.alunoId);
+          if (sessions.length > 0) consultorId = sessions[0].consultorId;
+        }
+        if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Você não está vinculado como mentor' });
+
+        const effectiveTaskMode = input.taskMode ?? "sem_tarefa";
+        const createdIds: number[] = [];
+
+        for (const p of input.participants) {
+          const aluno = await db.getAlunoById(p.alunoId);
+          if (!aluno) continue;
+
+          const nivelVigente = await db.getContratoNivelVigenteByAluno(p.alunoId);
+          const nivelId = nivelVigente?.id ?? null;
+          const sessoesCiclo = nivelId ? await db.getMentoringSessionsByAlunoAndNivel(p.alunoId, nivelId) : [];
+          const resetOcorreu = sessoesCiclo.length > 0;
+          const base = resetOcorreu ? sessoesCiclo : await db.getMentoringSessionsByAluno(p.alunoId);
+          const nextSessionNumber = base.length > 0 ? Math.max(...base.map(s => s.sessionNumber ?? 0)) + 1 : 1;
+
+          const effectiveTaskStatus = effectiveTaskMode !== "sem_tarefa" ? "nao_entregue" : (p.taskStatus ?? "sem_tarefa");
+
+          const sessionId = await db.createMentoringSession({
+            alunoId: p.alunoId,
+            consultorId,
+            turmaId: aluno.turmaId ?? undefined,
+            trilhaId: aluno.trilhaId ?? undefined,
+            sessionNumber: nextSessionNumber,
+            sessionDate: input.sessionDate,
+            presence: p.presence,
+            taskStatus: effectiveTaskStatus as any,
+            engagementScore: p.engagementScore ?? null,
+            notaEvolucao: p.notaEvolucao ?? null,
+            feedback: p.feedback ?? null,
+            mensagemAluno: p.mensagemAluno ?? null,
+            taskId: input.taskId ?? null,
+            taskDeadline: input.taskDeadline ?? null,
+            taskMode: effectiveTaskMode as any,
+            customTaskTitle: input.customTaskTitle ?? null,
+            customTaskDescription: input.customTaskDescription ?? null,
+            tipoSessao: 'grupo_normal',
+            appointmentId: input.appointmentId,
+            contratoNivelId: nivelId,
+          });
+          if (sessionId) createdIds.push(sessionId);
+        }
+
+        return { success: true, count: createdIds.length, ids: createdIds };
+      }),
+  }),
   }),
 
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
