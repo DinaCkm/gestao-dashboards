@@ -1550,7 +1550,11 @@ export default function RegistroMentoria() {
               {/* Lista de sessões existentes */}
               {sessions.length > 0 ? (
                 <div className="space-y-4">
-                  {sessions.map((session) => {
+                  {[...sessions].sort((a, b) => {
+                    const dateA = a.sessionDate ? new Date(a.sessionDate).getTime() : 0;
+                    const dateB = b.sessionDate ? new Date(b.sessionDate).getTime() : 0;
+                    return dateB - dateA;
+                  }).map((session) => {
                     const presencePoints = getPresencePoints(session.presence);
                     const isFirstSession = session.sessionNumber === 1;
                     const taskPoints = isFirstSession ? null : getTaskPoints(session.taskStatus);
