@@ -10048,14 +10048,17 @@ Responda APENAS em JSON com o formato:
               descricao: macroDescricao || null,
               isActive: 1,
             });
-            for (const micro of micrometas) {
+            for (let mi = 0; mi < micrometas.length; mi++) {
+              const micro = micrometas[mi];
+              // Prefixar com número sequencial para que o sistema identifique como micrometa
+              const microTitulo = /^\d+\./.test(micro.titulo.trim()) ? micro.titulo : `${mi + 1}. ${micro.titulo}`;
               await dbConn.insert(metasTable).values({
                 alunoId,
                 assessmentPdiId: pdi.id,
                 assessmentCompetenciaId,
                 competenciaId,
                 contratoNivelId: pdi.contratoNivelId ?? null,
-                titulo: micro.titulo,
+                titulo: microTitulo,
                 descricao: micro.descricao || null,
                 isActive: 1,
               });
