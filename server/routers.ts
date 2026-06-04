@@ -7420,6 +7420,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         notaEvolucao: z.number().min(0).max(10).nullable().optional(),
         feedback: z.string().optional(),
         notaMentoraAplicabilidade: z.number().min(0).max(10).nullable().optional(),
+        tipoSessao: z.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
       }))
       .mutation(async ({ input }) => {
         // If sessionNumber is being changed, validate no duplicate for same aluno
@@ -7448,6 +7449,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (input.notaEvolucao !== undefined) updateData.notaEvolucao = input.notaEvolucao;
         if (input.feedback !== undefined) updateData.feedback = input.feedback;
         if (input.notaMentoraAplicabilidade !== undefined) updateData.notaMentoraAplicabilidade = input.notaMentoraAplicabilidade;
+        if (input.tipoSessao !== undefined) updateData.tipoSessao = input.tipoSessao;
 
         const success = await db.updateMentoringSession(input.sessionId, updateData);
         return { success };

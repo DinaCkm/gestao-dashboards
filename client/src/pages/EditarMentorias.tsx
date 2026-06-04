@@ -38,6 +38,7 @@ export default function EditarMentorias() {
   const [editNotaEvolucao, setEditNotaEvolucao] = useState("");
   const [editFeedback, setEditFeedback] = useState("");
   const [editNotaMentoraAplicabilidade, setEditNotaMentoraAplicabilidade] = useState("");
+  const [editTipoSessao, setEditTipoSessao] = useState("");
 
   // Delete confirmation dialog state
   const [deleteSession, setDeleteSession] = useState<any | null>(null);
@@ -202,6 +203,7 @@ export default function EditarMentorias() {
     setEditNotaEvolucao(session.notaEvolucao != null ? String(session.notaEvolucao) : "");
     setEditFeedback(session.feedback || "");
     setEditNotaMentoraAplicabilidade(session.notaMentoraAplicabilidade != null ? String(session.notaMentoraAplicabilidade) : "");
+    setEditTipoSessao(session.tipoSessao || "");
   }
 
   function closeEditDialog() {
@@ -214,6 +216,7 @@ export default function EditarMentorias() {
     setEditNotaEvolucao("");
     setEditFeedback("");
     setEditNotaMentoraAplicabilidade("");
+    setEditTipoSessao("");
   }
 
   function handleSaveEdit() {
@@ -261,6 +264,10 @@ export default function EditarMentorias() {
     const origNotaAplicab = editSession.notaMentoraAplicabilidade ?? null;
     if (newNotaAplicab !== origNotaAplicab) {
       payload.notaMentoraAplicabilidade = newNotaAplicab;
+    }
+
+    if (editTipoSessao && editTipoSessao !== editSession.tipoSessao) {
+      payload.tipoSessao = editTipoSessao;
     }
 
     if (Object.keys(payload).length <= 1) {
@@ -798,6 +805,21 @@ export default function EditarMentorias() {
                       onChange={(e) => setEditNotaMentoraAplicabilidade(e.target.value)}
                     />
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Tipo de Sessão</Label>
+                  <Select value={editTipoSessao} onValueChange={setEditTipoSessao}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="individual_normal">Individual</SelectItem>
+                      <SelectItem value="individual_assessment">Individual (Assessment)</SelectItem>
+                      <SelectItem value="grupo_normal">Grupal</SelectItem>
+                      <SelectItem value="grupo_assessment">Grupal (Assessment)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">

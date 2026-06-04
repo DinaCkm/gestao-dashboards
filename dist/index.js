@@ -25955,7 +25955,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       presence: z6.enum(["presente", "ausente"]).optional(),
       notaEvolucao: z6.number().min(0).max(10).nullable().optional(),
       feedback: z6.string().optional(),
-      notaMentoraAplicabilidade: z6.number().min(0).max(10).nullable().optional()
+      notaMentoraAplicabilidade: z6.number().min(0).max(10).nullable().optional(),
+      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional()
     })).mutation(async ({ input }) => {
       if (input.sessionNumber !== void 0) {
         const session = await getMentoringSessionById(input.sessionId);
@@ -25981,6 +25982,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       if (input.notaEvolucao !== void 0) updateData.notaEvolucao = input.notaEvolucao;
       if (input.feedback !== void 0) updateData.feedback = input.feedback;
       if (input.notaMentoraAplicabilidade !== void 0) updateData.notaMentoraAplicabilidade = input.notaMentoraAplicabilidade;
+      if (input.tipoSessao !== void 0) updateData.tipoSessao = input.tipoSessao;
       const success = await updateMentoringSession(input.sessionId, updateData);
       return { success };
     }),
