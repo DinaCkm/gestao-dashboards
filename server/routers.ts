@@ -9940,6 +9940,177 @@ Responda APENAS em JSON com o formato:
         const { alunoId } = input;
         return await db.getAlertaAtualizacaoMetas(alunoId);
       }),
+
+    // ---- Upload em massa de metas via planilha XLSX (somente admin) ----
+    uploadEmMassa: adminProcedure
+      .input(z.object({
+        fileData: z.string(),
+        fileName: z.string(),
+        preview: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.fileData, 'base64');
+        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames.find((n: string) => n !== 'Instruções') || workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        if (rows.length < 2) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Planilha sem dados' });
+
+        const hdrs = (rows[0] as string[]).map((h: string) => String(h || '').trim());
+        const getColVal = (row: unknown[], name: string): string => {
+          const idx = hdrs.findIndex(h => h.toLowerCase() === name.toLowerCase());
+          if (idx < 0) return '';
+          const v = row[idx];
+          return v === null || v === undefined ? '' : String(v).trim();
+        };
+
+        // Lookup: alunos por email
+        const alunosList = await db.getAlunos();
+        const alunoByEmail = new Map<string, number>();
+        for (const a of alunosList) {
+          if (a.email) alunoByEmail.set(a.email.toLowerCase().trim(), a.id);
+        }
+
+        // Lookup: competências por nome
+        const compList = await db.getAllCompetencias();
+        const compByName = new Map<string, number>();
+        for (const c of compList) {
+          if (c.nome) compByName.set(c.nome.toLowerCase().trim(), c.id);
+        }
+
+        const results: { row: number; aluno: string; status: 'ok' | 'erro' | 'aviso'; message: string }[] = [];
+        let created = 0;
+        let errors = 0;
+
+        const dbConn = await getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Banco de dados indisponível' });
+
+        const { assessmentPdi: apTable, assessmentCompetencias: acTable, metas: metasTable } = await import('../drizzle/schema');
+        const { eq: eqOp, and: andOp, sql: sqlOp } = await import('drizzle-orm');
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i] as unknown[];
+          if (row.every(v => !v)) continue;
+
+          const emailAluno = getColVal(row, 'email_aluno');
+          const nomeComp = getColVal(row, 'competencia');
+          const macroTitulo = getColVal(row, 'macrometa_titulo');
+          const macroDescricao = getColVal(row, 'macrometa_descricao');
+
+          if (!emailAluno) { results.push({ row: i+1, aluno: '(sem email)', status: 'erro', message: 'Campo email_aluno obrigatório' }); errors++; continue; }
+          if (!macroTitulo) { results.push({ row: i+1, aluno: emailAluno, status: 'erro', message: 'Campo macrometa_titulo obrigatório' }); errors++; continue; }
+          if (!nomeComp) { results.push({ row: i+1, aluno: emailAluno, status: 'erro', message: 'Campo competencia obrigatório' }); errors++; continue; }
+
+          const alunoId = alunoByEmail.get(emailAluno.toLowerCase());
+          if (!alunoId) { results.push({ row: i+1, aluno: emailAluno, status: 'erro', message: `Aluno não encontrado: "${emailAluno}"` }); errors++; continue; }
+
+          const competenciaId = compByName.get(nomeComp.toLowerCase().trim());
+          if (!competenciaId) { results.push({ row: i+1, aluno: emailAluno, status: 'erro', message: `Competência não encontrada: "${nomeComp}"` }); errors++; continue; }
+
+          // PDI ativo do aluno
+          const pdis = await dbConn.select({ id: apTable.id, contratoNivelId: apTable.contratoNivelId })
+            .from(apTable)
+            .where(andOp(eqOp(apTable.alunoId, alunoId), sqlOp`${apTable.status} = 'ativo'`))
+            .limit(1);
+          if (pdis.length === 0) { results.push({ row: i+1, aluno: emailAluno, status: 'erro', message: 'Aluno não possui PDI ativo' }); errors++; continue; }
+          const pdi = pdis[0];
+
+          // assessmentCompetencia correspondente no PDI
+          const assComps = await dbConn.select({ id: acTable.id })
+            .from(acTable)
+            .where(andOp(eqOp(acTable.assessmentPdiId, pdi.id), eqOp(acTable.competenciaId, competenciaId)))
+            .limit(1);
+          if (assComps.length === 0) { results.push({ row: i+1, aluno: emailAluno, status: 'erro', message: `Competência "${nomeComp}" não está no PDI ativo do aluno` }); errors++; continue; }
+          const assessmentCompetenciaId = assComps[0].id;
+
+          // Micrometas (até 5)
+          const micrometas: { titulo: string; descricao: string }[] = [];
+          for (let n = 1; n <= 5; n++) {
+            const mt = getColVal(row, `micrometa${n}_titulo`);
+            if (!mt) break;
+            micrometas.push({ titulo: mt, descricao: getColVal(row, `micrometa${n}_descricao`) || '' });
+          }
+
+          if (input.preview) {
+            results.push({ row: i+1, aluno: emailAluno, status: 'ok', message: `Válido: macrometa + ${micrometas.length} micrometa(s) — competência "${nomeComp}"` });
+            continue;
+          }
+
+          // Inserir apenas na tabela metas — sem tocar em indicadores
+          try {
+            await dbConn.insert(metasTable).values({
+              alunoId,
+              assessmentPdiId: pdi.id,
+              assessmentCompetenciaId,
+              competenciaId,
+              contratoNivelId: pdi.contratoNivelId ?? null,
+              titulo: macroTitulo,
+              descricao: macroDescricao || null,
+              isActive: 1,
+            });
+            for (const micro of micrometas) {
+              await dbConn.insert(metasTable).values({
+                alunoId,
+                assessmentPdiId: pdi.id,
+                assessmentCompetenciaId,
+                competenciaId,
+                contratoNivelId: pdi.contratoNivelId ?? null,
+                titulo: micro.titulo,
+                descricao: micro.descricao || null,
+                isActive: 1,
+              });
+            }
+            results.push({ row: i+1, aluno: emailAluno, status: 'ok', message: `Criado: macrometa + ${micrometas.length} micrometa(s)` });
+            created++;
+          } catch (err: any) {
+            results.push({ row: i+1, aluno: emailAluno, status: 'erro', message: `Erro ao inserir: ${err?.message || 'Erro desconhecido'}` });
+            errors++;
+          }
+        }
+
+        return { created, errors, total: results.length, results, preview: input.preview ?? false };
+      }),
+
+    // ---- Baixar modelo de planilha de metas ----
+    downloadModeloMetas: adminProcedure
+      .mutation(async () => {
+        const wb = XLSX.utils.book_new();
+        const headers = [
+          'email_aluno', 'competencia',
+          'macrometa_titulo', 'macrometa_descricao',
+          'micrometa1_titulo', 'micrometa1_descricao',
+          'micrometa2_titulo', 'micrometa2_descricao',
+          'micrometa3_titulo', 'micrometa3_descricao',
+          'micrometa4_titulo', 'micrometa4_descricao',
+          'micrometa5_titulo', 'micrometa5_descricao',
+        ];
+        const exampleRow = [
+          'aluno@email.com', 'Escuta Ativa',
+          'Melhorar comunicação com a equipe', 'Desenvolver habilidade de ouvir ativamente nas reuniões',
+          'Praticar escuta ativa em 3 reuniões por semana', 'Anotar pontos principais de cada fala',
+          'Fazer perguntas de esclarecimento', 'Evitar interrupções durante as falas',
+          '', '', '', '', '', '',
+        ];
+        const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
+        ws['!cols'] = headers.map(() => ({ wch: 28 }));
+        XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+        const instrucoes = XLSX.utils.aoa_to_sheet([
+          ['INSTRUÇÕES DE PREENCHIMENTO'],
+          [''],
+          ['- Uma linha por aluno'],
+          ['- email_aluno: e-mail cadastrado do aluno no sistema (obrigatório)'],
+          ['- competencia: nome exato da competência no PDI ativo do aluno (obrigatório)'],
+          ['- macrometa_titulo: título da macrometa (obrigatório)'],
+          ['- macrometa_descricao: descrição da macrometa (opcional)'],
+          ['- micrometa1 a micrometa5: título obrigatório, descrição opcional'],
+          ['- Preencha as micrometas do 1 em diante sem pular'],
+          ['- Máximo 5 micrometas por aluno'],
+        ]);
+        instrucoes['!cols'] = [{ wch: 80 }];
+        XLSX.utils.book_append_sheet(wb, instrucoes, 'Instruções');
+        const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        return { data: (buf as Buffer).toString('base64'), filename: 'modelo_metas.xlsx' };
+      }),
   }),
 
   // ============ TESTE DISC + AUTOPERCEPÇÃO ============

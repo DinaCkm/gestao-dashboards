@@ -25,7 +25,8 @@ import {
   Eye,
   Clock,
   Trash2,
-  ClipboardList
+  ClipboardList,
+  Target
 } from "lucide-react";
 import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
@@ -176,6 +177,77 @@ export default function UploadPage() {
   const pdiResultRef = useRef<HTMLDivElement>(null); // ref para scroll automático ao resultado
 
   const uploadPDIsMutation = trpc.uploads.uploadPDIs.useMutation();
+
+  // ---- Estados para upload de Metas em massa ----
+  const [metasFile, setMetasFile] = useState<File | null>(null);
+  const [metasPreviewResults, setMetasPreviewResults] = useState<{ row: number; aluno: string; status: 'ok' | 'erro' | 'aviso'; message: string }[] | null>(null);
+  const [metasResultMode, setMetasResultMode] = useState<'preview' | 'result'>('preview');
+  const [metasIsProcessing, setMetasIsProcessing] = useState(false);
+  const [metasIsConfirming, setMetasIsConfirming] = useState(false);
+  const metasFileInputRef = useRef<HTMLInputElement>(null);
+  const metasResultRef = useRef<HTMLDivElement>(null);
+  const uploadMetasMutation = trpc.metas.uploadEmMassa.useMutation();
+  const downloadModeloMetasMutation = trpc.metas.downloadModeloMetas.useMutation();
+
+  const handleMetasFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) { setMetasFile(f); setMetasPreviewResults(null); setMetasResultMode('preview'); }
+  };
+  const handleMetasPreview = async () => {
+    if (!metasFile) return;
+    setMetasIsProcessing(true);
+    try {
+      const arrayBuffer = await metasFile.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const result = await uploadMetasMutation.mutateAsync({ fileData: base64, fileName: metasFile.name, preview: true });
+      setMetasPreviewResults(result.results);
+      setMetasResultMode('preview');
+      toast.info(`Pré-visualização: ${result.results.filter(r => r.status === 'ok').length} válidos, ${result.results.filter(r => r.status === 'erro').length} erros`);
+    } catch (err: any) {
+      toast.error('Erro ao validar planilha: ' + (err?.message || 'Erro desconhecido'));
+    } finally {
+      setMetasIsProcessing(false);
+    }
+  };
+  const handleMetasConfirm = async () => {
+    if (!metasFile) return;
+    setMetasIsConfirming(true);
+    try {
+      const arrayBuffer = await metasFile.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const result = await uploadMetasMutation.mutateAsync({ fileData: base64, fileName: metasFile.name, preview: false });
+      setMetasPreviewResults(result.results);
+      setMetasResultMode('result');
+      setTimeout(() => metasResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+      if (result.errors > 0 && result.created === 0) {
+        toast.error(`Nenhuma meta criada. ${result.errors} erro(s). Veja o relatório abaixo.`);
+      } else if (result.errors > 0) {
+        toast.warning(`${result.created} aluno(s) processado(s) com sucesso, mas ${result.errors} erro(s). Veja o relatório abaixo.`);
+      } else {
+        toast.success(`${result.created} aluno(s) com metas criadas com sucesso!`);
+      }
+    } catch (err: any) {
+      toast.error('Erro ao criar metas: ' + (err?.message || 'Erro desconhecido'));
+    } finally {
+      setMetasIsConfirming(false);
+    }
+  };
+  const handleDownloadModeloMetas = async () => {
+    try {
+      const result = await downloadModeloMetasMutation.mutateAsync();
+      const byteCharacters = atob(result.data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+      const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url; link.download = result.filename; link.style.display = 'none';
+      setTimeout(() => { link.click(); setTimeout(() => window.URL.revokeObjectURL(url), 100); }, 0);
+      toast.success('Modelo de metas baixado!');
+    } catch (err: any) {
+      toast.error('Erro ao baixar modelo: ' + (err?.message || 'Erro desconhecido'));
+    }
+  };
 
   const handlePdiFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -445,7 +517,7 @@ export default function UploadPage() {
 
         {/* Tabs: Upload | Histórico */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <UploadIcon className="h-4 w-4" />
               Upload
@@ -453,6 +525,10 @@ export default function UploadPage() {
             <TabsTrigger value="pdi" className="flex items-center gap-2">
               <ClipboardList className="h-4 w-4" />
               PDI em Massa
+            </TabsTrigger>
+            <TabsTrigger value="metas" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Metas
             </TabsTrigger>
             <TabsTrigger value="historico" className="flex items-center gap-2">
               <History className="h-4 w-4" />
@@ -755,6 +831,86 @@ export default function UploadPage() {
             </Card>
           </TabsContent>
 
+          {/* ========== TAB: METAS ========== */}
+          <TabsContent value="metas" className="space-y-6 mt-6">
+            <Card className="gradient-card">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-emerald-600" />
+                  Upload de Metas em Massa
+                </CardTitle>
+                <CardDescription>Crie macrometas e micrometas para múltiplos alunos de uma vez via planilha XLSX.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant="outline" onClick={handleDownloadModeloMetas} disabled={downloadModeloMetasMutation.isPending}>
+                    {downloadModeloMetasMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                    Baixar Modelo
+                  </Button>
+                  <input ref={metasFileInputRef} type="file" accept=".xlsx" className="hidden" onChange={handleMetasFileChange} />
+                  <Button variant="outline" onClick={() => metasFileInputRef.current?.click()}>
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    {metasFile ? metasFile.name : 'Selecionar planilha XLSX'}
+                  </Button>
+                  {metasFile && (
+                    <>
+                      <Button variant="secondary" onClick={handleMetasPreview} disabled={metasIsProcessing || metasIsConfirming}>
+                        {metasIsProcessing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
+                        Pré-visualizar
+                      </Button>
+                      <Button onClick={handleMetasConfirm} disabled={metasIsProcessing || metasIsConfirming} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                        {metasIsConfirming ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                        Confirmar e Criar Metas
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {metasPreviewResults && (
+                  <div ref={metasResultRef} className="space-y-2">
+                    <div className={`flex items-center gap-2 p-2 rounded-lg text-sm font-semibold ${
+                      metasResultMode === 'result'
+                        ? (metasPreviewResults.some(r => r.status === 'erro') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200')
+                        : 'bg-blue-50 text-blue-700 border border-blue-200'
+                    }`}>
+                      {metasResultMode === 'result' ? (
+                        metasPreviewResults.some(r => r.status === 'erro')
+                          ? <><XCircle className="h-4 w-4 shrink-0" /> Resultado — verifique os erros abaixo e corrija a planilha</>
+                          : <><CheckCircle2 className="h-4 w-4 shrink-0" /> Metas criadas com sucesso!</>
+                      ) : (
+                        <><Eye className="h-4 w-4 shrink-0" /> Pré-visualização — nenhuma meta foi criada ainda</>
+                      )}
+                    </div>
+                    <div className="flex gap-4 text-sm">
+                      <span className="text-green-600 font-medium">{metasPreviewResults.filter(r => r.status === 'ok').length} {metasResultMode === 'result' ? 'criados' : 'válidos'}</span>
+                      <span className="text-red-600 font-medium">{metasPreviewResults.filter(r => r.status === 'erro').length} erros</span>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto space-y-1 rounded-lg border border-border/30 p-2">
+                      {metasPreviewResults.map((r, i) => (
+                        <div key={i} className={`flex items-start gap-2 p-2 rounded text-sm ${
+                          r.status === 'ok' ? 'bg-green-500/10 text-green-700' :
+                          r.status === 'erro' ? 'bg-red-500/10 text-red-700' :
+                          'bg-yellow-500/10 text-yellow-700'
+                        }`}>
+                          {r.status === 'ok' ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" /> :
+                           r.status === 'erro' ? <XCircle className="h-4 w-4 mt-0.5 shrink-0" /> :
+                           <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />}
+                          <span><strong>Linha {r.row} — {r.aluno}:</strong> {r.message}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="p-4 bg-muted/30 rounded-lg text-sm space-y-1">
+                  <p className="font-medium">Instruções:</p>
+                  <p className="text-muted-foreground">1. Baixe o modelo clicando em <strong>Baixar Modelo</strong></p>
+                  <p className="text-muted-foreground">2. Preencha uma linha por aluno com e-mail, competência, macrometa e até 5 micrometas</p>
+                  <p className="text-muted-foreground">3. A competência deve ser o nome exato de uma competência no PDI ativo do aluno</p>
+                  <p className="text-muted-foreground">4. Clique em <strong>Pré-visualizar</strong> para validar antes de criar</p>
+                  <p className="text-muted-foreground">5. Clique em <strong>Confirmar e Criar Metas</strong> para salvar no sistema</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
           {/* ========== TAB: HISTÓRICO ========== */}
           <TabsContent value="historico" className="space-y-6 mt-6">
             <div className="grid gap-6 lg:grid-cols-3">
