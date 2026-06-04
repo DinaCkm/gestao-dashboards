@@ -4827,10 +4827,14 @@ export async function createAssessmentPdi(
   });
   const pdiId = result[0].insertId;
   
+  // Deduplicar competências (evitar inserção duplicada da mesma competenciaId no mesmo PDI)
+  const competenciasDeduplicadas = competenciasData.filter(
+    (comp, index, self) => index === self.findIndex(c => c.competenciaId === comp.competenciaId)
+  );
   // Insert competencias - convert string dates to Date objects
-  if (competenciasData.length > 0) {
+  if (competenciasDeduplicadas.length > 0) {
     await db.insert(assessmentCompetencias).values(
-      competenciasData.map(c => ({
+      competenciasDeduplicadas.map(c => ({
         assessmentPdiId: pdiId,
         competenciaId: c.competenciaId,
         peso: c.peso,

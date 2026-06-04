@@ -5542,9 +5542,12 @@ async function createAssessmentPdi(pdiData, competenciasData) {
     numeroPdi: proximoNumeroPdi
   });
   const pdiId = result[0].insertId;
-  if (competenciasData.length > 0) {
+  const competenciasDeduplicadas = competenciasData.filter(
+    (comp, index, self) => index === self.findIndex((c) => c.competenciaId === comp.competenciaId)
+  );
+  if (competenciasDeduplicadas.length > 0) {
     await db2.insert(assessmentCompetencias).values(
-      competenciasData.map((c) => ({
+      competenciasDeduplicadas.map((c) => ({
         assessmentPdiId: pdiId,
         competenciaId: c.competenciaId,
         peso: c.peso,

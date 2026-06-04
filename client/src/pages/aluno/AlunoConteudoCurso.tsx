@@ -183,7 +183,7 @@ export default function AlunoConteudoCurso() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="overflow-hidden rounded-lg border bg-black/5">
+              <div className="relative overflow-hidden rounded-lg border bg-black/5">
                 <iframe
                   ref={iframeRef}
                   key={urlEmbed}
@@ -192,6 +192,12 @@ export default function AlunoConteudoCurso() {
                   className="h-[75vh] w-full"
                   allow="fullscreen; autoplay"
                   allowFullScreen
+                />
+                {/* Overlay para bloquear botões nativos do Genially (compartilhar, etc.) no canto inferior direito */}
+                <div
+                  className="pointer-events-auto absolute bottom-0 right-0 z-10 bg-transparent"
+                  style={{ width: 120, height: 60 }}
+                  aria-hidden="true"
                 />
               </div>
 
