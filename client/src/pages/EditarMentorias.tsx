@@ -26,7 +26,7 @@ export default function EditarMentorias() {
   const [presencaFilter, setPresencaFilter] = useState("");
   const [taskStatusFilter, setTaskStatusFilter] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 30;
+  const pageSize = 100;
 
   // Edit dialog state
   const [editSession, setEditSession] = useState<any | null>(null);

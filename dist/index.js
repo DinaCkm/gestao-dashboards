@@ -25915,7 +25915,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const turmasForProgram = await dbInstance.select({ id: turmasTable.id }).from(turmasTable).where(eq16(turmasTable.programId, filters.programId));
         const turmaIds2 = turmasForProgram.map((t2) => t2.id);
         if (turmaIds2.length > 0) {
-          conditions.push(sql4`${mentoringSessions2.turmaId} IN (${sql4.raw(turmaIds2.join(","))})`);
+          conditions.push(sql4`(${mentoringSessions2.turmaId} IN (${sql4.raw(turmaIds2.join(","))}) OR ${mentoringSessions2.turmaId} IS NULL)`);
         } else {
           return { sessions: [], total: 0 };
         }

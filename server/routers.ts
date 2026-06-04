@@ -7365,7 +7365,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const turmasForProgram = await dbInstance.select({ id: turmasTable.id }).from(turmasTable).where(eq(turmasTable.programId, filters.programId));
           const turmaIds = turmasForProgram.map(t => t.id);
           if (turmaIds.length > 0) {
-            conditions.push(sql`${mentoringSessions.turmaId} IN (${sql.raw(turmaIds.join(','))})`);
+            // Inclui sessões da empresa OU sessões sem turma vinculada (ex: grupais sem turmaId)
+            conditions.push(sql`(${mentoringSessions.turmaId} IN (${sql.raw(turmaIds.join(','))}) OR ${mentoringSessions.turmaId} IS NULL)`);
           } else {
             return { sessions: [], total: 0 };
           }
