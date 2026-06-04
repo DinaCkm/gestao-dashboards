@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -128,6 +129,7 @@ function normalizarAvaliacao(item: any) {
 }
 
 export default function AdminAvaliacoes() {
+  const [, setLocation] = useLocation();
   const [competenciaId, setCompetenciaId] = useState<number>(0);
   const [cursoSelecionado, setCursoSelecionado] = useState<string>("");
   const [atividadeSelecionada, setAtividadeSelecionada] = useState<string>("");
@@ -625,6 +627,15 @@ export default function AdminAvaliacoes() {
                         <span className="rounded-full bg-muted px-2 py-1 text-xs">
                           {avaliacao.isActive === 1 ? "Ativa" : "Inativa"}
                         </span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="ml-auto"
+                          onClick={() => setLocation(`/admin/avaliacoes/preview?avaliacaoId=${avaliacao.id}`)}
+                        >
+                          Testar avaliação
+                        </Button>
                       </div>
 
                       <p className="text-sm text-muted-foreground">

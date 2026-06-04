@@ -70,6 +70,7 @@ import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
 
 import AdminAtividades from "./pages/admin/AdminAtividades";
 import AdminAvaliacoes from "./pages/admin/AdminAvaliacoes";
+import AdminPreviewAvaliacao from "./pages/admin/AdminPreviewAvaliacao";
 import AdminDashboardCompTec from "./pages/admin/AdminDashboard";
 import AdminQuestoes from "./pages/admin/AdminQuestoes";
 
@@ -165,6 +166,7 @@ function Router() {
       <Route path={"/admin/competencias-comp-tec/atividades"} component={AdminAtividades} />
       <Route path={"/admin/competencias-comp-tec/avaliacoes"} component={AdminAvaliacoes} />
       <Route path={"/admin/avaliacoes"} component={AdminAvaliacoes} />
+      <Route path={"/admin/avaliacoes/preview"} component={AdminPreviewAvaliacao} />
       <Route path={"/admin/competencias-comp-tec/questoes"} component={AdminQuestoes} />
 
       <Route path={"/mentor/competencias-comp-tec/alunos"} component={MentorListaAlunos} />

@@ -12869,6 +12869,35 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true, id: result[0]?.insertId ?? null };
         }),
 
+      previewAvaliacao: adminOrAdmin2Procedure
+        .input(z.object({ avaliacaoId: z.number().int().min(1) }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId))
+            .limit(1);
+          if (!avaliacao) throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada" });
+          let questoes: any[] = [];
+          try {
+            const raw = avaliacao.questoes;
+            const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+            if (Array.isArray(parsed)) questoes = parsed;
+          } catch {}
+          // Sortear 10 questões aleatórias (como o sistema faz para os alunos)
+          const sorteadas = questoes.length > 10
+            ? [...questoes].sort(() => Math.random() - 0.5).slice(0, 10)
+            : questoes;
+          return {
+            id: avaliacao.id,
+            titulo: avaliacao.titulo,
+            notaMinima: avaliacao.notaMinima,
+            totalQuestoes: questoes.length,
+            questoes: sorteadas,
+          };
+        }),
       listarAvaliacoesCurso: protectedProcedure
         .input(z.object({ cursoId: z.number() }))
         .query(async ({ input }) => {
