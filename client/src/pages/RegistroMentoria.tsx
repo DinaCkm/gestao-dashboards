@@ -1039,7 +1039,10 @@ export default function RegistroMentoria() {
                                 onClick={() => {
                                   setSelectedAppointmentId(appt.id);
                                   setNewSessionDate(appt.scheduledDate);
-                                  if (appt.type === 'grupo') setNewTipoSessao('grupo_normal');
+                                  // Se o título do agendamento contém "Individual", tratar como individual
+                                  // mesmo que o tipo do evento seja 'grupo'
+                                  const tituloTemIndividual = (appt.title || '').toLowerCase().includes('individual');
+                                  if (appt.type === 'grupo' && !tituloTemIndividual) setNewTipoSessao('grupo_normal');
                                   else setNewTipoSessao('individual_normal');
                                 }}
                                 className={`w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-lg border-2 transition-all ${
