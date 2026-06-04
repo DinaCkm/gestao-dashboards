@@ -10087,29 +10087,45 @@ Responda APENAS em JSON com o formato:
           'micrometa4_titulo', 'micrometa4_descricao',
           'micrometa5_titulo', 'micrometa5_descricao',
         ];
+        // Linha de exemplo: 1 aluno, 1 competência, 1 macrometa, 3 micrometas
         const exampleRow = [
-          'aluno@email.com', 'Escuta Ativa',
-          'Melhorar comunicação com a equipe', 'Desenvolver habilidade de ouvir ativamente nas reuniões',
-          'Praticar escuta ativa em 3 reuniões por semana', 'Anotar pontos principais de cada fala',
-          'Fazer perguntas de esclarecimento', 'Evitar interrupções durante as falas',
-          '', '', '', '', '', '',
+          'aluno@email.com', 'Gestão da Comunicação',
+          'Desenvolver comunicação assertiva com a equipe', 'Aprimorar a clareza e objetividade na comunicação em reuniões e e-mails',
+          'Praticar escuta ativa em reuniões', 'Aguardar a fala completa antes de responder e anotar pontos-chave',
+          'Reformular mensagens com tom colaborativo', 'Reescrever uma mensagem sensível com foco em solução antes de enviar',
+          'Solicitar feedback sobre comunicação', 'Pedir retorno de um colega ou gestor sobre clareza e tom das comunicações',
+          '', '', '', '',
         ];
         const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
-        ws['!cols'] = headers.map(() => ({ wch: 28 }));
+        ws['!cols'] = headers.map(() => ({ wch: 32 }));
         XLSX.utils.book_append_sheet(wb, ws, 'Dados');
         const instrucoes = XLSX.utils.aoa_to_sheet([
           ['INSTRUÇÕES DE PREENCHIMENTO'],
           [''],
-          ['- Uma linha por aluno'],
-          ['- email_aluno: e-mail cadastrado do aluno no sistema (obrigatório)'],
-          ['- competencia: nome exato da competência no PDI ativo do aluno (obrigatório)'],
-          ['- macrometa_titulo: título da macrometa (obrigatório)'],
-          ['- macrometa_descricao: descrição da macrometa (opcional)'],
-          ['- micrometa1 a micrometa5: título obrigatório, descrição opcional'],
-          ['- Preencha as micrometas do 1 em diante sem pular'],
-          ['- Máximo 5 micrometas por aluno'],
+          ['⚠️  REGRA PRINCIPAL: UMA LINHA POR ALUNO'],
+          ['Cada linha representa UM aluno com UMA macrometa vinculada a UMA competência do PDI.'],
+          ['NÃO repita o mesmo aluno em múltiplas linhas — cada aluno deve aparecer apenas uma vez.'],
+          [''],
+          ['CAMPOS OBRIGATÓRIOS:'],
+          ['• email_aluno   → e-mail cadastrado do aluno no sistema'],
+          ['• competencia   → nome EXATO da competência no PDI ativo do aluno (ex: Gestão da Comunicação)'],
+          ['• macrometa_titulo → título da macrometa principal (objetivo maior do aluno nesta competência)'],
+          [''],
+          ['CAMPOS OPCIONAIS:'],
+          ['• macrometa_descricao → descrição detalhada da macrometa'],
+          ['• micrometa1_titulo até micrometa5_titulo → títulos das micrometas (etapas concretas)'],
+          ['• micrometa1_descricao até micrometa5_descricao → descrições das micrometas'],
+          [''],
+          ['REGRAS DAS MICROMETAS:'],
+          ['• Preencha em sequência: micrometa1, micrometa2, micrometa3... sem pular números'],
+          ['• Máximo de 5 micrometas por aluno'],
+          ['• As micrometas são as etapas que, quando cumpridas, atingem a macrometa (100%)'],
+          ['• NÃO inclua numeração no título — o sistema adiciona automaticamente (1., 2., 3...)'],
+          [''],
+          ['EXEMPLO CORRETO (uma linha por aluno):'],
+          ['  aluno@email.com | Gestão da Comunicação | Desenvolver comunicação assertiva | ... | Micrometa 1 | ... | Micrometa 2 | ...'],
         ]);
-        instrucoes['!cols'] = [{ wch: 80 }];
+        instrucoes['!cols'] = [{ wch: 90 }];
         XLSX.utils.book_append_sheet(wb, instrucoes, 'Instruções');
         const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
         return { data: (buf as Buffer).toString('base64'), filename: 'modelo_metas.xlsx' };
