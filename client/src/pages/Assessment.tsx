@@ -893,18 +893,29 @@ function AssessmentContent() {
                 const groups = Array.from(turmaGroups.entries());
                 return (
                   <div className="border-t pt-3">
-                    <button
-                      type="button"
-                      onClick={() => setTrilhasExpanded(!trilhasExpanded)}
-                      className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5 w-full cursor-pointer hover:text-foreground transition-colors"
-                    >
-                      <Route className="h-3.5 w-3.5" />
-                      Trilhas e Ciclos de Execução
-                      <span className="ml-auto flex items-center gap-1 text-[10px] normal-case font-normal">
-                        {trilhasExpanded ? 'Recolher' : `Expandir (${assessments.length} trilhas)`}
-                        {trilhasExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </span>
-                    </button>
+                    <div className="flex items-center gap-2 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => setTrilhasExpanded(!trilhasExpanded)}
+                        className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 flex-1 cursor-pointer hover:text-foreground transition-colors"
+                      >
+                        <Route className="h-3.5 w-3.5" />
+                        Trilhas e Ciclos de Execução
+                        <span className="ml-2 flex items-center gap-1 text-[10px] normal-case font-normal">
+                          {trilhasExpanded ? 'Recolher' : `Expandir (${assessments.length} trilhas)`}
+                          {trilhasExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLocation(`/assessment/novo/${selectedAlunoId}`)}
+                        className="flex items-center gap-1 text-[10px] font-semibold text-secondary hover:text-secondary/80 border border-secondary/30 hover:border-secondary/60 rounded px-2 py-0.5 transition-colors whitespace-nowrap"
+                        title="Adicionar nova trilha ao PDI deste aluno"
+                      >
+                        <Plus className="h-3 w-3" />
+                        Nova Trilha
+                      </button>
+                    </div>
                     {/* Resumo compacto */}
                     {!trilhasExpanded && (
                       <div className="space-y-1">
