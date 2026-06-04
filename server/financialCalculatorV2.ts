@@ -387,12 +387,22 @@ export async function getRelatorioFinanceiroV2(
     const consultorMap = new Map(allConsultors.map(c => [c.id, c.name || 'N/A']));
 
     // IDs de sessões no período (para cruzamento)
+    // Inclui appointmentIds de TODAS as sessões (incluindo as grupais que foram colapsadas)
     const sessionAppointmentIds = new Set(filtered.filter(s => s.appointmentId).map(s => s.appointmentId!));
-    // Também verificar por data + consultor + aluno
-    const sessionKeys = new Set(filtered.map(s => {
+    // Também verificar por data + consultor + aluno (com tolerância de ±1 dia)
+    const sessionKeys = new Set<string>();
+    for (const s of filtered) {
       const d = s.sessionDate ? String(s.sessionDate).slice(0, 10) : '';
-      return `${d}_${s.consultorId}_${s.alunoId}`;
-    }));
+      if (!d || !s.consultorId) continue;
+      // Adicionar a chave exata
+      sessionKeys.add(`${d}_${s.consultorId}_${s.alunoId}`);
+      // Adicionar chaves com tolerância de ±1 dia para cobrir diferenças de fuso horário
+      const dateObj = new Date(d + 'T00:00:00Z');
+      const dayBefore = new Date(dateObj.getTime() - 86400000).toISOString().slice(0, 10);
+      const dayAfter = new Date(dateObj.getTime() + 86400000).toISOString().slice(0, 10);
+      sessionKeys.add(`${dayBefore}_${s.consultorId}_${s.alunoId}`);
+      sessionKeys.add(`${dayAfter}_${s.consultorId}_${s.alunoId}`);
+    }
 
     for (const appt of appointmentsInPeriod) {
       // Se já tem sessão vinculada diretamente, pular

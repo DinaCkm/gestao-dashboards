@@ -19484,10 +19484,17 @@ async function getRelatorioFinanceiroV2(db2, dateFrom, dateTo) {
     const allConsultors = await db2.select({ id: consultors.id, name: consultors.name }).from(consultors);
     const consultorMap = new Map(allConsultors.map((c) => [c.id, c.name || "N/A"]));
     const sessionAppointmentIds = new Set(filtered.filter((s) => s.appointmentId).map((s) => s.appointmentId));
-    const sessionKeys = new Set(filtered.map((s) => {
+    const sessionKeys = /* @__PURE__ */ new Set();
+    for (const s of filtered) {
       const d = s.sessionDate ? String(s.sessionDate).slice(0, 10) : "";
-      return `${d}_${s.consultorId}_${s.alunoId}`;
-    }));
+      if (!d || !s.consultorId) continue;
+      sessionKeys.add(`${d}_${s.consultorId}_${s.alunoId}`);
+      const dateObj = /* @__PURE__ */ new Date(d + "T00:00:00Z");
+      const dayBefore = new Date(dateObj.getTime() - 864e5).toISOString().slice(0, 10);
+      const dayAfter = new Date(dateObj.getTime() + 864e5).toISOString().slice(0, 10);
+      sessionKeys.add(`${dayBefore}_${s.consultorId}_${s.alunoId}`);
+      sessionKeys.add(`${dayAfter}_${s.consultorId}_${s.alunoId}`);
+    }
     for (const appt of appointmentsInPeriod) {
       if (sessionAppointmentIds.has(appt.id)) continue;
       const participants = participantsByAppointment.get(appt.id) || [];
