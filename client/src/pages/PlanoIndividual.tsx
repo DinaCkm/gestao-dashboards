@@ -112,6 +112,7 @@ function PlanoContent() {
 
   // Metas state
   const [expandedCompId, setExpandedCompId] = useState<number | null>(null);
+  const [expandedMetaIds, setExpandedMetaIds] = useState<Set<number>>(new Set());
   const [showAddMetaDialog, setShowAddMetaDialog] = useState(false);
   const [addMetaCompId, setAddMetaCompId] = useState<number | null>(null);
   const [addMetaAssCompId, setAddMetaAssCompId] = useState<number | null>(null);
@@ -1343,7 +1344,17 @@ function PlanoContent() {
                                                 <p className="text-sm">{meta.titulo}</p>
                                                 {meta.taskLibraryId && <Badge variant="secondary" className="text-xs gap-1"><Library className="h-3 w-3" />Biblioteca</Badge>}
                                               </div>
-                                              {meta.descricao && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{meta.descricao}</p>}
+                                              {meta.descricao && (
+                                                <div>
+                                                  <p className={`text-xs text-muted-foreground mt-0.5 ${expandedMetaIds.has(meta.id) ? '' : 'line-clamp-2'}`}>{meta.descricao}</p>
+                                                  <button
+                                                    className="text-xs text-primary hover:underline mt-0.5 focus:outline-none"
+                                                    onClick={() => setExpandedMetaIds(prev => { const next = new Set(prev); next.has(meta.id) ? next.delete(meta.id) : next.add(meta.id); return next; })}
+                                                  >
+                                                    {expandedMetaIds.has(meta.id) ? 'Ver menos' : 'Ver mais'}
+                                                  </button>
+                                                </div>
+                                              )}
                                               {meta.ultimoStatus && (
                                                 <div className="flex items-center gap-2 mt-1">
                                                   <Badge className={`text-xs ${getMetaStatusColor(meta.ultimoStatus)}`}>{getMetaStatusLabel(meta.ultimoStatus)}</Badge>
