@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { DISC_PERFIS } from "@shared/discData";
 import DashboardLayout from "@/components/DashboardLayout";
 import ProcessoStatusBadge from "@/components/processos-seletivos/ProcessoStatusBadge";
 import { Badge } from "@/components/ui/badge";
@@ -941,28 +942,73 @@ function AvaliacaoContent() {
               {/* DISC */}
               <div>
                 <h3 className="font-semibold text-sm text-[#0f2b3c] mb-1.5">Perfil DISC</h3>
-                {perfil.disc ? (
-                  <div className="grid grid-cols-4 gap-3">
-                    {(["D", "I", "S", "C"] as const).map((fator) => {
-                      const score = (perfil.disc as any)[`score${fator}`] ?? 0;
-                      const colors: Record<string, string> = {
-                        D: "bg-red-100 text-red-700",
-                        I: "bg-amber-100 text-amber-700",
-                        S: "bg-emerald-100 text-emerald-700",
-                        C: "bg-blue-100 text-blue-700",
-                      };
-                      return (
-                        <div
-                          key={fator}
-                          className={`rounded-lg p-3 text-center ${colors[fator]}`}
-                        >
-                          <div className="text-2xl font-bold">{score}</div>
-                          <div className="text-xs font-semibold mt-0.5">{fator}</div>
+                {perfil.disc ? (() => {
+                  const disc = perfil.disc as any;
+                  const colors: Record<string, string> = {
+                    D: "bg-red-100 text-red-700",
+                    I: "bg-amber-100 text-amber-700",
+                    S: "bg-emerald-100 text-emerald-700",
+                    C: "bg-blue-100 text-blue-700",
+                  };
+                  const predominante = disc.perfilPredominante as "D" | "I" | "S" | "C" | null;
+                  const secundario = disc.perfilSecundario as "D" | "I" | "S" | "C" | null;
+                  const perfilPrincipalData = predominante ? DISC_PERFIS[predominante] : null;
+                  const perfilSecData = secundario ? DISC_PERFIS[secundario] : null;
+                  return (
+                    <div className="space-y-3">
+                      {/* Scores */}
+                      <div className="grid grid-cols-4 gap-3">
+                        {(["D", "I", "S", "C"] as const).map((fator) => {
+                          const score = disc[`score${fator}`] ?? 0;
+                          const isPred = fator === predominante;
+                          return (
+                            <div key={fator} className={`rounded-lg p-3 text-center ${colors[fator]} ${isPred ? "ring-2 ring-offset-1" : ""}`}
+                              style={isPred ? { ringColor: DISC_PERFIS[fator].cor } : {}}>
+                              <div className="text-2xl font-bold">{score}</div>
+                              <div className="text-xs font-semibold mt-0.5">{fator}</div>
+                              {isPred && <div className="text-[10px] mt-0.5 opacity-70">predominante</div>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Perfil predominante: nome e título */}
+                      {perfilPrincipalData && (
+                        <div className="text-sm text-muted-foreground">
+                          <span className="font-semibold" style={{ color: perfilPrincipalData.cor }}>{predominante} — {perfilPrincipalData.nome}</span>
+                          <span className="ml-1 text-xs">({perfilPrincipalData.titulo})</span>
+                          {perfilSecData && (
+                            <span className="ml-2 text-xs text-muted-foreground">· Secundário: <span className="font-medium" style={{ color: perfilSecData.cor }}>{secundario} — {perfilSecData.nome}</span></span>
+                          )}
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
+                      )}
+                      {/* Pontos Positivos */}
+                      {perfilPrincipalData && (
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+                            <p className="text-xs font-semibold text-emerald-700 mb-2 flex items-center gap-1">✦ Pontos Positivos</p>
+                            <ul className="space-y-1">
+                              {perfilPrincipalData.pontosFortes.map((pf, i) => (
+                                <li key={i} className="text-xs text-emerald-800 flex items-start gap-1.5">
+                                  <span className="mt-0.5 text-emerald-500">•</span>{pf}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div className="rounded-lg border border-amber-100 bg-amber-50 p-3">
+                            <p className="text-xs font-semibold text-amber-700 mb-2 flex items-center gap-1">⚠ Pontos de Atenção</p>
+                            <ul className="space-y-1">
+                              {perfilPrincipalData.areasDesenvolvimento.map((ad, i) => (
+                                <li key={i} className="text-xs text-amber-800 flex items-start gap-1.5">
+                                  <span className="mt-0.5 text-amber-500">•</span>{ad}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })() : (
                   <p className="text-sm text-muted-foreground italic">DISC não realizado.</p>
                 )}
               </div>
