@@ -615,7 +615,7 @@ export const processosSeletivosRouter = router({
         userId: processoCandidatos.userId,
         nome: processoCandidatos.nome,
         email: processoCandidatos.email,
-        telefone: processoCandidatos.telefone,
+        telefone: sql<string | null>`COALESCE(${processoCandidatos.telefone}, ${alunos.telefone})`,
         cpf: processoCandidatos.cpf,
         statusCadastro: processoCandidatos.statusCadastro,
         statusTeste: processoCandidatos.statusTeste,
@@ -639,6 +639,8 @@ export const processosSeletivosRouter = router({
           ne(processoAgendaSlots.status, "cancelado"),
         ),
       )
+      .leftJoin(users, eq(users.id, processoCandidatos.userId))
+      .leftJoin(alunos, eq(alunos.id, users.alunoId))
       .where(and(eq(processoCandidatos.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo")))
       .orderBy(asc(processoCandidatos.nome));
     if (isCkmAdmin(ctx.user.role)) return rows;
