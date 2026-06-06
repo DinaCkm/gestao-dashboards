@@ -283,6 +283,19 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(err.message),
   });
 
+  const reagendarEntrevista = trpc.processosSeletivos.reagendarEntrevista.useMutation({
+    onSuccess: async () => {
+      toast.success("Entrevista reagendada. O candidato foi notificado por e-mail e pelo sino.");
+      await invalidateProcesso();
+    },
+    onError: (err) => toast.error(`Erro ao reagendar: ${err.message}`),
+  });
+
+  const { data: slotsDisponiveis = [] } = trpc.processosSeletivos.listarSlotsDisponiveis.useQuery(
+    { processoId: selectedProcessoId ?? 0 },
+    { enabled: !!selectedProcessoId },
+  );
+
   const handleCreateProcesso = (event: SimpleFormEvent) => {
     event.preventDefault();
     criarProcesso.mutate({
@@ -892,12 +905,15 @@ function ProcessosSeletivosContent() {
                 <TabelaCandidatosProcesso
                   candidatos={candidatos}
                   regioes={regioes}
+                  slotsDisponiveis={slotsDisponiveis}
                   isAdmin={isAdmin}
-                  isBusy={concluirTeste.isPending || registrarResultado.isPending || moverCandidato.isPending}
+                  isMentora={false}
+                  isBusy={concluirTeste.isPending || registrarResultado.isPending || moverCandidato.isPending || reagendarEntrevista.isPending}
                   onConcluirTeste={(id) => concluirTeste.mutate({ candidatoId: id })}
                   onAprovar={(id) => registrarResultado.mutate({ candidatoId: id, resultado: "aprovado" })}
                   onMoverRegiao={(candidatoId, novaRegiaoId) => moverCandidato.mutate({ candidatoId, novaRegiaoId })}
                   onInativar={(id) => inativarCandidato.mutate({ candidatoId: id })}
+                  onReagendar={(candidatoId, novoSlotId) => reagendarEntrevista.mutate({ candidatoId, novoSlotId })}
                 />
               </CardContent>
             </Card>

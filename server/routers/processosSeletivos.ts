@@ -20,7 +20,7 @@ import {
   users,
 } from "../../drizzle/schema";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
+import { createNotification, getDb } from "../db";
 import { buildPsAlertaAdminSemSlotEmail, buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, buildPsRelatorioEmail, sendEmail } from "../emailService";
 
 const adminRoles = new Set(["admin", "admin2"]);
@@ -605,7 +605,42 @@ export const processosSeletivosRouter = router({
   listarCandidatos: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);
-    const rows = await database.select().from(processoCandidatos).where(and(eq(processoCandidatos.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo"))).orderBy(asc(processoCandidatos.nome));
+    // Join com slot de agenda para retornar data/horário do agendamento
+    const rows = await database
+      .select({
+        id: processoCandidatos.id,
+        processoId: processoCandidatos.processoId,
+        vagaId: processoCandidatos.vagaId,
+        regiaoId: processoCandidatos.regiaoId,
+        userId: processoCandidatos.userId,
+        nome: processoCandidatos.nome,
+        email: processoCandidatos.email,
+        telefone: processoCandidatos.telefone,
+        cpf: processoCandidatos.cpf,
+        statusCadastro: processoCandidatos.statusCadastro,
+        statusTeste: processoCandidatos.statusTeste,
+        testeConcluidoEm: processoCandidatos.testeConcluidoEm,
+        statusEntrevista: processoCandidatos.statusEntrevista,
+        statusResultado: processoCandidatos.statusResultado,
+        observacoes: processoCandidatos.observacoes,
+        createdAt: processoCandidatos.createdAt,
+        updatedAt: processoCandidatos.updatedAt,
+        slotId: processoAgendaSlots.id,
+        slotDataAgenda: processoAgendaSlots.dataAgenda,
+        slotInicio: processoAgendaSlots.inicio,
+        slotFim: processoAgendaSlots.fim,
+      })
+      .from(processoCandidatos)
+      .leftJoin(
+        processoAgendaSlots,
+        and(
+          eq(processoAgendaSlots.candidatoId, processoCandidatos.id),
+          eq(processoAgendaSlots.processoId, input.processoId),
+          ne(processoAgendaSlots.status, "cancelado"),
+        ),
+      )
+      .where(and(eq(processoCandidatos.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo")))
+      .orderBy(asc(processoCandidatos.nome));
     if (isCkmAdmin(ctx.user.role)) return rows;
     // Mentora: ver todos os candidatos do processo
     const userConsultorId = (ctx.user as any).consultorId as number | null;
@@ -1237,9 +1272,22 @@ export const processosSeletivosRouter = router({
         .limit(1);
       if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
       await ensureProcessAccess(database, ctx.user, candidate.processoId);
-      // Apenas admin CKM pode reagendar (não o próprio candidato)
-      if (!isCkmAdmin(ctx.user.role)) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem reagendar entrevistas" });
+      // Admin CKM ou mentora do processo pode reagendar
+      const isAdmin = isCkmAdmin(ctx.user.role);
+      let isMentoraDoProcesso = false;
+      if (!isAdmin) {
+        const userConsultorId = (ctx.user as any).consultorId as number | null;
+        if (userConsultorId) {
+          const [processoCheck] = await database
+            .select({ mentorId: processosSeletivos.mentorId })
+            .from(processosSeletivos)
+            .where(eq(processosSeletivos.id, candidate.processoId))
+            .limit(1);
+          isMentoraDoProcesso = processoCheck?.mentorId === userConsultorId;
+        }
+      }
+      if (!isAdmin && !isMentoraDoProcesso) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores ou a mentora do processo podem reagendar entrevistas" });
       }
 
       // Verificar novo slot
@@ -1337,6 +1385,22 @@ export const processosSeletivosRouter = router({
           html: emailData.html,
           text: emailData.text,
         });
+      }
+
+      // Notificação no sino para o candidato
+      if (candidate.userId) {
+        try {
+          await createNotification({
+            userId: candidate.userId,
+            title: "Entrevista Reagendada",
+            message: `Sua entrevista para o processo ${processo?.nome ?? "Processo Seletivo"} foi reagendada para ${dataFormatada} às ${novoSlot.inicio}.`,
+            type: "warning",
+            category: "processo_seletivo",
+            link: `/processos-seletivos`,
+          });
+        } catch (notifErr) {
+          console.error("[reagendarEntrevista] Erro ao criar notificação:", notifErr);
+        }
       }
 
       return { success: true, novoSlot };

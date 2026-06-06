@@ -13,9 +13,16 @@ function formatCpf(value: string): string {
 
 type Modo = null | "desenvolvimento" | "processo_seletivo";
 
+// Mapeamento de IDs de processos obsoletos/recriados para os IDs corretos ativos
+const PROCESSO_ID_REDIRECT: Record<string, string> = {
+  "5": "7", // Banrisul - G.Adm. (processo recriado com novo ID)
+};
+
 export default function AutoRegistro() {
   // Ler ?ps= da URL para pré-selecionar o processo
-  const psParam = new URLSearchParams(window.location.search).get("ps") ?? "";
+  const rawPsParam = new URLSearchParams(window.location.search).get("ps") ?? "";
+  // Redirecionar IDs obsoletos para o processo correto ativo
+  const psParam = rawPsParam && PROCESSO_ID_REDIRECT[rawPsParam] ? PROCESSO_ID_REDIRECT[rawPsParam] : rawPsParam;
   const [modo, setModo] = useState<Modo>(psParam ? "processo_seletivo" : null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

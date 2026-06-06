@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter, UserMinus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter, UserMinus, CalendarClock } from "lucide-react";
 import ProcessoStatusBadge from "./ProcessoStatusBadge";
 
 type Candidate = {
@@ -14,6 +15,17 @@ type Candidate = {
   statusResultado: string;
   regiaoId: number | null;
   vagaId: number | null;
+  slotId?: number | null;
+  slotDataAgenda?: string | null;
+  slotInicio?: string | null;
+  slotFim?: string | null;
+};
+
+type Slot = {
+  id: number;
+  dataAgenda: string;
+  inicio: string;
+  fim: string;
 };
 
 type Regiao = {
@@ -24,29 +36,36 @@ type Regiao = {
 export default function TabelaCandidatosProcesso({
   candidatos,
   regioes,
+  slotsDisponiveis,
   isAdmin,
   isMentora,
   onConcluirTeste,
   onAprovar,
   onMoverRegiao,
   onInativar,
+  onReagendar,
   isBusy,
 }: {
   candidatos: Candidate[];
   regioes?: Regiao[];
+  slotsDisponiveis?: Slot[];
   isAdmin: boolean;
   isMentora?: boolean;
   onConcluirTeste: (id: number) => void;
   onAprovar: (id: number) => void;
   onMoverRegiao?: (candidatoId: number, novaRegiaoId: number | null) => void;
   onInativar?: (id: number) => void;
+  onReagendar?: (candidatoId: number, novoSlotId: number) => void;
   isBusy: boolean;
 }) {
   const [movendo, setMovendo] = useState<number | null>(null);
   const [novaRegiao, setNovaRegiao] = useState<string>("");
   const [filtroRegiao, setFiltroRegiao] = useState<string>("todas");
+  const [reagendandoId, setReagendandoId] = useState<number | null>(null);
+  const [novoSlotId, setNovoSlotId] = useState<string>("");
 
   const podeEditarRegiao = isAdmin || isMentora;
+  const podeReagendar = isAdmin || isMentora;
 
   function getRegiaoNome(regiaoId: number | null) {
     if (!regiaoId) return "—";
@@ -61,6 +80,23 @@ export default function TabelaCandidatosProcesso({
     setNovaRegiao("");
   }
 
+  function handleConfirmarReagendar() {
+    if (!onReagendar || !reagendandoId || !novoSlotId) return;
+    onReagendar(reagendandoId, Number(novoSlotId));
+    setReagendandoId(null);
+    setNovoSlotId("");
+  }
+
+  function formatarDataSlot(dataAgenda: string, inicio: string, fim: string) {
+    const [ano, mes, dia] = dataAgenda.split("-");
+    return `${dia}/${mes}/${ano} ${inicio}–${fim}`;
+  }
+
+  function formatarDataCurta(dataAgenda: string, inicio: string, fim: string) {
+    const [ano, mes, dia] = dataAgenda.split("-");
+    return `${dia}/${mes} ${inicio}–${fim}`;
+  }
+
   const candidatosFiltrados = filtroRegiao === "todas"
     ? candidatos
     : filtroRegiao === "sem_regiao"
@@ -68,6 +104,7 @@ export default function TabelaCandidatosProcesso({
     : candidatos.filter((c) => String(c.regiaoId) === filtroRegiao);
 
   const temRegioes = regioes && regioes.length > 0;
+  const candidatoReagendando = candidatos.find((c) => c.id === reagendandoId);
 
   return (
     <div className="space-y-3">
@@ -179,7 +216,17 @@ export default function TabelaCandidatosProcesso({
                   )}
                 </TableCell>
                 <TableCell><ProcessoStatusBadge status={candidate.statusTeste} /></TableCell>
-                <TableCell><ProcessoStatusBadge status={candidate.statusEntrevista} /></TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <ProcessoStatusBadge status={candidate.statusEntrevista} />
+                    {candidate.slotDataAgenda && candidate.slotInicio && candidate.slotFim && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <CalendarClock className="h-3 w-3 flex-shrink-0" />
+                        <span>{formatarDataCurta(candidate.slotDataAgenda, candidate.slotInicio, candidate.slotFim)}</span>
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell><ProcessoStatusBadge status={candidate.statusResultado} /></TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2 flex-wrap">
@@ -193,6 +240,18 @@ export default function TabelaCandidatosProcesso({
                       >
                         <ArrowRightLeft className="mr-1 h-3 w-3" />
                         {candidate.regiaoId ? "Mover" : "Definir região"}
+                      </Button>
+                    )}
+                    {podeReagendar && onReagendar && candidate.statusEntrevista === "agendada" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isBusy}
+                        onClick={() => { setReagendandoId(candidate.id); setNovoSlotId(""); }}
+                        title="Reagendar entrevista deste candidato"
+                      >
+                        <CalendarClock className="mr-1 h-3 w-3" />
+                        Reagendar
                       </Button>
                     )}
                     {isAdmin && (
@@ -239,6 +298,57 @@ export default function TabelaCandidatosProcesso({
           )}
         </TableBody>
       </Table>
+
+      {/* Dialog de reagendamento */}
+      <Dialog open={reagendandoId !== null} onOpenChange={(open) => { if (!open) { setReagendandoId(null); setNovoSlotId(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reagendar Entrevista</DialogTitle>
+          </DialogHeader>
+          {candidatoReagendando && (
+            <div className="space-y-4">
+              <div className="text-sm">
+                <span className="font-medium">{candidatoReagendando.nome}</span>
+                {candidatoReagendando.slotDataAgenda && candidatoReagendando.slotInicio && candidatoReagendando.slotFim && (
+                  <p className="text-muted-foreground mt-1">
+                    Agendamento atual: {formatarDataSlot(candidatoReagendando.slotDataAgenda, candidatoReagendando.slotInicio, candidatoReagendando.slotFim)}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Novo horário disponível:</label>
+                <Select value={novoSlotId} onValueChange={setNovoSlotId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um horário..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(slotsDisponiveis ?? []).length === 0 ? (
+                      <SelectItem value="__none__" disabled>Nenhum slot disponível</SelectItem>
+                    ) : (
+                      (slotsDisponiveis ?? []).map((slot) => (
+                        <SelectItem key={slot.id} value={String(slot.id)}>
+                          {formatarDataSlot(slot.dataAgenda, slot.inicio, slot.fim)}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O candidato receberá um e-mail e uma notificação com o novo horário.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReagendandoId(null); setNovoSlotId(""); }}>
+              Cancelar
+            </Button>
+            <Button disabled={!novoSlotId || novoSlotId === "__none__" || isBusy} onClick={handleConfirmarReagendar}>
+              Confirmar Reagendamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
