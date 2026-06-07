@@ -201,8 +201,12 @@ export default function AlunoConteudoCurso() {
                 />
               </div>
 
-              <div className="rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
-                Se o conteúdo não carregar corretamente no iframe, use <strong>Abrir em nova aba</strong> como alternativa.
+              <div className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                <span className="mt-0.5 text-lg">⚠️</span>
+                <p>
+                  <strong>Assista o vídeo na tela do sistema, não migre para o YouTube.</strong>{" "}
+                  Isto evitará que o sistema possa acompanhar a sua performance e prejudicar sua avaliação.
+                </p>
               </div>
             </div>
           )}
