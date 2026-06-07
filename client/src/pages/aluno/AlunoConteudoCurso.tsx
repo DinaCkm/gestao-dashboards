@@ -4,7 +4,8 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, Maximize } from "lucide-react";
+import { ArrowLeft, Maximize, Clock } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 function getNumeroQuery(search: string, chave: string) {
   const params = new URLSearchParams(search);
@@ -25,6 +26,13 @@ function adaptarUrlParaEmbed(url?: string | null) {
   return resultado;
 }
 
+function formatarTempo(segundos: number): string {
+  const s = Math.max(0, Math.round(segundos));
+  const min = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${min}:${sec.toString().padStart(2, "0")}`;
+}
+
 export default function AlunoConteudoCurso() {
   const [, setLocation] = useLocation();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -40,13 +48,40 @@ export default function AlunoConteudoCurso() {
   );
 
   const atividade = useMemo(() => {
-    return (atividadesQuery.data ?? []).find((item) => item.id === atividadeId) ?? null;
+    return (atividadesQuery.data ?? []).find((item: any) => item.id === atividadeId) ?? null;
   }, [atividadeId, atividadesQuery.data]);
 
   const urlOriginal = atividade?.urlGenially || atividade?.urlMidia || "";
   const urlEmbed = adaptarUrlParaEmbed(urlOriginal);
 
+  // Tempo acumulado local (em segundos), iniciado com o valor do banco
+  const [tempoAtivoLocal, setTempoAtivoLocal] = useState<number>(0);
   const [timerPausado, setTimerPausado] = useState(false);
+
+  // Inicializar tempo local com valor do banco quando atividade carregar
+  useEffect(() => {
+    if (atividade?.tempoAtivoAcumuladoSegundos != null) {
+      setTempoAtivoLocal(Number(atividade.tempoAtivoAcumuladoSegundos));
+    }
+  }, [atividade?.id]);
+
+  const tempoMinimoExigido = Number(atividade?.tempoMinimoExigidoSegundos ?? 0);
+  const tempoRestante = Math.max(0, tempoMinimoExigido - tempoAtivoLocal);
+  const percentual = tempoMinimoExigido > 0
+    ? Math.min(100, Math.round((tempoAtivoLocal / tempoMinimoExigido) * 100))
+    : 100;
+  const tempoCumprido = tempoMinimoExigido <= 0 || tempoAtivoLocal >= tempoMinimoExigido;
+
+  // Contador local de 1 em 1 segundo (apenas visual)
+  useEffect(() => {
+    if (!cursoAtribuidoId || !atividadeId) return;
+    const tick = setInterval(() => {
+      if (document.visibilityState === "visible" && document.hasFocus()) {
+        setTempoAtivoLocal((prev) => prev + 1);
+      }
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [cursoAtribuidoId, atividadeId]);
 
   const heartbeatMutation = trpc.competenciasCompTec.aluno.registrarHeartbeatAtividade.useMutation();
   const pausarSessaoMutation = trpc.competenciasCompTec.aluno.pausarSessaoAtividade.useMutation();
@@ -100,11 +135,6 @@ export default function AlunoConteudoCurso() {
     );
   };
 
-  const abrirNovaAba = () => {
-    if (!urlOriginal) return;
-    window.open(urlOriginal, "_blank", "noopener,noreferrer");
-  };
-
   const abrirTelaCheia = async () => {
     if (!iframeRef.current?.requestFullscreen) return;
     await iframeRef.current.requestFullscreen();
@@ -130,16 +160,41 @@ export default function AlunoConteudoCurso() {
             <Maximize className="mr-2 h-4 w-4" />
             Tela cheia
           </Button>
-          {atividade?.permitirAberturaExterna === 1 && (
-            <Button variant="outline" onClick={abrirNovaAba} disabled={!urlOriginal}>
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Abrir em nova aba
-            </Button>
-          )}
         </div>
       </div>
 
-      {timerPausado && (
+      {/* Barra de progresso de tempo */}
+      {tempoMinimoExigido > 0 && (
+        <div className={`rounded-lg border p-4 space-y-2 ${tempoCumprido ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
+          <div className="flex items-center justify-between text-sm font-medium">
+            <div className={`flex items-center gap-2 ${tempoCumprido ? "text-green-800" : "text-amber-800"}`}>
+              <Clock className="h-4 w-4" />
+              {tempoCumprido ? (
+                <span>✅ Tempo mínimo cumprido! Você já pode voltar e fazer a avaliação.</span>
+              ) : (
+                <span>
+                  Aguarde o tempo mínimo para liberar a avaliação — faltam{" "}
+                  <strong>{formatarTempo(tempoRestante)}</strong>
+                </span>
+              )}
+            </div>
+            <span className={`text-xs ${tempoCumprido ? "text-green-700" : "text-amber-700"}`}>
+              {formatarTempo(tempoAtivoLocal)} / {formatarTempo(tempoMinimoExigido)}
+            </span>
+          </div>
+          <Progress
+            value={percentual}
+            className={`h-2 ${tempoCumprido ? "[&>div]:bg-green-500" : "[&>div]:bg-amber-500"}`}
+          />
+          {!tempoCumprido && timerPausado && (
+            <p className="text-xs text-amber-700">
+              ⏸ Timer pausado — você saiu desta aba. Volte para continuar acumulando tempo.
+            </p>
+          )}
+        </div>
+      )}
+
+      {timerPausado && tempoMinimoExigido <= 0 && (
         <div className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span className="text-lg">⏸</span>
           <div>
@@ -172,14 +227,6 @@ export default function AlunoConteudoCurso() {
               <p className="text-sm text-muted-foreground">
                 Esta atividade não possui uma URL válida para incorporação.
               </p>
-              {atividade?.permitirAberturaExterna === 1 && (
-                <div className="flex justify-center">
-                  <Button onClick={abrirNovaAba} disabled={!urlOriginal}>
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Abrir em nova aba
-                  </Button>
-                </div>
-              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -193,10 +240,16 @@ export default function AlunoConteudoCurso() {
                   allow="fullscreen; autoplay"
                   allowFullScreen
                 />
-                {/* Overlay para bloquear botões nativos do Genially (compartilhar, etc.) no canto inferior direito */}
+                {/* Overlay inferior: bloqueia barra de progresso e botões do YouTube/Genially */}
+                <div
+                  className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10 bg-transparent"
+                  style={{ height: 52 }}
+                  aria-hidden="true"
+                />
+                {/* Overlay lateral direito: bloqueia botão "Assistir no YouTube" */}
                 <div
                   className="pointer-events-auto absolute bottom-0 right-0 z-10 bg-transparent"
-                  style={{ width: 120, height: 60 }}
+                  style={{ width: 200, height: 52 }}
                   aria-hidden="true"
                 />
               </div>
