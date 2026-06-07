@@ -315,7 +315,17 @@ export default function CompetenciasCompTec() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {todosCursos.map((curso: any) => {
+                  {[...todosCursos].sort((a: any, b: any) => {
+                    // Ativos primeiro, depois inativos
+                    if (b.isActive !== a.isActive) return b.isActive - a.isActive;
+                    // Dentro de cada grupo, ordenar por nome da competência
+                    const compA = competencias.find((c: any) => c.id === a.competenciaId)?.nome || '';
+                    const compB = competencias.find((c: any) => c.id === b.competenciaId)?.nome || '';
+                    const cmpComp = compA.localeCompare(compB, 'pt-BR');
+                    if (cmpComp !== 0) return cmpComp;
+                    // Depois por título do curso
+                    return (a.titulo || '').localeCompare(b.titulo || '', 'pt-BR');
+                  }).map((curso: any) => {
                     const competencia = competencias.find((c: any) => c.id === curso.competenciaId);
                     return (
                       <TableRow key={curso.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleViewCurso(curso.id)}>
