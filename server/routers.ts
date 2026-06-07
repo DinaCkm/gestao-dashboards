@@ -756,8 +756,19 @@ export const appRouter = router({
         } catch (e) { console.warn('[AutoRegistro] email aluno:', e); }
         try {
           const { sendEmail } = await import('./emailService');
-          const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
-          await sendEmail({ to: 'relacionamento@ckmtalents.net', cc: 'dina@makiyama.com.br', subject: `[Novo Aluno] ${input.name} - Desenvolvimento Express`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
+          if (input.processoSeletivoId) {
+            // Notificação interna — novo candidato de processo seletivo
+            const database = await getDb();
+            const { processosSeletivos: psTbl } = await import('../drizzle/schema');
+            const [ps] = await database.select({ nome: psTbl.nome, clienteNome: psTbl.clienteNome }).from(psTbl).where(eq(psTbl.id, input.processoSeletivoId)).limit(1);
+            const processoLabel = ps ? `${ps.clienteNome} — ${ps.nome}` : `Processo #${input.processoSeletivoId}`;
+            const notifHtml = `<h2>Novo Candidato — Processo Seletivo</h2><p><strong>Processo:</strong> ${processoLabel}</p><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
+            await sendEmail({ to: 'relacionamento@ckmtalents.net', cc: 'dina@makiyama.com.br', subject: `[Novo Candidato] ${input.name} — ${processoLabel}`, html: notifHtml, text: `Novo candidato PS: ${input.name} | ${input.email} | ${processoLabel}` });
+          } else {
+            // Notificação interna — novo aluno de desenvolvimento
+            const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
+            await sendEmail({ to: 'relacionamento@ckmtalents.net', cc: 'dina@makiyama.com.br', subject: `[Novo Aluno] ${input.name} — ${input.empresa || 'Desenvolvimento Express'}`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
+          }
         } catch (e) { console.warn('[AutoRegistro] email admin:', e); }
         // Criar sessão automaticamente para o candidato recém-cadastrado
         try {
