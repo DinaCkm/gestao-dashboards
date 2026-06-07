@@ -13682,6 +13682,56 @@ Responda APENAS em JSON com o formato especificado.`
           });
         }),
 
+      previewCurso: adminOrAdmin2Procedure
+        .input(z.object({ cursoId: z.number().int().positive() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+
+          const atividades = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
+
+          const atividadeIds = atividades.map((a) => a.id);
+
+          const avaliacoes = atividadeIds.length === 0
+            ? []
+            : await database
+                .select()
+                .from(avaliacoesAtividade)
+                .where(
+                  and(
+                    eq(avaliacoesAtividade.isActive, 1),
+                    inArray(avaliacoesAtividade.atividadeId, atividadeIds)
+                  )
+                );
+
+          const avaliacaoMap = new Map(avaliacoes.map((a) => [a.atividadeId, a]));
+
+          return atividades.map((atividade, index) => ({
+            id: atividade.id,
+            titulo: atividade.titulo,
+            descricao: atividade.descricao,
+            ordem: atividade.ordem ?? index + 1,
+            imagemUrl: atividade.imagemUrl ?? null,
+            urlGenially: atividade.urlGenially ?? null,
+            urlMidia: atividade.urlMidia ?? null,
+            status: "disponivel" as string,
+            notaFinal: null,
+            tentativas: 0,
+            avaliacaoId: avaliacaoMap.get(atividade.id)?.id ?? null,
+            temAvaliacao: !!avaliacaoMap.get(atividade.id),
+            avaliacaoLiberada: true,
+            permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
+            duracaoEstimadaMinutos: atividade.duracaoEstimadaMinutos ?? null,
+            duracaoRealMinutos: null,
+            iniciadoEm: null,
+            concluidoEm: null,
+          }));
+        }),
+
       iniciarAtividade: protectedProcedure
         .input(z.object({
           cursoId: z.number(),
