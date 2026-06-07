@@ -12799,35 +12799,27 @@ Responda APENAS em JSON com o formato especificado.`
 
           const cursoId = input.cursoId;
 
-          // 1. Deletar tentativas de avaliação vinculadas às atividades do curso
-          await conn.execute(
-            `DELETE ta FROM tentativas_avaliacao ta
-             INNER JOIN atividades_curso ac ON ta.atividadeId = ac.id
-             WHERE ac.cursoId = ?`,
-            [cursoId]
-          );
-
-          // 2. Deletar avaliações vinculadas às atividades do curso
+          // 1. Deletar avaliações vinculadas às atividades do curso (se a tabela existir)
           await conn.execute(
             `DELETE aa FROM avaliacoes_atividade aa
              INNER JOIN atividades_curso ac ON aa.atividadeId = ac.id
              WHERE ac.cursoId = ?`,
             [cursoId]
-          );
+          ).catch(() => {/* tabela pode não existir */});
 
-          // 3. Deletar atividades do curso
+          // 2. Deletar atividades do curso
           await conn.execute(
             `DELETE FROM atividades_curso WHERE cursoId = ?`,
             [cursoId]
           );
 
-          // 4. Deletar atribuições de alunos ao curso
+          // 3. Deletar atribuições de alunos ao curso
           await conn.execute(
             `DELETE FROM aluno_curso_atribuido WHERE cursoId = ?`,
             [cursoId]
           );
 
-          // 5. Deletar o curso
+          // 4. Deletar o curso
           await conn.execute(
             `DELETE FROM cursos_competencias WHERE id = ?`,
             [cursoId]
