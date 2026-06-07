@@ -7925,7 +7925,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // Notificar admin + dina sobre avanço no onboarding (PDI Publicado)
         try {
           const alunoForEmail = await db.getAlunoById(input.alunoId);
-          if (alunoForEmail) {
+          if (alunoForEmail && alunoForEmail.tipoPortal !== 'processo_seletivo') {
             const { sendEmail: sendEmailStep, buildOnboardingStepEmail, buildPdiPublishedInviteEmail } = await import('./emailService');
             const adminEmail = process.env.SMTP_USER || '';
 
@@ -10192,7 +10192,7 @@ Responda APENAS em JSON com o formato:
         // Notificar admin + dina sobre avanço no onboarding (Teste DISC realizado)
         try {
           const aluno = await db.getAlunoById(input.alunoId);
-          if (aluno) {
+          if (aluno && aluno.tipoPortal !== 'processo_seletivo') {
             const { sendEmail, buildOnboardingStepEmail } = await import('./emailService');
             const adminEmail = process.env.SMTP_USER || '';
             const emailData = buildOnboardingStepEmail({
@@ -10476,7 +10476,7 @@ Responda APENAS em JSON com o formato:
         // Notificar admin + dina sobre avanço no onboarding
         try {
           const aluno = await db.getAlunoById(alunoId);
-          if (aluno) {
+          if (aluno && aluno.tipoPortal !== 'processo_seletivo') {
             const { sendEmail, buildOnboardingStepEmail } = await import('./emailService');
             const adminEmail = process.env.SMTP_USER || '';
             const emailData = buildOnboardingStepEmail({
@@ -11058,7 +11058,7 @@ Responda APENAS em JSON com o formato:
 
         // Notificar admin + dina sobre avanço no onboarding (Mentoria Agendada)
         try {
-          if (aluno) {
+          if (aluno && aluno.tipoPortal !== 'processo_seletivo') {
             const { sendEmail: sendEmailStep, buildOnboardingStepEmail } = await import('./emailService');
             const adminEmailStep = process.env.SMTP_USER || '';
             const emailData = buildOnboardingStepEmail({
