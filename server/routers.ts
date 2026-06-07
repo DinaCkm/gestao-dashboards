@@ -12792,55 +12792,46 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
-          // Buscar todas as atividades do curso
-          const atividades = await database
-            .select({ id: atividadesCurso.id })
-            .from(atividadesCurso)
-            .where(eq(atividadesCurso.cursoId, input.cursoId));
-
-          const atividadeIds = atividades.map((a) => a.id);
-
-          if (atividadeIds.length > 0) {
-            // Buscar avaliações das atividades
-            const avaliacoes = await database
-              .select({ id: avaliacoesAtividade.id })
-              .from(avaliacoesAtividade)
-              .where(inArray(avaliacoesAtividade.atividadeId, atividadeIds));
-
-            const avaliacaoIds = avaliacoes.map((a) => a.id);
-
-            if (avaliacaoIds.length > 0) {
-              // Deletar tentativas de avaliação
-              await database
-                .delete(tentativasAvaliacao)
-                .where(inArray(tentativasAvaliacao.avaliacaoId, avaliacaoIds));
-
-              // Deletar avaliações
-              await database
-                .delete(avaliacoesAtividade)
-                .where(inArray(avaliacoesAtividade.id, avaliacaoIds));
-            }
-
-            // Deletar progresso dos alunos nas atividades
-            await database
-              .delete(tentativasAvaliacao)
-              .where(inArray(tentativasAvaliacao.atividadeId, atividadeIds));
-
-            // Deletar atividades
-            await database
-              .delete(atividadesCurso)
-              .where(eq(atividadesCurso.cursoId, input.cursoId));
+          const conn = await db.getRawConnection();
+          if (!conn) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Conexão indisponível" });
           }
 
-          // Deletar cursos atribuídos aos alunos
-          await database
-            .delete(alunoCursoAtribuido)
-            .where(eq(alunoCursoAtribuido.cursoId, input.cursoId));
+          const cursoId = input.cursoId;
 
-          // Deletar o curso
-          await database
-            .delete(cursosCompetencias)
-            .where(eq(cursosCompetencias.id, input.cursoId));
+          // 1. Deletar tentativas de avaliação vinculadas às atividades do curso
+          await conn.execute(
+            `DELETE ta FROM tentativas_avaliacao ta
+             INNER JOIN atividades_curso ac ON ta.atividadeId = ac.id
+             WHERE ac.cursoId = ?`,
+            [cursoId]
+          );
+
+          // 2. Deletar avaliações vinculadas às atividades do curso
+          await conn.execute(
+            `DELETE aa FROM avaliacoes_atividade aa
+             INNER JOIN atividades_curso ac ON aa.atividadeId = ac.id
+             WHERE ac.cursoId = ?`,
+            [cursoId]
+          );
+
+          // 3. Deletar atividades do curso
+          await conn.execute(
+            `DELETE FROM atividades_curso WHERE cursoId = ?`,
+            [cursoId]
+          );
+
+          // 4. Deletar atribuições de alunos ao curso
+          await conn.execute(
+            `DELETE FROM aluno_curso_atribuido WHERE cursoId = ?`,
+            [cursoId]
+          );
+
+          // 5. Deletar o curso
+          await conn.execute(
+            `DELETE FROM cursos_competencias WHERE id = ?`,
+            [cursoId]
+          );
 
           return { success: true };
         }),
