@@ -48,6 +48,7 @@ export default function CompetenciasCompTec() {
   const [cursoDescricao, setCursoDescricao] = useState('');
   const [viewCursoId, setViewCursoId] = useState<number | null>(null);
   const [viewCursoOpen, setViewCursoOpen] = useState(false);
+  const [confirmarDeleteId, setConfirmarDeleteId] = useState<number | null>(null);
 
   // Queries
   const { data: competencias = [] } = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
@@ -102,6 +103,22 @@ export default function CompetenciasCompTec() {
     },
     onError: (error: any) => {
       toast.error(`Erro ao alterar status do curso: ${error.message}`);
+    },
+  });
+
+  const deletarCursoMutation = trpc.competenciasCompTec.admin.deletarCurso.useMutation({
+    onSuccess: async () => {
+      toast.success('Curso excluído permanentemente!');
+      setConfirmarDeleteId(null);
+      if (selectedCompetenciaId) {
+        await utils.competenciasCompTec.admin.listarCursos.invalidate({
+          competenciaId: selectedCompetenciaId,
+        });
+      }
+      await utils.competenciasCompTec.admin.listarTodosCursos.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao excluir curso: ${error.message}`);
     },
   });
 
@@ -372,7 +389,7 @@ export default function CompetenciasCompTec() {
                             variant="ghost"
                             onClick={() => excluirCursoMutation.mutateAsync({ cursoId: curso.id })}
                             disabled={excluirCursoMutation.isPending}
-                            title={curso.isActive ? 'Inativar curso' : 'Curso inativo'}
+                            title={curso.isActive ? 'Inativar curso' : 'Ativar curso'}
                           >
                             {curso.isActive ? (
                               <EyeOff className="h-4 w-4 text-red-500" />
@@ -380,6 +397,37 @@ export default function CompetenciasCompTec() {
                               <EyeOff className="h-4 w-4 text-gray-400" />
                             )}
                           </Button>
+                          {confirmarDeleteId === curso.id ? (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-xs text-red-600 font-medium">Confirmar?</span>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deletarCursoMutation.mutateAsync({ cursoId: curso.id })}
+                                disabled={deletarCursoMutation.isPending}
+                                className="h-6 px-2 text-xs"
+                              >
+                                Sim
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setConfirmarDeleteId(null)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                Não
+                              </Button>
+                            </span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setConfirmarDeleteId(curso.id)}
+                              title="Excluir permanentemente"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-700" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     );

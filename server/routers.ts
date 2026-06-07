@@ -12784,6 +12784,67 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true, isActive: novoStatus };
         }),
 
+      deletarCurso: adminOrAdmin2Procedure
+        .input(z.object({ cursoId: z.number() }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          // Buscar todas as atividades do curso
+          const atividades = await database
+            .select({ id: atividadesCurso.id })
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.cursoId, input.cursoId));
+
+          const atividadeIds = atividades.map((a) => a.id);
+
+          if (atividadeIds.length > 0) {
+            // Buscar avaliações das atividades
+            const avaliacoes = await database
+              .select({ id: avaliacoesAtividade.id })
+              .from(avaliacoesAtividade)
+              .where(inArray(avaliacoesAtividade.atividadeId, atividadeIds));
+
+            const avaliacaoIds = avaliacoes.map((a) => a.id);
+
+            if (avaliacaoIds.length > 0) {
+              // Deletar tentativas de avaliação
+              await database
+                .delete(tentativasAvaliacao)
+                .where(inArray(tentativasAvaliacao.avaliacaoId, avaliacaoIds));
+
+              // Deletar avaliações
+              await database
+                .delete(avaliacoesAtividade)
+                .where(inArray(avaliacoesAtividade.id, avaliacaoIds));
+            }
+
+            // Deletar progresso dos alunos nas atividades
+            await database
+              .delete(tentativasAvaliacao)
+              .where(inArray(tentativasAvaliacao.atividadeId, atividadeIds));
+
+            // Deletar atividades
+            await database
+              .delete(atividadesCurso)
+              .where(eq(atividadesCurso.cursoId, input.cursoId));
+          }
+
+          // Deletar cursos atribuídos aos alunos
+          await database
+            .delete(alunoCursoAtribuido)
+            .where(eq(alunoCursoAtribuido.cursoId, input.cursoId));
+
+          // Deletar o curso
+          await database
+            .delete(cursosCompetencias)
+            .where(eq(cursosCompetencias.id, input.cursoId));
+
+          return { success: true };
+        }),
+
       listarAtividadesCurso: protectedProcedure
         .input(z.object({ cursoId: z.number() }))
         .query(async ({ input }) => {
