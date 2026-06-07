@@ -12760,15 +12760,28 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
           }
 
+          // Buscar status atual para fazer toggle
+          const [cursoAtual] = await database
+            .select({ isActive: cursosCompetencias.isActive })
+            .from(cursosCompetencias)
+            .where(eq(cursosCompetencias.id, input.cursoId))
+            .limit(1);
+
+          if (!cursoAtual) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Curso não encontrado" });
+          }
+
+          const novoStatus = cursoAtual.isActive === 1 ? 0 : 1;
+
           await database
             .update(cursosCompetencias)
             .set({
-              isActive: 0,
+              isActive: novoStatus,
               updatedAt: new Date(),
             })
             .where(eq(cursosCompetencias.id, input.cursoId));
 
-          return { success: true };
+          return { success: true, isActive: novoStatus };
         }),
 
       listarAtividadesCurso: protectedProcedure
