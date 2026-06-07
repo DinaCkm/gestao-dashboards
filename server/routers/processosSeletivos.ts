@@ -293,7 +293,7 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
         linkEntrevista: processo.linkEntrevista || slot.linkEntrevista || null,
         loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/login`,
       });
-      await sendEmail({ to: candidate.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+      await sendEmail({ to: candidate.email, cc: 'relacionamento@ckmtalents.net', subject: emailData.subject, html: emailData.html, text: emailData.text });
     }
   } catch (emailErr) {
     console.error('[allocateCandidate] Erro ao enviar e-mail de confirmação ao candidato:', emailErr);
@@ -1057,7 +1057,7 @@ export const processosSeletivosRouter = router({
             linkEntrevista: slot.linkEntrevista ?? null,
             loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/login`,
           });
-          await sendEmail({ to: candidate.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+          await sendEmail({ to: candidate.email, cc: 'relacionamento@ckmtalents.net', subject: emailData.subject, html: emailData.html, text: emailData.text });
         }
       } catch (emailErr) {
         console.error('[PS] Erro ao enviar e-mail de confirmação:', emailErr);
