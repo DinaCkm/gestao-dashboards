@@ -64,6 +64,7 @@ import PrecificacaoSessoes from "./pages/PrecificacaoSessoes";
 import ProcessosSeletivosDashboard from "./pages/processos-seletivos/ProcessosSeletivosDashboard";
 import ProcessosSeletivosMentora from "./pages/processos-seletivos/ProcessosSeletivosMentora";
 import ProcessosSeletivosAvaliacao from "./pages/processos-seletivos/ProcessosSeletivosAvaliacao";
+import ProcessosSeletivosComunicado from "./pages/processos-seletivos/ProcessosSeletivosComunicado";
 import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
 import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
@@ -157,6 +158,7 @@ function Router() {
       <Route path={"/processos-seletivos"} component={ProcessosSeletivosDashboard} />
       <Route path={"/processos-seletivos/mentora"}><Redirect to="/processos-seletivos/avaliacao" /></Route>
       <Route path={"/processos-seletivos/avaliacao"} component={ProcessosSeletivosAvaliacao} />
+      <Route path={"/processos-seletivos/comunicado"} component={ProcessosSeletivosComunicado} />
       <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
       <Route path={"/portal-candidato-processo"} component={ProcessosSeletivosDashboard} />
       <Route path={"/competencias-comp-tec"} component={CompetenciasCompTec} />

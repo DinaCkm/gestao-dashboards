@@ -3200,7 +3200,7 @@ const ADMIN_PAGE_GROUPS = [
     pages: [
       { path: '/processos-seletivos', label: 'Painel de Processos' },
       { path: '/processos-seletivos/avaliacao', label: 'Avaliação' },
-      { path: '/processos-seletivos?tab=comunicado', label: 'Comunicado do PS' },
+      { path: '/processos-seletivos/comunicado', label: 'Comunicado do PS' },
     ],
   },
   {
