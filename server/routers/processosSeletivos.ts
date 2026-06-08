@@ -1563,6 +1563,21 @@ export const processosSeletivosRouter = router({
         .from(processoCandidatos)
         .where(and(eq(processoCandidatos.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo")))
         .orderBy(asc(processoCandidatos.nome));
+      // Buscar slots de entrevista agendados para os candidatos deste processo
+      const slotsEntrevista = await database
+        .select({
+          candidatoId: processoAgendaSlots.candidatoId,
+          dataAgenda: processoAgendaSlots.dataAgenda,
+          inicio: processoAgendaSlots.inicio,
+          fim: processoAgendaSlots.fim,
+        })
+        .from(processoAgendaSlots)
+        .where(and(
+          eq(processoAgendaSlots.processoId, input.processoId),
+          ne(processoAgendaSlots.status, "cancelado"),
+          ne(processoAgendaSlots.status, "disponivel")
+        ));
+      const slotMap = new Map(slotsEntrevista.map(s => [s.candidatoId, s]));
       // Buscar regiões para mapear nomes
       const regioes = await database
         .select({ id: processoRegioes.id, nome: processoRegioes.nome })
@@ -1586,14 +1601,26 @@ export const processosSeletivosRouter = router({
         if (s === "desistente") return "Desistente";
         return s;
       };
-      const dadosCandidatos = candidatos.map((c) => ({
-        nome: c.nome,
-        regiao: c.regiaoId ? (regiaoMap.get(c.regiaoId) ?? "\u2014") : "\u2014",
-        inscrito: c.statusCadastro === "ativo",
-        testePerfil: c.statusTeste === "concluido",
-        entrevista: labelEntrevista(c.statusEntrevista),
-        status: labelResultado(c.statusResultado),
-      }));
+      const dadosCandidatos = candidatos.map((c) => {
+        const slot = slotMap.get(c.id);
+        let dataHoraEntrevista = "";
+        if (slot?.dataAgenda) {
+          const d = new Date(slot.dataAgenda);
+          const dia = String(d.getUTCDate()).padStart(2, "0");
+          const mes = String(d.getUTCMonth() + 1).padStart(2, "0");
+          const ano = d.getUTCFullYear();
+          dataHoraEntrevista = `${dia}/${mes}/${ano} ${slot.inicio}–${slot.fim}`;
+        }
+        return {
+          nome: c.nome,
+          regiao: c.regiaoId ? (regiaoMap.get(c.regiaoId) ?? "\u2014") : "\u2014",
+          inscrito: c.statusCadastro === "ativo",
+          testePerfil: c.statusTeste === "concluido",
+          entrevista: labelEntrevista(c.statusEntrevista),
+          dataHoraEntrevista,
+          status: labelResultado(c.statusResultado),
+        };
+      });
       const agora = new Date();
       const dataEnvio = agora.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" });
       const emailData = buildPsRelatorioEmail({

@@ -2990,6 +2990,6 @@ export function buildPsRelatorioEmail(data: {
     </table>
   </td></tr></table>
 </body></html>`;
-  const text = `Relatório — ${data.processoNome} (${data.dataEnvio})\n\n${data.candidatos.map(c => `${c.nome} | ${c.regiao} | Inscrito: ${c.inscrito ? 'Sim' : 'Não'} | Teste: ${c.testePerfil ? 'Sim' : 'Não'} | Entrevista: ${c.entrevista} | Status: ${c.status}`).join('\n')}\n\nAcesse: ${data.loginUrl}`;
+  const text = `Relatório — ${data.processoNome} (${data.dataEnvio})\n\n${data.candidatos.map(c => `${c.nome} | ${c.regiao} | Inscrito: ${c.inscrito ? 'Sim' : 'Não'} | Teste: ${c.testePerfil ? 'Sim' : 'Não'} | Entrevista: ${c.entrevista} | Data/Horário: ${c.dataHoraEntrevista || '—'} | Status: ${c.status}`).join('\n')}\n\nAcesse: ${data.loginUrl}`;
   return { subject, html, text };
 }
