@@ -15,6 +15,7 @@ const ONBOARDING_CUTOFF_DATE = new Date("2026-03-01T00:00:00Z");
 /** Itens de menu para candidatos de processo seletivo */
 const PS_NAV_ITEMS = [
   { label: "Meu Cadastro", path: "/candidato-ps", icon: ClipboardList, requiresAceite: false },
+  { label: "Comunicado", path: "/candidato-ps?secao=comunicado", icon: Megaphone, requiresAceite: false },
 ];
 
 const ALL_NAV_ITEMS = [

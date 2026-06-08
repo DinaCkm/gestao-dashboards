@@ -16,6 +16,7 @@ import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight, Link2, Copy, CheckCheck, Megaphone } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearch } from "wouter";
 import { toast } from "sonner";
 
 type SimpleFormEvent = React.FormEvent<HTMLFormElement>;
@@ -64,6 +65,15 @@ function ProcessosSeletivosContent() {
   const [modoManual, setModoManual] = useState(true);
   const [linkCopiado, setLinkCopiado] = useState<number | null>(null);
   const [comunicadoHtml, setComunicadoHtml] = useState("");
+
+  // Aba ativa — suporta deep-link via ?tab=comunicado
+  const searchString = useSearch();
+  const tabFromUrl = new URLSearchParams(searchString).get("tab") || "candidatos";
+  const validTabs = ["candidatos", "mapa", "aprovados", "comunicado"];
+  const [activeTab, setActiveTab] = useState(validTabs.includes(tabFromUrl) ? tabFromUrl : "candidatos");
+  useEffect(() => {
+    if (validTabs.includes(tabFromUrl)) setActiveTab(tabFromUrl);
+  }, [tabFromUrl]);
 
   const BASE_URL = "https://ecolider.ecodobem.com";
   const getLinkConvite = (processoId: number) => `${BASE_URL}/registro?ps=${processoId}`;
@@ -909,7 +919,7 @@ function ProcessosSeletivosContent() {
             </Card>
           )}
 
-          <Tabs defaultValue="candidatos" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="candidatos">Candidatos e Status</TabsTrigger>
               <TabsTrigger value="mapa">Mapa de Entrevistas</TabsTrigger>

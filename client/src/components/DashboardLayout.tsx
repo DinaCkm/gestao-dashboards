@@ -153,6 +153,7 @@ const adminMenuGroups: MenuGroup[] = [
     items: [
       { icon: BriefcaseBusiness, label: "Painel de Processos", path: "/processos-seletivos" },
       { icon: ClipboardCheck, label: "Avaliação", path: "/processos-seletivos/avaliacao" },
+      { icon: Megaphone, label: "Comunicado do PS", path: "/processos-seletivos?tab=comunicado" },
     ],
   },
   {
@@ -342,8 +343,13 @@ function DashboardLayoutContent({
   const hasPageRestrictions = isAdmin && Array.isArray(adminPagePerms) && adminPagePerms.length > 0;
   const canAccessPage = (path: string) => {
     if (!hasPageRestrictions) return true;
+    // Verifica match exato (incluindo query params) ou match por path base
     const basePath = path.split('?')[0];
-    return adminPagePerms!.some(p => p === basePath || basePath.startsWith(p + '/'));
+    return adminPagePerms!.some(p => {
+      if (p === path) return true; // match exato (ex: /processos-seletivos?tab=comunicado)
+      const pBase = p.split('?')[0];
+      return pBase === basePath || basePath.startsWith(pBase + '/');
+    });
   };
   const hasConsultorId = !!(user as any)?.consultorId;
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
