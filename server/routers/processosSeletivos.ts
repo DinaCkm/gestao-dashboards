@@ -1790,4 +1790,21 @@ export const processosSeletivosRouter = router({
       .limit(1);
     return { entrevista, slot: slot ?? null };
   }),
+
+  // ── Forçar migration da coluna comunicado (admin) ──
+  runMigration: protectedProcedure.mutation(async ({ ctx }) => {
+    requireCkmAdmin(ctx.user.role);
+    const database = await requireDatabase();
+    try {
+      await database.execute(sql.raw(
+        "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `comunicado` longtext NULL COMMENT 'Comunicado do processo em HTML (editor rico)'"
+      ));
+      return { success: true, message: 'Coluna comunicado criada/verificada com sucesso' };
+    } catch (e: any) {
+      if (e?.message?.includes('Duplicate column')) {
+        return { success: true, message: 'Coluna comunicado já existia' };
+      }
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: e?.message ?? 'Erro na migration' });
+    }
+  }),
 });
