@@ -914,6 +914,7 @@ function ProcessosSeletivosContent() {
                   onMoverRegiao={(candidatoId, novaRegiaoId) => moverCandidato.mutate({ candidatoId, novaRegiaoId })}
                   onInativar={(id) => inativarCandidato.mutate({ candidatoId: id })}
                   onReagendar={(candidatoId, novoSlotId) => reagendarEntrevista.mutate({ candidatoId, novoSlotId })}
+                  onRefetch={invalidateProcesso}
                 />
               </CardContent>
             </Card>

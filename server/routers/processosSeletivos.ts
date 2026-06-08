@@ -1634,6 +1634,72 @@ export const processosSeletivosRouter = router({
       return { success: true };
     }),
 
+  // Obter ficha completa do candidato para edição (admin)
+  obterFichaCandidato: protectedProcedure
+    .input(z.object({ candidatoId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [candidato] = await database
+        .select({
+          id: processoCandidatos.id,
+          nome: processoCandidatos.nome,
+          email: processoCandidatos.email,
+          telefone: processoCandidatos.telefone,
+          cpf: processoCandidatos.cpf,
+          alunoId: users.alunoId,
+          dataNascimento: alunos.dataNascimento,
+        })
+        .from(processoCandidatos)
+        .leftJoin(users, eq(users.id, processoCandidatos.userId))
+        .leftJoin(alunos, eq(alunos.id, users.alunoId))
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidato) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato não encontrado" });
+      return candidato;
+    }),
+
+  // Editar dados pessoais do candidato (admin)
+  editarCandidato: protectedProcedure
+    .input(z.object({
+      candidatoId: z.number().int().positive(),
+      nome: z.string().min(1),
+      email: z.string().email(),
+      telefone: z.string().optional().nullable(),
+      cpf: z.string().optional().nullable(),
+      dataNascimento: z.string().optional().nullable(), // formato YYYY-MM-DD
+    }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      // Atualizar processo_candidatos
+      await database
+        .update(processoCandidatos)
+        .set({
+          nome: input.nome,
+          email: input.email,
+          telefone: input.telefone ?? null,
+          cpf: input.cpf ?? null,
+        })
+        .where(eq(processoCandidatos.id, input.candidatoId));
+      // Se tiver alunoId vinculado, atualizar também na tabela alunos
+      if (input.dataNascimento !== undefined) {
+        const [candidato] = await database
+          .select({ alunoId: users.alunoId })
+          .from(processoCandidatos)
+          .leftJoin(users, eq(users.id, processoCandidatos.userId))
+          .where(eq(processoCandidatos.id, input.candidatoId))
+          .limit(1);
+        if (candidato?.alunoId) {
+          await database
+            .update(alunos)
+            .set({ dataNascimento: input.dataNascimento ? new Date(input.dataNascimento) : null })
+            .where(eq(alunos.id, candidato.alunoId));
+        }
+      }
+      return { success: true };
+    }),
+
   // Obter entrevista agendada do candidato
   minhaEntrevista: protectedProcedure.query(async ({ ctx }) => {
     const database = await requireDatabase();

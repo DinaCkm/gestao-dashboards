@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter, UserMinus, CalendarClock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter, UserMinus, CalendarClock, Pencil } from "lucide-react";
 import ProcessoStatusBadge from "./ProcessoStatusBadge";
+import { trpc } from "@/lib/trpc";
+import { toast } from "@/hooks/use-toast";
 
 type Candidate = {
   id: number;
@@ -45,6 +49,7 @@ export default function TabelaCandidatosProcesso({
   onInativar,
   onReagendar,
   isBusy,
+  onRefetch,
 }: {
   candidatos: Candidate[];
   regioes?: Regiao[];
@@ -57,6 +62,7 @@ export default function TabelaCandidatosProcesso({
   onInativar?: (id: number) => void;
   onReagendar?: (candidatoId: number, novoSlotId: number) => void;
   isBusy: boolean;
+  onRefetch?: () => void;
 }) {
   const [movendo, setMovendo] = useState<number | null>(null);
   const [novaRegiao, setNovaRegiao] = useState<string>("");
@@ -64,8 +70,64 @@ export default function TabelaCandidatosProcesso({
   const [reagendandoId, setReagendandoId] = useState<number | null>(null);
   const [novoSlotId, setNovoSlotId] = useState<string>("");
 
+  // Estado do modal de edição
+  const [editandoId, setEditandoId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({
+    nome: "",
+    email: "",
+    telefone: "",
+    cpf: "",
+    dataNascimento: "",
+  });
+
   const podeEditarRegiao = isAdmin || isMentora;
   const podeReagendar = isAdmin || isMentora;
+
+  // Query para buscar ficha do candidato ao abrir o modal
+  const fichaQuery = trpc.processosSeletivos.obterFichaCandidato.useQuery(
+    { candidatoId: editandoId ?? 0 },
+    {
+      enabled: !!editandoId,
+      onSuccess: (data: any) => {
+        setEditForm({
+          nome: data.nome ?? "",
+          email: data.email ?? "",
+          telefone: data.telefone ?? "",
+          cpf: data.cpf ?? "",
+          dataNascimento: data.dataNascimento
+            ? String(data.dataNascimento).substring(0, 10)
+            : "",
+        });
+      },
+    }
+  );
+
+  const editarMutation = trpc.processosSeletivos.editarCandidato.useMutation({
+    onSuccess: () => {
+      toast({ title: "Dados atualizados com sucesso!" });
+      setEditandoId(null);
+      onRefetch?.();
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+    },
+  });
+
+  function handleAbrirEdicao(candidatoId: number) {
+    setEditandoId(candidatoId);
+  }
+
+  function handleSalvarEdicao() {
+    if (!editandoId) return;
+    editarMutation.mutate({
+      candidatoId: editandoId,
+      nome: editForm.nome,
+      email: editForm.email,
+      telefone: editForm.telefone || null,
+      cpf: editForm.cpf || null,
+      dataNascimento: editForm.dataNascimento || null,
+    });
+  }
 
   function getRegiaoNome(regiaoId: number | null) {
     if (!regiaoId) return "—";
@@ -230,6 +292,18 @@ export default function TabelaCandidatosProcesso({
                 <TableCell><ProcessoStatusBadge status={candidate.statusResultado} /></TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2 flex-wrap">
+                    {isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={isBusy}
+                        onClick={() => handleAbrirEdicao(candidate.id)}
+                        title="Editar dados do candidato"
+                      >
+                        <Pencil className="mr-1 h-3 w-3" />
+                        Editar
+                      </Button>
+                    )}
                     {podeEditarRegiao && onMoverRegiao && temRegioes && movendo !== candidate.id && (
                       <Button
                         size="sm"
@@ -298,6 +372,83 @@ export default function TabelaCandidatosProcesso({
           )}
         </TableBody>
       </Table>
+
+      {/* Modal de edição de dados do candidato */}
+      <Dialog open={editandoId !== null} onOpenChange={(open) => { if (!open) setEditandoId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Dados do Candidato</DialogTitle>
+          </DialogHeader>
+          {fichaQuery.isLoading ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">Carregando dados...</div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-nome">Nome completo</Label>
+                <Input
+                  id="edit-nome"
+                  value={editForm.nome}
+                  onChange={(e) => setEditForm((f) => ({ ...f, nome: e.target.value }))}
+                  placeholder="Nome completo"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-email">E-mail</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-telefone">Telefone</Label>
+                <Input
+                  id="edit-telefone"
+                  value={editForm.telefone}
+                  onChange={(e) => setEditForm((f) => ({ ...f, telefone: e.target.value }))}
+                  placeholder="(51) 99999-9999"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-cpf">CPF</Label>
+                <Input
+                  id="edit-cpf"
+                  value={editForm.cpf}
+                  onChange={(e) => setEditForm((f) => ({ ...f, cpf: e.target.value }))}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-datanascimento">Data de Nascimento</Label>
+                <Input
+                  id="edit-datanascimento"
+                  type="date"
+                  value={editForm.dataNascimento}
+                  onChange={(e) => setEditForm((f) => ({ ...f, dataNascimento: e.target.value }))}
+                />
+                {!fichaQuery.data?.alunoId && (
+                  <p className="text-xs text-muted-foreground">
+                    Este candidato ainda não possui conta no sistema — a data de nascimento será salva quando ele se cadastrar.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditandoId(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={editarMutation.isPending || fichaQuery.isLoading || !editForm.nome || !editForm.email}
+              onClick={handleSalvarEdicao}
+            >
+              {editarMutation.isPending ? "Salvando..." : "Salvar alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog de reagendamento */}
       <Dialog open={reagendandoId !== null} onOpenChange={(open) => { if (!open) { setReagendandoId(null); setNovoSlotId(""); } }}>
