@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter, UserMinus, CalendarClock, Pencil } from "lucide-react";
 import ProcessoStatusBadge from "./ProcessoStatusBadge";
 import { trpc } from "@/lib/trpc";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 type Candidate = {
   id: number;
@@ -104,12 +104,12 @@ export default function TabelaCandidatosProcesso({
 
   const editarMutation = trpc.processosSeletivos.editarCandidato.useMutation({
     onSuccess: () => {
-      toast({ title: "Dados atualizados com sucesso!" });
+      toast.success("Dados atualizados com sucesso!");
       setEditandoId(null);
       onRefetch?.();
     },
     onError: (err: any) => {
-      toast({ title: "Erro ao salvar", description: err.message, variant: "destructive" });
+      toast.error(`Erro ao salvar: ${err.message}`);
     },
   });
 
