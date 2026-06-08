@@ -112,7 +112,7 @@ export default function ProcessosSeletivosAvaliacao() {
 
 function AvaliacaoContent() {
   const { user } = useAuth();
-  const isAdmin = user?.role === "admin" || (user as any)?.role === "admin2";
+  const isAdmin = user?.role === "admin" || (user as any)?.role === "admin2" || user?.role === "mentor";
 
   const [processoId, setProcessoId] = useState<number | null>(null);
 

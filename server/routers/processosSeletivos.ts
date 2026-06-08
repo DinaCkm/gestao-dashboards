@@ -580,11 +580,11 @@ export const processosSeletivosRouter = router({
   inativarCandidato: protectedProcedure
     .input(z.object({ candidatoId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      requireCkmAdmin(ctx.user.role);
       const database = await requireDatabase();
       const [candidato] = await database.select({ id: processoCandidatos.id, processoId: processoCandidatos.processoId, nome: processoCandidatos.nome })
         .from(processoCandidatos).where(eq(processoCandidatos.id, input.candidatoId)).limit(1);
       if (!candidato) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidato.processoId);
       await database.update(processoCandidatos).set({ statusCadastro: "inativo" }).where(eq(processoCandidatos.id, input.candidatoId));
       // Liberar slots de entrevista reservados para este candidato
       const entrevistas = await database
@@ -1424,9 +1424,6 @@ export const processosSeletivosRouter = router({
         .limit(1);
       if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
       await ensureProcessAccess(database, ctx.user, candidate.processoId);
-      if (!isCkmAdmin(ctx.user.role)) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores CKM podem registrar decisoes" });
-      }
 
       const decisaoAnterior = candidate.statusResultado;
 
