@@ -46,7 +46,7 @@ async function startServer() {
   await ensureRelatorioMentoriasLogTable();
   await ensureAuditoriaNotesMentoriaTable();
   await ensureGoogleCalendarColumns();
-  await ensureProcessoSeletivoColumns();
+  await ensureProcessoSeletivoColumns(); // v2: garante coluna comunicado no banco
 
   const app = express();
   const server = createServer(app);
