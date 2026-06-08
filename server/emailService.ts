@@ -2943,6 +2943,7 @@ export function buildPsRelatorioEmail(data: {
     inscrito: boolean;
     testePerfil: boolean;
     entrevista: string;
+    dataHoraEntrevista?: string;
     status: string;
   }>;
   loginUrl: string;
@@ -2956,6 +2957,7 @@ export function buildPsRelatorioEmail(data: {
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.inscrito ? '✅ Sim' : '❌ Não'}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.testePerfil ? '✅ Sim' : '❌ Não'}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.entrevista}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.dataHoraEntrevista || '—'}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.status}</td>
     </tr>`).join('');
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
@@ -2975,6 +2977,7 @@ export function buildPsRelatorioEmail(data: {
               <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Inscrito</th>
               <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Teste de Perfil</th>
               <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Entrevista</th>
+              <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Data/Horário</th>
               <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Status</th>
             </tr>
           </thead>
