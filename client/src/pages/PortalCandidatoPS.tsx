@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  CheckCircle2, Lock, CalendarClock, ClipboardList, Brain, Calendar, Video, AlertCircle
+  CheckCircle2, Lock, CalendarClock, ClipboardList, Brain, Calendar, Video, AlertCircle, Megaphone
 } from "lucide-react";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 
 // ─── Stepper ────────────────────────────────────────────────────────────────
 
@@ -267,6 +268,12 @@ export default function PortalCandidatoPS() {
   const alunoId = onboardingStatus?.alunoId ?? 0;
   const processoId = onboardingStatus?.processoSeletivoId ?? 0;
 
+  // Buscar comunicado do processo
+  const { data: comunicadoData } = trpc.processosSeletivos.obterComunicado.useQuery(
+    { processoId },
+    { enabled: processoId > 0 }
+  );
+
   // Buscar resultado DISC e autopercepções apenas quando alunoId estiver disponível
   const { data: discResultado, refetch: refetchDisc } = trpc.disc.resultado.useQuery(
     { alunoId },
@@ -365,6 +372,25 @@ export default function PortalCandidatoPS() {
 
         {/* Stepper */}
         <Stepper currentStep={currentStep} />
+
+        {/* Comunicado do processo — exibido sempre que houver conteúdo */}
+        {comunicadoData?.comunicado && (
+          <Card className="mb-6 border-amber-200 bg-amber-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base text-amber-800">
+                <Megaphone className="h-4 w-4" />
+                Comunicado
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RichTextEditor
+                value={comunicadoData.comunicado}
+                onChange={() => {}}
+                readOnly
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Conteúdo da etapa */}
         <div className="mt-4">

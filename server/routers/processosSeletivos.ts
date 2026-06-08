@@ -1727,6 +1727,36 @@ export const processosSeletivosRouter = router({
       return { success: true };
     }),
 
+  // ── Salvar comunicado do processo (admin) ──
+  salvarComunicado: protectedProcedure
+    .input(z.object({
+      processoId: z.number().int().positive(),
+      comunicado: z.string(), // HTML do editor rico
+    }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      await database
+        .update(processosSeletivos)
+        .set({ comunicado: input.comunicado || null })
+        .where(eq(processosSeletivos.id, input.processoId));
+      await writeLog(database, { processoId: input.processoId, userId: ctx.user.id, acao: "comunicado_atualizado" });
+      return { success: true };
+    }),
+
+  // ── Obter comunicado do processo (admin, mentor, candidato) ──
+  obterComunicado: protectedProcedure
+    .input(z.object({ processoId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [processo] = await database
+        .select({ comunicado: processosSeletivos.comunicado })
+        .from(processosSeletivos)
+        .where(eq(processosSeletivos.id, input.processoId))
+        .limit(1);
+      return { comunicado: processo?.comunicado ?? null };
+    }),
+
   // Obter entrevista agendada do candidato
   minhaEntrevista: protectedProcedure.query(async ({ ctx }) => {
     const database = await requireDatabase();

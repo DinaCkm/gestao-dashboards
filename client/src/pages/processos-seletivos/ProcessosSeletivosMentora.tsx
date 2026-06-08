@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { BriefcaseBusiness, CheckCircle2, ChevronRight, ClipboardList, Users, XCircle, Clock } from "lucide-react";
+import { BriefcaseBusiness, CheckCircle2, ChevronRight, ClipboardList, Users, XCircle, Clock, Megaphone } from "lucide-react";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -99,6 +100,8 @@ function ProcessosMentoraContent() {
     () => processos.find((p) => p.id === selectedProcessoId) || null,
     [processos, selectedProcessoId],
   );
+
+  const { data: comunicadoData } = trpc.processosSeletivos.obterComunicado.useQuery(queryInput!, { enabled });
 
   // Mapa de resultados por candidatoId
   const resultadoMap = useMemo(
@@ -239,6 +242,25 @@ function ProcessosMentoraContent() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Comunicado do processo */}
+          {comunicadoData?.comunicado && (
+            <Card className="border-amber-200 bg-amber-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base text-amber-800">
+                  <Megaphone className="h-4 w-4" />
+                  Comunicado
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RichTextEditor
+                  value={comunicadoData.comunicado}
+                  onChange={() => {}}
+                  readOnly
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Cards de resumo */}
           {resumo && (

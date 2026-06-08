@@ -13071,6 +13071,7 @@ export async function ensureProcessoSeletivoColumns(): Promise<void> {
     "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `dataFim` date NULL COMMENT 'Data de encerramento do processo'",
     "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `emailsRelatorio` text NULL COMMENT 'E-mails separados por vírgula para receber relatório do processo'",
     "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `mentorId` int NULL COMMENT 'ID do mentor/selecionadora responsável'",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `comunicado` longtext NULL COMMENT 'Comunicado do processo em HTML (editor rico)'",
   ];
   for (const col of columns) {
     try {

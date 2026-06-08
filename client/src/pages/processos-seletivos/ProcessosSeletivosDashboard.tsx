@@ -12,7 +12,9 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight, Link2, Copy, CheckCheck } from "lucide-react";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight, Link2, Copy, CheckCheck, Megaphone } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -61,6 +63,7 @@ function ProcessosSeletivosContent() {
   });
   const [modoManual, setModoManual] = useState(true);
   const [linkCopiado, setLinkCopiado] = useState<number | null>(null);
+  const [comunicadoHtml, setComunicadoHtml] = useState("");
 
   const BASE_URL = "https://ecolider.ecodobem.com";
   const getLinkConvite = (processoId: number) => `${BASE_URL}/registro?ps=${processoId}`;
@@ -104,6 +107,17 @@ function ProcessosSeletivosContent() {
   const { data: candidatos = [] } = trpc.processosSeletivos.listarCandidatos.useQuery(queryInput!, { enabled });
   const { data: agendas = [] } = trpc.processosSeletivos.listarAgendasGrupo.useQuery(queryInput!, { enabled });
   const { data: slots = [] } = trpc.processosSeletivos.listarSlotsAgenda.useQuery(queryInput!, { enabled });
+  const { data: comunicadoData } = trpc.processosSeletivos.obterComunicado.useQuery(queryInput!, { enabled });
+
+  // Sincronizar comunicado ao trocar de processo
+  useEffect(() => {
+    setComunicadoHtml(comunicadoData?.comunicado ?? "");
+  }, [comunicadoData]);
+
+  const salvarComunicado = trpc.processosSeletivos.salvarComunicado.useMutation({
+    onSuccess: () => toast.success("Comunicado salvo com sucesso!"),
+    onError: (err) => toast.error(`Erro ao salvar comunicado: ${err.message}`),
+  });
 
   const invalidateProcesso = async () => {
     await Promise.all([
@@ -895,7 +909,17 @@ function ProcessosSeletivosContent() {
             </Card>
           )}
 
-          <div className="grid gap-4">
+          <Tabs defaultValue="candidatos" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="candidatos">Candidatos e Status</TabsTrigger>
+              <TabsTrigger value="mapa">Mapa de Entrevistas</TabsTrigger>
+              <TabsTrigger value="aprovados">Aprovados por Região</TabsTrigger>
+              <TabsTrigger value="comunicado" className="gap-1.5"><Megaphone className="h-3.5 w-3.5" />Comunicado</TabsTrigger>
+            </TabsList>
+
+            {/* ABA: CANDIDATOS */}
+            <TabsContent value="candidatos">
+            <div className="grid gap-4">
             <Card className="rounded-lg">
               <CardHeader>
                 <CardTitle>Candidatos e status</CardTitle>
@@ -991,38 +1015,160 @@ function ProcessosSeletivosContent() {
               </CardContent>
             </Card>
           </div>
+            </TabsContent>
 
-          <Card className="rounded-lg">
-            <CardHeader>
-              <CardTitle>Mapa de aprovados por regiao</CardTitle>
-              <CardDescription>Visao nominal para CKM e cliente, filtrada no backend por vinculo ao processo.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {regioes.map((regiao) => {
-                  const aprovados = candidatos.filter((candidate) => candidate.regiaoId === regiao.id && candidate.statusResultado === "aprovado");
-                  return (
-                    <div key={regiao.id} className="rounded-lg border p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{regiao.nome}</h3>
-                          <p className="text-xs text-muted-foreground">{vagaById.size} vaga(s) cadastrada(s)</p>
+            {/* ABA: MAPA DE ENTREVISTAS */}
+            <TabsContent value="mapa">
+              <Card className="rounded-lg">
+                <CardHeader>
+                  <CardTitle>Mapa de entrevistas</CardTitle>
+                  <CardDescription>Slots ordenados por data e horario.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Horario</TableHead>
+                        <TableHead>Regiao</TableHead>
+                        <TableHead>Candidato</TableHead>
+                        <TableHead>Link</TableHead>
+                        <TableHead>Status</TableHead>
+                        {isAdmin && <TableHead className="w-10" />}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {slots.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={isAdmin ? 6 : 5} className="h-20 text-center text-muted-foreground">Nenhum slot gerado.</TableCell>
+                        </TableRow>
+                      ) : (
+                        slots.map((slot) => {
+                          const candidate = slot.candidatoId ? candidateById.get(slot.candidatoId) : null;
+                          const linkSlot = (slot as any).linkEntrevista || (selectedProcesso as any)?.linkEntrevista || null;
+                          return (
+                            <TableRow key={slot.id}>
+                              <TableCell>
+                                <div className="font-medium">{slot.dataAgenda}</div>
+                                <div className="text-xs text-muted-foreground">{slot.inicio} - {slot.fim}</div>
+                              </TableCell>
+                              <TableCell>{regionById.get(slot.regiaoId) || slot.regiaoId}</TableCell>
+                              <TableCell>{candidate?.nome || "Disponivel"}</TableCell>
+                              <TableCell>
+                                {linkSlot ? (
+                                  <a href={linkSlot} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline hover:text-blue-800 break-all">Abrir sala</a>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              <TableCell><ProcessoStatusBadge status={slot.status} /></TableCell>
+                              {isAdmin && (
+                                <TableCell>
+                                  {(slot.status === "disponivel" || slot.status === "reservado") && (
+                                    <button
+                                      type="button"
+                                      title="Excluir slot"
+                                      disabled={excluirSlot.isPending}
+                                      onClick={() => {
+                                        if (confirm(`Excluir slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim}?`)) {
+                                          excluirSlot.mutate({ slotId: slot.id });
+                                        }
+                                      }}
+                                      className="flex h-7 w-7 items-center justify-center rounded text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ABA: APROVADOS POR REGIÃO */}
+            <TabsContent value="aprovados">
+              <Card className="rounded-lg">
+                <CardHeader>
+                  <CardTitle>Mapa de aprovados por região</CardTitle>
+                  <CardDescription>Visão nominal para CKM e cliente, filtrada no backend por vínculo ao processo.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {regioes.map((regiao) => {
+                      const aprovados = candidatos.filter((candidate) => candidate.regiaoId === regiao.id && candidate.statusResultado === "aprovado");
+                      return (
+                        <div key={regiao.id} className="rounded-lg border p-4">
+                          <div className="mb-2 flex items-center justify-between">
+                            <div>
+                              <h3 className="font-semibold">{regiao.nome}</h3>
+                              <p className="text-xs text-muted-foreground">{vagaById.size} vaga(s) cadastrada(s)</p>
+                            </div>
+                            <strong className="text-2xl text-primary">{aprovados.length}</strong>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            {aprovados.length === 0 ? (
+                              <p className="text-muted-foreground">Sem aprovados publicados.</p>
+                            ) : (
+                              aprovados.map((candidate) => <p key={candidate.id}>{candidate.nome}</p>)
+                            )}
+                          </div>
                         </div>
-                        <strong className="text-2xl text-primary">{aprovados.length}</strong>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* ABA: COMUNICADO */}
+            <TabsContent value="comunicado">
+              <Card className="rounded-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-primary" />Comunicado</CardTitle>
+                  <CardDescription>Escreva o comunicado do processo. Será visível para candidatos e mentores.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isAdmin ? (
+                    <>
+                      <RichTextEditor
+                        value={comunicadoHtml}
+                        onChange={setComunicadoHtml}
+                        placeholder="Digite o comunicado do processo aqui..."
+                        className="min-h-[320px]"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setComunicadoHtml(comunicadoData?.comunicado ?? "")}
+                          disabled={salvarComunicado.isPending}
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          onClick={() => selectedProcessoId && salvarComunicado.mutate({ processoId: selectedProcessoId, comunicado: comunicadoHtml })}
+                          disabled={salvarComunicado.isPending || !selectedProcessoId}
+                        >
+                          {salvarComunicado.isPending ? "Salvando..." : "Salvar Comunicado"}
+                        </Button>
                       </div>
-                      <div className="space-y-1 text-sm">
-                        {aprovados.length === 0 ? (
-                          <p className="text-muted-foreground">Sem aprovados publicados.</p>
-                        ) : (
-                          aprovados.map((candidate) => <p key={candidate.id}>{candidate.nome}</p>)
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                    </>
+                  ) : (
+                    comunicadoData?.comunicado ? (
+                      <RichTextEditor value={comunicadoData.comunicado} onChange={() => {}} readOnly />
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Nenhum comunicado publicado para este processo.</p>
+                    )
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+          </Tabs>
         </>
       ) : (
         <Card className="rounded-lg">

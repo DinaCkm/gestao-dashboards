@@ -1745,6 +1745,7 @@ export const processosSeletivos = mysqlTable("processos_seletivos", {
   responsavelCkmId: int("responsavelCkmId"),
   mentorId: int("mentorId"), // FK para consultors - mentora responsável pelas entrevistas
   emailsRelatorio: text("emailsRelatorio"), // E-mails separados por vírgula para receber relatório diário
+  comunicado: text("comunicado"), // Comunicado do processo em HTML (editor rico)
   criadoPor: int("criadoPor").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
