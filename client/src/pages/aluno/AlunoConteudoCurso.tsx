@@ -240,16 +240,16 @@ export default function AlunoConteudoCurso() {
                   allow="fullscreen; autoplay"
                   allowFullScreen
                 />
-                {/* Overlay inferior: bloqueia barra de progresso e botões do YouTube/Genially */}
+                {/* Overlay inferior: cobre toda a barra de controles do YouTube (barra de progresso + botões) */}
                 <div
-                  className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10 bg-transparent"
-                  style={{ height: 52 }}
+                  className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10"
+                  style={{ height: 80, background: "rgba(0,0,0,0.01)" }}
                   aria-hidden="true"
                 />
-                {/* Overlay lateral direito: bloqueia botão "Assistir no YouTube" */}
+                {/* Overlay barra de progresso vermelha (linha fina acima dos controles) */}
                 <div
-                  className="pointer-events-auto absolute bottom-0 right-0 z-10 bg-transparent"
-                  style={{ width: 200, height: 52 }}
+                  className="pointer-events-auto absolute left-0 right-0 z-10"
+                  style={{ bottom: 78, height: 12, background: "rgba(0,0,0,0.01)" }}
                   aria-hidden="true"
                 />
               </div>
