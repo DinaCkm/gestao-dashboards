@@ -1796,12 +1796,21 @@ export const processosSeletivosRouter = router({
     requireCkmAdmin(ctx.user.role);
     const database = await requireDatabase();
     try {
+      // Verificar se a coluna já existe no information_schema
+      const rows = await database.execute(sql.raw(
+        "SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_NAME = 'processos_seletivos' AND COLUMN_NAME = 'comunicado'"
+      )) as any;
+      const count = rows?.[0]?.[0]?.cnt ?? rows?.[0]?.cnt ?? 0;
+      if (Number(count) > 0) {
+        return { success: true, message: 'Coluna comunicado já existe no banco' };
+      }
+      // Criar a coluna sem IF NOT EXISTS (compatível com TiDB)
       await database.execute(sql.raw(
-        "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `comunicado` longtext NULL COMMENT 'Comunicado do processo em HTML (editor rico)'"
+        "ALTER TABLE `processos_seletivos` ADD COLUMN `comunicado` longtext NULL"
       ));
-      return { success: true, message: 'Coluna comunicado criada/verificada com sucesso' };
+      return { success: true, message: 'Coluna comunicado criada com sucesso' };
     } catch (e: any) {
-      if (e?.message?.includes('Duplicate column')) {
+      if (e?.message?.includes('Duplicate column') || e?.message?.includes('already exists')) {
         return { success: true, message: 'Coluna comunicado já existia' };
       }
       throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: e?.message ?? 'Erro na migration' });
