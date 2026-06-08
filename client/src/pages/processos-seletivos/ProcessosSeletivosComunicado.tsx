@@ -27,6 +27,14 @@ function ComunicadoContent() {
 
   const { data: processos = [] } = trpc.processosSeletivos.listarProcessos.useQuery();
 
+  // Selecionar automaticamente o primeiro processo ativo ao carregar
+  useEffect(() => {
+    if (processos.length > 0 && !processoId) {
+      const ativo = (processos as any[]).find((p) => p.status === "ativo") ?? (processos as any[])[0];
+      if (ativo) setProcessoId(ativo.id);
+    }
+  }, [processos]);
+
   const queryInput = processoId ? { processoId } : null;
   const enabled = !!processoId;
 
