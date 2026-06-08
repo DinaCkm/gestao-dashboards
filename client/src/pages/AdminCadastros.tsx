@@ -3159,6 +3159,12 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
 // ============ LISTA DE PÁGINAS DO SISTEMA PARA PERMISSÕES ============
 const ADMIN_PAGE_GROUPS = [
   {
+    group: 'Geral',
+    pages: [
+      { path: '/', label: 'Painel Inicial' },
+    ],
+  },
+  {
     group: 'Alunos',
     pages: [
       { path: '/onboarding-tracking', label: 'Onboarding Tracking' },
