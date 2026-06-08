@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -86,21 +86,24 @@ export default function TabelaCandidatosProcesso({
   // Query para buscar ficha do candidato ao abrir o modal
   const fichaQuery = trpc.processosSeletivos.obterFichaCandidato.useQuery(
     { candidatoId: editandoId ?? 0 },
-    {
-      enabled: !!editandoId,
-      onSuccess: (data: any) => {
-        setEditForm({
-          nome: data.nome ?? "",
-          email: data.email ?? "",
-          telefone: data.telefone ?? "",
-          cpf: data.cpf ?? "",
-          dataNascimento: data.dataNascimento
-            ? String(data.dataNascimento).substring(0, 10)
-            : "",
-        });
-      },
-    }
+    { enabled: !!editandoId }
   );
+
+  // Preencher o formulário quando os dados chegarem
+  useEffect(() => {
+    if (fichaQuery.data) {
+      const data = fichaQuery.data as any;
+      setEditForm({
+        nome: data.nome ?? "",
+        email: data.email ?? "",
+        telefone: data.telefone ?? "",
+        cpf: data.cpf ?? "",
+        dataNascimento: data.dataNascimento
+          ? String(data.dataNascimento).substring(0, 10)
+          : "",
+      });
+    }
+  }, [fichaQuery.data]);
 
   const editarMutation = trpc.processosSeletivos.editarCandidato.useMutation({
     onSuccess: () => {
