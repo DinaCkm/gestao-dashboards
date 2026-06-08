@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { RoleProvider } from "./contexts/RoleContext";
@@ -155,7 +155,7 @@ function Router() {
       <Route path={"/dashboard/ciclos-turmas"} component={CiclosTurmas} />
       <Route path={"/precificacao-sessoes"} component={PrecificacaoSessoes} />
       <Route path={"/processos-seletivos"} component={ProcessosSeletivosDashboard} />
-      <Route path={"/processos-seletivos/mentora"} component={ProcessosSeletivosMentora} />
+      <Route path={"/processos-seletivos/mentora"}><Redirect to="/processos-seletivos/avaliacao" /></Route>
       <Route path={"/processos-seletivos/avaliacao"} component={ProcessosSeletivosAvaliacao} />
       <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
       <Route path={"/portal-candidato-processo"} component={ProcessosSeletivosDashboard} />

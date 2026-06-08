@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter, UserMinus, CalendarClock, Pencil } from "lucide-react";
+import { CheckCircle2, Trophy, ArrowRightLeft, MapPin, Filter, UserMinus, CalendarClock, Pencil, UserCheck } from "lucide-react";
 import ProcessoStatusBadge from "./ProcessoStatusBadge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ type Candidate = {
   id: number;
   nome: string;
   email: string;
+  statusCadastro?: string | null;
   statusTeste: string;
   statusEntrevista: string;
   statusResultado: string;
@@ -82,6 +83,7 @@ export default function TabelaCandidatosProcesso({
 
   const podeEditarRegiao = isAdmin || isMentora;
   const podeReagendar = isAdmin || isMentora;
+  const podeReativar = isAdmin || isMentora;
 
   // Query para buscar ficha do candidato ao abrir o modal
   const fichaQuery = trpc.processosSeletivos.obterFichaCandidato.useQuery(
@@ -113,6 +115,16 @@ export default function TabelaCandidatosProcesso({
     },
     onError: (err: any) => {
       toast.error(`Erro ao salvar: ${err.message}`);
+    },
+  });
+
+  const reativarMutation = trpc.processosSeletivos.reativarCandidato.useMutation({
+    onSuccess: () => {
+      toast.success("Candidato reativado com sucesso!");
+      onRefetch?.();
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao reativar: ${err.message}`);
     },
   });
 
@@ -236,142 +248,174 @@ export default function TabelaCandidatosProcesso({
               </TableCell>
             </TableRow>
           ) : (
-            candidatosFiltrados.map((candidate) => (
-              <TableRow key={candidate.id}>
-                <TableCell>
-                  <div className="font-medium">{candidate.nome}</div>
-                  <div className="text-xs text-muted-foreground">{candidate.email}</div>
-                </TableCell>
-                <TableCell>
-                  {movendo === candidate.id ? (
-                    <div className="flex items-center gap-2">
-                      <Select value={novaRegiao} onValueChange={setNovaRegiao}>
-                        <SelectTrigger className="h-8 w-36 text-xs">
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sem_regiao">— Sem região —</SelectItem>
-                          {(regioes ?? [])
-                            .filter((r) => r.id !== candidate.regiaoId)
-                            .map((r) => (
-                              <SelectItem key={r.id} value={String(r.id)}>{r.nome}</SelectItem>
-                            ))}
-                        </SelectContent>
-                      </Select>
-                      <Button size="sm" variant="default" className="h-8 px-2 text-xs" disabled={!novaRegiao || isBusy}
-                        onClick={() => handleConfirmarMover(candidate.id)}>
-                        OK
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-8 px-2 text-xs"
-                        onClick={() => { setMovendo(null); setNovaRegiao(""); }}>
-                        ✕
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      {candidate.regiaoId ? (
-                        <>
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">{getRegiaoNome(candidate.regiaoId)}</span>
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground italic">Não definida</span>
+            candidatosFiltrados.map((candidate) => {
+              const isInativo = candidate.statusCadastro === "inativo";
+              return (
+                <TableRow key={candidate.id} className={isInativo ? "opacity-60" : ""}>
+                  <TableCell>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium">{candidate.nome}</span>
+                      {isInativo && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                          Inativo
+                        </span>
                       )}
                     </div>
-                  )}
-                </TableCell>
-                <TableCell><ProcessoStatusBadge status={candidate.statusTeste} /></TableCell>
-                <TableCell>
-                  <div className="space-y-1">
-                    <ProcessoStatusBadge status={candidate.statusEntrevista} />
-                    {candidate.slotDataAgenda && candidate.slotInicio && candidate.slotFim && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <CalendarClock className="h-3 w-3 flex-shrink-0" />
-                        <span>{formatarDataCurta(candidate.slotDataAgenda, candidate.slotInicio, candidate.slotFim)}</span>
+                    <div className="text-xs text-muted-foreground">{candidate.email}</div>
+                  </TableCell>
+                  <TableCell>
+                    {movendo === candidate.id ? (
+                      <div className="flex items-center gap-2">
+                        <Select value={novaRegiao} onValueChange={setNovaRegiao}>
+                          <SelectTrigger className="h-8 w-36 text-xs">
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sem_regiao">— Sem região —</SelectItem>
+                            {(regioes ?? [])
+                              .filter((r) => r.id !== candidate.regiaoId)
+                              .map((r) => (
+                                <SelectItem key={r.id} value={String(r.id)}>{r.nome}</SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <Button size="sm" variant="default" className="h-8 px-2 text-xs" disabled={!novaRegiao || isBusy}
+                          onClick={() => handleConfirmarMover(candidate.id)}>
+                          OK
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs"
+                          onClick={() => { setMovendo(null); setNovaRegiao(""); }}>
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        {candidate.regiaoId ? (
+                          <>
+                            <MapPin className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{getRegiaoNome(candidate.regiaoId)}</span>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Não definida</span>
+                        )}
                       </div>
                     )}
-                  </div>
-                </TableCell>
-                <TableCell><ProcessoStatusBadge status={candidate.statusResultado} /></TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2 flex-wrap">
-                    {isAdmin && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isBusy}
-                        onClick={() => handleAbrirEdicao(candidate.id)}
-                        title="Editar dados do candidato"
-                      >
-                        <Pencil className="mr-1 h-3 w-3" />
-                        Editar
-                      </Button>
-                    )}
-                    {podeEditarRegiao && onMoverRegiao && temRegioes && movendo !== candidate.id && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isBusy}
-                        onClick={() => { setMovendo(candidate.id); setNovaRegiao(""); }}
-                        title="Definir/alterar região do candidato"
-                      >
-                        <ArrowRightLeft className="mr-1 h-3 w-3" />
-                        {candidate.regiaoId ? "Mover" : "Definir região"}
-                      </Button>
-                    )}
-                    {podeReagendar && onReagendar && candidate.statusEntrevista === "agendada" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isBusy}
-                        onClick={() => { setReagendandoId(candidate.id); setNovoSlotId(""); }}
-                        title="Reagendar entrevista deste candidato"
-                      >
-                        <CalendarClock className="mr-1 h-3 w-3" />
-                        Reagendar
-                      </Button>
-                    )}
-                    {isAdmin && (
-                      <>
+                  </TableCell>
+                  <TableCell><ProcessoStatusBadge status={candidate.statusTeste} /></TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <ProcessoStatusBadge status={candidate.statusEntrevista} />
+                      {candidate.slotDataAgenda && candidate.slotInicio && candidate.slotFim && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CalendarClock className="h-3 w-3 flex-shrink-0" />
+                          <span>{formatarDataCurta(candidate.slotDataAgenda, candidate.slotInicio, candidate.slotFim)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell><ProcessoStatusBadge status={candidate.statusResultado} /></TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2 flex-wrap">
+                      {/* Botão Reativar — visível apenas para inativos, para admin/mentora */}
+                      {isInativo && podeReativar && (
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={isBusy || candidate.statusTeste === "concluido"}
-                          onClick={() => onConcluirTeste(candidate.id)}
+                          className="text-green-700 border-green-300 hover:bg-green-50"
+                          disabled={isBusy || reativarMutation.isPending}
+                          onClick={() => {
+                            if (confirm(`Reativar "${candidate.nome}" no processo?`))
+                              reativarMutation.mutate({ candidatoId: candidate.id });
+                          }}
+                          title="Reativar candidato"
                         >
-                          <CheckCircle2 className="mr-1 h-3 w-3" />
-                          Concluir
+                          <UserCheck className="mr-1 h-3 w-3" />
+                          Reativar
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isBusy || candidate.statusResultado === "aprovado"}
-                          onClick={() => onAprovar(candidate.id)}
-                        >
-                          <Trophy className="mr-1 h-3 w-3" />
-                          Aprovar
-                        </Button>
-                        {onInativar && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600 border-red-300 hover:bg-red-50"
-                            disabled={isBusy}
-                            onClick={() => {
-                              if (confirm(`Inativar "${candidate.nome}" do processo? Ele não aparecerá mais na lista.`))
-                                onInativar(candidate.id);
-                            }}
-                          >
-                            <UserMinus className="mr-1 h-3 w-3" />
-                            Inativar
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
+                      )}
+                      {/* Demais ações apenas para candidatos ativos */}
+                      {!isInativo && (
+                        <>
+                          {isAdmin && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isBusy}
+                              onClick={() => handleAbrirEdicao(candidate.id)}
+                              title="Editar dados do candidato"
+                            >
+                              <Pencil className="mr-1 h-3 w-3" />
+                              Editar
+                            </Button>
+                          )}
+                          {podeEditarRegiao && onMoverRegiao && temRegioes && movendo !== candidate.id && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isBusy}
+                              onClick={() => { setMovendo(candidate.id); setNovaRegiao(""); }}
+                              title="Definir/alterar região do candidato"
+                            >
+                              <ArrowRightLeft className="mr-1 h-3 w-3" />
+                              {candidate.regiaoId ? "Mover" : "Definir região"}
+                            </Button>
+                          )}
+                          {podeReagendar && onReagendar && candidate.statusEntrevista === "agendada" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={isBusy}
+                              onClick={() => { setReagendandoId(candidate.id); setNovoSlotId(""); }}
+                              title="Reagendar entrevista deste candidato"
+                            >
+                              <CalendarClock className="mr-1 h-3 w-3" />
+                              Reagendar
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isBusy || candidate.statusTeste === "concluido"}
+                                onClick={() => onConcluirTeste(candidate.id)}
+                              >
+                                <CheckCircle2 className="mr-1 h-3 w-3" />
+                                Concluir
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={isBusy || candidate.statusResultado === "aprovado"}
+                                onClick={() => onAprovar(candidate.id)}
+                              >
+                                <Trophy className="mr-1 h-3 w-3" />
+                                Aprovar
+                              </Button>
+                              {onInativar && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 border-red-300 hover:bg-red-50"
+                                  disabled={isBusy}
+                                  onClick={() => {
+                                    if (confirm(`Inativar "${candidate.nome}" do processo? Ele não aparecerá mais na lista.`))
+                                      onInativar(candidate.id);
+                                  }}
+                                >
+                                  <UserMinus className="mr-1 h-3 w-3" />
+                                  Inativar
+                                </Button>
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
       </Table>

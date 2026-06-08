@@ -602,6 +602,19 @@ export const processosSeletivosRouter = router({
       return { success: true };
     }),
 
+  reativarCandidato: protectedProcedure
+    .input(z.object({ candidatoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidato] = await database.select({ id: processoCandidatos.id, processoId: processoCandidatos.processoId, nome: processoCandidatos.nome })
+        .from(processoCandidatos).where(eq(processoCandidatos.id, input.candidatoId)).limit(1);
+      if (!candidato) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidato.processoId);
+      await database.update(processoCandidatos).set({ statusCadastro: "importado" }).where(eq(processoCandidatos.id, input.candidatoId));
+      await writeLog(database, { processoId: candidato.processoId, userId: ctx.user.id, acao: "candidato_reativado", detalhe: candidato.nome });
+      return { success: true };
+    }),
+
   listarCandidatos: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);
@@ -641,7 +654,7 @@ export const processosSeletivosRouter = router({
       )
       .leftJoin(users, eq(users.id, processoCandidatos.userId))
       .leftJoin(alunos, eq(alunos.id, users.alunoId))
-      .where(and(eq(processoCandidatos.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo")))
+      .where(eq(processoCandidatos.processoId, input.processoId))
       .orderBy(asc(processoCandidatos.nome));
     if (isCkmAdmin(ctx.user.role)) return rows;
     // Mentora: ver todos os candidatos do processo
