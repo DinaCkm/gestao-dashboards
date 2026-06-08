@@ -556,8 +556,8 @@ function DashboardLayoutContent({
           <SidebarContent className="gap-0 py-2 overflow-y-auto">
             {isAdmin ? (
               <>
-                {/* PAINEL INICIAL - item fixo no topo */}
-                <div className="px-2 pt-1 pb-1">
+                {/* PAINEL INICIAL - item fixo no topo, respeitando permissões */}
+                {canAccessPage('/') && <div className="px-2 pt-1 pb-1">
                   <SidebarMenu className="px-0">
                     <SidebarMenuItem>
                       <SidebarMenuButton
@@ -576,7 +576,7 @@ function DashboardLayoutContent({
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>
-                </div>
+                </div>}
 
                 {/* 7 ÁREAS COLAPSÁVEIS */}
                 {adminMenuGroups.filter(group => isFullAdmin || group.label !== "Parametrização").map((group, groupIdx) => {
@@ -787,7 +787,7 @@ function DashboardLayoutContent({
         )}
         <main className="flex-1 p-4 md:p-6">
           {/* Proteção de rota por permissões do admin */}
-          {isAdmin && hasPageRestrictions && !canAccessPage(location) && location !== '/' ? (
+          {isAdmin && hasPageRestrictions && !canAccessPage(location) ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-4">
               <div className="text-6xl">🔒</div>
               <h2 className="text-2xl font-bold text-gray-800">Acesso Restrito</h2>
