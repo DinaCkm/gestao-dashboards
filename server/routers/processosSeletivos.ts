@@ -660,7 +660,7 @@ export const processosSeletivosRouter = router({
       )
       .leftJoin(users, eq(users.id, processoCandidatos.userId))
       .leftJoin(alunos, eq(alunos.id, users.alunoId))
-      .where(eq(processoCandidatos.processoId, input.processoId))
+      .where(and(eq(processoCandidatos.processoId, input.processoId), ne(processoCandidatos.statusCadastro, "inativo")))
       .orderBy(asc(processoCandidatos.nome));
     if (isCkmAdmin(ctx.user.role)) return rows;
     // Mentora: ver todos os candidatos do processo
