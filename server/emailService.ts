@@ -3022,7 +3022,7 @@ export function buildNovoAvisoMuralEmail(data: {
       <tr><td style="background:linear-gradient(135deg,#e85d04,#f48c06);padding:36px 40px;text-align:center;">
         <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="150" style="display:block;margin:0 auto 20px;"/>
         <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:900;letter-spacing:-0.5px;line-height:1.2;">🎉 TEM NOVIDADES NO MURAL!</h1>
-        <p style="margin:12px 0 0;color:#fff3e0;font-size:16px;font-weight:600;">Dá uma passadinha por lá e não deixe de curtir! ❤️</p>
+        <p style="margin:12px 0 0;color:#fff3e0;font-size:16px;font-weight:600;">Dá uma passadinha por lá e não deixe de curtir e participar! ❤️</p>
       </td></tr>
 
       <!-- Body -->
@@ -3050,8 +3050,11 @@ export function buildNovoAvisoMuralEmail(data: {
         </div>
 
         <p style="font-size:13px;color:#9ca3af;text-align:center;margin:0;">
-          Não esquece de curtir! Cada ❤️ faz a diferença e incentiva mais conteúdo. 😉
+          Não esquece de curtir e participar! Cada ❤️ faz a diferença e incentiva mais conteúdo. 😉
         </p>
+        <div style="text-align:center;margin-top:16px;">
+          <a href="https://ecolider.ecodobem.com/mural" style="font-size:13px;color:#e85d04;text-decoration:underline;">https://ecolider.ecodobem.com/mural</a>
+        </div>
       </td></tr>
 
       <!-- Footer -->
@@ -3067,7 +3070,7 @@ export function buildNovoAvisoMuralEmail(data: {
 </table>
 </body></html>`;
 
-  const text = `🎉 TEM NOVIDADES NO MURAL, ${primeiroNome.toUpperCase()}!\n\nDá uma passadinha por lá e não deixe de curtir!\n\nOi, ${primeiroNome}!\n\nA equipe do Ecossistema do Bem publicou um conteúdo novo no Mural:\n\n"${data.avisoTitle}"\n${data.avisoContent ? `\n${data.avisoContent.slice(0, 200)}\n` : ''}\nCorre lá conferir 👉 ${data.loginUrl}\n\nNão esquece de curtir! Cada ❤️ faz a diferença.`;
+  const text = `🎉 TEM NOVIDADES NO MURAL, ${primeiroNome.toUpperCase()}!\n\nDá uma passadinha por lá e não deixe de curtir e participar!\n\nOi, ${primeiroNome}!\n\nA equipe do Ecossistema do Bem publicou um conteúdo novo no Mural:\n\n"${data.avisoTitle}"\n${data.avisoContent ? `\n${data.avisoContent.slice(0, 200)}\n` : ''}\nCorre lá conferir 👉 ${data.loginUrl}\nhttps://ecolider.ecodobem.com/mural\n\nNão esquece de curtir e participar! Cada ❤️ faz a diferença.`;
 
   return { subject, html, text };
 }
