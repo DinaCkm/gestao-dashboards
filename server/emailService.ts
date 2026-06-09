@@ -3008,7 +3008,7 @@ export function buildNovoAvisoMuralEmail(data: {
 }): { subject: string; html: string; text: string } {
   const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
   const primeiroNome = data.alunoName?.split(' ')[0] || data.alunoName;
-  const subject = `📣 Tem novidade no Mural para você, ${primeiroNome}!`;
+  const subject = `🔔 Tem novidades no Mural, ${primeiroNome}! Dá uma passadinha por lá 😄`;
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -3019,41 +3019,38 @@ export function buildNovoAvisoMuralEmail(data: {
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.09);">
 
       <!-- Header -->
-      <tr><td style="background:linear-gradient(135deg,#0A1E3E,#1a4a7a);padding:32px 40px;text-align:center;">
-        <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="150" style="display:block;margin:0 auto 16px;"/>
-        <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Tem novidade no Mural! 🎉</h1>
-        <p style="margin:8px 0 0;color:#93c5fd;font-size:14px;">Uma dica nova está esperando por você</p>
+      <tr><td style="background:linear-gradient(135deg,#e85d04,#f48c06);padding:36px 40px;text-align:center;">
+        <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="150" style="display:block;margin:0 auto 20px;"/>
+        <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:900;letter-spacing:-0.5px;line-height:1.2;">🎉 TEM NOVIDADES NO MURAL!</h1>
+        <p style="margin:12px 0 0;color:#fff3e0;font-size:16px;font-weight:600;">Dá uma passadinha por lá e não deixe de curtir! ❤️</p>
       </td></tr>
 
       <!-- Body -->
-      <tr><td style="padding:36px 40px 24px;">
-        <p style="font-size:16px;color:#374151;margin:0 0 12px;line-height:1.6;">
+      <tr><td style="padding:36px 40px 28px;">
+        <p style="font-size:17px;color:#374151;margin:0 0 16px;line-height:1.7;">
           Oi, <strong>${primeiroNome}</strong>! 👋
         </p>
-        <p style="font-size:15px;color:#374151;margin:0 0 20px;line-height:1.7;">
-          A equipe do <strong>Ecossistema do Bem</strong> acabou de publicar um novo conteúdo no Mural e a gente não ia deixar você perder, né? 😄
+        <p style="font-size:15px;color:#374151;margin:0 0 24px;line-height:1.8;">
+          A equipe do <strong>Ecossistema do Bem</strong> acabou de publicar um conteúdo novo no Mural e a gente não ia deixar você de fora, né? 😄<br/>
+          Corre lá conferir — tá quentinho ainda! 🔥
         </p>
 
         <!-- Card do aviso -->
-        <div style="background:#f0f7ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
-          <p style="margin:0 0 6px;font-size:12px;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Novo post</p>
-          <p style="margin:0;font-size:17px;font-weight:700;color:#0A1E3E;">${data.avisoTitle}</p>
-          ${data.avisoContent ? `<p style="margin:10px 0 0;font-size:14px;color:#4b5563;line-height:1.6;">${data.avisoContent.slice(0, 180)}${data.avisoContent.length > 180 ? '...' : ''}</p>` : ''}
+        <div style="background:#fff8f0;border:1px solid #fed7aa;border-left:5px solid #e85d04;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
+          <p style="margin:0 0 8px;font-size:12px;color:#e85d04;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">✨ Novo no Mural</p>
+          <p style="margin:0;font-size:18px;font-weight:800;color:#0A1E3E;">${data.avisoTitle}</p>
+          ${data.avisoContent ? `<p style="margin:10px 0 0;font-size:14px;color:#4b5563;line-height:1.7;">${data.avisoContent.slice(0, 200)}${data.avisoContent.length > 200 ? '...' : ''}</p>` : ''}
         </div>
 
-        <p style="font-size:15px;color:#374151;margin:0 0 24px;line-height:1.7;">
-          Acesse a plataforma agora, vá até a área do <strong>Mural</strong> e confira tudo quentinho! 🔥
-        </p>
-
         <!-- CTA -->
-        <div style="text-align:center;margin:28px 0;">
-          <a href="${data.loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#0A1E3E,#1a4a7a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:10px;font-size:15px;font-weight:700;letter-spacing:0.3px;">
-            Ver no Mural →
+        <div style="text-align:center;margin:32px 0 24px;">
+          <a href="${data.loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#e85d04,#f48c06);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:0.3px;box-shadow:0 4px 12px rgba(232,93,4,0.3);">
+            👉 Ver no Mural agora
           </a>
         </div>
 
         <p style="font-size:13px;color:#9ca3af;text-align:center;margin:0;">
-          Não deixa pra depois — o conhecimento não espera! 😉
+          Não esquece de curtir! Cada ❤️ faz a diferença e incentiva mais conteúdo. 😉
         </p>
       </td></tr>
 
@@ -3070,7 +3067,7 @@ export function buildNovoAvisoMuralEmail(data: {
 </table>
 </body></html>`;
 
-  const text = `Tem novidade no Mural para você, ${primeiroNome}!\n\nOi, ${primeiroNome}!\n\nA equipe do Ecossistema do Bem acabou de publicar um novo conteúdo no Mural:\n\n"${data.avisoTitle}"\n${data.avisoContent ? `\n${data.avisoContent.slice(0, 200)}\n` : ''}\nAcesse a plataforma e confira: ${data.loginUrl}\n\nNão deixa pra depois — o conhecimento não espera!`;
+  const text = `🎉 TEM NOVIDADES NO MURAL, ${primeiroNome.toUpperCase()}!\n\nDá uma passadinha por lá e não deixe de curtir!\n\nOi, ${primeiroNome}!\n\nA equipe do Ecossistema do Bem publicou um conteúdo novo no Mural:\n\n"${data.avisoTitle}"\n${data.avisoContent ? `\n${data.avisoContent.slice(0, 200)}\n` : ''}\nCorre lá conferir 👉 ${data.loginUrl}\n\nNão esquece de curtir! Cada ❤️ faz a diferença.`;
 
   return { subject, html, text };
 }
