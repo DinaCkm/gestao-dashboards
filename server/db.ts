@@ -67,7 +67,8 @@ import {
   tentativasAvaliacao, InsertTentativaAvaliacao, TentativaAvaliacao,
   alunoCursoAtribuido, InsertAlunoCursoAtribuido, AlunoCursoAtribuido,
   assessmentPdi, AssessmentPdi, InsertAssessmentPdi,
-  assessmentCompetencias,} from "../drizzle/schema";
+  assessmentCompetencias,
+  processoCandidatos,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from './aplicabilidadeCalculator';
 import * as schema from "../drizzle/schema";
@@ -2656,6 +2657,28 @@ export async function updateAccessUser(userId: number, data: {
   await db.update(users)
     .set(updateData)
     .where(eq(users.id, userId));
+
+  // Se email foi alterado, atualizar também em processo_candidatos para evitar duplicação
+  if (data.email !== undefined) {
+    try {
+      await db.update(processoCandidatos)
+        .set({ email: data.email.toLowerCase() })
+        .where(eq(processoCandidatos.userId, userId));
+    } catch (e) {
+      console.warn('[updateAccessUser] Erro ao atualizar email em processo_candidatos:', e);
+    }
+  }
+
+  // Se nome foi alterado, atualizar também em processo_candidatos
+  if (data.name !== undefined) {
+    try {
+      await db.update(processoCandidatos)
+        .set({ nome: data.name })
+        .where(eq(processoCandidatos.userId, userId));
+    } catch (e) {
+      console.warn('[updateAccessUser] Erro ao atualizar nome em processo_candidatos:', e);
+    }
+  }
   
   // Se consultorId foi passado, atualizar o mentor na tabela alunos
   if (data.consultorId !== undefined) {
