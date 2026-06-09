@@ -258,8 +258,18 @@ export default function EditAssessmentDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent
         className="max-w-5xl max-h-[85vh] flex flex-col"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => {
+          // Não bloquear cliques em portais do Radix (Select, Popover, etc.)
+          const target = e.target as Element;
+          if (target?.closest('[data-radix-popper-content-wrapper]') || target?.closest('[role="listbox"]') || target?.closest('[data-radix-select-viewport]')) return;
+          e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          // Não bloquear interações em portais do Radix (Select, Popover, etc.)
+          const target = e.target as Element;
+          if (target?.closest('[data-radix-popper-content-wrapper]') || target?.closest('[role="listbox"]') || target?.closest('[data-radix-select-viewport]')) return;
+          e.preventDefault();
+        }}
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
