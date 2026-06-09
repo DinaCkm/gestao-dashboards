@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { and, asc, desc, eq, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
   alunos,
@@ -157,17 +157,23 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
     ? eq(processoAgendaSlots.regiaoId, candidate.regiaoId)
     : isNull(processoAgendaSlots.regiaoId);
 
+  // Filtrar apenas slots com data de hoje ou futura (ignorar datas passadas)
+  const hoje = new Date();
+  const dataHoje = hoje.toISOString().slice(0, 10); // "YYYY-MM-DD"
+
   const slotWhere = candidate.vagaId
     ? and(
         eq(processoAgendaSlots.processoId, candidate.processoId),
         regiaoFilter,
         or(isNull(processoAgendaSlots.vagaId), eq(processoAgendaSlots.vagaId, candidate.vagaId)),
         eq(processoAgendaSlots.status, "disponivel"),
+        gte(processoAgendaSlots.dataAgenda, dataHoje),
       )
     : and(
         eq(processoAgendaSlots.processoId, candidate.processoId),
         regiaoFilter,
         eq(processoAgendaSlots.status, "disponivel"),
+        gte(processoAgendaSlots.dataAgenda, dataHoje),
       );
 
   const [slot] = await database
