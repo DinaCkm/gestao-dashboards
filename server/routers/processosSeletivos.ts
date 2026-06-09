@@ -198,7 +198,7 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
     // Buscar dados do processo para o e-mail de alerta
     try {
       const [processo] = await database
-        .select()
+        .select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, clienteEmail: processosSeletivos.clienteEmail, responsavelCkmId: processosSeletivos.responsavelCkmId })
         .from(processosSeletivos)
         .where(eq(processosSeletivos.id, candidate.processoId))
         .limit(1);
@@ -281,7 +281,7 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
   // Enviar e-mail de confirmação ao candidato
   try {
     const [processo] = await database
-      .select()
+      .select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, linkEntrevista: processosSeletivos.linkEntrevista })
       .from(processosSeletivos)
       .where(eq(processosSeletivos.id, candidate.processoId))
       .limit(1);
