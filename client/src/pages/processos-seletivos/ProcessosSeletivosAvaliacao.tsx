@@ -22,6 +22,7 @@ import {
   FileText,
   Filter,
   History,
+  Pencil,
   Search,
   User,
   XCircle,
@@ -126,11 +127,13 @@ function AvaliacaoContent() {
   // Modais
   const [modalDecisao, setModalDecisao] = useState<{ candidato: Candidato; modo: "nova" | "alterar" } | null>(null);
   const [modalHistorico, setModalHistorico] = useState<Candidato | null>(null);
+  const [editandoParecer, setEditandoParecer] = useState(false);
+  const [parecerEditado, setParecerEditado] = useState("");
   const [modalPerfil, setModalPerfil] = useState<Candidato | null>(null);
   const [modalReagendar, setModalReagendar] = useState<Entrevista | null>(null);
 
   // Formulário de decisão
-  const [decisaoForm, setDecisaoForm] = useState<{ decisao: "aprovado" | "reprovado" | ""; justificativa: string }>({
+  const [decisaoForm, setDecisaoForm] = useState<{ decisao: "aprovado" | "reprovado" | "em_analise" | ""; justificativa: string }>({
     decisao: "",
     justificativa: "",
   });
@@ -167,6 +170,16 @@ function AvaliacaoContent() {
     );
 
   // ── Mutations ─────────────────────────────────────────────────────────────────
+
+  const editarParecer = trpc.processosSeletivos.editarParecer.useMutation({
+    onSuccess: () => {
+      toast.success("Parecer atualizado com sucesso.");
+      setEditandoParecer(false);
+      setParecerEditado("");
+      utils.processosSeletivos.historicoDecisoesCandidato.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const registrarDecisao = trpc.processosSeletivos.registrarDecisao.useMutation({
     onSuccess: () => {
@@ -248,7 +261,7 @@ function AvaliacaoContent() {
     }
     registrarDecisao.mutate({
       candidatoId: modalDecisao.candidato.id,
-      decisao: decisaoForm.decisao as "aprovado" | "reprovado",
+      decisao: decisaoForm.decisao as "aprovado" | "reprovado" | "em_analise",
       justificativa: decisaoForm.justificativa.trim(),
     });
   }
@@ -649,6 +662,18 @@ function AvaliacaoContent() {
                                     <Button
                                       size="sm"
                                       variant="outline"
+                                      className="text-blue-700 border-blue-300 hover:bg-blue-50 h-7 px-2 text-xs"
+                                      onClick={() => {
+                                        setModalDecisao({ candidato: c, modo: "nova" });
+                                        setDecisaoForm({ decisao: "em_analise", justificativa: "" });
+                                      }}
+                                    >
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      Em Análise
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
                                       className="text-red-700 border-red-300 hover:bg-red-50 h-7 px-2 text-xs"
                                       onClick={() => {
                                         setModalDecisao({ candidato: c, modo: "nova" });
@@ -661,7 +686,8 @@ function AvaliacaoContent() {
                                   </>
                                 ) : (
                                   c.statusResultado === "aprovado" ||
-                                  c.statusResultado === "reprovado"
+                                  c.statusResultado === "reprovado" ||
+                                  c.statusResultado === "em_analise"
                                 ) ? (
                                   <Button
                                     size="sm"
@@ -831,6 +857,7 @@ function AvaliacaoContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="aprovado">Habilitado</SelectItem>
+                    <SelectItem value="em_analise">Em Análise</SelectItem>
                     <SelectItem value="reprovado">Inabilitado</SelectItem>
                   </SelectContent>
                 </Select>
@@ -865,55 +892,126 @@ function AvaliacaoContent() {
       </Dialog>
 
       {/* ── Modal: Histórico de Decisões ── */}
-      <Dialog open={!!modalHistorico} onOpenChange={(open) => !open && setModalHistorico(null)}>
+      <Dialog open={!!modalHistorico} onOpenChange={(open) => { if (!open) { setModalHistorico(null); setEditandoParecer(false); setParecerEditado(""); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Histórico de Decisões — {modalHistorico?.nome}</DialogTitle>
           </DialogHeader>
           {loadingHistorico ? (
             <p className="text-sm text-muted-foreground py-4 text-center">Carregando histórico...</p>
-          ) : historico.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              Nenhuma decisão registrada para este candidato.
-            </p>
           ) : (
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
-              {historico.map((h: any) => {
-                const meta = h.metadata as any;
+              {/* Parecer atual com opção de editar */}
+              {(() => {
+                const ultimaDecisao = (historico as any[]).find((h: any) =>
+                  h.acao === "decisao_registrada" || h.acao === "decisao_alterada"
+                );
+                const parecerAtual = (ultimaDecisao?.metadata as any)?.justificativa ?? null;
                 return (
-                  <div key={h.id} className="border rounded-lg p-4 space-y-2 text-sm">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          className={
-                            h.acao === "decisao_registrada"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-amber-100 text-amber-700"
-                          }
+                  <div className="border border-blue-100 bg-blue-50 rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-blue-800">Parecer atual</span>
+                      {!editandoParecer && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-blue-700 hover:bg-blue-100"
+                          onClick={() => { setEditandoParecer(true); setParecerEditado(parecerAtual ?? ""); }}
                         >
-                          {h.acao === "decisao_registrada" ? "Primeira decisão" : "Alteração"}
-                        </Badge>
-                        {badgeResultado(h.detalhe)}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(h.createdAt).toLocaleString("pt-BR")}
-                      </span>
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Editar
+                        </Button>
+                      )}
                     </div>
-                    {meta?.decisaoAnterior && meta.decisaoAnterior !== "pendente" && (
-                      <div className="text-xs text-muted-foreground">
-                        Decisão anterior: {labelResultado(meta.decisaoAnterior)} → {labelResultado(h.detalhe)}
+                    {editandoParecer ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          rows={4}
+                          value={parecerEditado}
+                          onChange={(e) => setParecerEditado(e.target.value)}
+                          placeholder="Complemente ou ajuste o parecer..."
+                          className="text-sm"
+                        />
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => { setEditandoParecer(false); setParecerEditado(""); }}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            size="sm"
+                            disabled={!parecerEditado.trim() || editarParecer.isPending}
+                            onClick={() => {
+                              if (modalHistorico) editarParecer.mutate({ candidatoId: modalHistorico.id, parecer: parecerEditado.trim() });
+                            }}
+                          >
+                            {editarParecer.isPending ? "Salvando..." : "Salvar parecer"}
+                          </Button>
+                        </div>
                       </div>
+                    ) : (
+                      <p className="text-sm text-blue-900">
+                        {parecerAtual ?? <span className="italic text-muted-foreground">Nenhum parecer registrado.</span>}
+                      </p>
                     )}
-                    <div className="bg-slate-50 rounded p-2 text-sm">
-                      <span className="text-muted-foreground">Justificativa: </span>
-                      {meta?.justificativa ?? "—"}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Responsável: {h.userName ?? `Usuário #${h.userId}`}
-                    </div>
                   </div>
                 );
-              })}
+              })()}
+
+              {/* Histórico de decisões */}
+              {historico.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-2 text-center">Nenhuma decisão registrada para este candidato.</p>
+              ) : (
+                (historico as any[]).map((h: any) => {
+                  const meta = h.metadata as any;
+                  if (h.acao === "parecer_editado") {
+                    return (
+                      <div key={h.id} className="border rounded-lg p-3 space-y-1 text-sm bg-slate-50">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <Badge className="bg-slate-200 text-slate-600">Parecer editado</Badge>
+                          <span className="text-xs text-muted-foreground">{new Date(h.createdAt).toLocaleString("pt-BR")}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">Responsável: {h.userName ?? `Usuário #${h.userId}`}</div>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={h.id} className="border rounded-lg p-4 space-y-2 text-sm">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={
+                              h.acao === "decisao_registrada"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-amber-100 text-amber-700"
+                            }
+                          >
+                            {h.acao === "decisao_registrada" ? "Primeira decisão" : "Alteração"}
+                          </Badge>
+                          {badgeResultado(h.detalhe)}
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(h.createdAt).toLocaleString("pt-BR")}
+                        </span>
+                      </div>
+                      {meta?.decisaoAnterior && meta.decisaoAnterior !== "pendente" && (
+                        <div className="text-xs text-muted-foreground">
+                          Decisão anterior: {labelResultado(meta.decisaoAnterior)} → {labelResultado(h.detalhe)}
+                        </div>
+                      )}
+                      <div className="bg-slate-50 rounded p-2 text-sm">
+                        <span className="text-muted-foreground">Justificativa: </span>
+                        {meta?.justificativa ?? "—"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Responsável: {h.userName ?? `Usuário #${h.userId}`}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           )}
         </DialogContent>

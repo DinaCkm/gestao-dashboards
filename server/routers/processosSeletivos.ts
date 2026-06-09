@@ -1431,7 +1431,7 @@ export const processosSeletivosRouter = router({
   registrarDecisao: protectedProcedure
     .input(z.object({
       candidatoId: z.number(),
-      decisao: z.enum(["aprovado", "reprovado"]),
+      decisao: z.enum(["aprovado", "reprovado", "em_analise"]),
       justificativa: z.string().min(1, "Justificativa é obrigatória"),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -1521,13 +1521,56 @@ export const processosSeletivosRouter = router({
             eq(processoLogs.candidatoId, input.candidatoId),
             or(
               eq(processoLogs.acao, "decisao_registrada"),
-              eq(processoLogs.acao, "decisao_alterada")
+              eq(processoLogs.acao, "decisao_alterada"),
+              eq(processoLogs.acao, "parecer_editado")
             )
           )
         )
         .orderBy(desc(processoLogs.createdAt));
 
       return logs;
+    }),
+
+  // ── AVALIAÇÃO: Editar/complementar parecer sem alterar decisão ──
+  editarParecer: protectedProcedure
+    .input(z.object({
+      candidatoId: z.number(),
+      parecer: z.string().min(1, "O parecer não pode ser vazio"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select({ processoId: processoCandidatos.processoId })
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato não encontrado" });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+
+      // Atualizar o parecer em processo_resultados
+      const [existingResult] = await database
+        .select({ id: processoResultados.id })
+        .from(processoResultados)
+        .where(eq(processoResultados.candidatoId, input.candidatoId))
+        .limit(1);
+      if (existingResult) {
+        await database
+          .update(processoResultados)
+          .set({ parecer: input.parecer })
+          .where(eq(processoResultados.id, existingResult.id));
+      }
+
+      // Registrar no histórico
+      await writeLog(database, {
+        processoId: candidate.processoId,
+        candidatoId: input.candidatoId,
+        userId: ctx.user.id,
+        acao: "parecer_editado",
+        detalhe: "parecer_atualizado",
+        metadata: { parecer: input.parecer },
+      });
+
+      return { success: true };
     }),
 
   // ── Enviar relatório do processo por e-mail ──
@@ -1795,6 +1838,23 @@ export const processosSeletivosRouter = router({
       .where(eq(processoAgendaSlots.id, entrevista.agendaSlotId))
       .limit(1);
     return { entrevista, slot: slot ?? null };
+  }),
+
+  // ── Migration: adicionar em_analise ao enum statusResultado ──
+  runMigrationEmAnalise: protectedProcedure.mutation(async ({ ctx }) => {
+    requireCkmAdmin(ctx.user.role);
+    const database = await requireDatabase();
+    try {
+      await database.execute(sql.raw(
+        "ALTER TABLE `processo_candidatos` MODIFY COLUMN `statusResultado` enum('pendente','aprovado','reprovado','em_analise','suplente','desistente') NOT NULL DEFAULT 'pendente'"
+      ));
+      await database.execute(sql.raw(
+        "ALTER TABLE `processo_resultados` MODIFY COLUMN `resultado` enum('pendente','aprovado','reprovado','em_analise','suplente','desistente') NOT NULL DEFAULT 'pendente'"
+      ));
+      return { success: true, message: 'Enum em_analise adicionado com sucesso' };
+    } catch (e: any) {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: e?.message ?? 'Erro na migration' });
+    }
   }),
 
   // ── Forçar migration da coluna comunicado (admin) ──
