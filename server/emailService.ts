@@ -2996,3 +2996,81 @@ export function buildPsRelatorioEmail(data: {
   const text = `Relatório — ${data.processoNome} (${data.dataEnvio})\n\n${data.candidatos.map(c => `${c.nome} | ${c.regiao} | Inscrito: ${c.inscrito ? 'Sim' : 'Não'} | Teste: ${c.testePerfil ? 'Sim' : 'Não'} | Entrevista: ${c.entrevista} | Data/Horário: ${c.dataHoraEntrevista || '—'} | Status: ${c.status}`).join('\n')}\n\nAcesse: ${data.loginUrl}`;
   return { subject, html, text };
 }
+
+// ============================================================
+// Template: Novo Aviso no Mural (notificação para alunos)
+// ============================================================
+export function buildNovoAvisoMuralEmail(data: {
+  alunoName: string;
+  avisoTitle: string;
+  avisoContent?: string | null;
+  loginUrl: string;
+}): { subject: string; html: string; text: string } {
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const primeiroNome = data.alunoName?.split(' ')[0] || data.alunoName;
+  const subject = `📣 Tem novidade no Mural para você, ${primeiroNome}!`;
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.09);">
+
+      <!-- Header -->
+      <tr><td style="background:linear-gradient(135deg,#0A1E3E,#1a4a7a);padding:32px 40px;text-align:center;">
+        <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="150" style="display:block;margin:0 auto 16px;"/>
+        <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;">Tem novidade no Mural! 🎉</h1>
+        <p style="margin:8px 0 0;color:#93c5fd;font-size:14px;">Uma dica nova está esperando por você</p>
+      </td></tr>
+
+      <!-- Body -->
+      <tr><td style="padding:36px 40px 24px;">
+        <p style="font-size:16px;color:#374151;margin:0 0 12px;line-height:1.6;">
+          Oi, <strong>${primeiroNome}</strong>! 👋
+        </p>
+        <p style="font-size:15px;color:#374151;margin:0 0 20px;line-height:1.7;">
+          A equipe do <strong>Ecossistema do Bem</strong> acabou de publicar um novo conteúdo no Mural e a gente não ia deixar você perder, né? 😄
+        </p>
+
+        <!-- Card do aviso -->
+        <div style="background:#f0f7ff;border:1px solid #bfdbfe;border-left:4px solid #2563eb;border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+          <p style="margin:0 0 6px;font-size:12px;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Novo post</p>
+          <p style="margin:0;font-size:17px;font-weight:700;color:#0A1E3E;">${data.avisoTitle}</p>
+          ${data.avisoContent ? `<p style="margin:10px 0 0;font-size:14px;color:#4b5563;line-height:1.6;">${data.avisoContent.slice(0, 180)}${data.avisoContent.length > 180 ? '...' : ''}</p>` : ''}
+        </div>
+
+        <p style="font-size:15px;color:#374151;margin:0 0 24px;line-height:1.7;">
+          Acesse a plataforma agora, vá até a área do <strong>Mural</strong> e confira tudo quentinho! 🔥
+        </p>
+
+        <!-- CTA -->
+        <div style="text-align:center;margin:28px 0;">
+          <a href="${data.loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#0A1E3E,#1a4a7a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:10px;font-size:15px;font-weight:700;letter-spacing:0.3px;">
+            Ver no Mural →
+          </a>
+        </div>
+
+        <p style="font-size:13px;color:#9ca3af;text-align:center;margin:0;">
+          Não deixa pra depois — o conhecimento não espera! 😉
+        </p>
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+        <p style="margin:0;font-size:11px;color:#9ca3af;">
+          ECOSSISTEMA DO BEM — Programa de Desenvolvimento e Mentoria<br/>
+          Você está recebendo este e-mail porque é aluno(a) ativo(a) da plataforma.
+        </p>
+      </td></tr>
+
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
+
+  const text = `Tem novidade no Mural para você, ${primeiroNome}!\n\nOi, ${primeiroNome}!\n\nA equipe do Ecossistema do Bem acabou de publicar um novo conteúdo no Mural:\n\n"${data.avisoTitle}"\n${data.avisoContent ? `\n${data.avisoContent.slice(0, 200)}\n` : ''}\nAcesse a plataforma e confira: ${data.loginUrl}\n\nNão deixa pra depois — o conhecimento não espera!`;
+
+  return { subject, html, text };
+}

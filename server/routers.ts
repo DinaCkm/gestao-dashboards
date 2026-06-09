@@ -37,7 +37,7 @@ import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
 import { gerarEEnviarRelatorioMentorias, calcularPeriodoPadrao } from "./cronRelatorioMentorias";
-import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, buildCongelamentoTurmaEmail, sendEmail } from "./emailService";
+import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, buildCongelamentoTurmaEmail, buildNovoAvisoMuralEmail, sendEmail } from "./emailService";
 import { cacheOrFetch, cacheInvalidate } from './dataCache';
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 import { DISC_PERFIS } from "../shared/discData";
@@ -8498,12 +8498,44 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         expiresAt: z.string().optional(),
         isActive: z.number().optional(),
         webinarId: z.number().optional(),
+        sendEmailNotification: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const data: any = { ...input, createdBy: ctx.user.id };
+        const { sendEmailNotification, ...announcementData } = input;
+        const data: any = { ...announcementData, createdBy: ctx.user.id };
         if (input.publishAt) data.publishAt = new Date(input.publishAt);
         if (input.expiresAt) data.expiresAt = new Date(input.expiresAt);
         const id = await db.createAnnouncement(data);
+
+        // Enviar e-mail de notificação para alunos ativos (opcional, ativado pelo admin)
+        if (sendEmailNotification) {
+          try {
+            const alunos = await db.getStudentEmailsByProgram();
+            const loginUrl = 'https://ecolider.ecodobem.com/mural';
+            let emailsSent = 0;
+            let emailsFailed = 0;
+            for (const aluno of alunos) {
+              if (!aluno.email) continue;
+              try {
+                const emailData = buildNovoAvisoMuralEmail({
+                  alunoName: aluno.name || 'aluno(a)',
+                  avisoTitle: input.title,
+                  avisoContent: input.content || null,
+                  loginUrl,
+                });
+                await sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+                emailsSent++;
+              } catch {
+                emailsFailed++;
+              }
+            }
+            return { id, success: true, emailsSent, emailsFailed };
+          } catch {
+            // Falha no envio não deve impedir a criação do aviso
+            return { id, success: true, emailsSent: 0, emailsFailed: 0 };
+          }
+        }
+
         return { id, success: true };
       }),
 

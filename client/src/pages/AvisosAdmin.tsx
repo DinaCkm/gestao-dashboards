@@ -116,6 +116,7 @@ export default function AvisosAdmin() {
   const [form, setForm] = useState<AnnouncementForm>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [sendEmailNotification, setSendEmailNotification] = useState(false);
 
   const { data: announcements, isLoading, refetch } = trpc.announcements.list.useQuery();
 
@@ -125,6 +126,7 @@ export default function AvisosAdmin() {
       setShowCreateDialog(false);
       setForm(emptyForm);
       setImageFile(null);
+      setSendEmailNotification(false);
       refetch();
     },
     onError: (err) => toast.error(`Erro ao criar: ${err.message}`),
@@ -226,7 +228,7 @@ export default function AvisosAdmin() {
     if (editingAnnouncement) {
       updateMutation.mutate({ id: editingAnnouncement.id, ...payload });
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate({ ...payload, sendEmailNotification });
     }
   };
 
@@ -794,6 +796,26 @@ export default function AvisosAdmin() {
               </div>
             </div>
 
+            {/* Notificação por e-mail — apenas na criação */}
+            {!editingAnnouncement && (
+              <div className="border border-blue-100 bg-blue-50 rounded-lg px-4 py-3 flex items-start gap-3">
+                <Switch
+                  id="sendEmail"
+                  checked={sendEmailNotification}
+                  onCheckedChange={setSendEmailNotification}
+                  className="mt-0.5"
+                />
+                <div>
+                  <Label htmlFor="sendEmail" className="font-semibold text-blue-800 cursor-pointer">
+                    Notificar alunos por e-mail
+                  </Label>
+                  <p className="text-xs text-blue-600 mt-0.5">
+                    Envia um e-mail divertido para todos os alunos ativos avisando que há um novo post no Mural.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <DialogFooter>
               <Button
                 variant="outline"
@@ -803,6 +825,7 @@ export default function AvisosAdmin() {
                     setEditingAnnouncement(null);
                     setForm(emptyForm);
                     setImageFile(null);
+                    setSendEmailNotification(false);
                   }, 100);
                 }}
               >
