@@ -5824,6 +5824,8 @@ export async function listActiveAnnouncementsForStudent(programId?: number): Pro
 export async function getStudentEmailsByProgram(programId?: number): Promise<{email: string | null; name: string | null}[]> {
   const db = await getDb();
   if (!db) return [];
+  // Filtra apenas alunos com alunoId preenchido (alunos de mentoria com acesso ao mural)
+  // Candidatos do processo seletivo têm alunoId nulo e não têm acesso ao mural
   if (programId) {
     return await db.select({ email: users.email, name: users.name })
       .from(users)
@@ -5831,7 +5833,8 @@ export async function getStudentEmailsByProgram(programId?: number): Promise<{em
         eq(users.role, "user"),
         eq(users.isActive, 1),
         eq(users.programId, programId),
-        isNotNull(users.email)
+        isNotNull(users.email),
+        isNotNull(users.alunoId)
       ));
   }
   return await db.select({ email: users.email, name: users.name })
@@ -5839,7 +5842,8 @@ export async function getStudentEmailsByProgram(programId?: number): Promise<{em
     .where(and(
       eq(users.role, "user"),
       eq(users.isActive, 1),
-      isNotNull(users.email)
+      isNotNull(users.email),
+      isNotNull(users.alunoId)
     ));
 }
 
