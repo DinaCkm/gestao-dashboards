@@ -22,6 +22,7 @@ import {
   FileText,
   Filter,
   History,
+  Mail,
   Pencil,
   Search,
   User,
@@ -198,6 +199,11 @@ function AvaliacaoContent() {
     },
     onError: (e) => toast.error(e.message),
   });
+  const enviarConvocacao = trpc.processosSeletivos.enviarConvocacao.useMutation({
+    onSuccess: (data) => toast.success(data.message),
+    onError: (e) => toast.error(e.message),
+  });
+
   const inativarCandidato = trpc.processosSeletivos.inativarCandidato.useMutation({
     onSuccess: () => {
       toast.success("Candidato removido da lista.");
@@ -628,6 +634,23 @@ function AvaliacaoContent() {
                             >
                               <History className="h-3.5 w-3.5" />
                             </Button>
+
+                            {/* Reenviar convocação (apenas para candidatos agendados) */}
+                            {isAdmin && c.statusEntrevista === "agendada" && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                title="Reenviar e-mail de convocação"
+                                className="text-blue-500 hover:text-blue-700 h-7 w-7 p-0"
+                                disabled={enviarConvocacao.isPending}
+                                onClick={() => {
+                                  if (confirm(`Reenviar e-mail de convocação para "${c.nome}"?`))
+                                    enviarConvocacao.mutate({ candidatoId: c.id });
+                                }}
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
 
                             {/* Remover da lista */}
                             {isAdmin && (

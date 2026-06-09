@@ -1858,6 +1858,71 @@ export const processosSeletivosRouter = router({
   }),
 
   // ── Forçar migration da coluna comunicado (admin) ──
+  enviarConvocacao: protectedProcedure
+    .input(z.object({ candidatoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+
+      // Buscar candidato
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: 'NOT_FOUND', message: 'Candidato não encontrado' });
+
+      // Buscar entrevista e slot
+      const [entrevista] = await database
+        .select()
+        .from(processoEntrevistas)
+        .where(eq(processoEntrevistas.candidatoId, input.candidatoId))
+        .limit(1);
+      if (!entrevista) throw new TRPCError({ code: 'NOT_FOUND', message: 'Entrevista não encontrada para este candidato' });
+
+      const [slot] = await database
+        .select()
+        .from(processoAgendaSlots)
+        .where(eq(processoAgendaSlots.id, entrevista.agendaSlotId))
+        .limit(1);
+      if (!slot) throw new TRPCError({ code: 'NOT_FOUND', message: 'Slot de agenda não encontrado' });
+
+      // Buscar processo
+      const [processo] = await database
+        .select()
+        .from(processosSeletivos)
+        .where(eq(processosSeletivos.id, candidate.processoId))
+        .limit(1);
+      if (!processo) throw new TRPCError({ code: 'NOT_FOUND', message: 'Processo não encontrado' });
+
+      // Enviar e-mail de confirmação
+      const dataFormatada = slot.dataAgenda
+        ? new Date(slot.dataAgenda + 'T00:00:00').toLocaleDateString('pt-BR')
+        : slot.dataAgenda;
+      const emailData = buildPsConfirmacaoAgendamentoEmail({
+        candidatoNome: candidate.nome,
+        processoNome: processo.nome,
+        clienteNome: processo.clienteNome,
+        dataEntrevista: dataFormatada,
+        horaInicio: slot.inicio,
+        horaFim: slot.fim,
+        linkEntrevista: processo.linkEntrevista || slot.linkEntrevista || null,
+        loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/login`,
+      });
+      await sendEmail({ to: candidate.email, cc: 'relacionamento@ckmtalents.net', subject: emailData.subject, html: emailData.html, text: emailData.text });
+
+      await writeLog(database, {
+        processoId: candidate.processoId,
+        candidatoId: input.candidatoId,
+        userId: ctx.user.id,
+        acao: 'reenvio_convocacao',
+        detalhe: `E-mail de convocação reenviado manualmente para ${candidate.nome} (${candidate.email}).`,
+        metadata: { slotId: slot.id },
+      });
+
+      return { success: true, message: `E-mail de convocação enviado para ${candidate.email}` };
+    }),
+
   runMigration: protectedProcedure.mutation(async ({ ctx }) => {
     requireCkmAdmin(ctx.user.role);
     const database = await requireDatabase();
