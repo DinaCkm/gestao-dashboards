@@ -434,7 +434,21 @@ export const processosSeletivosRouter = router({
   obterProcesso: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);
-    const [processo] = await database.select().from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
+    const safeSelectProcesso = {
+      id: processosSeletivos.id,
+      nome: processosSeletivos.nome,
+      clienteNome: processosSeletivos.clienteNome,
+      clienteEmail: processosSeletivos.clienteEmail,
+      linkEntrevista: processosSeletivos.linkEntrevista,
+      descricao: processosSeletivos.descricao,
+      status: processosSeletivos.status,
+      dataInicio: processosSeletivos.dataInicio,
+      responsavelCkmId: processosSeletivos.responsavelCkmId,
+      criadoPor: processosSeletivos.criadoPor,
+      createdAt: processosSeletivos.createdAt,
+      updatedAt: processosSeletivos.updatedAt,
+    };
+    const [processo] = await database.select(safeSelectProcesso).from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
     if (!processo) throw new TRPCError({ code: "NOT_FOUND", message: "Processo nao encontrado" });
     return processo;
   }),
@@ -1061,7 +1075,12 @@ export const processosSeletivosRouter = router({
       });
       // Enviar e-mail de confirmação ao candidato
       try {
-        const [processo] = await database.select().from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
+        const [processo] = await database.select({
+          id: processosSeletivos.id,
+          nome: processosSeletivos.nome,
+          clienteNome: processosSeletivos.clienteNome,
+          linkEntrevista: processosSeletivos.linkEntrevista,
+        }).from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
         if (processo && candidate.email) {
           const dataFormatada = slot.dataAgenda
             ? new Date(slot.dataAgenda + 'T00:00:00').toLocaleDateString('pt-BR')
@@ -1887,9 +1906,14 @@ export const processosSeletivosRouter = router({
         .limit(1);
       if (!slot) throw new TRPCError({ code: 'NOT_FOUND', message: 'Slot de agenda não encontrado' });
 
-      // Buscar processo
+      // Buscar processo (usando safeSelect para evitar colunas que podem não existir no banco)
       const [processo] = await database
-        .select()
+        .select({
+          id: processosSeletivos.id,
+          nome: processosSeletivos.nome,
+          clienteNome: processosSeletivos.clienteNome,
+          linkEntrevista: processosSeletivos.linkEntrevista,
+        })
         .from(processosSeletivos)
         .where(eq(processosSeletivos.id, candidate.processoId))
         .limit(1);
