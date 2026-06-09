@@ -3008,69 +3008,106 @@ export function buildNovoAvisoMuralEmail(data: {
 }): { subject: string; html: string; text: string } {
   const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
   const primeiroNome = data.alunoName?.split(' ')[0] || data.alunoName;
-  const subject = `🔔 Tem novidades no Mural, ${primeiroNome}! Dá uma passadinha por lá 😄`;
+  const subject = `🎉 Tem novidades no Mural, ${primeiroNome}! Dá uma passadinha por lá`;
+  const previewText = `Dá uma passadinha por lá e não deixe de curtir e participar! ❤️`;
 
   const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;">
-  <tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.09);">
+<html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <title>Novidades no Mural</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap');
+    body { margin:0; padding:0; background:#f0f2f5; }
+    .email-wrapper { font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f0f2f5;">
+  <!-- Preview text (hidden) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${previewText}</div>
 
-      <!-- Header -->
-      <tr><td style="background:linear-gradient(135deg,#e85d04,#f48c06);padding:36px 40px;text-align:center;">
-        <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="150" style="display:block;margin:0 auto 20px;"/>
-        <h1 style="margin:0;color:#ffffff;font-size:28px;font-weight:900;letter-spacing:-0.5px;line-height:1.2;">🎉 TEM NOVIDADES NO MURAL!</h1>
-        <p style="margin:12px 0 0;color:#fff3e0;font-size:16px;font-weight:600;">Dá uma passadinha por lá e não deixe de curtir e participar! ❤️</p>
-      </td></tr>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-      <!-- Body -->
-      <tr><td style="padding:36px 40px 28px;">
-        <p style="font-size:17px;color:#374151;margin:0 0 16px;line-height:1.7;">
-          Oi, <strong>${primeiroNome}</strong>! 👋
-        </p>
-        <p style="font-size:15px;color:#374151;margin:0 0 24px;line-height:1.8;">
-          A equipe do <strong>Ecossistema do Bem</strong> acabou de publicar um conteúdo novo no Mural e a gente não ia deixar você de fora, né? 😄<br/>
-          Corre lá conferir — tá quentinho ainda! 🔥
-        </p>
+        <!-- Logo topo -->
+        <tr><td style="text-align:center;padding-bottom:24px;">
+          <img src="${logoUrl}" alt="Ecossistema do Bem" width="140" style="display:inline-block;"/>
+        </td></tr>
 
-        <!-- Card do aviso -->
-        <div style="background:#fff8f0;border:1px solid #fed7aa;border-left:5px solid #e85d04;border-radius:10px;padding:20px 24px;margin-bottom:28px;">
-          <p style="margin:0 0 8px;font-size:12px;color:#e85d04;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;">✨ Novo no Mural</p>
-          <p style="margin:0;font-size:18px;font-weight:800;color:#0A1E3E;">${data.avisoTitle}</p>
-          ${data.avisoContent ? `<p style="margin:10px 0 0;font-size:14px;color:#4b5563;line-height:1.7;">${data.avisoContent.slice(0, 200)}${data.avisoContent.length > 200 ? '...' : ''}</p>` : ''}
-        </div>
+        <!-- Card principal -->
+        <tr><td style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.10);">
 
-        <!-- CTA -->
-        <div style="text-align:center;margin:32px 0 24px;">
-          <a href="${data.loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#e85d04,#f48c06);color:#ffffff;text-decoration:none;padding:16px 48px;border-radius:12px;font-size:16px;font-weight:800;letter-spacing:0.3px;box-shadow:0 4px 12px rgba(232,93,4,0.3);">
-            👉 Ver no Mural agora
-          </a>
-        </div>
+          <!-- Banner hero com gradiente vibrante -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="background:linear-gradient(135deg,#FF6B35 0%,#F7C59F 50%,#FFBE0B 100%);padding:48px 40px 40px;text-align:center;">
+              <p style="margin:0 0 12px;font-family:'Poppins',Arial,sans-serif;font-size:13px;font-weight:700;color:#7c2d00;letter-spacing:3px;text-transform:uppercase;">✦ &nbsp; Ecossistema do Bem &nbsp; ✦</p>
+              <h1 style="margin:0 0 10px;font-family:'Poppins',Arial,sans-serif;font-size:38px;font-weight:900;color:#1a0a00;line-height:1.1;letter-spacing:-1px;">🎉 TEM NOVIDADES<br/>NO MURAL!</h1>
+              <p style="margin:16px 0 0;font-family:'Poppins',Arial,sans-serif;font-size:17px;font-weight:600;color:#5c2500;line-height:1.5;">Dá uma passadinha por lá e<br/>não deixe de curtir e participar! ❤️</p>
+            </td></tr>
+          </table>
 
-        <p style="font-size:13px;color:#9ca3af;text-align:center;margin:0;">
-          Não esquece de curtir e participar! Cada ❤️ faz a diferença e incentiva mais conteúdo. 😉
-        </p>
-        <div style="text-align:center;margin-top:16px;">
-          <a href="https://ecolider.ecodobem.com/mural" style="font-size:13px;color:#e85d04;text-decoration:underline;">https://ecolider.ecodobem.com/mural</a>
-        </div>
-      </td></tr>
+          <!-- Corpo -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:40px 44px 32px;">
 
-      <!-- Footer -->
-      <tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
-        <p style="margin:0;font-size:11px;color:#9ca3af;">
-          ECOSSISTEMA DO BEM — Programa de Desenvolvimento e Mentoria<br/>
-          Você está recebendo este e-mail porque é aluno(a) ativo(a) da plataforma.
-        </p>
-      </td></tr>
+              <!-- Saudação -->
+              <p style="margin:0 0 20px;font-family:'Poppins',Arial,sans-serif;font-size:18px;font-weight:700;color:#1a1a2e;">Oi, ${primeiroNome}! 👋</p>
+              <p style="margin:0 0 32px;font-family:'Poppins',Arial,sans-serif;font-size:15px;font-weight:400;color:#4b5563;line-height:1.8;">
+                A equipe do <strong style="color:#FF6B35;">Ecossistema do Bem</strong> acabou de publicar um conteúdo novo no Mural e a gente não ia deixar você de fora, né? 😄<br/>
+                Corre lá conferir — tá quentinho ainda! 🔥
+              </p>
 
-    </table>
-  </td></tr>
-</table>
+              <!-- Card do conteúdo -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#fff8f0,#fff3e0);border-radius:16px;border:1px solid #fed7aa;margin-bottom:36px;">
+                <tr><td style="padding:28px 28px 24px;">
+                  <p style="margin:0 0 10px;font-family:'Poppins',Arial,sans-serif;font-size:11px;font-weight:700;color:#FF6B35;text-transform:uppercase;letter-spacing:2px;">✨ &nbsp; Novo no Mural</p>
+                  <p style="margin:0 0 ${data.avisoContent ? '14px' : '0'};font-family:'Poppins',Arial,sans-serif;font-size:20px;font-weight:800;color:#1a0a00;line-height:1.3;">${data.avisoTitle}</p>
+                  ${data.avisoContent ? `<p style="margin:0;font-family:'Poppins',Arial,sans-serif;font-size:14px;font-weight:400;color:#6b7280;line-height:1.8;">${data.avisoContent.slice(0, 220)}${data.avisoContent.length > 220 ? '...' : ''}</p>` : ''}
+                </td></tr>
+              </table>
+
+              <!-- Botão CTA -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="text-align:center;padding-bottom:28px;">
+                  <a href="${data.loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#FF6B35,#FFBE0B);color:#1a0a00;text-decoration:none;padding:18px 56px;border-radius:50px;font-family:'Poppins',Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.3px;box-shadow:0 6px 24px rgba(255,107,53,0.40);">Ver no Mural agora →</a>
+                </td></tr>
+              </table>
+
+              <!-- Link direto -->
+              <p style="margin:0 0 8px;font-family:'Poppins',Arial,sans-serif;font-size:12px;color:#9ca3af;text-align:center;">Ou acesse diretamente:</p>
+              <p style="margin:0 0 28px;text-align:center;">
+                <a href="https://ecolider.ecodobem.com/mural" style="font-family:'Poppins',Arial,sans-serif;font-size:13px;color:#FF6B35;text-decoration:none;border-bottom:1px solid #FF6B35;padding-bottom:1px;">https://ecolider.ecodobem.com/mural</a>
+              </p>
+
+              <!-- Mensagem final -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:12px;">
+                <tr><td style="padding:20px 24px;text-align:center;">
+                  <p style="margin:0;font-family:'Poppins',Arial,sans-serif;font-size:14px;font-weight:600;color:#374151;">Não esquece de curtir e participar! 😉</p>
+                  <p style="margin:6px 0 0;font-family:'Poppins',Arial,sans-serif;font-size:13px;color:#9ca3af;">Cada ❤️ faz a diferença e incentiva mais conteúdo incrivel para você.</p>
+                </td></tr>
+              </table>
+
+            </td></tr>
+          </table>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:28px 0 8px;text-align:center;">
+          <p style="margin:0 0 6px;font-family:'Poppins',Arial,sans-serif;font-size:12px;font-weight:600;color:#6b7280;">ECOSSISTEMA DO BEM</p>
+          <p style="margin:0;font-family:'Poppins',Arial,sans-serif;font-size:11px;color:#9ca3af;">Programa de Desenvolvimento e Mentoria<br/>Você está recebendo este e-mail porque é aluno(a) ativo(a) da plataforma.</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
 </body></html>`;
 
-  const text = `🎉 TEM NOVIDADES NO MURAL, ${primeiroNome.toUpperCase()}!\n\nDá uma passadinha por lá e não deixe de curtir e participar!\n\nOi, ${primeiroNome}!\n\nA equipe do Ecossistema do Bem publicou um conteúdo novo no Mural:\n\n"${data.avisoTitle}"\n${data.avisoContent ? `\n${data.avisoContent.slice(0, 200)}\n` : ''}\nCorre lá conferir 👉 ${data.loginUrl}\nhttps://ecolider.ecodobem.com/mural\n\nNão esquece de curtir e participar! Cada ❤️ faz a diferença.`;
+  const text = `🎉 TEM NOVIDADES NO MURAL, ${primeiroNome.toUpperCase()}!\n\nDá uma passadinha por lá e não deixe de curtir e participar! ❤️\n\nOi, ${primeiroNome}!\n\nA equipe do Ecossistema do Bem publicou um conteúdo novo no Mural:\n\n"${data.avisoTitle}"\n${data.avisoContent ? `\n${data.avisoContent.slice(0, 220)}\n` : ''}\nCorre lá conferir → ${data.loginUrl}\nhttps://ecolider.ecodobem.com/mural\n\nNão esquece de curtir e participar! Cada ❤️ faz a diferença.`;
 
   return { subject, html, text };
 }
