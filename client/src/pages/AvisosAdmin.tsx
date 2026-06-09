@@ -43,6 +43,7 @@ import {
   Eye,
   EyeOff,
   Link2,
+  Send,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 
@@ -157,6 +158,15 @@ export default function AvisosAdmin() {
       refetch();
     },
     onError: (err) => toast.error(`Erro ao alterar status: ${err.message}`),
+  });
+
+  const sendNotificationMutation = trpc.announcements.sendNotification.useMutation({
+    onSuccess: (data) => {
+      toast.success(`E-mail enviado com sucesso para ${data.emailsSent} aluno(s)!${
+        data.emailsFailed > 0 ? ` (${data.emailsFailed} falha(s))` : ''
+      }`);
+    },
+    onError: (err) => toast.error(`Erro ao enviar notificação: ${err.message}`),
   });
 
   const filteredAnnouncements = useMemo(() => {
@@ -535,6 +545,16 @@ export default function AvisosAdmin() {
                             onCheckedChange={() => handleToggleActive(announcement)}
                           />
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          title="Reenviar notificação por e-mail para todos os alunos"
+                          className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                          disabled={sendNotificationMutation.isPending}
+                          onClick={() => sendNotificationMutation.mutate({ id: announcement.id })}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"

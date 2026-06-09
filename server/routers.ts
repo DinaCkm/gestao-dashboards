@@ -8571,6 +8571,34 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return { success: true };
       }),
 
+    // Reenviar notificação por e-mail para todos os alunos ativos
+    sendNotification: adminOrAdmin2Procedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const aviso = await db.getAnnouncementById(input.id);
+        if (!aviso) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aviso não encontrado' });
+        const alunos = await db.getStudentEmailsByProgram();
+        const loginUrl = 'https://ecolider.ecodobem.com/mural';
+        let emailsSent = 0;
+        let emailsFailed = 0;
+        for (const aluno of alunos) {
+          if (!aluno.email) continue;
+          try {
+            const emailData = buildNovoAvisoMuralEmail({
+              alunoName: aluno.name || 'aluno(a)',
+              avisoTitle: aviso.title,
+              avisoContent: aviso.content || null,
+              loginUrl,
+            });
+            await sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+            emailsSent++;
+          } catch {
+            emailsFailed++;
+          }
+        }
+        return { success: true, emailsSent, emailsFailed };
+      }),
+
     // Upload de imagem de capa para avisos
     uploadImage: adminOrAdmin2Procedure
       .input(z.object({
