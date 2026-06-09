@@ -440,11 +440,11 @@ export default function EditAssessmentDialog({
                         <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContentNoPortal>
+                        <SelectContent>
                           {trilhas.map((t: any) => (
                             <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
                           ))}
-                        </SelectContentNoPortal>
+                        </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1">
@@ -453,7 +453,7 @@ export default function EditAssessmentDialog({
                         <SelectTrigger className="h-9">
                           <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
-                        <SelectContentNoPortal>
+                        <SelectContent>
                           {availableComps.length === 0 ? (
                             <SelectItem value="__none" disabled>Nenhuma disponível</SelectItem>
                           ) : (
@@ -461,7 +461,7 @@ export default function EditAssessmentDialog({
                               <SelectItem key={c.id} value={String(c.id)}>{c.nome || c.name}</SelectItem>
                             ))
                           )}
-                        </SelectContentNoPortal>
+                        </SelectContent>
                       </Select>
                     </div>
                   </div>
