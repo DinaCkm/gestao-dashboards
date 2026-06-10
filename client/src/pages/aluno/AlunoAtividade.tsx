@@ -77,6 +77,9 @@ export default function AlunoAtividade() {
     return items.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
   }, [atividadesQuery.data]);
 
+  // Nome da competência vem no primeiro item da lista (retornado pelo backend)
+  const nomeCompetencia = atividades[0]?.nomeCompetencia ?? null;
+
   const getStatusAtividade = (atividade: any, index: number) => {
     if (atividade.status === "concluida" || atividade.status === "aprovada") {
       return { label: "Concluída", color: "bg-green-100 text-green-800", icon: CheckCircle };
@@ -108,10 +111,22 @@ export default function AlunoAtividade() {
     <AlunoLayout>
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Aluno — Atividade</h1>
+        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Competência</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {nomeCompetencia ?? "Atividades"}
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Acesse o conteúdo dentro da plataforma e siga para a avaliação após concluir a atividade.
         </p>
+      </div>
+
+      {/* Aviso sobre a Biblioteca */}
+      <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+        <span className="mt-0.5 text-lg">📚</span>
+        <span>
+          Resumos, textos e materiais complementares desta competência estão disponíveis na{" "}
+          <strong>Biblioteca</strong>, acessível pelo menu <strong>Mural</strong> do aluno.
+        </span>
       </div>
 
       <Card>

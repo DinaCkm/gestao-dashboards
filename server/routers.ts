@@ -13657,6 +13657,17 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
           }
 
+          // Buscar nome da competência vinculada ao curso atribuído
+          let nomeCompetencia: string | null = null;
+          if (atribuicao.competenciaId) {
+            const [comp] = await database
+              .select({ nome: competencias.nome })
+              .from(competencias)
+              .where(eq(competencias.id, atribuicao.competenciaId))
+              .limit(1);
+            nomeCompetencia = comp?.nome ?? null;
+          }
+
           const atividades = await database
             .select()
             .from(atividadesCurso)
@@ -13738,6 +13749,7 @@ Responda APENAS em JSON com o formato especificado.`
               avaliacaoLiberada: progresso?.avaliacaoLiberada === 1,
               permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
               ...montarResumoTempo(atividade, progresso),
+              nomeCompetencia: index === 0 ? nomeCompetencia : null,
             };
           });
         }),
