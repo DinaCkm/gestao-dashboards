@@ -208,6 +208,10 @@ export default function MentorAtribuirCurso() {
       dataPrazo: item?.dataPrazo ?? "",
       dataAtribuicao: item?.dataAtribuicao ?? "",
       status: item?.status ?? "nao_iniciado",
+      dataInicio: item?.dataInicio ?? null,
+      atividadesConcluidas: item?.atividadesConcluidas ?? 0,
+      totalAtividades: item?.totalAtividades ?? 0,
+      percentualProgresso: item?.percentualProgresso ?? 0,
     }));
 
     return dados.filter((item) => {
@@ -507,6 +511,8 @@ export default function MentorAtribuirCurso() {
                     <th className="px-4 py-3 font-semibold text-gray-700">Competência</th>
                     <th className="px-4 py-3 font-semibold text-gray-700">Prazo</th>
                     <th className="px-4 py-3 font-semibold text-gray-700">Atribuído em</th>
+                    <th className="px-4 py-3 font-semibold text-gray-700">Iniciado em</th>
+                    <th className="px-4 py-3 font-semibold text-gray-700">Progresso</th>
                     <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
                     <th className="px-4 py-3 font-semibold text-gray-700 text-right">Ações</th>
                   </tr>
@@ -522,6 +528,27 @@ export default function MentorAtribuirCurso() {
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs">
                         {item.dataAtribuicao ? new Date(item.dataAtribuicao).toLocaleDateString('pt-BR') : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {item.dataInicio ? new Date(item.dataInicio).toLocaleDateString('pt-BR') : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3 min-w-[130px]">
+                        {item.totalAtividades > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="h-2 rounded-full transition-all"
+                                style={{
+                                  width: `${item.percentualProgresso}%`,
+                                  backgroundColor: item.percentualProgresso === 100 ? '#16a34a' : item.percentualProgresso > 0 ? '#2563eb' : '#d1d5db'
+                                }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-600 whitespace-nowrap">{item.atividadesConcluidas}/{item.totalAtividades}</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-300 text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">{getStatusBadge(item.status)}</td>
                       <td className="px-4 py-3 text-right">

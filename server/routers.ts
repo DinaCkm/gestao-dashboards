@@ -13460,7 +13460,44 @@ Responda APENAS em JSON com o formato especificado.`
             .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
             .leftJoin(alunosTable, eq(alunoCursoAtribuido.alunoId, alunosTable.id))
             .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
-          return cursos;
+          // Enriquecer com dataInicio e progresso de cada atribuicao
+          const resultado = await Promise.all(cursos.map(async (curso) => {
+            const progressos = await database
+              .select({
+                status: alunoAtividadeProgresso.status,
+                iniciadoEm: alunoAtividadeProgresso.iniciadoEm,
+              })
+              .from(alunoAtividadeProgresso)
+              .where(
+                and(
+                  eq(alunoAtividadeProgresso.alunoId, curso.alunoId),
+                  eq(alunoAtividadeProgresso.cursoAtribuidoId, curso.id),
+                )
+              );
+            // Data de inicio: menor iniciadoEm entre as atividades
+            const datasInicio = progressos
+              .map(p => p.iniciadoEm)
+              .filter(d => d != null) as Date[];
+            const dataInicio = datasInicio.length > 0
+              ? new Date(Math.min(...datasInicio.map(d => d.getTime())))
+              : null;
+            // Progresso: atividades concluidas ou aprovadas / total de atividades do curso
+            const atividadesConcluidas = progressos.filter(
+              p => p.status === 'concluida' || p.status === 'aprovada'
+            ).length;
+            const totalAtividades = progressos.length;
+            const percentualProgresso = totalAtividades > 0
+              ? Math.round((atividadesConcluidas / totalAtividades) * 100)
+              : 0;
+            return {
+              ...curso,
+              dataInicio,
+              atividadesConcluidas,
+              totalAtividades,
+              percentualProgresso,
+            };
+          }));
+          return resultado;
         }),
 
        listarCursosAtribuidosAoAluno: protectedProcedure
