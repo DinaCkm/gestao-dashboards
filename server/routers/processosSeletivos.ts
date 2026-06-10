@@ -1034,6 +1034,31 @@ export const processosSeletivosRouter = router({
       return slots;
     }),
 
+  // Rota pública: verifica se CPF está na lista de convocados de um processo seletivo
+  verificarCpfConvocado: publicProcedure
+    .input(z.object({ processoId: z.number(), cpf: z.string().min(1) }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      const cpfLimpo = input.cpf.replace(/[.\-\s]/g, '').trim();
+      const [candidato] = await database
+        .select({ id: processoCandidatos.id, nome: processoCandidatos.nome, statusCadastro: processoCandidatos.statusCadastro })
+        .from(processoCandidatos)
+        .where(
+          and(
+            eq(processoCandidatos.processoId, input.processoId),
+            eq(processoCandidatos.cpf, cpfLimpo),
+          )
+        )
+        .limit(1);
+      if (!candidato || candidato.statusCadastro === 'inativo') {
+        return { convocado: false, nome: null, jaCadastrado: false };
+      }
+      return {
+        convocado: true,
+        nome: candidato.nome,
+        jaCadastrado: candidato.statusCadastro === 'ativo',
+      };
+    }),
   // Candidato agendando seu próprio slot após concluir os testes
   candidatoAgendar: protectedProcedure
     .input(z.object({ slotId: z.number(), processoId: z.number() }))

@@ -231,6 +231,7 @@ export default function TabelaCandidatosProcesso({
         <TableHeader>
           <TableRow>
             <TableHead>Candidato</TableHead>
+            <TableHead>Cadastro</TableHead>
             <TableHead>Região</TableHead>
             <TableHead>Teste</TableHead>
             <TableHead>Entrevista</TableHead>
@@ -241,7 +242,7 @@ export default function TabelaCandidatosProcesso({
         <TableBody>
           {candidatosFiltrados.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="h-20 text-center text-muted-foreground">
+              <TableCell colSpan={7} className="h-20 text-center text-muted-foreground">
                 {filtroRegiao === "todas"
                   ? "Nenhum candidato cadastrado neste processo."
                   : "Nenhum candidato nesta região."}
@@ -262,6 +263,17 @@ export default function TabelaCandidatosProcesso({
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground">{candidate.email}</div>
+                  </TableCell>
+                  <TableCell>
+                    {candidate.statusCadastro === 'ativo' ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                        Cadastrado
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">
+                        Não cadastrado
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {movendo === candidate.id ? (

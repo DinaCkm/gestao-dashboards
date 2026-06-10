@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
-import { Loader2, AlertCircle, User, Mail, Fingerprint, Building2, MessageCircle, ChevronDown, Briefcase, GraduationCap, ArrowLeft } from "lucide-react";
+import { Loader2, AlertCircle, User, Mail, Fingerprint, Building2, MessageCircle, ChevronDown, Briefcase, GraduationCap, ArrowLeft, ShieldCheck } from "lucide-react";
 import BoasVindasBC from "./BoasVindasBC";
 
 function formatCpf(value: string): string {
@@ -39,6 +39,19 @@ export default function AutoRegistro() {
   const { data: processos, isLoading: loadingProcessos } = trpc.processosSeletivos.listProcessosAtivos.useQuery(undefined, { enabled: modo === "processo_seletivo" });
 
   const [emailJaExiste, setEmailJaExiste] = useState(false);
+
+  // Etapa de verificação de CPF (exclusivo para processo_seletivo)
+  const [etapaCpf, setEtapaCpf] = useState(true); // true = mostrar tela de CPF, false = mostrar formulário completo
+  const [cpfVerificando, setCpfVerificando] = useState(false);
+  const [cpfVerificado, setCpfVerificado] = useState(false); // CPF validado com sucesso
+  const [cpfNomeConvocado, setCpfNomeConvocado] = useState<string | null>(null);
+  const [cpfJaCadastrado, setCpfJaCadastrado] = useState(false);
+  const [cpfErro, setCpfErro] = useState<string | null>(null);
+
+  const verificarCpfQuery = trpc.processosSeletivos.verificarCpfConvocado.useQuery(
+    { processoId: Number(processoId), cpf: cpf.replace(/[.\-]/g, '').trim() },
+    { enabled: false }
+  );
 
   // Login automático após cadastro bem-sucedido
   const loginMutation = trpc.auth.emailCpfLogin.useMutation({
@@ -101,6 +114,35 @@ export default function AutoRegistro() {
         : (empresa || undefined),
       processoSeletivoId: modo === "processo_seletivo" && processoId ? Number(processoId) : undefined,
     });
+  };
+
+  const handleVerificarCpf = async () => {
+    const cpfDigits = cpf.replace(/\D/g, '');
+    if (cpfDigits.length < 11) { setCpfErro("CPF deve ter 11 dígitos."); return; }
+    setCpfVerificando(true);
+    setCpfErro(null);
+    try {
+      const result = await verificarCpfQuery.refetch();
+      const data = result.data;
+      if (!data || !data.convocado) {
+        setCpfErro("Seu CPF não está entre os convocados para este processo seletivo. Verifique com o RH.");
+        setCpfVerificando(false);
+        return;
+      }
+      if (data.jaCadastrado) {
+        setCpfJaCadastrado(true);
+        setCpfVerificando(false);
+        return;
+      }
+      // CPF válido e ainda não cadastrado
+      setCpfNomeConvocado(data.nome);
+      if (data.nome) setName(data.nome);
+      setCpfVerificado(true);
+      setEtapaCpf(false);
+    } catch {
+      setCpfErro("Erro ao verificar CPF. Tente novamente.");
+    }
+    setCpfVerificando(false);
   };
 
   if (success) {
@@ -310,11 +352,86 @@ export default function AutoRegistro() {
               <>
                 {/* Botão voltar */}
                 <button
-                  onClick={() => { setModo(null); setError(null); }}
+                  onClick={() => { setModo(null); setError(null); setEtapaCpf(true); setCpfVerificado(false); setCpfErro(null); setCpfJaCadastrado(false); setCpfNomeConvocado(null); }}
                   style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: "13px", marginBottom: "20px", padding: 0 }}
                 >
                   <ArrowLeft size={14} /> Voltar
                 </button>
+
+                {/* ETAPA DE VERIFICAÇÃO DE CPF — apenas para processo_seletivo */}
+                {modo === "processo_seletivo" && etapaCpf && (
+                  <>
+                    <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0d1117", marginBottom: "6px", textAlign: "center" }}>Verificar convocação</h2>
+                    <p style={{ color: "#6b7280", fontSize: "14px", textAlign: "center", marginBottom: "24px", lineHeight: "1.5" }}>
+                      Digite seu CPF para confirmar que você está na lista de convocados.
+                    </p>
+
+                    {cpfJaCadastrado && (
+                      <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: "12px", padding: "16px", marginBottom: "20px", textAlign: "center" }}>
+                        <div style={{ fontSize: "15px", fontWeight: "700", color: "#92400e", marginBottom: "6px" }}>Você já possui cadastro</div>
+                        <div style={{ fontSize: "13px", color: "#78350f", marginBottom: "14px", lineHeight: "1.5" }}>Use seu CPF para entrar no portal.</div>
+                        <a href="/login" style={{ display: "inline-block", background: "#0A1E3E", color: "#fff", fontWeight: "700", fontSize: "14px", borderRadius: "8px", padding: "10px 24px", textDecoration: "none" }}>Ir para o login</a>
+                      </div>
+                    )}
+
+                    {cpfErro && (
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "10px", padding: "12px 14px", marginBottom: "20px", color: "#dc2626", fontSize: "14px", lineHeight: "1.4" }}>
+                        <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
+                        <span>{cpfErro}</span>
+                      </div>
+                    )}
+
+                    <div style={{ marginBottom: "20px" }}>
+                      <label style={{ display: "block", fontSize: "13px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>CPF *</label>
+                      <div style={{ position: "relative" }}>
+                        <Fingerprint size={15} style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+                        <input
+                          type="text"
+                          placeholder="000.000.000-00"
+                          value={cpf}
+                          onChange={e => { setCpf(formatCpf(e.target.value)); setCpfErro(null); }}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleVerificarCpf(); } }}
+                          maxLength={14}
+                          style={{ ...inputStyle }}
+                          onFocus={e => (e.target.style.borderColor = "#0f2b3c")}
+                          onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleVerificarCpf}
+                      disabled={cpfVerificando || cpf.replace(/\D/g, '').length < 11}
+                      style={{
+                        width: "100%", padding: "14px",
+                        background: cpfVerificando ? "#9ca3af" : "linear-gradient(135deg, #0f2b3c, #1a3a52)",
+                        border: "none", borderRadius: "12px", color: "#fff",
+                        fontSize: "15px", fontWeight: "700",
+                        cursor: cpfVerificando ? "not-allowed" : "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                        boxShadow: cpfVerificando ? "none" : "0 4px 20px rgba(15,43,60,0.35)",
+                      }}
+                    >
+                      {cpfVerificando
+                        ? <><Loader2 size={17} style={{ animation: "spin 1s linear infinite" }} />Verificando...</>
+                        : <><ShieldCheck size={17} />Verificar CPF</>}
+                    </button>
+                  </>
+                )}
+
+                {/* FORMULÁRIO COMPLETO — exibido após CPF verificado (ou em modo desenvolvimento) */}
+                {(modo !== "processo_seletivo" || !etapaCpf) && (
+                  <>
+                    {cpfNomeConvocado && (
+                      <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "12px", padding: "12px 16px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+                        <ShieldCheck size={18} color="#16a34a" style={{ flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontSize: "13px", fontWeight: "700", color: "#15803d" }}>CPF verificado com sucesso!</div>
+                          <div style={{ fontSize: "12px", color: "#166534" }}>Bem-vindo(a), {cpfNomeConvocado}. Complete seu cadastro abaixo.</div>
+                        </div>
+                      </div>
+                    )}
 
                 <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0d1117", marginBottom: "6px", textAlign: "center" }}>
                   {modo === "processo_seletivo" ? "Cadastro — Processo Seletivo" : "Crie sua conta"}
@@ -472,6 +589,8 @@ export default function AutoRegistro() {
                   Já tem acesso?{" "}
                   <a href="/login" style={{ color: "#5B2EFF", fontWeight: "600", textDecoration: "none" }}>Fazer login</a>
                 </p>
+                  </>
+                )}
               </>
             )}
           </div>
