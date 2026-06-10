@@ -7,12 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import ContratoInfoReadonly from "@/components/ContratoInfoReadonly";
 import { toast } from "sonner";
@@ -25,18 +20,16 @@ import {
   BookOpen,
   Plus,
   Trash2,
-  AlertTriangle,
+  Route,
   Building2,
   Users,
-  Route,
-  CheckCircle2,
   X,
 } from "lucide-react";
 
 interface EditAssessmentDialogProps {
   open: boolean;
   onClose: () => void;
-  pdi: any; // The assessment PDI object with competencias
+  pdi: any;
   trilhas: any[];
   programs: any[];
   mentores: any[];
@@ -56,7 +49,6 @@ export default function EditAssessmentDialog({
   isAdmin,
   onSuccess,
 }: EditAssessmentDialogProps) {
-  const [activeTab, setActiveTab] = useState("geral");
 
   // ===== General info state =====
   const [trilhaId, setTrilhaId] = useState(String(pdi.trilhaId));
@@ -92,9 +84,6 @@ export default function EditAssessmentDialog({
     { enabled: !!addCompTrilhaId }
   );
 
-  // All competencias for reference
-  const { data: allCompetencias = [] } = trpc.competencias.list.useQuery();
-
   // Filter out already-added competencias
   const availableComps = useMemo(() => {
     const existingIds = new Set(pdi.competencias?.map((c: any) => c.competenciaId) || []);
@@ -103,24 +92,18 @@ export default function EditAssessmentDialog({
 
   // Mutations
   const updatePdiMutation = trpc.assessment.atualizar.useMutation({
-    onSuccess: () => {
-      toast.success("Dados gerais do assessment atualizados!");
-      onSuccess();
-    },
+    onSuccess: () => { toast.success("Dados gerais atualizados!"); onSuccess(); },
     onError: (err) => toast.error(err.message),
   });
 
   const updateCompMutation = trpc.assessment.atualizarCompetencia.useMutation({
-    onSuccess: () => {
-      toast.success("Competência atualizada!");
-      onSuccess();
-    },
+    onSuccess: () => { toast.success("Competência atualizada!"); onSuccess(); },
     onError: (err) => toast.error(err.message),
   });
 
   const addCompMutation = trpc.assessment.adicionarCompetencia.useMutation({
     onSuccess: () => {
-      toast.success("Competência adicionada ao assessment!");
+      toast.success("Competência adicionada!");
       setShowAddComp(false);
       setSelectedNewCompId("");
       setNewCompPeso("obrigatoria");
@@ -132,20 +115,12 @@ export default function EditAssessmentDialog({
   });
 
   const removeCompMutation = trpc.assessment.removerCompetencia.useMutation({
-    onSuccess: () => {
-      toast.success("Competência removida do assessment!");
-      setDeleteConfirmId(null);
-      onSuccess();
-    },
+    onSuccess: () => { toast.success("Competência removida!"); setDeleteConfirmId(null); onSuccess(); },
     onError: (err) => toast.error(err.message),
   });
 
-  // Update nível mutation (reuse existing)
   const updateNivelMutation = trpc.jornada.updateNivel.useMutation({
-    onSuccess: () => {
-      toast.success("Níveis e metas atualizados!");
-      onSuccess();
-    },
+    onSuccess: () => { toast.success("Níveis e metas atualizados!"); onSuccess(); },
     onError: (err) => toast.error(err.message),
   });
 
@@ -155,7 +130,6 @@ export default function EditAssessmentDialog({
       toast.error("Data de início deve ser anterior à data de término");
       return;
     }
-
     updatePdiMutation.mutate({
       pdiId: pdi.id,
       trilhaId: parseInt(trilhaId),
@@ -172,16 +146,12 @@ export default function EditAssessmentDialog({
   const handleSaveCompetencia = (comp: any) => {
     const edit = editingComps.get(comp.id);
     if (!edit) return;
-
-    // Save micro dates and peso via atualizarCompetencia
     updateCompMutation.mutate({
       id: comp.id,
       peso: edit.peso,
       microInicio: edit.microInicio || null,
       microTermino: edit.microTermino || null,
     });
-
-    // Save níveis and metas via updateNivel
     updateNivelMutation.mutate({
       assessmentCompetenciaId: comp.id,
       nivelAtual: edit.nivelAtual ? parseFloat(edit.nivelAtual) : undefined,
@@ -190,13 +160,7 @@ export default function EditAssessmentDialog({
       metaFinal: edit.metaFinal ? parseFloat(edit.metaFinal) : undefined,
       justificativa: edit.justificativa || undefined,
     });
-
-    // Remove from editing state
-    setEditingComps(prev => {
-      const next = new Map(prev);
-      next.delete(comp.id);
-      return next;
-    });
+    setEditingComps(prev => { const next = new Map(prev); next.delete(comp.id); return next; });
   };
 
   const startEditComp = (comp: any) => {
@@ -217,15 +181,11 @@ export default function EditAssessmentDialog({
   };
 
   const cancelEditComp = (compId: number) => {
-    setEditingComps(prev => {
-      const next = new Map(prev);
-      next.delete(compId);
-      return next;
-    });
+    setEditingComps(prev => { const next = new Map(prev); next.delete(compId); return next; });
   };
 
   const handleAddCompetencia = () => {
-    if (!selectedNewCompId) {
+    if (!selectedNewCompId || selectedNewCompId === "__none") {
       toast.error("Selecione uma competência");
       return;
     }
@@ -254,10 +214,12 @@ export default function EditAssessmentDialog({
     );
   }, [trilhaId, consultorId, programId, turmaId, macroInicio, macroTermino, observacoes, pdi]);
 
+  const selectClass = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs";
+
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent
-        className="max-w-5xl max-h-[85vh] flex flex-col"
+        className="max-w-3xl max-h-[90vh] flex flex-col"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
@@ -267,102 +229,81 @@ export default function EditAssessmentDialog({
             Editar Assessment — {pdi.trilhaNome}
           </DialogTitle>
           <DialogDescription>
-            Edite todas as informações do assessment: dados gerais, competências, datas e metas
+            Edite os dados gerais e as competências do assessment
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="geral" className="flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5" />
-              Dados Gerais
-            </TabsTrigger>
-            <TabsTrigger value="competencias" className="flex items-center gap-1.5">
-              <Target className="h-3.5 w-3.5" />
-              Competências ({pdi.competencias?.length || 0})
-            </TabsTrigger>
-          </TabsList>
+        {/* Single scrollable body */}
+        <div className="flex-1 overflow-y-auto pr-1 space-y-6">
 
-          {/* ===== TAB: Dados Gerais ===== */}
-          <TabsContent value="geral" className="flex-1 overflow-y-auto mt-4 max-h-[calc(85vh-220px)]">
-            <div className="space-y-5 pr-1">
+          {/* ===== SEÇÃO 1: Dados Gerais ===== */}
+          <div>
+            <h3 className="font-semibold text-sm flex items-center gap-2 mb-3">
+              <BookOpen className="h-4 w-4 text-secondary" />
+              Dados Gerais
+            </h3>
+            <div className="space-y-4">
+
               {/* Trilha */}
-              <div className="space-y-2">
-                <Label className="font-medium flex items-center gap-1.5">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
                   <Route className="h-3.5 w-3.5 text-muted-foreground" />
                   Trilha
                 </Label>
-                <Select value={trilhaId} onValueChange={setTrilhaId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a trilha" />
-                  </SelectTrigger>
-                  <SelectContentNoPortal>
-                    {trilhas.map((t: any) => (
-                      <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                    ))}
-                  </SelectContentNoPortal>
-                </Select>
+                <select value={trilhaId} onChange={(e) => setTrilhaId(e.target.value)} className={selectClass}>
+                  {trilhas.map((t: any) => (
+                    <option key={t.id} value={String(t.id)}>{t.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Mentora */}
-              <div className="space-y-2">
-                <Label className="font-medium flex items-center gap-1.5">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
                   <User className="h-3.5 w-3.5 text-muted-foreground" />
                   Mentora Responsável
                 </Label>
-                <Select value={consultorId} onValueChange={setConsultorId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a mentora" />
-                  </SelectTrigger>
-                  <SelectContentNoPortal>
-                    {mentores.map((m: any) => (
-                      <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
-                    ))}
-                  </SelectContentNoPortal>
-                </Select>
+                <select value={consultorId} onChange={(e) => setConsultorId(e.target.value)} className={selectClass}>
+                  <option value="">Selecione a mentora</option>
+                  {mentores.map((m: any) => (
+                    <option key={m.id} value={String(m.id)}>{m.name}</option>
+                  ))}
+                </select>
               </div>
 
-              {/* Empresa e Turma */}
+              {/* Empresa e Turma (admin only) */}
               {isAdmin && (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="font-medium flex items-center gap-1.5">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium flex items-center gap-1.5">
                       <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                       Empresa
                     </Label>
-                    <Select value={programId} onValueChange={(v) => { setProgramId(v); setTurmaId(""); }}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a empresa" />
-                      </SelectTrigger>
-                      <SelectContentNoPortal>
-                        {programs.map((p: any) => (
-                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContentNoPortal>
-                    </Select>
+                    <select value={programId} onChange={(e) => { setProgramId(e.target.value); setTurmaId(""); }} className={selectClass}>
+                      <option value="">Selecione a empresa</option>
+                      {programs.map((p: any) => (
+                        <option key={p.id} value={String(p.id)}>{p.name}</option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="font-medium flex items-center gap-1.5">
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium flex items-center gap-1.5">
                       <Users className="h-3.5 w-3.5 text-muted-foreground" />
                       Turma
                     </Label>
-                    <Select value={turmaId} onValueChange={setTurmaId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a turma" />
-                      </SelectTrigger>
-                      <SelectContentNoPortal>
-                        {turmasList.map((t: any) => (
-                          <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                        ))}
-                      </SelectContentNoPortal>
-                    </Select>
+                    <select value={turmaId} onChange={(e) => setTurmaId(e.target.value)} className={selectClass}>
+                      <option value="">Selecione a turma</option>
+                      {turmasList.map((t: any) => (
+                        <option key={t.id} value={String(t.id)}>{t.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               )}
 
               {/* Macro Jornada */}
-              <div className="space-y-2">
-                <Label className="font-medium flex items-center gap-1.5">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                   Macro Jornada (Duração da Trilha)
                 </Label>
@@ -378,12 +319,12 @@ export default function EditAssessmentDialog({
                 </div>
               </div>
 
-              {/* Info do contrato - somente leitura (definido pelo admin) */}
+              {/* Contrato info */}
               <ContratoInfoReadonly alunoId={pdi.alunoId} />
 
               {/* Observações */}
-              <div className="space-y-2">
-                <Label className="font-medium">Observações</Label>
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Observações</Label>
                 <Textarea
                   value={observacoes}
                   onChange={(e) => setObservacoes(e.target.value)}
@@ -392,8 +333,8 @@ export default function EditAssessmentDialog({
                 />
               </div>
 
-              {/* Save button */}
-              <div className="flex justify-end pt-2">
+              {/* Salvar dados gerais */}
+              <div className="flex justify-end">
                 <Button
                   onClick={handleSaveGeneral}
                   disabled={updatePdiMutation.isPending || !hasGeneralChanges}
@@ -404,15 +345,17 @@ export default function EditAssessmentDialog({
                 </Button>
               </div>
             </div>
-          </TabsContent>
+          </div>
 
-          {/* ===== TAB: Competências ===== */}
-          <TabsContent value="competencias" className="flex-1 flex flex-col mt-4 min-h-0 max-h-[calc(85vh-220px)]">
-            {/* Add competencia button */}
+          <Separator />
+
+          {/* ===== SEÇÃO 2: Competências ===== */}
+          <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-muted-foreground">
-                {pdi.competencias?.length || 0} competências vinculadas
-              </p>
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Target className="h-4 w-4 text-secondary" />
+                Competências ({pdi.competencias?.length || 0})
+              </h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -424,9 +367,9 @@ export default function EditAssessmentDialog({
               </Button>
             </div>
 
-            {/* Add competencia form */}
+            {/* Formulário de nova competência */}
             {showAddComp && (
-              <Card className="mb-3 border-secondary/30 bg-secondary/5">
+              <Card className="mb-4 border-secondary/30 bg-secondary/5">
                 <CardContent className="p-4 space-y-3">
                   <h4 className="font-semibold text-sm flex items-center gap-2">
                     <Plus className="h-4 w-4 text-secondary" />
@@ -436,33 +379,32 @@ export default function EditAssessmentDialog({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs">Trilha (para filtrar)</Label>
-                      <Select value={addCompTrilhaId} onValueChange={setAddCompTrilhaId}>
-                        <SelectTrigger className="h-9">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContentNoPortal>
-                          {trilhas.map((t: any) => (
-                            <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                          ))}
-                        </SelectContentNoPortal>
-                      </Select>
+                      <select
+                        value={addCompTrilhaId}
+                        onChange={(e) => { setAddCompTrilhaId(e.target.value); setSelectedNewCompId(""); }}
+                        className={selectClass}
+                      >
+                        {trilhas.map((t: any) => (
+                          <option key={t.id} value={String(t.id)}>{t.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Competência</Label>
-                      <Select value={selectedNewCompId} onValueChange={setSelectedNewCompId}>
-                        <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContentNoPortal>
-                          {availableComps.length === 0 ? (
-                            <SelectItem value="__none" disabled>Nenhuma disponível</SelectItem>
-                          ) : (
-                            availableComps.map((c: any) => (
-                              <SelectItem key={c.id} value={String(c.id)}>{c.nome || c.name}</SelectItem>
-                            ))
-                          )}
-                        </SelectContentNoPortal>
-                      </Select>
+                      <select
+                        value={selectedNewCompId}
+                        onChange={(e) => setSelectedNewCompId(e.target.value)}
+                        className={selectClass}
+                      >
+                        <option value="">Selecione...</option>
+                        {availableComps.length === 0 ? (
+                          <option value="__none" disabled>Nenhuma disponível nesta trilha</option>
+                        ) : (
+                          availableComps.map((c: any) => (
+                            <option key={c.id} value={String(c.id)}>{c.nome || c.name}</option>
+                          ))
+                        )}
+                      </select>
                     </div>
                   </div>
 
@@ -472,7 +414,7 @@ export default function EditAssessmentDialog({
                       <select
                         value={newCompPeso}
                         onChange={(e) => setNewCompPeso(e.target.value as "obrigatoria" | "opcional")}
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        className={selectClass}
                       >
                         <option value="obrigatoria">Obrigatória</option>
                         <option value="opcional">Opcional</option>
@@ -520,291 +462,270 @@ export default function EditAssessmentDialog({
               </Card>
             )}
 
-            {/* Competencias list */}
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-              <div className="space-y-3">
-                {(pdi.competencias || []).map((comp: any) => {
-                  const isEditing = editingComps.has(comp.id);
-                  const edit = editingComps.get(comp.id);
-                  const isConfirmingDelete = deleteConfirmId === comp.id;
+            {/* Lista de competências */}
+            <div className="space-y-3">
+              {(pdi.competencias || []).map((comp: any) => {
+                const isEditing = editingComps.has(comp.id);
+                const edit = editingComps.get(comp.id);
+                const isConfirmingDelete = deleteConfirmId === comp.id;
 
-                  return (
-                    <Card key={comp.id} className="border-gray-200">
-                      <CardContent className="p-4">
-                        {isEditing && edit ? (
-                          /* ===== EDIT MODE ===== */
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold text-sm flex items-center gap-2">
-                                <Target className="h-4 w-4 text-secondary" />
-                                {comp.competenciaNome}
-                              </h4>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="sm" onClick={() => cancelEditComp(comp.id)} className="h-7 px-2">
-                                  <X className="h-3.5 w-3.5 mr-1" />
-                                  Cancelar
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleSaveCompetencia(comp)}
-                                  disabled={updateCompMutation.isPending || updateNivelMutation.isPending}
-                                  className="h-7 px-2 bg-secondary hover:bg-secondary/90"
-                                >
-                                  <Save className="h-3.5 w-3.5 mr-1" />
-                                  Salvar
-                                </Button>
-                              </div>
+                return (
+                  <Card key={comp.id} className="border-gray-200">
+                    <CardContent className="p-4">
+                      {isEditing && edit ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                              <Target className="h-4 w-4 text-secondary" />
+                              {comp.competenciaNome}
+                            </h4>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => cancelEditComp(comp.id)} className="h-7 px-2">
+                                <X className="h-3.5 w-3.5 mr-1" />
+                                Cancelar
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleSaveCompetencia(comp)}
+                                disabled={updateCompMutation.isPending || updateNivelMutation.isPending}
+                                className="h-7 px-2 bg-secondary hover:bg-secondary/90"
+                              >
+                                <Save className="h-3.5 w-3.5 mr-1" />
+                                Salvar
+                              </Button>
                             </div>
+                          </div>
 
-                            {/* Peso and Micro dates */}
-                            <div className="grid grid-cols-3 gap-3">
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Peso</Label>
-                                <select
-                                  value={edit.peso}
-                                  onChange={(e) => {
-                                    setEditingComps(prev => {
-                                      const next = new Map(prev);
-                                      next.set(comp.id, { ...edit, peso: e.target.value as "obrigatoria" | "opcional" });
-                                      return next;
-                                    });
-                                  }}
-                                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                                >
-                                  <option value="obrigatoria">Obrigatória</option>
-                                  <option value="opcional">Opcional</option>
-                                </select>
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Micro Jornada Início</Label>
-                                <Input
-                                  type="date"
-                                  value={edit.microInicio}
-                                  min={macroInicio}
-                                  max={macroTermino}
-                                  onChange={(e) => {
-                                    setEditingComps(prev => {
-                                      const next = new Map(prev);
-                                      next.set(comp.id, { ...edit, microInicio: e.target.value });
-                                      return next;
-                                    });
-                                  }}
-                                  className="h-9"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Micro Jornada Término</Label>
-                                <Input
-                                  type="date"
-                                  value={edit.microTermino}
-                                  min={edit.microInicio || macroInicio}
-                                  max={macroTermino}
-                                  onChange={(e) => {
-                                    setEditingComps(prev => {
-                                      const next = new Map(prev);
-                                      next.set(comp.id, { ...edit, microTermino: e.target.value });
-                                      return next;
-                                    });
-                                  }}
-                                  className="h-9"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Níveis and Metas */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Nível Identificado (%)</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={edit.nivelAtual}
-                                  onChange={(e) => {
-                                    setEditingComps(prev => {
-                                      const next = new Map(prev);
-                                      next.set(comp.id, { ...edit, nivelAtual: e.target.value });
-                                      return next;
-                                    });
-                                  }}
-                                  className="h-9"
-                                  placeholder="0-100"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Evolução no Período 1 (%)</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={edit.metaCiclo1}
-                                  onChange={(e) => {
-                                    setEditingComps(prev => {
-                                      const next = new Map(prev);
-                                      next.set(comp.id, { ...edit, metaCiclo1: e.target.value });
-                                      return next;
-                                    });
-                                  }}
-                                  className="h-9"
-                                  placeholder="0-100"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Evolução no Período 2 (%)</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={edit.metaCiclo2}
-                                  onChange={(e) => {
-                                    setEditingComps(prev => {
-                                      const next = new Map(prev);
-                                      next.set(comp.id, { ...edit, metaCiclo2: e.target.value });
-                                      return next;
-                                    });
-                                  }}
-                                  className="h-9"
-                                  placeholder="0-100"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Meta Final (%)</Label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  max="100"
-                                  value={edit.metaFinal}
-                                  onChange={(e) => {
-                                    setEditingComps(prev => {
-                                      const next = new Map(prev);
-                                      next.set(comp.id, { ...edit, metaFinal: e.target.value });
-                                      return next;
-                                    });
-                                  }}
-                                  className="h-9"
-                                  placeholder="0-100"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Justificativa */}
+                          <div className="grid grid-cols-3 gap-3">
                             <div className="space-y-1">
-                              <Label className="text-xs text-muted-foreground">Justificativa da Mentora</Label>
-                              <Textarea
-                                value={edit.justificativa}
+                              <Label className="text-xs text-muted-foreground">Peso</Label>
+                              <select
+                                value={edit.peso}
                                 onChange={(e) => {
                                   setEditingComps(prev => {
                                     const next = new Map(prev);
-                                    next.set(comp.id, { ...edit, justificativa: e.target.value });
+                                    next.set(comp.id, { ...edit, peso: e.target.value as "obrigatoria" | "opcional" });
                                     return next;
                                   });
                                 }}
-                                placeholder="Justificativa para a meta definida..."
-                                className="h-16 resize-none text-sm"
+                                className={selectClass}
+                              >
+                                <option value="obrigatoria">Obrigatória</option>
+                                <option value="opcional">Opcional</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Micro Jornada Início</Label>
+                              <Input
+                                type="date"
+                                value={edit.microInicio}
+                                min={macroInicio}
+                                max={macroTermino}
+                                onChange={(e) => {
+                                  setEditingComps(prev => {
+                                    const next = new Map(prev);
+                                    next.set(comp.id, { ...edit, microInicio: e.target.value });
+                                    return next;
+                                  });
+                                }}
+                                className="h-9"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Micro Jornada Término</Label>
+                              <Input
+                                type="date"
+                                value={edit.microTermino}
+                                min={edit.microInicio || macroInicio}
+                                max={macroTermino}
+                                onChange={(e) => {
+                                  setEditingComps(prev => {
+                                    const next = new Map(prev);
+                                    next.set(comp.id, { ...edit, microTermino: e.target.value });
+                                    return next;
+                                  });
+                                }}
+                                className="h-9"
                               />
                             </div>
                           </div>
-                        ) : (
-                          /* ===== VIEW MODE ===== */
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold text-sm">{comp.competenciaNome}</h4>
-                                <Badge variant={comp.peso === "obrigatoria" ? "default" : "outline"} className="text-[10px]">
-                                  {comp.peso === "obrigatoria" ? "Obrigatória" : "Opcional"}
-                                </Badge>
-                                {comp.nivelAutomatico && (
-                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-300 text-blue-600 bg-blue-50">
-                                    Automático
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="sm" onClick={() => startEditComp(comp)} className="h-7 w-7 p-0">
-                                  <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                                {isConfirmingDelete ? (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-red-600 font-medium">Confirmar?</span>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => handleRemoveCompetencia(comp.id)}
-                                      disabled={removeCompMutation.isPending}
-                                      className="h-7 px-2 text-xs"
-                                    >
-                                      {removeCompMutation.isPending ? "..." : "Sim"}
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => setDeleteConfirmId(null)} className="h-7 px-2 text-xs">
-                                      Não
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setDeleteConfirmId(comp.id)}
-                                    className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
 
-                            {/* Info grid */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-xs">
-                              <div>
-                                <span className="text-muted-foreground">Micro Início:</span>{" "}
-                                <span className="font-medium">{formatDateDisplay(comp.microInicio)}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Micro Término:</span>{" "}
-                                <span className="font-medium">{formatDateDisplay(comp.microTermino)}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Nível Identificado:</span>{" "}
-                                <span className="font-medium">{comp.nivelAtualEfetivo ?? comp.nivelAtual ?? "—"}%</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Meta Final:</span>{" "}
-                                <span className="font-medium">{comp.metaFinal ?? "—"}%</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Meta C1:</span>{" "}
-                                <span className="font-medium">{comp.metaCiclo1 ?? "—"}%</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Meta C2:</span>{" "}
-                                <span className="font-medium">{comp.metaCiclo2 ?? "—"}%</span>
-                              </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Nível Identificado (%)</Label>
+                              <Input
+                                type="number" min="0" max="100"
+                                value={edit.nivelAtual}
+                                onChange={(e) => {
+                                  setEditingComps(prev => {
+                                    const next = new Map(prev);
+                                    next.set(comp.id, { ...edit, nivelAtual: e.target.value });
+                                    return next;
+                                  });
+                                }}
+                                className="h-9" placeholder="0-100"
+                              />
                             </div>
-
-                            {comp.justificativa && (
-                              <p className="text-xs text-muted-foreground italic border-l-2 border-secondary/30 pl-2 mt-1">
-                                {comp.justificativa}
-                              </p>
-                            )}
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Evolução Período 1 (%)</Label>
+                              <Input
+                                type="number" min="0" max="100"
+                                value={edit.metaCiclo1}
+                                onChange={(e) => {
+                                  setEditingComps(prev => {
+                                    const next = new Map(prev);
+                                    next.set(comp.id, { ...edit, metaCiclo1: e.target.value });
+                                    return next;
+                                  });
+                                }}
+                                className="h-9" placeholder="0-100"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Evolução Período 2 (%)</Label>
+                              <Input
+                                type="number" min="0" max="100"
+                                value={edit.metaCiclo2}
+                                onChange={(e) => {
+                                  setEditingComps(prev => {
+                                    const next = new Map(prev);
+                                    next.set(comp.id, { ...edit, metaCiclo2: e.target.value });
+                                    return next;
+                                  });
+                                }}
+                                className="h-9" placeholder="0-100"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Meta Final (%)</Label>
+                              <Input
+                                type="number" min="0" max="100"
+                                value={edit.metaFinal}
+                                onChange={(e) => {
+                                  setEditingComps(prev => {
+                                    const next = new Map(prev);
+                                    next.set(comp.id, { ...edit, metaFinal: e.target.value });
+                                    return next;
+                                  });
+                                }}
+                                className="h-9" placeholder="0-100"
+                              />
+                            </div>
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
 
-                {(!pdi.competencias || pdi.competencias.length === 0) && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Target className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    <p className="text-sm">Nenhuma competência vinculada</p>
-                    <p className="text-xs mt-1">Clique em "Adicionar Competência" para começar</p>
-                  </div>
-                )}
-              </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Justificativa da Mentora</Label>
+                            <Textarea
+                              value={edit.justificativa}
+                              onChange={(e) => {
+                                setEditingComps(prev => {
+                                  const next = new Map(prev);
+                                  next.set(comp.id, { ...edit, justificativa: e.target.value });
+                                  return next;
+                                });
+                              }}
+                              placeholder="Justificativa para a meta definida..."
+                              className="h-16 resize-none text-sm"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-sm">{comp.competenciaNome}</h4>
+                              <Badge variant={comp.peso === "obrigatoria" ? "default" : "outline"} className="text-[10px]">
+                                {comp.peso === "obrigatoria" ? "Obrigatória" : "Opcional"}
+                              </Badge>
+                              {comp.nivelAutomatico && (
+                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-300 text-blue-600 bg-blue-50">
+                                  Automático
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => startEditComp(comp)} className="h-7 w-7 p-0">
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              {isConfirmingDelete ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-red-600 font-medium">Confirmar?</span>
+                                  <Button
+                                    variant="destructive" size="sm"
+                                    onClick={() => handleRemoveCompetencia(comp.id)}
+                                    disabled={removeCompMutation.isPending}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    {removeCompMutation.isPending ? "..." : "Sim"}
+                                  </Button>
+                                  <Button variant="outline" size="sm" onClick={() => setDeleteConfirmId(null)} className="h-7 px-2 text-xs">
+                                    Não
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button
+                                  variant="ghost" size="sm"
+                                  onClick={() => setDeleteConfirmId(comp.id)}
+                                  className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Micro Início:</span>{" "}
+                              <span className="font-medium">{formatDateDisplay(comp.microInicio)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Micro Término:</span>{" "}
+                              <span className="font-medium">{formatDateDisplay(comp.microTermino)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Nível Identificado:</span>{" "}
+                              <span className="font-medium">{comp.nivelAtualEfetivo ?? comp.nivelAtual ?? "—"}%</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Meta Final:</span>{" "}
+                              <span className="font-medium">{comp.metaFinal ?? "—"}%</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Meta C1:</span>{" "}
+                              <span className="font-medium">{comp.metaCiclo1 ?? "—"}%</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Meta C2:</span>{" "}
+                              <span className="font-medium">{comp.metaCiclo2 ?? "—"}%</span>
+                            </div>
+                          </div>
+
+                          {comp.justificativa && (
+                            <p className="text-xs text-muted-foreground italic border-l-2 border-secondary/30 pl-2 mt-1">
+                              {comp.justificativa}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+
+              {(!pdi.competencias || pdi.competencias.length === 0) && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Target className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">Nenhuma competência vinculada</p>
+                  <p className="text-xs mt-1">Clique em "Adicionar Competência" para começar</p>
+                </div>
+              )}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
 
-        <DialogFooter className="mt-2">
+        </div>
+
+        <DialogFooter className="mt-2 pt-2 border-t">
           <Button variant="outline" onClick={onClose}>
             Fechar
           </Button>
