@@ -7008,7 +7008,9 @@ export async function getJornadaCompleta(alunoId: number) {
       .where(and(
         eq(alunoAtividadeProgresso.alunoId, alunoId),
         eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtrib.id),
-        eq(alunoAtividadeProgresso.status, 'aprovada')
+        // Incluir 'concluida' além de 'aprovada': atividades sem avaliação ficam como 'concluida'
+        // e atividades com avaliação ficam como 'concluida' antes de ir para a prova
+        sql`${alunoAtividadeProgresso.status} IN ('aprovada', 'concluida')`
       ));
     const [andResult] = await db.select({ count: sql<number>`COUNT(*)` })
       .from(alunoAtividadeProgresso)
