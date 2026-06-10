@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,8 +15,8 @@ function getNumeroQuery(search: string, chave: string) {
 
 export default function AlunoAtividade() {
   const [, setLocation] = useLocation();
-
-  const search = typeof window !== "undefined" ? window.location.search : "";
+  const searchString = useSearch(); // reativo a mudanças de rota (fix: botão Prosseguir)
+  const search = searchString ? `?${searchString}` : (typeof window !== "undefined" ? window.location.search : "");
   const cursoId = getNumeroQuery(search, "cursoId");
   const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
 

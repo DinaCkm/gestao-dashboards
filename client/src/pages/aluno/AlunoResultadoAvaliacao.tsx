@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle } from "lucide-react";
@@ -11,8 +10,11 @@ function getParam(search: string, chave: string) {
 }
 
 export default function AlunoResultadoAvaliacao() {
-  const [location, setLocation] = useLocation();
-  const [search] = useState(() => location.split("?")[1] ?? "");
+  const [, setLocation] = useLocation();
+  // Fix: useLocation() no wouter retorna apenas o pathname, sem a query string.
+  // useSearch() retorna a query string reativa corretamente.
+  const searchString = useSearch();
+  const search = searchString || (typeof window !== "undefined" ? window.location.search.replace(/^\?/, "") : "");
 
   const cursoId = getParam(search, "cursoId");
   const cursoAtribuidoId = getParam(search, "cursoAtribuidoId");

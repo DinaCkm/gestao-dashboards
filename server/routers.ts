@@ -14315,9 +14315,10 @@ Responda APENAS em JSON com o formato especificado.`
                   dataConclusao: new Date(),
                 })
                 .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
-              // Sincronizar student_performance para refletir conclusão nos indicadores de Competências e Avaliações
-              await db.syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
             }
+            // Bug 4 fix: Sincronizar student_performance a cada atividade aprovada (não só na conclusão total)
+            // Isso garante que o Portal do Aluno mostre o progresso correto em tempo real
+            await db.syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
           }
 
           return { success: true, aprovadaAutomaticamente: !temAvaliacao };
@@ -14575,7 +14576,10 @@ Responda APENAS em JSON com o formato especificado.`
                 status: "concluido",
               })
               .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
-            // Sincronizar student_performance para refletir conclusão nos indicadores de Competências e Avaliações
+          }
+          // Bug 4 fix: Sincronizar student_performance a cada submissão aprovada (não só na conclusão total)
+          // Isso garante que o Portal do Aluno mostre o progresso correto em tempo real
+          if (aprovado) {
             await db.syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
           }
 
