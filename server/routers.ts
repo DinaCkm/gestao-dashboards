@@ -14522,6 +14522,9 @@ Responda APENAS em JSON com o formato especificado.`
 
           // Verificar se atingiu o limite de 3 tentativas
           const bloqueado = tentativasAtuais >= 3 && !aprovado;
+          // Quando reprovado (mas ainda tem tentativas), manter avaliacaoLiberada = 1
+          // para que o aluno possa refazer a prova sem precisar retornar ao conteudo
+          const novoAvaliacaoLiberada = (!bloqueado && !aprovado) ? 1 : progresso.avaliacaoLiberada;
 
           await database
             .update(alunoAtividadeProgresso)
@@ -14529,6 +14532,7 @@ Responda APENAS em JSON com o formato especificado.`
               notaFinal: notaPersistida,
               status: bloqueado ? "bloqueada" : (aprovado ? "aprovada" : "reprovada"),
               tentativas: tentativasAtuais,
+              avaliacaoLiberada: novoAvaliacaoLiberada,
               updatedAt: new Date(),
             })
             .where(eq(alunoAtividadeProgresso.id, progresso.id));
