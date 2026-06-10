@@ -104,6 +104,7 @@ function Router() {
       <Route path={"/candidato-ps"} component={PortalCandidatoPS} />
       <Route path={"/"} component={Home} />
       <Route path={"/upload"} component={Upload} />
+      <Route path={"/admin"}>{() => { window.location.replace("/dashboard/admin"); return null; }}</Route>
       <Route path={"/dashboard/admin"} component={AdminDashboard} />
       <Route path={"/dashboard/gerencial"} component={ManagerDashboard} />
       <Route path={"/dashboard/individual"} component={IndividualDashboard} />
