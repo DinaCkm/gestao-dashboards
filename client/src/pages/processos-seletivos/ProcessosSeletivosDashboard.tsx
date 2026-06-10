@@ -362,12 +362,14 @@ function ProcessosSeletivosContent() {
   const handleCreateCandidato = (event: SimpleFormEvent) => {
     event.preventDefault();
     if (!selectedProcessoId) return;
+    const cpfDigits = candidatoForm.cpf.replace(/\D/g, '');
+    const emailFinal = candidatoForm.email.trim() || `cpf.${cpfDigits}@sem-email.banrisul`;
     criarCandidato.mutate({
       processoId: selectedProcessoId,
       nome: candidatoForm.nome,
-      email: candidatoForm.email,
+      email: emailFinal,
       telefone: candidatoForm.telefone || undefined,
-      cpf: candidatoForm.cpf ? candidatoForm.cpf.replace(/\D/g, '') : undefined,
+      cpf: cpfDigits || undefined,
       regiaoId: candidatoForm.regiaoId ? Number(candidatoForm.regiaoId) : null,
       vagaId: candidatoForm.vagaId === "none" ? null : Number(candidatoForm.vagaId),
     });
@@ -711,8 +713,8 @@ function ProcessosSeletivosContent() {
                 <CardContent>
                   <form className="grid gap-2" onSubmit={handleCreateCandidato}>
                     <Input placeholder="Nome" value={candidatoForm.nome} onChange={(event) => setCandidatoForm((form) => ({ ...form, nome: event.target.value }))} required />
-                    <Input placeholder="Email" type="email" value={candidatoForm.email} onChange={(event) => setCandidatoForm((form) => ({ ...form, email: event.target.value }))} required />
-                    <Input placeholder="CPF (somente números)" value={candidatoForm.cpf} onChange={(event) => setCandidatoForm((form) => ({ ...form, cpf: event.target.value }))} />
+                    <Input placeholder="CPF (somente números) *" value={candidatoForm.cpf} onChange={(event) => setCandidatoForm((form) => ({ ...form, cpf: event.target.value }))} required />
+                    <Input placeholder="Email (opcional — candidato preencherá ao se registrar)" type="email" value={candidatoForm.email} onChange={(event) => setCandidatoForm((form) => ({ ...form, email: event.target.value }))} />
                     <Input placeholder="Telefone" value={candidatoForm.telefone} onChange={(event) => setCandidatoForm((form) => ({ ...form, telefone: event.target.value }))} />
                     <Select value={candidatoForm.regiaoId} onValueChange={(value) => setCandidatoForm((form) => ({ ...form, regiaoId: value }))}>
                       <SelectTrigger><SelectValue placeholder="Regiao" /></SelectTrigger>
