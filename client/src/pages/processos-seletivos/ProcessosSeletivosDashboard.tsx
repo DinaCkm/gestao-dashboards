@@ -48,7 +48,7 @@ function ProcessosSeletivosContent() {
   const [processoForm, setProcessoForm] = useState(emptyProcesso);
   const [vagaForm, setVagaForm] = useState({ titulo: "", codigo: "", quantidadeVagas: "1" });
   const [regiaoForm, setRegiaoForm] = useState({ nome: "", codigo: "", vagasPrevistas: "0" });
-  const [candidatoForm, setCandidatoForm] = useState({ nome: "", email: "", telefone: "", regiaoId: "", vagaId: "none" });
+  const [candidatoForm, setCandidatoForm] = useState({ nome: "", email: "", telefone: "", cpf: "", regiaoId: "", vagaId: "none" });
   const [importacaoTexto, setImportacaoTexto] = useState("");
   const [importacaoForm, setImportacaoForm] = useState({ regiaoId: "", vagaId: "none" });
   const [agendaForm, setAgendaForm] = useState({
@@ -192,7 +192,7 @@ function ProcessosSeletivosContent() {
   const criarCandidato = trpc.processosSeletivos.criarCandidato.useMutation({
     onSuccess: async () => {
       toast.success("Candidato cadastrado.");
-      setCandidatoForm({ nome: "", email: "", telefone: "", regiaoId: "", vagaId: "none" });
+      setCandidatoForm({ nome: "", email: "", telefone: "", cpf: "", regiaoId: "", vagaId: "none" });
       await invalidateProcesso();
     },
     onError: (err) => toast.error(err.message),
@@ -361,13 +361,14 @@ function ProcessosSeletivosContent() {
 
   const handleCreateCandidato = (event: SimpleFormEvent) => {
     event.preventDefault();
-    if (!selectedProcessoId || !candidatoForm.regiaoId) return;
+    if (!selectedProcessoId) return;
     criarCandidato.mutate({
       processoId: selectedProcessoId,
       nome: candidatoForm.nome,
       email: candidatoForm.email,
       telefone: candidatoForm.telefone || undefined,
-      regiaoId: Number(candidatoForm.regiaoId),
+      cpf: candidatoForm.cpf ? candidatoForm.cpf.replace(/\D/g, '') : undefined,
+      regiaoId: candidatoForm.regiaoId ? Number(candidatoForm.regiaoId) : null,
       vagaId: candidatoForm.vagaId === "none" ? null : Number(candidatoForm.vagaId),
     });
   };
@@ -711,6 +712,7 @@ function ProcessosSeletivosContent() {
                   <form className="grid gap-2" onSubmit={handleCreateCandidato}>
                     <Input placeholder="Nome" value={candidatoForm.nome} onChange={(event) => setCandidatoForm((form) => ({ ...form, nome: event.target.value }))} required />
                     <Input placeholder="Email" type="email" value={candidatoForm.email} onChange={(event) => setCandidatoForm((form) => ({ ...form, email: event.target.value }))} required />
+                    <Input placeholder="CPF (somente números)" value={candidatoForm.cpf} onChange={(event) => setCandidatoForm((form) => ({ ...form, cpf: event.target.value }))} />
                     <Input placeholder="Telefone" value={candidatoForm.telefone} onChange={(event) => setCandidatoForm((form) => ({ ...form, telefone: event.target.value }))} />
                     <Select value={candidatoForm.regiaoId} onValueChange={(value) => setCandidatoForm((form) => ({ ...form, regiaoId: value }))}>
                       <SelectTrigger><SelectValue placeholder="Regiao" /></SelectTrigger>
@@ -725,7 +727,7 @@ function ProcessosSeletivosContent() {
                         {vagas.map((vaga) => <SelectItem key={vaga.id} value={String(vaga.id)}>{vaga.titulo}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                    <Button type="submit" disabled={criarCandidato.isPending || regioes.length === 0}>
+                    <Button type="submit" disabled={criarCandidato.isPending}>
                       <UserPlus className="mr-2 h-4 w-4" />
                       Cadastrar
                     </Button>
