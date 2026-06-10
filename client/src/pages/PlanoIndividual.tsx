@@ -1019,7 +1019,7 @@ function PlanoContent() {
                       <BookOpen className="h-5 w-5 text-primary" />
                       <CardTitle className="text-base">Competências do Plano</CardTitle>
                     </div>
-                    {isAdmin && selectedAluno && (
+                    {(isAdmin || isMentor) && selectedAluno && (
                       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                         <DialogTrigger asChild>
                           <Button size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Adicionar</Button>
@@ -1085,7 +1085,7 @@ function PlanoContent() {
                                 <TableHead className="text-xs">Competência</TableHead>
                                 <TableHead className="text-xs w-32">Status</TableHead>
                                 <TableHead className="text-xs w-24">Meta</TableHead>
-                                {isAdmin && <TableHead className="text-xs w-20">Ações</TableHead>}
+                                {(isAdmin || isMentor) && <TableHead className="text-xs w-20">Ações</TableHead>}
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1096,12 +1096,12 @@ function PlanoContent() {
                                     {item.competenciaCodigo && <p className="text-xs text-muted-foreground">{item.competenciaCodigo}</p>}
                                   </TableCell>
                                   <TableCell>
-                                    {isAdmin ? (
+                                    {(isAdmin || isMentor) ? (
                                       <button onClick={() => handleToggleStatus(item.id, item.status)}>{getStatusBadge(item.status)}</button>
                                     ) : getStatusBadge(item.status)}
                                   </TableCell>
                                   <TableCell className="text-sm">&ge; {item.metaNota}</TableCell>
-                                  {isAdmin && (
+                                  {(isAdmin || isMentor) && (
                                     <TableCell>
                                       <Button variant="ghost" size="sm" onClick={() => handleRemove(item.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0">
                                         <Trash2 className="w-4 h-4" />
