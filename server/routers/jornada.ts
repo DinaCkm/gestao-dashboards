@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from '@trpc/server';
 import { z } from "zod";
-import { eq } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { 
   getAssessmentPdiByAluno,
   getAssessmentCompetenciasByPdi,
@@ -140,6 +140,43 @@ export const jornadaRouter = router({
           }
         }
 
+        // 7b. Fallback: para competências sem student_performance, buscar progresso
+        // diretamente de aluno_atividade_progresso (atividades concluídas/aprovadas)
+        const cursosAtribAluno = await db.select({
+          id: schema.alunoCursoAtribuido.id,
+          cursoId: schema.alunoCursoAtribuido.cursoId,
+          competenciaId: schema.alunoCursoAtribuido.competenciaId,
+        }).from(schema.alunoCursoAtribuido)
+          .where(eq(schema.alunoCursoAtribuido.alunoId, aluno.id));
+
+        // Mapa competenciaId -> dados de progresso da plataforma
+        const plataformaProgMap = new Map<number, { total: number; concluidas: number; emAndamento: number }>();
+        for (const ca of cursosAtribAluno) {
+          const [totalRes] = await db.select({ count: sql<number>`COUNT(*)` })
+            .from(schema.atividadesCurso)
+            .where(and(eq(schema.atividadesCurso.cursoId, ca.cursoId), eq(schema.atividadesCurso.isActive, 1)));
+          const [conclRes] = await db.select({ count: sql<number>`COUNT(*)` })
+            .from(schema.alunoAtividadeProgresso)
+            .where(and(
+              eq(schema.alunoAtividadeProgresso.alunoId, aluno.id),
+              eq(schema.alunoAtividadeProgresso.cursoAtribuidoId, ca.id),
+              sql`${schema.alunoAtividadeProgresso.status} IN ('aprovada', 'concluida')`
+            ));
+          const [andRes] = await db.select({ count: sql<number>`COUNT(*)` })
+            .from(schema.alunoAtividadeProgresso)
+            .where(and(
+              eq(schema.alunoAtividadeProgresso.alunoId, aluno.id),
+              eq(schema.alunoAtividadeProgresso.cursoAtribuidoId, ca.id),
+              eq(schema.alunoAtividadeProgresso.status, 'em_andamento')
+            ));
+          const total = Number(totalRes?.count || 0);
+          const concluidas = Number(conclRes?.count || 0);
+          const emAndamento = Number(andRes?.count || 0);
+          if (total > 0) {
+            plataformaProgMap.set(ca.competenciaId, { total, concluidas, emAndamento });
+          }
+        }
+
         // 8. Montar macroJornadas com dados de performance enriquecidos
         const macroJornadas = pdis.map((pdi: any) => {
           const trilha = trilhasMap.get(pdi.trilhaId);
@@ -178,6 +215,14 @@ export const jornadaRouter = router({
                 perfComp = studentPerf.find(p => p.competenciaId === comp.competenciaId);
               }
 
+              // Fallback: se ainda não há student_performance, usar dados da plataforma
+              const platProg = plataformaProgMap.get(comp.competenciaId);
+              const aulasDisp = perfComp?.aulasDisponiveis ?? (platProg?.total ?? 0);
+              const aulasConc = perfComp?.aulasConcluidas ?? (platProg?.concluidas ?? 0);
+              const aulasAnd = perfComp?.aulasEmAndamento ?? (platProg?.emAndamento ?? 0);
+              const progressoCalc = aulasDisp > 0 ? Math.round((aulasConc / aulasDisp) * 100) : 0;
+              const progressoFinal = perfComp?.progressoTotal ?? progressoCalc;
+
               return {
                 id: comp.id,
                 competenciaId: comp.competenciaId,
@@ -189,11 +234,11 @@ export const jornadaRouter = router({
                 metaFinal: comp.metaFinal,
                 metaCiclo1: comp.metaCiclo1 ?? null,
                 metaCiclo2: comp.metaCiclo2 ?? null,
-                // Dados de student_performance (upload Scaffold)
-                aulasDisponiveis: perfComp?.aulasDisponiveis ?? 0,
-                aulasConcluidas: perfComp?.aulasConcluidas ?? 0,
-                aulasEmAndamento: perfComp?.aulasEmAndamento ?? 0,
-                progressoTotal: perfComp?.progressoTotal ?? 0,
+                // Dados de progresso (student_performance ou fallback da plataforma)
+                aulasDisponiveis: aulasDisp,
+                aulasConcluidas: aulasConc,
+                aulasEmAndamento: aulasAnd,
+                progressoTotal: progressoFinal,
                 notaPlataforma: perfComp?.mediaAvaliacoesFinais 
                   ? Number(perfComp.mediaAvaliacoesFinais) * 10 
                   : (perfComp?.mediaAvaliacoesRespondidas 
