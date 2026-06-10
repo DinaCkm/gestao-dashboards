@@ -4,6 +4,7 @@ import ProcessoStatusBadge from "@/components/processos-seletivos/ProcessoStatus
 import ResumoProcessoCards from "@/components/processos-seletivos/ResumoProcessoCards";
 import TabelaCandidatosProcesso from "@/components/processos-seletivos/TabelaCandidatosProcesso";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,6 +65,8 @@ function ProcessosSeletivosContent() {
   });
   const [modoManual, setModoManual] = useState(true);
   const [linkCopiado, setLinkCopiado] = useState<number | null>(null);
+  const [inativarDialog, setInativarDialog] = useState<{ id: number; nome: string } | null>(null);
+  const [comunicadoInativar, setComunicadoInativar] = useState("Identificamos que fez o cadastro no processo, porém o seu nome não está entre os convocados nesta etapa. Estamos cancelando o seu agendamento.");
   const [comunicadoHtml, setComunicadoHtml] = useState("");
 
   // Aba ativa — suporta deep-link via ?tab=comunicado
@@ -946,7 +949,11 @@ function ProcessosSeletivosContent() {
                   onConcluirTeste={(id) => concluirTeste.mutate({ candidatoId: id })}
                   onAprovar={(id) => registrarResultado.mutate({ candidatoId: id, resultado: "aprovado" })}
                   onMoverRegiao={(candidatoId, novaRegiaoId) => moverCandidato.mutate({ candidatoId, novaRegiaoId })}
-                  onInativar={(id) => inativarCandidato.mutate({ candidatoId: id })}
+                  onInativar={(id) => {
+                    const cand = candidatos.find((c: any) => c.id === id);
+                    setComunicadoInativar("Identificamos que fez o cadastro no processo, porém o seu nome não está entre os convocados nesta etapa. Estamos cancelando o seu agendamento.");
+                    setInativarDialog({ id, nome: cand?.nome ?? "candidato" });
+                  }}
                   onReagendar={(candidatoId, novoSlotId) => reagendarEntrevista.mutate({ candidatoId, novoSlotId })}
                   onRefetch={invalidateProcesso}
                 />
@@ -1187,6 +1194,44 @@ function ProcessosSeletivosContent() {
           </CardContent>
         </Card>
       )}
+    {/* Dialog de comunicado ao inativar candidato */}
+    <Dialog open={!!inativarDialog} onOpenChange={(open) => { if (!open) setInativarDialog(null); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Inativar candidato</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Deseja enviar um e-mail de comunicado para <strong>{inativarDialog?.nome}</strong> antes de inativá-lo?
+          </p>
+          <Textarea
+            value={comunicadoInativar}
+            onChange={(e) => setComunicadoInativar(e.target.value)}
+            rows={4}
+            placeholder="Mensagem de comunicado (opcional)"
+          />
+          <p className="text-xs text-muted-foreground">Deixe em branco para inativar sem enviar e-mail.</p>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setInativarDialog(null)}>Cancelar</Button>
+          <Button
+            variant="destructive"
+            disabled={inativarCandidato.isPending}
+            onClick={() => {
+              if (inativarDialog) {
+                inativarCandidato.mutate({
+                  candidatoId: inativarDialog.id,
+                  comunicado: comunicadoInativar.trim() || undefined,
+                });
+                setInativarDialog(null);
+              }
+            }}
+          >
+            {inativarCandidato.isPending ? "Inativando..." : "Confirmar inativação"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </div>
   );
 }

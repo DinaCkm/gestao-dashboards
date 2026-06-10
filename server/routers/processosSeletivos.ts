@@ -598,13 +598,40 @@ export const processosSeletivosRouter = router({
     }),
 
   inativarCandidato: protectedProcedure
-    .input(z.object({ candidatoId: z.number() }))
+    .input(z.object({ candidatoId: z.number(), comunicado: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const database = await requireDatabase();
-      const [candidato] = await database.select({ id: processoCandidatos.id, processoId: processoCandidatos.processoId, nome: processoCandidatos.nome })
+      const [candidato] = await database.select({
+        id: processoCandidatos.id,
+        processoId: processoCandidatos.processoId,
+        nome: processoCandidatos.nome,
+        email: processoCandidatos.email,
+      })
         .from(processoCandidatos).where(eq(processoCandidatos.id, input.candidatoId)).limit(1);
       if (!candidato) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
       await ensureProcessAccess(database, ctx.user, candidato.processoId);
+
+      // Enviar e-mail de comunicado antes de inativar (se fornecido e candidato tem e-mail)
+      if (input.comunicado && candidato.email) {
+        try {
+          const htmlComunicado = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+              <p style="font-size: 15px; color: #333;">Olá, <strong>${candidato.nome}</strong>,</p>
+              <p style="font-size: 15px; color: #333;">${input.comunicado}</p>
+              <p style="font-size: 13px; color: #888; margin-top: 32px;">Atenciosamente,<br/>Equipe Ecossistema do Bem</p>
+            </div>
+          `;
+          await sendEmail({
+            to: candidato.email,
+            subject: "Informação sobre sua participação no processo seletivo",
+            html: htmlComunicado,
+            text: input.comunicado,
+          });
+        } catch (emailErr) {
+          console.error('[inativarCandidato] Erro ao enviar e-mail de comunicado:', emailErr);
+        }
+      }
+
       await database.update(processoCandidatos).set({ statusCadastro: "inativo" }).where(eq(processoCandidatos.id, input.candidatoId));
       // Liberar slots de entrevista reservados para este candidato
       const entrevistas = await database
