@@ -1857,7 +1857,7 @@ export const processoEntrevistas = mysqlTable("processo_entrevistas", {
   id: int("id").autoincrement().primaryKey(),
   processoId: int("processoId").notNull(),
   candidatoId: int("candidatoId").notNull(),
-  agendaSlotId: int("agendaSlotId").notNull(),
+  agendaSlotId: int("agendaSlotId"),
   entrevistadorNome: varchar("entrevistadorNome", { length: 255 }),
   linkEntrevista: varchar("linkEntrevista", { length: 500 }),
   status: mysqlEnum("status", ["agendada", "realizada", "cancelada", "reagendada"]).default("agendada").notNull(),

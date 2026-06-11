@@ -2524,13 +2524,33 @@ export const processosSeletivosRouter = router({
       if (ext === 'txt') {
         transcricaoTexto = buffer.toString('utf-8');
       } else if (ext === 'pdf') {
-        const pdfParse = (await import('pdf-parse')).default;
-        const parsed = await pdfParse(buffer);
-        transcricaoTexto = parsed.text;
+        try {
+          const pdfParse = (await import('pdf-parse')).default;
+          const parsed = await pdfParse(buffer);
+          transcricaoTexto = parsed.text;
+        } catch {
+          // fallback: tentar extrair texto bruto do PDF
+          transcricaoTexto = buffer.toString('latin1').replace(/[^\x20-\x7E\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
+        }
       } else if (ext === 'docx' || ext === 'doc') {
-        const mammoth = await import('mammoth');
-        const result = await mammoth.extractRawText({ buffer });
-        transcricaoTexto = result.value;
+        try {
+          const mammoth = await import('mammoth');
+          const result = await mammoth.extractRawText({ buffer });
+          transcricaoTexto = result.value;
+        } catch {
+          // fallback: extrair texto do XML interno do docx (é um ZIP)
+          try {
+            const AdmZip = (await import('adm-zip')).default;
+            const zip = new AdmZip(buffer);
+            const entry = zip.getEntry('word/document.xml');
+            if (entry) {
+              const xml = entry.getData().toString('utf-8');
+              transcricaoTexto = xml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+          } catch {
+            transcricaoTexto = buffer.toString('utf-8').replace(/<[^>]+>/g, ' ').replace(/[^\x20-\x7E\n\r]/g, ' ').replace(/\s+/g, ' ').trim();
+          }
+        }
       }
 
       if (!transcricaoTexto.trim()) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não foi possível extrair texto da transcrição' });
