@@ -134,6 +134,7 @@ function AvaliacaoContent() {
   const [modalHistorico, setModalHistorico] = useState<Candidato | null>(null);
   const [editandoParecer, setEditandoParecer] = useState(false);
   const [parecerEditado, setParecerEditado] = useState("");
+  const [bancaEditada, setBancaEditada] = useState("");
   const [modalPerfil, setModalPerfil] = useState<Candidato | null>(null);
   const [modalReagendar, setModalReagendar] = useState<Entrevista | null>(null);
 
@@ -186,6 +187,7 @@ function AvaliacaoContent() {
       toast.success("Parecer atualizado com sucesso.");
       setEditandoParecer(false);
       setParecerEditado("");
+      setBancaEditada("");
       utils.processosSeletivos.historicoDecisoesCandidato.invalidate();
     },
     onError: (e) => toast.error(e.message),
@@ -1100,7 +1102,7 @@ function AvaliacaoContent() {
       </Dialog>
 
       {/* ── Modal: Histórico de Decisões ── */}
-      <Dialog open={!!modalHistorico} onOpenChange={(open) => { if (!open) { setModalHistorico(null); setEditandoParecer(false); setParecerEditado(""); } }}>
+      <Dialog open={!!modalHistorico} onOpenChange={(open) => { if (!open) { setModalHistorico(null); setEditandoParecer(false); setParecerEditado(""); setBancaEditada(""); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Histórico de Decisões — {modalHistorico?.nome}</DialogTitle>
@@ -1115,6 +1117,7 @@ function AvaliacaoContent() {
                   h.acao === "decisao_registrada" || h.acao === "decisao_alterada"
                 );
                 const parecerAtual = (ultimaDecisao?.metadata as any)?.justificativa ?? null;
+                const bancaAtual = (ultimaDecisao?.metadata as any)?.participantesBanca ?? "";
                 return (
                   <div className="border border-blue-100 bg-blue-50 rounded-lg p-4 space-y-2">
                     <div className="flex items-center justify-between">
@@ -1131,6 +1134,26 @@ function AvaliacaoContent() {
                         </Button>
                       )}
                     </div>
+                    {/* Campo de banca — sempre visível e editável */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-blue-700 flex items-center gap-1">
+                        <Users className="h-3 w-3" /> Participantes da Banca
+                      </label>
+                      <Input
+                        className="h-7 text-xs bg-white"
+                        placeholder="Ex: Maria Silva, João Souza"
+                        value={bancaEditada !== "" ? bancaEditada : bancaAtual}
+                        onChange={(e) => setBancaEditada(e.target.value)}
+                        onBlur={(e) => {
+                          const valor = e.target.value.trim();
+                          if (valor !== bancaAtual && modalHistorico) {
+                            salvarParticipantesBanca.mutate({ candidatoId: modalHistorico.id, participantesBanca: valor });
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-blue-600">Salvo automaticamente ao sair do campo.</p>
+                    </div>
+
                     {editandoParecer ? (
                       <div className="space-y-2">
                         <Textarea
@@ -1207,6 +1230,11 @@ function AvaliacaoContent() {
                       {meta?.decisaoAnterior && meta.decisaoAnterior !== "pendente" && (
                         <div className="text-xs text-muted-foreground">
                           Decisão anterior: {labelResultado(meta.decisaoAnterior)} → {labelResultado(h.detalhe)}
+                        </div>
+                      )}
+                      {meta?.participantesBanca && (
+                        <div className="text-xs text-muted-foreground">
+                          <span className="font-medium">Banca: </span>{meta.participantesBanca}
                         </div>
                       )}
                       <div className="bg-slate-50 rounded p-2 text-sm">
