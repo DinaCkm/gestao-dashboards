@@ -2128,6 +2128,43 @@ export const processosSeletivosRouter = router({
       return { success: true };
     }),
 
+  runMigrationRelatorioPS: protectedProcedure.mutation(async ({ ctx }) => {
+    requireCkmAdmin(ctx.user.role);
+    const database = await requireDatabase();
+    const colunas = [
+      { tabela: 'processo_entrevistas', coluna: 'transcricaoUrl', tipo: 'varchar(1000) NULL' },
+      { tabela: 'processo_entrevistas', coluna: 'transcricaoNomeArquivo', tipo: 'varchar(255) NULL' },
+      { tabela: 'processo_entrevistas', coluna: 'participantesBanca', tipo: 'text NULL' },
+      { tabela: 'processo_entrevistas', coluna: 'dadosPrincipaisEntrevista', tipo: 'longtext NULL' },
+      { tabela: 'processo_entrevistas', coluna: 'analisePerfilComportamental', tipo: 'longtext NULL' },
+      { tabela: 'processo_entrevistas', coluna: 'relatorioGeradoEm', tipo: 'datetime NULL' },
+      { tabela: 'processo_entrevistas', coluna: 'observacaoRevisao', tipo: 'text NULL' },
+      { tabela: 'processo_resultados', coluna: 'participantesBanca', tipo: 'text NULL' },
+    ];
+    const resultados: string[] = [];
+    for (const { tabela, coluna, tipo } of colunas) {
+      try {
+        const rows = await database.execute(sql.raw(
+          `SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_NAME = '${tabela}' AND COLUMN_NAME = '${coluna}'`
+        )) as any;
+        const count = rows?.[0]?.[0]?.cnt ?? rows?.[0]?.cnt ?? 0;
+        if (Number(count) > 0) {
+          resultados.push(`${tabela}.${coluna}: já existe`);
+          continue;
+        }
+        await database.execute(sql.raw(`ALTER TABLE \`${tabela}\` ADD COLUMN \`${coluna}\` ${tipo}`));
+        resultados.push(`${tabela}.${coluna}: criada`);
+      } catch (e: any) {
+        if (e?.message?.includes('Duplicate column') || e?.message?.includes('already exists')) {
+          resultados.push(`${tabela}.${coluna}: já existia`);
+        } else {
+          resultados.push(`${tabela}.${coluna}: ERRO - ${e?.message}`);
+        }
+      }
+    }
+    return { success: true, resultados };
+  }),
+
   runMigration: protectedProcedure.mutation(async ({ ctx }) => {
     requireCkmAdmin(ctx.user.role);
     const database = await requireDatabase();

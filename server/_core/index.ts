@@ -17,7 +17,7 @@ import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria
 import { iniciarCronRelatorioMentorias } from "../cronRelatorioMentorias";
 import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
 import { ENV } from "./env";
-import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -47,6 +47,7 @@ async function startServer() {
   await ensureAuditoriaNotesMentoriaTable();
   await ensureGoogleCalendarColumns();
   await ensureProcessoSeletivoColumns(); // v2: garante coluna comunicado no banco
+  await ensureRelatorioEntrevistaColumns(); // v3: garante colunas do relatório consolidado de entrevista
 
   const app = express();
   const server = createServer(app);

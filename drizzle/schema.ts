@@ -1862,6 +1862,14 @@ export const processoEntrevistas = mysqlTable("processo_entrevistas", {
   linkEntrevista: varchar("linkEntrevista", { length: 500 }),
   status: mysqlEnum("status", ["agendada", "realizada", "cancelada", "reagendada"]).default("agendada").notNull(),
   observacoes: text("observacoes"),
+  // Campos do relatório consolidado
+  transcricaoUrl: varchar("transcricaoUrl", { length: 1000 }),          // URL S3 do arquivo de transcrição
+  transcricaoNomeArquivo: varchar("transcricaoNomeArquivo", { length: 255 }), // Nome original do arquivo
+  participantesBanca: text("participantesBanca"),                        // Nomes dos participantes da banca
+  dadosPrincipaisEntrevista: text("dadosPrincipaisEntrevista"),          // Gerado pela IA
+  analisePerfilComportamental: text("analisePerfilComportamental"),      // Gerado pela IA
+  relatorioGeradoEm: timestamp("relatorioGeradoEm"),                    // Quando o relatório foi gerado
+  observacaoRevisao: text("observacaoRevisao"),                         // Observação para refazer
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1875,6 +1883,7 @@ export const processoResultados = mysqlTable("processo_resultados", {
   resultado: mysqlEnum("resultado", ["pendente", "aprovado", "reprovado", "em_analise", "desistente"]).default("pendente").notNull(),
   notaEntrevista: int("notaEntrevista"),
   parecer: text("parecer"),
+  participantesBanca: text("participantesBanca"),  // Nomes dos participantes da banca
   registradoPor: int("registradoPor").notNull(),
   publicadoEm: timestamp("publicadoEm"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

@@ -13113,3 +13113,28 @@ export async function ensureProcessoSeletivoColumns(): Promise<void> {
   }
   console.log("[DB] Colunas do Processo Seletivo verificadas/criadas com sucesso.");
 }
+
+export async function ensureRelatorioEntrevistaColumns(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const columns = [
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `transcricaoUrl` varchar(1000) NULL COMMENT 'URL S3 do arquivo de transcri\u00e7\u00e3o da entrevista'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `transcricaoNomeArquivo` varchar(255) NULL COMMENT 'Nome original do arquivo de transcri\u00e7\u00e3o'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `participantesBanca` text NULL COMMENT 'Nomes dos participantes da banca'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `dadosPrincipaisEntrevista` longtext NULL COMMENT 'Dados principais gerados pela IA'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `analisePerfilComportamental` longtext NULL COMMENT 'An\u00e1lise do perfil comportamental gerada pela IA'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `relatorioGeradoEm` datetime NULL COMMENT 'Quando o relat\u00f3rio foi gerado pela \u00faltima vez'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `observacaoRevisao` text NULL COMMENT 'Observa\u00e7\u00e3o da mentora para refazer o relat\u00f3rio'",
+    "ALTER TABLE `processo_resultados` ADD COLUMN IF NOT EXISTS `participantesBanca` text NULL COMMENT 'Nomes dos participantes da banca'",
+  ];
+  for (const col of columns) {
+    try {
+      await db.execute(sql.raw(col));
+    } catch (e: any) {
+      if (!e?.message?.includes("Duplicate column")) {
+        console.warn("[DB] ensureRelatorioEntrevistaColumns:", e?.message);
+      }
+    }
+  }
+  console.log("[DB] Colunas do Relat\u00f3rio de Entrevista verificadas/criadas com sucesso.");
+}
