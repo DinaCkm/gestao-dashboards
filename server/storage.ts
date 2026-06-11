@@ -87,3 +87,54 @@ export async function storageGet(
     url: signedUrl,
   };
 }
+
+/**
+ * Baixa o conteúdo de um arquivo do R2/S3 como Buffer
+ * Aceita tanto a chave relativa quanto a URL pública (extrai a chave da URL)
+ */
+export async function storageDownloadBuffer(
+  relKeyOrUrl: string
+): Promise<Buffer> {
+  const { bucketName } = requireR2Env();
+  const client = getR2Client();
+
+  // Se for uma URL completa, extrai a chave relativa
+  let key: string;
+  if (relKeyOrUrl.startsWith('http://') || relKeyOrUrl.startsWith('https://')) {
+    // Tenta extrair a chave da URL pública ou assinada
+    const base = ENV.r2PublicBaseUrl?.trim();
+    if (base && relKeyOrUrl.startsWith(base)) {
+      key = relKeyOrUrl.slice(base.replace(/\/+$/, '').length).replace(/^\/+/, '');
+    } else {
+      // URL assinada ou outro formato: extrai o path
+      const urlObj = new URL(relKeyOrUrl);
+      key = urlObj.pathname.replace(/^\/+/, '');
+    }
+  } else {
+    key = normalizeKey(relKeyOrUrl);
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+  });
+
+  const response = await client.send(command);
+  if (!response.Body) throw new Error('Arquivo vazio ou não encontrado no storage');
+
+  // Converte o stream para Buffer
+  const chunks: Uint8Array[] = [];
+  const stream = response.Body as any;
+  if (typeof stream[Symbol.asyncIterator] === 'function') {
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+  } else {
+    await new Promise<void>((resolve, reject) => {
+      stream.on('data', (chunk: Uint8Array) => chunks.push(chunk));
+      stream.on('end', resolve);
+      stream.on('error', reject);
+    });
+  }
+  return Buffer.concat(chunks);
+}

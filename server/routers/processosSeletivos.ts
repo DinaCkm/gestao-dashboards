@@ -22,7 +22,7 @@ import {
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { createNotification, getDb } from "../db";
 import { buildPsAlertaAdminSemSlotEmail, buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, buildPsRelatorioEmail, sendEmail } from "../emailService";
-import { storagePut, storageGet } from "../storage";
+import { storagePut, storageGet, storageDownloadBuffer } from "../storage";
 
 const adminRoles = new Set(["admin", "admin2"]);
 
@@ -2415,6 +2415,167 @@ export const processosSeletivosRouter = router({
     }
     return { success: true, resultados };
   }),
+
+  // ── RELATÓRIO CONSOLIDADO: Gerar relatório com IA ──
+  gerarRelatorioIA: protectedProcedure
+    .input(z.object({
+      candidatoId: z.number(),
+      observacao: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: 'NOT_FOUND', message: 'Candidato não encontrado' });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+
+      // Buscar entrevista (mesma lógica do dadosRelatorio)
+      let entrevista: any = null;
+      const [e1] = await database.select().from(processoEntrevistas)
+        .where(eq(processoEntrevistas.candidatoId, input.candidatoId))
+        .orderBy(desc(processoEntrevistas.createdAt)).limit(1);
+      if (e1) entrevista = e1;
+
+      if (!entrevista) {
+        const slots = await database.select({ id: processoAgendaSlots.id }).from(processoAgendaSlots)
+          .where(eq(processoAgendaSlots.candidatoId, input.candidatoId)).limit(5);
+        if (slots.length > 0) {
+          const [e2] = await database.select().from(processoEntrevistas)
+            .where(inArray(processoEntrevistas.agendaSlotId, slots.map(s => s.id)))
+            .orderBy(desc(processoEntrevistas.createdAt)).limit(1);
+          if (e2) entrevista = e2;
+        }
+      }
+
+      if (!entrevista) {
+        const rows = await database.select({ e: processoEntrevistas }).from(processoEntrevistas)
+          .innerJoin(processoCandidatos, eq(processoCandidatos.id, processoEntrevistas.candidatoId))
+          .where(eq(processoCandidatos.email, candidate.email))
+          .orderBy(desc(processoEntrevistas.createdAt)).limit(1);
+        if (rows.length > 0) entrevista = rows[0].e;
+      }
+
+      if (!entrevista) throw new TRPCError({ code: 'NOT_FOUND', message: 'Nenhuma entrevista encontrada para este candidato' });
+      if (!(entrevista as any).transcricaoUrl) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Nenhuma transcrição enviada para esta entrevista' });
+
+      // Extrair texto da transcrição
+      const buffer = await storageDownloadBuffer((entrevista as any).transcricaoUrl);
+      const ext = ((entrevista as any).transcricaoNomeArquivo ?? '').split('.').pop()?.toLowerCase() || 'txt';
+      let transcricaoTexto = '';
+      if (ext === 'txt') {
+        transcricaoTexto = buffer.toString('utf-8');
+      } else if (ext === 'pdf') {
+        const pdfParse = (await import('pdf-parse')).default;
+        const parsed = await pdfParse(buffer);
+        transcricaoTexto = parsed.text;
+      } else if (ext === 'docx' || ext === 'doc') {
+        const mammoth = await import('mammoth');
+        const result = await mammoth.extractRawText({ buffer });
+        transcricaoTexto = result.value;
+      }
+
+      if (!transcricaoTexto.trim()) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não foi possível extrair texto da transcrição' });
+
+      // Buscar dados complementares
+      const [aluno] = await database.select({
+        name: alunos.name, cargo: alunos.cargo, minicurriculo: alunos.minicurriculo,
+      }).from(alunos).where(eq(alunos.id, candidate.alunoId ?? 0)).limit(1);
+
+      const [disc] = await database.select().from(discResultados)
+        .where(eq(discResultados.alunoId, candidate.alunoId ?? 0))
+        .orderBy(desc(discResultados.completedAt)).limit(1);
+
+      const autopercepcoes = await database.select({
+        nota: autopercepcoesCompetencias.nota,
+        competenciaNome: competencias.nome,
+      }).from(autopercepcoesCompetencias)
+        .leftJoin(competencias, eq(competencias.id, autopercepcoesCompetencias.competenciaId))
+        .where(eq(autopercepcoesCompetencias.alunoId, candidate.alunoId ?? 0))
+        .orderBy(desc(autopercepcoesCompetencias.nota));
+
+      // Montar contexto
+      const discTexto = disc
+        ? `Perfil DISC: D=${disc.d ?? 0}, I=${disc.i ?? 0}, S=${disc.s ?? 0}, C=${disc.c ?? 0}. Perfil predominante: ${disc.perfilPredominante ?? 'não identificado'}.`
+        : 'Perfil DISC: não disponível.';
+
+      const autoPercTexto = autopercepcoes.length > 0
+        ? 'Autopercepção de competências:\n' + autopercepcoes.map(a => `- ${a.competenciaNome}: ${a.nota}/10`).join('\n')
+        : 'Autopercepção de competências: não disponível.';
+
+      const observacaoTexto = input.observacao?.trim()
+        ? `\n\nObservação do avaliador para esta análise: ${input.observacao}`
+        : '';
+
+      // Chamar IA
+      const { invokeLLM } = await import('../_core/llm');
+      const response = await invokeLLM({
+        messages: [
+          {
+            role: 'system',
+            content: `Você é um especialista em seleção de lideranças e desenvolvimento humano. Com base na transcrição de uma entrevista e nos dados do candidato, gere um relatório estruturado e objetivo em português brasileiro. O relatório deve ser profissional, claro e útil para a tomada de decisão do processo seletivo.
+
+Responda APENAS em JSON com o seguinte formato:
+{
+  "dadosPrincipaisEntrevista": "Resumo dos principais pontos da entrevista: motivações, experiências relevantes, postura, comunicação e pontos de atenção. Mínimo 3 parágrafos.",
+  "analisePerfilComportamental": "Análise do perfil comportamental integrando o DISC, as autopercepções de competências e os comportamentos observados na entrevista. Mínimo 2 parágrafos."
+}`,
+          },
+          {
+            role: 'user',
+            content: `Candidato: ${candidate.nome}\nCargo atual: ${aluno?.cargo ?? 'não informado'}\nMinicurrículo: ${aluno?.minicurriculo ?? 'não informado'}\n\n${discTexto}\n\n${autoPercTexto}${observacaoTexto}\n\nTRANSCRIÇÃO DA ENTREVISTA:\n${transcricaoTexto.slice(0, 12000)}`,
+          },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'relatorio_entrevista',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                dadosPrincipaisEntrevista: { type: 'string' },
+                analisePerfilComportamental: { type: 'string' },
+              },
+              required: ['dadosPrincipaisEntrevista', 'analisePerfilComportamental'],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const content = response.choices?.[0]?.message?.content;
+      if (!content) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'IA não retornou conteúdo' });
+
+      let parsed: { dadosPrincipaisEntrevista: string; analisePerfilComportamental: string };
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao interpretar resposta da IA' });
+      }
+
+      // Salvar no banco
+      await database.update(processoEntrevistas)
+        .set({
+          dadosPrincipaisEntrevista: parsed.dadosPrincipaisEntrevista,
+          analisePerfilComportamental: parsed.analisePerfilComportamental,
+          relatorioGeradoEm: new Date(),
+          observacaoRevisao: input.observacao ?? null,
+        } as any)
+        .where(eq(processoEntrevistas.id, (entrevista as any).id));
+
+      await writeLog(database, {
+        processoId: candidate.processoId,
+        candidatoId: input.candidatoId,
+        userId: ctx.user.id,
+        acao: 'relatorio_ia_gerado',
+        detalhe: `Relatório IA gerado para ${candidate.nome}`,
+      });
+
+      return { success: true, dadosPrincipaisEntrevista: parsed.dadosPrincipaisEntrevista, analisePerfilComportamental: parsed.analisePerfilComportamental };
+    }),
 
   runMigration: protectedProcedure.mutation(async ({ ctx }) => {
     requireCkmAdmin(ctx.user.role);
