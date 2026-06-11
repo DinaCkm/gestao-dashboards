@@ -22,6 +22,7 @@ import {
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { createNotification, getDb } from "../db";
 import { buildPsAlertaAdminSemSlotEmail, buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, buildPsRelatorioEmail, sendEmail } from "../emailService";
+import { storagePut, storageGet } from "../storage";
 
 const adminRoles = new Set(["admin", "admin2"]);
 
@@ -1499,11 +1500,12 @@ export const processosSeletivosRouter = router({
     }),
 
   // ── AVALIAÇÃO: Registrar decisão com justificativa obrigatória ──
-  registrarDecisao: protectedProcedure
+    registrarDecisao: protectedProcedure
     .input(z.object({
       candidatoId: z.number(),
       decisao: z.enum(["aprovado", "reprovado", "em_analise"]),
       justificativa: z.string().min(1, "Justificativa é obrigatória"),
+      participantesBanca: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const database = await requireDatabase();
@@ -1514,19 +1516,19 @@ export const processosSeletivosRouter = router({
         .limit(1);
       if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
       await ensureProcessAccess(database, ctx.user, candidate.processoId);
-
       const decisaoAnterior = candidate.statusResultado;
-
       // Upsert em processo_resultados
       const [existingResult] = await database
         .select({ id: processoResultados.id })
         .from(processoResultados)
         .where(eq(processoResultados.candidatoId, input.candidatoId))
         .limit(1);
+      const updateSet: any = { resultado: input.decisao, parecer: input.justificativa, registradoPor: ctx.user.id };
+      if (input.participantesBanca !== undefined) updateSet.participantesBanca = input.participantesBanca;
       if (existingResult) {
         await database
           .update(processoResultados)
-          .set({ resultado: input.decisao, parecer: input.justificativa, registradoPor: ctx.user.id })
+          .set(updateSet)
           .where(eq(processoResultados.id, existingResult.id));
       } else {
         await database.insert(processoResultados).values({
@@ -1534,8 +1536,9 @@ export const processosSeletivosRouter = router({
           candidatoId: input.candidatoId,
           resultado: input.decisao,
           parecer: input.justificativa,
+          participantesBanca: input.participantesBanca ?? null,
           registradoPor: ctx.user.id,
-        });
+        } as any);
       }
 
       // Atualizar statusResultado no candidato
@@ -2126,6 +2129,191 @@ export const processosSeletivosRouter = router({
       }
 
       return { success: true };
+    }),
+
+  // ── RELATÓRIO CONSOLIDADO: Upload de transcrição ──
+  uploadTranscricao: protectedProcedure
+    .input(z.object({
+      entrevistaId: z.number(),
+      fileName: z.string(),
+      fileData: z.string(), // Base64
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      // Verificar se a entrevista existe e o usuário tem acesso
+      const [entrevista] = await database
+        .select({ id: processoEntrevistas.id, processoId: processoEntrevistas.processoId })
+        .from(processoEntrevistas)
+        .where(eq(processoEntrevistas.id, input.entrevistaId))
+        .limit(1);
+      if (!entrevista) throw new TRPCError({ code: 'NOT_FOUND', message: 'Entrevista não encontrada' });
+      await ensureProcessAccess(database, ctx.user, entrevista.processoId);
+
+      const ext = input.fileName.split('.').pop()?.toLowerCase() || 'txt';
+      const allowedExts = ['txt', 'pdf', 'docx', 'doc'];
+      if (!allowedExts.includes(ext)) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Formato não suportado. Use .txt, .pdf ou .docx' });
+      }
+      const buffer = Buffer.from(input.fileData, 'base64');
+      const key = `processos-seletivos/transcricoes/${entrevista.processoId}/${input.entrevistaId}-${Date.now()}.${ext}`;
+      const contentType = ext === 'pdf' ? 'application/pdf' : ext === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'text/plain';
+      const result = await storagePut(key, buffer, contentType);
+
+      await database
+        .update(processoEntrevistas)
+        .set({ transcricaoUrl: result.url, transcricaoNomeArquivo: input.fileName } as any)
+        .where(eq(processoEntrevistas.id, input.entrevistaId));
+
+      await writeLog(database, {
+        processoId: entrevista.processoId,
+        userId: ctx.user.id,
+        acao: 'transcricao_enviada',
+        detalhe: `Transcrição enviada: ${input.fileName}`,
+      });
+
+      return { success: true, url: result.url, fileName: input.fileName };
+    }),
+
+  // ── RELATÓRIO CONSOLIDADO: Salvar participantes da banca ──
+  salvarParticipantesBanca: protectedProcedure
+    .input(z.object({
+      candidatoId: z.number(),
+      participantesBanca: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select({ processoId: processoCandidatos.processoId })
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: 'NOT_FOUND', message: 'Candidato não encontrado' });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+
+      // Upsert em processo_resultados
+      const [existing] = await database
+        .select({ id: processoResultados.id })
+        .from(processoResultados)
+        .where(eq(processoResultados.candidatoId, input.candidatoId))
+        .limit(1);
+      if (existing) {
+        await database
+          .update(processoResultados)
+          .set({ participantesBanca: input.participantesBanca } as any)
+          .where(eq(processoResultados.id, existing.id));
+      } else {
+        await database.insert(processoResultados).values({
+          processoId: candidate.processoId,
+          candidatoId: input.candidatoId,
+          resultado: 'pendente',
+          parecer: '',
+          participantesBanca: input.participantesBanca,
+          registradoPor: ctx.user.id,
+        } as any);
+      }
+      return { success: true };
+    }),
+
+  // ── RELATÓRIO CONSOLIDADO: Buscar dados completos do candidato para o relatório ──
+  dadosRelatorio: protectedProcedure
+    .input(z.object({ candidatoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: 'NOT_FOUND', message: 'Candidato não encontrado' });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+
+      // Buscar dados do aluno (minicurrículo, etc.)
+      const [aluno] = await database
+        .select({
+          id: alunos.id,
+          name: alunos.name,
+          email: alunos.email,
+          cargo: alunos.cargo,
+          telefone: alunos.telefone,
+          minicurriculo: alunos.minicurriculo,
+        })
+        .from(alunos)
+        .where(eq(alunos.id, candidate.alunoId ?? 0))
+        .limit(1);
+
+      // Buscar resultado DISC mais recente
+      const [disc] = await database
+        .select()
+        .from(discResultados)
+        .where(eq(discResultados.alunoId, candidate.alunoId ?? 0))
+        .orderBy(desc(discResultados.completedAt))
+        .limit(1);
+
+      // Buscar autopercepções de competências
+      const autopercepcoes = await database
+        .select({
+          nota: autopercepcoesCompetencias.nota,
+          competenciaNome: competencias.nome,
+        })
+        .from(autopercepcoesCompetencias)
+        .leftJoin(competencias, eq(competencias.id, autopercepcoesCompetencias.competenciaId))
+        .where(eq(autopercepcoesCompetencias.alunoId, candidate.alunoId ?? 0))
+        .orderBy(desc(autopercepcoesCompetencias.nota));
+
+      // Buscar resultado/decisão
+      const [resultado] = await database
+        .select()
+        .from(processoResultados)
+        .where(eq(processoResultados.candidatoId, input.candidatoId))
+        .limit(1);
+
+      // Buscar entrevista (transcrição e dados gerados pela IA)
+      const [entrevista] = await database
+        .select()
+        .from(processoEntrevistas)
+        .where(eq(processoEntrevistas.candidatoId, input.candidatoId))
+        .orderBy(desc(processoEntrevistas.createdAt))
+        .limit(1);
+
+      // Buscar processo e mentor
+      const [processo] = await database
+        .select({ id: processosSeletivos.id, nome: processosSeletivos.nome, mentorId: processosSeletivos.mentorId })
+        .from(processosSeletivos)
+        .where(eq(processosSeletivos.id, candidate.processoId))
+        .limit(1);
+
+      let mentorNome: string | null = null;
+      if (processo?.mentorId) {
+        const [mentor] = await database
+          .select({ name: users.name })
+          .from(users)
+          .where(eq(users.id, processo.mentorId))
+          .limit(1);
+        mentorNome = mentor?.name ?? null;
+      }
+
+      // Buscar slot da entrevista (data e horário)
+      let slotData: { dataAgenda: string | null; inicio: string | null; fim: string | null } | null = null;
+      if (entrevista?.agendaSlotId) {
+        const [slot] = await database
+          .select({ dataAgenda: processoAgendaSlots.dataAgenda, inicio: processoAgendaSlots.inicio, fim: processoAgendaSlots.fim })
+          .from(processoAgendaSlots)
+          .where(eq(processoAgendaSlots.id, entrevista.agendaSlotId))
+          .limit(1);
+        slotData = slot ?? null;
+      }
+
+      return {
+        candidato: candidate,
+        aluno: aluno ?? null,
+        disc: disc ?? null,
+        autopercepcoes,
+        resultado: resultado ?? null,
+        entrevista: entrevista ?? null,
+        processo: processo ?? null,
+        mentorNome,
+        slot: slotData,
+      };
     }),
 
   runMigrationRelatorioPS: protectedProcedure.mutation(async ({ ctx }) => {

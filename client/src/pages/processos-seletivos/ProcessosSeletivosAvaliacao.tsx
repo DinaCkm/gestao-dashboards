@@ -27,7 +27,9 @@ import {
   Mail,
   Pencil,
   Search,
+  Upload,
   User,
+  Users,
   XCircle,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -136,10 +138,15 @@ function AvaliacaoContent() {
   const [modalReagendar, setModalReagendar] = useState<Entrevista | null>(null);
 
   // Formulário de decisão
-  const [decisaoForm, setDecisaoForm] = useState<{ decisao: "aprovado" | "reprovado" | "em_analise" | ""; justificativa: string }>({
+  const [decisaoForm, setDecisaoForm] = useState<{ decisao: "aprovado" | "reprovado" | "em_analise" | ""; justificativa: string; participantesBanca: string }>({
     decisao: "",
     justificativa: "",
+    participantesBanca: "",
   });
+
+  // Relatório consolidado
+  const [modalRelatorio, setModalRelatorio] = useState<Candidato | null>(null);
+  const [uploadingTranscricao, setUploadingTranscricao] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -188,11 +195,48 @@ function AvaliacaoContent() {
     onSuccess: () => {
       toast.success("Decisão registrada com sucesso.");
       setModalDecisao(null);
-      setDecisaoForm({ decisao: "", justificativa: "" });
+      setDecisaoForm({ decisao: "", justificativa: "", participantesBanca: "" });
       utils.processosSeletivos.listarCandidatos.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
+
+  const uploadTranscricao = trpc.processosSeletivos.uploadTranscricao.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Transcrição "${data.fileName}" enviada com sucesso.`);
+      utils.processosSeletivos.dadosRelatorio.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const salvarParticipantesBanca = trpc.processosSeletivos.salvarParticipantesBanca.useMutation({
+    onSuccess: () => toast.success("Participantes da banca salvos."),
+    onError: (e) => toast.error(e.message),
+  });
+
+  // Query de dados do relatório (carregada quando o modal de relatório abre)
+  const { data: dadosRelatorio, isLoading: loadingRelatorio } = trpc.processosSeletivos.dadosRelatorio.useQuery(
+    { candidatoId: modalRelatorio?.id ?? 0 },
+    { enabled: !!modalRelatorio }
+  );
+
+  async function handleUploadTranscricao(e: React.ChangeEvent<HTMLInputElement>, entrevistaId: number) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingTranscricao(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = (ev.target?.result as string).split(',')[1];
+        uploadTranscricao.mutate({ entrevistaId, fileName: file.name, fileData: base64 });
+        setUploadingTranscricao(false);
+      };
+      reader.onerror = () => { toast.error("Erro ao ler o arquivo."); setUploadingTranscricao(false); };
+      reader.readAsDataURL(file);
+    } catch {
+      setUploadingTranscricao(false);
+    }
+  }
 
   const moverCandidato = trpc.processosSeletivos.moverCandidato.useMutation({
     onSuccess: () => {
@@ -271,6 +315,7 @@ function AvaliacaoContent() {
       candidatoId: modalDecisao.candidato.id,
       decisao: decisaoForm.decisao as "aprovado" | "reprovado" | "em_analise",
       justificativa: decisaoForm.justificativa.trim(),
+      participantesBanca: decisaoForm.participantesBanca.trim() || undefined,
     });
   }
 
@@ -754,6 +799,17 @@ function AvaliacaoContent() {
                               <History className="h-3.5 w-3.5" />
                             </Button>
 
+                            {/* Transcrição da entrevista */}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="Transcrição da entrevista"
+                              className="text-purple-500 hover:text-purple-700 h-7 w-7 p-0"
+                              onClick={() => setModalRelatorio(c)}
+                            >
+                              <Upload className="h-3.5 w-3.5" />
+                            </Button>
+
                             {/* Reenviar convocação (apenas para candidatos agendados) */}
                             {isAdmin && c.statusEntrevista === "agendada" && (
                               <Button
@@ -1003,6 +1059,16 @@ function AvaliacaoContent() {
                     <SelectItem value="reprovado">Inabilitado</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              {/* Participantes da Banca */}
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Participantes da Banca <span className="text-xs text-muted-foreground">(opcional)</span></Label>
+                <Input
+                  placeholder="Ex: Maria Silva, João Souza"
+                  value={decisaoForm.participantesBanca}
+                  onChange={(e) => setDecisaoForm((f) => ({ ...f, participantesBanca: e.target.value }))}
+                />
               </div>
 
               {/* Justificativa */}
@@ -1349,6 +1415,97 @@ function AvaliacaoContent() {
                 >
                   {reagendarEntrevista.isPending ? "Reagendando..." : "Confirmar Reagendamento"}
                 </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Modal: Upload de Transcrição ── */}
+      <Dialog open={!!modalRelatorio} onOpenChange={(open) => !open && setModalRelatorio(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Transcrição da Entrevista
+            </DialogTitle>
+          </DialogHeader>
+          {modalRelatorio && (
+            <div className="space-y-4">
+              <div className="bg-slate-50 rounded-lg p-3 text-sm">
+                <span className="text-muted-foreground">Candidato: </span>
+                <span className="font-medium">{modalRelatorio.nome}</span>
+              </div>
+
+              {loadingRelatorio ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Carregando dados...</p>
+              ) : (
+                <>
+                  {/* Transcrição atual */}
+                  {(dadosRelatorio?.entrevista as any)?.transcricaoNomeArquivo ? (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
+                      <FileText className="h-4 w-4 text-green-600 shrink-0" />
+                      <div>
+                        <p className="font-medium text-green-800">Transcrição enviada</p>
+                        <p className="text-green-600">{(dadosRelatorio?.entrevista as any)?.transcricaoNomeArquivo}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+                      Nenhuma transcrição enviada ainda.
+                    </div>
+                  )}
+
+                  {/* Entrevista vinculada */}
+                  {dadosRelatorio?.entrevista ? (
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> Enviar arquivo de transcrição</Label>
+                      <p className="text-xs text-muted-foreground">Formatos aceitos: .txt, .pdf, .docx</p>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="pointer-events-none"
+                          disabled={uploadingTranscricao || uploadTranscricao.isPending}
+                        >
+                          {uploadingTranscricao || uploadTranscricao.isPending ? "Enviando..." : "Selecionar arquivo"}
+                        </Button>
+                        <input
+                          type="file"
+                          accept=".txt,.pdf,.docx,.doc"
+                          className="hidden"
+                          onChange={(e) => handleUploadTranscricao(e, dadosRelatorio.entrevista!.id)}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-slate-50 border rounded-lg text-sm text-muted-foreground">
+                      Este candidato ainda não tem entrevista agendada/realizada.
+                    </div>
+                  )}
+
+                  {/* Participantes da banca */}
+                  <div className="space-y-1.5">
+                    <Label className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Participantes da Banca</Label>
+                    <Input
+                      placeholder="Ex: Maria Silva, João Souza"
+                      defaultValue={(dadosRelatorio?.resultado as any)?.participantesBanca ?? ""}
+                      onBlur={(e) => {
+                        if (e.target.value.trim()) {
+                          salvarParticipantesBanca.mutate({
+                            candidatoId: modalRelatorio.id,
+                            participantesBanca: e.target.value.trim(),
+                          });
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">Salvo automaticamente ao sair do campo.</p>
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setModalRelatorio(null)}>Fechar</Button>
               </div>
             </div>
           )}
