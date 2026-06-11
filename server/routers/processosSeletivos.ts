@@ -2028,20 +2028,89 @@ export const processosSeletivosRouter = router({
         })
         .where(eq(processoAgendaSlots.id, input.slotId));
 
-      // Se o slot tem candidato alocado, atualizar também a entrevista
+      // Se o slot tem candidato alocado, atualizar também a entrevista e notificar
       if (slot.candidatoId) {
         await database
           .update(processoEntrevistas)
           .set({ status: "reagendada" })
           .where(eq(processoEntrevistas.agendaSlotId, input.slotId));
-      }
 
-      await writeLog(database, {
-        processoId: slot.processoId,
-        userId: ctx.user.id,
-        acao: "slot_editado",
-        detalhe: `Slot editado: ${dataAnterior} → ${input.dataAgenda} ${input.inicio}-${input.fim}`,
-      });
+        // Buscar dados do candidato e processo para e-mail
+        const [candidate] = await database
+          .select()
+          .from(processoCandidatos)
+          .where(eq(processoCandidatos.id, slot.candidatoId))
+          .limit(1);
+
+        const [processo] = await database
+          .select({ nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, linkEntrevista: processosSeletivos.linkEntrevista })
+          .from(processosSeletivos)
+          .where(eq(processosSeletivos.id, slot.processoId))
+          .limit(1);
+
+        if (candidate && processo) {
+          const [ano, mes, dia] = input.dataAgenda.split("-");
+          const dataFormatada = `${dia}/${mes}/${ano}`;
+          const linkFinal = slot.linkEntrevista || processo.linkEntrevista || null;
+
+          // Registrar log com nome do candidato
+          await writeLog(database, {
+            processoId: slot.processoId,
+            candidatoId: slot.candidatoId,
+            userId: ctx.user.id,
+            acao: "slot_editado",
+            detalhe: `Horário alterado para ${candidate.nome}: ${dataAnterior} → ${input.dataAgenda} ${input.inicio}-${input.fim}`,
+          });
+
+          // Enviar e-mail ao candidato
+          if (candidate.email) {
+            try {
+              const emailData = buildPsReagendamentoEmail({
+                candidatoNome: candidate.nome,
+                processoNome: processo.nome,
+                clienteNome: processo.clienteNome,
+                dataEntrevista: dataFormatada,
+                horaInicio: input.inicio,
+                horaFim: input.fim,
+                linkEntrevista: linkFinal,
+                loginUrl: "https://ecolider.ecodobem.com/login",
+              });
+              await sendEmail({
+                to: candidate.email,
+                subject: emailData.subject,
+                html: emailData.html,
+                text: emailData.text,
+              });
+            } catch (emailErr) {
+              console.error("[editarSlot] Erro ao enviar e-mail:", emailErr);
+            }
+          }
+
+          // Notificação no sino para o candidato
+          if (candidate.userId) {
+            try {
+              await createNotification({
+                userId: candidate.userId,
+                title: "Horário de entrevista alterado",
+                message: `Seu horário de entrevista para o processo ${processo.nome} foi alterado para ${dataFormatada} às ${input.inicio}.`,
+                type: "warning",
+                category: "processo_seletivo",
+                link: `/processos-seletivos`,
+              });
+            } catch (notifErr) {
+              console.error("[editarSlot] Erro ao criar notificação:", notifErr);
+            }
+          }
+        }
+      } else {
+        // Slot sem candidato: apenas log simples
+        await writeLog(database, {
+          processoId: slot.processoId,
+          userId: ctx.user.id,
+          acao: "slot_editado",
+          detalhe: `Slot editado (sem candidato): ${dataAnterior} → ${input.dataAgenda} ${input.inicio}-${input.fim}`,
+        });
+      }
 
       return { success: true };
     }),
