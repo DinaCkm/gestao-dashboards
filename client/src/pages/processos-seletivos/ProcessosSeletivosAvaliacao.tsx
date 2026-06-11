@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   CalendarDays,
   CheckCircle2,
@@ -329,6 +331,117 @@ function AvaliacaoContent() {
     toast.success("Excel gerado com sucesso.");
   }
 
+  // ── Exportação PDF ─────────────────────────────────────────────────────────
+
+  function handleGerarPDF() {
+    if (!processoSelecionado) return;
+    const nomeProcesso = (processoSelecionado as any).nome ?? "Processo";
+    const clienteNome = (processoSelecionado as any).clienteNome ?? "";
+    const agora = new Date();
+    const dataGeracao = agora.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    const horaGeracao = agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+
+    // ── Cabeçalho ──
+    doc.setFillColor(15, 43, 60); // #0f2b3c
+    doc.rect(0, 0, pageW, 28, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Relatório do Processo Seletivo", pageW / 2, 11, { align: "center" });
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`${nomeProcesso}${clienteNome ? " — " + clienteNome : ""}`, pageW / 2, 18, { align: "center" });
+    doc.text(`Gerado em ${dataGeracao} às ${horaGeracao}`, pageW / 2, 24, { align: "center" });
+
+    // ── Seção 1: Mapa de Entrevistas (ordenado por data/hora) ──
+    const entrevistasSorted = [...(entrevistas as Entrevista[])].sort((a, b) => {
+      const ka = `${a.dataAgenda} ${a.inicio}`;
+      const kb = `${b.dataAgenda} ${b.inicio}`;
+      return ka.localeCompare(kb);
+    });
+
+    doc.setTextColor(15, 43, 60);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Mapa de Entrevistas", 14, 36);
+
+    autoTable(doc, {
+      startY: 40,
+      head: [["Data", "Horário", "Candidato", "E-mail", "Status Entrevista", "Resultado"]],
+      body: entrevistasSorted.map((e) => [
+        formatarData(e.dataAgenda),
+        `${e.inicio} – ${e.fim}`,
+        e.candidatoNome,
+        e.candidatoEmail,
+        e.status,
+        labelResultado(e.statusResultado),
+      ]),
+      headStyles: { fillColor: [15, 43, 60], textColor: 255, fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 22 }, 3: { cellWidth: 55 }, 4: { cellWidth: 30 }, 5: { cellWidth: 25 } },
+      margin: { left: 14, right: 14 },
+    });
+
+    // ── Seção 2: Lista de Candidatos ──
+    const finalY = (doc as any).lastAutoTable?.finalY ?? 40;
+    const secY = finalY + 10;
+
+    if (secY < doc.internal.pageSize.getHeight() - 30) {
+      doc.setTextColor(15, 43, 60);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Lista de Candidatos", 14, secY);
+    } else {
+      doc.addPage();
+      doc.setTextColor(15, 43, 60);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Lista de Candidatos", 14, 20);
+    }
+
+    const listStartY = (doc as any).lastAutoTable?.finalY ? secY + 4 : 24;
+
+    autoTable(doc, {
+      startY: listStartY,
+      head: [["Nome", "E-mail", "Região", "Teste", "Entrevista", "Data/Hora Entrevista", "Resultado"]],
+      body: candidatosFiltrados.map((c) => {
+        const ent = (entrevistas as Entrevista[]).find((e) => e.candidatoId === c.id);
+        return [
+          c.nome,
+          c.email,
+          regioes.find((r: Regiao) => r.id === c.regiaoId)?.nome ?? "—",
+          c.statusTeste === "concluido" ? "Concluído" : c.statusTeste === "pendente" ? "Pendente" : c.statusTeste,
+          c.statusEntrevista,
+          ent ? `${formatarData(ent.dataAgenda)} ${ent.inicio}–${ent.fim}` : "—",
+          labelResultado(c.statusResultado),
+        ];
+      }),
+      headStyles: { fillColor: [15, 43, 60], textColor: 255, fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: { 1: { cellWidth: 55 } },
+      margin: { left: 14, right: 14 },
+    });
+
+    // ── Rodapé com número de página ──
+    const totalPages = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(`Página ${i} de ${totalPages}`, pageW - 14, doc.internal.pageSize.getHeight() - 6, { align: "right" });
+      doc.text("Ecossistema do Bem — Relatório Confidencial", 14, doc.internal.pageSize.getHeight() - 6);
+    }
+
+    const nomeArquivo = `relatorio_${nomeProcesso.replace(/[^a-zA-Z0-9]/g, "_")}_${dataGeracao.replace(/\//g, "-")}.pdf`;
+    doc.save(nomeArquivo);
+    toast.success("PDF gerado com sucesso.");
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
@@ -342,10 +455,16 @@ function AvaliacaoContent() {
           </p>
         </div>
         {processoId && (
-          <Button variant="outline" onClick={handleExportarExcel} className="gap-2">
-            <Download className="h-4 w-4" />
-            Gerar Excel
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportarExcel} className="gap-2">
+              <Download className="h-4 w-4" />
+              Gerar Excel
+            </Button>
+            <Button variant="outline" onClick={handleGerarPDF} className="gap-2">
+              <FileText className="h-4 w-4" />
+              Gerar PDF
+            </Button>
+          </div>
         )}
       </div>
 
