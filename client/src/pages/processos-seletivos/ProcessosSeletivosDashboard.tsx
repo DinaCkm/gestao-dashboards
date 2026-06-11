@@ -68,6 +68,9 @@ function ProcessosSeletivosContent() {
   const [inativarDialog, setInativarDialog] = useState<{ id: number; nome: string } | null>(null);
   const [comunicadoInativar, setComunicadoInativar] = useState("Identificamos que fez o cadastro no processo, porém o seu nome não está entre os convocados nesta etapa. Estamos cancelando o seu agendamento.");
   const [comunicadoHtml, setComunicadoHtml] = useState("");
+  // Filtro de candidato no Mapa de Entrevistas
+  const [filtroMapaCandidato, setFiltroMapaCandidato] = useState("");
+
   // Estado para o dialog de edição de slot
   const [editSlotDialog, setEditSlotDialog] = useState<{
     slotId: number;
@@ -987,6 +990,14 @@ function ProcessosSeletivosContent() {
                 <CardDescription>Slots ordenados por data e horario.</CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mb-3">
+                  <Input
+                    placeholder="Filtrar por candidato..."
+                    value={filtroMapaCandidato}
+                    onChange={(e) => setFiltroMapaCandidato(e.target.value)}
+                    className="max-w-xs"
+                  />
+                </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1004,7 +1015,13 @@ function ProcessosSeletivosContent() {
                         <TableCell colSpan={isAdmin ? 6 : 5} className="h-20 text-center text-muted-foreground">Nenhum slot gerado.</TableCell>
                       </TableRow>
                     ) : (
-                      slots.map((slot) => {
+                      slots
+                        .filter((slot) => {
+                          if (!filtroMapaCandidato.trim()) return true;
+                          const nome = slot.candidatoId ? (candidateById.get(slot.candidatoId)?.nome ?? "") : "";
+                          return nome.toLowerCase().includes(filtroMapaCandidato.toLowerCase());
+                        })
+                        .map((slot) => {
                         const candidate = slot.candidatoId ? candidateById.get(slot.candidatoId) : null;
                         const linkSlot = (slot as any).linkEntrevista || (selectedProcesso as any)?.linkEntrevista || null;
                         return (
@@ -1079,6 +1096,14 @@ function ProcessosSeletivosContent() {
                   <CardDescription>Slots ordenados por data e horario.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="mb-3">
+                    <Input
+                      placeholder="Filtrar por candidato..."
+                      value={filtroMapaCandidato}
+                      onChange={(e) => setFiltroMapaCandidato(e.target.value)}
+                      className="max-w-xs"
+                    />
+                  </div>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -1096,7 +1121,13 @@ function ProcessosSeletivosContent() {
                           <TableCell colSpan={isAdmin ? 6 : 5} className="h-20 text-center text-muted-foreground">Nenhum slot gerado.</TableCell>
                         </TableRow>
                       ) : (
-                        slots.map((slot) => {
+                        slots
+                          .filter((slot) => {
+                            if (!filtroMapaCandidato.trim()) return true;
+                            const nome = slot.candidatoId ? (candidateById.get(slot.candidatoId)?.nome ?? "") : "";
+                            return nome.toLowerCase().includes(filtroMapaCandidato.toLowerCase());
+                          })
+                          .map((slot) => {
                           const candidate = slot.candidatoId ? candidateById.get(slot.candidatoId) : null;
                           const linkSlot = (slot as any).linkEntrevista || (selectedProcesso as any)?.linkEntrevista || null;
                           return (
