@@ -2295,16 +2295,13 @@ export const processosSeletivosRouter = router({
         }
       }
 
-      // 3) Tenta pelo email do candidato via join (candidatoId pode estar inconsistente)
+      // 3) Tenta pelo email do candidato (candidato pode ter sido importado de outro processo)
       if (!entrevista) {
         const rows = await database
           .select({ e: processoEntrevistas })
           .from(processoEntrevistas)
           .innerJoin(processoCandidatos, eq(processoCandidatos.id, processoEntrevistas.candidatoId))
-          .where(and(
-            eq(processoEntrevistas.processoId, candidate.processoId),
-            eq(processoCandidatos.email, candidate.email),
-          ))
+          .where(eq(processoCandidatos.email, candidate.email))
           .orderBy(desc(processoEntrevistas.createdAt))
           .limit(1);
         if (rows.length > 0) entrevista = rows[0].e;
