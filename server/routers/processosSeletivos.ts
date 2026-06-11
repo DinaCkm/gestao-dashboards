@@ -2268,12 +2268,32 @@ export const processosSeletivosRouter = router({
         .limit(1);
 
       // Buscar entrevista (transcrição e dados gerados pela IA)
-      const [entrevista] = await database
+      // Primeiro tenta pelo candidatoId direto
+      let [entrevista] = await database
         .select()
         .from(processoEntrevistas)
         .where(eq(processoEntrevistas.candidatoId, input.candidatoId))
         .orderBy(desc(processoEntrevistas.createdAt))
         .limit(1);
+
+      // Se não encontrou, tenta pelo slot vinculado ao candidato
+      if (!entrevista) {
+        const slots = await database
+          .select({ id: processoAgendaSlots.id })
+          .from(processoAgendaSlots)
+          .where(eq(processoAgendaSlots.candidatoId, input.candidatoId))
+          .limit(5);
+        if (slots.length > 0) {
+          const slotIds = slots.map(s => s.id);
+          const entrevistasPorSlot = await database
+            .select()
+            .from(processoEntrevistas)
+            .where(inArray(processoEntrevistas.agendaSlotId, slotIds))
+            .orderBy(desc(processoEntrevistas.createdAt))
+            .limit(1);
+          if (entrevistasPorSlot.length > 0) entrevista = entrevistasPorSlot[0];
+        }
+      }
 
       // Buscar processo e mentor
       const [processo] = await database
