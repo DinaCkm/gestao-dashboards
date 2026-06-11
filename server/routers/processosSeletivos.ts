@@ -2268,7 +2268,7 @@ export const processosSeletivosRouter = router({
         .limit(1);
 
       // Buscar entrevista (transcrição e dados gerados pela IA)
-      // Primeiro tenta pelo candidatoId direto
+      // 1) Tenta pelo candidatoId direto
       let [entrevista] = await database
         .select()
         .from(processoEntrevistas)
@@ -2276,7 +2276,7 @@ export const processosSeletivosRouter = router({
         .orderBy(desc(processoEntrevistas.createdAt))
         .limit(1);
 
-      // Se não encontrou, tenta pelo slot vinculado ao candidato
+      // 2) Tenta pelo slot vinculado ao candidato
       if (!entrevista) {
         const slots = await database
           .select({ id: processoAgendaSlots.id })
@@ -2292,6 +2292,52 @@ export const processosSeletivosRouter = router({
             .orderBy(desc(processoEntrevistas.createdAt))
             .limit(1);
           if (entrevistasPorSlot.length > 0) entrevista = entrevistasPorSlot[0];
+        }
+      }
+
+      // 3) Tenta pelo email do candidato via join (candidatoId pode estar inconsistente)
+      if (!entrevista) {
+        const rows = await database
+          .select({ e: processoEntrevistas })
+          .from(processoEntrevistas)
+          .innerJoin(processoCandidatos, eq(processoCandidatos.id, processoEntrevistas.candidatoId))
+          .where(and(
+            eq(processoEntrevistas.processoId, candidate.processoId),
+            eq(processoCandidatos.email, candidate.email),
+          ))
+          .orderBy(desc(processoEntrevistas.createdAt))
+          .limit(1);
+        if (rows.length > 0) entrevista = rows[0].e;
+      }
+
+      // 4) Se ainda não encontrou mas o candidato tem slot agendado, cria a entrevista automaticamente
+      if (!entrevista) {
+        const [slotExistente] = await database
+          .select()
+          .from(processoAgendaSlots)
+          .where(and(
+            eq(processoAgendaSlots.candidatoId, input.candidatoId),
+            ne(processoAgendaSlots.status, 'cancelado'),
+          ))
+          .orderBy(desc(processoAgendaSlots.createdAt))
+          .limit(1);
+        if (slotExistente) {
+          await database.insert(processoEntrevistas).values({
+            processoId: candidate.processoId,
+            candidatoId: input.candidatoId,
+            agendaSlotId: slotExistente.id,
+            status: 'agendada',
+          });
+          const [nova] = await database
+            .select()
+            .from(processoEntrevistas)
+            .where(and(
+              eq(processoEntrevistas.candidatoId, input.candidatoId),
+              eq(processoEntrevistas.agendaSlotId, slotExistente.id),
+            ))
+            .orderBy(desc(processoEntrevistas.createdAt))
+            .limit(1);
+          if (nova) entrevista = nova;
         }
       }
 
