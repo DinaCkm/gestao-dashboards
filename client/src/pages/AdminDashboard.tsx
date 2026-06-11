@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { 
@@ -13,7 +14,9 @@ import {
   CheckCircle2,
   Target,
   Award,
-  Minus
+  Minus,
+  ChevronDown,
+  BookOpen
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -79,6 +82,14 @@ export default function AdminDashboard() {
   
   // Hooks must be called before any conditional returns
   const { data: dashboardData, isLoading, isError } = trpc.dashboard.adminMetrics.useQuery();
+  const { data: empresas = [] } = trpc.indicadores.empresas.useQuery();
+  const [empresaCompetenciasId, setEmpresaCompetenciasId] = useState<number | null>(null);
+  const [competenciasOpen, setCompetenciasOpen] = useState(false);
+  const { data: competenciasPorEmpresa = [], isLoading: loadingCompetencias } =
+    trpc.competencias.porEmpresaMacrociclo.useQuery(
+      { programId: empresaCompetenciasId ?? 0 },
+      { enabled: !!empresaCompetenciasId }
+    );
 
   // Check admin access
   if (user?.role !== "admin") {
@@ -429,6 +440,76 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Competências por Empresa (macrociclo ativo) */}
+        <Collapsible open={competenciasOpen} onOpenChange={setCompetenciasOpen}>
+          <Card className="bg-card border-border">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer select-none hover:bg-muted/30 transition-colors rounded-t-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Competências em Desenvolvimento por Empresa</CardTitle>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${competenciasOpen ? 'rotate-180' : ''}`} />
+                </div>
+                <CardDescription>Competências presentes nos PDIs ativos — selecione uma empresa para visualizar</CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 pb-6 px-6 space-y-4">
+                {/* Seletor de empresa */}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">Empresa:</span>
+                  <Select
+                    value={empresaCompetenciasId ? String(empresaCompetenciasId) : ""}
+                    onValueChange={(v) => setEmpresaCompetenciasId(Number(v))}
+                  >
+                    <SelectTrigger className="w-[260px] bg-background">
+                      <SelectValue placeholder="Selecione uma empresa..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empresas.map((e) => (
+                        <SelectItem key={e.id} value={String(e.id)}>{e.nome}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Lista de competências */}
+                {!empresaCompetenciasId && (
+                  <p className="text-sm text-muted-foreground italic">Selecione uma empresa para ver as competências dos PDIs ativos.</p>
+                )}
+                {empresaCompetenciasId && loadingCompetencias && (
+                  <p className="text-sm text-muted-foreground">Carregando...</p>
+                )}
+                {empresaCompetenciasId && !loadingCompetencias && competenciasPorEmpresa.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">Nenhuma competência encontrada em PDIs ativos para esta empresa.</p>
+                )}
+                {empresaCompetenciasId && !loadingCompetencias && competenciasPorEmpresa.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {competenciasPorEmpresa[0].totalPdisEmpresa} PDI{competenciasPorEmpresa[0].totalPdisEmpresa !== 1 ? 's' : ''} ativo{competenciasPorEmpresa[0].totalPdisEmpresa !== 1 ? 's' : ''} nesta empresa
+                    </p>
+                    {competenciasPorEmpresa.map((comp) => (
+                      <div key={comp.competenciaId} className="flex items-center gap-3">
+                        <span className="text-sm w-56 truncate" title={comp.competenciaNome}>{comp.competenciaNome}</span>
+                        <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                          <div
+                            className="h-2 rounded-full bg-primary transition-all duration-500"
+                            style={{ width: `${comp.percentual}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium w-12 text-right">{comp.percentual}%</span>
+                        <span className="text-xs text-muted-foreground w-20 text-right">{comp.totalPdis} PDI{comp.totalPdis !== 1 ? 's' : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </div>
     </DashboardLayout>
   );

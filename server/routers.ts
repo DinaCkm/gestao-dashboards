@@ -2670,6 +2670,51 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const success = await db.deleteCompetencia(input.id);
         return { success };
       }),
+
+    // Competências dos PDIs ativos por empresa (macrociclo ativo)
+    porEmpresaMacrociclo: protectedProcedure
+      .input(z.object({ programId: z.number() }))
+      .query(async ({ input }) => {
+        const database = await db.getDb();
+        if (!database) return [];
+        const conn = (database as any).$client.promise
+          ? (database as any).$client.promise()
+          : (database as any).$client;
+        if (!conn) return [];
+
+        // Conta quantos PDIs ativos da empresa têm cada competência
+        // e calcula o percentual sobre o total de PDIs ativos da empresa
+        const [rows] = await conn.execute(
+          `SELECT
+             c.id AS competenciaId,
+             c.nome AS competenciaNome,
+             COUNT(DISTINCT ap.id) AS totalPdis,
+             (
+               SELECT COUNT(DISTINCT ap2.id)
+               FROM assessment_pdi ap2
+               JOIN alunos a2 ON a2.id = ap2.alunoId
+               WHERE a2.programId = ? AND ap2.status = 'ativo'
+             ) AS totalPdisEmpresa
+           FROM assessment_pdi ap
+           JOIN alunos a ON a.id = ap.alunoId
+           JOIN assessment_competencias ac ON ac.assessmentPdiId = ap.id
+           JOIN competencias c ON c.id = ac.competenciaId
+           WHERE a.programId = ? AND ap.status = 'ativo'
+           GROUP BY c.id, c.nome
+           ORDER BY totalPdis DESC, c.nome ASC`,
+          [input.programId, input.programId]
+        );
+
+        return (rows as any[]).map((r) => ({
+          competenciaId: r.competenciaId as number,
+          competenciaNome: r.competenciaNome as string,
+          totalPdis: Number(r.totalPdis),
+          totalPdisEmpresa: Number(r.totalPdisEmpresa),
+          percentual: r.totalPdisEmpresa > 0
+            ? Math.round((Number(r.totalPdis) / Number(r.totalPdisEmpresa)) * 100)
+            : 0,
+        }));
+      }),
   }),
 
   // Plano Individual (Competências obrigatórias por aluno)
@@ -13987,7 +14032,7 @@ Responda APENAS em JSON com o formato especificado.`
             )
             .limit(1);
 
-          if (!sessaoAtiva) {
+                    if (!sessaoAtiva) {
             await database.insert(sessoesEstudoAtividade).values({
               alunoId: user.alunoId,
               cursoAtribuidoId: input.cursoAtribuidoId,
@@ -13997,7 +14042,13 @@ Responda APENAS em JSON com o formato especificado.`
               statusSessao: "ativa",
             });
           }
-
+          // Atualizar status da atribuição para em_progresso se ainda for nao_iniciado
+          if (atribuicao.status === "nao_iniciado") {
+            await database
+              .update(alunoCursoAtribuido)
+              .set({ status: "em_progresso" })
+              .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+          }
           const [avaliacao] = await database
             .select()
             .from(avaliacoesAtividade)

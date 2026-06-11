@@ -1,6 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { formatDateCustomSafe } from "@/lib/dateUtils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { 
@@ -32,6 +33,7 @@ export default function DashboardGestor() {
   const [selectedTurmaGroup, setSelectedTurmaGroup] = useState<string>("todas");
   const [selectedTrilha, setSelectedTrilha] = useState<string>("todas");
   const [selectedAlunoId, setSelectedAlunoId] = useState<string>("todos");
+  const [competenciasOpen, setCompetenciasOpen] = useState(false);
 
   // Get the empresa name from the user's programId
   const { data: empresas } = trpc.indicadores.empresas.useQuery();
@@ -58,6 +60,13 @@ export default function DashboardGestor() {
     { programId: user?.programId || 0 },
     { enabled: !!user?.programId }
   );
+
+  // Competências dos PDIs ativos da empresa
+  const { data: competenciasPorEmpresa = [], isLoading: loadingCompetencias } =
+    trpc.competencias.porEmpresaMacrociclo.useQuery(
+      { programId: user?.programId || 0 },
+      { enabled: !!user?.programId }
+    );
 
   // Turma names map
   const turmaNames = useMemo(() => {
@@ -1085,6 +1094,54 @@ export default function DashboardGestor() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Competências em Desenvolvimento (macrociclo ativo) */}
+        <Collapsible open={competenciasOpen} onOpenChange={setCompetenciasOpen}>
+          <Card className="bg-card border-border">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer select-none hover:bg-muted/30 transition-colors rounded-t-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Competências em Desenvolvimento</CardTitle>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${competenciasOpen ? 'rotate-180' : ''}`} />
+                </div>
+                <CardDescription>
+                  Competências presentes nos PDIs ativos {empresaNome ? `— ${empresaNome}` : ''} — macrociclo atual
+                </CardDescription>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 pb-6 px-6">
+                {loadingCompetencias && <p className="text-sm text-muted-foreground">Carregando...</p>}
+                {!loadingCompetencias && competenciasPorEmpresa.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic">Nenhuma competência encontrada em PDIs ativos.</p>
+                )}
+                {!loadingCompetencias && competenciasPorEmpresa.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground mb-3">
+                      {competenciasPorEmpresa[0].totalPdisEmpresa} PDI{competenciasPorEmpresa[0].totalPdisEmpresa !== 1 ? 's' : ''} ativo{competenciasPorEmpresa[0].totalPdisEmpresa !== 1 ? 's' : ''} nesta empresa
+                    </p>
+                    {competenciasPorEmpresa.map((comp) => (
+                      <div key={comp.competenciaId} className="flex items-center gap-3">
+                        <span className="text-sm w-56 truncate" title={comp.competenciaNome}>{comp.competenciaNome}</span>
+                        <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                          <div
+                            className="h-2 rounded-full bg-primary transition-all duration-500"
+                            style={{ width: `${comp.percentual}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium w-12 text-right">{comp.percentual}%</span>
+                        <span className="text-xs text-muted-foreground w-20 text-right">{comp.totalPdis} PDI{comp.totalPdis !== 1 ? 's' : ''}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </div>
     </DashboardLayout>
   );
