@@ -2134,20 +2134,70 @@ export const processosSeletivosRouter = router({
   // ── RELATÓRIO CONSOLIDADO: Upload de transcrição ──
   uploadTranscricao: protectedProcedure
     .input(z.object({
-      entrevistaId: z.number(),
+      candidatoId: z.number(),
       fileName: z.string(),
       fileData: z.string(), // Base64
     }))
     .mutation(async ({ ctx, input }) => {
       const database = await requireDatabase();
-      // Verificar se a entrevista existe e o usuário tem acesso
-      const [entrevista] = await database
+      // Buscar candidato
+      const [candidate] = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.id, input.candidatoId))
+        .limit(1);
+      if (!candidate) throw new TRPCError({ code: 'NOT_FOUND', message: 'Candidato não encontrado' });
+      await ensureProcessAccess(database, ctx.user, candidate.processoId);
+
+      // Buscar ou criar entrevista para o candidato
+      let [entrevista] = await database
         .select({ id: processoEntrevistas.id, processoId: processoEntrevistas.processoId })
         .from(processoEntrevistas)
-        .where(eq(processoEntrevistas.id, input.entrevistaId))
+        .where(eq(processoEntrevistas.candidatoId, input.candidatoId))
+        .orderBy(desc(processoEntrevistas.createdAt))
         .limit(1);
-      if (!entrevista) throw new TRPCError({ code: 'NOT_FOUND', message: 'Entrevista não encontrada' });
-      await ensureProcessAccess(database, ctx.user, entrevista.processoId);
+
+      if (!entrevista) {
+        // Tenta pelo slot
+        const [slot] = await database
+          .select({ id: processoAgendaSlots.id })
+          .from(processoAgendaSlots)
+          .where(and(eq(processoAgendaSlots.candidatoId, input.candidatoId), ne(processoAgendaSlots.status, 'cancelado')))
+          .orderBy(desc(processoAgendaSlots.createdAt))
+          .limit(1);
+        if (slot) {
+          const [eSlot] = await database
+            .select({ id: processoEntrevistas.id, processoId: processoEntrevistas.processoId })
+            .from(processoEntrevistas)
+            .where(eq(processoEntrevistas.agendaSlotId, slot.id))
+            .limit(1);
+          if (eSlot) entrevista = eSlot;
+        }
+      }
+
+      if (!entrevista) {
+        // Cria entrevista automaticamente
+        const [slot] = await database
+          .select({ id: processoAgendaSlots.id })
+          .from(processoAgendaSlots)
+          .where(and(eq(processoAgendaSlots.candidatoId, input.candidatoId), ne(processoAgendaSlots.status, 'cancelado')))
+          .orderBy(desc(processoAgendaSlots.createdAt))
+          .limit(1);
+        await database.insert(processoEntrevistas).values({
+          processoId: candidate.processoId,
+          candidatoId: input.candidatoId,
+          agendaSlotId: slot?.id ?? null,
+          status: 'agendada',
+        });
+        const [nova] = await database
+          .select({ id: processoEntrevistas.id, processoId: processoEntrevistas.processoId })
+          .from(processoEntrevistas)
+          .where(eq(processoEntrevistas.candidatoId, input.candidatoId))
+          .orderBy(desc(processoEntrevistas.createdAt))
+          .limit(1);
+        if (!nova) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Não foi possível criar entrevista' });
+        entrevista = nova;
+      }
 
       const ext = input.fileName.split('.').pop()?.toLowerCase() || 'txt';
       const allowedExts = ['txt', 'pdf', 'docx', 'doc'];
@@ -2155,14 +2205,13 @@ export const processosSeletivosRouter = router({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Formato não suportado. Use .txt, .pdf ou .docx' });
       }
       const buffer = Buffer.from(input.fileData, 'base64');
-      const key = `processos-seletivos/transcricoes/${entrevista.processoId}/${input.entrevistaId}-${Date.now()}.${ext}`;
+      const key = `processos-seletivos/transcricoes/${entrevista.processoId}/${entrevista.id}-${Date.now()}.${ext}`;
       const contentType = ext === 'pdf' ? 'application/pdf' : ext === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'text/plain';
       const result = await storagePut(key, buffer, contentType);
-
       await database
         .update(processoEntrevistas)
         .set({ transcricaoUrl: result.url, transcricaoNomeArquivo: input.fileName } as any)
-        .where(eq(processoEntrevistas.id, input.entrevistaId));
+        .where(eq(processoEntrevistas.id, entrevista.id));
 
       await writeLog(database, {
         processoId: entrevista.processoId,

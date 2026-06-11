@@ -234,7 +234,7 @@ function AvaliacaoContent() {
     { enabled: !!modalRelatorio }
   );
 
-  async function handleUploadTranscricao(e: React.ChangeEvent<HTMLInputElement>, entrevistaId: number) {
+  async function handleUploadTranscricao(e: React.ChangeEvent<HTMLInputElement>, candidatoId: number) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingTranscricao(true);
@@ -242,7 +242,7 @@ function AvaliacaoContent() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         const base64 = (ev.target?.result as string).split(',')[1];
-        uploadTranscricao.mutate({ entrevistaId, fileName: file.name, fileData: base64 });
+        uploadTranscricao.mutate({ candidatoId, fileName: file.name, fileData: base64 });
         setUploadingTranscricao(false);
       };
       reader.onerror = () => { toast.error("Erro ao ler o arquivo."); setUploadingTranscricao(false); };
@@ -1508,33 +1508,27 @@ function AvaliacaoContent() {
                     </div>
                   )}
 
-                  {/* Entrevista vinculada */}
-                  {dadosRelatorio?.entrevista ? (
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> Enviar arquivo de transcrição</Label>
-                      <p className="text-xs text-muted-foreground">Formatos aceitos: .txt, .pdf, .docx</p>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="pointer-events-none"
-                          disabled={uploadingTranscricao || uploadTranscricao.isPending}
-                        >
-                          {uploadingTranscricao || uploadTranscricao.isPending ? "Enviando..." : "Selecionar arquivo"}
-                        </Button>
-                        <input
-                          type="file"
-                          accept=".txt,.pdf,.docx,.doc"
-                          className="hidden"
-                          onChange={(e) => handleUploadTranscricao(e, dadosRelatorio.entrevista!.id)}
-                        />
-                      </label>
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-slate-50 border rounded-lg text-sm text-muted-foreground">
-                      Este candidato ainda não tem entrevista agendada/realizada.
-                    </div>
-                  )}
+                  {/* Upload de transcrição — sempre disponível */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> Enviar arquivo de transcrição</Label>
+                    <p className="text-xs text-muted-foreground">Formatos aceitos: .txt, .pdf, .docx</p>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="pointer-events-none"
+                        disabled={uploadingTranscricao || uploadTranscricao.isPending}
+                      >
+                        {uploadingTranscricao || uploadTranscricao.isPending ? "Enviando..." : "Selecionar arquivo"}
+                      </Button>
+                      <input
+                        type="file"
+                        accept=".txt,.pdf,.docx,.doc"
+                        className="hidden"
+                        onChange={(e) => handleUploadTranscricao(e, modalRelatorio.id)}
+                      />
+                    </label>
+                  </div>
 
                   {/* Participantes da banca */}
                   <div className="space-y-1.5">
