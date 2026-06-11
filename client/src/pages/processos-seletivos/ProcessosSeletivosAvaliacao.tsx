@@ -5,6 +5,7 @@ import ProcessoStatusBadge from "@/components/processos-seletivos/ProcessoStatus
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  ChevronUp,
   Clock,
   Download,
   FileText,
@@ -137,6 +139,7 @@ function AvaliacaoContent() {
   const [bancaEditada, setBancaEditada] = useState("");
   const [modalPerfil, setModalPerfil] = useState<Candidato | null>(null);
   const [modalReagendar, setModalReagendar] = useState<Entrevista | null>(null);
+  const [mapaAberto, setMapaAberto] = useState(false);
 
   // Formulário de decisão
   const [decisaoForm, setDecisaoForm] = useState<{ decisao: "aprovado" | "reprovado" | "em_analise" | ""; justificativa: string; participantesBanca: string }>({
@@ -559,13 +562,23 @@ function AvaliacaoContent() {
       {processoId && (
         <>
           {/* ── Mapa de Entrevistas ── */}
+          <Collapsible open={mapaAberto} onOpenChange={setMapaAberto}>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CalendarDays className="h-4 w-4" />
-                Mapa de Entrevistas
-              </CardTitle>
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between hover:opacity-80 transition-opacity">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4" />
+                    Mapa de Entrevistas
+                    {(entrevistas as Entrevista[]).length > 0 && (
+                      <Badge variant="secondary" className="ml-1 text-xs">{(entrevistas as Entrevista[]).length}</Badge>
+                    )}
+                  </CardTitle>
+                  {mapaAberto ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+              </CollapsibleTrigger>
             </CardHeader>
+            <CollapsibleContent>
             <CardContent>
               {loadingEntrevistas ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">Carregando entrevistas...</p>
@@ -633,7 +646,9 @@ function AvaliacaoContent() {
                 </Table>
               )}
             </CardContent>
+            </CollapsibleContent>
           </Card>
+          </Collapsible>
 
           {/* ── Filtros da Lista de Candidatos ── */}
           <Card>
