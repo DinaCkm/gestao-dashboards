@@ -2297,14 +2297,21 @@ export const processosSeletivosRouter = router({
 
       // 3) Tenta pelo email do candidato (candidato pode ter sido importado de outro processo)
       if (!entrevista) {
-        const rows = await database
-          .select({ e: processoEntrevistas })
-          .from(processoEntrevistas)
-          .innerJoin(processoCandidatos, eq(processoCandidatos.id, processoEntrevistas.candidatoId))
-          .where(eq(processoCandidatos.email, candidate.email))
-          .orderBy(desc(processoEntrevistas.createdAt))
-          .limit(1);
-        if (rows.length > 0) entrevista = rows[0].e;
+        // Busca todos os candidatoIds com esse email (incluindo inativos/outros processos)
+        const candidatosComEmail = await database
+          .select({ id: processoCandidatos.id })
+          .from(processoCandidatos)
+          .where(eq(processoCandidatos.email, candidate.email));
+        if (candidatosComEmail.length > 0) {
+          const ids = candidatosComEmail.map(c => c.id);
+          const [e3] = await database
+            .select()
+            .from(processoEntrevistas)
+            .where(inArray(processoEntrevistas.candidatoId, ids))
+            .orderBy(desc(processoEntrevistas.createdAt))
+            .limit(1);
+          if (e3) entrevista = e3;
+        }
       }
 
       // 4) Se ainda não encontrou mas o candidato tem slot agendado, cria a entrevista automaticamente
