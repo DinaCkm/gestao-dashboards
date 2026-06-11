@@ -1731,26 +1731,39 @@ export const processosSeletivosRouter = router({
         if (s === "desistente") return "Desistente";
         return s;
       };
-      const dadosCandidatos = candidatos.map((c) => {
+      const dadosCandidatosRaw = candidatos.map((c) => {
         const slot = slotMap.get(c.id);
         let dataHoraEntrevista = "";
+        let sortKey = "";
         if (slot?.dataAgenda) {
           const d = new Date(slot.dataAgenda);
           const dia = String(d.getUTCDate()).padStart(2, "0");
           const mes = String(d.getUTCMonth() + 1).padStart(2, "0");
           const ano = d.getUTCFullYear();
           dataHoraEntrevista = `${dia}/${mes}/${ano} ${slot.inicio}–${slot.fim}`;
+          // Chave de ordenação: YYYY-MM-DD HH:MM (string ISO é ordinável)
+          sortKey = `${slot.dataAgenda} ${slot.inicio}`;
         }
         return {
           nome: c.nome,
-          regiao: c.regiaoId ? (regiaoMap.get(c.regiaoId) ?? "\u2014") : "\u2014",
+          regiao: c.regiaoId ? (regiaoMap.get(c.regiaoId) ?? "—") : "—",
           inscrito: c.statusCadastro === "ativo",
           testePerfil: c.statusTeste === "concluido",
           entrevista: labelEntrevista(c.statusEntrevista),
           dataHoraEntrevista,
           status: labelResultado(c.statusResultado),
+          sortKey,
         };
       });
+      // Ordenar por data/hora da entrevista (candidatos sem slot ficam no final, ordenados por nome)
+      const dadosCandidatos = dadosCandidatosRaw
+        .sort((a, b) => {
+          if (a.sortKey && b.sortKey) return a.sortKey.localeCompare(b.sortKey);
+          if (a.sortKey) return -1; // com slot vem antes
+          if (b.sortKey) return 1;
+          return a.nome.localeCompare(b.nome); // ambos sem slot: ordem alfabética
+        })
+        .map(({ sortKey: _sk, ...rest }) => rest);
       const agora = new Date();
       const dataEnvio = agora.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" });
       const emailData = buildPsRelatorioEmail({
