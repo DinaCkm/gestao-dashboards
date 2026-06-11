@@ -851,7 +851,7 @@ function AvaliacaoContent() {
                                       className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 h-7 px-2 text-xs"
                                       onClick={() => {
                                         setModalDecisao({ candidato: c, modo: "nova" });
-                                        setDecisaoForm({ decisao: "aprovado", justificativa: "" });
+                                        setDecisaoForm({ decisao: "aprovado", justificativa: "", participantesBanca: "" });
                                       }}
                                     >
                                       <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -863,7 +863,7 @@ function AvaliacaoContent() {
                                       className="text-blue-700 border-blue-300 hover:bg-blue-50 h-7 px-2 text-xs"
                                       onClick={() => {
                                         setModalDecisao({ candidato: c, modo: "nova" });
-                                        setDecisaoForm({ decisao: "em_analise", justificativa: "" });
+                                        setDecisaoForm({ decisao: "em_analise", justificativa: "", participantesBanca: "" });
                                       }}
                                     >
                                       <Clock className="h-3 w-3 mr-1" />
@@ -875,7 +875,7 @@ function AvaliacaoContent() {
                                       className="text-red-700 border-red-300 hover:bg-red-50 h-7 px-2 text-xs"
                                       onClick={() => {
                                         setModalDecisao({ candidato: c, modo: "nova" });
-                                        setDecisaoForm({ decisao: "reprovado", justificativa: "" });
+                                        setDecisaoForm({ decisao: "reprovado", justificativa: "", participantesBanca: "" });
                                       }}
                                     >
                                       <XCircle className="h-3 w-3 mr-1" />
@@ -893,7 +893,7 @@ function AvaliacaoContent() {
                                     className="h-7 px-2 text-xs"
                                     onClick={() => {
                                       setModalDecisao({ candidato: c, modo: "alterar" });
-                                      setDecisaoForm({ decisao: "", justificativa: "" });
+                                      setDecisaoForm({ decisao: "", justificativa: "", participantesBanca: "" });
                                     }}
                                   >
                                     <ChevronDown className="h-3 w-3 mr-1" />
