@@ -151,6 +151,7 @@ function AvaliacaoContent() {
   // Relatório consolidado
   const [modalRelatorio, setModalRelatorio] = useState<Candidato | null>(null);
   const [uploadingTranscricao, setUploadingTranscricao] = useState(false);
+  const [observacaoRevisao, setObservacaoRevisao] = useState("");
 
   const utils = trpc.useUtils();
 
@@ -216,6 +217,14 @@ function AvaliacaoContent() {
 
   const salvarParticipantesBanca = trpc.processosSeletivos.salvarParticipantesBanca.useMutation({
     onSuccess: () => toast.success("Participantes da banca salvos."),
+    onError: (e) => toast.error(e.message),
+  });
+
+  const gerarRelatorioIA = trpc.processosSeletivos.gerarRelatorioIA.useMutation({
+    onSuccess: () => {
+      toast.success("Relatório gerado com sucesso!");
+      utils.processosSeletivos.dadosRelatorio.invalidate();
+    },
     onError: (e) => toast.error(e.message),
   });
 
@@ -1544,6 +1553,85 @@ function AvaliacaoContent() {
                     />
                     <p className="text-xs text-muted-foreground">Salvo automaticamente ao sair do campo.</p>
                   </div>
+
+                  {/* Observação para a IA */}
+                  {(dadosRelatorio?.entrevista as any)?.transcricaoUrl && (
+                    <div className="space-y-1.5">
+                      <Label className="flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5" /> Observação para o relatório (opcional)</Label>
+                      <Textarea
+                        placeholder="Ex: Focar na experiência de liderança, desconsiderar lacuna de 2020..."
+                        value={observacaoRevisao}
+                        onChange={(e) => setObservacaoRevisao(e.target.value)}
+                        rows={2}
+                        className="text-sm"
+                      />
+                      <Button
+                        className="w-full"
+                        disabled={gerarRelatorioIA.isPending}
+                        onClick={() => gerarRelatorioIA.mutate({ candidatoId: modalRelatorio.id, observacao: observacaoRevisao })}
+                      >
+                        {gerarRelatorioIA.isPending ? "Gerando relatório..." : (dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista ? "Regenerar Relatório com IA" : "Gerar Relatório com IA"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Relatório gerado */}
+                  {(dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista && (
+                    <div className="space-y-3 border rounded-lg p-3 bg-slate-50">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold">Relatório gerado pela IA</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            const doc = new jsPDF();
+                            const nome = modalRelatorio.nome;
+                            const participantes = (dadosRelatorio?.resultado as any)?.participantesBanca ?? "";
+                            const dadosPrincipais = (dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista ?? "";
+                            const analise = (dadosRelatorio?.entrevista as any)?.analisePerfilComportamental ?? "";
+                            const geradoEm = (dadosRelatorio?.entrevista as any)?.relatorioGeradoEm
+                              ? new Date((dadosRelatorio?.entrevista as any).relatorioGeradoEm).toLocaleDateString("pt-BR")
+                              : new Date().toLocaleDateString("pt-BR");
+
+                            doc.setFontSize(16);
+                            doc.text("Relatório de Entrevista", 14, 20);
+                            doc.setFontSize(11);
+                            doc.text(`Candidato: ${nome}`, 14, 30);
+                            if (participantes) doc.text(`Banca: ${participantes}`, 14, 37);
+                            doc.text(`Gerado em: ${geradoEm}`, 14, participantes ? 44 : 37);
+
+                            let y = participantes ? 54 : 47;
+                            doc.setFontSize(13);
+                            doc.text("Dados Principais da Entrevista", 14, y);
+                            y += 6;
+                            doc.setFontSize(10);
+                            const linhasDados = doc.splitTextToSize(dadosPrincipais, 182);
+                            doc.text(linhasDados, 14, y);
+                            y += linhasDados.length * 5 + 8;
+
+                            doc.setFontSize(13);
+                            doc.text("Análise do Perfil Comportamental", 14, y);
+                            y += 6;
+                            doc.setFontSize(10);
+                            const linhasAnalise = doc.splitTextToSize(analise, 182);
+                            doc.text(linhasAnalise, 14, y);
+
+                            doc.save(`relatorio-${nome.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+                          }}
+                        >
+                          <Download className="h-3.5 w-3.5 mr-1" /> Baixar PDF
+                        </Button>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Dados Principais</p>
+                        <p className="text-xs whitespace-pre-wrap">{(dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Análise do Perfil Comportamental</p>
+                        <p className="text-xs whitespace-pre-wrap">{(dadosRelatorio?.entrevista as any)?.analisePerfilComportamental}</p>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
