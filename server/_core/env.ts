@@ -18,7 +18,7 @@ export const ENV = {
 
   // legado - manter por compatibilidade temporária
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? process.env.OPENAI_API_KEY ?? "",
 
   // Cloudflare R2
   r2AccountId: process.env.R2_ACCOUNT_ID ?? "",
