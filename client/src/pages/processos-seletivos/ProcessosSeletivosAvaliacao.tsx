@@ -1512,22 +1512,23 @@ function AvaliacaoContent() {
                   <div className="space-y-2">
                     <Label className="flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> Enviar arquivo de transcrição</Label>
                     <p className="text-xs text-muted-foreground">Formatos aceitos: .txt, .pdf, .docx</p>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="pointer-events-none"
                         disabled={uploadingTranscricao || uploadTranscricao.isPending}
+                        onClick={() => document.getElementById('transcricao-file-input')?.click()}
                       >
                         {uploadingTranscricao || uploadTranscricao.isPending ? "Enviando..." : "Selecionar arquivo"}
                       </Button>
                       <input
+                        id="transcricao-file-input"
                         type="file"
                         accept=".txt,.pdf,.docx,.doc"
                         className="hidden"
                         onChange={(e) => handleUploadTranscricao(e, modalRelatorio.id)}
                       />
-                    </label>
+                    </div>
                   </div>
 
                   {/* Participantes da banca */}
