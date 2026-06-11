@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight, Link2, Copy, CheckCheck, Megaphone } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight, Link2, Copy, CheckCheck, Megaphone, Pencil } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearch } from "wouter";
 import { toast } from "sonner";
@@ -68,6 +68,14 @@ function ProcessosSeletivosContent() {
   const [inativarDialog, setInativarDialog] = useState<{ id: number; nome: string } | null>(null);
   const [comunicadoInativar, setComunicadoInativar] = useState("Identificamos que fez o cadastro no processo, porém o seu nome não está entre os convocados nesta etapa. Estamos cancelando o seu agendamento.");
   const [comunicadoHtml, setComunicadoHtml] = useState("");
+  // Estado para o dialog de edição de slot
+  const [editSlotDialog, setEditSlotDialog] = useState<{
+    slotId: number;
+    dataAgenda: string;
+    inicio: string;
+    fim: string;
+    candidatoNome: string | null;
+  } | null>(null);
 
   // Aba ativa — suporta deep-link via ?tab=comunicado
   const searchString = useSearch();
@@ -308,6 +316,15 @@ function ProcessosSeletivosContent() {
       await invalidateProcesso();
     },
     onError: (err) => toast.error(err.message),
+  });
+
+  const editarSlot = trpc.processosSeletivos.editarSlot.useMutation({
+    onSuccess: async () => {
+      toast.success("Slot atualizado com sucesso.");
+      setEditSlotDialog(null);
+      await invalidateProcesso();
+    },
+    onError: (err) => toast.error(`Erro ao editar slot: ${err.message}`),
   });
 
   const reagendarEntrevista = trpc.processosSeletivos.reagendarEntrevista.useMutation({
@@ -978,7 +995,7 @@ function ProcessosSeletivosContent() {
                       <TableHead>Candidato</TableHead>
                       <TableHead>Link</TableHead>
                       <TableHead>Status</TableHead>
-                      {isAdmin && <TableHead className="w-10" />}
+                      {isAdmin && <TableHead className="w-20" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1010,21 +1027,37 @@ function ProcessosSeletivosContent() {
                             <TableCell><ProcessoStatusBadge status={slot.status} /></TableCell>
                             {isAdmin && (
                               <TableCell>
-                                {(slot.status === "disponivel" || slot.status === "reservado") && (
+                                <div className="flex items-center gap-1">
                                   <button
                                     type="button"
-                                    title="Excluir slot"
-                                    disabled={excluirSlot.isPending}
-                                    onClick={() => {
-                                      if (confirm(`Excluir slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim}?`)) {
-                                        excluirSlot.mutate({ slotId: slot.id });
-                                      }
-                                    }}
-                                    className="flex h-7 w-7 items-center justify-center rounded text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                    title="Editar data/horário do slot"
+                                    onClick={() => setEditSlotDialog({
+                                      slotId: slot.id,
+                                      dataAgenda: slot.dataAgenda,
+                                      inicio: slot.inicio,
+                                      fim: slot.fim,
+                                      candidatoNome: candidate?.nome || null,
+                                    })}
+                                    className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <Pencil className="h-3.5 w-3.5" />
                                   </button>
-                                )}
+                                  {(slot.status === "disponivel" || slot.status === "reservado") && (
+                                    <button
+                                      type="button"
+                                      title="Excluir slot"
+                                      disabled={excluirSlot.isPending}
+                                      onClick={() => {
+                                        if (confirm(`Excluir slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim}?`)) {
+                                          excluirSlot.mutate({ slotId: slot.id });
+                                        }
+                                      }}
+                                      className="flex h-7 w-7 items-center justify-center rounded text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </TableCell>
                             )}
                           </TableRow>
@@ -1054,7 +1087,7 @@ function ProcessosSeletivosContent() {
                         <TableHead>Candidato</TableHead>
                         <TableHead>Link</TableHead>
                         <TableHead>Status</TableHead>
-                        {isAdmin && <TableHead className="w-10" />}
+                        {isAdmin && <TableHead className="w-20" />}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1084,21 +1117,37 @@ function ProcessosSeletivosContent() {
                               <TableCell><ProcessoStatusBadge status={slot.status} /></TableCell>
                               {isAdmin && (
                                 <TableCell>
-                                  {(slot.status === "disponivel" || slot.status === "reservado") && (
+                                  <div className="flex items-center gap-1">
                                     <button
                                       type="button"
-                                      title="Excluir slot"
-                                      disabled={excluirSlot.isPending}
-                                      onClick={() => {
-                                        if (confirm(`Excluir slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim}?`)) {
-                                          excluirSlot.mutate({ slotId: slot.id });
-                                        }
-                                      }}
-                                      className="flex h-7 w-7 items-center justify-center rounded text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                      title="Editar data/horário do slot"
+                                      onClick={() => setEditSlotDialog({
+                                        slotId: slot.id,
+                                        dataAgenda: slot.dataAgenda,
+                                        inicio: slot.inicio,
+                                        fim: slot.fim,
+                                        candidatoNome: candidate?.nome || null,
+                                      })}
+                                      className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
+                                      <Pencil className="h-3.5 w-3.5" />
                                     </button>
-                                  )}
+                                    {(slot.status === "disponivel" || slot.status === "reservado") && (
+                                      <button
+                                        type="button"
+                                        title="Excluir slot"
+                                        disabled={excluirSlot.isPending}
+                                        onClick={() => {
+                                          if (confirm(`Excluir slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim}?`)) {
+                                            excluirSlot.mutate({ slotId: slot.id });
+                                          }
+                                        }}
+                                        className="flex h-7 w-7 items-center justify-center rounded text-destructive hover:bg-destructive/10 disabled:opacity-40"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
                                 </TableCell>
                               )}
                             </TableRow>
@@ -1199,6 +1248,68 @@ function ProcessosSeletivosContent() {
         </Card>
       )}
     {/* Dialog de comunicado ao inativar candidato */}
+    {/* Dialog de edição de slot */}
+    <Dialog open={!!editSlotDialog} onOpenChange={(open) => { if (!open) setEditSlotDialog(null); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Editar horário do slot</DialogTitle>
+        </DialogHeader>
+        {editSlotDialog && (
+          <div className="space-y-4">
+            {editSlotDialog.candidatoNome && (
+              <p className="text-sm text-muted-foreground">
+                Candidato: <strong>{editSlotDialog.candidatoNome}</strong>
+              </p>
+            )}
+            <div className="space-y-2">
+              <Label>Data</Label>
+              <Input
+                type="date"
+                value={editSlotDialog.dataAgenda}
+                onChange={(e) => setEditSlotDialog(prev => prev ? { ...prev, dataAgenda: e.target.value } : null)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Início</Label>
+                <Input
+                  type="time"
+                  value={editSlotDialog.inicio}
+                  onChange={(e) => setEditSlotDialog(prev => prev ? { ...prev, inicio: e.target.value } : null)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fim</Label>
+                <Input
+                  type="time"
+                  value={editSlotDialog.fim}
+                  onChange={(e) => setEditSlotDialog(prev => prev ? { ...prev, fim: e.target.value } : null)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setEditSlotDialog(null)}>Cancelar</Button>
+          <Button
+            disabled={editarSlot.isPending}
+            onClick={() => {
+              if (editSlotDialog) {
+                editarSlot.mutate({
+                  slotId: editSlotDialog.slotId,
+                  dataAgenda: editSlotDialog.dataAgenda,
+                  inicio: editSlotDialog.inicio,
+                  fim: editSlotDialog.fim,
+                });
+              }
+            }}
+          >
+            {editarSlot.isPending ? "Salvando..." : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <Dialog open={!!inativarDialog} onOpenChange={(open) => { if (!open) setInativarDialog(null); }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>

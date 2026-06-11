@@ -1999,6 +1999,53 @@ export const processosSeletivosRouter = router({
       return { success: true, message: `E-mail de convocação enviado para ${candidate.email}` };
     }),
 
+  // ── EDITAR SLOT: Alterar data/hora de um slot manualmente ──
+  editarSlot: protectedProcedure
+    .input(z.object({
+      slotId: z.number(),
+      dataAgenda: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
+      inicio: z.string().regex(/^\d{2}:\d{2}$/, "Formato HH:MM"),
+      fim: z.string().regex(/^\d{2}:\d{2}$/, "Formato HH:MM"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [slot] = await database
+        .select()
+        .from(processoAgendaSlots)
+        .where(eq(processoAgendaSlots.id, input.slotId))
+        .limit(1);
+      if (!slot) throw new TRPCError({ code: "NOT_FOUND", message: "Slot não encontrado" });
+
+      const dataAnterior = `${slot.dataAgenda} ${slot.inicio}-${slot.fim}`;
+
+      await database
+        .update(processoAgendaSlots)
+        .set({
+          dataAgenda: input.dataAgenda,
+          inicio: input.inicio,
+          fim: input.fim,
+        })
+        .where(eq(processoAgendaSlots.id, input.slotId));
+
+      // Se o slot tem candidato alocado, atualizar também a entrevista
+      if (slot.candidatoId) {
+        await database
+          .update(processoEntrevistas)
+          .set({ status: "reagendada" })
+          .where(eq(processoEntrevistas.agendaSlotId, input.slotId));
+      }
+
+      await writeLog(database, {
+        processoId: slot.processoId,
+        userId: ctx.user.id,
+        acao: "slot_editado",
+        detalhe: `Slot editado: ${dataAnterior} → ${input.dataAgenda} ${input.inicio}-${input.fim}`,
+      });
+
+      return { success: true };
+    }),
+
   runMigration: protectedProcedure.mutation(async ({ ctx }) => {
     requireCkmAdmin(ctx.user.role);
     const database = await requireDatabase();
