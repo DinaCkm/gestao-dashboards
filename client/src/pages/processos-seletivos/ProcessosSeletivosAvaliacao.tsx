@@ -16,6 +16,7 @@ import { trpc } from "@/lib/trpc";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { LOGO_ECO_AO_BEM_BASE64 } from "@/lib/logoBase64";
 import {
   CalendarDays,
   CheckCircle2,
@@ -1579,37 +1580,119 @@ function AvaliacaoContent() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            const doc = new jsPDF();
+                            const doc = new jsPDF({ unit: "mm", format: "a4" });
+                            const pageW = doc.internal.pageSize.getWidth();
+                            const pageH = doc.internal.pageSize.getHeight();
+                            const marginL = 14;
+                            const marginR = 14;
+                            const contentW = pageW - marginL - marginR;
+                            const lineH = 5;
+
                             const nome = modalRelatorio.nome;
-                            const participantes = (dadosRelatorio?.resultado as any)?.participantesBanca ?? "";
-                            const dadosPrincipais = (dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista ?? "";
-                            const analise = (dadosRelatorio?.entrevista as any)?.analisePerfilComportamental ?? "";
+                            const relatorioTexto = (dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista ?? "";
+                            const mentorNomePDF = dadosRelatorio?.mentorNome ?? "";
                             const geradoEm = (dadosRelatorio?.entrevista as any)?.relatorioGeradoEm
                               ? new Date((dadosRelatorio?.entrevista as any).relatorioGeradoEm).toLocaleDateString("pt-BR")
                               : new Date().toLocaleDateString("pt-BR");
 
-                            doc.setFontSize(16);
-                            doc.text("Relatório de Entrevista", 14, 20);
-                            doc.setFontSize(11);
-                            doc.text(`Candidato: ${nome}`, 14, 30);
-                            if (participantes) doc.text(`Banca: ${participantes}`, 14, 37);
-                            doc.text(`Gerado em: ${geradoEm}`, 14, participantes ? 44 : 37);
+                            // Função auxiliar para adicionar nova página se necessário
+                            let y = 0;
+                            const checkPageBreak = (needed: number) => {
+                              if (y + needed > pageH - 20) {
+                                doc.addPage();
+                                y = 15;
+                              }
+                            };
 
-                            let y = participantes ? 54 : 47;
-                            doc.setFontSize(13);
-                            doc.text("Dados Principais da Entrevista", 14, y);
-                            y += 6;
+                            // ── CABEÇALHO: Logo + título ──
+                            try {
+                              doc.addImage(LOGO_ECO_AO_BEM_BASE64, "PNG", marginL, 8, 40, 40);
+                            } catch {}
+                            doc.setFontSize(18);
+                            doc.setFont("helvetica", "bold");
+                            doc.setTextColor(44, 62, 80);
+                            doc.text("Relatório de Avaliação Individual", pageW / 2, 18, { align: "center" });
                             doc.setFontSize(10);
-                            const linhasDados = doc.splitTextToSize(dadosPrincipais, 182);
-                            doc.text(linhasDados, 14, y);
-                            y += linhasDados.length * 5 + 8;
+                            doc.setFont("helvetica", "normal");
+                            doc.setTextColor(100, 100, 100);
+                            doc.text(`Candidato: ${nome}`, pageW / 2, 26, { align: "center" });
+                            doc.text(`Gerado em: ${geradoEm}`, pageW / 2, 32, { align: "center" });
 
-                            doc.setFontSize(13);
-                            doc.text("Análise do Perfil Comportamental", 14, y);
-                            y += 6;
+                            // Linha separadora
+                            doc.setDrawColor(44, 62, 80);
+                            doc.setLineWidth(0.5);
+                            doc.line(marginL, 50, pageW - marginR, 50);
+                            y = 58;
+
+                            // ── CONTEÚDO: parsear o relatório por seções ──
+                            const secoes = [
+                              { titulo: "1. DADOS GERAIS DO PROCESSO", chave: "1. DADOS GERAIS DO PROCESSO" },
+                              { titulo: "2. MINICURRÍCULO DO CANDIDATO", chave: "2. MINICURRÍCULO DO CANDIDATO" },
+                              { titulo: "3. PONTOS DE DESTAQUE DO PERFIL PROFISSIONAL", chave: "3. PONTOS DE DESTAQUE DO PERFIL PROFISSIONAL" },
+                              { titulo: "4. ANÁLISE DISC / PERFIL COMPORTAMENTAL", chave: "4. ANÁLISE DISC / PERFIL COMPORTAMENTAL" },
+                              { titulo: "5. PARECER DA ENTREVISTA", chave: "5. PARECER DA ENTREVISTA" },
+                              { titulo: "6. CONCLUSÃO E RECOMENDAÇÃO FINAL", chave: "6. CONCLUSÃO E RECOMENDAÇÃO FINAL" },
+                            ];
+
+                            const linhasRelatorio = relatorioTexto.split("\n");
+                            let secaoAtual = "";
+                            let bufferSecao: string[] = [];
+
+                            const renderSecao = (titulo: string, linhas: string[]) => {
+                              if (!linhas.length) return;
+                              checkPageBreak(12);
+                              doc.setFontSize(12);
+                              doc.setFont("helvetica", "bold");
+                              doc.setTextColor(44, 62, 80);
+                              doc.text(titulo, marginL, y);
+                              y += lineH + 2;
+                              doc.setFontSize(10);
+                              doc.setFont("helvetica", "normal");
+                              doc.setTextColor(50, 50, 50);
+                              for (const linha of linhas) {
+                                if (!linha.trim()) { y += lineH * 0.5; continue; }
+                                const wrapped = doc.splitTextToSize(linha, contentW);
+                                checkPageBreak(wrapped.length * lineH + 2);
+                                doc.text(wrapped, marginL, y);
+                                y += wrapped.length * lineH + 1;
+                              }
+                              y += 4;
+                            };
+
+                            for (const linha of linhasRelatorio) {
+                              const isTitulo = secoes.find(s => linha.trim().startsWith(s.chave));
+                              if (isTitulo) {
+                                if (secaoAtual && bufferSecao.length) renderSecao(secaoAtual, bufferSecao);
+                                secaoAtual = linha.trim();
+                                bufferSecao = [];
+                              } else if (secaoAtual) {
+                                bufferSecao.push(linha);
+                              } else {
+                                // Antes da primeira seção (título do relatório)
+                              }
+                            }
+                            if (secaoAtual && bufferSecao.length) renderSecao(secaoAtual, bufferSecao);
+
+                            // ── ASSINATURA ──
+                            checkPageBreak(30);
+                            y += 8;
+                            doc.setDrawColor(180, 180, 180);
+                            doc.setLineWidth(0.3);
+                            doc.line(marginL, y, pageW - marginR, y);
+                            y += 8;
                             doc.setFontSize(10);
-                            const linhasAnalise = doc.splitTextToSize(analise, 182);
-                            doc.text(linhasAnalise, 14, y);
+                            doc.setFont("helvetica", "bold");
+                            doc.setTextColor(44, 62, 80);
+                            if (mentorNomePDF) {
+                              doc.text(`Avaliado por: ${mentorNomePDF} — Empresa CKM Talents`, marginL, y);
+                            } else {
+                              doc.text("Empresa CKM Talents", marginL, y);
+                            }
+                            y += 5;
+                            doc.setFont("helvetica", "normal");
+                            doc.setFontSize(9);
+                            doc.setTextColor(120, 120, 120);
+                            doc.text(`Documento gerado em ${geradoEm}`, marginL, y);
 
                             doc.save(`relatorio-${nome.replace(/\s+/g, "-").toLowerCase()}.pdf`);
                           }}
@@ -1618,17 +1701,18 @@ function AvaliacaoContent() {
                         </Button>
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Dados Principais</p>
-                        <div className="max-h-52 overflow-y-auto rounded border bg-white p-2">
-                          <p className="text-xs whitespace-pre-wrap">{(dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista}</p>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Relatório Completo</p>
+                        <div className="max-h-96 overflow-y-auto rounded border bg-white p-3">
+                          <p className="text-xs whitespace-pre-wrap leading-relaxed">{(dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista}</p>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Análise do Perfil Comportamental</p>
-                        <div className="max-h-52 overflow-y-auto rounded border bg-white p-2">
-                          <p className="text-xs whitespace-pre-wrap">{(dadosRelatorio?.entrevista as any)?.analisePerfilComportamental}</p>
+                      {dadosRelatorio?.mentorNome && (
+                        <div className="pt-2 border-t">
+                          <p className="text-xs text-muted-foreground">
+                            <span className="font-medium">Avaliado por:</span> {dadosRelatorio.mentorNome} — Empresa CKM Talents
+                          </p>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </>

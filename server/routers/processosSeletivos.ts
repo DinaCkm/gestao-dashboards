@@ -2572,17 +2572,51 @@ export const processosSeletivosRouter = router({
         .where(eq(autopercepcoesCompetencias.alunoId, candidate.alunoId ?? 0))
         .orderBy(desc(autopercepcoesCompetencias.nota));
 
+      // Buscar processo, mentor e slot para contexto e assinatura
+      const [processoInfo] = await database
+        .select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, mentorId: processosSeletivos.mentorId })
+        .from(processosSeletivos)
+        .where(eq(processosSeletivos.id, candidate.processoId))
+        .limit(1);
+
+      let mentorNomeIA: string | null = null;
+      if (processoInfo?.mentorId) {
+        const [mentor] = await database.select({ name: users.name }).from(users).where(eq(users.id, processoInfo.mentorId)).limit(1);
+        mentorNomeIA = mentor?.name ?? null;
+      }
+
+      let slotIA: { dataAgenda: string | null; inicio: string | null; fim: string | null } | null = null;
+      if ((entrevista as any)?.agendaSlotId) {
+        const [slot] = await database
+          .select({ dataAgenda: processoAgendaSlots.dataAgenda, inicio: processoAgendaSlots.inicio, fim: processoAgendaSlots.fim })
+          .from(processoAgendaSlots)
+          .where(eq(processoAgendaSlots.id, (entrevista as any).agendaSlotId))
+          .limit(1);
+        slotIA = slot ?? null;
+      }
+
+      const [resultadoIA] = await database.select().from(processoResultados)
+        .where(eq(processoResultados.candidatoId, input.candidatoId))
+        .orderBy(desc(processoResultados.createdAt)).limit(1);
+
       // Montar contexto
+      const statusFinal = resultadoIA?.resultado === 'aprovado' ? 'Habilitado' : resultadoIA?.resultado === 'reprovado' ? 'Não Habilitado' : 'A definir';
+      const participantesBancaIA = (entrevista as any)?.participantesBanca ?? resultadoIA?.participantesBanca ?? 'Não informado';
+      const dataEntrevista = slotIA?.dataAgenda
+        ? new Date(slotIA.dataAgenda + 'T00:00:00').toLocaleDateString('pt-BR')
+        : 'Não informada';
+      const horarioEntrevista = slotIA?.inicio ? `${slotIA.inicio}${slotIA.fim ? ' às ' + slotIA.fim : ''}` : 'Não informado';
+
       const discTexto = disc
-        ? `Perfil DISC: D=${disc.d ?? 0}, I=${disc.i ?? 0}, S=${disc.s ?? 0}, C=${disc.c ?? 0}. Perfil predominante: ${disc.perfilPredominante ?? 'não identificado'}.`
+        ? `Fatores DISC: D=${disc.d ?? 0}, I=${disc.i ?? 0}, S=${disc.s ?? 0}, C=${disc.c ?? 0}.\nPerfil predominante: ${disc.perfilPredominante ?? 'não identificado'}.\n${disc.pontosPositivos ? 'Pontos positivos: ' + disc.pontosPositivos : ''}\n${disc.pontosAtencao ? 'Pontos de atenção: ' + disc.pontosAtencao : ''}`
         : 'Perfil DISC: não disponível.';
 
       const autoPercTexto = autopercepcoes.length > 0
-        ? 'Autopercepção de competências:\n' + autopercepcoes.map(a => `- ${a.competenciaNome}: ${a.nota}/10`).join('\n')
+        ? 'Autopercepção de competências (escala 0-10):\n' + autopercepcoes.map(a => `- ${a.competenciaNome}: ${a.nota}/10`).join('\n')
         : 'Autopercepção de competências: não disponível.';
 
       const observacaoTexto = input.observacao?.trim()
-        ? `\n\nObservação do avaliador para esta análise: ${input.observacao}`
+        ? `\n\nObservação do avaliador: ${input.observacao}`
         : '';
 
       // Chamar IA
@@ -2591,17 +2625,32 @@ export const processosSeletivosRouter = router({
         messages: [
           {
             role: 'system',
-            content: `Você é um especialista em seleção de lideranças e desenvolvimento humano. Com base na transcrição de uma entrevista e nos dados do candidato, gere um relatório estruturado e objetivo em português brasileiro. O relatório deve ser profissional, claro e útil para a tomada de decisão do processo seletivo.
+            content: `Você é uma psicóloga organizacional especialista em avaliação de candidatos para processos seletivos internos e externos, com experiência em análise comportamental, entrevistas por competências e elaboração de pareceres profissionais.
 
-Responda APENAS em JSON com o seguinte formato:
+Elabore um Relatório de Avaliação Individual de Candidato completo, com linguagem técnica, objetiva, respeitosa e adequada para apresentação ao cliente.
+
+Orientações de linguagem:
+- Use linguagem técnica, profissional e respeitosa.
+- Evite termos agressivos, definitivos ou subjetivos demais.
+- Não use expressões como "não serve", "fraco", "ruim" ou "sem perfil".
+- Prefira expressões como: "ainda não demonstrou maturidade suficiente para a função"; "necessita desenvolver maior segurança na comunicação"; "apresenta potencial, porém ainda requer desenvolvimento em competências essenciais ao cargo"; "demonstrou aderência ao perfil requerido".
+- Mantenha coerência entre minicurrículo, DISC, entrevista e conclusão.
+- Não invente informações. Quando algum dado não estiver disponível, sinalize discretamente ou não mencione.
+- O relatório deve ter tom institucional e estar adequado para envio ao cliente.
+
+Responda APENAS em JSON com exatamente os seguintes campos:
 {
-  "dadosPrincipaisEntrevista": "Resumo dos principais pontos da entrevista: motivações, experiências relevantes, postura, comunicação e pontos de atenção. Mínimo 3 parágrafos.",
-  "analisePerfilComportamental": "Análise do perfil comportamental integrando o DISC, as autopercepções de competências e os comportamentos observados na entrevista. Mínimo 2 parágrafos."
+  "minicurriculo": "Resumo profissional do candidato em formato de parágrafo, considerando trajetória, formação, experiências anteriores, tempo de atuação, áreas pelas quais passou, principais responsabilidades e experiências relacionadas à função pretendida.",
+  "pontosDestaque": "Principais pontos de destaque do candidato organizados em tópicos (use \\n para separar cada tópico), considerando: experiência técnica, conhecimento de rotinas, vivência com normas/controles/processos, capacidade de organização, relacionamento interpessoal, postura profissional, iniciativa, responsabilidade, maturidade e aderência ao contexto.",
+  "pontosPositivosDisc": "Principais comportamentos favoráveis observados no perfil DISC, relacionando-os com a função avaliada.",
+  "pontosDesenvolvimentoDisc": "Principais aspectos comportamentais que precisam de atenção ou desenvolvimento, especialmente aqueles que possam impactar o desempenho na função pretendida.",
+  "parecerEntrevista": "Parecer técnico da entrevista em formato de texto corrido, com tom analítico e profissional, considerando: clareza e objetividade das respostas, capacidade de apresentar exemplos concretos, domínio técnico, postura diante de normas e processos, capacidade de organização, maturidade profissional, comunicação, relacionamento interpessoal, liderança e coerência entre discurso, histórico e DISC.",
+  "conclusao": "Conclusão coerente com o status informado. Se Habilitado: indicar aderência ao perfil, destacar motivos principais, pode mencionar pontos de desenvolvimento. Se Não Habilitado: justificar de forma técnica e respeitosa, apontar competências a desenvolver para futuras oportunidades. Objetiva, clara e alinhada ao parecer."
 }`,
           },
           {
             role: 'user',
-            content: `Candidato: ${candidate.nome}\nCargo atual: ${aluno?.cargo ?? 'não informado'}\nMinicurrículo: ${aluno?.minicurriculo ?? 'não informado'}\n\n${discTexto}\n\n${autoPercTexto}${observacaoTexto}\n\nTRANSCRIÇÃO DA ENTREVISTA:\n${transcricaoTexto.slice(0, 12000)}`,
+            content: `Cliente: ${processoInfo?.clienteNome ?? 'Não informado'}\nProcesso Seletivo: ${processoInfo?.nome ?? 'Não informado'}\nCandidato: ${candidate.nome}\nData da Entrevista: ${dataEntrevista}\nHorário: ${horarioEntrevista}\nStatus Final: ${statusFinal}\nBanca Avaliadora: ${participantesBancaIA}\nMentor/Entrevistador: ${mentorNomeIA ?? 'Não informado'}\n\nMinicurrículo / Histórico Profissional:\n${aluno?.minicurriculo ?? 'Não disponível'}\nCargo atual: ${aluno?.cargo ?? 'Não informado'}\n\nDISC / Perfil Comportamental:\n${discTexto}\n\n${autoPercTexto}${observacaoTexto}\n\nTranscrição da Entrevista:\n${transcricaoTexto.slice(0, 14000)}`,
           },
         ],
         response_format: {
@@ -2612,10 +2661,14 @@ Responda APENAS em JSON com o seguinte formato:
             schema: {
               type: 'object',
               properties: {
-                dadosPrincipaisEntrevista: { type: 'string' },
-                analisePerfilComportamental: { type: 'string' },
+                minicurriculo: { type: 'string' },
+                pontosDestaque: { type: 'string' },
+                pontosPositivosDisc: { type: 'string' },
+                pontosDesenvolvimentoDisc: { type: 'string' },
+                parecerEntrevista: { type: 'string' },
+                conclusao: { type: 'string' },
               },
-              required: ['dadosPrincipaisEntrevista', 'analisePerfilComportamental'],
+              required: ['minicurriculo', 'pontosDestaque', 'pontosPositivosDisc', 'pontosDesenvolvimentoDisc', 'parecerEntrevista', 'conclusao'],
               additionalProperties: false,
             },
           },
@@ -2625,18 +2678,53 @@ Responda APENAS em JSON com o seguinte formato:
       const content = response.choices?.[0]?.message?.content;
       if (!content) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'IA não retornou conteúdo' });
 
-      let parsed: { dadosPrincipaisEntrevista: string; analisePerfilComportamental: string };
+      let parsed: { minicurriculo: string; pontosDestaque: string; pontosPositivosDisc: string; pontosDesenvolvimentoDisc: string; parecerEntrevista: string; conclusao: string };
       try {
         parsed = JSON.parse(content);
       } catch {
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao interpretar resposta da IA' });
       }
 
+      // Montar relatório completo em texto estruturado para salvar no banco
+      const relatorioCompleto = [
+        `RELATÓRIO DE AVALIAÇÃO INDIVIDUAL`,
+        ``,
+        `1. DADOS GERAIS DO PROCESSO`,
+        `Cliente: ${processoInfo?.clienteNome ?? 'Não informado'}`,
+        `Processo Seletivo: ${processoInfo?.nome ?? 'Não informado'}`,
+        `Candidato: ${candidate.nome}`,
+        `Data da Entrevista: ${dataEntrevista}`,
+        `Horário: ${horarioEntrevista}`,
+        `Status Final: ${statusFinal}`,
+        `Banca Avaliadora: ${participantesBancaIA}`,
+        `Avaliado por: ${mentorNomeIA ?? 'Não informado'} — Empresa CKM Talents`,
+        ``,
+        `2. MINICURRÍCULO DO CANDIDATO`,
+        parsed.minicurriculo,
+        ``,
+        `3. PONTOS DE DESTAQUE DO PERFIL PROFISSIONAL`,
+        parsed.pontosDestaque,
+        ``,
+        `4. ANÁLISE DISC / PERFIL COMPORTAMENTAL`,
+        ``,
+        `4.1 Pontos Positivos Identificados`,
+        parsed.pontosPositivosDisc,
+        ``,
+        `4.2 Pontos a Desenvolver`,
+        parsed.pontosDesenvolvimentoDisc,
+        ``,
+        `5. PARECER DA ENTREVISTA`,
+        parsed.parecerEntrevista,
+        ``,
+        `6. CONCLUSÃO E RECOMENDAÇÃO FINAL`,
+        parsed.conclusao,
+      ].join('\n');
+
       // Salvar no banco
       await database.update(processoEntrevistas)
         .set({
-          dadosPrincipaisEntrevista: parsed.dadosPrincipaisEntrevista,
-          analisePerfilComportamental: parsed.analisePerfilComportamental,
+          dadosPrincipaisEntrevista: relatorioCompleto,
+          analisePerfilComportamental: parsed.conclusao,
           relatorioGeradoEm: new Date(),
           observacaoRevisao: input.observacao ?? null,
         } as any)
@@ -2650,7 +2738,18 @@ Responda APENAS em JSON com o seguinte formato:
         detalhe: `Relatório IA gerado para ${candidate.nome}`,
       });
 
-      return { success: true, dadosPrincipaisEntrevista: parsed.dadosPrincipaisEntrevista, analisePerfilComportamental: parsed.analisePerfilComportamental };
+      return {
+        success: true,
+        dadosPrincipaisEntrevista: relatorioCompleto,
+        analisePerfilComportamental: parsed.conclusao,
+        mentorNome: mentorNomeIA,
+        processoNome: processoInfo?.nome ?? null,
+        clienteNome: processoInfo?.clienteNome ?? null,
+        statusFinal,
+        dataEntrevista,
+        horarioEntrevista,
+        participantesBanca: participantesBancaIA,
+      };
     }),
 
   runMigration: protectedProcedure.mutation(async ({ ctx }) => {
