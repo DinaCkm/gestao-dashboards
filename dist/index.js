@@ -1635,6 +1635,8 @@ var init_schema = __esm({
       // FK para consultors - mentora responsável pelas entrevistas
       emailsRelatorio: text("emailsRelatorio"),
       // E-mails separados por vírgula para receber relatório diário
+      comunicado: text("comunicado"),
+      // Comunicado do processo em HTML (editor rico)
       criadoPor: int("criadoPor").notNull(),
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
@@ -1725,11 +1727,26 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       processoId: int("processoId").notNull(),
       candidatoId: int("candidatoId").notNull(),
-      agendaSlotId: int("agendaSlotId").notNull(),
+      agendaSlotId: int("agendaSlotId"),
       entrevistadorNome: varchar("entrevistadorNome", { length: 255 }),
       linkEntrevista: varchar("linkEntrevista", { length: 500 }),
       status: mysqlEnum("status", ["agendada", "realizada", "cancelada", "reagendada"]).default("agendada").notNull(),
       observacoes: text("observacoes"),
+      // Campos do relatório consolidado
+      transcricaoUrl: varchar("transcricaoUrl", { length: 1e3 }),
+      // URL S3 do arquivo de transcrição
+      transcricaoNomeArquivo: varchar("transcricaoNomeArquivo", { length: 255 }),
+      // Nome original do arquivo
+      participantesBanca: text("participantesBanca"),
+      // Nomes dos participantes da banca
+      dadosPrincipaisEntrevista: text("dadosPrincipaisEntrevista"),
+      // Gerado pela IA
+      analisePerfilComportamental: text("analisePerfilComportamental"),
+      // Gerado pela IA
+      relatorioGeradoEm: timestamp("relatorioGeradoEm"),
+      // Quando o relatório foi gerado
+      observacaoRevisao: text("observacaoRevisao"),
+      // Observação para refazer
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
     });
@@ -1740,6 +1757,8 @@ var init_schema = __esm({
       resultado: mysqlEnum("resultado", ["pendente", "aprovado", "reprovado", "em_analise", "desistente"]).default("pendente").notNull(),
       notaEntrevista: int("notaEntrevista"),
       parecer: text("parecer"),
+      participantesBanca: text("participantesBanca"),
+      // Nomes dos participantes da banca
       registradoPor: int("registradoPor").notNull(),
       publicadoEm: timestamp("publicadoEm"),
       createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1793,7 +1812,7 @@ var init_env = __esm({
       isProduction: process.env.NODE_ENV === "production",
       // legado - manter por compatibilidade temporária
       forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-      forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+      forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? process.env.OPENAI_API_KEY ?? "",
       // Cloudflare R2
       r2AccountId: process.env.R2_ACCOUNT_ID ?? "",
       r2AccessKeyId: process.env.R2_ACCESS_KEY_ID ?? "",
@@ -2010,6 +2029,7 @@ __export(db_exports, {
   ensureHistoricoCiclosTable: () => ensureHistoricoCiclosTable,
   ensurePerfilProfissionalColumns: () => ensurePerfilProfissionalColumns,
   ensureProcessoSeletivoColumns: () => ensureProcessoSeletivoColumns,
+  ensureRelatorioEntrevistaColumns: () => ensureRelatorioEntrevistaColumns,
   ensureRelatorioMentoriasLogTable: () => ensureRelatorioMentoriasLogTable,
   getAccessUsers: () => getAccessUsers,
   getActiveCertificationTemplateByNivel: () => getActiveCertificationTemplateByNivel,
@@ -4095,6 +4115,20 @@ async function updateAccessUser(userId, data) {
     }
   }
   await db2.update(users).set(updateData).where(eq(users.id, userId));
+  if (data.email !== void 0) {
+    try {
+      await db2.update(processoCandidatos).set({ email: data.email.toLowerCase() }).where(eq(processoCandidatos.userId, userId));
+    } catch (e) {
+      console.warn("[updateAccessUser] Erro ao atualizar email em processo_candidatos:", e);
+    }
+  }
+  if (data.name !== void 0) {
+    try {
+      await db2.update(processoCandidatos).set({ nome: data.name }).where(eq(processoCandidatos.userId, userId));
+    } catch (e) {
+      console.warn("[updateAccessUser] Erro ao atualizar nome em processo_candidatos:", e);
+    }
+  }
   if (data.consultorId !== void 0) {
     const [userRecord] = await db2.select({ cpf: users.cpf, alunoId: users.alunoId }).from(users).where(eq(users.id, userId)).limit(1);
     if (userRecord) {
@@ -6188,13 +6222,15 @@ async function getStudentEmailsByProgram(programId) {
       eq(users.role, "user"),
       eq(users.isActive, 1),
       eq(users.programId, programId),
-      isNotNull(users.email)
+      isNotNull(users.email),
+      isNotNull(users.alunoId)
     ));
   }
   return await db2.select({ email: users.email, name: users.name }).from(users).where(and(
     eq(users.role, "user"),
     eq(users.isActive, 1),
-    isNotNull(users.email)
+    isNotNull(users.email),
+    isNotNull(users.alunoId)
   ));
 }
 async function getActiveStudentsWithIds(programId) {
@@ -6978,7 +7014,9 @@ async function getJornadaCompleta(alunoId) {
     const [aprovResult] = await db2.select({ count: sql`COUNT(*)` }).from(alunoAtividadeProgresso).where(and(
       eq(alunoAtividadeProgresso.alunoId, alunoId),
       eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtrib.id),
-      eq(alunoAtividadeProgresso.status, "aprovada")
+      // Incluir 'concluida' além de 'aprovada': atividades sem avaliação ficam como 'concluida'
+      // e atividades com avaliação ficam como 'concluida' antes de ir para a prova
+      sql`${alunoAtividadeProgresso.status} IN ('aprovada', 'concluida')`
     ));
     const [andResult] = await db2.select({ count: sql`COUNT(*)` }).from(alunoAtividadeProgresso).where(and(
       eq(alunoAtividadeProgresso.alunoId, alunoId),
@@ -10997,7 +11035,8 @@ async function ensureProcessoSeletivoColumns() {
   const columns = [
     "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `dataFim` date NULL COMMENT 'Data de encerramento do processo'",
     "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `emailsRelatorio` text NULL COMMENT 'E-mails separados por v\xEDrgula para receber relat\xF3rio do processo'",
-    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `mentorId` int NULL COMMENT 'ID do mentor/selecionadora respons\xE1vel'"
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `mentorId` int NULL COMMENT 'ID do mentor/selecionadora respons\xE1vel'",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `comunicado` longtext NULL COMMENT 'Comunicado do processo em HTML (editor rico)'"
   ];
   for (const col of columns) {
     try {
@@ -11009,6 +11048,30 @@ async function ensureProcessoSeletivoColumns() {
     }
   }
   console.log("[DB] Colunas do Processo Seletivo verificadas/criadas com sucesso.");
+}
+async function ensureRelatorioEntrevistaColumns() {
+  const db2 = await getDb();
+  if (!db2) return;
+  const columns = [
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `transcricaoUrl` varchar(1000) NULL COMMENT 'URL S3 do arquivo de transcri\xE7\xE3o da entrevista'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `transcricaoNomeArquivo` varchar(255) NULL COMMENT 'Nome original do arquivo de transcri\xE7\xE3o'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `participantesBanca` text NULL COMMENT 'Nomes dos participantes da banca'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `dadosPrincipaisEntrevista` longtext NULL COMMENT 'Dados principais gerados pela IA'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `analisePerfilComportamental` longtext NULL COMMENT 'An\xE1lise do perfil comportamental gerada pela IA'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `relatorioGeradoEm` datetime NULL COMMENT 'Quando o relat\xF3rio foi gerado pela \xFAltima vez'",
+    "ALTER TABLE `processo_entrevistas` ADD COLUMN IF NOT EXISTS `observacaoRevisao` text NULL COMMENT 'Observa\xE7\xE3o da mentora para refazer o relat\xF3rio'",
+    "ALTER TABLE `processo_resultados` ADD COLUMN IF NOT EXISTS `participantesBanca` text NULL COMMENT 'Nomes dos participantes da banca'"
+  ];
+  for (const col of columns) {
+    try {
+      await db2.execute(sql.raw(col));
+    } catch (e) {
+      if (!e?.message?.includes("Duplicate column")) {
+        console.warn("[DB] ensureRelatorioEntrevistaColumns:", e?.message);
+      }
+    }
+  }
+  console.log("[DB] Colunas do Relat\xF3rio de Entrevista verificadas/criadas com sucesso.");
 }
 var _db, _connection, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO, CONTRATO_NIVEL_STATUS_ATIVOS, onboardingRevisoesDb;
 var init_db = __esm({
@@ -11392,6 +11455,7 @@ __export(emailService_exports, {
   buildLembreteTarefaMentoriaEmail: () => buildLembreteTarefaMentoriaEmail,
   buildMentoringAlertEmail: () => buildMentoringAlertEmail,
   buildNovaAlunaEmail: () => buildNovaAlunaEmail,
+  buildNovoAvisoMuralEmail: () => buildNovoAvisoMuralEmail,
   buildNovoCaseEmail: () => buildNovoCaseEmail,
   buildOnboardingInviteEmail: () => buildOnboardingInviteEmail,
   buildOnboardingReminderEmail: () => buildOnboardingReminderEmail,
@@ -14004,6 +14068,7 @@ function buildPsRelatorioEmail(data) {
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.inscrito ? "\u2705 Sim" : "\u274C N\xE3o"}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.testePerfil ? "\u2705 Sim" : "\u274C N\xE3o"}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.entrevista}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.dataHoraEntrevista || "\u2014"}</td>
       <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${c.status}</td>
     </tr>`).join("");
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,sans-serif;">
@@ -14023,6 +14088,7 @@ function buildPsRelatorioEmail(data) {
               <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Inscrito</th>
               <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Teste de Perfil</th>
               <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Entrevista</th>
+              <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Data/Hor\xE1rio</th>
               <th style="padding:10px 12px;text-align:center;font-size:13px;color:#374151;">Status</th>
             </tr>
           </thead>
@@ -14040,9 +14106,127 @@ function buildPsRelatorioEmail(data) {
 </body></html>`;
   const text2 = `Relat\xF3rio \u2014 ${data.processoNome} (${data.dataEnvio})
 
-${data.candidatos.map((c) => `${c.nome} | ${c.regiao} | Inscrito: ${c.inscrito ? "Sim" : "N\xE3o"} | Teste: ${c.testePerfil ? "Sim" : "N\xE3o"} | Entrevista: ${c.entrevista} | Status: ${c.status}`).join("\n")}
+${data.candidatos.map((c) => `${c.nome} | ${c.regiao} | Inscrito: ${c.inscrito ? "Sim" : "N\xE3o"} | Teste: ${c.testePerfil ? "Sim" : "N\xE3o"} | Entrevista: ${c.entrevista} | Data/Hor\xE1rio: ${c.dataHoraEntrevista || "\u2014"} | Status: ${c.status}`).join("\n")}
 
 Acesse: ${data.loginUrl}`;
+  return { subject, html, text: text2 };
+}
+function buildNovoAvisoMuralEmail(data) {
+  const logoUrl = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const primeiroNome = data.alunoName?.split(" ")[0] || data.alunoName;
+  const subject = `\u{1F389} Tem novidades no Mural, ${primeiroNome}! D\xE1 uma passadinha por l\xE1`;
+  const previewText = `D\xE1 uma passadinha por l\xE1 e n\xE3o deixe de curtir e participar! \u2764\uFE0F`;
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <title>Novidades no Mural</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap');
+    body { margin:0; padding:0; background:#f0f2f5; }
+    .email-wrapper { font-family: 'Poppins', 'Segoe UI', Arial, sans-serif; }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f0f2f5;">
+  <!-- Preview text (hidden) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${previewText}</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <!-- Logo topo -->
+        <tr><td style="text-align:center;padding-bottom:24px;">
+          <img src="${logoUrl}" alt="Ecossistema do Bem" width="140" style="display:inline-block;"/>
+        </td></tr>
+
+        <!-- Card principal -->
+        <tr><td style="background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.10);">
+
+          <!-- Banner hero com gradiente vibrante -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="background:linear-gradient(135deg,#FF6B35 0%,#F7C59F 50%,#FFBE0B 100%);padding:48px 40px 40px;text-align:center;">
+              <p style="margin:0 0 12px;font-family:'Poppins',Arial,sans-serif;font-size:13px;font-weight:700;color:#7c2d00;letter-spacing:3px;text-transform:uppercase;">\u2726 &nbsp; Ecossistema do Bem &nbsp; \u2726</p>
+              <h1 style="margin:0 0 10px;font-family:'Poppins',Arial,sans-serif;font-size:38px;font-weight:900;color:#1a0a00;line-height:1.1;letter-spacing:-1px;">\u{1F389} TEM NOVIDADES<br/>NO MURAL!</h1>
+              <p style="margin:16px 0 0;font-family:'Poppins',Arial,sans-serif;font-size:17px;font-weight:600;color:#5c2500;line-height:1.5;">D\xE1 uma passadinha por l\xE1 e<br/>n\xE3o deixe de curtir e participar! \u2764\uFE0F</p>
+            </td></tr>
+          </table>
+
+          <!-- Corpo -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:40px 44px 32px;">
+
+              <!-- Sauda\xE7\xE3o -->
+              <p style="margin:0 0 20px;font-family:'Poppins',Arial,sans-serif;font-size:18px;font-weight:700;color:#1a1a2e;">Oi, ${primeiroNome}! \u{1F44B}</p>
+              <p style="margin:0 0 32px;font-family:'Poppins',Arial,sans-serif;font-size:15px;font-weight:400;color:#4b5563;line-height:1.8;">
+                A equipe do <strong style="color:#FF6B35;">Ecossistema do Bem</strong> acabou de publicar um conte\xFAdo novo no Mural e a gente n\xE3o ia deixar voc\xEA de fora, n\xE9? \u{1F604}<br/>
+                Corre l\xE1 conferir \u2014 t\xE1 quentinho ainda! \u{1F525}
+              </p>
+
+              <!-- Card do conte\xFAdo -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#fff8f0,#fff3e0);border-radius:16px;border:1px solid #fed7aa;margin-bottom:36px;">
+                <tr><td style="padding:28px 28px 24px;">
+                  <p style="margin:0 0 10px;font-family:'Poppins',Arial,sans-serif;font-size:11px;font-weight:700;color:#FF6B35;text-transform:uppercase;letter-spacing:2px;">\u2728 &nbsp; Novo no Mural</p>
+                  <p style="margin:0 0 ${data.avisoContent ? "14px" : "0"};font-family:'Poppins',Arial,sans-serif;font-size:20px;font-weight:800;color:#1a0a00;line-height:1.3;">${data.avisoTitle}</p>
+                  ${data.avisoContent ? `<p style="margin:0;font-family:'Poppins',Arial,sans-serif;font-size:14px;font-weight:400;color:#6b7280;line-height:1.8;">${data.avisoContent.slice(0, 220)}${data.avisoContent.length > 220 ? "..." : ""}</p>` : ""}
+                </td></tr>
+              </table>
+
+              <!-- Bot\xE3o CTA -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="text-align:center;padding-bottom:28px;">
+                  <a href="${data.loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#FF6B35,#FFBE0B);color:#1a0a00;text-decoration:none;padding:18px 56px;border-radius:50px;font-family:'Poppins',Arial,sans-serif;font-size:16px;font-weight:800;letter-spacing:0.3px;box-shadow:0 6px 24px rgba(255,107,53,0.40);">Ver no Mural agora \u2192</a>
+                </td></tr>
+              </table>
+
+              <!-- Link direto -->
+              <p style="margin:0 0 8px;font-family:'Poppins',Arial,sans-serif;font-size:12px;color:#9ca3af;text-align:center;">Ou acesse diretamente:</p>
+              <p style="margin:0 0 28px;text-align:center;">
+                <a href="https://ecolider.ecodobem.com/mural" style="font-family:'Poppins',Arial,sans-serif;font-size:13px;color:#FF6B35;text-decoration:none;border-bottom:1px solid #FF6B35;padding-bottom:1px;">https://ecolider.ecodobem.com/mural</a>
+              </p>
+
+              <!-- Mensagem final -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:12px;">
+                <tr><td style="padding:20px 24px;text-align:center;">
+                  <p style="margin:0;font-family:'Poppins',Arial,sans-serif;font-size:14px;font-weight:600;color:#374151;">N\xE3o esquece de curtir e participar! \u{1F609}</p>
+                  <p style="margin:6px 0 0;font-family:'Poppins',Arial,sans-serif;font-size:13px;color:#9ca3af;">Cada \u2764\uFE0F faz a diferen\xE7a e incentiva mais conte\xFAdo incrivel para voc\xEA.</p>
+                </td></tr>
+              </table>
+
+            </td></tr>
+          </table>
+
+        </td></tr>
+
+        <!-- Footer -->
+        <tr><td style="padding:28px 0 8px;text-align:center;">
+          <p style="margin:0 0 6px;font-family:'Poppins',Arial,sans-serif;font-size:12px;font-weight:600;color:#6b7280;">ECOSSISTEMA DO BEM</p>
+          <p style="margin:0;font-family:'Poppins',Arial,sans-serif;font-size:11px;color:#9ca3af;">Programa de Desenvolvimento e Mentoria<br/>Voc\xEA est\xE1 recebendo este e-mail porque \xE9 aluno(a) ativo(a) da plataforma.</p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+  const text2 = `\u{1F389} TEM NOVIDADES NO MURAL, ${primeiroNome.toUpperCase()}!
+
+D\xE1 uma passadinha por l\xE1 e n\xE3o deixe de curtir e participar! \u2764\uFE0F
+
+Oi, ${primeiroNome}!
+
+A equipe do Ecossistema do Bem publicou um conte\xFAdo novo no Mural:
+
+"${data.avisoTitle}"
+${data.avisoContent ? `
+${data.avisoContent.slice(0, 220)}
+` : ""}
+Corre l\xE1 conferir \u2192 ${data.loginUrl}
+https://ecolider.ecodobem.com/mural
+
+N\xE3o esquece de curtir e participar! Cada \u2764\uFE0F faz a diferen\xE7a.`;
   return { subject, html, text: text2 };
 }
 var transporter;
@@ -14051,6 +14235,176 @@ var init_emailService = __esm({
     "use strict";
     init_env();
     transporter = null;
+  }
+});
+
+// server/_core/llm.ts
+var llm_exports = {};
+__export(llm_exports, {
+  invokeLLM: () => invokeLLM
+});
+async function invokeLLM(params) {
+  assertApiKey();
+  const {
+    messages,
+    tools,
+    toolChoice,
+    tool_choice,
+    outputSchema,
+    output_schema,
+    responseFormat,
+    response_format
+  } = params;
+  const payload = {
+    model: ENV.forgeApiUrl ? "gemini-2.5-flash" : "gpt-4o",
+    messages: messages.map(normalizeMessage)
+  };
+  if (tools && tools.length > 0) {
+    payload.tools = tools;
+  }
+  const normalizedToolChoice = normalizeToolChoice(
+    toolChoice || tool_choice,
+    tools
+  );
+  if (normalizedToolChoice) {
+    payload.tool_choice = normalizedToolChoice;
+  }
+  payload.max_tokens = ENV.forgeApiUrl ? 32768 : 4096;
+  const normalizedResponseFormat = normalizeResponseFormat({
+    responseFormat,
+    response_format,
+    outputSchema,
+    output_schema
+  });
+  if (normalizedResponseFormat) {
+    payload.response_format = normalizedResponseFormat;
+  }
+  const response = await fetch(resolveApiUrl(), {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${ENV.forgeApiKey}`
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `LLM invoke failed: ${response.status} ${response.statusText} \u2013 ${errorText}`
+    );
+  }
+  return await response.json();
+}
+var ensureArray, normalizeContentPart, normalizeMessage, normalizeToolChoice, resolveApiUrl, assertApiKey, normalizeResponseFormat;
+var init_llm = __esm({
+  "server/_core/llm.ts"() {
+    "use strict";
+    init_env();
+    ensureArray = (value) => Array.isArray(value) ? value : [value];
+    normalizeContentPart = (part) => {
+      if (typeof part === "string") {
+        return { type: "text", text: part };
+      }
+      if (part.type === "text") {
+        return part;
+      }
+      if (part.type === "image_url") {
+        return part;
+      }
+      if (part.type === "file_url") {
+        return part;
+      }
+      throw new Error("Unsupported message content part");
+    };
+    normalizeMessage = (message) => {
+      const { role, name, tool_call_id } = message;
+      if (role === "tool" || role === "function") {
+        const content = ensureArray(message.content).map((part) => typeof part === "string" ? part : JSON.stringify(part)).join("\n");
+        return {
+          role,
+          name,
+          tool_call_id,
+          content
+        };
+      }
+      const contentParts = ensureArray(message.content).map(normalizeContentPart);
+      if (contentParts.length === 1 && contentParts[0].type === "text") {
+        return {
+          role,
+          name,
+          content: contentParts[0].text
+        };
+      }
+      return {
+        role,
+        name,
+        content: contentParts
+      };
+    };
+    normalizeToolChoice = (toolChoice, tools) => {
+      if (!toolChoice) return void 0;
+      if (toolChoice === "none" || toolChoice === "auto") {
+        return toolChoice;
+      }
+      if (toolChoice === "required") {
+        if (!tools || tools.length === 0) {
+          throw new Error(
+            "tool_choice 'required' was provided but no tools were configured"
+          );
+        }
+        if (tools.length > 1) {
+          throw new Error(
+            "tool_choice 'required' needs a single tool or specify the tool name explicitly"
+          );
+        }
+        return {
+          type: "function",
+          function: { name: tools[0].function.name }
+        };
+      }
+      if ("name" in toolChoice) {
+        return {
+          type: "function",
+          function: { name: toolChoice.name }
+        };
+      }
+      return toolChoice;
+    };
+    resolveApiUrl = () => ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0 ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions` : "https://api.openai.com/v1/chat/completions";
+    assertApiKey = () => {
+      if (!ENV.forgeApiKey) {
+        throw new Error("OPENAI_API_KEY is not configured");
+      }
+    };
+    normalizeResponseFormat = ({
+      responseFormat,
+      response_format,
+      outputSchema,
+      output_schema
+    }) => {
+      const explicitFormat = responseFormat || response_format;
+      if (explicitFormat) {
+        if (explicitFormat.type === "json_schema" && !explicitFormat.json_schema?.schema) {
+          throw new Error(
+            "responseFormat json_schema requires a defined schema object"
+          );
+        }
+        return explicitFormat;
+      }
+      const schema = outputSchema || output_schema;
+      if (!schema) return void 0;
+      if (!schema.name || !schema.schema) {
+        throw new Error("outputSchema requires both name and schema");
+      }
+      return {
+        type: "json_schema",
+        json_schema: {
+          name: schema.name,
+          schema: schema.schema,
+          ...typeof schema.strict === "boolean" ? { strict: schema.strict } : {}
+        }
+      };
+    };
   }
 });
 
@@ -14708,186 +15062,13 @@ var init_googleCalendarService = __esm({
   }
 });
 
-// server/_core/llm.ts
-var llm_exports = {};
-__export(llm_exports, {
-  invokeLLM: () => invokeLLM
-});
-async function invokeLLM(params) {
-  assertApiKey();
-  const {
-    messages,
-    tools,
-    toolChoice,
-    tool_choice,
-    outputSchema,
-    output_schema,
-    responseFormat,
-    response_format
-  } = params;
-  const payload = {
-    model: "gemini-2.5-flash",
-    messages: messages.map(normalizeMessage)
-  };
-  if (tools && tools.length > 0) {
-    payload.tools = tools;
-  }
-  const normalizedToolChoice = normalizeToolChoice(
-    toolChoice || tool_choice,
-    tools
-  );
-  if (normalizedToolChoice) {
-    payload.tool_choice = normalizedToolChoice;
-  }
-  payload.max_tokens = 32768;
-  payload.thinking = {
-    "budget_tokens": 128
-  };
-  const normalizedResponseFormat = normalizeResponseFormat({
-    responseFormat,
-    response_format,
-    outputSchema,
-    output_schema
-  });
-  if (normalizedResponseFormat) {
-    payload.response_format = normalizedResponseFormat;
-  }
-  const response = await fetch(resolveApiUrl(), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} \u2013 ${errorText}`
-    );
-  }
-  return await response.json();
-}
-var ensureArray, normalizeContentPart, normalizeMessage, normalizeToolChoice, resolveApiUrl, assertApiKey, normalizeResponseFormat;
-var init_llm = __esm({
-  "server/_core/llm.ts"() {
-    "use strict";
-    init_env();
-    ensureArray = (value) => Array.isArray(value) ? value : [value];
-    normalizeContentPart = (part) => {
-      if (typeof part === "string") {
-        return { type: "text", text: part };
-      }
-      if (part.type === "text") {
-        return part;
-      }
-      if (part.type === "image_url") {
-        return part;
-      }
-      if (part.type === "file_url") {
-        return part;
-      }
-      throw new Error("Unsupported message content part");
-    };
-    normalizeMessage = (message) => {
-      const { role, name, tool_call_id } = message;
-      if (role === "tool" || role === "function") {
-        const content = ensureArray(message.content).map((part) => typeof part === "string" ? part : JSON.stringify(part)).join("\n");
-        return {
-          role,
-          name,
-          tool_call_id,
-          content
-        };
-      }
-      const contentParts = ensureArray(message.content).map(normalizeContentPart);
-      if (contentParts.length === 1 && contentParts[0].type === "text") {
-        return {
-          role,
-          name,
-          content: contentParts[0].text
-        };
-      }
-      return {
-        role,
-        name,
-        content: contentParts
-      };
-    };
-    normalizeToolChoice = (toolChoice, tools) => {
-      if (!toolChoice) return void 0;
-      if (toolChoice === "none" || toolChoice === "auto") {
-        return toolChoice;
-      }
-      if (toolChoice === "required") {
-        if (!tools || tools.length === 0) {
-          throw new Error(
-            "tool_choice 'required' was provided but no tools were configured"
-          );
-        }
-        if (tools.length > 1) {
-          throw new Error(
-            "tool_choice 'required' needs a single tool or specify the tool name explicitly"
-          );
-        }
-        return {
-          type: "function",
-          function: { name: tools[0].function.name }
-        };
-      }
-      if ("name" in toolChoice) {
-        return {
-          type: "function",
-          function: { name: toolChoice.name }
-        };
-      }
-      return toolChoice;
-    };
-    resolveApiUrl = () => ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0 ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions` : "https://forge.manus.im/v1/chat/completions";
-    assertApiKey = () => {
-      if (!ENV.forgeApiKey) {
-        throw new Error("OPENAI_API_KEY is not configured");
-      }
-    };
-    normalizeResponseFormat = ({
-      responseFormat,
-      response_format,
-      outputSchema,
-      output_schema
-    }) => {
-      const explicitFormat = responseFormat || response_format;
-      if (explicitFormat) {
-        if (explicitFormat.type === "json_schema" && !explicitFormat.json_schema?.schema) {
-          throw new Error(
-            "responseFormat json_schema requires a defined schema object"
-          );
-        }
-        return explicitFormat;
-      }
-      const schema = outputSchema || output_schema;
-      if (!schema) return void 0;
-      if (!schema.name || !schema.schema) {
-        throw new Error("outputSchema requires both name and schema");
-      }
-      return {
-        type: "json_schema",
-        json_schema: {
-          name: schema.name,
-          schema: schema.schema,
-          ...typeof schema.strict === "boolean" ? { strict: schema.strict } : {}
-        }
-      };
-    };
-  }
-});
-
 // server/cronVencimentoCiclo.ts
 var cronVencimentoCiclo_exports = {};
 __export(cronVencimentoCiclo_exports, {
   iniciarCronVencimentoCiclo: () => iniciarCronVencimentoCiclo,
   verificarEEnviarAlertasVencimentoCiclo: () => verificarEEnviarAlertasVencimentoCiclo
 });
-import { eq as eq7, and as and5, gte as gte3 } from "drizzle-orm";
+import { eq as eq7, and as and6, gte as gte4 } from "drizzle-orm";
 async function verificarEEnviarAlertasVencimentoCiclo(options) {
   const dryRun = options?.dryRun || false;
   const forceResend = options?.forceResend || false;
@@ -14907,8 +15088,8 @@ async function verificarEEnviarAlertasVencimentoCiclo(options) {
   const allTrilhas = await db2.select().from(trilhas);
   const trilhaMap = new Map(allTrilhas.map((t2) => [t2.id, t2]));
   const sevenDaysAgo = new Date(Date.now() - DIAS_ENTRE_ALERTAS * 24 * 60 * 60 * 1e3);
-  const recentAlerts = await db2.select().from(emailAlertasLog).where(and5(
-    gte3(emailAlertasLog.createdAt, sevenDaysAgo),
+  const recentAlerts = await db2.select().from(emailAlertasLog).where(and6(
+    gte4(emailAlertasLog.createdAt, sevenDaysAgo),
     eq7(emailAlertasLog.emailEnviado, 1)
   ));
   const recentAlertKeys = new Set(
@@ -15209,7 +15390,7 @@ init_schema();
 init_db();
 import { TRPCError as TRPCError6 } from "@trpc/server";
 import { z as z6 } from "zod";
-import { eq as eq8, and as and6, asc as asc3, desc as desc3, inArray as inArray4 } from "drizzle-orm";
+import { eq as eq8, and as and7, asc as asc3, desc as desc3, inArray as inArray4 } from "drizzle-orm";
 
 // server/excelProcessor.ts
 import * as XLSX from "xlsx";
@@ -15267,6 +15448,42 @@ async function storagePut(relKey, data, contentType = "application/octet-stream"
     key,
     url: buildPublicUrl(key)
   };
+}
+async function storageDownloadBuffer(relKeyOrUrl) {
+  const { bucketName } = requireR2Env();
+  const client = getR2Client();
+  let key;
+  if (relKeyOrUrl.startsWith("http://") || relKeyOrUrl.startsWith("https://")) {
+    const base = ENV.r2PublicBaseUrl?.trim();
+    if (base && relKeyOrUrl.startsWith(base)) {
+      key = relKeyOrUrl.slice(base.replace(/\/+$/, "").length).replace(/^\/+/, "");
+    } else {
+      const urlObj = new URL(relKeyOrUrl);
+      key = urlObj.pathname.replace(/^\/+/, "");
+    }
+  } else {
+    key = normalizeKey(relKeyOrUrl);
+  }
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: key
+  });
+  const response = await client.send(command);
+  if (!response.Body) throw new Error("Arquivo vazio ou n\xE3o encontrado no storage");
+  const chunks = [];
+  const stream = response.Body;
+  if (typeof stream[Symbol.asyncIterator] === "function") {
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+  } else {
+    await new Promise((resolve, reject) => {
+      stream.on("data", (chunk) => chunks.push(chunk));
+      stream.on("end", resolve);
+      stream.on("error", reject);
+    });
+  }
+  return Buffer.concat(chunks);
 }
 
 // server/excelProcessor.ts
@@ -16291,7 +16508,7 @@ init_notification();
 // server/routers/jornada.ts
 init_db();
 import { z as z2 } from "zod";
-import { eq as eq2 } from "drizzle-orm";
+import { eq as eq2, and as and2, sql as sql2 } from "drizzle-orm";
 
 // server/dataCache.ts
 var cache = /* @__PURE__ */ new Map();
@@ -16402,6 +16619,31 @@ var jornadaRouter = router({
           perfMap.set(perf.externalCompetenciaId.toLowerCase(), perf);
         }
       }
+      const cursosAtribAluno = await db2.select({
+        id: alunoCursoAtribuido.id,
+        cursoId: alunoCursoAtribuido.cursoId,
+        competenciaId: alunoCursoAtribuido.competenciaId
+      }).from(alunoCursoAtribuido).where(eq2(alunoCursoAtribuido.alunoId, aluno.id));
+      const plataformaProgMap = /* @__PURE__ */ new Map();
+      for (const ca of cursosAtribAluno) {
+        const [totalRes] = await db2.select({ count: sql2`COUNT(*)` }).from(atividadesCurso).where(and2(eq2(atividadesCurso.cursoId, ca.cursoId), eq2(atividadesCurso.isActive, 1)));
+        const [conclRes] = await db2.select({ count: sql2`COUNT(*)` }).from(alunoAtividadeProgresso).where(and2(
+          eq2(alunoAtividadeProgresso.alunoId, aluno.id),
+          eq2(alunoAtividadeProgresso.cursoAtribuidoId, ca.id),
+          sql2`${alunoAtividadeProgresso.status} IN ('aprovada', 'concluida')`
+        ));
+        const [andRes] = await db2.select({ count: sql2`COUNT(*)` }).from(alunoAtividadeProgresso).where(and2(
+          eq2(alunoAtividadeProgresso.alunoId, aluno.id),
+          eq2(alunoAtividadeProgresso.cursoAtribuidoId, ca.id),
+          eq2(alunoAtividadeProgresso.status, "em_andamento")
+        ));
+        const total = Number(totalRes?.count || 0);
+        const concluidas = Number(conclRes?.count || 0);
+        const emAndamento = Number(andRes?.count || 0);
+        if (total > 0) {
+          plataformaProgMap.set(ca.competenciaId, { total, concluidas, emAndamento });
+        }
+      }
       const macroJornadas = pdis.map((pdi) => {
         const trilha = trilhasMap.get(pdi.trilhaId);
         const competencias2 = competenciasMap.get(pdi.id) || [];
@@ -16430,6 +16672,12 @@ var jornadaRouter = router({
             if (!perfComp) {
               perfComp = studentPerf.find((p) => p.competenciaId === comp.competenciaId);
             }
+            const platProg = plataformaProgMap.get(comp.competenciaId);
+            const aulasDisp = perfComp?.aulasDisponiveis ?? (platProg?.total ?? 0);
+            const aulasConc = perfComp?.aulasConcluidas ?? (platProg?.concluidas ?? 0);
+            const aulasAnd = perfComp?.aulasEmAndamento ?? (platProg?.emAndamento ?? 0);
+            const progressoCalc = aulasDisp > 0 ? Math.round(aulasConc / aulasDisp * 100) : 0;
+            const progressoFinal = perfComp?.progressoTotal ?? progressoCalc;
             return {
               id: comp.id,
               competenciaId: comp.competenciaId,
@@ -16441,11 +16689,11 @@ var jornadaRouter = router({
               metaFinal: comp.metaFinal,
               metaCiclo1: comp.metaCiclo1 ?? null,
               metaCiclo2: comp.metaCiclo2 ?? null,
-              // Dados de student_performance (upload Scaffold)
-              aulasDisponiveis: perfComp?.aulasDisponiveis ?? 0,
-              aulasConcluidas: perfComp?.aulasConcluidas ?? 0,
-              aulasEmAndamento: perfComp?.aulasEmAndamento ?? 0,
-              progressoTotal: perfComp?.progressoTotal ?? 0,
+              // Dados de progresso (student_performance ou fallback da plataforma)
+              aulasDisponiveis: aulasDisp,
+              aulasConcluidas: aulasConc,
+              aulasEmAndamento: aulasAnd,
+              progressoTotal: progressoFinal,
               notaPlataforma: perfComp?.mediaAvaliacoesFinais ? Number(perfComp.mediaAvaliacoesFinais) * 10 : perfComp?.mediaAvaliacoesRespondidas ? Number(perfComp.mediaAvaliacoesRespondidas) * 10 : 0,
               avaliacoesRespondidas: perfComp?.avaliacoesRespondidas ?? 0,
               avaliacoesDisponiveis: perfComp?.avaliacoesDisponiveis ?? 0,
@@ -17084,7 +17332,7 @@ import { z as z3 } from "zod";
 init_db();
 init_schema();
 import { TRPCError as TRPCError3 } from "@trpc/server";
-import { eq as eq3, and as and2 } from "drizzle-orm";
+import { eq as eq3, and as and3 } from "drizzle-orm";
 import * as XLSX2 from "xlsx";
 function camposObrigatoriosCompetencia(data) {
   const obrigatorios = [
@@ -17220,7 +17468,7 @@ var fichasPedagogicasRouter = router({
     if (!comp) throw new TRPCError3({ code: "NOT_FOUND", message: "Compet\xEAncia n\xE3o encontrada" });
     if (input.status === "publicada") {
       const existente = await db2.select().from(fichasPedagogicasCompetencias).where(
-        and2(
+        and3(
           eq3(fichasPedagogicasCompetencias.competenciaId, input.competenciaId),
           eq3(fichasPedagogicasCompetencias.status, "publicada")
         )
@@ -17253,7 +17501,7 @@ var fichasPedagogicasRouter = router({
     const { id, ...dados } = input;
     if (dados.status === "publicada" && dados.competenciaId) {
       const existente = await db2.select().from(fichasPedagogicasCompetencias).where(
-        and2(
+        and3(
           eq3(fichasPedagogicasCompetencias.competenciaId, dados.competenciaId),
           eq3(fichasPedagogicasCompetencias.status, "publicada")
         )
@@ -17290,7 +17538,7 @@ var fichasPedagogicasRouter = router({
       });
     }
     const existente = await db2.select().from(fichasPedagogicasCompetencias).where(
-      and2(
+      and3(
         eq3(fichasPedagogicasCompetencias.competenciaId, ficha.competenciaId),
         eq3(fichasPedagogicasCompetencias.status, "publicada")
       )
@@ -17328,7 +17576,7 @@ var fichasPedagogicasRouter = router({
     const db2 = await getDb();
     if (!db2) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
     const fichas = await db2.select().from(fichasPedagogicasConteudos).where(
-      and2(
+      and3(
         eq3(fichasPedagogicasConteudos.conteudoId, input.conteudoId),
         eq3(fichasPedagogicasConteudos.competenciaId, input.competenciaId)
       )
@@ -17339,7 +17587,7 @@ var fichasPedagogicasRouter = router({
     const db2 = await getDb();
     if (!db2) throw new TRPCError3({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
     const [modulo] = await db2.select().from(competenciasModulos).where(
-      and2(
+      and3(
         eq3(competenciasModulos.id, input.conteudoId),
         eq3(competenciasModulos.competenciaId, input.competenciaId)
       )
@@ -17352,7 +17600,7 @@ var fichasPedagogicasRouter = router({
     }
     if (input.status === "publicada") {
       const existente = await db2.select().from(fichasPedagogicasConteudos).where(
-        and2(
+        and3(
           eq3(fichasPedagogicasConteudos.conteudoId, input.conteudoId),
           eq3(fichasPedagogicasConteudos.competenciaId, input.competenciaId),
           eq3(fichasPedagogicasConteudos.status, "publicada")
@@ -17386,7 +17634,7 @@ var fichasPedagogicasRouter = router({
     const { id, ...dados } = input;
     if (dados.status === "publicada" && dados.conteudoId && dados.competenciaId) {
       const existente = await db2.select().from(fichasPedagogicasConteudos).where(
-        and2(
+        and3(
           eq3(fichasPedagogicasConteudos.conteudoId, dados.conteudoId),
           eq3(fichasPedagogicasConteudos.competenciaId, dados.competenciaId),
           eq3(fichasPedagogicasConteudos.status, "publicada")
@@ -17423,7 +17671,7 @@ var fichasPedagogicasRouter = router({
       });
     }
     const existente = await db2.select().from(fichasPedagogicasConteudos).where(
-      and2(
+      and3(
         eq3(fichasPedagogicasConteudos.conteudoId, ficha.conteudoId),
         eq3(fichasPedagogicasConteudos.competenciaId, ficha.competenciaId),
         eq3(fichasPedagogicasConteudos.status, "publicada")
@@ -17743,7 +17991,7 @@ var fichasPedagogicasRouter = router({
           updatedBy: userName
         };
         const existente = await db2.select().from(fichasPedagogicasConteudos).where(
-          and2(
+          and3(
             eq3(fichasPedagogicasConteudos.conteudoId, modulo.id),
             eq3(fichasPedagogicasConteudos.competenciaId, comp.id)
           )
@@ -17973,7 +18221,7 @@ var bibliotecaLivrosRouter = router({
 // server/routers/processosSeletivos.ts
 init_schema();
 import { TRPCError as TRPCError5 } from "@trpc/server";
-import { and as and3, asc as asc2, desc as desc2, eq as eq4, inArray as inArray3, isNull as isNull2, lt as lt2, ne as ne2, or as or2, sql as sql2 } from "drizzle-orm";
+import { and as and4, asc as asc2, desc as desc2, eq as eq4, gte as gte2, inArray as inArray3, isNull as isNull2, lt as lt2, ne as ne2, or as or2, sql as sql3 } from "drizzle-orm";
 import { z as z5 } from "zod";
 init_db();
 init_emailService();
@@ -17997,9 +18245,9 @@ async function hasProcessAccess(database, user, processoId) {
     const [processo] = await database.select({ mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq4(processosSeletivos.id, processoId)).limit(1);
     if (processo?.mentorId === user.consultorId) return true;
   }
-  const [cliente] = await database.select({ id: processoClienteUsuarios.id }).from(processoClienteUsuarios).where(and3(eq4(processoClienteUsuarios.processoId, processoId), eq4(processoClienteUsuarios.userId, user.id))).limit(1);
+  const [cliente] = await database.select({ id: processoClienteUsuarios.id }).from(processoClienteUsuarios).where(and4(eq4(processoClienteUsuarios.processoId, processoId), eq4(processoClienteUsuarios.userId, user.id))).limit(1);
   if (cliente) return true;
-  const [candidato] = await database.select({ id: processoCandidatos.id }).from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, processoId), eq4(processoCandidatos.userId, user.id))).limit(1);
+  const [candidato] = await database.select({ id: processoCandidatos.id }).from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, processoId), eq4(processoCandidatos.userId, user.id))).limit(1);
   return Boolean(candidato);
 }
 async function ensureProcessAccess(database, user, processoId) {
@@ -18057,15 +18305,19 @@ async function allocateCandidate(database, candidatoId, actorUserId) {
     throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
   }
   const regiaoFilter = candidate.regiaoId != null ? eq4(processoAgendaSlots.regiaoId, candidate.regiaoId) : isNull2(processoAgendaSlots.regiaoId);
-  const slotWhere = candidate.vagaId ? and3(
+  const hoje = /* @__PURE__ */ new Date();
+  const dataHoje = hoje.toISOString().slice(0, 10);
+  const slotWhere = candidate.vagaId ? and4(
     eq4(processoAgendaSlots.processoId, candidate.processoId),
     regiaoFilter,
     or2(isNull2(processoAgendaSlots.vagaId), eq4(processoAgendaSlots.vagaId, candidate.vagaId)),
-    eq4(processoAgendaSlots.status, "disponivel")
-  ) : and3(
+    eq4(processoAgendaSlots.status, "disponivel"),
+    gte2(processoAgendaSlots.dataAgenda, dataHoje)
+  ) : and4(
     eq4(processoAgendaSlots.processoId, candidate.processoId),
     regiaoFilter,
-    eq4(processoAgendaSlots.status, "disponivel")
+    eq4(processoAgendaSlots.status, "disponivel"),
+    gte2(processoAgendaSlots.dataAgenda, dataHoje)
   );
   const [slot] = await database.select().from(processoAgendaSlots).where(slotWhere).orderBy(asc2(processoAgendaSlots.dataAgenda), asc2(processoAgendaSlots.inicio)).limit(1);
   if (!slot) {
@@ -18078,7 +18330,7 @@ async function allocateCandidate(database, candidatoId, actorUserId) {
       detalhe: `Candidato ${candidate.nome} ficou aguardando agenda na regiao ${candidate.regiaoId}.`
     });
     try {
-      const [processo] = await database.select().from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
+      const [processo] = await database.select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, clienteEmail: processosSeletivos.clienteEmail, responsavelCkmId: processosSeletivos.responsavelCkmId }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
       let regiaoNome = null;
       if (candidate.regiaoId) {
         const [regiao] = await database.select().from(processoRegioes).where(eq4(processoRegioes.id, candidate.regiaoId)).limit(1);
@@ -18131,7 +18383,7 @@ async function allocateCandidate(database, candidatoId, actorUserId) {
     metadata: { slotId: slot.id, regiaoId: slot.regiaoId, vagaId: slot.vagaId }
   });
   try {
-    const [processo] = await database.select().from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
+    const [processo] = await database.select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, linkEntrevista: processosSeletivos.linkEntrevista }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
     if (processo && candidate.email) {
       const dataFormatada = slot.dataAgenda ? (/* @__PURE__ */ new Date(slot.dataAgenda + "T00:00:00")).toLocaleDateString("pt-BR") : slot.dataAgenda;
       const emailData = buildPsConfirmacaoAgendamentoEmail({
@@ -18144,7 +18396,7 @@ async function allocateCandidate(database, candidatoId, actorUserId) {
         linkEntrevista: processo.linkEntrevista || slot.linkEntrevista || null,
         loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com"}/login`
       });
-      await sendEmail({ to: candidate.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+      await sendEmail({ to: candidate.email, cc: "relacionamento@ckmtalents.net", subject: emailData.subject, html: emailData.html, text: emailData.text });
     }
   } catch (emailErr) {
     console.error("[allocateCandidate] Erro ao enviar e-mail de confirma\xE7\xE3o ao candidato:", emailErr);
@@ -18187,7 +18439,7 @@ var processosSeletivosRouter = router({
     const userConsultorRole = ctx2.user.consultorRole;
     const userManagedProgramId = ctx2.user.managedProgramId;
     if (userConsultorId && userConsultorRole !== "gerente") {
-      return database.select(safeSelect).from(processosSeletivos).where(sql2`${processosSeletivos.id} IN (SELECT id FROM processos_seletivos WHERE mentorId = ${userConsultorId})`).orderBy(desc2(processosSeletivos.createdAt));
+      return database.select(safeSelect).from(processosSeletivos).where(sql3`${processosSeletivos.id} IN (SELECT id FROM processos_seletivos WHERE mentorId = ${userConsultorId})`).orderBy(desc2(processosSeletivos.createdAt));
     }
     if (userConsultorRole === "gerente" && userManagedProgramId) {
       const [prog] = await database.select({ name: programs.name }).from(programs).where(eq4(programs.id, userManagedProgramId)).limit(1);
@@ -18206,11 +18458,11 @@ var processosSeletivosRouter = router({
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx2.user, input.processoId);
     const ativo = ne2(processoCandidatos.statusCadastro, "inativo");
-    const [candidatos] = await database.select({ total: sql2`count(*)` }).from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, input.processoId), ativo));
-    const [testesConcluidos] = await database.select({ total: sql2`count(*)` }).from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, input.processoId), ativo, eq4(processoCandidatos.statusTeste, "concluido")));
-    const [entrevistasAgendadas] = await database.select({ total: sql2`count(*)` }).from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, input.processoId), ativo, eq4(processoCandidatos.statusEntrevista, "agendada")));
-    const [aprovados] = await database.select({ total: sql2`count(*)` }).from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, input.processoId), ativo, eq4(processoCandidatos.statusResultado, "aprovado")));
-    const [slotsLivres] = await database.select({ total: sql2`count(*)` }).from(processoAgendaSlots).where(and3(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.status, "disponivel")));
+    const [candidatos] = await database.select({ total: sql3`count(*)` }).from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), ativo));
+    const [testesConcluidos] = await database.select({ total: sql3`count(*)` }).from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), ativo, eq4(processoCandidatos.statusTeste, "concluido")));
+    const [entrevistasAgendadas] = await database.select({ total: sql3`count(*)` }).from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), ativo, eq4(processoCandidatos.statusEntrevista, "agendada")));
+    const [aprovados] = await database.select({ total: sql3`count(*)` }).from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), ativo, eq4(processoCandidatos.statusResultado, "aprovado")));
+    const [slotsLivres] = await database.select({ total: sql3`count(*)` }).from(processoAgendaSlots).where(and4(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.status, "disponivel")));
     return {
       candidatos: Number(candidatos?.total ?? 0),
       testesConcluidos: Number(testesConcluidos?.total ?? 0),
@@ -18222,7 +18474,21 @@ var processosSeletivosRouter = router({
   obterProcesso: protectedProcedure.input(processoIdInput).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx2.user, input.processoId);
-    const [processo] = await database.select().from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
+    const safeSelectProcesso = {
+      id: processosSeletivos.id,
+      nome: processosSeletivos.nome,
+      clienteNome: processosSeletivos.clienteNome,
+      clienteEmail: processosSeletivos.clienteEmail,
+      linkEntrevista: processosSeletivos.linkEntrevista,
+      descricao: processosSeletivos.descricao,
+      status: processosSeletivos.status,
+      dataInicio: processosSeletivos.dataInicio,
+      responsavelCkmId: processosSeletivos.responsavelCkmId,
+      criadoPor: processosSeletivos.criadoPor,
+      createdAt: processosSeletivos.createdAt,
+      updatedAt: processosSeletivos.updatedAt
+    };
+    const [processo] = await database.select(safeSelectProcesso).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
     if (!processo) throw new TRPCError5({ code: "NOT_FOUND", message: "Processo nao encontrado" });
     return processo;
   }),
@@ -18320,7 +18586,7 @@ var processosSeletivosRouter = router({
   listarRegioes: protectedProcedure.input(processoIdInput).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx2.user, input.processoId);
-    return database.select().from(processoRegioes).where(and3(eq4(processoRegioes.processoId, input.processoId), ne2(processoRegioes.status, "encerrada")));
+    return database.select().from(processoRegioes).where(and4(eq4(processoRegioes.processoId, input.processoId), ne2(processoRegioes.status, "encerrada")));
   }),
   criarRegiao: protectedProcedure.input(processoIdInput.extend({ nome: z5.string().min(1), codigo: z5.string().optional(), vagasPrevistas: z5.number().min(0).default(0) })).mutation(async ({ ctx: ctx2, input }) => {
     requireCkmAdmin(ctx2.user.role);
@@ -18343,11 +18609,35 @@ var processosSeletivosRouter = router({
     await writeLog(database, { processoId: regiao.processoId, userId: ctx2.user.id, acao: "regiao_inativada", detalhe: regiao.nome });
     return { success: true };
   }),
-  inativarCandidato: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
-    requireCkmAdmin(ctx2.user.role);
+  inativarCandidato: protectedProcedure.input(z5.object({ candidatoId: z5.number(), comunicado: z5.string().optional() })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
-    const [candidato] = await database.select({ id: processoCandidatos.id, processoId: processoCandidatos.processoId, nome: processoCandidatos.nome }).from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    const [candidato] = await database.select({
+      id: processoCandidatos.id,
+      processoId: processoCandidatos.processoId,
+      nome: processoCandidatos.nome,
+      email: processoCandidatos.email
+    }).from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
     if (!candidato) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    await ensureProcessAccess(database, ctx2.user, candidato.processoId);
+    if (input.comunicado && candidato.email) {
+      try {
+        const htmlComunicado = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+              <p style="font-size: 15px; color: #333;">Ol\xE1, <strong>${candidato.nome}</strong>,</p>
+              <p style="font-size: 15px; color: #333;">${input.comunicado}</p>
+              <p style="font-size: 13px; color: #888; margin-top: 32px;">Atenciosamente,<br/>Equipe Ecossistema do Bem</p>
+            </div>
+          `;
+        await sendEmail({
+          to: candidato.email,
+          subject: "Informa\xE7\xE3o sobre sua participa\xE7\xE3o no processo seletivo",
+          html: htmlComunicado,
+          text: input.comunicado
+        });
+      } catch (emailErr) {
+        console.error("[inativarCandidato] Erro ao enviar e-mail de comunicado:", emailErr);
+      }
+    }
     await database.update(processoCandidatos).set({ statusCadastro: "inativo" }).where(eq4(processoCandidatos.id, input.candidatoId));
     const entrevistas = await database.select({ agendaSlotId: processoEntrevistas.agendaSlotId }).from(processoEntrevistas).where(eq4(processoEntrevistas.candidatoId, input.candidatoId));
     for (const e of entrevistas) {
@@ -18358,17 +18648,55 @@ var processosSeletivosRouter = router({
     await writeLog(database, { processoId: candidato.processoId, userId: ctx2.user.id, acao: "candidato_inativado", detalhe: candidato.nome });
     return { success: true };
   }),
+  reativarCandidato: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const [candidato] = await database.select({ id: processoCandidatos.id, processoId: processoCandidatos.processoId, nome: processoCandidatos.nome }).from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    if (!candidato) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+    await ensureProcessAccess(database, ctx2.user, candidato.processoId);
+    await database.update(processoCandidatos).set({ statusCadastro: "importado" }).where(eq4(processoCandidatos.id, input.candidatoId));
+    await writeLog(database, { processoId: candidato.processoId, userId: ctx2.user.id, acao: "candidato_reativado", detalhe: candidato.nome });
+    return { success: true };
+  }),
   listarCandidatos: protectedProcedure.input(processoIdInput).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx2.user, input.processoId);
-    const rows = await database.select().from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, input.processoId), ne2(processoCandidatos.statusCadastro, "inativo"))).orderBy(asc2(processoCandidatos.nome));
+    const rows = await database.select({
+      id: processoCandidatos.id,
+      processoId: processoCandidatos.processoId,
+      vagaId: processoCandidatos.vagaId,
+      regiaoId: processoCandidatos.regiaoId,
+      userId: processoCandidatos.userId,
+      nome: processoCandidatos.nome,
+      email: processoCandidatos.email,
+      telefone: sql3`COALESCE(${processoCandidatos.telefone}, ${alunos.telefone})`,
+      cpf: processoCandidatos.cpf,
+      statusCadastro: processoCandidatos.statusCadastro,
+      statusTeste: processoCandidatos.statusTeste,
+      testeConcluidoEm: processoCandidatos.testeConcluidoEm,
+      statusEntrevista: processoCandidatos.statusEntrevista,
+      statusResultado: processoCandidatos.statusResultado,
+      observacoes: processoCandidatos.observacoes,
+      createdAt: processoCandidatos.createdAt,
+      updatedAt: processoCandidatos.updatedAt,
+      slotId: processoAgendaSlots.id,
+      slotDataAgenda: processoAgendaSlots.dataAgenda,
+      slotInicio: processoAgendaSlots.inicio,
+      slotFim: processoAgendaSlots.fim
+    }).from(processoCandidatos).leftJoin(
+      processoAgendaSlots,
+      and4(
+        eq4(processoAgendaSlots.candidatoId, processoCandidatos.id),
+        eq4(processoAgendaSlots.processoId, input.processoId),
+        ne2(processoAgendaSlots.status, "cancelado")
+      )
+    ).leftJoin(users, eq4(users.id, processoCandidatos.userId)).leftJoin(alunos, eq4(alunos.id, users.alunoId)).where(and4(eq4(processoCandidatos.processoId, input.processoId), ne2(processoCandidatos.statusCadastro, "inativo"))).orderBy(asc2(processoCandidatos.nome));
     if (isCkmAdmin(ctx2.user.role)) return rows;
     const userConsultorId = ctx2.user.consultorId;
     if (userConsultorId) {
       const [processo] = await database.select({ mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
       if (processo?.mentorId === userConsultorId) return rows;
     }
-    const isCliente = await database.select({ id: processoClienteUsuarios.id }).from(processoClienteUsuarios).where(and3(eq4(processoClienteUsuarios.processoId, input.processoId), eq4(processoClienteUsuarios.userId, ctx2.user.id))).limit(1);
+    const isCliente = await database.select({ id: processoClienteUsuarios.id }).from(processoClienteUsuarios).where(and4(eq4(processoClienteUsuarios.processoId, input.processoId), eq4(processoClienteUsuarios.userId, ctx2.user.id))).limit(1);
     if (isCliente.length > 0) return rows;
     return rows.filter((candidate) => candidate.userId === ctx2.user.id);
   }),
@@ -18563,7 +18891,7 @@ var processosSeletivosRouter = router({
   listarSlotsAgenda: protectedProcedure.input(processoIdInput.extend({ agendaGrupoId: z5.number().optional() })).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx2.user, input.processoId);
-    const where = input.agendaGrupoId ? and3(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.agendaGrupoId, input.agendaGrupoId)) : eq4(processoAgendaSlots.processoId, input.processoId);
+    const where = input.agendaGrupoId ? and4(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.agendaGrupoId, input.agendaGrupoId)) : eq4(processoAgendaSlots.processoId, input.processoId);
     return database.select().from(processoAgendaSlots).where(where).orderBy(asc2(processoAgendaSlots.dataAgenda), asc2(processoAgendaSlots.inicio));
   }),
   listarLogs: protectedProcedure.input(processoIdInput).query(async ({ ctx: ctx2, input }) => {
@@ -18629,13 +18957,32 @@ var processosSeletivosRouter = router({
   // Rota pública: retorna slots disponíveis de um processo para o candidato agendar
   listarSlotsDisponiveis: publicProcedure.input(z5.object({ processoId: z5.number() })).query(async ({ input }) => {
     const database = await requireDatabase();
-    const slots = await database.select().from(processoAgendaSlots).where(and3(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.status, "disponivel"))).orderBy(asc2(processoAgendaSlots.dataAgenda), asc2(processoAgendaSlots.inicio));
+    const slots = await database.select().from(processoAgendaSlots).where(and4(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.status, "disponivel"))).orderBy(asc2(processoAgendaSlots.dataAgenda), asc2(processoAgendaSlots.inicio));
     return slots;
+  }),
+  // Rota pública: verifica se CPF está na lista de convocados de um processo seletivo
+  verificarCpfConvocado: publicProcedure.input(z5.object({ processoId: z5.number(), cpf: z5.string().min(1) })).query(async ({ input }) => {
+    const database = await requireDatabase();
+    const cpfLimpo = input.cpf.replace(/[.\-\s]/g, "").trim();
+    const [candidato] = await database.select({ id: processoCandidatos.id, nome: processoCandidatos.nome, statusCadastro: processoCandidatos.statusCadastro }).from(processoCandidatos).where(
+      and4(
+        eq4(processoCandidatos.processoId, input.processoId),
+        eq4(processoCandidatos.cpf, cpfLimpo)
+      )
+    ).limit(1);
+    if (!candidato || candidato.statusCadastro === "inativo") {
+      return { convocado: false, nome: null, jaCadastrado: false };
+    }
+    return {
+      convocado: true,
+      nome: candidato.nome,
+      jaCadastrado: candidato.statusCadastro === "ativo"
+    };
   }),
   // Candidato agendando seu próprio slot após concluir os testes
   candidatoAgendar: protectedProcedure.input(z5.object({ slotId: z5.number(), processoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
-    const [candidate] = await database.select().from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, input.processoId), eq4(processoCandidatos.userId, ctx2.user.id))).limit(1);
+    const [candidate] = await database.select().from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), eq4(processoCandidatos.userId, ctx2.user.id))).limit(1);
     if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado neste processo" });
     if (candidate.statusTeste !== "concluido") {
       const alunoId = ctx2.user.alunoId;
@@ -18649,7 +18996,7 @@ var processosSeletivosRouter = router({
       }
       await database.update(processoCandidatos).set({ statusTeste: "concluido", testeConcluidoEm: /* @__PURE__ */ new Date() }).where(eq4(processoCandidatos.id, candidate.id));
     }
-    const [slot] = await database.select().from(processoAgendaSlots).where(and3(eq4(processoAgendaSlots.id, input.slotId), eq4(processoAgendaSlots.status, "disponivel"))).limit(1);
+    const [slot] = await database.select().from(processoAgendaSlots).where(and4(eq4(processoAgendaSlots.id, input.slotId), eq4(processoAgendaSlots.status, "disponivel"))).limit(1);
     if (!slot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot nao disponivel" });
     await database.update(processoAgendaSlots).set({ candidatoId: candidate.id, status: "reservado" }).where(eq4(processoAgendaSlots.id, input.slotId));
     await database.insert(processoEntrevistas).values({
@@ -18668,7 +19015,12 @@ var processosSeletivosRouter = router({
       detalhe: `Slot ${slot.dataAgenda} ${slot.inicio}`
     });
     try {
-      const [processo] = await database.select().from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
+      const [processo] = await database.select({
+        id: processosSeletivos.id,
+        nome: processosSeletivos.nome,
+        clienteNome: processosSeletivos.clienteNome,
+        linkEntrevista: processosSeletivos.linkEntrevista
+      }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
       if (processo && candidate.email) {
         const dataFormatada = slot.dataAgenda ? (/* @__PURE__ */ new Date(slot.dataAgenda + "T00:00:00")).toLocaleDateString("pt-BR") : slot.dataAgenda;
         const emailData = buildPsConfirmacaoAgendamentoEmail({
@@ -18681,7 +19033,7 @@ var processosSeletivosRouter = router({
           linkEntrevista: slot.linkEntrevista ?? null,
           loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com"}/login`
         });
-        await sendEmail({ to: candidate.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+        await sendEmail({ to: candidate.email, cc: "relacionamento@ckmtalents.net", subject: emailData.subject, html: emailData.html, text: emailData.text });
       }
     } catch (emailErr) {
       console.error("[PS] Erro ao enviar e-mail de confirma\xE7\xE3o:", emailErr);
@@ -18723,7 +19075,7 @@ var processosSeletivosRouter = router({
     const isCandidate = candidate.userId === ctx2.user.id && !isCkmAdmin(ctx2.user.role);
     if (isCandidate) throw new TRPCError5({ code: "FORBIDDEN", message: "Candidatos nao podem alterar propria regiao" });
     if (input.novaRegiaoId !== null) {
-      const [regiao] = await database.select({ id: processoRegioes.id }).from(processoRegioes).where(and3(eq4(processoRegioes.id, input.novaRegiaoId), eq4(processoRegioes.processoId, candidate.processoId))).limit(1);
+      const [regiao] = await database.select({ id: processoRegioes.id }).from(processoRegioes).where(and4(eq4(processoRegioes.id, input.novaRegiaoId), eq4(processoRegioes.processoId, candidate.processoId))).limit(1);
       if (!regiao) throw new TRPCError5({ code: "NOT_FOUND", message: "Regiao nao encontrada neste processo" });
     }
     const regiaoAnterior = candidate.regiaoId;
@@ -18753,7 +19105,7 @@ var processosSeletivosRouter = router({
       dataAgenda: processoAgendaSlots.dataAgenda,
       inicio: processoAgendaSlots.inicio,
       fim: processoAgendaSlots.fim
-    }).from(processoEntrevistas).innerJoin(processoCandidatos, eq4(processoCandidatos.id, processoEntrevistas.candidatoId)).innerJoin(processoAgendaSlots, eq4(processoAgendaSlots.id, processoEntrevistas.agendaSlotId)).where(and3(eq4(processoEntrevistas.processoId, input.processoId), ne2(processoCandidatos.statusCadastro, "inativo"))).orderBy(asc2(processoAgendaSlots.dataAgenda), asc2(processoAgendaSlots.inicio));
+    }).from(processoEntrevistas).innerJoin(processoCandidatos, eq4(processoCandidatos.id, processoEntrevistas.candidatoId)).innerJoin(processoAgendaSlots, eq4(processoAgendaSlots.id, processoEntrevistas.agendaSlotId)).where(and4(eq4(processoEntrevistas.processoId, input.processoId), ne2(processoCandidatos.statusCadastro, "inativo"))).orderBy(asc2(processoAgendaSlots.dataAgenda), asc2(processoAgendaSlots.inicio));
     return rows;
   }),
   // ── AVALIAÇÃO: Perfil completo do candidato (DISC + autopercepções < 4 + minicurrículo) ──
@@ -18783,7 +19135,7 @@ var processosSeletivosRouter = router({
         competenciaNome: competencias.nome,
         nota: autopercepcoesCompetencias.nota
       }).from(autopercepcoesCompetencias).innerJoin(competencias, eq4(competencias.id, autopercepcoesCompetencias.competenciaId)).where(
-        and3(
+        and4(
           eq4(autopercepcoesCompetencias.alunoId, alunoId),
           lt2(autopercepcoesCompetencias.nota, 4)
         )
@@ -18811,8 +19163,17 @@ var processosSeletivosRouter = router({
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
     if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
-    if (!isCkmAdmin(ctx2.user.role)) {
-      throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas administradores podem reagendar entrevistas" });
+    const isAdmin = isCkmAdmin(ctx2.user.role);
+    let isMentoraDoProcesso = false;
+    if (!isAdmin) {
+      const userConsultorId = ctx2.user.consultorId;
+      if (userConsultorId) {
+        const [processoCheck] = await database.select({ mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
+        isMentoraDoProcesso = processoCheck?.mentorId === userConsultorId;
+      }
+    }
+    if (!isAdmin && !isMentoraDoProcesso) {
+      throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas administradores ou a mentora do processo podem reagendar entrevistas" });
     }
     const [novoSlot] = await database.select().from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, input.novoSlotId)).limit(1);
     if (!novoSlot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot nao encontrado" });
@@ -18866,31 +19227,46 @@ var processosSeletivosRouter = router({
         text: emailData.text
       });
     }
+    if (candidate.userId) {
+      try {
+        await createNotification({
+          userId: candidate.userId,
+          title: "Entrevista Reagendada",
+          message: `Sua entrevista para o processo ${processo?.nome ?? "Processo Seletivo"} foi reagendada para ${dataFormatada} \xE0s ${novoSlot.inicio}.`,
+          type: "warning",
+          category: "processo_seletivo",
+          link: `/processos-seletivos`
+        });
+      } catch (notifErr) {
+        console.error("[reagendarEntrevista] Erro ao criar notifica\xE7\xE3o:", notifErr);
+      }
+    }
     return { success: true, novoSlot };
   }),
   // ── AVALIAÇÃO: Registrar decisão com justificativa obrigatória ──
   registrarDecisao: protectedProcedure.input(z5.object({
     candidatoId: z5.number(),
-    decisao: z5.enum(["aprovado", "reprovado"]),
-    justificativa: z5.string().min(1, "Justificativa \xE9 obrigat\xF3ria")
+    decisao: z5.enum(["aprovado", "reprovado", "em_analise"]),
+    justificativa: z5.string().min(1, "Justificativa \xE9 obrigat\xF3ria"),
+    participantesBanca: z5.string().optional()
   })).mutation(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
     if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
-    if (!isCkmAdmin(ctx2.user.role)) {
-      throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas administradores CKM podem registrar decisoes" });
-    }
     const decisaoAnterior = candidate.statusResultado;
     const [existingResult] = await database.select({ id: processoResultados.id }).from(processoResultados).where(eq4(processoResultados.candidatoId, input.candidatoId)).limit(1);
+    const updateSet = { resultado: input.decisao, parecer: input.justificativa, registradoPor: ctx2.user.id };
+    if (input.participantesBanca !== void 0) updateSet.participantesBanca = input.participantesBanca;
     if (existingResult) {
-      await database.update(processoResultados).set({ resultado: input.decisao, parecer: input.justificativa, registradoPor: ctx2.user.id }).where(eq4(processoResultados.id, existingResult.id));
+      await database.update(processoResultados).set(updateSet).where(eq4(processoResultados.id, existingResult.id));
     } else {
       await database.insert(processoResultados).values({
         processoId: candidate.processoId,
         candidatoId: input.candidatoId,
         resultado: input.decisao,
         parecer: input.justificativa,
+        participantesBanca: input.participantesBanca ?? null,
         registradoPor: ctx2.user.id
       });
     }
@@ -18925,15 +19301,39 @@ var processosSeletivosRouter = router({
       userId: processoLogs.userId,
       userName: users.name
     }).from(processoLogs).leftJoin(users, eq4(users.id, processoLogs.userId)).where(
-      and3(
+      and4(
         eq4(processoLogs.candidatoId, input.candidatoId),
         or2(
           eq4(processoLogs.acao, "decisao_registrada"),
-          eq4(processoLogs.acao, "decisao_alterada")
+          eq4(processoLogs.acao, "decisao_alterada"),
+          eq4(processoLogs.acao, "parecer_editado")
         )
       )
     ).orderBy(desc2(processoLogs.createdAt));
     return logs;
+  }),
+  // ── AVALIAÇÃO: Editar/complementar parecer sem alterar decisão ──
+  editarParecer: protectedProcedure.input(z5.object({
+    candidatoId: z5.number(),
+    parecer: z5.string().min(1, "O parecer n\xE3o pode ser vazio")
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const [candidate] = await database.select({ processoId: processoCandidatos.processoId }).from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato n\xE3o encontrado" });
+    await ensureProcessAccess(database, ctx2.user, candidate.processoId);
+    const [existingResult] = await database.select({ id: processoResultados.id }).from(processoResultados).where(eq4(processoResultados.candidatoId, input.candidatoId)).limit(1);
+    if (existingResult) {
+      await database.update(processoResultados).set({ parecer: input.parecer }).where(eq4(processoResultados.id, existingResult.id));
+    }
+    await writeLog(database, {
+      processoId: candidate.processoId,
+      candidatoId: input.candidatoId,
+      userId: ctx2.user.id,
+      acao: "parecer_editado",
+      detalhe: "parecer_atualizado",
+      metadata: { parecer: input.parecer }
+    });
+    return { success: true };
   }),
   // ── Enviar relatório do processo por e-mail ──
   enviarRelatorio: protectedProcedure.input(processoIdInput).mutation(async ({ ctx: ctx2, input }) => {
@@ -18968,7 +19368,18 @@ var processosSeletivosRouter = router({
       statusTeste: processoCandidatos.statusTeste,
       statusEntrevista: processoCandidatos.statusEntrevista,
       statusResultado: processoCandidatos.statusResultado
-    }).from(processoCandidatos).where(and3(eq4(processoCandidatos.processoId, input.processoId), ne2(processoCandidatos.statusCadastro, "inativo"))).orderBy(asc2(processoCandidatos.nome));
+    }).from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), ne2(processoCandidatos.statusCadastro, "inativo"))).orderBy(asc2(processoCandidatos.nome));
+    const slotsEntrevista = await database.select({
+      candidatoId: processoAgendaSlots.candidatoId,
+      dataAgenda: processoAgendaSlots.dataAgenda,
+      inicio: processoAgendaSlots.inicio,
+      fim: processoAgendaSlots.fim
+    }).from(processoAgendaSlots).where(and4(
+      eq4(processoAgendaSlots.processoId, input.processoId),
+      ne2(processoAgendaSlots.status, "cancelado"),
+      ne2(processoAgendaSlots.status, "disponivel")
+    ));
+    const slotMap = new Map(slotsEntrevista.map((s) => [s.candidatoId, s]));
     const regioes = await database.select({ id: processoRegioes.id, nome: processoRegioes.nome }).from(processoRegioes).where(eq4(processoRegioes.processoId, input.processoId));
     const regiaoMap = new Map(regioes.map((r) => [r.id, r.nome]));
     const labelEntrevista = (s) => {
@@ -18988,14 +19399,35 @@ var processosSeletivosRouter = router({
       if (s === "desistente") return "Desistente";
       return s;
     };
-    const dadosCandidatos = candidatos.map((c) => ({
-      nome: c.nome,
-      regiao: c.regiaoId ? regiaoMap.get(c.regiaoId) ?? "\u2014" : "\u2014",
-      inscrito: c.statusCadastro === "ativo",
-      testePerfil: c.statusTeste === "concluido",
-      entrevista: labelEntrevista(c.statusEntrevista),
-      status: labelResultado(c.statusResultado)
-    }));
+    const dadosCandidatosRaw = candidatos.map((c) => {
+      const slot = slotMap.get(c.id);
+      let dataHoraEntrevista = "";
+      let sortKey = "";
+      if (slot?.dataAgenda) {
+        const d = new Date(slot.dataAgenda);
+        const dia = String(d.getUTCDate()).padStart(2, "0");
+        const mes = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const ano = d.getUTCFullYear();
+        dataHoraEntrevista = `${dia}/${mes}/${ano} ${slot.inicio}\u2013${slot.fim}`;
+        sortKey = `${slot.dataAgenda} ${slot.inicio}`;
+      }
+      return {
+        nome: c.nome,
+        regiao: c.regiaoId ? regiaoMap.get(c.regiaoId) ?? "\u2014" : "\u2014",
+        inscrito: c.statusCadastro === "ativo",
+        testePerfil: c.statusTeste === "concluido",
+        entrevista: labelEntrevista(c.statusEntrevista),
+        dataHoraEntrevista,
+        status: labelResultado(c.statusResultado),
+        sortKey
+      };
+    });
+    const dadosCandidatos = dadosCandidatosRaw.sort((a, b) => {
+      if (a.sortKey && b.sortKey) return a.sortKey.localeCompare(b.sortKey);
+      if (a.sortKey) return -1;
+      if (b.sortKey) return 1;
+      return a.nome.localeCompare(b.nome);
+    }).map(({ sortKey: _sk, ...rest }) => rest);
     const agora = /* @__PURE__ */ new Date();
     const dataEnvio = agora.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" });
     const emailData = buildPsRelatorioEmail({
@@ -19028,6 +19460,66 @@ var processosSeletivosRouter = router({
     await writeLog(database, { processoId: input.processoId, userId: ctx2.user.id, acao: "processo_encerrado" });
     return { success: true };
   }),
+  // Obter ficha completa do candidato para edição (admin)
+  obterFichaCandidato: protectedProcedure.input(z5.object({ candidatoId: z5.number().int().positive() })).query(async ({ ctx: ctx2, input }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    const [candidato] = await database.select({
+      id: processoCandidatos.id,
+      nome: processoCandidatos.nome,
+      email: processoCandidatos.email,
+      telefone: processoCandidatos.telefone,
+      cpf: processoCandidatos.cpf,
+      alunoId: users.alunoId,
+      dataNascimento: alunos.dataNascimento
+    }).from(processoCandidatos).leftJoin(users, eq4(users.id, processoCandidatos.userId)).leftJoin(alunos, eq4(alunos.id, users.alunoId)).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    if (!candidato) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato n\xE3o encontrado" });
+    return candidato;
+  }),
+  // Editar dados pessoais do candidato (admin)
+  editarCandidato: protectedProcedure.input(z5.object({
+    candidatoId: z5.number().int().positive(),
+    nome: z5.string().min(1),
+    email: z5.string().email(),
+    telefone: z5.string().optional().nullable(),
+    cpf: z5.string().optional().nullable(),
+    dataNascimento: z5.string().optional().nullable()
+    // formato YYYY-MM-DD
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    await database.update(processoCandidatos).set({
+      nome: input.nome,
+      email: input.email,
+      telefone: input.telefone ?? null,
+      cpf: input.cpf ?? null
+    }).where(eq4(processoCandidatos.id, input.candidatoId));
+    if (input.dataNascimento !== void 0) {
+      const [candidato] = await database.select({ alunoId: users.alunoId }).from(processoCandidatos).leftJoin(users, eq4(users.id, processoCandidatos.userId)).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+      if (candidato?.alunoId) {
+        await database.update(alunos).set({ dataNascimento: input.dataNascimento ? new Date(input.dataNascimento) : null }).where(eq4(alunos.id, candidato.alunoId));
+      }
+    }
+    return { success: true };
+  }),
+  // ── Salvar comunicado do processo (admin) ──
+  salvarComunicado: protectedProcedure.input(z5.object({
+    processoId: z5.number().int().positive(),
+    comunicado: z5.string()
+    // HTML do editor rico
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    await database.update(processosSeletivos).set({ comunicado: input.comunicado || null }).where(eq4(processosSeletivos.id, input.processoId));
+    await writeLog(database, { processoId: input.processoId, userId: ctx2.user.id, acao: "comunicado_atualizado" });
+    return { success: true };
+  }),
+  // ── Obter comunicado do processo (admin, mentor, candidato) ──
+  obterComunicado: protectedProcedure.input(z5.object({ processoId: z5.number().int().positive() })).query(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const [processo] = await database.select({ comunicado: processosSeletivos.comunicado }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
+    return { comunicado: processo?.comunicado ?? null };
+  }),
   // Obter entrevista agendada do candidato
   minhaEntrevista: protectedProcedure.query(async ({ ctx: ctx2 }) => {
     const database = await requireDatabase();
@@ -19037,6 +19529,490 @@ var processosSeletivosRouter = router({
     if (!entrevista) return null;
     const [slot] = await database.select().from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, entrevista.agendaSlotId)).limit(1);
     return { entrevista, slot: slot ?? null };
+  }),
+  // ── Migration: adicionar em_analise ao enum statusResultado ──
+  runMigrationEmAnalise: protectedProcedure.mutation(async ({ ctx: ctx2 }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    try {
+      await database.execute(sql3.raw(
+        "ALTER TABLE `processo_candidatos` MODIFY COLUMN `statusResultado` enum('pendente','aprovado','reprovado','em_analise','suplente','desistente') NOT NULL DEFAULT 'pendente'"
+      ));
+      await database.execute(sql3.raw(
+        "ALTER TABLE `processo_resultados` MODIFY COLUMN `resultado` enum('pendente','aprovado','reprovado','em_analise','suplente','desistente') NOT NULL DEFAULT 'pendente'"
+      ));
+      return { success: true, message: "Enum em_analise adicionado com sucesso" };
+    } catch (e) {
+      throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: e?.message ?? "Erro na migration" });
+    }
+  }),
+  // ── Forçar migration da coluna comunicado (admin) ──
+  enviarConvocacao: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato n\xE3o encontrado" });
+    const [entrevista] = await database.select().from(processoEntrevistas).where(eq4(processoEntrevistas.candidatoId, input.candidatoId)).limit(1);
+    if (!entrevista) throw new TRPCError5({ code: "NOT_FOUND", message: "Entrevista n\xE3o encontrada para este candidato" });
+    const [slot] = await database.select().from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, entrevista.agendaSlotId)).limit(1);
+    if (!slot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot de agenda n\xE3o encontrado" });
+    const [processo] = await database.select({
+      id: processosSeletivos.id,
+      nome: processosSeletivos.nome,
+      clienteNome: processosSeletivos.clienteNome,
+      linkEntrevista: processosSeletivos.linkEntrevista
+    }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
+    if (!processo) throw new TRPCError5({ code: "NOT_FOUND", message: "Processo n\xE3o encontrado" });
+    const dataFormatada = slot.dataAgenda ? (/* @__PURE__ */ new Date(slot.dataAgenda + "T00:00:00")).toLocaleDateString("pt-BR") : slot.dataAgenda;
+    const emailData = buildPsConfirmacaoAgendamentoEmail({
+      candidatoNome: candidate.nome,
+      processoNome: processo.nome,
+      clienteNome: processo.clienteNome,
+      dataEntrevista: dataFormatada,
+      horaInicio: slot.inicio,
+      horaFim: slot.fim,
+      linkEntrevista: processo.linkEntrevista || slot.linkEntrevista || null,
+      loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com"}/login`
+    });
+    await sendEmail({ to: candidate.email, cc: "relacionamento@ckmtalents.net", subject: emailData.subject, html: emailData.html, text: emailData.text });
+    await writeLog(database, {
+      processoId: candidate.processoId,
+      candidatoId: input.candidatoId,
+      userId: ctx2.user.id,
+      acao: "reenvio_convocacao",
+      detalhe: `E-mail de convoca\xE7\xE3o reenviado manualmente para ${candidate.nome} (${candidate.email}).`,
+      metadata: { slotId: slot.id }
+    });
+    return { success: true, message: `E-mail de convoca\xE7\xE3o enviado para ${candidate.email}` };
+  }),
+  // ── EDITAR SLOT: Alterar data/hora de um slot manualmente ──
+  editarSlot: protectedProcedure.input(z5.object({
+    slotId: z5.number(),
+    dataAgenda: z5.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato YYYY-MM-DD"),
+    inicio: z5.string().regex(/^\d{2}:\d{2}$/, "Formato HH:MM"),
+    fim: z5.string().regex(/^\d{2}:\d{2}$/, "Formato HH:MM")
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    const [slot] = await database.select().from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, input.slotId)).limit(1);
+    if (!slot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot n\xE3o encontrado" });
+    const dataAnterior = `${slot.dataAgenda} ${slot.inicio}-${slot.fim}`;
+    await database.update(processoAgendaSlots).set({
+      dataAgenda: input.dataAgenda,
+      inicio: input.inicio,
+      fim: input.fim
+    }).where(eq4(processoAgendaSlots.id, input.slotId));
+    if (slot.candidatoId) {
+      await database.update(processoEntrevistas).set({ status: "reagendada" }).where(eq4(processoEntrevistas.agendaSlotId, input.slotId));
+      const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, slot.candidatoId)).limit(1);
+      const [processo] = await database.select({ nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, linkEntrevista: processosSeletivos.linkEntrevista }).from(processosSeletivos).where(eq4(processosSeletivos.id, slot.processoId)).limit(1);
+      if (candidate && processo) {
+        const [ano, mes, dia] = input.dataAgenda.split("-");
+        const dataFormatada = `${dia}/${mes}/${ano}`;
+        const linkFinal = slot.linkEntrevista || processo.linkEntrevista || null;
+        await writeLog(database, {
+          processoId: slot.processoId,
+          candidatoId: slot.candidatoId,
+          userId: ctx2.user.id,
+          acao: "slot_editado",
+          detalhe: `Hor\xE1rio alterado para ${candidate.nome}: ${dataAnterior} \u2192 ${input.dataAgenda} ${input.inicio}-${input.fim}`
+        });
+        if (candidate.email) {
+          try {
+            const emailData = buildPsReagendamentoEmail({
+              candidatoNome: candidate.nome,
+              processoNome: processo.nome,
+              clienteNome: processo.clienteNome,
+              dataEntrevista: dataFormatada,
+              horaInicio: input.inicio,
+              horaFim: input.fim,
+              linkEntrevista: linkFinal,
+              loginUrl: "https://ecolider.ecodobem.com/login"
+            });
+            await sendEmail({
+              to: candidate.email,
+              subject: emailData.subject,
+              html: emailData.html,
+              text: emailData.text
+            });
+          } catch (emailErr) {
+            console.error("[editarSlot] Erro ao enviar e-mail:", emailErr);
+          }
+        }
+        if (candidate.userId) {
+          try {
+            await createNotification({
+              userId: candidate.userId,
+              title: "Hor\xE1rio de entrevista alterado",
+              message: `Seu hor\xE1rio de entrevista para o processo ${processo.nome} foi alterado para ${dataFormatada} \xE0s ${input.inicio}.`,
+              type: "warning",
+              category: "processo_seletivo",
+              link: `/processos-seletivos`
+            });
+          } catch (notifErr) {
+            console.error("[editarSlot] Erro ao criar notifica\xE7\xE3o:", notifErr);
+          }
+        }
+      }
+    } else {
+      await writeLog(database, {
+        processoId: slot.processoId,
+        userId: ctx2.user.id,
+        acao: "slot_editado",
+        detalhe: `Slot editado (sem candidato): ${dataAnterior} \u2192 ${input.dataAgenda} ${input.inicio}-${input.fim}`
+      });
+    }
+    return { success: true };
+  }),
+  // ── RELATÓRIO CONSOLIDADO: Upload de transcrição ──
+  uploadTranscricao: protectedProcedure.input(z5.object({
+    candidatoId: z5.number(),
+    fileName: z5.string(),
+    fileData: z5.string()
+    // Base64
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato n\xE3o encontrado" });
+    await ensureProcessAccess(database, ctx2.user, candidate.processoId);
+    let [entrevista] = await database.select({ id: processoEntrevistas.id, processoId: processoEntrevistas.processoId }).from(processoEntrevistas).where(eq4(processoEntrevistas.candidatoId, input.candidatoId)).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+    if (!entrevista) {
+      const [slot] = await database.select({ id: processoAgendaSlots.id }).from(processoAgendaSlots).where(and4(eq4(processoAgendaSlots.candidatoId, input.candidatoId), ne2(processoAgendaSlots.status, "cancelado"))).orderBy(desc2(processoAgendaSlots.createdAt)).limit(1);
+      if (slot) {
+        const [eSlot] = await database.select({ id: processoEntrevistas.id, processoId: processoEntrevistas.processoId }).from(processoEntrevistas).where(eq4(processoEntrevistas.agendaSlotId, slot.id)).limit(1);
+        if (eSlot) entrevista = eSlot;
+      }
+    }
+    if (!entrevista) {
+      const [slot] = await database.select({ id: processoAgendaSlots.id }).from(processoAgendaSlots).where(and4(eq4(processoAgendaSlots.candidatoId, input.candidatoId), ne2(processoAgendaSlots.status, "cancelado"))).orderBy(desc2(processoAgendaSlots.createdAt)).limit(1);
+      await database.insert(processoEntrevistas).values({
+        processoId: candidate.processoId,
+        candidatoId: input.candidatoId,
+        agendaSlotId: slot?.id ?? null,
+        status: "agendada"
+      });
+      const [nova] = await database.select({ id: processoEntrevistas.id, processoId: processoEntrevistas.processoId }).from(processoEntrevistas).where(eq4(processoEntrevistas.candidatoId, input.candidatoId)).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+      if (!nova) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "N\xE3o foi poss\xEDvel criar entrevista" });
+      entrevista = nova;
+    }
+    const ext = input.fileName.split(".").pop()?.toLowerCase() || "txt";
+    const allowedExts = ["txt", "pdf", "docx", "doc"];
+    if (!allowedExts.includes(ext)) {
+      throw new TRPCError5({ code: "BAD_REQUEST", message: "Formato n\xE3o suportado. Use .txt, .pdf ou .docx" });
+    }
+    const buffer = Buffer.from(input.fileData, "base64");
+    const key = `processos-seletivos/transcricoes/${entrevista.processoId}/${entrevista.id}-${Date.now()}.${ext}`;
+    const contentType = ext === "pdf" ? "application/pdf" : ext === "docx" ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "text/plain";
+    const result = await storagePut(key, buffer, contentType);
+    await database.update(processoEntrevistas).set({ transcricaoUrl: result.url, transcricaoNomeArquivo: input.fileName }).where(eq4(processoEntrevistas.id, entrevista.id));
+    await writeLog(database, {
+      processoId: entrevista.processoId,
+      userId: ctx2.user.id,
+      acao: "transcricao_enviada",
+      detalhe: `Transcri\xE7\xE3o enviada: ${input.fileName}`
+    });
+    return { success: true, url: result.url, fileName: input.fileName };
+  }),
+  // ── RELATÓRIO CONSOLIDADO: Salvar participantes da banca ──
+  salvarParticipantesBanca: protectedProcedure.input(z5.object({
+    candidatoId: z5.number(),
+    participantesBanca: z5.string()
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const [candidate] = await database.select({ processoId: processoCandidatos.processoId }).from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato n\xE3o encontrado" });
+    await ensureProcessAccess(database, ctx2.user, candidate.processoId);
+    const [existing] = await database.select({ id: processoResultados.id }).from(processoResultados).where(eq4(processoResultados.candidatoId, input.candidatoId)).limit(1);
+    if (existing) {
+      await database.update(processoResultados).set({ participantesBanca: input.participantesBanca }).where(eq4(processoResultados.id, existing.id));
+    } else {
+      await database.insert(processoResultados).values({
+        processoId: candidate.processoId,
+        candidatoId: input.candidatoId,
+        resultado: "pendente",
+        parecer: "",
+        participantesBanca: input.participantesBanca,
+        registradoPor: ctx2.user.id
+      });
+    }
+    return { success: true };
+  }),
+  // ── RELATÓRIO CONSOLIDADO: Buscar dados completos do candidato para o relatório ──
+  dadosRelatorio: protectedProcedure.input(z5.object({ candidatoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato n\xE3o encontrado" });
+    await ensureProcessAccess(database, ctx2.user, candidate.processoId);
+    const [aluno] = await database.select({
+      id: alunos.id,
+      name: alunos.name,
+      email: alunos.email,
+      cargo: alunos.cargo,
+      telefone: alunos.telefone,
+      minicurriculo: alunos.minicurriculo
+    }).from(alunos).where(eq4(alunos.id, candidate.alunoId ?? 0)).limit(1);
+    const [disc] = await database.select().from(discResultados).where(eq4(discResultados.alunoId, candidate.alunoId ?? 0)).orderBy(desc2(discResultados.completedAt)).limit(1);
+    const autopercepcoes = await database.select({
+      nota: autopercepcoesCompetencias.nota,
+      competenciaNome: competencias.nome
+    }).from(autopercepcoesCompetencias).leftJoin(competencias, eq4(competencias.id, autopercepcoesCompetencias.competenciaId)).where(eq4(autopercepcoesCompetencias.alunoId, candidate.alunoId ?? 0)).orderBy(desc2(autopercepcoesCompetencias.nota));
+    const [resultado] = await database.select().from(processoResultados).where(eq4(processoResultados.candidatoId, input.candidatoId)).limit(1);
+    let [entrevista] = await database.select().from(processoEntrevistas).where(eq4(processoEntrevistas.candidatoId, input.candidatoId)).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+    if (!entrevista) {
+      const slots = await database.select({ id: processoAgendaSlots.id }).from(processoAgendaSlots).where(eq4(processoAgendaSlots.candidatoId, input.candidatoId)).limit(5);
+      if (slots.length > 0) {
+        const slotIds = slots.map((s) => s.id);
+        const entrevistasPorSlot = await database.select().from(processoEntrevistas).where(inArray3(processoEntrevistas.agendaSlotId, slotIds)).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+        if (entrevistasPorSlot.length > 0) entrevista = entrevistasPorSlot[0];
+      }
+    }
+    if (!entrevista) {
+      const candidatosComEmail = await database.select({ id: processoCandidatos.id }).from(processoCandidatos).where(eq4(processoCandidatos.email, candidate.email));
+      if (candidatosComEmail.length > 0) {
+        const ids = candidatosComEmail.map((c) => c.id);
+        const [e3] = await database.select().from(processoEntrevistas).where(inArray3(processoEntrevistas.candidatoId, ids)).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+        if (e3) entrevista = e3;
+      }
+    }
+    if (!entrevista) {
+      const [slotExistente] = await database.select().from(processoAgendaSlots).where(and4(
+        eq4(processoAgendaSlots.candidatoId, input.candidatoId),
+        ne2(processoAgendaSlots.status, "cancelado")
+      )).orderBy(desc2(processoAgendaSlots.createdAt)).limit(1);
+      if (slotExistente) {
+        await database.insert(processoEntrevistas).values({
+          processoId: candidate.processoId,
+          candidatoId: input.candidatoId,
+          agendaSlotId: slotExistente.id,
+          status: "agendada"
+        });
+        const [nova] = await database.select().from(processoEntrevistas).where(and4(
+          eq4(processoEntrevistas.candidatoId, input.candidatoId),
+          eq4(processoEntrevistas.agendaSlotId, slotExistente.id)
+        )).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+        if (nova) entrevista = nova;
+      }
+    }
+    const [processo] = await database.select({ id: processosSeletivos.id, nome: processosSeletivos.nome, mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
+    let mentorNome = null;
+    if (processo?.mentorId) {
+      const [mentor] = await database.select({ name: users.name }).from(users).where(eq4(users.id, processo.mentorId)).limit(1);
+      mentorNome = mentor?.name ?? null;
+    }
+    let slotData = null;
+    if (entrevista?.agendaSlotId) {
+      const [slot] = await database.select({ dataAgenda: processoAgendaSlots.dataAgenda, inicio: processoAgendaSlots.inicio, fim: processoAgendaSlots.fim }).from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, entrevista.agendaSlotId)).limit(1);
+      slotData = slot ?? null;
+    }
+    return {
+      candidato: candidate,
+      aluno: aluno ?? null,
+      disc: disc ?? null,
+      autopercepcoes,
+      resultado: resultado ?? null,
+      entrevista: entrevista ?? null,
+      processo: processo ?? null,
+      mentorNome,
+      slot: slotData
+    };
+  }),
+  runMigrationRelatorioPS: protectedProcedure.mutation(async ({ ctx: ctx2 }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    const colunas = [
+      { tabela: "processo_entrevistas", coluna: "transcricaoUrl", tipo: "varchar(1000) NULL" },
+      { tabela: "processo_entrevistas", coluna: "transcricaoNomeArquivo", tipo: "varchar(255) NULL" },
+      { tabela: "processo_entrevistas", coluna: "participantesBanca", tipo: "text NULL" },
+      { tabela: "processo_entrevistas", coluna: "dadosPrincipaisEntrevista", tipo: "longtext NULL" },
+      { tabela: "processo_entrevistas", coluna: "analisePerfilComportamental", tipo: "longtext NULL" },
+      { tabela: "processo_entrevistas", coluna: "relatorioGeradoEm", tipo: "datetime NULL" },
+      { tabela: "processo_entrevistas", coluna: "observacaoRevisao", tipo: "text NULL" },
+      { tabela: "processo_resultados", coluna: "participantesBanca", tipo: "text NULL" }
+    ];
+    const resultados = [];
+    for (const { tabela, coluna, tipo } of colunas) {
+      try {
+        const rows = await database.execute(sql3.raw(
+          `SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_NAME = '${tabela}' AND COLUMN_NAME = '${coluna}'`
+        ));
+        const count = rows?.[0]?.[0]?.cnt ?? rows?.[0]?.cnt ?? 0;
+        if (Number(count) > 0) {
+          resultados.push(`${tabela}.${coluna}: j\xE1 existe`);
+          continue;
+        }
+        await database.execute(sql3.raw(`ALTER TABLE \`${tabela}\` ADD COLUMN \`${coluna}\` ${tipo}`));
+        resultados.push(`${tabela}.${coluna}: criada`);
+      } catch (e) {
+        if (e?.message?.includes("Duplicate column") || e?.message?.includes("already exists")) {
+          resultados.push(`${tabela}.${coluna}: j\xE1 existia`);
+        } else {
+          resultados.push(`${tabela}.${coluna}: ERRO - ${e?.message}`);
+        }
+      }
+    }
+    return { success: true, resultados };
+  }),
+  // ── RELATÓRIO CONSOLIDADO: Gerar relatório com IA ──
+  gerarRelatorioIA: protectedProcedure.input(z5.object({
+    candidatoId: z5.number(),
+    observacao: z5.string().optional()
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
+    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato n\xE3o encontrado" });
+    await ensureProcessAccess(database, ctx2.user, candidate.processoId);
+    let entrevista = null;
+    const [e1] = await database.select().from(processoEntrevistas).where(eq4(processoEntrevistas.candidatoId, input.candidatoId)).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+    if (e1) entrevista = e1;
+    if (!entrevista) {
+      const slots = await database.select({ id: processoAgendaSlots.id }).from(processoAgendaSlots).where(eq4(processoAgendaSlots.candidatoId, input.candidatoId)).limit(5);
+      if (slots.length > 0) {
+        const [e2] = await database.select().from(processoEntrevistas).where(inArray3(processoEntrevistas.agendaSlotId, slots.map((s) => s.id))).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+        if (e2) entrevista = e2;
+      }
+    }
+    if (!entrevista) {
+      const rows = await database.select({ e: processoEntrevistas }).from(processoEntrevistas).innerJoin(processoCandidatos, eq4(processoCandidatos.id, processoEntrevistas.candidatoId)).where(eq4(processoCandidatos.email, candidate.email)).orderBy(desc2(processoEntrevistas.createdAt)).limit(1);
+      if (rows.length > 0) entrevista = rows[0].e;
+    }
+    if (!entrevista) throw new TRPCError5({ code: "NOT_FOUND", message: "Nenhuma entrevista encontrada para este candidato" });
+    if (!entrevista.transcricaoUrl) throw new TRPCError5({ code: "BAD_REQUEST", message: "Nenhuma transcri\xE7\xE3o enviada para esta entrevista" });
+    const buffer = await storageDownloadBuffer(entrevista.transcricaoUrl);
+    const ext = (entrevista.transcricaoNomeArquivo ?? "").split(".").pop()?.toLowerCase() || "txt";
+    let transcricaoTexto = "";
+    if (ext === "txt") {
+      transcricaoTexto = buffer.toString("utf-8");
+    } else if (ext === "pdf") {
+      try {
+        const pdfParse = (await import("pdf-parse")).default;
+        const parsed2 = await pdfParse(buffer);
+        transcricaoTexto = parsed2.text;
+      } catch {
+        transcricaoTexto = buffer.toString("latin1").replace(/[^\x20-\x7E\n\r]/g, " ").replace(/\s+/g, " ").trim();
+      }
+    } else if (ext === "docx" || ext === "doc") {
+      try {
+        const mammoth = await import("mammoth");
+        const result = await mammoth.extractRawText({ buffer });
+        transcricaoTexto = result.value;
+      } catch {
+        try {
+          const AdmZip = (await import("adm-zip")).default;
+          const zip = new AdmZip(buffer);
+          const entry = zip.getEntry("word/document.xml");
+          if (entry) {
+            const xml = entry.getData().toString("utf-8");
+            transcricaoTexto = xml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+          }
+        } catch {
+          transcricaoTexto = buffer.toString("utf-8").replace(/<[^>]+>/g, " ").replace(/[^\x20-\x7E\n\r]/g, " ").replace(/\s+/g, " ").trim();
+        }
+      }
+    }
+    if (!transcricaoTexto.trim()) throw new TRPCError5({ code: "BAD_REQUEST", message: "N\xE3o foi poss\xEDvel extrair texto da transcri\xE7\xE3o" });
+    const [aluno] = await database.select({
+      name: alunos.name,
+      cargo: alunos.cargo,
+      minicurriculo: alunos.minicurriculo
+    }).from(alunos).where(eq4(alunos.id, candidate.alunoId ?? 0)).limit(1);
+    const [disc] = await database.select().from(discResultados).where(eq4(discResultados.alunoId, candidate.alunoId ?? 0)).orderBy(desc2(discResultados.completedAt)).limit(1);
+    const autopercepcoes = await database.select({
+      nota: autopercepcoesCompetencias.nota,
+      competenciaNome: competencias.nome
+    }).from(autopercepcoesCompetencias).leftJoin(competencias, eq4(competencias.id, autopercepcoesCompetencias.competenciaId)).where(eq4(autopercepcoesCompetencias.alunoId, candidate.alunoId ?? 0)).orderBy(desc2(autopercepcoesCompetencias.nota));
+    const discTexto = disc ? `Perfil DISC: D=${disc.d ?? 0}, I=${disc.i ?? 0}, S=${disc.s ?? 0}, C=${disc.c ?? 0}. Perfil predominante: ${disc.perfilPredominante ?? "n\xE3o identificado"}.` : "Perfil DISC: n\xE3o dispon\xEDvel.";
+    const autoPercTexto = autopercepcoes.length > 0 ? "Autopercep\xE7\xE3o de compet\xEAncias:\n" + autopercepcoes.map((a) => `- ${a.competenciaNome}: ${a.nota}/10`).join("\n") : "Autopercep\xE7\xE3o de compet\xEAncias: n\xE3o dispon\xEDvel.";
+    const observacaoTexto = input.observacao?.trim() ? `
+
+Observa\xE7\xE3o do avaliador para esta an\xE1lise: ${input.observacao}` : "";
+    const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
+    const response = await invokeLLM2({
+      messages: [
+        {
+          role: "system",
+          content: `Voc\xEA \xE9 um especialista em sele\xE7\xE3o de lideran\xE7as e desenvolvimento humano. Com base na transcri\xE7\xE3o de uma entrevista e nos dados do candidato, gere um relat\xF3rio estruturado e objetivo em portugu\xEAs brasileiro. O relat\xF3rio deve ser profissional, claro e \xFAtil para a tomada de decis\xE3o do processo seletivo.
+
+Responda APENAS em JSON com o seguinte formato:
+{
+  "dadosPrincipaisEntrevista": "Resumo dos principais pontos da entrevista: motiva\xE7\xF5es, experi\xEAncias relevantes, postura, comunica\xE7\xE3o e pontos de aten\xE7\xE3o. M\xEDnimo 3 par\xE1grafos.",
+  "analisePerfilComportamental": "An\xE1lise do perfil comportamental integrando o DISC, as autopercep\xE7\xF5es de compet\xEAncias e os comportamentos observados na entrevista. M\xEDnimo 2 par\xE1grafos."
+}`
+        },
+        {
+          role: "user",
+          content: `Candidato: ${candidate.nome}
+Cargo atual: ${aluno?.cargo ?? "n\xE3o informado"}
+Minicurr\xEDculo: ${aluno?.minicurriculo ?? "n\xE3o informado"}
+
+${discTexto}
+
+${autoPercTexto}${observacaoTexto}
+
+TRANSCRI\xC7\xC3O DA ENTREVISTA:
+${transcricaoTexto.slice(0, 12e3)}`
+        }
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "relatorio_entrevista",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              dadosPrincipaisEntrevista: { type: "string" },
+              analisePerfilComportamental: { type: "string" }
+            },
+            required: ["dadosPrincipaisEntrevista", "analisePerfilComportamental"],
+            additionalProperties: false
+          }
+        }
+      }
+    });
+    const content = response.choices?.[0]?.message?.content;
+    if (!content) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "IA n\xE3o retornou conte\xFAdo" });
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao interpretar resposta da IA" });
+    }
+    await database.update(processoEntrevistas).set({
+      dadosPrincipaisEntrevista: parsed.dadosPrincipaisEntrevista,
+      analisePerfilComportamental: parsed.analisePerfilComportamental,
+      relatorioGeradoEm: /* @__PURE__ */ new Date(),
+      observacaoRevisao: input.observacao ?? null
+    }).where(eq4(processoEntrevistas.id, entrevista.id));
+    await writeLog(database, {
+      processoId: candidate.processoId,
+      candidatoId: input.candidatoId,
+      userId: ctx2.user.id,
+      acao: "relatorio_ia_gerado",
+      detalhe: `Relat\xF3rio IA gerado para ${candidate.nome}`
+    });
+    return { success: true, dadosPrincipaisEntrevista: parsed.dadosPrincipaisEntrevista, analisePerfilComportamental: parsed.analisePerfilComportamental };
+  }),
+  runMigration: protectedProcedure.mutation(async ({ ctx: ctx2 }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    try {
+      const rows = await database.execute(sql3.raw(
+        "SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_NAME = 'processos_seletivos' AND COLUMN_NAME = 'comunicado'"
+      ));
+      const count = rows?.[0]?.[0]?.cnt ?? rows?.[0]?.cnt ?? 0;
+      if (Number(count) > 0) {
+        return { success: true, message: "Coluna comunicado j\xE1 existe no banco" };
+      }
+      await database.execute(sql3.raw(
+        "ALTER TABLE `processos_seletivos` ADD COLUMN `comunicado` longtext NULL"
+      ));
+      return { success: true, message: "Coluna comunicado criada com sucesso" };
+    } catch (e) {
+      if (e?.message?.includes("Duplicate column") || e?.message?.includes("already exists")) {
+        return { success: true, message: "Coluna comunicado j\xE1 existia" };
+      }
+      throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: e?.message ?? "Erro na migration" });
+    }
   })
 });
 
@@ -19593,7 +20569,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { sql as sql3 } from "drizzle-orm";
+import { sql as sql4 } from "drizzle-orm";
 var LOGIN_URL = "https://ecolider.ecodobem.com";
 var CC_DESTINATARIOS = [
   "financeiro@makiyama.com.br",
@@ -19786,7 +20762,7 @@ async function gerarEEnviarRelatorioMentorias(tipo, dateFrom, dateTo, mentorIdsF
         ...mentoraSummary.filter((m) => m.emailEnviado).map((m) => m.email),
         ...CC_DESTINATARIOS
       ];
-      await dbConn2.execute(sql3`
+      await dbConn2.execute(sql4`
         INSERT INTO relatorio_mentorias_log
           (tipo, periodo_inicio, periodo_fim, destinatarios, total_sessoes, total_valor)
         VALUES (
@@ -20358,7 +21334,7 @@ var appRouter = router({
           const { processoCandidatos: processoCandidatos2, users: usersTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
           const [userRow] = await database.select({ id: usersTable.id }).from(usersTable).where(eq8(usersTable.email, input.email.trim().toLowerCase())).limit(1);
           const correctUserId = userRow?.id ?? null;
-          const [existingCand] = await database.select({ id: processoCandidatos2.id }).from(processoCandidatos2).where(and6(
+          const [existingCand] = await database.select({ id: processoCandidatos2.id }).from(processoCandidatos2).where(and7(
             eq8(processoCandidatos2.processoId, input.processoSeletivoId),
             eq8(processoCandidatos2.email, input.email.trim().toLowerCase())
           )).limit(1);
@@ -20404,8 +21380,17 @@ var appRouter = router({
       }
       try {
         const { sendEmail: sendEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
-        const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
-        await sendEmail2({ to: "relacionamento@ckmtalents.net", cc: "dina@makiyama.com.br", subject: `[Novo Aluno] ${input.name} - Desenvolvimento Express`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
+        if (input.processoSeletivoId) {
+          const database = await getDb();
+          const { processosSeletivos: psTbl } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+          const [ps] = await database.select({ nome: psTbl.nome, clienteNome: psTbl.clienteNome }).from(psTbl).where(eq8(psTbl.id, input.processoSeletivoId)).limit(1);
+          const processoLabel = ps ? `${ps.clienteNome} \u2014 ${ps.nome}` : `Processo #${input.processoSeletivoId}`;
+          const notifHtml = `<h2>Novo Candidato \u2014 Processo Seletivo</h2><p><strong>Processo:</strong> ${processoLabel}</p><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
+          await sendEmail2({ to: "relacionamento@ckmtalents.net", cc: "dina@makiyama.com.br", subject: `[Novo Candidato] ${input.name} \u2014 ${processoLabel}`, html: notifHtml, text: `Novo candidato PS: ${input.name} | ${input.email} | ${processoLabel}` });
+        } else {
+          const notifHtml = `<h2>Novo aluno via Landing Page</h2><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
+          await sendEmail2({ to: "relacionamento@ckmtalents.net", cc: "dina@makiyama.com.br", subject: `[Novo Aluno] ${input.name} \u2014 ${input.empresa || "Desenvolvimento Express"}`, html: notifHtml, text: `Novo aluno: ${input.name} | ${input.email}` });
+        }
       } catch (e) {
         console.warn("[AutoRegistro] email admin:", e);
       }
@@ -21957,6 +22942,40 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       const success = await deleteCompetencia(input.id);
       return { success };
+    }),
+    // Competências dos PDIs ativos por empresa (macrociclo ativo)
+    porEmpresaMacrociclo: protectedProcedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
+      const database = await getDb();
+      if (!database) return [];
+      const conn = database.$client.promise ? database.$client.promise() : database.$client;
+      if (!conn) return [];
+      const [rows] = await conn.execute(
+        `SELECT
+             c.id AS competenciaId,
+             c.nome AS competenciaNome,
+             COUNT(DISTINCT ap.id) AS totalPdis,
+             (
+               SELECT COUNT(DISTINCT ap2.id)
+               FROM assessment_pdi ap2
+               JOIN alunos a2 ON a2.id = ap2.alunoId
+               WHERE a2.programId = ? AND ap2.status = 'ativo'
+             ) AS totalPdisEmpresa
+           FROM assessment_pdi ap
+           JOIN alunos a ON a.id = ap.alunoId
+           JOIN assessment_competencias ac ON ac.assessmentPdiId = ap.id
+           JOIN competencias c ON c.id = ac.competenciaId
+           WHERE a.programId = ? AND ap.status = 'ativo'
+           GROUP BY c.id, c.nome
+           ORDER BY totalPdis DESC, c.nome ASC`,
+        [input.programId, input.programId]
+      );
+      return rows.map((r) => ({
+        competenciaId: r.competenciaId,
+        competenciaNome: r.competenciaNome,
+        totalPdis: Number(r.totalPdis),
+        totalPdisEmpresa: Number(r.totalPdisEmpresa),
+        percentual: r.totalPdisEmpresa > 0 ? Math.round(Number(r.totalPdis) / Number(r.totalPdisEmpresa) * 100) : 0
+      }));
     })
   }),
   // Plano Individual (Competências obrigatórias por aluno)
@@ -25898,7 +26917,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const dbInstance = await (await Promise.resolve().then(() => (init_db(), db_exports))).getDb();
       if (!dbInstance) return { sessions: [], total: 0 };
       const { mentoringSessions: mentoringSessions2, alunos: alunosTable, consultors: consultorsTable, turmas: turmasTable, programs: programsTable, trilhas: trilhasTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq16, and: and14, sql: sql4, desc: desc6, asc: asc4, like } = await import("drizzle-orm");
+      const { eq: eq16, and: and15, sql: sql5, desc: desc6, asc: asc4, like } = await import("drizzle-orm");
       const conditions = [];
       if (filters.alunoId) conditions.push(eq16(mentoringSessions2.alunoId, filters.alunoId));
       if (filters.consultorId) conditions.push(eq16(mentoringSessions2.consultorId, filters.consultorId));
@@ -25906,22 +26925,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       if (filters.presenca) conditions.push(eq16(mentoringSessions2.presence, filters.presenca));
       if (filters.taskStatus) conditions.push(eq16(mentoringSessions2.taskStatus, filters.taskStatus));
       if (filters.alunoNome && filters.alunoNome.trim()) {
-        const matchingAlunos = await dbInstance.select({ id: alunosTable.id }).from(alunosTable).where(sql4`LOWER(${alunosTable.name}) LIKE ${"%" + filters.alunoNome.toLowerCase() + "%"}`);
+        const matchingAlunos = await dbInstance.select({ id: alunosTable.id }).from(alunosTable).where(sql5`LOWER(${alunosTable.name}) LIKE ${"%" + filters.alunoNome.toLowerCase() + "%"}`);
         const matchingIds = matchingAlunos.map((a) => a.id);
         if (matchingIds.length === 0) return { sessions: [], total: 0 };
-        conditions.push(sql4`${mentoringSessions2.alunoId} IN (${sql4.raw(matchingIds.join(","))})`);
+        conditions.push(sql5`${mentoringSessions2.alunoId} IN (${sql5.raw(matchingIds.join(","))})`);
       }
       if (filters.programId && !filters.turmaId) {
         const turmasForProgram = await dbInstance.select({ id: turmasTable.id }).from(turmasTable).where(eq16(turmasTable.programId, filters.programId));
         const turmaIds2 = turmasForProgram.map((t2) => t2.id);
         if (turmaIds2.length > 0) {
-          conditions.push(sql4`(${mentoringSessions2.turmaId} IN (${sql4.raw(turmaIds2.join(","))}) OR ${mentoringSessions2.turmaId} IS NULL)`);
+          conditions.push(sql5`(${mentoringSessions2.turmaId} IN (${sql5.raw(turmaIds2.join(","))}) OR ${mentoringSessions2.turmaId} IS NULL)`);
         } else {
           return { sessions: [], total: 0 };
         }
       }
-      const whereClause = conditions.length > 0 ? and14(...conditions) : void 0;
-      const [countResult] = await dbInstance.select({ count: sql4`COUNT(*)` }).from(mentoringSessions2).where(whereClause);
+      const whereClause = conditions.length > 0 ? and15(...conditions) : void 0;
+      const [countResult] = await dbInstance.select({ count: sql5`COUNT(*)` }).from(mentoringSessions2).where(whereClause);
       const total = Number(countResult?.count || 0);
       let query = dbInstance.select().from(mentoringSessions2).where(whereClause).orderBy(asc4(mentoringSessions2.sessionNumber), desc6(mentoringSessions2.sessionDate), desc6(mentoringSessions2.id)).limit(pageSize).offset(offset);
       const sessions = await query;
@@ -25929,10 +26948,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const consultorIds = Array.from(new Set(sessions.filter((s) => s.consultorId).map((s) => s.consultorId)));
       const turmaIds = Array.from(new Set(sessions.filter((s) => s.turmaId).map((s) => s.turmaId)));
       const trilhaIds = Array.from(new Set(sessions.filter((s) => s.trilhaId).map((s) => s.trilhaId)));
-      const alunosList = alunoIds.length > 0 ? await dbInstance.select({ id: alunosTable.id, name: alunosTable.name }).from(alunosTable).where(sql4`${alunosTable.id} IN (${sql4.raw(alunoIds.join(","))})`) : [];
-      const consultorsList = consultorIds.length > 0 ? await dbInstance.select({ id: consultorsTable.id, name: consultorsTable.name }).from(consultorsTable).where(sql4`${consultorsTable.id} IN (${sql4.raw(consultorIds.join(","))})`) : [];
-      const turmasList = turmaIds.length > 0 ? await dbInstance.select({ id: turmasTable.id, name: turmasTable.name }).from(turmasTable).where(sql4`${turmasTable.id} IN (${sql4.raw(turmaIds.join(","))})`) : [];
-      const trilhasList = trilhaIds.length > 0 ? await dbInstance.select({ id: trilhasTable.id, name: trilhasTable.name }).from(trilhasTable).where(sql4`${trilhasTable.id} IN (${sql4.raw(trilhaIds.join(","))})`) : [];
+      const alunosList = alunoIds.length > 0 ? await dbInstance.select({ id: alunosTable.id, name: alunosTable.name }).from(alunosTable).where(sql5`${alunosTable.id} IN (${sql5.raw(alunoIds.join(","))})`) : [];
+      const consultorsList = consultorIds.length > 0 ? await dbInstance.select({ id: consultorsTable.id, name: consultorsTable.name }).from(consultorsTable).where(sql5`${consultorsTable.id} IN (${sql5.raw(consultorIds.join(","))})`) : [];
+      const turmasList = turmaIds.length > 0 ? await dbInstance.select({ id: turmasTable.id, name: turmasTable.name }).from(turmasTable).where(sql5`${turmasTable.id} IN (${sql5.raw(turmaIds.join(","))})`) : [];
+      const trilhasList = trilhaIds.length > 0 ? await dbInstance.select({ id: trilhasTable.id, name: trilhasTable.name }).from(trilhasTable).where(sql5`${trilhasTable.id} IN (${sql5.raw(trilhaIds.join(","))})`) : [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a.name]));
       const consultorMap = new Map(consultorsList.map((c) => [c.id, c.name]));
       const turmaMap = new Map(turmasList.map((t2) => [t2.id, t2.name]));
@@ -26139,7 +27158,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         try {
           const database = await getDb();
           const { processoCandidatos: processoCandidatos2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-          const [existing] = await database.select({ id: processoCandidatos2.id }).from(processoCandidatos2).where(and6(
+          const [existing] = await database.select({ id: processoCandidatos2.id }).from(processoCandidatos2).where(and7(
             eq8(processoCandidatos2.processoId, status.processoSeletivoId),
             eq8(processoCandidatos2.email, (ctx2.user.email ?? "").toLowerCase())
           )).limit(1);
@@ -26349,7 +27368,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       try {
         const alunoForEmail = await getAlunoById(input.alunoId);
-        if (alunoForEmail) {
+        if (alunoForEmail && alunoForEmail.tipoPortal !== "processo_seletivo") {
           const { sendEmail: sendEmailStep, buildOnboardingStepEmail: buildOnboardingStepEmail2, buildPdiPublishedInviteEmail: buildPdiPublishedInviteEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
           const adminEmail = process.env.SMTP_USER || "";
           const stepEmail = buildOnboardingStepEmail2({
@@ -26797,12 +27816,40 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       publishAt: z6.string().optional(),
       expiresAt: z6.string().optional(),
       isActive: z6.number().optional(),
-      webinarId: z6.number().optional()
+      webinarId: z6.number().optional(),
+      sendEmailNotification: z6.boolean().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
-      const data = { ...input, createdBy: ctx2.user.id };
+      const { sendEmailNotification, ...announcementData } = input;
+      const data = { ...announcementData, createdBy: ctx2.user.id };
       if (input.publishAt) data.publishAt = new Date(input.publishAt);
       if (input.expiresAt) data.expiresAt = new Date(input.expiresAt);
       const id = await createAnnouncement(data);
+      if (sendEmailNotification) {
+        try {
+          const alunos2 = await getStudentEmailsByProgram();
+          const loginUrl = "https://ecolider.ecodobem.com/mural";
+          let emailsSent = 0;
+          let emailsFailed = 0;
+          for (const aluno of alunos2) {
+            if (!aluno.email) continue;
+            try {
+              const emailData = buildNovoAvisoMuralEmail({
+                alunoName: aluno.name || "aluno(a)",
+                avisoTitle: input.title,
+                avisoContent: input.content || null,
+                loginUrl
+              });
+              await sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+              emailsSent++;
+            } catch {
+              emailsFailed++;
+            }
+          }
+          return { id, success: true, emailsSent, emailsFailed };
+        } catch {
+          return { id, success: true, emailsSent: 0, emailsFailed: 0 };
+        }
+      }
       return { id, success: true };
     }),
     update: adminOrAdmin2Procedure.input(z6.object({
@@ -26830,6 +27877,31 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
       await deleteAnnouncement(input.id);
       return { success: true };
+    }),
+    // Reenviar notificação por e-mail para todos os alunos ativos
+    sendNotification: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+      const aviso = await getAnnouncementById(input.id);
+      if (!aviso) throw new TRPCError6({ code: "NOT_FOUND", message: "Aviso n\xE3o encontrado" });
+      const alunos2 = await getStudentEmailsByProgram();
+      const loginUrl = "https://ecolider.ecodobem.com/mural";
+      let emailsSent = 0;
+      let emailsFailed = 0;
+      for (const aluno of alunos2) {
+        if (!aluno.email) continue;
+        try {
+          const emailData = buildNovoAvisoMuralEmail({
+            alunoName: aluno.name || "aluno(a)",
+            avisoTitle: aviso.title,
+            avisoContent: aviso.content || null,
+            loginUrl
+          });
+          await sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+          emailsSent++;
+        } catch {
+          emailsFailed++;
+        }
+      }
+      return { success: true, emailsSent, emailsFailed };
     }),
     // Upload de imagem de capa para avisos
     uploadImage: adminOrAdmin2Procedure.input(z6.object({
@@ -27949,6 +29021,203 @@ Responda APENAS em JSON com o formato:
     alertaAtualizacao: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
       const { alunoId } = input;
       return await getAlertaAtualizacaoMetas(alunoId);
+    }),
+    // ---- Upload em massa de metas via planilha XLSX (somente admin) ----
+    uploadEmMassa: adminProcedure3.input(z6.object({
+      fileData: z6.string(),
+      fileName: z6.string(),
+      preview: z6.boolean().optional()
+    })).mutation(async ({ input }) => {
+      const buffer = Buffer.from(input.fileData, "base64");
+      const workbook = XLSX4.read(buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames.find((n) => n !== "Instru\xE7\xF5es") || workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX4.utils.sheet_to_json(sheet, { header: 1 });
+      if (rows.length < 2) throw new TRPCError6({ code: "BAD_REQUEST", message: "Planilha sem dados" });
+      const hdrs = rows[0].map((h) => String(h || "").trim());
+      const getColVal = (row, name) => {
+        const idx = hdrs.findIndex((h) => h.toLowerCase() === name.toLowerCase());
+        if (idx < 0) return "";
+        const v = row[idx];
+        return v === null || v === void 0 ? "" : String(v).trim();
+      };
+      const alunosList = await getAlunos();
+      const alunoByEmail = /* @__PURE__ */ new Map();
+      for (const a of alunosList) {
+        if (a.email) alunoByEmail.set(a.email.toLowerCase().trim(), a.id);
+      }
+      const compList = await getAllCompetencias();
+      const compByName = /* @__PURE__ */ new Map();
+      for (const c of compList) {
+        if (c.nome) compByName.set(c.nome.toLowerCase().trim(), c.id);
+      }
+      const results = [];
+      let created = 0;
+      let errors = 0;
+      const dbConn2 = await getDb();
+      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indispon\xEDvel" });
+      const { assessmentPdi: apTable, assessmentCompetencias: acTable, metas: metasTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const { eq: eqOp, and: andOp, sql: sqlOp } = await import("drizzle-orm");
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (row.every((v) => !v)) continue;
+        const emailAluno = getColVal(row, "email_aluno");
+        const nomeComp = getColVal(row, "competencia");
+        const macroTitulo = getColVal(row, "macrometa_titulo");
+        const macroDescricao = getColVal(row, "macrometa_descricao");
+        if (!emailAluno) {
+          results.push({ row: i + 1, aluno: "(sem email)", status: "erro", message: "Campo email_aluno obrigat\xF3rio" });
+          errors++;
+          continue;
+        }
+        if (!macroTitulo) {
+          results.push({ row: i + 1, aluno: emailAluno, status: "erro", message: "Campo macrometa_titulo obrigat\xF3rio" });
+          errors++;
+          continue;
+        }
+        if (!nomeComp) {
+          results.push({ row: i + 1, aluno: emailAluno, status: "erro", message: "Campo competencia obrigat\xF3rio" });
+          errors++;
+          continue;
+        }
+        const alunoId = alunoByEmail.get(emailAluno.toLowerCase());
+        if (!alunoId) {
+          results.push({ row: i + 1, aluno: emailAluno, status: "erro", message: `Aluno n\xE3o encontrado: "${emailAluno}"` });
+          errors++;
+          continue;
+        }
+        const competenciaId = compByName.get(nomeComp.toLowerCase().trim());
+        if (!competenciaId) {
+          results.push({ row: i + 1, aluno: emailAluno, status: "erro", message: `Compet\xEAncia n\xE3o encontrada: "${nomeComp}"` });
+          errors++;
+          continue;
+        }
+        const pdis = await dbConn2.select({ id: apTable.id, contratoNivelId: apTable.contratoNivelId }).from(apTable).where(andOp(eqOp(apTable.alunoId, alunoId), sqlOp`${apTable.status} = 'ativo'`)).limit(1);
+        if (pdis.length === 0) {
+          results.push({ row: i + 1, aluno: emailAluno, status: "erro", message: "Aluno n\xE3o possui PDI ativo" });
+          errors++;
+          continue;
+        }
+        const pdi = pdis[0];
+        const assComps = await dbConn2.select({ id: acTable.id }).from(acTable).where(andOp(eqOp(acTable.assessmentPdiId, pdi.id), eqOp(acTable.competenciaId, competenciaId))).limit(1);
+        if (assComps.length === 0) {
+          results.push({ row: i + 1, aluno: emailAluno, status: "erro", message: `Compet\xEAncia "${nomeComp}" n\xE3o est\xE1 no PDI ativo do aluno` });
+          errors++;
+          continue;
+        }
+        const assessmentCompetenciaId = assComps[0].id;
+        const micrometas = [];
+        for (let n = 1; n <= 5; n++) {
+          const mt = getColVal(row, `micrometa${n}_titulo`);
+          if (!mt) break;
+          micrometas.push({ titulo: mt, descricao: getColVal(row, `micrometa${n}_descricao`) || "" });
+        }
+        if (input.preview) {
+          results.push({ row: i + 1, aluno: emailAluno, status: "ok", message: `V\xE1lido: macrometa + ${micrometas.length} micrometa(s) \u2014 compet\xEAncia "${nomeComp}"` });
+          continue;
+        }
+        try {
+          await dbConn2.insert(metasTable).values({
+            alunoId,
+            assessmentPdiId: pdi.id,
+            assessmentCompetenciaId,
+            competenciaId,
+            contratoNivelId: pdi.contratoNivelId ?? null,
+            titulo: macroTitulo,
+            descricao: macroDescricao || null,
+            isActive: 1
+          });
+          for (let mi = 0; mi < micrometas.length; mi++) {
+            const micro = micrometas[mi];
+            const microTitulo = /^\d+\./.test(micro.titulo.trim()) ? micro.titulo : `${mi + 1}. ${micro.titulo}`;
+            await dbConn2.insert(metasTable).values({
+              alunoId,
+              assessmentPdiId: pdi.id,
+              assessmentCompetenciaId,
+              competenciaId,
+              contratoNivelId: pdi.contratoNivelId ?? null,
+              titulo: microTitulo,
+              descricao: micro.descricao || null,
+              isActive: 1
+            });
+          }
+          results.push({ row: i + 1, aluno: emailAluno, status: "ok", message: `Criado: macrometa + ${micrometas.length} micrometa(s)` });
+          created++;
+        } catch (err) {
+          results.push({ row: i + 1, aluno: emailAluno, status: "erro", message: `Erro ao inserir: ${err?.message || "Erro desconhecido"}` });
+          errors++;
+        }
+      }
+      return { created, errors, total: results.length, results, preview: input.preview ?? false };
+    }),
+    // ---- Baixar modelo de planilha de metas ----
+    downloadModeloMetas: adminProcedure3.mutation(async () => {
+      const wb = XLSX4.utils.book_new();
+      const headers = [
+        "email_aluno",
+        "competencia",
+        "macrometa_titulo",
+        "macrometa_descricao",
+        "micrometa1_titulo",
+        "micrometa1_descricao",
+        "micrometa2_titulo",
+        "micrometa2_descricao",
+        "micrometa3_titulo",
+        "micrometa3_descricao",
+        "micrometa4_titulo",
+        "micrometa4_descricao",
+        "micrometa5_titulo",
+        "micrometa5_descricao"
+      ];
+      const exampleRow = [
+        "aluno@email.com",
+        "Gest\xE3o da Comunica\xE7\xE3o",
+        "Desenvolver comunica\xE7\xE3o assertiva com a equipe",
+        "Aprimorar a clareza e objetividade na comunica\xE7\xE3o em reuni\xF5es e e-mails",
+        "Praticar escuta ativa em reuni\xF5es",
+        "Aguardar a fala completa antes de responder e anotar pontos-chave",
+        "Reformular mensagens com tom colaborativo",
+        "Reescrever uma mensagem sens\xEDvel com foco em solu\xE7\xE3o antes de enviar",
+        "Solicitar feedback sobre comunica\xE7\xE3o",
+        "Pedir retorno de um colega ou gestor sobre clareza e tom das comunica\xE7\xF5es",
+        "",
+        "",
+        "",
+        ""
+      ];
+      const ws = XLSX4.utils.aoa_to_sheet([headers, exampleRow]);
+      ws["!cols"] = headers.map(() => ({ wch: 32 }));
+      XLSX4.utils.book_append_sheet(wb, ws, "Dados");
+      const instrucoes = XLSX4.utils.aoa_to_sheet([
+        ["INSTRU\xC7\xD5ES DE PREENCHIMENTO"],
+        [""],
+        ["\u26A0\uFE0F  REGRA PRINCIPAL: UMA LINHA POR ALUNO"],
+        ["Cada linha representa UM aluno com UMA macrometa vinculada a UMA compet\xEAncia do PDI."],
+        ["N\xC3O repita o mesmo aluno em m\xFAltiplas linhas \u2014 cada aluno deve aparecer apenas uma vez."],
+        [""],
+        ["CAMPOS OBRIGAT\xD3RIOS:"],
+        ["\u2022 email_aluno   \u2192 e-mail cadastrado do aluno no sistema"],
+        ["\u2022 competencia   \u2192 nome EXATO da compet\xEAncia no PDI ativo do aluno (ex: Gest\xE3o da Comunica\xE7\xE3o)"],
+        ["\u2022 macrometa_titulo \u2192 t\xEDtulo da macrometa principal (objetivo maior do aluno nesta compet\xEAncia)"],
+        [""],
+        ["CAMPOS OPCIONAIS:"],
+        ["\u2022 macrometa_descricao \u2192 descri\xE7\xE3o detalhada da macrometa"],
+        ["\u2022 micrometa1_titulo at\xE9 micrometa5_titulo \u2192 t\xEDtulos das micrometas (etapas concretas)"],
+        ["\u2022 micrometa1_descricao at\xE9 micrometa5_descricao \u2192 descri\xE7\xF5es das micrometas"],
+        [""],
+        ["REGRAS DAS MICROMETAS:"],
+        ["\u2022 Preencha em sequ\xEAncia: micrometa1, micrometa2, micrometa3... sem pular n\xFAmeros"],
+        ["\u2022 M\xE1ximo de 5 micrometas por aluno"],
+        ["\u2022 As micrometas s\xE3o as etapas que, quando cumpridas, atingem a macrometa (100%)"],
+        ["\u2022 N\xC3O inclua numera\xE7\xE3o no t\xEDtulo \u2014 o sistema adiciona automaticamente (1., 2., 3...)"],
+        [""],
+        ["EXEMPLO CORRETO (uma linha por aluno):"],
+        ["  aluno@email.com | Gest\xE3o da Comunica\xE7\xE3o | Desenvolver comunica\xE7\xE3o assertiva | ... | Micrometa 1 | ... | Micrometa 2 | ..."]
+      ]);
+      instrucoes["!cols"] = [{ wch: 90 }];
+      XLSX4.utils.book_append_sheet(wb, instrucoes, "Instru\xE7\xF5es");
+      const buf = XLSX4.write(wb, { type: "buffer", bookType: "xlsx" });
+      return { data: buf.toString("base64"), filename: "modelo_metas.xlsx" };
     })
   }),
   // ============ TESTE DISC + AUTOPERCEPÇÃO ============
@@ -27998,7 +29267,7 @@ Responda APENAS em JSON com o formato:
       });
       try {
         const aluno = await getAlunoById(input.alunoId);
-        if (aluno) {
+        if (aluno && aluno.tipoPortal !== "processo_seletivo") {
           const { sendEmail: sendEmail2, buildOnboardingStepEmail: buildOnboardingStepEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
           const adminEmail = process.env.SMTP_USER || "";
           const emailData = buildOnboardingStepEmail2({
@@ -28221,7 +29490,7 @@ Responda APENAS em JSON com o formato:
       });
       try {
         const aluno = await getAlunoById(alunoId);
-        if (aluno) {
+        if (aluno && aluno.tipoPortal !== "processo_seletivo") {
           const { sendEmail: sendEmail2, buildOnboardingStepEmail: buildOnboardingStepEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
           const adminEmail = process.env.SMTP_USER || "";
           const emailData = buildOnboardingStepEmail2({
@@ -28754,7 +30023,7 @@ Responda APENAS em JSON com o formato:
         console.warn("[Onboarding] Erro ao enviar confirma\xE7\xE3o de agendamento para aluno:", emailErr);
       }
       try {
-        if (aluno) {
+        if (aluno && aluno.tipoPortal !== "processo_seletivo") {
           const { sendEmail: sendEmailStep, buildOnboardingStepEmail: buildOnboardingStepEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
           const adminEmailStep = process.env.SMTP_USER || "";
           const emailData = buildOnboardingStepEmail2({
@@ -29996,7 +31265,7 @@ Responda APENAS em JSON com o formato especificado.`
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(cursosCompetencias).where(
-          and6(
+          and7(
             eq8(cursosCompetencias.competenciaId, input.competenciaId),
             eq8(cursosCompetencias.isActive, 1)
           )
@@ -30063,17 +31332,53 @@ Responda APENAS em JSON com o formato especificado.`
         if (!database) {
           throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
+        const [cursoAtual] = await database.select({ isActive: cursosCompetencias.isActive }).from(cursosCompetencias).where(eq8(cursosCompetencias.id, input.cursoId)).limit(1);
+        if (!cursoAtual) {
+          throw new TRPCError6({ code: "NOT_FOUND", message: "Curso n\xE3o encontrado" });
+        }
+        const novoStatus = cursoAtual.isActive === 1 ? 0 : 1;
         await database.update(cursosCompetencias).set({
-          isActive: 0,
+          isActive: novoStatus,
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq8(cursosCompetencias.id, input.cursoId));
+        return { success: true, isActive: novoStatus };
+      }),
+      deletarCurso: adminOrAdmin2Procedure.input(z6.object({ cursoId: z6.number() })).mutation(async ({ input }) => {
+        const database = await getDb();
+        if (!database) {
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+        }
+        const conn = await getRawConnection();
+        if (!conn) {
+          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Conex\xE3o indispon\xEDvel" });
+        }
+        const cursoId = input.cursoId;
+        await conn.execute(
+          `DELETE aa FROM avaliacoes_atividade aa
+             INNER JOIN atividades_curso ac ON aa.atividadeId = ac.id
+             WHERE ac.cursoId = ?`,
+          [cursoId]
+        ).catch(() => {
+        });
+        await conn.execute(
+          `DELETE FROM atividades_curso WHERE cursoId = ?`,
+          [cursoId]
+        );
+        await conn.execute(
+          `DELETE FROM aluno_curso_atribuido WHERE cursoId = ?`,
+          [cursoId]
+        );
+        await conn.execute(
+          `DELETE FROM cursos_competencias WHERE id = ?`,
+          [cursoId]
+        );
         return { success: true };
       }),
       listarAtividadesCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(atividadesCurso).where(
-          and6(
+          and7(
             eq8(atividadesCurso.cursoId, input.cursoId),
             eq8(atividadesCurso.isActive, 1)
           )
@@ -30084,7 +31389,7 @@ Responda APENAS em JSON com o formato especificado.`
         if (!database) return [];
         if (input.competenciaId <= 0) return [];
         return await database.select().from(cursosCompetencias).where(
-          and6(
+          and7(
             eq8(cursosCompetencias.competenciaId, input.competenciaId),
             eq8(cursosCompetencias.isActive, 1)
           )
@@ -30094,7 +31399,7 @@ Responda APENAS em JSON com o formato especificado.`
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(atividadesCurso).where(
-          and6(
+          and7(
             eq8(atividadesCurso.cursoId, input.cursoId),
             eq8(atividadesCurso.isActive, 1)
           )
@@ -30320,7 +31625,7 @@ Responda APENAS em JSON com o formato especificado.`
           avaliacao: avaliacoesAtividade,
           atividade: atividadesCurso
         }).from(avaliacoesAtividade).innerJoin(atividadesCurso, eq8(avaliacoesAtividade.atividadeId, atividadesCurso.id)).where(
-          and6(
+          and7(
             eq8(atividadesCurso.cursoId, input.cursoId),
             eq8(avaliacoesAtividade.isActive, 1)
           )
@@ -30366,7 +31671,7 @@ Responda APENAS em JSON com o formato especificado.`
         }
         const mentorId = Number(ctx2.user.consultorId ?? ctx2.user.id);
         const [existente] = await database.select().from(alunoCursoAtribuido).where(
-          and6(
+          and7(
             eq8(alunoCursoAtribuido.alunoId, input.alunoId),
             eq8(alunoCursoAtribuido.cursoId, input.cursoId)
           )
@@ -30425,7 +31730,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const progressos = await database.select().from(alunoAtividadeProgresso).where(
-          and6(
+          and7(
             eq8(alunoAtividadeProgresso.alunoId, input.alunoId),
             eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
           )
@@ -30469,7 +31774,32 @@ Responda APENAS em JSON com o formato especificado.`
           cursoTitulo: cursosCompetencias.titulo,
           competenciaNome: competencias.nome
         }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(alunoCursoAtribuido.competenciaId, competencias.id)).leftJoin(alunosTable, eq8(alunoCursoAtribuido.alunoId, alunosTable.id)).orderBy(desc3(alunoCursoAtribuido.dataAtribuicao));
-        return cursos;
+        const resultado = await Promise.all(cursos.map(async (curso) => {
+          const progressos = await database.select({
+            status: alunoAtividadeProgresso.status,
+            iniciadoEm: alunoAtividadeProgresso.iniciadoEm
+          }).from(alunoAtividadeProgresso).where(
+            and7(
+              eq8(alunoAtividadeProgresso.alunoId, curso.alunoId),
+              eq8(alunoAtividadeProgresso.cursoAtribuidoId, curso.id)
+            )
+          );
+          const datasInicio = progressos.map((p) => p.iniciadoEm).filter((d) => d != null);
+          const dataInicio = datasInicio.length > 0 ? new Date(Math.min(...datasInicio.map((d) => d.getTime()))) : null;
+          const atividadesConcluidas = progressos.filter(
+            (p) => p.status === "concluida" || p.status === "aprovada"
+          ).length;
+          const totalAtividades = progressos.length;
+          const percentualProgresso = totalAtividades > 0 ? Math.round(atividadesConcluidas / totalAtividades * 100) : 0;
+          return {
+            ...curso,
+            dataInicio,
+            atividadesConcluidas,
+            totalAtividades,
+            percentualProgresso
+          };
+        }));
+        return resultado;
       }),
       listarCursosAtribuidosAoAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
         const database = await getDb();
@@ -30487,7 +31817,7 @@ Responda APENAS em JSON com o formato especificado.`
         }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(alunoCursoAtribuido.competenciaId, competencias.id)).where(eq8(alunoCursoAtribuido.alunoId, input.alunoId)).orderBy(desc3(alunoCursoAtribuido.dataAtribuicao));
         const resultado = await Promise.all(cursos.map(async (curso) => {
           const atividadesBloqueadas = await database.select().from(alunoAtividadeProgresso).where(
-            and6(
+            and7(
               eq8(alunoAtividadeProgresso.alunoId, input.alunoId),
               eq8(alunoAtividadeProgresso.cursoAtribuidoId, curso.id),
               eq8(alunoAtividadeProgresso.status, "bloqueada")
@@ -30542,7 +31872,7 @@ Responda APENAS em JSON com o formato especificado.`
           progresso: alunoModuloProgresso,
           modulo: competenciasModulos
         }).from(alunoModuloProgresso).leftJoin(competenciasModulos, eq8(alunoModuloProgresso.moduloId, competenciasModulos.id)).where(
-          and6(
+          and7(
             eq8(alunoModuloProgresso.alunoId, aluno.id),
             eq8(alunoModuloProgresso.moduloId, input.moduloId)
           )
@@ -30559,7 +31889,7 @@ Responda APENAS em JSON com o formato especificado.`
           atribuicao: alunoCursoAtribuido,
           competencia: competencias
         }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(cursosCompetencias.competenciaId, competencias.id)).where(
-          and6(
+          and7(
             eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
             eq8(alunoCursoAtribuido.alunoId, aluno.id),
             eq8(alunoCursoAtribuido.cursoId, input.cursoId)
@@ -30582,7 +31912,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "FORBIDDEN", message: "Aluno n\xE3o identificado." });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
-          and6(
+          and7(
             eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
             eq8(alunoCursoAtribuido.alunoId, user.alunoId),
             eq8(alunoCursoAtribuido.cursoId, input.cursoId)
@@ -30591,16 +31921,21 @@ Responda APENAS em JSON com o formato especificado.`
         if (!atribuicao) {
           throw new TRPCError6({ code: "NOT_FOUND", message: "Curso atribu\xEDdo n\xE3o encontrado." });
         }
+        let nomeCompetencia = null;
+        if (atribuicao.competenciaId) {
+          const [comp] = await database.select({ nome: competencias.nome }).from(competencias).where(eq8(competencias.id, atribuicao.competenciaId)).limit(1);
+          nomeCompetencia = comp?.nome ?? null;
+        }
         const atividades = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
         const progressos = await database.select().from(alunoAtividadeProgresso).where(
-          and6(
+          and7(
             eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
             eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
           )
         );
         const atividadeIds = atividades.map((atividade) => atividade.id);
         const avaliacoes = atividadeIds.length === 0 ? [] : await database.select().from(avaliacoesAtividade).where(
-          and6(
+          and7(
             eq8(avaliacoesAtividade.isActive, 1),
             inArray4(avaliacoesAtividade.atividadeId, atividadeIds)
           )
@@ -30639,9 +31974,43 @@ Responda APENAS em JSON com o formato especificado.`
             temAvaliacao: !!avaliacao,
             avaliacaoLiberada: progresso?.avaliacaoLiberada === 1,
             permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
-            ...montarResumoTempo(atividade, progresso)
+            ...montarResumoTempo(atividade, progresso),
+            nomeCompetencia: index === 0 ? nomeCompetencia : null
           };
         });
+      }),
+      previewCurso: adminOrAdmin2Procedure.input(z6.object({ cursoId: z6.number().int().positive() })).query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return [];
+        const atividades = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
+        const atividadeIds = atividades.map((a) => a.id);
+        const avaliacoes = atividadeIds.length === 0 ? [] : await database.select().from(avaliacoesAtividade).where(
+          and7(
+            eq8(avaliacoesAtividade.isActive, 1),
+            inArray4(avaliacoesAtividade.atividadeId, atividadeIds)
+          )
+        );
+        const avaliacaoMap = new Map(avaliacoes.map((a) => [a.atividadeId, a]));
+        return atividades.map((atividade, index) => ({
+          id: atividade.id,
+          titulo: atividade.titulo,
+          descricao: atividade.descricao,
+          ordem: atividade.ordem ?? index + 1,
+          imagemUrl: atividade.imagemUrl ?? null,
+          urlGenially: atividade.urlGenially ?? null,
+          urlMidia: atividade.urlMidia ?? null,
+          status: "disponivel",
+          notaFinal: null,
+          tentativas: 0,
+          avaliacaoId: avaliacaoMap.get(atividade.id)?.id ?? null,
+          temAvaliacao: !!avaliacaoMap.get(atividade.id),
+          avaliacaoLiberada: true,
+          permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
+          duracaoEstimadaMinutos: atividade.duracaoEstimadaMinutos ?? null,
+          duracaoRealMinutos: null,
+          iniciadoEm: null,
+          concluidoEm: null
+        }));
       }),
       iniciarAtividade: protectedProcedure.input(z6.object({
         cursoId: z6.number(),
@@ -30664,7 +32033,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "FORBIDDEN" });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
-          and6(
+          and7(
             eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
             eq8(alunoCursoAtribuido.alunoId, user.alunoId),
             eq8(alunoCursoAtribuido.cursoId, input.cursoId)
@@ -30677,7 +32046,7 @@ Responda APENAS em JSON com o formato especificado.`
           });
         }
         const [atividade] = await database.select().from(atividadesCurso).where(
-          and6(
+          and7(
             eq8(atividadesCurso.id, input.atividadeId),
             eq8(atividadesCurso.cursoId, input.cursoId)
           )
@@ -30689,7 +32058,7 @@ Responda APENAS em JSON com o formato especificado.`
           });
         }
         const [existente] = await database.select().from(alunoAtividadeProgresso).where(
-          and6(
+          and7(
             eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
             eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
             eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
@@ -30731,7 +32100,7 @@ Responda APENAS em JSON com o formato especificado.`
           }).where(eq8(alunoAtividadeProgresso.id, existente.id));
         }
         const [sessaoAtiva] = await database.select().from(sessoesEstudoAtividade).where(
-          and6(
+          and7(
             eq8(sessoesEstudoAtividade.alunoId, user.alunoId),
             eq8(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
             eq8(sessoesEstudoAtividade.atividadeId, input.atividadeId),
@@ -30747,6 +32116,9 @@ Responda APENAS em JSON com o formato especificado.`
             tempoAtivoSegundos: 0,
             statusSessao: "ativa"
           });
+        }
+        if (atribuicao.status === "nao_iniciado") {
+          await database.update(alunoCursoAtribuido).set({ status: "em_progresso" }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
         }
         const [avaliacao] = await database.select().from(avaliacoesAtividade).where(eq8(avaliacoesAtividade.atividadeId, input.atividadeId)).limit(1);
         if (!avaliacao) {
@@ -30823,7 +32195,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "FORBIDDEN" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
-          and6(
+          and7(
             eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
             eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
             eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
@@ -30859,7 +32231,7 @@ Responda APENAS em JSON com o formato especificado.`
           updatedAt: agora
         }).where(eq8(alunoAtividadeProgresso.id, progresso.id));
         const [sessaoAtiva] = await database.select().from(sessoesEstudoAtividade).where(
-          and6(
+          and7(
             eq8(sessoesEstudoAtividade.alunoId, user.alunoId),
             eq8(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
             eq8(sessoesEstudoAtividade.atividadeId, input.atividadeId),
@@ -30892,7 +32264,7 @@ Responda APENAS em JSON com o formato especificado.`
           statusSessao: "pausada",
           encerradaEm: /* @__PURE__ */ new Date()
         }).where(
-          and6(
+          and7(
             eq8(sessoesEstudoAtividade.alunoId, user.alunoId),
             eq8(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
             eq8(sessoesEstudoAtividade.atividadeId, input.atividadeId),
@@ -30920,7 +32292,7 @@ Responda APENAS em JSON com o formato especificado.`
         }
         const [atividade] = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
-          and6(
+          and7(
             eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
             eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
             eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
@@ -30937,7 +32309,7 @@ Responda APENAS em JSON com o formato especificado.`
           });
         }
         const [avaliacaoExistente] = await database.select({ id: avaliacoesAtividade.id }).from(avaliacoesAtividade).where(
-          and6(
+          and7(
             eq8(avaliacoesAtividade.atividadeId, input.atividadeId),
             eq8(avaliacoesAtividade.isActive, 1)
           )
@@ -30957,7 +32329,7 @@ Responda APENAS em JSON com o formato especificado.`
           const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1 ? atividades[atividadeIndex + 1] : null;
           if (proximaAtividade) {
             const [proximaJaExiste] = await database.select().from(alunoAtividadeProgresso).where(
-              and6(
+              and7(
                 eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
                 eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
                 eq8(alunoAtividadeProgresso.atividadeId, proximaAtividade.id)
@@ -30975,7 +32347,7 @@ Responda APENAS em JSON com o formato especificado.`
             }
           }
           const todasAsAtividades = await database.select().from(alunoAtividadeProgresso).where(
-            and6(
+            and7(
               eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
               eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
             )
@@ -30986,8 +32358,8 @@ Responda APENAS em JSON com o formato especificado.`
               status: "concluido",
               dataConclusao: /* @__PURE__ */ new Date()
             }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
-            await syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
           }
+          await syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
         }
         return { success: true, aprovadaAutomaticamente: !temAvaliacao };
       }),
@@ -31010,7 +32382,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "FORBIDDEN", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
-          and6(
+          and7(
             eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
             eq8(alunoCursoAtribuido.alunoId, user.alunoId),
             eq8(alunoCursoAtribuido.cursoId, input.cursoId)
@@ -31020,7 +32392,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "FORBIDDEN", message: "Curso n\xE3o atribu\xEDdo a este aluno" });
         }
         const [atividade] = await database.select().from(atividadesCurso).where(
-          and6(
+          and7(
             eq8(atividadesCurso.id, input.atividadeId),
             eq8(atividadesCurso.cursoId, input.cursoId)
           )
@@ -31029,7 +32401,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada neste curso" });
         }
         const [avaliacao] = await database.select().from(avaliacoesAtividade).where(
-          and6(
+          and7(
             eq8(avaliacoesAtividade.id, input.avaliacaoId),
             eq8(avaliacoesAtividade.atividadeId, input.atividadeId)
           )
@@ -31038,7 +32410,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "NOT_FOUND", message: "Avalia\xE7\xE3o n\xE3o encontrada para esta atividade" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
-          and6(
+          and7(
             eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
             eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
             eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
@@ -31082,7 +32454,7 @@ Responda APENAS em JSON com o formato especificado.`
           throw new TRPCError6({ code: "FORBIDDEN" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
-          and6(
+          and7(
             eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
             eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
             eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
@@ -31109,10 +32481,12 @@ Responda APENAS em JSON com o formato especificado.`
         const tentativasAtuais = (progresso.tentativas ?? 0) + 1;
         const tentativasRestantes = 3 - tentativasAtuais;
         const bloqueado = tentativasAtuais >= 3 && !aprovado;
+        const novoAvaliacaoLiberada = !bloqueado && !aprovado ? 1 : progresso.avaliacaoLiberada;
         await database.update(alunoAtividadeProgresso).set({
           notaFinal: notaPersistida,
           status: bloqueado ? "bloqueada" : aprovado ? "aprovada" : "reprovada",
           tentativas: tentativasAtuais,
+          avaliacaoLiberada: novoAvaliacaoLiberada,
           updatedAt: /* @__PURE__ */ new Date()
         }).where(eq8(alunoAtividadeProgresso.id, progresso.id));
         const atividades = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
@@ -31120,7 +32494,7 @@ Responda APENAS em JSON com o formato especificado.`
         const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1 ? atividades[atividadeIndex + 1] : null;
         if (aprovado && proximaAtividade) {
           const [proximaJaExiste] = await database.select().from(alunoAtividadeProgresso).where(
-            and6(
+            and7(
               eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
               eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
               eq8(alunoAtividadeProgresso.atividadeId, proximaAtividade.id)
@@ -31138,7 +32512,7 @@ Responda APENAS em JSON com o formato especificado.`
           }
         }
         const todasAsAtividades = await database.select().from(alunoAtividadeProgresso).where(
-          and6(
+          and7(
             eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
             eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
           )
@@ -31148,6 +32522,8 @@ Responda APENAS em JSON com o formato especificado.`
           await database.update(alunoCursoAtribuido).set({
             status: "concluido"
           }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+        }
+        if (aprovado) {
           await syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
         }
         if (bloqueado) {
@@ -31244,7 +32620,7 @@ Responda APENAS em JSON com o formato especificado.`
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
         if (!aluno) return [];
         return await database.select().from(alunoModuloAvaliacao).where(
-          and6(
+          and7(
             eq8(alunoModuloAvaliacao.alunoId, aluno.id),
             eq8(alunoModuloAvaliacao.moduloId, input.moduloId)
           )
@@ -31271,7 +32647,7 @@ Responda APENAS em JSON com o formato especificado.`
           });
         }
         const [cursoAtribuido] = await database.select().from(alunoCursoAtribuido).where(
-          and6(
+          and7(
             eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
             eq8(alunoCursoAtribuido.alunoId, aluno.id)
           )
@@ -31284,7 +32660,7 @@ Responda APENAS em JSON com o formato especificado.`
         }
         const [tentativaJoin] = await database.select().from(tentativasAvaliacao).innerJoin(
           alunoCursoAtribuido,
-          and6(
+          and7(
             eq8(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
             eq8(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
           )
@@ -31310,7 +32686,7 @@ Responda APENAS em JSON com o formato especificado.`
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
         if (!aluno) return null;
         const [cursoAtribuido] = await database.select().from(alunoCursoAtribuido).where(
-          and6(
+          and7(
             eq8(alunoCursoAtribuido.alunoId, aluno.id),
             eq8(alunoCursoAtribuido.cursoId, input.cursoId)
           )
@@ -31328,7 +32704,7 @@ Responda APENAS em JSON com o formato especificado.`
           urlGenially: atividadesCurso.urlGenially,
           urlMidia: atividadesCurso.urlMidia
         }).from(atividadesCurso).where(
-          and6(
+          and7(
             eq8(atividadesCurso.cursoId, input.cursoId),
             eq8(atividadesCurso.isActive, 1)
           )
@@ -31364,7 +32740,7 @@ Responda APENAS em JSON com o formato especificado.`
           });
         }
         const [cursoAtribuido] = await database.select().from(alunoCursoAtribuido).where(
-          and6(
+          and7(
             eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
             eq8(alunoCursoAtribuido.alunoId, aluno.id)
           )
@@ -31377,7 +32753,7 @@ Responda APENAS em JSON com o formato especificado.`
         }
         const [ultimaTentativaJoin] = await database.select().from(tentativasAvaliacao).innerJoin(
           alunoCursoAtribuido,
-          and6(
+          and7(
             eq8(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
             eq8(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
           )
@@ -31456,7 +32832,7 @@ Responda APENAS em JSON com o formato especificado.`
     obterPorChave: publicProcedure.input(z6.object({ chave: z6.string() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return null;
-      const video = await database.select().from(onboardingVideos).where(and6(eq8(onboardingVideos.chave, input.chave), eq8(onboardingVideos.isActive, 1))).limit(1);
+      const video = await database.select().from(onboardingVideos).where(and7(eq8(onboardingVideos.chave, input.chave), eq8(onboardingVideos.isActive, 1))).limit(1);
       return video[0] || null;
     }),
     criar: adminOrAdmin2Procedure.input(z6.object({
@@ -31734,7 +33110,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq9, and as and7, gte as gte4 } from "drizzle-orm";
+import { eq as eq9, and as and8, gte as gte5 } from "drizzle-orm";
 var DIAS_MINIMO = 30;
 var DIAS_ENTRE_ALERTAS2 = 7;
 async function verificarEEnviarAlertasMentoria(options) {
@@ -31760,10 +33136,10 @@ async function verificarEEnviarAlertasMentoria(options) {
     }
   }
   const sevenDaysAgo = new Date(Date.now() - DIAS_ENTRE_ALERTAS2 * 24 * 60 * 60 * 1e3);
-  const recentAlerts = await db2.select().from(emailAlertasLog).where(and7(
+  const recentAlerts = await db2.select().from(emailAlertasLog).where(and8(
     eq9(emailAlertasLog.tipoAlerta, "mentoria_30dias"),
     eq9(emailAlertasLog.emailEnviado, 1),
-    gte4(emailAlertasLog.createdAt, sevenDaysAgo)
+    gte5(emailAlertasLog.createdAt, sevenDaysAgo)
   ));
   const recentAlertAlunoIds = new Set(recentAlerts.map((a) => a.alunoId));
   const now = Date.now();
@@ -31897,7 +33273,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq10, and as and8 } from "drizzle-orm";
+import { eq as eq10, and as and9 } from "drizzle-orm";
 var DIAS_ENTRE_ENVIOS = 3;
 var TOTAL_EMAILS_SEQUENCIA = 5;
 var DIAS_ALERTA_ADMIN = 15;
@@ -31915,7 +33291,7 @@ function diasDesde(date2) {
 async function jaEnviado(db2, alunoId, tipo) {
   if (!db2) return false;
   const rows = await db2.select({ id: emailAlertasLog.id }).from(emailAlertasLog).where(
-    and8(
+    and9(
       eq10(emailAlertasLog.alunoId, alunoId),
       eq10(emailAlertasLog.tipoAlerta, tipo),
       eq10(emailAlertasLog.emailEnviado, 1)
@@ -32041,7 +33417,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq11, and as and9, gte as gte5, lte as lte3, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq11, and as and10, gte as gte6, lte as lte3, inArray as inArray6 } from "drizzle-orm";
 async function verificarEEnviarLembretesAplicabilidade(options) {
   const dryRun = options?.dryRun || false;
   const forceResend = options?.forceResend || false;
@@ -32055,8 +33431,8 @@ async function verificarEEnviarLembretesAplicabilidade(options) {
   const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1e3);
   const todayStr = now.toISOString().slice(0, 10);
   const in48hStr = in48h.toISOString().slice(0, 10);
-  const upcomingAppointments = await db2.select().from(mentorAppointments).where(and9(
-    gte5(mentorAppointments.scheduledDate, todayStr),
+  const upcomingAppointments = await db2.select().from(mentorAppointments).where(and10(
+    gte6(mentorAppointments.scheduledDate, todayStr),
     lte3(mentorAppointments.scheduledDate, in48hStr),
     inArray6(mentorAppointments.status, ["agendado", "confirmado"])
   ));
@@ -32066,10 +33442,10 @@ async function verificarEEnviarLembretesAplicabilidade(options) {
   const appointmentIds = upcomingAppointments.map((a) => a.id);
   const participants = await db2.select().from(appointmentParticipants).where(inArray6(appointmentParticipants.appointmentId, appointmentIds));
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1e3);
-  const recentAlerts = await db2.select().from(emailAlertasLog).where(and9(
+  const recentAlerts = await db2.select().from(emailAlertasLog).where(and10(
     eq11(emailAlertasLog.tipoAlerta, "lembrete_aplicabilidade_48h"),
     eq11(emailAlertasLog.emailEnviado, 1),
-    gte5(emailAlertasLog.createdAt, threeDaysAgo)
+    gte6(emailAlertasLog.createdAt, threeDaysAgo)
   ));
   const recentAlertAlunoIds = new Set(recentAlerts.map((a) => a.alunoId));
   const allSessions = await db2.select().from(mentoringSessions);
@@ -32207,7 +33583,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq12, and as and10, gte as gte6 } from "drizzle-orm";
+import { eq as eq12, and as and11, gte as gte7 } from "drizzle-orm";
 var DIAS_MINIMO2 = 45;
 var DIAS_ENTRE_ALERTAS3 = 7;
 var ADMIN_EMAIL2 = "relacionamento@ckmtalents.net";
@@ -32253,10 +33629,10 @@ async function verificarEEnviarAlertasTarefasEmAberto(options) {
   }
   const sevenDaysAgo = new Date(Date.now() - DIAS_ENTRE_ALERTAS3 * 24 * 60 * 60 * 1e3);
   const sessionIds = tarefasEmAberto.map((s) => s.id);
-  const recentAlerts = await db2.select().from(emailAlertasLog).where(and10(
+  const recentAlerts = await db2.select().from(emailAlertasLog).where(and11(
     eq12(emailAlertasLog.tipoAlerta, TIPO_ALERTA),
     eq12(emailAlertasLog.emailEnviado, 1),
-    gte6(emailAlertasLog.createdAt, sevenDaysAgo)
+    gte7(emailAlertasLog.createdAt, sevenDaysAgo)
   ));
   const jaEnviadosSet = new Set(recentAlerts.map((a) => `${a.alunoId}-${a.diasSemSessao}`));
   const alertas = [];
@@ -32392,7 +33768,7 @@ function iniciarCronTarefasEmAberto() {
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq13, and as and11, gte as gte7, lte as lte4 } from "drizzle-orm";
+import { eq as eq13, and as and12, gte as gte8, lte as lte4 } from "drizzle-orm";
 var TIPO_ALERTA2 = "ausencia_webinar";
 var INTERVALO_DIAS = 15;
 var JANELA_DIAS = 30;
@@ -32411,9 +33787,9 @@ async function verificarEEnviarAlertasAusenciaWebinar(dryRun = false) {
     eventTitle: events.title,
     eventDate: events.eventDate
   }).from(eventParticipation).innerJoin(events, eq13(events.id, eventParticipation.eventId)).where(
-    and11(
+    and12(
       eq13(eventParticipation.status, "ausente"),
-      gte7(events.eventDate, limiteInferiorStr),
+      gte8(events.eventDate, limiteInferiorStr),
       lte4(events.eventDate, limiteSuperiorStr)
     )
   );
@@ -32422,10 +33798,10 @@ async function verificarEEnviarAlertasAusenciaWebinar(dryRun = false) {
   }
   const limiteLog = new Date(agora.getTime() - INTERVALO_DIAS * 24 * 60 * 60 * 1e3);
   const logsRecentes = await db2.select({ alunoId: emailAlertasLog.alunoId }).from(emailAlertasLog).where(
-    and11(
+    and12(
       eq13(emailAlertasLog.tipoAlerta, TIPO_ALERTA2),
       eq13(emailAlertasLog.emailEnviado, 1),
-      gte7(emailAlertasLog.createdAt, limiteLog)
+      gte8(emailAlertasLog.createdAt, limiteLog)
     )
   );
   const jaEnviadosSet = new Set(logsRecentes.map((l) => l.alunoId));
@@ -32538,7 +33914,7 @@ function iniciarCronAusenciaWebinar() {
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq14, and as and12, gte as gte8, desc as desc5 } from "drizzle-orm";
+import { eq as eq14, and as and13, gte as gte9, desc as desc5 } from "drizzle-orm";
 var TIPO_ALERTA3 = "lembrete_tarefa_mentoria";
 var INTERVALO_DIAS2 = 15;
 var LOGIN_URL4 = "https://ecolider.ecodobem.com";
@@ -32566,10 +33942,10 @@ async function verificarEEnviarLembreteTarefaMentoria(dryRun = false) {
   }
   const limiteLog = new Date(agora.getTime() - INTERVALO_DIAS2 * 24 * 60 * 60 * 1e3);
   const logsRecentes = await db2.select({ alunoId: emailAlertasLog.alunoId }).from(emailAlertasLog).where(
-    and12(
+    and13(
       eq14(emailAlertasLog.tipoAlerta, TIPO_ALERTA3),
       eq14(emailAlertasLog.emailEnviado, 1),
-      gte8(emailAlertasLog.createdAt, limiteLog)
+      gte9(emailAlertasLog.createdAt, limiteLog)
     )
   );
   const jaEnviadosSet = new Set(logsRecentes.map((l) => l.alunoId));
@@ -32594,9 +33970,9 @@ async function verificarEEnviarLembreteTarefaMentoria(dryRun = false) {
       scheduledDate: mentorAppointments.scheduledDate,
       startTime: mentorAppointments.startTime
     }).from(mentorAppointments).innerJoin(appointmentParticipants, eq14(appointmentParticipants.appointmentId, mentorAppointments.id)).where(
-      and12(
+      and13(
         eq14(appointmentParticipants.alunoId, alunoId),
-        gte8(mentorAppointments.scheduledDate, hojeStr)
+        gte9(mentorAppointments.scheduledDate, hojeStr)
       )
     ).orderBy(mentorAppointments.scheduledDate).limit(1);
     const proximaSessao = proximasSessoes[0] || null;
@@ -32701,7 +34077,7 @@ function iniciarCronLembreteTarefaMentoria() {
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq15, and as and13, gte as gte9, lte as lte5 } from "drizzle-orm";
+import { eq as eq15, and as and14, gte as gte10, lte as lte5 } from "drizzle-orm";
 var TIPO_ALERTA4 = "ps_lembrete_d1";
 var LOGIN_URL5 = process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com";
 async function verificarEEnviarLembreteD1(dryRun = false) {
@@ -32732,9 +34108,9 @@ async function verificarEEnviarLembreteD1(dryRun = false) {
     fim: processoAgendaSlots.fim,
     linkEntrevista: processoAgendaSlots.linkEntrevista
   }).from(processoEntrevistas).innerJoin(processoCandidatos, eq15(processoCandidatos.id, processoEntrevistas.candidatoId)).innerJoin(processosSeletivos, eq15(processosSeletivos.id, processoEntrevistas.processoId)).innerJoin(processoAgendaSlots, eq15(processoAgendaSlots.id, processoEntrevistas.agendaSlotId)).where(
-    and13(
+    and14(
       eq15(processoEntrevistas.status, "agendada"),
-      gte9(processoAgendaSlots.dataAgenda, amanhaStr),
+      gte10(processoAgendaSlots.dataAgenda, amanhaStr),
       lte5(processoAgendaSlots.dataAgenda, amanhaStr)
     )
   );
@@ -32750,10 +34126,10 @@ async function verificarEEnviarLembreteD1(dryRun = false) {
   const inicioHoje = new Date(agora);
   inicioHoje.setHours(0, 0, 0, 0);
   const logsHoje = await db2.select({ candidatoId: psEmailLog.candidatoId }).from(psEmailLog).where(
-    and13(
+    and14(
       eq15(psEmailLog.tipoAlerta, TIPO_ALERTA4),
       eq15(psEmailLog.emailEnviado, 1),
-      gte9(psEmailLog.createdAt, inicioHoje)
+      gte10(psEmailLog.createdAt, inicioHoje)
     )
   );
   const jaEnviadosSet = new Set(logsHoje.map((l) => l.candidatoId));
@@ -32878,6 +34254,7 @@ async function startServer() {
   await ensureAuditoriaNotesMentoriaTable();
   await ensureGoogleCalendarColumns();
   await ensureProcessoSeletivoColumns();
+  await ensureRelatorioEntrevistaColumns();
   const app = express2();
   const server = createServer(app);
   app.use(express2.json({ limit: "50mb" }));
