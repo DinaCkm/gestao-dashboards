@@ -630,14 +630,14 @@ export const appRouter = router({
         emailAluno: z.string().email()
       }))
       .mutation(async ({ input, ctx }) => {
-        // Verificar que o usuário atual é admin
-        if (!ctx.user || (ctx.user.role !== 'admin' && ctx.user.role !== 'admin2')) {
+        // Verificar que o usuário atual é admin (ou que já está em impersonação com admin no backup)
+        const isAdmin = ctx.user && (ctx.user.role === 'admin' || ctx.user.role === 'admin2');
+        const isAdminImpersonating = ctx.isImpersonating && ctx.adminUser && (ctx.adminUser.role === 'admin' || ctx.adminUser.role === 'admin2');
+        if (!isAdmin && !isAdminImpersonating) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem usar a impersonação.' });
         }
-        // Não permitir impersonação aninhada
-        if (ctx.isImpersonating) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Já está em modo de impersonação. Saia primeiro.' });
-        }
+        // Se já está impersonando, usar o adminUser do backup como base (troca direta de aluno)
+        const adminForSession = ctx.isImpersonating && ctx.adminUser ? ctx.adminUser : ctx.user!;
         // Buscar o aluno pelo email
         const aluno = await db.getAlunoByEmail(input.emailAluno.toLowerCase().trim());
         if (!aluno) {
@@ -668,9 +668,9 @@ export const appRouter = router({
         if (!alunoUser) {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao preparar sessão do aluno.' });
         }
-        // Salvar sessão atual do admin no cookie de backup
-        const adminToken = await sdk.createSessionToken(ctx.user.openId, {
-          name: ctx.user.name || "",
+        // Salvar sessão do admin original no cookie de backup (preserva mesmo em troca de aluno)
+        const adminToken = await sdk.createSessionToken(adminForSession.openId, {
+          name: adminForSession.name || "",
           expiresInMs: TWO_HOURS_MS,
         });
         const cookieOptions = getSessionCookieOptions(ctx.req);
