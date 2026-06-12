@@ -19996,26 +19996,7 @@ Transcri\xE7\xE3o da Entrevista:
 ${transcricaoTexto.slice(0, 14e3)}`
         }
       ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "relatorio_entrevista",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              minicurriculo: { type: "string" },
-              pontosDestaque: { type: "string" },
-              pontosPositivosDisc: { type: "string" },
-              pontosDesenvolvimentoDisc: { type: "string" },
-              parecerEntrevista: { type: "string" },
-              conclusao: { type: "string" }
-            },
-            required: ["minicurriculo", "pontosDestaque", "pontosPositivosDisc", "pontosDesenvolvimentoDisc", "parecerEntrevista", "conclusao"],
-            additionalProperties: false
-          }
-        }
-      }
+      response_format: { type: "json_object" }
     });
     const content = response.choices?.[0]?.message?.content;
     if (!content) throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: "IA n\xE3o retornou conte\xFAdo" });

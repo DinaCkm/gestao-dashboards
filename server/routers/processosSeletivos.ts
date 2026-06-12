@@ -2653,26 +2653,7 @@ Responda APENAS em JSON com exatamente os seguintes campos:
             content: `Cliente: ${processoInfo?.clienteNome ?? 'Não informado'}\nProcesso Seletivo: ${processoInfo?.nome ?? 'Não informado'}\nCandidato: ${candidate.nome}\nData da Entrevista: ${dataEntrevista}\nHorário: ${horarioEntrevista}\nStatus Final: ${statusFinal}\nBanca Avaliadora: ${participantesBancaIA}\nMentor/Entrevistador: ${mentorNomeIA ?? 'Não informado'}\n\nMinicurrículo / Histórico Profissional:\n${aluno?.minicurriculo ?? 'Não disponível'}\nCargo atual: ${aluno?.cargo ?? 'Não informado'}\n\nDISC / Perfil Comportamental:\n${discTexto}\n\n${autoPercTexto}${observacaoTexto}\n\nTranscrição da Entrevista:\n${transcricaoTexto.slice(0, 14000)}`,
           },
         ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'relatorio_entrevista',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                minicurriculo: { type: 'string' },
-                pontosDestaque: { type: 'string' },
-                pontosPositivosDisc: { type: 'string' },
-                pontosDesenvolvimentoDisc: { type: 'string' },
-                parecerEntrevista: { type: 'string' },
-                conclusao: { type: 'string' },
-              },
-              required: ['minicurriculo', 'pontosDestaque', 'pontosPositivosDisc', 'pontosDesenvolvimentoDisc', 'parecerEntrevista', 'conclusao'],
-              additionalProperties: false,
-            },
-          },
-        },
+        response_format: { type: 'json_object' },
       });
 
       const content = response.choices?.[0]?.message?.content;
