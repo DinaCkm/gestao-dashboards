@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq, and, asc, desc, inArray } from "drizzle-orm";
+import { eq, and, or, asc, desc, inArray } from "drizzle-orm";
 import {
   competenciasModulos,
   competencias,
@@ -579,7 +579,8 @@ export const appRouter = router({
             .from(usersTable)
             .where(and(
               eq(usersTable.email, normalizedEmail),
-              eq(usersTable.isActive, 1)
+              eq(usersTable.isActive, 1),
+              or(eq(usersTable.role, 'admin'), eq(usersTable.role, 'admin2'))
             ))
             .limit(1);
           if (!adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'admin2')) {
