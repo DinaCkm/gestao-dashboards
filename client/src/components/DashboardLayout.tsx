@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import ImpersonationBanner from "@/components/ImpersonationBanner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -772,6 +773,8 @@ function DashboardLayoutContent({
         />
       </div>
 
+      {/* Banner de impersonação - aparece quando admin está visualizando como aluno */}
+      <ImpersonationBanner />
       <SidebarInset className="gradient-bg">
         {isMobile && (
           <div className="flex border-b border-border h-14 items-center justify-between bg-background/80 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">

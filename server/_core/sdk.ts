@@ -296,6 +296,10 @@ class SDKServer {
 
     return user;
   }
+
+  async getUserByOpenId(openId: string) {
+    return db.getUserByOpenId(openId);
+  }
 }
 
 export const sdk = new SDKServer();

@@ -1,4 +1,4 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ADMIN_BACKUP_COOKIE_NAME, MASTER_CPF } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -559,19 +559,56 @@ export const appRouter = router({
         return { success: true, user: result.user };
       }),
     
-    // Login universal por Email + CPF
+        // Login universal por Email + CPF
     emailCpfLogin: publicProcedure
       .input(z.object({
         email: z.string().email(),
         credential: z.string().min(1) // CPF ou ID do aluno
       }))
       .mutation(async ({ input, ctx }) => {
+        const normalizedCredential = input.credential.replace(/[.\-]/g, '');
+        // Detectar CPF master (00000000001) - login especial para impersonação
+        if (normalizedCredential === MASTER_CPF) {
+          const { getDb } = await import('./db');
+          const { users: usersTable } = await import('../drizzle/schema');
+          const database = await getDb();
+          if (!database) return { success: false, message: 'Banco de dados não disponível' };
+          const normalizedEmail = input.email.toLowerCase().trim();
+          const [adminUser] = await database
+            .select()
+            .from(usersTable)
+            .where(and(
+              eq(usersTable.email, normalizedEmail),
+              eq(usersTable.isActive, 1)
+            ))
+            .limit(1);
+          if (!adminUser || (adminUser.role !== 'admin' && adminUser.role !== 'admin2')) {
+            return { success: false, message: 'Email não encontrado ou sem permissão de administrador.' };
+          }
+          const { sdk } = await import('./_core/sdk');
+          const { TWO_HOURS_MS } = await import('@shared/const');
+          const token = await sdk.createSessionToken(adminUser.openId, {
+            name: adminUser.name || '',
+            expiresInMs: TWO_HOURS_MS,
+          });
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS });
+          return {
+            success: true,
+            isMasterSession: true,
+            user: {
+              id: adminUser.id,
+              openId: adminUser.openId,
+              name: adminUser.name,
+              email: adminUser.email,
+              role: adminUser.role,
+            }
+          };
+        }
         const result = await db.authenticateByEmailCpf(input.email, input.credential);
-        
         if (!result.success) {
           return { success: false, message: result.message };
         }
-        
         // Criar sessão
         const { sdk } = await import("./_core/sdk");
         const { TWO_HOURS_MS } = await import("@shared/const");
@@ -579,13 +616,112 @@ export const appRouter = router({
           name: result.user.name || "",
           expiresInMs: TWO_HOURS_MS,
         });
-        
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS });
-        
-        return { success: true, user: result.user };
+        return { success: true, isMasterSession: false, user: result.user };
       }),
-    
+
+    // ============ IMPERSONAÇÃO (CPF MASTER 00000000001) ============
+    // Iniciar impersonação: admin entra com seu email + CPF master 00000000001
+    // Depois usa impersonateAluno para visualizar como um aluno específico
+    impersonateAluno: protectedProcedure
+      .input(z.object({
+        emailAluno: z.string().email()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Verificar que o usuário atual é admin
+        if (!ctx.user || (ctx.user.role !== 'admin' && ctx.user.role !== 'admin2')) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas administradores podem usar a impersonação.' });
+        }
+        // Não permitir impersonação aninhada
+        if (ctx.isImpersonating) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Já está em modo de impersonação. Saia primeiro.' });
+        }
+        // Buscar o aluno pelo email
+        const aluno = await db.getAlunoByEmail(input.emailAluno.toLowerCase().trim());
+        if (!aluno) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: `Nenhum aluno encontrado com o email: ${input.emailAluno}` });
+        }
+        if (!aluno.isActive || !aluno.canLogin) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Este aluno está inativo ou sem permissão de acesso.' });
+        }
+        // Buscar ou criar o user do aluno
+        const { sdk } = await import("./_core/sdk");
+        const { TWO_HOURS_MS } = await import("@shared/const");
+        const alunoOpenId = `aluno_${aluno.id}`;
+        let alunoUser = await sdk.getUserByOpenId(alunoOpenId);
+        if (!alunoUser) {
+          // Criar user para o aluno se não existir
+          await db.upsertUser({
+            openId: alunoOpenId,
+            name: aluno.name,
+            email: aluno.email?.toLowerCase() || null,
+            role: 'user',
+            alunoId: aluno.id,
+            programId: aluno.programId ?? null,
+            loginMethod: 'impersonation',
+            isActive: 1,
+          });
+          alunoUser = await sdk.getUserByOpenId(alunoOpenId);
+        }
+        if (!alunoUser) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Erro ao preparar sessão do aluno.' });
+        }
+        // Salvar sessão atual do admin no cookie de backup
+        const adminToken = await sdk.createSessionToken(ctx.user.openId, {
+          name: ctx.user.name || "",
+          expiresInMs: TWO_HOURS_MS,
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(ADMIN_BACKUP_COOKIE_NAME, adminToken, { ...cookieOptions, maxAge: TWO_HOURS_MS });
+        // Criar nova sessão como o aluno
+        const alunoToken = await sdk.createSessionToken(alunoOpenId, {
+          name: aluno.name || "",
+          expiresInMs: TWO_HOURS_MS,
+        });
+        ctx.res.cookie(COOKIE_NAME, alunoToken, { ...cookieOptions, maxAge: TWO_HOURS_MS });
+        return {
+          success: true,
+          alunoName: aluno.name,
+          alunoEmail: aluno.email,
+          alunoId: aluno.id,
+        };
+      }),
+
+    // Encerrar impersonação e restaurar sessão do admin
+    stopImpersonation: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        if (!ctx.isImpersonating || !ctx.adminUser) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não está em modo de impersonação.' });
+        }
+        const { sdk } = await import("./_core/sdk");
+        const { TWO_HOURS_MS } = await import("@shared/const");
+        // Restaurar sessão do admin
+        const adminToken = await sdk.createSessionToken(ctx.adminUser.openId, {
+          name: ctx.adminUser.name || "",
+          expiresInMs: TWO_HOURS_MS,
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, adminToken, { ...cookieOptions, maxAge: TWO_HOURS_MS });
+        // Remover cookie de backup
+        ctx.res.clearCookie(ADMIN_BACKUP_COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+        return { success: true };
+      }),
+
+    // Retornar informações de impersonação junto com o usuário atual
+    meWithImpersonation: protectedProcedure.query(async ({ ctx }) => {
+      return {
+        user: ctx.user,
+        isImpersonating: ctx.isImpersonating,
+        adminUser: ctx.isImpersonating ? {
+          id: ctx.adminUser?.id,
+          name: ctx.adminUser?.name,
+          email: ctx.adminUser?.email,
+          role: ctx.adminUser?.role,
+        } : null,
+      };
+    }),
+
     // Login customizado para Alunos, Mentores e Gerentes
     customLogin: publicProcedure
       .input(z.object({

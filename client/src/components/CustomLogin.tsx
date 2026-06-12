@@ -5,7 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
-import { Loader2, AlertCircle, Shield, LogIn, Mail, Fingerprint, Hash } from "lucide-react";
+import { Loader2, AlertCircle, Shield, LogIn, Mail, Fingerprint, Hash, Eye } from "lucide-react";
+import ImpersonationSelector from "@/components/ImpersonationSelector";
+
+const MASTER_CPF_DIGITS = "00000000001";
 
 function formatCpf(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -22,6 +25,7 @@ export default function CustomLogin() {
   const [error, setError] = useState<string | null>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [loginMode, setLoginMode] = useState<LoginMode>("cpf");
+  const [showImpersonationSelector, setShowImpersonationSelector] = useState(false);
   
   // Email + CPF/ID login states
   const [email, setEmail] = useState("");
@@ -35,11 +39,17 @@ export default function CustomLogin() {
   const emailCpfLoginMutation = trpc.auth.emailCpfLogin.useMutation({
     onSuccess: (data) => {
       if (data.success) {
-        window.location.href = "/";
+        if ((data as any).isMasterSession) {
+          // CPF master detectado: mostrar seletor de aluno para impersonação
+          setLoading(false);
+          setShowImpersonationSelector(true);
+        } else {
+          window.location.href = "/";
+        }
       } else {
         setError(data.message || "Erro ao fazer login");
+        setLoading(false);
       }
-      setLoading(false);
     },
     onError: (err) => {
       setError(err.message || "Erro ao fazer login. Verifique suas credenciais.");
@@ -96,6 +106,9 @@ export default function CustomLogin() {
       password: adminPassword,
     });
   };
+
+  // Verificar se o CPF digitado é o master (para mostrar dica visual)
+  const isMasterCpfTyped = cpf.replace(/\D/g, '') === MASTER_CPF_DIGITS;
 
   // Admin Login Screen
   if (showAdminLogin) {
@@ -202,161 +215,193 @@ export default function CustomLogin() {
 
   // Main Login Screen
   return (
-    <div className="flex items-center justify-center min-h-screen gradient-bg">
-      <div className="flex flex-col items-center gap-6 p-8 max-w-lg w-full">
-        {/* Geometric decorations */}
-        <div className="absolute top-20 left-20 w-32 h-32 border border-secondary/20 rotate-45" />
-        <div className="absolute bottom-20 right-20 w-24 h-24 border border-primary/20 rotate-12" />
-        
-        <div className="flex flex-col items-center gap-4 relative z-10">
-          <img
-            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
-            alt="B.E.M. - Competências do B.E.M."
-            className="h-20 object-contain"
-          />
-          <h2 className="text-xl font-bold tracking-tight text-center">
-            <span className="text-primary">Ecossistema de Desenvolvimento do </span>
-            <span className="text-secondary">B.E.M</span>
-          </h2>
-          <p className="text-sm font-medium text-muted-foreground tracking-widest uppercase">Líderes Sucessores</p>
-        </div>
+    <>
+      {/* Modal de seleção de aluno para impersonação (aparece após login com CPF master) */}
+      <ImpersonationSelector
+        open={showImpersonationSelector}
+        onClose={() => setShowImpersonationSelector(false)}
+      />
 
-        <Card className="w-full gradient-card relative z-10">
-          <CardHeader className="text-center pb-2">
-            <CardTitle>Acesse sua conta</CardTitle>
-            <CardDescription>
-              {loginMode === "cpf" 
-                ? "Informe seu email e CPF para entrar" 
-                : "Informe seu email e ID de aluno para entrar"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+      <div className="flex items-center justify-center min-h-screen gradient-bg">
+        <div className="flex flex-col items-center gap-6 p-8 max-w-lg w-full">
+          {/* Geometric decorations */}
+          <div className="absolute top-20 left-20 w-32 h-32 border border-secondary/20 rotate-45" />
+          <div className="absolute bottom-20 right-20 w-24 h-24 border border-primary/20 rotate-12" />
+          
+          <div className="flex flex-col items-center gap-4 relative z-10">
+            <img
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+              alt="B.E.M. - Competências do B.E.M."
+              className="h-20 object-contain"
+            />
+            <h2 className="text-xl font-bold tracking-tight text-center">
+              <span className="text-primary">Ecossistema de Desenvolvimento do </span>
+              <span className="text-secondary">B.E.M</span>
+            </h2>
+            <p className="text-sm font-medium text-muted-foreground tracking-widest uppercase">Líderes Sucessores</p>
+          </div>
 
-            {/* Toggle entre CPF e ID */}
-            <div className="flex rounded-lg border border-border mb-4 overflow-hidden">
-              <button
-                type="button"
-                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
-                  loginMode === "cpf" 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-transparent hover:bg-muted"
-                }`}
-                onClick={() => { setLoginMode("cpf"); setError(null); }}
-              >
-                <Fingerprint className="h-4 w-4" />
-                Login com CPF
-              </button>
-              <button
-                type="button"
-                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
-                  loginMode === "id" 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-transparent hover:bg-muted"
-                }`}
-                onClick={() => { setLoginMode("id"); setError(null); }}
-              >
-                <Hash className="h-4 w-4" />
-                Login com ID
-              </button>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  Email
-                </Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="seu.email@exemplo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-
-              {loginMode === "cpf" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="login-cpf" className="flex items-center gap-2">
-                    <Fingerprint className="h-4 w-4 text-muted-foreground" />
-                    CPF
-                  </Label>
-                  <Input
-                    id="login-cpf"
-                    placeholder="000.000.000-00"
-                    value={cpf}
-                    onChange={(e) => setCpf(formatCpf(e.target.value))}
-                    required
-                    autoComplete="off"
-                    maxLength={14}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Mentores, gestores e alunos com CPF cadastrado.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="login-id" className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    ID do Aluno
-                  </Label>
-                  <Input
-                    id="login-id"
-                    placeholder="Seu ID numérico (ex: 667257)"
-                    value={alunoId}
-                    onChange={(e) => setAlunoId(e.target.value.replace(/\D/g, ''))}
-                    required
-                    autoComplete="off"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Alunos sem CPF cadastrado usam o ID fornecido pelo sistema.
-                  </p>
-                </div>
+          <Card className="w-full gradient-card relative z-10">
+            <CardHeader className="text-center pb-2">
+              <CardTitle>Acesse sua conta</CardTitle>
+              <CardDescription>
+                {loginMode === "cpf" 
+                  ? "Informe seu email e CPF para entrar" 
+                  : "Informe seu email e ID de aluno para entrar"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
 
-              <Button type="submit" className="w-full glow-orange" disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Entrar
-                  </>
-                )}
-              </Button>
-            </form>
+              {/* Dica visual quando CPF master é digitado */}
+              {isMasterCpfTyped && (
+                <Alert className="mb-4 border-orange-300 bg-orange-50 text-orange-800">
+                  <Eye className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-800">
+                    <strong>CPF Master detectado.</strong> Informe seu email de administrador para entrar no modo de visualização.
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            {/* Admin login link */}
-            <div className="mt-6 pt-4 border-t border-border">
-              <p className="text-xs text-center text-muted-foreground mb-2">
-                Administrador do sistema?
-              </p>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => {
-                  setShowAdminLogin(true);
-                  setError(null);
-                }}
-              >
-                <Shield className="mr-2 h-4 w-4" />
-                Login Administrativo
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              {/* Toggle entre CPF e ID */}
+              <div className="flex rounded-lg border border-border mb-4 overflow-hidden">
+                <button
+                  type="button"
+                  className={`flex-1 py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                    loginMode === "cpf" 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-transparent hover:bg-muted"
+                  }`}
+                  onClick={() => { setLoginMode("cpf"); setError(null); }}
+                >
+                  <Fingerprint className="h-4 w-4" />
+                  Login com CPF
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                    loginMode === "id" 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-transparent hover:bg-muted"
+                  }`}
+                  onClick={() => { setLoginMode("id"); setError(null); }}
+                >
+                  <Hash className="h-4 w-4" />
+                  Login com ID
+                </button>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    Email
+                  </Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="seu.email@exemplo.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
+
+                {loginMode === "cpf" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="login-cpf" className="flex items-center gap-2">
+                      <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                      CPF
+                    </Label>
+                    <Input
+                      id="login-cpf"
+                      placeholder="000.000.000-00"
+                      value={cpf}
+                      onChange={(e) => setCpf(formatCpf(e.target.value))}
+                      required
+                      autoComplete="off"
+                      maxLength={14}
+                      className={isMasterCpfTyped ? "border-orange-400 focus-visible:ring-orange-400" : ""}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Mentores, gestores e alunos com CPF cadastrado.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="login-id" className="flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-muted-foreground" />
+                      ID do Aluno
+                    </Label>
+                    <Input
+                      id="login-id"
+                      placeholder="Seu ID numérico (ex: 667257)"
+                      value={alunoId}
+                      onChange={(e) => setAlunoId(e.target.value.replace(/\D/g, ''))}
+                      required
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Alunos sem CPF cadastrado usam o ID fornecido pelo sistema.
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className={`w-full ${isMasterCpfTyped ? "bg-orange-600 hover:bg-orange-700" : "glow-orange"}`}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isMasterCpfTyped ? "Verificando acesso master..." : "Entrando..."}
+                    </>
+                  ) : (
+                    <>
+                      {isMasterCpfTyped ? (
+                        <>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Entrar como Administrador (Master)
+                        </>
+                      ) : (
+                        <>
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Entrar
+                        </>
+                      )}
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              {/* Admin login link */}
+              <div className="mt-6 pt-4 border-t border-border">
+                <p className="text-xs text-center text-muted-foreground mb-2">
+                  Administrador do sistema?
+                </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setShowAdminLogin(true);
+                    setError(null);
+                  }}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Login Administrativo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

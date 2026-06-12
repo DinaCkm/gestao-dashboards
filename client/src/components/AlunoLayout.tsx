@@ -1,6 +1,7 @@
 import { ReactNode, useMemo, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
+import ImpersonationBanner from "@/components/ImpersonationBanner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
@@ -116,6 +117,8 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Banner de impersonação - aparece quando admin está visualizando como aluno */}
+      <ImpersonationBanner />
       {/* Header */}
       <header className="bg-[#0A1E3E] text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
