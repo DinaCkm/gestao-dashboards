@@ -1483,7 +1483,7 @@ function AvaliacaoContent() {
             </DialogTitle>
           </DialogHeader>
           {modalRelatorio && (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
               <div className="bg-slate-50 rounded-lg p-3 text-sm">
                 <span className="text-muted-foreground">Candidato: </span>
                 <span className="font-medium">{modalRelatorio.nome}</span>
@@ -1619,11 +1619,15 @@ function AvaliacaoContent() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-1">Dados Principais</p>
-                        <p className="text-xs whitespace-pre-wrap">{(dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista}</p>
+                        <div className="max-h-52 overflow-y-auto rounded border bg-white p-2">
+                          <p className="text-xs whitespace-pre-wrap">{(dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista}</p>
+                        </div>
                       </div>
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-1">Análise do Perfil Comportamental</p>
-                        <p className="text-xs whitespace-pre-wrap">{(dadosRelatorio?.entrevista as any)?.analisePerfilComportamental}</p>
+                        <div className="max-h-52 overflow-y-auto rounded border bg-white p-2">
+                          <p className="text-xs whitespace-pre-wrap">{(dadosRelatorio?.entrevista as any)?.analisePerfilComportamental}</p>
+                        </div>
                       </div>
                     </div>
                   )}
