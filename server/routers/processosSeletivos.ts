@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { DISC_PERFIS } from "../../shared/discData";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -2607,9 +2608,25 @@ export const processosSeletivosRouter = router({
         : 'Não informada';
       const horarioEntrevista = slotIA?.inicio ? `${slotIA.inicio}${slotIA.fim ? ' às ' + slotIA.fim : ''}` : 'Não informado';
 
-      const discTexto = disc
-        ? `Perfil DISC:\nDominância (D): ${disc.scoreD ?? 0}%\nInfluência (I): ${disc.scoreI ?? 0}%\nEstabilidade (S): ${disc.scoreS ?? 0}%\nConformidade (C): ${disc.scoreC ?? 0}%\nPerfil predominante: ${disc.perfilPredominante ?? 'não identificado'}${disc.perfilSecundario ? ' / Secundário: ' + disc.perfilSecundario : ''}.`
-        : 'Perfil DISC: não disponível.';
+      const discTexto = (() => {
+        if (!disc) return 'Perfil DISC: não disponível.';
+        const perfilPred = DISC_PERFIS[disc.perfilPredominante as keyof typeof DISC_PERFIS];
+        const perfilSec = disc.perfilSecundario ? DISC_PERFIS[disc.perfilSecundario as keyof typeof DISC_PERFIS] : null;
+        const linhas = [
+          `Perfil DISC:`,
+          `Perfil predominante: ${perfilPred?.nome ?? disc.perfilPredominante} — ${perfilPred?.titulo ?? ''}`,
+          perfilSec ? `Perfil secundário: ${perfilSec.nome} — ${perfilSec.titulo}` : '',
+          ``,
+          perfilPred?.descricao ? `Descrição: ${perfilPred.descricao}` : '',
+          ``,
+          perfilPred?.pontosFortes?.length ? `Pontos fortes:\n${perfilPred.pontosFortes.map(p => `- ${p}`).join('\n')}` : '',
+          ``,
+          perfilPred?.areasDesenvolvimento?.length ? `Áreas de desenvolvimento:\n${perfilPred.areasDesenvolvimento.map(p => `- ${p}`).join('\n')}` : '',
+          ``,
+          perfilPred?.comoSeRelaciona ? `Como se relaciona: ${perfilPred.comoSeRelaciona}` : '',
+        ].filter(Boolean);
+        return linhas.join('\n');
+      })();
       const parecerMentorTexto = resultadoIA?.parecer?.trim()
         ? `\n\nParecer do Mentor/Avaliador (justificativa da decisão): ${resultadoIA.parecer}`
         : '';
