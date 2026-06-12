@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 /**
  * Banner exibido quando o administrador está visualizando a plataforma
  * como outro usuário (modo de impersonação read-only).
+ * Posicionado como sticky no topo, abaixo do header/menu.
  */
 export default function ImpersonationBanner() {
   const { data, isLoading } = trpc.auth.meWithImpersonation.useQuery(undefined, {
@@ -14,11 +15,9 @@ export default function ImpersonationBanner() {
 
   const stopMutation = trpc.auth.stopImpersonation.useMutation({
     onSuccess: () => {
-      // Redirecionar para o painel admin após sair da impersonação
-      window.location.href = "/dashboard/admin";
+      window.location.href = "/";
     },
-    onError: (err) => {
-      console.error("Erro ao sair da impersonação:", err);
+    onError: () => {
       window.location.href = "/";
     },
   });
@@ -30,14 +29,14 @@ export default function ImpersonationBanner() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[9999] flex items-center justify-between px-4 py-2 text-white text-sm font-medium shadow-lg"
+      className="w-full flex items-center justify-between px-4 py-2 text-white text-sm font-medium shadow-md z-50"
       style={{ backgroundColor: "#E07B00", borderBottom: "2px solid #B86200" }}
     >
       <div className="flex items-center gap-2">
         <Eye className="h-4 w-4 flex-shrink-0" />
         <span>
-          <strong>Modo Visualização:</strong> Você ({adminName}) está visualizando a plataforma como{" "}
-          <strong>{alunoName}</strong>. Todas as ações são somente leitura.
+          <strong>Modo Visualização:</strong> Você ({adminName}) está visualizando como{" "}
+          <strong>{alunoName}</strong>. Somente leitura.
         </span>
       </div>
       <Button
