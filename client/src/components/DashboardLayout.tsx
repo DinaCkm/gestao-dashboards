@@ -235,6 +235,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: FileText, label: "Relatórios dos Meus Alunos", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: BookOpen, label: "Atribuir Cursos", path: "/mentor/atribuir-cursos", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: Building2, label: "Dashboard Por Empresa", path: "/dashboard/empresa", roles: ["manager"], requireConsultorRole: 'mentor' },
+  { icon: BarChart3, label: "Performance dos Alunos", path: "/performance", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: BriefcaseBusiness, label: "Painel de Processos", path: "/processos-seletivos", roles: ["manager"], requireConsultorRole: 'mentor' },
   { icon: ClipboardCheck, label: "Avaliação PS", path: "/processos-seletivos/avaliacao", roles: ["manager"], requireConsultorRole: 'mentor' },
 
@@ -246,6 +247,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: BarChart3, label: "Ranking Geral de Engajamento", path: "/dashboard/ranking-geral-engajamento", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Calendar, label: "Sessões de Mentoria", path: "/demonstrativo-mentorias", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas-gestor", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: BarChart3, label: "Performance dos Alunos", path: "/performance", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: ClipboardCheck, label: "Avaliação PS", path: "/processos-seletivos/avaliacao", roles: ["manager"], requireConsultorRole: 'gerente' },
   // === PROCESSOS SELETIVOS (apenas para candidatos/alunos sem consultorId) ===
