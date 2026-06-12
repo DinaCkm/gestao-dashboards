@@ -451,6 +451,53 @@ export default function Performance() {
   }
 
   if (!data || !data.found) {
+    // Mentor/gestor/admin sem aluno selecionado: mostrar seletor
+    if (canSelectAluno) {
+      return (
+        <PageLayout>
+          <div className="space-y-6 p-4">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="h-5 w-5 text-[#0A1E3E]" />
+                <h3 className="font-semibold text-[#0A1E3E] text-sm">Visualizar Performance de Aluno</h3>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Buscar por nome ou email..."
+                  value={alunoSearch}
+                  onChange={e => setAlunoSearch(e.target.value)}
+                  className="flex-1 text-sm h-9"
+                />
+              </div>
+              {alunoSearch.trim() && alunosFiltrados.length > 0 && (
+                <div className="mt-2 border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-white shadow-md">
+                  {(alunosFiltrados as any[]).map((a: any) => (
+                    <button
+                      key={a.id}
+                      onClick={() => { setSelectedAlunoId(a.id); setAlunoSearch(''); }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0 text-gray-700"
+                    >
+                      <span className="font-medium">{a.name}</span>
+                      <span className="text-gray-400 text-xs ml-2">{a.email}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {alunoSearch.trim() && alunosFiltrados.length === 0 && (
+                <p className="text-xs text-gray-400 mt-2">Nenhum aluno encontrado.</p>
+              )}
+              {!alunoSearch.trim() && (
+                <p className="text-xs text-gray-400 mt-2">Digite o nome ou email do aluno para visualizar a performance.</p>
+              )}
+            </div>
+            <div className="flex flex-col items-center justify-center h-48 gap-3 text-gray-400">
+              <Users className="h-16 w-16" />
+              <p className="text-lg font-medium">Selecione um aluno acima para ver a performance</p>
+            </div>
+          </div>
+        </PageLayout>
+      );
+    }
     return (
       <PageLayout>
         <div className="flex flex-col items-center justify-center h-96 gap-4">
