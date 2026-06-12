@@ -4,6 +4,7 @@ import { safeToFixed } from "@/_core/utils/safe-format";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import AlunoLayout from "@/components/AlunoLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -143,6 +144,9 @@ export default function Performance() {
   const isMentorOrGestor = user?.role === 'manager' && !(user as any).alunoId;
   const isAdminUser = user?.role === 'admin' || (user?.role as string) === 'admin2';
   const canSelectAluno = isMentorOrGestor || isAdminUser;
+
+  // Layout dinâmico: mentor/gestor/admin usam DashboardLayout, aluno usa AlunoLayout
+  const PageLayout = canSelectAluno ? DashboardLayout : AlunoLayout;
   const [selectedAlunoId, setSelectedAlunoId] = useState<number | undefined>(undefined);
   const [alunoSearch, setAlunoSearch] = useState('');
 
@@ -438,17 +442,17 @@ export default function Performance() {
 
   if (isLoading) {
     return (
-      <AlunoLayout>
+      <PageLayout>
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0A1E3E]"></div>
         </div>
-      </AlunoLayout>
+      </PageLayout>
     );
   }
 
   if (!data || !data.found) {
     return (
-      <AlunoLayout>
+      <PageLayout>
         <div className="flex flex-col items-center justify-center h-96 gap-4">
           <User className="h-16 w-16 text-gray-400" />
           <h2 className="text-xl font-semibold text-gray-700">Perfil não encontrado</h2>
@@ -456,7 +460,7 @@ export default function Performance() {
             {data && !data.found ? data.message : "Nenhum perfil de aluno vinculado a esta conta."}
           </p>
         </div>
-      </AlunoLayout>
+      </PageLayout>
     );
   }
 
@@ -473,7 +477,7 @@ export default function Performance() {
 
   if (!hasAssessment) {
     return (
-      <AlunoLayout>
+      <PageLayout>
         <div className="space-y-6">
           {/* Header básico com informações do aluno */}
           <Card className="bg-gradient-to-br from-[#0A1E3E] to-[#132d54] border-0 text-white shadow-lg">
@@ -543,12 +547,12 @@ export default function Performance() {
             </CardContent>
           </Card>
         </div>
-      </AlunoLayout>
+      </PageLayout>
     );
   }
 
   return (
-    <AlunoLayout>
+    <PageLayout>
       <div className="space-y-6">
 
         {/* Seletor de aluno para mentor/gestor/admin */}
@@ -3098,7 +3102,7 @@ export default function Performance() {
       </>
         )}
       </div>
-    </AlunoLayout>
+    </PageLayout>
   );
 }
 
