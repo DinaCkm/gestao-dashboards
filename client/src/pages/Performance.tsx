@@ -139,6 +139,24 @@ export default function Performance() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
+  // Seletor de aluno para mentor/gestor/admin
+  const isMentorOrGestor = user?.role === 'manager' && !(user as any).alunoId;
+  const isAdminUser = user?.role === 'admin' || (user?.role as string) === 'admin2';
+  const canSelectAluno = isMentorOrGestor || isAdminUser;
+  const [selectedAlunoId, setSelectedAlunoId] = useState<number | undefined>(undefined);
+  const [alunoSearch, setAlunoSearch] = useState('');
+
+  const { data: meusAlunos } = trpc.alunos.meusAlunos.useQuery(undefined, {
+    enabled: canSelectAluno,
+  });
+
+  const alunosFiltrados = useMemo(() => {
+    if (!meusAlunos) return [];
+    if (!alunoSearch.trim()) return meusAlunos;
+    const q = alunoSearch.toLowerCase();
+    return (meusAlunos as any[]).filter((a: any) => a.name?.toLowerCase().includes(q) || a.email?.toLowerCase().includes(q));
+  }, [meusAlunos, alunoSearch]);
+
   // Verificar se o aluno precisa de onboarding (sem PDI ou admin liberou novo ciclo)
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
     enabled: !!user && (user.role === 'user' || (user.role === 'manager' && !!(user as any).alunoId)),
@@ -150,7 +168,9 @@ export default function Performance() {
     }
   }, [onboardingStatus, setLocation]);
 
-  const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
+  const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery(
+    canSelectAluno ? { viewAlunoId: selectedAlunoId } : undefined
+  );
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
   // Filtro de indicadores: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
@@ -530,6 +550,70 @@ export default function Performance() {
   return (
     <AlunoLayout>
       <div className="space-y-6">
+
+        {/* Seletor de aluno para mentor/gestor/admin */}
+        {canSelectAluno && (
+          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="h-5 w-5 text-[#0A1E3E]" />
+              <h3 className="font-semibold text-[#0A1E3E] text-sm">Visualizar Performance de Aluno</h3>
+              {selectedAlunoId && (
+                <button
+                  onClick={() => setSelectedAlunoId(undefined)}
+                  className="ml-auto text-xs text-gray-500 hover:text-red-500 underline"
+                >
+                  Limpar seleção
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Buscar por nome ou email..."
+                value={alunoSearch}
+                onChange={e => setAlunoSearch(e.target.value)}
+                className="flex-1 text-sm h-9"
+              />
+            </div>
+            {alunoSearch.trim() && alunosFiltrados.length > 0 && (
+              <div className="mt-2 border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-white shadow-md z-10">
+                {(alunosFiltrados as any[]).map((a: any) => (
+                  <button
+                    key={a.id}
+                    onClick={() => { setSelectedAlunoId(a.id); setAlunoSearch(''); }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0 ${
+                      selectedAlunoId === a.id ? 'bg-blue-50 font-semibold text-blue-700' : 'text-gray-700'
+                    }`}
+                  >
+                    <span className="font-medium">{a.name}</span>
+                    <span className="text-gray-400 text-xs ml-2">{a.email}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {selectedAlunoId && (() => {
+              const sel = (meusAlunos as any[])?.find((a: any) => a.id === selectedAlunoId);
+              return sel ? (
+                <div className="mt-2 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                  <User className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">{sel.name}</span>
+                  <span className="text-xs text-blue-500">{sel.email}</span>
+                </div>
+              ) : null;
+            })()}
+            {!selectedAlunoId && (
+              <p className="text-xs text-gray-400 mt-2">Selecione um aluno para visualizar a performance dele. Sem seleção, nenhum dado é exibido.</p>
+            )}
+          </div>
+        )}
+
+        {/* Bloquear conteúdo se mentor/gestor não selecionou aluno */}
+        {canSelectAluno && !selectedAlunoId ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
+            <Users className="h-16 w-16" />
+            <p className="text-lg font-medium">Selecione um aluno acima para ver a performance</p>
+          </div>
+        ) : (
+        <>
         {/* Banner: Resultado Congelado */}
         {(data as any).resultadoCongelado?.congelado && (() => {
           const dc = (data as any).resultadoCongelado.dataCongelamento;
@@ -3011,6 +3095,8 @@ export default function Performance() {
             )}
           </DialogContent>
         </Dialog>
+      </>
+        )}
       </div>
     </AlunoLayout>
   );

@@ -3445,6 +3445,30 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .query(async ({ input }) => {
         return await db.getProgramsByConsultor(input.consultorId);
       }),
+    // Alunos visíveis para o mentor/gestor logado
+    meusAlunos: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user) throw new TRPCError({ code: 'UNAUTHORIZED' });
+      const role = ctx.user.role;
+      const consultorId = (ctx.user as any).consultorId as number | undefined;
+      const { alunos: alunosTable, consultors: consultorsTable } = await import('../drizzle/schema');
+      const database = await getDb();
+      if (!database) return [];
+      if (role === 'admin' || role === 'admin2') {
+        // Admin vê todos os alunos ativos
+        return await database.select({ id: alunosTable.id, name: alunosTable.name, email: alunosTable.email, programId: alunosTable.programId, turmaId: alunosTable.turmaId }).from(alunosTable).where(eq(alunosTable.isActive, 1)).orderBy(alunosTable.name);
+      }
+      if (role === 'manager' && consultorId) {
+        const [consultor] = await database.select().from(consultorsTable).where(eq(consultorsTable.id, consultorId)).limit(1);
+        if (consultor?.role === 'mentor') {
+          // Mentor vê apenas seus alunos vinculados
+          return await database.select({ id: alunosTable.id, name: alunosTable.name, email: alunosTable.email, programId: alunosTable.programId, turmaId: alunosTable.turmaId }).from(alunosTable).where(and(eq(alunosTable.consultorId, consultorId), eq(alunosTable.isActive, 1))).orderBy(alunosTable.name);
+        } else if (consultor?.role === 'gerente' && consultor?.managedProgramId) {
+          // Gerente vê alunos do seu programa
+          return await database.select({ id: alunosTable.id, name: alunosTable.name, email: alunosTable.email, programId: alunosTable.programId, turmaId: alunosTable.turmaId }).from(alunosTable).where(and(eq(alunosTable.programId, consultor.managedProgramId), eq(alunosTable.isActive, 1))).orderBy(alunosTable.name);
+        }
+      }
+      return [];
+    }),
   }),
 
   // Indicadores BEM
@@ -4771,16 +4795,48 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Meu Dashboard - dados do aluno logado
-    meuDashboard: protectedProcedure.query(async ({ ctx }) => {
+        meuDashboard: protectedProcedure
+      .input(z.object({ viewAlunoId: z.number().optional() }).optional())
+      .query(async ({ input, ctx }) => {
       if (!ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário não autenticado' });
       }
-
-      // Tentar encontrar o aluno: alunoId direto → email → externalId (openId)
-      console.log('[meuDashboard] ctx.user:', JSON.stringify({ id: ctx.user.id, openId: ctx.user.openId, email: ctx.user.email, alunoId: ctx.user.alunoId, role: ctx.user.role }));
-      const aluno = await db.getAlunoFromCtx(ctx.user);
-      console.log('[meuDashboard] aluno encontrado:', aluno ? JSON.stringify({ id: aluno.id, name: aluno.name, email: aluno.email, externalId: aluno.externalId }) : 'null');
-
+      // Se viewAlunoId for passado, verificar se o usuário tem permissão (mentor, gerente ou admin)
+      let aluno: Awaited<ReturnType<typeof db.getAlunoFromCtx>>;
+      if (input?.viewAlunoId) {
+        const role = ctx.user.role;
+        const isAllowed = role === 'admin' || role === 'admin2' || role === 'manager';
+        if (!isAllowed) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Sem permissão para visualizar dados de outro aluno.' });
+        }
+        const { alunos: alunosTable } = await import('../drizzle/schema');
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const [found] = await database.select().from(alunosTable).where(eq(alunosTable.id, input.viewAlunoId)).limit(1);
+        aluno = found || null;
+        // Se for mentor, verificar se o aluno pertence a ele
+        if (role === 'manager' && (ctx.user as any).consultorId) {
+          const consultorId = (ctx.user as any).consultorId;
+          const { consultors: consultorsTable } = await import('../drizzle/schema');
+          const [consultor] = await database.select().from(consultorsTable).where(eq(consultorsTable.id, consultorId)).limit(1);
+          if (consultor?.role === 'mentor') {
+            // Mentor só pode ver seus próprios alunos
+            if (found?.consultorId !== consultorId) {
+              throw new TRPCError({ code: 'FORBIDDEN', message: 'Você não é o mentor deste aluno.' });
+            }
+          } else if (consultor?.role === 'gerente' && consultor?.managedProgramId) {
+            // Gerente só pode ver alunos do seu programa
+            if (found?.programId !== consultor.managedProgramId) {
+              throw new TRPCError({ code: 'FORBIDDEN', message: 'Este aluno não pertence ao seu programa.' });
+            }
+          }
+        }
+      } else {
+        // Tentar encontrar o aluno: alunoId direto → email → externalId (openId)
+        console.log('[meuDashboard] ctx.user:', JSON.stringify({ id: ctx.user.id, openId: ctx.user.openId, email: ctx.user.email, alunoId: ctx.user.alunoId, role: ctx.user.role }));
+        aluno = await db.getAlunoFromCtx(ctx.user);
+        console.log('[meuDashboard] aluno encontrado:', aluno ? JSON.stringify({ id: aluno.id, name: aluno.name, email: aluno.email, externalId: aluno.externalId }) : 'null');
+      }
       if (!aluno) {
         return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
       }
