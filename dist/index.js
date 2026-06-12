@@ -19936,14 +19936,19 @@ var processosSeletivosRouter = router({
     const participantesBancaIA = entrevista?.participantesBanca ?? resultadoIA?.participantesBanca ?? "N\xE3o informado";
     const dataEntrevista = slotIA?.dataAgenda ? (/* @__PURE__ */ new Date(slotIA.dataAgenda + "T00:00:00")).toLocaleDateString("pt-BR") : "N\xE3o informada";
     const horarioEntrevista = slotIA?.inicio ? `${slotIA.inicio}${slotIA.fim ? " \xE0s " + slotIA.fim : ""}` : "N\xE3o informado";
-    const discTexto = disc ? `Fatores DISC: D=${disc.d ?? 0}, I=${disc.i ?? 0}, S=${disc.s ?? 0}, C=${disc.c ?? 0}.
-Perfil predominante: ${disc.perfilPredominante ?? "n\xE3o identificado"}.
-${disc.pontosPositivos ? "Pontos positivos: " + disc.pontosPositivos : ""}
-${disc.pontosAtencao ? "Pontos de aten\xE7\xE3o: " + disc.pontosAtencao : ""}` : "Perfil DISC: n\xE3o dispon\xEDvel.";
+    const discTexto = disc ? `Perfil DISC:
+Domin\xE2ncia (D): ${disc.scoreD ?? 0}%
+Influ\xEAncia (I): ${disc.scoreI ?? 0}%
+Estabilidade (S): ${disc.scoreS ?? 0}%
+Conformidade (C): ${disc.scoreC ?? 0}%
+Perfil predominante: ${disc.perfilPredominante ?? "n\xE3o identificado"}${disc.perfilSecundario ? " / Secund\xE1rio: " + disc.perfilSecundario : ""}.` : "Perfil DISC: n\xE3o dispon\xEDvel.";
+    const parecerMentorTexto = resultadoIA?.parecer?.trim() ? `
+
+Parecer do Mentor/Avaliador (justificativa da decis\xE3o): ${resultadoIA.parecer}` : "";
     const autoPercTexto = autopercepcoes.length > 0 ? "Autopercep\xE7\xE3o de compet\xEAncias (escala 0-10):\n" + autopercepcoes.map((a) => `- ${a.competenciaNome}: ${a.nota}/10`).join("\n") : "Autopercep\xE7\xE3o de compet\xEAncias: n\xE3o dispon\xEDvel.";
     const observacaoTexto = input.observacao?.trim() ? `
 
-Observa\xE7\xE3o do avaliador: ${input.observacao}` : "";
+Observa\xE7\xE3o adicional para este relat\xF3rio: ${input.observacao}` : "";
     const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
     const response = await invokeLLM2({
       messages: [
@@ -19969,7 +19974,7 @@ Responda APENAS em JSON com exatamente os seguintes campos:
   "pontosPositivosDisc": "Principais comportamentos favor\xE1veis observados no perfil DISC, relacionando-os com a fun\xE7\xE3o avaliada.",
   "pontosDesenvolvimentoDisc": "Principais aspectos comportamentais que precisam de aten\xE7\xE3o ou desenvolvimento, especialmente aqueles que possam impactar o desempenho na fun\xE7\xE3o pretendida.",
   "parecerEntrevista": "Parecer t\xE9cnico da entrevista em formato de texto corrido, com tom anal\xEDtico e profissional, considerando: clareza e objetividade das respostas, capacidade de apresentar exemplos concretos, dom\xEDnio t\xE9cnico, postura diante de normas e processos, capacidade de organiza\xE7\xE3o, maturidade profissional, comunica\xE7\xE3o, relacionamento interpessoal, lideran\xE7a e coer\xEAncia entre discurso, hist\xF3rico e DISC.",
-  "conclusao": "Conclus\xE3o coerente com o status informado. Se Habilitado: indicar ader\xEAncia ao perfil, destacar motivos principais, pode mencionar pontos de desenvolvimento. Se N\xE3o Habilitado: justificar de forma t\xE9cnica e respeitosa, apontar compet\xEAncias a desenvolver para futuras oportunidades. Objetiva, clara e alinhada ao parecer."
+  "conclusao": "Conclus\xE3o baseada obrigatoriamente no Parecer do Mentor/Avaliador fornecido nos dados. Incorpore e expanda o parecer do mentor com linguagem t\xE9cnica e profissional. Se Habilitado: reforce a ader\xEAncia ao perfil e os pontos positivos destacados pelo mentor. Se N\xE3o Habilitado: justifique de forma t\xE9cnica e respeitosa, incorporando os pontos levantados pelo mentor e indicando compet\xEAncias a desenvolver. Objetiva, clara e coerente com o status informado."
 }`
         },
         {
@@ -19987,10 +19992,9 @@ Minicurr\xEDculo / Hist\xF3rico Profissional:
 ${aluno?.minicurriculo ?? "N\xE3o dispon\xEDvel"}
 Cargo atual: ${aluno?.cargo ?? "N\xE3o informado"}
 
-DISC / Perfil Comportamental:
 ${discTexto}
 
-${autoPercTexto}${observacaoTexto}
+${autoPercTexto}${parecerMentorTexto}${observacaoTexto}
 
 Transcri\xE7\xE3o da Entrevista:
 ${transcricaoTexto.slice(0, 14e3)}`

@@ -1605,9 +1605,7 @@ function AvaliacaoContent() {
                             };
 
                             // ── CABEÇALHO: Logo + título ──
-                            try {
-                              doc.addImage(LOGO_ECO_AO_BEM_BASE64, "PNG", marginL, 8, 40, 40);
-                            } catch {}
+                            doc.addImage(LOGO_ECO_AO_BEM_BASE64, "PNG", marginL, 8, 35, 35);
                             doc.setFontSize(18);
                             doc.setFont("helvetica", "bold");
                             doc.setTextColor(44, 62, 80);

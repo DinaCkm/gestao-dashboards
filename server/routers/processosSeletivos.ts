@@ -2608,15 +2608,18 @@ export const processosSeletivosRouter = router({
       const horarioEntrevista = slotIA?.inicio ? `${slotIA.inicio}${slotIA.fim ? ' às ' + slotIA.fim : ''}` : 'Não informado';
 
       const discTexto = disc
-        ? `Fatores DISC: D=${disc.d ?? 0}, I=${disc.i ?? 0}, S=${disc.s ?? 0}, C=${disc.c ?? 0}.\nPerfil predominante: ${disc.perfilPredominante ?? 'não identificado'}.\n${disc.pontosPositivos ? 'Pontos positivos: ' + disc.pontosPositivos : ''}\n${disc.pontosAtencao ? 'Pontos de atenção: ' + disc.pontosAtencao : ''}`
+        ? `Perfil DISC:\nDominância (D): ${disc.scoreD ?? 0}%\nInfluência (I): ${disc.scoreI ?? 0}%\nEstabilidade (S): ${disc.scoreS ?? 0}%\nConformidade (C): ${disc.scoreC ?? 0}%\nPerfil predominante: ${disc.perfilPredominante ?? 'não identificado'}${disc.perfilSecundario ? ' / Secundário: ' + disc.perfilSecundario : ''}.`
         : 'Perfil DISC: não disponível.';
+      const parecerMentorTexto = resultadoIA?.parecer?.trim()
+        ? `\n\nParecer do Mentor/Avaliador (justificativa da decisão): ${resultadoIA.parecer}`
+        : '';
 
       const autoPercTexto = autopercepcoes.length > 0
         ? 'Autopercepção de competências (escala 0-10):\n' + autopercepcoes.map(a => `- ${a.competenciaNome}: ${a.nota}/10`).join('\n')
         : 'Autopercepção de competências: não disponível.';
 
       const observacaoTexto = input.observacao?.trim()
-        ? `\n\nObservação do avaliador: ${input.observacao}`
+        ? `\n\nObservação adicional para este relatório: ${input.observacao}`
         : '';
 
       // Chamar IA
@@ -2645,12 +2648,12 @@ Responda APENAS em JSON com exatamente os seguintes campos:
   "pontosPositivosDisc": "Principais comportamentos favoráveis observados no perfil DISC, relacionando-os com a função avaliada.",
   "pontosDesenvolvimentoDisc": "Principais aspectos comportamentais que precisam de atenção ou desenvolvimento, especialmente aqueles que possam impactar o desempenho na função pretendida.",
   "parecerEntrevista": "Parecer técnico da entrevista em formato de texto corrido, com tom analítico e profissional, considerando: clareza e objetividade das respostas, capacidade de apresentar exemplos concretos, domínio técnico, postura diante de normas e processos, capacidade de organização, maturidade profissional, comunicação, relacionamento interpessoal, liderança e coerência entre discurso, histórico e DISC.",
-  "conclusao": "Conclusão coerente com o status informado. Se Habilitado: indicar aderência ao perfil, destacar motivos principais, pode mencionar pontos de desenvolvimento. Se Não Habilitado: justificar de forma técnica e respeitosa, apontar competências a desenvolver para futuras oportunidades. Objetiva, clara e alinhada ao parecer."
+  "conclusao": "Conclusão baseada obrigatoriamente no Parecer do Mentor/Avaliador fornecido nos dados. Incorpore e expanda o parecer do mentor com linguagem técnica e profissional. Se Habilitado: reforce a aderência ao perfil e os pontos positivos destacados pelo mentor. Se Não Habilitado: justifique de forma técnica e respeitosa, incorporando os pontos levantados pelo mentor e indicando competências a desenvolver. Objetiva, clara e coerente com o status informado."
 }`,
           },
           {
             role: 'user',
-            content: `Cliente: ${processoInfo?.clienteNome ?? 'Não informado'}\nProcesso Seletivo: ${processoInfo?.nome ?? 'Não informado'}\nCandidato: ${candidate.nome}\nData da Entrevista: ${dataEntrevista}\nHorário: ${horarioEntrevista}\nStatus Final: ${statusFinal}\nBanca Avaliadora: ${participantesBancaIA}\nMentor/Entrevistador: ${mentorNomeIA ?? 'Não informado'}\n\nMinicurrículo / Histórico Profissional:\n${aluno?.minicurriculo ?? 'Não disponível'}\nCargo atual: ${aluno?.cargo ?? 'Não informado'}\n\nDISC / Perfil Comportamental:\n${discTexto}\n\n${autoPercTexto}${observacaoTexto}\n\nTranscrição da Entrevista:\n${transcricaoTexto.slice(0, 14000)}`,
+            content: `Cliente: ${processoInfo?.clienteNome ?? 'Não informado'}\nProcesso Seletivo: ${processoInfo?.nome ?? 'Não informado'}\nCandidato: ${candidate.nome}\nData da Entrevista: ${dataEntrevista}\nHorário: ${horarioEntrevista}\nStatus Final: ${statusFinal}\nBanca Avaliadora: ${participantesBancaIA}\nMentor/Entrevistador: ${mentorNomeIA ?? 'Não informado'}\n\nMinicurrículo / Histórico Profissional:\n${aluno?.minicurriculo ?? 'Não disponível'}\nCargo atual: ${aluno?.cargo ?? 'Não informado'}\n\n${discTexto}\n\n${autoPercTexto}${parecerMentorTexto}${observacaoTexto}\n\nTranscrição da Entrevista:\n${transcricaoTexto.slice(0, 14000)}`,
           },
         ],
         response_format: { type: 'json_object' },
