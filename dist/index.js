@@ -19911,20 +19911,25 @@ var processosSeletivosRouter = router({
       }
     }
     if (!transcricaoTexto.trim()) throw new TRPCError5({ code: "BAD_REQUEST", message: "N\xE3o foi poss\xEDvel extrair texto da transcri\xE7\xE3o" });
-    const [aluno] = await database.select({
+    let alunoIdIA = null;
+    if (candidate.userId) {
+      const [userRow] = await database.select({ alunoId: users.alunoId }).from(users).where(eq4(users.id, candidate.userId)).limit(1);
+      alunoIdIA = userRow?.alunoId ?? null;
+    }
+    const [aluno] = alunoIdIA ? await database.select({
       name: alunos.name,
       cargo: alunos.cargo,
       minicurriculo: alunos.minicurriculo
-    }).from(alunos).where(eq4(alunos.id, candidate.alunoId ?? 0)).limit(1);
-    const [disc] = await database.select().from(discResultados).where(eq4(discResultados.alunoId, candidate.alunoId ?? 0)).orderBy(desc2(discResultados.completedAt)).limit(1);
-    const autopercepcoes = await database.select({
+    }).from(alunos).where(eq4(alunos.id, alunoIdIA)).limit(1) : [null];
+    const [disc] = alunoIdIA ? await database.select().from(discResultados).where(eq4(discResultados.alunoId, alunoIdIA)).orderBy(desc2(discResultados.completedAt)).limit(1) : [null];
+    const autopercepcoes = alunoIdIA ? await database.select({
       nota: autopercepcoesCompetencias.nota,
       competenciaNome: competencias.nome
-    }).from(autopercepcoesCompetencias).leftJoin(competencias, eq4(competencias.id, autopercepcoesCompetencias.competenciaId)).where(eq4(autopercepcoesCompetencias.alunoId, candidate.alunoId ?? 0)).orderBy(desc2(autopercepcoesCompetencias.nota));
+    }).from(autopercepcoesCompetencias).leftJoin(competencias, eq4(competencias.id, autopercepcoesCompetencias.competenciaId)).where(eq4(autopercepcoesCompetencias.alunoId, alunoIdIA)).orderBy(desc2(autopercepcoesCompetencias.nota)) : [];
     const [processoInfo] = await database.select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
     let mentorNomeIA = null;
     if (processoInfo?.mentorId) {
-      const [mentor] = await database.select({ name: users.name }).from(users).where(eq4(users.id, processoInfo.mentorId)).limit(1);
+      const [mentor] = await database.select({ name: consultors.name }).from(consultors).where(eq4(consultors.id, processoInfo.mentorId)).limit(1);
       mentorNomeIA = mentor?.name ?? null;
     }
     let slotIA = null;

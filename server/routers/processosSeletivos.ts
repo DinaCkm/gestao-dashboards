@@ -6,6 +6,7 @@ import {
   alunos,
   autopercepcoesCompetencias,
   competencias,
+  consultors,
   discResultados,
   processoAgendaSlots,
   processoAgendasGrupo,
@@ -2556,22 +2557,32 @@ export const processosSeletivosRouter = router({
 
       if (!transcricaoTexto.trim()) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não foi possível extrair texto da transcrição' });
 
+            // Buscar alunoId via userId do candidato
+      let alunoIdIA: number | null = null;
+      if (candidate.userId) {
+        const [userRow] = await database.select({ alunoId: users.alunoId }).from(users).where(eq(users.id, candidate.userId)).limit(1);
+        alunoIdIA = userRow?.alunoId ?? null;
+      }
       // Buscar dados complementares
-      const [aluno] = await database.select({
-        name: alunos.name, cargo: alunos.cargo, minicurriculo: alunos.minicurriculo,
-      }).from(alunos).where(eq(alunos.id, candidate.alunoId ?? 0)).limit(1);
-
-      const [disc] = await database.select().from(discResultados)
-        .where(eq(discResultados.alunoId, candidate.alunoId ?? 0))
-        .orderBy(desc(discResultados.completedAt)).limit(1);
-
-      const autopercepcoes = await database.select({
-        nota: autopercepcoesCompetencias.nota,
-        competenciaNome: competencias.nome,
-      }).from(autopercepcoesCompetencias)
-        .leftJoin(competencias, eq(competencias.id, autopercepcoesCompetencias.competenciaId))
-        .where(eq(autopercepcoesCompetencias.alunoId, candidate.alunoId ?? 0))
-        .orderBy(desc(autopercepcoesCompetencias.nota));
+      const [aluno] = alunoIdIA
+        ? await database.select({
+            name: alunos.name, cargo: alunos.cargo, minicurriculo: alunos.minicurriculo,
+          }).from(alunos).where(eq(alunos.id, alunoIdIA)).limit(1)
+        : [null];
+      const [disc] = alunoIdIA
+        ? await database.select().from(discResultados)
+            .where(eq(discResultados.alunoId, alunoIdIA))
+            .orderBy(desc(discResultados.completedAt)).limit(1)
+        : [null];
+      const autopercepcoes = alunoIdIA
+        ? await database.select({
+            nota: autopercepcoesCompetencias.nota,
+            competenciaNome: competencias.nome,
+          }).from(autopercepcoesCompetencias)
+            .leftJoin(competencias, eq(competencias.id, autopercepcoesCompetencias.competenciaId))
+            .where(eq(autopercepcoesCompetencias.alunoId, alunoIdIA))
+            .orderBy(desc(autopercepcoesCompetencias.nota))
+        : [];
 
       // Buscar processo, mentor e slot para contexto e assinatura
       const [processoInfo] = await database
@@ -2582,7 +2593,7 @@ export const processosSeletivosRouter = router({
 
       let mentorNomeIA: string | null = null;
       if (processoInfo?.mentorId) {
-        const [mentor] = await database.select({ name: users.name }).from(users).where(eq(users.id, processoInfo.mentorId)).limit(1);
+        const [mentor] = await database.select({ name: consultors.name }).from(consultors).where(eq(consultors.id, processoInfo.mentorId)).limit(1);
         mentorNomeIA = mentor?.name ?? null;
       }
 
