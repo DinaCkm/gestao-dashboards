@@ -12203,13 +12203,21 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   )) as any;
   const discRow = Array.isArray(discRows) ? discRows[0] : null;
 
-  // Buscar o PDI ativo mais recente do aluno (com macroInicio e macroTermino)
+  // Buscar o PDI que está sendo arquivado (congelado = ciclo anterior ao reset).
+  // REGRA DE NEGÓCIO: o snapshot do ciclo arquivado deve usar o período do PDI CONGELADO
+  // (macroInicio do PDI congelado → data do reset), NÃO o PDI ativo (que é o novo macrociclo).
+  // Isso garante que Evolução mostre dados do ciclo anterior e Performance mostre dados do ciclo atual.
+  const [pdiCongeladoRows] = await db.execute(sql.raw(
+    `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'congelado' ORDER BY createdAt DESC LIMIT 1`
+  )) as any;
+  const pdiCongeladoRow = Array.isArray(pdiCongeladoRows) ? pdiCongeladoRows[0] : null;
+  // Fallback: PDI ativo (para alunos sem PDI congelado ainda)
   const [pdiActiveRows] = await db.execute(sql.raw(
     `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo' ORDER BY createdAt DESC LIMIT 1`
   )) as any;
   const pdiActiveRow = Array.isArray(pdiActiveRows) ? pdiActiveRows[0] : null;
-  // Fallback: qualquer PDI mais recente (para alunos sem PDI ativo no momento do arquivamento)
-  let pdiId: number | null = pdiActiveRow?.id || null;
+  // Fallback final: qualquer PDI mais recente
+  let pdiId: number | null = pdiCongeladoRow?.id || pdiActiveRow?.id || null;
   let pdiFallbackRow: any = null;
   if (!pdiId) {
     const [pdiAnyRows] = await db.execute(sql.raw(
@@ -12218,14 +12226,14 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
     pdiFallbackRow = Array.isArray(pdiAnyRows) ? pdiAnyRows[0] : null;
     pdiId = pdiFallbackRow?.id ?? null;
   }
-  // Extrair macroInicio e macroTermino do PDI (ativo ou fallback)
-  const pdiMacroRow = pdiActiveRow || pdiFallbackRow || null;
+  // Extrair macroInicio do PDI congelado (ciclo que está sendo arquivado)
+  // e usar a data atual como macroTermino (data do reset = fim do ciclo anterior)
+  const pdiMacroRow = pdiCongeladoRow || pdiActiveRow || pdiFallbackRow || null;
   const macroInicioStr: string | null = pdiMacroRow?.macroInicio
     ? String(pdiMacroRow.macroInicio).split('T')[0]
     : null;
-  const macroTerminoStr: string | null = pdiMacroRow?.macroTermino
-    ? String(pdiMacroRow.macroTermino).split('T')[0]
-    : null;
+  // macroTermino = data do reset (hoje), não o macroTermino do PDI
+  const macroTerminoStr: string = new Date().toISOString().split('T')[0];
 
   // Buscar o aceite do onboarding para pegar dataInicio
   const [jornadaRows] = await db.execute(sql.raw(
