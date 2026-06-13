@@ -192,18 +192,12 @@ export default function Performance() {
     alertaCasePendente: any[];
   } | undefined) : undefined;
 
-  // Quando os dados carregarem, ajustar o filtro padrão para o ciclo em andamento
+  // Quando os dados carregarem, manter o filtro padrão como consolidado (macrociclo acumulado)
   const filtroInicializado = useRef(false);
   useEffect(() => {
     if (!v2 || filtroInicializado.current) return;
-    const ciclosAtivos = v2.ciclosEmAndamento || [];
-    if (ciclosAtivos.length > 0) {
-      // Usar o ciclo em andamento mais recente como padrão
-      const cicloAtual = ciclosAtivos[ciclosAtivos.length - 1];
-      if (cicloAtual?.cicloId) {
-        setIndicadorFiltro(`ciclo:${cicloAtual.cicloId}`);
-      }
-    }
+    // Sempre usar o consolidado como padrão — representa o macrociclo vigente acumulado
+    setIndicadorFiltro('consolidado');
     filtroInicializado.current = true;
   }, [v2]);
 
@@ -383,16 +377,28 @@ export default function Performance() {
   // Opções de filtro disponíveis
   const filtroOpcoes = useMemo(() => {
     if (!v2) return [];
+    // Determinar label do consolidado com base nos ciclos em andamento
+    const temCicloAndamento = (v2.ciclosEmAndamento || []).length > 0;
+    const labelConsolidado = temCicloAndamento
+      ? "Macrociclo Atual — Visão Acumulada"
+      : "Consolidado (Todos os macrociclos)";
     const opcoes: { value: string; label: string; group: string }[] = [
-      { value: "consolidado", label: "Consolidado (Todos os ciclos finalizados)", group: "Geral" },
+      { value: "consolidado", label: labelConsolidado, group: "Geral" },
     ];
     const trilhas = new Set<string>();
     const allCiclos = [...(v2.ciclosFinalizados || []), ...(v2.ciclosEmAndamento || [])];
+    // Numerar as trilhas para identificar macrociclos
+    const trilhasList: string[] = [];
     allCiclos.forEach((c: any) => {
       if (c.trilhaNome && !trilhas.has(c.trilhaNome)) {
         trilhas.add(c.trilhaNome);
-        opcoes.push({ value: `trilha:${c.trilhaNome}`, label: `Trilha: ${c.trilhaNome}`, group: "Por Trilha" });
+        trilhasList.push(c.trilhaNome);
       }
+    });
+    trilhasList.forEach((trilhaNome, idx) => {
+      const temAndamento = allCiclos.some((c: any) => c.trilhaNome === trilhaNome && c.status === 'em_andamento');
+      const sufixo = temAndamento ? ' — Em Andamento' : '';
+      opcoes.push({ value: `trilha:${trilhaNome}`, label: `Macrociclo ${idx + 1}: ${trilhaNome}${sufixo}`, group: "Por Macrociclo" });
     });
     allCiclos.forEach((c: any) => {
       const status = c.status === 'em_andamento' ? ' (Em Andamento)' : '';
