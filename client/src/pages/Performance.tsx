@@ -178,7 +178,23 @@ export default function Performance() {
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
   // Filtro de indicadores: "consolidado" | "trilha:NomeTrilha" | "ciclo:CicloId"
+  // Padrão: ciclo em andamento mais recente (se existir), senão consolidado
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
+
+  // Quando os dados carregarem, ajustar o filtro padrão para o ciclo em andamento
+  const filtroInicializado = useRef(false);
+  useEffect(() => {
+    if (!v2 || filtroInicializado.current) return;
+    const ciclosAtivos = v2.ciclosEmAndamento || [];
+    if (ciclosAtivos.length > 0) {
+      // Usar o ciclo em andamento mais recente como padrão
+      const cicloAtual = ciclosAtivos[ciclosAtivos.length - 1];
+      if (cicloAtual?.cicloId) {
+        setIndicadorFiltro(`ciclo:${cicloAtual.cicloId}`);
+      }
+    }
+    filtroInicializado.current = true;
+  }, [v2]);
   const [showGlossario, setShowGlossario] = useState(false);
   const [showAllTrilhasCard, setShowAllTrilhasCard] = useState(false);
 
