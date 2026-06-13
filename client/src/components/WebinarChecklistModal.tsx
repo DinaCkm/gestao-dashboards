@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -186,64 +185,65 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="w-[95vw] max-w-[1200px] max-h-[92vh] overflow-hidden flex flex-col p-0"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <ClipboardList className="h-5 w-5 text-primary" />
             Checklist Interno de Produção
           </DialogTitle>
-          <DialogDescription className="truncate">
+          <DialogDescription className="mt-1 text-sm text-foreground/70 font-medium truncate">
             {webinarTitle}
           </DialogDescription>
-        </DialogHeader>
 
-        {/* Summary bar */}
-        {summary && (
-          <div className="flex items-center gap-3 flex-wrap py-2 border-b">
-            <span className="text-sm text-muted-foreground">
-              <strong>{summary.completed}</strong>/{summary.total} concluídas
-            </span>
-            {summary.overdue > 0 && (
-              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 text-xs">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                {summary.overdue} atrasada{summary.overdue > 1 ? "s" : ""}
+          {/* Summary bar */}
+          {summary && (
+            <div className="flex items-center gap-3 flex-wrap mt-3">
+              <span className="text-sm text-muted-foreground">
+                <strong className="text-foreground">{summary.completed}</strong>/{summary.total} concluídas
+              </span>
+              {summary.overdue > 0 && (
+                <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 text-xs gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {summary.overdue} atrasada{summary.overdue > 1 ? "s" : ""}
+                </Badge>
+              )}
+              {summary.atRisk > 0 && (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 text-xs gap-1">
+                  <Clock className="h-3 w-3" />
+                  {summary.atRisk} vencendo em breve
+                </Badge>
+              )}
+              <Badge variant="outline" className={`text-xs ${riskColor}`}>
+                Risco: {summary.riskLevel}
               </Badge>
-            )}
-            {summary.atRisk > 0 && (
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 text-xs">
-                <Clock className="h-3 w-3 mr-1" />
-                {summary.atRisk} vencendo em breve
-              </Badge>
-            )}
-            <Badge variant="outline" className={`text-xs ${riskColor}`}>
-              Risco: {summary.riskLevel}
-            </Badge>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
-        {/* Task table */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Task table — scrollable body */}
+        <div className="flex-1 overflow-y-auto overflow-x-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : !tasks || tasks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <ClipboardList className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p>Nenhuma tarefa encontrada para este webinar.</p>
+            <div className="text-center py-16 text-muted-foreground">
+              <ClipboardList className="h-12 w-12 mx-auto mb-3 opacity-40" />
+              <p className="text-base">Nenhuma tarefa encontrada para este webinar.</p>
             </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-background border-b">
+            <table className="w-full text-sm" style={{ minWidth: "800px" }}>
+              <thead className="sticky top-0 bg-background z-10 border-b shadow-sm">
                 <tr className="text-left">
-                  <th className="py-2 px-3 font-medium text-muted-foreground w-24">Prazo</th>
-                  <th className="py-2 px-3 font-medium text-muted-foreground">Tarefa</th>
-                  <th className="py-2 px-3 font-medium text-muted-foreground w-36">Responsável</th>
-                  <th className="py-2 px-3 font-medium text-muted-foreground w-44">Status</th>
-                  <th className="py-2 px-3 font-medium text-muted-foreground w-28 text-center">Ações</th>
+                  <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wide text-muted-foreground w-32">Prazo</th>
+                  <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wide text-muted-foreground">Tarefa</th>
+                  <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wide text-muted-foreground w-52">Responsável</th>
+                  <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wide text-muted-foreground w-52">Status</th>
+                  <th className="py-3 px-4 font-semibold text-xs uppercase tracking-wide text-muted-foreground w-32 text-center">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -261,21 +261,21 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                   return (
                     <tr
                       key={task.id}
-                      className={`border-b transition-colors ${
+                      className={`border-b transition-colors hover:bg-muted/30 ${
                         overdue && !isDone
                           ? "bg-red-50/60"
                           : isAtRisk
                           ? "bg-yellow-50/60"
                           : isDone
-                          ? "bg-green-50/40 opacity-70"
+                          ? "bg-green-50/30"
                           : ""
                       }`}
                     >
                       {/* Prazo */}
-                      <td className="py-2 px-3">
-                        <div className="flex flex-col gap-0.5">
+                      <td className="py-3 px-4 align-top">
+                        <div className="flex flex-col gap-1">
                           <span
-                            className={`font-medium text-xs ${
+                            className={`font-semibold text-sm ${
                               overdue && !isDone
                                 ? "text-red-600"
                                 : isAtRisk
@@ -286,10 +286,10 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                             {formatDate(task.dueDate)}
                           </span>
                           {overdue && !isDone && (
-                            <span className="text-[10px] text-red-500 font-semibold">ATRASADA</span>
+                            <span className="text-xs text-red-500 font-bold">ATRASADA</span>
                           )}
                           {isAtRisk && (
-                            <span className="text-[10px] text-yellow-600">
+                            <span className="text-xs text-yellow-600 font-medium">
                               {days === 0 ? "Hoje" : `${days}d`}
                             </span>
                           )}
@@ -297,21 +297,21 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                       </td>
 
                       {/* Tarefa */}
-                      <td className="py-2 px-3">
-                        <div className="flex items-start gap-1.5">
+                      <td className="py-3 px-4 align-top">
+                        <div className="flex items-start gap-2">
                           {task.isCritical && (
-                            <span className="text-red-500 text-xs mt-0.5 flex-shrink-0" title="Tarefa crítica">●</span>
+                            <span className="text-red-500 text-sm mt-0.5 flex-shrink-0" title="Tarefa crítica">●</span>
                           )}
                           <div>
-                            <p className={`font-medium leading-tight ${isDone ? "line-through text-muted-foreground" : ""}`}>
+                            <p className={`font-semibold text-sm leading-snug ${isDone ? "line-through text-muted-foreground" : "text-foreground"}`}>
                               {task.title}
                             </p>
                             {task.description && (
-                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-tight">
+                              <p className="text-xs text-muted-foreground mt-1 leading-snug">
                                 {task.description}
                               </p>
                             )}
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-xs text-muted-foreground mt-1 block">
                               {ROLE_LABELS[task.responsibleRole] || task.responsibleRole}
                             </span>
                           </div>
@@ -319,45 +319,46 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                       </td>
 
                       {/* Responsável */}
-                      <td className="py-2 px-3">
+                      <td className="py-3 px-4 align-top">
                         {editingResponsible?.taskId === task.id ? (
-                          <div className="space-y-1">
+                          <div className="space-y-1.5">
                             <Input
-                              value={editingResponsible.name}
+                              value={editingResponsible?.name ?? ""}
                               onChange={(e) =>
                                 setEditingResponsible((prev) => prev ? { ...prev, name: e.target.value } : null)
                               }
                               placeholder="Nome"
-                              className="h-7 text-xs"
+                              className="h-8 text-sm"
                             />
                             <Input
-                              value={editingResponsible.email}
+                              value={editingResponsible?.email ?? ""}
                               onChange={(e) =>
                                 setEditingResponsible((prev) => prev ? { ...prev, email: e.target.value } : null)
                               }
                               placeholder="Email"
-                              className="h-7 text-xs"
+                              className="h-8 text-sm"
                             />
-                            <div className="flex gap-1">
+                            <div className="flex gap-1.5">
                               <Button
                                 size="sm"
-                                className="h-6 text-xs px-2"
+                                className="h-7 text-xs px-3"
                                 onClick={handleSaveResponsible}
                                 disabled={updateResponsibleMutation.isPending}
                               >
                                 {updateResponsibleMutation.isPending ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 ) : (
-                                  <CheckCheck className="h-3 w-3" />
+                                  <CheckCheck className="h-3.5 w-3.5" />
                                 )}
+                                <span className="ml-1">Salvar</span>
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-6 text-xs px-2"
+                                className="h-7 text-xs px-2"
                                 onClick={() => setEditingResponsible(null)}
                               >
-                                <X className="h-3 w-3" />
+                                <X className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </div>
@@ -365,34 +366,37 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                           <div className="space-y-0.5">
                             {task.responsibleName ? (
                               <>
-                                <p className="text-xs font-medium leading-tight">{task.responsibleName}</p>
+                                <p className="text-sm font-medium leading-snug">{task.responsibleName}</p>
                                 {task.responsibleEmail && (
-                                  <p className="text-[10px] text-muted-foreground truncate max-w-[130px]">
+                                  <p className="text-xs text-muted-foreground truncate max-w-[190px]">
                                     {task.responsibleEmail}
                                   </p>
                                 )}
                               </>
                             ) : (
-                              <span className="text-[11px] text-muted-foreground italic">Não definido</span>
+                              <span className="text-sm text-muted-foreground italic">Não definido</span>
                             )}
                           </div>
                         )}
                       </td>
 
                       {/* Status */}
-                      <td className="py-2 px-3">
+                      <td className="py-3 px-4 align-top">
                         {updatingStatusId === task.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Atualizando...</span>
+                          </div>
                         ) : (
                           <Select
                             value={task.status}
                             onValueChange={(v) => handleStatusChange(task.id, v as WebinarTaskStatus)}
                           >
-                            <SelectTrigger className="h-7 text-xs w-full">
+                            <SelectTrigger className="h-8 text-sm w-full">
                               <SelectValue>
                                 <Badge
                                   variant="outline"
-                                  className={`text-[10px] ${STATUS_COLORS[task.status as WebinarTaskStatus] || ""}`}
+                                  className={`text-xs ${STATUS_COLORS[task.status as WebinarTaskStatus] || ""}`}
                                 >
                                   {STATUS_LABELS[task.status as WebinarTaskStatus] || task.status}
                                 </Badge>
@@ -400,7 +404,7 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                             </SelectTrigger>
                             <SelectContent>
                               {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                                <SelectItem key={key} value={key} className="text-xs">
+                                <SelectItem key={key} value={key} className="text-sm">
                                   {label}
                                 </SelectItem>
                               ))}
@@ -410,14 +414,14 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                       </td>
 
                       {/* Ações */}
-                      <td className="py-2 px-3">
-                        <div className="flex items-center justify-center gap-1">
+                      <td className="py-3 px-4 align-top">
+                        <div className="flex items-center justify-center gap-1.5">
                           {/* Marcar concluída */}
                           {task.status !== "completed" && task.status !== "cancelled" && (
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-50"
+                              className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
                               title="Marcar como concluída"
                               onClick={() => handleStatusChange(task.id, "completed")}
                               disabled={updatingStatusId === task.id}
@@ -429,7 +433,7 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7"
+                            className="h-8 w-8 text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                             title="Editar responsável"
                             onClick={() =>
                               setEditingResponsible({
@@ -439,22 +443,22 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
                               })
                             }
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Pencil className="h-4 w-4" />
                           </Button>
                           {/* Enviar lembrete */}
                           {task.responsibleEmail && task.status !== "completed" && task.status !== "cancelled" && (
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                               title={`Enviar lembrete para ${task.responsibleEmail}`}
                               onClick={() => handleSendReminder(task.id)}
                               disabled={sendingReminderId === task.id}
                             >
                               {sendingReminderId === task.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                <Send className="h-3.5 w-3.5" />
+                                <Send className="h-4 w-4" />
                               )}
                             </Button>
                           )}
@@ -468,19 +472,19 @@ export default function WebinarChecklistModal({ webinarId, webinarTitle, open, o
           )}
         </div>
 
-        {/* Legend */}
-        <div className="border-t pt-2 flex items-center gap-4 text-[11px] text-muted-foreground flex-wrap">
-          <span className="flex items-center gap-1">
-            <span className="text-red-500">●</span> Tarefa crítica
+        {/* Legend — sticky footer */}
+        <div className="border-t px-6 py-3 flex items-center gap-5 text-xs text-muted-foreground flex-wrap bg-background">
+          <span className="flex items-center gap-1.5">
+            <span className="text-red-500 text-sm">●</span> Tarefa crítica
           </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-red-100 border border-red-300 inline-block" /> Atrasada
+          <span className="flex items-center gap-1.5">
+            <span className="w-3.5 h-3.5 rounded bg-red-100 border border-red-300 inline-block" /> Atrasada
           </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-yellow-100 border border-yellow-300 inline-block" /> Vencendo em ≤5 dias
+          <span className="flex items-center gap-1.5">
+            <span className="w-3.5 h-3.5 rounded bg-yellow-100 border border-yellow-300 inline-block" /> Vencendo em ≤5 dias
           </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-green-100 border border-green-300 inline-block" /> Concluída
+          <span className="flex items-center gap-1.5">
+            <span className="w-3.5 h-3.5 rounded bg-green-100 border border-green-300 inline-block" /> Concluída
           </span>
         </div>
       </DialogContent>

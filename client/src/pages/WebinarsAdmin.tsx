@@ -453,7 +453,7 @@ export default function WebinarsAdmin() {
   // webinarFormFields is a JSX variable (not a component function) to prevent
   // React from remounting the DOM on every re-render, which was causing input focus loss.
   const webinarFormFields = (
-    <div className="grid gap-4 max-h-[55vh] overflow-y-auto pr-2">
+    <div className="grid gap-4">
       <div className="grid gap-2">
         <Label htmlFor="title">Título *</Label>
         <Input
@@ -895,21 +895,23 @@ export default function WebinarsAdmin() {
 
       {/* Create Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl"
+        <DialogContent className="max-w-2xl max-h-[92vh] flex flex-col p-0"
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
-          <DialogHeader>
+          <div className="px-6 pt-6 pb-4 border-b flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Video className="h-5 w-5" />
               Novo Webinar
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="mt-1">
               Preencha os dados do novo webinar. Campos com * são obrigatórios.
             </DialogDescription>
-          </DialogHeader>
-          {webinarFormFields}
-          <DialogFooter>
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {webinarFormFields}
+          </div>
+          <div className="px-6 py-4 border-t bg-background flex-shrink-0 flex justify-end gap-3">
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
               Cancelar
             </Button>
@@ -919,64 +921,65 @@ export default function WebinarsAdmin() {
             >
               {createMutation.isPending ? "Criando..." : "Criar Webinar"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingWebinar} onOpenChange={(open) => !open && setTimeout(() => setEditingWebinar(null), 100)}>
-        <DialogContent className="max-w-2xl"
+        <DialogContent className="max-w-2xl max-h-[92vh] flex flex-col p-0"
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
         >
-          <DialogHeader>
+          <div className="px-6 pt-6 pb-4 border-b flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5" />
               Editar Webinar
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="mt-1">
               Atualize os dados do webinar. Você pode incluir links de gravação para webinars passados.
             </DialogDescription>
-          </DialogHeader>
-          {webinarFormFields}
+          </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            {webinarFormFields}
 
-          {/* Card upload section */}
-          {editingWebinar && (
-            <div className="border rounded-lg p-4 space-y-3">
-              <Label className="flex items-center gap-2">
-                <ImageIcon className="h-4 w-4" />
-                Cartão de Divulgação
-              </Label>
-              {editingWebinar.cardImageUrl && (
-                <div className="relative w-full max-w-xs">
-                  <img
-                    src={editingWebinar.cardImageUrl}
-                    alt="Cartão atual"
-                    className="rounded-lg border max-h-40 object-contain"
+            {/* Card upload section */}
+            {editingWebinar && (
+              <div className="border rounded-lg p-4 space-y-3">
+                <Label className="flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Cartão de Divulgação
+                </Label>
+                {editingWebinar.cardImageUrl && (
+                  <div className="relative w-full max-w-xs">
+                    <img
+                      src={editingWebinar.cardImageUrl}
+                      alt="Cartão atual"
+                      className="rounded-lg border max-h-48 object-contain"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setCardFile(e.target.files?.[0] || null)}
+                    className="flex-1"
                   />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleUploadCard(editingWebinar.id)}
+                    disabled={!cardFile || uploadCardMutation.isPending}
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    {uploadCardMutation.isPending ? "Enviando..." : "Enviar"}
+                  </Button>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setCardFile(e.target.files?.[0] || null)}
-                  className="flex-1"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleUploadCard(editingWebinar.id)}
-                  disabled={!cardFile || uploadCardMutation.isPending}
-                >
-                  <Upload className="h-4 w-4 mr-1" />
-                  {uploadCardMutation.isPending ? "Enviando..." : "Enviar"}
-                </Button>
               </div>
-            </div>
-          )}
-
-          <DialogFooter>
+            )}
+          </div>
+          <div className="px-6 py-4 border-t bg-background flex-shrink-0 flex justify-end gap-3">
             <Button variant="outline" onClick={() => setTimeout(() => setEditingWebinar(null), 100)}>
               Cancelar
             </Button>
@@ -986,7 +989,7 @@ export default function WebinarsAdmin() {
             >
               {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
