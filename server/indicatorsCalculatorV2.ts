@@ -879,8 +879,11 @@ function consolidarCiclos(ciclos: IndicadoresCiclo[], trilhaNome: string): Indic
   // Ind. 1 e Ind. 4: calculados pelo MACROCICLO (totais somados, não média por microciclo)
   const consolidadoInd1 = totalWebinars > 0 ? Math.round((totalPresentes / totalWebinars) * 100 * 100) / 100 : 0;
   const consolidadoInd4 = totalTarefas > 0 ? Math.round((tarefasEntregues / totalTarefas) * 100 * 100) / 100 : 0;
-  const consolidadoInd2 = avg('ind2_avaliacoes');
-  const consolidadoInd3 = avg('ind3_competencias');
+  // Ind.2 e Ind.3: soma acumulada de TODAS as competências elegíveis (não média dos microciclos)
+  // Regra: competência entra no cálculo quando microInicio <= hoje OU já concluída
+  // O denominador é o total de competências elegíveis (dos microciclos já iniciados/finalizados)
+  const consolidadoInd2 = totalProvas > 0 ? Math.round((somaNotas / totalProvas) * 100) / 100 : 0;
+  const consolidadoInd3 = totalComps > 0 ? Math.round((compsFinalizadas / totalComps) * 100 * 100) / 100 : 0;
   const consolidadoInd5 = avg('ind5_engajamento');
   
   // Ind. 7: recalcular com os valores consolidados corretos (macrociclo para ind1/ind4)
