@@ -28,6 +28,7 @@ import {
   Tooltip, Cell, PieChart, Pie,
 } from "recharts";
 import { InfoTooltip, GLOSSARIO, INDICADORES_INFO } from "@/components/InfoTooltip";
+import { useRole } from "@/contexts/RoleContext";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -141,7 +142,8 @@ export default function Performance() {
   const [, setLocation] = useLocation();
 
   // Seletor de aluno para mentor/gestor/admin
-  const isMentorOrGestor = user?.role === 'manager' && !(user as any).alunoId;
+  const { activeRole } = useRole();
+  const isMentorOrGestor = user?.role === 'manager' && (!(user as any).alunoId || activeRole === 'gerente');
   const isAdminUser = user?.role === 'admin' || (user?.role as string) === 'admin2';
   const canSelectAluno = isMentorOrGestor || isAdminUser;
 
