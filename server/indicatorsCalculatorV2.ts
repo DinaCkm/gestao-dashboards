@@ -345,6 +345,11 @@ export function calcularIndicadoresCiclo(
   // Competências opcionais NÃO entram no cálculo dos indicadores.
   const compIdsParaCalculo = ciclo.competenciaIds;
   
+  // Regra de elegibilidade: competência entra no cálculo APENAS quando:
+  // 1. Prazo vencido: microTermino (ciclo.dataFim) <= hoje
+  // 2. OU já concluída (todas as aulas concluídas) antes do prazo
+  const microTerminoVencido = hoje ? new Date(ciclo.dataFim + 'T23:59:59') <= hoje : new Date(ciclo.dataFim + 'T23:59:59') <= new Date();
+  
   for (const compId of compIdsParaCalculo) {
     const codigo = compIdToCodigoMap.get(compId);
     const perfComp = performanceAluno.find(p => {
@@ -354,7 +359,14 @@ export function calcularIndicadoresCiclo(
                p.nomeCompetencia?.toLowerCase()?.includes(codigo.toLowerCase());
       }
       return p.idCompetencia === String(compId);
-    });
+    }) as any;
+    
+    const aulasConcluidas = perfComp?.aulasConcluidas || 0;
+    const aulasDisponiveis = perfComp?.aulasDisponiveis || 0;
+    const compConcluida = aulasDisponiveis > 0 && aulasConcluidas >= aulasDisponiveis;
+    
+    // Só entra no cálculo se prazo vencido OU já concluída
+    if (!microTerminoVencido && !compConcluida) continue;
     
     if (perfComp && perfComp.notaAvaliacao !== undefined && perfComp.notaAvaliacao >= 0) {
       // Nota está em escala 0-10, converter para 0-100
@@ -373,7 +385,7 @@ export function calcularIndicadoresCiclo(
   // % competências/cursos finalizados por ciclo
   // Finalizado = todas as aulas disponíveis concluídas
   // ============================================================
-  let totalComps = compIdsParaCalculo.length;
+  let totalComps = 0; // Apenas competências elegíveis (prazo vencido OU concluída)
   let compsFinalizadas = 0;
   let compsEmAndamento = 0;
   const competenciasDetalhe: CompetenciaDetalhe[] = [];
@@ -395,6 +407,21 @@ export function calcularIndicadoresCiclo(
     const notaAvaliacao = perfComp?.notaAvaliacao !== undefined && perfComp?.notaAvaliacao >= 0 
       ? perfComp.notaAvaliacao * 10 : null;
     
+    // Só entra no cálculo se prazo vencido OU já concluída
+    if (!microTerminoVencido && !concluida) {
+      // Ainda assim adiciona ao detalhe para exibição, mas não conta no indicador
+      competenciasDetalhe.push({
+        competenciaId: compId,
+        nome: perfComp?.nomeCompetencia || compIdToNomeMap?.get(compId) || codigo || `Comp ${compId}`,
+        aulasConcluidas,
+        aulasDisponiveis,
+        notaAvaliacao,
+        concluida,
+      });
+      continue;
+    }
+    
+    totalComps++;
     if (concluida) compsFinalizadas++;
     else if (aulasConcluidas > 0) compsEmAndamento++;
     
