@@ -181,6 +181,17 @@ export default function Performance() {
   // Padrão: ciclo em andamento mais recente (se existir), senão consolidado
   const [indicadorFiltro, setIndicadorFiltro] = useState<string>("consolidado");
 
+  const [showGlossario, setShowGlossario] = useState(false);
+  const [showAllTrilhasCard, setShowAllTrilhasCard] = useState(false);
+
+  // Dados de indicadores - declarado cedo para uso nos useMemo
+  const v2 = data?.found ? ((data as any).indicadoresV2 as {
+    ciclosFinalizados: any[];
+    ciclosEmAndamento: any[];
+    consolidado: any;
+    alertaCasePendente: any[];
+  } | undefined) : undefined;
+
   // Quando os dados carregarem, ajustar o filtro padrão para o ciclo em andamento
   const filtroInicializado = useRef(false);
   useEffect(() => {
@@ -195,16 +206,6 @@ export default function Performance() {
     }
     filtroInicializado.current = true;
   }, [v2]);
-  const [showGlossario, setShowGlossario] = useState(false);
-  const [showAllTrilhasCard, setShowAllTrilhasCard] = useState(false);
-
-  // Dados de indicadores - declarado cedo para uso nos useMemo
-  const v2 = data?.found ? ((data as any).indicadoresV2 as {
-    ciclosFinalizados: any[];
-    ciclosEmAndamento: any[];
-    consolidado: any;
-    alertaCasePendente: any[];
-  } | undefined) : undefined;
 
   // Metas de desenvolvimento do aluno (para indicador de Desenvolvimento)
   const { data: metasData } = trpc.metas.minhas.useQuery();
