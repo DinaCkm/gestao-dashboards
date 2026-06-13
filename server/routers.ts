@@ -9180,6 +9180,68 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
   }),
 
+  // ==================== WEBINAR TASK TEMPLATES ====================
+  webinarTaskTemplates: router({
+
+    /** Lista todos os templates de tarefas (ativos e inativos) */
+    list: adminProcedure
+      .query(async () => {
+        return await db.listWebinarTaskTemplates();
+      }),
+
+    /** Cria um novo template */
+    create: adminProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        daysOffset: z.number(),
+        defaultRole: z.enum(['organizacao','marketing','administrativo','coordenacao','palestrante','solicitante']),
+        isCritical: z.number().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.createWebinarTaskTemplate(input);
+        return { id, success: true };
+      }),
+
+    /** Atualiza um template existente */
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().min(1).optional(),
+        description: z.string().optional(),
+        daysOffset: z.number().optional(),
+        defaultRole: z.enum(['organizacao','marketing','administrativo','coordenacao','palestrante','solicitante']).optional(),
+        isCritical: z.number().optional(),
+        sortOrder: z.number().optional(),
+        isActive: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateWebinarTaskTemplate(id, data);
+        return { success: true };
+      }),
+
+    /** Remove (soft delete) um template */
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteWebinarTaskTemplate(input.id);
+        return { success: true };
+      }),
+
+    /** Reordena os templates */
+    reorder: adminProcedure
+      .input(z.object({
+        orders: z.array(z.object({ id: z.number(), sortOrder: z.number() })),
+      }))
+      .mutation(async ({ input }) => {
+        await db.reorderWebinarTaskTemplates(input.orders);
+        return { success: true };
+      }),
+
+  }),
+
   // ==================== ANNOUNCEMENTS ====================
   announcements: router({
     // Avisos ativos para alunos (filtrado por programa)

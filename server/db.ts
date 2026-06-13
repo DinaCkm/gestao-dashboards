@@ -13503,3 +13503,88 @@ export async function generateWebinarInternalTasks(
     `));
   }
 }
+
+// ============ WEBINAR TASK TEMPLATES CRUD ============
+
+export interface WebinarTaskTemplate {
+  id: number;
+  title: string;
+  description: string | null;
+  daysOffset: number;
+  defaultRole: 'organizacao' | 'marketing' | 'administrativo' | 'coordenacao' | 'palestrante' | 'solicitante';
+  requiresUpload: number;
+  requiresApproval: number;
+  isCritical: number;
+  sortOrder: number;
+  isActive: number;
+}
+
+export async function listWebinarTaskTemplates(): Promise<WebinarTaskTemplate[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows] = await db.execute(sql.raw(`
+    SELECT id, title, description, daysOffset, defaultRole,
+           requiresUpload, requiresApproval, isCritical, sortOrder, isActive
+    FROM webinar_task_templates
+    ORDER BY sortOrder ASC
+  `));
+  return rows as WebinarTaskTemplate[];
+}
+
+export async function createWebinarTaskTemplate(data: {
+  title: string;
+  description?: string;
+  daysOffset: number;
+  defaultRole: string;
+  isCritical?: number;
+  sortOrder?: number;
+}): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error('DB not available');
+  const safeTitle = data.title.replace(/'/g, "''");
+  const safeDesc = (data.description || '').replace(/'/g, "''");
+  const [result] = await db.execute(sql.raw(`
+    INSERT INTO webinar_task_templates (title, description, daysOffset, defaultRole, isCritical, sortOrder, isActive)
+    VALUES ('${safeTitle}', '${safeDesc}', ${data.daysOffset}, '${data.defaultRole}',
+            ${data.isCritical ?? 1}, ${data.sortOrder ?? 99}, 1)
+  `));
+  return (result as any).insertId;
+}
+
+export async function updateWebinarTaskTemplate(id: number, data: {
+  title?: string;
+  description?: string;
+  daysOffset?: number;
+  defaultRole?: string;
+  isCritical?: number;
+  sortOrder?: number;
+  isActive?: number;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('DB not available');
+  const sets: string[] = [];
+  if (data.title !== undefined) sets.push(`title = '${data.title.replace(/'/g, "''")}'`);
+  if (data.description !== undefined) sets.push(`description = '${data.description.replace(/'/g, "''")}'`);
+  if (data.daysOffset !== undefined) sets.push(`daysOffset = ${data.daysOffset}`);
+  if (data.defaultRole !== undefined) sets.push(`defaultRole = '${data.defaultRole}'`);
+  if (data.isCritical !== undefined) sets.push(`isCritical = ${data.isCritical}`);
+  if (data.sortOrder !== undefined) sets.push(`sortOrder = ${data.sortOrder}`);
+  if (data.isActive !== undefined) sets.push(`isActive = ${data.isActive}`);
+  if (!sets.length) return;
+  await db.execute(sql.raw(`UPDATE webinar_task_templates SET ${sets.join(', ')} WHERE id = ${id}`));
+}
+
+export async function deleteWebinarTaskTemplate(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('DB not available');
+  // Soft delete: marcar como inativo
+  await db.execute(sql.raw(`UPDATE webinar_task_templates SET isActive = 0 WHERE id = ${id}`));
+}
+
+export async function reorderWebinarTaskTemplates(orders: { id: number; sortOrder: number }[]): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error('DB not available');
+  for (const o of orders) {
+    await db.execute(sql.raw(`UPDATE webinar_task_templates SET sortOrder = ${o.sortOrder} WHERE id = ${o.id}`));
+  }
+}

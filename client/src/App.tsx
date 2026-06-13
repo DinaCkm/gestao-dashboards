@@ -96,6 +96,7 @@ import AuditoriaNotesMentoria from "./pages/admin/AuditoriaNotesMentoria";
 import VisualizarPDI from "./pages/VisualizarPDI";
 import AutoRegistro from "./pages/AutoRegistro";
 import PortalCandidatoPS from "./pages/PortalCandidatoPS";
+import WebinarChecklistConfig from "./pages/WebinarChecklistConfig";
 
 function Router() {
   return (
@@ -193,6 +194,7 @@ function Router() {
       <Route path={"/admin/biblioteca-livros"} component={AdminBibliotecaLivros} />
       <Route path={"/biblioteca"} component={BibliotecaLivros} />
       <Route path={"/admin/auditoria-resets"} component={AuditoriaResets} />
+      <Route path={"/admin/webinar-checklist-config"} component={WebinarChecklistConfig} />
       <Route path={"/admin/auditoria-notas-mentoria"} component={AuditoriaNotesMentoria} />
       <Route path={"/pdi/nivel/:contratoNivelId"} component={VisualizarPDI} />
       <Route path={"/pdi/:pdiId"} component={VisualizarPDI} />
