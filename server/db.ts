@@ -5928,7 +5928,7 @@ export async function getActiveStudentsWithIds(programId?: number): Promise<{id:
   const db = await getDb();
   if (!db) return [];
   if (programId) {
-    return await db.select({ id: users.id, email: users.email, name: users.name })
+    const byProgram = await db.select({ id: users.id, email: users.email, name: users.name })
       .from(users)
       .where(and(
         eq(users.role, "user"),
@@ -5936,14 +5936,31 @@ export async function getActiveStudentsWithIds(programId?: number): Promise<{id:
         eq(users.programId, programId),
         isNotNull(users.email)
       ));
+    return byProgram.filter(s => {
+      if (!s.email) return false;
+      const email = s.email.toLowerCase();
+      if (email.endsWith('@test.com')) return false;
+      if (email.endsWith('@teste.com')) return false;
+      if (email.match(/^(turma|direto|contrato|aluno)-[a-z0-9]+-\d+@/)) return false;
+      return true;
+    });
   }
-  return await db.select({ id: users.id, email: users.email, name: users.name })
+  const allStudents = await db.select({ id: users.id, email: users.email, name: users.name })
     .from(users)
     .where(and(
       eq(users.role, "user"),
       eq(users.isActive, 1),
       isNotNull(users.email)
     ));
+  // Filtrar emails fictícios gerados por importação em massa (@test.com, @teste.com, padrões turma-/direto-/contrato-)
+  return allStudents.filter(s => {
+    if (!s.email) return false;
+    const email = s.email.toLowerCase();
+    if (email.endsWith('@test.com')) return false;
+    if (email.endsWith('@teste.com')) return false;
+    if (email.match(/^(turma|direto|contrato|aluno)-[a-z0-9]+-\d+@/)) return false;
+    return true;
+  });
 }
 
 
