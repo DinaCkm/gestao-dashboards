@@ -5503,6 +5503,348 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         })(),
       };
     }),
+
+    // === MACROCICLO ANTERIOR (CONGELADO) ===
+    // Endpoint idêntico ao meuDashboard, mas usando PDIs congelados e dados até a data do reset.
+    // Usado pela página Evolução (clone da Performance) para exibir o Macrociclo 1.
+    meuDashboardCongelado: protectedProcedure
+      .input(z.object({ viewAlunoId: z.number().optional() }).optional())
+      .query(async ({ input, ctx }) => {
+      if (!ctx.user) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário não autenticado' });
+      }
+      let aluno: Awaited<ReturnType<typeof db.getAlunoFromCtx>>;
+      if (input?.viewAlunoId) {
+        const role = ctx.user.role;
+        const isAllowed = role === 'admin' || role === 'admin2' || role === 'manager';
+        if (!isAllowed) throw new TRPCError({ code: 'FORBIDDEN', message: 'Sem permissão.' });
+        const { alunos: alunosTable } = await import('../drizzle/schema');
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        const [found] = await database.select().from(alunosTable).where(eq(alunosTable.id, input.viewAlunoId)).limit(1);
+        aluno = found || null;
+      } else {
+        aluno = await db.getAlunoFromCtx(ctx.user);
+      }
+      if (!aluno) {
+        return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
+      }
+
+      // Verificar se o aluno tem PDIs congelados
+      const pdisCongeladosCheck = await (async () => {
+        const { assessmentPdi: apTable } = await import('../drizzle/schema');
+        const database = await getDb();
+        if (!database) return [];
+        return database.select().from(apTable).where(
+          and(eq(apTable.alunoId, aluno!.id), eq(apTable.status, 'congelado'))
+        );
+      })();
+
+      if (pdisCongeladosCheck.length === 0) {
+        return { found: false as const, message: 'Este aluno não possui macrociclo anterior congelado.' };
+      }
+
+      // Data do reset = data do último reset do aluno (marco zero do ciclo atual)
+      // Os dados do Macrociclo 1 são todos os dados ATÉ essa data
+      const dataReset = await db.getDataUltimoResetAluno(aluno.id);
+
+      // Se não há reset registrado, usar a data de congelamento do PDI mais recente
+      const dataCorte: Date | null = dataReset ?? (() => {
+        // Usar macroTermino do PDI congelado mais recente como corte
+        const terminos = pdisCongeladosCheck
+          .filter(p => p.macroTermino)
+          .map(p => new Date(p.macroTermino as any));
+        if (terminos.length === 0) return null;
+        return new Date(Math.max(...terminos.map(d => d.getTime())));
+      })();
+
+      // Buscar dados globais em paralelo
+      const [
+        allSessions,
+        allEventParticipations,
+        alunosList,
+        programsList,
+        turmasList,
+        studentPerfRecords,
+        compIdToCodigoMapAll,
+        compIdToNomeMapAll,
+        casesAluno,
+        planoItems,
+        sessoesAluno,
+        eventosAluno,
+      ] = await Promise.all([
+        cacheOrFetch('allSessions', () => db.getAllMentoringSessions()),
+        cacheOrFetch('allEventParticipations', () => db.getAllEventParticipationWithDate()),
+        cacheOrFetch('alunosList', () => db.getAlunos()),
+        cacheOrFetch('programsList', () => db.getPrograms()),
+        cacheOrFetch('turmasList', () => db.getTurmas()),
+        cacheOrFetch('studentPerfRecords', () => db.getStudentPerformanceAsRecords()),
+        cacheOrFetch('compIdToCodigoMap', () => db.getCompIdToCodigoMap()),
+        cacheOrFetch('compIdToNomeMap', () => db.getCompIdToNomeMap()),
+        db.getCasesSucessoByAluno(aluno.id),
+        db.getPlanoIndividualByAluno(aluno.id),
+        db.getMentoringSessionsByAluno(aluno.id),
+        db.getEventParticipationByAluno(aluno.id),
+      ]);
+
+      const alunoMap = new Map(alunosList.map(a => [a.id, a]));
+      const programMap = new Map(programsList.map(p => [p.id, p]));
+      const turmaMap = new Map(turmasList.map(t => [t.id, t]));
+      const idUsuario = aluno.externalId || String(aluno.id);
+
+      // Filtrar sessões: apenas as que ocorreram ATÉ a data de corte
+      const mentorias: MentoringRecord[] = [];
+      for (const session of allSessions) {
+        const sessionAluno = alunoMap.get(session.alunoId);
+        if (!sessionAluno) continue;
+        if (sessionAluno.id !== aluno.id) continue;
+        if (!session.sessionDate) continue;
+        const sessionDt = new Date(session.sessionDate);
+        // Só incluir sessões até a data de corte
+        if (dataCorte && sessionDt > dataCorte) continue;
+        const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
+        const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
+        mentorias.push({
+          idUsuario: sessionAluno.externalId || String(sessionAluno.id),
+          nomeAluno: sessionAluno.name,
+          empresa: program?.name || 'Desconhecida',
+          turma: turma?.name || '',
+          trilha: '',
+          ciclo: session.ciclo || '',
+          sessao: session.sessionNumber || 0,
+          dataSessao: sessionDt,
+          presenca: session.presence as 'presente' | 'ausente',
+          atividadeEntregue: session.isAssessment ? 'sem_tarefa' : ((session.taskStatus || 'sem_tarefa') as 'entregue' | 'nao_entregue' | 'sem_tarefa'),
+          engajamento: session.engagementScore || undefined,
+          feedback: session.feedback || '',
+        });
+      }
+
+      // Filtrar eventos: apenas os que ocorreram ATÉ a data de corte
+      const eventos: EventRecord[] = [];
+      for (const ep of allEventParticipations) {
+        const epAluno = alunoMap.get(ep.alunoId);
+        if (!epAluno || epAluno.id !== aluno.id) continue;
+        if (!ep.eventDate) continue;
+        const evtDt = new Date(ep.eventDate);
+        if (dataCorte && evtDt > dataCorte) continue;
+        const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
+        eventos.push({
+          idUsuario: epAluno.externalId || String(epAluno.id),
+          nomeAluno: epAluno.name,
+          empresa: program?.name || 'Desconhecida',
+          turma: '',
+          trilha: '',
+          tituloEvento: ep.eventTitle || 'Evento',
+          dataEvento: evtDt,
+          presenca: ep.status as 'presente' | 'ausente',
+        });
+      }
+
+      // Performance: usar planoItems e student_performance
+      const performance: PerformanceRecord[] = [];
+      for (const item of planoItems) {
+        if (item.notaAtual) {
+          performance.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeTurma: '',
+            idCompetencia: String(item.competenciaId),
+            nomeCompetencia: item.competenciaNome || '',
+            notaAvaliacao: parseFloat(item.notaAtual),
+            aprovado: parseFloat(item.notaAtual) >= 7,
+          });
+        }
+      }
+      const existingPerfKeys = new Set(performance.map(p => `${p.idUsuario}|${p.idCompetencia}`));
+      for (const spRec of studentPerfRecords) {
+        const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+        if (!existingPerfKeys.has(key)) {
+          performance.push(spRec);
+          existingPerfKeys.add(key);
+        }
+      }
+
+      // Ciclos dos PDIs CONGELADOS
+      const ciclosCongelados = await db.getCiclosCongeladosParaCalculator(aluno.id);
+      const ciclosV2 = ciclosCongelados.map(c => ({
+        ...c,
+        trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
+      }));
+
+      // Cases do aluno
+      const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
+        alunoId: c.alunoId,
+        trilhaId: c.trilhaId,
+        trilhaNome: c.trilhaNome,
+        entregue: c.entregue === 1,
+        dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : null,
+      }));
+
+      // Macrociclo: usar período dos PDIs congelados
+      const macroInicioCongelado = pdisCongeladosCheck
+        .filter(p => p.macroInicio)
+        .map(p => String(p.macroInicio).split('T')[0])
+        .sort()[0] || null;
+      const macroTerminoCongelado = pdisCongeladosCheck
+        .filter(p => p.macroTermino)
+        .map(p => String(p.macroTermino).split('T')[0])
+        .sort().reverse()[0] || null;
+      const macrocicloCongelado = macroInicioCongelado && macroTerminoCongelado
+        ? { macroInicio: macroInicioCongelado, macroTermino: macroTerminoCongelado }
+        : undefined;
+
+      // Calcular indicadores V2 com os ciclos congelados
+      const indicadoresV2Congelado = calcularIndicadoresAlunoV2(
+        idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMapAll, casesDataAluno, undefined, macrocicloCongelado, compIdToNomeMapAll
+      );
+
+      // Calcular indicadores clássicos
+      const compObrigatorias: CompetenciaObrigatoria[] = (await db.getCompetenciasObrigatoriasAluno(aluno.id)).map(c => ({
+        competenciaId: c.competenciaId,
+        codigoIntegracao: c.codigoIntegracao,
+        notaAtual: c.notaAtual,
+        metaNota: c.metaNota,
+        status: c.status,
+      }));
+      const indicadoresClassicos = calcularIndicadoresAlunoFiltrado(
+        idUsuario, mentorias, eventos, performance, compObrigatorias, ciclosCongelados
+      );
+
+      // Buscar programa, turma e mentor do aluno
+      const programa = aluno.programId ? programMap.get(aluno.programId) : null;
+      const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
+      const sessaoComConsultor = !aluno.consultorId ? [...sessoesAluno].reverse().find(s => s.consultorId) : null;
+      const mentorAluno = aluno.consultorId
+        ? await db.getConsultorById(aluno.consultorId)
+        : sessaoComConsultor?.consultorId
+          ? await db.getConsultorById(sessaoComConsultor.consultorId)
+          : null;
+
+      // Sessões filtradas até a data de corte
+      const sessoesCongeladas = sessoesAluno.filter(s => {
+        if (!s.sessionDate) return true;
+        return !dataCorte || new Date(s.sessionDate) <= dataCorte;
+      });
+
+      // Eventos detalhados filtrados até a data de corte
+      const allEvents = aluno.programId
+        ? await cacheOrFetch(`eventsByProgram_${aluno.programId}`, () => db.getEventsByProgramOrGlobal(aluno.programId!))
+        : [];
+      const eventMap = new Map(allEvents.map(e => [e.id, e]));
+      const eventosDetalhados = eventosAluno
+        .filter(ep => {
+          const evento = eventMap.get(ep.eventId);
+          const evtDate = evento?.eventDate;
+          if (!evtDate) return true;
+          return !dataCorte || new Date(evtDate) <= dataCorte;
+        })
+        .map(ep => {
+          const evento = eventMap.get(ep.eventId);
+          return {
+            id: ep.id,
+            eventId: ep.eventId,
+            titulo: evento?.title || `Evento #${ep.eventId}`,
+            tipo: evento?.eventType || 'webinar',
+            data: evento?.eventDate ? new Date(evento.eventDate) : null,
+            status: ep.status,
+            reflexao: ep.reflexao || null,
+            selfReportedAt: ep.selfReportedAt || null,
+          };
+        });
+
+      // Ciclos detalhados para exibição
+      const ciclosDetalhados = ciclosCongelados.map(c => {
+        const hoje = dataCorte || new Date();
+        const inicio = new Date(c.dataInicio);
+        const fim = new Date(c.dataFim);
+        let status: 'finalizado' | 'em_andamento' | 'futuro' = 'futuro';
+        if (hoje > fim) status = 'finalizado';
+        else if (hoje >= inicio && hoje <= fim) status = 'em_andamento';
+        return {
+          id: c.id,
+          nomeCiclo: c.nomeCiclo,
+          dataInicio: c.dataInicio,
+          dataFim: c.dataFim,
+          status,
+          competencias: (c.allCompetenciaIds || c.competenciaIds).map(compId => ({
+            id: compId,
+            nome: compIdToNomeMapAll.get(compId) || `Comp ${compId}`,
+            nota: null,
+            meta: 7,
+            progressoPlataforma: null,
+            status: 'pendente' as const,
+          })),
+        };
+      });
+
+      return {
+        found: true as const,
+        macrocicloLabel: 'Macrociclo 1 — Congelado',
+        dataCorte: dataCorte ? dataCorte.toISOString().split('T')[0] : null,
+        macroInicio: macroInicioCongelado,
+        macroTermino: macroTerminoCongelado,
+        aluno: {
+          id: aluno.id,
+          name: aluno.name,
+          email: aluno.email,
+          programa: programa?.name || 'Não definido',
+          turma: turmaAluno?.name || 'Não definida',
+          mentor: mentorAluno?.name || 'Não definido',
+          mentorEmail: mentorAluno?.email || null,
+          mentorId: mentorAluno?.id || null,
+        },
+        indicadores: {
+          participacaoMentorias: indicadoresClassicos.participacaoMentorias,
+          atividadesPraticas: indicadoresClassicos.atividadesPraticas,
+          engajamento: indicadoresClassicos.engajamento,
+          performanceCompetencias: indicadoresClassicos.performanceCompetencias,
+          participacaoEventos: indicadoresClassicos.participacaoEventos,
+          performanceGeral: indicadoresClassicos.performanceGeral,
+          notaFinal: indicadoresClassicos.notaFinal,
+          classificacao: indicadoresClassicos.classificacao,
+          ciclosFinalizados: indicadoresClassicos.ciclosFinalizados,
+          ciclosEmAndamento: indicadoresClassicos.ciclosEmAndamento,
+        },
+        indicadoresV2: {
+          ciclosFinalizados: indicadoresV2Congelado.ciclosFinalizados,
+          ciclosEmAndamento: indicadoresV2Congelado.ciclosEmAndamento,
+          consolidado: indicadoresV2Congelado.consolidado,
+          alertaCasePendente: [],
+        },
+        sessoes: sessoesCongeladas.map(s => ({
+          id: s.id,
+          sessionNumber: s.sessionNumber,
+          sessionDate: s.sessionDate,
+          presence: s.presence,
+          taskStatus: s.taskStatus,
+          engagementScore: s.engagementScore,
+          notaEvolucao: s.notaEvolucao,
+          feedback: s.feedback,
+          mensagemAluno: s.mensagemAluno,
+          taskId: s.taskId,
+          taskDeadline: s.taskDeadline,
+          customTaskTitle: s.customTaskTitle,
+          taskMode: s.taskMode,
+          relatoAluno: s.relatoAluno,
+          ciclo: s.ciclo,
+          isAssessment: s.isAssessment ? true : false,
+        })),
+        eventos: eventosDetalhados,
+        planoIndividual: planoItems,
+        assessments: pdisCongeladosCheck,
+        ciclosDetalhados,
+        casesAluno: casesAluno.map(c => ({
+          id: c.id,
+          trilhaId: c.trilhaId,
+          trilhaNome: c.trilhaNome,
+          entregue: c.entregue === 1,
+          dataEntrega: c.dataEntrega,
+          titulo: c.titulo,
+          descricao: c.descricao,
+          resumoPublico: c.resumoPublico,
+        })),
+      };
+    }),
   }),
 
   // Mentor/Consultor routes

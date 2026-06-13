@@ -3595,6 +3595,83 @@ export async function getCiclosForCalculator(alunoId: number) {
   return result;
 }
 
+/**
+ * Busca ciclos dos PDIs CONGELADOS do aluno para exibição do Macrociclo anterior (Evolução).
+ * Lógica idêntica ao fallback de getCiclosForCalculator, mas filtra por status = 'congelado'.
+ */
+export async function getCiclosCongeladosParaCalculator(alunoId: number) {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+
+  const pdis = await dbConn.select({
+    id: assessmentPdi.id,
+    trilhaId: assessmentPdi.trilhaId,
+  }).from(assessmentPdi)
+    .where(sql`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'congelado'`);
+
+  if (pdis.length === 0) return [];
+
+  const pdiIds = pdis.map(p => p.id);
+  const allComps = await dbConn.select({
+    id: assessmentCompetencias.id,
+    assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+    competenciaId: assessmentCompetencias.competenciaId,
+    peso: assessmentCompetencias.peso,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino,
+  }).from(assessmentCompetencias)
+    .where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map(id => sql`${id}`), sql`, `)})`);
+
+  const allTrilhas = await dbConn.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map(t => [t.id, t.name]));
+
+  const allCompetencias = await dbConn.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
+  const compNomeMap = new Map(allCompetencias.map(c => [c.id, c.nome]));
+
+  let autoId = 300000; // range diferente para não colidir com getCiclosForCalculator
+  const result: { id: number; nomeCiclo: string; dataInicio: string; dataFim: string; competenciaIds: number[]; allCompetenciaIds?: number[]; competenciaIdsObrigatorias?: number[] }[] = [];
+
+  for (const pdi of pdis) {
+    const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
+    const comps = allComps.filter(c => c.assessmentPdiId === pdi.id);
+
+    const cicloGroups = new Map<string, { allCompIds: number[]; obrigatoriaIds: number[]; inicio: string; termino: string }>();
+
+    for (const comp of comps) {
+      if (!comp.microInicio || !comp.microTermino) continue;
+      const inicio = new Date(comp.microInicio).toISOString().split('T')[0];
+      const termino = new Date(comp.microTermino).toISOString().split('T')[0];
+      const key = `${inicio}|${termino}`;
+      const group = cicloGroups.get(key) || { allCompIds: [], obrigatoriaIds: [], inicio, termino };
+      group.allCompIds.push(comp.competenciaId);
+      if (comp.peso === 'obrigatoria') group.obrigatoriaIds.push(comp.competenciaId);
+      cicloGroups.set(key, group);
+    }
+
+    const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
+
+    for (const [, group] of sortedGroups) {
+      if (group.allCompIds.length === 0) continue;
+      const namesForTitle = group.obrigatoriaIds.length > 0 ? group.obrigatoriaIds : group.allCompIds;
+      const allNames = namesForTitle.map(id => compNomeMap.get(id) || `Comp ${id}`);
+      const compNames = allNames.length <= 2
+        ? allNames.join(', ')
+        : `${allNames.slice(0, 2).join(', ')} +${allNames.length - 2}`;
+      result.push({
+        id: autoId++,
+        nomeCiclo: `${trilhaNome} - ${compNames}`,
+        dataInicio: group.inicio,
+        dataFim: group.termino,
+        competenciaIds: group.obrigatoriaIds,
+        allCompetenciaIds: group.allCompIds,
+        competenciaIdsObrigatorias: group.obrigatoriaIds,
+      });
+    }
+  }
+
+  return result;
+}
+
 // Buscar todos os ciclos formatados para cálculo em massa (agrupados por alunoId)
 // Agora usa assessment_competencias como fonte principal de ciclos
 export async function getAllCiclosForCalculator() {

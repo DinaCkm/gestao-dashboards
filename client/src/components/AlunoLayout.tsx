@@ -25,7 +25,7 @@ const ALL_NAV_ITEMS = [
   { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass, requiresAceite: true },
   // { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true }, // oculto — acesso via Portal do Aluno > Metas
   { label: "Performance", path: "/performance", icon: TrendingUp, requiresAceite: true },
-  { label: "Evolução", path: "/evolucao", icon: Sparkles, requiresAceite: true },
+  { label: "Evolução", path: "/evolucao-v2", icon: Sparkles, requiresAceite: true },
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
 ];
 

@@ -31,6 +31,7 @@ import PlanoIndividual from "./pages/PlanoIndividual";
 import DashboardAluno from "./pages/DashboardAluno";
 import Performance from "./pages/Performance";
 import EvolucaoAluno from "./pages/EvolucaoAluno";
+import EvolucaoV2 from "./pages/EvolucaoV2";
 import RegistroMentoria from "./pages/RegistroMentoria";
 import DashboardGestor from "./pages/DashboardGestor";
 import RankingGeralEngajamento from "./pages/RankingGeralEngajamento";
@@ -135,6 +136,7 @@ function Router() {
       <Route path={"/mural"} component={MuralAluno} />
       <Route path={"/performance"} component={Performance} />
       <Route path={"/evolucao"} component={EvolucaoAluno} />
+      <Route path={"/evolucao-v2"} component={EvolucaoV2} />
       <Route path={"/onboarding"} component={OnboardingAluno} />
       <Route path={"/avisos"} component={AvisosAdmin} />
       <Route path={"/atividades-praticas"} component={AtividadesPraticas} />
