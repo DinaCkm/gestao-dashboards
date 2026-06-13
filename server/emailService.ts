@@ -3111,3 +3111,122 @@ export function buildNovoAvisoMuralEmail(data: {
 
   return { subject, html, text };
 }
+
+
+export function buildLembreteInternoWebinarEmail(data: {
+  responsibleName: string;
+  taskTitle: string;
+  taskDescription?: string | null;
+  dueDate: string; // dd/mm/yyyy
+  webinarTitle: string;
+  webinarDate: string; // dd/mm/yyyy
+  riskLevel?: string;
+  adminUrl: string;
+}): { subject: string; html: string; text: string } {
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const primeiroNome = data.responsibleName?.split(' ')[0] || data.responsibleName || 'Responsável';
+  const subject = `[Checklist Webinar] Lembrete: "${data.taskTitle}" — ${data.webinarTitle}`;
+
+  const riskBadge = data.riskLevel === 'Alto'
+    ? `<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">⚠️ Risco Alto</span>`
+    : data.riskLevel === 'Médio'
+    ? `<span style="background:#fef3c7;color:#d97706;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">⚡ Risco Médio</span>`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Lembrete Checklist Webinar</title>
+</head>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <!-- Logo -->
+        <tr><td style="text-align:center;padding-bottom:20px;">
+          <img src="${logoUrl}" alt="Ecossistema do Bem" width="130" style="display:inline-block;"/>
+        </td></tr>
+
+        <!-- Card -->
+        <tr><td style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="background:linear-gradient(135deg,#0f2b3c 0%,#1a4a5e 100%);padding:32px 40px;text-align:center;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#7dd3fc;letter-spacing:3px;text-transform:uppercase;">ECOSSISTEMA DO BEM</p>
+              <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;line-height:1.3;">📋 Checklist de Produção<br/>Webinar</h1>
+            </td></tr>
+          </table>
+
+          <!-- Body -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:36px 40px 32px;">
+
+              <p style="margin:0 0 20px;font-size:17px;font-weight:700;color:#0f2b3c;">Olá, ${primeiroNome}! 👋</p>
+              <p style="margin:0 0 28px;font-size:14px;color:#4b5563;line-height:1.7;">
+                Você tem uma tarefa pendente no checklist de produção do webinar abaixo. Por favor, verifique o prazo e atualize o status assim que possível.
+              </p>
+
+              <!-- Card da tarefa -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:28px;">
+                <tr><td style="padding:24px 28px;">
+                  <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:2px;">📌 Tarefa Pendente</p>
+                  <p style="margin:0 0 ${data.taskDescription ? '12px' : '16px'};font-size:18px;font-weight:800;color:#0f2b3c;">${data.taskTitle}</p>
+                  ${data.taskDescription ? `<p style="margin:0 0 16px;font-size:13px;color:#6b7280;line-height:1.6;">${data.taskDescription}</p>` : ''}
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="font-size:13px;color:#6b7280;padding:4px 0;width:120px;">📅 Prazo:</td>
+                      <td style="font-size:13px;font-weight:700;color:#dc2626;padding:4px 0;">${data.dueDate}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px;color:#6b7280;padding:4px 0;">🎙️ Webinar:</td>
+                      <td style="font-size:13px;font-weight:600;color:#0f2b3c;padding:4px 0;">${data.webinarTitle}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px;color:#6b7280;padding:4px 0;">📆 Data do evento:</td>
+                      <td style="font-size:13px;font-weight:600;color:#0f2b3c;padding:4px 0;">${data.webinarDate}</td>
+                    </tr>
+                    ${data.riskLevel && data.riskLevel !== 'Baixo' ? `
+                    <tr>
+                      <td style="font-size:13px;color:#6b7280;padding:8px 0 4px;">Nível de risco:</td>
+                      <td style="padding:8px 0 4px;">${riskBadge}</td>
+                    </tr>` : ''}
+                  </table>
+                </td></tr>
+              </table>
+
+              <!-- Botão CTA -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="text-align:center;padding-bottom:24px;">
+                  <a href="${data.adminUrl}" style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;padding:14px 44px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.3px;">Ver Checklist Completo →</a>
+                </td></tr>
+              </table>
+
+              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6;">
+                Este é um lembrete interno da equipe de produção do ECOSSISTEMA DO BEM.<br/>
+                Acesse a plataforma para atualizar o status desta tarefa.
+              </p>
+
+            </td></tr>
+          </table>
+
+          <!-- Footer -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f1f5f9;">
+            <tr><td style="padding:20px 40px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#9ca3af;">ECOSSISTEMA DO BEM — Gestão de Webinars<br/>Você está recebendo este e-mail por ser responsável por uma tarefa de produção.</p>
+            </td></tr>
+          </table>
+
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  const text = `[Checklist Webinar] Lembrete: ${data.taskTitle}\n\nOlá, ${primeiroNome}!\n\nVocê tem uma tarefa pendente no checklist de produção do webinar "${data.webinarTitle}".\n\nTarefa: ${data.taskTitle}\n${data.taskDescription ? `Descrição: ${data.taskDescription}\n` : ''}Prazo: ${data.dueDate}\nWebinar: ${data.webinarTitle}\nData do evento: ${data.webinarDate}\n${data.riskLevel ? `Nível de risco: ${data.riskLevel}\n` : ''}\nAcesse a plataforma para atualizar o status: ${data.adminUrl}`;
+
+  return { subject, html, text };
+}

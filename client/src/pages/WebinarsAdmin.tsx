@@ -41,10 +41,16 @@ import {
   Image as ImageIcon,
   Link2,
   Youtube,
+  ClipboardList,
+  AlertTriangle,
+  CheckCircle2,
+  UserCheck,
 } from "lucide-react";
+import WebinarChecklistModal from "@/components/WebinarChecklistModal";
 
 type WebinarStatus = "draft" | "published" | "completed" | "cancelled";
 type TargetAudience = "all" | "sebrae_to" | "sebrae_acre" | "embrapii" | "banrisul";
+type ResponsibleRole = "organizacao" | "marketing" | "administrativo" | "coordenacao" | "palestrante" | "solicitante";
 
 const STATUS_LABELS: Record<WebinarStatus, string> = {
   draft: "Rascunho",
@@ -68,6 +74,15 @@ const AUDIENCE_LABELS: Record<TargetAudience, string> = {
   banrisul: "BANRISUL",
 };
 
+const RESPONSIBLE_ROLES: { value: ResponsibleRole; label: string; description: string }[] = [
+  { value: "coordenacao", label: "Coordenadora/Organizadora", description: "Responsável pela coordenação geral do evento" },
+  { value: "marketing", label: "Marketing", description: "Responsável pela divulgação e materiais visuais" },
+  { value: "administrativo", label: "Administrativo/Financeiro", description: "Responsável por contratos e pagamentos" },
+  { value: "palestrante", label: "Palestrante/Professor", description: "Responsável pela apresentação e conteúdo" },
+  { value: "solicitante", label: "Solicitante/Aprovador", description: "Quem solicitou e aprova o evento" },
+  { value: "organizacao", label: "Organização", description: "Equipe de organização do evento" },
+];
+
 interface WebinarForm {
   title: string;
   description: string;
@@ -82,6 +97,13 @@ interface WebinarForm {
   youtubeLink: string;
   targetAudience: TargetAudience;
   status: WebinarStatus;
+}
+
+interface ResponsibleForm {
+  role: ResponsibleRole;
+  name: string;
+  email: string;
+  phone: string;
 }
 
 const emptyForm: WebinarForm = {
@@ -100,36 +122,105 @@ const emptyForm: WebinarForm = {
   status: "draft",
 };
 
+const emptyResponsibles: ResponsibleForm[] = RESPONSIBLE_ROLES.map((r) => ({
+  role: r.value,
+  name: "",
+  email: "",
+  phone: "",
+}));
+
+// Componente para o badge de resumo do checklist
+function ChecklistSummaryBadge({ webinarId }: { webinarId: number }) {
+  const { data: summary } = trpc.webinarTasks.getSummaryByWebinar.useQuery({ webinarId });
+  if (!summary) return null;
+
+  const riskColor =
+    summary.riskLevel === "Alto"
+      ? "bg-red-100 text-red-700 border-red-300"
+      : summary.riskLevel === "Médio"
+      ? "bg-yellow-100 text-yellow-700 border-yellow-300"
+      : "bg-green-100 text-green-700 border-green-300";
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <Badge variant="outline" className="text-xs bg-gray-50">
+        <ClipboardList className="h-3 w-3 mr-1" />
+        {summary.completed}/{summary.total}
+      </Badge>
+      {summary.overdue > 0 && (
+        <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-300">
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          {summary.overdue} atrasada{summary.overdue > 1 ? "s" : ""}
+        </Badge>
+      )}
+      <Badge variant="outline" className={`text-xs ${riskColor}`}>
+        Risco: {summary.riskLevel}
+      </Badge>
+    </div>
+  );
+}
+
 export default function WebinarsAdmin() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingWebinar, setEditingWebinar] = useState<any | null>(null);
   const [form, setForm] = useState<WebinarForm>(emptyForm);
+  const [responsibles, setResponsibles] = useState<ResponsibleForm[]>(emptyResponsibles);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [cardFile, setCardFile] = useState<File | null>(null);
   const [reminderDialogWebinarId, setReminderDialogWebinarId] = useState<number | null>(null);
   const [reminderRecipients, setReminderRecipients] = useState<string[]>(['alunos', 'gerentes', 'mentores']);
+  const [checklistWebinar, setChecklistWebinar] = useState<{ id: number; title: string } | null>(null);
+  const [showResponsiblesSection, setShowResponsiblesSection] = useState(false);
 
   const { data: webinars, isLoading, refetch } = trpc.webinars.list.useQuery(
     { status: statusFilter === "all" ? undefined : statusFilter }
   );
 
   const createMutation = trpc.webinars.create.useMutation({
-    onSuccess: () => {
+    onSuccess: async (data) => {
       toast.success("Webinar criado com sucesso!");
+      // Salvar responsáveis se algum foi preenchido
+      const filledResponsibles = responsibles.filter((r) => r.name.trim() || r.email.trim());
+      if (filledResponsibles.length > 0 && data.id) {
+        try {
+          await upsertResponsiblesMutation.mutateAsync({
+            webinarId: data.id,
+            responsibles: filledResponsibles,
+          });
+        } catch (e) {
+          console.warn("Erro ao salvar responsáveis:", e);
+        }
+      }
       setShowCreateDialog(false);
       setForm(emptyForm);
+      setResponsibles(emptyResponsibles);
       refetch();
     },
     onError: (err) => toast.error(`Erro ao criar: ${err.message}`),
   });
 
   const updateMutation = trpc.webinars.update.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success("Webinar atualizado com sucesso!");
+      // Salvar responsáveis se algum foi preenchido
+      if (editingWebinar) {
+        const filledResponsibles = responsibles.filter((r) => r.name.trim() || r.email.trim());
+        if (filledResponsibles.length > 0) {
+          try {
+            await upsertResponsiblesMutation.mutateAsync({
+              webinarId: editingWebinar.id,
+              responsibles: filledResponsibles,
+            });
+          } catch (e) {
+            console.warn("Erro ao salvar responsáveis:", e);
+          }
+        }
+      }
       setEditingWebinar(null);
       setForm(emptyForm);
+      setResponsibles(emptyResponsibles);
       refetch();
     },
     onError: (err) => toast.error(`Erro ao atualizar: ${err.message}`),
@@ -172,6 +263,10 @@ export default function WebinarsAdmin() {
     onError: (err) => toast.error(`Erro ao enviar lembrete: ${err.message}`),
   });
 
+  const upsertResponsiblesMutation = trpc.webinarTasks.upsertResponsibles.useMutation({
+    onError: (err) => console.warn("Erro ao salvar responsáveis:", err.message),
+  });
+
   const toggleRecipient = (group: string) => {
     setReminderRecipients(prev =>
       prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
@@ -203,10 +298,12 @@ export default function WebinarsAdmin() {
 
   const handleCreate = () => {
     setForm(emptyForm);
+    setResponsibles(emptyResponsibles);
+    setShowResponsiblesSection(false);
     setShowCreateDialog(true);
   };
 
-  const handleEdit = (webinar: any) => {
+  const handleEdit = async (webinar: any) => {
     setForm({
       title: webinar.title || "",
       description: webinar.description || "",
@@ -222,6 +319,8 @@ export default function WebinarsAdmin() {
       targetAudience: (webinar.targetAudience as TargetAudience) || "all",
       status: (webinar.status as WebinarStatus) || "draft",
     });
+    setResponsibles(emptyResponsibles);
+    setShowResponsiblesSection(false);
     setEditingWebinar(webinar);
   };
 
@@ -283,7 +382,7 @@ export default function WebinarsAdmin() {
   };
 
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "\u2014";
+    if (!dateStr) return "—";
     return formatDateTimeBrazil(dateStr);
   };
 
@@ -300,10 +399,61 @@ export default function WebinarsAdmin() {
     };
   }, [webinars]);
 
+  // Seção de responsáveis internos (reutilizada em criar e editar)
+  const responsiblesSection = (
+    <div className="border rounded-lg p-4 space-y-3 mt-2">
+      <div className="flex items-center gap-2">
+        <UserCheck className="h-4 w-4 text-primary" />
+        <Label className="text-sm font-semibold">Responsáveis Internos</Label>
+        <span className="text-xs text-muted-foreground">(opcional — para o checklist de produção)</span>
+      </div>
+      <div className="space-y-3">
+        {RESPONSIBLE_ROLES.map((roleInfo, idx) => {
+          const resp = responsibles.find((r) => r.role === roleInfo.value);
+          const respIdx = responsibles.findIndex((r) => r.role === roleInfo.value);
+          return (
+            <div key={roleInfo.value} className="grid grid-cols-[1fr_1fr] gap-2 items-start">
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground">{roleInfo.label}</Label>
+                <Input
+                  value={resp?.name || ""}
+                  onChange={(e) =>
+                    setResponsibles((prev) =>
+                      prev.map((r, i) => (i === respIdx ? { ...r, name: e.target.value } : r))
+                    )
+                  }
+                  placeholder="Nome"
+                  className="h-8 text-sm mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground invisible">Email</Label>
+                <Input
+                  value={resp?.email || ""}
+                  onChange={(e) =>
+                    setResponsibles((prev) =>
+                      prev.map((r, i) => (i === respIdx ? { ...r, email: e.target.value } : r))
+                    )
+                  }
+                  placeholder="Email"
+                  type="email"
+                  className="h-8 text-sm mt-1"
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Os responsáveis serão vinculados automaticamente às tarefas do checklist de produção.
+      </p>
+    </div>
+  );
+
   // webinarFormFields is a JSX variable (not a component function) to prevent
   // React from remounting the DOM on every re-render, which was causing input focus loss.
   const webinarFormFields = (
-    <div className="grid gap-4 max-h-[60vh] overflow-y-auto pr-2">
+    <div className="grid gap-4 max-h-[55vh] overflow-y-auto pr-2">
       <div className="grid gap-2">
         <Label htmlFor="title">Título *</Label>
         <Input
@@ -323,8 +473,8 @@ export default function WebinarsAdmin() {
             value={form.startDate}
             onChange={(e) => {
               const startDate = e.target.value;
-              setForm((prev) => ({ 
-                ...prev, 
+              setForm((prev) => ({
+                ...prev,
                 startDate,
                 eventDate: startDate || prev.eventDate,
               }));
@@ -466,6 +616,21 @@ export default function WebinarsAdmin() {
             </SelectContentNoPortal>
           </Select>
         </div>
+      </div>
+
+      {/* Toggle responsáveis */}
+      <div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-2 text-xs"
+          onClick={() => setShowResponsiblesSection((prev) => !prev)}
+        >
+          <UserCheck className="h-3.5 w-3.5" />
+          {showResponsiblesSection ? "Ocultar responsáveis internos" : "Definir responsáveis internos"}
+        </Button>
+        {showResponsiblesSection && responsiblesSection}
       </div>
     </div>
   );
@@ -668,10 +833,25 @@ export default function WebinarsAdmin() {
                           </Badge>
                         ) : null}
                       </div>
+
+                      {/* Checklist summary badge */}
+                      <div className="mt-2">
+                        <ChecklistSummaryBadge webinarId={webinar.id} />
+                      </div>
                     </div>
 
                     {/* Actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
+                      {/* Checklist interno */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setChecklistWebinar({ id: webinar.id, title: webinar.title })}
+                        title="Checklist interno de produção"
+                        className="text-primary hover:text-primary/80"
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -901,6 +1081,16 @@ export default function WebinarsAdmin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Checklist Interno Modal */}
+      {checklistWebinar && (
+        <WebinarChecklistModal
+          webinarId={checklistWebinar.id}
+          webinarTitle={checklistWebinar.title}
+          open={!!checklistWebinar}
+          onClose={() => setChecklistWebinar(null)}
+        />
+      )}
     </div>
     </DashboardLayout>
   );

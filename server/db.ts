@@ -13223,3 +13223,266 @@ export async function ensureRelatorioEntrevistaColumns(): Promise<void> {
   }
   console.log("[DB] Colunas do Relat\u00f3rio de Entrevista verificadas/criadas com sucesso.");
 }
+
+
+// ==================== WEBINAR CHECKLIST INTERNO ====================
+
+export type WebinarTaskStatus =
+  | 'pending'
+  | 'in_progress'
+  | 'waiting_delivery'
+  | 'waiting_approval'
+  | 'adjustment_requested'
+  | 'approved'
+  | 'completed'
+  | 'cancelled';
+
+export type WebinarResponsibleRole =
+  | 'organizacao'
+  | 'marketing'
+  | 'administrativo'
+  | 'coordenacao'
+  | 'palestrante'
+  | 'solicitante';
+
+export interface WebinarTask {
+  id: number;
+  webinarId: number;
+  templateId: number | null;
+  title: string;
+  description: string | null;
+  dueDate: string; // ISO date string
+  responsibleRole: WebinarResponsibleRole;
+  responsibleUserId: number | null;
+  responsibleName: string | null;
+  responsibleEmail: string | null;
+  status: WebinarTaskStatus;
+  priority: 'low' | 'normal' | 'high' | 'critical';
+  isCritical: boolean;
+  completedAt: string | null;
+  completedBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WebinarResponsible {
+  id: number;
+  webinarId: number;
+  role: WebinarResponsibleRole;
+  userId: number | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface WebinarTaskSummary {
+  total: number;
+  completed: number;
+  overdue: number;
+  atRisk: number; // vencendo em ≤5 dias e não concluídas
+  riskLevel: 'Baixo' | 'Médio' | 'Alto';
+}
+
+/** Busca todas as tarefas de um webinar */
+export async function getWebinarTasksByWebinar(webinarId: number): Promise<WebinarTask[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows] = await db.execute(sql.raw(`
+    SELECT
+      id, webinarId, templateId, title, description,
+      DATE_FORMAT(dueDate, '%Y-%m-%d') AS dueDate,
+      responsibleRole, responsibleUserId, responsibleName, responsibleEmail,
+      status, priority, isCritical,
+      completedAt, completedBy, createdAt, updatedAt
+    FROM webinar_tasks
+    WHERE webinarId = ${webinarId}
+    ORDER BY dueDate ASC, id ASC
+  `));
+  return (rows as any[]).map(r => ({ ...r, isCritical: !!r.isCritical }));
+}
+
+/** Atualiza o status de uma tarefa */
+export async function updateWebinarTaskStatus(
+  taskId: number,
+  status: WebinarTaskStatus,
+  completedBy?: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const isCompleted = status === 'completed';
+  const completedAtSql = isCompleted
+    ? `completedAt = NOW(), completedBy = ${completedBy ?? 'NULL'},`
+    : `completedAt = NULL, completedBy = NULL,`;
+  await db.execute(sql.raw(`
+    UPDATE webinar_tasks
+    SET ${completedAtSql} status = '${status}', updatedAt = NOW()
+    WHERE id = ${taskId}
+  `));
+}
+
+/** Atualiza responsável (nome + email) de uma tarefa */
+export async function updateWebinarTaskResponsible(
+  taskId: number,
+  name: string,
+  email: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const safeName = name.replace(/'/g, "''");
+  const safeEmail = email.replace(/'/g, "''");
+  await db.execute(sql.raw(`
+    UPDATE webinar_tasks
+    SET responsibleName = '${safeName}', responsibleEmail = '${safeEmail}', updatedAt = NOW()
+    WHERE id = ${taskId}
+  `));
+}
+
+/** Retorna resumo (contagens + nível de risco) para o card do webinar */
+export async function getWebinarTasksSummary(webinarId: number): Promise<WebinarTaskSummary> {
+  const db = await getDb();
+  if (!db) return { total: 0, completed: 0, overdue: 0, atRisk: 0, riskLevel: 'Baixo' };
+
+  const [rows] = await db.execute(sql.raw(`
+    SELECT
+      COUNT(*) AS total,
+      SUM(status = 'completed' OR status = 'cancelled') AS completed,
+      SUM(
+        status NOT IN ('completed','cancelled')
+        AND dueDate < CURDATE()
+      ) AS overdue,
+      SUM(
+        status NOT IN ('completed','cancelled')
+        AND dueDate >= CURDATE()
+        AND DATEDIFF(dueDate, CURDATE()) <= 5
+      ) AS atRisk,
+      SUM(
+        isCritical = 1
+        AND status NOT IN ('completed','cancelled')
+        AND dueDate < CURDATE()
+      ) AS criticalOverdue,
+      SUM(
+        isCritical = 1
+        AND status NOT IN ('completed','cancelled')
+        AND dueDate >= CURDATE()
+        AND DATEDIFF(dueDate, CURDATE()) <= 5
+      ) AS criticalAtRisk
+    FROM webinar_tasks
+    WHERE webinarId = ${webinarId}
+  `));
+
+  const r = (rows as any[])[0] || {};
+  const total = Number(r.total) || 0;
+  const completed = Number(r.completed) || 0;
+  const overdue = Number(r.overdue) || 0;
+  const atRisk = Number(r.atRisk) || 0;
+  const criticalOverdue = Number(r.criticalOverdue) || 0;
+  const criticalAtRisk = Number(r.criticalAtRisk) || 0;
+
+  // Regra de risco:
+  // Alto: qualquer tarefa crítica atrasada
+  // Médio: tarefa crítica vencendo em ≤5 dias OU tarefa não crítica atrasada
+  // Baixo: nenhuma das condições acima
+  let riskLevel: 'Baixo' | 'Médio' | 'Alto' = 'Baixo';
+  if (criticalOverdue > 0) {
+    riskLevel = 'Alto';
+  } else if (criticalAtRisk > 0 || overdue > 0) {
+    riskLevel = 'Médio';
+  }
+
+  return { total, completed, overdue, atRisk, riskLevel };
+}
+
+/** Busca responsáveis de um webinar */
+export async function getWebinarResponsibles(webinarId: number): Promise<WebinarResponsible[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows] = await db.execute(sql.raw(`
+    SELECT id, webinarId, role, userId, name, email, phone
+    FROM webinar_responsibles
+    WHERE webinarId = ${webinarId}
+    ORDER BY role ASC
+  `));
+  return rows as WebinarResponsible[];
+}
+
+/** Salva/atualiza responsáveis de um webinar (upsert por role) */
+export async function upsertWebinarResponsibles(
+  webinarId: number,
+  responsibles: Array<{ role: WebinarResponsibleRole; name: string; email: string; phone?: string }>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  for (const r of responsibles) {
+    const safeName = (r.name || '').replace(/'/g, "''");
+    const safeEmail = (r.email || '').replace(/'/g, "''");
+    const safePhone = (r.phone || '').replace(/'/g, "''");
+    await db.execute(sql.raw(`
+      INSERT INTO webinar_responsibles (webinarId, role, name, email, phone)
+      VALUES (${webinarId}, '${r.role}', '${safeName}', '${safeEmail}', '${safePhone}')
+      ON DUPLICATE KEY UPDATE
+        name = '${safeName}',
+        email = '${safeEmail}',
+        phone = '${safePhone}',
+        updatedAt = NOW()
+    `));
+  }
+}
+
+/** Gera as tarefas internas de produção a partir dos templates para um webinar */
+export async function generateWebinarInternalTasks(
+  webinarId: number,
+  eventDate: Date,
+  theme?: string | null
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  // Buscar templates ativos
+  const [templates] = await db.execute(sql.raw(`
+    SELECT id, title, description, daysOffset, defaultRole, isCritical, sortOrder
+    FROM webinar_task_templates
+    WHERE isActive = 1
+    ORDER BY sortOrder ASC
+  `));
+
+  const tplList = templates as any[];
+  if (!tplList.length) return;
+
+  // Verificar se o tema já está definido (para marcar "Definir tema" como concluída)
+  const themeIsDefined = theme && theme.trim() !== '' && theme.trim().toLowerCase() !== 'a definir';
+
+  for (const tpl of tplList) {
+    const dueDate = new Date(eventDate);
+    dueDate.setDate(dueDate.getDate() + Number(tpl.daysOffset));
+    const dueDateStr = dueDate.toISOString().slice(0, 10);
+
+    // Buscar responsável já cadastrado para este role neste webinar
+    const [respRows] = await db.execute(sql.raw(`
+      SELECT name, email FROM webinar_responsibles
+      WHERE webinarId = ${webinarId} AND role = '${tpl.defaultRole}'
+      LIMIT 1
+    `));
+    const resp = (respRows as any[])[0];
+    const respName = resp ? `'${(resp.name || '').replace(/'/g, "''")}'` : 'NULL';
+    const respEmail = resp ? `'${(resp.email || '').replace(/'/g, "''")}'` : 'NULL';
+
+    // Verificar se é a tarefa "Definir tema" para marcar como concluída se tema já está definido
+    const isDefineThemeTask = tpl.title.toLowerCase().includes('definir tema');
+    const initialStatus = (isDefineThemeTask && themeIsDefined) ? 'completed' : 'pending';
+    const completedAtSql = (isDefineThemeTask && themeIsDefined) ? 'NOW()' : 'NULL';
+
+    const safeTitle = tpl.title.replace(/'/g, "''");
+    const safeDesc = (tpl.description || '').replace(/'/g, "''");
+
+    await db.execute(sql.raw(`
+      INSERT INTO webinar_tasks
+        (webinarId, templateId, title, description, dueDate,
+         responsibleRole, responsibleName, responsibleEmail,
+         status, priority, isCritical, completedAt)
+      VALUES
+        (${webinarId}, ${tpl.id}, '${safeTitle}', '${safeDesc}', '${dueDateStr}',
+         '${tpl.defaultRole}', ${respName}, ${respEmail},
+         '${initialStatus}', 'normal', ${tpl.isCritical ? 1 : 0}, ${completedAtSql})
+    `));
+  }
+}

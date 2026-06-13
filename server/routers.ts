@@ -37,7 +37,7 @@ import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
 import { gerarEEnviarRelatorioMentorias, calcularPeriodoPadrao } from "./cronRelatorioMentorias";
-import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, buildCongelamentoTurmaEmail, buildNovoAvisoMuralEmail, sendEmail } from "./emailService";
+import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, buildCongelamentoTurmaEmail, buildNovoAvisoMuralEmail, buildLembreteInternoWebinarEmail, sendEmail } from "./emailService";
 import { cacheOrFetch, cacheInvalidate } from './dataCache';
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 import { DISC_PERFIS } from "../shared/discData";
@@ -8791,6 +8791,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (input.status === 'published') {
           await db.ensureEventForWebinar(id);
         }
+        // Gerar tarefas internas do checklist de produção
+        try {
+          await db.generateWebinarInternalTasks(id, eventDate, input.theme || null);
+        } catch (err: any) {
+          console.warn('[WebinarTasks] Erro ao gerar tarefas internas:', err?.message);
+          // Não bloquear a criação do webinar por falha no checklist
+        }
         return { id, success: true };
       }),
 
@@ -9042,6 +9049,135 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       .query(async ({ input }) => {
         return await db.listPastWebinars(input?.limit || 10);
       }),
+  }),
+
+  // ==================== WEBINAR TASKS (CHECKLIST INTERNO) ====================
+  webinarTasks: router({
+
+    /** Lista todas as tarefas de um webinar */
+    listByWebinar: adminOrAdmin2Procedure
+      .input(z.object({ webinarId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getWebinarTasksByWebinar(input.webinarId);
+      }),
+
+    /** Retorna resumo (total/concluídas/atrasadas/risco) para o card */
+    getSummaryByWebinar: adminOrAdmin2Procedure
+      .input(z.object({ webinarId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getWebinarTasksSummary(input.webinarId);
+      }),
+
+    /** Altera status de uma tarefa */
+    updateStatus: adminOrAdmin2Procedure
+      .input(z.object({
+        taskId: z.number(),
+        status: z.enum(['pending','in_progress','waiting_delivery','waiting_approval','adjustment_requested','approved','completed','cancelled']),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updateWebinarTaskStatus(input.taskId, input.status, ctx.user.id);
+        return { success: true };
+      }),
+
+    /** Edita responsável (nome + email) de uma tarefa */
+    updateResponsible: adminOrAdmin2Procedure
+      .input(z.object({
+        taskId: z.number(),
+        name: z.string(),
+        email: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateWebinarTaskResponsible(input.taskId, input.name, input.email);
+        return { success: true };
+      }),
+
+    /** Busca responsáveis internos de um webinar */
+    getResponsibles: adminOrAdmin2Procedure
+      .input(z.object({ webinarId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getWebinarResponsibles(input.webinarId);
+      }),
+
+    /** Salva/atualiza responsáveis internos de um webinar */
+    upsertResponsibles: adminOrAdmin2Procedure
+      .input(z.object({
+        webinarId: z.number(),
+        responsibles: z.array(z.object({
+          role: z.enum(['organizacao','marketing','administrativo','coordenacao','palestrante','solicitante']),
+          name: z.string(),
+          email: z.string(),
+          phone: z.string().optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        await db.upsertWebinarResponsibles(input.webinarId, input.responsibles);
+        // Atualizar responsáveis nas tarefas existentes deste webinar para os roles informados
+        for (const resp of input.responsibles) {
+          const tasks = await db.getWebinarTasksByWebinar(input.webinarId);
+          for (const task of tasks) {
+            if (task.responsibleRole === resp.role && !task.responsibleName) {
+              await db.updateWebinarTaskResponsible(task.id, resp.name, resp.email);
+            }
+          }
+        }
+        return { success: true };
+      }),
+
+    /** Envia e-mail de lembrete interno para o responsável de uma tarefa */
+    sendInternalReminder: adminOrAdmin2Procedure
+      .input(z.object({
+        taskId: z.number(),
+        webinarId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const tasks = await db.getWebinarTasksByWebinar(input.webinarId);
+        const task = tasks.find(t => t.id === input.taskId);
+        if (!task) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tarefa não encontrada' });
+        if (!task.responsibleEmail) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Responsável sem e-mail cadastrado' });
+
+        const webinar = await db.getWebinarById(input.webinarId);
+        if (!webinar) throw new TRPCError({ code: 'NOT_FOUND', message: 'Webinar não encontrado' });
+
+        const summary = await db.getWebinarTasksSummary(input.webinarId);
+
+        const eventDate = webinar.eventDate ? new Date(webinar.eventDate) : null;
+        const webinarDateStr = eventDate
+          ? eventDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : 'Data não definida';
+
+        const dueDate = task.dueDate ? new Date(task.dueDate + 'T00:00:00') : null;
+        const dueDateStr = dueDate
+          ? dueDate.toLocaleDateString('pt-BR')
+          : 'Sem prazo';
+
+        const adminUrl = 'https://ecolider.ecodobem.com/admin/webinars';
+
+        const emailData = buildLembreteInternoWebinarEmail({
+          responsibleName: task.responsibleName || 'Responsável',
+          taskTitle: task.title,
+          taskDescription: task.description,
+          dueDate: dueDateStr,
+          webinarTitle: webinar.title,
+          webinarDate: webinarDateStr,
+          riskLevel: summary.riskLevel,
+          adminUrl,
+        });
+
+        const result = await sendEmail({
+          to: task.responsibleEmail,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text,
+        });
+
+        return {
+          success: result.success,
+          emailSent: result.success,
+          to: task.responsibleEmail,
+          error: result.error,
+        };
+      }),
+
   }),
 
   // ==================== ANNOUNCEMENTS ====================
