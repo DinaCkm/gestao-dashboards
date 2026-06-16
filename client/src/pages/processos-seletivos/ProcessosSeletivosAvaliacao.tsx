@@ -346,6 +346,14 @@ function AvaliacaoContent() {
     const semAgendamento = todos.filter((c) =>
       ["nao_agendada", "aguardando_agenda"].includes(c.statusEntrevista)
     ).length;
+    const naoAcessou = todos.filter((c) =>
+      ["nao_agendada", "aguardando_agenda"].includes(c.statusEntrevista) &&
+      (c.statusCadastro === "importado" || !c.userId || c.userId === 0)
+    ).length;
+    const acessouSemAgenda = todos.filter((c) =>
+      ["nao_agendada", "aguardando_agenda"].includes(c.statusEntrevista) &&
+      c.statusCadastro === "ativo" && c.userId && c.userId !== 0
+    ).length;
     const slotsAbertos = (slots as Slot[]).filter(
       (s) => !s.candidatoId && s.status !== "bloqueado" && s.status !== "cancelado"
     ).length;
@@ -378,7 +386,7 @@ function AvaliacaoContent() {
       });
     }
 
-    return { total, agendados, semAgendamento, slotsAbertos, habilitados, inabilitados, percAprovacao, entrevistados, porRegiao };
+    return { total, agendados, semAgendamento, naoAcessou, acessouSemAgenda, slotsAbertos, habilitados, inabilitados, percAprovacao, entrevistados, porRegiao };
   }, [candidatos, slots, regioes]);
 
   // ── Processo selecionado ──────────────────────────────────────────────────────
@@ -641,8 +649,8 @@ function AvaliacaoContent() {
         <>
           {/* ── Dashboard de Métricas ── */}
           <div className="space-y-4">
-            {/* Linha 1: 7 cards principais */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+            {/* Linha 1: 8 cards principais */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
               {/* Convocados */}
               <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-slate-50 to-slate-100">
                 <CardContent className="p-4 flex items-center gap-3">
@@ -667,15 +675,29 @@ function AvaliacaoContent() {
                   </div>
                 </CardContent>
               </Card>
-              {/* Sem agendamento */}
+              {/* Não acessou */}
+              <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-orange-50 to-orange-100">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-200 text-orange-600 flex-shrink-0">
+                    <UserX className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-orange-600 leading-tight">Não acessou</p>
+                    <strong className="text-2xl text-orange-800">{metricas.naoAcessou}</strong>
+                    <p className="text-[10px] text-orange-400">sem 1º acesso</p>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Acessou sem agenda */}
               <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-amber-50 to-amber-100">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-200 text-amber-600 flex-shrink-0">
                     <CalendarX2 className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-medium text-amber-600 leading-tight">Sem agendamento</p>
-                    <strong className="text-2xl text-amber-800">{metricas.semAgendamento}</strong>
+                    <p className="text-[11px] font-medium text-amber-600 leading-tight">Acessou, sem agenda</p>
+                    <strong className="text-2xl text-amber-800">{metricas.acessouSemAgenda}</strong>
+                    <p className="text-[10px] text-amber-400">aguardando agendamento</p>
                   </div>
                 </CardContent>
               </Card>
