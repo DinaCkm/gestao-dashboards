@@ -304,10 +304,11 @@ function AvaliacaoContent() {
       const matchTeste = filtroTeste === "todos" || c.statusTeste === filtroTeste;
       const matchEntrevista = filtroEntrevista === "todos" || c.statusEntrevista === filtroEntrevista;
       const matchResultado = filtroResultado === "todos" || c.statusResultado === filtroResultado;
+      const naoAcessou = !c.userId || c.userId === 0;
       const matchAcesso =
         filtroAcesso === "todos" ||
-        (filtroAcesso === "nao_acessou" ? !c.userId : false) ||
-        (filtroAcesso === "acessou_sem_teste" ? !!c.userId && c.statusTeste !== "concluido" : false);
+        (filtroAcesso === "nao_acessou" ? naoAcessou : false) ||
+        (filtroAcesso === "acessou_sem_teste" ? !naoAcessou && c.statusTeste !== "concluido" : false);
       const matchCadastro =
         filtroCadastro === "todos" ||
         (filtroCadastro === "inscrito" ? c.statusCadastro === "ativo" : c.statusCadastro !== "ativo");
@@ -869,10 +870,10 @@ function AvaliacaoContent() {
                           >
                             <div className="font-medium text-sm text-[#0f2b3c]">{c.nome}</div>
                             <div className="text-xs text-muted-foreground">{c.email}</div>
-                            {!c.userId && (
+                            {(!c.userId || c.userId === 0) && (
                               <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500">Não acessou</span>
                             )}
-                            {!!c.userId && c.statusTeste !== "concluido" && (
+                            {(!!c.userId && c.userId !== 0) && c.statusTeste !== "concluido" && (
                               <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Pendente</span>
                             )}
                           </button>
