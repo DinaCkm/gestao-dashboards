@@ -18,7 +18,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { LOGO_ECO_AO_BEM_BASE64 } from "@/lib/logoBase64";
 import {
+  CalendarCheck2,
   CalendarDays,
+  CalendarX2,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -28,10 +30,16 @@ import {
   Filter,
   History,
   Mail,
+  MapPin,
   Pencil,
   Search,
+  ThumbsDown,
+  ThumbsUp,
+  Trophy,
   Upload,
   User,
+  UserCheck,
+  UserX,
   Users,
   XCircle,
 } from "lucide-react";
@@ -327,6 +335,52 @@ function AvaliacaoContent() {
     );
   }, [slots, modalReagendar]);
 
+  // ── Métricas do dashboard ──────────────────────────────────────────────────────
+
+  const metricas = useMemo(() => {
+    const todos = candidatos as Candidato[];
+    const total = todos.length;
+    const agendados = todos.filter((c) =>
+      ["agendada", "realizada", "reagendada"].includes(c.statusEntrevista)
+    ).length;
+    const semAgendamento = todos.filter((c) =>
+      ["nao_agendada", "aguardando_agenda"].includes(c.statusEntrevista)
+    ).length;
+    const slotsAbertos = (slots as Slot[]).filter(
+      (s) => !s.candidatoId && s.status !== "bloqueado" && s.status !== "cancelado"
+    ).length;
+    const habilitados = todos.filter((c) => c.statusResultado === "aprovado").length;
+    const inabilitados = todos.filter((c) => c.statusResultado === "reprovado").length;
+    const entrevistados = todos.filter((c) =>
+      ["realizada"].includes(c.statusEntrevista)
+    ).length;
+    const percAprovacao = entrevistados > 0 ? Math.round((habilitados / entrevistados) * 100) : 0;
+
+    // Por região
+    const regioesList = regioes as Regiao[];
+    const porRegiao = regioesList.map((r) => {
+      const cands = todos.filter((c) => c.regiaoId === r.id);
+      return {
+        nome: r.nome,
+        total: cands.length,
+        habilitados: cands.filter((c) => c.statusResultado === "aprovado").length,
+        inabilitados: cands.filter((c) => c.statusResultado === "reprovado").length,
+      };
+    });
+    // Sem região
+    const semRegiao = todos.filter((c) => !c.regiaoId);
+    if (semRegiao.length > 0) {
+      porRegiao.unshift({
+        nome: "Sem região",
+        total: semRegiao.length,
+        habilitados: semRegiao.filter((c) => c.statusResultado === "aprovado").length,
+        inabilitados: semRegiao.filter((c) => c.statusResultado === "reprovado").length,
+      });
+    }
+
+    return { total, agendados, semAgendamento, slotsAbertos, habilitados, inabilitados, percAprovacao, entrevistados, porRegiao };
+  }, [candidatos, slots, regioes]);
+
   // ── Processo selecionado ──────────────────────────────────────────────────────
 
   const processoSelecionado = processos.find((p: any) => p.id === processoId);
@@ -585,6 +639,160 @@ function AvaliacaoContent() {
 
       {processoId && (
         <>
+          {/* ── Dashboard de Métricas ── */}
+          <div className="space-y-4">
+            {/* Linha 1: 7 cards principais */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+              {/* Convocados */}
+              <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-slate-50 to-slate-100">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-200 text-slate-600 flex-shrink-0">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-slate-500 leading-tight">Convocados</p>
+                    <strong className="text-2xl text-slate-800">{metricas.total}</strong>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Agendados */}
+              <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-200 text-blue-600 flex-shrink-0">
+                    <CalendarCheck2 className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-blue-500 leading-tight">Agendados</p>
+                    <strong className="text-2xl text-blue-800">{metricas.agendados}</strong>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Sem agendamento */}
+              <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-amber-50 to-amber-100">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-200 text-amber-600 flex-shrink-0">
+                    <CalendarX2 className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-amber-600 leading-tight">Sem agendamento</p>
+                    <strong className="text-2xl text-amber-800">{metricas.semAgendamento}</strong>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Slots abertos */}
+              <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-cyan-50 to-cyan-100">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-200 text-cyan-600 flex-shrink-0">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-cyan-600 leading-tight">Slots abertos</p>
+                    <strong className="text-2xl text-cyan-800">{metricas.slotsAbertos}</strong>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Habilitados */}
+              <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-emerald-50 to-emerald-100">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-200 text-emerald-600 flex-shrink-0">
+                    <UserCheck className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-emerald-600 leading-tight">Habilitados</p>
+                    <strong className="text-2xl text-emerald-800">{metricas.habilitados}</strong>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Inabilitados */}
+              <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-red-50 to-red-100">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-200 text-red-500 flex-shrink-0">
+                    <UserX className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-red-500 leading-tight">Inabilitados</p>
+                    <strong className="text-2xl text-red-800">{metricas.inabilitados}</strong>
+                  </div>
+                </CardContent>
+              </Card>
+              {/* % Aprovação */}
+              <Card className="rounded-xl border-0 shadow-sm bg-gradient-to-br from-violet-50 to-violet-100">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-200 text-violet-600 flex-shrink-0">
+                    <Trophy className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-violet-600 leading-tight">% Aprovação</p>
+                    <strong className="text-2xl text-violet-800">{metricas.percAprovacao}%</strong>
+                    <p className="text-[10px] text-violet-400">{metricas.habilitados}/{metricas.entrevistados} entrev.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Linha 2: Tabela por região */}
+            {metricas.porRegiao.length > 0 && (
+              <Card className="rounded-xl border-0 shadow-sm">
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-slate-500" />
+                    Candidatos por Região
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100">
+                          <th className="text-left py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Região</th>
+                          <th className="text-center py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</th>
+                          <th className="text-center py-2 px-3 text-xs font-semibold text-emerald-600 uppercase tracking-wide">Habilitados</th>
+                          <th className="text-center py-2 px-3 text-xs font-semibold text-red-500 uppercase tracking-wide">Inabilitados</th>
+                          <th className="text-left py-2 pl-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Distribuição</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metricas.porRegiao.map((r) => {
+                          const pctHab = r.total > 0 ? Math.round((r.habilitados / r.total) * 100) : 0;
+                          const pctInab = r.total > 0 ? Math.round((r.inabilitados / r.total) * 100) : 0;
+                          return (
+                            <tr key={r.nome} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                              <td className="py-2 pr-4 font-medium text-slate-700">{r.nome}</td>
+                              <td className="py-2 px-3 text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-6 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">{r.total}</span>
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                {r.habilitados > 0 ? (
+                                  <span className="inline-flex items-center justify-center w-8 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">{r.habilitados}</span>
+                                ) : <span className="text-slate-300 text-xs">—</span>}
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                {r.inabilitados > 0 ? (
+                                  <span className="inline-flex items-center justify-center w-8 h-6 rounded-full bg-red-100 text-red-600 text-xs font-bold">{r.inabilitados}</span>
+                                ) : <span className="text-slate-300 text-xs">—</span>}
+                              </td>
+                              <td className="py-2 pl-3">
+                                <div className="flex items-center gap-1 min-w-[120px]">
+                                  <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                    <div className="flex h-full">
+                                      {pctHab > 0 && <div className="h-full bg-emerald-400 rounded-l-full" style={{ width: `${pctHab}%` }} />}
+                                      {pctInab > 0 && <div className="h-full bg-red-400" style={{ width: `${pctInab}%` }} />}
+                                    </div>
+                                  </div>
+                                  <span className="text-[10px] text-slate-400 whitespace-nowrap">{pctHab}% hab.</span>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
           {/* ── Mapa de Entrevistas ── */}
           <Collapsible open={mapaAberto} onOpenChange={setMapaAberto}>
           <Card>
