@@ -874,7 +874,7 @@ function AvaliacaoContent() {
                               <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500">Não acessou</span>
                             )}
                             {(!!c.userId && c.userId !== 0) && c.statusTeste !== "concluido" && (
-                              <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Pendente</span>
+                              <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Aguardando teste</span>
                             )}
                           </button>
                         </TableCell>
