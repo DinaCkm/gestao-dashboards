@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq, and, or, asc, desc, inArray } from "drizzle-orm";
+import { eq, and, or, asc, desc, inArray, sql } from "drizzle-orm";
 import {
   competenciasModulos,
   competencias,
@@ -842,25 +842,31 @@ export const appRouter = router({
               .where(eq(usersTable.email, input.email.trim().toLowerCase()))
               .limit(1);
             const correctUserId = userRow?.id ?? null;
+            const cpfLimpo = input.cpf ? input.cpf.replace(/[.\-\s]/g, '').trim() : null;
+            // Buscar registro existente pelo e-mail OU pelo CPF (importados têm e-mail fictício)
             const [existingCand] = await database
-              .select({ id: processoCandidatos.id })
+              .select({ id: processoCandidatos.id, statusCadastro: processoCandidatos.statusCadastro })
               .from(processoCandidatos)
               .where(and(
                 eq(processoCandidatos.processoId, input.processoSeletivoId),
-                eq(processoCandidatos.email, input.email.trim().toLowerCase())
+                or(
+                  eq(processoCandidatos.email, input.email.trim().toLowerCase()),
+                  cpfLimpo ? eq(processoCandidatos.cpf, cpfLimpo) : sql`FALSE`
+                )
               ))
               .limit(1);
             if (existingCand) {
+              // Atualizar o registro existente (importado ou outro) para ativo
               await database
                 .update(processoCandidatos)
-                .set({ userId: correctUserId, statusCadastro: 'ativo' })
+                .set({ userId: correctUserId, statusCadastro: 'ativo', email: input.email.trim().toLowerCase(), nome: input.name, cpf: cpfLimpo ?? undefined })
                 .where(eq(processoCandidatos.id, existingCand.id));
             } else {
               await database.insert(processoCandidatos).values({
                 processoId: input.processoSeletivoId,
                 nome: input.name,
                 email: input.email.trim().toLowerCase(),
-                cpf: input.cpf,
+                cpf: cpfLimpo,
                 userId: correctUserId,
                 statusCadastro: 'ativo',
               });
