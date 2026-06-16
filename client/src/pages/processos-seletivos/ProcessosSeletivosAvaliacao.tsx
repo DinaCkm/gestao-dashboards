@@ -86,7 +86,7 @@ type Slot = {
   linkEntrevista: string | null;
 };
 
-type Regiao = { id: number; nome: string };
+type Regiao = { id: number; nome: string; vagasPrevistas: number };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -153,6 +153,10 @@ function AvaliacaoContent() {
   const [modalPerfil, setModalPerfil] = useState<Candidato | null>(null);
   const [modalReagendar, setModalReagendar] = useState<Entrevista | null>(null);
   const [mapaAberto, setMapaAberto] = useState(false);
+  const [dashboardAberto, setDashboardAberto] = useState(true);
+  const [filtrosAberto, setFiltrosAberto] = useState(true);
+  const [candidatosAberto, setCandidatosAberto] = useState(true);
+  const [aprovadosAberto, setAprovadosAberto] = useState(false);
 
   // Formulário de decisão
   const [decisaoForm, setDecisaoForm] = useState<{ decisao: "aprovado" | "reprovado" | "em_analise" | ""; justificativa: string; participantesBanca: string }>({
@@ -359,10 +363,8 @@ function AvaliacaoContent() {
     ).length;
     const habilitados = todos.filter((c) => c.statusResultado === "aprovado").length;
     const inabilitados = todos.filter((c) => c.statusResultado === "reprovado").length;
-    const entrevistados = todos.filter((c) =>
-      ["realizada"].includes(c.statusEntrevista)
-    ).length;
-    const percAprovacao = entrevistados > 0 ? Math.round((habilitados / entrevistados) * 100) : 0;
+    const comResultado = habilitados + inabilitados;
+    const percAprovacao = comResultado > 0 ? Math.round((habilitados / comResultado) * 100) : 0;
 
     // Por região
     const regioesList = regioes as Regiao[];
@@ -371,6 +373,7 @@ function AvaliacaoContent() {
       return {
         nome: r.nome,
         total: cands.length,
+        vagasPrevistas: r.vagasPrevistas ?? 0,
         habilitados: cands.filter((c) => c.statusResultado === "aprovado").length,
         inabilitados: cands.filter((c) => c.statusResultado === "reprovado").length,
       };
@@ -381,12 +384,13 @@ function AvaliacaoContent() {
       porRegiao.unshift({
         nome: "Sem região",
         total: semRegiao.length,
+        vagasPrevistas: 0,
         habilitados: semRegiao.filter((c) => c.statusResultado === "aprovado").length,
         inabilitados: semRegiao.filter((c) => c.statusResultado === "reprovado").length,
       });
     }
 
-    return { total, agendados, semAgendamento, naoAcessou, acessouSemAgenda, slotsAbertos, habilitados, inabilitados, percAprovacao, entrevistados, porRegiao };
+    return { total, agendados, semAgendamento, naoAcessou, acessouSemAgenda, slotsAbertos, habilitados, inabilitados, percAprovacao, comResultado, porRegiao };
   }, [candidatos, slots, regioes]);
 
   // ── Processo selecionado ──────────────────────────────────────────────────────
@@ -648,6 +652,21 @@ function AvaliacaoContent() {
       {processoId && (
         <>
           {/* ── Dashboard de Métricas ── */}
+          <Collapsible open={dashboardAberto} onOpenChange={setDashboardAberto}>
+          <Card>
+            <CardHeader className="pb-3">
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between hover:opacity-80 transition-opacity">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Trophy className="h-4 w-4" />
+                    Dashboard de Métricas
+                  </CardTitle>
+                  {dashboardAberto ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+              </CollapsibleTrigger>
+            </CardHeader>
+            <CollapsibleContent>
+            <CardContent className="pt-0">
           <div className="space-y-4">
             {/* Linha 1: 8 cards principais */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
@@ -746,7 +765,7 @@ function AvaliacaoContent() {
                   <div className="min-w-0">
                     <p className="text-[11px] font-medium text-violet-600 leading-tight">% Aprovação</p>
                     <strong className="text-2xl text-violet-800">{metricas.percAprovacao}%</strong>
-                    <p className="text-[10px] text-violet-400">{metricas.habilitados}/{metricas.entrevistados} entrev.</p>
+                    <p className="text-[10px] text-violet-400">{metricas.habilitados}/{metricas.comResultado} c/ resultado</p>
                   </div>
                 </CardContent>
               </Card>
@@ -768,6 +787,7 @@ function AvaliacaoContent() {
                         <tr className="border-b border-slate-100">
                           <th className="text-left py-2 pr-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Região</th>
                           <th className="text-center py-2 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</th>
+                          <th className="text-center py-2 px-3 text-xs font-semibold text-blue-500 uppercase tracking-wide">Vagas</th>
                           <th className="text-center py-2 px-3 text-xs font-semibold text-emerald-600 uppercase tracking-wide">Habilitados</th>
                           <th className="text-center py-2 px-3 text-xs font-semibold text-red-500 uppercase tracking-wide">Inabilitados</th>
                           <th className="text-left py-2 pl-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Distribuição</th>
@@ -782,6 +802,11 @@ function AvaliacaoContent() {
                               <td className="py-2 pr-4 font-medium text-slate-700">{r.nome}</td>
                               <td className="py-2 px-3 text-center">
                                 <span className="inline-flex items-center justify-center w-8 h-6 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">{r.total}</span>
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                {r.vagasPrevistas > 0 ? (
+                                  <span className="inline-flex items-center justify-center w-8 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">{r.vagasPrevistas}</span>
+                                ) : <span className="text-slate-300 text-xs">—</span>}
                               </td>
                               <td className="py-2 px-3 text-center">
                                 {r.habilitados > 0 ? (
@@ -814,6 +839,10 @@ function AvaliacaoContent() {
               </Card>
             )}
           </div>
+          </CardContent>
+          </CollapsibleContent>
+          </Card>
+          </Collapsible>
 
           {/* ── Mapa de Entrevistas ── */}
           <Collapsible open={mapaAberto} onOpenChange={setMapaAberto}>
@@ -905,13 +934,20 @@ function AvaliacaoContent() {
           </Collapsible>
 
           {/* ── Filtros da Lista de Candidatos ── */}
+          <Collapsible open={filtrosAberto} onOpenChange={setFiltrosAberto}>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                Candidatos e Status
-              </CardTitle>
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between hover:opacity-80 transition-opacity">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filtros
+                  </CardTitle>
+                  {filtrosAberto ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+              </CollapsibleTrigger>
             </CardHeader>
+            <CollapsibleContent>
             <CardContent className="space-y-4">
 
               {/* Abas de região — igual ao painel de processos */}
@@ -1060,16 +1096,25 @@ function AvaliacaoContent() {
               )}
 
             </CardContent>
+            </CollapsibleContent>
           </Card>
+          </Collapsible>
 
           {/* ── Lista de Candidatos ── */}
+          <Collapsible open={candidatosAberto} onOpenChange={setCandidatosAberto}>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Candidatos ({candidatosFiltrados.length})
-              </CardTitle>
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between hover:opacity-80 transition-opacity">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Candidatos ({candidatosFiltrados.length})
+                  </CardTitle>
+                  {candidatosAberto ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                </button>
+              </CollapsibleTrigger>
             </CardHeader>
+            <CollapsibleContent>
             <CardContent className="p-0">
               {loadingCandidatos ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">Carregando candidatos...</p>
@@ -1276,8 +1321,12 @@ function AvaliacaoContent() {
                 </Table>
               )}
             </CardContent>
+            </CollapsibleContent>
           </Card>
+          </Collapsible>
+
           {/* ── Aprovados por Região ── */}
+          <Collapsible open={aprovadosAberto} onOpenChange={setAprovadosAberto}>
           {(() => {
             const regioesList = regioes as Regiao[];
             const candidatosList = candidatos as Candidato[];
@@ -1371,6 +1420,7 @@ function AvaliacaoContent() {
               </Card>
             );
           })()}
+          </Collapsible>
         </>
       )}
 
