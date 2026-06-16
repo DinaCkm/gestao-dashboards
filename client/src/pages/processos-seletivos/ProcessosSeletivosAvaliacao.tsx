@@ -134,6 +134,7 @@ function AvaliacaoContent() {
   const [filtroEntrevista, setFiltroEntrevista] = useState("todos");
   const [filtroResultado, setFiltroResultado] = useState("todos");
   const [filtroAcesso, setFiltroAcesso] = useState("todos");
+  const [filtroCadastro, setFiltroCadastro] = useState("todos");
 
   // Modais
   const [modalDecisao, setModalDecisao] = useState<{ candidato: Candidato; modo: "nova" | "alterar" } | null>(null);
@@ -307,9 +308,12 @@ function AvaliacaoContent() {
         filtroAcesso === "todos" ||
         (filtroAcesso === "nao_acessou" ? !c.userId : false) ||
         (filtroAcesso === "acessou_sem_teste" ? !!c.userId && c.statusTeste !== "concluido" : false);
-      return matchBusca && matchRegiao && matchTeste && matchEntrevista && matchResultado && matchAcesso;
+      const matchCadastro =
+        filtroCadastro === "todos" ||
+        (filtroCadastro === "inscrito" ? c.statusCadastro === "ativo" : c.statusCadastro !== "ativo");
+      return matchBusca && matchRegiao && matchCadastro && matchTeste && matchEntrevista && matchResultado && matchAcesso;
     });
-  }, [candidatos, filtroBusca, filtroRegiao, filtroTeste, filtroEntrevista, filtroResultado, filtroAcesso]);
+  }, [candidatos, filtroBusca, filtroRegiao, filtroCadastro, filtroTeste, filtroEntrevista, filtroResultado, filtroAcesso]);
 
   // ── Slots livres para reagendamento ──────────────────────────────────────────
 
@@ -553,7 +557,8 @@ function AvaliacaoContent() {
               setFiltroTeste("todos");
               setFiltroEntrevista("todos");
               setFiltroResultado("todos");
-            setFiltroAcesso("todos");
+              setFiltroAcesso("todos");
+              setFiltroCadastro("todos");
             }}
           >
             <SelectTrigger className="w-full max-w-md">
@@ -673,10 +678,55 @@ function AvaliacaoContent() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                Filtros
+                Candidatos e Status
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+
+              {/* Abas de região — igual ao painel de processos */}
+              {(regioes as Regiao[]).length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm text-muted-foreground">Filtrar por região:</span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      onClick={() => setFiltroRegiao("todas")}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        filtroRegiao === "todas"
+                          ? "bg-primary text-white"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      Todas ({(candidatos as Candidato[]).length})
+                    </button>
+                    <button
+                      onClick={() => setFiltroRegiao("sem_regiao")}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        filtroRegiao === "sem_regiao"
+                          ? "bg-primary text-white"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      Sem região ({(candidatos as Candidato[]).filter((c) => !c.regiaoId).length})
+                    </button>
+                    {(regioes as Regiao[]).map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => setFiltroRegiao(String(r.id))}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          filtroRegiao === String(r.id)
+                            ? "bg-primary text-white"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {r.nome} ({(candidatos as Candidato[]).filter((c) => c.regiaoId === r.id).length})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Linha de filtros de status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                 {/* Busca por nome/email */}
                 <div className="relative lg:col-span-2">
@@ -689,19 +739,15 @@ function AvaliacaoContent() {
                   />
                 </div>
 
-                {/* Região */}
-                <Select value={filtroRegiao} onValueChange={setFiltroRegiao}>
+                {/* Cadastro */}
+                <Select value={filtroCadastro} onValueChange={setFiltroCadastro}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Região" />
+                    <SelectValue placeholder="Cadastro" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todas">Todas as regiões</SelectItem>
-                    <SelectItem value="sem_regiao">Sem região</SelectItem>
-                    {(regioes as Regiao[]).map((r) => (
-                      <SelectItem key={r.id} value={String(r.id)}>
-                        {r.nome}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="todos">Todos os cadastros</SelectItem>
+                    <SelectItem value="inscrito">Inscrito</SelectItem>
+                    <SelectItem value="nao_inscrito">Não inscrito</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -758,6 +804,30 @@ function AvaliacaoContent() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Indicador de filtros ativos */}
+              {(filtroBusca || filtroRegiao !== "todas" || filtroCadastro !== "todos" || filtroTeste !== "todos" || filtroEntrevista !== "todos" || filtroResultado !== "todos" || filtroAcesso !== "todos") && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Exibindo {candidatosFiltrados.length} de {(candidatos as Candidato[]).length} candidatos
+                  </span>
+                  <button
+                    onClick={() => {
+                      setFiltroBusca("");
+                      setFiltroRegiao("todas");
+                      setFiltroCadastro("todos");
+                      setFiltroTeste("todos");
+                      setFiltroEntrevista("todos");
+                      setFiltroResultado("todos");
+                      setFiltroAcesso("todos");
+                    }}
+                    className="text-xs text-primary underline hover:no-underline"
+                  >
+                    Limpar filtros
+                  </button>
+                </div>
+              )}
+
             </CardContent>
           </Card>
 
@@ -781,6 +851,7 @@ function AvaliacaoContent() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Candidato</TableHead>
+                      <TableHead>Cadastro</TableHead>
                       <TableHead>Região</TableHead>
                       <TableHead>Teste</TableHead>
                       <TableHead>Entrevista</TableHead>
@@ -805,6 +876,17 @@ function AvaliacaoContent() {
                               <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Pendente</span>
                             )}
                           </button>
+                        </TableCell>
+                        <TableCell>
+                          {c.statusCadastro === 'ativo' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200">
+                              Inscrito
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200">
+                              Não inscrito
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm">
                           <Select
