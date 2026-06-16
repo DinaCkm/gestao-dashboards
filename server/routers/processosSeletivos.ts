@@ -2666,8 +2666,14 @@ Orientações de linguagem:
 - Não use expressões como "não serve", "fraco", "ruim" ou "sem perfil".
 - Prefira expressões como: "ainda não demonstrou maturidade suficiente para a função"; "necessita desenvolver maior segurança na comunicação"; "apresenta potencial, porém ainda requer desenvolvimento em competências essenciais ao cargo"; "demonstrou aderência ao perfil requerido".
 - Mantenha coerência entre minicurrículo, DISC, entrevista e conclusão.
-- Não invente informações. Quando algum dado não estiver disponível, sinalize discretamente ou não mencione.
 - O relatório deve ter tom institucional e estar adequado para envio ao cliente.
+
+IMPORTANTE sobre a Transcrição da Entrevista:
+- A transcrição da entrevista fornecida nos dados é o documento COMPLETO e OFICIAL da entrevista realizada.
+- Você DEVE usar a transcrição integralmente como base principal para o parecer da entrevista.
+- NUNCA mencione que a transcrição está incompleta, parcial ou indisponível — ela é a fonte oficial.
+- Analise as respostas, exemplos, postura e conteúdo presentes na transcrição para embasar o parecer.
+- Se algum dado complementar (minicurrículo, DISC) não estiver disponível, simplesmente não o mencione — mas a transcrição sempre estará disponível e deve ser usada.
 
 Responda APENAS em JSON com exatamente os seguintes campos:
 {
@@ -2675,13 +2681,13 @@ Responda APENAS em JSON com exatamente os seguintes campos:
   "pontosDestaque": "Principais pontos de destaque do candidato organizados em tópicos (use \\n para separar cada tópico), considerando: experiência técnica, conhecimento de rotinas, vivência com normas/controles/processos, capacidade de organização, relacionamento interpessoal, postura profissional, iniciativa, responsabilidade, maturidade e aderência ao contexto.",
   "pontosPositivosDisc": "Principais comportamentos favoráveis observados no perfil DISC, relacionando-os com a função avaliada.",
   "pontosDesenvolvimentoDisc": "Principais aspectos comportamentais que precisam de atenção ou desenvolvimento, especialmente aqueles que possam impactar o desempenho na função pretendida.",
-  "parecerEntrevista": "Parecer técnico da entrevista em formato de texto corrido, com tom analítico e profissional, considerando: clareza e objetividade das respostas, capacidade de apresentar exemplos concretos, domínio técnico, postura diante de normas e processos, capacidade de organização, maturidade profissional, comunicação, relacionamento interpessoal, liderança e coerência entre discurso, histórico e DISC.",
+  "parecerEntrevista": "Parecer técnico da entrevista em formato de texto corrido, com tom analítico e profissional, baseado diretamente na transcrição fornecida. Considere: clareza e objetividade das respostas, exemplos concretos apresentados pelo candidato, domínio técnico demonstrado, postura diante de normas e processos, capacidade de organização, maturidade profissional, comunicação, relacionamento interpessoal, liderança e coerência entre discurso, histórico e DISC.",
   "conclusao": "Conclusão baseada obrigatoriamente no Parecer do Mentor/Avaliador fornecido nos dados. Incorpore e expanda o parecer do mentor com linguagem técnica e profissional. Se Habilitado: reforce a aderência ao perfil e os pontos positivos destacados pelo mentor. Se Não Habilitado: justifique de forma técnica e respeitosa, incorporando os pontos levantados pelo mentor e indicando competências a desenvolver. Objetiva, clara e coerente com o status informado."
 }`,
           },
           {
             role: 'user',
-            content: `Cliente: ${processoInfo?.clienteNome ?? 'Não informado'}\nProcesso Seletivo: ${processoInfo?.nome ?? 'Não informado'}\nCandidato: ${candidate.nome}\nData da Entrevista: ${dataEntrevista}\nHorário: ${horarioEntrevista}\nStatus Final: ${statusFinal}\nBanca Avaliadora: ${participantesBancaIA}\nMentor/Entrevistador: ${mentorNomeIA ?? 'Não informado'}\n\nMinicurrículo / Histórico Profissional:\n${aluno?.minicurriculo ?? 'Não disponível'}\nCargo atual: ${aluno?.cargo ?? 'Não informado'}\n\n${discTexto}\n\n${autoPercTexto}${parecerMentorTexto}${observacaoTexto}\n\nTranscrição da Entrevista:\n${transcricaoTexto.slice(0, 14000)}`,
+            content: `Cliente: ${processoInfo?.clienteNome ?? 'Não informado'}\nProcesso Seletivo: ${processoInfo?.nome ?? 'Não informado'}\nCandidato: ${candidate.nome}\nData da Entrevista: ${dataEntrevista}\nHorário: ${horarioEntrevista}\nStatus Final: ${statusFinal}\nBanca Avaliadora: ${participantesBancaIA}\nMentor/Entrevistador: ${mentorNomeIA ?? 'Não informado'}\n\nMinicurrículo / Histórico Profissional:\n${aluno?.minicurriculo ?? 'Não disponível'}\nCargo atual: ${aluno?.cargo ?? 'Não informado'}\n\n${discTexto}\n\n${autoPercTexto}${parecerMentorTexto}${observacaoTexto}\n\nTranscrição da Entrevista:\n${transcricaoTexto.slice(0, 30000)}`,
           },
         ],
         response_format: { type: 'json_object' },
