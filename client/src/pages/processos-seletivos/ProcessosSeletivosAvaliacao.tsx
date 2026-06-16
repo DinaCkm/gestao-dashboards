@@ -48,6 +48,8 @@ type Candidato = {
   statusTeste: string;
   statusEntrevista: string;
   statusResultado: string;
+  statusCadastro: string;
+  userId: number | null;
   regiaoId: number | null;
   vagaId: number | null;
 };
@@ -131,6 +133,7 @@ function AvaliacaoContent() {
   const [filtroTeste, setFiltroTeste] = useState("todos");
   const [filtroEntrevista, setFiltroEntrevista] = useState("todos");
   const [filtroResultado, setFiltroResultado] = useState("todos");
+  const [filtroAcesso, setFiltroAcesso] = useState("todos");
 
   // Modais
   const [modalDecisao, setModalDecisao] = useState<{ candidato: Candidato; modo: "nova" | "alterar" } | null>(null);
@@ -300,9 +303,13 @@ function AvaliacaoContent() {
       const matchTeste = filtroTeste === "todos" || c.statusTeste === filtroTeste;
       const matchEntrevista = filtroEntrevista === "todos" || c.statusEntrevista === filtroEntrevista;
       const matchResultado = filtroResultado === "todos" || c.statusResultado === filtroResultado;
-      return matchBusca && matchRegiao && matchTeste && matchEntrevista && matchResultado;
+      const matchAcesso =
+        filtroAcesso === "todos" ||
+        (filtroAcesso === "nao_acessou" ? !c.userId : false) ||
+        (filtroAcesso === "acessou_sem_teste" ? !!c.userId && c.statusTeste !== "concluido" : false);
+      return matchBusca && matchRegiao && matchTeste && matchEntrevista && matchResultado && matchAcesso;
     });
-  }, [candidatos, filtroBusca, filtroRegiao, filtroTeste, filtroEntrevista, filtroResultado]);
+  }, [candidatos, filtroBusca, filtroRegiao, filtroTeste, filtroEntrevista, filtroResultado, filtroAcesso]);
 
   // ── Slots livres para reagendamento ──────────────────────────────────────────
 
@@ -546,6 +553,7 @@ function AvaliacaoContent() {
               setFiltroTeste("todos");
               setFiltroEntrevista("todos");
               setFiltroResultado("todos");
+            setFiltroAcesso("todos");
             }}
           >
             <SelectTrigger className="w-full max-w-md">
@@ -669,7 +677,7 @@ function AvaliacaoContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                 {/* Busca por nome/email */}
                 <div className="relative lg:col-span-2">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -737,6 +745,18 @@ function AvaliacaoContent() {
                     <SelectItem value="reprovado">Inabilitado</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {/* Acesso ao sistema */}
+                <Select value={filtroAcesso} onValueChange={setFiltroAcesso}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Acesso" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os acessos</SelectItem>
+                    <SelectItem value="nao_acessou">Não acessou</SelectItem>
+                    <SelectItem value="acessou_sem_teste">Pendente (acessou, sem teste)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardContent>
           </Card>
@@ -778,6 +798,12 @@ function AvaliacaoContent() {
                           >
                             <div className="font-medium text-sm text-[#0f2b3c]">{c.nome}</div>
                             <div className="text-xs text-muted-foreground">{c.email}</div>
+                            {!c.userId && (
+                              <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500">Não acessou</span>
+                            )}
+                            {!!c.userId && c.statusTeste !== "concluido" && (
+                              <span className="inline-block mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Pendente</span>
+                            )}
                           </button>
                         </TableCell>
                         <TableCell className="text-sm">
