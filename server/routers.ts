@@ -9374,38 +9374,42 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           webinarId: announcementData.webinarId ?? null,
           createdBy: ctx.user.id,
         };
-        const id = await db.createAnnouncement(data);
-
+                const id = await db.createAnnouncement(data);
         // Enviar e-mail de notificação para alunos ativos (opcional, ativado pelo admin)
+        // O envio é feito em BACKGROUND para não bloquear a resposta da API
         if (sendEmailNotification) {
-          try {
-            const alunos = await db.getStudentEmailsByProgram();
-            const loginUrl = 'https://ecolider.ecodobem.com/mural';
-            let emailsSent = 0;
-            let emailsFailed = 0;
-            for (const aluno of alunos) {
-              if (!aluno.email) continue;
-              try {
-                const emailData = buildNovoAvisoMuralEmail({
-                  alunoName: aluno.name || 'aluno(a)',
-                  avisoTitle: input.title,
-                  avisoContent: input.content || null,
-                  loginUrl,
-                });
-                await sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
-                emailsSent++;
-              } catch {
-                emailsFailed++;
+          const avisoTitle = input.title;
+          const avisoContent = input.content || null;
+          // Dispara em background sem await — retorna imediatamente para o frontend
+          (async () => {
+            try {
+              const alunos = await db.getStudentEmailsByProgram();
+              const loginUrl = 'https://ecolider.ecodobem.com/mural';
+              // Envia em lotes de 10 paralelos para acelerar sem sobrecarregar o SMTP
+              const BATCH_SIZE = 10;
+              for (let i = 0; i < alunos.length; i += BATCH_SIZE) {
+                const lote = alunos.slice(i, i + BATCH_SIZE);
+                await Promise.allSettled(
+                  lote
+                    .filter(a => !!a.email)
+                    .map(aluno => {
+                      const emailData = buildNovoAvisoMuralEmail({
+                        alunoName: aluno.name || 'aluno(a)',
+                        avisoTitle,
+                        avisoContent,
+                        loginUrl,
+                      });
+                      return sendEmail({ to: aluno.email!, subject: emailData.subject, html: emailData.html, text: emailData.text });
+                    })
+                );
               }
+              console.log(`[Avisos] E-mails de notificação enviados para ${alunos.length} alunos (aviso id=${id})`);
+            } catch (err) {
+              console.error(`[Avisos] Erro ao enviar e-mails em background (aviso id=${id}):`, err);
             }
-            return { id, success: true, emailsSent, emailsFailed };
-          } catch {
-            // Falha no envio não deve impedir a criação do aviso
-            return { id, success: true, emailsSent: 0, emailsFailed: 0 };
-          }
+          })();
         }
-
-        return { id, success: true };
+        return { id, success: true, emailsQueued: sendEmailNotification };
       }),
 
     update: adminOrAdmin2Procedure
