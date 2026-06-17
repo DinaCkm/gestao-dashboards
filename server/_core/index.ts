@@ -16,6 +16,7 @@ import { iniciarCronAusenciaWebinar } from "../cronAusenciaWebinar";
 import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria";
 import { iniciarCronRelatorioMentorias } from "../cronRelatorioMentorias";
 import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
+import { iniciarCronLembreteChecklistWebinar } from "../cronLembreteChecklistWebinar";
 import { ENV } from "./env";
 import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns } from "../db";
 
@@ -102,6 +103,8 @@ async function startServer() {
       iniciarCronRelatorioMentorias();
       // Iniciar cron job de lembrete D-1 para entrevistas do Processo Seletivo
       iniciarCronPsLembreteD1();
+      // Iniciar cron job de lembretes automáticos do checklist de webinar (diário, ignora status do webinar, cooldown 24h por tarefa)
+      iniciarCronLembreteChecklistWebinar();
     } else {
       console.log("Cron jobs de e-mail desativados temporariamente.");
     }
