@@ -5,9 +5,7 @@ import AlunoLayout from "@/components/AlunoLayout";
 import EtapaAssessmentCompleta from "./TesteDiscOnboarding";
 import { EtapaCadastro } from "./OnboardingAluno";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import {
   CheckCircle2, Lock, CalendarClock, ClipboardList, Brain, Calendar, Video, AlertCircle, Megaphone
 } from "lucide-react";
@@ -54,19 +52,11 @@ function Stepper({ currentStep }: { currentStep: number }) {
 }
 
 // ─── Etapa 3: Agendamento ────────────────────────────────────────────────────
+// O agendamento é exclusivamente automático pelo sistema — o candidato apenas visualiza o resultado.
 
-function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoId: number }) {
-  const { data: slots, isLoading: slotsLoading } = trpc.processosSeletivos.listarSlotsDisponiveis.useQuery({ processoId });
-  const { data: minhaEntrevista, isLoading: entrevistaLoading, refetch } = trpc.processosSeletivos.minhaEntrevista.useQuery();
-  const agendarMutation = trpc.processosSeletivos.candidatoAgendar.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Entrevista agendada para ${data.slot.dataAgenda} às ${data.slot.inicio}!`);
-      refetch();
-    },
-    onError: (err) => toast.error(err.message),
-  });
+function EtapaAgendamento({ candidato }: { candidato: any; processoId: number }) {
+  const { data: minhaEntrevista, isLoading: entrevistaLoading } = trpc.processosSeletivos.minhaEntrevista.useQuery();
 
-  // Aguardar dados da entrevista antes de renderizar qualquer coisa
   if (entrevistaLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -83,7 +73,6 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
     });
     return (
       <div className="max-w-lg mx-auto space-y-4">
-        {/* Confirmação */}
         <Card className="border-green-200 bg-green-50">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-3">
@@ -118,7 +107,6 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
           </CardContent>
         </Card>
 
-        {/* Aviso de preparação */}
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-start gap-3">
@@ -138,102 +126,33 @@ function EtapaAgendamento({ candidato, processoId }: { candidato: any; processoI
     );
   }
 
-  // statusEntrevista = agendada mas slot foi removido pelo admin — aguardando novo agendamento
-  if (candidato?.statusEntrevista === "agendada" && !minhaEntrevista?.slot) {
-    return (
-      <div className="max-w-lg mx-auto">
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="pt-6 pb-6 text-center space-y-4">
-            <CalendarClock className="h-12 w-12 text-orange-500 mx-auto" />
-            <div>
-              <p className="font-semibold text-orange-800 text-base">Aguardando confirmação de horário</p>
-              <p className="text-sm text-orange-700 mt-2 leading-relaxed">
-                Seu agendamento está sendo processado pela nossa equipe.
-                Em breve você receberá um e-mail com os detalhes da sua entrevista.
-              </p>
-              <p className="text-sm text-orange-700 mt-2">
-                Se precisar de ajuda, entre em contato conosco.
-              </p>
-            </div>
-            <a
-              href="https://ckmtalents.com.br/fale-conosco/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0A1E3E] text-white text-sm font-semibold hover:bg-[#0A1E3E]/90 transition-colors"
-            >
-              <AlertCircle className="h-4 w-4" />
-              Fale Conosco
-            </a>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+  // Aguardando agendamento automático pelo sistema
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-800">Escolha seu horário de entrevista</h3>
-        <p className="text-sm text-gray-500 mt-1">Selecione um dos horários disponíveis abaixo.</p>
-      </div>
-
-      {slotsLoading && (
-        <div className="text-center py-8 text-gray-400">Carregando horários disponíveis...</div>
-      )}
-
-      {!slotsLoading && (!slots || slots.length === 0) && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="pt-6 pb-6 text-center space-y-4">
-            <CalendarClock className="h-12 w-12 text-orange-500 mx-auto" />
-            <div>
-              <p className="font-semibold text-orange-800 text-base">Nenhum horário disponível no momento</p>
-              <p className="text-sm text-orange-700 mt-2 leading-relaxed">
-                Nossa equipe foi notificada e está trabalhando para liberar novos horários de entrevista para você.
-                Em breve você receberá um e-mail com a confirmação do agendamento.
-              </p>
-              <p className="text-sm text-orange-700 mt-2">
-                Se precisar de ajuda ou tiver dúvidas, entre em contato conosco.
-              </p>
-            </div>
-            <a
-              href="https://ckmtalents.com.br/fale-conosco/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0A1E3E] text-white text-sm font-semibold hover:bg-[#0A1E3E]/90 transition-colors"
-            >
-              <AlertCircle className="h-4 w-4" />
-              Fale Conosco
-            </a>
-          </CardContent>
-        </Card>
-      )}
-
-      {slots && slots.length > 0 && (
-        <div className="grid gap-3">
-          {slots.map((slot: any) => {
-            const dataFormatada = new Date(slot.dataAgenda + "T00:00:00").toLocaleDateString("pt-BR", {
-              weekday: "long", day: "numeric", month: "long"
-            });
-            return (
-              <Card key={slot.id} className="border hover:border-[#0A1E3E] hover:shadow-md transition-all cursor-pointer">
-                <CardContent className="pt-4 pb-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-800 capitalize">{dataFormatada}</p>
-                    <p className="text-sm text-gray-500">{slot.inicio} – {slot.fim}</p>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => agendarMutation.mutate({ slotId: slot.id, processoId })}
-                    disabled={agendarMutation.isPending}
-                  >
-                    Agendar
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+    <div className="max-w-lg mx-auto">
+      <Card className="border-orange-200 bg-orange-50">
+        <CardContent className="pt-6 pb-6 text-center space-y-4">
+          <CalendarClock className="h-12 w-12 text-orange-500 mx-auto" />
+          <div>
+            <p className="font-semibold text-orange-800 text-base">Aguardando confirmação de horário</p>
+            <p className="text-sm text-orange-700 mt-2 leading-relaxed">
+              Seus testes foram concluídos! Nossa equipe está alocando um horário de entrevista para você.
+              Em breve você receberá um e-mail com os detalhes da sua entrevista.
+            </p>
+            <p className="text-sm text-orange-700 mt-2">
+              Se precisar de ajuda, entre em contato conosco.
+            </p>
+          </div>
+          <a
+            href="https://ckmtalents.com.br/fale-conosco/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#0A1E3E] text-white text-sm font-semibold hover:bg-[#0A1E3E]/90 transition-colors"
+          >
+            <AlertCircle className="h-4 w-4" />
+            Fale Conosco
+          </a>
+        </CardContent>
+      </Card>
     </div>
   );
 }

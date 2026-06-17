@@ -1018,19 +1018,6 @@ export const processosSeletivosRouter = router({
     return rows;
   }),
 
-  // Rota pública: retorna slots disponíveis de um processo para o candidato agendar
-  listarSlotsDisponiveis: publicProcedure
-    .input(z.object({ processoId: z.number() }))
-    .query(async ({ input }) => {
-      const database = await requireDatabase();
-      const slots = await database
-        .select()
-        .from(processoAgendaSlots)
-        .where(and(eq(processoAgendaSlots.processoId, input.processoId), eq(processoAgendaSlots.status, "disponivel")))
-        .orderBy(asc(processoAgendaSlots.dataAgenda), asc(processoAgendaSlots.inicio));
-      return slots;
-    }),
-
   // Rota pública: verifica se CPF está na lista de convocados de um processo seletivo
   verificarCpfConvocado: publicProcedure
     .input(z.object({ processoId: z.number(), cpf: z.string().min(1) }))
@@ -1056,101 +1043,7 @@ export const processosSeletivosRouter = router({
         jaCadastrado: candidato.statusCadastro === 'ativo',
       };
     }),
-  // Candidato agendando seu próprio slot após concluir os testes
-  candidatoAgendar: protectedProcedure
-    .input(z.object({ slotId: z.number(), processoId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      const database = await requireDatabase();
-      // Verificar se o candidato pertence ao processo
-      const [candidate] = await database
-        .select()
-        .from(processoCandidatos)
-        .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.userId, ctx.user.id)))
-        .limit(1);
-      if (!candidate) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado neste processo" });
-      // Verificar se testes foram concluídos: statusTeste=concluido OU candidato tem resultado DISC no banco
-      if (candidate.statusTeste !== "concluido") {
-        // Verificar se há resultado DISC para o aluno (fonte de verdade alternativa)
-        const alunoId = (ctx.user as any).alunoId as number | null;
-        let discOk = false;
-        if (alunoId) {
-          const [discRow] = await database
-            .select({ id: discResultados.id })
-            .from(discResultados)
-            .where(eq(discResultados.alunoId, alunoId))
-            .limit(1);
-          discOk = !!discRow;
-        }
-        if (!discOk) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Voce precisa concluir os testes antes de agendar" });
-        }
-        // Testes concluídos mas statusTeste desatualizado — corrigir automaticamente
-        await database
-          .update(processoCandidatos)
-          .set({ statusTeste: "concluido", testeConcluidoEm: new Date() })
-          .where(eq(processoCandidatos.id, candidate.id));
-      }
-      // Verificar se o slot está disponível
-      const [slot] = await database
-        .select()
-        .from(processoAgendaSlots)
-        .where(and(eq(processoAgendaSlots.id, input.slotId), eq(processoAgendaSlots.status, "disponivel")))
-        .limit(1);
-      if (!slot) throw new TRPCError({ code: "NOT_FOUND", message: "Slot nao disponivel" });
-      // Reservar o slot
-      await database
-        .update(processoAgendaSlots)
-        .set({ candidatoId: candidate.id, status: "reservado" })
-        .where(eq(processoAgendaSlots.id, input.slotId));
-      // Criar entrevista
-      await database.insert(processoEntrevistas).values({
-        processoId: input.processoId,
-        candidatoId: candidate.id,
-        agendaSlotId: input.slotId,
-        linkEntrevista: slot.linkEntrevista,
-        status: "agendada",
-      });
-      // Atualizar status do candidato
-      await database
-        .update(processoCandidatos)
-        .set({ statusEntrevista: "agendada" })
-        .where(eq(processoCandidatos.id, candidate.id));
-      await writeLog(database, {
-        processoId: input.processoId,
-        candidatoId: candidate.id,
-        userId: ctx.user.id,
-        acao: "candidato_agendou",
-        detalhe: `Slot ${slot.dataAgenda} ${slot.inicio}`,
-      });
-      // Enviar e-mail de confirmação ao candidato
-      try {
-        const [processo] = await database.select({
-          id: processosSeletivos.id,
-          nome: processosSeletivos.nome,
-          clienteNome: processosSeletivos.clienteNome,
-          linkEntrevista: processosSeletivos.linkEntrevista,
-        }).from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
-        if (processo && candidate.email) {
-          const dataFormatada = slot.dataAgenda
-            ? new Date(slot.dataAgenda + 'T00:00:00').toLocaleDateString('pt-BR')
-            : slot.dataAgenda;
-          const emailData = buildPsConfirmacaoAgendamentoEmail({
-            candidatoNome: candidate.nome,
-            processoNome: processo.nome,
-            clienteNome: processo.clienteNome,
-            dataEntrevista: dataFormatada,
-            horaInicio: slot.inicio,
-            horaFim: slot.fim,
-            linkEntrevista: slot.linkEntrevista ?? null,
-            loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com'}/login`,
-          });
-          await sendEmail({ to: candidate.email, cc: 'relacionamento@ckmtalents.net', subject: emailData.subject, html: emailData.html, text: emailData.text });
-        }
-      } catch (emailErr) {
-        console.error('[PS] Erro ao enviar e-mail de confirmação:', emailErr);
-      }
-      return { success: true, slot };
-    }),
+
 
   // Obter dados do candidato pelo userId (para o portal do candidato)
   meusDadosCandidato: protectedProcedure.query(async ({ ctx }) => {
