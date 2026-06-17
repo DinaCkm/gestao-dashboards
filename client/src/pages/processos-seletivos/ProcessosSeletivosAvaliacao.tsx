@@ -153,6 +153,7 @@ function AvaliacaoContent() {
   const [modalPerfil, setModalPerfil] = useState<Candidato | null>(null);
   const [modalReagendar, setModalReagendar] = useState<Entrevista | null>(null);
   const [mapaAberto, setMapaAberto] = useState(false);
+  const [buscaMapa, setBuscaMapa] = useState("");
   const [dashboardAberto, setDashboardAberto] = useState(true);
   const [filtrosAberto, setFiltrosAberto] = useState(true);
   const [candidatosAberto, setCandidatosAberto] = useState(true);
@@ -863,13 +864,33 @@ function AvaliacaoContent() {
             </CardHeader>
             <CollapsibleContent>
             <CardContent>
+              {/* Campo de busca */}
+              <div className="mb-3">
+                <Input
+                  placeholder="Buscar por nome ou e-mail..."
+                  value={buscaMapa}
+                  onChange={(ev) => setBuscaMapa(ev.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
               {loadingEntrevistas ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">Carregando entrevistas...</p>
               ) : (entrevistas as Entrevista[]).length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
                   Nenhuma entrevista agendada neste processo.
                 </p>
-              ) : (
+              ) : (() => {
+                const entrevistasFiltradas = (entrevistas as Entrevista[]).filter((e) => {
+                  if (!buscaMapa.trim()) return true;
+                  const termo = buscaMapa.toLowerCase();
+                  return (
+                    e.candidatoNome?.toLowerCase().includes(termo) ||
+                    e.candidatoEmail?.toLowerCase().includes(termo)
+                  );
+                });
+                return entrevistasFiltradas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">Nenhum candidato encontrado para "{buscaMapa}".</p>
+                ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -883,7 +904,7 @@ function AvaliacaoContent() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(entrevistas as Entrevista[]).map((e) => (
+                    {entrevistasFiltradas.map((e) => (
                       <TableRow key={e.entrevistaId}>
                         <TableCell className="font-medium text-sm">{formatarData(e.dataAgenda)}</TableCell>
                         <TableCell className="text-sm">
@@ -927,7 +948,8 @@ function AvaliacaoContent() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
+                );
+              })()}
             </CardContent>
             </CollapsibleContent>
           </Card>
