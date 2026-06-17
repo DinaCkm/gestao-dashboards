@@ -75,6 +75,7 @@ function ProcessosSeletivosContent() {
   const [openVagas, setOpenVagas] = useState(false);
   const [openRegioes, setOpenRegioes] = useState(false);
   const [openCandidato, setOpenCandidato] = useState(false);
+  const [openMapaAba, setOpenMapaAba] = useState(true);
 
   // Estado para o dialog de edição de slot
   const [editSlotDialog, setEditSlotDialog] = useState<{
@@ -831,165 +832,6 @@ function ProcessosSeletivosContent() {
             </div>
           )}
 
-          {isAdmin && (
-            <Card className="rounded-lg">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Agenda de entrevistas</CardTitle>
-                    <CardDescription className="mt-1">
-                      {modoManual
-                        ? "Modo manual: adicione cada slot individualmente com data e horário."
-                        : "Modo automático: configure o período e os slots serão gerados automaticamente."}
-                    </CardDescription>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setModoManual((v) => !v)}
-                    className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
-                  >
-                    {modoManual ? <ToggleRight className="h-4 w-4 text-primary" /> : <ToggleLeft className="h-4 w-4 text-muted-foreground" />}
-                    {modoManual ? "Manual" : "Automático"}
-                  </button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {modoManual ? (
-                  <div className="space-y-4">
-                    {/* Cabeçalho do grupo */}
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label className="mb-1 block text-xs text-muted-foreground">Nome do grupo</Label>
-                        <Input
-                          placeholder="Ex: Entrevistas"
-                          value={nomeGrupoManual}
-                          onChange={(e) => setNomeGrupoManual(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label className="mb-1 block text-xs text-muted-foreground">Link padrão (opcional)</Label>
-                        <Input
-                          placeholder="https://meet.google.com/..."
-                          value={linkPadraoManual}
-                          onChange={(e) => setLinkPadraoManual(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Cabeçalho da tabela */}
-                    <div className="grid grid-cols-[1fr_100px_100px_1fr_40px] gap-2 text-xs font-semibold text-muted-foreground">
-                      <span>Data</span>
-                      <span>Início</span>
-                      <span>Fim</span>
-                      <span>Link específico (opcional)</span>
-                      <span />
-                    </div>
-
-                    {/* Lista de slots */}
-                    <div className="space-y-2">
-                      {slotsManual.map((slot) => (
-                        <div key={slot.id} className="grid grid-cols-[1fr_100px_100px_1fr_40px] items-center gap-2">
-                          <Input
-                            type="date"
-                            value={slot.dataAgenda}
-                            onChange={(e) =>
-                              setSlotsManual((prev) =>
-                                prev.map((s) => (s.id === slot.id ? { ...s, dataAgenda: e.target.value } : s))
-                              )
-                            }
-                          />
-                          <Input
-                            type="time"
-                            value={slot.inicio}
-                            onChange={(e) =>
-                              setSlotsManual((prev) =>
-                                prev.map((s) => (s.id === slot.id ? { ...s, inicio: e.target.value } : s))
-                              )
-                            }
-                          />
-                          <Input
-                            type="time"
-                            value={slot.fim}
-                            onChange={(e) =>
-                              setSlotsManual((prev) =>
-                                prev.map((s) => (s.id === slot.id ? { ...s, fim: e.target.value } : s))
-                              )
-                            }
-                          />
-                          <Input
-                            placeholder="Link específico..."
-                            value={slot.link}
-                            onChange={(e) =>
-                              setSlotsManual((prev) =>
-                                prev.map((s) => (s.id === slot.id ? { ...s, link: e.target.value } : s))
-                              )
-                            }
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setSlotsManual((prev) =>
-                                prev.length > 1 ? prev.filter((s) => s.id !== slot.id) : prev
-                              )
-                            }
-                            className="flex h-9 w-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10 disabled:opacity-30"
-                            disabled={slotsManual.length === 1}
-                            title="Remover slot"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Rodapé de ações */}
-                    <div className="flex items-center gap-3 pt-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSlotsManual((prev) => [...prev, novoSlotVazio()])}
-                      >
-                        <Plus className="mr-1 h-4 w-4" />
-                        Adicionar slot
-                      </Button>
-                      <Button
-                        type="button"
-                        disabled={criarSlotsManual.isPending || !selectedProcessoId}
-                        onClick={handleSalvarSlotsManual}
-                      >
-                        <CalendarDays className="mr-2 h-4 w-4" />
-                        {criarSlotsManual.isPending ? "Salvando..." : `Salvar ${slotsManual.length} slot(s)`}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <form className="grid gap-3 md:grid-cols-4 lg:grid-cols-8" onSubmit={handleCreateAgenda}>
-                    <Input className="lg:col-span-2" placeholder="Nome do grupo" value={agendaForm.nomeGrupo} onChange={(event) => setAgendaForm((form) => ({ ...form, nomeGrupo: event.target.value }))} required />
-                    <Select value={agendaForm.vagaId} onValueChange={(value) => setAgendaForm((form) => ({ ...form, vagaId: value }))}>
-                      <SelectTrigger><SelectValue placeholder="Vaga" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Todas</SelectItem>
-                        {vagas.map((vaga) => <SelectItem key={vaga.id} value={String(vaga.id)}>{vaga.titulo}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                    <Input type="date" value={agendaForm.dataAgenda} onChange={(event) => setAgendaForm((form) => ({ ...form, dataAgenda: event.target.value }))} required />
-                    <Input type="time" value={agendaForm.inicio} onChange={(event) => setAgendaForm((form) => ({ ...form, inicio: event.target.value }))} required />
-                    <Input type="time" value={agendaForm.fim} onChange={(event) => setAgendaForm((form) => ({ ...form, fim: event.target.value }))} required />
-                    <Input type="number" min="10" value={agendaForm.duracaoMinutos} onChange={(event) => setAgendaForm((form) => ({ ...form, duracaoMinutos: event.target.value }))} />
-                    <Input type="time" value={agendaForm.intervaloInicio} onChange={(event) => setAgendaForm((form) => ({ ...form, intervaloInicio: event.target.value }))} />
-                    <Input type="time" value={agendaForm.intervaloFim} onChange={(event) => setAgendaForm((form) => ({ ...form, intervaloFim: event.target.value }))} />
-                    <Input className="md:col-span-2 lg:col-span-5" placeholder="Link padrao da entrevista" value={agendaForm.linkPadrao} onChange={(event) => setAgendaForm((form) => ({ ...form, linkPadrao: event.target.value }))} />
-                    <Button type="submit" disabled={criarAgenda.isPending}>
-                      <CalendarDays className="mr-2 h-4 w-4" />
-                      Gerar slots
-                    </Button>
-                  </form>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="candidatos">Candidatos e Status</TabsTrigger>
@@ -1027,6 +869,166 @@ function ProcessosSeletivosContent() {
                 />
               </CardContent>
             </Card>
+
+
+            {isAdmin && (
+          <Card className="rounded-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Agenda de entrevistas</CardTitle>
+                  <CardDescription className="mt-1">
+                    {modoManual
+                      ? "Modo manual: adicione cada slot individualmente com data e horário."
+                      : "Modo automático: configure o período e os slots serão gerados automaticamente."}
+                  </CardDescription>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModoManual((v) => !v)}
+                  className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted"
+                >
+                  {modoManual ? <ToggleRight className="h-4 w-4 text-primary" /> : <ToggleLeft className="h-4 w-4 text-muted-foreground" />}
+                  {modoManual ? "Manual" : "Automático"}
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {modoManual ? (
+                <div className="space-y-4">
+                  {/* Cabeçalho do grupo */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <Label className="mb-1 block text-xs text-muted-foreground">Nome do grupo</Label>
+                      <Input
+                        placeholder="Ex: Entrevistas"
+                        value={nomeGrupoManual}
+                        onChange={(e) => setNomeGrupoManual(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="mb-1 block text-xs text-muted-foreground">Link padrão (opcional)</Label>
+                      <Input
+                        placeholder="https://meet.google.com/..."
+                        value={linkPadraoManual}
+                        onChange={(e) => setLinkPadraoManual(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Cabeçalho da tabela */}
+                  <div className="grid grid-cols-[1fr_100px_100px_1fr_40px] gap-2 text-xs font-semibold text-muted-foreground">
+                    <span>Data</span>
+                    <span>Início</span>
+                    <span>Fim</span>
+                    <span>Link específico (opcional)</span>
+                    <span />
+                  </div>
+
+                  {/* Lista de slots */}
+                  <div className="space-y-2">
+                    {slotsManual.map((slot) => (
+                      <div key={slot.id} className="grid grid-cols-[1fr_100px_100px_1fr_40px] items-center gap-2">
+                        <Input
+                          type="date"
+                          value={slot.dataAgenda}
+                          onChange={(e) =>
+                            setSlotsManual((prev) =>
+                              prev.map((s) => (s.id === slot.id ? { ...s, dataAgenda: e.target.value } : s))
+                            )
+                          }
+                        />
+                        <Input
+                          type="time"
+                          value={slot.inicio}
+                          onChange={(e) =>
+                            setSlotsManual((prev) =>
+                              prev.map((s) => (s.id === slot.id ? { ...s, inicio: e.target.value } : s))
+                            )
+                          }
+                        />
+                        <Input
+                          type="time"
+                          value={slot.fim}
+                          onChange={(e) =>
+                            setSlotsManual((prev) =>
+                              prev.map((s) => (s.id === slot.id ? { ...s, fim: e.target.value } : s))
+                            )
+                          }
+                        />
+                        <Input
+                          placeholder="Link específico..."
+                          value={slot.link}
+                          onChange={(e) =>
+                            setSlotsManual((prev) =>
+                              prev.map((s) => (s.id === slot.id ? { ...s, link: e.target.value } : s))
+                            )
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSlotsManual((prev) =>
+                              prev.length > 1 ? prev.filter((s) => s.id !== slot.id) : prev
+                            )
+                          }
+                          className="flex h-9 w-9 items-center justify-center rounded-md text-destructive hover:bg-destructive/10 disabled:opacity-30"
+                          disabled={slotsManual.length === 1}
+                          title="Remover slot"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Rodapé de ações */}
+                  <div className="flex items-center gap-3 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSlotsManual((prev) => [...prev, novoSlotVazio()])}
+                    >
+                      <Plus className="mr-1 h-4 w-4" />
+                      Adicionar slot
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={criarSlotsManual.isPending || !selectedProcessoId}
+                      onClick={handleSalvarSlotsManual}
+                    >
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      {criarSlotsManual.isPending ? "Salvando..." : `Salvar ${slotsManual.length} slot(s)`}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form className="grid gap-3 md:grid-cols-4 lg:grid-cols-8" onSubmit={handleCreateAgenda}>
+                  <Input className="lg:col-span-2" placeholder="Nome do grupo" value={agendaForm.nomeGrupo} onChange={(event) => setAgendaForm((form) => ({ ...form, nomeGrupo: event.target.value }))} required />
+                  <Select value={agendaForm.vagaId} onValueChange={(value) => setAgendaForm((form) => ({ ...form, vagaId: value }))}>
+                    <SelectTrigger><SelectValue placeholder="Vaga" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Todas</SelectItem>
+                      {vagas.map((vaga) => <SelectItem key={vaga.id} value={String(vaga.id)}>{vaga.titulo}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Input type="date" value={agendaForm.dataAgenda} onChange={(event) => setAgendaForm((form) => ({ ...form, dataAgenda: event.target.value }))} required />
+                  <Input type="time" value={agendaForm.inicio} onChange={(event) => setAgendaForm((form) => ({ ...form, inicio: event.target.value }))} required />
+                  <Input type="time" value={agendaForm.fim} onChange={(event) => setAgendaForm((form) => ({ ...form, fim: event.target.value }))} required />
+                  <Input type="number" min="10" value={agendaForm.duracaoMinutos} onChange={(event) => setAgendaForm((form) => ({ ...form, duracaoMinutos: event.target.value }))} />
+                  <Input type="time" value={agendaForm.intervaloInicio} onChange={(event) => setAgendaForm((form) => ({ ...form, intervaloInicio: event.target.value }))} />
+                  <Input type="time" value={agendaForm.intervaloFim} onChange={(event) => setAgendaForm((form) => ({ ...form, intervaloFim: event.target.value }))} />
+                  <Input className="md:col-span-2 lg:col-span-5" placeholder="Link padrao da entrevista" value={agendaForm.linkPadrao} onChange={(event) => setAgendaForm((form) => ({ ...form, linkPadrao: event.target.value }))} />
+                  <Button type="submit" disabled={criarAgenda.isPending}>
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    Gerar slots
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+            )}
 
             <Card className="rounded-lg">
               <CardHeader>
@@ -1134,11 +1136,22 @@ function ProcessosSeletivosContent() {
 
             {/* ABA: MAPA DE ENTREVISTAS */}
             <TabsContent value="mapa">
+              <Collapsible open={openMapaAba} onOpenChange={setOpenMapaAba}>
               <Card className="rounded-lg">
                 <CardHeader>
-                  <CardTitle>Mapa de entrevistas</CardTitle>
-                  <CardDescription>Slots ordenados por data e horario.</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Mapa de entrevistas</CardTitle>
+                      <CardDescription>Slots ordenados por data e horario.</CardDescription>
+                    </div>
+                    <CollapsibleTrigger asChild>
+                      <button type="button" className="rounded p-1 hover:bg-muted transition-colors">
+                        {openMapaAba ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                    </CollapsibleTrigger>
+                  </div>
                 </CardHeader>
+                <CollapsibleContent>
                 <CardContent>
                   <div className="mb-3">
                     <Input
@@ -1232,7 +1245,9 @@ function ProcessosSeletivosContent() {
                     </TableBody>
                   </Table>
                 </CardContent>
+                </CollapsibleContent>
               </Card>
+              </Collapsible>
             </TabsContent>
 
             {/* ABA: APROVADOS POR REGIÃO */}
