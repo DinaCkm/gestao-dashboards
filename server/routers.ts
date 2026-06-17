@@ -9358,9 +9358,22 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       }))
       .mutation(async ({ input, ctx }) => {
         const { sendEmailNotification, ...announcementData } = input;
-        const data: any = { ...announcementData, createdBy: ctx.user.id };
-        if (input.publishAt) data.publishAt = new Date(input.publishAt);
-        if (input.expiresAt) data.expiresAt = new Date(input.expiresAt);
+        // Converter campos undefined para null para evitar bug do Drizzle ORM com parâmetros posicionais
+        const data: any = {
+          title: announcementData.title,
+          content: announcementData.content ?? null,
+          type: announcementData.type,
+          imageUrl: announcementData.imageUrl ?? null,
+          actionUrl: announcementData.actionUrl ?? null,
+          actionLabel: announcementData.actionLabel ?? null,
+          targetAudience: announcementData.targetAudience ?? 'all',
+          priority: announcementData.priority ?? 0,
+          publishAt: announcementData.publishAt ? new Date(announcementData.publishAt) : null,
+          expiresAt: announcementData.expiresAt ? new Date(announcementData.expiresAt) : null,
+          isActive: announcementData.isActive ?? 1,
+          webinarId: announcementData.webinarId ?? null,
+          createdBy: ctx.user.id,
+        };
         const id = await db.createAnnouncement(data);
 
         // Enviar e-mail de notificação para alunos ativos (opcional, ativado pelo admin)
@@ -9411,15 +9424,25 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         isActive: z.number().optional(),
         webinarId: z.number().optional(),
       }))
-      .mutation(async ({ input }) => {
+            .mutation(async ({ input }) => {
         const { id, ...data } = input;
-        const updateData: any = { ...data };
-        if (data.publishAt) updateData.publishAt = new Date(data.publishAt);
-        if (data.expiresAt) updateData.expiresAt = new Date(data.expiresAt);
+        // Converter campos undefined para null para evitar bug do Drizzle ORM
+        const updateData: any = {};
+        if (data.title !== undefined) updateData.title = data.title;
+        if (data.content !== undefined) updateData.content = data.content ?? null;
+        if (data.type !== undefined) updateData.type = data.type;
+        if (data.imageUrl !== undefined) updateData.imageUrl = data.imageUrl ?? null;
+        if (data.actionUrl !== undefined) updateData.actionUrl = data.actionUrl ?? null;
+        if (data.actionLabel !== undefined) updateData.actionLabel = data.actionLabel ?? null;
+        if (data.targetAudience !== undefined) updateData.targetAudience = data.targetAudience ?? 'all';
+        if (data.priority !== undefined) updateData.priority = data.priority ?? 0;
+        if (data.publishAt !== undefined) updateData.publishAt = data.publishAt ? new Date(data.publishAt) : null;
+        if (data.expiresAt !== undefined) updateData.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
+        if (data.isActive !== undefined) updateData.isActive = data.isActive ?? 1;
+        if (data.webinarId !== undefined) updateData.webinarId = data.webinarId ?? null;
         await db.updateAnnouncement(id, updateData);
         return { success: true };
       }),
-
     delete: adminOrAdmin2Procedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
