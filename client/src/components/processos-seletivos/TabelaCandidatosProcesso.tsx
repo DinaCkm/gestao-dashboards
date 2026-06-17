@@ -68,6 +68,11 @@ export default function TabelaCandidatosProcesso({
   const [movendo, setMovendo] = useState<number | null>(null);
   const [novaRegiao, setNovaRegiao] = useState<string>("");
   const [filtroRegiao, setFiltroRegiao] = useState<string>("todas");
+  const [filtroBusca, setFiltroBusca] = useState("");
+  const [filtroCadastro, setFiltroCadastro] = useState("todos");
+  const [filtroTeste, setFiltroTeste] = useState("todos");
+  const [filtroEntrevista, setFiltroEntrevista] = useState("todos");
+  const [filtroResultado, setFiltroResultado] = useState("todos");
   const [reagendandoId, setReagendandoId] = useState<number | null>(null);
   const [novoSlotId, setNovoSlotId] = useState<string>("");
 
@@ -174,17 +179,93 @@ export default function TabelaCandidatosProcesso({
     return `${dia}/${mes} ${inicio}–${fim}`;
   }
 
-  const candidatosFiltrados = filtroRegiao === "todas"
-    ? candidatos
-    : filtroRegiao === "sem_regiao"
-    ? candidatos.filter((c) => !c.regiaoId)
-    : candidatos.filter((c) => String(c.regiaoId) === filtroRegiao);
+  const candidatosFiltrados = candidatos.filter((c) => {
+    // Filtro por região
+    if (filtroRegiao !== "todas") {
+      if (filtroRegiao === "sem_regiao" && c.regiaoId) return false;
+      if (filtroRegiao !== "sem_regiao" && String(c.regiaoId) !== filtroRegiao) return false;
+    }
+    // Filtro por busca (nome ou e-mail)
+    if (filtroBusca.trim()) {
+      const termo = filtroBusca.toLowerCase();
+      if (!c.nome.toLowerCase().includes(termo) && !c.email.toLowerCase().includes(termo)) return false;
+    }
+    // Filtro por cadastro
+    if (filtroCadastro !== "todos") {
+      if (filtroCadastro === "cadastrado" && c.statusCadastro !== "ativo") return false;
+      if (filtroCadastro === "nao_cadastrado" && c.statusCadastro === "ativo") return false;
+    }
+    // Filtro por teste
+    if (filtroTeste !== "todos" && c.statusTeste !== filtroTeste) return false;
+    // Filtro por entrevista
+    if (filtroEntrevista !== "todos" && c.statusEntrevista !== filtroEntrevista) return false;
+    // Filtro por resultado
+    if (filtroResultado !== "todos" && c.statusResultado !== filtroResultado) return false;
+    return true;
+  });
 
   const temRegioes = regioes && regioes.length > 0;
   const candidatoReagendando = candidatos.find((c) => c.id === reagendandoId);
 
   return (
     <div className="space-y-3">
+      {/* Barra de filtros */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input
+          placeholder="Buscar por nome ou e-mail..."
+          value={filtroBusca}
+          onChange={(e) => setFiltroBusca(e.target.value)}
+          className="h-8 text-sm w-56"
+        />
+        <Select value={filtroCadastro} onValueChange={setFiltroCadastro}>
+          <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Cadastro" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Cadastro: Todos</SelectItem>
+            <SelectItem value="cadastrado">Cadastrado</SelectItem>
+            <SelectItem value="nao_cadastrado">Não cadastrado</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroTeste} onValueChange={setFiltroTeste}>
+          <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Teste" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Teste: Todos</SelectItem>
+            <SelectItem value="nao_enviado">Não enviado</SelectItem>
+            <SelectItem value="enviado">Enviado</SelectItem>
+            <SelectItem value="em_andamento">Em andamento</SelectItem>
+            <SelectItem value="concluido">Concluído</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroEntrevista} onValueChange={setFiltroEntrevista}>
+          <SelectTrigger className="h-8 text-xs w-40"><SelectValue placeholder="Entrevista" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Entrevista: Todos</SelectItem>
+            <SelectItem value="nao_agendada">Não agendada</SelectItem>
+            <SelectItem value="aguardando_agenda">Aguardando agenda</SelectItem>
+            <SelectItem value="agendada">Agendada</SelectItem>
+            <SelectItem value="reagendada">Reagendada</SelectItem>
+            <SelectItem value="realizada">Realizada</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filtroResultado} onValueChange={setFiltroResultado}>
+          <SelectTrigger className="h-8 text-xs w-36"><SelectValue placeholder="Resultado" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Resultado: Todos</SelectItem>
+            <SelectItem value="pendente">Pendente</SelectItem>
+            <SelectItem value="em_analise">Em análise</SelectItem>
+            <SelectItem value="aprovado">Aprovado</SelectItem>
+            <SelectItem value="reprovado">Reprovado</SelectItem>
+          </SelectContent>
+        </Select>
+        {(filtroBusca || filtroCadastro !== "todos" || filtroTeste !== "todos" || filtroEntrevista !== "todos" || filtroResultado !== "todos") && (
+          <button
+            onClick={() => { setFiltroBusca(""); setFiltroCadastro("todos"); setFiltroTeste("todos"); setFiltroEntrevista("todos"); setFiltroResultado("todos"); }}
+            className="text-xs text-muted-foreground underline hover:text-foreground"
+          >
+            Limpar filtros
+          </button>
+        )}
+      </div>
+
       {temRegioes && (
         <div className="flex items-center gap-2 flex-wrap">
           <Filter className="h-4 w-4 text-muted-foreground" />
