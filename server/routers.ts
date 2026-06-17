@@ -830,6 +830,7 @@ export const appRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: result.message || 'Erro ao criar cadastro' });
         }
         // Se for processo seletivo, criar/vincular candidato na tabela processo_candidatos
+        let candidatoEraImportado = false; // rastreia se o candidato já existia (importado)
         if (input.processoSeletivoId && result.alunoId) {
           try {
             const database = await getDb();
@@ -857,6 +858,7 @@ export const appRouter = router({
               .limit(1);
             if (existingCand) {
               // Atualizar o registro existente (importado ou outro) para ativo
+              candidatoEraImportado = true;
               await database
                 .update(processoCandidatos)
                 .set({ userId: correctUserId, statusCadastro: 'ativo', email: input.email.trim().toLowerCase(), nome: input.name, cpf: cpfLimpo ?? undefined })
@@ -899,8 +901,8 @@ export const appRouter = router({
         } catch (e) { console.warn('[AutoRegistro] email aluno:', e); }
         try {
           const { sendEmail } = await import('./emailService');
-          if (input.processoSeletivoId) {
-            // Notificação interna — novo candidato de processo seletivo
+          if (input.processoSeletivoId && !candidatoEraImportado) {
+            // Notificação interna — novo candidato de processo seletivo (apenas cadastros novos, não importados)
             const database = await getDb();
             const { processosSeletivos: psTbl } = await import('../drizzle/schema');
             const [ps] = await database.select({ nome: psTbl.nome, clienteNome: psTbl.clienteNome }).from(psTbl).where(eq(psTbl.id, input.processoSeletivoId)).limit(1);

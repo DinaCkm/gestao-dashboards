@@ -1355,26 +1355,34 @@ function AvaliacaoContent() {
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between flex-wrap gap-3">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      Aprovados por Região ({aprovadosFiltrados.length})
-                    </CardTitle>
-                    <Select value={filtroRegiaoAprovados} onValueChange={setFiltroRegiaoAprovados}>
-                      <SelectTrigger className="h-8 text-xs w-48">
-                        <SelectValue placeholder="Todas as regiões" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todas">Todas as regiões</SelectItem>
-                        {regioesComAprovados.map((r) => (
-                          <SelectItem key={r.id} value={String(r.id)}>{r.nome}</SelectItem>
-                        ))}
-                        {aprovadosSemRegiao.length > 0 && (
-                          <SelectItem value="sem_regiao">Sem região definida</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <CollapsibleTrigger asChild>
+                      <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          Aprovados por Região ({aprovadosFiltrados.length})
+                        </CardTitle>
+                        {aprovadosAberto ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                    </CollapsibleTrigger>
+                    {aprovadosAberto && (
+                      <Select value={filtroRegiaoAprovados} onValueChange={setFiltroRegiaoAprovados}>
+                        <SelectTrigger className="h-8 text-xs w-48">
+                          <SelectValue placeholder="Todas as regiões" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todas">Todas as regiões</SelectItem>
+                          {regioesComAprovados.map((r) => (
+                            <SelectItem key={r.id} value={String(r.id)}>{r.nome}</SelectItem>
+                          ))}
+                          {aprovadosSemRegiao.length > 0 && (
+                            <SelectItem value="sem_regiao">Sem região definida</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </CardHeader>
+                <CollapsibleContent>
                 <CardContent>
                   {aprovadosFiltrados.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-6">
@@ -1417,6 +1425,7 @@ function AvaliacaoContent() {
                     </div>
                   )}
                 </CardContent>
+                </CollapsibleContent>
               </Card>
             );
           })()}

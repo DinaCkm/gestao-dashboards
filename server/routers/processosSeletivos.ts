@@ -155,11 +155,7 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
     throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
   }
 
-  // Quando regiaoId é null (processo sem regiões), busca qualquer slot disponível do processo
-  const regiaoFilter = candidate.regiaoId != null
-    ? eq(processoAgendaSlots.regiaoId, candidate.regiaoId)
-    : isNull(processoAgendaSlots.regiaoId);
-
+  // Slots são sempre gerais (sem vínculo de região) — busca qualquer slot disponível do processo
   // Filtrar apenas slots com data de hoje ou futura (ignorar datas passadas)
   const hoje = new Date();
   const dataHoje = hoje.toISOString().slice(0, 10); // "YYYY-MM-DD"
@@ -167,14 +163,12 @@ async function allocateCandidate(database: DbClient, candidatoId: number, actorU
   const slotWhere = candidate.vagaId
     ? and(
         eq(processoAgendaSlots.processoId, candidate.processoId),
-        regiaoFilter,
         or(isNull(processoAgendaSlots.vagaId), eq(processoAgendaSlots.vagaId, candidate.vagaId)),
         eq(processoAgendaSlots.status, "disponivel"),
         gte(processoAgendaSlots.dataAgenda, dataHoje),
       )
     : and(
         eq(processoAgendaSlots.processoId, candidate.processoId),
-        regiaoFilter,
         eq(processoAgendaSlots.status, "disponivel"),
         gte(processoAgendaSlots.dataAgenda, dataHoje),
       );
