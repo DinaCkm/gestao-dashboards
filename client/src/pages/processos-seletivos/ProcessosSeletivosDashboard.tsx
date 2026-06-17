@@ -15,7 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight, Link2, Copy, CheckCheck, Megaphone, Pencil } from "lucide-react";
+import { BriefcaseBusiness, CalendarDays, MapPin, Plus, UserPlus, Ban, PlayCircle, PauseCircle, Trash2, ToggleLeft, ToggleRight, Link2, Copy, CheckCheck, Megaphone, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useEffect, useMemo, useState } from "react";
 import { useSearch } from "wouter";
 import { toast } from "sonner";
@@ -70,6 +71,10 @@ function ProcessosSeletivosContent() {
   const [comunicadoHtml, setComunicadoHtml] = useState("");
   // Filtro de candidato no Mapa de Entrevistas
   const [filtroMapaCandidato, setFiltroMapaCandidato] = useState("");
+  // Colapso dos cards de configuração
+  const [openVagas, setOpenVagas] = useState(false);
+  const [openRegioes, setOpenRegioes] = useState(false);
+  const [openCandidato, setOpenCandidato] = useState(false);
 
   // Estado para o dialog de edição de slot
   const [editSlotDialog, setEditSlotDialog] = useState<{
@@ -650,11 +655,22 @@ function ProcessosSeletivosContent() {
 
           {isAdmin && (
             <div className="grid gap-4 lg:grid-cols-3">
+              <Collapsible open={openVagas} onOpenChange={setOpenVagas}>
               <Card className="rounded-lg">
                 <CardHeader>
-                  <CardTitle>Vagas</CardTitle>
-                  <CardDescription>Cargos ou vagas dentro do processo.</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Vagas</CardTitle>
+                      <CardDescription>Cargos ou vagas dentro do processo.</CardDescription>
+                    </div>
+                    <CollapsibleTrigger asChild>
+                      <button type="button" className="rounded p-1 hover:bg-muted transition-colors">
+                        {openVagas ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                    </CollapsibleTrigger>
+                  </div>
                 </CardHeader>
+                <CollapsibleContent>
                 <CardContent className="space-y-4">
                   <form className="grid gap-2" onSubmit={handleCreateVaga}>
                     <Input placeholder="Titulo da vaga" value={vagaForm.titulo} onChange={(event) => setVagaForm((form) => ({ ...form, titulo: event.target.value }))} required />
@@ -683,13 +699,26 @@ function ProcessosSeletivosContent() {
                     ))}
                   </div>
                 </CardContent>
+                </CollapsibleContent>
               </Card>
+              </Collapsible>
 
+              <Collapsible open={openRegioes} onOpenChange={setOpenRegioes}>
               <Card className="rounded-lg">
                 <CardHeader>
-                  <CardTitle>Regioes</CardTitle>
-                  <CardDescription>Grupos ou regioes usados na agenda.</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Regioes</CardTitle>
+                      <CardDescription>Grupos ou regioes usados na agenda.</CardDescription>
+                    </div>
+                    <CollapsibleTrigger asChild>
+                      <button type="button" className="rounded p-1 hover:bg-muted transition-colors">
+                        {openRegioes ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                    </CollapsibleTrigger>
+                  </div>
                 </CardHeader>
+                <CollapsibleContent>
                 <CardContent className="space-y-4">
                   <form className="grid gap-2" onSubmit={handleCreateRegiao}>
                     <Input placeholder="Nome da regiao" value={regiaoForm.nome} onChange={(event) => setRegiaoForm((form) => ({ ...form, nome: event.target.value }))} required />
@@ -723,13 +752,26 @@ function ProcessosSeletivosContent() {
                     ))}
                   </div>
                 </CardContent>
+                </CollapsibleContent>
               </Card>
+              </Collapsible>
 
+              <Collapsible open={openCandidato} onOpenChange={setOpenCandidato}>
               <Card className="rounded-lg">
                 <CardHeader>
-                  <CardTitle>Candidato</CardTitle>
-                  <CardDescription>Cadastro manual inicial para homologacao.</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Candidato</CardTitle>
+                      <CardDescription>Cadastro manual inicial para homologacao.</CardDescription>
+                    </div>
+                    <CollapsibleTrigger asChild>
+                      <button type="button" className="rounded p-1 hover:bg-muted transition-colors">
+                        {openCandidato ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </button>
+                    </CollapsibleTrigger>
+                  </div>
                 </CardHeader>
+                <CollapsibleContent>
                 <CardContent>
                   <form className="grid gap-2" onSubmit={handleCreateCandidato}>
                     <Input placeholder="Nome" value={candidatoForm.nome} onChange={(event) => setCandidatoForm((form) => ({ ...form, nome: event.target.value }))} required />
@@ -783,7 +825,9 @@ function ProcessosSeletivosContent() {
                     </Button>
                   </form>
                 </CardContent>
+                </CollapsibleContent>
               </Card>
+              </Collapsible>
             </div>
           )}
 
