@@ -97,10 +97,12 @@ import VisualizarPDI from "./pages/VisualizarPDI";
 import AutoRegistro from "./pages/AutoRegistro";
 import PortalCandidatoPS from "./pages/PortalCandidatoPS";
 import WebinarChecklistConfig from "./pages/WebinarChecklistConfig";
+import WebinarTaskResponsavel from "./pages/WebinarTaskResponsavel";
 
 function Router() {
   return (
     <Switch>
+      <Route path={"/tarefa-webinar/:token"} component={WebinarTaskResponsavel} />
       <Route path={"/login"} component={Login} />
       <Route path={"/registro"} component={AutoRegistro} />
       <Route path={"/candidato-ps"} component={PortalCandidatoPS} />

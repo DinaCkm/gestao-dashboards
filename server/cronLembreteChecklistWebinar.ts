@@ -54,6 +54,7 @@ export async function verificarEEnviarLembretesChecklistWebinar(dryRun = false):
   // Busca tarefas pendentes/em andamento com prazo <= hoje
   // JOIN com scheduled_webinars para obter título e data do evento
   // NÃO filtra por status do webinar — obedece apenas à data da tarefa
+  // Exclui palestrante — não recebem lembrete por este canal
   const [tarefasRows] = await db.execute(sql.raw(`
     SELECT
       wt.id AS taskId,
@@ -62,6 +63,7 @@ export async function verificarEEnviarLembretesChecklistWebinar(dryRun = false):
       DATE_FORMAT(wt.dueDate, '%d/%m/%Y') AS dueDateFormatted,
       wt.responsibleName,
       wt.responsibleEmail,
+      wt.accessToken,
       sw.title AS webinarTitle,
       DATE_FORMAT(sw.eventDate, '%d/%m/%Y') AS webinarDate,
       sw.id AS webinarId
@@ -69,6 +71,7 @@ export async function verificarEEnviarLembretesChecklistWebinar(dryRun = false):
     INNER JOIN scheduled_webinars sw ON sw.id = wt.webinarId
     WHERE
       wt.status NOT IN ('completed', 'cancelled')
+      AND wt.responsibleRole != 'palestrante'
       AND wt.dueDate <= '${hojeStr}'
       AND wt.responsibleEmail IS NOT NULL
       AND wt.responsibleEmail != ''
@@ -126,6 +129,10 @@ export async function verificarEEnviarLembretesChecklistWebinar(dryRun = false):
 
     if (!dryRun) {
       try {
+        // URL da página de conclusão da tarefa (link único por tarefa)
+        const taskUrl = tarefa.accessToken
+          ? `https://ecolider.ecodobem.com/tarefa-webinar/${tarefa.accessToken}`
+          : `${ADMIN_URL}/${tarefa.webinarId}`;
         const emailData = buildLembreteInternoWebinarEmail({
           responsibleName: tarefa.responsibleName || 'Responsável',
           taskTitle: tarefa.taskTitle,
@@ -133,7 +140,7 @@ export async function verificarEEnviarLembretesChecklistWebinar(dryRun = false):
           dueDate: tarefa.dueDateFormatted,
           webinarTitle: tarefa.webinarTitle,
           webinarDate: tarefa.webinarDate || 'Data não definida',
-          adminUrl: `${ADMIN_URL}/${tarefa.webinarId}`,
+          adminUrl: taskUrl,
         });
 
         const result = await sendEmail({

@@ -9186,6 +9186,76 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         };
       }),
 
+    /** Busca uma tarefa pelo accessToken (acesso público para o responsável) */
+    getTaskByToken: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const db = await import('./db');
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        const { sql } = await import('drizzle-orm');
+        const [rows] = await dbConn.execute(sql.raw(`
+          SELECT
+            wt.id, wt.webinarId, wt.title, wt.description, wt.deliveryUrl,
+            DATE_FORMAT(wt.dueDate, '%Y-%m-%d') AS dueDate,
+            wt.responsibleRole, wt.responsibleName, wt.responsibleEmail,
+            wt.status, wt.isCritical, wt.completedAt,
+            sw.title AS webinarTitle,
+            DATE_FORMAT(sw.eventDate, '%d/%m/%Y') AS webinarDate
+          FROM webinar_tasks wt
+          INNER JOIN scheduled_webinars sw ON sw.id = wt.webinarId
+          WHERE wt.accessToken = '${input.token.replace(/'/g, "''")}'
+          LIMIT 1
+        `));
+        const task = (rows as any[])[0];
+        if (!task) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tarefa não encontrada ou link inválido' });
+        // Bloquear palestrante de usar esta interface
+        if (task.responsibleRole === 'palestrante') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Esta interface não está disponível para palestrantes' });
+        }
+        return { ...task, isCritical: !!task.isCritical };
+      }),
+
+    /** Conclui uma tarefa via token público: salva link de entrega e marca como concluída */
+    completeTaskByToken: publicProcedure
+      .input(z.object({
+        token: z.string(),
+        deliveryUrl: z.string().url('URL inválida').optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await import('./db');
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        const { sql } = await import('drizzle-orm');
+        // Buscar tarefa pelo token
+        const [rows] = await dbConn.execute(sql.raw(`
+          SELECT id, responsibleRole, status
+          FROM webinar_tasks
+          WHERE accessToken = '${input.token.replace(/'/g, "''")}'
+          LIMIT 1
+        `));
+        const task = (rows as any[])[0];
+        if (!task) throw new TRPCError({ code: 'NOT_FOUND', message: 'Tarefa não encontrada ou link inválido' });
+        // Bloquear palestrante
+        if (task.responsibleRole === 'palestrante') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Palestrantes não podem concluir tarefas por este canal' });
+        }
+        if (task.status === 'completed') {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Esta tarefa já foi concluída' });
+        }
+        const safeUrl = input.deliveryUrl ? `'${input.deliveryUrl.replace(/'/g, "''")}'` : 'NULL';
+        await dbConn.execute(sql.raw(`
+          UPDATE webinar_tasks
+          SET
+            status = 'completed',
+            deliveryUrl = ${safeUrl},
+            completedAt = NOW(),
+            updatedAt = NOW()
+          WHERE id = ${task.id}
+        `));
+        return { success: true, taskId: task.id };
+      }),
+
   }),
 
   // ==================== WEBINAR TASK TEMPLATES ====================

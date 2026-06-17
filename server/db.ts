@@ -13268,6 +13268,8 @@ export interface WebinarTask {
   templateId: number | null;
   title: string;
   description: string | null;
+  deliveryUrl: string | null;
+  accessToken: string | null;
   dueDate: string; // ISO date string
   responsibleRole: WebinarResponsibleRole;
   responsibleUserId: number | null;
@@ -13306,7 +13308,7 @@ export async function getWebinarTasksByWebinar(webinarId: number): Promise<Webin
   if (!db) return [];
   const [rows] = await db.execute(sql.raw(`
     SELECT
-      id, webinarId, templateId, title, description,
+      id, webinarId, templateId, title, description, deliveryUrl, accessToken,
       DATE_FORMAT(dueDate, '%Y-%m-%d') AS dueDate,
       responsibleRole, responsibleUserId, responsibleName, responsibleEmail,
       status, priority, isCritical,
@@ -13495,11 +13497,18 @@ export async function generateWebinarInternalTasks(
       INSERT INTO webinar_tasks
         (webinarId, templateId, title, description, dueDate,
          responsibleRole, responsibleName, responsibleEmail,
-         status, priority, isCritical, completedAt)
+         status, priority, isCritical, completedAt, accessToken)
       VALUES
         (${webinarId}, ${tpl.id}, '${safeTitle}', '${safeDesc}', '${dueDateStr}',
          '${tpl.defaultRole}', ${respName}, ${respEmail},
-         '${initialStatus}', 'normal', ${tpl.isCritical ? 1 : 0}, ${completedAtSql})
+         '${initialStatus}', 'normal', ${tpl.isCritical ? 1 : 0}, ${completedAtSql},
+         LOWER(CONCAT(
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 1, 8), '-',
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 9, 4), '-',
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 13, 4), '-',
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 17, 4), '-',
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 21, 12)
+         )))
     `));
   }
 }
