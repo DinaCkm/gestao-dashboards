@@ -1998,7 +1998,7 @@ function AvaliacaoContent() {
                         disabled={gerarRelatorioIA.isPending}
                         onClick={() => gerarRelatorioIA.mutate({ candidatoId: modalRelatorio.id, observacao: observacaoRevisao })}
                       >
-                        {gerarRelatorioIA.isPending ? "Gerando relatório..." : (dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista ? "Regenerar Relatório com IA" : "Gerar Relatório com IA"}
+                        {gerarRelatorioIA.isPending ? "Gerando relatório..." : (dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista ? "Regenerar Relatório Consolidado" : "Gerar Relatório Consolidado"}
                       </Button>
                     </div>
                   )}
@@ -2007,7 +2007,7 @@ function AvaliacaoContent() {
                   {(dadosRelatorio?.entrevista as any)?.dadosPrincipaisEntrevista && (
                     <div className="space-y-3 border rounded-lg p-3 bg-slate-50">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold">Relatório gerado pela IA</p>
+                        <p className="text-sm font-semibold">RELATÓRIO CONSOLIDADO</p>
                         <Button
                           size="sm"
                           variant="outline"
