@@ -920,6 +920,42 @@ export const processosSeletivosRouter = router({
       return { success: true };
     }),
 
+  alternarSuspensaoSlot: protectedProcedure
+    .input(z.object({ slotId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [slot] = await database
+        .select()
+        .from(processoAgendaSlots)
+        .where(eq(processoAgendaSlots.id, input.slotId))
+        .limit(1);
+      if (!slot) throw new TRPCError({ code: "NOT_FOUND", message: "Slot nao encontrado" });
+
+      let novoStatus: "disponivel" | "suspenso";
+      if (slot.status === "disponivel") {
+        novoStatus = "suspenso";
+      } else if (slot.status === "suspenso") {
+        novoStatus = "disponivel";
+      } else {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Apenas slots disponiveis ou suspensos podem ter o status alternado" });
+      }
+
+      await database
+        .update(processoAgendaSlots)
+        .set({ status: novoStatus })
+        .where(eq(processoAgendaSlots.id, input.slotId));
+
+      await writeLog(database, {
+        processoId: slot.processoId,
+        userId: ctx.user.id,
+        acao: novoStatus === "suspenso" ? "slot_suspenso" : "slot_reativado",
+        detalhe: `Slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim} ${novoStatus === "suspenso" ? "suspenso" : "reativado"}`,
+      });
+
+      return { success: true, status: novoStatus };
+    }),
+
   listarAgendasGrupo: protectedProcedure.input(processoIdInput).query(async ({ ctx, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx.user, input.processoId);

@@ -25,6 +25,7 @@ const statusClasses: Record<string, string> = {
   reservado: "bg-cyan-100 text-cyan-700",
   confirmado: "bg-blue-100 text-blue-700",
   bloqueado: "bg-zinc-100 text-zinc-700",
+  suspenso: "bg-amber-100 text-amber-700",
 };
 
 const labels: Record<string, string> = {
@@ -52,6 +53,7 @@ const labels: Record<string, string> = {
   reservado: "Reservado",
   confirmado: "Confirmado",
   bloqueado: "Bloqueado",
+  suspenso: "Suspenso",
 };
 
 export default function ProcessoStatusBadge({ status }: { status: string | null | undefined }) {

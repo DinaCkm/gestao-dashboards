@@ -1844,7 +1844,7 @@ export const processoAgendaSlots = mysqlTable("processo_agenda_slots", {
   inicio: varchar("inicio", { length: 5 }).notNull(),
   fim: varchar("fim", { length: 5 }).notNull(),
   linkEntrevista: varchar("linkEntrevista", { length: 500 }),
-  status: mysqlEnum("status", ["disponivel", "reservado", "confirmado", "realizado", "cancelado", "bloqueado"]).default("disponivel").notNull(),
+  status: mysqlEnum("status", ["disponivel", "reservado", "confirmado", "realizado", "cancelado", "bloqueado", "suspenso"]).default("disponivel").notNull(),
   emailConvocacaoEnviado: int("emailConvocacaoEnviado").default(0).notNull(),
   emailConvocacaoEnviadoEm: timestamp("emailConvocacaoEnviadoEm"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

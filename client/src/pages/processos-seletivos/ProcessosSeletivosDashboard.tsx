@@ -261,6 +261,14 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(`Erro ao excluir: ${err.message}`),
   });
 
+  const alternarSuspensaoSlot = trpc.processosSeletivos.alternarSuspensaoSlot.useMutation({
+    onSuccess: async (result) => {
+      toast.success(result.status === "suspenso" ? "Slot suspenso." : "Slot reativado.");
+      await invalidateProcesso();
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
   const criarSlotsManual = trpc.processosSeletivos.criarSlotsManual.useMutation({
     onSuccess: async (result) => {
       toast.success(`${result.slotsCriados} slot(s) salvos com sucesso!`);
@@ -1071,7 +1079,7 @@ function ProcessosSeletivosContent() {
                         const candidate = slot.candidatoId ? candidateById.get(slot.candidatoId) : null;
                         const linkSlot = (slot as any).linkEntrevista || (selectedProcesso as any)?.linkEntrevista || null;
                         return (
-                          <TableRow key={slot.id}>
+                          <TableRow key={slot.id} className={slot.status === "suspenso" ? "opacity-50 bg-muted/30" : ""}>
                             <TableCell>
                               <div className="font-medium">{slot.dataAgenda}</div>
                               <div className="text-xs text-muted-foreground">{slot.inicio} - {slot.fim}</div>
@@ -1105,7 +1113,18 @@ function ProcessosSeletivosContent() {
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </button>
-                                  {(slot.status === "disponivel" || slot.status === "reservado") && (
+                                  {(slot.status === "disponivel" || slot.status === "suspenso") && (
+                                    <button
+                                      type="button"
+                                      title={slot.status === "disponivel" ? "Suspender slot" : "Ativar slot"}
+                                      disabled={alternarSuspensaoSlot.isPending}
+                                      onClick={() => alternarSuspensaoSlot.mutate({ slotId: slot.id })}
+                                      className={`flex h-7 w-7 items-center justify-center rounded ${slot.status === "disponivel" ? "text-amber-600 hover:bg-amber-50" : "text-green-600 hover:bg-green-50"} disabled:opacity-40`}
+                                    >
+                                      {slot.status === "disponivel" ? <PauseCircle className="h-3.5 w-3.5" /> : <PlayCircle className="h-3.5 w-3.5" />}
+                                    </button>
+                                  )}
+                                  {(slot.status === "disponivel" || slot.status === "reservado" || slot.status === "suspenso") && (
                                     <button
                                       type="button"
                                       title="Excluir slot"
