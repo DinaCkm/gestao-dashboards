@@ -26,6 +26,7 @@ import {
   ChevronUp,
   Clock,
   Download,
+  ExternalLink,
   FileText,
   Filter,
   History,
@@ -1918,10 +1919,21 @@ function AvaliacaoContent() {
                   {(dadosRelatorio?.entrevista as any)?.transcricaoNomeArquivo ? (
                     <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
                       <FileText className="h-4 w-4 text-green-600 shrink-0" />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-green-800">Transcrição enviada</p>
                         <p className="text-green-600">{(dadosRelatorio?.entrevista as any)?.transcricaoNomeArquivo}</p>
                       </div>
+                      {(dadosRelatorio?.entrevista as any)?.transcricaoUrl && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs border-green-300 text-green-700 hover:bg-green-100"
+                          onClick={() => window.open((dadosRelatorio?.entrevista as any).transcricaoUrl, '_blank')}
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Abrir arquivo
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
