@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -560,6 +560,7 @@ export default function MuralAluno() {
   );
   const VITRINE_INICIAL = 6;
   const [vitrineExpandida, setVitrineExpandida] = useState(false);
+  const [dicaIndex, setDicaIndex] = useState(0);
   const isAdmin = user?.role === 'admin';
   const consultorRoleMural = (user as any)?.consultorRole as string | null | undefined;
   const isMentorMural = consultorRoleMural === 'mentor';
@@ -603,15 +604,19 @@ export default function MuralAluno() {
     );
   }, [myAttendance]);
 
-  // Dica da Semana: primeiro aviso ativo do tipo news (o backend já filtra isActive, publishAt e expiresAt)
-  // Ordena por prioridade decrescente e pega o primeiro
-  const dicaDaSemana = useMemo(() => {
+  // Dica da Semana: todas as novidades ativas do tipo news, ordenadas por prioridade e data
+  const dicasDaSemana = useMemo(() => {
     return (
       (activeAnnouncements ?? [])
         .filter((a: any) => a.type === "news")
-        .sort((a: any, b: any) => Number(b.priority ?? 0) - Number(a.priority ?? 0))[0] ?? null
+        .sort((a: any, b: any) => {
+          const pDiff = Number(b.priority ?? 0) - Number(a.priority ?? 0);
+          if (pDiff !== 0) return pDiff;
+          return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+        })
     );
   }, [activeAnnouncements]);
+  const dicaDaSemana = dicasDaSemana[dicaIndex] ?? null;
 
   // Announcements by type
   const announcementsByType = useMemo(() => {
@@ -788,17 +793,17 @@ E-mail: ${email}`;
           {nextWebinar && <NextWebinarHighlight webinar={nextWebinar} />}
 
           {/* Dica da Semana */}
-          {dicaDaSemana && (
+          {dicasDaSemana.length > 0 && dicaDaSemana && (
             <div className="animate-in fade-in zoom-in duration-500">
               <div className="relative overflow-hidden rounded-2xl border border-orange-300 bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 shadow-[0_0_30px_rgba(245,153,31,0.35)] p-5 sm:p-6">
                 {/* Glow de fundo */}
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-amber-300/5 to-red-400/10 pointer-events-none" />
 
-                <div className="relative flex flex-col sm:flex-row gap-4 items-start">
+                <div className="relative flex flex-col sm:flex-row gap-6 items-start">
                   {/* Conteudo */}
                   <div className="flex-1 min-w-0">
-                    {/* Badge */}
-                    <div className="flex items-center gap-2 mb-3">
+                    {/* Badge + navegação */}
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 px-3 py-1 text-xs font-bold text-white shadow-md animate-pulse">
                         <Sparkles className="h-3.5 w-3.5" />
                         DICA DA SEMANA
@@ -807,6 +812,30 @@ E-mail: ${email}`;
                         <span className="text-xs text-orange-600/70">
                           {formatDate(dicaDaSemana.publishAt)}
                         </span>
+                      )}
+                      {/* Navegação entre novidades */}
+                      {dicasDaSemana.length > 1 && (
+                        <div className="flex items-center gap-1 ml-auto">
+                          <button
+                            onClick={() => setDicaIndex(i => Math.max(0, i - 1))}
+                            disabled={dicaIndex === 0}
+                            className="w-7 h-7 rounded-full flex items-center justify-center border border-orange-300 bg-white/80 text-orange-600 disabled:opacity-30 hover:bg-orange-50 transition-colors"
+                            aria-label="Novidade anterior"
+                          >
+                            <ChevronRight className="h-4 w-4 rotate-180" />
+                          </button>
+                          <span className="text-xs text-orange-600/80 font-medium px-1">
+                            {dicaIndex + 1} / {dicasDaSemana.length}
+                          </span>
+                          <button
+                            onClick={() => setDicaIndex(i => Math.min(dicasDaSemana.length - 1, i + 1))}
+                            disabled={dicaIndex === dicasDaSemana.length - 1}
+                            className="w-7 h-7 rounded-full flex items-center justify-center border border-orange-300 bg-white/80 text-orange-600 disabled:opacity-30 hover:bg-orange-50 transition-colors"
+                            aria-label="Próxima novidade"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -834,13 +863,13 @@ E-mail: ${email}`;
                     )}
                   </div>
 
-                  {/* Imagem lateral (se houver) */}
+                  {/* Imagem lateral ampliada (se houver) */}
                   {dicaDaSemana.imageUrl && (
-                    <div className="shrink-0 w-full sm:w-48">
+                    <div className="shrink-0 w-full sm:w-80">
                       <img
                         src={dicaDaSemana.imageUrl}
                         alt={dicaDaSemana.title}
-                        className="w-full rounded-xl object-cover aspect-video sm:aspect-square shadow-md border border-orange-200"
+                        className="w-full rounded-xl object-cover aspect-video shadow-md border border-orange-200"
                       />
                     </div>
                   )}
