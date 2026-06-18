@@ -561,6 +561,7 @@ export default function MuralAluno() {
   const VITRINE_INICIAL = 6;
   const [vitrineExpandida, setVitrineExpandida] = useState(false);
   const [dicaIndex, setDicaIndex] = useState(0);
+  const [dicaPaused, setDicaPaused] = useState(false);
   const isAdmin = user?.role === 'admin';
   const consultorRoleMural = (user as any)?.consultorRole as string | null | undefined;
   const isMentorMural = consultorRoleMural === 'mentor';
@@ -617,6 +618,15 @@ export default function MuralAluno() {
     );
   }, [activeAnnouncements]);
   const dicaDaSemana = dicasDaSemana[dicaIndex] ?? null;
+
+  // Autoplay: troca a novidade automaticamente a cada 6 segundos (pausa ao passar o mouse)
+  useEffect(() => {
+    if (dicasDaSemana.length <= 1 || dicaPaused) return;
+    const timer = setInterval(() => {
+      setDicaIndex(i => (i + 1) % dicasDaSemana.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [dicasDaSemana.length, dicaPaused]);
 
   // Announcements by type
   const announcementsByType = useMemo(() => {
@@ -794,8 +804,25 @@ E-mail: ${email}`;
 
           {/* Dica da Semana */}
           {dicasDaSemana.length > 0 && dicaDaSemana && (
-            <div className="animate-in fade-in zoom-in duration-500">
+            <div
+              className="animate-in fade-in zoom-in duration-500"
+              onMouseEnter={() => setDicaPaused(true)}
+              onMouseLeave={() => setDicaPaused(false)}
+            >
               <div className="relative overflow-hidden rounded-2xl border border-orange-300 bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 shadow-[0_0_30px_rgba(245,153,31,0.35)] p-5 sm:p-6">
+                {/* Barra de progresso do autoplay */}
+                {dicasDaSemana.length > 1 && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-100 rounded-b-2xl overflow-hidden">
+                    <div
+                      key={`${dicaIndex}-${dicaPaused}`}
+                      className="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-b-2xl"
+                      style={{
+                        animation: dicaPaused ? 'none' : 'dicaProgress 6s linear forwards',
+                        width: dicaPaused ? '100%' : undefined,
+                      }}
+                    />
+                  </div>
+                )}
                 {/* Glow de fundo */}
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-amber-300/5 to-red-400/10 pointer-events-none" />
 

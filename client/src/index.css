@@ -340,3 +340,9 @@
     transform: translateY(-6px);
   }
 }
+
+/* Autoplay progress bar for DICA DA SEMANA card */
+@keyframes dicaProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
