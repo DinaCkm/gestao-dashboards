@@ -13597,3 +13597,35 @@ export async function reorderWebinarTaskTemplates(orders: { id: number; sortOrde
     await db.execute(sql.raw(`UPDATE webinar_task_templates SET sortOrder = ${o.sortOrder} WHERE id = ${o.id}`));
   }
 }
+
+// ==================== SUPORTE A PDF NAS ATIVIDADES DE CURSO ====================
+
+/**
+ * Garante que o enum tipoAtividade na tabela atividades_curso aceite o valor "pdf".
+ * Também garante que a coluna urlMidia existe (usada para armazenar a URL do PDF).
+ */
+export async function ensurePdfAtividadeSupport(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.execute(sql.raw(
+      `ALTER TABLE \`atividades_curso\`
+       MODIFY COLUMN \`tipoAtividade\`
+         enum('genially','video','podcast','tedtalk','livro','intro','pdf')
+         NOT NULL`
+    ));
+    console.log("[DB] Enum tipoAtividade atualizado para incluir 'pdf'.");
+  } catch (e: any) {
+    console.warn("[DB] ensurePdfAtividadeSupport (enum):", e?.message);
+  }
+  try {
+    await db.execute(sql.raw(
+      `ALTER TABLE \`atividades_curso\` ADD COLUMN IF NOT EXISTS \`urlMidia\` text NULL`
+    ));
+    console.log("[DB] Coluna urlMidia verificada/criada em atividades_curso.");
+  } catch (e: any) {
+    if (!e?.message?.includes("Duplicate column")) {
+      console.warn("[DB] ensurePdfAtividadeSupport (urlMidia):", e?.message);
+    }
+  }
+}

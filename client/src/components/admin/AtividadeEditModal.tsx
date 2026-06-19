@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,8 @@ type TipoAtividade =
   | "podcast"
   | "tedtalk"
   | "livro"
-  | "intro";
+  | "intro"
+  | "pdf";
 
 interface AtividadeEditModalProps {
   open: boolean;
@@ -39,6 +40,7 @@ type FormDataType = {
   titulo: string;
   tipoAtividade: TipoAtividade;
   urlGenially: string;
+  urlMidia: string;
   imagemUrl: string;
   descricao: string;
   ordem: number;
@@ -55,6 +57,7 @@ function getInitialFormData(atividade: any): FormDataType {
     titulo: atividade?.titulo || "",
     tipoAtividade: (atividade?.tipoAtividade || "genially") as TipoAtividade,
     urlGenially: atividade?.urlGenially || "",
+    urlMidia: atividade?.urlMidia || "",
     imagemUrl: atividade?.imagemUrl || "",
     descricao: atividade?.descricao || "",
     ordem: Number(atividade?.ordem ?? 0),
@@ -72,10 +75,13 @@ export function AtividadeEditModal({
   const [formData, setFormData] = useState<FormDataType>(getInitialFormData(atividade));
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(atividade?.imagemUrl || "");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const uploadImagemMutation = trpc.competenciasCompTec.admin.uploadImagemAtividade.useMutation();
+  const uploadPdfMutation = trpc.competenciasCompTec.admin.uploadPdfAtividade.useMutation();
   const updateAtividadeMutation = trpc.competenciasCompTec.admin.atualizarAtividade.useMutation();
 
   useEffect(() => {
@@ -83,7 +89,9 @@ export function AtividadeEditModal({
     setFormData(initialData);
     setImagePreview(atividade?.imagemUrl || "");
     setImageFile(null);
+    setPdfFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (pdfInputRef.current) pdfInputRef.current.value = "";
   }, [atividade, open]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,6 +103,17 @@ export function AtividadeEditModal({
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== "application/pdf") {
+        toast.error("Apenas arquivos PDF são permitidos.");
+        return;
+      }
+      setPdfFile(file);
     }
   };
 
@@ -135,6 +154,17 @@ export function AtividadeEditModal({
         imagemUrl = uploadResult.url;
       }
 
+      let urlMidia = formData.urlMidia;
+      if (formData.tipoAtividade === "pdf" && pdfFile) {
+        const base64Pdf = await convertFileToBase64(pdfFile);
+        const pdfResult = await uploadPdfMutation.mutateAsync({
+          nomeArquivo: pdfFile.name,
+          tipoMime: pdfFile.type,
+          dados: base64Pdf,
+        });
+        urlMidia = pdfResult.url;
+      }
+
       const tempoMinutos = Number(formData.tempoMinimoMinutos || 0);
       const tempoSegundos = tempoMinutos > 0 ? tempoMinutos * 60 : 0;
 
@@ -142,7 +172,8 @@ export function AtividadeEditModal({
         id: Number(atividade.id),
         titulo: formData.titulo.trim(),
         tipoAtividade: formData.tipoAtividade,
-        urlGenially: formData.urlGenially.trim(),
+        urlGenially: formData.tipoAtividade !== "pdf" ? formData.urlGenially.trim() : undefined,
+        urlMidia: formData.tipoAtividade === "pdf" ? urlMidia : undefined,
         descricao: formData.descricao.trim(),
         ordem: Number(formData.ordem ?? 0),
         imagemUrl,
@@ -162,7 +193,7 @@ export function AtividadeEditModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar Atividade</DialogTitle>
         </DialogHeader>
@@ -179,7 +210,6 @@ export function AtividadeEditModal({
               placeholder="Ex: Introdução ao tema"
             />
           </div>
-
           <div>
             <Label htmlFor="tipoAtividade">Tipo de Atividade</Label>
             <Select
@@ -201,24 +231,66 @@ export function AtividadeEditModal({
                 <SelectItem value="tedtalk">TedTalk</SelectItem>
                 <SelectItem value="livro">Livro</SelectItem>
                 <SelectItem value="intro">Introdução</SelectItem>
+                <SelectItem value="pdf">PDF</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="urlGenially">URL Genially</Label>
-            <Input
-              id="urlGenially"
-              value={formData.urlGenially}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  urlGenially: e.target.value,
-                }))
-              }
-              placeholder="https://..."
-            />
-          </div>
+          {/* Campo URL — exibido apenas quando o tipo NÃO é PDF */}
+          {formData.tipoAtividade !== "pdf" && (
+            <div>
+              <Label htmlFor="urlGenially">URL Genially / Vídeo</Label>
+              <Input
+                id="urlGenially"
+                value={formData.urlGenially}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    urlGenially: e.target.value,
+                  }))
+                }
+                placeholder="https://..."
+              />
+            </div>
+          )}
+
+          {/* Campo PDF — exibido apenas quando o tipo é PDF */}
+          {formData.tipoAtividade === "pdf" && (
+            <div>
+              <Label htmlFor="pdfFile">Arquivo PDF</Label>
+              {formData.urlMidia && !pdfFile && (
+                <div className="mb-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 p-2 text-sm text-blue-700">
+                  <span>📄</span>
+                  <a
+                    href={formData.urlMidia}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline truncate max-w-xs"
+                  >
+                    PDF atual — clique para visualizar
+                  </a>
+                </div>
+              )}
+              <Input
+                ref={pdfInputRef}
+                id="pdfFile"
+                type="file"
+                accept="application/pdf"
+                onChange={handlePdfChange}
+                className="mt-1"
+              />
+              {pdfFile && (
+                <p className="mt-1 text-xs text-green-600">
+                  ✓ {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB) — será substituído ao salvar
+                </p>
+              )}
+              {!pdfFile && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Deixe em branco para manter o PDF atual
+                </p>
+              )}
+            </div>
+          )}
 
           <div>
             <Label htmlFor="imagem">Imagem do Card</Label>
@@ -236,7 +308,6 @@ export function AtividadeEditModal({
                   Sem imagem cadastrada
                 </div>
               )}
-
               <Input
                 ref={fileInputRef}
                 id="imagem"
@@ -249,7 +320,6 @@ export function AtividadeEditModal({
               </p>
             </div>
           </div>
-
           <div>
             <Label htmlFor="descricao">Descrição</Label>
             <Textarea
@@ -262,7 +332,6 @@ export function AtividadeEditModal({
               rows={3}
             />
           </div>
-
           <div>
             <Label htmlFor="ordem">Ordem</Label>
             <Input
@@ -274,7 +343,6 @@ export function AtividadeEditModal({
               }
             />
           </div>
-
           <div>
             <Label htmlFor="tempoMinimoMinutos">Tempo mínimo obrigatório (minutos)</Label>
             <Input
@@ -292,7 +360,6 @@ export function AtividadeEditModal({
               Tempo que o aluno deve permanecer no conteúdo antes de liberar a avaliação. Deixe vazio para sem trava.
             </p>
           </div>
-
           <div>
             <Label>Status atual</Label>
             <div className="mt-2 text-sm text-gray-600">
@@ -300,7 +367,6 @@ export function AtividadeEditModal({
             </div>
           </div>
         </div>
-
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar

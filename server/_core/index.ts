@@ -18,7 +18,7 @@ import { iniciarCronRelatorioMentorias } from "../cronRelatorioMentorias";
 import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
 import { iniciarCronLembreteChecklistWebinar } from "../cronLembreteChecklistWebinar";
 import { ENV } from "./env";
-import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport } from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -49,6 +49,7 @@ async function startServer() {
   await ensureGoogleCalendarColumns();
   await ensureProcessoSeletivoColumns(); // v2: garante coluna comunicado no banco
   await ensureRelatorioEntrevistaColumns(); // v3: garante colunas do relatório consolidado de entrevista
+  await ensurePdfAtividadeSupport(); // garante suporte a PDF nas atividades de curso
 
   const app = express();
   const server = createServer(app);

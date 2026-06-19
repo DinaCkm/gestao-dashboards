@@ -39,6 +39,7 @@ const TIPO_ATIVIDADE_MAP: Record<string, { label: string; icon: React.ReactNode;
   tedtalk: { label: 'TED Talk', icon: <Mic className="h-4 w-4" />, color: 'bg-red-100 text-red-800' },
   livro: { label: 'Livro', icon: <BookMarked className="h-4 w-4" />, color: 'bg-amber-100 text-amber-800' },
   intro: { label: 'Introdução', icon: <FileText className="h-4 w-4" />, color: 'bg-gray-100 text-gray-800' },
+  pdf: { label: 'PDF', icon: <FileText className="h-4 w-4" />, color: 'bg-orange-100 text-orange-800' },
 };
 
 export default function CompetenciasCompTec() {

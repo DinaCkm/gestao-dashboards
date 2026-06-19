@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,10 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { ArrowLeft, Edit, Eye, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { AtividadeEditModal } from "@/components/admin/AtividadeEditModal";
 
-type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro";
+type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro" | "pdf";
 
 const TIPOS_ATIVIDADE: { value: TipoAtividade; label: string }[] = [
   { value: "intro", label: "Introdução" },
@@ -26,6 +26,7 @@ const TIPOS_ATIVIDADE: { value: TipoAtividade; label: string }[] = [
   { value: "tedtalk", label: "TedTalk" },
   { value: "livro", label: "Livro" },
   { value: "genially", label: "Genially" },
+  { value: "pdf", label: "PDF" },
 ];
 
 export default function AdminAtividades() {
@@ -46,7 +47,10 @@ export default function AdminAtividades() {
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string>("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const utils = trpc.useUtils();
 
@@ -67,6 +71,7 @@ export default function AdminAtividades() {
 
   // Mutations
   const uploadImagemMutation = trpc.competenciasCompTec.admin.uploadImagemAtividade.useMutation();
+  const uploadPdfMutation = trpc.competenciasCompTec.admin.uploadPdfAtividade.useMutation();
 
   const excluirAtividadeMutation = trpc.competenciasCompTec.admin.deleteAtividade.useMutation({
     onSuccess: async () => {
@@ -100,7 +105,9 @@ export default function AdminAtividades() {
       });
       setImagemFile(null);
       setImagemPreview("");
+      setPdfFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      if (pdfInputRef.current) pdfInputRef.current.value = "";
       if (cursoId > 0) {
         await utils.competenciasCompTec.admin.listarAtividades.invalidate({ cursoId });
       }
@@ -111,9 +118,7 @@ export default function AdminAtividades() {
   });
 
   const competencias = competenciasQuery.data ?? [];
-
   const cursos = cursosQuery.data ?? [];
-
   const atividades = atividadesQuery.data ?? [];
 
   const handleImagemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,6 +130,17 @@ export default function AdminAtividades() {
         setImagemPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== "application/pdf") {
+        toast.error("Apenas arquivos PDF são permitidos.");
+        return;
+      }
+      setPdfFile(file);
     }
   };
 
@@ -153,6 +169,11 @@ export default function AdminAtividades() {
       return;
     }
 
+    if (formAtividade.tipoAtividade === "pdf" && !pdfFile) {
+      toast.error("Selecione um arquivo PDF para esta atividade");
+      return;
+    }
+
     setIsUploadingImage(true);
     try {
       let imagemUrl = formAtividade.imagemUrl;
@@ -166,6 +187,19 @@ export default function AdminAtividades() {
         imagemUrl = uploadResult.url;
       }
 
+      let urlMidia: string | undefined = undefined;
+      if (formAtividade.tipoAtividade === "pdf" && pdfFile) {
+        setIsUploadingPdf(true);
+        const base64Pdf = await convertFileToBase64(pdfFile);
+        const pdfResult = await uploadPdfMutation.mutateAsync({
+          nomeArquivo: pdfFile.name,
+          tipoMime: pdfFile.type,
+          dados: base64Pdf,
+        });
+        urlMidia = pdfResult.url;
+        setIsUploadingPdf(false);
+      }
+
       const tempoMinutos = Number(formAtividade.tempoMinimoMinutos || 0);
       const tempoSegundos = tempoMinutos > 0 ? tempoMinutos * 60 : 0;
 
@@ -174,15 +208,19 @@ export default function AdminAtividades() {
         titulo: formAtividade.titulo.trim(),
         tipoAtividade: formAtividade.tipoAtividade,
         descricao: formAtividade.descricao.trim(),
-        urlGenially: formAtividade.urlGenially.trim(),
+        urlGenially: formAtividade.tipoAtividade !== "pdf" ? formAtividade.urlGenially.trim() : undefined,
+        urlMidia,
         imagemUrl,
         ordem: Number(formAtividade.ordem || 0),
         tempoMinimoObrigatorioSegundos: tempoSegundos > 0 ? tempoSegundos : undefined,
       });
     } finally {
       setIsUploadingImage(false);
+      setIsUploadingPdf(false);
     }
   }
+
+  const isSubmitting = isUploadingImage || isUploadingPdf || criarAtividadeMutation.isPending;
 
   return (
     <div className="space-y-6 p-6">
@@ -316,21 +354,50 @@ export default function AdminAtividades() {
                 </Select>
               </div>
 
-              <div className="space-y-1">
-                <Label htmlFor="urlGenially" className="text-xs">
-                  URL da Genially
-                </Label>
-                <Input
-                  id="urlGenially"
-                  value={formAtividade.urlGenially}
-                  onChange={(e) =>
-                    setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
-                  }
-                  placeholder="https://..."
-                  disabled={cursoId <= 0}
-                  className="text-sm"
-                />
-              </div>
+              {/* Campo URL — exibido apenas quando o tipo NÃO é PDF */}
+              {formAtividade.tipoAtividade !== "pdf" && (
+                <div className="space-y-1">
+                  <Label htmlFor="urlGenially" className="text-xs">
+                    URL da Genially / Vídeo
+                  </Label>
+                  <Input
+                    id="urlGenially"
+                    value={formAtividade.urlGenially}
+                    onChange={(e) =>
+                      setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
+                    }
+                    placeholder="https://..."
+                    disabled={cursoId <= 0}
+                    className="text-sm"
+                  />
+                </div>
+              )}
+
+              {/* Campo de upload de PDF — exibido apenas quando o tipo é PDF */}
+              {formAtividade.tipoAtividade === "pdf" && (
+                <div className="space-y-1">
+                  <Label htmlFor="pdfFile" className="text-xs">
+                    Arquivo PDF <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    ref={pdfInputRef}
+                    id="pdfFile"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handlePdfChange}
+                    disabled={cursoId <= 0}
+                    className="text-sm"
+                  />
+                  {pdfFile && (
+                    <p className="text-xs text-green-600">
+                      ✓ {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">
+                    O PDF será armazenado e exibido diretamente na plataforma para os alunos.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <Label htmlFor="imagem" className="text-xs">
@@ -412,8 +479,12 @@ export default function AdminAtividades() {
                 </p>
               </div>
 
-              <Button type="submit" disabled={cursoId <= 0 || isUploadingImage} className="w-full text-sm">
-                {isUploadingImage ? "Enviando imagem..." : "Criar Atividade"}
+              <Button type="submit" disabled={cursoId <= 0 || isSubmitting} className="w-full text-sm">
+                {isUploadingPdf
+                  ? "Enviando PDF..."
+                  : isUploadingImage
+                  ? "Enviando imagem..."
+                  : "Criar Atividade"}
               </Button>
             </form>
           </CardContent>
@@ -472,7 +543,6 @@ export default function AdminAtividades() {
           </CardContent>
         </Card>
       </div>
-
       {/* Modal para editar atividade */}
       <AtividadeEditModal
         open={modalOpen}

@@ -13840,6 +13840,7 @@ Responda APENAS em JSON com o formato especificado.`
               "tedtalk",
               "livro",
               "intro",
+              "pdf",
             ]),
             urlGenially: z.string().optional(),
             urlMidia: z.string().optional(),
@@ -13943,13 +13944,40 @@ Responda APENAS em JSON com o formato especificado.`
           }
         }),
 
+      uploadPdfAtividade: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            nomeArquivo: z.string(),
+            tipoMime: z.string(),
+            dados: z.string(), // base64 encoded
+          })
+        )
+        .mutation(async ({ input }) => {
+          try {
+            if (input.tipoMime !== 'application/pdf') {
+              throw new TRPCError({ code: 'BAD_REQUEST', message: 'Apenas arquivos PDF são permitidos' });
+            }
+            const buffer = Buffer.from(input.dados, 'base64');
+            const fileKey = `atividades/pdf/${Date.now()}-${input.nomeArquivo}`;
+            const { url, key } = await storagePut(fileKey, buffer, 'application/pdf');
+            return { url, key, success: true };
+          } catch (error: any) {
+            console.error("Erro ao fazer upload de PDF:", error);
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: error?.message || "Erro ao fazer upload do PDF",
+            });
+          }
+        }),
+
       atualizarAtividade: adminOrAdmin2Procedure
         .input(
           z.object({
             id: z.number(),
             titulo: z.string().min(1).optional(),
-            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]).optional(),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf"]).optional(),
             urlGenially: z.string().optional(),
+            urlMidia: z.string().optional(),
             imagemUrl: z.string().optional(),
             descricao: z.string().optional(),
             ordem: z.number().optional(),
@@ -13966,6 +13994,7 @@ Responda APENAS em JSON com o formato especificado.`
           if (input.titulo) updates.titulo = input.titulo;
           if (input.tipoAtividade) updates.tipoAtividade = input.tipoAtividade;
           if (input.urlGenially !== undefined) updates.urlGenially = input.urlGenially ?? null;
+          if (input.urlMidia !== undefined) updates.urlMidia = input.urlMidia ?? null;
           if (input.descricao !== undefined) updates.descricao = input.descricao ?? null;
           if (input.ordem !== undefined) updates.ordem = input.ordem;
           if (input.imagemUrl !== undefined) updates.imagemUrl = input.imagemUrl || null;
@@ -15890,7 +15919,7 @@ Responda APENAS em JSON com o formato especificado.`
           z.object({
             id: z.number(),
             titulo: z.string(),
-            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf"]),
             urlGenially: z.string().optional(),
             urlMidia: z.string().optional(),
             imagemUrl: z.string().optional(),

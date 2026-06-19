@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Maximize, Clock } from "lucide-react";
+import { ArrowLeft, Maximize, Clock, ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 function getNumeroQuery(search: string, chave: string) {
@@ -51,8 +51,10 @@ export default function AlunoConteudoCurso() {
     return (atividadesQuery.data ?? []).find((item: any) => item.id === atividadeId) ?? null;
   }, [atividadeId, atividadesQuery.data]);
 
-  const urlOriginal = atividade?.urlGenially || atividade?.urlMidia || "";
-  const urlEmbed = adaptarUrlParaEmbed(urlOriginal);
+  const isPdf = atividade?.tipoAtividade === "pdf";
+  const urlPdf = isPdf ? (atividade?.urlMidia || atividade?.urlGenially || "") : "";
+  const urlOriginal = !isPdf ? (atividade?.urlGenially || atividade?.urlMidia || "") : "";
+  const urlEmbed = !isPdf ? adaptarUrlParaEmbed(urlOriginal) : "";
 
   // Tempo acumulado local (em segundos), iniciado com o valor do banco
   const [tempoAtivoLocal, setTempoAtivoLocal] = useState<number>(0);
@@ -140,6 +142,9 @@ export default function AlunoConteudoCurso() {
     await iframeRef.current.requestFullscreen();
   };
 
+  // Determina se o conteúdo principal está disponível para exibição
+  const temConteudo = isPdf ? !!urlPdf : !!urlEmbed;
+
   return (
     <AlunoLayout>
     <div className="space-y-6 p-6">
@@ -156,10 +161,22 @@ export default function AlunoConteudoCurso() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
-          <Button variant="outline" onClick={abrirTelaCheia} disabled={!urlEmbed}>
-            <Maximize className="mr-2 h-4 w-4" />
-            Tela cheia
-          </Button>
+          {/* Botão tela cheia apenas para conteúdo não-PDF */}
+          {!isPdf && (
+            <Button variant="outline" onClick={abrirTelaCheia} disabled={!urlEmbed}>
+              <Maximize className="mr-2 h-4 w-4" />
+              Tela cheia
+            </Button>
+          )}
+          {/* Botão abrir PDF em nova aba */}
+          {isPdf && urlPdf && (
+            <Button variant="outline" asChild>
+              <a href={urlPdf} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                Abrir em nova aba
+              </a>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -208,7 +225,9 @@ export default function AlunoConteudoCurso() {
         <CardHeader>
           <CardTitle>{atividade?.titulo ?? "Conteúdo do curso"}</CardTitle>
           <CardDescription>
-            O conteúdo é exibido internamente por iframe. Se o provedor bloquear a incorporação, use o botão de fallback para abrir em nova aba.
+            {isPdf
+              ? "O documento PDF está exibido diretamente abaixo. Use o botão 'Abrir em nova aba' para visualizar em tela cheia."
+              : "O conteúdo é exibido internamente por iframe. Se o provedor bloquear a incorporação, use o botão de fallback para abrir em nova aba."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -222,13 +241,35 @@ export default function AlunoConteudoCurso() {
             <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
               Não foi possível localizar a atividade selecionada.
             </div>
-          ) : !urlEmbed ? (
+          ) : !temConteudo ? (
             <div className="space-y-4 rounded-md border border-dashed p-8 text-center">
               <p className="text-sm text-muted-foreground">
-                Esta atividade não possui uma URL válida para incorporação.
+                Esta atividade não possui um conteúdo válido para incorporação.
               </p>
             </div>
+          ) : isPdf ? (
+            /* ===== VISUALIZAÇÃO DE PDF EMBEDADO ===== */
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-lg border bg-gray-50">
+                <iframe
+                  key={urlPdf}
+                  src={urlPdf}
+                  title={atividade.titulo}
+                  className="h-[80vh] w-full"
+                  style={{ border: "none" }}
+                />
+              </div>
+              <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                <span className="mt-0.5 text-lg">📄</span>
+                <p>
+                  <strong>Leia o documento PDF na tela do sistema.</strong>{" "}
+                  O sistema acompanha o tempo que você permanece nesta página para liberar a avaliação.
+                  Caso o PDF não carregue, use o botão <strong>"Abrir em nova aba"</strong> acima.
+                </p>
+              </div>
+            </div>
           ) : (
+            /* ===== VISUALIZAÇÃO DE VÍDEO / GENIALLY / OUTROS ===== */
             <div className="space-y-4">
               <div className="relative overflow-hidden rounded-lg border bg-black/5">
                 <iframe
