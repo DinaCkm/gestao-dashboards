@@ -215,10 +215,21 @@ export default function AlunoAtividade() {
 
                       <div className="mt-4 space-y-2">
                         {atividade.status === "aprovada" ? (
-                          <Button disabled className="w-full" size="sm">
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Concluída
-                          </Button>
+                          <>
+                            <Button disabled className="w-full" size="sm">
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Concluída
+                            </Button>
+                            <Button
+                              onClick={() => abrirConteudo(atividade.id)}
+                              variant="outline"
+                              className="w-full text-xs"
+                              size="sm"
+                            >
+                              <BookOpen className="mr-2 h-3 w-3" />
+                              Rever conteúdo
+                            </Button>
+                          </>
                         ) : atividade.status === "concluida" && atividade.avaliacaoLiberada && atividade.temAvaliacao ? (
                           <Button
                             onClick={() =>
