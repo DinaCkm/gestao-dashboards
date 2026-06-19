@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Play, BookOpen, Eye } from "lucide-react";
+import { ArrowLeft, Play, BookOpen, Eye, FileText } from "lucide-react";
 
 function getNumeroQuery(search: string, chave: string) {
   const params = new URLSearchParams(search);
@@ -21,6 +21,7 @@ export default function AdminPreviewCurso() {
     titulo: string;
     urlGenially: string | null;
     urlMidia: string | null;
+    tipoAtividade: string | null;
   }>(null);
 
   const previewQuery = trpc.competenciasCompTec.admin.previewCurso.useQuery(
@@ -34,6 +35,7 @@ export default function AdminPreviewCurso() {
   }, [previewQuery.data]);
 
   if (atividadeAberta) {
+    const isPdf = atividadeAberta.tipoAtividade === 'pdf';
     const url = atividadeAberta.urlGenially || atividadeAberta.urlMidia || "";
     return (
       <div className="flex h-screen flex-col">
@@ -41,6 +43,17 @@ export default function AdminPreviewCurso() {
         <div className="flex items-center gap-3 bg-amber-500 px-4 py-2 text-sm font-medium text-white">
           <Eye className="h-4 w-4" />
           <span>Modo Preview — Administrador | Atividade: {atividadeAberta.titulo}</span>
+          {isPdf && url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ml-2 flex items-center gap-1 rounded border border-white px-2 py-1 text-xs hover:bg-amber-600"
+            >
+              <FileText className="h-3 w-3" />
+              Abrir em nova aba
+            </a>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -53,12 +66,21 @@ export default function AdminPreviewCurso() {
         </div>
 
         {url ? (
-          <iframe
-            src={url}
-            className="flex-1 w-full border-0"
-            title={atividadeAberta.titulo}
-            allowFullScreen
-          />
+          isPdf ? (
+            <iframe
+              src={url}
+              className="flex-1 w-full border-0"
+              title={atividadeAberta.titulo}
+              style={{ minHeight: '80vh' }}
+            />
+          ) : (
+            <iframe
+              src={url}
+              className="flex-1 w-full border-0"
+              title={atividadeAberta.titulo}
+              allowFullScreen
+            />
+          )
         ) : (
           <div className="flex flex-1 items-center justify-center text-muted-foreground">
             <div className="text-center">
@@ -164,6 +186,7 @@ export default function AdminPreviewCurso() {
                               titulo: atividade.titulo,
                               urlGenially: atividade.urlGenially,
                               urlMidia: atividade.urlMidia,
+                              tipoAtividade: atividade.tipoAtividade ?? null,
                             })
                           }
                           className="w-full"
