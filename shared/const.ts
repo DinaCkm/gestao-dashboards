@@ -3,7 +3,6 @@ export const ADMIN_BACKUP_COOKIE_NAME = "app_admin_backup";
 export const MASTER_CPF = "00000000001";
 export const ONE_YEAR_MS = 1000 * 60 * 60 * 24 * 365;
 export const TWO_HOURS_MS = 1000 * 60 * 60 * 2;
-export const THIRTY_DAYS_MS = 1000 * 60 * 60 * 24 * 30;
 export const AXIOS_TIMEOUT_MS = 30_000;
 export const UNAUTHED_ERR_MSG = 'Please login (10001)';
 export const NOT_ADMIN_ERR_MSG = 'You do not have required permission (10002)';
