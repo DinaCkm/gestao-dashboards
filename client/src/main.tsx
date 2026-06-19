@@ -33,9 +33,12 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  // Não redirecionar automaticamente - deixar o CustomLogin tratar
-  // window.location.href = getLoginUrl();
-  console.log("[Auth] User not authenticated, showing login screen");
+  // Redirecionar para login quando a sessão expirar
+  const loginUrl = getLoginUrl();
+  if (!window.location.pathname.startsWith('/login')) {
+    console.log("[Auth] Sessão expirada, redirecionando para login...");
+    window.location.href = loginUrl + '?expired=1';
+  }
 };
 
 queryClient.getQueryCache().subscribe(event => {

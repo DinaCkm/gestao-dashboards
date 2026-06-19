@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { trpc } from "@/lib/trpc";
-import { Loader2, AlertCircle, Shield, LogIn, Mail, Fingerprint, Hash, Eye } from "lucide-react";
+import { Loader2, AlertCircle, Shield, LogIn, Mail, Fingerprint, Hash, Eye, Clock } from "lucide-react";
 import ImpersonationSelector from "@/components/ImpersonationSelector";
 
 const MASTER_CPF_DIGITS = "00000000001";
@@ -23,6 +23,9 @@ type LoginMode = "cpf" | "id";
 export default function CustomLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Detectar se foi redirecionado por sessão expirada
+  const sessionExpired = new URLSearchParams(window.location.search).get('expired') === '1';
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [loginMode, setLoginMode] = useState<LoginMode>("cpf");
   const [showImpersonationSelector, setShowImpersonationSelector] = useState(false);
@@ -145,6 +148,15 @@ export default function CustomLogin() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {sessionExpired && (
+                <Alert className="mb-4 border-amber-400 bg-amber-50 text-amber-800">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <strong>Sua sessão expirou.</strong> Por segurança, faça login novamente para continuar.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {error && (
                 <Alert variant="destructive" className="mb-4">
                   <AlertCircle className="h-4 w-4" />
@@ -251,6 +263,15 @@ export default function CustomLogin() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {sessionExpired && (
+                <Alert className="mb-4 border-amber-400 bg-amber-50 text-amber-800">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <strong>Sua sessão expirou.</strong> Por segurança, faça login novamente para continuar.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {error && (
                 <Alert variant="destructive" className="mb-4">
                   <AlertCircle className="h-4 w-4" />
