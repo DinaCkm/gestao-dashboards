@@ -475,6 +475,7 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false, lockNomeE
   });
   // Dados pessoais complementares
   const [dataNascimento, setDataNascimento] = useState("");
+  const [dataNascimentoInput, setDataNascimentoInput] = useState("");
   const [estadoCivil, setEstadoCivil] = useState("");
   const [temFilhos, setTemFilhos] = useState(false);
   const [quantidadeFilhos, setQuantidadeFilhos] = useState(0);
@@ -530,7 +531,12 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false, lockNomeE
 
   if (perfilProfData && !perfilInitialized) {
     const p = perfilProfData as any;
-    if (p.dataNascimento) setDataNascimento(p.dataNascimento.toString().split('T')[0]);
+    if (p.dataNascimento) {
+      const dateStr = p.dataNascimento.toString().split('T')[0];
+      setDataNascimento(dateStr);
+      const [y, m, d] = dateStr.split('-');
+      setDataNascimentoInput(`${d}/${m}/${y}`);
+    }
     if (p.estadoCivil) setEstadoCivil(p.estadoCivil);
     if (p.temFilhos) setTemFilhos(!!p.temFilhos);
     if (p.quantidadeFilhos) setQuantidadeFilhos(p.quantidadeFilhos);
@@ -610,8 +616,14 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false, lockNomeE
     if (!perfil.empresa || perfil.empresa.trim().length < 2) {
       toast.error("Preencha o campo Empresa."); return;
     }
-    if (!dataNascimento) {
-      toast.error("Preencha o campo Data de Nascimento."); return;
+    if (!dataNascimentoInput || dataNascimentoInput.length < 10) {
+      toast.error("Preencha o campo Data de Nascimento corretamente (DD/MM/AAAA)."); return;
+    }
+    // Validar se a data é válida
+    const [d, m, y] = dataNascimentoInput.split('/');
+    const dateObj = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+    if (isNaN(dateObj.getTime())) {
+      toast.error("Data de Nascimento inválida."); return;
     }
     if (!estadoCivil) {
       toast.error("Preencha o campo Estado Civil."); return;
@@ -742,7 +754,26 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false, lockNomeE
               <div><label className="text-sm font-medium text-gray-700">Empresa <span className="text-red-500">*</span></label>
                 <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} /></div>
               <div><label className="text-sm font-medium text-gray-700">Data de Nascimento <span className="text-red-500">*</span></label>
-                <Input type="date" value={dataNascimento} onChange={(e) => setDataNascimento(e.target.value)} disabled={readOnly} /></div>
+                <Input
+                  placeholder="DD/MM/AAAA"
+                  value={dataNascimentoInput}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.length > 8) val = val.slice(0, 8);
+                    let formatted = val;
+                    if (val.length > 2) formatted = `${val.slice(0, 2)}/${val.slice(2)}`;
+                    if (val.length > 4) formatted = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`;
+                    setDataNascimentoInput(formatted);
+
+                    if (val.length === 8) {
+                      const d = val.slice(0, 2);
+                      const m = val.slice(2, 4);
+                      const y = val.slice(4, 8);
+                      setDataNascimento(`${y}-${m}-${d}`);
+                    }
+                  }}
+                  disabled={readOnly}
+                /></div>
               <div><label className="text-sm font-medium text-gray-700">Estado Civil <span className="text-red-500">*</span></label>
                 <Select value={estadoCivil} onValueChange={setEstadoCivil} disabled={readOnly}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
