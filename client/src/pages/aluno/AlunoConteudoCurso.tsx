@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +37,8 @@ export default function AlunoConteudoCurso() {
   const [, setLocation] = useLocation();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
-  const search = typeof window !== "undefined" ? window.location.search : "";
+  const searchString = useSearch(); // reativo a mudanças de rota
+  const search = searchString ? `?${searchString}` : (typeof window !== "undefined" ? window.location.search : "");
   const cursoId = getNumeroQuery(search, "cursoId");
   const cursoAtribuidoId = getNumeroQuery(search, "cursoAtribuidoId");
   const atividadeId = getNumeroQuery(search, "atividadeId");
