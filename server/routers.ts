@@ -7226,7 +7226,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         // Fallback: agendamento não tem participantes cadastrados (agendamentos importados/antigos)
         // Busca os alunos ativos do consultor dono do agendamento e os registra automaticamente
         const appointment = await db.getAppointmentById(input.appointmentId);
-        if (!appointment || appointment.type !== 'grupo') return [];
+        if (!appointment) return [];
+
+        const tipoGrupal = appointment.type === 'grupo' || appointment.type === 'grupal' || String(appointment.type).includes('grup');
+        if (!tipoGrupal) return [];
 
         const alunosDoConsultor = await db.getAlunosByConsultor(appointment.consultorId);
         if (alunosDoConsultor.length === 0) return [];
@@ -7235,7 +7238,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const database = await getDb();
         const result = [];
         for (const aluno of alunosDoConsultor) {
-          if (!aluno.isActive) continue;
+          // isActive pode vir como boolean true ou número 1
+          if (!aluno.isActive && aluno.isActive !== 1) continue;
 
           try {
             if (database) {

@@ -8171,7 +8171,7 @@ export async function getMentorAppointments(consultorId: number, filters?: {
 
     // Fallback para agendamentos grupais sem participantes cadastrados:
     // inclui todos os alunos ativos do consultor como participantes temporários
-    if (participants.length === 0 && appt.type === 'grupo') {
+    if (participants.length === 0 && (appt.type === 'grupo' || appt.type === 'grupal' || String(appt.type).includes('grup'))) {
       const alunosDoConsultor = allAlunos.filter(a => a.consultorId === appt.consultorId && a.isActive === 1);
       participants = alunosDoConsultor.map(a => ({
         id: 0,
@@ -8456,7 +8456,7 @@ export async function getAlunoAppointments(alunoId: number) {
 
       // Buscar todos os participantes para sessões de grupo
       let participants: { alunoId: number; alunoName: string; status: string }[] = [];
-      if (appt.type === 'grupo') {
+      if (appt.type === 'grupo' || appt.type === 'grupal' || String(appt.type).includes('grup')) {
         const allP = await db.select().from(appointmentParticipants)
           .where(eq(appointmentParticipants.appointmentId, appt.id));
         const allAlunos = await getAlunos();
