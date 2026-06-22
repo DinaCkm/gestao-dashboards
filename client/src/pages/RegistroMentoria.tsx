@@ -189,7 +189,7 @@ export default function RegistroMentoria() {
     }
   });
 
-  const { data: groupParticipants = [] } = trpc.mentor.getGroupParticipants.useQuery(
+  const { data: groupParticipants = [], isLoading: isLoadingParticipants } = trpc.mentor.getGroupParticipants.useQuery(
     { appointmentId: selectedAppointmentId! },
     { enabled: !!selectedAppointmentId && newTipoSessao === 'grupo_normal' }
   );
@@ -1133,9 +1133,14 @@ export default function RegistroMentoria() {
                     {/* FORMULÁRIO GRUPAL — campos individuais por participante */}
                     {newTipoSessao === 'grupo_normal' && (
                       <div className="space-y-4">
-                        {groupParticipants.length === 0 && selectedAppointmentId && (
+                        {isLoadingParticipants && selectedAppointmentId && (
                           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                             Carregando participantes do grupo...
+                          </div>
+                        )}
+                        {!isLoadingParticipants && groupParticipants.length === 0 && selectedAppointmentId && (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800">
+                            Nenhum participante encontrado para este agendamento. Verifique se os alunos foram adicionados ao agendamento grupal.
                           </div>
                         )}
                         {groupParticipants.length === 0 && !selectedAppointmentId && (

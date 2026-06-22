@@ -21,6 +21,7 @@ import {
   sessoesEstudoAtividade,
   users,
   emailAlertasLog,
+  appointmentParticipants,
 } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
@@ -7211,10 +7212,44 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .input(z.object({ appointmentId: z.number() }))
       .query(async ({ input }) => {
         const participants = await db.getAppointmentParticipants(input.appointmentId);
+
+        // Caminho normal: participantes cadastrados na tabela appointment_participants
+        if (participants.length > 0) {
+          const result = [];
+          for (const p of participants) {
+            const aluno = await db.getAlunoById(p.alunoId);
+            if (aluno) result.push({ alunoId: p.alunoId, alunoName: aluno.name, email: aluno.email });
+          }
+          return result;
+        }
+
+        // Fallback: agendamento não tem participantes cadastrados (agendamentos importados/antigos)
+        // Busca os alunos ativos do consultor dono do agendamento e os registra automaticamente
+        const appointment = await db.getAppointmentById(input.appointmentId);
+        if (!appointment || appointment.type !== 'grupo') return [];
+
+        const alunosDoConsultor = await db.getAlunosByConsultor(appointment.consultorId);
+        if (alunosDoConsultor.length === 0) return [];
+
+        // Registrar os alunos como participantes automaticamente para corrigir o dado faltante
+        const database = await getDb();
         const result = [];
-        for (const p of participants) {
-          const aluno = await db.getAlunoById(p.alunoId);
-          if (aluno) result.push({ alunoId: p.alunoId, alunoName: aluno.name, email: aluno.email });
+        for (const aluno of alunosDoConsultor) {
+          if (!aluno.isActive) continue;
+
+          try {
+            if (database) {
+              await database.insert(appointmentParticipants).values({
+                appointmentId: input.appointmentId,
+                alunoId: aluno.id,
+                status: 'convidado' as const,
+              });
+            }
+          } catch {
+            // ignora erro de duplicata (aluno já pode estar cadastrado)
+          }
+
+          result.push({ alunoId: aluno.id, alunoName: aluno.name, email: aluno.email });
         }
         return result;
       }),
