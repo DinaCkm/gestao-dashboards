@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { formatDateSafe } from "@/lib/dateUtils";
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -376,6 +376,21 @@ export default function RegistroMentoria() {
       return { ...prev, [alunoId]: { presence: 'presente', taskStatus: 'sem_tarefa', engagementScore: null, feedback: '', mensagemAluno: '' } };
     });
   };
+
+  // Inicializar dados dos participantes quando a lista carregar (evita setState durante render)
+  useEffect(() => {
+    if (groupParticipants.length > 0) {
+      setGroupParticipantsData(prev => {
+        const next = { ...prev };
+        for (const p of groupParticipants as any[]) {
+          if (!next[p.alunoId]) {
+            next[p.alunoId] = { presence: 'presente', taskStatus: 'sem_tarefa', engagementScore: null, feedback: '', mensagemAluno: '' };
+          }
+        }
+        return next;
+      });
+    }
+  }, [groupParticipants]);
   const updateGroupParticipant = (alunoId: number, field: string, value: any) => {
     setGroupParticipantsData(prev => ({ ...prev, [alunoId]: { ...prev[alunoId], [field]: value } }));
   };
@@ -1149,7 +1164,6 @@ export default function RegistroMentoria() {
                           </div>
                         )}
                         {groupParticipants.map((p: any) => {
-                          initGroupParticipant(p.alunoId);
                           const pd = groupParticipantsData[p.alunoId] || { presence: 'presente', taskStatus: 'sem_tarefa', engagementScore: null, feedback: '', mensagemAluno: '' };
                           return (
                             <div key={p.alunoId} className="border-2 border-emerald-200 rounded-xl p-4 bg-emerald-50/30 space-y-3">
