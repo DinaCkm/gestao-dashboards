@@ -7206,6 +7206,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             return [];
           }
         }),
+    }),
 
     // Buscar participantes de um agendamento grupal
     getGroupParticipants: protectedProcedure
@@ -7332,7 +7333,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
         return { success: true, count: createdIds.length, ids: createdIds };
       }),
-  }),
   }),
 
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
