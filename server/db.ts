@@ -5784,13 +5784,35 @@ export async function updateWebinar(id: number, data: Partial<InsertScheduledWeb
 export async function deleteWebinar(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  // Limpar eventos e participações vinculados ao webinar para evitar órfãos
+
+  // Buscar o webinar antes de excluir para ter título e data
+  const [webinar] = await db.select().from(scheduledWebinars).where(eq(scheduledWebinars.id, id)).limit(1);
+
+  // 1. Limpar eventos vinculados pelo externalId padrão sw-{id}
   const linkedEvents = await db.select().from(events).where(eq(events.externalId, `sw-${id}`));
   if (linkedEvents.length > 0) {
     const linkedEventIds = linkedEvents.map(e => e.id);
     await db.delete(eventParticipation).where(inArray(eventParticipation.eventId, linkedEventIds));
     await db.delete(events).where(inArray(events.id, linkedEventIds));
   }
+
+  // 2. Limpar eventos com mesmo título e data (importados manualmente sem externalId)
+  if (webinar?.title && webinar?.eventDate) {
+    const sameEvents = await db.select().from(events).where(
+      and(
+        eq(events.title, webinar.title),
+        eq(events.eventDate, webinar.eventDate),
+        isNull(events.externalId)
+      )
+    );
+    if (sameEvents.length > 0) {
+      const sameEventIds = sameEvents.map(e => e.id);
+      await db.delete(eventParticipation).where(inArray(eventParticipation.eventId, sameEventIds));
+      await db.delete(events).where(inArray(events.id, sameEventIds));
+    }
+  }
+
+  // 3. Excluir o webinar
   await db.delete(scheduledWebinars).where(eq(scheduledWebinars.id, id));
 }
 
