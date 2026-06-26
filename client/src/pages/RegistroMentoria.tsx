@@ -46,7 +46,9 @@ import {
   ArrowRight,
   Info,
   ListChecks,
-  Users
+  Users,
+  Trash2,
+  Loader2
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -59,6 +61,7 @@ export default function RegistroMentoria() {
   const [selectedAlunoId, setSelectedAlunoId] = useState<number | null>(null);
   const [editingSession, setEditingSession] = useState<number | null>(null);
   const [viewingSession, setViewingSession] = useState<number | null>(null);
+  const [confirmDeleteSession, setConfirmDeleteSession] = useState<number | null>(null);
   
   // Edit form states
   const [selectedStage, setSelectedStage] = useState<number | null>(null);
@@ -164,6 +167,17 @@ export default function RegistroMentoria() {
     },
     onError: (error: { message: string }) => {
       toast.error(`Erro ao atualizar: ${error.message}`);
+    }
+  });
+
+  const deleteSession = trpc.mentor.deleteSession.useMutation({
+    onSuccess: () => {
+      toast.success("Sessão excluída com sucesso!");
+      refetchSessions();
+      setConfirmDeleteSession(null);
+    },
+    onError: (error: { message: string }) => {
+      toast.error(`Erro ao excluir: ${error.message}`);
     }
   });
 
@@ -1559,11 +1573,14 @@ export default function RegistroMentoria() {
                     <Button variant="outline" onClick={resetNewSessionForm}>Cancelar</Button>
                     <Button 
                       onClick={handleCreateSession}
-                      disabled={createSession.isPending || !newSessionDate}
+                      disabled={createSession.isPending || createGroupSessions.isPending || !newSessionDate}
                       className="bg-[#0A1E3E] hover:bg-[#2D5A87]"
                     >
-                      <Save className="h-4 w-4 mr-1" />
-                      {createSession.isPending ? "Salvando..." : "Registrar Sessão"}
+                      {(createSession.isPending || createGroupSessions.isPending) ? (
+                        <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Salvando...</>
+                      ) : (
+                        <><Save className="h-4 w-4 mr-1" /> Registrar Sessão</>
+                      )}
                     </Button>
                   </div>
                 </div>
