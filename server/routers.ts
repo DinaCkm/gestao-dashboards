@@ -445,7 +445,7 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
         mentoriasRealizadas: mentorias.filter((s: any) => s.presence === "presente").length,
         mentoriasTotal: mentorias.length,
         eventosPresenca: eventosPresentes,
-        eventosTotal: eventos.length,
+        eventosTotal: eventos.filter((e: any) => e.status !== 'pendente').length,
         casesEntregues: cases.filter((c: any) => c.entregue === 1).length,
         casesTotal: cases.length,
         mediaNotaPerformance: Number.isFinite(avgNotaPerformance) ? Number(avgNotaPerformance.toFixed(2)) : 0,
@@ -4541,7 +4541,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         );
 
         // Indicadores: usar V2 para todos (Ind.1 a Ind.7)
-        const webinarsTotal = eventos.length;
+        const webinarsTotal = eventos.filter((e: any) => e.status !== 'pendente').length;
         const webinarsPresente = eventos.filter((e: any) => e.status === "presente").length;
         const ind1_webinars = indV2Nivel.consolidado?.ind1_webinars ?? (webinarsTotal > 0 ? clampPercent((webinarsPresente / webinarsTotal) * 100) : 0);
         const ind2_avaliacoes = indV2Nivel.consolidado?.ind2_avaliacoes ?? 0;
