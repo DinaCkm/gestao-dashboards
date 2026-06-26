@@ -2216,18 +2216,22 @@ export default function Performance() {
                         <div key={evt.eventId} className={`rounded-xl border overflow-hidden transition-all duration-200 ${
                           !evt.dentroDoMacrociclo
                             ? "bg-gradient-to-r from-gray-50/50 to-gray-50/30 border-gray-200 opacity-70 hover:opacity-90"
-                            : evt.status === "ausente"
-                              ? "bg-gradient-to-r from-red-50/50 to-white border-red-200 hover:shadow-sm"
-                              : "bg-gradient-to-r from-emerald-50/30 to-white border-emerald-100 hover:shadow-sm"
+                            : evt.status === "pendente"
+                              ? "bg-gradient-to-r from-blue-50/30 to-white border-blue-100 hover:shadow-sm opacity-60"
+                              : evt.status === "ausente"
+                                ? "bg-gradient-to-r from-red-50/50 to-white border-red-200 hover:shadow-sm"
+                                : "bg-gradient-to-r from-emerald-50/30 to-white border-emerald-100 hover:shadow-sm"
                         }`}>
                           <div className="flex items-center gap-3 p-3">
                             {/* Ícone de status */}
                             <div className="flex-shrink-0">
                               <div className={`w-9 h-9 rounded-full flex items-center justify-center ${
-                                evt.status === "presente" ? "bg-emerald-100" : "bg-red-100"
+                                evt.status === "presente" ? "bg-emerald-100" : evt.status === "pendente" ? "bg-blue-100" : "bg-red-100"
                               }`}>
                                 {evt.status === "presente" ? (
                                   <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                ) : evt.status === "pendente" ? (
+                                  <Clock className="h-4 w-4 text-blue-400" />
                                 ) : (
                                   <XCircle className="h-4 w-4 text-red-500" />
                                 )}
@@ -2280,6 +2284,10 @@ export default function Performance() {
                               {evt.status === "presente" ? (
                                 <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 font-medium">
                                   Presente
+                                </Badge>
+                              ) : evt.status === "pendente" ? (
+                                <Badge className="bg-blue-100 text-blue-600 border-blue-200 font-medium">
+                                  Em breve
                                 </Badge>
                               ) : (
                                 <div className="flex items-center gap-2">

@@ -6326,6 +6326,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       ? (evt.eventDate ? new Date(evt.eventDate) >= macroInicio : true)
       : true; // Se não tem macroInicio, considerar todos como dentro
 
+    const isFutureEvent = evt.eventDate ? new Date(evt.eventDate) > now : false;
     return {
       eventId: evt.id,
       scheduledWebinarId: matchedWebinar?.id || null,
@@ -6333,7 +6334,7 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
       eventType: evt.eventType || 'webinar',
       eventDate: evt.eventDate,
       videoLink,
-      status: isPresent ? 'presente' : 'ausente',
+      status: isPresent ? 'presente' : isFutureEvent ? 'pendente' : 'ausente',
       selfReported,
       reflexao: part?.reflexao || null,
       selfReportedAt: part?.selfReportedAt || null,
