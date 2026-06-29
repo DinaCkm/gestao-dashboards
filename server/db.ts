@@ -5778,7 +5778,39 @@ export async function createWebinar(data: InsertScheduledWebinar): Promise<numbe
 export async function updateWebinar(id: number, data: Partial<InsertScheduledWebinar>): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
+
+  // Buscar o webinar antes de atualizar para ter o título antigo
+  const [oldWebinar] = await db.select().from(scheduledWebinars).where(eq(scheduledWebinars.id, id)).limit(1);
+
+  // Atualizar o webinar
   await db.update(scheduledWebinars).set(data).where(eq(scheduledWebinars.id, id));
+
+  // Se o título mudou, atualizar também os eventos vinculados na tabela events
+  // para evitar duplicatas (evento com título antigo + evento sintético com título novo)
+  if (data.title && oldWebinar?.title && data.title !== oldWebinar.title) {
+    // Atualizar evento vinculado pelo externalId sw-{id}
+    await db.update(events)
+      .set({ title: data.title })
+      .where(eq(events.externalId, `sw-${id}`));
+
+    // Atualizar eventos com título antigo e mesma data (importados sem externalId)
+    if (oldWebinar.eventDate) {
+      await db.update(events)
+        .set({ title: data.title })
+        .where(and(
+          eq(events.title, oldWebinar.title),
+          eq(events.eventDate, oldWebinar.eventDate),
+          isNull(events.externalId)
+        ));
+    }
+  }
+
+  // Se a data mudou, atualizar também os eventos vinculados
+  if (data.eventDate && oldWebinar?.eventDate && String(data.eventDate) !== String(oldWebinar.eventDate)) {
+    await db.update(events)
+      .set({ eventDate: data.eventDate as any })
+      .where(eq(events.externalId, `sw-${id}`));
+  }
 }
 
 export async function deleteWebinar(id: number): Promise<void> {
