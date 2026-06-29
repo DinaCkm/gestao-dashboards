@@ -2828,10 +2828,14 @@ Responda APENAS em JSON com exatamente os seguintes campos:
         return false;
       });
 
-      return { slots: slotsFiltrados, meuSlot: meuSlot[0] || null, candidatoId: candidato[0].id };
-    }),
+      // Verificar se a etapa de devolutivas foi iniciada pelo admin
+      const processoRows = await database.execute(sql.raw(
+        `SELECT devolutivaIniciada FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+      )) as any;
+      const devolutivaIniciada = !!(processoRows?.[0]?.[0]?.devolutivaIniciada ?? processoRows?.[0]?.devolutivaIniciada);
 
-  // Candidato agenda devolutiva
+      return { slots: slotsFiltrados, meuSlot: meuSlot[0] || null, candidatoId: candidato[0].id, devolutivaIniciada };
+    }),
   agendarDevolutiva: protectedProcedure
     .input(z.object({ processoId: z.number(), slotId: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -2930,6 +2934,84 @@ Responda APENAS em JSON com exatamente os seguintes campos:
       return slot[0] || null;
     }),
 
+  // Iniciar etapa de devolutivas — envia e-mail a todos os candidatos com resultado definido
+  iniciarDevolutiva: protectedProcedure
+    .input(z.object({ processoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+
+      // Marcar processo como devolutiva iniciada
+      await database.execute(sql.raw(
+        `UPDATE \`processos_seletivos\` SET \`devolutivaIniciada\` = 1, \`devolutivaIniciadaEm\` = NOW() WHERE \`id\` = ${input.processoId}`
+      ));
+
+      // Buscar todos os candidatos com resultado definido (aprovado ou reprovado)
+      const candidatos = await database.select({
+        id: processoCandidatos.id,
+        nome: processoCandidatos.nome,
+        email: processoCandidatos.email,
+        statusResultado: processoCandidatos.statusResultado,
+      })
+        .from(processoCandidatos)
+        .where(and(
+          eq(processoCandidatos.processoId, input.processoId),
+          eq(processoCandidatos.statusCadastro, 'ativo'),
+          or(
+            eq(processoCandidatos.statusResultado, 'aprovado'),
+            eq(processoCandidatos.statusResultado, 'reprovado'),
+          )
+        ));
+
+      const [processo] = await database.select({ nome: processosSeletivos.nome })
+        .from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
+
+      const portalUrl = process.env.VITE_OAUTH_PORTAL_URL ?? 'https://ecolider.ecodobem.com';
+      let enviados = 0;
+      let erros = 0;
+
+      for (const candidato of candidatos) {
+        if (!candidato.email) continue;
+        try {
+          await sendEmail({
+            to: candidato.email,
+            subject: `📅 Agende sua Entrevista Devolutiva — ${processo?.nome || 'Processo Seletivo'}`,
+            html: `
+              <h2>Olá, ${candidato.nome}!</h2>
+              <p>Chegou a hora de agendar a sua <strong>Entrevista Devolutiva</strong> referente ao processo seletivo <strong>${processo?.nome || ''}</strong>.</p>
+
+              <div style="background:#f0f4ff;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #0A1E3E;">
+                <h3 style="margin:0 0 12px;color:#0A1E3E;">Sobre a Entrevista Devolutiva</h3>
+                <ul style="margin:0;padding-left:20px;line-height:1.8;">
+                  <li>O agendamento é <strong>definitivo e não possui reagendamento</strong>.</li>
+                  <li>O objetivo é apresentar os seus <strong>pontos de desenvolvimento</strong> identificados durante o processo.</li>
+                  <li>Esta entrevista <strong>não tem como objetivo discutir ou alterar o resultado</strong> do processo seletivo.</li>
+                  <li>Se você tem interesse em seus pontos de desenvolvimento para próximos processos, <strong>será muito bem-vindo(a)!</strong></li>
+                </ul>
+              </div>
+
+              <p>Acesse o portal e escolha o horário que melhor se encaixa na sua agenda:</p>
+              <a href="${portalUrl}/portal-candidato"
+                style="display:inline-block;background:#0A1E3E;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 0;">
+                📅 Agendar minha Devolutiva
+              </a>
+
+              <p style="color:#666;font-size:12px;margin-top:24px;">
+                Se você não conseguir acessar o link, copie e cole este endereço no seu navegador:<br/>
+                ${portalUrl}/portal-candidato
+              </p>
+            `,
+          });
+          enviados++;
+        } catch (e) {
+          console.error(`[iniciarDevolutiva] Erro ao enviar e-mail para ${candidato.email}:`, e);
+          erros++;
+        }
+      }
+
+      return { success: true, enviados, erros, total: candidatos.length };
+    }),
+
   // ==================== MIGRATION ====================
   runMigration: protectedProcedure.mutation(async ({ ctx }) => {
     requireCkmAdmin(ctx.user.role);
@@ -2954,6 +3036,21 @@ Responda APENAS em JSON com exatamente os seguintes campos:
           \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `));
+      // Adicionar colunas de controle da etapa devolutiva no processo
+      try {
+        await database.execute(sql.raw(
+          "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaIniciada` int NOT NULL DEFAULT 0"
+        ));
+      } catch (e: any) {
+        if (!e?.message?.includes('Duplicate column') && !e?.message?.includes('already exists')) throw e;
+      }
+      try {
+        await database.execute(sql.raw(
+          "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaIniciadaEm` timestamp NULL"
+        ));
+      } catch (e: any) {
+        if (!e?.message?.includes('Duplicate column') && !e?.message?.includes('already exists')) throw e;
+      }
       return { success: true, message: 'Tabela devolutiva_slots criada com sucesso' };
     } catch (e: any) {
       if (e?.message?.includes('already exists')) {

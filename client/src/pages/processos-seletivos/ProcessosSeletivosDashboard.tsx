@@ -327,6 +327,14 @@ function ProcessosSeletivosContent() {
     onError: (err) => toast.error(`Erro ao finalizar: ${err.message}`),
   });
 
+  const iniciarDevolutiva = trpc.processosSeletivos.iniciarDevolutiva.useMutation({
+    onSuccess: (result: any) => {
+      toast.success(`Etapa de devolutivas iniciada! ${result.enviados} e-mail(s) enviado(s) aos candidatos.`);
+      utils.processosSeletivos.listarProcessos.invalidate();
+    },
+    onError: (err: any) => toast.error(`Erro ao iniciar devolutivas: ${err.message}`),
+  });
+
   const moverCandidato = trpc.processosSeletivos.moverCandidato.useMutation({
     onSuccess: async () => {
       toast.success("Candidato movido para a nova região.");
@@ -653,6 +661,21 @@ function ProcessosSeletivosContent() {
                       onClick={() => { if (confirm("Finalizar este processo? O status será alterado para Encerrado.")) finalizarProcesso.mutate({ processoId: selectedProcesso.id }); }}>
                       ✅ Finalizar Processo
                     </Button>
+                  )}
+                  {!(selectedProcesso as any).devolutivaIniciada && (
+                    <Button size="sm" variant="outline" className="gap-1 text-teal-700 border-teal-300 hover:bg-teal-50" disabled={iniciarDevolutiva.isPending}
+                      onClick={() => {
+                        if (confirm("Iniciar a etapa de devolutivas? Todos os candidatos com resultado definido receberão um e-mail convidando-os a agendar a devolutiva.\n\nEsta ação não informa o resultado — apenas convida para o agendamento.")) {
+                          iniciarDevolutiva.mutate({ processoId: selectedProcesso.id });
+                        }
+                      }}>
+                      {iniciarDevolutiva.isPending ? "Enviando..." : "📅 Iniciar Etapa de Devolutivas"}
+                    </Button>
+                  )}
+                  {(selectedProcesso as any).devolutivaIniciada === 1 && (
+                    <span className="text-xs text-teal-700 font-medium flex items-center gap-1 px-2 py-1 bg-teal-50 border border-teal-200 rounded">
+                      ✅ Devolutivas iniciadas
+                    </span>
                   )}
                 </div>
               )}

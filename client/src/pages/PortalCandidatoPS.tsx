@@ -69,6 +69,19 @@ function EtapaDevolutiva({ processoId }: { processoId: number }) {
 
   if (isLoading) return <div className="py-6 text-center text-gray-400">Carregando horários...</div>;
 
+  // Devolutiva ainda não iniciada pelo admin
+  if (!data?.devolutivaIniciada) {
+    return (
+      <Card className="border-gray-200">
+        <CardContent className="pt-6 pb-6 text-center space-y-3">
+          <Clock className="h-10 w-10 text-gray-400 mx-auto" />
+          <p className="font-medium text-gray-700">Em breve</p>
+          <p className="text-sm text-gray-500">Os horários para a entrevista devolutiva serão disponibilizados em breve. Você receberá um e-mail quando puder agendar.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const meuSlot = data?.meuSlot;
   const slots = data?.slots || [];
 
@@ -492,10 +505,10 @@ export default function PortalCandidatoPS() {
             </div>
           )}
 
-          {/* Seção de Devolutiva — aparece após o resultado ser publicado */}
-          {currentStep === 3 && processoId > 0 && 
-           candidato?.statusResultado && 
-           candidato.statusResultado !== 'pendente' && 
+          {/* Seção de Devolutiva — aparece para todos candidatos com resultado definido */}
+          {currentStep === 3 && processoId > 0 &&
+           candidato?.statusResultado &&
+           candidato.statusResultado !== 'pendente' &&
            candidato.statusResultado !== 'em_analise' && (
             <div className="mt-8 border-t pt-8">
               <div className="mb-4">
