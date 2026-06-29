@@ -2127,7 +2127,7 @@ export default function Performance() {
             <div className="space-y-6">
               {/* Resumo com contadores visuais - usa apenas eventos dentro do macrociclo */}
               {(() => {
-                const eventosDentro = pendingWebinars?.events?.filter((e: any) => e.dentroDoMacrociclo) || [];
+                const eventosDentro = pendingWebinars?.events?.filter((e: any) => e.dentroDoMacrociclo && e.status !== 'pendente') || [];
                 const presencasDentro = eventosDentro.filter((e: any) => e.status === 'presente').length;
                 const totalDentro = eventosDentro.length;
                 const ausenciasDentro = totalDentro - presencasDentro;
