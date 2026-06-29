@@ -6155,10 +6155,42 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     return match ? Number(match[1]) : null;
   };
   // Excluir eventos órfãos vinculados a webinars removidos
+  // E também excluir eventos cujo webinar vinculado (sw-{id}) já tem outro evento na tabela
+  // com título diferente (caso de edição de título do webinar)
+  const swIdToDbEvent = new Map<number, typeof dbEventsRaw[0]>();
+  for (const evt of dbEventsRaw) {
+    const swId = linkedWebinarId(evt.externalId);
+    if (swId) swIdToDbEvent.set(swId, evt);
+  }
+
+  // Mapear webinars ativos por data para detectar eventos com título antigo
+  const activeWebinarByDate = new Map<string, typeof allScheduledWebinars[0]>();
+  for (const sw of allScheduledWebinars) {
+    if (sw.eventDate) {
+      const dateStr = new Date(sw.eventDate).toISOString().split('T')[0];
+      activeWebinarByDate.set(dateStr, sw);
+    }
+  }
+
   const dbEvents = dbEventsRaw.filter(evt => {
     const swId = linkedWebinarId(evt.externalId);
-    if (!swId) return true;
-    return allScheduledIds.has(swId);
+    // Remover eventos órfãos (sw-id sem webinar válido)
+    if (swId) return allScheduledIds.has(swId);
+    // Para eventos sem externalId (importados), verificar se existe webinar ativo
+    // com mesma data mas título diferente — se sim, é um evento com título antigo, remover
+    if (evt.eventDate && evt.title) {
+      const dateStr = new Date(evt.eventDate).toISOString().split('T')[0];
+      const activeWebinar = activeWebinarByDate.get(dateStr);
+      if (activeWebinar && activeWebinar.title) {
+        const evtNorm = evt.title.toLowerCase().trim().replace(/\s+/g, ' ');
+        const swNorm = activeWebinar.title.toLowerCase().trim().replace(/\s+/g, ' ');
+        // Se há webinar ativo nessa data com título diferente, este evento é o título antigo
+        if (evtNorm !== swNorm && swIdToDbEvent.has(activeWebinar.id)) {
+          return false; // remover duplicata com título antigo
+        }
+      }
+    }
+    return true;
   });
 
   // CORREÇÃO: Incluir scheduled_webinars (published/completed) que NÃO existem na tabela events
