@@ -1915,3 +1915,27 @@ export const processoLogs = mysqlTable("processo_logs", {
 });
 export type ProcessoLog = typeof processoLogs.$inferSelect;
 export type InsertProcessoLog = typeof processoLogs.$inferInsert;
+
+/**
+ * Slots de Disponibilidade para Entrevista Devolutiva do Processo Seletivo
+ * A mentora cria slots e candidatos habilitados/inabilitados escolhem o horário
+ */
+export const devolutivaSlots = mysqlTable("devolutiva_slots", {
+  id: int("id").autoincrement().primaryKey(),
+  processoId: int("processoId").notNull(),           // FK para processos_seletivos
+  consultorId: int("consultorId").notNull(),          // FK para consultors (mentora)
+  elegiveisResultado: mysqlEnum("elegiveisResultado", ["habilitados", "inabilitados", "ambos"]).default("ambos").notNull(),
+  specificDate: varchar("specificDate", { length: 10 }).notNull(), // "2026-07-15"
+  startTime: varchar("startTime", { length: 5 }).notNull(),        // "09:00"
+  endTime: varchar("endTime", { length: 5 }).notNull(),            // "10:00"
+  googleMeetLink: varchar("googleMeetLink", { length: 500 }),
+  candidatoId: int("candidatoId"),                   // null = disponível, preenchido = reservado
+  reservadoEm: timestamp("reservadoEm"),
+  emailConfirmacaoEnviado: int("emailConfirmacaoEnviado").default(0).notNull(),
+  emailLembreteEnviado: int("emailLembreteEnviado").default(0).notNull(),
+  status: mysqlEnum("status", ["disponivel", "reservado", "cancelado"]).default("disponivel").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DevolutivaSlot = typeof devolutivaSlots.$inferSelect;
+export type InsertDevolutivaSlot = typeof devolutivaSlots.$inferInsert;

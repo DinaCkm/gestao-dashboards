@@ -8,6 +8,7 @@ import {
   competencias,
   consultors,
   discResultados,
+  devolutivaSlots,
   processoAgendaSlots,
   processoAgendasGrupo,
   processoCandidatos,
@@ -2713,6 +2714,250 @@ Responda APENAS em JSON com exatamente os seguintes campos:
     } catch (e: any) {
       if (e?.message?.includes('Duplicate column') || e?.message?.includes('already exists')) {
         return { success: true, message: 'Coluna comunicado já existia' };
+      }
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: e?.message ?? 'Erro na migration' });
+    }
+  }),
+
+  // ==================== DEVOLUTIVA ====================
+
+  // Mentora cria slots de devolutiva
+  criarSlotDevolutiva: protectedProcedure
+    .input(z.object({
+      processoId: z.number(),
+      specificDate: z.string(),
+      startTime: z.string(),
+      endTime: z.string(),
+      googleMeetLink: z.string().optional(),
+      elegiveisResultado: z.enum(['habilitados', 'inabilitados', 'ambos']).default('ambos'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const consultorId = (ctx.user as any).consultorId as number | undefined;
+      if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentoras podem criar slots' });
+      await database.insert(devolutivaSlots).values({
+        processoId: input.processoId,
+        consultorId,
+        specificDate: input.specificDate,
+        startTime: input.startTime,
+        endTime: input.endTime,
+        googleMeetLink: input.googleMeetLink || null,
+        elegiveisResultado: input.elegiveisResultado,
+        status: 'disponivel',
+      });
+      return { success: true };
+    }),
+
+  // Mentora lista seus slots de devolutiva
+  listarSlotsDevolutiva: protectedProcedure
+    .input(z.object({ processoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const consultorId = (ctx.user as any).consultorId as number | undefined;
+      const slots = await database.select().from(devolutivaSlots)
+        .where(and(
+          eq(devolutivaSlots.processoId, input.processoId),
+          consultorId ? eq(devolutivaSlots.consultorId, consultorId) : sql`1=1`
+        ))
+        .orderBy(asc(devolutivaSlots.specificDate), asc(devolutivaSlots.startTime));
+      const result = [];
+      for (const slot of slots) {
+        let candidatoNome = null;
+        let candidatoEmail = null;
+        if (slot.candidatoId) {
+          const cand = await database.select({ nome: processoCandidatos.nome, email: processoCandidatos.email })
+            .from(processoCandidatos).where(eq(processoCandidatos.id, slot.candidatoId)).limit(1);
+          candidatoNome = cand[0]?.nome || null;
+          candidatoEmail = cand[0]?.email || null;
+        }
+        result.push({ ...slot, candidatoNome, candidatoEmail });
+      }
+      return result;
+    }),
+
+  // Mentora exclui slot disponível (não pode excluir se já reservado)
+  excluirSlotDevolutiva: protectedProcedure
+    .input(z.object({ slotId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const slot = await database.select().from(devolutivaSlots).where(eq(devolutivaSlots.id, input.slotId)).limit(1);
+      if (!slot[0]) throw new TRPCError({ code: 'NOT_FOUND', message: 'Slot não encontrado' });
+      if (slot[0].status === 'reservado') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Não é possível excluir um slot já reservado por um candidato' });
+      await database.delete(devolutivaSlots).where(eq(devolutivaSlots.id, input.slotId));
+      return { success: true };
+    }),
+
+  // Candidato busca slots disponíveis para devolutiva
+  slotsDevolutivaDisponiveis: protectedProcedure
+    .input(z.object({ processoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      // Buscar candidato pelo userId
+      const candidato = await database.select().from(processoCandidatos)
+        .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.userId, ctx.user.id)))
+        .limit(1);
+      if (!candidato[0]) return { slots: [], meuSlot: null };
+
+      // Verificar se já agendou
+      const meuSlot = await database.select().from(devolutivaSlots)
+        .where(and(eq(devolutivaSlots.processoId, input.processoId), eq(devolutivaSlots.candidatoId, candidato[0].id)))
+        .limit(1);
+
+      // Buscar resultado do candidato para filtrar slots elegíveis
+      const resultado = await database.select().from(processoResultados)
+        .where(and(eq(processoResultados.processoId, input.processoId), eq(processoResultados.candidatoId, candidato[0].id)))
+        .limit(1);
+      const resultadoCandidato = resultado[0]?.resultado; // 'aprovado' | 'reprovado'
+      const isHabilitado = resultadoCandidato === 'aprovado';
+
+      // Buscar slots disponíveis elegíveis para este candidato
+      const hoje = new Date().toISOString().split('T')[0];
+      const slots = await database.select().from(devolutivaSlots)
+        .where(and(
+          eq(devolutivaSlots.processoId, input.processoId),
+          eq(devolutivaSlots.status, 'disponivel'),
+          gte(devolutivaSlots.specificDate, hoje)
+        ))
+        .orderBy(asc(devolutivaSlots.specificDate), asc(devolutivaSlots.startTime));
+
+      // Filtrar por elegibilidade
+      const slotsFiltrados = slots.filter(s => {
+        if (s.elegiveisResultado === 'ambos') return true;
+        if (s.elegiveisResultado === 'habilitados' && isHabilitado) return true;
+        if (s.elegiveisResultado === 'inabilitados' && !isHabilitado) return true;
+        return false;
+      });
+
+      return { slots: slotsFiltrados, meuSlot: meuSlot[0] || null, candidatoId: candidato[0].id };
+    }),
+
+  // Candidato agenda devolutiva
+  agendarDevolutiva: protectedProcedure
+    .input(z.object({ processoId: z.number(), slotId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const candidato = await database.select().from(processoCandidatos)
+        .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.userId, ctx.user.id)))
+        .limit(1);
+      if (!candidato[0]) throw new TRPCError({ code: 'FORBIDDEN', message: 'Candidato não encontrado neste processo' });
+
+      // Verificar se já tem devolutiva agendada
+      const jaAgendou = await database.select().from(devolutivaSlots)
+        .where(and(eq(devolutivaSlots.processoId, input.processoId), eq(devolutivaSlots.candidatoId, candidato[0].id)))
+        .limit(1);
+      if (jaAgendou[0]) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Você já possui uma devolutiva agendada. O agendamento é definitivo e não pode ser alterado.' });
+
+      // Verificar se slot ainda está disponível
+      const slot = await database.select().from(devolutivaSlots)
+        .where(and(eq(devolutivaSlots.id, input.slotId), eq(devolutivaSlots.status, 'disponivel')))
+        .limit(1);
+      if (!slot[0]) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Este horário não está mais disponível. Por favor, escolha outro.' });
+
+      // Reservar o slot
+      await database.update(devolutivaSlots)
+        .set({ candidatoId: candidato[0].id, status: 'reservado', reservadoEm: new Date() })
+        .where(eq(devolutivaSlots.id, input.slotId));
+
+      // Buscar dados para o e-mail
+      const processo = await database.select().from(processosSeletivos).where(eq(processosSeletivos.id, input.processoId)).limit(1);
+      const consultor = await database.select().from(consultors).where(eq(consultors.id, slot[0].consultorId)).limit(1);
+      const dataFormatada = new Date(slot[0].specificDate + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+
+      const textoDevolutiva = `
+        <p><strong>Importante:</strong></p>
+        <ul>
+          <li>A entrevista devolutiva <strong>não possui reagendamento</strong>.</li>
+          <li>O objetivo desta conversa é apresentar os seus <strong>pontos de desenvolvimento</strong> identificados durante o processo.</li>
+          <li>Esta entrevista <strong>não tem como objetivo discutir ou alterar o resultado</strong> do processo seletivo.</li>
+          <li>Se você tem interesse em conhecer seus pontos de desenvolvimento para os próximos processos, será muito bem-vindo(a)!</li>
+        </ul>
+      `;
+
+      // E-mail para o candidato
+      try {
+        await sendEmail({
+          to: candidato[0].email,
+          subject: `✅ Devolutiva agendada — ${processo[0]?.nome || 'Processo Seletivo'}`,
+          html: `
+            <h2>Sua devolutiva foi agendada!</h2>
+            <p>Olá, <strong>${candidato[0].nome}</strong>!</p>
+            <p>Sua entrevista devolutiva foi confirmada com sucesso:</p>
+            <ul>
+              <li><strong>Data:</strong> ${dataFormatada}</li>
+              <li><strong>Horário:</strong> ${slot[0].startTime} – ${slot[0].endTime}</li>
+              ${slot[0].googleMeetLink ? `<li><strong>Link:</strong> <a href="${slot[0].googleMeetLink}">${slot[0].googleMeetLink}</a></li>` : ''}
+            </ul>
+            ${textoDevolutiva}
+            <p>Até lá!</p>
+          `,
+        });
+      } catch (e) { console.error('Erro ao enviar e-mail candidato devolutiva:', e); }
+
+      // E-mail para a mentora
+      try {
+        if (consultor[0]?.email) {
+          await sendEmail({
+            to: consultor[0].email,
+            subject: `📅 Nova devolutiva agendada — ${candidato[0].nome}`,
+            html: `
+              <h2>Nova devolutiva agendada</h2>
+              <p>O candidato <strong>${candidato[0].nome}</strong> (${candidato[0].email}) agendou a devolutiva:</p>
+              <ul>
+                <li><strong>Data:</strong> ${dataFormatada}</li>
+                <li><strong>Horário:</strong> ${slot[0].startTime} – ${slot[0].endTime}</li>
+                <li><strong>Processo:</strong> ${processo[0]?.nome || ''}</li>
+              </ul>
+            `,
+          });
+        }
+      } catch (e) { console.error('Erro ao enviar e-mail mentora devolutiva:', e); }
+
+      return { success: true, slot: slot[0] };
+    }),
+
+  // Minha devolutiva (candidato visualiza seu agendamento)
+  minhaDevolutiva: protectedProcedure
+    .input(z.object({ processoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const candidato = await database.select().from(processoCandidatos)
+        .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.userId, ctx.user.id)))
+        .limit(1);
+      if (!candidato[0]) return null;
+      const slot = await database.select().from(devolutivaSlots)
+        .where(and(eq(devolutivaSlots.processoId, input.processoId), eq(devolutivaSlots.candidatoId, candidato[0].id)))
+        .limit(1);
+      return slot[0] || null;
+    }),
+
+  // ==================== MIGRATION ====================
+  runMigration: protectedProcedure.mutation(async ({ ctx }) => {
+    requireCkmAdmin(ctx.user.role);
+    const database = await requireDatabase();
+    try {
+      await database.execute(sql.raw(`
+        CREATE TABLE IF NOT EXISTS \`devolutiva_slots\` (
+          \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          \`processoId\` int NOT NULL,
+          \`consultorId\` int NOT NULL,
+          \`elegiveisResultado\` enum('habilitados','inabilitados','ambos') NOT NULL DEFAULT 'ambos',
+          \`specificDate\` varchar(10) NOT NULL,
+          \`startTime\` varchar(5) NOT NULL,
+          \`endTime\` varchar(5) NOT NULL,
+          \`googleMeetLink\` varchar(500) NULL,
+          \`candidatoId\` int NULL,
+          \`reservadoEm\` timestamp NULL,
+          \`emailConfirmacaoEnviado\` int NOT NULL DEFAULT 0,
+          \`emailLembreteEnviado\` int NOT NULL DEFAULT 0,
+          \`status\` enum('disponivel','reservado','cancelado') NOT NULL DEFAULT 'disponivel',
+          \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `));
+      return { success: true, message: 'Tabela devolutiva_slots criada com sucesso' };
+    } catch (e: any) {
+      if (e?.message?.includes('already exists')) {
+        return { success: true, message: 'Tabela devolutiva_slots já existia' };
       }
       throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: e?.message ?? 'Erro na migration' });
     }

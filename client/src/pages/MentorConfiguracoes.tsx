@@ -35,6 +35,175 @@ import {
 
 const DAYS_OF_WEEK = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
+// ==================== DEVOLUTIVA PS TAB ====================
+function DevolutivaTab({ consultorId }: { consultorId: number }) {
+  const utils = trpc.useUtils();
+  const [processoId, setProcessoId] = useState<number | null>(null);
+  const [novoSlot, setNovoSlot] = useState({ specificDate: '', startTime: '09:00', endTime: '10:00', googleMeetLink: '', elegiveisResultado: 'ambos' as 'habilitados' | 'inabilitados' | 'ambos' });
+
+  const { data: processosData } = trpc.processosSeletivos.listarProcessos.useQuery();
+  const processos = (processosData || []) as any[];
+
+  const { data: slots = [], refetch: refetchSlots } = trpc.processosSeletivos.listarSlotsDevolutiva.useQuery(
+    { processoId: processoId! },
+    { enabled: !!processoId }
+  );
+
+  const criarSlot = trpc.processosSeletivos.criarSlotDevolutiva.useMutation({
+    onSuccess: () => { toast.success('Slot criado!'); refetchSlots(); setNovoSlot(p => ({ ...p, specificDate: '', googleMeetLink: '' })); },
+    onError: (e: any) => toast.error(e.message || 'Erro ao criar slot'),
+  });
+
+  const excluirSlot = trpc.processosSeletivos.excluirSlotDevolutiva.useMutation({
+    onSuccess: () => { toast.success('Slot removido'); refetchSlots(); },
+    onError: (e: any) => toast.error(e.message || 'Erro ao remover slot'),
+  });
+
+  const migrar = trpc.processosSeletivos.runMigrationDevolutiva.useMutation({
+    onSuccess: (r: any) => toast.success(r.message),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const formatDate = (d: string) => { const [y,m,dd] = d.split('-'); return `${dd}/${m}/${y}`; };
+
+  const slotsDisponiveis = (slots as any[]).filter(s => s.status === 'disponivel');
+  const slotsReservados = (slots as any[]).filter(s => s.status === 'reservado');
+
+  return (
+    <div className="space-y-6">
+      {/* Info */}
+      <Card className="border-blue-200 bg-blue-50/50">
+        <CardContent className="pt-4">
+          <div className="flex gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-800">
+              <p className="font-medium mb-1">Entrevistas Devolutivas do Processo Seletivo</p>
+              <p>Disponibilize horários para que os candidatos habilitados e/ou inabilitados possam agendar a devolutiva. O agendamento é definitivo e sem reagendamento.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Selecionar Processo */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Selecionar Processo Seletivo</CardTitle></CardHeader>
+        <CardContent>
+          <Select value={processoId?.toString() || ''} onValueChange={v => setProcessoId(Number(v))}>
+            <SelectTrigger><SelectValue placeholder="Selecione o processo seletivo..." /></SelectTrigger>
+            <SelectContent>
+              {processos.map((p: any) => <SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          {!processoId && (
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => migrar.mutate()}>
+              {migrar.isPending ? 'Criando tabela...' : 'Inicializar banco (1x)'}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      {processoId && (
+        <>
+          {/* Adicionar slot */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Plus className="h-4 w-4 text-purple-600" />
+                Adicionar Horário de Devolutiva
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <Label>Data</Label>
+                  <Input type="date" value={novoSlot.specificDate} onChange={e => setNovoSlot(p => ({ ...p, specificDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} />
+                </div>
+                <div>
+                  <Label>Início</Label>
+                  <Input type="time" value={novoSlot.startTime} onChange={e => setNovoSlot(p => ({ ...p, startTime: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Fim</Label>
+                  <Input type="time" value={novoSlot.endTime} onChange={e => setNovoSlot(p => ({ ...p, endTime: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Elegíveis</Label>
+                  <Select value={novoSlot.elegiveisResultado} onValueChange={v => setNovoSlot(p => ({ ...p, elegiveisResultado: v as any }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ambos">Habilitados e Inabilitados</SelectItem>
+                      <SelectItem value="habilitados">Apenas Habilitados</SelectItem>
+                      <SelectItem value="inabilitados">Apenas Inabilitados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Link do Meet (opcional)</Label>
+                <Input placeholder="https://meet.google.com/xxx-xxxx-xxx" value={novoSlot.googleMeetLink} onChange={e => setNovoSlot(p => ({ ...p, googleMeetLink: e.target.value }))} />
+              </div>
+              <Button onClick={() => criarSlot.mutate({ processoId, ...novoSlot })} disabled={criarSlot.isPending || !novoSlot.specificDate}>
+                {criarSlot.isPending ? 'Salvando...' : '+ Adicionar Horário'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Slots disponíveis */}
+          {slotsDisponiveis.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className="text-base text-green-700">Horários Disponíveis ({slotsDisponiveis.length})</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {slotsDisponiveis.map((s: any) => (
+                  <div key={s.id} className="flex items-center justify-between p-3 rounded-lg border border-green-100 bg-green-50/50">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-4 w-4 text-green-600" />
+                      <span className="font-medium">{formatDate(s.specificDate)}</span>
+                      <span className="text-gray-600">{s.startTime} – {s.endTime}</span>
+                      <Badge variant="outline" className="text-xs">{s.elegiveisResultado === 'ambos' ? 'Todos' : s.elegiveisResultado === 'habilitados' ? 'Habilitados' : 'Inabilitados'}</Badge>
+                    </div>
+                    <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700" onClick={() => excluirSlot.mutate({ slotId: s.id })}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Slots reservados */}
+          {slotsReservados.length > 0 && (
+            <Card>
+              <CardHeader><CardTitle className="text-base text-blue-700">Devolutivas Agendadas ({slotsReservados.length})</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {slotsReservados.map((s: any) => (
+                  <div key={s.id} className="flex items-center justify-between p-3 rounded-lg border border-blue-100 bg-blue-50/50">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium">{formatDate(s.specificDate)}</span>
+                        <span className="text-gray-600">{s.startTime} – {s.endTime}</span>
+                      </div>
+                      {s.candidatoNome && <p className="text-sm text-gray-700 ml-7">👤 {s.candidatoNome} — {s.candidatoEmail}</p>}
+                      {s.googleMeetLink && <a href={s.googleMeetLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline ml-7">🔗 Abrir Meet</a>}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {slots.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar className="h-10 w-10 mx-auto mb-2 opacity-30" />
+              <p>Nenhum horário cadastrado ainda para este processo.</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function MentorConfiguracoes() {
   return (
     <DashboardLayout>
@@ -78,7 +247,7 @@ function MentorConfiguracoesContent() {
 
       {/* Tabs */}
       <Tabs defaultValue="perfil" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="perfil" className="flex items-center gap-2">
             <User2 className="h-4 w-4" />
             <span className="hidden sm:inline">Meu Perfil</span>
@@ -93,6 +262,11 @@ function MentorConfiguracoesContent() {
             <Calendar className="h-4 w-4" />
             <span className="hidden sm:inline">Agendamentos</span>
             <span className="sm:hidden">Agend.</span>
+          </TabsTrigger>
+          <TabsTrigger value="devolutiva" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Devolutiva PS</span>
+            <span className="sm:hidden">Devol.</span>
           </TabsTrigger>
           <TabsTrigger value="notificacoes" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
@@ -111,6 +285,10 @@ function MentorConfiguracoesContent() {
 
         <TabsContent value="agendamentos">
           <MentorAgendamentosTab consultorId={userConsultorId} />
+        </TabsContent>
+
+        <TabsContent value="devolutiva">
+          <DevolutivaTab consultorId={userConsultorId} />
         </TabsContent>
 
         <TabsContent value="notificacoes">
