@@ -6083,9 +6083,20 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
   const aluno = await getAlunoById(alunoId);
   if (!aluno) return [];
 
-  // Buscar macroInicio do aluno para filtrar eventos anteriores ao macrociclo
+  // Buscar macroInicio e macroTermino do aluno
   const macroInicioMap = await getAlunoMacroInicioMap();
   const macroInicio = macroInicioMap.get(alunoId);
+
+  // Buscar macroTermino do PDI ativo do aluno
+  const db2 = await getDb();
+  let macroTermino: Date | null = null;
+  if (db2) {
+    const pdis = await db2.select({ macroTermino: assessmentPdi.macroTermino })
+      .from(assessmentPdi)
+      .where(and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.status, 'ativo')))
+      .limit(1);
+    if (pdis[0]?.macroTermino) macroTermino = new Date(pdis[0].macroTermino);
+  }
 
   // Buscar todos os eventos do programa do aluno
   // Se o aluno tem programId, buscar eventos do programa OU eventos sem programa (programId NULL)
@@ -6321,10 +6332,13 @@ export async function getWebinarsPendingAttendance(alunoId: number): Promise<any
     const isPresent = part?.status === 'presente';
     const selfReported = !!part?.selfReportedAt;
 
-    // Verificar se o evento está dentro do macrociclo do aluno
-    const dentroDoMacrociclo = macroInicio
-      ? (evt.eventDate ? new Date(evt.eventDate) >= macroInicio : true)
-      : true; // Se não tem macroInicio, considerar todos como dentro
+    // Verificar se o evento está dentro do macrociclo do aluno (entre macroInicio e macroTermino)
+    const evtDate = evt.eventDate ? new Date(evt.eventDate) : null;
+    const dentroDoMacrociclo = macroInicio && evtDate
+      ? evtDate >= macroInicio && (!macroTermino || evtDate <= macroTermino)
+      : macroInicio
+        ? (evtDate ? evtDate >= macroInicio : true)
+        : true;
 
     const isFutureEvent = evt.eventDate ? new Date(evt.eventDate) > now : false;
     return {
