@@ -1488,46 +1488,6 @@ export const processosSeletivosRouter = router({
         },
       });
 
-      // Enviar e-mail ao candidato quando resultado for aprovado ou reprovado
-      if ((input.decisao === "aprovado" || input.decisao === "reprovado") && candidate.email) {
-        try {
-          const [processo] = await database.select({ nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome })
-            .from(processosSeletivos).where(eq(processosSeletivos.id, candidate.processoId)).limit(1);
-          const isHabilitado = input.decisao === "aprovado";
-          const portalUrl = process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com";
-
-          await sendEmail({
-            to: candidate.email,
-            subject: `Resultado do Processo Seletivo — ${processo?.nome || "Processo Seletivo"}`,
-            html: `
-              <h2>Resultado do Processo Seletivo</h2>
-              <p>Olá, <strong>${candidate.nome}</strong>!</p>
-              <p>O resultado do processo seletivo <strong>${processo?.nome || ""}</strong> foi registrado.</p>
-              <p>Você foi <strong>${isHabilitado ? "✅ Habilitado(a)" : "❌ Inabilitado(a)"}</strong> neste processo.</p>
-
-              <div style="background:#f5f5f5;padding:16px;border-radius:8px;margin:16px 0;">
-                <h3 style="margin:0 0 8px">📅 Entrevista Devolutiva</h3>
-                <p style="margin:0">Você tem direito a uma entrevista devolutiva com a consultora para conhecer seus pontos de desenvolvimento.</p>
-                <br/>
-                <ul>
-                  <li>O agendamento é <strong>definitivo e não possui reagendamento</strong>.</li>
-                  <li>O objetivo é apresentar seus <strong>pontos de desenvolvimento</strong> identificados no processo.</li>
-                  <li>Esta entrevista <strong>não tem como objetivo discutir ou alterar o resultado</strong> do processo seletivo.</li>
-                  <li>Se você tem interesse em seus pontos de desenvolvimento para próximos processos, será muito bem-vindo(a)!</li>
-                </ul>
-                <br/>
-                <a href="${portalUrl}/portal-candidato" style="background:#0A1E3E;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">
-                  Agendar minha devolutiva
-                </a>
-              </div>
-              <p style="color:#666;font-size:12px;">Acesse o portal para escolher o horário da sua devolutiva.</p>
-            `,
-          });
-        } catch (e) {
-          console.error("[registrarDecisao] Erro ao enviar e-mail de resultado:", e);
-        }
-      }
-
       return { success: true };
     }),
 
