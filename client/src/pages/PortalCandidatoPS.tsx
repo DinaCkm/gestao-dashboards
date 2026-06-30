@@ -69,6 +69,8 @@ function EtapaDevolutiva({ processoId }: { processoId: number }) {
 
   if (isLoading) return <div className="py-6 text-center text-gray-400">Carregando horários...</div>;
 
+  const meuSlot = data?.meuSlot;
+
   // Devolutiva ainda não iniciada pelo admin
   if (!data?.devolutivaIniciada) {
     return (
@@ -82,7 +84,21 @@ function EtapaDevolutiva({ processoId }: { processoId: number }) {
     );
   }
 
-  const meuSlot = data?.meuSlot;
+  // Prazo de agendamento encerrado e o candidato não chegou a agendar
+  if (data?.prazoExpirado && !meuSlot) {
+    return (
+      <Card className="border-red-200 bg-red-50/40">
+        <CardContent className="pt-6 pb-6 text-center space-y-3">
+          <AlertCircle className="h-10 w-10 text-red-500 mx-auto" />
+          <p className="font-semibold text-red-700">Prazo de agendamento de devolutivas encerrado</p>
+          <p className="text-sm text-red-600 max-w-md mx-auto">
+            O período disponível para agendar sua entrevista devolutiva já foi encerrado. Caso tenha dúvidas, entre em contato com a equipe responsável pelo processo seletivo.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const slots = data?.slots || [];
 
   // Já tem devolutiva agendada
@@ -167,7 +183,17 @@ function EtapaDevolutiva({ processoId }: { processoId: number }) {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Escolha seu horário</CardTitle><CardDescription>Selecione um dos horários disponíveis para sua devolutiva.</CardDescription></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Escolha seu horário</CardTitle>
+          <CardDescription>
+            Selecione um dos horários disponíveis para sua devolutiva.
+            {data?.prazoFim && (
+              <span className="block mt-1 text-amber-700">
+                ⏰ Prazo para agendar: até {new Date(data.prazoFim).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} às {new Date(data.prazoFim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
         <CardContent className="space-y-3">
           {slots.map((slot: any) => {
             const dataFormatada = new Date(slot.specificDate + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });

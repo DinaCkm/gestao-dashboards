@@ -46,6 +46,8 @@ function ProcessosSeletivosContent() {
   const isAdmin = user?.role === "admin" || (user as any)?.role === "admin2";
   const utils = trpc.useUtils();
   const [selectedProcessoId, setSelectedProcessoId] = useState<number | null>(null);
+  const [modalDevolutiva, setModalDevolutiva] = useState(false);
+  const [prazoDevolutiva, setPrazoDevolutiva] = useState({ inicio: '', fim: '' });
   const [processoForm, setProcessoForm] = useState(emptyProcesso);
   const [vagaForm, setVagaForm] = useState({ titulo: "", codigo: "", quantidadeVagas: "1" });
   const [regiaoForm, setRegiaoForm] = useState({ nome: "", codigo: "", vagasPrevistas: "0" });
@@ -331,6 +333,7 @@ function ProcessosSeletivosContent() {
     onSuccess: (result: any) => {
       toast.success(`Etapa de devolutivas iniciada! ${result.enviados} e-mail(s) enviado(s) aos candidatos.`);
       utils.processosSeletivos.listarProcessos.invalidate();
+      setModalDevolutiva(false);
     },
     onError: (err: any) => toast.error(`Erro ao iniciar devolutivas: ${err.message}`),
   });
@@ -663,13 +666,13 @@ function ProcessosSeletivosContent() {
                     </Button>
                   )}
                   {!(selectedProcesso as any).devolutivaIniciada && (
-                    <Button size="sm" variant="outline" className="gap-1 text-teal-700 border-teal-300 hover:bg-teal-50" disabled={iniciarDevolutiva.isPending}
+                    <Button size="sm" variant="outline" className="gap-1 text-teal-700 border-teal-300 hover:bg-teal-50"
                       onClick={() => {
-                        if (confirm("Iniciar a etapa de devolutivas? Todos os candidatos com resultado definido receberão um e-mail convidando-os a agendar a devolutiva.\n\nEsta ação não informa o resultado — apenas convida para o agendamento.")) {
-                          iniciarDevolutiva.mutate({ processoId: selectedProcesso.id });
-                        }
+                        const hoje = new Date().toISOString().slice(0, 16);
+                        setPrazoDevolutiva({ inicio: hoje, fim: '' });
+                        setModalDevolutiva(true);
                       }}>
-                      {iniciarDevolutiva.isPending ? "Enviando..." : "📅 Iniciar Etapa de Devolutivas"}
+                      📅 Iniciar Etapa de Devolutivas
                     </Button>
                   )}
                   {(selectedProcesso as any).devolutivaIniciada === 1 && (
@@ -1492,6 +1495,60 @@ function ProcessosSeletivosContent() {
             }}
           >
             {inativarCandidato.isPending ? "Inativando..." : "Confirmar inativação"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={modalDevolutiva} onOpenChange={setModalDevolutiva}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>📅 Iniciar Etapa de Devolutivas</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Defina o período em que os candidatos poderão agendar a entrevista devolutiva. Após o prazo final, o agendamento será automaticamente encerrado.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-sm">Agendamentos abertos a partir de</Label>
+              <Input
+                type="datetime-local"
+                value={prazoDevolutiva.inicio}
+                onChange={(e) => setPrazoDevolutiva((p) => ({ ...p, inicio: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label className="text-sm">Agendamentos encerram em</Label>
+              <Input
+                type="datetime-local"
+                value={prazoDevolutiva.fim}
+                onChange={(e) => setPrazoDevolutiva((p) => ({ ...p, fim: e.target.value }))}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">
+            Todos os candidatos com resultado definido (habilitados e inabilitados) receberão um e-mail convidando-os a agendar. O e-mail não menciona o resultado do processo.
+          </p>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setModalDevolutiva(false)}>Cancelar</Button>
+          <Button
+            disabled={iniciarDevolutiva.isPending || !prazoDevolutiva.inicio || !prazoDevolutiva.fim}
+            onClick={() => {
+              if (!selectedProcesso) return;
+              if (new Date(prazoDevolutiva.fim) <= new Date(prazoDevolutiva.inicio)) {
+                toast.error('O prazo final deve ser depois do prazo inicial');
+                return;
+              }
+              iniciarDevolutiva.mutate({
+                processoId: selectedProcesso.id,
+                prazoInicio: prazoDevolutiva.inicio,
+                prazoFim: prazoDevolutiva.fim,
+              });
+            }}
+          >
+            {iniciarDevolutiva.isPending ? "Enviando e-mails..." : "Confirmar e Enviar Convites"}
           </Button>
         </DialogFooter>
       </DialogContent>

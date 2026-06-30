@@ -2829,13 +2829,26 @@ Responda APENAS em JSON com exatamente os seguintes campos:
         return false;
       });
 
-      // Verificar se a etapa de devolutivas foi iniciada pelo admin
+      // Verificar se a etapa de devolutivas foi iniciada pelo admin e o prazo
       const processoRows = await database.execute(sql.raw(
-        `SELECT devolutivaIniciada FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+        `SELECT devolutivaIniciada, devolutivaPrazoInicio, devolutivaPrazoFim FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
       )) as any;
-      const devolutivaIniciada = !!(processoRows?.[0]?.[0]?.devolutivaIniciada ?? processoRows?.[0]?.devolutivaIniciada);
+      const procRow = processoRows?.[0]?.[0] ?? processoRows?.[0];
+      const devolutivaIniciada = !!procRow?.devolutivaIniciada;
+      const prazoInicio = procRow?.devolutivaPrazoInicio ? new Date(procRow.devolutivaPrazoInicio) : null;
+      const prazoFim = procRow?.devolutivaPrazoFim ? new Date(procRow.devolutivaPrazoFim) : null;
+      const agora = new Date();
+      const dentroDoPrazo = devolutivaIniciada && (!prazoInicio || agora >= prazoInicio) && (!prazoFim || agora <= prazoFim);
+      const prazoExpirado = devolutivaIniciada && prazoFim ? agora > prazoFim : false;
 
-      return { slots: slotsFiltrados, meuSlot: meuSlot[0] || null, candidatoId: candidato[0].id, devolutivaIniciada };
+      return {
+        slots: dentroDoPrazo ? slotsFiltrados : [],
+        meuSlot: meuSlot[0] || null,
+        candidatoId: candidato[0].id,
+        devolutivaIniciada,
+        prazoExpirado,
+        prazoFim: prazoFim ? prazoFim.toISOString() : null,
+      };
     }),
   agendarDevolutiva: protectedProcedure
     .input(z.object({ processoId: z.number(), slotId: z.number() }))
@@ -2845,6 +2858,24 @@ Responda APENAS em JSON com exatamente os seguintes campos:
         .where(and(eq(processoCandidatos.processoId, input.processoId), eq(processoCandidatos.userId, ctx.user.id)))
         .limit(1);
       if (!candidato[0]) throw new TRPCError({ code: 'FORBIDDEN', message: 'Candidato não encontrado neste processo' });
+
+      // Verificar se o prazo de agendamento ainda está válido
+      const processoRows = await database.execute(sql.raw(
+        `SELECT devolutivaIniciada, devolutivaPrazoInicio, devolutivaPrazoFim FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+      )) as any;
+      const procRow = processoRows?.[0]?.[0] ?? processoRows?.[0];
+      const prazoInicio = procRow?.devolutivaPrazoInicio ? new Date(procRow.devolutivaPrazoInicio) : null;
+      const prazoFim = procRow?.devolutivaPrazoFim ? new Date(procRow.devolutivaPrazoFim) : null;
+      const agora = new Date();
+      if (!procRow?.devolutivaIniciada) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'A etapa de devolutivas ainda não foi iniciada.' });
+      }
+      if (prazoInicio && agora < prazoInicio) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'O prazo de agendamento ainda não foi iniciado.' });
+      }
+      if (prazoFim && agora > prazoFim) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Prazo de agendamento de devolutivas encerrado.' });
+      }
 
       // Verificar se já tem devolutiva agendada
       const jaAgendou = await database.select().from(devolutivaSlots)
@@ -2937,14 +2968,21 @@ Responda APENAS em JSON com exatamente os seguintes campos:
 
   // Iniciar etapa de devolutivas — envia e-mail a todos os candidatos com resultado definido
   iniciarDevolutiva: protectedProcedure
-    .input(z.object({ processoId: z.number() }))
+    .input(z.object({
+      processoId: z.number(),
+      prazoInicio: z.string(), // "2026-06-30T00:00"
+      prazoFim: z.string(),    // "2026-07-03T23:59"
+    }))
     .mutation(async ({ ctx, input }) => {
       requireCkmAdmin(ctx.user.role);
       const database = await requireDatabase();
 
-      // Marcar processo como devolutiva iniciada
+      const prazoInicioSql = input.prazoInicio.replace('T', ' ') + ':00';
+      const prazoFimSql = input.prazoFim.replace('T', ' ') + ':59';
+
+      // Marcar processo como devolutiva iniciada e salvar o prazo
       await database.execute(sql.raw(
-        `UPDATE \`processos_seletivos\` SET \`devolutivaIniciada\` = 1, \`devolutivaIniciadaEm\` = NOW() WHERE \`id\` = ${input.processoId}`
+        `UPDATE \`processos_seletivos\` SET \`devolutivaIniciada\` = 1, \`devolutivaIniciadaEm\` = NOW(), \`devolutivaPrazoInicio\` = '${prazoInicioSql}', \`devolutivaPrazoFim\` = '${prazoFimSql}' WHERE \`id\` = ${input.processoId}`
       ));
 
       // Buscar todos os candidatos com resultado definido (aprovado ou reprovado)
@@ -2971,6 +3009,10 @@ Responda APENAS em JSON com exatamente os seguintes campos:
       let enviados = 0;
       let erros = 0;
 
+      const prazoFimDate = new Date(prazoFimSql.replace(' ', 'T'));
+      const prazoFimFormatado = prazoFimDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+        ' às ' + prazoFimDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
       for (const candidato of candidatos) {
         if (!candidato.email) continue;
         try {
@@ -2980,6 +3022,10 @@ Responda APENAS em JSON com exatamente os seguintes campos:
             html: `
               <h2>Olá, ${candidato.nome}!</h2>
               <p>Chegou a hora de agendar a sua <strong>Entrevista Devolutiva</strong> referente ao processo seletivo <strong>${processo?.nome || ''}</strong>.</p>
+
+              <div style="background:#fff8e6;padding:14px 20px;border-radius:8px;margin:16px 0;border-left:4px solid #f59e0b;">
+                <p style="margin:0;"><strong>⏰ Atenção ao prazo:</strong> o agendamento estará disponível até <strong>${prazoFimFormatado}</strong>. Após esse prazo, não será mais possível agendar a devolutiva.</p>
+              </div>
 
               <div style="background:#f0f4ff;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #0A1E3E;">
                 <h3 style="margin:0 0 12px;color:#0A1E3E;">Sobre a Entrevista Devolutiva</h3>
@@ -3047,6 +3093,20 @@ Responda APENAS em JSON com exatamente os seguintes campos:
       try {
         await database.execute(sql.raw(
           "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaIniciadaEm` timestamp NULL"
+        ));
+      } catch (e: any) {
+        if (!e?.message?.includes('Duplicate column') && !e?.message?.includes('already exists')) throw e;
+      }
+      try {
+        await database.execute(sql.raw(
+          "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaPrazoInicio` datetime NULL"
+        ));
+      } catch (e: any) {
+        if (!e?.message?.includes('Duplicate column') && !e?.message?.includes('already exists')) throw e;
+      }
+      try {
+        await database.execute(sql.raw(
+          "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaPrazoFim` datetime NULL"
         ));
       } catch (e: any) {
         if (!e?.message?.includes('Duplicate column') && !e?.message?.includes('already exists')) throw e;
