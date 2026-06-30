@@ -40,6 +40,8 @@ function DevolutivaTab({ consultorId }: { consultorId: number }) {
   const utils = trpc.useUtils();
   const [processoId, setProcessoId] = useState<number | null>(null);
   const [novoSlot, setNovoSlot] = useState({ specificDate: '', startTime: '09:00', endTime: '10:00', googleMeetLink: '', elegiveisResultado: 'ambos' as 'habilitados' | 'inabilitados' | 'ambos' });
+  const [modoMultiplo, setModoMultiplo] = useState(false);
+  const [multiSlot, setMultiSlot] = useState({ specificDate: '', periodoInicio: '09:00', periodoFim: '17:00', duracaoMin: 30, googleMeetLink: '', elegiveisResultado: 'ambos' as 'habilitados' | 'inabilitados' | 'ambos' });
 
   const { data: processosData } = trpc.processosSeletivos.listarProcessos.useQuery();
   const processos = (processosData || []) as any[];
@@ -60,7 +62,7 @@ function DevolutivaTab({ consultorId }: { consultorId: number }) {
   });
 
   const migrar = trpc.processosSeletivos.runMigrationDevolutiva.useMutation({
-    onSuccess: (r: any) => toast.success(r.message),
+    onSuccess: (r: any) => { toast.success(r.message); refetchSlots(); },
     onError: (e: any) => toast.error(e.message),
   });
 
@@ -94,11 +96,9 @@ function DevolutivaTab({ consultorId }: { consultorId: number }) {
               {processos.map((p: any) => <SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}
             </SelectContent>
           </Select>
-          {!processoId && (
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => migrar.mutate()}>
-              {migrar.isPending ? 'Criando tabela...' : 'Inicializar banco (1x)'}
-            </Button>
-          )}
+          <Button variant="outline" size="sm" className="mt-2" onClick={() => migrar.mutate()} disabled={migrar.isPending}>
+            {migrar.isPending ? 'Criando tabela...' : '🔧 Inicializar banco de devolutivas (1x)'}
+          </Button>
         </CardContent>
       </Card>
 
@@ -107,44 +107,155 @@ function DevolutivaTab({ consultorId }: { consultorId: number }) {
           {/* Adicionar slot */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Plus className="h-4 w-4 text-purple-600" />
-                Adicionar Horário de Devolutiva
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Plus className="h-4 w-4 text-purple-600" />
+                  Adicionar Horário de Devolutiva
+                </CardTitle>
+                <div className="flex items-center gap-2 text-sm">
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md ${!modoMultiplo ? 'bg-[#0A1E3E] text-white' : 'bg-gray-100 text-gray-600'}`}
+                    onClick={() => setModoMultiplo(false)}
+                  >
+                    Um horário
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1 rounded-md ${modoMultiplo ? 'bg-[#0A1E3E] text-white' : 'bg-gray-100 text-gray-600'}`}
+                    onClick={() => setModoMultiplo(true)}
+                  >
+                    Vários horários no dia
+                  </button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <Label>Data</Label>
-                  <Input type="date" value={novoSlot.specificDate} onChange={e => setNovoSlot(p => ({ ...p, specificDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} />
-                </div>
-                <div>
-                  <Label>Início</Label>
-                  <Input type="time" value={novoSlot.startTime} onChange={e => setNovoSlot(p => ({ ...p, startTime: e.target.value }))} />
-                </div>
-                <div>
-                  <Label>Fim</Label>
-                  <Input type="time" value={novoSlot.endTime} onChange={e => setNovoSlot(p => ({ ...p, endTime: e.target.value }))} />
-                </div>
-                <div>
-                  <Label>Elegíveis</Label>
-                  <Select value={novoSlot.elegiveisResultado} onValueChange={v => setNovoSlot(p => ({ ...p, elegiveisResultado: v as any }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ambos">Habilitados e Inabilitados</SelectItem>
-                      <SelectItem value="habilitados">Apenas Habilitados</SelectItem>
-                      <SelectItem value="inabilitados">Apenas Inabilitados</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div>
-                <Label>Link do Meet (opcional)</Label>
-                <Input placeholder="https://meet.google.com/xxx-xxxx-xxx" value={novoSlot.googleMeetLink} onChange={e => setNovoSlot(p => ({ ...p, googleMeetLink: e.target.value }))} />
-              </div>
-              <Button onClick={() => criarSlot.mutate({ processoId, ...novoSlot })} disabled={criarSlot.isPending || !novoSlot.specificDate}>
-                {criarSlot.isPending ? 'Salvando...' : '+ Adicionar Horário'}
-              </Button>
+              {!modoMultiplo ? (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <Label>Data</Label>
+                      <Input type="date" value={novoSlot.specificDate} onChange={e => setNovoSlot(p => ({ ...p, specificDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} />
+                    </div>
+                    <div>
+                      <Label>Início</Label>
+                      <Input type="time" value={novoSlot.startTime} onChange={e => setNovoSlot(p => ({ ...p, startTime: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Fim</Label>
+                      <Input type="time" value={novoSlot.endTime} onChange={e => setNovoSlot(p => ({ ...p, endTime: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Elegíveis</Label>
+                      <Select value={novoSlot.elegiveisResultado} onValueChange={v => setNovoSlot(p => ({ ...p, elegiveisResultado: v as any }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ambos">Habilitados e Inabilitados</SelectItem>
+                          <SelectItem value="habilitados">Apenas Habilitados</SelectItem>
+                          <SelectItem value="inabilitados">Apenas Inabilitados</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Link do Meet (opcional)</Label>
+                    <Input placeholder="https://meet.google.com/xxx-xxxx-xxx" value={novoSlot.googleMeetLink} onChange={e => setNovoSlot(p => ({ ...p, googleMeetLink: e.target.value }))} />
+                  </div>
+                  <Button onClick={() => criarSlot.mutate({ processoId, ...novoSlot })} disabled={criarSlot.isPending || !novoSlot.specificDate}>
+                    {criarSlot.isPending ? 'Salvando...' : '+ Adicionar Horário'}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-500 -mt-2">Gera automaticamente vários horários disponíveis dentro de um período, com a duração escolhida.</p>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div>
+                      <Label>Data</Label>
+                      <Input type="date" value={multiSlot.specificDate} onChange={e => setMultiSlot(p => ({ ...p, specificDate: e.target.value }))} min={new Date().toISOString().split('T')[0]} />
+                    </div>
+                    <div>
+                      <Label>Início do período</Label>
+                      <Input type="time" value={multiSlot.periodoInicio} onChange={e => setMultiSlot(p => ({ ...p, periodoInicio: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Fim do período</Label>
+                      <Input type="time" value={multiSlot.periodoFim} onChange={e => setMultiSlot(p => ({ ...p, periodoFim: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label>Duração (min)</Label>
+                      <Select value={String(multiSlot.duracaoMin)} onValueChange={v => setMultiSlot(p => ({ ...p, duracaoMin: Number(v) }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 min</SelectItem>
+                          <SelectItem value="20">20 min</SelectItem>
+                          <SelectItem value="30">30 min</SelectItem>
+                          <SelectItem value="45">45 min</SelectItem>
+                          <SelectItem value="60">60 min</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Elegíveis</Label>
+                      <Select value={multiSlot.elegiveisResultado} onValueChange={v => setMultiSlot(p => ({ ...p, elegiveisResultado: v as any }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ambos">Habilitados e Inabilitados</SelectItem>
+                          <SelectItem value="habilitados">Apenas Habilitados</SelectItem>
+                          <SelectItem value="inabilitados">Apenas Inabilitados</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Link do Meet (opcional — usado em todos os horários gerados)</Label>
+                    <Input placeholder="https://meet.google.com/xxx-xxxx-xxx" value={multiSlot.googleMeetLink} onChange={e => setMultiSlot(p => ({ ...p, googleMeetLink: e.target.value }))} />
+                  </div>
+                  {multiSlot.specificDate && multiSlot.periodoInicio && multiSlot.periodoFim && (
+                    <p className="text-sm text-purple-700 bg-purple-50 rounded-md px-3 py-2">
+                      Serão criados {(() => {
+                        const [h1, m1] = multiSlot.periodoInicio.split(':').map(Number);
+                        const [h2, m2] = multiSlot.periodoFim.split(':').map(Number);
+                        const totalMin = (h2 * 60 + m2) - (h1 * 60 + m1);
+                        return totalMin > 0 ? Math.floor(totalMin / multiSlot.duracaoMin) : 0;
+                      })()} horário(s) de {multiSlot.duracaoMin} minutos cada.
+                    </p>
+                  )}
+                  <Button
+                    onClick={async () => {
+                      const [h1, m1] = multiSlot.periodoInicio.split(':').map(Number);
+                      const [h2, m2] = multiSlot.periodoFim.split(':').map(Number);
+                      const startTotal = h1 * 60 + m1;
+                      const endTotal = h2 * 60 + m2;
+                      if (endTotal <= startTotal) { toast.error('O fim do período deve ser depois do início'); return; }
+                      const slotsParaCriar: { startTime: string; endTime: string }[] = [];
+                      for (let t = startTotal; t + multiSlot.duracaoMin <= endTotal; t += multiSlot.duracaoMin) {
+                        const sh = String(Math.floor(t / 60)).padStart(2, '0');
+                        const sm = String(t % 60).padStart(2, '0');
+                        const et = t + multiSlot.duracaoMin;
+                        const eh = String(Math.floor(et / 60)).padStart(2, '0');
+                        const em = String(et % 60).padStart(2, '0');
+                        slotsParaCriar.push({ startTime: `${sh}:${sm}`, endTime: `${eh}:${em}` });
+                      }
+                      for (const s of slotsParaCriar) {
+                        await criarSlot.mutateAsync({
+                          processoId,
+                          specificDate: multiSlot.specificDate,
+                          startTime: s.startTime,
+                          endTime: s.endTime,
+                          googleMeetLink: multiSlot.googleMeetLink,
+                          elegiveisResultado: multiSlot.elegiveisResultado,
+                        });
+                      }
+                      toast.success(`${slotsParaCriar.length} horário(s) criado(s)!`);
+                      setMultiSlot(p => ({ ...p, specificDate: '' }));
+                    }}
+                    disabled={criarSlot.isPending || !multiSlot.specificDate}
+                  >
+                    {criarSlot.isPending ? 'Criando horários...' : '+ Gerar Horários Automaticamente'}
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 

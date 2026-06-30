@@ -3012,9 +3012,8 @@ Responda APENAS em JSON com exatamente os seguintes campos:
       return { success: true, enviados, erros, total: candidatos.length };
     }),
 
-  // ==================== MIGRATION ====================
-  runMigration: protectedProcedure.mutation(async ({ ctx }) => {
-    requireCkmAdmin(ctx.user.role);
+  // ==================== MIGRATION DEVOLUTIVA ====================
+  runMigrationDevolutiva: protectedProcedure.mutation(async ({ ctx }) => {
     const database = await requireDatabase();
     try {
       await database.execute(sql.raw(`
