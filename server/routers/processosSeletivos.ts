@@ -2753,11 +2753,12 @@ Responda APENAS em JSON com exatamente os seguintes campos:
     .input(z.object({ processoId: z.number() }))
     .query(async ({ ctx, input }) => {
       const database = await requireDatabase();
+      const isAdmin = isCkmAdmin(ctx.user.role);
       const consultorId = (ctx.user as any).consultorId as number | undefined;
       const slots = await database.select().from(devolutivaSlots)
         .where(and(
           eq(devolutivaSlots.processoId, input.processoId),
-          consultorId ? eq(devolutivaSlots.consultorId, consultorId) : sql`1=1`
+          (!isAdmin && consultorId) ? eq(devolutivaSlots.consultorId, consultorId) : sql`1=1`
         ))
         .orderBy(asc(devolutivaSlots.specificDate), asc(devolutivaSlots.startTime));
       const result = [];

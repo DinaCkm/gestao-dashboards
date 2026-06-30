@@ -868,6 +868,7 @@ function ProcessosSeletivosContent() {
               <TabsTrigger value="candidatos">Candidatos e Status</TabsTrigger>
               <TabsTrigger value="mapa">Mapa de Entrevistas</TabsTrigger>
               <TabsTrigger value="aprovados">Aprovados por Região</TabsTrigger>
+              <TabsTrigger value="devolutivas" className="gap-1.5">📅 Devolutivas</TabsTrigger>
               <TabsTrigger value="comunicado" className="gap-1.5"><Megaphone className="h-3.5 w-3.5" />Comunicado</TabsTrigger>
             </TabsList>
 
@@ -1338,6 +1339,11 @@ function ProcessosSeletivosContent() {
               </Card>
             </TabsContent>
 
+            {/* ABA: DEVOLUTIVAS */}
+            <TabsContent value="devolutivas">
+              <DevolutivasAdminTab processoId={selectedProcessoId!} />
+            </TabsContent>
+
             {/* ABA: COMUNICADO */}
             <TabsContent value="comunicado">
               <Card className="rounded-lg">
@@ -1490,6 +1496,106 @@ function ProcessosSeletivosContent() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </div>
+  );
+}
+
+// ==================== MAPA DE DEVOLUTIVAS (ADMIN) ====================
+function DevolutivasAdminTab({ processoId }: { processoId: number }) {
+  const { data: slots = [], isLoading } = trpc.processosSeletivos.listarSlotsDevolutiva.useQuery(
+    { processoId },
+    { enabled: !!processoId }
+  );
+
+  const formatDate = (d: string) => { const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; };
+
+  if (!processoId) {
+    return <p className="text-sm text-muted-foreground py-8 text-center">Selecione um processo seletivo.</p>;
+  }
+
+  if (isLoading) {
+    return <p className="text-sm text-muted-foreground py-8 text-center">Carregando devolutivas...</p>;
+  }
+
+  const slotsList = slots as any[];
+  const disponiveis = slotsList.filter(s => s.status === 'disponivel');
+  const reservados = slotsList.filter(s => s.status === 'reservado');
+
+  if (slotsList.length === 0) {
+    return (
+      <Card className="rounded-lg">
+        <CardContent className="py-10 text-center text-muted-foreground">
+          <p>Nenhum horário de devolutiva foi cadastrado ainda para este processo.</p>
+          <p className="text-xs mt-1">A mentora responsável cadastra os horários em Configurações → Devolutiva PS.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="rounded-lg border p-4 bg-blue-50/50">
+          <p className="text-xs text-muted-foreground">Total de horários</p>
+          <p className="text-2xl font-bold text-blue-800">{slotsList.length}</p>
+        </div>
+        <div className="rounded-lg border p-4 bg-green-50/50">
+          <p className="text-xs text-muted-foreground">Agendados</p>
+          <p className="text-2xl font-bold text-green-800">{reservados.length}</p>
+        </div>
+        <div className="rounded-lg border p-4 bg-gray-50">
+          <p className="text-xs text-muted-foreground">Disponíveis</p>
+          <p className="text-2xl font-bold text-gray-700">{disponiveis.length}</p>
+        </div>
+      </div>
+
+      {reservados.length > 0 && (
+        <Card className="rounded-lg">
+          <CardHeader>
+            <CardTitle className="text-base">Devolutivas Agendadas ({reservados.length})</CardTitle>
+            <CardDescription>Candidatos que já escolheram um horário.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {reservados.map((s: any) => (
+              <div key={s.id} className="flex items-center justify-between p-3 rounded-lg border border-blue-100 bg-blue-50/40">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{formatDate(s.specificDate)}</span>
+                    <span className="text-muted-foreground text-sm">{s.startTime} – {s.endTime}</span>
+                  </div>
+                  {s.candidatoNome && (
+                    <p className="text-sm text-gray-700 mt-1">👤 {s.candidatoNome} — {s.candidatoEmail}</p>
+                  )}
+                </div>
+                {s.googleMeetLink && (
+                  <a href={s.googleMeetLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">🔗 Meet</a>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {disponiveis.length > 0 && (
+        <Card className="rounded-lg">
+          <CardHeader>
+            <CardTitle className="text-base">Horários Ainda Disponíveis ({disponiveis.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {disponiveis.map((s: any) => (
+              <div key={s.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <span className="font-medium">{formatDate(s.specificDate)}</span>
+                  <span className="text-muted-foreground text-sm">{s.startTime} – {s.endTime}</span>
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">
+                    {s.elegiveisResultado === 'ambos' ? 'Todos' : s.elegiveisResultado === 'habilitados' ? 'Habilitados' : 'Inabilitados'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
