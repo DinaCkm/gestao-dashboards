@@ -7478,7 +7478,6 @@ export async function getCasesVitrineMural(limit = 12) {
   }
   return cases.map(c => {
     const total = interesseCount.get(c.caseId) || 0;
-    if (total > 0) console.log(`[vitrine debug] caseId=${c.caseId} titulo="${c.autorNome}" totalInteresses=${total}`);
     return { ...c, alunoNome: c.autorNome, totalInteresses: total };
   });
 }

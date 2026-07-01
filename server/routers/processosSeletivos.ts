@@ -2866,8 +2866,6 @@ Responda APENAS em JSON com exatamente os seguintes campos:
       const dentroDoPrazo = devolutivaIniciada && (!prazoInicio || agora >= prazoInicio) && (!prazoFim || agora <= prazoFim);
       const prazoExpirado = devolutivaIniciada && prazoFim ? agora > prazoFim : false;
 
-      console.log(`[devolutiva debug] candidato=${candidato[0].id} resultado=${resultadoCandidato} slots=${slots.length} slotsFiltrados=${slotsFiltrados.length} devolutivaIniciada=${devolutivaIniciada} dentroDoPrazo=${dentroDoPrazo}`);
-
       return {
         slots: dentroDoPrazo ? slotsFiltrados : [],
         meuSlot: meuSlot[0] || null,
