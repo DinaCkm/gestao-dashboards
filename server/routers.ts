@@ -10645,6 +10645,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           titulo: i.titulo || "Case de Sucesso",
           resumoPublico: i.resumoPublico || "",
           dataEntrega: i.dataEntrega,
+          totalInteresses: (i as any).totalInteresses || 0,
         }));
       }),
 
