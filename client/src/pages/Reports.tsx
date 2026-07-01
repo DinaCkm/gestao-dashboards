@@ -466,10 +466,10 @@ function RelatorioInteressesCases() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            ⭐ Interesses em Cases de Sucesso
+            📄 Cases de Sucesso — Vitrine
           </CardTitle>
           <CardDescription>
-            Cases que receberam interesse de outros alunos da plataforma. Clique em "Ver case" para acessar o conteúdo completo.
+            Todos os cases entregues. Cases com ⭐ receberam interesse de outros alunos. Clique em "Ver case" para ler o conteúdo completo e acessar os anexos.
           </CardDescription>
         </CardHeader>
         <CardContent>

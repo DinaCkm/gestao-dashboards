@@ -10758,7 +10758,6 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         LEFT JOIN case_interesses ci ON cs.id = ci.caseId
         WHERE cs.entregue = 1
         GROUP BY cs.id, cs.titulo, a_autor.name, a_autor.email, p.name
-        HAVING totalInteresses > 0
         ORDER BY totalInteresses DESC, cs.dataEntrega DESC
       `) as any;
       const result = (rows?.[0] ?? rows) as any[];
