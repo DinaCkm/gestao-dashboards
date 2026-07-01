@@ -2827,18 +2827,36 @@ Responda APENAS em JSON com exatamente os seguintes campos:
       });
 
       // Verificar se a etapa de devolutivas foi iniciada pelo admin e o prazo
-      const processoRows = await database.execute(sql.raw(
-        `SELECT devolutivaIniciada, devolutivaPrazoInicio, devolutivaPrazoFim FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
-      )) as any;
-      const procRow = processoRows?.[0]?.[0] ?? processoRows?.[0];
-      const devolutivaIniciada = !!procRow?.devolutivaIniciada;
-      const prazoInicio = procRow?.devolutivaPrazoInicio ? new Date(procRow.devolutivaPrazoInicio) : null;
-      const prazoFim = procRow?.devolutivaPrazoFim ? new Date(procRow.devolutivaPrazoFim) : null;
+      let devolutivaIniciada = false;
+      let prazoInicio: Date | null = null;
+      let prazoFim: Date | null = null;
+      try {
+        const processoRows = await database.execute(sql.raw(
+          `SELECT devolutivaIniciada, devolutivaPrazoInicio, devolutivaPrazoFim FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+        )) as any;
+        const procRow = processoRows?.[0]?.[0] ?? processoRows?.[0];
+        devolutivaIniciada = !!procRow?.devolutivaIniciada;
+        prazoInicio = procRow?.devolutivaPrazoInicio ? new Date(procRow.devolutivaPrazoInicio) : null;
+        prazoFim = procRow?.devolutivaPrazoFim ? new Date(procRow.devolutivaPrazoFim) : null;
+        console.log(`[devolutiva debug] procRow=${JSON.stringify(procRow)} devolutivaIniciada=${devolutivaIniciada} prazoInicio=${prazoInicio} prazoFim=${prazoFim}`);
+      } catch (e) {
+        // Colunas de prazo ainda não existem — tentar só com devolutivaIniciada
+        console.warn('[devolutiva] Colunas de prazo não existem, tentando fallback:', e);
+        try {
+          const processoRows2 = await database.execute(sql.raw(
+            `SELECT devolutivaIniciada FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+          )) as any;
+          const procRow2 = processoRows2?.[0]?.[0] ?? processoRows2?.[0];
+          devolutivaIniciada = !!procRow2?.devolutivaIniciada;
+        } catch (e2) {
+          console.error('[devolutiva] Erro ao buscar devolutivaIniciada:', e2);
+        }
+      }
       const agora = new Date();
       const dentroDoPrazo = devolutivaIniciada && (!prazoInicio || agora >= prazoInicio) && (!prazoFim || agora <= prazoFim);
       const prazoExpirado = devolutivaIniciada && prazoFim ? agora > prazoFim : false;
 
-      console.log(`[devolutiva debug] candidato=${candidato[0].id} resultado=${resultadoCandidato} isHabilitado=${isHabilitado} slots=${slots.length} slotsFiltrados=${slotsFiltrados.length} devolutivaIniciada=${devolutivaIniciada} prazoInicio=${prazoInicio} prazoFim=${prazoFim} agora=${agora} dentroDoPrazo=${dentroDoPrazo} prazoExpirado=${prazoExpirado} procRow=${JSON.stringify(procRow)}`);
+      console.log(`[devolutiva debug] candidato=${candidato[0].id} resultado=${resultadoCandidato} slots=${slots.length} slotsFiltrados=${slotsFiltrados.length} devolutivaIniciada=${devolutivaIniciada} dentroDoPrazo=${dentroDoPrazo}`);
 
       return {
         slots: dentroDoPrazo ? slotsFiltrados : [],
