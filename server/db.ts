@@ -13745,3 +13745,47 @@ export async function ensurePdfAtividadeSupport(): Promise<void> {
     }
   }
 }
+
+export async function ensureDevolutivasTables(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Criar tabela devolutiva_slots
+  try {
+    await db.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`devolutiva_slots\` (
+        \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`processoId\` int NOT NULL,
+        \`consultorId\` int NOT NULL,
+        \`elegiveisResultado\` enum('habilitados','inabilitados','ambos') NOT NULL DEFAULT 'ambos',
+        \`specificDate\` varchar(10) NOT NULL,
+        \`startTime\` varchar(5) NOT NULL,
+        \`endTime\` varchar(5) NOT NULL,
+        \`googleMeetLink\` varchar(500) NULL,
+        \`candidatoId\` int NULL,
+        \`reservadoEm\` timestamp NULL,
+        \`emailConfirmacaoEnviado\` int NOT NULL DEFAULT 0,
+        \`emailLembreteEnviado\` int NOT NULL DEFAULT 0,
+        \`status\` enum('disponivel','reservado','cancelado') NOT NULL DEFAULT 'disponivel',
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `));
+  } catch (e: any) {
+    if (!e?.message?.includes('already exists')) console.warn('[DB] ensureDevolutivasTables (tabela):', e?.message);
+  }
+  // Adicionar colunas de controle no processo seletivo
+  const columns = [
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaIniciada` int NOT NULL DEFAULT 0",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaIniciadaEm` timestamp NULL",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaPrazoInicio` datetime NULL",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaPrazoFim` datetime NULL",
+  ];
+  for (const col of columns) {
+    try {
+      await db.execute(sql.raw(col));
+    } catch (e: any) {
+      if (!e?.message?.includes('Duplicate column')) console.warn('[DB] ensureDevolutivasTables:', e?.message);
+    }
+  }
+  console.log('[DB] Tabela e colunas de devolutiva verificadas/criadas com sucesso.');
+}
