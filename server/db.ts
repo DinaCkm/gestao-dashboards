@@ -7476,7 +7476,7 @@ export async function getCasesVitrineMural(limit = 12) {
   for (const i of interesses) {
     interesseCount.set(i.caseId, (interesseCount.get(i.caseId) || 0) + 1);
   }
-  return cases.map(c => ({ ...c, totalInteresses: interesseCount.get(c.caseId) || 0 }));
+  return cases.map(c => ({ ...c, alunoNome: c.autorNome, totalInteresses: interesseCount.get(c.caseId) || 0 }));
 }
 
 export async function createCaseInteresse(data: InsertCaseInteresse) {
