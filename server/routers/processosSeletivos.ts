@@ -1085,11 +1085,21 @@ export const processosSeletivosRouter = router({
   // Obter dados do candidato pelo userId (para o portal do candidato)
   meusDadosCandidato: protectedProcedure.query(async ({ ctx }) => {
     const database = await requireDatabase();
-    const [candidate] = await database
+    // Buscar preferencialmente candidato ativo — evita retornar registro inativo em casos de duplicata
+    let candidates = await database
       .select()
       .from(processoCandidatos)
-      .where(eq(processoCandidatos.userId, ctx.user.id))
+      .where(and(eq(processoCandidatos.userId, ctx.user.id), eq(processoCandidatos.statusCadastro, 'ativo')))
       .limit(1);
+    // Fallback: se não encontrou ativo, tenta qualquer registro
+    if (!candidates.length) {
+      candidates = await database
+        .select()
+        .from(processoCandidatos)
+        .where(eq(processoCandidatos.userId, ctx.user.id))
+        .limit(1);
+    }
+    const candidate = candidates[0];
     if (!candidate) return null;
     // Buscar nome do processo
     const [processo] = await database
