@@ -2804,11 +2804,8 @@ Responda APENAS em JSON com exatamente os seguintes campos:
         .where(and(eq(devolutivaSlots.processoId, input.processoId), eq(devolutivaSlots.candidatoId, candidato[0].id)))
         .limit(1);
 
-      // Buscar resultado do candidato para filtrar slots elegíveis
-      const resultado = await database.select().from(processoResultados)
-        .where(and(eq(processoResultados.processoId, input.processoId), eq(processoResultados.candidatoId, candidato[0].id)))
-        .limit(1);
-      const resultadoCandidato = resultado[0]?.resultado; // 'aprovado' | 'reprovado'
+      // Determinar elegibilidade pelo statusResultado do próprio candidato
+      const resultadoCandidato = candidato[0].statusResultado;
       const isHabilitado = resultadoCandidato === 'aprovado';
 
       // Buscar slots disponíveis elegíveis para este candidato
