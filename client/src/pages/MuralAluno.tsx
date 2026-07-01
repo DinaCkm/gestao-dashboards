@@ -942,12 +942,12 @@ E-mail: ${email}`;
                     {c.totalInteresses > 0 && (
                       <div className="flex items-center gap-0.5 mt-1">
                         {Array.from({ length: Math.min(c.totalInteresses, 5) }).map((_: any, i: number) => (
-                          <span key={i} className="text-amber-400 text-xs">⭐</span>
+                          <span key={i} className="text-red-500 text-sm animate-pulse">★</span>
                         ))}
                         {c.totalInteresses > 5 && (
-                          <span className="text-[10px] text-amber-600 font-medium ml-0.5">+{c.totalInteresses - 5}</span>
+                          <span className="text-[10px] text-red-600 font-bold ml-0.5">+{c.totalInteresses - 5}</span>
                         )}
-                        <span className="text-[10px] text-amber-600 ml-1">{c.totalInteresses} {c.totalInteresses === 1 ? 'interesse' : 'interesses'}</span>
+                        <span className="text-[10px] text-red-600 font-semibold ml-1">{c.totalInteresses} {c.totalInteresses === 1 ? 'interesse' : 'interesses'}</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between mt-2">
