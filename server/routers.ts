@@ -10725,6 +10725,47 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         await db.markCaseInteresseAsRead(input.interesseId, aluno.id);
         return { success: true };
       }),
+
+    // Admin: relatório de todos os interesses em cases
+    relatorioInteresses: protectedProcedure.query(async ({ ctx }) => {
+      const { getDb: getDatabase } = await import('./db');
+      const database = await getDatabase();
+      if (!database) return [];
+      const rows = await database.execute(sql`
+        SELECT
+          cs.id as caseId,
+          cs.titulo,
+          a_autor.name as autorNome,
+          a_autor.email as autorEmail,
+          p.name as empresa,
+          COUNT(ci.id) as totalInteresses,
+          GROUP_CONCAT(ci.interessadoNome ORDER BY ci.createdAt DESC SEPARATOR '||') as interessadosNomes,
+          GROUP_CONCAT(ci.interessadoEmail ORDER BY ci.createdAt DESC SEPARATOR '||') as interessadosEmails,
+          GROUP_CONCAT(DATE_FORMAT(ci.createdAt, '%d/%m/%Y') ORDER BY ci.createdAt DESC SEPARATOR '||') as datas
+        FROM cases_sucesso cs
+        INNER JOIN alunos a_autor ON cs.alunoId = a_autor.id
+        LEFT JOIN programs p ON a_autor.programId = p.id
+        LEFT JOIN case_interesses ci ON cs.id = ci.caseId
+        WHERE cs.entregue = 1
+        GROUP BY cs.id, cs.titulo, a_autor.name, a_autor.email, p.name
+        HAVING totalInteresses > 0
+        ORDER BY totalInteresses DESC, cs.dataEntrega DESC
+      `) as any;
+      const result = (rows?.[0] ?? rows) as any[];
+      return result.map((r: any) => ({
+        caseId: r.caseId,
+        titulo: r.titulo,
+        autorNome: r.autorNome,
+        autorEmail: r.autorEmail,
+        empresa: r.empresa,
+        totalInteresses: Number(r.totalInteresses),
+        interessados: (r.interessadosNomes || '').split('||').map((nome: string, i: number) => ({
+          nome,
+          email: (r.interessadosEmails || '').split('||')[i] || '',
+          data: (r.datas || '').split('||')[i] || '',
+        })).filter((x: any) => x.nome),
+      }));
+    }),
   }),
 
   // ============ METAS DE DESENVOLVIMENTO ============

@@ -7445,7 +7445,7 @@ export async function getCaseSucessoById(id: number) {
 export async function getCasesVitrineMural(limit = 12) {
   const db = await getDb();
   if (!db) return [];
-  return db.select({
+  const cases = await db.select({
     caseId: casesSucesso.id,
     titulo: casesSucesso.titulo,
     resumoPublico: casesSucesso.resumoPublico,
@@ -7465,6 +7465,18 @@ export async function getCasesVitrineMural(limit = 12) {
     ))
     .orderBy(desc(casesSucesso.dataEntrega), desc(casesSucesso.createdAt))
     .limit(limit);
+
+  // Buscar contagem de interesses para cada case
+  const caseIds = cases.map(c => c.caseId);
+  if (caseIds.length === 0) return cases.map(c => ({ ...c, totalInteresses: 0 }));
+  const interesses = await db.select({
+    caseId: caseInteresses.caseId,
+  }).from(caseInteresses).where(inArray(caseInteresses.caseId, caseIds));
+  const interesseCount = new Map<number, number>();
+  for (const i of interesses) {
+    interesseCount.set(i.caseId, (interesseCount.get(i.caseId) || 0) + 1);
+  }
+  return cases.map(c => ({ ...c, totalInteresses: interesseCount.get(c.caseId) || 0 }));
 }
 
 export async function createCaseInteresse(data: InsertCaseInteresse) {

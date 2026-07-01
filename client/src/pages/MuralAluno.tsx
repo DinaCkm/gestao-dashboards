@@ -939,6 +939,17 @@ E-mail: ${email}`;
                       </div>
                       <Trophy className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                     </div>
+                    {c.totalInteresses > 0 && (
+                      <div className="flex items-center gap-0.5 mt-1">
+                        {Array.from({ length: Math.min(c.totalInteresses, 5) }).map((_: any, i: number) => (
+                          <span key={i} className="text-amber-400 text-xs">⭐</span>
+                        ))}
+                        {c.totalInteresses > 5 && (
+                          <span className="text-[10px] text-amber-600 font-medium ml-0.5">+{c.totalInteresses - 5}</span>
+                        )}
+                        <span className="text-[10px] text-amber-600 ml-1">{c.totalInteresses} {c.totalInteresses === 1 ? 'interesse' : 'interesses'}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-[10px] text-gray-400">
                         {c.dataEntrega ? formatDate(c.dataEntrega) : "—"}

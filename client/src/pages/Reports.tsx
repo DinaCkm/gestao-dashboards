@@ -444,7 +444,76 @@ export default function ReportsPage() {
             </CardContent>
           )}
         </Card>
+
+        {/* Relatório de Interesses em Cases */}
+        {isAdmin && <RelatorioInteressesCases />}
       </div>
     </DashboardLayout>
+  );
+}
+
+function RelatorioInteressesCases() {
+  const { data: interesses = [], isLoading } = trpc.cases.relatorioInteresses.useQuery();
+  const [expandido, setExpandido] = useState<number | null>(null);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          ⭐ Interesses em Cases de Sucesso
+        </CardTitle>
+        <CardDescription>
+          Cases que receberam interesse de outros alunos da plataforma.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Carregando...</p>
+        ) : interesses.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Nenhum interesse registrado ainda.</p>
+        ) : (
+          <div className="space-y-3">
+            {(interesses as any[]).map((c: any) => (
+              <div key={c.caseId} className="rounded-lg border border-amber-100 bg-amber-50/40 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-sm text-[#0A1E3E] truncate">{c.titulo}</h3>
+                      <span className="flex items-center gap-0.5">
+                        {Array.from({ length: Math.min(c.totalInteresses, 5) }).map((_: any, i: number) => (
+                          <span key={i} className="text-amber-400 text-xs">⭐</span>
+                        ))}
+                        {c.totalInteresses > 5 && <span className="text-xs text-amber-600">+{c.totalInteresses - 5}</span>}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {c.autorNome} · {c.empresa} · <strong>{c.totalInteresses} {c.totalInteresses === 1 ? 'interesse' : 'interesses'}</strong>
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-xs shrink-0"
+                    onClick={() => setExpandido(expandido === c.caseId ? null : c.caseId)}
+                  >
+                    {expandido === c.caseId ? 'Fechar' : 'Ver quem se interessou'}
+                  </Button>
+                </div>
+                {expandido === c.caseId && (
+                  <div className="mt-3 border-t border-amber-200 pt-3 space-y-2">
+                    {c.interessados.map((i: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between text-xs">
+                        <span className="font-medium">{i.nome}</span>
+                        <span className="text-muted-foreground">{i.email} · {i.data}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
