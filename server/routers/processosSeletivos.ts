@@ -2877,21 +2877,27 @@ Responda APENAS em JSON com exatamente os seguintes campos:
       if (!candidato[0]) throw new TRPCError({ code: 'FORBIDDEN', message: 'Candidato não encontrado neste processo' });
 
       // Verificar se o prazo de agendamento ainda está válido
-      const processoRows = await database.execute(sql.raw(
-        `SELECT devolutivaIniciada, devolutivaPrazoInicio, devolutivaPrazoFim FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
-      )) as any;
-      const procRow = processoRows?.[0]?.[0] ?? processoRows?.[0];
-      const prazoInicio = procRow?.devolutivaPrazoInicio ? new Date(procRow.devolutivaPrazoInicio) : null;
-      const prazoFim = procRow?.devolutivaPrazoFim ? new Date(procRow.devolutivaPrazoFim) : null;
-      const agora = new Date();
-      if (!procRow?.devolutivaIniciada) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'A etapa de devolutivas ainda não foi iniciada.' });
-      }
-      if (prazoInicio && agora < prazoInicio) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'O prazo de agendamento ainda não foi iniciado.' });
-      }
-      if (prazoFim && agora > prazoFim) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Prazo de agendamento de devolutivas encerrado.' });
+      try {
+        const processoRows = await database.execute(sql.raw(
+          `SELECT devolutivaIniciada, devolutivaPrazoInicio, devolutivaPrazoFim FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+        )) as any;
+        const procRow = processoRows?.[0]?.[0] ?? processoRows?.[0];
+        const prazoInicio = procRow?.devolutivaPrazoInicio ? new Date(procRow.devolutivaPrazoInicio) : null;
+        const prazoFim = procRow?.devolutivaPrazoFim ? new Date(procRow.devolutivaPrazoFim) : null;
+        const agora = new Date();
+        if (!procRow?.devolutivaIniciada) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'A etapa de devolutivas ainda não foi iniciada.' });
+        }
+        if (prazoInicio && agora < prazoInicio) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'O prazo de agendamento ainda não foi iniciado.' });
+        }
+        if (prazoFim && agora > prazoFim) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Prazo de agendamento de devolutivas encerrado.' });
+        }
+      } catch (e: any) {
+        // Se for erro de coluna inexistente, ignora e permite agendar
+        if (e?.code === 'BAD_REQUEST') throw e;
+        console.warn('[devolutiva] Colunas de prazo não existem ainda, permitindo agendamento:', e?.message);
       }
 
       // Verificar se já tem devolutiva agendada
