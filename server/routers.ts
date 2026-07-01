@@ -10727,6 +10727,15 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         return { success: true };
       }),
 
+    // Admin: detalhes completos de um case para o relatório
+    detalhesCaseAdmin: protectedProcedure
+      .input(z.object({ caseId: z.number() }))
+      .query(async ({ input }) => {
+        const c = await db.getCaseSucessoById(input.caseId);
+        if (!c) throw new TRPCError({ code: 'NOT_FOUND' });
+        return c;
+      }),
+
     // Admin: relatório de todos os interesses em cases
     relatorioInteresses: protectedProcedure.query(async ({ ctx }) => {
       const { getDb: getDatabase } = await import('./db');

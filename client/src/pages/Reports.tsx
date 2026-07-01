@@ -455,65 +455,140 @@ export default function ReportsPage() {
 function RelatorioInteressesCases() {
   const { data: interesses = [], isLoading } = trpc.cases.relatorioInteresses.useQuery();
   const [expandido, setExpandido] = useState<number | null>(null);
+  const [caseModalId, setCaseModalId] = useState<number | null>(null);
+  const { data: caseDetalhes } = trpc.cases.detalhesCaseAdmin.useQuery(
+    { caseId: caseModalId! },
+    { enabled: !!caseModalId }
+  );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          ⭐ Interesses em Cases de Sucesso
-        </CardTitle>
-        <CardDescription>
-          Cases que receberam interesse de outros alunos da plataforma.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">Carregando...</p>
-        ) : interesses.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">Nenhum interesse registrado ainda.</p>
-        ) : (
-          <div className="space-y-3">
-            {(interesses as any[]).map((c: any) => (
-              <div key={c.caseId} className="rounded-lg border border-amber-100 bg-amber-50/40 p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-sm text-[#0A1E3E] truncate">{c.titulo}</h3>
-                      <span className="flex items-center gap-0.5">
-                        {Array.from({ length: Math.min(c.totalInteresses, 5) }).map((_: any, i: number) => (
-                          <span key={i} className="text-amber-400 text-xs">⭐</span>
-                        ))}
-                        {c.totalInteresses > 5 && <span className="text-xs text-amber-600">+{c.totalInteresses - 5}</span>}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {c.autorNome} · {c.empresa} · <strong>{c.totalInteresses} {c.totalInteresses === 1 ? 'interesse' : 'interesses'}</strong>
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-xs shrink-0"
-                    onClick={() => setExpandido(expandido === c.caseId ? null : c.caseId)}
-                  >
-                    {expandido === c.caseId ? 'Fechar' : 'Ver quem se interessou'}
-                  </Button>
-                </div>
-                {expandido === c.caseId && (
-                  <div className="mt-3 border-t border-amber-200 pt-3 space-y-2">
-                    {c.interessados.map((i: any, idx: number) => (
-                      <div key={idx} className="flex items-center justify-between text-xs">
-                        <span className="font-medium">{i.nome}</span>
-                        <span className="text-muted-foreground">{i.email} · {i.data}</span>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            ⭐ Interesses em Cases de Sucesso
+          </CardTitle>
+          <CardDescription>
+            Cases que receberam interesse de outros alunos da plataforma. Clique em "Ver case" para acessar o conteúdo completo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Carregando...</p>
+          ) : interesses.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Nenhum interesse registrado ainda.</p>
+          ) : (
+            <div className="space-y-3">
+              {(interesses as any[]).map((c: any) => (
+                <div key={c.caseId} className="rounded-lg border border-amber-100 bg-amber-50/40 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-sm text-[#0A1E3E] truncate">{c.titulo}</h3>
+                        <span className="flex items-center gap-0.5">
+                          {Array.from({ length: Math.min(c.totalInteresses, 5) }).map((_: any, i: number) => (
+                            <span key={i} className="text-amber-400 text-xs">⭐</span>
+                          ))}
+                          {c.totalInteresses > 5 && <span className="text-xs text-amber-600">+{c.totalInteresses - 5}</span>}
+                        </span>
                       </div>
-                    ))}
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {c.autorNome} · {c.empresa} · <strong>{c.totalInteresses} {c.totalInteresses === 1 ? 'interesse' : 'interesses'}</strong>
+                      </p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <Button size="sm" variant="outline" className="text-xs" onClick={() => setCaseModalId(c.caseId)}>
+                        📄 Ver case
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-xs" onClick={() => setExpandido(expandido === c.caseId ? null : c.caseId)}>
+                        {expandido === c.caseId ? 'Fechar' : '👥 Interessados'}
+                      </Button>
+                    </div>
+                  </div>
+                  {expandido === c.caseId && (
+                    <div className="mt-3 border-t border-amber-200 pt-3 space-y-2">
+                      {c.interessados.map((i: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between text-xs">
+                          <span className="font-medium">{i.nome}</span>
+                          <span className="text-muted-foreground">{i.email} · {i.data}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal de detalhes do case */}
+      {caseModalId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setCaseModalId(null)}>
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b flex items-start justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-[#0A1E3E]">{caseDetalhes?.titulo || 'Carregando...'}</h2>
+                {caseDetalhes?.trilhaNome && <p className="text-xs text-muted-foreground mt-0.5">Trilha: {caseDetalhes.trilhaNome}</p>}
+              </div>
+              <button onClick={() => setCaseModalId(null)} className="text-gray-400 hover:text-gray-600 text-xl font-bold ml-4">×</button>
+            </div>
+            {caseDetalhes ? (
+              <div className="p-6 space-y-5">
+                {caseDetalhes.descricao && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Descrição</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{caseDetalhes.descricao}</p>
+                  </div>
+                )}
+                {caseDetalhes.oQueAprendi && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">O que aprendi</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{caseDetalhes.oQueAprendi}</p>
+                  </div>
+                )}
+                {caseDetalhes.oQueMudei && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">O que mudei na minha rotina</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{caseDetalhes.oQueMudei}</p>
+                  </div>
+                )}
+                {caseDetalhes.resultadoMensuravel && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Resultado mensurável</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{caseDetalhes.resultadoMensuravel}</p>
+                  </div>
+                )}
+                {caseDetalhes.antesVsDepois && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Antes vs. Depois</p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{caseDetalhes.antesVsDepois}</p>
+                  </div>
+                )}
+                {(caseDetalhes.fileUrl || caseDetalhes.evidenciaUrl) && (
+                  <div className="border-t pt-4 space-y-2">
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Anexos</p>
+                    {caseDetalhes.fileUrl && (
+                      <a href={caseDetalhes.fileUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        📎 {caseDetalhes.fileName || 'Arquivo do case'}
+                      </a>
+                    )}
+                    {caseDetalhes.evidenciaUrl && (
+                      <a href={caseDetalhes.evidenciaUrl} target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-blue-600 hover:underline">
+                        🖼️ {caseDetalhes.evidenciaFileName || 'Evidência'}
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
-            ))}
+            ) : (
+              <div className="p-6 text-center text-sm text-muted-foreground">Carregando detalhes...</div>
+            )}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+      )}
+    </>
   );
 }
