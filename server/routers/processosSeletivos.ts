@@ -3004,9 +3004,25 @@ Responda APENAS em JSON com exatamente os seguintes campos:
       const prazoFimSql = input.prazoFim.replace('T', ' ') + ':59';
 
       // Marcar processo como devolutiva iniciada e salvar o prazo
-      await database.execute(sql.raw(
-        `UPDATE \`processos_seletivos\` SET \`devolutivaIniciada\` = 1, \`devolutivaIniciadaEm\` = NOW(), \`devolutivaPrazoInicio\` = '${prazoInicioSql}', \`devolutivaPrazoFim\` = '${prazoFimSql}' WHERE \`id\` = ${input.processoId}`
-      ));
+      try {
+        await database.execute(sql.raw(
+          `UPDATE \`processos_seletivos\` SET \`devolutivaIniciada\` = 1, \`devolutivaIniciadaEm\` = NOW(), \`devolutivaPrazoInicio\` = '${prazoInicioSql}', \`devolutivaPrazoFim\` = '${prazoFimSql}' WHERE \`id\` = ${input.processoId}`
+        ));
+      } catch (e: any) {
+        // Colunas de prazo podem não existir ainda — tentar criar e depois atualizar
+        console.warn('[devolutiva] Colunas de prazo não existem, criando e tentando novamente:', e?.message);
+        try {
+          await database.execute(sql.raw("ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaIniciada` int NOT NULL DEFAULT 0"));
+          await database.execute(sql.raw("ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaIniciadaEm` timestamp NULL"));
+          await database.execute(sql.raw("ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaPrazoInicio` datetime NULL"));
+          await database.execute(sql.raw("ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaPrazoFim` datetime NULL"));
+          await database.execute(sql.raw(
+            `UPDATE \`processos_seletivos\` SET \`devolutivaIniciada\` = 1, \`devolutivaIniciadaEm\` = NOW(), \`devolutivaPrazoInicio\` = '${prazoInicioSql}', \`devolutivaPrazoFim\` = '${prazoFimSql}' WHERE \`id\` = ${input.processoId}`
+          ));
+        } catch (e2: any) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `Erro ao iniciar devolutiva: ${e2?.message}` });
+        }
+      }
 
       // Buscar todos os candidatos com resultado definido (aprovado ou reprovado)
       const candidatos = await database.select({
