@@ -59,8 +59,8 @@ export function calcularPeriodoPadrao(tipo: 'previa' | 'definitivo' | 'manual' =
   // Início: dia 01 do mês atual
   const inicio = new Date(anoAtual, mesAtual, 1);
 
-  // Fim: dia 25 para prévia, dia 30 para definitivo
-  const diaFim = tipo === 'definitivo' ? 30 : 25;
+  // Fim: dia 30 tanto para prévia quanto para definitivo
+  const diaFim = 30;
   const fim = new Date(anoAtual, mesAtual, diaFim);
 
   // Pagamento: dia 10 do mês seguinte
