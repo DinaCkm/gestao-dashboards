@@ -6519,6 +6519,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           })();
         }
 
+        // Disparar e-mail de preparação para cada aluno ao agendar (assíncrono)
+        if (result.success && result.id) {
+          const apptId = result.id;
+          (async () => {
+            try {
+              const { enviarPreparacaoSessao } = await import('./cronPreparacaoSessao');
+              for (const alunoId of input.alunoIds) {
+                await enviarPreparacaoSessao(apptId, alunoId, 'agendamento');
+              }
+            } catch (err) {
+              console.warn('[PreparacaoSessao] Erro ao enviar e-mail de agendamento grupal:', err);
+            }
+          })();
+        }
+
         return result;
       }),
 

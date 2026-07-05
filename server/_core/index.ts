@@ -13,7 +13,8 @@ import { iniciarCronVencimentoCiclo } from "../cronVencimentoCiclo";
 import { iniciarCronLembreteAplicabilidade } from "../cronLembreteAplicabilidade";
 import { iniciarCronTarefasEmAberto } from "../cronTarefasEmAberto";
 import { iniciarCronAusenciaWebinar } from "../cronAusenciaWebinar";
-import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria";
+import { iniciarCronLembreteTarefaMentoria } from "../cronLembreteTarefaMentoria"; // mantido mas desativado
+import { iniciarCronPreparacaoSessao } from "../cronPreparacaoSessao";
 import { iniciarCronRelatorioMentorias } from "../cronRelatorioMentorias";
 import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
 import { iniciarCronLembreteChecklistWebinar } from "../cronLembreteChecklistWebinar";
@@ -101,7 +102,8 @@ async function startServer() {
       // Iniciar cron job de lembretes de ausência em webinar (verifica diariamente, cooldown 15 dias)
       iniciarCronAusenciaWebinar();
       // Iniciar cron job de lembretes de tarefa pendente + próxima mentoria (verifica diariamente, cooldown 15 dias)
-      iniciarCronLembreteTarefaMentoria();
+      // iniciarCronLembreteTarefaMentoria(); // substituído por cronPreparacaoSessao
+      iniciarCronPreparacaoSessao(); // lembrete D-1 com todas as pendências
       // Iniciar cron job de relatório de mentorias (dia 25 = prévia, dia 30 = definitivo)
       iniciarCronRelatorioMentorias();
       // Iniciar cron job de lembrete D-1 para entrevistas do Processo Seletivo
