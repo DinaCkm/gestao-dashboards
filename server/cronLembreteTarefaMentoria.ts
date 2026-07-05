@@ -73,7 +73,24 @@ export async function verificarEEnviarLembreteTarefaMentoria(dryRun = false): Pr
     }
   }
 
-  // Buscar logs de envio recentes (últimos 15 dias)
+  // Buscar contagem total de envios por aluno (para limitar a 3 vezes)
+  const MAX_ENVIOS = 3;
+  const todosLogs = await db
+    .select({ alunoId: emailAlertasLog.alunoId, sessionId: emailAlertasLog.diasSemSessao })
+    .from(emailAlertasLog)
+    .where(
+      and(
+        eq(emailAlertasLog.tipoAlerta, TIPO_ALERTA),
+        eq(emailAlertasLog.emailEnviado, 1),
+      )
+    );
+  // Contar envios por alunoId
+  const contagemEnvios = new Map<number, number>();
+  for (const log of todosLogs) {
+    contagemEnvios.set(log.alunoId, (contagemEnvios.get(log.alunoId) || 0) + 1);
+  }
+
+  // Buscar logs de envio recentes (últimos 15 dias) para cooldown
   const limiteLog = new Date(agora.getTime() - INTERVALO_DIAS * 24 * 60 * 60 * 1000);
   const logsRecentes = await db
     .select({ alunoId: emailAlertasLog.alunoId })
@@ -133,6 +150,14 @@ export async function verificarEEnviarLembreteTarefaMentoria(dryRun = false): Pr
       ? new Date(proximaSessao.scheduledDate + 'T12:00:00').toLocaleDateString('pt-BR')
       : null;
     const proximaSessaoTime = proximaSessao?.startTime || null;
+
+    // Verificar se já atingiu o limite de 3 envios
+    const totalEnviosAluno = contagemEnvios.get(alunoId) || 0;
+    if (totalEnviosAluno >= MAX_ENVIOS) {
+      console.log(`[Lembrete Tarefa] Aluno ${alunoId} já recebeu ${totalEnviosAluno} lembretes (limite: ${MAX_ENVIOS}). Ignorando.`);
+      jaEnviadosIgnorados++;
+      continue;
+    }
 
     if (jaEnviadosSet.has(alunoId)) {
       alertas.push({
