@@ -170,7 +170,7 @@ export default function RegistroMentoria() {
     }
   });
 
-  const deleteSession = trpc.mentor.deleteSession.useMutation({
+  const deleteSession = trpc.mentor.deleteMentorSession.useMutation({
     onSuccess: () => {
       toast.success("Sessão excluída com sucesso!");
       refetchSessions();
@@ -1930,6 +1930,25 @@ export default function RegistroMentoria() {
                                   <Button size="sm" variant="outline" onClick={() => handleEdit(session)}>
                                     <Edit className="h-4 w-4 mr-1" /> Editar
                                   </Button>
+                                  {confirmDeleteSession === session.id ? (
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-red-600 font-medium">Confirmar?</span>
+                                      <Button size="sm" variant="destructive" className="h-7 text-xs px-2"
+                                        onClick={() => deleteSession.mutate({ sessionId: session.id })}
+                                        disabled={deleteSession.isPending}>
+                                        {deleteSession.isPending ? 'Excluindo...' : 'Sim'}
+                                      </Button>
+                                      <Button size="sm" variant="outline" className="h-7 text-xs px-2"
+                                        onClick={() => setConfirmDeleteSession(null)}>
+                                        Não
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700 hover:border-red-300"
+                                      onClick={() => setConfirmDeleteSession(session.id)}>
+                                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
                               {session.feedback && (

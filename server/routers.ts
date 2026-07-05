@@ -8102,6 +8102,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success };
       }),
 
+    // Mentora exclui sua própria sessão
+    deleteMentorSession: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const consultorId = (ctx.user as any).consultorId as number | undefined;
+        if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentoras podem excluir sessões' });
+        // Verificar se a sessão pertence à mentora
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
+        if (session.consultorId !== consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Você só pode excluir suas próprias sessões' });
+        const success = await db.deleteMentoringSession(input.sessionId);
+        return { success };
+      }),
+
     adminCreateSession: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
