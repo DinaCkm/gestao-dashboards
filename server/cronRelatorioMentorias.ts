@@ -47,18 +47,20 @@ export interface RelatorioMentoriasResult {
 
 /**
  * Calcula o período padrão do relatório:
- * - Início: dia 25 do mês anterior
- * - Fim: dia 25 do mês atual
+ * - Prévia (dia 25): início dia 26 do mês anterior, fim dia 25 do mês atual
+ * - Definitivo (dia 30): início dia 26 do mês anterior, fim dia 30 do mês atual
  */
-export function calcularPeriodoPadrao(): { inicio: string; fim: string } {
+export function calcularPeriodoPadrao(tipo: 'previa' | 'definitivo' | 'manual' = 'previa'): { inicio: string; fim: string } {
   const hoje = new Date();
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth(); // 0-indexed
 
-  // Fim: dia 25 do mês atual
-  const fim = new Date(anoAtual, mesAtual, 25);
-  // Início: dia 25 do mês anterior
-  const inicio = new Date(anoAtual, mesAtual - 1, 25);
+  // Início: dia 26 do mês anterior (para não sobrepor com o relatório anterior)
+  const inicio = new Date(anoAtual, mesAtual - 1, 26);
+
+  // Fim: dia 25 para prévia, dia 30 para definitivo
+  const diaFim = tipo === 'definitivo' ? 30 : 25;
+  const fim = new Date(anoAtual, mesAtual, diaFim);
 
   const toISO = (d: Date) => d.toISOString().slice(0, 10);
   return { inicio: toISO(inicio), fim: toISO(fim) };
@@ -103,7 +105,7 @@ export async function gerarEEnviarRelatorioMentorias(
     periodoInicio = dateFrom;
     periodoFim = dateTo;
   } else {
-    const periodo = calcularPeriodoPadrao();
+    const periodo = calcularPeriodoPadrao(tipo);
     periodoInicio = periodo.inicio;
     periodoFim = periodo.fim;
   }
