@@ -41,6 +41,7 @@ interface PendenciasAluno {
   webinarsPendentes: Array<{ titulo: string; data: string }>;
   microciclosVencendo: Array<{ competencia: string; vencimento: string }>;
   pdiDesatualizado: boolean;
+  semMetas: boolean;
 }
 
 async function buscarPendenciasAluno(alunoId: number, db: any): Promise<PendenciasAluno> {
@@ -120,7 +121,7 @@ async function buscarPendenciasAluno(alunoId: number, db: any): Promise<Pendenci
     }
   } catch (e) { console.warn('[PreparacaoSessao] Erro microciclos:', e); }
 
-  // 4. PDI desatualizado (última sessão há mais de 15 sessões sem atualização de metas)
+  // 4. PDI desatualizado (última sessão há mais de 5 sessões sem atualização de metas)
   let pdiDesatualizado = false;
   try {
     const ultimaAtualizacao = await db.execute(`
@@ -137,7 +138,18 @@ async function buscarPendenciasAluno(alunoId: number, db: any): Promise<Pendenci
     pdiDesatualizado = total >= 5;
   } catch (e) { console.warn('[PreparacaoSessao] Erro PDI:', e); }
 
-  return { tarefasPendentes, webinarsPendentes, microciclosVencendo, pdiDesatualizado };
+  // 5. Sem nenhuma meta lançada
+  let semMetas = false;
+  try {
+    const totalMetas = await db.execute(`
+      SELECT COUNT(*) as total FROM metas WHERE alunoId = ${alunoId}
+    `);
+    const rows = Array.isArray(totalMetas[0]) ? totalMetas[0] : totalMetas;
+    semMetas = Number((rows as any[])[0]?.total || 0) === 0;
+    if (semMetas) pdiDesatualizado = false; // evitar duplicar a mensagem
+  } catch (e) { console.warn('[PreparacaoSessao] Erro metas:', e); }
+
+  return { tarefasPendentes, webinarsPendentes, microciclosVencendo, pdiDesatualizado, semMetas };
 }
 
 function buildEmailPreparacaoSessao(data: {
@@ -152,7 +164,7 @@ function buildEmailPreparacaoSessao(data: {
   paraAluno: boolean;
 }): { subject: string; html: string } {
   const { alunoNome, mentoraNome, dataSessao, horaSessao, tipoSessao, pendencias, tipo, paraAluno } = data;
-  const totalPendencias = pendencias.tarefasPendentes.length + pendencias.webinarsPendentes.length + pendencias.microciclosVencendo.length + (pendencias.pdiDesatualizado ? 1 : 0);
+  const totalPendencias = pendencias.tarefasPendentes.length + pendencias.webinarsPendentes.length + pendencias.microciclosVencendo.length + (pendencias.pdiDesatualizado ? 1 : 0) + (pendencias.semMetas ? 1 : 0);
   const subject = tipo === 'agendamento'
     ? `📅 Sessão agendada com ${paraAluno ? mentoraNome : alunoNome} — ${dataSessao} às ${horaSessao}`
     : `🔔 Lembrete: sua sessão é amanhã — ${dataSessao} às ${horaSessao}`;
@@ -204,6 +216,13 @@ function buildEmailPreparacaoSessao(data: {
       pendenciasHtml += `<div style="border:1px solid #6ee7b7;border-radius:8px;padding:14px 18px;margin:8px 0;background:#ecfdf5;">
         <p style="color:#065f46;font-weight:700;margin:0 0 8px;">⏰ Microciclos vencendo em 30 dias (${pendencias.microciclosVencendo.length})</p>
         ${pendencias.microciclosVencendo.map(m => `<p style="margin:4px 0;font-size:13px;color:#047857;">• ${m.competencia} — vence em ${m.vencimento}</p>`).join('')}
+      </div>`;
+    }
+
+    if (pendencias.semMetas) {
+      pendenciasHtml += `<div style="border:1px solid #fca5a5;border-radius:8px;padding:14px 18px;margin:8px 0;background:#fef2f2;">
+        <p style="color:#991b1b;font-weight:700;margin:0;">🎯 PDI — Nenhuma meta lançada</p>
+        <p style="color:#b91c1c;font-size:13px;margin:4px 0 0;">O aluno ainda não possui metas cadastradas. Aproveite a sessão para criar as primeiras metas de desenvolvimento.</p>
       </div>`;
     }
 
