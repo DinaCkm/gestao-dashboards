@@ -278,7 +278,10 @@ export default function AlunoConteudoCurso() {
                 {!iframeIniciado ? (
                   <div
                     className="h-[75vh] w-full flex flex-col items-center justify-center gap-4 bg-slate-900 cursor-pointer hover:bg-slate-800 transition-colors"
-                    onClick={() => { setIframeIniciado(true); setIframeCarregando(true); }}
+                    onClick={() => {
+                      setIframeIniciado(true);
+                      setIframeCarregando(true);
+                    }}
                   >
                     <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
                       <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
@@ -288,6 +291,7 @@ export default function AlunoConteudoCurso() {
                     <div className="text-center">
                       <p className="text-white font-semibold text-lg">Clique para iniciar</p>
                       <p className="text-slate-400 text-sm mt-1">O conteúdo será carregado ao clicar</p>
+                      <p className="text-amber-400 text-xs mt-2 font-medium">💡 Dica: use tela cheia para melhor experiência</p>
                     </div>
                   </div>
                 ) : (
@@ -298,6 +302,15 @@ export default function AlunoConteudoCurso() {
                         <p className="text-slate-300 text-sm">Carregando conteúdo...</p>
                         <p className="text-slate-500 text-xs">Isso pode levar alguns segundos</p>
                       </div>
+                    )}
+                    {!iframeCarregando && (
+                      <button
+                        onClick={abrirTelaCheia}
+                        className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-black/70 hover:bg-black/90 text-white text-xs font-medium px-3 py-1.5 rounded-full transition-all"
+                        title="Abrir em tela cheia para melhor experiência"
+                      >
+                        ⛶ Tela Cheia
+                      </button>
                     )}
                     <iframe
                       ref={iframeRef}
@@ -324,6 +337,13 @@ export default function AlunoConteudoCurso() {
                     />
                   </>
                 )}
+              </div>
+
+              <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+                <span className="text-lg">💡</span>
+                <p>
+                  <strong>Dica:</strong> Se o conteúdo estiver lento ou com dificuldade de visualização, clique em <strong>⛶ Tela Cheia</strong> no canto superior direito do player para uma experiência melhor.
+                </p>
               </div>
 
               <div className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
