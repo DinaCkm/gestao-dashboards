@@ -47,23 +47,27 @@ export interface RelatorioMentoriasResult {
 
 /**
  * Calcula o período padrão do relatório:
- * - Prévia (dia 25): início dia 26 do mês anterior, fim dia 25 do mês atual
- * - Definitivo (dia 30): início dia 26 do mês anterior, fim dia 30 do mês atual
+ * - Prévia (dia 25): início dia 01 do mês atual, fim dia 25 do mês atual
+ * - Definitivo (dia 30): início dia 01 do mês atual, fim dia 30 do mês atual
+ * Pagamento: dia 10 do mês subsequente
  */
-export function calcularPeriodoPadrao(tipo: 'previa' | 'definitivo' | 'manual' = 'previa'): { inicio: string; fim: string } {
+export function calcularPeriodoPadrao(tipo: 'previa' | 'definitivo' | 'manual' = 'previa'): { inicio: string; fim: string; dataPagamento: string } {
   const hoje = new Date();
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth(); // 0-indexed
 
-  // Início: dia 26 do mês anterior (para não sobrepor com o relatório anterior)
-  const inicio = new Date(anoAtual, mesAtual - 1, 26);
+  // Início: dia 01 do mês atual
+  const inicio = new Date(anoAtual, mesAtual, 1);
 
   // Fim: dia 25 para prévia, dia 30 para definitivo
   const diaFim = tipo === 'definitivo' ? 30 : 25;
   const fim = new Date(anoAtual, mesAtual, diaFim);
 
+  // Pagamento: dia 10 do mês seguinte
+  const pagamento = new Date(anoAtual, mesAtual + 1, 10);
+
   const toISO = (d: Date) => d.toISOString().slice(0, 10);
-  return { inicio: toISO(inicio), fim: toISO(fim) };
+  return { inicio: toISO(inicio), fim: toISO(fim), dataPagamento: toISO(pagamento) };
 }
 
 /**
@@ -101,13 +105,19 @@ export async function gerarEEnviarRelatorioMentorias(
   // Calcular período
   let periodoInicio: string;
   let periodoFim: string;
+  let dataPagamento: string;
   if (dateFrom && dateTo) {
     periodoInicio = dateFrom;
     periodoFim = dateTo;
+    // Calcular pagamento como dia 10 do mês seguinte ao fim
+    const fimDate = new Date(dateTo);
+    const pagDate = new Date(fimDate.getFullYear(), fimDate.getMonth() + 1, 10);
+    dataPagamento = pagDate.toISOString().slice(0, 10);
   } else {
     const periodo = calcularPeriodoPadrao(tipo);
     periodoInicio = periodo.inicio;
     periodoFim = periodo.fim;
+    dataPagamento = periodo.dataPagamento;
   }
 
   const isFinal = tipo === 'definitivo';
@@ -215,6 +225,7 @@ export async function gerarEEnviarRelatorioMentorias(
           mentoraNome: mentor.consultorNome,
           periodoInicio: periodoInicioFmt,
           periodoFim: periodoFimFmt,
+          dataPagamento: formatDateBR(dataPagamento),
           isFinal,
           sessoes: sessoesRealizadas,
           agendadosSemRegistro,
