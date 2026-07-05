@@ -20,6 +20,51 @@ interface QuizQuestion {
 
 type StudyStep = "conteudo" | "reflexao" | "avaliacao" | "conclusao";
 
+// Componente com lazy loading — só carrega o iframe quando o aluno clicar em "Iniciar"
+function GeniallyPlayer({ url, titulo }: { url: string; titulo: string }) {
+  const [iniciado, setIniciado] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+
+  if (!iniciado) {
+    return (
+      <div className="w-full h-96 bg-slate-900 rounded-lg border border-slate-700 flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-slate-800 transition-colors"
+        onClick={() => { setIniciado(true); setCarregando(true); }}>
+        <div className="w-16 h-16 rounded-full bg-[#0A1E3E] flex items-center justify-center">
+          <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </div>
+        <div className="text-center">
+          <p className="text-white font-semibold">Clique para iniciar o conteúdo</p>
+          <p className="text-slate-400 text-sm mt-1">O conteúdo será carregado ao clicar</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-96 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 relative">
+      {carregando && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900 z-10">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+          <p className="text-slate-300 text-sm">Carregando conteúdo...</p>
+          <p className="text-slate-500 text-xs">Isso pode levar alguns segundos</p>
+        </div>
+      )}
+      <iframe
+        src={url}
+        width="100%"
+        height="100%"
+        frameBorder="0"
+        allowFullScreen
+        title={titulo}
+        onLoad={() => setCarregando(false)}
+        style={{ opacity: carregando ? 0 : 1, transition: 'opacity 0.3s' }}
+      />
+    </div>
+  );
+}
+
 export function ModuleStudy() {
   const { moduloId, progressoId } = useParams<{ moduloId: string; progressoId: string }>();
   const navigate = useNavigate();
@@ -211,18 +256,9 @@ export function ModuleStudy() {
               <CardDescription>Estude o conteúdo interativo abaixo</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Genially Embed */}
+              {/* Genially Embed — lazy loading para não travar a página */}
               {moduleContent.urlGenially && (
-                <div className="w-full h-96 bg-slate-900 rounded-lg overflow-hidden border border-slate-700">
-                  <iframe
-                    src={moduleContent.urlGenially}
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    allowFullScreen
-                    title={moduleContent.titulo}
-                  ></iframe>
-                </div>
+                <GeniallyPlayer url={moduleContent.urlGenially} titulo={moduleContent.titulo} />
               )}
 
               {/* Descrição */}

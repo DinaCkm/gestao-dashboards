@@ -36,6 +36,8 @@ function formatarTempo(segundos: number): string {
 export default function AlunoConteudoCurso() {
   const [, setLocation] = useLocation();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [iframeCarregando, setIframeCarregando] = useState(true);
+  const [iframeIniciado, setIframeIniciado] = useState(false);
 
   const searchString = useSearch(); // reativo a mudanças de rota
   const search = searchString ? `?${searchString}` : (typeof window !== "undefined" ? window.location.search : "");
@@ -273,27 +275,55 @@ export default function AlunoConteudoCurso() {
             /* ===== VISUALIZAÇÃO DE VÍDEO / GENIALLY / OUTROS ===== */
             <div className="space-y-4">
               <div className="relative overflow-hidden rounded-lg border bg-black/5">
-                <iframe
-                  ref={iframeRef}
-                  key={urlEmbed}
-                  src={urlEmbed}
-                  title={atividade.titulo}
-                  className="h-[75vh] w-full"
-                  allow="fullscreen; autoplay"
-                  allowFullScreen
-                />
-                {/* Overlay inferior: cobre toda a barra de controles do YouTube (barra de progresso + botões) */}
-                <div
-                  className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10"
-                  style={{ height: 80, background: "rgba(0,0,0,0.01)" }}
-                  aria-hidden="true"
-                />
-                {/* Overlay barra de progresso vermelha (linha fina acima dos controles) */}
-                <div
-                  className="pointer-events-auto absolute left-0 right-0 z-10"
-                  style={{ bottom: 78, height: 12, background: "rgba(0,0,0,0.01)" }}
-                  aria-hidden="true"
-                />
+                {!iframeIniciado ? (
+                  <div
+                    className="h-[75vh] w-full flex flex-col items-center justify-center gap-4 bg-slate-900 cursor-pointer hover:bg-slate-800 transition-colors"
+                    onClick={() => { setIframeIniciado(true); setIframeCarregando(true); }}
+                  >
+                    <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-white font-semibold text-lg">Clique para iniciar</p>
+                      <p className="text-slate-400 text-sm mt-1">O conteúdo será carregado ao clicar</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {iframeCarregando && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900 z-10">
+                        <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+                        <p className="text-slate-300 text-sm">Carregando conteúdo...</p>
+                        <p className="text-slate-500 text-xs">Isso pode levar alguns segundos</p>
+                      </div>
+                    )}
+                    <iframe
+                      ref={iframeRef}
+                      key={urlEmbed}
+                      src={urlEmbed}
+                      title={atividade.titulo}
+                      className="h-[75vh] w-full"
+                      allow="fullscreen; autoplay"
+                      allowFullScreen
+                      onLoad={() => setIframeCarregando(false)}
+                      style={{ opacity: iframeCarregando ? 0 : 1, transition: 'opacity 0.4s' }}
+                    />
+                    {/* Overlay inferior: cobre toda a barra de controles do YouTube */}
+                    <div
+                      className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10"
+                      style={{ height: 80, background: "rgba(0,0,0,0.01)" }}
+                      aria-hidden="true"
+                    />
+                    {/* Overlay barra de progresso vermelha */}
+                    <div
+                      className="pointer-events-auto absolute left-0 right-0 z-10"
+                      style={{ bottom: 78, height: 12, background: "rgba(0,0,0,0.01)" }}
+                      aria-hidden="true"
+                    />
+                  </>
+                )}
               </div>
 
               <div className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
