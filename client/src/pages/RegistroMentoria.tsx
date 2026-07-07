@@ -1599,7 +1599,13 @@ export default function RegistroMentoria() {
                     const taskPoints = isFirstSession ? null : getTaskPoints(session.taskStatus);
                     
                     return (
-                      <div key={session.id} className="border rounded-lg hover:bg-gray-50/50 transition-colors overflow-hidden">
+                      <div key={session.id} className={`border rounded-lg hover:bg-gray-50/50 transition-colors overflow-hidden ${(session as any).cancelada ? 'opacity-60 border-red-200 bg-red-50/30' : ''}`}>
+                        {(session as any).cancelada && (
+                          <div className="px-4 py-1.5 bg-red-100 border-b border-red-200 flex items-center gap-2">
+                            <XCircle className="h-3.5 w-3.5 text-red-600" />
+                            <span className="text-xs font-semibold text-red-700">SESSÃO CANCELADA — não contabilizada em relatórios e indicadores</span>
+                          </div>
+                        )}
                         {editingSession === session.id ? (
                           /* Modo de edição */
                           <div className="p-4 space-y-4">
@@ -1930,7 +1936,7 @@ export default function RegistroMentoria() {
                                   <Button size="sm" variant="outline" onClick={() => handleEdit(session)}>
                                     <Edit className="h-4 w-4 mr-1" /> Editar
                                   </Button>
-                                  {confirmDeleteSession === session.id ? (
+                                  {!(session as any).cancelada && (confirmDeleteSession === session.id ? (
                                     <div className="flex items-center gap-1">
                                       <span className="text-xs text-red-600 font-medium">Cancelar sessão?</span>
                                       <Button size="sm" variant="destructive" className="h-7 text-xs px-2"
@@ -1948,7 +1954,7 @@ export default function RegistroMentoria() {
                                       onClick={() => setConfirmDeleteSession(session.id)}>
                                       <Trash2 className="h-4 w-4 mr-1" /> Cancelar
                                     </Button>
-                                  )}
+                                  ))}
                                 </div>
                               </div>
                               {session.feedback && (
