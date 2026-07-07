@@ -8302,6 +8302,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     // Atualizar plataformaAulas de todos os alunos
+    // Migração: corrige tipoSessao de sessões grupais existentes gravadas incorretamente como individual
+    migrarTipoSessaoGrupais: adminOrAdmin2Procedure
+      .mutation(async () => {
+        const { migrarTipoSessaoGrupais } = await import('./db');
+        return await migrarTipoSessaoGrupais();
+      }),
+
     updateAllAlunosPlataformaAulas: adminOrAdmin2Procedure
       .mutation(async () => {
         return await db.updateAllAlunosPlataformaAulas();

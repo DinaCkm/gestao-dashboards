@@ -986,6 +986,19 @@ export async function createMentoringSession(data: {
   await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "mentoringSessions.create");
   const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
   
+  // Garantir que tipoSessao reflita o tipo real do agendamento.
+  // Se appointmentId foi fornecido e o agendamento é do tipo "grupo",
+  // o tipoSessao deve ser grupal — independente do que o chamador passou.
+  // Isso uniformiza todos os fluxos de criação de sessão.
+  let tipoSessaoEfetivo = data.tipoSessao ?? "individual_normal";
+  if (data.appointmentId) {
+    const appt = await getAppointmentById(data.appointmentId);
+    if (appt?.type === "grupo") {
+      if (tipoSessaoEfetivo === "individual_normal") tipoSessaoEfetivo = "grupo_normal";
+      if (tipoSessaoEfetivo === "individual_assessment") tipoSessaoEfetivo = "grupo_assessment";
+    }
+  }
+
   const result = await db.insert(mentoringSessions).values({
     alunoId: data.alunoId,
     contratoNivelId: contratoNivelIdResolved,
@@ -1007,7 +1020,7 @@ export async function createMentoringSession(data: {
     taskMode: data.taskMode ?? "sem_tarefa",
     notaMentoraAplicabilidade: data.notaMentoraAplicabilidade ?? null,
     aplicabilidadeAvaliadaEm: data.aplicabilidadeAvaliadaEm ?? null,
-    tipoSessao: data.tipoSessao ?? "individual_normal",
+    tipoSessao: tipoSessaoEfetivo,
     appointmentId: data.appointmentId ?? null,
   } as any);
   return result[0].insertId;
@@ -13804,4 +13817,37 @@ export async function ensureDevolutivasTables(): Promise<void> {
     }
   }
   console.log('[DB] Tabela e colunas de devolutiva verificadas/criadas com sucesso.');
+}
+
+/**
+ * Migração: corrige tipoSessao de sessões existentes que foram gravadas
+ * como individual mas pertencem a um agendamento do tipo grupo.
+ * Executar uma única vez após o deploy.
+ */
+export async function migrarTipoSessaoGrupais(): Promise<{ corrigidas: number }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Buscar todas as sessões com appointmentId onde tipoSessao ainda é individual
+  const rows = await db.execute(sql`
+    SELECT ms.id, ms.tipoSessao, ma.type as appointmentType
+    FROM mentoring_sessions ms
+    INNER JOIN mentor_appointments ma ON ma.id = ms.appointmentId
+    WHERE ma.type = 'grupo'
+      AND ms.tipoSessao IN ('individual_normal', 'individual_assessment')
+      AND COALESCE(ms.cancelada, 0) = 0
+  `);
+
+  const sessions = Array.isArray(rows) ? (rows[0] as any[]) : [];
+  let corrigidas = 0;
+
+  for (const s of sessions) {
+    const novoTipo = s.tipoSessao === 'individual_assessment' ? 'grupo_assessment' : 'grupo_normal';
+    await db.execute(sql.raw(
+      `UPDATE mentoring_sessions SET tipoSessao = '${novoTipo}' WHERE id = ${s.id}`
+    ));
+    corrigidas++;
+  }
+
+  return { corrigidas };
 }
