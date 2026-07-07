@@ -855,10 +855,7 @@ export async function getMentoringSessionsByBatch(batchId: number): Promise<Ment
 export async function getMentoringSessionsByAluno(alunoId: number): Promise<MentoringSession[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(mentoringSessions).where(and(
-    eq(mentoringSessions.alunoId, alunoId),
-    sql`COALESCE(${mentoringSessions}.cancelada, 0) = 0`
-  ));
+  return await db.select().from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
 }
 
 export async function getMentoringSessionsByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null): Promise<MentoringSession[]> {
@@ -868,7 +865,6 @@ export async function getMentoringSessionsByAlunoAndNivel(alunoId: number, contr
   return await db.select().from(mentoringSessions).where(and(
     eq(mentoringSessions.alunoId, alunoId),
     eq(mentoringSessions.contratoNivelId, contratoNivelId),
-    sql`COALESCE(${mentoringSessions}.cancelada, 0) = 0`
   ));
 }
 
@@ -1493,10 +1489,7 @@ export async function getConsultorByName(name: string): Promise<Consultor | unde
 export async function getMentoringSessionsByConsultor(consultorId: number): Promise<MentoringSession[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(mentoringSessions).where(and(
-    eq(mentoringSessions.consultorId, consultorId),
-    sql`COALESCE(${mentoringSessions}.cancelada, 0) = 0`
-  ));
+  return await db.select().from(mentoringSessions).where(eq(mentoringSessions.consultorId, consultorId));
 }
 
 export async function getConsultorStats(consultorId: number) {
@@ -5287,7 +5280,7 @@ export async function getSessionProgressByAluno(alunoId: number) {
     .where(and(
       eq(mentoringSessions.alunoId, alunoId),
       eq(mentoringSessions.isAssessment, 0),
-      sql`COALESCE(${mentoringSessions}.cancelada, 0) = 0`
+      eq(mentoringSessions.cancelada, 0)
     ));
   
   const sessoesRealizadas = sessions.length;

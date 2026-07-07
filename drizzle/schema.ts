@@ -277,6 +277,7 @@ export const mentoringSessions = mysqlTable("mentoring_sessions", {
   // === Nova Lógica Financeira ===
   tipoSessao: mysqlEnum("tipoSessao", ["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).default("individual_normal"), // Tipo da sessão para precificação
   appointmentId: int("appointmentId"), // FK para mentor_appointments (vínculo sessão ↔ agendamento)
+  cancelada: int("cancelada").default(0), // 0 = ativa, 1 = cancelada (soft delete)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
