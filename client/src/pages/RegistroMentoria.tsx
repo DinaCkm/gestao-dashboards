@@ -172,12 +172,12 @@ export default function RegistroMentoria() {
 
   const deleteSession = trpc.mentor.deleteSession.useMutation({
     onSuccess: () => {
-      toast.success("Sessão excluída com sucesso!");
+      toast.success("Sessão cancelada! Ela não aparecerá mais em relatórios e indicadores.");
       refetchSessions();
       setConfirmDeleteSession(null);
     },
     onError: (error: { message: string }) => {
-      toast.error(`Erro ao excluir: ${error.message}`);
+      toast.error(`Erro ao cancelar: ${error.message}`);
     }
   });
 
@@ -1932,11 +1932,11 @@ export default function RegistroMentoria() {
                                   </Button>
                                   {confirmDeleteSession === session.id ? (
                                     <div className="flex items-center gap-1">
-                                      <span className="text-xs text-red-600 font-medium">Confirmar?</span>
+                                      <span className="text-xs text-red-600 font-medium">Cancelar sessão?</span>
                                       <Button size="sm" variant="destructive" className="h-7 text-xs px-2"
                                         onClick={() => deleteSession.mutate({ sessionId: session.id })}
                                         disabled={deleteSession.isPending}>
-                                        {deleteSession.isPending ? 'Excluindo...' : 'Sim'}
+                                        {deleteSession.isPending ? 'Cancelando...' : 'Sim'}
                                       </Button>
                                       <Button size="sm" variant="outline" className="h-7 text-xs px-2"
                                         onClick={() => setConfirmDeleteSession(null)}>
@@ -1946,7 +1946,7 @@ export default function RegistroMentoria() {
                                   ) : (
                                     <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700 hover:border-red-300"
                                       onClick={() => setConfirmDeleteSession(session.id)}>
-                                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                                      <Trash2 className="h-4 w-4 mr-1" /> Cancelar
                                     </Button>
                                   )}
                                 </div>

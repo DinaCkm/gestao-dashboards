@@ -8128,12 +8128,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }),
 
     deleteSession: protectedProcedure
-      .input(z.object({
-        sessionId: z.number(),
-      }))
+      .input(z.object({ sessionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        // Admin pode excluir qualquer sessão
-        // Mentora só pode excluir suas próprias sessões
         const isAdmin = ['admin', 'admin2'].includes(ctx.user.role ?? '');
         if (!isAdmin) {
           let consultorId = (ctx.user as any).consultorId as number | undefined;
@@ -8142,13 +8138,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             const consultor = consultorsList.find((c: any) => c.loginId === ctx.user.openId);
             consultorId = consultor?.id;
           }
-          if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Sem permissão para excluir sessões' });
+          if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Sem permissão' });
           const session = await db.getMentoringSessionById(input.sessionId);
-          if (!session) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
-          if (session.consultorId !== consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Você só pode excluir suas próprias sessões' });
+          if (!session) throw new TRPCError({ code: 'NOT_FOUND' });
+          if (session.consultorId !== consultorId) throw new TRPCError({ code: 'FORBIDDEN' });
         }
-        const success = await db.deleteMentoringSession(input.sessionId);
-        return { success };
+        // Cancelar em vez de excluir — marca como cancelada e remove dos relatórios
+        const dbConn = await (await import('./db')).getDb();
+        if (dbConn) {
+          await dbConn.execute(
+            (await import('drizzle-orm')).sql.raw(`UPDATE mentoring_sessions SET cancelada = 1 WHERE id = ${input.sessionId}`)
+          );
+        }
+        return { success: true };
       }),
 
     adminCreateSession: adminOrAdmin2Procedure

@@ -855,7 +855,10 @@ export async function getMentoringSessionsByBatch(batchId: number): Promise<Ment
 export async function getMentoringSessionsByAluno(alunoId: number): Promise<MentoringSession[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(mentoringSessions).where(eq(mentoringSessions.alunoId, alunoId));
+  return await db.select().from(mentoringSessions).where(and(
+    eq(mentoringSessions.alunoId, alunoId),
+    eq((mentoringSessions as any).cancelada, 0),
+  ));
 }
 
 export async function getMentoringSessionsByAlunoAndNivel(alunoId: number, contratoNivelId?: number | null): Promise<MentoringSession[]> {
@@ -865,6 +868,7 @@ export async function getMentoringSessionsByAlunoAndNivel(alunoId: number, contr
   return await db.select().from(mentoringSessions).where(and(
     eq(mentoringSessions.alunoId, alunoId),
     eq(mentoringSessions.contratoNivelId, contratoNivelId),
+    eq((mentoringSessions as any).cancelada, 0),
   ));
 }
 
@@ -1476,7 +1480,10 @@ export async function getConsultorByName(name: string): Promise<Consultor | unde
 export async function getMentoringSessionsByConsultor(consultorId: number): Promise<MentoringSession[]> {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(mentoringSessions).where(eq(mentoringSessions.consultorId, consultorId));
+  return await db.select().from(mentoringSessions).where(and(
+    eq(mentoringSessions.consultorId, consultorId),
+    eq((mentoringSessions as any).cancelada, 0),
+  ));
 }
 
 export async function getConsultorStats(consultorId: number) {

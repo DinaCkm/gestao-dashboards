@@ -167,7 +167,8 @@ export async function getRelatorioFinanceiroV2(
     })
     .from(mentoringSessions)
     .leftJoin(consultors, eq(mentoringSessions.consultorId, consultors.id))
-    .leftJoin(alunos, eq(mentoringSessions.alunoId, alunos.id));
+    .leftJoin(alunos, eq(mentoringSessions.alunoId, alunos.id))
+    .where(eq((mentoringSessions as any).cancelada, 0));
 
   // 2. Filtrar por período
   let filtered = sessions;
