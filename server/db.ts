@@ -5262,11 +5262,12 @@ export async function getSessionProgressByAluno(alunoId: number) {
     totalSessoesEsperadas = Math.max(1, totalMeses);
   }
 
-  // Count sessions completed for this student (excluding assessment sessions)
+  // Count sessions completed for this student (excluding assessment sessions and cancelled)
   const sessions = await db.select().from(mentoringSessions)
     .where(and(
       eq(mentoringSessions.alunoId, alunoId),
-      eq(mentoringSessions.isAssessment, 0)
+      eq(mentoringSessions.isAssessment, 0),
+      eq((mentoringSessions as any).cancelada, 0)
     ));
   
   const sessoesRealizadas = sessions.length;

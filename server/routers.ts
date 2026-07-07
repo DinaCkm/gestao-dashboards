@@ -5274,6 +5274,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           : { congelado: false, dataCongelamento: null, codigoTurma: null, nomeTurma: null },
         sessoes: sessoesAluno
           .filter(s => {
+            // Excluir sessões canceladas dos indicadores
+            if ((s as any).cancelada) return false;
             // Se a turma está congelada, excluir sessões posteriores ao congelamento
             if (dataCongelamentoTurma && s.sessionDate) {
               return new Date(s.sessionDate) <= dataCongelamentoTurma;
@@ -5820,7 +5822,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           consolidado: indicadoresV2Congelado.consolidado,
           alertaCasePendente: [],
         },
-        sessoes: sessoesCongeladas.map(s => ({
+        sessoes: sessoesCongeladas.filter(s => !(s as any).cancelada).map(s => ({
           id: s.id,
           sessionNumber: s.sessionNumber,
           sessionDate: s.sessionDate,
