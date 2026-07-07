@@ -225,11 +225,18 @@ export async function getRelatorioFinanceiroV2(
     if (!s.consultorId) continue;
 
     const valorPadrao = s.valorSessaoPadrao ? Number(s.valorSessaoPadrao) : 0;
-    const tipoSessao = (s.tipoSessao || "individual_normal") as TipoSessao;
+    const tipoSessaoSalvo = (s.tipoSessao || "individual_normal") as TipoSessao;
     const programId = s.programId || null;
     const programNome = programId ? (programMap.get(programId)?.name || "N/A") : "N/A";
     const appointment = s.appointmentId ? appointmentMap.get(s.appointmentId) : null;
-    const isGrupal = tipoSessao === "grupo_normal" || tipoSessao === "grupo_assessment" || appointment?.type === "grupo";
+    const isGrupal = tipoSessaoSalvo === "grupo_normal" || tipoSessaoSalvo === "grupo_assessment" || appointment?.type === "grupo";
+
+    // Se o agendamento é grupal mas a sessão foi salva com tipoSessao individual
+    // (lançamentos via fluxo que não gravou grupo_normal), corrigir para grupo
+    // para que a precificação use a regra de grupo correta.
+    let tipoSessao: TipoSessao = tipoSessaoSalvo;
+    if (isGrupal && tipoSessaoSalvo === "individual_normal") tipoSessao = "grupo_normal";
+    if (isGrupal && tipoSessaoSalvo === "individual_assessment") tipoSessao = "grupo_assessment";
     const isPendente = !s.appointmentId; // Sessão sem agendamento = pendente
     const alertas: string[] = [];
 
