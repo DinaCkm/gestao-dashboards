@@ -2369,6 +2369,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               sessoes: Array<{ alunoNome: string; empresaNome: string; data: string; sessionNumber: number; valor: number; tipoSessao: string; origemPreco: string }>;
             }> = {};
 
+            // Rastrear agendamentos grupais já contabilizados para não duplicar o pagamento
+            // Sessão grupal = 1 pagamento por agendamento (não por participante)
+            const grupalAppointmentsContabilizados = new Set<number>();
+
             for (const s of mentoringSessions) {
               if (!s.consultorId) continue;
               const consultor = consultorMap.get(s.consultorId);
@@ -2379,6 +2383,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               const tipoSessao = (s.tipoSessao || 'individual_normal') as TipoSessao;
               const programId = aluno?.programId || null;
               const sessionDateStr = s.sessionDate ? String(s.sessionDate).slice(0, 10) : null;
+              const isGrupal = tipoSessao === 'grupo_normal' || tipoSessao === 'grupo_assessment';
+
+              // Sessão grupal com appointmentId já contabilizado: pula para não duplicar pagamento
+              if (isGrupal && s.appointmentId && grupalAppointmentsContabilizados.has(s.appointmentId)) {
+                continue;
+              }
 
               if (!mentoraSummary[s.consultorId]) {
                 mentoraSummary[s.consultorId] = {
@@ -2420,8 +2430,25 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
                 }
               }
 
+              // Buscar todos os participantes do grupo para exibir na linha (sem multiplicar valor)
+              let alunoNomeExibicao = aluno?.name || 'N/A';
+              if (isGrupal && s.appointmentId) {
+                // Marcar agendamento como contabilizado
+                grupalAppointmentsContabilizados.add(s.appointmentId);
+                // Listar todos os participantes do mesmo agendamento
+                const participantesDoGrupo = mentoringSessions
+                  .filter(other => other.appointmentId === s.appointmentId)
+                  .map(other => {
+                    const outroAluno = other.alunoId ? alunoMap.get(other.alunoId) : null;
+                    return outroAluno?.name || 'N/A';
+                  });
+                if (participantesDoGrupo.length > 1) {
+                  alunoNomeExibicao = participantesDoGrupo.join(', ');
+                }
+              }
+
               mentoraSummary[s.consultorId].sessoes.push({
-                alunoNome: aluno?.name || 'N/A',
+                alunoNome: alunoNomeExibicao,
                 empresaNome: program?.name || 'N/A',
                 data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString('pt-BR') : '',
                 sessionNumber: s.sessionNumber || 0,
@@ -2537,6 +2564,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               nome: string;
               sessoes: Array<{ alunoNome: string; mentoraNome: string; data: string; sessionNumber: number; valor: number }>;
             }> = {};
+
+            // Rastrear agendamentos grupais já contabilizados para não duplicar o pagamento
+            // Sessão grupal = 1 pagamento por agendamento (não por participante)
+            const grupalAppointmentsContabilizadosEmpresa = new Set<number>();
             
             for (const s of mentoringSessions) {
               const aluno = s.alunoId ? alunoMap.get(s.alunoId) : null;
@@ -2545,6 +2576,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               if (!program) continue;
               const consultor = s.consultorId ? consultorMap.get(s.consultorId) : null;
               const valorPadrao = consultor?.valorSessao ? Number(consultor.valorSessao) : 0;
+              const tipoSessao = s.tipoSessao || 'individual_normal';
+              const isGrupal = tipoSessao === 'grupo_normal' || tipoSessao === 'grupo_assessment';
+
+              // Sessão grupal com appointmentId já contabilizado: pula para não duplicar pagamento
+              if (isGrupal && s.appointmentId && grupalAppointmentsContabilizadosEmpresa.has(s.appointmentId)) {
+                continue;
+              }
               
               if (!empresaSummary[program.id]) {
                 empresaSummary[program.id] = {
@@ -2558,9 +2596,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
               const sessionNum = s.sessionNumber || 0;
               const matchingRule = rules.find(r => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
               const valorSessao = matchingRule ? Number(matchingRule.valor) : valorPadrao;
+
+              // Para grupos, listar todos os participantes na mesma linha
+              let alunoNomeExibicao = aluno.name || 'N/A';
+              if (isGrupal && s.appointmentId) {
+                grupalAppointmentsContabilizadosEmpresa.add(s.appointmentId);
+                const participantesDoGrupo = mentoringSessions
+                  .filter(other => other.appointmentId === s.appointmentId)
+                  .map(other => {
+                    const outroAluno = other.alunoId ? alunoMap.get(other.alunoId) : null;
+                    return outroAluno?.name || 'N/A';
+                  });
+                if (participantesDoGrupo.length > 1) {
+                  alunoNomeExibicao = participantesDoGrupo.join(', ');
+                }
+              }
               
               empresaSummary[program.id].sessoes.push({
-                alunoNome: aluno.name || 'N/A',
+                alunoNome: alunoNomeExibicao,
                 mentoraNome: consultor?.name || 'N/A',
                 data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString('pt-BR') : '',
                 sessionNumber: s.sessionNumber || 0,
