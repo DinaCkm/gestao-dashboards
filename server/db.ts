@@ -5280,7 +5280,7 @@ export async function getSessionProgressByAluno(alunoId: number) {
     .where(and(
       eq(mentoringSessions.alunoId, alunoId),
       eq(mentoringSessions.isAssessment, 0),
-      eq((mentoringSessions as any).cancelada, 0)
+      sql`COALESCE(${mentoringSessions}.cancelada, 0) = 0`
     ));
   
   const sessoesRealizadas = sessions.length;
