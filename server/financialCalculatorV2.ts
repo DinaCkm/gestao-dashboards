@@ -10,7 +10,7 @@
  * 6. Sessões históricas (sem tipoSessao ou appointmentId): usam cálculo legado
  */
 
-import { eq, and, or, isNull, lte, gte } from "drizzle-orm";
+import { eq, and, or, isNull, lte, gte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   mentoringSessions,
@@ -168,7 +168,7 @@ export async function getRelatorioFinanceiroV2(
     .from(mentoringSessions)
     .leftJoin(consultors, eq(mentoringSessions.consultorId, consultors.id))
     .leftJoin(alunos, eq(mentoringSessions.alunoId, alunos.id))
-    .where(eq((mentoringSessions as any).cancelada, 0));
+    .where(sql`COALESCE(${mentoringSessions}.cancelada, 0) = 0`);
 
   // 2. Filtrar por período
   let filtered = sessions;
