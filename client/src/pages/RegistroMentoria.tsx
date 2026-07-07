@@ -170,7 +170,7 @@ export default function RegistroMentoria() {
     }
   });
 
-  const deleteSession = trpc.mentor.deleteMentorSession.useMutation({
+  const deleteSession = trpc.mentor.deleteSession.useMutation({
     onSuccess: () => {
       toast.success("Sessão excluída com sucesso!");
       refetchSessions();
