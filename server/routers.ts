@@ -8121,7 +8121,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     deleteMentorSession: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        const consultorId = (ctx.user as any).consultorId as number | undefined;
+        // Buscar consultorId — pode vir no contexto ou precisa ser buscado pelo openId
+        let consultorId = (ctx.user as any).consultorId as number | undefined;
+        if (!consultorId && ctx.user.openId) {
+          const consultorsList = await db.getConsultors();
+          const consultor = consultorsList.find(c => c.loginId === ctx.user.openId);
+          consultorId = consultor?.id;
+        }
         if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentoras podem excluir sessões' });
         // Verificar se a sessão pertence à mentora
         const session = await db.getMentoringSessionById(input.sessionId);
