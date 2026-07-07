@@ -7404,23 +7404,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true, count: createdIds.length, ids: createdIds };
       }),
 
-    // Mentora exclui sua própria sessão
-    deleteMentorSession: protectedProcedure
+    // Mentora cancela sua própria sessão (marca cancelada=1, não exclui)
+    deleteSession: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        console.log('[deleteMentorSession] chamado por', ctx.user?.openId, 'sessionId:', input.sessionId);
         let consultorId = (ctx.user as any).consultorId as number | undefined;
         if (!consultorId && ctx.user.openId) {
           const consultorsList = await db.getConsultors();
           const consultor = consultorsList.find((c: any) => c.loginId === ctx.user.openId);
           consultorId = consultor?.id;
         }
-        if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentoras podem excluir sessões' });
+        if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentoras podem cancelar sessões' });
         const session = await db.getMentoringSessionById(input.sessionId);
         if (!session) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
-        if (session.consultorId !== consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Você só pode excluir suas próprias sessões' });
-        const success = await db.deleteMentoringSession(input.sessionId);
-        return { success };
+        if (session.consultorId !== consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Você só pode cancelar suas próprias sessões' });
+        // Cancelar em vez de excluir — remove dos relatórios sem perder histórico
+        const dbConn = await (await import('./db')).getDb();
+        if (dbConn) {
+          await dbConn.execute(
+            (await import('drizzle-orm')).sql.raw(`UPDATE mentoring_sessions SET cancelada = 1 WHERE id = ${input.sessionId}`)
+          );
+        }
+        return { success: true };
       }),
   }),
 
