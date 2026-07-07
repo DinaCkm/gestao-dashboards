@@ -1606,7 +1606,7 @@ export default function RegistroMentoria() {
                             <span className="text-xs font-semibold text-red-700">SESSÃO CANCELADA — não contabilizada em relatórios e indicadores</span>
                           </div>
                         )}
-                        {editingSession === session.id ? (
+                        {editingSession === session.id && !(session as any).cancelada ? (
                           /* Modo de edição */
                           <div className="p-4 space-y-4">
                             <div className="flex items-center justify-between">
@@ -1930,31 +1930,39 @@ export default function RegistroMentoria() {
                                   })() : (
                                     <span className="text-sm text-gray-400 italic">Sem nota</span>
                                   )}
-                                  <Button size="sm" variant="outline" onClick={() => setViewingSession(session.id)} className="text-[#0A1E3E] border-[#0A1E3E]/30 hover:bg-[#0A1E3E]/5">
-                                    <Eye className="h-4 w-4 mr-1" /> Visualizar
-                                  </Button>
-                                  <Button size="sm" variant="outline" onClick={() => handleEdit(session)}>
-                                    <Edit className="h-4 w-4 mr-1" /> Editar
-                                  </Button>
-                                  {!(session as any).cancelada && (confirmDeleteSession === session.id ? (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs text-red-600 font-medium">Cancelar sessão?</span>
-                                      <Button size="sm" variant="destructive" className="h-7 text-xs px-2"
-                                        onClick={() => deleteSession.mutate({ sessionId: session.id })}
-                                        disabled={deleteSession.isPending}>
-                                        {deleteSession.isPending ? 'Cancelando...' : 'Sim'}
-                                      </Button>
-                                      <Button size="sm" variant="outline" className="h-7 text-xs px-2"
-                                        onClick={() => setConfirmDeleteSession(null)}>
-                                        Não
-                                      </Button>
-                                    </div>
+                                  {(session as any).cancelada ? (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-100 text-red-700 text-xs font-semibold border border-red-200 cursor-default">
+                                      <XCircle className="h-3.5 w-3.5" /> Sessão Cancelada
+                                    </span>
                                   ) : (
-                                    <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700 hover:border-red-300"
-                                      onClick={() => setConfirmDeleteSession(session.id)}>
-                                      <Trash2 className="h-4 w-4 mr-1" /> Cancelar
-                                    </Button>
-                                  ))}
+                                    <>
+                                      <Button size="sm" variant="outline" onClick={() => setViewingSession(session.id)} className="text-[#0A1E3E] border-[#0A1E3E]/30 hover:bg-[#0A1E3E]/5">
+                                        <Eye className="h-4 w-4 mr-1" /> Visualizar
+                                      </Button>
+                                      <Button size="sm" variant="outline" onClick={() => handleEdit(session)}>
+                                        <Edit className="h-4 w-4 mr-1" /> Editar
+                                      </Button>
+                                      {confirmDeleteSession === session.id ? (
+                                        <div className="flex items-center gap-1">
+                                          <span className="text-xs text-red-600 font-medium">Cancelar sessão?</span>
+                                          <Button size="sm" variant="destructive" className="h-7 text-xs px-2"
+                                            onClick={() => deleteSession.mutate({ sessionId: session.id })}
+                                            disabled={deleteSession.isPending}>
+                                            {deleteSession.isPending ? 'Cancelando...' : 'Sim'}
+                                          </Button>
+                                          <Button size="sm" variant="outline" className="h-7 text-xs px-2"
+                                            onClick={() => setConfirmDeleteSession(null)}>
+                                            Não
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700 hover:border-red-300"
+                                          onClick={() => setConfirmDeleteSession(session.id)}>
+                                          <Trash2 className="h-4 w-4 mr-1" /> Cancelar
+                                        </Button>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
                               </div>
                               {session.feedback && (
