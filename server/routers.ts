@@ -7353,6 +7353,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     deleteMentorSession: protectedProcedure
       .input(z.object({ sessionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
+        console.log('[deleteMentorSession] chamado por', ctx.user?.openId, 'sessionId:', input.sessionId);
         let consultorId = (ctx.user as any).consultorId as number | undefined;
         if (!consultorId && ctx.user.openId) {
           const consultorsList = await db.getConsultors();
