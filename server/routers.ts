@@ -7348,6 +7348,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
         return { success: true, count: createdIds.length, ids: createdIds };
       }),
+
+    // Mentora exclui sua própria sessão
+    deleteMentorSession: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        let consultorId = (ctx.user as any).consultorId as number | undefined;
+        if (!consultorId && ctx.user.openId) {
+          const consultorsList = await db.getConsultors();
+          const consultor = consultorsList.find((c: any) => c.loginId === ctx.user.openId);
+          consultorId = consultor?.id;
+        }
+        if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentoras podem excluir sessões' });
+        const session = await db.getMentoringSessionById(input.sessionId);
+        if (!session) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
+        if (session.consultorId !== consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Você só pode excluir suas próprias sessões' });
+        const success = await db.deleteMentoringSession(input.sessionId);
+        return { success };
+      }),
   }),
 
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
@@ -8113,26 +8131,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         sessionId: z.number(),
       }))
       .mutation(async ({ input }) => {
-        const success = await db.deleteMentoringSession(input.sessionId);
-        return { success };
-      }),
-
-    // Mentora exclui sua própria sessão
-    deleteMentorSession: protectedProcedure
-      .input(z.object({ sessionId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        // Buscar consultorId — pode vir no contexto ou precisa ser buscado pelo openId
-        let consultorId = (ctx.user as any).consultorId as number | undefined;
-        if (!consultorId && ctx.user.openId) {
-          const consultorsList = await db.getConsultors();
-          const consultor = consultorsList.find(c => c.loginId === ctx.user.openId);
-          consultorId = consultor?.id;
-        }
-        if (!consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentoras podem excluir sessões' });
-        // Verificar se a sessão pertence à mentora
-        const session = await db.getMentoringSessionById(input.sessionId);
-        if (!session) throw new TRPCError({ code: 'NOT_FOUND', message: 'Sessão não encontrada' });
-        if (session.consultorId !== consultorId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Você só pode excluir suas próprias sessões' });
         const success = await db.deleteMentoringSession(input.sessionId);
         return { success };
       }),
