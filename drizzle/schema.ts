@@ -1970,7 +1970,6 @@ export const discAssessments = mysqlTable("disc_assessments", {
     "cargo",
     "empresa",
     "diretoria",
-    "diretor",
   ]).notNull(),
   respondedByUserId: int("respondedByUserId"),
   status: mysqlEnum("status", ["rascunho", "concluido", "arquivado"])
