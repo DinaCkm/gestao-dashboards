@@ -445,9 +445,17 @@ function PerfilEmpresaDiretoriaContent() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  A vinculação dos diretores (cargo) que farão parte do cálculo da Diretoria será feita em uma etapa futura, junto ao cadastro de Cargo/Departamento/Líder.
-                </p>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <p>
+                    <strong className="text-foreground">Como o cálculo funciona:</strong> o Perfil DISC da Diretoria é a média dos perfis DISC individuais dos diretores selecionados para esta área. Além da média, o sistema calcula o grau de concordância entre eles — ou seja, o quanto os estilos de liderança dos diretores selecionados se parecem entre si. Concordância alta indica um time diretivo com estilo de liderança coeso; concordância baixa indica estilos bem diferentes entre os diretores.
+                  </p>
+                  <p>
+                    <strong className="text-foreground">Como escolher os profissionais:</strong> selecione apenas pessoas que ocupam o cargo de Diretor(a) nesta área e que já tenham respondido ao DISC individual. Inclua todos os diretores relevantes da área — quanto mais diretores incluídos, mais representativo é o resultado. Evite selecionar diretores de outras áreas ou pessoas em cargos diferentes de Diretor.
+                  </p>
+                  <p className="italic">
+                    A seleção dos diretores e a busca automática dos DISCs individuais ainda depende do cadastro de Cargo/Departamento/Líder (próximo bloco) e do Questionário DISC individual do colaborador. Assim que essas etapas estiverem prontas, você poderá selecionar os diretores diretamente aqui.
+                  </p>
+                </div>
                 <Collapsible>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="text-muted-foreground">
