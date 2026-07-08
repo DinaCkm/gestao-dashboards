@@ -1970,6 +1970,7 @@ export const discAssessments = mysqlTable("disc_assessments", {
     "cargo",
     "empresa",
     "diretoria",
+    "diretor",
   ]).notNull(),
   respondedByUserId: int("respondedByUserId"),
   status: mysqlEnum("status", ["rascunho", "concluido", "arquivado"])
@@ -1984,6 +1985,8 @@ export const discAssessments = mysqlTable("disc_assessments", {
   completedAt: timestamp("completedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  respondentName: varchar("respondentName", { length: 255 }), // Nome do respondente convidado (quando nao possui conta no sistema)
+  respondentEmail: varchar("respondentEmail", { length: 320 }), // Email do respondente convidado
 });
 
 export type DiscAssessment = typeof discAssessments.$inferSelect;
@@ -2064,6 +2067,9 @@ export const discOrgProfiles = mysqlTable("disc_org_profiles", {
   validTo: date("validTo"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  origemPerfil: mysqlEnum("origemPerfil", ["manual","questionario"]),
+  statusConsistencia: mysqlEnum("statusConsistencia", ["previa","suficiente"]),
+  totalRespondentes: int("totalRespondentes"),
 });
 
 export type DiscOrgProfile = typeof discOrgProfiles.$inferSelect;
@@ -2156,3 +2162,16 @@ export const discGeneratedReports = mysqlTable("disc_generated_reports", {
 
 export type DiscGeneratedReport = typeof discGeneratedReports.$inferSelect;
 export type InsertDiscGeneratedReport = typeof discGeneratedReports.$inferInsert;
+
+// EcoDISC 360 - Respostas individuais do Questionario de Cultura Comportamental da Empresa
+// (formato de escolha unica por pergunta, diferente do formato mais/menos usado em disc_assessment_answers)
+export const discCultureSurveyAnswers = mysqlTable("disc_culture_survey_answers", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentId: int("assessmentId").notNull(),
+  questionId: varchar("questionId", { length: 20 }).notNull(),
+  dimensaoEscolhida: mysqlEnum("dimensaoEscolhida", ["D","I","S","C"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DiscCultureSurveyAnswer = typeof discCultureSurveyAnswers.$inferSelect;
+export type InsertDiscCultureSurveyAnswer = typeof discCultureSurveyAnswers.$inferInsert;
