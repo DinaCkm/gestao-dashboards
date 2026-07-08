@@ -11,6 +11,9 @@ import {
   discMatches,
   discGeneratedReports,
   discCultureSurveyAnswers,
+  discDiretoriaMembros,
+  alunos,
+  discResultados,
   type InsertDiscAssessment,
   type InsertDiscAssessmentAnswer,
   type InsertDiscRoleProfile,
@@ -18,7 +21,7 @@ import {
   type InsertDiscMatch,
   type InsertDiscGeneratedReport,
 } from "../drizzle/schema";
-import { calculateFullMatch, type DiscScores } from "./discMatchService";
+import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore } from "./discMatchService";
 import {
   calcularDiscCulturaEmpresa,
   calcularDiscEmpresaConsolidado,
@@ -308,4 +311,142 @@ export async function consolidateOrgProfileFromCulture(database: DbClient, orgPr
     totalRespondentes: consolidado.totalRespondentes,
   } as any);
   return consolidado;
+}
+
+/**
+ * Bloco 5 (revisado): consolidacao do Perfil DISC da Diretoria a partir do DISC
+ * individual (legado) dos diretores selecionados manualmente pelo RH.
+ *
+ * IMPORTANTE: a funcao abaixo (getLegacyDiscResultForAluno) apenas LE dados de
+ * disc_resultados. Nenhuma escrita, alteracao ou exclusao e feita nessa tabela.
+ */
+
+export async function getLegacyDiscResultForAluno(database: DbClient, alunoId: number) {
+  const rows = await database
+    .select()
+    .from(discResultados)
+    .where(eq(discResultados.alunoId, alunoId))
+    .orderBy(desc(discResultados.ciclo), desc(discResultados.completedAt))
+    .limit(1);
+  return rows[0] || null;
+}
+
+export async function listDistinctCargosByProgram(database: DbClient, programId: number) {
+  const rows = await database
+    .selectDistinct({ cargo: alunos.cargo })
+    .from(alunos)
+    .where(eq(alunos.programId, programId));
+  return rows
+    .map((r) => r.cargo)
+    .filter((c): c is string => !!c && c.trim().length > 0)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+export async function searchAlunosForSelection(
+  database: DbClient,
+  filters: { programId: number; departmentId?: number; cargo?: string }
+) {
+  const conditions = [eq(alunos.programId, filters.programId)];
+  if (filters.departmentId) conditions.push(eq(alunos.departmentId, filters.departmentId));
+  if (filters.cargo) conditions.push(eq(alunos.cargo, filters.cargo));
+  return database
+    .select({ id: alunos.id, name: alunos.name, cargo: alunos.cargo, departmentId: alunos.departmentId })
+    .from(alunos)
+    .where(and(...conditions))
+    .orderBy(alunos.name);
+}
+
+export async function addDiretoriaMembro(database: DbClient, orgProfileId: number, alunoId: number) {
+  const existentes = await database
+    .select()
+    .from(discDiretoriaMembros)
+    .where(
+      and(
+        eq(discDiretoriaMembros.orgProfileId, orgProfileId),
+        eq(discDiretoriaMembros.alunoId, alunoId)
+      )
+    );
+  if (existentes.length > 0) return existentes[0];
+  await database.insert(discDiretoriaMembros).values({ orgProfileId, alunoId });
+  const inserted = await database
+    .select()
+    .from(discDiretoriaMembros)
+    .where(
+      and(
+        eq(discDiretoriaMembros.orgProfileId, orgProfileId),
+        eq(discDiretoriaMembros.alunoId, alunoId)
+      )
+    );
+  return inserted[0];
+}
+
+export async function removeDiretoriaMembro(database: DbClient, orgProfileId: number, alunoId: number) {
+  await database
+    .delete(discDiretoriaMembros)
+    .where(
+      and(
+        eq(discDiretoriaMembros.orgProfileId, orgProfileId),
+        eq(discDiretoriaMembros.alunoId, alunoId)
+      )
+    );
+}
+
+export async function listDiretoriaMembrosComScores(database: DbClient, orgProfileId: number) {
+  const membros = await database
+    .select({ alunoId: discDiretoriaMembros.alunoId, nome: alunos.name })
+    .from(discDiretoriaMembros)
+    .innerJoin(alunos, eq(discDiretoriaMembros.alunoId, alunos.id))
+    .where(eq(discDiretoriaMembros.orgProfileId, orgProfileId));
+
+  const comScores = await Promise.all(
+    membros.map(async (m) => {
+      const resultado = await getLegacyDiscResultForAluno(database, m.alunoId);
+      return {
+        alunoId: m.alunoId,
+        nome: m.nome,
+        temDiscLegado: !!resultado,
+        scores: resultado
+          ? {
+              D: Number(resultado.scoreD),
+              I: Number(resultado.scoreI),
+              S: Number(resultado.scoreS),
+              C: Number(resultado.scoreC),
+            }
+          : null,
+      };
+    })
+  );
+  return comScores;
+}
+
+export async function previewDiretoriaConsolidacao(database: DbClient, orgProfileId: number) {
+  const membros = await listDiretoriaMembrosComScores(database, orgProfileId);
+  const comDisc: PessoaComScore[] = membros
+    .filter((m) => m.scores !== null)
+    .map((m) => ({ alunoId: m.alunoId, nome: m.nome, scores: m.scores as DiscScores }));
+
+  if (comDisc.length === 0) {
+    return {
+      totalMembros: membros.length,
+      totalComDisc: 0,
+      resultado: null as ReturnType<typeof calcularPerfilDiretoriaPorGrupo> | null,
+    };
+  }
+
+  const resultado = calcularPerfilDiretoriaPorGrupo(comDisc);
+  return { totalMembros: membros.length, totalComDisc: comDisc.length, resultado };
+}
+
+export async function consolidateDiretoriaFromGrupo(database: DbClient, orgProfileId: number) {
+  const preview = await previewDiretoriaConsolidacao(database, orgProfileId);
+  if (!preview.resultado) {
+    throw new Error("Nenhum membro selecionado possui DISC individual (legado) registrado.");
+  }
+  await updateOrgProfile(database, orgProfileId, {
+    expectedScores: preview.resultado.scoresFinais,
+    perfilDesejado: preview.resultado.perfilSugerido,
+    origemPerfil: "grupo_diretores",
+    totalRespondentes: preview.totalComDisc,
+  });
+  return preview;
 }
