@@ -23,6 +23,48 @@ export type DiscScores = {
   C: number;
 };
 
+// ---------------------------------------------------------------------------
+// Determinacao de perfil (predominante/secundario) com regra de desempate
+// e indice de concordancia entre respondentes (reaproveitavel por qualquer
+// consolidacao que precise comparar varios DiscScores individuais a uma media:
+// usado hoje pela consolidacao da Cultura da Empresa, e podera ser reaproveitado
+// futuramente pela consolidacao do Perfil da Diretoria).
+// ---------------------------------------------------------------------------
+
+// Ordem de prioridade em caso de empate entre dimensoes: D > I > S > C.
+const ORDEM_PRIORIDADE_DISC: (keyof DiscScores)[] = ["D", "I", "S", "C"];
+
+export function determinarPerfil(scores: DiscScores): { predominante: keyof DiscScores; secundario: keyof DiscScores; sugerido: string } {
+  const ordenado = [...ORDEM_PRIORIDADE_DISC].sort((a, b) => {
+    if (scores[b] !== scores[a]) return scores[b] - scores[a];
+    return ORDEM_PRIORIDADE_DISC.indexOf(a) - ORDEM_PRIORIDADE_DISC.indexOf(b);
+  });
+  const predominante = ordenado[0];
+  const secundario = ordenado[1];
+  return { predominante, secundario, sugerido: predominante + "/" + secundario };
+}
+
+export type ClassificacaoConcordancia = "alta" | "media" | "baixa";
+
+export function calcularIndiceConcordancia(
+  scoresIndividuais: DiscScores[],
+  scoresMedios: DiscScores
+): { diferencaMedia: number; classificacao: ClassificacaoConcordancia } {
+  if (!scoresIndividuais || scoresIndividuais.length === 0) {
+    return { diferencaMedia: 0, classificacao: "alta" };
+  }
+  const diferencasPorRespondente = scoresIndividuais.map((scores) => {
+    const somaDiferencas = ORDEM_PRIORIDADE_DISC.reduce((acc, dim) => acc + Math.abs(scores[dim] - scoresMedios[dim]), 0);
+    return somaDiferencas / ORDEM_PRIORIDADE_DISC.length;
+  });
+  const diferencaMedia = diferencasPorRespondente.reduce((acc, v) => acc + v, 0) / diferencasPorRespondente.length;
+  let classificacao: ClassificacaoConcordancia;
+  if (diferencaMedia <= 10) classificacao = "alta";
+  else if (diferencaMedia <= 20) classificacao = "media";
+  else classificacao = "baixa";
+  return { diferencaMedia: Math.round(diferencaMedia * 100) / 100, classificacao };
+}
+
 export type MatchClassification = "alto" | "bom" | "medio" | "baixo" | "desalinhado";
 
 /**
