@@ -10,6 +10,7 @@ import {
   discOrgProfiles,
   discMatches,
   discGeneratedReports,
+  discCultureSurveyAnswers,
   type InsertDiscAssessment,
   type InsertDiscAssessmentAnswer,
   type InsertDiscRoleProfile,
@@ -18,6 +19,11 @@ import {
   type InsertDiscGeneratedReport,
 } from "../drizzle/schema";
 import { calculateFullMatch, type DiscScores } from "./discMatchService";
+import {
+  calcularDiscCulturaEmpresa,
+  calcularDiscEmpresaConsolidado,
+  type RespostaCultura,
+} from "./discCultureService";
 import type { getDb } from "./db";
 
 type DbClient = NonNullable<Awaited<ReturnType<typeof getDb>>>;
@@ -212,4 +218,94 @@ export async function getManagementMatrix(database: DbClient, programId: number)
 export async function registerGeneratedReport(database: DbClient, data: InsertDiscGeneratedReport) {
   const result: any = await database.insert(discGeneratedReports).values(data);
   return result?.insertId as number;
+}
+
+// ---------------------------------------------------------------------------
+// Questionario de Cultura Comportamental da Empresa (Opcao A) e
+// consolidacao do Perfil DISC da Empresa.
+// ---------------------------------------------------------------------------
+
+export type SubmitCultureSurveyInput = {
+  programId: number;
+  orgProfileId: number;
+  respostas: RespostaCultura[];
+  respondedByUserId?: number | null;
+  respondentName?: string | null;
+  respondentEmail?: string | null;
+};
+
+export async function submitCultureSurveyResponse(database: DbClient, input: SubmitCultureSurveyInput) {
+  const resultado = calcularDiscCulturaEmpresa(input.respostas);
+
+  const assessmentId = await createAssessment(database, {
+    programId: input.programId,
+    orgProfileId: input.orgProfileId,
+    assessmentType: "empresa",
+    respondedByUserId: input.respondedByUserId ?? null,
+    respondentName: input.respondentName ?? null,
+    respondentEmail: input.respondentEmail ?? null,
+    status: "concluido",
+    scores: resultado.scores as any,
+    perfilPredominante: resultado.perfilPredominante as any,
+    perfilSecundario: resultado.perfilSecundario as any,
+    completedAt: new Date(),
+  } as any);
+
+  if (input.respostas.length > 0) {
+    await database.insert(discCultureSurveyAnswers).values(
+      input.respostas.map((resposta) => ({
+        assessmentId,
+        questionId: resposta.questionId,
+        dimensaoEscolhida: resposta.dimensao,
+      }))
+    );
+  }
+
+  return { id: assessmentId, ...resultado };
+}
+
+/**
+ * Lista as aplicacoes individuais (respondentes) do questionario de cultura
+ * ja concluidas para um determinado Perfil DISC da Empresa.
+ */
+export async function listCultureAssessmentsByOrgProfile(database: DbClient, orgProfileId: number) {
+  return database
+    .select()
+    .from(discAssessments)
+    .where(
+      and(
+        eq(discAssessments.orgProfileId, orgProfileId),
+        eq(discAssessments.assessmentType, "empresa"),
+        eq(discAssessments.status, "concluido")
+      )
+    )
+    .orderBy(desc(discAssessments.completedAt));
+}
+
+/**
+ * Calcula a consolidacao do Perfil DISC da Empresa SEM salvar - usado para
+ * mostrar uma previa do resultado antes de o admin validar oficialmente.
+ */
+export async function previewCultureConsolidation(database: DbClient, orgProfileId: number) {
+  const assessments = await listCultureAssessmentsByOrgProfile(database, orgProfileId);
+  const scoresIndividuais = assessments
+    .map((assessment) => assessment.scores as unknown as DiscScores)
+    .filter((scores) => !!scores);
+  return calcularDiscEmpresaConsolidado(scoresIndividuais);
+}
+
+/**
+ * Consolida e SALVA o Perfil DISC da Empresa a partir das respostas do
+ * questionario de cultura ja recebidas, marcando origemPerfil="questionario".
+ */
+export async function consolidateOrgProfileFromCulture(database: DbClient, orgProfileId: number) {
+  const consolidado = await previewCultureConsolidation(database, orgProfileId);
+  await updateOrgProfile(database, orgProfileId, {
+    expectedScores: consolidado.scoresMedios as any,
+    perfilDesejado: consolidado.perfilSugerido,
+    origemPerfil: "questionario",
+    statusConsistencia: consolidado.statusConsistencia,
+    totalRespondentes: consolidado.totalRespondentes,
+  } as any);
+  return consolidado;
 }
