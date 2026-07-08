@@ -1,7 +1,9 @@
 /**
  * EcoDISC 360 - Aderencia Pessoa x Cargo x Cultura
- * Router tRPC do modulo. Mantem isolamento total do DISC legado
- * (disc_respostas / disc_resultados nao sao tocados por este arquivo).
+ * Router tRPC do modulo. O DISC legado (disc_respostas / disc_resultados)
+ * nunca e alterado por este arquivo - a unica interacao e leitura (somente
+ * SELECT) dos resultados ja existentes, usada para consolidar o Perfil DISC
+ * da Diretoria a partir dos diretores selecionados pelo RH.
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -25,6 +27,14 @@ import {
   listCultureAssessmentsByOrgProfile,
   previewCultureConsolidation,
   consolidateOrgProfileFromCulture,
+  getLegacyDiscResultForAluno,
+  listDistinctCargosByProgram,
+  searchAlunosForSelection,
+  addDiretoriaMembro,
+  removeDiretoriaMembro,
+  listDiretoriaMembrosComScores,
+  previewDiretoriaConsolidacao,
+  consolidateDiretoriaFromGrupo,
 } from "../disc360Service";
 import { DISC360_CULTURE_QUESTIONS } from "../../shared/disc360CultureQuestions";
 
@@ -193,6 +203,92 @@ export const disc360Router = router({
       }
       const database = await requireDatabase();
       return consolidateOrgProfileFromCulture(database, input.orgProfileId);
+    }),
+  getLegacyDiscResult: protectedProcedure
+    .input(z.object({ alunoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return getLegacyDiscResultForAluno(database, input.alunoId);
+    }),
+
+  listDistinctCargos: protectedProcedure
+    .input(z.object({ programId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return listDistinctCargosByProgram(database, input.programId);
+    }),
+
+  searchAlunosForSelection: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        departmentId: z.number().optional(),
+        cargo: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return searchAlunosForSelection(database, input);
+    }),
+
+  addDiretoriaMembro: protectedProcedure
+    .input(z.object({ orgProfileId: z.number(), alunoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return addDiretoriaMembro(database, input.orgProfileId, input.alunoId);
+    }),
+
+  removeDiretoriaMembro: protectedProcedure
+    .input(z.object({ orgProfileId: z.number(), alunoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      await removeDiretoriaMembro(database, input.orgProfileId, input.alunoId);
+      return { success: true };
+    }),
+
+  listDiretoriaMembros: protectedProcedure
+    .input(z.object({ orgProfileId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return listDiretoriaMembrosComScores(database, input.orgProfileId);
+    }),
+
+  previewDiretoriaConsolidacao: protectedProcedure
+    .input(z.object({ orgProfileId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return previewDiretoriaConsolidacao(database, input.orgProfileId);
+    }),
+
+  consolidateDiretoriaFromGrupo: protectedProcedure
+    .input(z.object({ orgProfileId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem validar o Perfil DISC da Diretoria." });
+      }
+      const database = await requireDatabase();
+      return consolidateDiretoriaFromGrupo(database, input.orgProfileId);
     }),
 
   updateOrgProfile: protectedProcedure
