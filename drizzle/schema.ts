@@ -1940,3 +1940,216 @@ export const devolutivaSlots = mysqlTable("devolutiva_slots", {
 });
 export type DevolutivaSlot = typeof devolutivaSlots.$inferSelect;
 export type InsertDevolutivaSlot = typeof devolutivaSlots.$inferInsert;
+// ============================================================
+// EcoDISC 360 - Aderência Pessoa x Cargo x Cultura
+// Fase 1: tabelas principais do módulo (prefixo disc_)
+// Não altera nenhuma tabela existente do DISC legado
+// (disc_respostas / disc_resultados permanecem intactas).
+//
+// NOTA TÉCNICA: o schema abaixo acompanha a migration manual
+// drizzle/0087_ecodisc360_tables.sql (escrita à mão, NÃO gerada via
+// `pnpm db:generate`, pois os snapshots em drizzle/meta/ estão
+// desatualizados desde a migration 0075). Não rodar db:generate
+// para este bloco — o SQL da 0087 é a fonte da verdade.
+// ============================================================
+
+/**
+ * EcoDISC 360 - Aplicações DISC (empregado, cargo, empresa, diretoria)
+ */
+export const discAssessments = mysqlTable("disc_assessments", {
+  id: int("id").autoincrement().primaryKey(),
+  programId: int("programId").notNull(),
+  alunoId: int("alunoId"),
+  cargoProfileId: int("cargoProfileId"),
+  orgProfileId: int("orgProfileId"),
+  assessmentType: mysqlEnum("assessmentType", [
+    "empregado",
+    "cargo",
+    "empresa",
+    "diretoria",
+  ]).notNull(),
+  respondedByUserId: int("respondedByUserId"),
+  status: mysqlEnum("status", ["rascunho", "concluido", "arquivado"])
+    .default("rascunho")
+    .notNull(),
+  scores: json("scores"),
+  rawScores: json("rawScores"),
+  perfilPredominante: mysqlEnum("perfilPredominante", ["D", "I", "S", "C"]),
+  perfilSecundario: mysqlEnum("perfilSecundario", ["D", "I", "S", "C"]),
+  indiceConsistencia: decimal("indiceConsistencia", { precision: 5, scale: 2 }),
+  alertaBaixaDiferenciacao: boolean("alertaBaixaDiferenciacao").default(false),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DiscAssessment = typeof discAssessments.$inferSelect;
+export type InsertDiscAssessment = typeof discAssessments.$inferInsert;
+
+/**
+ * EcoDISC 360 - Respostas detalhadas, bloco a bloco (escolha forçada)
+ */
+export const discAssessmentAnswers = mysqlTable("disc_assessment_answers", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentId: int("assessmentId").notNull(),
+  blocoIndex: int("blocoIndex").notNull(),
+  maisId: varchar("maisId", { length: 20 }).notNull(),
+  menosId: varchar("menosId", { length: 20 }).notNull(),
+  maisDimensao: mysqlEnum("maisDimensao", ["D", "I", "S", "C"]).notNull(),
+  menosDimensao: mysqlEnum("menosDimensao", ["D", "I", "S", "C"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DiscAssessmentAnswer = typeof discAssessmentAnswers.$inferSelect;
+export type InsertDiscAssessmentAnswer = typeof discAssessmentAnswers.$inferInsert;
+
+/**
+ * EcoDISC 360 - Perfil comportamental esperado para o cargo
+ */
+export const discRoleProfiles = mysqlTable("disc_role_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  programId: int("programId").notNull(),
+  departmentId: int("departmentId"),
+  cargoNome: varchar("cargoNome", { length: 255 }).notNull(),
+  cargoCodigo: varchar("cargoCodigo", { length: 50 }),
+  leaderUserId: int("leaderUserId"),
+  createdByUserId: int("createdByUserId"),
+  expectedScores: json("expectedScores"),
+  perfilEsperado: varchar("perfilEsperado", { length: 10 }),
+  nivelAutonomia: mysqlEnum("nivelAutonomia", ["baixo", "medio", "alto"]),
+  nivelPressao: mysqlEnum("nivelPressao", ["baixo", "medio", "alto"]),
+  necessidadeRelacionamento: mysqlEnum("necessidadeRelacionamento", [
+    "baixa",
+    "media",
+    "alta",
+  ]),
+  necessidadeAnaliseTecnica: mysqlEnum("necessidadeAnaliseTecnica", [
+    "baixa",
+    "media",
+    "alta",
+  ]),
+  necessidadeRotinaProcesso: mysqlEnum("necessidadeRotinaProcesso", [
+    "baixa",
+    "media",
+    "alta",
+  ]),
+  descricao: text("descricao"),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DiscRoleProfile = typeof discRoleProfiles.$inferSelect;
+export type InsertDiscRoleProfile = typeof discRoleProfiles.$inferInsert;
+
+/**
+ * EcoDISC 360 - Perfil comportamental desejado para empresa/diretoria
+ */
+export const discOrgProfiles = mysqlTable("disc_org_profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  programId: int("programId").notNull(),
+  departmentId: int("departmentId"),
+  profileType: mysqlEnum("profileType", ["empresa", "diretoria"]).notNull(),
+  profileName: varchar("profileName", { length: 255 }).notNull(),
+  expectedScores: json("expectedScores"),
+  perfilDesejado: varchar("perfilDesejado", { length: 10 }),
+  culturalDescription: text("culturalDescription"),
+  competenciasValorizadas: json("competenciasValorizadas"),
+  approvedByUserId: int("approvedByUserId"),
+  isActive: int("isActive").default(1).notNull(),
+  validFrom: date("validFrom"),
+  validTo: date("validTo"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DiscOrgProfile = typeof discOrgProfiles.$inferSelect;
+export type InsertDiscOrgProfile = typeof discOrgProfiles.$inferInsert;
+
+/**
+ * EcoDISC 360 - Matches de aderência (colaborador x cargo x empresa/diretoria)
+ */
+export const discMatches = mysqlTable("disc_matches", {
+  id: int("id").autoincrement().primaryKey(),
+  programId: int("programId").notNull(),
+  alunoId: int("alunoId").notNull(),
+  employeeAssessmentId: int("employeeAssessmentId").notNull(),
+  cargoProfileId: int("cargoProfileId"),
+  orgProfileId: int("orgProfileId"),
+  matchEmployeeRole: decimal("matchEmployeeRole", { precision: 5, scale: 2 }),
+  matchEmployeeOrg: decimal("matchEmployeeOrg", { precision: 5, scale: 2 }),
+  matchRoleOrg: decimal("matchRoleOrg", { precision: 5, scale: 2 }),
+  matchOverall: decimal("matchOverall", { precision: 5, scale: 2 }),
+  classificationEmployeeRole: mysqlEnum("classificationEmployeeRole", [
+    "alto",
+    "bom",
+    "medio",
+    "baixo",
+    "desalinhado",
+  ]),
+  classificationEmployeeOrg: mysqlEnum("classificationEmployeeOrg", [
+    "alto",
+    "bom",
+    "medio",
+    "baixo",
+    "desalinhado",
+  ]),
+  classificationRoleOrg: mysqlEnum("classificationRoleOrg", [
+    "alto",
+    "bom",
+    "medio",
+    "baixo",
+    "desalinhado",
+  ]),
+  classificationOverall: mysqlEnum("classificationOverall", [
+    "alto",
+    "bom",
+    "medio",
+    "baixo",
+    "desalinhado",
+  ]),
+  strengths: json("strengths"),
+  gaps: json("gaps"),
+  risks: json("risks"),
+  recommendations: json("recommendations"),
+  calculatedAt: timestamp("calculatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DiscMatch = typeof discMatches.$inferSelect;
+export type InsertDiscMatch = typeof discMatches.$inferInsert;
+
+/**
+ * EcoDISC 360 - Histórico de relatórios PDF gerados
+ */
+export const discGeneratedReports = mysqlTable("disc_generated_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  programId: int("programId").notNull(),
+  alunoId: int("alunoId"),
+  departmentId: int("departmentId"),
+  assessmentId: int("assessmentId"),
+  matchId: int("matchId"),
+  reportType: mysqlEnum("reportType", [
+    "individual",
+    "cargo",
+    "empresa",
+    "diretoria",
+    "match",
+    "integrado",
+    "gerencial",
+    "matriz",
+  ]).notNull(),
+  fileUrl: text("fileUrl"),
+  generatedByUserId: int("generatedByUserId"),
+  generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+  version: varchar("version", { length: 20 }),
+  status: mysqlEnum("status", ["ativo", "arquivado", "substituido"])
+    .default("ativo")
+    .notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DiscGeneratedReport = typeof discGeneratedReports.$inferSelect;
+export type InsertDiscGeneratedReport = typeof discGeneratedReports.$inferInsert;
