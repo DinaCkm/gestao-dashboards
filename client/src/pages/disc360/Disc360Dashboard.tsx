@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Building2, BriefcaseBusiness, ClipboardCheck, Target, BarChart3, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 type Disc360CardConfig = {
   icon: React.ElementType;
@@ -18,7 +19,7 @@ const cards: Disc360CardConfig[] = [
     title: "Perfis de Empresa/Diretoria",
     description: "Cadastre o perfil comportamental (DISC) desejado para a empresa ou para uma diretoria.",
     path: "/disc360/perfis-empresa",
-    disponivel: false,
+    disponivel: true,
   },
   {
     icon: BriefcaseBusiness,
@@ -66,6 +67,8 @@ export default function Disc360Dashboard() {
 }
 
 function Disc360DashboardContent() {
+  const [, setLocation] = useLocation();
+
   const handleCardClick = (card: Disc360CardConfig) => {
     if (!card.disponivel) {
       toast.info("Funcionalidade em breve", {
@@ -73,6 +76,7 @@ function Disc360DashboardContent() {
       });
       return;
     }
+    setLocation(card.path);
   };
 
   return (
