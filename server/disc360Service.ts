@@ -107,17 +107,25 @@ export async function createOrgProfile(database: DbClient, data: InsertDiscOrgPr
   return result?.insertId as number;
 }
 
-export async function listOrgProfiles(database: DbClient, programId: number) {
+export async function listOrgProfiles(database: DbClient, programId: number, includeInactive = false) {
+  const condition = includeInactive
+    ? eq(discOrgProfiles.programId, programId)
+    : and(eq(discOrgProfiles.programId, programId), eq(discOrgProfiles.isActive, 1));
   return database
     .select()
     .from(discOrgProfiles)
-    .where(and(eq(discOrgProfiles.programId, programId), eq(discOrgProfiles.isActive, 1)))
+    .where(condition)
     .orderBy(desc(discOrgProfiles.createdAt));
 }
 
 export async function getOrgProfileById(database: DbClient, id: number) {
   const rows = await database.select().from(discOrgProfiles).where(eq(discOrgProfiles.id, id)).limit(1);
   return rows[0] ?? null;
+}
+
+export async function updateOrgProfile(database: DbClient, id: number, data: Partial<InsertDiscOrgProfile>) {
+  await database.update(discOrgProfiles).set(data).where(eq(discOrgProfiles.id, id));
+  return getOrgProfileById(database, id);
 }
 
 // ---------------------------------------------------------------------------
