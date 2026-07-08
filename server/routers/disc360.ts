@@ -16,6 +16,7 @@ import {
   listRoleProfiles,
   createOrgProfile,
   listOrgProfiles,
+  updateOrgProfile,
   calculateAndSaveMatch,
   listMatchesByAluno,
   getManagementMatrix,
@@ -123,10 +124,41 @@ export const disc360Router = router({
     }),
 
   listOrgProfiles: protectedProcedure
-    .input(z.object({ programId: z.number() }))
+    .input(z.object({ programId: z.number(), includeInactive: z.boolean().optional() }))
     .query(async ({ input }) => {
       const database = await requireDatabase();
-      return listOrgProfiles(database, input.programId);
+      return listOrgProfiles(database, input.programId, input.includeInactive ?? false);
+    }),
+
+  updateOrgProfile: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        profileType: z.enum(["empresa", "diretoria"]).optional(),
+        profileName: z.string().min(1).optional(),
+        expectedScores: discScoresSchema.optional(),
+        perfilDesejado: z.string().nullable().optional(),
+        culturalDescription: z.string().nullable().optional(),
+        competenciasValorizadas: z.array(z.string()).nullable().optional(),
+        validFrom: z.string().nullable().optional(),
+        validTo: z.string().nullable().optional(),
+        isActive: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!isAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas administradores podem editar o DISC da empresa/diretoria.",
+        });
+      }
+      const { id, isActive, ...rest } = input;
+      const database = await requireDatabase();
+      const updateData: Record<string, any> = { ...rest };
+      if (isActive !== undefined) {
+        updateData.isActive = isActive ? 1 : 0;
+      }
+      return updateOrgProfile(database, id, updateData as any);
     }),
 
   // ---------------------------------------------------------------------
