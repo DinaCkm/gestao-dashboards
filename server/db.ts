@@ -263,6 +263,14 @@ export async function getAllDepartments() {
   return await db.select().from(departments).orderBy(departments.name);
 }
 
+export async function getDepartmentsByProgram(programId: number, includeInactive = false) {
+  if (!db) return [];
+  const condition = includeInactive
+    ? eq(departments.programId, programId)
+    : and(eq(departments.programId, programId), eq(departments.isActive, 1));
+  return await db.select().from(departments).where(condition).orderBy(departments.name);
+}
+
 export async function getDepartmentById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
