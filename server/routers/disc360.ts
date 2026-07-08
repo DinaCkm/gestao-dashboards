@@ -105,7 +105,7 @@ export const disc360Router = router({
         departmentId: z.number().nullable().optional(),
         profileType: z.enum(["empresa", "diretoria"]),
         profileName: z.string().min(1),
-        expectedScores: discScoresSchema,
+        expectedScores: discScoresSchema.optional(),
         perfilDesejado: z.string().nullable().optional(),
         culturalDescription: z.string().nullable().optional(),
         competenciasValorizadas: z.array(z.string()).nullable().optional(),
@@ -123,7 +123,8 @@ export const disc360Router = router({
       const database = await requireDatabase();
       const insertId = await createOrgProfile(database, {
         ...input,
-        origemPerfil: "manual",
+        expectedScores: input.expectedScores ?? { D: 0, I: 0, S: 0, C: 0 },
+        origemPerfil: input.expectedScores ? "manual" : "questionario",
         approvedByUserId: (ctx as any)?.user?.id ?? null,
       } as any);
       return { id: insertId };
