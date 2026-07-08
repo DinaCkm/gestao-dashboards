@@ -539,7 +539,10 @@ export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  managerId: int("managerId"),
+  managerId: int("managerId"), // Lider do departamento - referencia consultors.id (consultor com role gerente)
+  programId: int("programId"), // Empresa/programa ao qual o departamento pertence
+  parentDepartmentId: int("parentDepartmentId"), // Departamento pai, para hierarquia (null = departamento raiz)
+  isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
