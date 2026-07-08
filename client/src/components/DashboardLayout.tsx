@@ -158,6 +158,13 @@ const adminMenuGroups: MenuGroup[] = [
     ],
   },
   {
+    icon: Sparkles,
+    label: "EcoDISC 360",
+    items: [
+      { icon: Sparkles, label: "Painel EcoDISC 360", path: "/disc360" },
+    ],
+  },
+  {
     icon: Settings,
     label: "Parametrização",
     items: [
