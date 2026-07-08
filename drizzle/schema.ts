@@ -2067,7 +2067,7 @@ export const discOrgProfiles = mysqlTable("disc_org_profiles", {
   validTo: date("validTo"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  origemPerfil: mysqlEnum("origemPerfil", ["manual","questionario"]),
+  origemPerfil: mysqlEnum("origemPerfil", ["manual","questionario","grupo_diretores"]),
   statusConsistencia: mysqlEnum("statusConsistencia", ["previa","suficiente"]),
   totalRespondentes: int("totalRespondentes"),
 });
@@ -2175,3 +2175,13 @@ export const discCultureSurveyAnswers = mysqlTable("disc_culture_survey_answers"
 
 export type DiscCultureSurveyAnswer = typeof discCultureSurveyAnswers.$inferSelect;
 export type InsertDiscCultureSurveyAnswer = typeof discCultureSurveyAnswers.$inferInsert;
+
+export const discDiretoriaMembros = mysqlTable("disc_diretoria_membros", {
+  id: int("id").autoincrement().primaryKey(),
+  orgProfileId: int("orgProfileId").notNull(), // FK para disc_org_profiles (perfil da diretoria)
+  alunoId: int("alunoId").notNull(), // FK para alunos (diretor selecionado)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DiscDiretoriaMembro = typeof discDiretoriaMembros.$inferSelect;
+export type InsertDiscDiretoriaMembro = typeof discDiretoriaMembros.$inferInsert;
