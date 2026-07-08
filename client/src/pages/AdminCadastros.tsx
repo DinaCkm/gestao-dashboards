@@ -926,6 +926,15 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [editTipoMentoria, setEditTipoMentoria] = useState("individual");
   const [editTotalSessoes, setEditTotalSessoes] = useState("");
   const [editTelefone, setEditTelefone] = useState("");
+  const [editDepartmentId, setEditDepartmentId] = useState("");
+  const { data: departamentosEdicao = [] } = trpc.departments.list.useQuery(
+    { programId: editProgramId ? parseInt(editProgramId) : undefined, includeInactive: false },
+    { enabled: !!editProgramId }
+  );
+  const departamentoEdicaoSelecionado = departamentosEdicao.find((d: any) => String(d.id) === editDepartmentId);
+  const liderEdicaoNome = departamentoEdicaoSelecionado?.managerId
+    ? (gerentes || []).find((g: any) => g.id === departamentoEdicaoSelecionado.managerId)?.name || null
+    : null;
   const [editCargo, setEditCargo] = useState("");
   const [editAreaAtuacao, setEditAreaAtuacao] = useState("");
   const [editMinicurriculo, setEditMinicurriculo] = useState("");
@@ -971,6 +980,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     setEditCargo(aluno.cargo || "");
     setEditAreaAtuacao(aluno.areaAtuacao || "");
     setEditMinicurriculo(aluno.minicurriculo || "");
+    setEditDepartmentId(aluno.departmentId ? String(aluno.departmentId) : "");
     setEditQuemEVoce(aluno.quemEVoce || "");
     setEditPlataformaAulas(aluno.plataformaAulas || "sistema_interno");
     setEditOpen(true);
@@ -1001,6 +1011,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       cargo: editCargo || null,
       areaAtuacao: editAreaAtuacao || null,
       minicurriculo: editMinicurriculo || null,
+      departmentId: editDepartmentId ? parseInt(editDepartmentId) : null,
       quemEVoce: editQuemEVoce || null,
       plataformaAulas: editPlataformaAulas as 'scaffold' | 'sistema_interno',
     });
@@ -1230,6 +1241,25 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     <div className="space-y-1">
                       <Label className="text-xs">Cargo</Label>
                       <Input value={editCargo} onChange={(e) => setEditCargo(e.target.value)} className="text-sm" placeholder="Ex: Gerente de Projetos" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Departamento</Label>
+                      <Select value={editDepartmentId} onValueChange={setEditDepartmentId}>
+                        <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Sem departamento" /></SelectTrigger>
+                        <SelectContent>
+                          {departamentosEdicao.map((d: any) => (
+                            <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Líder do departamento</Label>
+                      <p className="text-sm text-muted-foreground pt-2">
+                        {editDepartmentId ? (liderEdicaoNome || "Nenhum líder definido") : "Selecione um departamento"}
+                      </p>
                     </div>
                   </div>
                   <div className="space-y-1">
