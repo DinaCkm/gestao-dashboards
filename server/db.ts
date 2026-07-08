@@ -2077,6 +2077,7 @@ export async function updateAluno(alunoId: number, data: {
   turmaId?: number | null;
   telefone?: string | null;
   cargo?: string | null;
+  departmentId?: number | null;
   areaAtuacao?: string | null;
   minicurriculo?: string | null;
   quemEVoce?: string | null;
@@ -2098,6 +2099,7 @@ export async function updateAluno(alunoId: number, data: {
   if (data.turmaId !== undefined) updateData.turmaId = data.turmaId;
   if (data.telefone !== undefined) updateData.telefone = data.telefone;
   if (data.cargo !== undefined) updateData.cargo = data.cargo;
+  if (data.departmentId !== undefined) updateData.departmentId = data.departmentId;
   if (data.areaAtuacao !== undefined) updateData.areaAtuacao = data.areaAtuacao;
   if (data.minicurriculo !== undefined) updateData.minicurriculo = data.minicurriculo;
   if (data.quemEVoce !== undefined) updateData.quemEVoce = data.quemEVoce;
