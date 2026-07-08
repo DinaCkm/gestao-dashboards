@@ -66,6 +66,7 @@ import ProcessosSeletivosDashboard from "./pages/processos-seletivos/ProcessosSe
 import ProcessosSeletivosMentora from "./pages/processos-seletivos/ProcessosSeletivosMentora";
 import ProcessosSeletivosAvaliacao from "./pages/processos-seletivos/ProcessosSeletivosAvaliacao";
 import ProcessosSeletivosComunicado from "./pages/processos-seletivos/ProcessosSeletivosComunicado";
+import Disc360Dashboard from "./pages/disc360/Disc360Dashboard";
 import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
 import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
@@ -165,6 +166,7 @@ function Router() {
       <Route path={"/processos-seletivos/mentora"}><Redirect to="/processos-seletivos/avaliacao" /></Route>
       <Route path={"/processos-seletivos/avaliacao"} component={ProcessosSeletivosAvaliacao} />
       <Route path={"/processos-seletivos/comunicado"} component={ProcessosSeletivosComunicado} />
+      <Route path={"/disc360"} component={Disc360Dashboard} />
       <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
       <Route path={"/portal-candidato-processo"} component={ProcessosSeletivosDashboard} />
       <Route path={"/competencias-comp-tec"} component={CompetenciasCompTec} />
