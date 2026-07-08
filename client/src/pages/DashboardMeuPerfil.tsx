@@ -259,7 +259,11 @@ export default function DashboardMeuPerfil() {
     }
   }, [onboardingStatus, setLocation]);
 
-  const { data, isLoading } = trpc.indicadores.meuDashboard.useQuery();
+  const { data, isLoading, isError, refetch } = trpc.indicadores.meuDashboard.useQuery(undefined, {
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
   const { data: jornadaData } = trpc.jornada.minha.useQuery();
   const [pdiStatusFilter, setPdiStatusFilter] = useState<"todos" | "ativo" | "congelado">("todos");
   const [fotoPreviewPerfil, setFotoPreviewPerfil] = useState<string | null>(null);
@@ -672,8 +676,26 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
   if (isLoading) {
     return (
       <AlunoLayout>
-        <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0A1E3E]"></div>
+          <p className="text-sm text-gray-500">Carregando seu dashboard, aguarde um momento…</p>
+        </div>
+      </AlunoLayout>
+    );
+  }
+
+  if (isError) {
+    return (
+      <AlunoLayout>
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
+          <AlertTriangle className="h-16 w-16 text-amber-400" />
+          <h2 className="text-xl font-semibold text-gray-700">Não foi possível carregar o dashboard</h2>
+          <p className="text-gray-500 text-center max-w-md">
+            Ocorreu um erro ao buscar seus dados. Isso pode acontecer quando o servidor está sob alta carga.
+          </p>
+          <Button onClick={() => refetch()} variant="outline" className="mt-2">
+            Tentar novamente
+          </Button>
         </div>
       </AlunoLayout>
     );
