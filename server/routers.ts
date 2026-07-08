@@ -33,6 +33,7 @@ import { jornadaRouter } from "./routers/jornada";
 import { fichasPedagogicasRouter } from "./routers/fichasPedagogicas";
 import { bibliotecaLivrosRouter } from "./routers/bibliotecaLivros";
 import { processosSeletivosRouter } from "./routers/processosSeletivos";
+import { disc360Router } from "./routers/disc360";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
@@ -517,6 +518,7 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
 export const appRouter = router({
   system: systemRouter,
   processosSeletivos: processosSeletivosRouter,
+  disc360: disc360Router,
   jornada: jornadaRouter,
   fichasPedagogicas: fichasPedagogicasRouter,
   bibliotecaLivros: bibliotecaLivrosRouter,
