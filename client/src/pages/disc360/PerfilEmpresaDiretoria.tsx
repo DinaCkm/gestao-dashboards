@@ -14,6 +14,7 @@ import { Pencil, Power, ClipboardList, ChevronDown } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import QuestionarioCulturaEmpresa from "@/components/disc360/QuestionarioCulturaEmpresa";
+import SelecaoDiretores from "@/components/disc360/SelecaoDiretores";
 
 type ProfileType = "empresa" | "diretoria";
 
@@ -71,6 +72,8 @@ function PerfilEmpresaDiretoriaContent() {
   const [empresaModo, setEmpresaModo] = useState<"escolha" | "questionario" | "manual">("escolha");
   const [form, setForm] = useState<FormState>(emptyForm("empresa"));
   const [questionarioOrgProfileId, setQuestionarioOrgProfileId] = useState<number | null>(null);
+  const [diretoriaSelecionadaId, setDiretoriaSelecionadaId] = useState<number | null>(null);
+  const [nomeNovaDiretoria, setNomeNovaDiretoria] = useState("");
   const [mostrarFormularioPerguntas, setMostrarFormularioPerguntas] = useState(false);
   const [mostrarPrevia, setMostrarPrevia] = useState(false);
 
@@ -234,6 +237,30 @@ function PerfilEmpresaDiretoriaContent() {
     );
   };
 
+  const handleCriarDiretoria = () => {
+    if (!numericProgramId) {
+      toast.error("Selecione um programa/empresa.");
+      return;
+    }
+    if (!nomeNovaDiretoria.trim()) {
+      toast.error("Informe o nome do perfil de Diretoria.");
+      return;
+    }
+    createMutation.mutate(
+      {
+        programId: numericProgramId,
+        profileType: "diretoria",
+        profileName: nomeNovaDiretoria.trim(),
+      },
+      {
+        onSuccess: (data: any) => {
+          setDiretoriaSelecionadaId(data.id);
+          setNomeNovaDiretoria("");
+        },
+      }
+    );
+  };
+
   const handleVerPrevia = () => {
     setMostrarPrevia(true);
     refetchPrevia();
@@ -275,6 +302,11 @@ function PerfilEmpresaDiretoriaContent() {
                 <TableCell className="text-right space-x-2">
                   {perfil.profileType === "empresa" && perfil.origemPerfil === "questionario" && (
                     <Button variant="ghost" size="icon" onClick={() => { setQuestionarioOrgProfileId(perfil.id); setEmpresaModo("questionario"); }} title="Abrir questionário">
+                      <ClipboardList className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {perfil.profileType === "diretoria" && (
+                    <Button variant="ghost" size="icon" onClick={() => setDiretoriaSelecionadaId(perfil.id)} title="Selecionar diretores">
                       <ClipboardList className="h-4 w-4" />
                     </Button>
                   )}
@@ -453,9 +485,28 @@ function PerfilEmpresaDiretoriaContent() {
                     <strong className="text-foreground">Como escolher os profissionais:</strong> selecione apenas pessoas que ocupam o cargo de Diretor(a) nesta área e que já tenham respondido ao DISC individual. Inclua todos os diretores relevantes da área — quanto mais diretores incluídos, mais representativo é o resultado. Evite selecionar diretores de outras áreas ou pessoas em cargos diferentes de Diretor.
                   </p>
                   <p className="italic">
-                    A seleção dos diretores e a busca automática dos DISCs individuais ainda depende do cadastro de Cargo/Departamento/Líder (próximo bloco) e do Questionário DISC individual do colaborador. Assim que essas etapas estiverem prontas, você poderá selecionar os diretores diretamente aqui.
+                    A seleção dos diretores e a busca automática dos DISCs individuais usam o DISC que a pessoa já respondeu na plataforma.
                   </p>
                 </div>
+
+                {!diretoriaSelecionadaId ? (
+                  <div className="space-y-2 max-w-md">
+                    <Label className="text-xs">Nome do perfil de Diretoria</Label>
+                    <Input value={nomeNovaDiretoria} onChange={(e) => setNomeNovaDiretoria(e.target.value)} placeholder="Ex: Diretoria Comercial" />
+                    <Button size="sm" onClick={handleCriarDiretoria} disabled={isSaving}>
+                      Criar e selecionar diretores
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Selecionando diretores para este perfil</p>
+                      <Button variant="ghost" size="sm" onClick={() => setDiretoriaSelecionadaId(null)}>Fechar</Button>
+                    </div>
+                    {numericProgramId && <SelecaoDiretores programId={numericProgramId} orgProfileId={diretoriaSelecionadaId} />}
+                  </div>
+                )}
+
                 <Collapsible>
                   <CollapsibleTrigger asChild>
                     <Button variant="ghost" size="sm" className="text-muted-foreground">
