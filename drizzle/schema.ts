@@ -198,6 +198,7 @@ export const alunos = mysqlTable("alunos", {
   totalSessoesContratadas: int("totalSessoesContratadas").default(0), // Nº total de sessões de mentoria contratadas
   telefone: varchar("telefone", { length: 20 }),
   cargo: varchar("cargo", { length: 255 }),
+  departmentId: int("departmentId"),
   areaAtuacao: varchar("areaAtuacao", { length: 255 }),
   minicurriculo: text("minicurriculo"),
   quemEVoce: text("quemEVoce"),
