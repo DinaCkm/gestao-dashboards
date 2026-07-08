@@ -4905,6 +4905,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { found: false as const, message: 'Nenhum perfil de aluno vinculado a esta conta.' };
       }
 
+      const t0MeuDashboard = Date.now();
+      console.log(`[meuDashboard] Iniciando carregamento para aluno ${aluno.id} (${aluno.name})`);
+
       // Buscar dados do aluno e dados globais em paralelo (com cache de 5min para dados globais)
       const [
         competenciasObrigatorias,
@@ -5244,7 +5247,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const casesDataAll: CaseSucessoData[] = [];
       for (const [, cases] of Array.from(casesMapAll.entries())) { casesDataAll.push(...cases); }
       const macrocicloPorAlunoRanking = macrocicloPorAlunoGlobal;
-      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking, compIdToNomeMapAll);
+
+      // Cache do cálculo pesado de todos os alunos (5 min TTL) para evitar recalcular a cada request
+      console.log(`[meuDashboard] Iniciando calcularIndicadoresTodosAlunos para aluno ${aluno.id} (${aluno.name})`);
+      const t0Ranking = Date.now();
+      const todosIndicadoresV2 = await cacheOrFetch(
+        'todosIndicadoresV2',
+        () => Promise.resolve(calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, undefined, macrocicloPorAlunoRanking, compIdToNomeMapAll)),
+      );
+      console.log(`[meuDashboard] calcularIndicadoresTodosAlunos concluído em ${Date.now() - t0Ranking}ms`);
 
       let ranking = { posicao: 0, totalAlunos: 0 };
       if (aluno.programId) {
@@ -5260,6 +5271,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
       // Usar indicadores V2 do aluno para notaFinal e performanceGeral consistentes
       const alunoIndicadoresV2Global = todosIndicadoresV2.find(i => i.idUsuario === idUsuario);
+
+      console.log(`[meuDashboard] Carregamento concluído em ${Date.now() - t0MeuDashboard}ms para aluno ${aluno.id}`);
 
       return {
         found: true as const,
