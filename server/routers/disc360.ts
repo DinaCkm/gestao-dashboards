@@ -1,0 +1,276 @@
+/**
+ * EcoDISC 360 - Aderencia Pessoa x Cargo x Cultura
+ * Router tRPC do modulo. Mantem isolamento total do DISC legado
+ * (disc_respostas / disc_resultados nao sao tocados por este arquivo).
+ */
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import { protectedProcedure, router } from "../_core/trpc";
+import { getDb } from "../db";
+import {
+  createAssessment,
+  saveAssessmentAnswers,
+  getAssessmentById,
+  getLatestEmployeeAssessment,
+  createRoleProfile,
+  listRoleProfiles,
+  createOrgProfile,
+  listOrgProfiles,
+  calculateAndSaveMatch,
+  listMatchesByAluno,
+  getManagementMatrix,
+  registerGeneratedReport,
+} from "../disc360Service";
+
+const adminRoles = new Set(["admin", "admin2"]);
+const isAdmin = (role?: string | null) => adminRoles.has(role ?? "");
+const isManagerOrAdmin = (role?: string | null) => isAdmin(role) || role === "manager";
+
+const requireDatabase = async () => {
+  const database = await getDb();
+  if (!database) {
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+  }
+  return database;
+};
+
+const discScoresSchema = z.object({
+  D: z.number(),
+  I: z.number(),
+  S: z.number(),
+  C: z.number(),
+});
+
+const discDimensionEnum = z.enum(["D", "I", "S", "C"]);
+const intensidadeEnum = z.enum(["baixo", "medio", "alto"]);
+const intensidadeFemininaEnum = z.enum(["baixa", "media", "alta"]);
+
+export const disc360Router = router({
+  // ---------------------------------------------------------------------
+  // Perfis de Cargo (DISC do Cargo)
+  // ---------------------------------------------------------------------
+  createRoleProfile: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        departmentId: z.number().nullable().optional(),
+        cargoNome: z.string().min(1),
+        cargoCodigo: z.string().nullable().optional(),
+        leaderUserId: z.number().nullable().optional(),
+        expectedScores: discScoresSchema,
+        perfilEsperado: z.string().nullable().optional(),
+        nivelAutonomia: intensidadeEnum.nullable().optional(),
+        nivelPressao: intensidadeEnum.nullable().optional(),
+        necessidadeRelacionamento: intensidadeFemininaEnum.nullable().optional(),
+        necessidadeAnaliseTecnica: intensidadeFemininaEnum.nullable().optional(),
+        necessidadeRotinaProcesso: intensidadeFemininaEnum.nullable().optional(),
+        descricao: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas lideres, gestores ou administradores podem cadastrar o DISC do cargo.",
+        });
+      }
+      const database = await requireDatabase();
+      const insertId = await createRoleProfile(database, {
+        ...input,
+        createdByUserId: (ctx as any)?.user?.id ?? null,
+      } as any);
+      return { id: insertId };
+    }),
+
+  listRoleProfiles: protectedProcedure
+    .input(z.object({ programId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return listRoleProfiles(database, input.programId);
+    }),
+
+  // ---------------------------------------------------------------------
+  // Perfis de Empresa/Diretoria (DISC da Empresa/Diretoria)
+  // ---------------------------------------------------------------------
+  createOrgProfile: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        departmentId: z.number().nullable().optional(),
+        profileType: z.enum(["empresa", "diretoria"]),
+        profileName: z.string().min(1),
+        expectedScores: discScoresSchema,
+        perfilDesejado: z.string().nullable().optional(),
+        culturalDescription: z.string().nullable().optional(),
+        competenciasValorizadas: z.array(z.string()).nullable().optional(),
+        validFrom: z.string().nullable().optional(),
+        validTo: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!isAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas administradores podem cadastrar o DISC da empresa/diretoria.",
+        });
+      }
+      const database = await requireDatabase();
+      const insertId = await createOrgProfile(database, {
+        ...input,
+        approvedByUserId: (ctx as any)?.user?.id ?? null,
+      } as any);
+      return { id: insertId };
+    }),
+
+  listOrgProfiles: protectedProcedure
+    .input(z.object({ programId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return listOrgProfiles(database, input.programId);
+    }),
+
+  // ---------------------------------------------------------------------
+  // DISC do Empregado
+  // ---------------------------------------------------------------------
+  getEmployeeAssessment: protectedProcedure
+    .input(z.object({ alunoId: z.number(), programId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return getLatestEmployeeAssessment(database, input.alunoId, input.programId);
+    }),
+
+  createEmployeeAssessment: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        alunoId: z.number(),
+        scores: discScoresSchema,
+        rawScores: z.record(z.number()).nullable().optional(),
+        perfilPredominante: discDimensionEnum.nullable().optional(),
+        perfilSecundario: discDimensionEnum.nullable().optional(),
+        indiceConsistencia: z.number().nullable().optional(),
+        alertaBaixaDiferenciacao: z.boolean().optional(),
+        answers: z
+          .array(
+            z.object({
+              blocoIndex: z.number(),
+              maisId: z.string(),
+              menosId: z.string(),
+              maisDimensao: discDimensionEnum,
+              menosDimensao: discDimensionEnum,
+            })
+          )
+          .optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { answers, ...assessmentData } = input;
+      const database = await requireDatabase();
+      const insertId = await createAssessment(database, {
+        ...assessmentData,
+        assessmentType: "empregado",
+        respondedByUserId: (ctx as any)?.user?.id ?? null,
+        status: "concluido",
+        completedAt: new Date(),
+      } as any);
+      if (answers && answers.length > 0) {
+        await saveAssessmentAnswers(database, insertId, answers as any);
+      }
+      return { id: insertId };
+    }),
+
+  // ---------------------------------------------------------------------
+  // Matches (calculo de aderencia)
+  // ---------------------------------------------------------------------
+  calculateMatch: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        alunoId: z.number(),
+        employeeAssessmentId: z.number(),
+        cargoProfileId: z.number().nullable().optional(),
+        orgProfileId: z.number().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas lideres, gestores ou administradores podem calcular matches.",
+        });
+      }
+      const database = await requireDatabase();
+      return calculateAndSaveMatch(database, input);
+    }),
+
+  listMyMatches: protectedProcedure.query(async ({ ctx }) => {
+    const alunoId = (ctx as any)?.user?.alunoId;
+    if (!alunoId) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Usuario nao esta vinculado a um perfil de colaborador.",
+      });
+    }
+    const database = await requireDatabase();
+    return listMatchesByAluno(database, alunoId);
+  }),
+
+  listMatchesByAluno: protectedProcedure
+    .input(z.object({ alunoId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return listMatchesByAluno(database, input.alunoId);
+    }),
+
+  // ---------------------------------------------------------------------
+  // Matriz gerencial
+  // ---------------------------------------------------------------------
+  getManagementMatrix: protectedProcedure
+    .input(z.object({ programId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return getManagementMatrix(database, input.programId);
+    }),
+
+  // ---------------------------------------------------------------------
+  // Relatorios gerados (controle/rastreabilidade)
+  // ---------------------------------------------------------------------
+  registerGeneratedReport: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        alunoId: z.number().nullable().optional(),
+        departmentId: z.number().nullable().optional(),
+        assessmentId: z.number().nullable().optional(),
+        matchId: z.number().nullable().optional(),
+        reportType: z.enum([
+          "individual",
+          "cargo",
+          "empresa",
+          "diretoria",
+          "match",
+          "integrado",
+          "gerencial",
+          "matriz",
+        ]),
+        fileUrl: z.string().nullable().optional(),
+        version: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      const insertId = await registerGeneratedReport(database, {
+        ...input,
+        generatedByUserId: (ctx as any)?.user?.id ?? null,
+        generatedAt: new Date(),
+        status: "ativo",
+      } as any);
+      return { id: insertId };
+    }),
+});
