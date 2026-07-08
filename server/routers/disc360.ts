@@ -21,7 +21,12 @@ import {
   listMatchesByAluno,
   getManagementMatrix,
   registerGeneratedReport,
+  submitCultureSurveyResponse,
+  listCultureAssessmentsByOrgProfile,
+  previewCultureConsolidation,
+  consolidateOrgProfileFromCulture,
 } from "../disc360Service";
+import { DISC360_CULTURE_QUESTIONS } from "../../shared/disc360CultureQuestions";
 
 const adminRoles = new Set(["admin", "admin2"]);
 const isAdmin = (role?: string | null) => adminRoles.has(role ?? "");
@@ -118,6 +123,7 @@ export const disc360Router = router({
       const database = await requireDatabase();
       const insertId = await createOrgProfile(database, {
         ...input,
+        origemPerfil: "manual",
         approvedByUserId: (ctx as any)?.user?.id ?? null,
       } as any);
       return { id: insertId };
@@ -128,6 +134,64 @@ export const disc360Router = router({
     .query(async ({ input }) => {
       const database = await requireDatabase();
       return listOrgProfiles(database, input.programId, input.includeInactive ?? false);
+    }),
+
+  // ---------------------------------------------------------------------
+  // Questionario de Cultura Comportamental da Empresa
+  // ---------------------------------------------------------------------
+  getCultureQuestions: protectedProcedure.query(() => DISC360_CULTURE_QUESTIONS),
+
+  submitCultureSurveyResponse: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        orgProfileId: z.number(),
+        respostas: z.array(
+          z.object({
+            questionId: z.string(),
+            dimensao: discDimensionEnum,
+          })
+        ),
+        respondentName: z.string().nullable().optional(),
+        respondentEmail: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+      return submitCultureSurveyResponse(database, {
+        ...input,
+        respondedByUserId: (ctx as any)?.user?.id ?? null,
+      });
+    }),
+
+  listCultureAssessments: protectedProcedure
+    .input(z.object({ orgProfileId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return listCultureAssessmentsByOrgProfile(database, input.orgProfileId);
+    }),
+
+  previewCultureConsolidation: protectedProcedure
+    .input(z.object({ orgProfileId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return previewCultureConsolidation(database, input.orgProfileId);
+    }),
+
+  consolidateOrgProfileFromCulture: protectedProcedure
+    .input(z.object({ orgProfileId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Apenas administradores podem validar o Perfil DISC oficial da empresa." });
+      }
+      const database = await requireDatabase();
+      return consolidateOrgProfileFromCulture(database, input.orgProfileId);
     }),
 
   updateOrgProfile: protectedProcedure
