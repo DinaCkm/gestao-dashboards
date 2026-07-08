@@ -568,6 +568,13 @@
       "when": 1783539249787,
       "tag": "0087_ecodisc360_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "5",
+      "when": 1783545756237,
+      "tag": "0088_departments_hierarquia",
+      "breakpoints": true
     }
   ]
 }
