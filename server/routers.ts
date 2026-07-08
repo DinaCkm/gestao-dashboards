@@ -978,15 +978,22 @@ export const appRouter = router({
 
   // Department management
   departments: router({
-    list: protectedProcedure.query(async () => {
-      return await db.getAllDepartments();
-    }),
+    list: protectedProcedure
+      .input(z.object({ programId: z.number().optional(), includeInactive: z.boolean().optional() }).optional())
+      .query(async ({ input }) => {
+        if (input?.programId) {
+          return await db.getDepartmentsByProgram(input.programId, input.includeInactive ?? false);
+        }
+        return await db.getAllDepartments();
+      }),
     
     create: adminProcedure
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
-        managerId: z.number().optional()
+        managerId: z.number().optional(),
+        programId: z.number().optional(),
+        parentDepartmentId: z.number().optional()
       }))
       .mutation(async ({ input }) => {
         const id = await db.createDepartment(input);
@@ -998,10 +1005,17 @@ export const appRouter = router({
         id: z.number(),
         name: z.string().min(1).optional(),
         description: z.string().optional(),
-        managerId: z.number().nullable().optional()
+        managerId: z.number().nullable().optional(),
+        programId: z.number().nullable().optional(),
+        parentDepartmentId: z.number().nullable().optional(),
+        isActive: z.boolean().optional()
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, isActive, ...rest } = input;
+        const data: Record<string, any> = { ...rest };
+        if (isActive !== undefined) {
+          data.isActive = isActive ? 1 : 0;
+        }
         await db.updateDepartment(id, data);
         return { success: true };
       }),
