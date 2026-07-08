@@ -210,3 +210,122 @@ export function calculateFullMatch(
     recommendations: buildRecommendations(gaps),
   };
 }
+
+/**
+ * Consolidacao do Perfil DISC da Diretoria a partir do DISC individual (legado)
+ * dos diretores selecionados manualmente pelo RH.
+ *
+ * Diferente do calculo de "aderencia" acima (que compara PERFIS diferentes entre si),
+ * aqui o objetivo e encontrar o "numero ideal" de cada indicador (D, I, S, C) que
+ * representa o FATOR PREDOMINANTE do grupo de diretores.
+ *
+ * Regra (definida com a Dina): para cada indicador, se o grupo se dividir em
+ * subgrupos com mais de 30 pontos de diferenca entre eles, usamos a media do
+ * MAIOR subgrupo e desconsideramos os demais (para nao diluir o fator predominante).
+ * Se nao houver um subgrupo claramente maior (empate), usamos a media de todos.
+ */
+
+export type PessoaComScore = {
+  alunoId: number;
+  nome: string;
+  scores: DiscScores;
+};
+
+export type DetalheIndicador = {
+  valorFinal: number;
+  grupoUsado: "maioria" | "todos";
+  incluidos: { alunoId: number; nome: string; valor: number }[];
+  excluidos: { alunoId: number; nome: string; valor: number }[];
+};
+
+export type ResultadoGrupoDiretoria = {
+  scoresFinais: DiscScores;
+  detalhePorIndicador: Record<"D" | "I" | "S" | "C", DetalheIndicador>;
+  perfilPredominante: "D" | "I" | "S" | "C";
+  perfilSecundario: "D" | "I" | "S" | "C";
+  perfilSugerido: string;
+};
+
+const LIMITE_QUEBRA_GRUPO_DIRETORIA = 30;
+
+function mediaSimples(valores: number[]): number {
+  const soma = valores.reduce((acc, v) => acc + v, 0);
+  return Math.round((soma / valores.length) * 100) / 100;
+}
+
+function calcularIndicadorPorMaioria(
+  pessoas: { alunoId: number; nome: string; valor: number }[]
+): DetalheIndicador {
+  const ordenado = [...pessoas].sort((a, b) => a.valor - b.valor);
+
+  const grupos: (typeof ordenado)[] = [];
+  let grupoAtual: typeof ordenado = [ordenado[0]];
+  for (let i = 1; i < ordenado.length; i++) {
+    if (ordenado[i].valor - ordenado[i - 1].valor > LIMITE_QUEBRA_GRUPO_DIRETORIA) {
+      grupos.push(grupoAtual);
+      grupoAtual = [];
+    }
+    grupoAtual.push(ordenado[i]);
+  }
+  grupos.push(grupoAtual);
+
+  if (grupos.length === 1) {
+    return {
+      valorFinal: mediaSimples(pessoas.map((p) => p.valor)),
+      grupoUsado: "todos",
+      incluidos: pessoas,
+      excluidos: [],
+    };
+  }
+
+  const maiorTamanho = Math.max(...grupos.map((g) => g.length));
+  const maiores = grupos.filter((g) => g.length === maiorTamanho);
+
+  if (maiores.length > 1) {
+    return {
+      valorFinal: mediaSimples(pessoas.map((p) => p.valor)),
+      grupoUsado: "todos",
+      incluidos: pessoas,
+      excluidos: [],
+    };
+  }
+
+  const grupoMaioria = maiores[0];
+  const idsIncluidos = new Set(grupoMaioria.map((p) => p.alunoId));
+  const incluidos = pessoas.filter((p) => idsIncluidos.has(p.alunoId));
+  const excluidos = pessoas.filter((p) => !idsIncluidos.has(p.alunoId));
+
+  return {
+    valorFinal: mediaSimples(grupoMaioria.map((p) => p.valor)),
+    grupoUsado: "maioria",
+    incluidos,
+    excluidos,
+  };
+}
+
+export function calcularPerfilDiretoriaPorGrupo(pessoas: PessoaComScore[]): ResultadoGrupoDiretoria {
+  const dimensoes: ("D" | "I" | "S" | "C")[] = ["D", "I", "S", "C"];
+  const detalhePorIndicador = {} as Record<"D" | "I" | "S" | "C", DetalheIndicador>;
+
+  for (const dim of dimensoes) {
+    const valores = pessoas.map((p) => ({ alunoId: p.alunoId, nome: p.nome, valor: p.scores[dim] }));
+    detalhePorIndicador[dim] = calcularIndicadorPorMaioria(valores);
+  }
+
+  const scoresFinais: DiscScores = {
+    D: detalhePorIndicador.D.valorFinal,
+    I: detalhePorIndicador.I.valorFinal,
+    S: detalhePorIndicador.S.valorFinal,
+    C: detalhePorIndicador.C.valorFinal,
+  };
+
+  const perfil = determinarPerfil(scoresFinais);
+
+  return {
+    scoresFinais,
+    detalhePorIndicador,
+    perfilPredominante: perfil.predominante,
+    perfilSecundario: perfil.secundario,
+    perfilSugerido: perfil.sugerido,
+  };
+}
