@@ -3,6 +3,7 @@
  * Mantem isolamento total do DISC legado (disc_respostas / disc_resultados).
  */
 import { and, desc, eq } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import {
   discAssessments,
   discAssessmentAnswers,
@@ -449,4 +450,97 @@ export async function consolidateDiretoriaFromGrupo(database: DbClient, orgProfi
     totalRespondentes: preview.totalComDisc,
   });
   return preview;
+}
+
+
+// ---------------------------------------------------------------------------
+// Convites de respondentes - Perfil DISC da Empresa (link direto, sem login)
+// ---------------------------------------------------------------------------
+
+export type ConviteCulturaInput = {
+  alunoId?: number | null;
+  respondentName: string;
+  respondentEmail?: string | null;
+};
+
+export async function criarConvitesCulturaEmpresa(
+  database: DbClient,
+  input: { programId: number; orgProfileId: number; convites: ConviteCulturaInput[] }
+) {
+  const criados: Array<{ id: number; token: string; respondentName: string }> = [];
+  for (const convite of input.convites) {
+    const conviteToken = randomUUID();
+    const result: any = await database.insert(discAssessments).values({
+      programId: input.programId,
+      orgProfileId: input.orgProfileId,
+      alunoId: convite.alunoId ?? null,
+      assessmentType: "empresa",
+      status: "pendente",
+      respondentName: convite.respondentName,
+      respondentEmail: convite.respondentEmail ?? null,
+      conviteToken,
+    } as any);
+    const id = result?.[0]?.insertId as number;
+    criados.push({ id, token: conviteToken, respondentName: convite.respondentName });
+  }
+  return criados;
+}
+
+export async function listarConvitesCulturaEmpresa(database: DbClient, orgProfileId: number) {
+  return database
+    .select()
+    .from(discAssessments)
+    .where(
+      and(
+        eq(discAssessments.orgProfileId, orgProfileId),
+        eq(discAssessments.assessmentType, "empresa")
+      )
+    )
+    .orderBy(desc(discAssessments.createdAt));
+}
+
+export async function getConvitePorToken(database: DbClient, conviteToken: string) {
+  const rows = await database
+    .select()
+    .from(discAssessments)
+    .where(eq(discAssessments.conviteToken, conviteToken));
+  return (rows as any[])[0] ?? null;
+}
+
+export async function responderConviteCulturaEmpresa(
+  database: DbClient,
+  input: { token: string; respostas: RespostaCultura[] }
+) {
+  const convite = await getConvitePorToken(database, input.token);
+  if (!convite) {
+    throw new Error("Convite nao encontrado.");
+  }
+  if (convite.status !== "pendente") {
+    throw new Error("Este convite ja foi respondido.");
+  }
+
+  const resultado = calcularDiscCulturaEmpresa(input.respostas);
+
+  await database
+    .update(discAssessments)
+    .set({
+      status: "concluido",
+      scores: resultado.scores as any,
+      perfilPredominante: resultado.perfilPredominante as any,
+      perfilSecundario: resultado.perfilSecundario as any,
+      completedAt: new Date(),
+    } as any)
+    .where(eq(discAssessments.id, convite.id));
+
+  if (input.respostas.length > 0) {
+    await database.insert(discCultureSurveyAnswers).values(
+      input.respostas.map((resposta) => ({
+        assessmentId: convite.id,
+        questionId: resposta.questionId,
+        dimensaoEscolhida: resposta.dimensao,
+      }))
+    );
+  }
+
+  return { id: convite.id, ...resultado };
 }
