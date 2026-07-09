@@ -3,8 +3,15 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
+import { Copy, Eye } from "lucide-react";
 
 type Props = {
   programId: number;
@@ -19,6 +26,12 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
   );
 
   const [selecionados, setSelecionados] = useState<number[]>([]);
+  const [previewAberto, setPreviewAberto] = useState(false);
+
+  const { data: perguntasPreview = [], isLoading: carregandoPreview } = trpc.disc360.getCultureQuestions.useQuery(
+    undefined,
+    { enabled: previewAberto }
+  );
 
   const criarConvitesMutation = trpc.disc360.criarConvitesCulturaEmpresa.useMutation({
     onSuccess: (data: any) => {
@@ -40,6 +53,7 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
 
   const listaConvites = (convites ?? []) as any[];
   const listaAlunos = (alunos ?? []) as any[];
+  const listaPerguntasPreview = (perguntasPreview ?? []) as any[];
   const jaConvidadoIds = new Set(listaConvites.map((c) => c.alunoId).filter((id) => id != null));
   const alunosDisponiveis = listaAlunos.filter((a) => !jaConvidadoIds.has(a.id));
 
@@ -72,13 +86,20 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Selecionar respondentes</CardTitle>
-        <CardDescription>
-          Selecione os colaboradores que devem responder a pesquisa de cultura da empresa (minimo
-          recomendado: 5). Quem tiver e-mail cadastrado recebe o link automaticamente; para quem
-          nao tiver, copie o link e envie por WhatsApp ou outro canal. Cada pessoa responde pelo
-          proprio link, sem precisar de login.
-        </CardDescription>
+        <div className="flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <CardTitle className="text-base">Selecionar respondentes</CardTitle>
+            <CardDescription>
+              Selecione os colaboradores que devem responder a pesquisa de cultura da empresa
+              (minimo recomendado: 5). Quem tiver e-mail cadastrado recebe o link
+              automaticamente; para quem nao tiver, copie o link e envie por WhatsApp ou outro
+              canal. Cada pessoa responde pelo proprio link, sem precisar de login.
+            </CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setPreviewAberto(true)}>
+            <Eye className="h-4 w-4 mr-1" /> Visualizar questionário
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {alunosDisponiveis.length === 0 ? (
@@ -136,6 +157,37 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
           </div>
         )}
       </CardContent>
+
+      <Dialog open={previewAberto} onOpenChange={setPreviewAberto}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Prévia do questionário de cultura</DialogTitle>
+            <DialogDescription>
+              É apenas para visualização - as respostas aqui não são salvas. Cada colaborador
+              convidado responde pelo próprio link.
+            </DialogDescription>
+          </DialogHeader>
+          {carregandoPreview ? (
+            <p className="text-sm text-muted-foreground">Carregando perguntas...</p>
+          ) : (
+            <div className="space-y-4">
+              {listaPerguntasPreview.map((pergunta: any, index: number) => (
+                <div key={pergunta.id} className="space-y-1">
+                  <p className="text-sm font-medium">
+                    {index + 1}. {pergunta.tema}
+                  </p>
+                  <p className="text-sm text-muted-foreground">{pergunta.pergunta}</p>
+                  <ul className="text-sm list-disc pl-5 space-y-0.5">
+                    {pergunta.alternativas.map((alt: any) => (
+                      <li key={alt.id}>{alt.texto}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
