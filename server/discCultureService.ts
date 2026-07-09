@@ -100,7 +100,10 @@ export function calcularDiscEmpresaConsolidado(resultadosRespondentes: DiscScore
     statusConsistencia,
     indiceConcordancia: diferencaMedia,
     classificacaoConcordancia: classificacao,
-    textoConcordancia: TEXTOS_CONCORDANCIA[classificacao],
+    textoConcordancia:
+      totalRespondentes < MINIMO_RESPONDENTES_OFICIAL
+        ? "Resultado preliminar: apenas " + totalRespondentes + " de " + MINIMO_RESPONDENTES_OFICIAL + " respondentes recomendados ate agora. Ainda nao e possivel avaliar com confianca o grau de concordancia entre as percepcoes - aguarde mais respostas antes de validar o perfil oficial."
+        : TEXTOS_CONCORDANCIA[classificacao],
   };
 }
 
