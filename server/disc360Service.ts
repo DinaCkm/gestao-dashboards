@@ -29,6 +29,9 @@ import {
   calcularDiscEmpresaConsolidado,
   calcularPredominanciaPorTema,
   obterTextoEixoFaixa,
+  obterLeituraCombinada,
+  obterRecomendacoesPorPredominancia,
+  NOTA_METODOLOGICA_DISC,
   type RespostaCultura,
   type PredominanciaTema,
 } from "./discCultureService";
@@ -365,11 +368,17 @@ export async function getDashboardCultura(database: DbClient, orgProfileId: numb
     ])
   );
 
+  const eixoPredominante = consolidado.perfilPredominante as Disc360CultureDimension;
+  const eixoSecundario = consolidado.perfilSecundario as Disc360CultureDimension;
+
   return {
     nomeEmpresa,
     consolidado,
     predominanciaPorTema,
     textosPorEixo,
+    notaMetodologica: NOTA_METODOLOGICA_DISC,
+    leituraCombinada: obterLeituraCombinada(eixoPredominante, eixoSecundario),
+    recomendacoes: obterRecomendacoesPorPredominancia(eixoPredominante),
   };
 }
 
