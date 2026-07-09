@@ -70,6 +70,7 @@ import Disc360Dashboard from "./pages/disc360/Disc360Dashboard";
 import PerfilEmpresaDiretoria from "./pages/disc360/PerfilEmpresaDiretoria";
 import ResponderConviteCultura from "./pages/disc360/ResponderConviteCultura";
 import EstruturaOrganizacional from "./pages/disc360/EstruturaOrganizacional";
+import DashboardCultura from "./pages/disc360/DashboardCultura";
 import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
 import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
@@ -173,6 +174,7 @@ function Router() {
       <Route path={"/disc360/perfis-empresa"} component={PerfilEmpresaDiretoria} />
       <Route path={"/disc360/responder-convite/:token"} component={ResponderConviteCultura} />
       <Route path={"/disc360/estrutura-organizacional"} component={EstruturaOrganizacional} />
+      <Route path={"/disc360/dashboard-cultura/:orgProfileId"} component={DashboardCultura} />
       <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
       <Route path={"/portal-candidato-processo"} component={ProcessosSeletivosDashboard} />
       <Route path={"/competencias-comp-tec"} component={CompetenciasCompTec} />
