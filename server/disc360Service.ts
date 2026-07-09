@@ -37,7 +37,7 @@ type DbClient = NonNullable<Awaited<ReturnType<typeof getDb>>>;
 
 export async function createAssessment(database: DbClient, data: InsertDiscAssessment) {
   const result: any = await database.insert(discAssessments).values(data);
-  return result?.insertId as number;
+  return result?.[0]?.insertId as number;
 }
 
 export async function saveAssessmentAnswers(
@@ -91,7 +91,7 @@ export async function getLatestEmployeeAssessment(
 
 export async function createRoleProfile(database: DbClient, data: InsertDiscRoleProfile) {
   const result: any = await database.insert(discRoleProfiles).values(data);
-  return result?.insertId as number;
+  return result?.[0]?.insertId as number;
 }
 
 export async function listRoleProfiles(database: DbClient, programId: number) {
@@ -113,7 +113,7 @@ export async function getRoleProfileById(database: DbClient, id: number) {
 
 export async function createOrgProfile(database: DbClient, data: InsertDiscOrgProfile) {
   const result: any = await database.insert(discOrgProfiles).values(data);
-  return result?.insertId as number;
+  return result?.[0]?.insertId as number;
 }
 
 export async function listOrgProfiles(database: DbClient, programId: number, includeInactive = false) {
@@ -188,7 +188,7 @@ export async function calculateAndSaveMatch(database: DbClient, input: Calculate
 
   const insertId = await (async () => {
     const res: any = await database.insert(discMatches).values(values);
-    return res?.insertId as number;
+    return res?.[0]?.insertId as number;
   })();
 
   return { id: insertId, ...values };
@@ -220,7 +220,7 @@ export async function getManagementMatrix(database: DbClient, programId: number)
 
 export async function registerGeneratedReport(database: DbClient, data: InsertDiscGeneratedReport) {
   const result: any = await database.insert(discGeneratedReports).values(data);
-  return result?.insertId as number;
+  return result?.[0]?.insertId as number;
 }
 
 // ---------------------------------------------------------------------------
