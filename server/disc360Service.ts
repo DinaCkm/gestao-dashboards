@@ -3,6 +3,7 @@
  * Mantem isolamento total do DISC legado (disc_respostas / disc_resultados).
  */
 import { and, desc, eq } from "drizzle-orm";
+import { sendEmail } from "./emailService";
 import { randomUUID } from "crypto";
 import {
   discAssessments,
@@ -467,7 +468,7 @@ export async function criarConvitesCulturaEmpresa(
   database: DbClient,
   input: { programId: number; orgProfileId: number; convites: ConviteCulturaInput[] }
 ) {
-  const criados: Array<{ id: number; token: string; respondentName: string }> = [];
+  const criados: Array<{ id: number; token: string; respondentName: string; emailEnviado: boolean }> = [];
   for (const convite of input.convites) {
     const conviteToken = randomUUID();
     const result: any = await database.insert(discAssessments).values({
@@ -481,7 +482,24 @@ export async function criarConvitesCulturaEmpresa(
       conviteToken,
     } as any);
     const id = result?.[0]?.insertId as number;
-    criados.push({ id, token: conviteToken, respondentName: convite.respondentName });
+
+    let emailEnviado = false;
+    if (convite.respondentEmail) {
+      const link = "https://ecolider.ecodobem.com/disc360/responder-convite/" + conviteToken;
+      const nomeExibicao = convite.respondentName || "Colaborador(a)";
+      const envio = await sendEmail({
+        to: convite.respondentEmail,
+        subject: "Convite: Pesquisa de Cultura da Empresa",
+        html:
+          "<p>Ola, " + nomeExibicao + ".</p>" +
+          "<p>Voce foi convidado(a) a participar da pesquisa de cultura comportamental da empresa. " +
+          "Clique no link abaixo para responder (leva poucos minutos, sem necessidade de login):</p>" +
+          "<p><a href=\"" + link + "\">" + link + "</a></p>",
+      });
+      emailEnviado = !!envio?.success;
+    }
+
+    criados.push({ id, token: conviteToken, respondentName: convite.respondentName, emailEnviado });
   }
   return criados;
 }
