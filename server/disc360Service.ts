@@ -28,6 +28,7 @@ import {
   calcularDiscCulturaEmpresa,
   calcularDiscEmpresaConsolidado,
   calcularPredominanciaPorTema,
+  obterTextoEixoFaixa,
   type RespostaCultura,
   type PredominanciaTema,
 } from "./discCultureService";
@@ -338,6 +339,38 @@ export async function previewCultureConsolidation(database: DbClient, orgProfile
     .map((assessment) => assessment.scores as unknown as DiscScores)
     .filter((scores) => !!scores);
   return calcularDiscEmpresaConsolidado(scoresIndividuais);
+}
+
+/**
+ * Reune tudo que o Dashboard de Cultura precisa em uma unica chamada:
+ * o consolidado geral (D/I/S/C medio, predominante/secundario, status,
+ * concordancia), a predominancia por tema (24 perguntas) e o texto fixo
+ * ja correto para cada eixo (para exibir direto nos cards).
+ */
+export async function getDashboardCultura(database: DbClient, orgProfileId: number) {
+  const perfil = await getOrgProfileById(database, orgProfileId);
+  const nomeEmpresa = perfil?.profileName ?? "a empresa";
+
+  const consolidado = await previewCultureConsolidation(database, orgProfileId);
+  const predominanciaPorTema = await getPredominanciaPorTema(database, orgProfileId);
+
+  const dimensoes: Disc360CultureDimension[] = ["D", "I", "S", "C"];
+  const textosPorEixo = Object.fromEntries(
+    dimensoes.map((eixo) => [
+      eixo,
+      {
+        percentual: consolidado.scoresMedios[eixo],
+        texto: obterTextoEixoFaixa(eixo, consolidado.scoresMedios[eixo], nomeEmpresa),
+      },
+    ])
+  );
+
+  return {
+    nomeEmpresa,
+    consolidado,
+    predominanciaPorTema,
+    textosPorEixo,
+  };
 }
 
 /**
