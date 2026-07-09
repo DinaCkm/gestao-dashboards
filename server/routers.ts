@@ -7906,9 +7906,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const updateData: any = { ...data };
         if (contratoInicio !== undefined) updateData.contratoInicio = contratoInicio ? new Date(contratoInicio) : null;
         if (contratoFim !== undefined) updateData.contratoFim = contratoFim ? new Date(contratoFim) : null;
-        return await db.updateAluno(alunoId, updateData
         if (input.departmentId !== undefined) {
           await db.updateAluno(input.alunoId, { departmentId: input.departmentId });
+        }
+        return await db.updateAluno(alunoId, updateData);
         });
       }),
     
