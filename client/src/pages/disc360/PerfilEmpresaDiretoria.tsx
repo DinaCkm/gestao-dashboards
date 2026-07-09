@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -449,6 +450,13 @@ function PerfilEmpresaDiretoriaContent() {
                         <Button size="sm" onClick={handleValidarOficial} disabled={consolidarMutation.isPending || assessmentsCultura.length < 5}>
                           Validar Perfil Oficial
                         </Button>
+                        {questionarioOrgProfileId && (
+                          <Link href={`/disc360/dashboard-cultura/${questionarioOrgProfileId}`}>
+                            <Button variant="secondary" size="sm">
+                              Ver dashboard completo
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     </div>
 
