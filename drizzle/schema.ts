@@ -2178,7 +2178,10 @@ export const discCultureSurveyAnswers = mysqlTable("disc_culture_survey_answers"
   id: int("id").autoincrement().primaryKey(),
   assessmentId: int("assessmentId").notNull(),
   questionId: varchar("questionId", { length: 20 }).notNull(),
-  dimensaoEscolhida: mysqlEnum("dimensaoEscolhida", ["D","I","S","C"]).notNull(),
+  maisId: varchar("maisId", { length: 20 }).notNull(), // ID da alternativa "mais representa" (ex: q1_D)
+  menosId: varchar("menosId", { length: 20 }).notNull(), // ID da alternativa "menos representa" (ex: q1_S)
+  maisDimensao: mysqlEnum("maisDimensao", ["D","I","S","C"]).notNull(), // Dimensao do "mais"
+  menosDimensao: mysqlEnum("menosDimensao", ["D","I","S","C"]).notNull(), // Dimensao do "menos"
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
