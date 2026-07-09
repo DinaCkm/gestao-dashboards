@@ -7,7 +7,7 @@
  */
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { protectedProcedure, router } from "../_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import {
   createAssessment,
@@ -30,6 +30,10 @@ import {
   getLegacyDiscResultForAluno,
   listDistinctCargosByProgram,
   searchAlunosForSelection,
+  criarConvitesCulturaEmpresa,
+  listarConvitesCulturaEmpresa,
+  getConvitePorToken,
+  responderConviteCulturaEmpresa,
   addDiretoriaMembro,
   removeDiretoriaMembro,
   listDiretoriaMembrosComScores,
@@ -465,5 +469,68 @@ export const disc360Router = router({
         status: "ativo",
       } as any);
       return { id: insertId };
+    }),
+
+  // -------------------------------------------------------------------
+  // Convite de respondentes - Perfil DISC da Empresa (link sem login)
+  // -------------------------------------------------------------------
+  criarConvitesCulturaEmpresa: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        orgProfileId: z.number(),
+        convites: z
+          .array(
+            z.object({
+              alunoId: z.number().nullable().optional(),
+              respondentName: z.string().min(1),
+              respondentEmail: z.string().nullable().optional(),
+            })
+          )
+          .min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const database = await requireDatabase();
+      return criarConvitesCulturaEmpresa(database, input);
+    }),
+
+  listarConvitesCulturaEmpresa: protectedProcedure
+    .input(z.object({ orgProfileId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return listarConvitesCulturaEmpresa(database, input.orgProfileId);
+    }),
+
+  getConvitePorToken: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      const convite = await getConvitePorToken(database, input.token);
+      if (!convite) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Convite nao encontrado." });
+      }
+      return {
+        respondentName: (convite as any).respondentName as string | null,
+        status: (convite as any).status as string,
+        perguntas: DISC360_CULTURE_QUESTIONS,
+      };
+    }),
+
+  responderConvitePorToken: publicProcedure
+    .input(
+      z.object({
+        token: z.string(),
+        respostas: z.array(
+          z.object({
+            questionId: z.string(),
+            dimensao: discDimensionEnum,
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const database = await requireDatabase();
+      return responderConviteCulturaEmpresa(database, input);
     }),
 });
