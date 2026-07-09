@@ -117,3 +117,63 @@ export function validarSomaManual(scores: DiscScores): { valido: boolean; soma: 
 }
 
 export { DISC360_CULTURE_QUESTIONS };
+
+export type PredominanciaTema = {
+  questionId: string;
+  contagem: DiscScores;
+  totalRespostas: number;
+  eixoPredominante: Disc360CultureDimension;
+  classificacaoConsenso: "unanime" | "majoritaria" | "dividida";
+};
+
+/**
+ * Para cada pergunta do questionario de cultura, identifica qual eixo
+ * comportamental (D/I/S/C) foi mais escolhido entre os respondentes e
+ * classifica o nivel de consenso:
+ * - unanime: todos os respondentes escolheram o mesmo eixo;
+ * - majoritaria: um eixo teve mais escolhas que os demais, sem ser unanime;
+ * - dividida: houve empate entre dois ou mais eixos.
+ */
+export function calcularPredominanciaPorTema(
+  todasRespostas: { questionId: string; dimensao: Disc360CultureDimension }[]
+): PredominanciaTema[] {
+  const porPergunta = new Map<string, DiscScores>();
+
+  for (const resposta of todasRespostas) {
+    if (!porPergunta.has(resposta.questionId)) {
+      porPergunta.set(resposta.questionId, { D: 0, I: 0, S: 0, C: 0 });
+    }
+    porPergunta.get(resposta.questionId)![resposta.dimensao] += 1;
+  }
+
+  const dimensoes: Disc360CultureDimension[] = ["D", "I", "S", "C"];
+  const resultado: PredominanciaTema[] = [];
+
+  for (const [questionId, contagem] of porPergunta.entries()) {
+    const totalRespostas = contagem.D + contagem.I + contagem.S + contagem.C;
+    const maiorValor = Math.max(contagem.D, contagem.I, contagem.S, contagem.C);
+    const empatados = dimensoes.filter((dim) => contagem[dim] === maiorValor);
+    const eixoPredominante = empatados[0];
+
+    let classificacaoConsenso: "unanime" | "majoritaria" | "dividida";
+    if (empatados.length > 1) {
+      classificacaoConsenso = "dividida";
+    } else if (totalRespostas > 0 && maiorValor === totalRespostas) {
+      classificacaoConsenso = "unanime";
+    } else {
+      classificacaoConsenso = "majoritaria";
+    }
+
+    resultado.push({
+      questionId,
+      contagem,
+      totalRespostas,
+      eixoPredominante,
+      classificacaoConsenso,
+    });
+  }
+
+  return resultado.sort((a, b) =>
+    a.questionId.localeCompare(b.questionId, undefined, { numeric: true })
+  );
+}
