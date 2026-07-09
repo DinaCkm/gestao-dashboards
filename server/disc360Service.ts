@@ -352,7 +352,7 @@ export async function searchAlunosForSelection(
   if (filters.departmentId) conditions.push(eq(alunos.departmentId, filters.departmentId));
   if (filters.cargo) conditions.push(eq(alunos.cargo, filters.cargo));
   return database
-    .select({ id: alunos.id, name: alunos.name, cargo: alunos.cargo, departmentId: alunos.departmentId })
+    .select({ id: alunos.id, name: alunos.name, email: alunos.email, cargo: alunos.cargo, departmentId: alunos.departmentId })
     .from(alunos)
     .where(and(...conditions))
     .orderBy(alunos.name);
