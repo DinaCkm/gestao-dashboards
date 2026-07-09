@@ -931,6 +931,10 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
     { programId: editProgramId ? parseInt(editProgramId) : undefined, includeInactive: false },
     { enabled: !!editProgramId }
   );
+  const { data: cargosEdicao = [] } = trpc.cargos.list.useQuery(
+    { programId: editProgramId ? parseInt(editProgramId) : undefined, includeInactive: false },
+    { enabled: !!editProgramId }
+  );
   const departamentoEdicaoSelecionado = departamentosEdicao.find((d: any) => String(d.id) === editDepartmentId);
   const liderEdicaoNome = departamentoEdicaoSelecionado?.managerId
     ? (gerentes || []).find((g: any) => g.id === departamentoEdicaoSelecionado.managerId)?.name || null
@@ -1240,7 +1244,26 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Cargo</Label>
-                      <Input value={editCargo} onChange={(e) => setEditCargo(e.target.value)} className="text-sm" placeholder="Ex: Gerente de Projetos" />
+                      <Select
+                        value={(cargosEdicao as any[]).map((cg: any) => cg.name).includes(editCargo) ? editCargo : (editCargo ? "outro" : "")}
+                        onValueChange={(v) => setEditCargo(v === "outro" ? "" : v)}
+                      >
+                        <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Selecione um cargo" /></SelectTrigger>
+                        <SelectContent>
+                          {(cargosEdicao as any[]).map((cg: any) => (
+                            <SelectItem key={cg.id} value={cg.name}>{cg.name}</SelectItem>
+                          ))}
+                          <SelectItem value="outro">Outro cargo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {!(cargosEdicao as any[]).map((cg: any) => cg.name).includes(editCargo) && (
+                        <Input
+                          className="text-sm mt-2"
+                          value={editCargo}
+                          onChange={(e) => setEditCargo(e.target.value)}
+                          placeholder="Ex: Gerente de Projetos"
+                        />
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
