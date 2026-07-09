@@ -21,8 +21,17 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
   const [selecionados, setSelecionados] = useState<number[]>([]);
 
   const criarConvitesMutation = trpc.disc360.criarConvitesCulturaEmpresa.useMutation({
-    onSuccess: () => {
-      toast.success("Convites gerados. Copie os links abaixo para enviar aos colaboradores.");
+    onSuccess: (data: any) => {
+      const enviados = (data ?? []).filter((c: any) => c.emailEnviado).length;
+      const semEmail = (data ?? []).length - enviados;
+      if (enviados > 0) {
+        toast.success(
+          enviados + " convite(s) enviado(s) por e-mail." +
+            (semEmail > 0 ? " " + semEmail + " sem e-mail cadastrado - copie o link manualmente." : "")
+        );
+      } else {
+        toast.success("Convites gerados. Copie os links abaixo para enviar aos colaboradores.");
+      }
       setSelecionados([]);
       refetchConvites();
     },
@@ -45,7 +54,11 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
     }
     const convitesInput = selecionados.map((id) => {
       const aluno = listaAlunos.find((a) => a.id === id);
-      return { alunoId: id, respondentName: aluno?.name ?? "Colaborador" };
+      return {
+        alunoId: id,
+        respondentName: aluno?.name ?? "Colaborador",
+        respondentEmail: aluno?.email ?? null,
+      };
     });
     criarConvitesMutation.mutate({ programId, orgProfileId, convites: convitesInput });
   };
@@ -62,9 +75,9 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
         <CardTitle className="text-base">Selecionar respondentes</CardTitle>
         <CardDescription>
           Selecione os colaboradores que devem responder a pesquisa de cultura da empresa (minimo
-          recomendado: 5). Depois de gerar, copie o link de cada pessoa e envie por WhatsApp,
-          e-mail ou o canal que preferir. Cada pessoa responde pelo proprio link, sem precisar de
-          login no sistema.
+          recomendado: 5). Quem tiver e-mail cadastrado recebe o link automaticamente; para quem
+          nao tiver, copie o link e envie por WhatsApp ou outro canal. Cada pessoa responde pelo
+          proprio link, sem precisar de login.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -83,6 +96,9 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
                 />
                 <label htmlFor={`aluno-convite-${aluno.id}`} className="text-sm cursor-pointer">
                   {aluno.name}
+                  {!aluno.email && (
+                    <span className="text-muted-foreground"> (sem e-mail cadastrado)</span>
+                  )}
                 </label>
               </div>
             ))}
