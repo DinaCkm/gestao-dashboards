@@ -121,6 +121,12 @@ function DashboardCulturaContent() {
             </CardContent>
           </Card>
 
+          {data.notaMetodologica && (
+            <Card className="border-dashed bg-muted/30">
+              <CardContent className="pt-4 text-xs text-muted-foreground">{data.notaMetodologica}</CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Perfil geral (D/I/S/C)</CardTitle>
@@ -173,6 +179,20 @@ function DashboardCulturaContent() {
             })}
           </div>
 
+          {data.leituraCombinada && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Leitura combinada</CardTitle>
+                <CardDescription>
+                  Como {data.consolidado.perfilPredominante} e {data.consolidado.perfilSecundario} se combinam na cultura percebida.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{data.leituraCombinada}</p>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Onde a cultura se expressa mais</CardTitle>
@@ -214,6 +234,22 @@ function DashboardCulturaContent() {
               </div>
             </CardContent>
           </Card>
+
+          {data.recomendacoes && data.recomendacoes.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Recomendações práticas</CardTitle>
+                <CardDescription>Sugestões de desenvolvimento com base no eixo predominante.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {data.recomendacoes.map((rec, i) => (
+                    <li key={i}>{rec}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           <p className="border-t pt-3 text-xs text-muted-foreground">
             Este dashboard reflete a cultura percebida e esperada pelos respondentes, com base em cálculo
