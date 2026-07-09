@@ -19,7 +19,7 @@ export default function ResponderConviteCultura() {
     { enabled: !!token, retry: false }
   );
 
-  const [respostas, setRespostas] = useState<Record<string, Dimensao>>({});
+  const [respostas, setRespostas] = useState<Record<string, { mais?: Dimensao; menos?: Dimensao }>>({});
   const [enviado, setEnviado] = useState(false);
 
   const submitMutation = trpc.disc360.responderConvitePorToken.useMutation({
@@ -68,7 +68,6 @@ export default function ResponderConviteCultura() {
       </div>
     );
   }
-
   if (data.status === "concluido" || enviado) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -88,17 +87,36 @@ export default function ResponderConviteCultura() {
   }
 
   const perguntas = (data.perguntas ?? []) as any[];
-  const totalRespondidas = Object.keys(respostas).length;
+  const totalRespondidas = perguntas.filter(
+    (p: any) => respostas[p.id]?.mais && respostas[p.id]?.menos
+  ).length;
   const todasRespondidas = perguntas.length > 0 && totalRespondidas === perguntas.length;
+
+  const setMais = (perguntaId: string, dimensao: Dimensao) => {
+    setRespostas((prev) => {
+      const atual = prev[perguntaId] ?? {};
+      const menos = atual.menos === dimensao ? undefined : atual.menos;
+      return { ...prev, [perguntaId]: { ...atual, mais: dimensao, menos } };
+    });
+  };
+
+  const setMenos = (perguntaId: string, dimensao: Dimensao) => {
+    setRespostas((prev) => {
+      const atual = prev[perguntaId] ?? {};
+      const mais = atual.mais === dimensao ? undefined : atual.mais;
+      return { ...prev, [perguntaId]: { ...atual, menos: dimensao, mais } };
+    });
+  };
 
   const handleSubmit = () => {
     if (!todasRespondidas) {
-      toast.error("Responda todas as perguntas antes de enviar.");
+      toast.error("Escolha o que MAIS e o que MENOS representa em todas as perguntas antes de enviar.");
       return;
     }
     const respostasArray = perguntas.map((p: any) => ({
       questionId: p.id as string,
-      dimensao: respostas[p.id],
+      maisDimensao: respostas[p.id].mais as Dimensao,
+      menosDimensao: respostas[p.id].menos as Dimensao,
     }));
     submitMutation.mutate({ token, respostas: respostasArray });
   };
@@ -111,9 +129,10 @@ export default function ResponderConviteCultura() {
             <CardTitle>Pesquisa de Cultura da Empresa</CardTitle>
             <CardDescription>
               {data.respondentName ? `Ola, ${data.respondentName}. ` : ""}
-              Responda as perguntas abaixo pensando no comportamento que a empresa espera e
-              valoriza (nao necessariamente o que acontece hoje na pratica). Suas respostas sao
-              usadas apenas de forma consolidada, junto com as de outros colegas convidados.
+              Para cada pergunta, escolha a alternativa que MAIS e a que MENOS representa o
+              comportamento predominante na empresa (mesmo que nao seja o que acontece hoje na
+              pratica). Suas respostas sao usadas apenas de forma consolidada, junto com as de
+              outros colegas convidados.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -130,22 +149,50 @@ export default function ResponderConviteCultura() {
               </CardTitle>
               <CardDescription className="text-foreground">{pergunta.pergunta}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <RadioGroup
-                value={respostas[pergunta.id] ?? ""}
-                onValueChange={(value) =>
-                  setRespostas((prev) => ({ ...prev, [pergunta.id]: value as Dimensao }))
-                }
-              >
-                {pergunta.alternativas.map((alt: any) => (
-                  <div key={alt.id} className="flex items-center space-x-2 py-1">
-                    <RadioGroupItem value={alt.dimensao} id={`${pergunta.id}-${alt.id}`} />
-                    <Label htmlFor={`${pergunta.id}-${alt.id}`} className="font-normal cursor-pointer">
-                      {alt.texto}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium mb-2">O que MAIS representa a cultura da empresa:</p>
+                <RadioGroup
+                  value={respostas[pergunta.id]?.mais ?? ""}
+                  onValueChange={(value) => setMais(pergunta.id, value as Dimensao)}
+                >
+                  {pergunta.alternativas.map((alt: any) => (
+                    <div key={alt.id} className="flex items-center space-x-2 py-1">
+                      <RadioGroupItem value={alt.dimensao} id={`${pergunta.id}-mais-${alt.id}`} />
+                      <Label htmlFor={`${pergunta.id}-mais-${alt.id}`} className="font-normal cursor-pointer">
+                        {alt.texto}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium mb-2">O que MENOS representa a cultura da empresa:</p>
+                <RadioGroup
+                  value={respostas[pergunta.id]?.menos ?? ""}
+                  onValueChange={(value) => setMenos(pergunta.id, value as Dimensao)}
+                >
+                  {pergunta.alternativas.map((alt: any) => {
+                    const desabilitada = respostas[pergunta.id]?.mais === alt.dimensao;
+                    return (
+                      <div key={alt.id} className="flex items-center space-x-2 py-1">
+                        <RadioGroupItem
+                          value={alt.dimensao}
+                          id={`${pergunta.id}-menos-${alt.id}`}
+                          disabled={desabilitada}
+                        />
+                        <Label
+                          htmlFor={`${pergunta.id}-menos-${alt.id}`}
+                          className={`font-normal cursor-pointer ${desabilitada ? "text-muted-foreground/50" : ""}`}
+                        >
+                          {alt.texto}
+                        </Label>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
             </CardContent>
           </Card>
         ))}
