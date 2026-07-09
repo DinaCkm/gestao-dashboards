@@ -642,7 +642,10 @@ export async function responderConviteCulturaEmpresa(
       input.respostas.map((resposta) => ({
         assessmentId: convite.id,
         questionId: resposta.questionId,
-        dimensaoEscolhida: resposta.dimensao,
+        maisId: `${resposta.questionId}_${resposta.maisDimensao}`,
+        menosId: `${resposta.questionId}_${resposta.menosDimensao}`,
+        maisDimensao: resposta.maisDimensao,
+        menosDimensao: resposta.menosDimensao,
       }))
     );
   }
