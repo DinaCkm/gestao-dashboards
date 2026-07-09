@@ -2,7 +2,7 @@
  * EcoDISC 360 - Servico de acesso a dados (CRUD) do modulo.
  * Mantem isolamento total do DISC legado (disc_respostas / disc_resultados).
  */
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { sendEmail } from "./emailService";
 import { randomUUID } from "crypto";
 import {
@@ -27,8 +27,11 @@ import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, t
 import {
   calcularDiscCulturaEmpresa,
   calcularDiscEmpresaConsolidado,
+  calcularPredominanciaPorTema,
   type RespostaCultura,
+  type PredominanciaTema,
 } from "./discCultureService";
+import { DISC360_CULTURE_QUESTIONS, type Disc360CultureDimension } from "../shared/disc360CultureQuestions";
 import type { getDb } from "./db";
 
 type DbClient = NonNullable<Awaited<ReturnType<typeof getDb>>>;
@@ -285,6 +288,44 @@ export async function listCultureAssessmentsByOrgProfile(database: DbClient, org
       )
     )
     .orderBy(desc(discAssessments.completedAt));
+}
+
+/**
+ * Para cada uma das perguntas do questionario de cultura, retorna qual eixo
+ * comportamental (D/I/S/C) foi mais escolhido entre os respondentes ja
+ * concluidos de um Perfil DISC da Empresa, com o nivel de consenso entre
+ * eles (unanime / majoritaria / dividida) e o texto da pergunta/tema.
+ */
+export async function getPredominanciaPorTema(database: DbClient, orgProfileId: number) {
+  const assessments = await listCultureAssessmentsByOrgProfile(database, orgProfileId);
+  const assessmentIds = assessments.map((assessment) => assessment.id);
+
+  if (assessmentIds.length === 0) {
+    return [];
+  }
+
+  const respostas = await database
+    .select()
+    .from(discCultureSurveyAnswers)
+    .where(inArray(discCultureSurveyAnswers.assessmentId, assessmentIds));
+
+  const predominancias = calcularPredominanciaPorTema(
+    respostas.map((resposta) => ({
+      questionId: resposta.questionId,
+      dimensao: resposta.dimensaoEscolhida as Disc360CultureDimension,
+    }))
+  );
+
+  const perguntasPorId = new Map(DISC360_CULTURE_QUESTIONS.map((pergunta) => [pergunta.id, pergunta]));
+
+  return predominancias.map((predominancia) => {
+    const pergunta = perguntasPorId.get(predominancia.questionId);
+    return {
+      ...predominancia,
+      tema: pergunta?.tema ?? null,
+      pergunta: pergunta?.pergunta ?? null,
+    };
+  });
 }
 
 /**
