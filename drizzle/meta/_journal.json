@@ -603,6 +603,13 @@
       "when": 1783553958476,
       "tag": "0092_disc_diretoria_membros",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "5",
+      "when": 1783555957189,
+      "tag": "0093_cargos_catalogo",
+      "breakpoints": true
     }
   ]
 }
