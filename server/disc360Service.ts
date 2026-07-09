@@ -268,7 +268,10 @@ export async function submitCultureSurveyResponse(database: DbClient, input: Sub
       input.respostas.map((resposta) => ({
         assessmentId,
         questionId: resposta.questionId,
-        dimensaoEscolhida: resposta.dimensao,
+        maisId: `${resposta.questionId}_${resposta.maisDimensao}`,
+        menosId: `${resposta.questionId}_${resposta.menosDimensao}`,
+        maisDimensao: resposta.maisDimensao,
+        menosDimensao: resposta.menosDimensao,
       }))
     );
   }
@@ -316,7 +319,8 @@ export async function getPredominanciaPorTema(database: DbClient, orgProfileId: 
   const predominancias = calcularPredominanciaPorTema(
     respostas.map((resposta) => ({
       questionId: resposta.questionId,
-      dimensao: resposta.dimensaoEscolhida as Disc360CultureDimension,
+      maisDimensao: resposta.maisDimensao as Disc360CultureDimension,
+      menosDimensao: resposta.menosDimensao as Disc360CultureDimension,
     }))
   );
 
