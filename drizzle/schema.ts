@@ -1981,7 +1981,7 @@ export const discAssessments = mysqlTable("disc_assessments", {
     "diretoria",
   ]).notNull(),
   respondedByUserId: int("respondedByUserId"),
-  status: mysqlEnum("status", ["rascunho", "concluido", "arquivado"])
+  status: mysqlEnum("status", ["pendente", "rascunho", "concluido", "arquivado"])
     .default("rascunho")
     .notNull(),
   scores: json("scores"),
@@ -1995,6 +1995,7 @@ export const discAssessments = mysqlTable("disc_assessments", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   respondentName: varchar("respondentName", { length: 255 }), // Nome do respondente convidado (quando nao possui conta no sistema)
   respondentEmail: varchar("respondentEmail", { length: 320 }), // Email do respondente convidado
+  conviteToken: varchar("conviteToken", { length: 64 }), // Token unico do link de convite (resposta sem login)
 });
 
 export type DiscAssessment = typeof discAssessments.$inferSelect;
