@@ -146,10 +146,10 @@ function DashboardCulturaContent() {
                   <XAxis dataKey="eixo" tickFormatter={(v: Dimensao) => `${v} — ${EIXO_INFO[v].label.split(" / ")[0]}`} />
                   <YAxis domain={[0, 100]} unit="%" />
                   <ReferenceLine
-                    y={25}
+                    y={50}
                     stroke="#64748b"
                     strokeDasharray="4 4"
-                    label={{ value: "25% (sem predominância)", position: "insideTopRight", fontSize: 11, fill: "#64748b" }}
+                    label={{ value: "50% (média)", position: "insideTopRight", fontSize: 11, fill: "#64748b" }}
                   />
                   <Tooltip
                     formatter={(value: number) => [`${value}%`, "Percentual"]}
