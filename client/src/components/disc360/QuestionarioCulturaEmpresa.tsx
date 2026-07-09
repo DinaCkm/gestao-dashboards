@@ -15,7 +15,7 @@ type Props = {
 
 export default function QuestionarioCulturaEmpresa({ programId, orgProfileId, onSubmitted }: Props) {
   const { data: perguntas = [], isLoading } = trpc.disc360.getCultureQuestions.useQuery();
-  const [respostas, setRespostas] = useState<Record<string, string>>({});
+  const [respostas, setRespostas] = useState<Record<string, { mais?: string; menos?: string }>>({});
 
   const submitMutation = trpc.disc360.submitCultureSurveyResponse.useMutation({
     onSuccess: () => {
@@ -27,24 +27,38 @@ export default function QuestionarioCulturaEmpresa({ programId, orgProfileId, on
   });
 
   const totalPerguntas = perguntas.length;
-  const totalRespondidas = Object.keys(respostas).length;
+  const totalRespondidas = perguntas.filter(
+    (p: any) => respostas[p.id]?.mais && respostas[p.id]?.menos
+  ).length;
   const progresso = totalPerguntas > 0 ? Math.round((totalRespondidas / totalPerguntas) * 100) : 0;
   const completo = totalPerguntas > 0 && totalRespondidas === totalPerguntas;
 
-  const handleSelect = (questionId: string, alternativaId: string) => {
-    setRespostas((prev) => ({ ...prev, [questionId]: alternativaId }));
+  const setMais = (questionId: string, dimensao: string) => {
+    setRespostas((prev) => {
+      const atual = prev[questionId] ?? {};
+      const menos = atual.menos === dimensao ? undefined : atual.menos;
+      return { ...prev, [questionId]: { ...atual, mais: dimensao, menos } };
+    });
+  };
+
+  const setMenos = (questionId: string, dimensao: string) => {
+    setRespostas((prev) => {
+      const atual = prev[questionId] ?? {};
+      const mais = atual.mais === dimensao ? undefined : atual.mais;
+      return { ...prev, [questionId]: { ...atual, menos: dimensao, mais } };
+    });
   };
 
   const handleSubmit = () => {
     if (!completo) {
-      toast.error("Responda todas as perguntas antes de enviar.");
+      toast.error("Escolha o que MAIS e o que MENOS representa em todas as perguntas antes de enviar.");
       return;
     }
-    const respostasFormatadas = perguntas.map((pergunta: any) => {
-      const alternativaId = respostas[pergunta.id];
-      const alternativa = pergunta.alternativas.find((a: any) => a.id === alternativaId);
-      return { questionId: pergunta.id, dimensao: alternativa.dimensao };
-    });
+    const respostasFormatadas = perguntas.map((pergunta: any) => ({
+      questionId: pergunta.id,
+      maisDimensao: respostas[pergunta.id].mais,
+      menosDimensao: respostas[pergunta.id].menos,
+    }));
     submitMutation.mutate({ programId, orgProfileId, respostas: respostasFormatadas });
   };
 
@@ -70,21 +84,53 @@ export default function QuestionarioCulturaEmpresa({ programId, orgProfileId, on
             <CardDescription>{index + 1}. {pergunta.tema}</CardDescription>
             <CardTitle className="text-base font-medium leading-snug">{pergunta.pergunta}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <RadioGroup
-              value={respostas[pergunta.id] || ""}
-              onValueChange={(value) => handleSelect(pergunta.id, value)}
-              className="space-y-2"
-            >
-              {pergunta.alternativas.map((alternativa: any) => (
-                <div key={alternativa.id} className="flex items-start space-x-2 rounded-md border p-3 hover:bg-accent/50">
-                  <RadioGroupItem value={alternativa.id} id={alternativa.id} className="mt-0.5" />
-                  <Label htmlFor={alternativa.id} className="font-normal leading-snug cursor-pointer">
-                    {alternativa.texto}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm font-medium mb-2">O que MAIS representa a cultura da empresa:</p>
+              <RadioGroup
+                value={respostas[pergunta.id]?.mais || ""}
+                onValueChange={(value) => setMais(pergunta.id, value)}
+                className="space-y-2"
+              >
+                {pergunta.alternativas.map((alternativa: any) => (
+                  <div key={alternativa.id} className="flex items-start space-x-2 rounded-md border p-3 hover:bg-accent/50">
+                    <RadioGroupItem value={alternativa.dimensao} id={`mais-${alternativa.id}`} className="mt-0.5" />
+                    <Label htmlFor={`mais-${alternativa.id}`} className="font-normal leading-snug cursor-pointer">
+                      {alternativa.texto}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-2">O que MENOS representa a cultura da empresa:</p>
+              <RadioGroup
+                value={respostas[pergunta.id]?.menos || ""}
+                onValueChange={(value) => setMenos(pergunta.id, value)}
+                className="space-y-2"
+              >
+                {pergunta.alternativas.map((alternativa: any) => {
+                  const desabilitada = respostas[pergunta.id]?.mais === alternativa.dimensao;
+                  return (
+                    <div key={alternativa.id} className="flex items-start space-x-2 rounded-md border p-3 hover:bg-accent/50">
+                      <RadioGroupItem
+                        value={alternativa.dimensao}
+                        id={`menos-${alternativa.id}`}
+                        className="mt-0.5"
+                        disabled={desabilitada}
+                      />
+                      <Label
+                        htmlFor={`menos-${alternativa.id}`}
+                        className={`font-normal leading-snug cursor-pointer ${desabilitada ? "text-muted-foreground/50" : ""}`}
+                      >
+                        {alternativa.texto}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </RadioGroup>
+            </div>
           </CardContent>
         </Card>
       ))}
