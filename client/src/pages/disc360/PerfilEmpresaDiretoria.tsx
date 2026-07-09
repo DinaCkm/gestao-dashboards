@@ -433,13 +433,13 @@ function PerfilEmpresaDiretoriaContent() {
 
                 {perfilAcoesDialogAberto && questionarioOrgProfileId && (
                   <Dialog open={perfilAcoesDialogAberto} onOpenChange={setPerfilAcoesDialogAberto}>
-                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto overflow-x-hidden" style={{ maxWidth: "48rem", width: "95vw" }}>
                   <div ref={questionarioSectionRef} className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <p className="text-sm text-muted-foreground">
                         {assessmentsCultura.length} resposta(s) registrada(s) até o momento. Mínimo recomendado: 5 respondentes.
                       </p>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button variant="outline" size="sm" onClick={() => setMostrarFormularioPerguntas((v) => !v)}>
                           {mostrarFormularioPerguntas ? "Ocultar seleção de respondentes" : "Selecionar respondentes"}
                         </Button>
@@ -484,7 +484,7 @@ function PerfilEmpresaDiretoriaContent() {
 
                     {previewQuestionarioAberto && (
                     <Dialog open={previewQuestionarioAberto} onOpenChange={setPreviewQuestionarioAberto}>
-                      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto overflow-x-hidden" style={{ maxWidth: "40rem", width: "92vw" }}>
                         <div className="space-y-3">
                           <h3 className="text-lg font-semibold">Questionário de Cultura da Empresa</h3>
                           <p className="text-sm text-muted-foreground">Perguntas que os respondentes selecionados irão receber (somente visualização).</p>
