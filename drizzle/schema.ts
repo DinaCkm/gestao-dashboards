@@ -540,12 +540,20 @@ export const departments = mysqlTable("departments", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  managerId: int("managerId"), // Lider do departamento - referencia consultors.id (consultor com role gerente)
+  managerId: int("managerId"), // Lider do departamento - referencia alunos.id (qualquer aluno/colaborador da empresa) (consultor com role gerente)
   programId: int("programId"), // Empresa/programa ao qual o departamento pertence
   parentDepartmentId: int("parentDepartmentId"), // Departamento pai, para hierarquia (null = departamento raiz)
   isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export const cargos = mysqlTable("cargos", {
+  id: int("id").autoincrement().primaryKey(),
+  programId: int("programId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  isActive: int("isActive").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export type Department = typeof departments.$inferSelect;
@@ -2185,3 +2193,6 @@ export const discDiretoriaMembros = mysqlTable("disc_diretoria_membros", {
 
 export type DiscDiretoriaMembro = typeof discDiretoriaMembros.$inferSelect;
 export type InsertDiscDiretoriaMembro = typeof discDiretoriaMembros.$inferInsert;
+
+export type Cargo = typeof cargos.$inferSelect;
+export type InsertCargo = typeof cargos.$inferInsert;
