@@ -177,6 +177,7 @@ export default function EstruturaOrganizacional() {
 function EstruturaOrganizacionalContent() {
   const [, setLocation] = useLocation();
   const [programId, setProgramId] = useState<string>("");
+  const numericProgramId = programId ? Number(programId) : undefined;
   const [form, setForm] = useState<FormState>(emptyForm);
 
   const { data: empresas = [], isLoading: loadingEmpresas } = trpc.admin.listEmpresas.useQuery();
@@ -245,7 +246,7 @@ function EstruturaOrganizacionalContent() {
     updateCargoMutation.mutate({ id: cargo.id, isActive: cargo.isActive !== 1 });
   };
 
-  const numericProgramId = programId ? Number(programId) : undefined;
+  
 
   const { data: departamentos = [], isLoading: loadingDepartamentos, refetch: refetchDepartamentos } = trpc.departments.list.useQuery(
     { programId: numericProgramId as number, includeInactive: true },
