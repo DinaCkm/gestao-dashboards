@@ -177,3 +177,137 @@ export function calcularPredominanciaPorTema(
     a.questionId.localeCompare(b.questionId, undefined, { numeric: true })
   );
 }
+
+export type EixoTextoFaixa = {
+  min: number;
+  max: number;
+  texto: string;
+};
+
+/**
+ * Banco de textos fixos (revisados por profissional DISC), um por eixo e
+ * faixa de intensidade. O placeholder {{empresa}} e substituido pelo nome
+ * real da empresa antes de ser exibido. Sem uso de IA - texto sempre
+ * previsivel e rastreavel para o mesmo resultado calculado.
+ */
+const TEXTOS_EIXO_FAIXA: Record<Disc360CultureDimension, EixoTextoFaixa[]> = {
+  D: [
+    {
+      min: 0,
+      max: 25,
+      texto:
+        "A cultura da {{empresa}} parece dar pouco peso a urgencia e a tomada de decisao rapida. Isso pode significar um ambiente mais deliberativo, em que decisoes sao amadurecidas com calma - mas vale observar se isso nao esta gerando lentidao em momentos que pedem agilidade.",
+    },
+    {
+      min: 26,
+      max: 50,
+      texto:
+        "Ha uma presenca moderada de foco em resultado e decisao rapida na cultura percebida. A empresa parece equilibrar ritmo de execucao com outras prioridades, sem que a pressao por resultado domine o ambiente.",
+    },
+    {
+      min: 51,
+      max: 75,
+      texto:
+        "A cultura da {{empresa}} e percebida como orientada a resultados, com valorizacao de decisoes rapidas e foco em metas. Esse traco tende a impulsionar a execucao, mas pode exigir atencao para que o ritmo nao gere desgaste nas equipes.",
+    },
+    {
+      min: 76,
+      max: 100,
+      texto:
+        "A cultura percebida e fortemente orientada a resultado, ritmo e decisao rapida. Esse e um traco que costuma impulsionar entregas e superacao de metas, mas em intensidade muito alta pode sinalizar pressao excessiva ou pouca tolerancia a pausas para reflexao - vale um olhar atento sobre isso.",
+    },
+  ],
+  I: [
+    {
+      min: 0,
+      max: 25,
+      texto:
+        "A comunicacao aberta e o reconhecimento publico parecem ter pouco espaco na cultura percebida. Isso pode indicar um ambiente mais reservado ou formal - o que nao e necessariamente negativo, mas pode dificultar a troca espontanea entre as pessoas.",
+    },
+    {
+      min: 26,
+      max: 50,
+      texto:
+        "Ha um equilibrio moderado entre formalidade e abertura na comunicacao. A cultura percebida valoriza relacionamento e reconhecimento, mas sem que isso seja o traco dominante do ambiente.",
+    },
+    {
+      min: 51,
+      max: 75,
+      texto:
+        "A cultura da {{empresa}} e percebida como comunicativa e voltada ao relacionamento, com valorizacao do reconhecimento e da troca entre pessoas. Isso tende a favorecer engajamento e clima positivo.",
+    },
+    {
+      min: 76,
+      max: 100,
+      texto:
+        "A cultura percebida e marcadamente comunicativa, entusiasmada e voltada ao relacionamento. Esse traco costuma gerar um ambiente energizado e colaborativo, mas em intensidade muito alta pode sinalizar dificuldade em lidar com temas mais formais, tecnicos ou de menor visibilidade.",
+    },
+  ],
+  S: [
+    {
+      min: 0,
+      max: 25,
+      texto:
+        "A cultura percebida parece dar pouco valor a estabilidade e a previsibilidade. Isso pode refletir um ambiente mais dinamico e sujeito a mudancas frequentes - o que pede atencao redobrada para manter as pessoas alinhadas durante transicoes.",
+    },
+    {
+      min: 26,
+      max: 50,
+      texto:
+        "Ha uma presenca moderada de estabilidade e cooperacao na cultura percebida. A empresa parece conseguir se adaptar a mudancas sem abrir mao de uma certa previsibilidade no dia a dia.",
+    },
+    {
+      min: 51,
+      max: 75,
+      texto:
+        "A cultura da {{empresa}} e percebida como estavel e cooperativa, com valorizacao da continuidade e do trabalho em equipe de forma constante. Isso tende a gerar seguranca e senso de pertencimento.",
+    },
+    {
+      min: 76,
+      max: 100,
+      texto:
+        "A cultura percebida e fortemente estavel, paciente e cooperativa. Esse traco costuma fortalecer a confianca e a continuidade das relacoes, mas em intensidade muito alta pode indicar resistencia a mudancas ou dificuldade em se adaptar rapidamente quando necessario.",
+    },
+  ],
+  C: [
+    {
+      min: 0,
+      max: 25,
+      texto:
+        "Regras, processos e padroes formais parecem ter pouco peso na cultura percebida. Isso pode indicar um ambiente mais flexivel e informal - o que pede atencao para garantir consistencia e qualidade em processos criticos.",
+    },
+    {
+      min: 26,
+      max: 50,
+      texto:
+        "Ha uma presenca moderada de estrutura e processo na cultura percebida. A empresa parece equilibrar flexibilidade com algum nivel de padronizacao, sem que a formalidade seja o traco dominante.",
+    },
+    {
+      min: 51,
+      max: 75,
+      texto:
+        "A cultura da {{empresa}} e percebida como estruturada, com valorizacao de processos, qualidade e conformidade a normas. Isso tende a gerar consistencia e previsibilidade nas entregas.",
+    },
+    {
+      min: 76,
+      max: 100,
+      texto:
+        "A cultura percebida e fortemente estruturada, criteriosa e voltada a processos e normas. Esse traco costuma garantir qualidade e consistencia, mas em intensidade muito alta pode sinalizar excesso de burocracia ou resistencia a solucoes fora do padrao.",
+    },
+  ],
+};
+
+/**
+ * Retorna o texto fixo correspondente ao eixo e percentual calculado,
+ * com {{empresa}} ja substituido pelo nome informado.
+ */
+export function obterTextoEixoFaixa(
+  eixo: Disc360CultureDimension,
+  percentual: number,
+  nomeEmpresa: string
+): string {
+  const faixas = TEXTOS_EIXO_FAIXA[eixo];
+  const faixa =
+    faixas.find((f) => percentual >= f.min && percentual <= f.max) ?? faixas[faixas.length - 1];
+  return faixa.texto.replace(/\{\{empresa\}\}/g, nomeEmpresa);
+}
