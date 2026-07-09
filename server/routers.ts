@@ -1027,6 +1027,39 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+  cargos: router({
+    list: protectedProcedure
+      .input(z.object({ programId: z.number(), includeInactive: z.boolean().optional() }))
+      .query(async ({ input }) => {
+        return db.getCargosByProgram(input.programId, input.includeInactive ?? false);
+      }),
+    create: protectedProcedure
+      .input(
+        z.object({
+          programId: z.number(),
+          name: z.string().min(1),
+          description: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        return db.createCargo(input);
+      }),
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          name: z.string().min(1).optional(),
+          description: z.string().optional(),
+          isActive: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { id, isActive, ...rest } = input;
+        const data: Record<string, any> = { ...rest };
+        if (isActive !== undefined) data.isActive = isActive ? 1 : 0;
+        return db.updateCargo(id, data);
+      }),
+  }),
 
   // Upload management
   uploads: router({
