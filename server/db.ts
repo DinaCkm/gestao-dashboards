@@ -265,6 +265,7 @@ export async function getAllDepartments() {
 }
 
 export async function getDepartmentsByProgram(programId: number, includeInactive = false) {
+  const db = await getDb();
   if (!db) return [];
   const condition = includeInactive
     ? eq(departments.programId, programId)
@@ -272,6 +273,7 @@ export async function getDepartmentsByProgram(programId: number, includeInactive
   return await db.select().from(departments).where(condition).orderBy(departments.name);
 }
 export async function getCargosByProgram(programId: number, includeInactive = false) {
+  const db = await getDb();
   if (!db) return [];
   const condition = includeInactive
     ? eq(cargos.programId, programId)
@@ -280,12 +282,14 @@ export async function getCargosByProgram(programId: number, includeInactive = fa
 }
 
 export async function createCargo(data: InsertCargo) {
+  const db = await getDb();
   if (!db) return null;
   const [result] = await db.insert(cargos).values(data).$returningId();
   return result;
 }
 
 export async function updateCargo(id: number, data: Partial<InsertCargo>) {
+  const db = await getDb();
   if (!db) return null;
   await db.update(cargos).set(data).where(eq(cargos.id, id));
 }
