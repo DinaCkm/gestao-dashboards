@@ -991,9 +991,9 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
-        managerId: z.number().optional(),
-        programId: z.number().optional(),
-        parentDepartmentId: z.number().optional()
+        managerId: z.number().nullable().optional(),
+        programId: z.number().nullable().optional(),
+        parentDepartmentId: z.number().nullable().optional()
       }))
       .mutation(async ({ input }) => {
         const id = await db.createDepartment(input);
