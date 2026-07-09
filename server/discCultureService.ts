@@ -9,7 +9,8 @@ import { DISC360_CULTURE_QUESTIONS, type Disc360CultureDimension } from "../shar
 
 export type RespostaCultura = {
   questionId: string;
-  dimensao: Disc360CultureDimension;
+  maisDimensao: Disc360CultureDimension;
+  menosDimensao: Disc360CultureDimension;
 };
 
 export type ResultadoIndividualCultura = {
@@ -21,21 +22,25 @@ export type ResultadoIndividualCultura = {
 };
 
 /**
- * Calcula o resultado de UM respondente do questionario de cultura.
- * Cada pergunta respondida soma 1 ponto para a dimensao escolhida;
- * o percentual de cada dimensao e pontos/total de perguntas respondidas.
+ * Calcula o resultado de UM respondente do questionario de cultura,
+ * no modelo ipsativo (mais/menos) - o mesmo usado no DISC legado.
+ * Cada pergunta soma 1 ponto bruto para o eixo escolhido como "mais"
+ * e subtrai 1 ponto bruto do eixo escolhido como "menos". O score bruto
+ * de cada eixo (de -total a +total) e reescalado de forma independente
+ * para 0-100, onde 50 representa equilibrio entre mais e menos.
  */
 export function calcularDiscCulturaEmpresa(respostas: RespostaCultura[]): ResultadoIndividualCultura {
-  const pontos: DiscScores = { D: 0, I: 0, S: 0, C: 0 };
+  const bruto: DiscScores = { D: 0, I: 0, S: 0, C: 0 };
   for (const resposta of respostas) {
-    pontos[resposta.dimensao] += 1;
+    bruto[resposta.maisDimensao] += 1;
+    bruto[resposta.menosDimensao] -= 1;
   }
   const total = respostas.length || 1;
   const scores: DiscScores = {
-    D: Math.round((pontos.D / total) * 10000) / 100,
-    I: Math.round((pontos.I / total) * 10000) / 100,
-    S: Math.round((pontos.S / total) * 10000) / 100,
-    C: Math.round((pontos.C / total) * 10000) / 100,
+    D: Math.round(((bruto.D + total) / (2 * total)) * 10000) / 100,
+    I: Math.round(((bruto.I + total) / (2 * total)) * 10000) / 100,
+    S: Math.round(((bruto.S + total) / (2 * total)) * 10000) / 100,
+    C: Math.round(((bruto.C + total) / (2 * total)) * 10000) / 100,
   };
   const perfil = determinarPerfil(scores);
   return {
@@ -128,29 +133,35 @@ export type PredominanciaTema = {
 
 /**
  * Para cada pergunta do questionario de cultura, identifica qual eixo
- * comportamental (D/I/S/C) foi mais escolhido entre os respondentes e
- * classifica o nivel de consenso:
- * - unanime: todos os respondentes escolheram o mesmo eixo;
- * - majoritaria: um eixo teve mais escolhas que os demais, sem ser unanime;
+ * comportamental (D/I/S/C) predomina entre os respondentes (no modelo
+ * ipsativo mais/menos) e classifica o nivel de consenso:
+ * - unanime: todos os respondentes escolheram o mesmo eixo como "mais",
+ *   e nenhum escolheu esse eixo como "menos";
+ * - majoritaria: um eixo teve o maior saldo (mais - menos), sem ser unanime;
  * - dividida: houve empate entre dois ou mais eixos.
  */
 export function calcularPredominanciaPorTema(
-  todasRespostas: { questionId: string; dimensao: Disc360CultureDimension }[]
+  todasRespostas: { questionId: string; maisDimensao: Disc360CultureDimension; menosDimensao: Disc360CultureDimension }[]
 ): PredominanciaTema[] {
   const porPergunta = new Map<string, DiscScores>();
+  const totalPorPergunta = new Map<string, number>();
 
   for (const resposta of todasRespostas) {
     if (!porPergunta.has(resposta.questionId)) {
       porPergunta.set(resposta.questionId, { D: 0, I: 0, S: 0, C: 0 });
+      totalPorPergunta.set(resposta.questionId, 0);
     }
-    porPergunta.get(resposta.questionId)![resposta.dimensao] += 1;
+    const contagem = porPergunta.get(resposta.questionId)!;
+    contagem[resposta.maisDimensao] += 1;
+    contagem[resposta.menosDimensao] -= 1;
+    totalPorPergunta.set(resposta.questionId, (totalPorPergunta.get(resposta.questionId) ?? 0) + 1);
   }
 
   const dimensoes: Disc360CultureDimension[] = ["D", "I", "S", "C"];
   const resultado: PredominanciaTema[] = [];
 
   for (const [questionId, contagem] of porPergunta.entries()) {
-    const totalRespostas = contagem.D + contagem.I + contagem.S + contagem.C;
+    const totalRespostas = totalPorPergunta.get(questionId) ?? 0;
     const maiorValor = Math.max(contagem.D, contagem.I, contagem.S, contagem.C);
     const empatados = dimensoes.filter((dim) => contagem[dim] === maiorValor);
     const eixoPredominante = empatados[0];
@@ -178,18 +189,6 @@ export function calcularPredominanciaPorTema(
   );
 }
 
-export type EixoTextoFaixa = {
-  min: number;
-  max: number;
-  texto: string;
-};
-
-/**
- * Banco de textos fixos (revisados por profissional DISC), um por eixo e
- * faixa de intensidade. O placeholder {{empresa}} e substituido pelo nome
- * real da empresa antes de ser exibido. Sem uso de IA - texto sempre
- * previsivel e rastreavel para o mesmo resultado calculado.
- */
 const TEXTOS_EIXO_FAIXA: Record<Disc360CultureDimension, EixoTextoFaixa[]> = {
   D: [
     {
