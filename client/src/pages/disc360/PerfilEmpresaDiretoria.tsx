@@ -484,15 +484,38 @@ function PerfilEmpresaDiretoriaContent() {
 
                     {previewQuestionarioAberto && (
                     <Dialog open={previewQuestionarioAberto} onOpenChange={setPreviewQuestionarioAberto}>
-                      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto overflow-x-hidden" style={{ maxWidth: "40rem", width: "92vw" }}>
+                      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto overflow-x-hidden" style={{ maxWidth: "48rem", width: "95vw" }}>
                         <div className="space-y-3">
                           <h3 className="text-lg font-semibold">Questionário de Cultura da Empresa</h3>
                           <p className="text-sm text-muted-foreground">Perguntas que os respondentes selecionados irão receber (somente visualização).</p>
                           {perguntasPreviewRow.map((p: any, idx: number) => (
-                            <div key={p.id ?? idx} className="border rounded-md p-3">
-                              <p className="text-sm font-medium">{idx + 1}. {p.texto ?? p.text ?? p.pergunta}</p>
-                            </div>
-                          ))}
+                        <div key={p.id ?? idx} className="border rounded-md p-4 space-y-2">
+                          <p className="text-xs text-muted-foreground">Bloco {idx + 1}{p.tema ? (" · " + p.tema) : ""}</p>
+                          <p className="text-sm font-medium">{p.pergunta ?? p.texto ?? p.text}</p>
+                          {p.objetivo && (
+                            <p className="text-xs text-muted-foreground leading-relaxed">O que esta pergunta avalia: {p.objetivo}</p>
+                          )}
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {(p.alternativas ?? []).map((alt: any, altIdx: number) => (
+                              <div key={alt.id ?? altIdx} className="border rounded-md p-2">
+                                <span
+                                  className="inline-block text-xs font-medium px-2 py-0.5 rounded mb-1"
+                                  style={{
+                                    backgroundColor: ({ D: "#FAECE7", I: "#FAEEDA", S: "#E1F5EE", C: "#E6F1FB" } as Record<string, string>)[alt.dimensao] ?? "var(--muted)",
+                                    color: ({ D: "#712B13", I: "#633806", S: "#085041", C: "#0C447C" } as Record<string, string>)[alt.dimensao] ?? "inherit",
+                                  }}
+                                >
+                                  {alt.dimensao} · {({ D: "Dominância", I: "Influência", S: "Estabilidade", C: "Conformidade" } as Record<string, string>)[alt.dimensao] ?? alt.dimensao}
+                                </span>
+                                <p className="text-sm">{alt.texto}</p>
+                                {alt.explicacao && (
+                                  <p className="text-xs text-muted-foreground mt-1">{alt.explicacao}</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                         </div>
                       </DialogContent>
                     </Dialog>
