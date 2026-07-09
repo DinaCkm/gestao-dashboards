@@ -4,6 +4,7 @@ import mysql from "mysql2/promise";
 import { 
   InsertUser, users, 
   departments, InsertDepartment, Department,
+  cargos, InsertCargo, Cargo,
   uploadBatches, InsertUploadBatch, UploadBatch,
   uploadedFiles, InsertUploadedFile, UploadedFile,
   calculationFormulas, InsertCalculationFormula, CalculationFormula,
@@ -269,6 +270,24 @@ export async function getDepartmentsByProgram(programId: number, includeInactive
     ? eq(departments.programId, programId)
     : and(eq(departments.programId, programId), eq(departments.isActive, 1));
   return await db.select().from(departments).where(condition).orderBy(departments.name);
+}
+export async function getCargosByProgram(programId: number, includeInactive = false) {
+  if (!db) return [];
+  const condition = includeInactive
+    ? eq(cargos.programId, programId)
+    : and(eq(cargos.programId, programId), eq(cargos.isActive, 1));
+  return await db.select().from(cargos).where(condition).orderBy(cargos.name);
+}
+
+export async function createCargo(data: InsertCargo) {
+  if (!db) return null;
+  const [result] = await db.insert(cargos).values(data).$returningId();
+  return result;
+}
+
+export async function updateCargo(id: number, data: Partial<InsertCargo>) {
+  if (!db) return null;
+  await db.update(cargos).set(data).where(eq(cargos.id, id));
 }
 
 export async function getDepartmentById(id: number) {
