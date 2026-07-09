@@ -68,6 +68,7 @@ import ProcessosSeletivosAvaliacao from "./pages/processos-seletivos/ProcessosSe
 import ProcessosSeletivosComunicado from "./pages/processos-seletivos/ProcessosSeletivosComunicado";
 import Disc360Dashboard from "./pages/disc360/Disc360Dashboard";
 import PerfilEmpresaDiretoria from "./pages/disc360/PerfilEmpresaDiretoria";
+import ResponderConviteCultura from "./pages/disc360/ResponderConviteCultura";
 import EstruturaOrganizacional from "./pages/disc360/EstruturaOrganizacional";
 import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
@@ -170,6 +171,7 @@ function Router() {
       <Route path={"/processos-seletivos/comunicado"} component={ProcessosSeletivosComunicado} />
       <Route path={"/disc360"} component={Disc360Dashboard} />
       <Route path={"/disc360/perfis-empresa"} component={PerfilEmpresaDiretoria} />
+      <Route path={"/disc360/responder-convite/:token"} component={ResponderConviteCultura} />
       <Route path={"/disc360/estrutura-organizacional"} component={EstruturaOrganizacional} />
       <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
       <Route path={"/portal-candidato-processo"} component={ProcessosSeletivosDashboard} />
