@@ -11,6 +11,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -144,6 +145,12 @@ function DashboardCulturaContent() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="eixo" tickFormatter={(v: Dimensao) => `${v} — ${EIXO_INFO[v].label.split(" / ")[0]}`} />
                   <YAxis domain={[0, 100]} unit="%" />
+                  <ReferenceLine
+                    y={25}
+                    stroke="#64748b"
+                    strokeDasharray="4 4"
+                    label={{ value: "25% (sem predominância)", position: "insideTopRight", fontSize: 11, fill: "#64748b" }}
+                  />
                   <Tooltip
                     formatter={(value: number) => [`${value}%`, "Percentual"]}
                     labelFormatter={(v: Dimensao) => EIXO_INFO[v]?.label ?? v}
