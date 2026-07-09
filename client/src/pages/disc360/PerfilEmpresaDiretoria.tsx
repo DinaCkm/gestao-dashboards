@@ -13,7 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Pencil, Power, ClipboardList, ChevronDown } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import QuestionarioCulturaEmpresa from "@/components/disc360/QuestionarioCulturaEmpresa";
+import SelecaoRespondentesCultura from "@/components/disc360/SelecaoRespondentesCultura";
 import SelecaoDiretores from "@/components/disc360/SelecaoDiretores";
 
 type ProfileType = "empresa" | "diretoria";
@@ -426,7 +426,7 @@ function PerfilEmpresaDiretoriaContent() {
                       </p>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setMostrarFormularioPerguntas((v) => !v)}>
-                          {mostrarFormularioPerguntas ? "Ocultar questionário" : "Responder questionário"}
+                          {mostrarFormularioPerguntas ? "Ocultar seleção de respondentes" : "Selecionar respondentes"}
                         </Button>
                         <Button variant="outline" size="sm" onClick={handleVerPrevia} disabled={carregandoPrevia}>
                           Ver prévia do resultado
@@ -437,15 +437,14 @@ function PerfilEmpresaDiretoriaContent() {
                       </div>
                     </div>
 
-                    {mostrarFormularioPerguntas && numericProgramId && (
-                      <QuestionarioCulturaEmpresa
-                        programId={numericProgramId}
-                        orgProfileId={questionarioOrgProfileId}
-                        onSubmitted={() => { refetchAssessments(); setMostrarFormularioPerguntas(false); }}
-                      />
-                    )}
+                    {mostrarFormularioPerguntas && numericProgramId && questionarioOrgProfileId && (
+                            <SelecaoRespondentesCultura
+                                programId={numericProgramId}
+                                orgProfileId={questionarioOrgProfileId}
+                            />
+                        )}
 
-                    {mostrarPrevia && previa && (
+                        {mostrarPrevia && previa && (
                       <Card className="bg-muted/40">
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm">Prévia do resultado</CardTitle>
