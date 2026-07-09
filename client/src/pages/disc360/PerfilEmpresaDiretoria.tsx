@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,12 @@ function PerfilEmpresaDiretoriaContent() {
   const [empresaModo, setEmpresaModo] = useState<"escolha" | "questionario" | "manual">("escolha");
   const [form, setForm] = useState<FormState>(emptyForm("empresa"));
   const [questionarioOrgProfileId, setQuestionarioOrgProfileId] = useState<number | null>(null);
+  const questionarioSectionRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (questionarioOrgProfileId) {
+      questionarioSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [questionarioOrgProfileId]);
   const [diretoriaSelecionadaId, setDiretoriaSelecionadaId] = useState<number | null>(null);
   const [nomeNovaDiretoria, setNomeNovaDiretoria] = useState("");
   const [mostrarFormularioPerguntas, setMostrarFormularioPerguntas] = useState(false);
@@ -413,7 +419,7 @@ function PerfilEmpresaDiretoriaContent() {
                 )}
 
                 {empresaModo === "questionario" && questionarioOrgProfileId && (
-                  <div className="space-y-4">
+                  <div ref={questionarioSectionRef} className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <p className="text-sm text-muted-foreground">
                         {assessmentsCultura.length} resposta(s) registrada(s) até o momento. Mínimo recomendado: 5 respondentes.
