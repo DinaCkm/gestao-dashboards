@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft } from "lucide-react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
+  Line,
+  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -137,10 +136,10 @@ function DashboardCulturaContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart
                   data={DIMENSOES.map((eixo) => ({ eixo, valor: data.consolidado.scoresMedios[eixo] }))}
-                  margin={{ top: 16, right: 16, left: 0, bottom: 8 }}
+                  margin={{ top: 24, right: 24, left: 0, bottom: 8 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="eixo" tickFormatter={(v: Dimensao) => `${v} — ${EIXO_INFO[v].label.split(" / ")[0]}`} />
@@ -155,12 +154,20 @@ function DashboardCulturaContent() {
                     formatter={(value: number) => [`${value}%`, "Percentual"]}
                     labelFormatter={(v: Dimensao) => EIXO_INFO[v]?.label ?? v}
                   />
-                  <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
-                    {DIMENSOES.map((eixo) => (
-                      <Cell key={eixo} fill={EIXO_INFO[eixo].color} />
-                    ))}
-                  </Bar>
-                </BarChart>
+                  <Line
+                    type="linear"
+                    dataKey="valor"
+                    stroke="#334155"
+                    strokeWidth={2}
+                    dot={(props: any) => {
+                      const { cx, cy, payload, key } = props;
+                      const color = EIXO_INFO[payload.eixo as Dimensao].color;
+                      return <circle key={key ?? payload.eixo} cx={cx} cy={cy} r={7} fill={color} stroke="#ffffff" strokeWidth={2} />;
+                    }}
+                    activeDot={{ r: 8 }}
+                    label={{ position: "top", fontSize: 12, fontWeight: 600, fill: "#334155", formatter: (v: number) => `${v}%` }}
+                  />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
