@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Pencil, Power, ClipboardList, ChevronDown } from "lucide-react";
+import { Pencil, Power, ClipboardList, ChevronDown, Eye, Users } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import ContadorRespondentes from "@/components/disc360/ContadorRespondentes";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import SelecaoRespondentesCultura from "@/components/disc360/SelecaoRespondentesCultura";
@@ -72,6 +74,9 @@ function PerfilEmpresaDiretoriaContent() {
   const [empresaModo, setEmpresaModo] = useState<"escolha" | "questionario" | "manual">("escolha");
   const [form, setForm] = useState<FormState>(emptyForm("empresa"));
   const [questionarioOrgProfileId, setQuestionarioOrgProfileId] = useState<number | null>(null);
+  const [perfilAcoesDialogAberto, setPerfilAcoesDialogAberto] = useState(false);
+  const [previewQuestionarioAberto, setPreviewQuestionarioAberto] = useState(false);
+  const { data: perguntasPreviewRow = [] } = trpc.disc360.getCultureQuestions.useQuery(undefined, { enabled: previewQuestionarioAberto });
   const questionarioSectionRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (questionarioOrgProfileId) {
@@ -238,6 +243,7 @@ function PerfilEmpresaDiretoriaContent() {
         onSuccess: (data: any) => {
           setQuestionarioOrgProfileId(data.id);
           resetForm();
+          setEmpresaModo("escolha");
         },
       }
     );
@@ -307,11 +313,18 @@ function PerfilEmpresaDiretoriaContent() {
                 </TableCell>
                 <TableCell className="text-right space-x-2">
                   {perfil.profileType === "empresa" && perfil.origemPerfil === "questionario" && (
-                    <Button variant="ghost" size="icon" onClick={() => { setQuestionarioOrgProfileId(perfil.id); setEmpresaModo("questionario"); }} title="Abrir questionário">
-                      <ClipboardList className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {perfil.profileType === "diretoria" && (
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => setPreviewQuestionarioAberto(true)} title="Visualizar questionário">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => { setQuestionarioOrgProfileId(perfil.id); setPerfilAcoesDialogAberto(true); }} title="Selecionar respondentes e ver resultado">
+                                <Users className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <ContadorRespondentes orgProfileId={perfil.id} />
+                          </div>
+                        )}{perfil.profileType === "diretoria" && (
                     <Button variant="ghost" size="icon" onClick={() => setDiretoriaSelecionadaId(perfil.id)} title="Selecionar diretores">
                       <ClipboardList className="h-4 w-4" />
                     </Button>
@@ -412,13 +425,15 @@ function PerfilEmpresaDiretoriaContent() {
                       <Input value={form.profileName} onChange={(e) => setForm((f) => ({ ...f, profileName: e.target.value }))} />
                     </div>
                     <div className="flex gap-2">
-                      <Button onClick={handleIniciarQuestionario} disabled={isSaving}>Iniciar questionário</Button>
+                      <Button onClick={handleIniciarQuestionario} disabled={isSaving}>Criar Perfil da Empresa</Button>
                       <Button variant="outline" onClick={() => setEmpresaModo("escolha")}>Voltar</Button>
                     </div>
                   </div>
                 )}
 
-                {empresaModo === "questionario" && questionarioOrgProfileId && (
+                {perfilAcoesDialogAberto && questionarioOrgProfileId && (
+                  <Dialog open={perfilAcoesDialogAberto} onOpenChange={setPerfilAcoesDialogAberto}>
+                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
                   <div ref={questionarioSectionRef} className="space-y-4">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <p className="text-sm text-muted-foreground">
@@ -459,11 +474,29 @@ function PerfilEmpresaDiretoriaContent() {
                       </Card>
                     )}
 
-                    <Button variant="ghost" size="sm" onClick={() => { setQuestionarioOrgProfileId(null); setEmpresaModo("escolha"); }}>
-                      Iniciar outro perfil de empresa
+                    <Button variant="ghost" size="sm" onClick={() => setPerfilAcoesDialogAberto(false)}>
+                      Fechar
                     </Button>
                   </div>
+                    </DialogContent>
+                    </Dialog>
                 )}
+
+                    {previewQuestionarioAberto && (
+                    <Dialog open={previewQuestionarioAberto} onOpenChange={setPreviewQuestionarioAberto}>
+                      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                        <div className="space-y-3">
+                          <h3 className="text-lg font-semibold">Questionário de Cultura da Empresa</h3>
+                          <p className="text-sm text-muted-foreground">Perguntas que os respondentes selecionados irão receber (somente visualização).</p>
+                          {perguntasPreviewRow.map((p: any, idx: number) => (
+                            <div key={p.id ?? idx} className="border rounded-md p-3">
+                              <p className="text-sm font-medium">{idx + 1}. {p.texto ?? p.text ?? p.pergunta}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    )}
               </CardContent>
             </Card>
 
