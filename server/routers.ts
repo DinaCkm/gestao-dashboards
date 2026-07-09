@@ -7910,7 +7910,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           await db.updateAluno(input.alunoId, { departmentId: input.departmentId });
         }
         return await db.updateAluno(alunoId, updateData);
-        });
       }),
     
     // Gestão de Acesso (Email + CPF)
