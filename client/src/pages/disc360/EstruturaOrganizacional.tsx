@@ -61,6 +61,90 @@ const SUGESTOES_DEPARTAMENTO = [
   "Almoxarifado / Estoque",
   "Manutenção",
 ];
+
+const SUGESTOES_CARGO = [
+  "Aprendiz",
+  "Estagiário",
+  "Trainee",
+  "Auxiliar",
+  "Auxiliar Operacional",
+  "Auxiliar Administrativo",
+  "Assistente",
+  "Assistente Operacional",
+  "Assistente Administrativo",
+  "Técnico",
+  "Técnico Júnior",
+  "Técnico Pleno",
+  "Técnico Sênior",
+  "Operador",
+  "Operador Júnior",
+  "Operador Pleno",
+  "Operador Sênior",
+  "Analista",
+  "Analista Júnior",
+  "Analista Pleno",
+  "Analista Sênior",
+  "Analista Master",
+  "Especialista",
+  "Especialista Júnior",
+  "Especialista Pleno",
+  "Especialista Sênior",
+  "Consultor",
+  "Consultor Júnior",
+  "Consultor Pleno",
+  "Consultor Sênior",
+  "Consultor Master",
+  "Assessor",
+  "Assessor Técnico",
+  "Assessor Especial",
+  "Supervisor",
+  "Supervisor Júnior",
+  "Supervisor Pleno",
+  "Supervisor Sênior",
+  "Coordenador",
+  "Coordenador Júnior",
+  "Coordenador Pleno",
+  "Coordenador Sênior",
+  "Líder",
+  "Líder de Equipe",
+  "Encarregado",
+  "Chefe",
+  "Chefe de Setor",
+  "Gerente",
+  "Gerente Júnior",
+  "Gerente Pleno",
+  "Gerente Sênior",
+  "Gerente Geral",
+  "Gerente Executivo",
+  "Gerente Regional",
+  "Gerente Nacional",
+  "Head",
+  "Head de Área",
+  "Superintendente",
+  "Superintendente Adjunto",
+  "Diretor",
+  "Diretor Adjunto",
+  "Diretor Executivo",
+  "Diretor Geral",
+  "Vice-Presidente",
+  "Presidente",
+  "CEO",
+  "CFO",
+  "COO",
+  "CTO",
+  "CMO",
+  "CHRO",
+  "CIO",
+  "CCO",
+  "CLO",
+  "Conselheiro",
+  "Conselheiro Consultivo",
+  "Sócio",
+  "Sócio-Diretor",
+  "Sócio-Administrador",
+  "Fundador",
+  "Cofundador",
+];
 import { useLocation } from "wouter";
 import { ArrowLeft, Network, Pencil, Power } from "lucide-react";
 
@@ -426,7 +510,26 @@ function EstruturaOrganizacionalContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Nome do cargo</Label>
-                  <Input value={nomeCargo} onChange={(e) => setNomeCargo(e.target.value)} placeholder="Ex: Diretor, Supervisor, Analista..." />
+                  <Select
+                    value={SUGESTOES_CARGO.includes(nomeCargo) ? nomeCargo : (nomeCargo ? "outro" : "")}
+                    onValueChange={(v) => setNomeCargo(v === "outro" ? "" : v)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione um cargo" /></SelectTrigger>
+                    <SelectContent>
+                      {SUGESTOES_CARGO.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                      <SelectItem value="outro">Outro cargo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {!SUGESTOES_CARGO.includes(nomeCargo) && (
+                    <Input
+                      className="mt-2"
+                      value={nomeCargo}
+                      onChange={(e) => setNomeCargo(e.target.value)}
+                      placeholder="Ex: Diretor, Supervisor, Analista..."
+                    />
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Descricao (opcional)</Label>
