@@ -165,7 +165,8 @@ export const disc360Router = router({
         respostas: z.array(
           z.object({
             questionId: z.string(),
-            dimensao: discDimensionEnum,
+            maisDimensao: discDimensionEnum,
+            menosDimensao: discDimensionEnum,
           })
         ),
         respondentName: z.string().nullable().optional(),
@@ -535,7 +536,8 @@ export const disc360Router = router({
         respostas: z.array(
           z.object({
             questionId: z.string(),
-            dimensao: discDimensionEnum,
+            maisDimensao: discDimensionEnum,
+            menosDimensao: discDimensionEnum,
           })
         ),
       })
