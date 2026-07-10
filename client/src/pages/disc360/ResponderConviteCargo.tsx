@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -7,9 +7,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Clock } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 type Dimensao = "D" | "I" | "S" | "C";
+
+function formatarTempo(segundos: number): string {
+  const min = Math.floor(segundos / 60);
+  const sec = segundos % 60;
+  return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
 
 export default function ResponderConviteCargo() {
   const [, params] = useRoute("/disc360/responder-convite-cargo/:token");
@@ -28,6 +35,14 @@ export default function ResponderConviteCargo() {
     C: 0,
   });
   const [enviado, setEnviado] = useState(false);
+  const [validacaoTocada, setValidacaoTocada] = useState<Record<string, boolean>>({});
+  const [tempoDecorrido, setTempoDecorrido] = useState(0);
+
+  useEffect(() => {
+    if (enviado) return;
+    const interval = setInterval(() => setTempoDecorrido((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [enviado]);
 
   const submitMutation = trpc.disc360.responderConviteCargoPorToken.useMutation({
     onSuccess: () => {
@@ -99,7 +114,18 @@ export default function ResponderConviteCargo() {
   const totalRespondidas = perguntas.filter(
     (p: any) => respostas[p.id]?.mais && respostas[p.id]?.menos
   ).length;
-  const todasRespondidas = perguntas.length > 0 && totalRespondidas === perguntas.length;
+  const totalValidacaoRespondidas = perguntasValidacao.filter(
+    (pv: any) => validacaoTocada[pv.dimensao]
+  ).length;
+  const todasRespondidas =
+    perguntas.length > 0 &&
+    totalRespondidas === perguntas.length &&
+    perguntasValidacao.length > 0 &&
+    totalValidacaoRespondidas === perguntasValidacao.length;
+  const totalGeralPerguntas = perguntas.length + perguntasValidacao.length;
+  const totalGeralRespondidas = totalRespondidas + totalValidacaoRespondidas;
+  const percentualPreenchimento =
+    totalGeralPerguntas > 0 ? Math.round((totalGeralRespondidas / totalGeralPerguntas) * 100) : 0;
 
   const setMais = (perguntaId: string, dimensao: Dimensao) => {
     setRespostas((prev) => {
@@ -149,9 +175,20 @@ export default function ResponderConviteCargo() {
           </CardHeader>
         </Card>
 
-        <p className="text-sm text-muted-foreground text-center">
-          {totalRespondidas} de {perguntas.length} perguntas respondidas
-        </p>
+        <Card>
+          <CardContent className="pt-4 space-y-2">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>
+                {totalGeralRespondidas} de {totalGeralPerguntas} perguntas respondidas ({percentualPreenchimento}%)
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {formatarTempo(tempoDecorrido)}
+              </span>
+            </div>
+            <Progress value={percentualPreenchimento} />
+          </CardContent>
+        </Card>
 
         {perguntas.map((pergunta: any, index: number) => (
           <Card key={pergunta.id}>
@@ -226,9 +263,10 @@ export default function ResponderConviteCargo() {
                     <p className="text-sm font-medium">{pv.pergunta}</p>
                     <Slider
                       value={[valor]}
-                      onValueChange={(v) =>
-                        setRespostaValidacao((prev) => ({ ...prev, [pv.dimensao]: v[0] }))
-                      }
+                      onValueChange={(v) => {
+                        setRespostaValidacao((prev) => ({ ...prev, [pv.dimensao]: v[0] }));
+                        setValidacaoTocada((prev) => ({ ...prev, [pv.dimensao]: true }));
+                      }}
                       min={0}
                       max={100}
                       step={1}
