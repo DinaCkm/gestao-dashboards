@@ -76,6 +76,7 @@ import PerfisCargo from "./pages/disc360/PerfisCargo";
 import ResponderConviteCargo from "./pages/disc360/ResponderConviteCargo";
 import RelatorioCargo from "./pages/disc360/RelatorioCargo";
 import DashboardCargo from "./pages/disc360/DashboardCargo";
+import AplicacoesDISC from "./pages/disc360/AplicacoesDISC";
 import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
 import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
@@ -183,6 +184,7 @@ function Router() {
       <Route path={"/disc360/relatorio-cultura/:orgProfileId"} component={RelatorioCultura} />
       <Route path={"/disc360/perfis-cargo"} component={PerfisCargo} />
       <Route path={"/disc360/dashboard-cargo"} component={DashboardCargo} />
+      <Route path={"/disc360/aplicacoes"} component={AplicacoesDISC} />
       <Route path={"/disc360/responder-convite-cargo/:token"} component={ResponderConviteCargo} />
       <Route path={"/disc360/relatorio-cargo/:cargoProfileId"} component={RelatorioCargo} />
       <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
