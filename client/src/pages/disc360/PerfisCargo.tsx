@@ -256,9 +256,20 @@ function PerfisCargoContent() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Button variant="outline" size="sm" onClick={() => setAcoesAbertoId(p.id)}>
-                              Convites e resultado
-                            </Button>
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setAcoesAbertoId(p.id)}>
+                                Convites e resultado
+                              </Button>
+                              <Link href={`/disc360/dashboard-cargo?cargoProfileId=${p.id}`}>
+                                <Button variant="outline" size="sm">
+                                  Ver dashboard
+                                </Button>
+                              </Link>
+                              <Button variant="ghost" size="sm" onClick={() => setPreviewQuestionarioAberto(true)}>
+                                <Eye className="mr-1 h-4 w-4" />
+                                Questionário
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
