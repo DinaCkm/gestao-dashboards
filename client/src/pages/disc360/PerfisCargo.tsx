@@ -430,12 +430,17 @@ function CargoAcoesDialog({
                 Predominante: {preview.perfilPredominante} · Secundário: {preview.perfilSecundario}
               </p>
             </div>
-            <Button
-              onClick={() => consolidarMutation.mutate({ cargoProfileId })}
-              disabled={consolidarMutation.isPending}
-            >
-              {consolidarMutation.isPending ? "Salvando..." : "Consolidar e salvar perfil do cargo"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => consolidarMutation.mutate({ cargoProfileId })}
+                disabled={consolidarMutation.isPending}
+              >
+                {consolidarMutation.isPending ? "Salvando..." : "Consolidar e salvar perfil do cargo"}
+              </Button>
+              <Link href={`/disc360/relatorio-cargo/${cargoProfileId}`}>
+                <Button variant="outline">Ver relatório para impressão</Button>
+              </Link>
+            </div>
           </div>
         )}
       </DialogContent>
