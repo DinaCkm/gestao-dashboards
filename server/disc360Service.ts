@@ -18,6 +18,8 @@ import {
   alunos,
   discResultados,
   autopercepcoesCompetencias,
+  departments,
+  programs,
   type InsertDiscAssessment,
   type InsertDiscAssessmentAnswer,
   type InsertDiscRoleProfile,
@@ -918,4 +920,97 @@ export async function listAplicacoesDISC(database: DbClient, programId: number) 
       competenciasRespondidas: competenciaCountByAluno.get(a.id) ?? 0,
     };
   });
+}
+
+export async function getRelatorioIndividualDISC(database: DbClient, alunoId: number) {
+  const [aluno] = await database.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  if (!aluno) return null;
+
+  const disc = await getLegacyDiscResultForAluno(database, alunoId);
+
+  let departmentName: string | null = null;
+  let lider: { name: string; email: string | null } | null = null;
+  if (aluno.departmentId) {
+    const [dept] = await database
+      .select()
+      .from(departments)
+      .where(eq(departments.id, aluno.departmentId))
+      .limit(1);
+    if (dept) {
+      departmentName = dept.name;
+      if (dept.managerId) {
+        const [liderAluno] = await database
+          .select()
+          .from(alunos)
+          .where(eq(alunos.id, dept.managerId))
+          .limit(1);
+        if (liderAluno) {
+          lider = { name: liderAluno.name, email: liderAluno.email };
+        }
+      }
+    }
+  }
+
+  let programName: string | null = null;
+  if (aluno.programId) {
+    const [prog] = await database.select().from(programs).where(eq(programs.id, aluno.programId)).limit(1);
+    programName = prog?.name ?? null;
+  }
+
+  return {
+    aluno: { id: aluno.id, name: aluno.name, email: aluno.email, cargo: aluno.cargo },
+    programName,
+    departmentName,
+    lider,
+    disc,
+  };
+}
+
+export type EnviarRelatorioIndividualDISCInput = {
+  alunoId: number;
+  destinatarios: Array<"colaborador" | "lider">;
+};
+
+export async function enviarRelatorioIndividualDISC(
+  database: DbClient,
+  input: EnviarRelatorioIndividualDISCInput
+) {
+  const relatorio = await getRelatorioIndividualDISC(database, input.alunoId);
+  if (!relatorio) {
+    throw new Error("Colaborador nao encontrado.");
+  }
+  if (!relatorio.disc) {
+    throw new Error("Este colaborador ainda nao concluiu o teste DISC.");
+  }
+
+  const url = `https://ecolider.ecodobem.com/disc360/relatorio-individual/${input.alunoId}`;
+
+  const destinatariosEmail: { email: string; nome: string }[] = [];
+  if (input.destinatarios.includes("colaborador") && relatorio.aluno.email) {
+    destinatariosEmail.push({ email: relatorio.aluno.email, nome: relatorio.aluno.name });
+  }
+  if (input.destinatarios.includes("lider") && relatorio.lider?.email) {
+    destinatariosEmail.push({ email: relatorio.lider.email, nome: relatorio.lider.name });
+  }
+
+  if (destinatariosEmail.length === 0) {
+    throw new Error("Nenhum destinatario com email valido encontrado para o envio.");
+  }
+
+  const results: { email: string; success: boolean; error?: string }[] = [];
+  for (const dest of destinatariosEmail) {
+    const html = `
+      <p>Olá, ${dest.nome}.</p>
+      <p>O relatório individual de Perfil DISC de <strong>${relatorio.aluno.name}</strong> está disponível para visualização:</p>
+      <p><a href="${url}">${url}</a></p>
+    `;
+    const result = await sendEmail({
+      to: dest.email,
+      subject: `Relatório DISC - ${relatorio.aluno.name}`,
+      html,
+    });
+    results.push({ email: dest.email, success: result.success, error: result.error });
+  }
+
+  return { results };
 }
