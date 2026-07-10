@@ -178,9 +178,17 @@ function AplicacoesDISCContent() {
                       <TableCell className="font-medium">{a.name}</TableCell>
                       <TableCell>
                         {a.discConcluido ? (
-                          <Badge variant="secondary" title="Teste ja concluido - liberar novamente exigiria um ciclo de reavaliacao, ainda nao implementado">
-                            Teste já concluído
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">Concluído</Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              title="Novo ciclo de reavaliacao - melhoria futura, ainda nao disponivel"
+                            >
+                              Novo ciclo (Em breve)
+                            </Button>
+                          </div>
                         ) : a.onboardingLiberado ? (
                           <Badge variant="secondary">Liberado</Badge>
                         ) : (
