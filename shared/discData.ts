@@ -488,6 +488,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   pontosFortes: string[];
   areasDesenvolvimento: string[];
   comoSeRelaciona: string;
+  dicaRelacionamento: string;
   cor: string;
   subfatores: Partial<Record<DiscDimensao, string>>;
   percepcao: { comoSeVe: string; comoLiderancaVe: string; comoParesVeem: string };
@@ -509,7 +510,8 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       "Gestão de Conflitos — buscar acordos em vez de impor pontos de vista sob pressão",
       "Adaptabilidade — ajustar o ritmo quando o processo pede mais cautela do que velocidade"
     ],
-    comoSeRelaciona: "Tende a ser direto e objetivo nas relações, valorizando eficiência e competência. Pode ser percebido como autoritário quando sob pressão.",
+    comoSeRelaciona: "Você tende a se relacionar de forma direta, objetiva e orientada para soluções. Valoriza pessoas competentes, comprometidas e capazes de acompanhar um ritmo mais ágil, o que pode tornar suas interações práticas, claras e produtivas.\n\nEm situações de pressão ou urgência, sua firmeza pode ser percebida como intensidade ou autoritarismo, mesmo quando sua intenção é apenas resolver o problema com rapidez. Por isso, procure reservar espaço para ouvir, explicar o contexto e reconhecer as contribuições das outras pessoas antes de definir o próximo passo.\n\nAo equilibrar objetividade com escuta e consideração, você fortalece a confiança, amplia a colaboração e consegue mobilizar as pessoas sem perder sua capacidade de decisão.",
+    dicaRelacionamento: "Antes de responder ou decidir, faça uma pausa e pergunte: \"O que você pensa sobre isso?\" ou \"Há algum ponto que eu ainda não considerei?\" Essa pequena mudança preserva sua firmeza e, ao mesmo tempo, aumenta o envolvimento das pessoas.",
     cor: "#DC2626", // vermelho
     subfatores: {
       I: "Seu perfil secundário de Influência complementa muito bem a sua Dominância. Além de agir com objetividade e tomar decisões, você também tende a comunicar suas ideias com entusiasmo, envolver as pessoas e conquistar adesão para os objetivos que deseja alcançar.\n\nEm situações de maior pressão ou urgência, pode ser importante equilibrar a rapidez com alguns momentos de escuta e alinhamento. Antes de avançar, procure confirmar se as pessoas compreenderam a proposta, tiveram espaço para contribuir e sabem como participar da decisão.\n\nAo combinar sua capacidade de agir com uma comunicação mais aberta e cuidadosa, você amplia seu poder de influência, fortalece os relacionamentos e aumenta as chances de alcançar resultados com o apoio genuíno das pessoas.",
@@ -539,7 +541,8 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       "Leitura de Cenário — analisar dados e contexto antes de se deixar levar pelo entusiasmo do momento",
       "Disciplina — manter constância na execução de tarefas repetitivas, mesmo sem estímulo imediato"
     ],
-    comoSeRelaciona: "Tende a ser caloroso e acessível, criando um ambiente positivo. Pode ser percebido como disperso quando há muitas ideias em andamento.",
+    comoSeRelaciona: "Você tende a se relacionar de forma calorosa, acessível e entusiasmada, criando um ambiente positivo por onde passa. Valoriza pessoas abertas, comunicativas e dispostas a construir junto, o que torna suas interações leves, criativas e envolventes.\n\nEm situações de pressão ou urgência, esse entusiasmo pode ser percebido como dispersão, como se muitas ideias estivessem em andamento ao mesmo tempo sem foco claro, mesmo quando sua intenção é apenas manter o clima positivo e engajar todo mundo. Por isso, procure nomear com clareza qual é a prioridade do momento antes de trazer novas ideias para a conversa.\n\nAo equilibrar seu entusiasmo com mais foco e constância, você fortalece a confiança das pessoas na sua palavra e transforma sua energia em resultados mais consistentes.",
+    dicaRelacionamento: "Antes de propor algo novo em uma conversa já em andamento, faça uma pausa e pergunte: \"Isso ajuda a fechar o que já começamos, ou é uma ideia para depois?\" Essa pequena pausa preserva seu entusiasmo e, ao mesmo tempo, aumenta a confiança das pessoas na sua palavra.",
     cor: "#F59E0B", // amarelo/âmbar
     subfatores: {
       D: "Seu perfil secundário de Dominância complementa muito bem a sua Influência. Além de engajar e comunicar com entusiasmo, você também tende a buscar resultados concretos e a assumir o controle quando a situação exige.\n\nEm situações de maior pressão ou urgência, pode ser importante equilibrar o entusiasmo do momento com um pouco mais de planejamento antes de acelerar o ritmo.\n\nAo combinar sua capacidade de engajar pessoas com essa disposição para agir, você transforma entusiasmo em resultado com mais consistência.",
@@ -569,7 +572,8 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       "Tomada de Decisão — decidir com mais agilidade quando a situação exige resposta rápida",
       "Protagonismo — se posicionar e assumir mais visibilidade em vez de ficar em segundo plano"
     ],
-    comoSeRelaciona: "Tende a ser acolhedor e solidário, priorizando o bem-estar do grupo. Pode ser percebido como resistente a mudanças quando sai da zona de conforto.",
+    comoSeRelaciona: "Você tende a se relacionar de forma acolhedora e solidária, priorizando o bem-estar e a harmonia do grupo. Valoriza pessoas pacientes, leais e comprometidas com o coletivo, o que torna suas interações estáveis, confiáveis e seguras.\n\nEm situações de pressão ou mudança repentina, essa busca por harmonia pode ser percebida como resistência ou lentidão, mesmo quando sua intenção é apenas garantir que a transição aconteça sem prejudicar ninguém. Por isso, procure comunicar suas dúvidas e preocupações assim que elas surgirem, em vez de guardá-las para não gerar desconforto.\n\nAo equilibrar sua busca por estabilidade com uma comunicação mais aberta sobre mudanças, você fortalece a confiança do grupo e ajuda a conduzir transições com mais segurança para todos.",
+    dicaRelacionamento: "Diante de uma mudança que te incomoda, faça uma pausa e diga: \"Preciso de um tempo para entender melhor essa mudança, pode me ajudar com isso?\" Essa pequena atitude preserva sua estabilidade e, ao mesmo tempo, evita que a insatisfação se acumule em silêncio.",
     cor: "#16A34A", // verde
     subfatores: {
       D: "Seu perfil secundário de Dominância complementa muito bem a sua Estabilidade. Além de ser confiável e cooperativo, você também tende a ganhar mais disposição para se posicionar e tomar decisões rápidas quando necessário.\n\nEm situações de maior pressão ou urgência, pode ser importante equilibrar a busca por harmonia com a coragem de comunicar sua posição, mesmo quando ela pode gerar algum desconforto.\n\nAo combinar sua consistência com essa disposição para agir, você se torna alguém em quem as pessoas confiam tanto para manter a estabilidade quanto para avançar quando é preciso.",
@@ -599,7 +603,8 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       "Tomada de Decisão — avançar com a informação disponível, sem esperar 100% de certeza",
       "Resiliência — lidar com erros e imperfeições de forma mais leve, sem exigência excessiva de si e dos outros"
     ],
-    comoSeRelaciona: "Tende a ser reservado e objetivo, valorizando competência e precisão. Pode ser percebido como excessivamente crítico quando os padrões não são atendidos.",
+    comoSeRelaciona: "Você tende a se relacionar de forma reservada e objetiva, valorizando competência, precisão e qualidade no que é entregue. Valoriza pessoas criteriosas e comprometidas com padrões elevados, o que torna suas interações claras, consistentes e confiáveis.\n\nEm situações em que os padrões não são atendidos, essa busca por excelência pode ser percebida como crítica excessiva, mesmo quando sua intenção é apenas ajudar a elevar a qualidade do resultado. Por isso, procure reconhecer o que já está bom antes de apontar o que pode melhorar, e explicar o critério por trás da sua observação.\n\nAo equilibrar seu rigor técnico com reconhecimento e mais abertura, você fortalece a confiança das pessoas na sua avaliação e torna o padrão de qualidade um objetivo compartilhado, não uma cobrança individual.",
+    dicaRelacionamento: "Antes de apontar um erro ou inconsistência, faça uma pausa e comece por: \"Isso já está bom em X, e pode ficar ainda melhor se...\" Essa pequena mudança preserva seu rigor técnico e, ao mesmo tempo, aumenta a receptividade das pessoas ao seu feedback.",
     cor: "#2563EB", // azul
     subfatores: {
       D: "Seu perfil secundário de Dominância complementa muito bem a sua Conformidade. Além de analisar com rigor técnico, você também tende a ganhar mais disposição para decidir e agir quando a situação pede.\n\nEm situações de maior pressão ou urgência, pode ser importante equilibrar a busca por precisão com a urgência por resultado, definindo até onde a análise é realmente necessária antes de decidir.\n\nAo combinar seu rigor técnico com essa disposição para agir, você une qualidade e agilidade nas suas entregas.",
@@ -626,23 +631,23 @@ export const PRESSAO_DISC: Record<DiscDimensao, {
 }> = {
   D: {
     necessidadeAmeacada: "Perda de controle ou de autonomia sobre a situação",
-    reacaoRisco: "Impor decisões, atropelar opiniões e aumentar o tom de urgência mesmo quando não é necessário",
-    respostaRegulada: "Nomear a pressão antes de agir, abrir um espaço breve de escuta antes de decidir e distinguir urgência real de urgência percebida",
+    reacaoRisco: "Sua firmeza pode ser percebida como impaciência ou autoritarismo, mesmo quando sua intenção é apenas resolver o problema rápido e manter o resultado no caminho certo",
+    respostaRegulada: "Antes de agir, nomeie a pressão que está sentindo e abra um espaço breve de escuta — isso ajuda a distinguir a urgência real da urgência do momento, sem perder velocidade",
   },
   I: {
     necessidadeAmeacada: "Perda de aprovação ou de reconhecimento social",
-    reacaoRisco: "Evitar o conflito direto, prometer mais do que consegue entregar e dispersar o foco em várias frentes ao mesmo tempo",
-    respostaRegulada: "Nomear o desconforto sem precisar agradar a todos, reduzir compromissos assumidos por impulso e buscar dados antes de reagir emocionalmente",
+    reacaoRisco: "Seu entusiasmo pode levar a evitar o conflito direto ou a assumir mais compromissos do que consegue cumprir, mesmo quando sua intenção é agradar e manter o clima leve",
+    respostaRegulada: "Antes de dizer sim a algo novo, reserve um instante para checar sua agenda real — isso ajuda a manter sua palavra confiável sem perder o entusiasmo que é sua marca",
   },
   S: {
     necessidadeAmeacada: "Perda de previsibilidade ou de segurança na rotina",
-    reacaoRisco: "Paralisar diante de mudanças bruscas, evitar se posicionar para não gerar atrito e acumular insatisfação sem comunicar",
-    respostaRegulada: "Expressar a discordância assim que ela surge, permitir-se agir com informação parcial e buscar apoio para lidar com a mudança em vez de resistir sozinho",
+    reacaoRisco: "Sua busca por harmonia pode levar a evitar se posicionar diante de uma mudança, mesmo quando sua intenção é apenas preservar a estabilidade do grupo",
+    respostaRegulada: "Expresse a discordância ou dúvida assim que ela surgir, e busque apoio para lidar com a mudança — isso evita que a insatisfação se acumule em silêncio",
   },
   C: {
     necessidadeAmeacada: "Perda de precisão ou de controle sobre a qualidade do resultado",
-    reacaoRisco: "Travar em busca de mais dados, ser excessivamente crítico consigo ou com os outros e adiar decisões por medo do erro",
-    respostaRegulada: "Definir um nível suficiente de informação para decidir, separar fato de interpretação antes de criticar e aceitar entregas boas o bastante quando o prazo exige",
+    reacaoRisco: "Sua busca por precisão pode levar a adiar decisões em busca de mais dados, mesmo quando sua intenção é apenas garantir um resultado de qualidade",
+    respostaRegulada: "Defina previamente um nível suficiente de informação para decidir — isso ajuda a manter a qualidade do trabalho sem perder o ritmo necessário",
   },
 };
 
