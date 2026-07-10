@@ -3657,7 +3657,7 @@ export default function OnboardingAluno() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                Bem-vindo ao Programa de Certificação Líderes - Seja um líder 5 Estrelas. <span className="inline-flex gap-0.5 ml-1">{[...Array(5)].map((_, i) => (<span key={i} className="text-[#F5991F] text-xl">⭐</span>))}</span>
+                Bem-vindo à etapa do Assessment
               </h1>
               <p className="mt-1 text-white/80">
                 Conclua as etapas abaixo para iniciar sua jornada
