@@ -439,6 +439,9 @@ function CargoAcoesDialog({
               >
                 {consolidarMutation.isPending ? "Salvando..." : "Consolidar e salvar perfil do cargo"}
               </Button>
+              <Link href={`/disc360/dashboard-cargo?cargoProfileId=${cargoProfileId}`}>
+                <Button variant="outline">Ver dashboard</Button>
+              </Link>
               <Link href={`/disc360/relatorio-cargo/${cargoProfileId}`}>
                 <Button variant="outline">Ver relatório para impressão</Button>
               </Link>
