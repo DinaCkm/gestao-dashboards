@@ -495,7 +495,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   D: {
     nome: "Dominância",
     titulo: "Executor Determinado",
-    descricao: "Você é uma pessoa orientada a resultados, que gosta de assumir o controle e tomar decisões rápidas. Tem energia para enfrentar desafios e não tem medo de situações difíceis. Sua determinação e foco em objetivos são suas maiores forças.",
+    descricao: "Seu resultado sugere uma tendência a assumir o controle e tomar decisões rápidas, especialmente diante de desafios e prazos apertados. Essa configuração costuma se expressar por meio de energia para agir e foco constante em resultados. Sob pressão, pode aumentar o risco de decisões apressadas ou de atropelar a opinião dos outros — vale observar esse padrão nas situações de maior tensão.",
     pontosFortes: [
       "Tomada de decisão rápida e assertiva",
       "Foco em resultados e metas",
@@ -525,7 +525,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   I: {
     nome: "Influência",
     titulo: "Comunicador Inspirador",
-    descricao: "Você é uma pessoa comunicativa, entusiasta e que inspira os outros com sua energia positiva. Tem facilidade para criar conexões e motivar equipes. Sua capacidade de influenciar e engajar pessoas é sua maior força.",
+    descricao: "Seu resultado sugere uma tendência à comunicação entusiasmada e à facilidade para criar conexões e motivar as pessoas ao redor. Essa configuração costuma se expressar por meio de energia positiva e abertura social. Sob pressão, pode aumentar o risco de dispersão ou de prometer mais do que é possível entregar — vale observar esse padrão quando a agenda fica apertada.",
     pontosFortes: [
       "Comunicação persuasiva e envolvente",
       "Capacidade de motivar e inspirar equipes",
@@ -555,7 +555,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   S: {
     nome: "Estabilidade",
     titulo: "Colaborador Consistente",
-    descricao: "Você é uma pessoa confiável, paciente e que valoriza a harmonia nas relações. Tem grande capacidade de ouvir e apoiar os outros. Sua consistência e lealdade são suas maiores forças.",
+    descricao: "Seu resultado sugere uma tendência à paciência e à busca por harmonia nas relações, com grande disposição para ouvir e apoiar as pessoas ao redor. Essa configuração costuma se expressar por meio de consistência e lealdade nos compromissos assumidos. Sob pressão, pode aumentar o risco de evitar posicionamentos necessários ou de acumular insatisfação sem comunicar — vale observar esse padrão diante de mudanças bruscas.",
     pontosFortes: [
       "Paciência e capacidade de escuta",
       "Lealdade e comprometimento",
@@ -585,7 +585,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   C: {
     nome: "Conformidade",
     titulo: "Analista Preciso",
-    descricao: "Você é uma pessoa analítica, detalhista e que busca excelência em tudo que faz. Tem grande capacidade de planejamento e organização. Sua precisão e pensamento lógico são suas maiores forças.",
+    descricao: "Seu resultado sugere uma tendência à análise cuidadosa e à busca por excelência e precisão no que faz. Essa configuração costuma se expressar por meio de planejamento, organização e atenção a detalhes. Sob pressão, pode aumentar o risco de travar em busca de mais dados ou de adiar decisões por medo do erro — vale observar esse padrão quando o prazo não permite mais análise.",
     pontosFortes: [
       "Análise crítica e pensamento lógico",
       "Atenção a detalhes e qualidade",
@@ -612,6 +612,74 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       comoParesVeem: "Os pares tendem a te ver como uma referência de qualidade e método, ainda que, às vezes, percebam certa rigidez ou crítica excessiva quando os padrões não são atendidos.",
     },
   }
+};
+
+/**
+ * Como cada perfil tende a reagir sob pressão — e o caminho de autorregulação.
+ * Descreve tendências prováveis, não determinações: a mesma pessoa pode reagir de formas
+ * diferentes dependendo do contexto, do nível de energia e da experiência acumulada.
+ */
+export const PRESSAO_DISC: Record<DiscDimensao, {
+  necessidadeAmeacada: string;
+  reacaoRisco: string;
+  respostaRegulada: string;
+}> = {
+  D: {
+    necessidadeAmeacada: "Perda de controle ou de autonomia sobre a situação",
+    reacaoRisco: "Impor decisões, atropelar opiniões e aumentar o tom de urgência mesmo quando não é necessário",
+    respostaRegulada: "Nomear a pressão antes de agir, abrir um espaço breve de escuta antes de decidir e distinguir urgência real de urgência percebida",
+  },
+  I: {
+    necessidadeAmeacada: "Perda de aprovação ou de reconhecimento social",
+    reacaoRisco: "Evitar o conflito direto, prometer mais do que consegue entregar e dispersar o foco em várias frentes ao mesmo tempo",
+    respostaRegulada: "Nomear o desconforto sem precisar agradar a todos, reduzir compromissos assumidos por impulso e buscar dados antes de reagir emocionalmente",
+  },
+  S: {
+    necessidadeAmeacada: "Perda de previsibilidade ou de segurança na rotina",
+    reacaoRisco: "Paralisar diante de mudanças bruscas, evitar se posicionar para não gerar atrito e acumular insatisfação sem comunicar",
+    respostaRegulada: "Expressar a discordância assim que ela surge, permitir-se agir com informação parcial e buscar apoio para lidar com a mudança em vez de resistir sozinho",
+  },
+  C: {
+    necessidadeAmeacada: "Perda de precisão ou de controle sobre a qualidade do resultado",
+    reacaoRisco: "Travar em busca de mais dados, ser excessivamente crítico consigo ou com os outros e adiar decisões por medo do erro",
+    respostaRegulada: "Definir um nível suficiente de informação para decidir, separar fato de interpretação antes de criticar e aceitar entregas boas o bastante quando o prazo exige",
+  },
+};
+
+/**
+ * Áreas de desenvolvimento na perspectiva "força preservada / repertório a ampliar":
+ * evita o tom de fraqueza e mostra que o ponto de atenção é a mesma força usada em excesso
+ * ou fora de hora — não uma limitação isolada.
+ */
+export const DESENVOLVIMENTO_DETALHADO: Record<DiscDimensao, {
+  competencia: string;
+  forcaPreservada: string;
+  repertorioAmpliar: string;
+}[]> = {
+  D: [
+    { competencia: "Escuta Ativa", forcaPreservada: "Agilidade para decidir e agir sem travar diante de incertezas", repertorioAmpliar: "Abrir espaço para ouvir a equipe antes de fechar a decisão, mesmo quando o instinto já indica um caminho" },
+    { competencia: "Empatia", forcaPreservada: "Firmeza para manter o foco no resultado mesmo sob pressão", repertorioAmpliar: "Considerar o impacto emocional das decisões nas pessoas envolvidas antes de comunicá-las" },
+    { competencia: "Gestão de Conflitos", forcaPreservada: "Coragem para lidar com situações difíceis sem evitá-las", repertorioAmpliar: "Buscar acordos em vez de impor pontos de vista quando a situação está tensa" },
+    { competencia: "Adaptabilidade", forcaPreservada: "Disposição para agir rápido diante de mudanças", repertorioAmpliar: "Ajustar o ritmo quando o processo pede mais cautela do que velocidade" },
+  ],
+  I: [
+    { competencia: "Planejamento e Organização", forcaPreservada: "Entusiasmo para começar novas iniciativas", repertorioAmpliar: "Estruturar um plano antes de agir, evitando começar várias coisas ao mesmo tempo" },
+    { competencia: "Gestão de Tempo", forcaPreservada: "Energia para se envolver em múltiplas frentes", repertorioAmpliar: "Criar rotinas de acompanhamento para não perder prazos assumidos" },
+    { competencia: "Leitura de Cenário", forcaPreservada: "Otimismo que mantém a equipe motivada", repertorioAmpliar: "Analisar dados e contexto antes de se deixar levar pelo entusiasmo do momento" },
+    { competencia: "Disciplina", forcaPreservada: "Facilidade para engajar e mobilizar pessoas", repertorioAmpliar: "Manter constância na execução depois que o entusiasmo inicial passa" },
+  ],
+  S: [
+    { competencia: "Comunicação Assertiva", forcaPreservada: "Capacidade de acolher e manter a harmonia do grupo", repertorioAmpliar: "Expressar discordâncias e opiniões próprias de forma mais direta" },
+    { competencia: "Adaptabilidade", forcaPreservada: "Consistência que traz estabilidade para a equipe", repertorioAmpliar: "Se abrir mais rápido a mudanças de plano, mesmo fora da zona de conforto" },
+    { competencia: "Tomada de Decisão", forcaPreservada: "Cautela que evita decisões precipitadas", repertorioAmpliar: "Decidir com mais agilidade quando a situação exige resposta rápida" },
+    { competencia: "Protagonismo", forcaPreservada: "Discrição que facilita a cooperação e evita disputas", repertorioAmpliar: "Se posicionar e assumir mais visibilidade em vez de ficar em segundo plano" },
+  ],
+  C: [
+    { competencia: "Adaptabilidade", forcaPreservada: "Rigor técnico que garante qualidade e consistência", repertorioAmpliar: "Lidar melhor com mudanças de última hora e imprevistos" },
+    { competencia: "Inteligência Emocional", forcaPreservada: "Objetividade que reduz vieses na análise", repertorioAmpliar: "Equilibrar a análise técnica com mais sensibilidade ao lado humano das situações" },
+    { competencia: "Tomada de Decisão", forcaPreservada: "Cuidado que evita erros por precipitação", repertorioAmpliar: "Avançar com a informação disponível, sem esperar 100% de certeza" },
+    { competencia: "Resiliência", forcaPreservada: "Padrão elevado que eleva a qualidade do time", repertorioAmpliar: "Lidar com erros e imperfeições de forma mais leve, sem exigência excessiva de si e dos outros" },
+  ],
 };
 
 /**
