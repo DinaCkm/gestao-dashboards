@@ -182,6 +182,9 @@ export type Disc360RoleValidacaoFaixa = {
   max: number;
   label: string;
   texto: string;
+  pontosPositivos: string[];
+  pontosAtencao: string[];
+  pontosInvestigarSelecao: string[];
 };
 
 export type Disc360RoleValidacaoQuestion = {
@@ -193,42 +196,373 @@ export type Disc360RoleValidacaoQuestion = {
 export const DISC360_ROLE_VALIDACAO_QUESTIONS: Disc360RoleValidacaoQuestion[] = [
   {
     dimensao: "D",
-    pergunta: "Avaliando este cargo, quanto esta função exige Dominância para conduzir decisões, enfrentar desafios, lidar com pressão e entregar resultados?",
+    pergunta:
+      "Avaliando este cargo, quanto esta função exige Dominância para conduzir decisões, enfrentar desafios, lidar com pressão e entregar resultados?",
     faixas: [
-      { min: 0, max: 25, label: "Dominância baixa", texto: "O cargo exige uma condução mais cautelosa, diplomática e pouco confrontativa. A pessoa ainda precisa se posicionar, mas deve fazer isso com prudência, validação e cuidado nas relações." },
-      { min: 26, max: 50, label: "Dominância moderadamente baixa", texto: "O cargo exige alguma iniciativa e capacidade de decisão, mas com maior ponderação, menor exposição ao confronto e preferência por alinhamento antes da ação." },
-      { min: 51, max: 75, label: "Dominância moderadamente alta", texto: "O cargo exige posicionamento claro, responsabilidade por resultados e capacidade de decidir com firmeza, mas ainda preservando análise, escuta e cuidado com impactos." },
-      { min: 76, max: 100, label: "Dominância alta", texto: "O cargo exige decisão rápida, assertividade, enfrentamento direto de obstáculos, cobrança de resultados, autonomia e sustentação de decisões mesmo sob pressão." },
+      {
+        min: 0,
+        max: 25,
+        label: "Dominância baixa",
+        texto:
+          "O cargo exige uma condução mais cautelosa, diplomática e pouco confrontativa. A pessoa ainda precisa se posicionar, mas deve fazer isso com prudência, validação e cuidado nas relações.",
+        pontosPositivos: [
+          "Toma decisões com cautela, reduzindo o risco de escolhas precipitadas.",
+          "Evita atritos desnecessários e preserva o clima do time.",
+          "Boa aceitação em contextos que exigem diplomacia e escuta antes de agir.",
+        ],
+        pontosAtencao: [
+          "Pode demorar para decidir quando a situação exige rapidez.",
+          "Tende a evitar confrontos mesmo quando são necessários.",
+          "Pode ter dificuldade em cobrar resultados de forma direta.",
+        ],
+        pontosInvestigarSelecao: [
+          "Peça exemplos de decisões que teve que tomar sob pressão, mesmo sem ter certeza total.",
+          "Investigue como a pessoa reage diante de um conflito que não pode ser evitado.",
+          "Avalie o nível de conforto ao dar um feedback direto ou dizer não.",
+        ],
+      },
+      {
+        min: 26,
+        max: 50,
+        label: "Dominância moderadamente baixa",
+        texto:
+          "O cargo exige alguma iniciativa e capacidade de decisão, mas com maior ponderação, menor exposição ao confronto e preferência por alinhamento antes da ação.",
+        pontosPositivos: [
+          "Equilibra ação e escuta, buscando alinhamento antes de decidir.",
+          "Reduz o risco de decisões impulsivas ou mal avaliadas.",
+          "Tende a construir apoio da equipe antes de agir.",
+        ],
+        pontosAtencao: [
+          "Pode buscar validação em excesso antes de agir, perdendo tempo.",
+          "Risco de perder o timing em decisões urgentes.",
+          "Pode delegar decisões que deveria assumir pessoalmente.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa age quando precisa decidir sozinha, sem tempo para consultar ninguém.",
+          "Peça um exemplo de decisão tomada sem consenso da equipe.",
+          "Avalie a velocidade de resposta em situações que descreveu como urgentes.",
+        ],
+      },
+      {
+        min: 51,
+        max: 75,
+        label: "Dominância moderadamente alta",
+        texto:
+          "O cargo exige posicionamento claro, responsabilidade por resultados e capacidade de decidir com firmeza, mas ainda preservando análise, escuta e cuidado com impactos.",
+        pontosPositivos: [
+          "Assume responsabilidade e decide com firmeza quando necessário.",
+          "Orientação clara para resultado, sem abrir mão de ouvir antes de agir.",
+          "Consegue equilibrar urgência com análise da situação.",
+        ],
+        pontosAtencao: [
+          "Pode gerar atrito ao impor ritmo ou decisões ao time.",
+          "Risco de impaciência com pessoas que decidem mais devagar.",
+          "Pode subestimar o impacto emocional de suas decisões nos outros.",
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue como a pessoa lida com discordância da equipe após uma decisão já tomada.",
+          "Peça um exemplo de como equilibrou urgência e escuta em uma situação real.",
+          "Avalie como reage a um feedback que questiona diretamente uma decisão sua.",
+        ],
+      },
+      {
+        min: 76,
+        max: 100,
+        label: "Dominância alta",
+        texto:
+          "O cargo exige decisão rápida, assertividade, enfrentamento direto de obstáculos, cobrança de resultados, autonomia e sustentação de decisões mesmo sob pressão.",
+        pontosPositivos: [
+          "Assume riscos e responsabilidade sem se intimidar diante de obstáculos.",
+          "Sustenta a posição mesmo sob pressão ou questionamento.",
+          "Entrega resultado mesmo em cenários difíceis ou adversos.",
+        ],
+        pontosAtencao: [
+          "Risco de atropelar pessoas ou processos ao buscar velocidade.",
+          "Pode gerar conflitos desnecessários por excesso de assertividade.",
+          "Pode ter dificuldade em ouvir e acolher posições contrárias.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa lida com os próprios erros quando está sob pressão.",
+          "Peça exemplos de conflitos gerados por decisões rápidas e como foram resolvidos.",
+          "Avalie a capacidade de ouvir e mudar de posição quando confrontado com dados ou argumentos consistentes.",
+        ],
+      },
     ],
   },
   {
     dimensao: "I",
-    pergunta: "Avaliando este cargo, quanto esta função exige Influência para comunicar, envolver pessoas, construir relacionamentos e mobilizar adesão?",
+    pergunta:
+      "Avaliando este cargo, quanto esta função exige Influência para comunicar, envolver pessoas, construir relacionamentos e mobilizar adesão?",
     faixas: [
-      { min: 0, max: 25, label: "Influência baixa", texto: "O cargo exige uma comunicação mais reservada, técnica, objetiva e discreta. A pessoa se relaciona quando necessário, mas sem grande exposição social ou necessidade constante de persuasão." },
-      { min: 26, max: 50, label: "Influência moderadamente baixa", texto: "O cargo exige boa comunicação funcional e relacionamento cordial, mas sem depender fortemente de entusiasmo, visibilidade, negociação ou mobilização frequente de pessoas." },
-      { min: 51, max: 75, label: "Influência moderadamente alta", texto: "O cargo exige comunicação ativa, capacidade de envolver pessoas, negociar, criar vínculos e gerar adesão, ainda que de forma equilibrada e ajustada ao contexto." },
-      { min: 76, max: 100, label: "Influência alta", texto: "O cargo exige forte comunicação, presença, persuasão, entusiasmo, relacionamento constante, capacidade de engajar, inspirar confiança e mobilizar diferentes públicos." },
+      {
+        min: 0,
+        max: 25,
+        label: "Influência baixa",
+        texto:
+          "O cargo exige uma comunicação mais reservada, técnica, objetiva e discreta. A pessoa se relaciona quando necessário, mas sem grande exposição social ou necessidade constante de persuasão.",
+        pontosPositivos: [
+          "Comunicação objetiva e direta, focada no conteúdo técnico.",
+          "Menor desgaste em interações sociais frequentes.",
+          "Discrição em temas sensíveis ou confidenciais.",
+        ],
+        pontosAtencao: [
+          "Pode ter dificuldade em engajar ou motivar a equipe.",
+          "Pode parecer distante em times que precisam de proximidade constante.",
+          "Tende a evitar situações de exposição, como apresentações ou negociações.",
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue a experiência prévia liderando ou influenciando pessoas.",
+          "Pergunte como a pessoa se sente ao apresentar para grupos ou públicos maiores.",
+          "Peça exemplos de situações em que precisou convencer alguém de algo.",
+        ],
+      },
+      {
+        min: 26,
+        max: 50,
+        label: "Influência moderadamente baixa",
+        texto:
+          "O cargo exige boa comunicação funcional e relacionamento cordial, mas sem depender fortemente de entusiasmo, visibilidade, negociação ou mobilização frequente de pessoas.",
+        pontosPositivos: [
+          "Comunicação clara e sem excessos.",
+          "Relacionamento cordial e profissional com a equipe e stakeholders.",
+          "Menor risco de prometer além do que pode entregar.",
+        ],
+        pontosAtencao: [
+          "Pode não gerar entusiasmo ou engajamento espontâneo na equipe.",
+          "Tende a evitar papéis que exigem networking ativo ou negociação constante.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa constrói relacionamento com stakeholders importantes.",
+          "Peça exemplos de situações de negociação que já viveu.",
+          "Avalie o nível de conforto ao lidar com públicos variados.",
+        ],
+      },
+      {
+        min: 51,
+        max: 75,
+        label: "Influência moderadamente alta",
+        texto:
+          "O cargo exige comunicação ativa, capacidade de envolver pessoas, negociar, criar vínculos e gerar adesão, ainda que de forma equilibrada e ajustada ao contexto.",
+        pontosPositivos: [
+          "Boa capacidade de engajar e negociar com diferentes pessoas.",
+          "Cria vínculos com facilidade e se comunica bem em diferentes níveis.",
+          "Consegue gerar adesão sem depender de imposição.",
+        ],
+        pontosAtencao: [
+          "Pode priorizar aceitação e harmonia em detrimento de dados ou críticas necessárias.",
+          "Risco de otimismo excessivo em previsões ou promessas.",
+          "Pode se dispersar em interações sociais no lugar de focar na entrega.",
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue como a pessoa equilibra relacionamento e resultado no dia a dia.",
+          "Peça um exemplo de feedback difícil que precisou dar a alguém.",
+          "Pergunte como lida quando a boa comunicação não é suficiente para resolver um problema técnico.",
+        ],
+      },
+      {
+        min: 76,
+        max: 100,
+        label: "Influência alta",
+        texto:
+          "O cargo exige forte comunicação, presença, persuasão, entusiasmo, relacionamento constante, capacidade de engajar, inspirar confiança e mobilizar diferentes públicos.",
+        pontosPositivos: [
+          "Grande capacidade de engajar, inspirar e mobilizar pessoas.",
+          "Forte presença e comunicação em diferentes contextos.",
+          "Facilidade em criar redes de relacionamento amplas.",
+        ],
+        pontosAtencao: [
+          "Risco de priorizar o discurso em detrimento de dado e planejamento.",
+          "Pode superestimar acordos fechados apenas verbalmente.",
+          "Pode ter dificuldade com tarefas solitárias ou de baixo contato humano.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa organiza e acompanha compromissos assumidos verbalmente.",
+          "Peça exemplos de entregas técnicas ou detalhadas sob sua responsabilidade direta.",
+          "Avalie como lida com períodos de rotina de baixa interação social.",
+        ],
+      },
     ],
   },
   {
     dimensao: "S",
-    pergunta: "Avaliando este cargo, quanto esta função exige Estabilidade para manter constância, cooperação, paciência, previsibilidade e equilíbrio na rotina?",
+    pergunta:
+      "Avaliando este cargo, quanto esta função exige Estabilidade para manter constância, cooperação, paciência, previsibilidade e equilíbrio na rotina?",
     faixas: [
-      { min: 0, max: 25, label: "Estabilidade baixa", texto: "O cargo exige alta flexibilidade, adaptação rápida, agilidade e baixa dependência de rotina previsível. A pessoa precisa lidar bem com mudanças, interrupções e variações constantes." },
-      { min: 26, max: 50, label: "Estabilidade moderadamente baixa", texto: "O cargo exige alguma constância e cooperação, mas com forte necessidade de adaptação, alternância de prioridades e tolerância a ambientes menos previsíveis." },
-      { min: 51, max: 75, label: "Estabilidade moderadamente alta", texto: "O cargo exige continuidade, paciência, cooperação e equilíbrio, mas sem perder flexibilidade quando mudanças ou ajustes forem necessários." },
-      { min: 76, max: 100, label: "Estabilidade alta", texto: "O cargo exige grande constância, paciência, previsibilidade, cooperação, cuidado com o ritmo do time e sustentação da segurança emocional e operacional ao longo do tempo." },
+      {
+        min: 0,
+        max: 25,
+        label: "Estabilidade baixa",
+        texto:
+          "O cargo exige alta flexibilidade, adaptação rápida, agilidade e baixa dependência de rotina previsível. A pessoa precisa lidar bem com mudanças, interrupções e variações constantes.",
+        pontosPositivos: [
+          "Alta adaptabilidade a mudanças frequentes.",
+          "Conforto em ambientes dinâmicos ou instáveis.",
+          "Agilidade para mudar de prioridade quando necessário.",
+        ],
+        pontosAtencao: [
+          "Pode se desgastar ou perder foco em rotinas longas e repetitivas.",
+          "Pode gerar sensação de instabilidade percebida pela equipe.",
+          "Risco de descontinuidade em processos que exigem constância.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa se comporta diante de tarefas repetitivas de longo prazo.",
+          "Peça exemplos de continuidade que manteve em projetos extensos.",
+          "Avalie o nível de tolerância a rotina e processos padronizados.",
+        ],
+      },
+      {
+        min: 26,
+        max: 50,
+        label: "Estabilidade moderadamente baixa",
+        texto:
+          "O cargo exige alguma constância e cooperação, mas com forte necessidade de adaptação, alternância de prioridades e tolerância a ambientes menos previsíveis.",
+        pontosPositivos: [
+          "Equilibra rotina e mudança sem grande resistência.",
+          "Coopera bem em contextos variáveis.",
+          "Adapta-se com relativa facilidade a novas prioridades.",
+        ],
+        pontosAtencao: [
+          "Pode ter dificuldade em ambientes totalmente estáveis e repetitivos.",
+          "Alternância frequente de prioridades pode impactar a previsibilidade das entregas.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa prioriza tarefas quando tudo muda com frequência.",
+          "Peça um exemplo de como manteve a continuidade de um processo apesar das mudanças ao redor.",
+        ],
+      },
+      {
+        min: 51,
+        max: 75,
+        label: "Estabilidade moderadamente alta",
+        texto:
+          "O cargo exige continuidade, paciência, cooperação e equilíbrio, mas sem perder flexibilidade quando mudanças ou ajustes forem necessários.",
+        pontosPositivos: [
+          "Mantém constância no trabalho e coopera bem com o time.",
+          "Sustenta ritmo estável mesmo diante de ajustes pontuais.",
+          "Boa combinação de paciência com abertura a mudanças pontuais.",
+        ],
+        pontosAtencao: [
+          "Pode resistir a mudanças bruscas ou repentinas.",
+          "Pode levar mais tempo para se adaptar a reestruturações importantes.",
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue como a pessoa reage a mudanças de última hora.",
+          "Peça um exemplo de adaptação a uma mudança organizacional significativa.",
+        ],
+      },
+      {
+        min: 76,
+        max: 100,
+        label: "Estabilidade alta",
+        texto:
+          "O cargo exige grande constância, paciência, previsibilidade, cooperação, cuidado com o ritmo do time e sustentação da segurança emocional e operacional ao longo do tempo.",
+        pontosPositivos: [
+          "Grande estabilidade emocional e operacional ao longo do tempo.",
+          "Paciência e cooperação consistentes com a equipe.",
+          "Cuida do ritmo do time e preserva a previsibilidade dos processos.",
+        ],
+        pontosAtencao: [
+          "Pode resistir fortemente a mudanças.",
+          "Pode ter dificuldade em ambientes de alta volatilidade ou urgência constante.",
+          "Risco de desconforto diante de reestruturações frequentes.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa lidou com uma mudança organizacional grande e inesperada.",
+          "Avalie o nível de conforto com ambientes de alta incerteza.",
+          "Peça exemplos de flexibilização da própria rotina quando isso foi necessário.",
+        ],
+      },
     ],
   },
   {
     dimensao: "C",
-    pergunta: "Avaliando este cargo, quanto esta função exige Conformidade para seguir critérios, métodos, normas, padrões e controles de qualidade?",
+    pergunta:
+      "Avaliando este cargo, quanto esta função exige Conformidade para seguir critérios, métodos, normas, padrões e controles de qualidade?",
     faixas: [
-      { min: 0, max: 25, label: "Conformidade baixa", texto: "O cargo exige maior flexibilidade, autonomia e adaptação. A pessoa precisa entregar com qualidade, mas com liberdade para ajustar caminhos e menor dependência de regras rígidas." },
-      { min: 26, max: 50, label: "Conformidade moderadamente baixa", texto: "O cargo exige atenção a critérios importantes, mas permite flexibilidade, bom senso e adaptação dos procedimentos conforme o contexto." },
-      { min: 51, max: 75, label: "Conformidade moderadamente alta", texto: "O cargo exige método, organização, atenção a detalhes e respeito aos padrões, ainda com alguma possibilidade de adaptação quando a situação justificar." },
-      { min: 76, max: 100, label: "Conformidade alta", texto: "O cargo exige rigor técnico, precisão, análise cuidadosa, documentação, controle, atenção minuciosa a detalhes e cumprimento fiel de normas e processos definidos." },
+      {
+        min: 0,
+        max: 25,
+        label: "Conformidade baixa",
+        texto:
+          "O cargo exige maior flexibilidade, autonomia e adaptação. A pessoa precisa entregar com qualidade, mas com liberdade para ajustar caminhos e menor dependência de regras rígidas.",
+        pontosPositivos: [
+          "Flexibilidade para adaptar processos conforme a necessidade.",
+          "Autonomia para encontrar soluções alternativas.",
+          "Menor rigidez burocrática no dia a dia.",
+        ],
+        pontosAtencao: [
+          "Risco de menor padronização ou documentação dos processos.",
+          "Pode negligenciar detalhes ou normas importantes.",
+          "Risco de inconsistência em processos que exigem regulação.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa lida com tarefas que exigem alta precisão ou documentação.",
+          "Peça exemplos de erros cometidos por falta de atenção a detalhes.",
+          "Avalie o nível de conforto seguindo normas e regras rígidas.",
+        ],
+      },
+      {
+        min: 26,
+        max: 50,
+        label: "Conformidade moderadamente baixa",
+        texto:
+          "O cargo exige atenção a critérios importantes, mas permite flexibilidade, bom senso e adaptação dos procedimentos conforme o contexto.",
+        pontosPositivos: [
+          "Equilibra regras e bom senso na execução do trabalho.",
+          "Adapta processos quando faz sentido para o resultado.",
+          "Atenção a critérios relevantes sem engessar o trabalho.",
+        ],
+        pontosAtencao: [
+          "Pode relaxar padrões em momentos de pressão.",
+          "Pode não documentar processos com o rigor necessário.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa garante qualidade quando o prazo é curto.",
+          "Peça exemplos de decisões entre seguir a norma à risca ou adaptar o processo.",
+        ],
+      },
+      {
+        min: 51,
+        max: 75,
+        label: "Conformidade moderadamente alta",
+        texto:
+          "O cargo exige método, organização, atenção a detalhes e respeito aos padrões, ainda com alguma possibilidade de adaptação quando a situação justificar.",
+        pontosPositivos: [
+          "Organização e atenção a detalhes no trabalho.",
+          "Segue padrões e qualidade de forma consistente.",
+          "Mantém certo grau de adaptabilidade quando justificado.",
+        ],
+        pontosAtencao: [
+          "Pode ser mais lento para decidir quando falta uma regra clara.",
+          "Pode gerar resistência a mudanças de processo sem justificativa técnica.",
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue como a pessoa se comporta diante de ambiguidade ou ausência de processo definido.",
+          "Peça exemplos de melhorias de processo que já propôs.",
+        ],
+      },
+      {
+        min: 76,
+        max: 100,
+        label: "Conformidade alta",
+        texto:
+          "O cargo exige rigor técnico, precisão, análise cuidadosa, documentação, controle, atenção minuciosa a detalhes e cumprimento fiel de normas e processos definidos.",
+        pontosPositivos: [
+          "Alta precisão técnica e rigor na análise.",
+          "Forte compromisso com qualidade e conformidade.",
+          "Documentação e controle consistentes dos processos.",
+        ],
+        pontosAtencao: [
+          "Risco de lentidão em decisões urgentes.",
+          "Pode ter dificuldade com ambiguidade ou mudanças de última hora.",
+          "Risco de perfeccionismo que atrasa entregas.",
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa lida com prazos apertados que exigem abrir mão de parte do rigor.",
+          "Peça exemplos de flexibilização de processo sob pressão de tempo.",
+          "Avalie o nível de conforto com decisões tomadas com informação incompleta.",
+        ],
+      },
     ],
   },
 ];
