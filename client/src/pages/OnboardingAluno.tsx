@@ -3578,14 +3578,21 @@ export default function OnboardingAluno() {
   // Buscar lista de mentores para recuperar dados da mentora salva
   const { data: mentoresData } = trpc.mentor.list.useQuery();
 
+  // Assessment: tipoPortal 'assessment' + Total de Sessões Contratadas define se há devolutiva/mentoria
+  const isAssessmentOnly = onboardingStatus?.tipoPortal === "assessment";
+  const alunoTotalSessoes = (dashData?.found ? (dashData.aluno as any)?.totalSessoesContratadas : null) ?? 0;
+  const assessmentTemDevolutiva = !isAssessmentOnly || alunoTotalSessoes > 0;
+  const assessmentMaxStep = isAssessmentOnly ? (assessmentTemDevolutiva ? 5 : 2) : 8;
+
   // Restaurar o step correto ao carregar a página
   useEffect(() => {
     if (progressoData && !stepInitialized) {
-      setCurrentStep(progressoData.step);
-      setProgressStep(progressoData.step);
+      const restoredStep = Math.min(progressoData.step, assessmentMaxStep);
+      setCurrentStep(restoredStep);
+      setProgressStep(restoredStep);
       setStepInitialized(true);
     }
-  }, [progressoData, stepInitialized]);
+  }, [progressoData, stepInitialized, assessmentMaxStep]);
 
   // Recuperar a mentora salva no banco quando o aluno retorna
   useEffect(() => {
@@ -3632,11 +3639,6 @@ export default function OnboardingAluno() {
       </AlunoLayout>
     );
   }
-
-  // Assessment: tipoPortal 'assessment' + Total de Sessões Contratadas define se há devolutiva/mentoria
-  const isAssessmentOnly = onboardingStatus?.tipoPortal === "assessment";
-  const alunoTotalSessoes = (dashData?.found ? (dashData.aluno as any)?.totalSessoesContratadas : null) ?? 0;
-  const assessmentTemDevolutiva = !isAssessmentOnly || alunoTotalSessoes > 0;
 
   const handleStepComplete = () => {
     // Assessment sem devolutiva: encerra logo após a etapa de Assessment (não vai para Mentora)
