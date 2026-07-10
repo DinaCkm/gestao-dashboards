@@ -22,10 +22,10 @@ export default function ResponderConviteCargo() {
 
   const [respostas, setRespostas] = useState<Record<string, { mais?: Dimensao; menos?: Dimensao }>>({});
   const [respostaValidacao, setRespostaValidacao] = useState<Record<string, number>>({
-    D: 50,
-    I: 50,
-    S: 50,
-    C: 50,
+    D: 0,
+    I: 0,
+    S: 0,
+    C: 0,
   });
   const [enviado, setEnviado] = useState(false);
 
@@ -219,7 +219,7 @@ export default function ResponderConviteCargo() {
             </CardHeader>
             <CardContent className="space-y-6">
               {perguntasValidacao.map((pv: any) => {
-                const valor = respostaValidacao[pv.dimensao] ?? 50;
+                const valor = respostaValidacao[pv.dimensao] ?? 0;
                 const faixa = pv.faixas.find((f: any) => valor >= f.min && valor <= f.max);
                 return (
                   <div key={pv.dimensao} className="space-y-2 border-b pb-6 last:border-b-0 last:pb-0">
