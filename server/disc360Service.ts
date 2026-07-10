@@ -20,6 +20,7 @@ import {
   autopercepcoesCompetencias,
   departments,
   programs,
+  assessmentPdi,
   type InsertDiscAssessment,
   type InsertDiscAssessmentAnswer,
   type InsertDiscRoleProfile,
@@ -883,6 +884,12 @@ export async function listAplicacoesDISC(database: DbClient, programId: number) 
     return [];
   }
 
+  const pdiRows = await database
+    .select({ alunoId: assessmentPdi.alunoId })
+    .from(assessmentPdi)
+    .where(inArray(assessmentPdi.alunoId, alunoIds));
+  const alunoIdsComPdi = new Set(pdiRows.map((r) => r.alunoId));
+
   const discRows = await database
     .select()
     .from(discResultados)
@@ -910,6 +917,7 @@ export async function listAplicacoesDISC(database: DbClient, programId: number) 
     const disc = latestDiscByAluno.get(a.id) ?? null;
     return {
       ...a,
+      hasPdi: alunoIdsComPdi.has(a.id),
       discConcluido: !!disc,
       discPerfilPredominante: disc?.perfilPredominante ?? null,
       discPerfilSecundario: disc?.perfilSecundario ?? null,
