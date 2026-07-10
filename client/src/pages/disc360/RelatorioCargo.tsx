@@ -169,10 +169,17 @@ export default function RelatorioCargo() {
                   <p className="text-sm text-slate-700">
                     D {r.scores.D} · I {r.scores.I} · S {r.scores.S} · C {r.scores.C}
                   </p>
-                  <p className="text-sm text-slate-700">Régua de validação: {r.respostaValidacaoDireta}</p>
-                  {r.avaliacaoDivergencia?.divergente && (
-                    <p className="mt-2 text-sm font-medium text-amber-700">{r.avaliacaoDivergencia.texto}</p>
-                  )}
+                  <p className="text-sm text-slate-700">
+                    Régua de validação — D {r.respostaValidacao?.D} · I {r.respostaValidacao?.I} · S{" "}
+                    {r.respostaValidacao?.S} · C {r.respostaValidacao?.C}
+                  </p>
+                  {(r.avaliacoesDivergencia ?? [])
+                    .filter((av: any) => av.divergente)
+                    .map((av: any) => (
+                      <p key={av.dimensao} className="mt-2 text-sm font-medium text-amber-700">
+                        {av.texto}
+                      </p>
+                    ))}
                 </div>
               ))}
               {data.respondentes.length === 0 && (
