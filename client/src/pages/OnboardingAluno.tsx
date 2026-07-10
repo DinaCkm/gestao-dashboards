@@ -477,6 +477,13 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false, lockNomeE
   const [dataNascimento, setDataNascimento] = useState("");
   const [dataNascimentoInput, setDataNascimentoInput] = useState("");
   const [estadoCivil, setEstadoCivil] = useState("");
+  const [empresaProgramId, setEmpresaProgramId] = useState<number | null>(null);
+  const [cargoOutro, setCargoOutro] = useState(false);
+  const { data: empresasList } = trpc.auth.listEmpresas.useQuery();
+  const { data: cargosList } = trpc.cargos.list.useQuery(
+    { programId: empresaProgramId ?? 0 },
+    { enabled: !!empresaProgramId }
+  );
   const [temFilhos, setTemFilhos] = useState(false);
   const [quantidadeFilhos, setQuantidadeFilhos] = useState(0);
   // Expectativas
@@ -752,7 +759,27 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false, lockNomeE
               <div><label className="text-sm font-medium text-gray-700">Telefone <span className="text-red-500">*</span></label>
                 <Input value={perfil.telefone} onChange={(e) => setPerfil({...perfil, telefone: e.target.value})} disabled={readOnly} /></div>
               <div><label className="text-sm font-medium text-gray-700">Empresa <span className="text-red-500">*</span></label>
-                <Input value={perfil.empresa} onChange={(e) => setPerfil({...perfil, empresa: e.target.value})} disabled={readOnly} /></div>
+                <Input
+                  list="onboarding-empresas-lista"
+                  value={perfil.empresa}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const match = empresasList?.find((emp: any) => emp.name.toLowerCase() === val.toLowerCase());
+                    setPerfil({ ...perfil, empresa: val });
+                    setEmpresaProgramId(match ? match.id : null);
+                    setCargoOutro(false);
+                  }}
+                  disabled={readOnly}
+                />
+                <datalist id="onboarding-empresas-lista">
+                  {empresasList?.map((emp: any) => (
+                    <option key={emp.id} value={emp.name} />
+                  ))}
+                </datalist>
+                {empresaProgramId && (
+                  <p className="text-xs text-emerald-600 mt-1">Empresa reconhecida — cargos cadastrados serão sugeridos no campo Cargo.</p>
+                )}
+              </div>
               <div><label className="text-sm font-medium text-gray-700">Data de Nascimento <span className="text-red-500">*</span></label>
                 <Input
                   placeholder="DD/MM/AAAA"
@@ -807,7 +834,37 @@ export function EtapaCadastro({ onComplete, alunoId, readOnly = false, lockNomeE
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div><label className="text-sm font-medium text-gray-700">Cargo <span className="text-red-500">*</span></label>
-                <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} disabled={readOnly} /></div>
+                {empresaProgramId && cargosList && cargosList.length > 0 && !cargoOutro ? (
+                  <>
+                    <Select
+                      value={cargosList.some((cg: any) => cg.name === perfil.cargo) ? perfil.cargo : ""}
+                      onValueChange={(v) => {
+                        if (v === "__outro__") {
+                          setCargoOutro(true);
+                          setPerfil({ ...perfil, cargo: "" });
+                        } else {
+                          setPerfil({ ...perfil, cargo: v });
+                        }
+                      }}
+                      disabled={readOnly}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione o cargo" /></SelectTrigger>
+                      <SelectContent>
+                        {cargosList.map((cg: any) => (
+                          <SelectItem key={cg.id} value={cg.name}>{cg.name}</SelectItem>
+                        ))}
+                        <SelectItem value="__outro__">Outro (não listado)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </>
+                ) : (
+                  <>
+                    <Input value={perfil.cargo} onChange={(e) => setPerfil({...perfil, cargo: e.target.value})} disabled={readOnly} />
+                    {empresaProgramId && cargosList && cargosList.length > 0 && cargoOutro && (
+                      <button type="button" className="text-xs text-[#F5991F] mt-1 underline" onClick={() => setCargoOutro(false)}>Voltar para lista de cargos</button>
+                    )}
+                  </>
+                )}</div>
               <div><label className="text-sm font-medium text-gray-700">Área de Atuação <span className="text-red-500">*</span></label>
                 <Input value={perfil.areaAtuacao} onChange={(e) => setPerfil({...perfil, areaAtuacao: e.target.value})} disabled={readOnly} /></div>
             </div>
