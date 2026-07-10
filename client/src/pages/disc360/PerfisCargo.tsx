@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Copy } from "lucide-react";
+import { ArrowLeft, Copy, Eye } from "lucide-react";
 
 const NONE_VALUE = "none";
 
@@ -60,6 +60,10 @@ function PerfisCargoContent() {
   const [leaderUserId, setLeaderUserId] = useState(NONE_VALUE);
   const [filtroDepartamento, setFiltroDepartamento] = useState(NONE_VALUE);
   const [acoesAbertoId, setAcoesAbertoId] = useState<number | null>(null);
+  const [previewQuestionarioAberto, setPreviewQuestionarioAberto] = useState(false);
+  const { data: questionarioPreview } = trpc.disc360.getRoleQuestions.useQuery(undefined, {
+    enabled: previewQuestionarioAberto,
+  });
 
   const createMutation = trpc.disc360.createRoleProfile.useMutation({
     onSuccess: () => {
@@ -199,6 +203,11 @@ function PerfisCargoContent() {
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-base">Cargos cadastrados</CardTitle>
+                <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setPreviewQuestionarioAberto(true)}>
+                  <Eye className="mr-1 h-4 w-4" />
+                  Visualizar questionário
+                </Button>
                 <div className="w-56">
                   <Select value={filtroDepartamento} onValueChange={setFiltroDepartamento}>
                     <SelectTrigger>
@@ -213,6 +222,7 @@ function PerfisCargoContent() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
                 </div>
               </div>
             </CardHeader>
@@ -268,6 +278,78 @@ function PerfisCargoContent() {
           onClose={() => setAcoesAbertoId(null)}
           onConsolidado={() => refetchPerfis()}
         />
+      )}
+
+      {previewQuestionarioAberto && (
+        <Dialog open={previewQuestionarioAberto} onOpenChange={setPreviewQuestionarioAberto}>
+          <DialogContent
+            className="max-w-3xl max-h-[85vh] overflow-y-auto overflow-x-hidden"
+            style={{ maxWidth: "48rem", width: "95vw" }}
+          >
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Questionário de Perfil do Cargo</h3>
+              <p className="text-sm text-muted-foreground">
+                Perguntas que o líder e o empregado selecionados irão receber (somente visualização).
+              </p>
+              {(questionarioPreview?.perguntas ?? []).map((p: any, idx: number) => (
+                <div key={p.id ?? idx} className="border rounded-md p-4 space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Bloco {idx + 1}
+                    {p.tema ? " · " + p.tema : ""}
+                  </p>
+                  <p className="text-sm font-medium">{p.pergunta}</p>
+                  {p.objetivo && (
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      O que esta pergunta avalia: {p.objetivo}
+                    </p>
+                  )}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {(p.alternativas ?? []).map((alt: any, altIdx: number) => (
+                      <div key={alt.id ?? altIdx} className="border rounded-md p-2">
+                        <span
+                          className="inline-block text-xs font-medium px-2 py-0.5 rounded mb-1"
+                          style={{
+                            backgroundColor: ({ D: "#FAECE7", I: "#FAEEDA", S: "#E1F5EE", C: "#E6F1FB" } as Record<string, string>)[alt.dimensao] ?? "var(--muted)",
+                            color: ({ D: "#712B13", I: "#633806", S: "#085041", C: "#0C447C" } as Record<string, string>)[alt.dimensao] ?? "inherit",
+                          }}
+                        >
+                          {alt.dimensao} · {({ D: "Dominância", I: "Influência", S: "Estabilidade", C: "Conformidade" } as Record<string, string>)[alt.dimensao] ?? alt.dimensao}
+                        </span>
+                        <p className="text-sm">{alt.texto}</p>
+                        {alt.explicacao && (
+                          <p className="text-xs text-muted-foreground mt-1">{alt.explicacao}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div className="border-t pt-3 space-y-3">
+                <p className="text-sm font-medium">Para finalizar — 4 réguas de validação (0 a 100)</p>
+                <p className="text-xs text-muted-foreground">
+                  Uma régua independente para cada eixo (D, I, S, C), usada para detectar possível
+                  tendenciosidade nas respostas.
+                </p>
+                {(questionarioPreview?.perguntasValidacao ?? []).map((pv: any) => (
+                  <div key={pv.dimensao} className="border rounded-md p-3 space-y-1">
+                    <p className="text-sm font-medium">{pv.pergunta}</p>
+                    <div className="space-y-1">
+                      {(pv.faixas ?? []).map((f: any) => (
+                        <p key={f.label} className="text-xs text-muted-foreground">
+                          <strong>
+                            {f.min}-{f.max}:
+                          </strong>{" "}
+                          {f.label} — {f.texto}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
