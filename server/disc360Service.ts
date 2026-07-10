@@ -17,6 +17,7 @@ import {
   discDiretoriaMembros,
   alunos,
   discResultados,
+  autopercepcoesCompetencias,
   type InsertDiscAssessment,
   type InsertDiscAssessmentAnswer,
   type InsertDiscRoleProfile,
@@ -857,4 +858,64 @@ export async function getDashboardCargo(database: DbClient, cargoProfileId: numb
     consolidado,
     textosPorEixo,
   };
+}
+
+export async function listAplicacoesDISC(database: DbClient, programId: number) {
+  const alunosRows = await database
+    .select({
+      id: alunos.id,
+      name: alunos.name,
+      email: alunos.email,
+      departmentId: alunos.departmentId,
+      cargo: alunos.cargo,
+      isActive: alunos.isActive,
+      canLogin: alunos.canLogin,
+      onboardingLiberado: alunos.onboardingLiberado,
+      discVideoWatchedAt: alunos.discVideoWatchedAt,
+    })
+    .from(alunos)
+    .where(eq(alunos.programId, programId));
+
+  const alunoIds = alunosRows.map((a) => a.id);
+  if (alunoIds.length === 0) {
+    return [];
+  }
+
+  const discRows = await database
+    .select()
+    .from(discResultados)
+    .where(inArray(discResultados.alunoId, alunoIds))
+    .orderBy(desc(discResultados.ciclo), desc(discResultados.completedAt));
+
+  const latestDiscByAluno = new Map<number, (typeof discRows)[number]>();
+  for (const row of discRows) {
+    if (!latestDiscByAluno.has(row.alunoId)) {
+      latestDiscByAluno.set(row.alunoId, row);
+    }
+  }
+
+  const competenciaRows = await database
+    .select({ alunoId: autopercepcoesCompetencias.alunoId })
+    .from(autopercepcoesCompetencias)
+    .where(inArray(autopercepcoesCompetencias.alunoId, alunoIds));
+
+  const competenciaCountByAluno = new Map<number, number>();
+  for (const row of competenciaRows) {
+    competenciaCountByAluno.set(row.alunoId, (competenciaCountByAluno.get(row.alunoId) ?? 0) + 1);
+  }
+
+  return alunosRows.map((a) => {
+    const disc = latestDiscByAluno.get(a.id) ?? null;
+    return {
+      ...a,
+      discConcluido: !!disc,
+      discPerfilPredominante: disc?.perfilPredominante ?? null,
+      discPerfilSecundario: disc?.perfilSecundario ?? null,
+      discScores: disc
+        ? { D: disc.scoreD, I: disc.scoreI, S: disc.scoreS, C: disc.scoreC }
+        : null,
+      discCompletedAt: disc?.completedAt ?? null,
+      competenciasRespondidas: competenciaCountByAluno.get(a.id) ?? 0,
+    };
+  });
 }
