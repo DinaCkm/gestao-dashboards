@@ -73,6 +73,8 @@ interface DiscPerfil {
   areasDesenvolvimento: string[];
   comoSeRelaciona: string;
   cor: string;
+  subfatores?: Partial<Record<DiscDimensao, string>>;
+  percepcao?: { comoSeVe: string; comoLiderancaVe: string; comoParesVeem: string };
 }
 
 interface DiscRespostaBloco {
@@ -1173,7 +1175,15 @@ function RelatorioAutoconhecimento({
       const media = avaliacoes.length > 0
         ? avaliacoes.reduce((sum: number, a: any) => sum + a.nota, 0) / avaliacoes.length
         : 0;
-      return { trilha, avaliacoes, media };
+      const respondidas = avaliacoes.filter((a: any) => a.nota > 0);
+      const totalRespondidas = respondidas.length;
+      const desenvolvidoCount = respondidas.filter((a: any) => a.nota >= 4).length;
+      const parcialCount = respondidas.filter((a: any) => a.nota === 3).length;
+      const naoDesenvolvidoCount = respondidas.filter((a: any) => a.nota <= 2).length;
+      const pctDesenvolvido = totalRespondidas > 0 ? Math.round((desenvolvidoCount / totalRespondidas) * 100) : 0;
+      const pctParcial = totalRespondidas > 0 ? Math.round((parcialCount / totalRespondidas) * 100) : 0;
+      const pctNaoDesenvolvido = totalRespondidas > 0 ? Math.max(0, 100 - pctDesenvolvido - pctParcial) : 0;
+      return { trilha, avaliacoes, media, pctDesenvolvido, pctParcial, pctNaoDesenvolvido, totalRespondidas };
     });
   }, [autopercepcoesData, competenciasData, trilhasData]);
 
@@ -1355,11 +1365,36 @@ function RelatorioAutoconhecimento({
                 <p className="text-sm text-blue-700">{perfilPrincipal.comoSeRelaciona}</p>
               </div>
 
-              {/* Perfil secundário */}
-              {perfilSec && (
+              {/* Perfil secundário: como ele contrapõe e influencia o perfil principal */}
+              {perfilSec && perfilSecundario && (
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h5 className="font-semibold text-gray-700 mb-1 text-sm">Perfil Secundário: {perfilSec.titulo} ({perfilSec.nome})</h5>
-                  <p className="text-sm text-gray-600">{perfilSec.descricao}</p>
+                  <h5 className="font-semibold text-gray-700 mb-1 text-sm">Seu Perfil Secundário: {perfilSec.titulo} ({perfilSec.nome})</h5>
+                  <p className="text-sm text-gray-600">
+                    {perfilPrincipal.subfatores?.[perfilSecundario] || perfilSec.descricao}
+                  </p>
+                </div>
+              )}
+
+              {/* Como você é percebido: sua visão, a da liderança e a dos pares */}
+              {perfilPrincipal.percepcao && (
+                <div className="space-y-3">
+                  <h5 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <Eye className="h-4 w-4" /> Como você é percebido
+                  </h5>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    <div className="bg-violet-50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-violet-800 mb-1">Sua própria visão</p>
+                      <p className="text-sm text-violet-700">{perfilPrincipal.percepcao.comoSeVe}</p>
+                    </div>
+                    <div className="bg-sky-50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-sky-800 mb-1">Visão da liderança</p>
+                      <p className="text-sm text-sky-700">{perfilPrincipal.percepcao.comoLiderancaVe}</p>
+                    </div>
+                    <div className="bg-rose-50 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-rose-800 mb-1">Visão dos pares</p>
+                      <p className="text-sm text-rose-700">{perfilPrincipal.percepcao.comoParesVeem}</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1391,7 +1426,7 @@ function RelatorioAutoconhecimento({
           <p className="text-white/70 text-sm mt-1">Como você se avalia em cada competência das trilhas de desenvolvimento</p>
         </div>
         <CardContent className="pt-6 space-y-6">
-          {autopercepçãoPorTrilha.map(({ trilha, avaliacoes, media }) => (
+          {autopercepçãoPorTrilha.map(({ trilha, avaliacoes, media, pctDesenvolvido, pctParcial, pctNaoDesenvolvido }) => (
             <div key={trilha.id} className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1404,27 +1439,29 @@ function RelatorioAutoconhecimento({
               </div>
 
               <div className="space-y-2">
-                {avaliacoes.map(({ competencia, nota }: any) => (
-                  <div key={competencia.id} className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600 w-48 shrink-0 truncate" title={competencia.nome}>
-                      {competencia.nome}
-                    </span>
-                    <div className="flex-1 flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <div
-                          key={n}
-                          className={`h-4 flex-1 rounded-sm transition-all ${
-                            n <= nota ? notaCores[nota] : "bg-gray-200"
-                          }`}
-                        />
-                      ))}
+                <div className="flex h-5 w-full rounded-full overflow-hidden bg-gray-100">
+                  {pctDesenvolvido > 0 && (
+                    <div className="bg-emerald-500 flex items-center justify-center" style={{ width: `${pctDesenvolvido}%` }} title={`Desenvolvido: ${pctDesenvolvido}%`}>
+                      {pctDesenvolvido >= 15 && <span className="text-[10px] text-white font-medium">{pctDesenvolvido}%</span>}
                     </div>
-                    <span className="text-sm font-medium text-gray-700 w-8 text-right">{nota}/5</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Contribuições da mentora por competência */}
+                  )}
+                  {pctParcial > 0 && (
+                    <div className="bg-amber-400 flex items-center justify-center" style={{ width: `${pctParcial}%` }} title={`Parcialmente desenvolvido: ${pctParcial}%`}>
+                      {pctParcial >= 15 && <span className="text-[10px] text-white font-medium">{pctParcial}%</span>}
+                    </div>
+                  )}
+                  {pctNaoDesenvolvido > 0 && (
+                    <div className="bg-red-400 flex items-center justify-center" style={{ width: `${pctNaoDesenvolvido}%` }} title={`A desenvolver: ${pctNaoDesenvolvido}%`}>
+                      {pctNaoDesenvolvido >= 15 && <span className="text-[10px] text-white font-medium">{pctNaoDesenvolvido}%</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> {pctDesenvolvido}% Desenvolvido</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> {pctParcial}% Parcialmente desenvolvido</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> {pctNaoDesenvolvido}% A desenvolver</span>
+                </div>
+              </div>              {/* Contribuições da mentora por competência */}
               {contribuicoesData?.filter((c: any) => c.tipo === "competencia" && avaliacoes.some((a: any) => a.competencia.id === c.competenciaId)).map((c: any) => (
                 <div key={c.id} className="bg-[#0A1E3E]/5 rounded-lg p-3 ml-4">
                   <p className="text-xs text-[#0A1E3E] font-medium mb-1">Observação da Mentora:</p>
