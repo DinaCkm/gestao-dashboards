@@ -9,8 +9,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, AlertTriangle, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 const NONE_VALUE = "none";
@@ -36,6 +47,16 @@ function AplicacoesDISCContent() {
   const [filtroDepartamento, setFiltroDepartamento] = useState(NONE_VALUE);
   const [filtroEmpregado, setFiltroEmpregado] = useState("");
   const [resultadoAbertoId, setResultadoAbertoId] = useState<number | null>(null);
+  const [cadastroAberto, setCadastroAberto] = useState(false);
+  const [novoNome, setNovoNome] = useState("");
+  const [novoEmail, setNovoEmail] = useState("");
+  const [novoExternalId, setNovoExternalId] = useState("");
+  const [novoProgramId, setNovoProgramId] = useState("");
+  const [novaPlataforma, setNovaPlataforma] = useState<"scaffold" | "sistema_interno">("sistema_interno");
+  const [novoContratoInicio, setNovoContratoInicio] = useState("");
+  const [novoContratoFim, setNovoContratoFim] = useState("");
+  const [novoTotalSessoes, setNovoTotalSessoes] = useState("");
+  const [novoTipoMentoria, setNovoTipoMentoria] = useState<"individual" | "grupo" | "">("");
 
   const { data: empresas = [] } = trpc.admin.listEmpresas.useQuery();
   const { data: departamentos = [] } = trpc.departments.list.useQuery(
@@ -64,6 +85,51 @@ function AplicacoesDISCContent() {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const resetNovoAlunoForm = () => {
+    setNovoNome("");
+    setNovoEmail("");
+    setNovoExternalId("");
+    setNovoProgramId(numericProgramId ? String(numericProgramId) : "");
+    setNovaPlataforma("sistema_interno");
+    setNovoContratoInicio("");
+    setNovoContratoFim("");
+    setNovoTotalSessoes("");
+    setNovoTipoMentoria("");
+  };
+
+  const createAluno = trpc.admin.createAluno.useMutation({
+    onSuccess: () => {
+      toast.success("Aluno cadastrado! Ele receberá acesso ao Onboarding para iniciar sua participação no programa.");
+      setCadastroAberto(false);
+      resetNovoAlunoForm();
+      refetch();
+    },
+    onError: (err: any) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
+  });
+
+  const resendInvite = trpc.onboardingTracking.resendInvite.useMutation({
+    onSuccess: () => toast.success("Convite reenviado por email!"),
+    onError: (err: any) => toast.error(`Erro ao reenviar convite: ${err.message}`),
+  });
+
+  const handleCadastrarAluno = () => {
+    if (!novoNome.trim() || !novoEmail.trim() || !novoExternalId.trim()) {
+      toast.error("Preencha nome, email e ID do aluno.");
+      return;
+    }
+    createAluno.mutate({
+      name: novoNome.trim(),
+      email: novoEmail.trim(),
+      externalId: novoExternalId.trim(),
+      programId: novoProgramId ? Number(novoProgramId) : undefined,
+      contratoInicio: novoContratoInicio || undefined,
+      contratoFim: novoContratoFim || undefined,
+      totalSessoesContratadas: novoTotalSessoes ? Number(novoTotalSessoes) : undefined,
+      tipoMentoria: novoTipoMentoria || undefined,
+      plataformaAulas: novaPlataforma,
+    });
+  };
+
   const aplicacoesFiltradas = (aplicacoes as any[])
     .filter((a) => (filtroDepartamento === NONE_VALUE ? true : String(a.departmentId ?? "") === filtroDepartamento))
     .filter((a) =>
@@ -83,6 +149,124 @@ function AplicacoesDISCContent() {
             Voltar
           </Button>
         </Link>
+        <Dialog
+          open={cadastroAberto}
+          onOpenChange={(open) => {
+            setCadastroAberto(open);
+            if (open) resetNovoAlunoForm();
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <UserPlus className="mr-1 h-4 w-4" />
+              Cadastrar Aluno
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Cadastrar Aluno para Onboarding</DialogTitle>
+              <DialogDescription>
+                Cadastre o aluno com os dados básicos. Ele receberá acesso ao Onboarding por email.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Nome Completo *</Label>
+                <Input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Nome completo" />
+              </div>
+              <div className="space-y-1">
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  value={novoEmail}
+                  onChange={(e) => setNovoEmail(e.target.value)}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>ID do Aluno *</Label>
+                <Input
+                  value={novoExternalId}
+                  onChange={(e) => setNovoExternalId(e.target.value)}
+                  placeholder="Ex: 667306"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label>Empresa Vinculada</Label>
+                <Select value={novoProgramId} onValueChange={setNovoProgramId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(empresas as any[]).map((e) => (
+                      <SelectItem key={e.id} value={String(e.id)}>
+                        {e.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>Plataforma de Aulas</Label>
+                <Select value={novaPlataforma} onValueChange={(v: any) => setNovaPlataforma(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sistema_interno">Sistema Interno</SelectItem>
+                    <SelectItem value="scaffold">Scaffold</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+                <p className="text-sm font-medium">Dados do Contrato (opcional)</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label>Início do Contrato</Label>
+                    <Input
+                      type="date"
+                      value={novoContratoInicio}
+                      onChange={(e) => setNovoContratoInicio(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Fim do Contrato</Label>
+                    <Input type="date" value={novoContratoFim} onChange={(e) => setNovoContratoFim(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Total de Sessões Contratadas</Label>
+                    <Input
+                      type="number"
+                      value={novoTotalSessoes}
+                      onChange={(e) => setNovoTotalSessoes(e.target.value)}
+                      placeholder="Ex: 12"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Tipo de Mentoria</Label>
+                    <Select value={novoTipoMentoria} onValueChange={(v: any) => setNovoTipoMentoria(v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="grupo">Grupo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCadastroAberto(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCadastrarAluno} disabled={createAluno.isPending}>
+                {createAluno.isPending ? "Cadastrando..." : "Cadastrar e Enviar Convite"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -180,18 +364,54 @@ function AplicacoesDISCContent() {
                         {a.discConcluido ? (
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary">Concluído</Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled
-                              title="Novo ciclo de reavaliacao - melhoria futura, ainda nao disponivel"
-                            >
-                              Novo ciclo (Em breve)
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  Refazer teste DISC
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                                    <AlertTriangle className="h-5 w-5" />
+                                    Atenção: esta ação não pode ser desfeita
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription asChild>
+                                    <div className="space-y-2 text-left text-sm text-muted-foreground">
+                                      <p>
+                                        Ao liberar um novo ciclo, <strong>{a.name}</strong> poderá responder o DISC
+                                        novamente — mas o resultado atual representa um momento real da pessoa, e
+                                        refazer o teste conhecendo o contexto tende a fazer com que as respostas
+                                        sejam direcionadas para um perfil "ideal", o que invalida cientificamente o
+                                        novo resultado.
+                                      </p>
+                                      <p>
+                                        Use isso apenas em casos extremos e justificados (mudança real de função,
+                                        tempo longo desde a última aplicação, correção de preenchimento, etc.).
+                                      </p>
+                                      <p className="font-medium text-foreground">
+                                        O resultado atual será preservado no histórico, mas deixará de ser o
+                                        resultado vigente. Tem certeza que deseja liberar um novo ciclo para este
+                                        colaborador?
+                                      </p>
+                                    </div>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={() => liberarOnboarding.mutate({ alunoId: a.id })}
+                                  >
+                                    Sim, liberar novo ciclo
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         ) : a.onboardingLiberado ? (
                           <Badge variant="secondary">Liberado</Badge>
-                        ) : (
+                        ) : a.hasPdi ? (
                           <Button
                             variant="outline"
                             size="sm"
@@ -200,6 +420,13 @@ function AplicacoesDISCContent() {
                           >
                             Liberar onboarding
                           </Button>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            title="Este colaborador ainda não iniciou o PDI; o onboarding será liberado automaticamente quando estiver pronto."
+                          >
+                            Aguardando onboarding automático
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell>
@@ -225,11 +452,23 @@ function AplicacoesDISCContent() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {a.discConcluido && (
-                          <Button variant="ghost" size="sm" onClick={() => setResultadoAbertoId(a.id)}>
-                            Ver resultado completo
-                          </Button>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {a.discConcluido && (
+                            <Button variant="ghost" size="sm" onClick={() => setResultadoAbertoId(a.id)}>
+                              Ver resultado completo
+                            </Button>
+                          )}
+                          {!a.discConcluido && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={resendInvite.isPending}
+                              onClick={() => resendInvite.mutate({ alunoId: a.id })}
+                            >
+                              Reenviar convite
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
