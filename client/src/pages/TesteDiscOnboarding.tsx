@@ -1437,16 +1437,41 @@ function RelatorioAutoconhecimento({
               <p className="text-xs text-gray-500">
                 Tendência observada quando a necessidade de <span className="font-medium">{pressaoAtual.necessidadeAmeacada.toLowerCase()}</span> entra em jogo. Não é uma regra fixa — é um padrão para observar em si mesmo.
               </p>
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="bg-white border border-rose-200 rounded-lg p-3 flex flex-col gap-1.5 relative">
-                  <span className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Sob pressão, pode parecer</span>
-                  <p className="text-sm text-gray-700">{pressaoAtual.reacaoRisco}</p>
-                  <ArrowRight className="hidden md:block absolute top-1/2 -right-[22px] -translate-y-1/2 h-4 w-4 text-gray-300 bg-orange-50 rounded-full p-0.5" />
+
+              <div className="space-y-1.5">
+                <p className="text-center text-[10px] font-semibold text-gray-400 uppercase tracking-wide">↑ Ativo / Rápido</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(["D", "I", "C", "S"] as DiscDimensao[]).map((dim) => {
+                    const info = (pressaoData as any)?.[dim];
+                    if (!info) return null;
+                    const isAtual = dim === perfilPredominante;
+                    const estilos: Record<string, { borda: string; texto: string }> = {
+                      D: { borda: "border-red-300 bg-red-50", texto: "text-red-700" },
+                      I: { borda: "border-amber-300 bg-amber-50", texto: "text-amber-700" },
+                      S: { borda: "border-emerald-300 bg-emerald-50", texto: "text-emerald-700" },
+                      C: { borda: "border-blue-300 bg-blue-50", texto: "text-blue-700" },
+                    };
+                    return (
+                      <div key={dim} className={`rounded-lg p-2.5 border-2 transition-all ${isAtual ? estilos[dim].borda : "border-gray-100 bg-white opacity-50"}`}>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className={`text-xs font-bold ${estilos[dim].texto}`}>{dim}</span>
+                          {isAtual && <span className="text-[9px] font-semibold text-gray-500 bg-white rounded-full px-1.5 py-0.5">Você está aqui</span>}
+                        </div>
+                        <p className="text-[11px] text-gray-600 leading-snug">{info.reacaoRisco}</p>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="bg-white border border-emerald-200 rounded-lg p-3 flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Um caminho mais leve</span>
-                  <p className="text-sm text-gray-700">{pressaoAtual.respostaRegulada}</p>
+                <p className="text-center text-[10px] font-semibold text-gray-400 uppercase tracking-wide">↓ Reservado / Analítico</p>
+                <div className="flex justify-between text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-1">
+                  <span>← Tarefas</span>
+                  <span>Pessoas →</span>
                 </div>
+              </div>
+
+              <div className="bg-white border border-emerald-200 rounded-lg p-3">
+                <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Um caminho mais leve para o seu perfil</span>
+                <p className="text-sm text-gray-700 mt-1">{pressaoAtual.respostaRegulada}</p>
               </div>
             </div>
           )}
