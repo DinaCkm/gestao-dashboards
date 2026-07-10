@@ -1,5 +1,6 @@
 import { determinarPerfil, type DiscScores } from "./discMatchService";
 import type { Disc360RoleDimension } from "../shared/disc360RoleQuestions";
+import { DISC360_ROLE_VALIDACAO_QUESTIONS } from "../shared/disc360RoleQuestions";
 
 export type RespostaRole = {
   questionId: string;
@@ -88,4 +89,19 @@ export function avaliarDivergenciaValidacao(
     }
     return { dimensao, divergente: false, diferenca, texto: null };
   });
+}
+
+// Retorna o rotulo e o texto de interpretacao da faixa (0-25/26-50/51-75/76-100)
+// em que um score medio de eixo do CARGO se encaixa, reaproveitando os
+// mesmos textos por faixa escritos para as perguntas de validacao (regua).
+export function obterFaixaTextoCargo(
+  dimensao: Disc360RoleDimension,
+  valor: number
+): { label: string; texto: string } {
+  const questao = DISC360_ROLE_VALIDACAO_QUESTIONS.find((q) => q.dimensao === dimensao);
+  const faixa = questao?.faixas.find((f) => valor >= f.min && valor <= f.max);
+  return {
+    label: faixa?.label ?? "",
+    texto: faixa?.texto ?? "",
+  };
 }
