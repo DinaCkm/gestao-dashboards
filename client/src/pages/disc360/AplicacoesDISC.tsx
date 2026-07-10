@@ -177,7 +177,11 @@ function AplicacoesDISCContent() {
                     <TableRow key={a.id}>
                       <TableCell className="font-medium">{a.name}</TableCell>
                       <TableCell>
-                        {a.onboardingLiberado ? (
+                        {a.discConcluido ? (
+                          <Badge variant="secondary" title="Teste ja concluido - liberar novamente exigiria um ciclo de reavaliacao, ainda nao implementado">
+                            Teste já concluído
+                          </Badge>
+                        ) : a.onboardingLiberado ? (
                           <Badge variant="secondary">Liberado</Badge>
                         ) : (
                           <Button
