@@ -349,6 +349,7 @@ function AplicacoesDISCContent() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Origem</TableHead>
                     <TableHead>Onboarding</TableHead>
                     <TableHead>Vídeo DISC</TableHead>
                     <TableHead>Teste DISC</TableHead>
@@ -360,6 +361,21 @@ function AplicacoesDISCContent() {
                   {aplicacoesFiltradas.map((a: any) => (
                     <TableRow key={a.id}>
                       <TableCell className="font-medium">{a.name}</TableCell>
+                      <TableCell>
+                        {a.tipoPortal === "processo_seletivo" ? (
+                          <Badge variant="outline" className="border-violet-300 text-violet-700">
+                            Processo Seletivo{a.processoSeletivoNome ? ` · ${a.processoSeletivoNome}` : ""}
+                          </Badge>
+                        ) : a.tipoPortal === "assessment" ? (
+                          <Badge variant="outline" className="border-sky-300 text-sky-700">
+                            Assessment
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="border-emerald-300 text-emerald-700">
+                            Desenvolvimento
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {a.discConcluido ? (
                           <div className="flex items-center gap-2">
@@ -474,7 +490,7 @@ function AplicacoesDISCContent() {
                   ))}
                   {aplicacoesFiltradas.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
                         Nenhum colaborador encontrado.
                       </TableCell>
                     </TableRow>
