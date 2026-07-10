@@ -495,7 +495,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   D: {
     nome: "Dominância",
     titulo: "Executor Determinado",
-    descricao: "Seu resultado sugere uma tendência a assumir o controle e tomar decisões rápidas, especialmente diante de desafios e prazos apertados. Essa configuração costuma se expressar por meio de energia para agir e foco constante em resultados. Sob pressão, pode aumentar o risco de decisões apressadas ou de atropelar a opinião dos outros — vale observar esse padrão nas situações de maior tensão.",
+    descricao: "Seu resultado indica uma tendência a assumir responsabilidades, agir com iniciativa e tomar decisões com rapidez, especialmente em situações desafiadoras ou com prazos reduzidos. Essa característica pode contribuir muito para impulsionar projetos, enfrentar obstáculos e manter o foco nos resultados.\n\nEm momentos de maior pressão, essa mesma agilidade pode levar você a decidir antes de considerar todos os pontos de vista. Por isso, pode ser útil reservar alguns instantes para ouvir outras opiniões e avaliar alternativas. Esse cuidado ajuda a tornar suas decisões ainda mais consistentes e fortalece a participação das pessoas ao seu redor.",
     pontosFortes: [
       "Tomada de decisão rápida e assertiva",
       "Foco em resultados e metas",
@@ -525,7 +525,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   I: {
     nome: "Influência",
     titulo: "Comunicador Inspirador",
-    descricao: "Seu resultado sugere uma tendência à comunicação entusiasmada e à facilidade para criar conexões e motivar as pessoas ao redor. Essa configuração costuma se expressar por meio de energia positiva e abertura social. Sob pressão, pode aumentar o risco de dispersão ou de prometer mais do que é possível entregar — vale observar esse padrão quando a agenda fica apertada.",
+    descricao: "Seu resultado indica uma tendência a se comunicar com entusiasmo, criar conexões com facilidade e contagiar as pessoas ao redor com energia positiva. Essa característica pode contribuir muito para engajar equipes, gerar ideias novas e manter o ambiente motivado.\n\nEm momentos de maior pressão, essa mesma facilidade de se envolver em várias frentes pode levar você a assumir mais compromissos do que consegue cumprir com calma. Por isso, pode ser útil reservar um tempo para organizar prioridades antes de dizer sim a tudo. Esse cuidado ajuda a manter sua energia sustentável e fortalece a confiança das pessoas que contam com você.",
     pontosFortes: [
       "Comunicação persuasiva e envolvente",
       "Capacidade de motivar e inspirar equipes",
@@ -555,7 +555,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   S: {
     nome: "Estabilidade",
     titulo: "Colaborador Consistente",
-    descricao: "Seu resultado sugere uma tendência à paciência e à busca por harmonia nas relações, com grande disposição para ouvir e apoiar as pessoas ao redor. Essa configuração costuma se expressar por meio de consistência e lealdade nos compromissos assumidos. Sob pressão, pode aumentar o risco de evitar posicionamentos necessários ou de acumular insatisfação sem comunicar — vale observar esse padrão diante de mudanças bruscas.",
+    descricao: "Seu resultado indica uma tendência a agir com paciência, buscar harmonia nas relações e oferecer apoio consistente às pessoas ao redor. Essa característica pode contribuir muito para fortalecer a confiança da equipe, manter a estabilidade em momentos difíceis e sustentar compromissos ao longo do tempo.\n\nEm momentos de maior pressão, essa mesma busca por harmonia pode levar você a evitar se posicionar mesmo quando discorda de algo importante. Por isso, pode ser útil expressar sua opinião logo quando ela surge, antes que o desconforto se acumule. Esse cuidado ajuda a tornar suas relações ainda mais verdadeiras e fortalece sua própria voz dentro do grupo.",
     pontosFortes: [
       "Paciência e capacidade de escuta",
       "Lealdade e comprometimento",
@@ -585,7 +585,7 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   C: {
     nome: "Conformidade",
     titulo: "Analista Preciso",
-    descricao: "Seu resultado sugere uma tendência à análise cuidadosa e à busca por excelência e precisão no que faz. Essa configuração costuma se expressar por meio de planejamento, organização e atenção a detalhes. Sob pressão, pode aumentar o risco de travar em busca de mais dados ou de adiar decisões por medo do erro — vale observar esse padrão quando o prazo não permite mais análise.",
+    descricao: "Seu resultado indica uma tendência a analisar com cuidado, buscar precisão e se dedicar à qualidade em tudo que faz. Essa característica pode contribuir muito para elevar o padrão dos resultados, antecipar riscos e trazer mais confiabilidade aos processos.\n\nEm momentos de maior pressão, essa mesma busca por precisão pode levar você a adiar decisões enquanto espera por mais informações. Por isso, pode ser útil definir um limite de tempo para a análise e seguir em frente mesmo sem 100% de certeza. Esse cuidado ajuda a manter a qualidade do seu trabalho sem perder o ritmo necessário.",
     pontosFortes: [
       "Análise crítica e pensamento lógico",
       "Atenção a detalhes e qualidade",
