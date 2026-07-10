@@ -171,19 +171,69 @@ export const DISC360_ROLE_QUESTIONS: Disc360RoleQuestion[] = [
 ];
 
 /**
- * Pergunta de validacao objetiva (regua 0-100), respondida apos os 12
- * blocos de escolha forcada. Nao entra no calculo do D/I/S/C - serve para
- * comparar com o D calculado pelas escolhas forcadas do mesmo respondente
- * e sinalizar possivel tendenciosidade/inconsistencia nas respostas.
+ * Perguntas de validacao objetiva (regua 0-100), UMA POR EIXO (D, I, S, C),
+ * respondidas apos os 12 blocos de escolha forcada. Nao entram no calculo
+ * do D/I/S/C pelas escolhas forcadas - servem para comparar, eixo a eixo,
+ * com o score calculado pelas escolhas forcadas do mesmo respondente e
+ * sinalizar possivel tendenciosidade/inconsistencia nas respostas.
  */
-export const DISC360_ROLE_PERGUNTA_VALIDACAO = {
-  pergunta:
-    "Numa régua de 0 a 100, o quanto você entende que a pessoa que ocupa este cargo deve conduzir um projeto ou um feedback:",
-  extremoBaixo: "Mais perto de 0 = de forma mais cautelosa, diplomática e pouco confrontativa.",
-  extremoAlto: "Mais perto de 100 = de forma mais direta, rápida e assertiva.",
+export type Disc360RoleValidacaoFaixa = {
+  min: number;
+  max: number;
+  label: string;
+  texto: string;
 };
 
-// Diferenca (em pontos) entre a regua de validacao e o D calculado pelas
-// escolhas forcadas, acima da qual acende um alerta de possivel
-// tendenciosidade/inconsistencia na resposta do respondente.
+export type Disc360RoleValidacaoQuestion = {
+  dimensao: Disc360RoleDimension;
+  pergunta: string;
+  faixas: Disc360RoleValidacaoFaixa[];
+};
+
+export const DISC360_ROLE_VALIDACAO_QUESTIONS: Disc360RoleValidacaoQuestion[] = [
+  {
+    dimensao: "D",
+    pergunta: "Avaliando este cargo, quanto esta função exige Dominância para conduzir decisões, enfrentar desafios, lidar com pressão e entregar resultados?",
+    faixas: [
+      { min: 0, max: 25, label: "Dominância baixa", texto: "O cargo exige uma condução mais cautelosa, diplomática e pouco confrontativa. A pessoa ainda precisa se posicionar, mas deve fazer isso com prudência, validação e cuidado nas relações." },
+      { min: 26, max: 50, label: "Dominância moderadamente baixa", texto: "O cargo exige alguma iniciativa e capacidade de decisão, mas com maior ponderação, menor exposição ao confronto e preferência por alinhamento antes da ação." },
+      { min: 51, max: 75, label: "Dominância moderadamente alta", texto: "O cargo exige posicionamento claro, responsabilidade por resultados e capacidade de decidir com firmeza, mas ainda preservando análise, escuta e cuidado com impactos." },
+      { min: 76, max: 100, label: "Dominância alta", texto: "O cargo exige decisão rápida, assertividade, enfrentamento direto de obstáculos, cobrança de resultados, autonomia e sustentação de decisões mesmo sob pressão." },
+    ],
+  },
+  {
+    dimensao: "I",
+    pergunta: "Avaliando este cargo, quanto esta função exige Influência para comunicar, envolver pessoas, construir relacionamentos e mobilizar adesão?",
+    faixas: [
+      { min: 0, max: 25, label: "Influência baixa", texto: "O cargo exige uma comunicação mais reservada, técnica, objetiva e discreta. A pessoa se relaciona quando necessário, mas sem grande exposição social ou necessidade constante de persuasão." },
+      { min: 26, max: 50, label: "Influência moderadamente baixa", texto: "O cargo exige boa comunicação funcional e relacionamento cordial, mas sem depender fortemente de entusiasmo, visibilidade, negociação ou mobilização frequente de pessoas." },
+      { min: 51, max: 75, label: "Influência moderadamente alta", texto: "O cargo exige comunicação ativa, capacidade de envolver pessoas, negociar, criar vínculos e gerar adesão, ainda que de forma equilibrada e ajustada ao contexto." },
+      { min: 76, max: 100, label: "Influência alta", texto: "O cargo exige forte comunicação, presença, persuasão, entusiasmo, relacionamento constante, capacidade de engajar, inspirar confiança e mobilizar diferentes públicos." },
+    ],
+  },
+  {
+    dimensao: "S",
+    pergunta: "Avaliando este cargo, quanto esta função exige Estabilidade para manter constância, cooperação, paciência, previsibilidade e equilíbrio na rotina?",
+    faixas: [
+      { min: 0, max: 25, label: "Estabilidade baixa", texto: "O cargo exige alta flexibilidade, adaptação rápida, agilidade e baixa dependência de rotina previsível. A pessoa precisa lidar bem com mudanças, interrupções e variações constantes." },
+      { min: 26, max: 50, label: "Estabilidade moderadamente baixa", texto: "O cargo exige alguma constância e cooperação, mas com forte necessidade de adaptação, alternância de prioridades e tolerância a ambientes menos previsíveis." },
+      { min: 51, max: 75, label: "Estabilidade moderadamente alta", texto: "O cargo exige continuidade, paciência, cooperação e equilíbrio, mas sem perder flexibilidade quando mudanças ou ajustes forem necessários." },
+      { min: 76, max: 100, label: "Estabilidade alta", texto: "O cargo exige grande constância, paciência, previsibilidade, cooperação, cuidado com o ritmo do time e sustentação da segurança emocional e operacional ao longo do tempo." },
+    ],
+  },
+  {
+    dimensao: "C",
+    pergunta: "Avaliando este cargo, quanto esta função exige Conformidade para seguir critérios, métodos, normas, padrões e controles de qualidade?",
+    faixas: [
+      { min: 0, max: 25, label: "Conformidade baixa", texto: "O cargo exige maior flexibilidade, autonomia e adaptação. A pessoa precisa entregar com qualidade, mas com liberdade para ajustar caminhos e menor dependência de regras rígidas." },
+      { min: 26, max: 50, label: "Conformidade moderadamente baixa", texto: "O cargo exige atenção a critérios importantes, mas permite flexibilidade, bom senso e adaptação dos procedimentos conforme o contexto." },
+      { min: 51, max: 75, label: "Conformidade moderadamente alta", texto: "O cargo exige método, organização, atenção a detalhes e respeito aos padrões, ainda com alguma possibilidade de adaptação quando a situação justificar." },
+      { min: 76, max: 100, label: "Conformidade alta", texto: "O cargo exige rigor técnico, precisão, análise cuidadosa, documentação, controle, atenção minuciosa a detalhes e cumprimento fiel de normas e processos definidos." },
+    ],
+  },
+];
+
+// Diferenca (em pontos) entre a regua de validacao e o score calculado do
+// mesmo eixo pelas escolhas forcadas, acima da qual acende um alerta de
+// possivel tendenciosidade/inconsistencia na resposta do respondente.
 export const DISC360_ROLE_ALERTA_LIMITE_DIVERGENCIA = 30;
