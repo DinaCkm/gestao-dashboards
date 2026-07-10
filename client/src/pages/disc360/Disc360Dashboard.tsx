@@ -40,7 +40,7 @@ const cards: Disc360CardConfig[] = [
     title: "Aplicações DISC",
     description: "Acompanhe as aplicações do questionário DISC 360 dos colaboradores.",
     path: "/disc360/aplicacoes",
-    disponivel: false,
+    disponivel: true,
   },
   {
     icon: Target,
