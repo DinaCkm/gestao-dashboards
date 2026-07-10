@@ -489,6 +489,8 @@ export const DISC_PERFIS: Record<DiscDimensao, {
   areasDesenvolvimento: string[];
   comoSeRelaciona: string;
   cor: string;
+  subfatores: Partial<Record<DiscDimensao, string>>;
+  percepcao: { comoSeVe: string; comoLiderancaVe: string; comoParesVeem: string };
 }> = {
   D: {
     nome: "Dominância",
@@ -502,13 +504,23 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       "Iniciativa e proatividade"
     ],
     areasDesenvolvimento: [
-      "Paciência com processos mais lentos",
-      "Escuta ativa e empatia",
-      "Delegação e confiança na equipe",
-      "Flexibilidade diante de mudanças de plano"
+      "Escuta Ativa — dar espaço para ouvir a equipe antes de decidir, evitando decisões apressadas",
+      "Empatia — considerar o impacto emocional das decisões nas pessoas envolvidas",
+      "Gestão de Conflitos — buscar acordos em vez de impor pontos de vista sob pressão",
+      "Adaptabilidade — ajustar o ritmo quando o processo pede mais cautela do que velocidade"
     ],
     comoSeRelaciona: "Tende a ser direto e objetivo nas relações, valorizando eficiência e competência. Pode ser percebido como autoritário quando sob pressão.",
-    cor: "#DC2626" // vermelho
+    cor: "#DC2626", // vermelho
+    subfatores: {
+      I: "Seu perfil secundário de Influência (I) suaviza a sua Dominância: você não é só direto e decidido, também sabe engajar e comunicar sua visão com entusiasmo, o que ajuda a conquistar adesão em vez de apenas impor. O risco é, sob pressão, priorizar velocidade e resultado a ponto de atropelar a comunicação que o I poderia oferecer.",
+      S: "Seu perfil secundário de Estabilidade (S) funciona como um contrapeso à sua Dominância: ele ajuda a manter consistência e a considerar o impacto das decisões nas pessoas, moderando a tendência a agir rápido demais. Ainda assim, quando a pressão aumenta, sua Dominância tende a prevalecer sobre a paciência da Estabilidade.",
+      C: "Seu perfil secundário de Conformidade (C) traz mais critério e método à sua Dominância: você tende a validar dados antes de decidir, e não apenas confiar no instinto. A tensão entre os dois fatores aparece quando a urgência (D) entra em conflito com a necessidade de precisão (C) — nesses momentos, geralmente a decisão rápida vence a análise detalhada.",
+    },
+    percepcao: {
+      comoSeVe: "Você se vê como alguém decidido, direto e orientado a resultados — a pessoa que assume o controle quando é preciso agir.",
+      comoLiderancaVe: "A liderança tende a te ver como alguém confiável para tocar entregas e tomar decisões difíceis, mas pode esperar mais paciência e escuta em momentos que exigem construção coletiva.",
+      comoParesVeem: "Os pares costumam te ver como alguém enérgico e assertivo, que ajuda o grupo a avançar — mas que, sob pressão, pode soar impositivo ou pouco aberto a outras opiniões.",
+    },
   },
   I: {
     nome: "Influência",
@@ -522,13 +534,23 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       "Otimismo e energia positiva"
     ],
     areasDesenvolvimento: [
-      "Foco em detalhes e acompanhamento",
-      "Organização e gestão do tempo",
-      "Análise crítica antes de agir",
-      "Consistência na execução de tarefas rotineiras"
+      "Planejamento e Organização — estruturar um plano antes de agir, evitando começar várias coisas ao mesmo tempo",
+      "Gestão do Tempo — criar rotinas de acompanhamento para não perder prazos",
+      "Leitura de Cenário — analisar dados e contexto antes de se deixar levar pelo entusiasmo do momento",
+      "Disciplina — manter constância na execução de tarefas repetitivas, mesmo sem estímulo imediato"
     ],
     comoSeRelaciona: "Tende a ser caloroso e acessível, criando um ambiente positivo. Pode ser percebido como disperso quando há muitas ideias em andamento.",
-    cor: "#F59E0B" // amarelo/âmbar
+    cor: "#F59E0B", // amarelo/âmbar
+    subfatores: {
+      D: "Seu perfil secundário de Dominância (D) dá mais foco e ambição à sua Influência: além de engajar pessoas, você também busca resultados concretos e não tem medo de assumir o controle. O contraponto é que, combinando entusiasmo (I) com impaciência (D), você pode acelerar demais e pular etapas de planejamento.",
+      S: "Seu perfil secundário de Estabilidade (S) equilibra sua Influência: você não é só envolvente, também é acolhedor e constrói relações de confiança mais duradouras. A tensão surge porque o I busca novidade e estímulo, enquanto o S busca rotina e segurança — e isso pode gerar oscilação entre euforia e acomodação.",
+      C: "Seu perfil secundário de Conformidade (C) traz mais atenção a detalhes à sua Influência: você consegue unir comunicação envolvente com alguma precisão técnica. O desafio é que o entusiasmo do I tende a querer avançar rápido, enquanto o C pede mais tempo de análise — encontrar esse ritmo é o seu principal ponto de desenvolvimento.",
+    },
+    percepcao: {
+      comoSeVe: "Você se vê como alguém comunicativo, otimista e capaz de motivar as pessoas ao seu redor.",
+      comoLiderancaVe: "A liderança costuma te ver como alguém que engaja times e dá energia ao ambiente, mas pode cobrar mais consistência no acompanhamento das entregas.",
+      comoParesVeem: "Os pares tendem a te ver como alguém acessível e agradável de trabalhar junto, ainda que às vezes pareça disperso ou inconstante em compromissos de rotina.",
+    },
   },
   S: {
     nome: "Estabilidade",
@@ -542,13 +564,23 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       "Mediação de conflitos"
     ],
     areasDesenvolvimento: [
-      "Assertividade e posicionamento",
-      "Adaptação a mudanças rápidas",
-      "Tomada de decisão sob pressão",
-      "Expressão de opiniões divergentes"
+      "Comunicação Assertiva — expressar discordâncias e opiniões próprias de forma mais direta",
+      "Adaptabilidade — se abrir mais rápido a mudanças de plano, mesmo fora da zona de conforto",
+      "Tomada de Decisão — decidir com mais agilidade quando a situação exige resposta rápida",
+      "Protagonismo — se posicionar e assumir mais visibilidade em vez de ficar em segundo plano"
     ],
     comoSeRelaciona: "Tende a ser acolhedor e solidário, priorizando o bem-estar do grupo. Pode ser percebido como resistente a mudanças quando sai da zona de conforto.",
-    cor: "#16A34A" // verde
+    cor: "#16A34A", // verde
+    subfatores: {
+      D: "Seu perfil secundário de Dominância (D) dá mais firmeza à sua Estabilidade: você continua confiável e cooperativo, mas ganha mais disposição para se posicionar e tomar decisões rápidas quando necessário. A tensão é entre a busca por harmonia (S) e a vontade de resultado imediato (D).",
+      I: "Seu perfil secundário de Influência (I) deixa sua Estabilidade mais calorosa e comunicativa: você constrói relações de confiança e também sabe se expressar com entusiasmo. O contraponto é equilibrar a preferência do S por rotina com a busca do I por novidade e estímulo social.",
+      C: "Seu perfil secundário de Conformidade (C) reforça sua Estabilidade com mais método e precisão: você é confiável tanto nas relações quanto na execução técnica. O desafio é que ambos os fatores tendem à cautela, então a velocidade de resposta em situações urgentes pode ser o seu maior ponto de atenção.",
+    },
+    percepcao: {
+      comoSeVe: "Você se vê como alguém confiável, paciente e disposto a apoiar o time sempre que possível.",
+      comoLiderancaVe: "A liderança costuma te ver como uma base estável do time, mas pode esperar mais iniciativa própria e posicionamento em momentos de decisão.",
+      comoParesVeem: "Os pares tendem a te ver como alguém leal e fácil de contar, ainda que, às vezes, percebam certa resistência a sair da rotina estabelecida.",
+    },
   },
   C: {
     nome: "Conformidade",
@@ -562,13 +594,23 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       "Consistência e padrões elevados"
     ],
     areasDesenvolvimento: [
-      "Flexibilidade e adaptação",
-      "Comunicação emocional e empatia",
-      "Velocidade na tomada de decisão",
-      "Tolerância com imperfeições"
+      "Adaptabilidade — lidar melhor com mudanças de última hora e imprevistos",
+      "Inteligência Emocional — equilibrar a análise técnica com mais sensibilidade ao lado humano das situações",
+      "Tomada de Decisão — avançar com a informação disponível, sem esperar 100% de certeza",
+      "Resiliência — lidar com erros e imperfeições de forma mais leve, sem exigência excessiva de si e dos outros"
     ],
     comoSeRelaciona: "Tende a ser reservado e objetivo, valorizando competência e precisão. Pode ser percebido como excessivamente crítico quando os padrões não são atendidos.",
-    cor: "#2563EB" // azul
+    cor: "#2563EB", // azul
+    subfatores: {
+      D: "Seu perfil secundário de Dominância (D) dá mais agilidade à sua Conformidade: você une rigor técnico com disposição para decidir e agir. A tensão aparece entre a busca por precisão (C), que pede tempo de análise, e a urgência por resultado (D), que pede decisão rápida.",
+      I: "Seu perfil secundário de Influência (I) suaviza sua Conformidade: você continua analítico, mas ganha mais facilidade para se comunicar e engajar pessoas em torno das suas conclusões. O contraponto é equilibrar o rigor do C com a espontaneidade do I.",
+      S: "Seu perfil secundário de Estabilidade (S) reforça sua Conformidade com mais paciência e constância: você é tanto preciso quanto confiável na rotina. O desafio comum aos dois fatores é a resistência a mudanças rápidas e a dificuldade de decidir sob pressão de tempo.",
+    },
+    percepcao: {
+      comoSeVe: "Você se vê como alguém analítico, criterioso e comprometido com a qualidade do que entrega.",
+      comoLiderancaVe: "A liderança costuma te ver como alguém que traz segurança técnica e rigor às entregas, mas pode esperar mais flexibilidade diante de imprevistos e prazos apertados.",
+      comoParesVeem: "Os pares tendem a te ver como uma referência de qualidade e método, ainda que, às vezes, percebam certa rigidez ou crítica excessiva quando os padrões não são atendidos.",
+    },
   }
 };
 
