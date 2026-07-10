@@ -11451,6 +11451,24 @@ Responda APENAS em JSON com o formato:
       return DISC_PERFIS;
     }),
 
+    // Como cada perfil tende a reagir sob pressão (gatilho, reação de risco, resposta regulada)
+    pressao: publicProcedure.query(() => {
+      const { PRESSAO_DISC } = require('../shared/discData');
+      return PRESSAO_DISC;
+    }),
+
+    // Áreas de desenvolvimento na perspectiva força preservada / repertório a ampliar
+    desenvolvimentoDetalhado: publicProcedure.query(() => {
+      const { DESENVOLVIMENTO_DETALHADO } = require('../shared/discData');
+      return DESENVOLVIMENTO_DETALHADO;
+    }),
+
+    // Matriz Competência x DISC (facilidade provável + ponto de desenvolvimento por fator)
+    competenciaMatrix: publicProcedure.query(() => {
+      const { COMPETENCIA_DISC } = require('../shared/competenciaDiscMatrix');
+      return COMPETENCIA_DISC;
+    }),
+
     // Buscar histórico completo de resultados DISC de um aluno (todos os ciclos)
     historico: protectedProcedure
       .input(z.object({ alunoId: z.number() }))
