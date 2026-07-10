@@ -3699,15 +3699,16 @@ export default function OnboardingAluno() {
 
   const handleStepComplete = () => {
     // Assessment sem devolutiva: encerra logo após a etapa de Assessment (não vai para Mentora)
+    // Mantém o aluno na propria tela (mostrando o relatorio) em vez de navegar para /meu-dashboard,
+    // pois essa pagina redireciona de volta para /onboarding quando needsOnboarding esta travado em true
+    // para contas assessment-only (ver Bloco D, pendente: tela de conclusao dedicada).
     if (isAssessmentOnly && !assessmentTemDevolutiva && currentStep === 2) {
       toast.success("Assessment concluído! Obrigado por participar.");
-      setLocation("/meu-dashboard");
       return;
     }
     // Assessment com devolutiva: encerra após o 1º Encontro (não avança para Sua Jornada/PDI/Aceite)
     if (isAssessmentOnly && assessmentTemDevolutiva && currentStep === 5) {
       toast.success("Assessment concluído! Obrigado por participar.");
-      setLocation("/meu-dashboard");
       return;
     }
     if (currentStep < 8) {
