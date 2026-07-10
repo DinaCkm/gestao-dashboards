@@ -1338,7 +1338,11 @@ function RelatorioAutoconhecimento({
                   <p className="text-sm text-gray-500">{perfilPrincipal.nome}</p>
                 </div>
               </div>
-              <p className="text-gray-700 leading-relaxed">{perfilPrincipal.descricao}</p>
+              <div className="space-y-3">
+                {perfilPrincipal.descricao.split("\n\n").map((paragrafo, i) => (
+                  <p key={i} className="text-gray-700 leading-relaxed">{paragrafo}</p>
+                ))}
+              </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-emerald-50 rounded-lg p-4">
