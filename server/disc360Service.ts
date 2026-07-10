@@ -25,7 +25,7 @@ import {
   type InsertDiscGeneratedReport,
 } from "../drizzle/schema";
 import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore, determinarPerfil } from "./discMatchService";
-import { calcularDiscCargo, avaliarDivergenciaValidacao, type RespostaRole, type RespostaValidacaoCargo } from "./discRoleService";
+import { calcularDiscCargo, avaliarDivergenciaValidacao, obterFaixaTextoCargo, type RespostaRole, type RespostaValidacaoCargo } from "./discRoleService";
 import {
   calcularDiscCulturaEmpresa,
   calcularDiscEmpresaConsolidado,
@@ -835,4 +835,26 @@ export async function consolidateRoleProfile(database: DbClient, cargoProfileId:
     perfilEsperado: consolidado.perfilSugerido,
   } as any);
   return consolidado;
+}
+
+export async function getDashboardCargo(database: DbClient, cargoProfileId: number) {
+  const cargoProfile = await getRoleProfileById(database, cargoProfileId);
+  const consolidado = await previewCargoConsolidacao(database, cargoProfileId);
+
+  const dimensoes: ("D" | "I" | "S" | "C")[] = ["D", "I", "S", "C"];
+  const textosPorEixo = Object.fromEntries(
+    dimensoes.map((eixo) => [
+      eixo,
+      {
+        percentual: consolidado.scoresMedios[eixo],
+        ...obterFaixaTextoCargo(eixo, consolidado.scoresMedios[eixo]),
+      },
+    ])
+  );
+
+  return {
+    cargoProfile,
+    consolidado,
+    textosPorEixo,
+  };
 }
