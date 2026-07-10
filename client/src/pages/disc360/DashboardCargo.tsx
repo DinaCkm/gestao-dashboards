@@ -280,8 +280,43 @@ function DashboardCargoContent() {
                     </div>
                     {info.label && <CardDescription>{info.label}</CardDescription>}
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-3">
                     <p className="text-sm text-muted-foreground">{info.texto}</p>
+
+                    {(info.pontosPositivos ?? []).length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-emerald-700">Pontos positivos</p>
+                        <ul className="list-disc pl-4 text-xs text-muted-foreground space-y-0.5 mt-1">
+                          {info.pontosPositivos.map((item: string, i: number) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {(info.pontosAtencao ?? []).length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-amber-700">Pontos de atenção</p>
+                        <ul className="list-disc pl-4 text-xs text-muted-foreground space-y-0.5 mt-1">
+                          {info.pontosAtencao.map((item: string, i: number) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {(info.pontosInvestigarSelecao ?? []).length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-slate-700">
+                          Principais pontos a investigar em processos seletivos
+                        </p>
+                        <ul className="list-disc pl-4 text-xs text-muted-foreground space-y-0.5 mt-1">
+                          {info.pontosInvestigarSelecao.map((item: string, i: number) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
