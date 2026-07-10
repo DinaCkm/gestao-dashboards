@@ -1437,16 +1437,14 @@ function RelatorioAutoconhecimento({
               <p className="text-xs text-gray-500">
                 Tendência observada quando a necessidade de <span className="font-medium">{pressaoAtual.necessidadeAmeacada.toLowerCase()}</span> entra em jogo. Não é uma regra fixa — é um padrão para observar em si mesmo.
               </p>
-              <div className="grid md:grid-cols-2 gap-3 items-stretch">
-                <div className="bg-white border border-rose-200 rounded-lg p-3 flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Reação de risco</span>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div className="bg-white border border-rose-200 rounded-lg p-3 flex flex-col gap-1.5 relative">
+                  <span className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Sob pressão, pode parecer</span>
                   <p className="text-sm text-gray-700">{pressaoAtual.reacaoRisco}</p>
+                  <ArrowRight className="hidden md:block absolute top-1/2 -right-[22px] -translate-y-1/2 h-4 w-4 text-gray-300 bg-orange-50 rounded-full p-0.5" />
                 </div>
-                <div className="flex items-center justify-center">
-                  <ArrowRight className="h-5 w-5 text-gray-300 rotate-90 md:rotate-0" />
-                </div>
-                <div className="bg-white border border-emerald-200 rounded-lg p-3 flex flex-col gap-1.5 md:col-start-1">
-                  <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Resposta regulada</span>
+                <div className="bg-white border border-emerald-200 rounded-lg p-3 flex flex-col gap-1.5">
+                  <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Um caminho mais leve</span>
                   <p className="text-sm text-gray-700">{pressaoAtual.respostaRegulada}</p>
                 </div>
               </div>
