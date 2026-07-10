@@ -413,9 +413,11 @@ function CargoAcoesDialog({
                 <p className="text-muted-foreground">
                   D {r.scores.D} · I {r.scores.I} · S {r.scores.S} · C {r.scores.C}
                 </p>
-                {r.avaliacaoDivergencia?.divergente && (
-                  <p className="mt-1 text-amber-600">{r.avaliacaoDivergencia.texto}</p>
-                )}
+                {(r.avaliacoesDivergencia ?? []).filter((av: any) => av.divergente).map((av: any) => (
+                  <p key={av.dimensao} className="mt-1 text-amber-600">
+                    {av.texto}
+                  </p>
+                ))}
               </div>
             ))}
             <div className="rounded-md border border-dashed p-3 text-sm">
