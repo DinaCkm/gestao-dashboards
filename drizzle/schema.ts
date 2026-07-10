@@ -1996,6 +1996,8 @@ export const discAssessments = mysqlTable("disc_assessments", {
   respondentName: varchar("respondentName", { length: 255 }), // Nome do respondente convidado (quando nao possui conta no sistema)
   respondentEmail: varchar("respondentEmail", { length: 320 }), // Email do respondente convidado
   conviteToken: varchar("conviteToken", { length: 64 }), // Token unico do link de convite (resposta sem login)
+  papelRespondente: mysqlEnum("papelRespondente", ["lider", "empregado"]), // Papel do respondente no questionario de Perfil do Cargo
+  respostaValidacaoDireta: int("respostaValidacaoDireta"), // Regua 0-100: percepcao direta do respondente (0=cauteloso, 100=direto/assertivo)
 });
 
 export type DiscAssessment = typeof discAssessments.$inferSelect;
@@ -2187,6 +2189,22 @@ export const discCultureSurveyAnswers = mysqlTable("disc_culture_survey_answers"
 
 export type DiscCultureSurveyAnswer = typeof discCultureSurveyAnswers.$inferSelect;
 export type InsertDiscCultureSurveyAnswer = typeof discCultureSurveyAnswers.$inferInsert;
+
+// EcoDISC 360 - Respostas do questionario de Perfil do Cargo (mesmo formato mais/menos
+// usado em disc_culture_survey_answers, mas para investigar o que o cargo exige)
+export const discRoleSurveyAnswers = mysqlTable("disc_role_survey_answers", {
+  id: int("id").autoincrement().primaryKey(),
+  assessmentId: int("assessmentId").notNull(),
+  questionId: varchar("questionId", { length: 20 }).notNull(),
+  maisId: varchar("maisId", { length: 20 }).notNull(), // ID da alternativa "mais representa" (ex: q1_D)
+  menosId: varchar("menosId", { length: 20 }).notNull(), // ID da alternativa "menos representa" (ex: q1_S)
+  maisDimensao: mysqlEnum("maisDimensao", ["D","I","S","C"]).notNull(), // Dimensao do "mais"
+  menosDimensao: mysqlEnum("menosDimensao", ["D","I","S","C"]).notNull(), // Dimensao do "menos"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type DiscRoleSurveyAnswer = typeof discRoleSurveyAnswers.$inferSelect;
+export type InsertDiscRoleSurveyAnswer = typeof discRoleSurveyAnswers.$inferInsert;
 
 export const discDiretoriaMembros = mysqlTable("disc_diretoria_membros", {
   id: int("id").autoincrement().primaryKey(),
