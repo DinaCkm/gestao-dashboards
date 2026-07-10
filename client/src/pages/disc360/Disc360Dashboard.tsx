@@ -33,7 +33,7 @@ const cards: Disc360CardConfig[] = [
     title: "Perfis de Cargo",
     description: "Cadastre o perfil comportamental esperado para cada cargo.",
     path: "/disc360/perfis-cargo",
-    disponivel: false,
+    disponivel: true,
   },
   {
     icon: ClipboardCheck,
