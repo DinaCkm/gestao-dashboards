@@ -1135,6 +1135,7 @@ function RelatorioAutoconhecimento({
   perfilSecundario,
   onComplete,
   labelContinuar = "Continuar para Escolha da Mentora",
+  temDevolutiva = true,
 }: {
   alunoId: number;
   discScores: DiscScores | null;
@@ -1142,6 +1143,7 @@ function RelatorioAutoconhecimento({
   perfilSecundario: DiscDimensao | null;
   onComplete: () => void;
   labelContinuar?: string;
+  temDevolutiva?: boolean;
 }) {
   const { data: perfisData } = trpc.disc.perfis.useQuery();
   const { data: autopercepcoesData } = trpc.autopercepção.porAluno.useQuery({ alunoId });
@@ -1484,10 +1486,25 @@ function RelatorioAutoconhecimento({
             <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             Pense em exemplos concretos do seu trabalho que ilustrem seus pontos fortes e desafios
           </li>
-          <li className="flex items-start gap-2">
-            <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            Leve perguntas e expectativas para a conversa com sua mentora
-          </li>
+          {temDevolutiva ? (
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              Caso o seu programa contemple uma devolutiva, anote ou imprima o resultado do seu assessment e não
+              deixe de levá-lo para a conversa com a mentora. Esse material será importante para apoiar a análise e
+              aprofundar a compreensão dos resultados.
+            </li>
+          ) : (
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>
+                Caso o seu programa não contemple uma devolutiva, leia o resultado com atenção e lembre-se de que
+                ele representa a forma como você se percebe e se posiciona no momento atual, não sendo uma definição
+                fixa ou imutável sobre quem você é. Observe seus pontos fortes, reconheça os aspectos que precisam
+                ser desenvolvidos e utilize essas informações para construir uma trilha de desenvolvimento alinhada
+                aos seus objetivos.
+              </span>
+            </li>
+          )}
         </ul>
       </div>
 
