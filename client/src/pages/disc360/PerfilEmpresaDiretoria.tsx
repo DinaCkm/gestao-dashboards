@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Pencil, Power, ClipboardList, ChevronDown, Eye, Users } from "lucide-react";
+import { Pencil, Power, ClipboardList, ChevronDown, Eye, Users, LayoutDashboard } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ContadorRespondentes from "@/components/disc360/ContadorRespondentes";
 import { trpc } from "@/lib/trpc";
@@ -330,6 +330,11 @@ function PerfilEmpresaDiretoriaContent() {
                               <Button variant="ghost" size="icon" onClick={() => { setQuestionarioOrgProfileId(perfil.id); setPerfilAcoesDialogAberto(true); }} title="Selecionar respondentes e ver resultado">
                                 <Users className="h-4 w-4" />
                               </Button>
+                              <Link href={`/disc360/dashboard-cultura/${perfil.id}`}>
+                                <Button variant="ghost" size="icon" title="Visualizar Dashboard">
+                                  <LayoutDashboard className="h-4 w-4" />
+                                </Button>
+                              </Link>
                             </div>
                             <ContadorRespondentes orgProfileId={perfil.id} />
                           </div>
