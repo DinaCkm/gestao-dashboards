@@ -1533,6 +1533,7 @@ export default function EtapaAssessmentCompleta({
   hideVideo1 = false,
   labelContinuar = "Continuar para Escolha da Mentora",
   contratoNivelId,
+  temDevolutiva = true,
 }: {
   alunoId: number;
   onComplete: () => void;
@@ -1541,6 +1542,7 @@ export default function EtapaAssessmentCompleta({
   hideVideo1?: boolean;
   labelContinuar?: string;
   contratoNivelId?: number | null;
+  temDevolutiva?: boolean;
 }) {
   // Verificar se já fez o teste — filtrar pelo contratoNivelId vigente para não pegar DISC do ciclo anterior
   const { data: discResultado } = trpc.disc.resultado.useQuery(
@@ -1646,6 +1648,7 @@ export default function EtapaAssessmentCompleta({
           perfilSecundario={perfilSecundario}
           onComplete={onComplete}
           labelContinuar={labelContinuar}
+          temDevolutiva={temDevolutiva}
         />
       ) : (
         <>
@@ -1679,6 +1682,7 @@ export default function EtapaAssessmentCompleta({
               perfilSecundario={perfilSecundario}
               onComplete={onComplete}
               labelContinuar={labelContinuar}
+              temDevolutiva={temDevolutiva}
             />
           )}
         </>
