@@ -21,7 +21,12 @@ export default function ResponderConviteCargo() {
   );
 
   const [respostas, setRespostas] = useState<Record<string, { mais?: Dimensao; menos?: Dimensao }>>({});
-  const [respostaValidacao, setRespostaValidacao] = useState(50);
+  const [respostaValidacao, setRespostaValidacao] = useState<Record<string, number>>({
+    D: 50,
+    I: 50,
+    S: 50,
+    C: 50,
+  });
   const [enviado, setEnviado] = useState(false);
 
   const submitMutation = trpc.disc360.responderConviteCargoPorToken.useMutation({
@@ -90,7 +95,7 @@ export default function ResponderConviteCargo() {
   }
 
   const perguntas = (data.perguntas ?? []) as any[];
-  const perguntaValidacao = data.perguntaValidacao as any;
+  const perguntasValidacao = (data.perguntasValidacao ?? []) as any[];
   const totalRespondidas = perguntas.filter(
     (p: any) => respostas[p.id]?.mais && respostas[p.id]?.menos
   ).length;
@@ -122,7 +127,11 @@ export default function ResponderConviteCargo() {
       maisDimensao: respostas[p.id].mais as Dimensao,
       menosDimensao: respostas[p.id].menos as Dimensao,
     }));
-    submitMutation.mutate({ token, respostas: respostasArray, respostaValidacaoDireta: respostaValidacao });
+    submitMutation.mutate({
+      token,
+      respostas: respostasArray,
+      respostaValidacao: respostaValidacao as { D: number; I: number; S: number; C: number },
+    });
   };
 
   return (
@@ -200,25 +209,44 @@ export default function ResponderConviteCargo() {
           </Card>
         ))}
 
-        {perguntaValidacao && (
+        {perguntasValidacao.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Para finalizar</CardTitle>
-              <CardDescription className="text-foreground">{perguntaValidacao.pergunta}</CardDescription>
+              <CardDescription className="text-foreground">
+                Avalie, eixo a eixo, o quanto este cargo exige de cada característica.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Slider
-                value={[respostaValidacao]}
-                onValueChange={(v) => setRespostaValidacao(v[0])}
-                min={0}
-                max={100}
-                step={1}
-              />
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{perguntaValidacao.extremoBaixo}</span>
-                <span>{perguntaValidacao.extremoAlto}</span>
-              </div>
-              <p className="text-center text-sm font-medium">Valor selecionado: {respostaValidacao}</p>
+            <CardContent className="space-y-6">
+              {perguntasValidacao.map((pv: any) => {
+                const valor = respostaValidacao[pv.dimensao] ?? 50;
+                const faixa = pv.faixas.find((f: any) => valor >= f.min && valor <= f.max);
+                return (
+                  <div key={pv.dimensao} className="space-y-2 border-b pb-6 last:border-b-0 last:pb-0">
+                    <p className="text-sm font-medium">{pv.pergunta}</p>
+                    <Slider
+                      value={[valor]}
+                      onValueChange={(v) =>
+                        setRespostaValidacao((prev) => ({ ...prev, [pv.dimensao]: v[0] }))
+                      }
+                      min={0}
+                      max={100}
+                      step={1}
+                    />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>0</span>
+                      <span className="font-medium text-foreground">Valor selecionado: {valor}</span>
+                      <span>100</span>
+                    </div>
+                    {faixa && (
+                      <div className="rounded-md bg-muted/50 p-3 text-sm">
+                        <p className="font-medium">{faixa.label}</p>
+                        <p className="text-muted-foreground">{faixa.texto}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
         )}
