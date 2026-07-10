@@ -245,9 +245,10 @@ export function buildOnboardingInviteEmail(data: {
   empresaName?: string;
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
-  const subject = `🎉 Parabéns! Sua jornada no ECOSSISTEMA DO BEM começa agora!`;
+  const subject = `Boas-vindas ao Ecossistema do B.E.M.!`;
 
   const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const organizacao = data.empresaName || 'sua organização';
 
   const html = `
 <!DOCTYPE html>
@@ -260,139 +261,118 @@ export function buildOnboardingInviteEmail(data: {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
-          
-          <!-- Header com Logo -->
+        <table role="presentation" width="100%" style="max-width: 560px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.06);">
           <tr>
-            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
-              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 12px;" />
-              <p style="color: #6b7280; margin: 4px 0 0; font-size: 13px;">
-                Programa de Desenvolvimento e Mentoria
-              </p>
+            <td style="background-color: #0f2b3c; padding: 28px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="Ecossistema do B.E.M." style="max-width: 180px; height: auto;" />
             </td>
           </tr>
-          <!-- Divider -->
-          <tr>
-            <td style="padding: 0 40px;">
-              <hr style="border: none; border-top: 2px solid #e8a838; margin: 0;" />
-            </td>
-          </tr>
-
-          <!-- Body -->
           <tr>
             <td style="padding: 40px;">
-              <h2 style="color: #0f2b3c; margin: 0 0 20px; font-size: 22px;">
-                🎉 Parabéns, ${data.alunoName}!
-              </h2>
-              
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
-                É com muita alegria que informamos que você foi selecionado(a) para participar do <strong>ECOSSISTEMA DO BEM</strong>${data.empresaName ? ` pela empresa <strong>${data.empresaName}</strong>` : ""}! 🌟
+              <p style="color: #0f2b3c; font-size: 20px; font-weight: 700; margin: 0 0 16px 0;">Olá, ${data.alunoName}!</p>
+
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+                É com muita alegria que damos as boas-vindas a você ao <strong>Ecossistema do B.E.M.</strong>, plataforma da CKM Talents voltada ao mapeamento e ao desenvolvimento de competências comportamentais e técnicas.
               </p>
 
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
-                Este é o início de uma <strong>jornada transformadora de desenvolvimento profissional e pessoal</strong>. Você terá acesso a mentorias exclusivas, trilhas de competências e ferramentas que vão impulsionar sua carreira! 🚀
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+                Você foi convidado(a) pela <strong>${organizacao}</strong> para participar de um processo realizado por meio da nossa plataforma.
               </p>
 
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 25px;">
-                Para dar o primeiro passo, acesse a plataforma e complete o seu <strong>Onboarding</strong>. Estamos ansiosos para acompanhar sua evolução! 💪
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+                Nela, você encontrará as etapas, atividades, avaliações e orientações preparadas especialmente para a sua participação, de acordo com o seu plano de adesão.
               </p>
 
-              <!-- Credentials Box -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 28px 0;">
+                Estamos muito felizes em receber você e desejamos que esta seja uma experiência positiva, produtiva e enriquecedora.
+              </p>
+
+              <p style="color: #0f2b3c; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">
+                Para começar, acesse a plataforma utilizando os dados abaixo:
+              </p>
+
+              <table role="presentation" width="100%" style="background-color: #f4f6f8; border-radius: 8px; margin: 0 0 28px 0;">
                 <tr>
-                  <td style="background-color: #f0f7fa; border: 1px solid #d1e5ed; border-radius: 8px; padding: 20px;">
-                    <p style="color: #0f2b3c; font-size: 14px; font-weight: 600; margin: 0 0 12px;">
-                      🔑 Seus dados de acesso:
-                    </p>
-                    <table role="presentation" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 80px;">📧 Email:</td>
-                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.alunoEmail}</td>
-                      </tr>
-                      <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 80px;">🆔 ID:</td>
-                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.alunoId}</td>
-                      </tr>
-                    </table>
+                  <td style="padding: 16px 20px;">
+                    <p style="color: #0f2b3c; font-size: 14px; font-weight: 700; margin: 0 0 8px 0;">Seus dados de acesso</p>
+                    <p style="color: #33475b; font-size: 14px; margin: 0 0 4px 0;">E-mail: ${data.alunoEmail}</p>
+                    <p style="color: #33475b; font-size: 14px; margin: 0;">ID: ${data.alunoId}</p>
                   </td>
                 </tr>
               </table>
 
-              <!-- CTA Button -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+              <table role="presentation" width="100%" style="margin: 0 0 28px 0;">
                 <tr>
                   <td align="center">
-                    <a href="${data.loginUrl}" 
-                       style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
-                      ✨ Iniciar Minha Jornada
+                    <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #f0c060 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                      ACESSAR A PLATAFORMA
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <p style="color: #9ca3af; font-size: 13px; line-height: 1.6; margin: 0; text-align: center;">
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+                Acesse a plataforma, conheça o ambiente e siga as orientações disponíveis em sua área de participação.
+              </p>
+
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 8px 0;">
+                Seja muito bem-vindo(a) ao Ecossistema do B.E.M.!
+              </p>
+
+              <p style="color: #9ca3af; font-size: 13px; line-height: 1.6; margin: 0;">
                 Caso o botão não funcione, copie e cole este link no seu navegador:<br>
                 <a href="${data.loginUrl}" style="color: #1a4a5e; word-break: break-all;">${data.loginUrl}</a>
               </p>
             </td>
           </tr>
-
-          <!-- Motivational Banner -->
           <tr>
-            <td style="background: linear-gradient(135deg, #e8a838 0%, #f0c060 100%); padding: 20px 40px; text-align: center;">
-              <p style="color: #0f2b3c; font-size: 15px; font-weight: 600; margin: 0; line-height: 1.6;">
-                🌱 "O desenvolvimento é uma jornada, não um destino. Cada passo conta!" 🌱
+            <td style="background-color: #f4f6f8; padding: 24px 40px; text-align: center;">
+              <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin: 0 0 8px 0;">
+                Em caso de dúvidas, fale conosco: <a href="https://ckmtalents.com.br/fale-conosco/" style="color: #1a4a5e;">ckmtalents.com.br/fale-conosco</a>
+              </p>
+              <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                Atenciosamente,<br>
+                Equipe CKM Talents — Ecossistema do B.E.M.
               </p>
             </td>
           </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" style="padding-bottom: 12px;">
-                    <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="60" style="opacity: 0.7;" />
-                  </td>
-                </tr>
-                <tr>
-                  <td align="center">
-                    <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
-                      Este é um email automático do ECOSSISTEMA DO BEM.<br>
-                      Em caso de dúvidas, entre em contato com a administração do programa.<br>
-                      © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
         </table>
       </td>
     </tr>
   </table>
 </body>
-</html>`;
+</html>
+`;
 
-  const text = `🎉 Parabéns, ${data.alunoName}!
+  const text = `Boas-vindas ao Ecossistema do B.E.M.!
 
-É com muita alegria que informamos que você foi selecionado(a) para participar do ECOSSISTEMA DO BEM${data.empresaName ? ` pela empresa ${data.empresaName}` : ""}! 🌟
+Olá, ${data.alunoName}!
 
-Este é o início de uma jornada transformadora de desenvolvimento profissional e pessoal. Você terá acesso a mentorias exclusivas, trilhas de competências e ferramentas que vão impulsionar sua carreira! 🚀
+É com muita alegria que damos as boas-vindas a você ao Ecossistema do B.E.M., plataforma da CKM Talents voltada ao mapeamento e ao desenvolvimento de competências comportamentais e técnicas.
 
-Para dar o primeiro passo, acesse a plataforma e complete o seu Onboarding. 💪
+Você foi convidado(a) pela ${organizacao} para participar de um processo realizado por meio da nossa plataforma.
 
-🔑 Seus dados de acesso:
-- 📧 Email: ${data.alunoEmail}
-- 🆔 ID: ${data.alunoId}
+Nela, você encontrará as etapas, atividades, avaliações e orientações preparadas especialmente para a sua participação, de acordo com o seu plano de adesão.
 
-✨ Acesse: ${data.loginUrl}
+Estamos muito felizes em receber você e desejamos que esta seja uma experiência positiva, produtiva e enriquecedora.
 
-🌱 "O desenvolvimento é uma jornada, não um destino. Cada passo conta!" 🌱
+Para começar, acesse a plataforma utilizando os dados abaixo:
 
-Este é um email automático do ECOSSISTEMA DO BEM.
-© ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.`;
+Seus dados de acesso
+E-mail: ${data.alunoEmail}
+ID: ${data.alunoId}
+
+Acessar a plataforma: ${data.loginUrl}
+
+Acesse a plataforma, conheça o ambiente e siga as orientações disponíveis em sua área de participação.
+
+Seja muito bem-vindo(a) ao Ecossistema do B.E.M.!
+
+Em caso de dúvidas, fale conosco: https://ckmtalents.com.br/fale-conosco/
+
+Atenciosamente,
+Equipe CKM Talents
+Ecossistema do B.E.M.`;
 
   return { subject, html, text };
 }
