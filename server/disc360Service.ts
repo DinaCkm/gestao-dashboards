@@ -25,7 +25,7 @@ import {
   type InsertDiscGeneratedReport,
 } from "../drizzle/schema";
 import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore, determinarPerfil } from "./discMatchService";
-import { calcularDiscCargo, avaliarDivergenciaValidacao, type RespostaRole } from "./discRoleService";
+import { calcularDiscCargo, avaliarDivergenciaValidacao, type RespostaRole, type RespostaValidacaoCargo } from "./discRoleService";
 import {
   calcularDiscCulturaEmpresa,
   calcularDiscEmpresaConsolidado,
@@ -725,7 +725,7 @@ export async function listarConvitesCargoRole(database: DbClient, cargoProfileId
 
 export async function responderConviteCargoPorToken(
   database: DbClient,
-  input: { token: string; respostas: RespostaRole[]; respostaValidacaoDireta: number }
+  input: { token: string; respostas: RespostaRole[]; respostaValidacao: RespostaValidacaoCargo }
 ) {
   const convite = await getConvitePorToken(database, input.token);
   if (!convite) {
@@ -736,7 +736,7 @@ export async function responderConviteCargoPorToken(
   }
 
   const resultado = calcularDiscCargo(input.respostas);
-  const avaliacaoDivergencia = avaliarDivergenciaValidacao(resultado.scores.D, input.respostaValidacaoDireta);
+  const avaliacoesDivergencia = avaliarDivergenciaValidacao(resultado.scores, input.respostaValidacao);
 
   await database
     .update(discAssessments)
@@ -745,7 +745,10 @@ export async function responderConviteCargoPorToken(
       scores: resultado.scores as any,
       perfilPredominante: resultado.perfilPredominante as any,
       perfilSecundario: resultado.perfilSecundario as any,
-      respostaValidacaoDireta: input.respostaValidacaoDireta,
+      respostaValidacaoD: input.respostaValidacao.D,
+      respostaValidacaoI: input.respostaValidacao.I,
+      respostaValidacaoS: input.respostaValidacao.S,
+      respostaValidacaoC: input.respostaValidacao.C,
       completedAt: new Date(),
     } as any)
     .where(eq(discAssessments.id, convite.id));
@@ -763,7 +766,7 @@ export async function responderConviteCargoPorToken(
     );
   }
 
-  return { id: convite.id, ...resultado, avaliacaoDivergencia };
+  return { id: convite.id, ...resultado, avaliacoesDivergencia };
 }
 
 export async function previewCargoConsolidacao(database: DbClient, cargoProfileId: number) {
@@ -780,13 +783,19 @@ export async function previewCargoConsolidacao(database: DbClient, cargoProfileI
 
   const respondentes = (assessments as any[]).map((a) => {
     const scores = (a.scores || { D: 0, I: 0, S: 0, C: 0 }) as DiscScores;
-    const avaliacaoDivergencia = avaliarDivergenciaValidacao(scores.D, a.respostaValidacaoDireta);
+    const respostaValidacao = {
+      D: a.respostaValidacaoD ?? 0,
+      I: a.respostaValidacaoI ?? 0,
+      S: a.respostaValidacaoS ?? 0,
+      C: a.respostaValidacaoC ?? 0,
+    };
+    const avaliacoesDivergencia = avaliarDivergenciaValidacao(scores, respostaValidacao);
     return {
       papelRespondente: a.papelRespondente,
       respondentName: a.respondentName,
       scores,
-      respostaValidacaoDireta: a.respostaValidacaoDireta,
-      avaliacaoDivergencia,
+      respostaValidacao,
+      avaliacoesDivergencia,
     };
   });
 
