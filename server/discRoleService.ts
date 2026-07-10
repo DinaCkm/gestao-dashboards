@@ -97,11 +97,20 @@ export function avaliarDivergenciaValidacao(
 export function obterFaixaTextoCargo(
   dimensao: Disc360RoleDimension,
   valor: number
-): { label: string; texto: string } {
+): {
+  label: string;
+  texto: string;
+  pontosPositivos: string[];
+  pontosAtencao: string[];
+  pontosInvestigarSelecao: string[];
+} {
   const questao = DISC360_ROLE_VALIDACAO_QUESTIONS.find((q) => q.dimensao === dimensao);
   const faixa = questao?.faixas.find((f) => valor >= f.min && valor <= f.max);
   return {
     label: faixa?.label ?? "",
     texto: faixa?.texto ?? "",
+    pontosPositivos: faixa?.pontosPositivos ?? [],
+    pontosAtencao: faixa?.pontosAtencao ?? [],
+    pontosInvestigarSelecao: faixa?.pontosInvestigarSelecao ?? [],
   };
 }
