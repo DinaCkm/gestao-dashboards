@@ -1597,8 +1597,8 @@ export default function EtapaAssessmentCompleta({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Banner da Mentora Guia */}
-      <MentoraGuiaBannerAssessment />
+      {/* Banner da Mentora Guia — some depois que o teste DISC já foi preenchido */}
+      {!discResultado && <MentoraGuiaBannerAssessment />}
 
       {/* Sub-stepper */}
       <div className="max-w-xl mx-auto">
