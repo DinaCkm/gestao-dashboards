@@ -57,6 +57,7 @@ function AplicacoesDISCContent() {
   const [novoContratoFim, setNovoContratoFim] = useState("");
   const [novoTotalSessoes, setNovoTotalSessoes] = useState("");
   const [novoTipoMentoria, setNovoTipoMentoria] = useState<"individual" | "grupo" | "">("");
+  const [novoTipoPortal, setNovoTipoPortal] = useState<"desenvolvimento" | "assessment">("desenvolvimento");
 
   const { data: empresas = [] } = trpc.admin.listEmpresas.useQuery();
   const { data: departamentos = [] } = trpc.departments.list.useQuery(
@@ -95,6 +96,7 @@ function AplicacoesDISCContent() {
     setNovoContratoFim("");
     setNovoTotalSessoes("");
     setNovoTipoMentoria("");
+    setNovoTipoPortal("desenvolvimento");
   };
 
   const createAluno = trpc.admin.createAluno.useMutation({
@@ -127,6 +129,7 @@ function AplicacoesDISCContent() {
       totalSessoesContratadas: novoTotalSessoes ? Number(novoTotalSessoes) : undefined,
       tipoMentoria: novoTipoMentoria || undefined,
       plataformaAulas: novaPlataforma,
+      tipoPortal: novoTipoPortal,
     });
   };
 
@@ -170,6 +173,33 @@ function AplicacoesDISCContent() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
+              <div className="space-y-1">
+                <Label>Tipo de Acesso *</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={novoTipoPortal === "desenvolvimento" ? "default" : "outline"}
+                    className="h-auto flex-col items-start py-2 px-3"
+                    onClick={() => setNovoTipoPortal("desenvolvimento")}
+                  >
+                    <span className="font-semibold">Desenvolvimento</span>
+                    <span className="text-xs font-normal opacity-80">Acesso completo à jornada do programa</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={novoTipoPortal === "assessment" ? "default" : "outline"}
+                    className="h-auto flex-col items-start py-2 px-3"
+                    onClick={() => setNovoTipoPortal("assessment")}
+                  >
+                    <span className="font-semibold">Assessment</span>
+                    <span className="text-xs font-normal opacity-80">Somente vídeo, teste DISC e resultado</span>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Candidatos de Processo Seletivo continuam sendo cadastrados por autoinscrição (CPF liberado
+                  previamente em Processos Seletivos).
+                </p>
+              </div>
               <div className="space-y-1">
                 <Label>Nome Completo *</Label>
                 <Input value={novoNome} onChange={(e) => setNovoNome(e.target.value)} placeholder="Nome completo" />
