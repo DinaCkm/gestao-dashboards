@@ -1997,7 +1997,10 @@ export const discAssessments = mysqlTable("disc_assessments", {
   respondentEmail: varchar("respondentEmail", { length: 320 }), // Email do respondente convidado
   conviteToken: varchar("conviteToken", { length: 64 }), // Token unico do link de convite (resposta sem login)
   papelRespondente: mysqlEnum("papelRespondente", ["lider", "empregado"]), // Papel do respondente no questionario de Perfil do Cargo
-  respostaValidacaoDireta: int("respostaValidacaoDireta"), // Regua 0-100: percepcao direta do respondente (0=cauteloso, 100=direto/assertivo)
+  respostaValidacaoD: int("respostaValidacaoD"), // Regua 0-100 (D): percepcao direta do respondente sobre exigencia de Dominancia
+  respostaValidacaoI: int("respostaValidacaoI"), // Regua 0-100 (I): percepcao direta do respondente sobre exigencia de Influencia
+  respostaValidacaoS: int("respostaValidacaoS"), // Regua 0-100 (S): percepcao direta do respondente sobre exigencia de Estabilidade
+  respostaValidacaoC: int("respostaValidacaoC"), // Regua 0-100 (C): percepcao direta do respondente sobre exigencia de Conformidade
 });
 
 export type DiscAssessment = typeof discAssessments.$inferSelect;
