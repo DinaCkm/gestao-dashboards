@@ -72,6 +72,7 @@ interface DiscPerfil {
   pontosFortes: string[];
   areasDesenvolvimento: string[];
   comoSeRelaciona: string;
+  dicaRelacionamento?: string;
   cor: string;
   subfatores?: Partial<Record<DiscDimensao, string>>;
   percepcao?: { comoSeVe: string; comoLiderancaVe: string; comoParesVeem: string };
@@ -1375,8 +1376,21 @@ function RelatorioAutoconhecimento({
                 <h5 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
                   <Eye className="h-4 w-4" /> Como você se relaciona
                 </h5>
-                <p className="text-sm text-blue-700">{perfilPrincipal.comoSeRelaciona}</p>
+                <div className="space-y-2">
+                  {perfilPrincipal.comoSeRelaciona.split("\n\n").map((paragrafo, i) => (
+                    <p key={i} className="text-sm text-blue-700">{paragrafo}</p>
+                  ))}
+                </div>
               </div>
+
+              {perfilPrincipal.dicaRelacionamento && (
+                <div className="bg-white border border-blue-100 rounded-lg p-4">
+                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1 flex items-center gap-2">
+                    <Lightbulb className="h-3.5 w-3.5" /> Para desenvolver ainda mais seus relacionamentos
+                  </p>
+                  <p className="text-sm text-gray-700">{perfilPrincipal.dicaRelacionamento}</p>
+                </div>
+              )}
 
               {/* Perfil secundário: como ele contrapõe e influencia o perfil principal */}
               {perfilSec && perfilSecundario && (
