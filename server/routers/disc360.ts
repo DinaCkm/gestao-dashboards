@@ -49,7 +49,7 @@ import {
   consolidateDiretoriaFromGrupo,
 } from "../disc360Service";
 import { DISC360_CULTURE_QUESTIONS } from "../../shared/disc360CultureQuestions";
-import { DISC360_ROLE_QUESTIONS, DISC360_ROLE_PERGUNTA_VALIDACAO } from "../../shared/disc360RoleQuestions";
+import { DISC360_ROLE_QUESTIONS, DISC360_ROLE_VALIDACAO_QUESTIONS } from "../../shared/disc360RoleQuestions";
 
 const adminRoles = new Set(["admin", "admin2"]);
 const isAdmin = (role?: string | null) => adminRoles.has(role ?? "");
@@ -200,7 +200,7 @@ export const disc360Router = router({
         papelRespondente: (convite as any).papelRespondente as string | null,
         status: (convite as any).status as string,
         perguntas: DISC360_ROLE_QUESTIONS,
-        perguntaValidacao: DISC360_ROLE_PERGUNTA_VALIDACAO,
+        perguntasValidacao: DISC360_ROLE_VALIDACAO_QUESTIONS,
       };
     }),
 
@@ -215,7 +215,12 @@ export const disc360Router = router({
             menosDimensao: discDimensionEnum,
           })
         ),
-        respostaValidacaoDireta: z.number().min(0).max(100),
+        respostaValidacao: z.object({
+          D: z.number().min(0).max(100),
+          I: z.number().min(0).max(100),
+          S: z.number().min(0).max(100),
+          C: z.number().min(0).max(100),
+        }),
       })
     )
     .mutation(async ({ input }) => {
