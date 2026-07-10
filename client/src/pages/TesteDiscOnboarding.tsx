@@ -1382,9 +1382,11 @@ function RelatorioAutoconhecimento({
               {perfilSec && perfilSecundario && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h5 className="font-semibold text-gray-700 mb-1 text-sm">Seu Perfil Secundário: {perfilSec.titulo} ({perfilSec.nome})</h5>
-                  <p className="text-sm text-gray-600">
-                    {perfilPrincipal.subfatores?.[perfilSecundario] || perfilSec.descricao}
-                  </p>
+                  <div className="space-y-2">
+                    {(perfilPrincipal.subfatores?.[perfilSecundario] || perfilSec.descricao).split("\n\n").map((paragrafo: string, i: number) => (
+                      <p key={i} className="text-sm text-gray-600">{paragrafo}</p>
+                    ))}
+                  </div>
                 </div>
               )}
 
