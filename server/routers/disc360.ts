@@ -16,6 +16,13 @@ import {
   getLatestEmployeeAssessment,
   createRoleProfile,
   listRoleProfiles,
+  getRoleProfileById,
+  updateRoleProfile,
+  criarConvitesCargoRole,
+  listarConvitesCargoRole,
+  responderConviteCargoPorToken,
+  previewCargoConsolidacao,
+  consolidateRoleProfile,
   createOrgProfile,
   listOrgProfiles,
   updateOrgProfile,
@@ -42,6 +49,7 @@ import {
   consolidateDiretoriaFromGrupo,
 } from "../disc360Service";
 import { DISC360_CULTURE_QUESTIONS } from "../../shared/disc360CultureQuestions";
+import { DISC360_ROLE_QUESTIONS, DISC360_ROLE_PERGUNTA_VALIDACAO } from "../../shared/disc360RoleQuestions";
 
 const adminRoles = new Set(["admin", "admin2"]);
 const isAdmin = (role?: string | null) => adminRoles.has(role ?? "");
@@ -108,6 +116,131 @@ export const disc360Router = router({
     .query(async ({ input }) => {
       const database = await requireDatabase();
       return listRoleProfiles(database, input.programId);
+    }),
+
+  getRoleProfileById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return getRoleProfileById(database, input.id);
+    }),
+
+  updateRoleProfile: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        departmentId: z.number().nullable().optional(),
+        cargoNome: z.string().min(1).optional(),
+        cargoCodigo: z.string().nullable().optional(),
+        leaderUserId: z.number().nullable().optional(),
+        expectedScores: discScoresSchema.optional(),
+        perfilEsperado: z.string().nullable().optional(),
+        nivelAutonomia: intensidadeEnum.nullable().optional(),
+        nivelPressao: intensidadeEnum.nullable().optional(),
+        necessidadeRelacionamento: intensidadeFemininaEnum.nullable().optional(),
+        necessidadeAnaliseTecnica: intensidadeFemininaEnum.nullable().optional(),
+        necessidadeRotinaProcesso: intensidadeFemininaEnum.nullable().optional(),
+        descricao: z.string().nullable().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas lideres, gestores ou administradores podem editar o DISC do cargo.",
+        });
+      }
+      const { id, ...data } = input;
+      const database = await requireDatabase();
+      return updateRoleProfile(database, id, data as any);
+    }),
+
+  criarConvitesCargoRole: protectedProcedure
+    .input(
+      z.object({
+        programId: z.number(),
+        cargoProfileId: z.number(),
+        convites: z.array(
+          z.object({
+            papelRespondente: z.enum(["lider", "empregado"]),
+            respondentName: z.string().min(1),
+            respondentEmail: z.string().email().nullable().optional(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas lideres, gestores ou administradores podem criar convites do Perfil do Cargo.",
+        });
+      }
+      const database = await requireDatabase();
+      return criarConvitesCargoRole(database, input);
+    }),
+
+  listarConvitesCargoRole: protectedProcedure
+    .input(z.object({ cargoProfileId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return listarConvitesCargoRole(database, input.cargoProfileId);
+    }),
+
+  getConviteCargoPorToken: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      const convite = await getConvitePorToken(database, input.token);
+      if (!convite) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Convite nao encontrado." });
+      }
+      return {
+        respondentName: (convite as any).respondentName as string | null,
+        papelRespondente: (convite as any).papelRespondente as string | null,
+        status: (convite as any).status as string,
+        perguntas: DISC360_ROLE_QUESTIONS,
+        perguntaValidacao: DISC360_ROLE_PERGUNTA_VALIDACAO,
+      };
+    }),
+
+  responderConviteCargoPorToken: publicProcedure
+    .input(
+      z.object({
+        token: z.string(),
+        respostas: z.array(
+          z.object({
+            questionId: z.string(),
+            maisDimensao: discDimensionEnum,
+            menosDimensao: discDimensionEnum,
+          })
+        ),
+        respostaValidacaoDireta: z.number().min(0).max(100),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const database = await requireDatabase();
+      return responderConviteCargoPorToken(database, input);
+    }),
+
+  previewCargoConsolidacao: protectedProcedure
+    .input(z.object({ cargoProfileId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return previewCargoConsolidacao(database, input.cargoProfileId);
+    }),
+
+  consolidateRoleProfile: protectedProcedure
+    .input(z.object({ cargoProfileId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas lideres, gestores ou administradores podem consolidar o Perfil do Cargo.",
+        });
+      }
+      const database = await requireDatabase();
+      return consolidateRoleProfile(database, input.cargoProfileId);
     }),
 
   // ---------------------------------------------------------------------
