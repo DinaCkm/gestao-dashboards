@@ -45,39 +45,47 @@ export function calcularDiscCargo(respostas: RespostaRole[]): ResultadoIndividua
   };
 }
 
-// Diferenca (em pontos) entre a regua de validacao e o D calculado pelas
-// escolhas forcadas, acima da qual acende um alerta de possivel
-// tendenciosidade/inconsistencia na resposta do respondente.
+// Diferenca (em pontos) entre a regua de validacao e o score calculado do
+// mesmo eixo pelas escolhas forcadas, acima da qual acende um alerta de
+// possivel tendenciosidade/inconsistencia na resposta do respondente.
 export const DISC360_ROLE_ALERTA_LIMITE_DIVERGENCIA = 30;
 
-export type AvaliacaoDivergenciaValidacao = {
+export type RespostaValidacaoCargo = {
+  D: number;
+  I: number;
+  S: number;
+  C: number;
+};
+
+export type AvaliacaoDivergenciaEixo = {
+  dimensao: Disc360RoleDimension;
   divergente: boolean;
-  diferenca: number | null;
+  diferenca: number;
   texto: string | null;
 };
 
 /**
- * Compara a resposta da regua de validacao (0-100, percepcao direta do
- * respondente) com o D calculado pelas escolhas forcadas do MESMO
- * respondente. Se divergirem muito, sinaliza possivel tendenciosidade.
+ * Compara, EIXO A EIXO, a regua de validacao (0-100, percepcao direta do
+ * respondente) com o score calculado pelas escolhas forcadas do MESMO
+ * respondente. Se algum eixo divergir muito, sinaliza possivel
+ * tendenciosidade naquele eixo especificamente.
  */
 export function avaliarDivergenciaValidacao(
-  scoreD: number,
-  respostaValidacaoDireta: number | null | undefined,
+  scores: DiscScores,
+  respostaValidacao: RespostaValidacaoCargo,
   limite: number = DISC360_ROLE_ALERTA_LIMITE_DIVERGENCIA
-): AvaliacaoDivergenciaValidacao {
-  if (respostaValidacaoDireta === null || respostaValidacaoDireta === undefined) {
-    return { divergente: false, diferenca: null, texto: null };
-  }
-  const diferenca = Math.round(Math.abs(respostaValidacaoDireta - scoreD));
-  if (diferenca > limite) {
-    const leituraRegua =
-      respostaValidacaoDireta >= 50 ? "mais direto/assertivo" : "mais cauteloso/diplomático";
-    return {
-      divergente: true,
-      diferenca,
-      texto: `Atenção: a resposta da régua (${respostaValidacaoDireta} = ${leituraRegua}) diverge do D calculado pelas escolhas forçadas (${scoreD}). Reveja essa resposta com atenção.`,
-    };
-  }
-  return { divergente: false, diferenca, texto: null };
+): AvaliacaoDivergenciaEixo[] {
+  const dimensoes: Disc360RoleDimension[] = ["D", "I", "S", "C"];
+  return dimensoes.map((dimensao) => {
+    const diferenca = Math.round(Math.abs(respostaValidacao[dimensao] - scores[dimensao]));
+    if (diferenca > limite) {
+      return {
+        dimensao,
+        divergente: true,
+        diferenca,
+        texto: `Atenção: a régua de ${dimensao} (${respostaValidacao[dimensao]}) diverge do ${dimensao} calculado pelas escolhas forçadas (${scores[dimensao]}). Reveja essa resposta com atenção.`,
+      };
+    }
+    return { dimensao, divergente: false, diferenca, texto: null };
+  });
 }
