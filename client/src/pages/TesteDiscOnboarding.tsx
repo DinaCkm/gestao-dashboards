@@ -1214,6 +1214,14 @@ function RelatorioAutoconhecimento({
     "Visão de Futuro": "#F59E0B",
   };
 
+  // O que significa cada bloco de competências (fundamentação da metodologia do B.E.M.)
+  const TRILHA_EXPLICACOES: Record<string, string> = {
+    "Basic": "Competências fundamentais (comunicação, atenção, disciplina, escuta, autopercepção) que sustentam todo o restante do desenvolvimento. Sem essa base sólida, o aprendizado de habilidades mais avançadas tende a ser superficial.",
+    "Essential": "Ampliam a capacidade de atuar bem em situações mais complexas — adaptação, comunicação assertiva, inteligência emocional, planejamento. É a ponte entre o básico e a atuação com mais autonomia.",
+    "Master": "Competências de liderança e alta performance — gestão de conflitos e de equipes, tomada de decisão, visão estratégica. Indicam a capacidade de influenciar resultados e pessoas com mais maturidade.",
+    "Visão de Futuro": "O nível mais avançado, voltado a pensamento estratégico de longo prazo e adaptação a cenários incertos — mentalidade sistêmica, decisões ágeis, arquitetura de mudanças.",
+  };
+
 
 
   if (!perfis) {
@@ -1426,6 +1434,27 @@ function RelatorioAutoconhecimento({
           <p className="text-white/70 text-sm mt-1">Como você se avalia em cada competência das trilhas de desenvolvimento</p>
         </div>
         <CardContent className="pt-6 space-y-6">
+          {autopercepçãoPorTrilha.some(({ trilha }) => TRILHA_EXPLICACOES[trilha.name]) && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 space-y-2">
+              <p className="text-sm text-blue-900 font-medium flex items-center gap-2">
+                <Info className="h-4 w-4" /> O que significa cada bloco de competências?
+              </p>
+              <p className="text-xs text-blue-800">
+                A metodologia do B.E.M. organiza o desenvolvimento em blocos progressivos — cada etapa fortalece a base necessária para a próxima (Básico → Essencial → Master → Visão de Futuro).
+              </p>
+              <div className="grid sm:grid-cols-2 gap-2 mt-1">
+                {autopercepçãoPorTrilha.map(({ trilha }) => {
+                  const explicacao = TRILHA_EXPLICACOES[trilha.name];
+                  if (!explicacao) return null;
+                  return (
+                    <div key={trilha.id} className="text-xs text-blue-800 bg-white/60 rounded p-2">
+                      <span className="font-semibold">{trilha.name}:</span> {explicacao}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {autopercepçãoPorTrilha.map(({ trilha, avaliacoes, media, pctDesenvolvido, pctParcial, pctNaoDesenvolvido }) => (
             <div key={trilha.id} className="space-y-3">
               <div className="flex items-center justify-between">
