@@ -1275,11 +1275,6 @@ function RelatorioAutoconhecimento({
           Esperamos que este resultado te leve a uma <strong>autorreflexão genuína</strong>. Analise com calma seus pontos fortes 
           e as áreas que merecem atenção. Reconhecer onde você está hoje é o primeiro passo para chegar onde deseja estar amanhã.
         </p>
-        <p className="text-gray-700 leading-relaxed">
-          No próximo passo, você poderá <strong>agendar uma sessão com sua mentora</strong>. Juntos, vocês irão discutir o seu perfil, 
-          identificar oportunidades e traçar uma <strong>trilha de desenvolvimento personalizada</strong> que potencialize sua carreira 
-          e o seu desempenho. Chegue preparado(a) — reflita sobre os resultados abaixo e leve suas dúvidas e percepções para essa conversa.
-        </p>
         <div className="mt-4 flex items-center gap-2 text-sm text-[#0A1E3E]/70">
           <Heart className="h-4 w-4 text-[#F5991F]" />
           <span className="italic">"O autoconhecimento é a base de toda evolução profissional."</span>
