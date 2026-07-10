@@ -1148,6 +1148,9 @@ function RelatorioAutoconhecimento({
   temDevolutiva?: boolean;
 }) {
   const { data: perfisData } = trpc.disc.perfis.useQuery();
+  const { data: pressaoData } = trpc.disc.pressao.useQuery();
+  const { data: desenvolvimentoDetalhadoData } = trpc.disc.desenvolvimentoDetalhado.useQuery();
+  const { data: competenciaMatrixData } = trpc.disc.competenciaMatrix.useQuery();
   const { data: autopercepcoesData } = trpc.autopercepção.porAluno.useQuery({ alunoId });
   const { data: competenciasData } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhasData } = trpc.trilhas.list.useQuery();
@@ -1156,6 +1159,9 @@ function RelatorioAutoconhecimento({
   const perfis = perfisData as Record<DiscDimensao, DiscPerfil> | undefined;
   const perfilPrincipal = perfis && perfilPredominante ? perfis[perfilPredominante] : null;
   const perfilSec = perfis && perfilSecundario ? perfis[perfilSecundario] : null;
+  const pressaoAtual = pressaoData && perfilPredominante ? (pressaoData as any)[perfilPredominante] : null;
+  const desenvolvimentoAtual = desenvolvimentoDetalhadoData && perfilPredominante ? (desenvolvimentoDetalhadoData as any)[perfilPredominante] : null;
+  const competenciaDisc = competenciaMatrixData as Record<string, Record<DiscDimensao, { facilidade: string; ponto: string }>> | undefined;
 
   // Agrupar autopercepções por trilha (todas as trilhas que o aluno tem autopercepção)
   const TRILHAS_RELATORIO_BASE = ["Basic", "Essential", "Master"];
@@ -1408,6 +1414,55 @@ function RelatorioAutoconhecimento({
             </div>
           )}
 
+          {pressaoAtual && (
+            <div className="rounded-lg border border-orange-100 bg-orange-50/60 p-4 space-y-3">
+              <h5 className="font-semibold text-gray-800 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-orange-600" /> Como você tende a reagir sob pressão
+              </h5>
+              <p className="text-xs text-gray-500">
+                Tendência observada quando a necessidade de <span className="font-medium">{pressaoAtual.necessidadeAmeacada.toLowerCase()}</span> entra em jogo. Não é uma regra fixa — é um padrão para observar em si mesmo.
+              </p>
+              <div className="grid md:grid-cols-2 gap-3 items-stretch">
+                <div className="bg-white border border-rose-200 rounded-lg p-3 flex flex-col gap-1.5">
+                  <span className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Reação de risco</span>
+                  <p className="text-sm text-gray-700">{pressaoAtual.reacaoRisco}</p>
+                </div>
+                <div className="flex items-center justify-center">
+                  <ArrowRight className="h-5 w-5 text-gray-300 rotate-90 md:rotate-0" />
+                </div>
+                <div className="bg-white border border-emerald-200 rounded-lg p-3 flex flex-col gap-1.5 md:col-start-1">
+                  <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Resposta regulada</span>
+                  <p className="text-sm text-gray-700">{pressaoAtual.respostaRegulada}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {desenvolvimentoAtual && desenvolvimentoAtual.length > 0 && (
+            <div className="space-y-3">
+              <h5 className="font-semibold text-gray-800 flex items-center gap-2">
+                <Lightbulb className="h-4 w-4" /> Força preservada / Repertório a ampliar
+              </h5>
+              <div className="space-y-2">
+                {desenvolvimentoAtual.map((item: any, i: number) => (
+                  <div key={i} className="border rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600">{item.competencia}</div>
+                    <div className="grid md:grid-cols-2">
+                      <div className="p-3 border-t md:border-t-0 md:border-r border-emerald-100 bg-emerald-50/40">
+                        <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wide">Força preservada</span>
+                        <p className="text-sm text-gray-700 mt-0.5">{item.forcaPreservada}</p>
+                      </div>
+                      <div className="p-3 border-t bg-amber-50/40">
+                        <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wide">Repertório a ampliar</span>
+                        <p className="text-sm text-gray-700 mt-0.5">{item.repertorioAmpliar}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Contribuições da mentora sobre o Perfil Comportamental */}
           {contribuicoesDisc.length > 0 && (
             <div className="border-t pt-4">
@@ -1490,7 +1545,32 @@ function RelatorioAutoconhecimento({
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> {pctParcial}% Parcialmente desenvolvido</span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> {pctNaoDesenvolvido}% A desenvolver</span>
                 </div>
-              </div>              {/* Contribuições da mentora por competência */}
+              </div>              {perfilPredominante && competenciaDisc && (
+                <div className="space-y-2">
+                  {avaliacoes.filter((a: any) => a.nota > 0 && a.nota <= 2).map((a: any) => {
+                    const nomeComp = a.competencia?.nome || a.competencia?.name;
+                    const info = nomeComp ? competenciaDisc[nomeComp]?.[perfilPredominante as DiscDimensao] : null;
+                    if (!info) return null;
+                    const niveis = ["Condicionada", "Moderada", "Alta"];
+                    const idxNivel = niveis.indexOf(info.facilidade);
+                    return (
+                      <div key={a.competencia.id} className="bg-white border rounded-lg p-3 ml-4 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-gray-700">{nomeComp}</span>
+                          <span className="text-[11px] text-gray-400">Facilidade provável para o seu perfil</span>
+                        </div>
+                        <div className="flex gap-1">
+                          {niveis.map((n, i) => (
+                            <div key={n} className={`flex-1 h-1.5 rounded-full ${i <= idxNivel ? (idxNivel === 0 ? "bg-rose-400" : idxNivel === 1 ? "bg-amber-400" : "bg-emerald-500") : "bg-gray-100"}`} title={n} />
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-500">{info.facilidade} — {info.ponto}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {/* Contribuições da mentora por competência */}
               {contribuicoesData?.filter((c: any) => c.tipo === "competencia" && avaliacoes.some((a: any) => a.competencia.id === c.competenciaId)).map((c: any) => (
                 <div key={c.id} className="bg-[#0A1E3E]/5 rounded-lg p-3 ml-4">
                   <p className="text-xs text-[#0A1E3E] font-medium mb-1">Observação da Mentora:</p>
