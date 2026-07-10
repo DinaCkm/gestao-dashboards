@@ -188,6 +188,11 @@ export const disc360Router = router({
       return listarConvitesCargoRole(database, input.cargoProfileId);
     }),
 
+  getRoleQuestions: protectedProcedure.query(() => ({
+    perguntas: DISC360_ROLE_QUESTIONS,
+    perguntasValidacao: DISC360_ROLE_VALIDACAO_QUESTIONS,
+  })),
+
   getConviteCargoPorToken: publicProcedure
     .input(z.object({ token: z.string() }))
     .query(async ({ input }) => {
