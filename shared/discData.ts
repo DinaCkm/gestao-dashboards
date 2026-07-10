@@ -517,9 +517,9 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       C: "Seu perfil secundário de Conformidade (C) traz mais critério e método à sua Dominância: você tende a validar dados antes de decidir, e não apenas confiar no instinto. A tensão entre os dois fatores aparece quando a urgência (D) entra em conflito com a necessidade de precisão (C) — nesses momentos, geralmente a decisão rápida vence a análise detalhada.",
     },
     percepcao: {
-      comoSeVe: "Você se vê como alguém decidido, direto e orientado a resultados — a pessoa que assume o controle quando é preciso agir.",
-      comoLiderancaVe: "A liderança tende a te ver como alguém confiável para tocar entregas e tomar decisões difíceis, mas pode esperar mais paciência e escuta em momentos que exigem construção coletiva.",
-      comoParesVeem: "Os pares costumam te ver como alguém enérgico e assertivo, que ajuda o grupo a avançar — mas que, sob pressão, pode soar impositivo ou pouco aberto a outras opiniões.",
+      comoSeVe: "Você tende a se ver como alguém decidido, direto e orientado a resultados — a pessoa que assume o controle quando é preciso agir.",
+      comoLiderancaVe: "Há uma forte tendência de que a liderança o perceba como alguém confiável para tocar entregas e tomar decisões difíceis, mas pode esperar mais paciência e escuta em momentos que exigem construção coletiva.",
+      comoParesVeem: "Há uma forte tendência de que os pares o percebam como alguém enérgico e assertivo, que ajuda o grupo a avançar — mas que, sob pressão, pode soar impositivo ou pouco aberto a outras opiniões.",
     },
   },
   I: {
@@ -547,9 +547,9 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       C: "Seu perfil secundário de Conformidade (C) traz mais atenção a detalhes à sua Influência: você consegue unir comunicação envolvente com alguma precisão técnica. O desafio é que o entusiasmo do I tende a querer avançar rápido, enquanto o C pede mais tempo de análise — encontrar esse ritmo é o seu principal ponto de desenvolvimento.",
     },
     percepcao: {
-      comoSeVe: "Você se vê como alguém comunicativo, otimista e capaz de motivar as pessoas ao seu redor.",
-      comoLiderancaVe: "A liderança costuma te ver como alguém que engaja times e dá energia ao ambiente, mas pode cobrar mais consistência no acompanhamento das entregas.",
-      comoParesVeem: "Os pares tendem a te ver como alguém acessível e agradável de trabalhar junto, ainda que às vezes pareça disperso ou inconstante em compromissos de rotina.",
+      comoSeVe: "Você tende a se ver como alguém comunicativo, otimista e capaz de motivar as pessoas ao seu redor.",
+      comoLiderancaVe: "Há uma forte tendência de que a liderança o perceba como alguém que engaja times e dá energia ao ambiente, mas pode cobrar mais consistência no acompanhamento das entregas.",
+      comoParesVeem: "Há uma forte tendência de que os pares o percebam como alguém acessível e agradável de trabalhar junto, ainda que às vezes pareça disperso ou inconstante em compromissos de rotina.",
     },
   },
   S: {
@@ -577,9 +577,9 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       C: "Seu perfil secundário de Conformidade (C) reforça sua Estabilidade com mais método e precisão: você é confiável tanto nas relações quanto na execução técnica. O desafio é que ambos os fatores tendem à cautela, então a velocidade de resposta em situações urgentes pode ser o seu maior ponto de atenção.",
     },
     percepcao: {
-      comoSeVe: "Você se vê como alguém confiável, paciente e disposto a apoiar o time sempre que possível.",
-      comoLiderancaVe: "A liderança costuma te ver como uma base estável do time, mas pode esperar mais iniciativa própria e posicionamento em momentos de decisão.",
-      comoParesVeem: "Os pares tendem a te ver como alguém leal e fácil de contar, ainda que, às vezes, percebam certa resistência a sair da rotina estabelecida.",
+      comoSeVe: "Você tende a se ver como alguém confiável, paciente e disposto a apoiar o time sempre que possível.",
+      comoLiderancaVe: "Há uma forte tendência de que a liderança o perceba como uma base estável do time, mas pode esperar mais iniciativa própria e posicionamento em momentos de decisão.",
+      comoParesVeem: "Há uma forte tendência de que os pares o percebam como alguém leal e fácil de contar, ainda que, às vezes, percebam certa resistência a sair da rotina estabelecida.",
     },
   },
   C: {
@@ -607,9 +607,9 @@ export const DISC_PERFIS: Record<DiscDimensao, {
       S: "Seu perfil secundário de Estabilidade (S) reforça sua Conformidade com mais paciência e constância: você é tanto preciso quanto confiável na rotina. O desafio comum aos dois fatores é a resistência a mudanças rápidas e a dificuldade de decidir sob pressão de tempo.",
     },
     percepcao: {
-      comoSeVe: "Você se vê como alguém analítico, criterioso e comprometido com a qualidade do que entrega.",
-      comoLiderancaVe: "A liderança costuma te ver como alguém que traz segurança técnica e rigor às entregas, mas pode esperar mais flexibilidade diante de imprevistos e prazos apertados.",
-      comoParesVeem: "Os pares tendem a te ver como uma referência de qualidade e método, ainda que, às vezes, percebam certa rigidez ou crítica excessiva quando os padrões não são atendidos.",
+      comoSeVe: "Você tende a se ver como alguém analítico, criterioso e comprometido com a qualidade do que entrega.",
+      comoLiderancaVe: "Há uma forte tendência de que a liderança o perceba como alguém que traz segurança técnica e rigor às entregas, mas pode esperar mais flexibilidade diante de imprevistos e prazos apertados.",
+      comoParesVeem: "Há uma forte tendência de que os pares o percebam como uma referência de qualidade e método, ainda que, às vezes, percebam certa rigidez ou crítica excessiva quando os padrões não são atendidos.",
     },
   }
 };
