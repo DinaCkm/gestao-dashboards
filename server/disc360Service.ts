@@ -21,6 +21,7 @@ import {
   departments,
   programs,
   assessmentPdi,
+  processosSeletivos,
   type InsertDiscAssessment,
   type InsertDiscAssessmentAnswer,
   type InsertDiscRoleProfile,
@@ -875,6 +876,8 @@ export async function listAplicacoesDISC(database: DbClient, programId: number) 
       canLogin: alunos.canLogin,
       onboardingLiberado: alunos.onboardingLiberado,
       discVideoWatchedAt: alunos.discVideoWatchedAt,
+      tipoPortal: alunos.tipoPortal,
+      processoSeletivoId: alunos.processoSeletivoId,
     })
     .from(alunos)
     .where(eq(alunos.programId, programId));
@@ -913,6 +916,20 @@ export async function listAplicacoesDISC(database: DbClient, programId: number) 
     competenciaCountByAluno.set(row.alunoId, (competenciaCountByAluno.get(row.alunoId) ?? 0) + 1);
   }
 
+  const processoSeletivoIds = Array.from(
+    new Set(alunosRows.map((a) => a.processoSeletivoId).filter((id): id is number => !!id))
+  );
+  const psNomeById = new Map<number, string>();
+  if (processoSeletivoIds.length > 0) {
+    const psRows = await database
+      .select({ id: processosSeletivos.id, nome: processosSeletivos.nome })
+      .from(processosSeletivos)
+      .where(inArray(processosSeletivos.id, processoSeletivoIds));
+    for (const row of psRows) {
+      psNomeById.set(row.id, row.nome);
+    }
+  }
+
   return alunosRows.map((a) => {
     const disc = latestDiscByAluno.get(a.id) ?? null;
     return {
@@ -926,6 +943,7 @@ export async function listAplicacoesDISC(database: DbClient, programId: number) 
         : null,
       discCompletedAt: disc?.completedAt ?? null,
       competenciasRespondidas: competenciaCountByAluno.get(a.id) ?? 0,
+      processoSeletivoNome: a.processoSeletivoId ? psNomeById.get(a.processoSeletivoId) ?? null : null,
     };
   });
 }
