@@ -3633,7 +3633,24 @@ export default function OnboardingAluno() {
     );
   }
 
+  // Assessment: tipoPortal 'assessment' + Total de Sessões Contratadas define se há devolutiva/mentoria
+  const isAssessmentOnly = onboardingStatus?.tipoPortal === "assessment";
+  const alunoTotalSessoes = (dashData?.found ? (dashData.aluno as any)?.totalSessoesContratadas : null) ?? 0;
+  const assessmentTemDevolutiva = !isAssessmentOnly || alunoTotalSessoes > 0;
+
   const handleStepComplete = () => {
+    // Assessment sem devolutiva: encerra logo após a etapa de Assessment (não vai para Mentora)
+    if (isAssessmentOnly && !assessmentTemDevolutiva && currentStep === 2) {
+      toast.success("Assessment concluído! Obrigado por participar.");
+      setLocation("/meu-dashboard");
+      return;
+    }
+    // Assessment com devolutiva: encerra após o 1º Encontro (não avança para Sua Jornada/PDI/Aceite)
+    if (isAssessmentOnly && assessmentTemDevolutiva && currentStep === 5) {
+      toast.success("Assessment concluído! Obrigado por participar.");
+      setLocation("/meu-dashboard");
+      return;
+    }
     if (currentStep < 8) {
       // No novo ciclo, pular apenas a etapa 3 (Mentora) — o aluno já tem mentora.
       // Agendamento (4), 1º Encontro (5), Sua Jornada (6), Meu PDI (7) e Aceite (8) são mantidos.
@@ -3734,8 +3751,15 @@ export default function OnboardingAluno() {
             alunoId={dashData?.found ? dashData.aluno?.id || 0 : 0}
             onComplete={handleStepComplete}
             readOnly={readOnly}
-            labelContinuar={emNovoCiclo ? "Continuar para Agendamento" : "Continuar para Escolha da Mentora"}
+            labelContinuar={
+              isAssessmentOnly && !assessmentTemDevolutiva
+                ? "Concluir Assessment"
+                : emNovoCiclo
+                ? "Continuar para Agendamento"
+                : "Continuar para Escolha da Mentora"
+            }
             contratoNivelId={contratoNivelIdVigente}
+            temDevolutiva={assessmentTemDevolutiva}
           />
         )}
         {currentStep === 3 && (
