@@ -13,6 +13,7 @@ import {
   discMatches,
   discGeneratedReports,
   discCultureSurveyAnswers,
+  discRoleSurveyAnswers,
   discDiretoriaMembros,
   alunos,
   discResultados,
@@ -23,7 +24,8 @@ import {
   type InsertDiscMatch,
   type InsertDiscGeneratedReport,
 } from "../drizzle/schema";
-import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore } from "./discMatchService";
+import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore, determinarPerfil } from "./discMatchService";
+import { calcularDiscCargo, avaliarDivergenciaValidacao, type RespostaRole } from "./discRoleService";
 import {
   calcularDiscCulturaEmpresa,
   calcularDiscEmpresaConsolidado,
@@ -651,4 +653,177 @@ export async function responderConviteCulturaEmpresa(
   }
 
   return { id: convite.id, ...resultado };
+}
+
+// ---------------------------------------------------------------------------
+// Perfil DISC do Cargo - Questionario investigativo (lider + empregado)
+// ---------------------------------------------------------------------------
+
+export async function updateRoleProfile(database: DbClient, id: number, data: Partial<InsertDiscRoleProfile>) {
+  await database.update(discRoleProfiles).set(data).where(eq(discRoleProfiles.id, id));
+  return getRoleProfileById(database, id);
+}
+
+export type ConviteCargoInput = {
+  papelRespondente: "lider" | "empregado";
+  respondentName: string;
+  respondentEmail?: string | null;
+};
+
+export async function criarConvitesCargoRole(
+  database: DbClient,
+  input: { programId: number; cargoProfileId: number; convites: ConviteCargoInput[] }
+) {
+  const criados: Array<{ id: number; token: string; papelRespondente: string; respondentName: string; emailEnviado: boolean }> = [];
+  for (const convite of input.convites) {
+    const conviteToken = randomUUID();
+    const result: any = await database.insert(discAssessments).values({
+      programId: input.programId,
+      cargoProfileId: input.cargoProfileId,
+      assessmentType: "cargo",
+      status: "pendente",
+      papelRespondente: convite.papelRespondente,
+      respondentName: convite.respondentName,
+      respondentEmail: convite.respondentEmail ?? null,
+      conviteToken,
+    } as any);
+    const id = result?.[0]?.insertId as number;
+
+    let emailEnviado = false;
+    if (convite.respondentEmail) {
+      const link = "https://ecolider.ecodobem.com/disc360/responder-convite-cargo/" + conviteToken;
+      const nomeExibicao = convite.respondentName || "Colaborador(a)";
+      const envio = await sendEmail({
+        to: convite.respondentEmail,
+        subject: "Convite: Perfil DISC do Cargo",
+        html:
+          "<p>Ola, " + nomeExibicao + ".</p>" +
+          "<p>Voce foi convidado(a) a participar da identificacao do perfil comportamental esperado para um cargo. " +
+          "Clique no link abaixo para responder (leva poucos minutos, sem necessidade de login):</p>" +
+          "<p><a href=\"" + link + "\">" + link + "</a></p>",
+      });
+      emailEnviado = !!envio?.success;
+    }
+
+    criados.push({ id, token: conviteToken, papelRespondente: convite.papelRespondente, respondentName: convite.respondentName, emailEnviado });
+  }
+  return criados;
+}
+
+export async function listarConvitesCargoRole(database: DbClient, cargoProfileId: number) {
+  return database
+    .select()
+    .from(discAssessments)
+    .where(
+      and(
+        eq(discAssessments.cargoProfileId, cargoProfileId),
+        eq(discAssessments.assessmentType, "cargo")
+      )
+    )
+    .orderBy(desc(discAssessments.createdAt));
+}
+
+export async function responderConviteCargoPorToken(
+  database: DbClient,
+  input: { token: string; respostas: RespostaRole[]; respostaValidacaoDireta: number }
+) {
+  const convite = await getConvitePorToken(database, input.token);
+  if (!convite) {
+    throw new Error("Convite nao encontrado.");
+  }
+  if (convite.status !== "pendente") {
+    throw new Error("Este convite ja foi respondido.");
+  }
+
+  const resultado = calcularDiscCargo(input.respostas);
+  const avaliacaoDivergencia = avaliarDivergenciaValidacao(resultado.scores.D, input.respostaValidacaoDireta);
+
+  await database
+    .update(discAssessments)
+    .set({
+      status: "concluido",
+      scores: resultado.scores as any,
+      perfilPredominante: resultado.perfilPredominante as any,
+      perfilSecundario: resultado.perfilSecundario as any,
+      respostaValidacaoDireta: input.respostaValidacaoDireta,
+      completedAt: new Date(),
+    } as any)
+    .where(eq(discAssessments.id, convite.id));
+
+  if (input.respostas.length > 0) {
+    await database.insert(discRoleSurveyAnswers).values(
+      input.respostas.map((resposta) => ({
+        assessmentId: convite.id,
+        questionId: resposta.questionId,
+        maisId: `${resposta.questionId}_${resposta.maisDimensao}`,
+        menosId: `${resposta.questionId}_${resposta.menosDimensao}`,
+        maisDimensao: resposta.maisDimensao,
+        menosDimensao: resposta.menosDimensao,
+      }))
+    );
+  }
+
+  return { id: convite.id, ...resultado, avaliacaoDivergencia };
+}
+
+export async function previewCargoConsolidacao(database: DbClient, cargoProfileId: number) {
+  const assessments = await database
+    .select()
+    .from(discAssessments)
+    .where(
+      and(
+        eq(discAssessments.cargoProfileId, cargoProfileId),
+        eq(discAssessments.assessmentType, "cargo"),
+        eq(discAssessments.status, "concluido")
+      )
+    );
+
+  const respondentes = (assessments as any[]).map((a) => {
+    const scores = (a.scores || { D: 0, I: 0, S: 0, C: 0 }) as DiscScores;
+    const avaliacaoDivergencia = avaliarDivergenciaValidacao(scores.D, a.respostaValidacaoDireta);
+    return {
+      papelRespondente: a.papelRespondente,
+      respondentName: a.respondentName,
+      scores,
+      respostaValidacaoDireta: a.respostaValidacaoDireta,
+      avaliacaoDivergencia,
+    };
+  });
+
+  const totalRespondentes = respondentes.length;
+  const scoresMedios: DiscScores = { D: 0, I: 0, S: 0, C: 0 };
+  if (totalRespondentes > 0) {
+    for (const r of respondentes) {
+      scoresMedios.D += r.scores.D;
+      scoresMedios.I += r.scores.I;
+      scoresMedios.S += r.scores.S;
+      scoresMedios.C += r.scores.C;
+    }
+    scoresMedios.D = Math.round((scoresMedios.D / totalRespondentes) * 100) / 100;
+    scoresMedios.I = Math.round((scoresMedios.I / totalRespondentes) * 100) / 100;
+    scoresMedios.S = Math.round((scoresMedios.S / totalRespondentes) * 100) / 100;
+    scoresMedios.C = Math.round((scoresMedios.C / totalRespondentes) * 100) / 100;
+  }
+
+  const perfil = determinarPerfil(scoresMedios);
+  const statusConsistencia = totalRespondentes >= 2 ? "suficiente" : "previa";
+
+  return {
+    respondentes,
+    totalRespondentes,
+    scoresMedios,
+    perfilPredominante: perfil.predominante,
+    perfilSecundario: perfil.secundario,
+    perfilSugerido: perfil.sugerido,
+    statusConsistencia,
+  };
+}
+
+export async function consolidateRoleProfile(database: DbClient, cargoProfileId: number) {
+  const consolidado = await previewCargoConsolidacao(database, cargoProfileId);
+  await updateRoleProfile(database, cargoProfileId, {
+    expectedScores: consolidado.scoresMedios as any,
+    perfilEsperado: consolidado.perfilSugerido,
+  } as any);
+  return consolidado;
 }
