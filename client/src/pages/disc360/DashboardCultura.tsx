@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import {
   CartesianGrid,
   Line,
@@ -64,13 +64,21 @@ function DashboardCulturaContent() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
         <Link href="/disc360/perfis-empresa">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-1 h-4 w-4" />
             Voltar
           </Button>
         </Link>
+        {orgProfileId && (
+          <Link href={`/disc360/relatorio-cultura/${orgProfileId}`}>
+            <Button variant="outline" size="sm">
+              <Printer className="mr-1 h-4 w-4" />
+              Relatório para impressão
+            </Button>
+          </Link>
+        )}
       </div>
 
       {!orgProfileId && (
