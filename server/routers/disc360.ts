@@ -23,6 +23,7 @@ import {
   responderConviteCargoPorToken,
   previewCargoConsolidacao,
   consolidateRoleProfile,
+  getDashboardCargo,
   createOrgProfile,
   listOrgProfiles,
   updateOrgProfile,
@@ -233,6 +234,13 @@ export const disc360Router = router({
     .query(async ({ input }) => {
       const database = await requireDatabase();
       return previewCargoConsolidacao(database, input.cargoProfileId);
+    }),
+
+  getDashboardCargo: protectedProcedure
+    .input(z.object({ cargoProfileId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return getDashboardCargo(database, input.cargoProfileId);
     }),
 
   consolidateRoleProfile: protectedProcedure
