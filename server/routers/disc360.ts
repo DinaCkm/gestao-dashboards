@@ -24,6 +24,7 @@ import {
   previewCargoConsolidacao,
   consolidateRoleProfile,
   getDashboardCargo,
+  listAplicacoesDISC,
   createOrgProfile,
   listOrgProfiles,
   updateOrgProfile,
@@ -246,6 +247,13 @@ export const disc360Router = router({
     .query(async ({ input }) => {
       const database = await requireDatabase();
       return getDashboardCargo(database, input.cargoProfileId);
+    }),
+
+  listAplicacoesDISC: protectedProcedure
+    .input(z.object({ programId: z.number() }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+      return listAplicacoesDISC(database, input.programId);
     }),
 
   consolidateRoleProfile: protectedProcedure
