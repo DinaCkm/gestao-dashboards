@@ -77,6 +77,7 @@ import ResponderConviteCargo from "./pages/disc360/ResponderConviteCargo";
 import RelatorioCargo from "./pages/disc360/RelatorioCargo";
 import DashboardCargo from "./pages/disc360/DashboardCargo";
 import AplicacoesDISC from "./pages/disc360/AplicacoesDISC";
+import ResultadoMatch from "./pages/disc360/ResultadoMatch";
 import RelatorioIndividualDISC from "./pages/disc360/RelatorioIndividualDISC";
 import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
@@ -185,6 +186,7 @@ function Router() {
       <Route path={"/disc360/relatorio-cultura/:orgProfileId"} component={RelatorioCultura} />
       <Route path={"/disc360/perfis-cargo"} component={PerfisCargo} />
       <Route path={"/disc360/dashboard-cargo"} component={DashboardCargo} />
+      <Route path={"/disc360/resultado-match"} component={ResultadoMatch} />
       <Route path="/disc360/aplicacoes" component={AplicacoesDISC} />
       <Route path="/disc360/relatorio-individual/:alunoId" component={RelatorioIndividualDISC} />
       <Route path="/disc360/responder-convite-cargo/:token" component={ResponderConviteCargo} />
