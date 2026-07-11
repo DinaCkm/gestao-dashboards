@@ -77,8 +77,8 @@ import ResponderConviteCargo from "./pages/disc360/ResponderConviteCargo";
 import RelatorioCargo from "./pages/disc360/RelatorioCargo";
 import DashboardCargo from "./pages/disc360/DashboardCargo";
 import AplicacoesDISC from "./pages/disc360/AplicacoesDISC";
-impor
-import RelatorioIndividualDISC from "./pages/disc360/RelatorioIndividualDISC";t CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
+import RelatorioIndividualDISC from "./pages/disc360/RelatorioIndividualDISC";
+import CompetenciasCompTec from "./pages/admin/CompetenciasCompTec";
 import MentorCompetenciasCompTec from "./pages/mentor/MentorCompetenciasCompTec";
 import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
 
@@ -185,9 +185,9 @@ function Router() {
       <Route path={"/disc360/relatorio-cultura/:orgProfileId"} component={RelatorioCultura} />
       <Route path={"/disc360/perfis-cargo"} component={PerfisCargo} />
       <Route path={"/disc360/dashboard-cargo"} component={DashboardCargo} />
-      <Route path={"/disc360/aplicacoes"} component={AplicacoesDISC} />
-      <Route 
-      <Route path="/disc360/relatorio-individual/:alunoId" component={RelatorioIndividualDISC} />path={"/disc360/responder-convite-cargo/:token"} component={ResponderConviteCargo} />
+      <Route path="/disc360/aplicacoes" component={AplicacoesDISC} />
+      <Route path="/disc360/relatorio-individual/:alunoId" component={RelatorioIndividualDISC} />
+      <Route path="/disc360/responder-convite-cargo/:token" component={ResponderConviteCargo} />
       <Route path={"/disc360/relatorio-cargo/:cargoProfileId"} component={RelatorioCargo} />
       <Route path={"/portal-cliente-processos"} component={ProcessosSeletivosDashboard} />
       <Route path={"/portal-candidato-processo"} component={ProcessosSeletivosDashboard} />
