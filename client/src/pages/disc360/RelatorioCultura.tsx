@@ -2,7 +2,25 @@ import { useRoute, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Printer } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowLeft, Printer, Download, Loader2 } from "lucide-react";
+import jsPDF from "jspdf";
+import { LOGO_ECO_AO_BEM_BASE64 } from "@/lib/logoBase64";
+
+// Carrega o html2canvas-pro via CDN sob demanda (fork com suporte a oklch/cores modernas do Tailwind)
+function carregarHtml2Canvas(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).html2canvas) {
+      resolve((window as any).html2canvas);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.4/dist/html2canvas-pro.min.js";
+    script.onload = () => resolve((window as any).html2canvas);
+    script.onerror = () => reject(new Error("Não foi possível carregar o gerador de PDF."));
+    document.body.appendChild(script);
+  });
+}
 import {
   CartesianGrid,
   Line,
@@ -52,6 +70,107 @@ export default function RelatorioCultura() {
   );
 
   const hoje = new Date().toLocaleDateString("pt-BR");
+  const conteudoRef = useRef<HTMLDivElement>(null);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+
+  const handleBaixarPdf = async () => {
+    if (!conteudoRef.current) return;
+    setGerandoPdf(true);
+    try {
+      const html2canvas = await carregarHtml2Canvas();
+      const secoes = Array.from(conteudoRef.current.querySelectorAll<HTMLElement>(".report-page"));
+      const alvo = secoes.length > 0 ? secoes : [conteudoRef.current];
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const marginX = 10;
+      const headerH = 26;
+      const footerH = 14;
+      const contentWidthMm = pageWidth - marginX * 2;
+      const contentAreaHeightMm = pageHeight - headerH - footerH;
+
+      const dataGeracao = new Date().toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+
+      let totalPages = 0;
+      const paginasImg: { data: string; heightMm: number }[] = [];
+
+      for (const secao of alvo) {
+        const canvas = await html2canvas(secao, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+        });
+        const pxPerMm = canvas.width / contentWidthMm;
+        const sliceHeightPx = Math.max(1, Math.floor(contentAreaHeightMm * pxPerMm));
+        const paginasDaSecao = Math.max(1, Math.ceil(canvas.height / sliceHeightPx));
+
+        for (let i = 0; i < paginasDaSecao; i++) {
+          const sy = i * sliceHeightPx;
+          const sh = Math.min(sliceHeightPx, canvas.height - sy);
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = sh;
+          const ctx = tempCanvas.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, sh);
+            ctx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
+          }
+          paginasImg.push({ data: tempCanvas.toDataURL("image/png"), heightMm: sh / pxPerMm });
+          totalPages++;
+        }
+      }
+
+      const desenharCabecalho = () => {
+        pdf.setFillColor(15, 43, 60);
+        pdf.rect(0, 0, pageWidth, headerH, "F");
+        pdf.addImage(LOGO_ECO_AO_BEM_BASE64, "PNG", marginX, 5, 16, 16);
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(13);
+        pdf.setFont("helvetica", "bold");
+        pdf.text("Relatório de Cultura Comportamental (DISC)", pageWidth / 2 + 8, 12, { align: "center" });
+        pdf.setFontSize(9);
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`Ecossistema do Bem · Gerado em ${dataGeracao}`, pageWidth / 2 + 8, 19, { align: "center" });
+      };
+
+      const desenharRodape = (paginaAtual: number) => {
+        pdf.setDrawColor(220, 220, 220);
+        pdf.line(marginX, pageHeight - footerH, pageWidth - marginX, pageHeight - footerH);
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(140, 140, 140);
+        pdf.setFont("helvetica", "italic");
+        pdf.text(
+          "Documento exclusivo e confidencial — Ecossistema do Bem. Proibida a reprodução ou redistribuição sem autorização.",
+          marginX,
+          pageHeight - 6
+        );
+        pdf.setFont("helvetica", "normal");
+        pdf.text(`Página ${paginaAtual} de ${totalPages}`, pageWidth - marginX, pageHeight - 6, {
+          align: "right",
+        });
+      };
+
+      paginasImg.forEach((pagina, i) => {
+        if (i > 0) pdf.addPage();
+        desenharCabecalho();
+        pdf.addImage(pagina.data, "PNG", marginX, headerH, contentWidthMm, pagina.heightMm);
+        desenharRodape(i + 1);
+      });
+
+      pdf.save(`relatorio-cultura-${orgProfileId}.pdf`);
+    } catch (err) {
+      console.error(err);
+      alert("Não foi possível gerar o PDF. Tente novamente ou use a opção Imprimir.");
+    } finally {
+      setGerandoPdf(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
@@ -74,10 +193,20 @@ export default function RelatorioCultura() {
             Voltar ao dashboard
           </Button>
         </Link>
-        <Button onClick={() => window.print()} disabled={!data}>
-          <Printer className="mr-2 h-4 w-4" />
-          Imprimir / Salvar PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => window.print()} disabled={!data}>
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir
+          </Button>
+          <Button onClick={handleBaixarPdf} disabled={!data || gerandoPdf}>
+            {gerandoPdf ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            {gerandoPdf ? "Gerando PDF..." : "Baixar PDF"}
+          </Button>
+        </div>
       </div>
 
       {!orgProfileId && (
@@ -91,7 +220,7 @@ export default function RelatorioCultura() {
       )}
 
       {orgProfileId && data && (
-        <>
+        <div ref={conteudoRef}>
           {/* Página 1 — Capa */}
           <section className="report-page flex flex-col items-center justify-center text-center">
             <p className="text-sm uppercase tracking-widest text-muted-foreground">Ecossistema do Bem</p>
@@ -259,7 +388,7 @@ export default function RelatorioCultura() {
               empresa.
             </p>
           </section>
-        </>
+        </div>
       )}
     </div>
   );
