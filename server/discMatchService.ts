@@ -329,3 +329,134 @@ export function calcularPerfilDiretoriaPorGrupo(pessoas: PessoaComScore[]): Resu
     perfilSugerido: perfil.sugerido,
   };
 }
+
+
+// ---------------------------------------------------------------------------
+// Bloco 6 - Resultado/Match: Indice de Match Pessoa x Cargo.
+//
+// Regra definida com a Dina: para cada um dos 4 indicadores DISC (D, I, S, C),
+// calculamos a diferenca absoluta entre a pontuacao da pessoa e a pontuacao
+// ideal do cargo. Se a diferenca for <= 30 pontos, o indicador conta para o
+// match. O Indice de Match e (indicadores dentro da faixa / 4) x 100, ou seja,
+// so pode assumir os valores 0, 25, 50, 75 ou 100.
+//
+// Nunca exibimos, por indicador, um rotulo de "deu match" / "nao deu match" -
+// apenas o percentual agregado. Mesmo em 100%, ainda ha pontos de
+// desenvolvimento a mostrar, a menos que a pessoa seja numericamente identica
+// ao cargo nos 4 eixos (diferenca = 0 em todos).
+// ---------------------------------------------------------------------------
+
+export const LIMITE_ADERENCIA_INDICADOR = 30;
+
+export type DetalheIndicadorMatchCargo = {
+  diferenca: number;
+  dentroFaixa: boolean;
+};
+
+export type IndiceMatchCargoResult = {
+  indiceMatch: number;
+  detalhePorIndicador: Record<DiscDimension, DetalheIndicadorMatchCargo>;
+  identico: boolean;
+};
+
+export function calcularIndiceMatchCargo(
+  pessoaScores: DiscScores,
+  cargoScores: DiscScores
+): IndiceMatchCargoResult {
+  const dimensoes: DiscDimension[] = ["D", "I", "S", "C"];
+  const detalhePorIndicador = {} as Record<DiscDimension, DetalheIndicadorMatchCargo>;
+  let dentroDaFaixaCount = 0;
+  let identico = true;
+
+  for (const dim of dimensoes) {
+    const pessoa = Number(pessoaScores?.[dim] ?? 0);
+    const cargo = Number(cargoScores?.[dim] ?? 0);
+    const diferenca = Math.round(Math.abs(pessoa - cargo) * 100) / 100;
+    const dentroFaixa = diferenca <= LIMITE_ADERENCIA_INDICADOR;
+    if (dentroFaixa) dentroDaFaixaCount += 1;
+    if (diferenca !== 0) identico = false;
+    detalhePorIndicador[dim] = { diferenca, dentroFaixa };
+  }
+
+  const indiceMatch = Math.round((dentroDaFaixaCount / dimensoes.length) * 100);
+
+  return { indiceMatch, detalhePorIndicador, identico };
+}
+
+export type JustificativaEixo = {
+  eixo: DiscDimension;
+  diferenca: number;
+  tipo: "alinhamento_total" | "ajuste_fino" | "desenvolvimento";
+  texto: string;
+};
+
+const EIXO_TEMA_MATCH_CARGO: Record<DiscDimension, string> = {
+  D: "ritmo de decisao, autonomia e assertividade",
+  I: "estilo de comunicacao e construcao de relacionamentos",
+  S: "ritmo de adaptacao, cooperacao e estabilidade",
+  C: "atencao a normas, dados e processos",
+};
+
+const EIXO_DESENVOLVER_ACIMA: Record<DiscDimension, string> = {
+  D: "calibrar o ritmo de decisao em momentos que pedem mais escuta e construcao coletiva",
+  I: "equilibrar a comunicacao com momentos de maior objetividade e foco na tarefa",
+  S: "desenvolver maior tolerancia a mudancas de ritmo e a situacoes menos previsiveis",
+  C: "flexibilizar a atencao a detalhes e processos quando o contexto pedir agilidade",
+};
+
+const EIXO_DESENVOLVER_ABAIXO: Record<DiscDimension, string> = {
+  D: "ampliar a autonomia e a assertividade na tomada de decisao",
+  I: "desenvolver mais abertura na comunicacao e na construcao de relacionamentos",
+  S: "desenvolver maior estabilidade e constancia diante de mudancas de ritmo",
+  C: "fortalecer a atencao a normas, dados e processos no dia a dia",
+};
+
+function classificarDiferencaMatchCargo(diferenca: number): "alinhamento_total" | "ajuste_fino" | "desenvolvimento" {
+  if (diferenca === 0) return "alinhamento_total";
+  if (diferenca <= LIMITE_ADERENCIA_INDICADOR) return "ajuste_fino";
+  return "desenvolvimento";
+}
+
+/**
+ * Gera, para cada um dos 4 eixos DISC, uma justificativa em tom de
+ * desenvolvimento (nunca punitiva, nunca rotulando "match"/"nao-match").
+ * So deixa de listar um ponto de desenvolvimento quando a diferenca naquele
+ * eixo for exatamente zero.
+ */
+export function buildJustificativasMatchCargo(
+  pessoaScores: DiscScores,
+  cargoScores: DiscScores
+): JustificativaEixo[] {
+  const dimensoes: DiscDimension[] = ["D", "I", "S", "C"];
+  const justificativas: JustificativaEixo[] = [];
+
+  for (const dim of dimensoes) {
+    const pessoa = Number(pessoaScores?.[dim] ?? 0);
+    const cargo = Number(cargoScores?.[dim] ?? 0);
+    const diferenca = Math.round(Math.abs(pessoa - cargo) * 100) / 100;
+    const tipo = classificarDiferencaMatchCargo(diferenca);
+
+    if (tipo === "alinhamento_total") {
+      justificativas.push({
+        eixo: dim,
+        diferenca,
+        tipo,
+        texto: "Em " + EIXO_TEMA_MATCH_CARGO[dim] + ", seu perfil esta numericamente identico ao ideal do cargo neste eixo - nao ha ponto de desenvolvimento a destacar aqui.",
+      });
+      continue;
+    }
+
+    const acima = pessoa > cargo;
+    const sugestao = acima ? EIXO_DESENVOLVER_ACIMA[dim] : EIXO_DESENVOLVER_ABAIXO[dim];
+    const intensidade = tipo === "ajuste_fino" ? "um ajuste fino" : "um ponto de atencao maior para o desenvolvimento";
+
+    justificativas.push({
+      eixo: dim,
+      diferenca,
+      tipo,
+      texto: "Em " + EIXO_TEMA_MATCH_CARGO[dim] + ", a diferenca em relacao ao ideal do cargo (" + diferenca + " pontos) representa " + intensidade + ": vale " + sugestao + ".",
+    });
+  }
+
+  return justificativas;
+}
