@@ -535,7 +535,7 @@ function AplicacoesDISCContent() {
 
       {aplicacaoAberta && (
         <Dialog open={!!resultadoAbertoId} onOpenChange={(open) => !open && setResultadoAbertoId(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] max-h-[92vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Relatório de Autoconhecimento — {aplicacaoAberta.name}</DialogTitle>
               <DialogDescription>
