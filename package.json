@@ -16,6 +16,8 @@
     "db:push": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^131.0.1",
+    "puppeteer-core": "^24.9.0",
     "@aws-sdk/client-s3": "^3.693.0",
     "@aws-sdk/s3-request-presigner": "^3.693.0",
     "@hookform/resolvers": "^5.2.2",
