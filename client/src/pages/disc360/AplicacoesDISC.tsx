@@ -537,6 +537,8 @@ function AplicacoesDISCContent() {
         <Dialog open={!!resultadoAbertoId} onOpenChange={(open) => !open && setResultadoAbertoId(null)}>
           <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] max-h-[92vh] overflow-y-auto">
             <DialogHeader>
+        <div className="flex items-start justify-between gap-3 pr-8">
+          <div>
               <DialogTitle>Relatório de Autoconhecimento — {aplicacaoAberta.name}</DialogTitle>
               <DialogDescription>
                 Perfil predominante: <strong>{PERFIL_LABEL[aplicacaoAberta.discPerfilPredominante] ?? aplicacaoAberta.discPerfilPredominante}</strong>
@@ -544,7 +546,23 @@ function AplicacoesDISCContent() {
                   ? ` · Secundário: ${PERFIL_LABEL[aplicacaoAberta.discPerfilSecundario] ?? aplicacaoAberta.discPerfilSecundario}`
                   : ""}
               </DialogDescription>
-            </DialogHeader>
+            </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="shrink-0"
+            onClick={() =>
+              window.open(
+                `/disc360/relatorio-individual/${aplicacaoAberta.id}?nome=${encodeURIComponent(aplicacaoAberta.name)}`,
+                "_blank"
+              )
+            }
+          >
+            Abrir para impressão / PDF
+          </Button>
+        </div>
+      </DialogHeader>
             <RelatorioAutoconhecimento
               alunoId={aplicacaoAberta.id}
               discScores={aplicacaoAberta.discScores}
