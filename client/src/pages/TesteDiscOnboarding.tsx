@@ -1131,7 +1131,7 @@ function ReguaAutopercepção({
 // COMPONENTE: RELATÓRIO DE AUTOCONHECIMENTO
 // ============================================================
 
-function RelatorioAutoconhecimento({
+export function RelatorioAutoconhecimento({
   alunoId,
   discScores,
   perfilPredominante,
@@ -1139,6 +1139,7 @@ function RelatorioAutoconhecimento({
   onComplete,
   labelContinuar = "Continuar para Escolha da Mentora",
   temDevolutiva = true,
+  somenteLeitura = false,
 }: {
   alunoId: number;
   discScores: DiscScores | null;
@@ -1147,6 +1148,7 @@ function RelatorioAutoconhecimento({
   onComplete: () => void;
   labelContinuar?: string;
   temDevolutiva?: boolean;
+  somenteLeitura?: boolean;
 }) {
   const { data: perfisData } = trpc.disc.perfis.useQuery();
   const { data: pressaoData } = trpc.disc.pressao.useQuery();
@@ -1733,14 +1735,16 @@ function RelatorioAutoconhecimento({
       </div>
 
       {/* Botão continuar */}
-      <div className="flex justify-center print:hidden pt-4">
-        <Button
-          className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base gap-2"
-          onClick={onComplete}
-        >
-          {labelContinuar} <ChevronRight className="h-5 w-5" />
-        </Button>
-      </div>
+      {!somenteLeitura && (
+        <div className="flex justify-center print:hidden pt-4">
+          <Button
+            className="bg-[#0A1E3E] hover:bg-[#0A1E3E]/90 text-white px-8 py-3 text-base gap-2"
+            onClick={onComplete}
+          >
+            {labelContinuar} <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
