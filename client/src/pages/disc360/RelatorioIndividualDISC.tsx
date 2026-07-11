@@ -15,7 +15,9 @@ function carregarHtml2Canvas(): Promise<any> {
       return;
     }
     const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+    // html2canvas-pro: fork do html2canvas com suporte a funcoes de cor modernas (oklch/oklab/color-mix)
+    // usadas pelo Tailwind/shadcn atuais. O html2canvas original quebra a captura nessas cores.
+    script.src = "https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.4/dist/html2canvas-pro.min.js";
     script.onload = () => resolve((window as any).html2canvas);
     script.onerror = () => reject(new Error("Não foi possível carregar o gerador de PDF."));
     document.body.appendChild(script);
