@@ -1229,6 +1229,28 @@ function RelatorioAutoconhecimento({
     "Visão de Futuro": "O nível mais avançado, voltado a pensamento estratégico de longo prazo e adaptação a cenários incertos — mentalidade sistêmica, decisões ágeis, arquitetura de mudanças.",
   };
 
+  // Narrativas que conectam o nível de autopercepção (forte / em consolidação / a desenvolver) com o perfil DISC
+  const TIER_DISC_NARRATIVAS: Record<"fortes" | "consolidacao" | "prioridades", Record<DiscDimensao, string>> = {
+    fortes: {
+      D: "Seu perfil de Dominância tende a se apoiar bem em competências que pedem decisão, ação e foco em resultado — faz sentido que você já domine algumas dessas áreas. Para potencializar ainda mais seu desempenho, use essas competências como base para assumir desafios maiores, sempre cuidando para envolver as pessoas certas no caminho.",
+      I: "Seu perfil de Influência tende a se apoiar bem em competências que envolvem comunicação, conexão e energia para engajar pessoas — faz sentido que você já domine algumas dessas áreas. Para potencializar ainda mais seu desempenho, use essas competências para assumir papéis de maior visibilidade e mobilização, buscando sustentar o entusiasmo com consistência ao longo do tempo.",
+      S: "Seu perfil de Estabilidade tende a se apoiar bem em competências que envolvem consistência, confiança e cuidado com as pessoas — faz sentido que você já domine algumas dessas áreas. Para potencializar ainda mais seu desempenho, use essas competências como base de confiança para o grupo, e busque também se posicionar mais quando tiver uma contribuição importante a dar.",
+      C: "Seu perfil de Conformidade tende a se apoiar bem em competências que envolvem análise, método e busca por qualidade — faz sentido que você já domine algumas dessas áreas. Para potencializar ainda mais seu desempenho, use essas competências para elevar o padrão de qualidade ao seu redor, e compartilhe esse conhecimento de forma acessível com quem tem outro ritmo de trabalho.",
+    },
+    consolidacao: {
+      D: "Essas competências ainda estão em consolidação, mas seu perfil de Dominância te dá uma vantagem real para avançar nelas: sua disposição para agir e testar coisas novas pode acelerar esse desenvolvimento. Aproveite pequenos desafios práticos nessas áreas para transformar potencial em domínio real.",
+      I: "Essas competências ainda estão em consolidação, mas seu perfil de Influência te dá uma vantagem real para avançar nelas: sua facilidade de se conectar com pessoas e buscar apoio pode acelerar esse desenvolvimento. Aproveite trocas com colegas e mentoria para transformar esse potencial em domínio mais consistente.",
+      S: "Essas competências ainda estão em consolidação, mas seu perfil de Estabilidade te dá uma vantagem real para avançar nelas: sua constância e disposição para praticar aos poucos favorecem um desenvolvimento sólido e duradouro. Aproveite a rotina para reforçar essas competências de forma gradual e sem pressa.",
+      C: "Essas competências ainda estão em consolidação, mas seu perfil de Conformidade te dá uma vantagem real para avançar nelas: sua capacidade de estudar e entender a fundo favorece um desenvolvimento consistente. Aproveite para buscar mais prática e menos teoria nessas áreas, testando o que já aprendeu.",
+    },
+    prioridades: {
+      D: "Essas são as competências que merecem mais atenção agora. Olhando pelo seu perfil de Dominância, é natural que algumas delas exijam mais esforço consciente — principalmente as que pedem mais pausa, escuta ou paciência do que ação imediata. Priorize praticar uma de cada vez, ligada a situações reais do seu dia a dia.",
+      I: "Essas são as competências que merecem mais atenção agora. Olhando pelo seu perfil de Influência, é natural que algumas delas exijam mais esforço consciente — principalmente as que pedem mais estrutura, planejamento ou constância do que entusiasmo. Priorize praticar uma de cada vez, ligada a situações reais do seu dia a dia.",
+      S: "Essas são as competências que merecem mais atenção agora. Olhando pelo seu perfil de Estabilidade, é natural que algumas delas exijam mais esforço consciente — principalmente as que pedem mais agilidade, posicionamento ou abertura à mudança do que rotina. Priorize praticar uma de cada vez, ligada a situações reais do seu dia a dia.",
+      C: "Essas são as competências que merecem mais atenção agora. Olhando pelo seu perfil de Conformidade, é natural que algumas delas exijam mais esforço consciente — principalmente as que pedem mais agilidade ou abertura emocional do que análise pura. Priorize praticar uma de cada vez, ligada a situações reais do seu dia a dia.",
+    },
+  };
+
 
 
   if (!perfis) {
@@ -1583,31 +1605,49 @@ function RelatorioAutoconhecimento({
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" /> {pctParcial}% Parcialmente desenvolvido</span>
                   <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> {pctNaoDesenvolvido}% A desenvolver</span>
                 </div>
-              </div>              {perfilPredominante && competenciaDisc && (
-                <div className="space-y-2">
-                  {avaliacoes.filter((a: any) => a.nota > 0 && a.nota <= 2).map((a: any) => {
-                    const nomeComp = a.competencia?.nome || a.competencia?.name;
-                    const info = nomeComp ? competenciaDisc[nomeComp]?.[perfilPredominante as DiscDimensao] : null;
-                    if (!info) return null;
-                    const niveis = ["Condicionada", "Moderada", "Alta"];
-                    const idxNivel = niveis.indexOf(info.facilidade);
-                    return (
-                      <div key={a.competencia.id} className="bg-white border rounded-lg p-3 ml-4 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-medium text-gray-700">{nomeComp}</span>
-                          <span className="text-[11px] text-gray-400">Facilidade provável para o seu perfil</span>
-                        </div>
-                        <div className="flex gap-1">
-                          {niveis.map((n, i) => (
-                            <div key={n} className={`flex-1 h-1.5 rounded-full ${i <= idxNivel ? (idxNivel === 0 ? "bg-rose-400" : idxNivel === 1 ? "bg-amber-400" : "bg-emerald-500") : "bg-gray-100"}`} title={n} />
+              </div>              {perfilPredominante && competenciaDisc && (() => {
+                const fortes = avaliacoes.filter((a: any) => a.nota >= 4);
+                const consolidacao = avaliacoes.filter((a: any) => a.nota === 3);
+                const prioridades = avaliacoes.filter((a: any) => a.nota > 0 && a.nota <= 2);
+                const grupos: { key: "fortes" | "consolidacao" | "prioridades"; label: string; itens: any[]; corChip: string; corTexto: string }[] = [
+                  { key: "fortes", label: "Pontos fortes desta trilha", itens: fortes, corChip: "bg-emerald-50 text-emerald-700 border-emerald-200", corTexto: "text-emerald-800" },
+                  { key: "consolidacao", label: "Em consolidação", itens: consolidacao, corChip: "bg-amber-50 text-amber-700 border-amber-200", corTexto: "text-amber-800" },
+                  { key: "prioridades", label: "Prioridades de desenvolvimento", itens: prioridades, corChip: "bg-rose-50 text-rose-700 border-rose-200", corTexto: "text-rose-800" },
+                ];
+                return (
+                  <div className="ml-4 space-y-3">
+                    {grupos.filter((g) => g.itens.length > 0).map((g) => (
+                      <div key={g.key} className="bg-white border rounded-lg p-3 space-y-2">
+                        <p className={`text-xs font-semibold ${g.corTexto}`}>{g.label} ({g.itens.length})</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {g.itens.map((a: any) => (
+                            <span key={a.competencia.id} className={`text-[11px] px-2 py-0.5 rounded-full border ${g.corChip}`}>
+                              {a.competencia?.nome || a.competencia?.name}
+                            </span>
                           ))}
                         </div>
-                        <p className="text-xs text-gray-500">{info.facilidade} — {info.ponto}</p>
+                        <p className="text-xs text-gray-600 leading-relaxed">
+                          {TIER_DISC_NARRATIVAS[g.key][perfilPredominante as DiscDimensao]}
+                        </p>
+                        {g.key === "prioridades" && (
+                          <ul className="text-[11px] text-gray-500 space-y-1 pt-1 border-t">
+                            {g.itens.map((a: any) => {
+                              const nomeComp = a.competencia?.nome || a.competencia?.name;
+                              const info = nomeComp ? competenciaDisc[nomeComp]?.[perfilPredominante as DiscDimensao] : null;
+                              if (!info) return null;
+                              return (
+                                <li key={a.competencia.id}>
+                                  <span className="font-medium text-gray-600">{nomeComp}:</span> {info.ponto}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    ))}
+                  </div>
+                );
+              })()}
               {/* Contribuições da mentora por competência */}
               {contribuicoesData?.filter((c: any) => c.tipo === "competencia" && avaliacoes.some((a: any) => a.competencia.id === c.competenciaId)).map((c: any) => (
                 <div key={c.id} className="bg-[#0A1E3E]/5 rounded-lg p-3 ml-4">
