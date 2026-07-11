@@ -1329,7 +1329,7 @@ export function RelatorioAutoconhecimento({
                         {dim}
                       </div>
                       <div>
-                        <span className="font-semibold text-gray-800">{perfil.nome}</span>
+                        <span className="font-semibold text-gray-800 text-base">{perfil.nome}</span>
                         {isPredominante && (
                           <Badge className="ml-2 bg-[#F5991F] text-white border-0 text-[10px]">PREDOMINANTE</Badge>
                         )}
@@ -1371,7 +1371,7 @@ export function RelatorioAutoconhecimento({
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-emerald-50 rounded-lg p-4">
-                  <h5 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
+                  <h5 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2 text-base">
                     <Target className="h-4 w-4" /> Pontos Fortes
                   </h5>
                   <ul className="space-y-1">
@@ -1383,7 +1383,7 @@ export function RelatorioAutoconhecimento({
                   </ul>
                 </div>
                 <div className="bg-amber-50 rounded-lg p-4">
-                  <h5 className="font-semibold text-amber-800 mb-2 flex items-center gap-2">
+                  <h5 className="font-semibold text-amber-800 mb-2 flex items-center gap-2 text-base">
                     <Sparkles className="h-4 w-4" /> Áreas de Desenvolvimento
                   </h5>
                   <ul className="space-y-1">
@@ -1397,7 +1397,7 @@ export function RelatorioAutoconhecimento({
               </div>
 
               <div className="bg-blue-50 rounded-lg p-4">
-                <h5 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                <h5 className="font-semibold text-blue-800 mb-2 flex items-center gap-2 text-base">
                   <Eye className="h-4 w-4" /> Como você se relaciona
                 </h5>
                 <div className="space-y-2">
@@ -1431,7 +1431,7 @@ export function RelatorioAutoconhecimento({
               {/* Como você é percebido: sua visão, a da liderança e a dos pares */}
               {perfilPrincipal.percepcao && (
                 <div className="space-y-3">
-                  <h5 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <h5 className="font-semibold text-gray-800 flex items-center gap-2 text-base">
                     <Eye className="h-4 w-4" /> Como você é percebido
                   </h5>
                   <div className="grid md:grid-cols-3 gap-3">
@@ -1455,7 +1455,7 @@ export function RelatorioAutoconhecimento({
 
           {pressaoAtual && (
             <div className="rounded-lg border border-orange-100 bg-orange-50/60 p-4 space-y-3">
-              <h5 className="font-semibold text-gray-800 flex items-center gap-2">
+              <h5 className="font-semibold text-gray-800 flex items-center gap-2 text-base">
                 <AlertCircle className="h-4 w-4 text-orange-600" /> Como você tende a reagir sob pressão
               </h5>
               <p className="text-xs text-gray-500">
@@ -1502,7 +1502,7 @@ export function RelatorioAutoconhecimento({
 
           {desenvolvimentoAtual && desenvolvimentoAtual.length > 0 && (
             <div className="space-y-3">
-              <h5 className="font-semibold text-gray-800 flex items-center gap-2">
+              <h5 className="font-semibold text-gray-800 flex items-center gap-2 text-base">
                 <Lightbulb className="h-4 w-4" /> Força preservada / Repertório a ampliar
               </h5>
               <div className="space-y-2">
@@ -1528,7 +1528,7 @@ export function RelatorioAutoconhecimento({
           {/* Contribuições da mentora sobre o Perfil Comportamental */}
           {contribuicoesDisc.length > 0 && (
             <div className="border-t pt-4">
-              <h5 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2">
+              <h5 className="font-semibold text-[#0A1E3E] mb-3 flex items-center gap-2 text-base">
                 <MessageSquare className="h-4 w-4" /> Observações da Mentora
               </h5>
               {contribuicoesDisc.map((c: any) => (
@@ -1577,7 +1577,7 @@ export function RelatorioAutoconhecimento({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: trilhaCoresMap[trilha.name] || "#6B7280" }} />
-                  <h4 className="font-semibold text-gray-800">{trilha.name}</h4>
+                  <h4 className="font-semibold text-gray-800 text-base">{trilha.name}</h4>
                 </div>
                 <Badge variant="outline" className="text-xs">
                   Média: {media.toFixed(1)}/5
@@ -1696,7 +1696,7 @@ export function RelatorioAutoconhecimento({
 
       {/* Dica para a sessão */}
       <div className="max-w-3xl mx-auto bg-blue-50 border border-blue-200 rounded-lg p-5">
-        <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+        <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2 text-base">
           <AlertCircle className="h-4 w-4" /> Prepare-se para sua sessão de mentoria
         </h4>
         <ul className="space-y-2 text-sm text-blue-700">
@@ -1732,6 +1732,12 @@ export function RelatorioAutoconhecimento({
             </li>
           )}
         </ul>
+      </div>
+
+      {/* Assinatura do responsável técnico */}
+      <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+        <p className="text-sm font-semibold text-gray-800">Mª Dinamar Makiyama</p>
+        <p className="text-xs text-gray-500">Psicóloga Responsável</p>
       </div>
 
       {/* Botão continuar */}
