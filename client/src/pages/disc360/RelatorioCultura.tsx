@@ -57,10 +57,12 @@ export default function RelatorioCultura() {
     <div className="min-h-screen bg-white text-slate-900">
       <style>{`
         @media print {
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
           .no-print { display: none !important; }
-          .report-page { page-break-after: always; padding-top: 0 !important; }
+          .report-page { page-break-after: always; padding-top: 0 !important; break-inside: avoid; }
           .report-page:last-child { page-break-after: auto; }
           body { background: white; }
+          @page { size: A4; margin: 10mm; }
         }
         .report-page { min-height: 100vh; padding: 48px; }
       `}</style>
