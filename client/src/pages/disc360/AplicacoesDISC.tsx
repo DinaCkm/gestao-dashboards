@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RelatorioAutoconhecimento } from "@/pages/TesteDiscOnboarding";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -534,9 +535,9 @@ function AplicacoesDISCContent() {
 
       {aplicacaoAberta && (
         <Dialog open={!!resultadoAbertoId} onOpenChange={(open) => !open && setResultadoAbertoId(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Resultado DISC — {aplicacaoAberta.name}</DialogTitle>
+              <DialogTitle>Relatório de Autoconhecimento — {aplicacaoAberta.name}</DialogTitle>
               <DialogDescription>
                 Perfil predominante: <strong>{PERFIL_LABEL[aplicacaoAberta.discPerfilPredominante] ?? aplicacaoAberta.discPerfilPredominante}</strong>
                 {aplicacaoAberta.discPerfilSecundario
@@ -544,18 +545,14 @@ function AplicacoesDISCContent() {
                   : ""}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-2 gap-3">
-              {(["D", "I", "S", "C"] as const).map((eixo) => (
-                <div key={eixo} className="border rounded-md p-3">
-                  <p className="text-xs text-muted-foreground">
-                    {eixo} — {PERFIL_LABEL[eixo]}
-                  </p>
-                  <p className="text-lg font-semibold">
-                    {aplicacaoAberta.discScores ? Number(aplicacaoAberta.discScores[eixo]) : "—"}%
-                  </p>
-                </div>
-              ))}
-            </div>
+            <RelatorioAutoconhecimento
+              alunoId={aplicacaoAberta.id}
+              discScores={aplicacaoAberta.discScores}
+              perfilPredominante={aplicacaoAberta.discPerfilPredominante}
+              perfilSecundario={aplicacaoAberta.discPerfilSecundario}
+              onComplete={() => {}}
+              somenteLeitura
+            />
           </DialogContent>
         </Dialog>
       )}
