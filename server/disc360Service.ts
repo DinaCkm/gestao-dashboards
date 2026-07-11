@@ -29,7 +29,7 @@ import {
   type InsertDiscMatch,
   type InsertDiscGeneratedReport,
 } from "../drizzle/schema";
-import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore, determinarPerfil } from "./discMatchService";
+import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore, determinarPerfil, calcularIndiceMatchCargo, buildJustificativasMatchCargo } from "./discMatchService";
 import { calcularDiscCargo, avaliarDivergenciaValidacao, obterFaixaTextoCargo, type RespostaRole, type RespostaValidacaoCargo } from "./discRoleService";
 import {
   calcularDiscCulturaEmpresa,
@@ -1048,4 +1048,73 @@ export async function enviarRelatorioIndividualDISC(
   }
 
   return { results };
+}
+
+
+// ---------------------------------------------------------------------------
+// Bloco 6 - Resultado/Match: Indice de Match Pessoa x Cargo (dashboard).
+// ---------------------------------------------------------------------------
+
+export type GetResultadoMatchInput = {
+  cargoProfileId: number;
+  alunoIds: number[];
+};
+
+export async function getResultadoMatch(database: DbClient, input: GetResultadoMatchInput) {
+  const cargoProfile = await getRoleProfileById(database, input.cargoProfileId);
+  if (!cargoProfile) {
+    throw new Error("Perfil DISC do Cargo nao encontrado.");
+  }
+  const cargoScores = ((cargoProfile as any).expectedScores as unknown as DiscScores) ?? { D: 0, I: 0, S: 0, C: 0 };
+
+  const alunoIdsUnicos = Array.from(new Set(input.alunoIds)).slice(0, 10);
+  if (alunoIdsUnicos.length === 0) {
+    return { cargoProfile, cargoScores, pessoas: [] };
+  }
+
+  const alunosRows = await database
+    .select({ id: alunos.id, name: alunos.name })
+    .from(alunos)
+    .where(inArray(alunos.id, alunoIdsUnicos));
+  const nomeById = new Map(alunosRows.map((a) => [a.id, a.name]));
+
+  const pessoas = await Promise.all(
+    alunoIdsUnicos.map(async (alunoId) => {
+      const nome = nomeById.get(alunoId) ?? ("Colaborador " + alunoId);
+      const resultado = await getLegacyDiscResultForAluno(database, alunoId);
+      if (!resultado) {
+        return {
+          alunoId,
+          nome,
+          scores: null,
+          indiceMatch: null,
+          detalhePorIndicador: null,
+          identico: false,
+          justificativas: [],
+          semDiscConcluido: true,
+        };
+      }
+      const scores: DiscScores = {
+        D: Number((resultado as any).scoreD),
+        I: Number((resultado as any).scoreI),
+        S: Number((resultado as any).scoreS),
+        C: Number((resultado as any).scoreC),
+      };
+      const { indiceMatch, detalhePorIndicador, identico } = calcularIndiceMatchCargo(scores, cargoScores);
+      const justificativas = buildJustificativasMatchCargo(scores, cargoScores);
+
+      return {
+        alunoId,
+        nome,
+        scores,
+        indiceMatch,
+        detalhePorIndicador,
+        identico,
+        justificativas,
+        semDiscConcluido: false,
+      };
+    })
+  );
+
+  return { cargoProfile, cargoScores, pessoas };
 }
