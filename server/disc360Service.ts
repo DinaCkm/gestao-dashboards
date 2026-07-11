@@ -363,7 +363,10 @@ export async function previewCultureConsolidation(database: DbClient, orgProfile
  */
 export async function getDashboardCultura(database: DbClient, orgProfileId: number) {
   const perfil = await getOrgProfileById(database, orgProfileId);
-  const nomeEmpresa = perfil?.profileName ?? "a empresa";
+  const programaRows = perfil
+    ? await database.select().from(programs).where(eq(programs.id, perfil.programId)).limit(1)
+    : [];
+  const nomeEmpresa = (programaRows[0] as any)?.name ?? perfil?.profileName ?? "a empresa";
 
   const consolidado = await previewCultureConsolidation(database, orgProfileId);
   const predominanciaPorTema = await getPredominanciaPorTema(database, orgProfileId);
@@ -382,8 +385,15 @@ export async function getDashboardCultura(database: DbClient, orgProfileId: numb
   const eixoPredominante = consolidado.perfilPredominante as Disc360CultureDimension;
   const eixoSecundario = consolidado.perfilSecundario as Disc360CultureDimension;
 
+  const convitesCultura = await listarConvitesCulturaEmpresa(database, orgProfileId);
+  const convidados = (convitesCultura as any[]).map((c) => ({
+    nome: c.respondentName as string,
+    status: c.status as string,
+  }));
+
   return {
     nomeEmpresa,
+    convidados,
     consolidado,
     predominanciaPorTema,
     textosPorEixo,
@@ -392,7 +402,6 @@ export async function getDashboardCultura(database: DbClient, orgProfileId: numb
     recomendacoes: obterRecomendacoesPorPredominancia(eixoPredominante),
   };
 }
-
 /**
  * Consolida e SALVA o Perfil DISC da Empresa a partir das respostas do
  * questionario de cultura ja recebidas, marcando origemPerfil="questionario".
