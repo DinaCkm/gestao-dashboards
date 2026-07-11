@@ -53,12 +53,7 @@ export default function RelatorioIndividualDISC() {
     setGerandoPdf(true);
     try {
       const html2canvas = await carregarHtml2Canvas();
-
-      const canvas = await html2canvas(conteudoRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-      });
+      const container = conteudoRef.current;
 
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -69,9 +64,47 @@ export default function RelatorioIndividualDISC() {
       const contentWidthMm = pageWidth - marginX * 2;
       const contentAreaHeightMm = pageHeight - headerH - footerH;
 
+      // Calcula os pontos de quebra de página respeitando os limites dos elementos
+      // (evita cortar texto ou ícones no meio da linha).
+      const domPxPerMm = container.offsetWidth / contentWidthMm;
+      const alturaPaginaPx = contentAreaHeightMm * domPxPerMm;
+
+      const containerRect = container.getBoundingClientRect();
+      const elementos = Array.from(container.querySelectorAll<HTMLElement>("*"))
+        .filter((el) => el.tagName.toLowerCase() === "svg" || el.children.length === 0)
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          return { top: r.top - containerRect.top, bottom: r.bottom - containerRect.top };
+        })
+        .filter((r) => r.bottom > r.top);
+
+      const totalAlturaPx = container.scrollHeight;
+      const limites = [0];
+      let atual = 0;
+      while (atual < totalAlturaPx) {
+        let proximo = Math.min(atual + alturaPaginaPx, totalAlturaPx);
+        if (proximo < totalAlturaPx) {
+          let ajustado = proximo;
+          for (const el of elementos) {
+            if (el.top < proximo && proximo < el.bottom && el.top < ajustado) {
+              ajustado = el.top;
+            }
+          }
+          if (ajustado > atual + 1) {
+            proximo = ajustado;
+          }
+        }
+        limites.push(proximo);
+        atual = proximo;
+      }
+
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+      const canvasScale = canvas.width / container.offsetWidth;
       const pxPerMm = canvas.width / contentWidthMm;
-      const sliceHeightPx = Math.max(1, Math.floor(contentAreaHeightMm * pxPerMm));
-      const totalPages = Math.max(1, Math.ceil(canvas.height / sliceHeightPx));
 
       const dataGeracao = new Date().toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -79,10 +112,13 @@ export default function RelatorioIndividualDISC() {
         year: "numeric",
       });
       const tituloEmpregado = nomeAluno || `Colaborador #${alunoId}`;
+      const totalPages = limites.length - 1;
 
       const desenharCabecalho = () => {
         pdf.setFillColor(15, 43, 60);
         pdf.rect(0, 0, pageWidth, headerH, "F");
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(marginX - 1, 4, 18, 18, 2, 2, "F");
         pdf.addImage(LOGO_ECO_AO_BEM_BASE64, "PNG", marginX, 5, 16, 16);
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(13);
@@ -118,8 +154,9 @@ export default function RelatorioIndividualDISC() {
       for (let i = 0; i < totalPages; i++) {
         if (i > 0) pdf.addPage();
 
-        const sy = i * sliceHeightPx;
-        const sh = Math.min(sliceHeightPx, canvas.height - sy);
+        const sy = Math.round(limites[i] * canvasScale);
+        const syEnd = Math.round(limites[i + 1] * canvasScale);
+        const sh = Math.max(1, syEnd - sy);
 
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = canvas.width;
@@ -130,11 +167,11 @@ export default function RelatorioIndividualDISC() {
           ctx.fillRect(0, 0, canvas.width, sh);
           ctx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
         }
-        const imgData = tempCanvas.toDataURL("image/png");
+        const imgData = tempCanvas.toDataURL("image/jpeg", 0.92);
         const imgHeightMm = sh / pxPerMm;
 
         desenharCabecalho();
-        pdf.addImage(imgData, "PNG", marginX, headerH, contentWidthMm, imgHeightMm);
+        pdf.addImage(imgData, "JPEG", marginX, headerH, contentWidthMm, imgHeightMm);
         desenharRodape(i + 1);
       }
 
