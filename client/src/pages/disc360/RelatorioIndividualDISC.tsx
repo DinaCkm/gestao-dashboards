@@ -62,7 +62,8 @@ export default function RelatorioIndividualDISC() {
       const headerH = 26;
       const footerH = 14;
       const contentWidthMm = pageWidth - marginX * 2;
-      const contentAreaHeightMm = pageHeight - headerH - footerH;
+      const contentGap = 6;
+      const contentAreaHeightMm = pageHeight - headerH - footerH - contentGap;
 
       // Calcula os pontos de quebra de página respeitando os limites dos elementos
       // (evita cortar texto ou ícones no meio da linha).
@@ -98,6 +99,7 @@ export default function RelatorioIndividualDISC() {
         atual = proximo;
       }
 
+      await document.fonts.ready;
       const canvas = await html2canvas(container, {
         scale: 2,
         useCORS: true,
@@ -171,7 +173,7 @@ export default function RelatorioIndividualDISC() {
         const imgHeightMm = sh / pxPerMm;
 
         desenharCabecalho();
-        pdf.addImage(imgData, "JPEG", marginX, headerH, contentWidthMm, imgHeightMm);
+        pdf.addImage(imgData, "JPEG", marginX, headerH + contentGap, contentWidthMm, imgHeightMm);
         desenharRodape(i + 1);
       }
 
