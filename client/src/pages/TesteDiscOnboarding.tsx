@@ -1369,7 +1369,7 @@ export function RelatorioAutoconhecimento({
                 ))}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="flex flex-col md:flex-row gap-4 md:[&>*]:flex-1 md:[&>*]:min-w-0">
                 <div className="bg-emerald-50 rounded-lg p-4">
                   <h5 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2 text-base">
                     <Target className="h-4 w-4" /> Pontos Fortes
@@ -1434,7 +1434,7 @@ export function RelatorioAutoconhecimento({
                   <h5 className="font-semibold text-gray-800 flex items-center gap-2 text-base">
                     <Eye className="h-4 w-4" /> Como você é percebido
                   </h5>
-                  <div className="grid md:grid-cols-3 gap-3">
+                  <div className="flex flex-col md:flex-row gap-3 md:[&>*]:flex-1 md:[&>*]:min-w-0">
                     <div className="bg-violet-50 rounded-lg p-3">
                       <p className="text-xs font-semibold text-violet-800 mb-1">Sua própria visão</p>
                       <p className="text-sm text-violet-700">{perfilPrincipal.percepcao.comoSeVe}</p>
@@ -1464,7 +1464,7 @@ export function RelatorioAutoconhecimento({
 
               <div className="space-y-1.5">
                 <p className="text-center text-[10px] font-semibold text-gray-400 uppercase tracking-wide">↑ Ativo / Rápido</p>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="flex flex-row flex-wrap gap-1.5 [&>*]:basis-[calc(50%-0.1875rem)] [&>*]:flex-1">
                   {(["D", "I", "C", "S"] as DiscDimensao[]).map((dim) => {
                     const info = (pressaoData as any)?.[dim];
                     if (!info) return null;
@@ -1509,7 +1509,7 @@ export function RelatorioAutoconhecimento({
                 {desenvolvimentoAtual.map((item: any, i: number) => (
                   <div key={i} className="border rounded-lg overflow-hidden">
                     <div className="bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600">{item.competencia}</div>
-                    <div className="grid md:grid-cols-2">
+                    <div className="flex flex-col md:flex-row md:[&>*]:flex-1 md:[&>*]:min-w-0">
                       <div className="p-3 border-t md:border-t-0 md:border-r border-emerald-100 bg-emerald-50/40">
                         <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wide">Força preservada</span>
                         <p className="text-sm text-gray-700 mt-0.5">{item.forcaPreservada}</p>
@@ -1559,7 +1559,7 @@ export function RelatorioAutoconhecimento({
               <p className="text-xs text-blue-800">
                 A metodologia do B.E.M. organiza o desenvolvimento em blocos progressivos — cada etapa fortalece a base necessária para a próxima (Básico → Essencial → Master → Visão de Futuro).
               </p>
-              <div className="grid sm:grid-cols-2 gap-2 mt-1">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 mt-1 sm:[&>*]:basis-[calc(50%-0.25rem)] sm:[&>*]:flex-1">
                 {autopercepçãoPorTrilha.map(({ trilha }) => {
                   const explicacao = TRILHA_EXPLICACOES[trilha.name];
                   if (!explicacao) return null;
