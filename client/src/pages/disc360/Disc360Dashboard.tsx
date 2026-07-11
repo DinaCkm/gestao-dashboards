@@ -46,8 +46,8 @@ const cards: Disc360CardConfig[] = [
     icon: Target,
     title: "Resultado / Match",
     description: "Veja o cruzamento entre o perfil do colaborador, do cargo e da empresa/diretoria.",
-    path: "/disc360/resultado",
-    disponivel: false,
+    path: "/disc360/resultado-match",
+    disponivel: true,
   },
   {
     icon: BarChart3,
