@@ -80,7 +80,8 @@ export default function RelatorioCargo() {
       const headerH = 26;
       const footerH = 14;
       const contentWidthMm = pageWidth - marginX * 2;
-      const contentAreaHeightMm = pageHeight - headerH - footerH;
+      const contentGap = 6;
+      const contentAreaHeightMm = pageHeight - headerH - footerH - contentGap;
 
       const dataGeracao = new Date().toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -90,6 +91,7 @@ export default function RelatorioCargo() {
 
       const paginasImg: { data: string; heightMm: number }[] = [];
 
+      await document.fonts.ready;
       for (const secao of alvo) {
         // Calcula os pontos de quebra de página respeitando os limites dos elementos
         // (evita cortar texto ou ícones no meio da linha).
@@ -187,7 +189,7 @@ export default function RelatorioCargo() {
       paginasImg.forEach((pagina, i) => {
         if (i > 0) pdf.addPage();
         desenharCabecalho();
-        pdf.addImage(pagina.data, "JPEG", marginX, headerH, contentWidthMm, pagina.heightMm);
+        pdf.addImage(pagina.data, "JPEG", marginX, headerH + contentGap, contentWidthMm, pagina.heightMm);
         desenharRodape(i + 1);
       });
 
