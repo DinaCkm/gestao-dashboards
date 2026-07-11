@@ -4,6 +4,10 @@ import { LOGO_ECO_AO_BEM_BASE64 } from "./pdfLogoBase64";
 
 const pdfRouter = Router();
 
+pdfRouter.get("/api/pdf/ping", (req, res) => {
+  res.status(200).json({ ok: true, msg: "pdfRouter esta ativo" });
+});
+
 function slug(input: string): string {
   return input
     .toLowerCase()
