@@ -25,6 +25,7 @@ import {
   consolidateRoleProfile,
   getDashboardCargo,
   getResultadoMatch,
+  getResultadoMatch,
   listAplicacoesDISC,
   createOrgProfile,
   listOrgProfiles,
@@ -248,6 +249,21 @@ export const disc360Router = router({
     .query(async ({ input }) => {
       const database = await requireDatabase();
       return getDashboardCargo(database, input.cargoProfileId);
+    }),
+
+  getResultadoMatch: protectedProcedure
+    .input(
+      z.object({
+        cargoProfileId: z.number(),
+        alunoIds: z.array(z.number()).min(1).max(10),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+      }
+      const database = await requireDatabase();
+      return getResultadoMatch(database, input);
     }),
 
   getResultadoMatch: protectedProcedure
