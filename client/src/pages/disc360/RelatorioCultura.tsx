@@ -96,22 +96,55 @@ export default function RelatorioCultura() {
         year: "numeric",
       });
 
-      let totalPages = 0;
       const paginasImg: { data: string; heightMm: number }[] = [];
 
       for (const secao of alvo) {
+        // Calcula os pontos de quebra de página respeitando os limites dos elementos
+        // (evita cortar texto ou ícones no meio da linha).
+        const domPxPerMm = secao.offsetWidth / contentWidthMm;
+        const alturaPaginaPx = contentAreaHeightMm * domPxPerMm;
+        const secaoRect = secao.getBoundingClientRect();
+        const elementos = Array.from(secao.querySelectorAll<HTMLElement>("*"))
+          .filter((el) => el.tagName.toLowerCase() === "svg" || el.children.length === 0)
+          .map((el) => {
+            const r = el.getBoundingClientRect();
+            return { top: r.top - secaoRect.top, bottom: r.bottom - secaoRect.top };
+          })
+          .filter((r) => r.bottom > r.top);
+
+        const totalAlturaPx = secao.scrollHeight;
+        const limites = [0];
+        let atual = 0;
+        while (atual < totalAlturaPx) {
+          let proximo = Math.min(atual + alturaPaginaPx, totalAlturaPx);
+          if (proximo < totalAlturaPx) {
+            let ajustado = proximo;
+            for (const el of elementos) {
+              if (el.top < proximo && proximo < el.bottom && el.top < ajustado) {
+                ajustado = el.top;
+              }
+            }
+            if (ajustado > atual + 1) {
+              proximo = ajustado;
+            }
+          }
+          limites.push(proximo);
+          atual = proximo;
+        }
+
         const canvas = await html2canvas(secao, {
           scale: 2,
           useCORS: true,
           backgroundColor: "#ffffff",
         });
+        const canvasScale = canvas.width / secao.offsetWidth;
         const pxPerMm = canvas.width / contentWidthMm;
-        const sliceHeightPx = Math.max(1, Math.floor(contentAreaHeightMm * pxPerMm));
-        const paginasDaSecao = Math.max(1, Math.ceil(canvas.height / sliceHeightPx));
 
-        for (let i = 0; i < paginasDaSecao; i++) {
-          const sy = i * sliceHeightPx;
-          const sh = Math.min(sliceHeightPx, canvas.height - sy);
+        for (let i = 0; i < limites.length - 1; i++) {
+          const sy = Math.round(limites[i] * canvasScale);
+          const syEnd = Math.round(limites[i + 1] * canvasScale);
+          const sh = Math.max(1, syEnd - sy);
+
           const tempCanvas = document.createElement("canvas");
           tempCanvas.width = canvas.width;
           tempCanvas.height = sh;
@@ -121,14 +154,17 @@ export default function RelatorioCultura() {
             ctx.fillRect(0, 0, canvas.width, sh);
             ctx.drawImage(canvas, 0, sy, canvas.width, sh, 0, 0, canvas.width, sh);
           }
-          paginasImg.push({ data: tempCanvas.toDataURL("image/png"), heightMm: sh / pxPerMm });
-          totalPages++;
+          paginasImg.push({ data: tempCanvas.toDataURL("image/jpeg", 0.92), heightMm: sh / pxPerMm });
         }
       }
+
+      const totalPages = paginasImg.length;
 
       const desenharCabecalho = () => {
         pdf.setFillColor(15, 43, 60);
         pdf.rect(0, 0, pageWidth, headerH, "F");
+        pdf.setFillColor(255, 255, 255);
+        pdf.roundedRect(marginX - 1, 4, 18, 18, 2, 2, "F");
         pdf.addImage(LOGO_ECO_AO_BEM_BASE64, "PNG", marginX, 5, 16, 16);
         pdf.setTextColor(255, 255, 255);
         pdf.setFontSize(13);
@@ -159,7 +195,7 @@ export default function RelatorioCultura() {
       paginasImg.forEach((pagina, i) => {
         if (i > 0) pdf.addPage();
         desenharCabecalho();
-        pdf.addImage(pagina.data, "PNG", marginX, headerH, contentWidthMm, pagina.heightMm);
+        pdf.addImage(pagina.data, "JPEG", marginX, headerH, contentWidthMm, pagina.heightMm);
         desenharRodape(i + 1);
       });
 
