@@ -343,13 +343,34 @@ function ResultadoMatchContent() {
                       Este colaborador ainda nao concluiu o teste DISC - nao e possivel calcular o resultado.
                     </p>
                   ) : (
-                    <ul className="space-y-1.5">
+                    <div className="space-y-4">
                       {(p.justificativas as any[]).map((j: any) => (
-                        <li key={j.eixo} className="text-sm text-muted-foreground">
-                          <strong className="text-foreground">{j.eixo}</strong> - {j.texto}
-                        </li>
+                        <div key={j.eixo} className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <h5 className="text-sm font-semibold text-foreground">{j.eixo} — {j.nomeCompleto}</h5>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">Diferença: {j.diferenca} pontos</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{j.paragrafo}</p>
+                          {j.bullets && j.bullets.length > 0 && (
+                            <div className="text-sm text-muted-foreground">
+                              <p>{j.bulletsIntro}</p>
+                              <ul className="list-disc pl-5 space-y-0.5">
+                                {j.bullets.map((b: string, i: number) => (
+                                  <li key={i}>{b}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          <p className="text-sm text-foreground/80 italic">{j.orientacao}</p>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
+                  )}
+                  {p.sinteseMatch && !p.semDiscConcluido && (
+                    <div className="mt-3 pt-3 border-t">
+                      <h5 className="text-sm font-semibold text-foreground mb-1">Síntese para o RH</h5>
+                      <p className="text-sm text-muted-foreground">{p.sinteseMatch}</p>
+                    </div>
                   )}
                   {p.correlacaoCompetencias && !p.semDiscConcluido && (p.correlacaoCompetencias.pontosFortes.length > 0 || p.correlacaoCompetencias.pontosAtencao.length > 0) && (
                     <div className="mt-3 pt-3 border-t space-y-3">
