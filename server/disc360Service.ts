@@ -1092,6 +1092,7 @@ export async function getResultadoMatch(database: DbClient, input: GetResultadoM
           identico: false,
           justificativas: [],
           correlacaoCompetencias: null,
+          sinteseMatch: null,
           semDiscConcluido: true,
         };
       }
@@ -1102,7 +1103,7 @@ export async function getResultadoMatch(database: DbClient, input: GetResultadoM
         C: Number((resultado as any).scoreC),
       };
       const { indiceMatch, detalhePorIndicador, identico } = calcularIndiceMatchCargo(scores, cargoScores);
-      const justificativas = buildJustificativasMatchCargo(scores, cargoScores);
+      const { eixos: justificativas, sintese: sinteseMatch } = buildJustificativasMatchCargo(scores, cargoScores);
 
       const correlacaoCompetencias = buildCorrelacaoCompetencias(scores, cargoScores);
 
@@ -1114,6 +1115,7 @@ export async function getResultadoMatch(database: DbClient, input: GetResultadoM
         detalhePorIndicador,
         identico,
         justificativas,
+        sinteseMatch,
         correlacaoCompetencias,
         semDiscConcluido: false,
       };

@@ -385,82 +385,302 @@ export function calcularIndiceMatchCargo(
   return { indiceMatch, detalhePorIndicador, identico };
 }
 
+export type NivelDiferencaEixo = 'aderente' | 'atencao';
+export type DirecaoDiferenca = 'acima' | 'abaixo' | 'igual';
+
 export type JustificativaEixo = {
   eixo: DiscDimension;
+  nomeCompleto: string;
   diferenca: number;
-  tipo: "alinhamento_total" | "ajuste_fino" | "desenvolvimento";
-  texto: string;
+  direcao: DirecaoDiferenca;
+  nivel: NivelDiferencaEixo;
+  maiorDistancia: boolean;
+  paragrafo: string;
+  bulletsIntro: string;
+  bullets: string[];
+  orientacao: string;
 };
 
-const EIXO_TEMA_MATCH_CARGO: Record<DiscDimension, string> = {
-  D: "ritmo de decisao, autonomia e assertividade",
-  I: "estilo de comunicacao e construcao de relacionamentos",
-  S: "ritmo de adaptacao, cooperacao e estabilidade",
-  C: "atencao a normas, dados e processos",
+export type ResultadoJustificativasMatchCargo = {
+  eixos: JustificativaEixo[];
+  sintese: string;
 };
 
-const EIXO_DESENVOLVER_ACIMA: Record<DiscDimension, string> = {
-  D: "calibrar o ritmo de decisao em momentos que pedem mais escuta e construcao coletiva",
-  I: "equilibrar a comunicacao com momentos de maior objetividade e foco na tarefa",
-  S: "desenvolver maior tolerancia a mudancas de ritmo e a situacoes menos previsiveis",
-  C: "flexibilizar a atencao a detalhes e processos quando o contexto pedir agilidade",
+const EIXO_NOME_COMPLETO: Record<DiscDimension, string> = {
+  D: 'Dominância',
+  I: 'Influência',
+  S: 'Estabilidade',
+  C: 'Conformidade',
 };
 
-const EIXO_DESENVOLVER_ABAIXO: Record<DiscDimension, string> = {
-  D: "ampliar a autonomia e a assertividade na tomada de decisao",
-  I: "desenvolver mais abertura na comunicacao e na construcao de relacionamentos",
-  S: "desenvolver maior estabilidade e constancia diante de mudancas de ritmo",
-  C: "fortalecer a atencao a normas, dados e processos no dia a dia",
+const EIXO_TEMA_FRASE: Record<DiscDimension, string> = {
+  D: 'o modo como a pessoa tende a tomar decisões, assumir autonomia e se posicionar diante de desafios',
+  I: 'o estilo de comunicação, interação e construção de relacionamentos da pessoa',
+  S: 'o ritmo de adaptação, cooperação e estabilidade da pessoa',
+  C: 'o modo como a pessoa lida com normas, dados, detalhes, critérios e processos',
 };
 
-function classificarDiferencaMatchCargo(diferenca: number): "alinhamento_total" | "ajuste_fino" | "desenvolvimento" {
-  if (diferenca === 0) return "alinhamento_total";
-  if (diferenca <= LIMITE_ADERENCIA_INDICADOR) return "ajuste_fino";
-  return "desenvolvimento";
+const EIXO_TEMA_CURTO: Record<DiscDimension, string> = {
+  D: 'autonomia, posicionamento e tomada de decisão',
+  I: 'adequação da comunicação e dos relacionamentos',
+  S: 'estabilidade e adaptação a mudanças',
+  C: 'atenção a processos e detalhes',
+};
+
+const EIXO_BULLETS_OBSERVAR_PROFISSIONAL: Record<DiscDimension, string[]> = {
+  D: [
+    'assume decisões com segurança',
+    'consegue agir sem depender de validações constantes',
+    'posiciona-se com clareza em situações de pressão',
+    'mantém equilíbrio entre firmeza e abertura ao diálogo',
+  ],
+  I: [
+    'comunica-se de forma clara e objetiva',
+    'constrói relacionamentos de confiança com a equipe',
+    'equilibra entusiasmo com foco na tarefa',
+    'ajusta o tom de acordo com o contexto e o interlocutor',
+  ],
+  S: [
+    'mantém constância mesmo diante de mudanças',
+    'coopera e se ajusta ao ritmo da equipe',
+    'lida bem com alterações de prioridade',
+    'equilibra estabilidade com abertura a novidades',
+  ],
+  C: [
+    'presta atenção a detalhes, dados e processos',
+    'segue normas e procedimentos estabelecidos',
+    'organiza informações de forma consistente',
+    'toma decisões apoiadas em critérios e dados',
+  ],
+};
+
+const EIXO_BULLETS_AVALIAR_CARGO: Record<DiscDimension, string[]> = {
+  D: [
+    'decisões rápidas e autônomas, com pouca dependência de validação',
+    'posicionamento firme diante de conflitos ou pressão',
+    'assunção de responsabilidade por resultados individuais',
+    'tolerância a ambientes de maior exposição e cobrança',
+  ],
+  I: [
+    'maior objetividade e síntese',
+    'comunicação mais relacional e persuasiva',
+    'maior exposição e interação com pessoas',
+    'equilíbrio entre relacionamento e execução das tarefas',
+  ],
+  S: [
+    'ritmo mais estável e previsível de trabalho',
+    'cooperação constante e rotina bem definida',
+    'menor exposição a mudanças abruptas de prioridade',
+    'construção de relacionamentos de confiança ao longo do tempo',
+  ],
+  C: [
+    'atenção rigorosa a detalhes, dados e conformidade',
+    'seguimento estrito de normas e processos',
+    'consistência e precisão nas entregas',
+    'decisões apoiadas fortemente em critérios técnicos',
+  ],
+};
+
+const EIXO_ACOMPANHAMENTO_ADERENTE: Record<DiscDimension, string> = {
+  D: 'observar como a pessoa equilibra firmeza e escuta em momentos de maior pressão ou urgência',
+  I: 'observar como a pessoa equilibra proximidade e objetividade em diferentes contextos de comunicação',
+  S: 'observar como a pessoa reage em situações de mudança, pressão ou alteração de prioridades',
+  C: 'observar como a pessoa mantém a atenção a detalhes e processos mesmo sob prazos apertados',
+};
+
+const EIXO_ORIENTACAO_ACIMA: Record<DiscDimension, string> = {
+  D: 'calibrar o ritmo de decisão em momentos que pedem mais escuta e construção coletiva, reservando espaço para ouvir a equipe antes de fechar posições, especialmente em decisões que afetam várias pessoas',
+  I: 'trabalhar a adequação da comunicação ao contexto, alternando momentos de interação e influência com maior objetividade, foco, escuta e direcionamento para resultados',
+  S: 'desenvolver maior tolerância a mudanças de ritmo e a situações menos previsíveis, ampliando a flexibilidade diante de imprevistos e novas prioridades',
+  C: 'flexibilizar a atenção a detalhes e processos quando o contexto pedir agilidade, equilibrando rigor técnico com rapidez de entrega',
+};
+
+const EIXO_ORIENTACAO_ABAIXO: Record<DiscDimension, string> = {
+  D: 'ampliar gradualmente a autonomia, a segurança para decidir e a assertividade na comunicação, especialmente em situações que exigem rapidez, posicionamento e responsabilização',
+  I: 'desenvolver mais abertura na comunicação e na construção de relacionamentos, ampliando a interação com pessoas e a capacidade de influenciar e mobilizar a equipe',
+  S: 'desenvolver maior estabilidade e constância diante de mudanças de ritmo, fortalecendo a previsibilidade e a cooperação contínua com a equipe',
+  C: 'fortalecer hábitos de conferência, planejamento, registro e acompanhamento dos processos, especialmente em atividades nas quais erros, descuidos ou ausência de padrão possam gerar impactos relevantes',
+};
+
+const LIMITE_ADERENCIA_EIXO = 8;
+const LIMITE_MAIOR_DISTANCIA = 20;
+
+function classificarNivelDiferenca(diferenca: number): NivelDiferencaEixo {
+  return diferenca < LIMITE_ADERENCIA_EIXO ? 'aderente' : 'atencao';
+}
+
+function qualificarDiferenca(diferenca: number): string {
+  if (diferenca < 15) return 'uma diferença pequena a moderada';
+  if (diferenca < 25) return 'uma diferença moderada';
+  return 'uma diferença mais relevante';
+}
+
+function formatarDiferenca(n: number): string {
+  const arredondado = Math.round(n * 100) / 100;
+  const str = Number.isInteger(arredondado) ? String(arredondado) : arredondado.toFixed(2);
+  return str.replace('.', ',');
 }
 
 /**
- * Gera, para cada um dos 4 eixos DISC, uma justificativa em tom de
- * desenvolvimento (nunca punitiva, nunca rotulando "match"/"nao-match").
- * So deixa de listar um ponto de desenvolvimento quando a diferenca naquele
- * eixo for exatamente zero.
+ * Gera, para cada um dos 4 eixos DISC, uma leitura orientativa em tom de
+ * desenvolvimento (nunca punitiva, nunca rotulando "match"/"nao-match"),
+ * deixando explicito o tamanho da diferenca, a direcao (pessoa acima ou
+ * abaixo do perfil esperado pelo cargo) e o que observar/desenvolver.
+ * Tambem monta uma sintese final para o RH, apontando o eixo de maior
+ * aderencia e o(s) eixo(s) que mais merecem atencao.
  */
 export function buildJustificativasMatchCargo(
   pessoaScores: DiscScores,
   cargoScores: DiscScores
-): JustificativaEixo[] {
-  const dimensoes: DiscDimension[] = ["D", "I", "S", "C"];
-  const justificativas: JustificativaEixo[] = [];
+): ResultadoJustificativasMatchCargo {
+  const dimensoes: DiscDimension[] = ['D', 'I', 'S', 'C'];
 
-  for (const dim of dimensoes) {
+  const brutos = dimensoes.map((dim) => {
     const pessoa = Number(pessoaScores?.[dim] ?? 0);
     const cargo = Number(cargoScores?.[dim] ?? 0);
     const diferenca = Math.round(Math.abs(pessoa - cargo) * 100) / 100;
-    const tipo = classificarDiferencaMatchCargo(diferenca);
+    const direcao: DirecaoDiferenca = diferenca === 0 ? 'igual' : pessoa > cargo ? 'acima' : 'abaixo';
+    return { dim, diferenca, direcao };
+  });
 
-    if (tipo === "alinhamento_total") {
-      justificativas.push({
+  const maiorDiferenca = Math.max(...brutos.map((b) => b.diferenca));
+  const dimMaiorDistancia =
+    maiorDiferenca >= LIMITE_MAIOR_DISTANCIA
+      ? brutos.find((b) => b.diferenca === maiorDiferenca)?.dim
+      : undefined;
+
+  const eixos: JustificativaEixo[] = brutos.map(({ dim, diferenca, direcao }) => {
+    const nomeCompleto = EIXO_NOME_COMPLETO[dim];
+    const maiorDistancia = dim === dimMaiorDistancia;
+    const direcaoTexto = direcao === 'igual' ? 'exatamente alinhada' : direcao;
+    const diferencaFmt = formatarDiferenca(diferenca);
+
+    if (direcao === 'igual') {
+      return {
         eixo: dim,
+        nomeCompleto,
         diferenca,
-        tipo,
-        texto: "Em " + EIXO_TEMA_MATCH_CARGO[dim] + ", seu perfil esta numericamente identico ao ideal do cargo neste eixo - nao ha ponto de desenvolvimento a destacar aqui.",
-      });
-      continue;
+        direcao,
+        nivel: 'aderente',
+        maiorDistancia: false,
+        paragrafo:
+          'Em ' + EIXO_TEMA_FRASE[dim] + ', o perfil da pessoa está numericamente idêntico ao ideal do cargo neste eixo - não há ponto de desenvolvimento a destacar aqui.',
+        bulletsIntro: '',
+        bullets: [],
+        orientacao: 'Orientação ao RH: considerar este eixo como um ponto de aderência total ao cargo.',
+      };
     }
 
-    const acima = pessoa > cargo;
-    const sugestao = acima ? EIXO_DESENVOLVER_ACIMA[dim] : EIXO_DESENVOLVER_ABAIXO[dim];
-    const intensidade = tipo === "ajuste_fino" ? "um ajuste fino" : "um ponto de atencao maior para o desenvolvimento";
+    const nivel = classificarNivelDiferenca(diferenca);
 
-    justificativas.push({
+    if (nivel === 'aderente') {
+      return {
+        eixo: dim,
+        nomeCompleto,
+        diferenca,
+        direcao,
+        nivel,
+        maiorDistancia: false,
+        paragrafo:
+          'Este resultado demonstra uma proximidade muito grande entre o comportamento apresentado e o perfil esperado para o cargo (diferença de ' +
+          diferencaFmt +
+          ' pontos, ' +
+          direcaoTexto +
+          ' do perfil esperado). Não há, neste eixo, uma necessidade relevante de desenvolvimento. O principal cuidado deve ser preservar esse equilíbrio e ' +
+          EIXO_ACOMPANHAMENTO_ADERENTE[dim] +
+          '.',
+        bulletsIntro: '',
+        bullets: [],
+        orientacao:
+          'Orientação ao RH: considerar este eixo como um ponto de aderência ao cargo, mantendo apenas o acompanhamento natural durante a integração e o desenvolvimento profissional.',
+      };
+    }
+
+    const orientacaoBase = direcao === 'acima' ? EIXO_ORIENTACAO_ACIMA[dim] : EIXO_ORIENTACAO_ABAIXO[dim];
+
+    if (maiorDistancia) {
+      return {
+        eixo: dim,
+        nomeCompleto,
+        diferenca,
+        direcao,
+        nivel,
+        maiorDistancia: true,
+        paragrafo:
+          'Este é o eixo com maior distância em relação ao perfil esperado (diferença de ' +
+          diferencaFmt +
+          ' pontos, ' +
+          direcaoTexto +
+          ' do perfil esperado). O resultado sugere que ' +
+          EIXO_TEMA_FRASE[dim] +
+          ' pode estar menos alinhado ao que o cargo exige.',
+        bulletsIntro: 'Para o RH e a liderança, recomenda-se avaliar se o cargo demanda:',
+        bullets: EIXO_BULLETS_AVALIAR_CARGO[dim],
+        orientacao: 'Orientação de desenvolvimento: ' + orientacaoBase + '.',
+      };
+    }
+
+    return {
       eixo: dim,
+      nomeCompleto,
       diferenca,
-      tipo,
-      texto: "Em " + EIXO_TEMA_MATCH_CARGO[dim] + ", a diferenca em relacao ao ideal do cargo (" + diferenca + " pontos) representa " + intensidade + ": vale " + sugestao + ".",
-    });
-  }
+      direcao,
+      nivel,
+      maiorDistancia: false,
+      paragrafo:
+        'Este resultado indica ' +
+        qualificarDiferenca(diferenca) +
+        ' (diferença de ' +
+        diferencaFmt +
+        ' pontos) em ' +
+        EIXO_TEMA_FRASE[dim] +
+        ', com a pessoa ' +
+        direcaoTexto +
+        ' do perfil esperado pelo cargo neste eixo.',
+      bulletsIntro: 'Para o RH e a liderança, recomenda-se observar se o profissional:',
+      bullets: EIXO_BULLETS_OBSERVAR_PROFISSIONAL[dim],
+      orientacao: 'Orientação de desenvolvimento: ' + orientacaoBase + '.',
+    };
+  });
 
-  return justificativas;
+  const sintese = montarSinteseMatchCargo(eixos);
+
+  return { eixos, sintese };
+}
+
+function montarSinteseMatchCargo(eixos: JustificativaEixo[]): string {
+  const ordenadoCrescente = [...eixos].sort((a, b) => a.diferenca - b.diferenca);
+  const ordenadoDecrescente = [...eixos].sort((a, b) => b.diferenca - a.diferenca);
+
+  const melhor = ordenadoCrescente[0];
+  const segundoMelhor = ordenadoCrescente[1];
+  const pior = ordenadoDecrescente[0];
+  const segundoPior = ordenadoDecrescente[1];
+
+  const usaSegundoMelhor = segundoMelhor.diferenca <= 10 && segundoMelhor.eixo !== melhor.eixo;
+  const usaSegundoPior = segundoPior.diferenca >= 15 && segundoPior.eixo !== pior.eixo;
+
+  const nomeAderencia =
+    'eixo ' + melhor.nomeCompleto + (usaSegundoMelhor ? ', seguido de ' + segundoMelhor.nomeCompleto : '');
+
+  const nomeAtencao =
+    (usaSegundoPior ? 'eixos ' : 'eixo ') +
+    pior.nomeCompleto +
+    (usaSegundoPior ? ' e ' + segundoPior.nomeCompleto : '');
+
+  const temasAtencao =
+    EIXO_TEMA_CURTO[pior.eixo] + (usaSegundoPior ? ', ' + EIXO_TEMA_CURTO[segundoPior.eixo] : '');
+
+  return (
+    'De forma geral, o profissional apresenta maior aderência ao cargo no ' +
+    nomeAderencia +
+    '. Os principais pontos de atenção estão n' +
+    (usaSegundoPior ? 'os ' : 'o ') +
+    nomeAtencao +
+    ', especialmente em relação a ' +
+    temasAtencao +
+    '. Essas diferenças não devem ser interpretadas automaticamente como incapacidade para exercer o cargo. Elas indicam aspectos que merecem ser investigados em entrevista, período de experiência, onboarding e plano de desenvolvimento. O resultado deve ser analisado em conjunto com experiência, competências técnicas, histórico profissional e desempenho observado.'
+  );
 }
 
 // ---------------------------------------------------------------------------
