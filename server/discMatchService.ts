@@ -1,3 +1,5 @@
+import { COMPETENCIA_DISC } from '../shared/competenciaDiscMatrix';
+
 /**
  * EcoDISC 360 - Servico de calculo de aderencia (match) comportamental.
  *
@@ -459,4 +461,60 @@ export function buildJustificativasMatchCargo(
   }
 
   return justificativas;
+}
+
+// ---------------------------------------------------------------------------
+// Bloco 6 - Pontos fortes / pontos de atencao via Matriz Competencia x DISC,
+// a partir dos eixos DISC dominantes do cargo (perfil predominante + secundario)
+// comparados ao perfil predominante do profissional. Reaproveita COMPETENCIA_DISC
+// (shared/competenciaDiscMatrix.ts), que ja descreve a tendencia de facilidade
+// ('Alta' | 'Moderada' | 'Condicionada') de cada eixo DISC para cada competencia
+// do catalogo B.E.M., e o texto de desenvolvimento ('ponto') para quem tem menor
+// facilidade tendencial naquela competencia.
+// ---------------------------------------------------------------------------
+
+export type PontoForteCompetencia = { competencia: string };
+export type PontoAtencaoCompetencia = { competencia: string; dica: string };
+
+export type CorrelacaoCompetenciasResult = {
+  perfilCargo: string; // ex: "D/I" (predominante/secundario do cargo)
+  perfilPessoa: keyof DiscScores;
+  pontosFortes: PontoForteCompetencia[];
+  pontosAtencao: PontoAtencaoCompetencia[];
+};
+
+const MAX_PONTOS_FORTES_COMPETENCIA = 10;
+const MAX_PONTOS_ATENCAO_COMPETENCIA = 6;
+
+export function buildCorrelacaoCompetencias(
+  pessoaScores: DiscScores,
+  cargoScores: DiscScores
+): CorrelacaoCompetenciasResult {
+  const cargoPerfil = determinarPerfil(cargoScores);
+  const pessoaPerfil = determinarPerfil(pessoaScores);
+  const eixosDominantesCargo: (keyof DiscScores)[] = [cargoPerfil.predominante, cargoPerfil.secundario];
+  const eixoPessoa = pessoaPerfil.predominante;
+
+  const pontosFortes: PontoForteCompetencia[] = [];
+  const pontosAtencao: PontoAtencaoCompetencia[] = [];
+
+  for (const [competencia, porEixo] of Object.entries(COMPETENCIA_DISC)) {
+    const infoPessoa = porEixo[eixoPessoa];
+    if (!infoPessoa) continue;
+    const cargoTemAlta = eixosDominantesCargo.some((eixo) => porEixo[eixo]?.facilidade === 'Alta');
+    if (!cargoTemAlta) continue;
+
+    if (infoPessoa.facilidade === 'Alta' && pontosFortes.length < MAX_PONTOS_FORTES_COMPETENCIA) {
+      pontosFortes.push({ competencia });
+    } else if (infoPessoa.facilidade === 'Condicionada' && pontosAtencao.length < MAX_PONTOS_ATENCAO_COMPETENCIA) {
+      pontosAtencao.push({ competencia, dica: infoPessoa.ponto });
+    }
+  }
+
+  return {
+    perfilCargo: cargoPerfil.sugerido,
+    perfilPessoa: eixoPessoa,
+    pontosFortes,
+    pontosAtencao,
+  };
 }

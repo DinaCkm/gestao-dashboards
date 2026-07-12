@@ -29,7 +29,7 @@ import {
   type InsertDiscMatch,
   type InsertDiscGeneratedReport,
 } from "../drizzle/schema";
-import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore, determinarPerfil, calcularIndiceMatchCargo, buildJustificativasMatchCargo } from "./discMatchService";
+import { calculateFullMatch, type DiscScores, calcularPerfilDiretoriaPorGrupo, type PessoaComScore, determinarPerfil, calcularIndiceMatchCargo, buildJustificativasMatchCargo, buildCorrelacaoCompetencias } from "./discMatchService";
 import { calcularDiscCargo, avaliarDivergenciaValidacao, obterFaixaTextoCargo, type RespostaRole, type RespostaValidacaoCargo } from "./discRoleService";
 import {
   calcularDiscCulturaEmpresa,
@@ -1091,6 +1091,7 @@ export async function getResultadoMatch(database: DbClient, input: GetResultadoM
           detalhePorIndicador: null,
           identico: false,
           justificativas: [],
+          correlacaoCompetencias: null,
           semDiscConcluido: true,
         };
       }
@@ -1103,6 +1104,8 @@ export async function getResultadoMatch(database: DbClient, input: GetResultadoM
       const { indiceMatch, detalhePorIndicador, identico } = calcularIndiceMatchCargo(scores, cargoScores);
       const justificativas = buildJustificativasMatchCargo(scores, cargoScores);
 
+      const correlacaoCompetencias = buildCorrelacaoCompetencias(scores, cargoScores);
+
       return {
         alunoId,
         nome,
@@ -1111,6 +1114,7 @@ export async function getResultadoMatch(database: DbClient, input: GetResultadoM
         detalhePorIndicador,
         identico,
         justificativas,
+        correlacaoCompetencias,
         semDiscConcluido: false,
       };
     })
