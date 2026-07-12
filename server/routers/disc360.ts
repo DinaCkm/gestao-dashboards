@@ -729,4 +729,24 @@ export const disc360Router = router({
       const database = await requireDatabase();
       return responderConviteCulturaEmpresa(database, input);
     }),
+  // =====================================================================
+  // Admin: Sincronizar permissões do EcoDISC 360 (endpoint de manutenção)
+  // =====================================================================
+  syncAdminPermissions: protectedProcedure
+    .query(async ({ ctx }) => {
+      const userRole = (ctx as any)?.user?.role;
+      if (userRole !== "admin" && userRole !== "admin2") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Apenas administradores podem sincronizar permissões do EcoDISC 360",
+        });
+      }
+      const database = await requireDatabase();
+      await syncDisc360Permissions(database);
+      return {
+        success: true,
+        message: "✅ Permissões do EcoDISC 360 sincronizadas para todos os administradores",
+        timestamp: new Date().toISOString(),
+      };
+    }),
 });
