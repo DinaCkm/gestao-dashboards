@@ -57,34 +57,34 @@ async function startServer() {
     })
   );
 
-  // development mode uses Vite, production mode uses static files
-  if (process.env.NODE_ENV === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  const port = parseInt(process.env.PORT || "3000");
 
-  // Endpoint de diagnóstico para verificar qual versão está rodando
+  // Endpoints operacionais devem ser registrados antes do fallback da SPA.
   app.get("/api/build-info", (_req, res) => {
     res.json({
       environment: process.env.NODE_ENV || "unknown",
       port,
       timestamp: new Date().toISOString(),
       deploymentId: process.env.RAILWAY_DEPLOYMENT_ID || "unknown",
+      commitSha: process.env.RAILWAY_GIT_COMMIT_SHA || "unknown",
     });
   });
 
-  // Health check endpoint
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // Endpoint para verificar se o módulo EcoDISC 360 está disponível
   app.get("/api/disc360/status", (_req, res) => {
     res.json({ status: "available", module: "disc360", timestamp: new Date().toISOString() });
   });
 
-  const port = parseInt(process.env.PORT || "3000");
+  // development mode uses Vite, production mode uses static files.
+  // O middleware estático possui fallback para index.html e precisa ser o último.
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);

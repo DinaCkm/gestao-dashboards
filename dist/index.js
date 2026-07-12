@@ -22,18 +22,22 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // shared/const.ts
 var const_exports = {};
 __export(const_exports, {
+  ADMIN_BACKUP_COOKIE_NAME: () => ADMIN_BACKUP_COOKIE_NAME,
   AXIOS_TIMEOUT_MS: () => AXIOS_TIMEOUT_MS,
   COOKIE_NAME: () => COOKIE_NAME,
+  MASTER_CPF: () => MASTER_CPF,
   NOT_ADMIN_ERR_MSG: () => NOT_ADMIN_ERR_MSG,
   ONE_YEAR_MS: () => ONE_YEAR_MS,
   TWO_HOURS_MS: () => TWO_HOURS_MS,
   UNAUTHED_ERR_MSG: () => UNAUTHED_ERR_MSG
 });
-var COOKIE_NAME, ONE_YEAR_MS, TWO_HOURS_MS, AXIOS_TIMEOUT_MS, UNAUTHED_ERR_MSG, NOT_ADMIN_ERR_MSG;
+var COOKIE_NAME, ADMIN_BACKUP_COOKIE_NAME, MASTER_CPF, ONE_YEAR_MS, TWO_HOURS_MS, AXIOS_TIMEOUT_MS, UNAUTHED_ERR_MSG, NOT_ADMIN_ERR_MSG;
 var init_const = __esm({
   "shared/const.ts"() {
     "use strict";
     COOKIE_NAME = "app_session_id";
+    ADMIN_BACKUP_COOKIE_NAME = "app_admin_backup";
+    MASTER_CPF = "00000000001";
     ONE_YEAR_MS = 1e3 * 60 * 60 * 24 * 365;
     TWO_HOURS_MS = 1e3 * 60 * 60 * 2;
     AXIOS_TIMEOUT_MS = 3e4;
@@ -64,6 +68,7 @@ __export(schema_exports, {
   autopercepcoesCompetencias: () => autopercepcoesCompetencias,
   avaliacoesAtividade: () => avaliacoesAtividade,
   calculationFormulas: () => calculationFormulas,
+  cargos: () => cargos,
   caseInteresses: () => caseInteresses,
   casesSucesso: () => casesSucesso,
   certificationSignatures: () => certificationSignatures,
@@ -79,8 +84,18 @@ __export(schema_exports, {
   cursosCompetencias: () => cursosCompetencias,
   dashboardMetrics: () => dashboardMetrics,
   departments: () => departments,
+  devolutivaSlots: () => devolutivaSlots,
+  discAssessmentAnswers: () => discAssessmentAnswers,
+  discAssessments: () => discAssessments,
+  discCultureSurveyAnswers: () => discCultureSurveyAnswers,
+  discDiretoriaMembros: () => discDiretoriaMembros,
+  discGeneratedReports: () => discGeneratedReports,
+  discMatches: () => discMatches,
+  discOrgProfiles: () => discOrgProfiles,
   discRespostas: () => discRespostas,
   discResultados: () => discResultados,
+  discRoleProfiles: () => discRoleProfiles,
+  discRoleSurveyAnswers: () => discRoleSurveyAnswers,
   emailAlertasLog: () => emailAlertasLog,
   eventParticipation: () => eventParticipation,
   events: () => events,
@@ -133,7 +148,7 @@ __export(schema_exports, {
   users: () => users
 });
 import { int, tinyint, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, date, boolean } from "drizzle-orm/mysql-core";
-var users, programs, consultors, turmas, trilhas, competencias, ciclosExecucao, cicloCompetencias, planoIndividual, alunos, mentoringSessions, events, eventParticipation, uploadBatches, uploadedFiles, dashboardMetrics, reports, assessmentPdi, assessmentCompetencias, performanceUploads, studentPerformance, departments, calculationFormulas, processedData, taskLibrary, scheduledWebinars, announcements, contratosAluno, contratoNiveis, certificationTemplates, certificationSignatures, nivelCertificates, nivelCertificateMentoras, historicoNivelCompetencia, casesSucesso, caseInteresses, practicalActivityComments, mentorAvailability, mentorAppointments, appointmentParticipants, metas, metaAcompanhamento, discRespostas, discResultados, autopercepcoesCompetencias, mentoraContribuicoes, inAppNotifications, courses, activities, activityRegistrations, activityTurmas, mentorSessionPricing, mentorSessionTypePricing, mentorDateAvailability, emailAlertasLog, psEmailLog, onboardingJornada, onboardingVideos, onboardingRevisoes, competenciasModulos, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCompetenciaProrrogacao, cursosCompetencias, atividadesCurso, TIPOS_ATIVIDADE, avaliacoesAtividade, tentativasAvaliacao, alunoCursoAtribuido, alunoAtividadeProgresso, sessoesEstudoAtividade, fichasPedagogicasCompetencias, fichasPedagogicasConteudos, historicoCiclosAluno, processosSeletivos, processoVagas, processoRegioes, processoClienteUsuarios, processoCandidatos, processoAgendasGrupo, processoAgendaSlots, processoEntrevistas, processoResultados, processoPublicacoesMapa, processoLogs;
+var users, programs, consultors, turmas, trilhas, competencias, ciclosExecucao, cicloCompetencias, planoIndividual, alunos, mentoringSessions, events, eventParticipation, uploadBatches, uploadedFiles, dashboardMetrics, reports, assessmentPdi, assessmentCompetencias, performanceUploads, studentPerformance, departments, cargos, calculationFormulas, processedData, taskLibrary, scheduledWebinars, announcements, contratosAluno, contratoNiveis, certificationTemplates, certificationSignatures, nivelCertificates, nivelCertificateMentoras, historicoNivelCompetencia, casesSucesso, caseInteresses, practicalActivityComments, mentorAvailability, mentorAppointments, appointmentParticipants, metas, metaAcompanhamento, discRespostas, discResultados, autopercepcoesCompetencias, mentoraContribuicoes, inAppNotifications, courses, activities, activityRegistrations, activityTurmas, mentorSessionPricing, mentorSessionTypePricing, mentorDateAvailability, emailAlertasLog, psEmailLog, onboardingJornada, onboardingVideos, onboardingRevisoes, competenciasModulos, alunoModuloProgresso, alunoModuloRelato, alunoModuloAvaliacao, alunoCompetenciaProrrogacao, cursosCompetencias, atividadesCurso, TIPOS_ATIVIDADE, avaliacoesAtividade, tentativasAvaliacao, alunoCursoAtribuido, alunoAtividadeProgresso, sessoesEstudoAtividade, fichasPedagogicasCompetencias, fichasPedagogicasConteudos, historicoCiclosAluno, processosSeletivos, processoVagas, processoRegioes, processoClienteUsuarios, processoCandidatos, processoAgendasGrupo, processoAgendaSlots, processoEntrevistas, processoResultados, processoPublicacoesMapa, processoLogs, devolutivaSlots, discAssessments, discAssessmentAnswers, discRoleProfiles, discOrgProfiles, discMatches, discGeneratedReports, discCultureSurveyAnswers, discRoleSurveyAnswers, discDiretoriaMembros;
 var init_schema = __esm({
   "drizzle/schema.ts"() {
     "use strict";
@@ -313,6 +328,7 @@ var init_schema = __esm({
       // Nº total de sessões de mentoria contratadas
       telefone: varchar("telefone", { length: 20 }),
       cargo: varchar("cargo", { length: 255 }),
+      departmentId: int("departmentId"),
       areaAtuacao: varchar("areaAtuacao", { length: 255 }),
       minicurriculo: text("minicurriculo"),
       quemEVoce: text("quemEVoce"),
@@ -408,6 +424,8 @@ var init_schema = __esm({
       // Tipo da sessão para precificação
       appointmentId: int("appointmentId"),
       // FK para mentor_appointments (vínculo sessão ↔ agendamento)
+      cancelada: int("cancelada").default(0),
+      // 0 = ativa, 1 = cancelada (soft delete)
       createdAt: timestamp("createdAt").defaultNow().notNull()
     });
     events = mysqlTable("events", {
@@ -637,8 +655,22 @@ var init_schema = __esm({
       name: varchar("name", { length: 255 }).notNull(),
       description: text("description"),
       managerId: int("managerId"),
+      // Lider do departamento - referencia alunos.id (qualquer aluno/colaborador da empresa)
+      programId: int("programId"),
+      // Empresa/programa ao qual o departamento pertence
+      parentDepartmentId: int("parentDepartmentId"),
+      // Departamento pai, para hierarquia (null = departamento raiz)
+      isActive: int("isActive").default(1).notNull(),
       createdAt: timestamp("createdAt").defaultNow().notNull(),
       updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    cargos = mysqlTable("cargos", {
+      id: int("id").autoincrement().primaryKey(),
+      programId: int("programId").notNull(),
+      name: varchar("name", { length: 255 }).notNull(),
+      description: text("description"),
+      isActive: int("isActive").default(1).notNull(),
+      createdAt: timestamp("createdAt").defaultNow().notNull()
     });
     calculationFormulas = mysqlTable("calculation_formulas", {
       id: int("id").autoincrement().primaryKey(),
@@ -1460,7 +1492,7 @@ var init_schema = __esm({
       id: int("id").autoincrement().primaryKey(),
       cursoId: int("cursoId").notNull(),
       titulo: varchar("titulo", { length: 255 }).notNull(),
-      tipoAtividade: mysqlEnum("tipoAtividade", ["genially", "video", "podcast", "tedtalk", "livro", "intro"]).notNull(),
+      tipoAtividade: mysqlEnum("tipoAtividade", ["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf"]).notNull(),
       urlGenially: text("urlGenially"),
       urlMidia: text("urlMidia"),
       imagemUrl: text("imagemUrl"),
@@ -1717,7 +1749,7 @@ var init_schema = __esm({
       inicio: varchar("inicio", { length: 5 }).notNull(),
       fim: varchar("fim", { length: 5 }).notNull(),
       linkEntrevista: varchar("linkEntrevista", { length: 500 }),
-      status: mysqlEnum("status", ["disponivel", "reservado", "confirmado", "realizado", "cancelado", "bloqueado"]).default("disponivel").notNull(),
+      status: mysqlEnum("status", ["disponivel", "reservado", "confirmado", "realizado", "cancelado", "bloqueado", "suspenso"]).default("disponivel").notNull(),
       emailConvocacaoEnviado: int("emailConvocacaoEnviado").default(0).notNull(),
       emailConvocacaoEnviadoEm: timestamp("emailConvocacaoEnviadoEm"),
       createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1780,6 +1812,239 @@ var init_schema = __esm({
       acao: varchar("acao", { length: 120 }).notNull(),
       detalhe: text("detalhe"),
       metadata: json("metadata"),
+      createdAt: timestamp("createdAt").defaultNow().notNull()
+    });
+    devolutivaSlots = mysqlTable("devolutiva_slots", {
+      id: int("id").autoincrement().primaryKey(),
+      processoId: int("processoId").notNull(),
+      // FK para processos_seletivos
+      consultorId: int("consultorId").notNull(),
+      // FK para consultors (mentora)
+      elegiveisResultado: mysqlEnum("elegiveisResultado", ["habilitados", "inabilitados", "ambos"]).default("ambos").notNull(),
+      specificDate: varchar("specificDate", { length: 10 }).notNull(),
+      // "2026-07-15"
+      startTime: varchar("startTime", { length: 5 }).notNull(),
+      // "09:00"
+      endTime: varchar("endTime", { length: 5 }).notNull(),
+      // "10:00"
+      googleMeetLink: varchar("googleMeetLink", { length: 500 }),
+      candidatoId: int("candidatoId"),
+      // null = disponível, preenchido = reservado
+      reservadoEm: timestamp("reservadoEm"),
+      emailConfirmacaoEnviado: int("emailConfirmacaoEnviado").default(0).notNull(),
+      emailLembreteEnviado: int("emailLembreteEnviado").default(0).notNull(),
+      status: mysqlEnum("status", ["disponivel", "reservado", "cancelado"]).default("disponivel").notNull(),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    discAssessments = mysqlTable("disc_assessments", {
+      id: int("id").autoincrement().primaryKey(),
+      programId: int("programId").notNull(),
+      alunoId: int("alunoId"),
+      cargoProfileId: int("cargoProfileId"),
+      orgProfileId: int("orgProfileId"),
+      assessmentType: mysqlEnum("assessmentType", [
+        "empregado",
+        "cargo",
+        "empresa",
+        "diretoria"
+      ]).notNull(),
+      respondedByUserId: int("respondedByUserId"),
+      status: mysqlEnum("status", ["pendente", "rascunho", "concluido", "arquivado"]).default("rascunho").notNull(),
+      scores: json("scores"),
+      rawScores: json("rawScores"),
+      perfilPredominante: mysqlEnum("perfilPredominante", ["D", "I", "S", "C"]),
+      perfilSecundario: mysqlEnum("perfilSecundario", ["D", "I", "S", "C"]),
+      indiceConsistencia: decimal("indiceConsistencia", { precision: 5, scale: 2 }),
+      alertaBaixaDiferenciacao: boolean("alertaBaixaDiferenciacao").default(false),
+      completedAt: timestamp("completedAt"),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+      respondentName: varchar("respondentName", { length: 255 }),
+      // Nome do respondente convidado (quando nao possui conta no sistema)
+      respondentEmail: varchar("respondentEmail", { length: 320 }),
+      // Email do respondente convidado
+      conviteToken: varchar("conviteToken", { length: 64 }),
+      // Token unico do link de convite (resposta sem login)
+      papelRespondente: mysqlEnum("papelRespondente", ["lider", "empregado"]),
+      // Papel do respondente no questionario de Perfil do Cargo
+      respostaValidacaoD: int("respostaValidacaoD"),
+      // Regua 0-100 (D): percepcao direta do respondente sobre exigencia de Dominancia
+      respostaValidacaoI: int("respostaValidacaoI"),
+      // Regua 0-100 (I): percepcao direta do respondente sobre exigencia de Influencia
+      respostaValidacaoS: int("respostaValidacaoS"),
+      // Regua 0-100 (S): percepcao direta do respondente sobre exigencia de Estabilidade
+      respostaValidacaoC: int("respostaValidacaoC")
+      // Regua 0-100 (C): percepcao direta do respondente sobre exigencia de Conformidade
+    });
+    discAssessmentAnswers = mysqlTable("disc_assessment_answers", {
+      id: int("id").autoincrement().primaryKey(),
+      assessmentId: int("assessmentId").notNull(),
+      blocoIndex: int("blocoIndex").notNull(),
+      maisId: varchar("maisId", { length: 20 }).notNull(),
+      menosId: varchar("menosId", { length: 20 }).notNull(),
+      maisDimensao: mysqlEnum("maisDimensao", ["D", "I", "S", "C"]).notNull(),
+      menosDimensao: mysqlEnum("menosDimensao", ["D", "I", "S", "C"]).notNull(),
+      createdAt: timestamp("createdAt").defaultNow().notNull()
+    });
+    discRoleProfiles = mysqlTable("disc_role_profiles", {
+      id: int("id").autoincrement().primaryKey(),
+      programId: int("programId").notNull(),
+      departmentId: int("departmentId"),
+      cargoNome: varchar("cargoNome", { length: 255 }).notNull(),
+      cargoCodigo: varchar("cargoCodigo", { length: 50 }),
+      leaderUserId: int("leaderUserId"),
+      createdByUserId: int("createdByUserId"),
+      expectedScores: json("expectedScores"),
+      perfilEsperado: varchar("perfilEsperado", { length: 10 }),
+      nivelAutonomia: mysqlEnum("nivelAutonomia", ["baixo", "medio", "alto"]),
+      nivelPressao: mysqlEnum("nivelPressao", ["baixo", "medio", "alto"]),
+      necessidadeRelacionamento: mysqlEnum("necessidadeRelacionamento", [
+        "baixa",
+        "media",
+        "alta"
+      ]),
+      necessidadeAnaliseTecnica: mysqlEnum("necessidadeAnaliseTecnica", [
+        "baixa",
+        "media",
+        "alta"
+      ]),
+      necessidadeRotinaProcesso: mysqlEnum("necessidadeRotinaProcesso", [
+        "baixa",
+        "media",
+        "alta"
+      ]),
+      descricao: text("descricao"),
+      isActive: int("isActive").default(1).notNull(),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    discOrgProfiles = mysqlTable("disc_org_profiles", {
+      id: int("id").autoincrement().primaryKey(),
+      programId: int("programId").notNull(),
+      departmentId: int("departmentId"),
+      profileType: mysqlEnum("profileType", ["empresa", "diretoria"]).notNull(),
+      profileName: varchar("profileName", { length: 255 }).notNull(),
+      expectedScores: json("expectedScores"),
+      perfilDesejado: varchar("perfilDesejado", { length: 10 }),
+      culturalDescription: text("culturalDescription"),
+      competenciasValorizadas: json("competenciasValorizadas"),
+      approvedByUserId: int("approvedByUserId"),
+      isActive: int("isActive").default(1).notNull(),
+      validFrom: date("validFrom"),
+      validTo: date("validTo"),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+      origemPerfil: mysqlEnum("origemPerfil", ["manual", "questionario", "grupo_diretores"]),
+      statusConsistencia: mysqlEnum("statusConsistencia", ["previa", "suficiente"]),
+      totalRespondentes: int("totalRespondentes")
+    });
+    discMatches = mysqlTable("disc_matches", {
+      id: int("id").autoincrement().primaryKey(),
+      programId: int("programId").notNull(),
+      alunoId: int("alunoId").notNull(),
+      employeeAssessmentId: int("employeeAssessmentId").notNull(),
+      cargoProfileId: int("cargoProfileId"),
+      orgProfileId: int("orgProfileId"),
+      matchEmployeeRole: decimal("matchEmployeeRole", { precision: 5, scale: 2 }),
+      matchEmployeeOrg: decimal("matchEmployeeOrg", { precision: 5, scale: 2 }),
+      matchRoleOrg: decimal("matchRoleOrg", { precision: 5, scale: 2 }),
+      matchOverall: decimal("matchOverall", { precision: 5, scale: 2 }),
+      classificationEmployeeRole: mysqlEnum("classificationEmployeeRole", [
+        "alto",
+        "bom",
+        "medio",
+        "baixo",
+        "desalinhado"
+      ]),
+      classificationEmployeeOrg: mysqlEnum("classificationEmployeeOrg", [
+        "alto",
+        "bom",
+        "medio",
+        "baixo",
+        "desalinhado"
+      ]),
+      classificationRoleOrg: mysqlEnum("classificationRoleOrg", [
+        "alto",
+        "bom",
+        "medio",
+        "baixo",
+        "desalinhado"
+      ]),
+      classificationOverall: mysqlEnum("classificationOverall", [
+        "alto",
+        "bom",
+        "medio",
+        "baixo",
+        "desalinhado"
+      ]),
+      strengths: json("strengths"),
+      gaps: json("gaps"),
+      risks: json("risks"),
+      recommendations: json("recommendations"),
+      calculatedAt: timestamp("calculatedAt"),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    discGeneratedReports = mysqlTable("disc_generated_reports", {
+      id: int("id").autoincrement().primaryKey(),
+      programId: int("programId").notNull(),
+      alunoId: int("alunoId"),
+      departmentId: int("departmentId"),
+      assessmentId: int("assessmentId"),
+      matchId: int("matchId"),
+      reportType: mysqlEnum("reportType", [
+        "individual",
+        "cargo",
+        "empresa",
+        "diretoria",
+        "match",
+        "integrado",
+        "gerencial",
+        "matriz"
+      ]).notNull(),
+      fileUrl: text("fileUrl"),
+      generatedByUserId: int("generatedByUserId"),
+      generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+      version: varchar("version", { length: 20 }),
+      status: mysqlEnum("status", ["ativo", "arquivado", "substituido"]).default("ativo").notNull(),
+      createdAt: timestamp("createdAt").defaultNow().notNull(),
+      updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull()
+    });
+    discCultureSurveyAnswers = mysqlTable("disc_culture_survey_answers", {
+      id: int("id").autoincrement().primaryKey(),
+      assessmentId: int("assessmentId").notNull(),
+      questionId: varchar("questionId", { length: 20 }).notNull(),
+      maisId: varchar("maisId", { length: 20 }).notNull(),
+      // ID da alternativa "mais representa" (ex: q1_D)
+      menosId: varchar("menosId", { length: 20 }).notNull(),
+      // ID da alternativa "menos representa" (ex: q1_S)
+      maisDimensao: mysqlEnum("maisDimensao", ["D", "I", "S", "C"]).notNull(),
+      // Dimensao do "mais"
+      menosDimensao: mysqlEnum("menosDimensao", ["D", "I", "S", "C"]).notNull(),
+      // Dimensao do "menos"
+      createdAt: timestamp("createdAt").defaultNow().notNull()
+    });
+    discRoleSurveyAnswers = mysqlTable("disc_role_survey_answers", {
+      id: int("id").autoincrement().primaryKey(),
+      assessmentId: int("assessmentId").notNull(),
+      questionId: varchar("questionId", { length: 20 }).notNull(),
+      maisId: varchar("maisId", { length: 20 }).notNull(),
+      // ID da alternativa "mais representa" (ex: q1_D)
+      menosId: varchar("menosId", { length: 20 }).notNull(),
+      // ID da alternativa "menos representa" (ex: q1_S)
+      maisDimensao: mysqlEnum("maisDimensao", ["D", "I", "S", "C"]).notNull(),
+      // Dimensao do "mais"
+      menosDimensao: mysqlEnum("menosDimensao", ["D", "I", "S", "C"]).notNull(),
+      // Dimensao do "menos"
+      createdAt: timestamp("createdAt").defaultNow().notNull()
+    });
+    discDiretoriaMembros = mysqlTable("disc_diretoria_membros", {
+      id: int("id").autoincrement().primaryKey(),
+      orgProfileId: int("orgProfileId").notNull(),
+      // FK para disc_org_profiles (perfil da diretoria)
+      alunoId: int("alunoId").notNull(),
+      // FK para alunos (diretor selecionado)
       createdAt: timestamp("createdAt").defaultNow().notNull()
     });
   }
@@ -1967,6 +2232,7 @@ __export(db_exports, {
   createAlunoDireto: () => createAlunoDireto,
   createAnnouncement: () => createAnnouncement,
   createAssessmentPdi: () => createAssessmentPdi,
+  createCargo: () => createCargo,
   createCaseInteresse: () => createCaseInteresse,
   createCaseSucesso: () => createCaseSucesso,
   createCertificationSignature: () => createCertificationSignature,
@@ -1998,6 +2264,7 @@ __export(db_exports, {
   createUploadBatch: () => createUploadBatch,
   createUploadedFile: () => createUploadedFile,
   createWebinar: () => createWebinar,
+  createWebinarTaskTemplate: () => createWebinarTaskTemplate,
   criarAtribuicaoCurso: () => criarAtribuicaoCurso,
   deactivateFormula: () => deactivateFormula,
   deleteAccessUser: () => deleteAccessUser,
@@ -2020,17 +2287,21 @@ __export(db_exports, {
   deleteTrilha: () => deleteTrilha,
   deleteUploadedFile: () => deleteUploadedFile,
   deleteWebinar: () => deleteWebinar,
+  deleteWebinarTaskTemplate: () => deleteWebinarTaskTemplate,
   descongelarAssessmentPdi: () => descongelarAssessmentPdi,
   determinePlataformaAulas: () => determinePlataformaAulas,
   ensureAuditoriaNotesMentoriaTable: () => ensureAuditoriaNotesMentoriaTable,
   ensureBibliotecaPedagogicaTables: () => ensureBibliotecaPedagogicaTables,
+  ensureDevolutivasTables: () => ensureDevolutivasTables,
   ensureEventForWebinar: () => ensureEventForWebinar,
   ensureGoogleCalendarColumns: () => ensureGoogleCalendarColumns,
   ensureHistoricoCiclosTable: () => ensureHistoricoCiclosTable,
+  ensurePdfAtividadeSupport: () => ensurePdfAtividadeSupport,
   ensurePerfilProfissionalColumns: () => ensurePerfilProfissionalColumns,
   ensureProcessoSeletivoColumns: () => ensureProcessoSeletivoColumns,
   ensureRelatorioEntrevistaColumns: () => ensureRelatorioEntrevistaColumns,
   ensureRelatorioMentoriasLogTable: () => ensureRelatorioMentoriasLogTable,
+  generateWebinarInternalTasks: () => generateWebinarInternalTasks,
   getAccessUsers: () => getAccessUsers,
   getActiveCertificationTemplateByNivel: () => getActiveCertificationTemplateByNivel,
   getActiveConsultors: () => getActiveConsultors,
@@ -2116,6 +2387,7 @@ __export(db_exports, {
   getAutopercepcoes: () => getAutopercepcoes,
   getAutopercepcoesByNivel: () => getAutopercepcoesByNivel,
   getAvaliacaoByAtividade: () => getAvaliacaoByAtividade,
+  getCargosByProgram: () => getCargosByProgram,
   getCaseInteressesByAutor: () => getCaseInteressesByAutor,
   getCaseSucessoById: () => getCaseSucessoById,
   getCasesForCalculator: () => getCasesForCalculator,
@@ -2126,6 +2398,7 @@ __export(db_exports, {
   getCertificationSignatures: () => getCertificationSignatures,
   getCertificationTemplates: () => getCertificationTemplates,
   getCiclosByAluno: () => getCiclosByAluno,
+  getCiclosCongeladosParaCalculator: () => getCiclosCongeladosParaCalculator,
   getCiclosDerivadosDoPdi: () => getCiclosDerivadosDoPdi,
   getCiclosForCalculator: () => getCiclosForCalculator,
   getCommentsBySessionId: () => getCommentsBySessionId,
@@ -2155,6 +2428,7 @@ __export(db_exports, {
   getDataUltimoResetAluno: () => getDataUltimoResetAluno,
   getDb: () => getDb,
   getDepartmentById: () => getDepartmentById,
+  getDepartmentsByProgram: () => getDepartmentsByProgram,
   getDiscRespostas: () => getDiscRespostas,
   getDiscResultado: () => getDiscResultado,
   getDiscResultadoByNivel: () => getDiscResultadoByNivel,
@@ -2248,6 +2522,9 @@ __export(db_exports, {
   getUsersByDepartment: () => getUsersByDepartment,
   getWebinarById: () => getWebinarById,
   getWebinarReflections: () => getWebinarReflections,
+  getWebinarResponsibles: () => getWebinarResponsibles,
+  getWebinarTasksByWebinar: () => getWebinarTasksByWebinar,
+  getWebinarTasksSummary: () => getWebinarTasksSummary,
   getWebinarsPendingAttendance: () => getWebinarsPendingAttendance,
   hasWatchedDiscVideo: () => hasWatchedDiscVideo,
   insertDashboardMetrics: () => insertDashboardMetrics,
@@ -2267,6 +2544,7 @@ __export(db_exports, {
   listAnnouncements: () => listAnnouncements,
   listPastWebinars: () => listPastWebinars,
   listUpcomingWebinars: () => listUpcomingWebinars,
+  listWebinarTaskTemplates: () => listWebinarTaskTemplates,
   listWebinars: () => listWebinars,
   logAuditoriaNota: () => logAuditoriaNota,
   markAllNotificationsRead: () => markAllNotificationsRead,
@@ -2275,6 +2553,7 @@ __export(db_exports, {
   markDiscVideoWatched: () => markDiscVideoWatched,
   markNotificationRead: () => markNotificationRead,
   markWebinarAttendance: () => markWebinarAttendance,
+  migrarTipoSessaoGrupais: () => migrarTipoSessaoGrupais,
   onboardingRevisoesDb: () => onboardingRevisoesDb,
   promoteAlunoToGerente: () => promoteAlunoToGerente,
   registerForActivity: () => registerForActivity,
@@ -2284,6 +2563,7 @@ __export(db_exports, {
   removeGerenteRole: () => removeGerenteRole,
   removeMentorAvailability: () => removeMentorAvailability,
   removeMentorDateAvailability: () => removeMentorDateAvailability,
+  reorderWebinarTaskTemplates: () => reorderWebinarTaskTemplates,
   requestExtension: () => requestExtension,
   resetDiscAluno: () => resetDiscAluno,
   resetOnboardingLiberado: () => resetOnboardingLiberado,
@@ -2328,6 +2608,7 @@ __export(db_exports, {
   updateAssessmentCompetencia: () => updateAssessmentCompetencia,
   updateAssessmentCompetenciaFields: () => updateAssessmentCompetenciaFields,
   updateAssessmentPdi: () => updateAssessmentPdi,
+  updateCargo: () => updateCargo,
   updateCaseSucesso: () => updateCaseSucesso,
   updateCicloExecucao: () => updateCicloExecucao,
   updateCompetencia: () => updateCompetencia,
@@ -2358,6 +2639,9 @@ __export(db_exports, {
   updateUserDepartment: () => updateUserDepartment,
   updateUserRole: () => updateUserRole,
   updateWebinar: () => updateWebinar,
+  updateWebinarTaskResponsible: () => updateWebinarTaskResponsible,
+  updateWebinarTaskStatus: () => updateWebinarTaskStatus,
+  updateWebinarTaskTemplate: () => updateWebinarTaskTemplate,
   upsertAluno: () => upsertAluno,
   upsertConsultor: () => upsertConsultor,
   upsertMetaAcompanhamento: () => upsertMetaAcompanhamento,
@@ -2367,6 +2651,7 @@ __export(db_exports, {
   upsertTrilha: () => upsertTrilha,
   upsertTurma: () => upsertTurma,
   upsertUser: () => upsertUser,
+  upsertWebinarResponsibles: () => upsertWebinarResponsibles,
   validarNivelEmAndamentoUnico: () => validarNivelEmAndamentoUnico,
   verificarBloqueioAtividade: () => verificarBloqueioAtividade
 });
@@ -2514,6 +2799,29 @@ async function getAllDepartments() {
   const db2 = await getDb();
   if (!db2) return [];
   return await db2.select().from(departments).orderBy(departments.name);
+}
+async function getDepartmentsByProgram(programId, includeInactive = false) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const condition = includeInactive ? eq(departments.programId, programId) : and(eq(departments.programId, programId), eq(departments.isActive, 1));
+  return await db2.select().from(departments).where(condition).orderBy(departments.name);
+}
+async function getCargosByProgram(programId, includeInactive = false) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const condition = includeInactive ? eq(cargos.programId, programId) : and(eq(cargos.programId, programId), eq(cargos.isActive, 1));
+  return await db2.select().from(cargos).where(condition).orderBy(cargos.name);
+}
+async function createCargo(data) {
+  const db2 = await getDb();
+  if (!db2) return null;
+  const [result] = await db2.insert(cargos).values(data).$returningId();
+  return result;
+}
+async function updateCargo(id, data) {
+  const db2 = await getDb();
+  if (!db2) return null;
+  await db2.update(cargos).set(data).where(eq(cargos.id, id));
 }
 async function getDepartmentById(id) {
   const db2 = await getDb();
@@ -2998,6 +3306,14 @@ async function createMentoringSession(data) {
   if (!db2) throw new Error("Database not available");
   await assertNivelPermiteNovasAtribuicoes(data.alunoId, data.contratoNivelId, "mentoringSessions.create");
   const contratoNivelIdResolved = await resolveContratoNivelId(data.alunoId, data.contratoNivelId);
+  let tipoSessaoEfetivo = data.tipoSessao ?? "individual_normal";
+  if (data.appointmentId) {
+    const appt = await getAppointmentById(data.appointmentId);
+    if (appt?.type === "grupo") {
+      if (tipoSessaoEfetivo === "individual_normal") tipoSessaoEfetivo = "grupo_normal";
+      if (tipoSessaoEfetivo === "individual_assessment") tipoSessaoEfetivo = "grupo_assessment";
+    }
+  }
   const result = await db2.insert(mentoringSessions).values({
     alunoId: data.alunoId,
     contratoNivelId: contratoNivelIdResolved,
@@ -3019,7 +3335,7 @@ async function createMentoringSession(data) {
     taskMode: data.taskMode ?? "sem_tarefa",
     notaMentoraAplicabilidade: data.notaMentoraAplicabilidade ?? null,
     aplicabilidadeAvaliadaEm: data.aplicabilidadeAvaliadaEm ?? null,
-    tipoSessao: data.tipoSessao ?? "individual_normal",
+    tipoSessao: tipoSessaoEfetivo,
     appointmentId: data.appointmentId ?? null
   });
   return result[0].insertId;
@@ -3748,6 +4064,7 @@ async function updateAluno(alunoId, data) {
   if (data.turmaId !== void 0) updateData.turmaId = data.turmaId;
   if (data.telefone !== void 0) updateData.telefone = data.telefone;
   if (data.cargo !== void 0) updateData.cargo = data.cargo;
+  if (data.departmentId !== void 0) updateData.departmentId = data.departmentId;
   if (data.areaAtuacao !== void 0) updateData.areaAtuacao = data.areaAtuacao;
   if (data.minicurriculo !== void 0) updateData.minicurriculo = data.minicurriculo;
   if (data.quemEVoce !== void 0) updateData.quemEVoce = data.quemEVoce;
@@ -3805,7 +4122,8 @@ async function createAluno(data) {
     contratoInicio: data.contratoInicio ? new Date(data.contratoInicio) : null,
     contratoFim: data.contratoFim ? new Date(data.contratoFim) : null,
     tipoMentoria: data.tipoMentoria || "individual",
-    plataformaAulas: data.plataformaAulas || "sistema_interno"
+    plataformaAulas: data.plataformaAulas || "sistema_interno",
+    tipoPortal: data.tipoPortal || "desenvolvimento"
   });
   const alunoId = result.insertId;
   const openId = `access_user_${normalizedId}`;
@@ -4735,6 +5053,62 @@ async function getCiclosForCalculator(alunoId) {
         // allCompetenciaIds inclui TODAS (obrigatórias + opcionais) para exibição
         allCompetenciaIds: group.allCompIds,
         // Separar obrigatórias explicitamente
+        competenciaIdsObrigatorias: group.obrigatoriaIds
+      });
+    }
+  }
+  return result;
+}
+async function getCiclosCongeladosParaCalculator(alunoId) {
+  const dbConn2 = await getDb();
+  if (!dbConn2) return [];
+  const pdis = await dbConn2.select({
+    id: assessmentPdi.id,
+    trilhaId: assessmentPdi.trilhaId
+  }).from(assessmentPdi).where(sql`${assessmentPdi.alunoId} = ${alunoId} AND ${assessmentPdi.status} = 'congelado'`);
+  if (pdis.length === 0) return [];
+  const pdiIds = pdis.map((p) => p.id);
+  const allComps = await dbConn2.select({
+    id: assessmentCompetencias.id,
+    assessmentPdiId: assessmentCompetencias.assessmentPdiId,
+    competenciaId: assessmentCompetencias.competenciaId,
+    peso: assessmentCompetencias.peso,
+    microInicio: assessmentCompetencias.microInicio,
+    microTermino: assessmentCompetencias.microTermino
+  }).from(assessmentCompetencias).where(sql`${assessmentCompetencias.assessmentPdiId} IN (${sql.join(pdiIds.map((id) => sql`${id}`), sql`, `)})`);
+  const allTrilhas = await dbConn2.select({ id: trilhas.id, name: trilhas.name }).from(trilhas);
+  const trilhaMap = new Map(allTrilhas.map((t2) => [t2.id, t2.name]));
+  const allCompetencias = await dbConn2.select({ id: competencias.id, nome: competencias.nome }).from(competencias);
+  const compNomeMap = new Map(allCompetencias.map((c) => [c.id, c.nome]));
+  let autoId = 3e5;
+  const result = [];
+  for (const pdi of pdis) {
+    const trilhaNome = trilhaMap.get(pdi.trilhaId) || `Trilha ${pdi.trilhaId}`;
+    const comps = allComps.filter((c) => c.assessmentPdiId === pdi.id);
+    const cicloGroups = /* @__PURE__ */ new Map();
+    for (const comp of comps) {
+      if (!comp.microInicio || !comp.microTermino) continue;
+      const inicio = new Date(comp.microInicio).toISOString().split("T")[0];
+      const termino = new Date(comp.microTermino).toISOString().split("T")[0];
+      const key = `${inicio}|${termino}`;
+      const group = cicloGroups.get(key) || { allCompIds: [], obrigatoriaIds: [], inicio, termino };
+      group.allCompIds.push(comp.competenciaId);
+      if (comp.peso === "obrigatoria") group.obrigatoriaIds.push(comp.competenciaId);
+      cicloGroups.set(key, group);
+    }
+    const sortedGroups = Array.from(cicloGroups.entries()).sort((a, b) => a[1].inicio.localeCompare(b[1].inicio));
+    for (const [, group] of sortedGroups) {
+      if (group.allCompIds.length === 0) continue;
+      const namesForTitle = group.obrigatoriaIds.length > 0 ? group.obrigatoriaIds : group.allCompIds;
+      const allNames = namesForTitle.map((id) => compNomeMap.get(id) || `Comp ${id}`);
+      const compNames = allNames.length <= 2 ? allNames.join(", ") : `${allNames.slice(0, 2).join(", ")} +${allNames.length - 2}`;
+      result.push({
+        id: autoId++,
+        nomeCiclo: `${trilhaNome} - ${compNames}`,
+        dataInicio: group.inicio,
+        dataFim: group.termino,
+        competenciaIds: group.obrigatoriaIds,
+        allCompetenciaIds: group.allCompIds,
         competenciaIdsObrigatorias: group.obrigatoriaIds
       });
     }
@@ -5772,7 +6146,8 @@ async function getSessionProgressByAluno(alunoId) {
   }
   const sessions = await db2.select().from(mentoringSessions).where(and(
     eq(mentoringSessions.alunoId, alunoId),
-    eq(mentoringSessions.isAssessment, 0)
+    eq(mentoringSessions.isAssessment, 0),
+    eq(mentoringSessions.cancelada, 0)
   ));
   const sessoesRealizadas = sessions.length;
   const sessoesFaltantes = Math.max(0, totalSessoesEsperadas - sessoesRealizadas);
@@ -6125,16 +6500,45 @@ async function createWebinar(data) {
 async function updateWebinar(id, data) {
   const db2 = await getDb();
   if (!db2) throw new Error("DB not available");
+  const [oldWebinar] = await db2.select().from(scheduledWebinars).where(eq(scheduledWebinars.id, id)).limit(1);
   await db2.update(scheduledWebinars).set(data).where(eq(scheduledWebinars.id, id));
+  if (data.title && oldWebinar?.title && data.title !== oldWebinar.title) {
+    await db2.update(events).set({ title: data.title }).where(eq(events.externalId, `sw-${id}`));
+    if (oldWebinar.eventDate) {
+      await db2.update(events).set({ title: data.title }).where(and(
+        eq(events.title, oldWebinar.title),
+        eq(events.eventDate, oldWebinar.eventDate),
+        isNull(events.externalId)
+      ));
+    }
+  }
+  if (data.eventDate && oldWebinar?.eventDate && String(data.eventDate) !== String(oldWebinar.eventDate)) {
+    await db2.update(events).set({ eventDate: data.eventDate }).where(eq(events.externalId, `sw-${id}`));
+  }
 }
 async function deleteWebinar(id) {
   const db2 = await getDb();
   if (!db2) throw new Error("DB not available");
+  const [webinar] = await db2.select().from(scheduledWebinars).where(eq(scheduledWebinars.id, id)).limit(1);
   const linkedEvents = await db2.select().from(events).where(eq(events.externalId, `sw-${id}`));
   if (linkedEvents.length > 0) {
     const linkedEventIds = linkedEvents.map((e) => e.id);
     await db2.delete(eventParticipation).where(inArray(eventParticipation.eventId, linkedEventIds));
     await db2.delete(events).where(inArray(events.id, linkedEventIds));
+  }
+  if (webinar?.title && webinar?.eventDate) {
+    const sameEvents = await db2.select().from(events).where(
+      and(
+        eq(events.title, webinar.title),
+        eq(events.eventDate, webinar.eventDate),
+        isNull(events.externalId)
+      )
+    );
+    if (sameEvents.length > 0) {
+      const sameEventIds = sameEvents.map((e) => e.id);
+      await db2.delete(eventParticipation).where(inArray(eventParticipation.eventId, sameEventIds));
+      await db2.delete(events).where(inArray(events.id, sameEventIds));
+    }
   }
   await db2.delete(scheduledWebinars).where(eq(scheduledWebinars.id, id));
 }
@@ -6237,18 +6641,34 @@ async function getActiveStudentsWithIds(programId) {
   const db2 = await getDb();
   if (!db2) return [];
   if (programId) {
-    return await db2.select({ id: users.id, email: users.email, name: users.name }).from(users).where(and(
+    const byProgram = await db2.select({ id: users.id, email: users.email, name: users.name }).from(users).where(and(
       eq(users.role, "user"),
       eq(users.isActive, 1),
       eq(users.programId, programId),
       isNotNull(users.email)
     ));
+    return byProgram.filter((s) => {
+      if (!s.email) return false;
+      const email = s.email.toLowerCase();
+      if (email.endsWith("@test.com")) return false;
+      if (email.endsWith("@teste.com")) return false;
+      if (email.match(/^(turma|direto|contrato|aluno)-[a-z0-9]+-\d+@/)) return false;
+      return true;
+    });
   }
-  return await db2.select({ id: users.id, email: users.email, name: users.name }).from(users).where(and(
+  const allStudents = await db2.select({ id: users.id, email: users.email, name: users.name }).from(users).where(and(
     eq(users.role, "user"),
     eq(users.isActive, 1),
     isNotNull(users.email)
   ));
+  return allStudents.filter((s) => {
+    if (!s.email) return false;
+    const email = s.email.toLowerCase();
+    if (email.endsWith("@test.com")) return false;
+    if (email.endsWith("@teste.com")) return false;
+    if (email.match(/^(turma|direto|contrato|aluno)-[a-z0-9]+-\d+@/)) return false;
+    return true;
+  });
 }
 async function getActiveMentorsWithIds() {
   const db2 = await getDb();
@@ -6305,6 +6725,12 @@ async function getWebinarsPendingAttendance(alunoId) {
   if (!aluno) return [];
   const macroInicioMap = await getAlunoMacroInicioMap();
   const macroInicio = macroInicioMap.get(alunoId);
+  const db22 = await getDb();
+  let macroTermino = null;
+  if (db22) {
+    const pdis = await db22.select({ macroTermino: assessmentPdi.macroTermino }).from(assessmentPdi).where(and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.status, "ativo"))).limit(1);
+    if (pdis[0]?.macroTermino) macroTermino = new Date(pdis[0].macroTermino);
+  }
   const dbEventsRaw = aluno.programId ? await db2.select().from(events).where(
     or(eq(events.programId, aluno.programId), isNull(events.programId))
   ) : await db2.select().from(events);
@@ -6317,10 +6743,33 @@ async function getWebinarsPendingAttendance(alunoId) {
     const match = externalId.match(/^sw-(\d+)$/);
     return match ? Number(match[1]) : null;
   };
+  const swIdToDbEvent = /* @__PURE__ */ new Map();
+  for (const evt of dbEventsRaw) {
+    const swId = linkedWebinarId(evt.externalId);
+    if (swId) swIdToDbEvent.set(swId, evt);
+  }
+  const activeWebinarByDate = /* @__PURE__ */ new Map();
+  for (const sw of allScheduledWebinars) {
+    if (sw.eventDate) {
+      const dateStr = new Date(sw.eventDate).toISOString().split("T")[0];
+      activeWebinarByDate.set(dateStr, sw);
+    }
+  }
   const dbEvents = dbEventsRaw.filter((evt) => {
     const swId = linkedWebinarId(evt.externalId);
-    if (!swId) return true;
-    return allScheduledIds.has(swId);
+    if (swId) return allScheduledIds.has(swId);
+    if (evt.eventDate && evt.title) {
+      const dateStr = new Date(evt.eventDate).toISOString().split("T")[0];
+      const activeWebinar = activeWebinarByDate.get(dateStr);
+      if (activeWebinar && activeWebinar.title) {
+        const evtNorm = evt.title.toLowerCase().trim().replace(/\s+/g, " ");
+        const swNorm = activeWebinar.title.toLowerCase().trim().replace(/\s+/g, " ");
+        if (evtNorm !== swNorm && swIdToDbEvent.has(activeWebinar.id)) {
+          return false;
+        }
+      }
+    }
+    return true;
   });
   const existingEventTitlesNorm = new Set(dbEvents.map((e) => {
     if (!e.title) return "";
@@ -6467,7 +6916,9 @@ async function getWebinarsPendingAttendance(alunoId) {
     const videoLink = evt.videoLink || matchedWebinar?.youtubeLink || null;
     const isPresent = part?.status === "presente";
     const selfReported = !!part?.selfReportedAt;
-    const dentroDoMacrociclo = macroInicio ? evt.eventDate ? new Date(evt.eventDate) >= macroInicio : true : true;
+    const evtDate = evt.eventDate ? new Date(evt.eventDate) : null;
+    const dentroDoMacrociclo = macroInicio && evtDate ? evtDate >= macroInicio && (!macroTermino || evtDate <= macroTermino) : macroInicio ? evtDate ? evtDate >= macroInicio : true : true;
+    const isFutureEvent = evt.eventDate ? new Date(evt.eventDate) > now : false;
     return {
       eventId: evt.id,
       scheduledWebinarId: matchedWebinar?.id || null,
@@ -6475,7 +6926,7 @@ async function getWebinarsPendingAttendance(alunoId) {
       eventType: evt.eventType || "webinar",
       eventDate: evt.eventDate,
       videoLink,
-      status: isPresent ? "presente" : "ausente",
+      status: isPresent ? "presente" : isFutureEvent ? "pendente" : "ausente",
       selfReported,
       reflexao: part?.reflexao || null,
       selfReportedAt: part?.selfReportedAt || null,
@@ -7185,7 +7636,7 @@ async function getCaseSucessoById(id) {
 async function getCasesVitrineMural(limit = 12) {
   const db2 = await getDb();
   if (!db2) return [];
-  return db2.select({
+  const cases = await db2.select({
     caseId: casesSucesso.id,
     titulo: casesSucesso.titulo,
     resumoPublico: casesSucesso.resumoPublico,
@@ -7199,6 +7650,19 @@ async function getCasesVitrineMural(limit = 12) {
     isNotNull(casesSucesso.dataEntrega),
     isNotNull(casesSucesso.titulo)
   )).orderBy(desc(casesSucesso.dataEntrega), desc(casesSucesso.createdAt)).limit(limit);
+  const caseIds = cases.map((c) => c.caseId);
+  if (caseIds.length === 0) return cases.map((c) => ({ ...c, totalInteresses: 0 }));
+  const interesses = await db2.select({
+    caseId: caseInteresses.caseId
+  }).from(caseInteresses).where(inArray(caseInteresses.caseId, caseIds));
+  const interesseCount = /* @__PURE__ */ new Map();
+  for (const i of interesses) {
+    interesseCount.set(i.caseId, (interesseCount.get(i.caseId) || 0) + 1);
+  }
+  return cases.map((c) => {
+    const total = interesseCount.get(c.caseId) || 0;
+    return { ...c, alunoNome: c.autorNome, totalInteresses: total };
+  });
 }
 async function createCaseInteresse(data) {
   const db2 = await getDb();
@@ -7711,7 +8175,19 @@ async function getMentorAppointments(consultorId, filters) {
   const alunoMap = new Map(allAlunos.map((a) => [a.id, a]));
   const result = [];
   for (const appt of appointments) {
-    const participants = await db2.select().from(appointmentParticipants).where(eq(appointmentParticipants.appointmentId, appt.id));
+    let participants = await db2.select().from(appointmentParticipants).where(eq(appointmentParticipants.appointmentId, appt.id));
+    if (participants.length === 0 && (appt.type === "grupo" || appt.type === "grupal" || String(appt.type).includes("grup"))) {
+      const alunosDoConsultor = allAlunos.filter((a) => a.consultorId === appt.consultorId && a.isActive === 1);
+      participants = alunosDoConsultor.map((a) => ({
+        id: 0,
+        appointmentId: appt.id,
+        alunoId: a.id,
+        status: "convidado",
+        confirmedAt: null,
+        notes: null,
+        createdAt: /* @__PURE__ */ new Date()
+      }));
+    }
     if (filters?.alunoId && !participants.some((p) => p.alunoId === filters.alunoId)) {
       continue;
     }
@@ -7891,7 +8367,7 @@ async function getAlunoAppointments(alunoId) {
       const consultorsList = await getConsultors();
       const mentor = consultorsList.find((c) => c.id === appt.consultorId);
       let participants = [];
-      if (appt.type === "grupo") {
+      if (appt.type === "grupo" || appt.type === "grupal" || String(appt.type).includes("grup")) {
         const allP = await db2.select().from(appointmentParticipants).where(eq(appointmentParticipants.appointmentId, appt.id));
         const allAlunos = await getAlunos();
         const alunoMap = new Map(allAlunos.map((a) => [a.id, a]));
@@ -10353,11 +10829,15 @@ async function arquivarCicloAtual(alunoId) {
     `SELECT id, ciclo, scoreD, scoreI, scoreS, scoreC, perfilPredominante, perfilSecundario FROM disc_resultados WHERE alunoId = ${alunoId} ORDER BY ciclo DESC, createdAt DESC LIMIT 1`
   ));
   const discRow = Array.isArray(discRows) ? discRows[0] : null;
+  const [pdiCongeladoRows] = await db2.execute(sql.raw(
+    `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'congelado' ORDER BY createdAt DESC LIMIT 1`
+  ));
+  const pdiCongeladoRow = Array.isArray(pdiCongeladoRows) ? pdiCongeladoRows[0] : null;
   const [pdiActiveRows] = await db2.execute(sql.raw(
     `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo' ORDER BY createdAt DESC LIMIT 1`
   ));
   const pdiActiveRow = Array.isArray(pdiActiveRows) ? pdiActiveRows[0] : null;
-  let pdiId = pdiActiveRow?.id || null;
+  let pdiId = pdiCongeladoRow?.id || pdiActiveRow?.id || null;
   let pdiFallbackRow = null;
   if (!pdiId) {
     const [pdiAnyRows] = await db2.execute(sql.raw(
@@ -10366,9 +10846,9 @@ async function arquivarCicloAtual(alunoId) {
     pdiFallbackRow = Array.isArray(pdiAnyRows) ? pdiAnyRows[0] : null;
     pdiId = pdiFallbackRow?.id ?? null;
   }
-  const pdiMacroRow = pdiActiveRow || pdiFallbackRow || null;
+  const pdiMacroRow = pdiCongeladoRow || pdiActiveRow || pdiFallbackRow || null;
   const macroInicioStr = pdiMacroRow?.macroInicio ? String(pdiMacroRow.macroInicio).split("T")[0] : null;
-  const macroTerminoStr = pdiMacroRow?.macroTermino ? String(pdiMacroRow.macroTermino).split("T")[0] : null;
+  const macroTerminoStr = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const [jornadaRows] = await db2.execute(sql.raw(
     `SELECT aceiteRealizadoEm FROM onboarding_jornada WHERE alunoId = ${alunoId} ORDER BY ciclo DESC LIMIT 1`
   ));
@@ -11073,6 +11553,303 @@ async function ensureRelatorioEntrevistaColumns() {
   }
   console.log("[DB] Colunas do Relat\xF3rio de Entrevista verificadas/criadas com sucesso.");
 }
+async function getWebinarTasksByWebinar(webinarId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const [rows] = await db2.execute(sql.raw(`
+    SELECT
+      id, webinarId, templateId, title, description, deliveryUrl, accessToken,
+      DATE_FORMAT(dueDate, '%Y-%m-%d') AS dueDate,
+      responsibleRole, responsibleUserId, responsibleName, responsibleEmail,
+      status, priority, isCritical,
+      completedAt, completedBy, createdAt, updatedAt
+    FROM webinar_tasks
+    WHERE webinarId = ${webinarId}
+    ORDER BY dueDate ASC, id ASC
+  `));
+  return rows.map((r) => ({ ...r, isCritical: !!r.isCritical }));
+}
+async function updateWebinarTaskStatus(taskId, status, completedBy) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("DB not available");
+  const isCompleted = status === "completed";
+  const completedAtSql = isCompleted ? `completedAt = NOW(), completedBy = ${completedBy ?? "NULL"},` : `completedAt = NULL, completedBy = NULL,`;
+  await db2.execute(sql.raw(`
+    UPDATE webinar_tasks
+    SET ${completedAtSql} status = '${status}', updatedAt = NOW()
+    WHERE id = ${taskId}
+  `));
+}
+async function updateWebinarTaskResponsible(taskId, name, email) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("DB not available");
+  const safeName = name.replace(/'/g, "''");
+  const safeEmail = email.replace(/'/g, "''");
+  await db2.execute(sql.raw(`
+    UPDATE webinar_tasks
+    SET responsibleName = '${safeName}', responsibleEmail = '${safeEmail}', updatedAt = NOW()
+    WHERE id = ${taskId}
+  `));
+}
+async function getWebinarTasksSummary(webinarId) {
+  const db2 = await getDb();
+  if (!db2) return { total: 0, completed: 0, overdue: 0, atRisk: 0, riskLevel: "Baixo" };
+  const [rows] = await db2.execute(sql.raw(`
+    SELECT
+      COUNT(*) AS total,
+      SUM(status = 'completed' OR status = 'cancelled') AS completed,
+      SUM(
+        status NOT IN ('completed','cancelled')
+        AND dueDate < CURDATE()
+      ) AS overdue,
+      SUM(
+        status NOT IN ('completed','cancelled')
+        AND dueDate >= CURDATE()
+        AND DATEDIFF(dueDate, CURDATE()) <= 5
+      ) AS atRisk,
+      SUM(
+        isCritical = 1
+        AND status NOT IN ('completed','cancelled')
+        AND dueDate < CURDATE()
+      ) AS criticalOverdue,
+      SUM(
+        isCritical = 1
+        AND status NOT IN ('completed','cancelled')
+        AND dueDate >= CURDATE()
+        AND DATEDIFF(dueDate, CURDATE()) <= 5
+      ) AS criticalAtRisk
+    FROM webinar_tasks
+    WHERE webinarId = ${webinarId}
+  `));
+  const r = rows[0] || {};
+  const total = Number(r.total) || 0;
+  const completed = Number(r.completed) || 0;
+  const overdue = Number(r.overdue) || 0;
+  const atRisk = Number(r.atRisk) || 0;
+  const criticalOverdue = Number(r.criticalOverdue) || 0;
+  const criticalAtRisk = Number(r.criticalAtRisk) || 0;
+  let riskLevel = "Baixo";
+  if (criticalOverdue > 0) {
+    riskLevel = "Alto";
+  } else if (criticalAtRisk > 0 || overdue > 0) {
+    riskLevel = "M\xE9dio";
+  }
+  return { total, completed, overdue, atRisk, riskLevel };
+}
+async function getWebinarResponsibles(webinarId) {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const [rows] = await db2.execute(sql.raw(`
+    SELECT id, webinarId, role, userId, name, email, phone
+    FROM webinar_responsibles
+    WHERE webinarId = ${webinarId}
+    ORDER BY role ASC
+  `));
+  return rows;
+}
+async function upsertWebinarResponsibles(webinarId, responsibles) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("DB not available");
+  for (const r of responsibles) {
+    const safeName = (r.name || "").replace(/'/g, "''");
+    const safeEmail = (r.email || "").replace(/'/g, "''");
+    const safePhone = (r.phone || "").replace(/'/g, "''");
+    await db2.execute(sql.raw(`
+      INSERT INTO webinar_responsibles (webinarId, role, name, email, phone)
+      VALUES (${webinarId}, '${r.role}', '${safeName}', '${safeEmail}', '${safePhone}')
+      ON DUPLICATE KEY UPDATE
+        name = '${safeName}',
+        email = '${safeEmail}',
+        phone = '${safePhone}',
+        updatedAt = NOW()
+    `));
+  }
+}
+async function generateWebinarInternalTasks(webinarId, eventDate, theme) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("DB not available");
+  const [templates] = await db2.execute(sql.raw(`
+    SELECT id, title, description, daysOffset, defaultRole, isCritical, sortOrder
+    FROM webinar_task_templates
+    WHERE isActive = 1
+    ORDER BY sortOrder ASC
+  `));
+  const tplList = templates;
+  if (!tplList.length) return;
+  const themeIsDefined = theme && theme.trim() !== "" && theme.trim().toLowerCase() !== "a definir";
+  for (const tpl of tplList) {
+    const dueDate = new Date(eventDate);
+    dueDate.setDate(dueDate.getDate() + Number(tpl.daysOffset));
+    const dueDateStr = dueDate.toISOString().slice(0, 10);
+    const [respRows] = await db2.execute(sql.raw(`
+      SELECT name, email FROM webinar_responsibles
+      WHERE webinarId = ${webinarId} AND role = '${tpl.defaultRole}'
+      LIMIT 1
+    `));
+    const resp = respRows[0];
+    const respName = resp ? `'${(resp.name || "").replace(/'/g, "''")}'` : "NULL";
+    const respEmail = resp ? `'${(resp.email || "").replace(/'/g, "''")}'` : "NULL";
+    const isDefineThemeTask = tpl.title.toLowerCase().includes("definir tema");
+    const initialStatus = isDefineThemeTask && themeIsDefined ? "completed" : "pending";
+    const completedAtSql = isDefineThemeTask && themeIsDefined ? "NOW()" : "NULL";
+    const safeTitle = tpl.title.replace(/'/g, "''");
+    const safeDesc = (tpl.description || "").replace(/'/g, "''");
+    await db2.execute(sql.raw(`
+      INSERT INTO webinar_tasks
+        (webinarId, templateId, title, description, dueDate,
+         responsibleRole, responsibleName, responsibleEmail,
+         status, priority, isCritical, completedAt, accessToken)
+      VALUES
+        (${webinarId}, ${tpl.id}, '${safeTitle}', '${safeDesc}', '${dueDateStr}',
+         '${tpl.defaultRole}', ${respName}, ${respEmail},
+         '${initialStatus}', 'normal', ${tpl.isCritical ? 1 : 0}, ${completedAtSql},
+         LOWER(CONCAT(
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 1, 8), '-',
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 9, 4), '-',
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 13, 4), '-',
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 17, 4), '-',
+           SUBSTRING(MD5(CONCAT(${webinarId}, ${tpl.id}, RAND())), 21, 12)
+         )))
+    `));
+  }
+}
+async function listWebinarTaskTemplates() {
+  const db2 = await getDb();
+  if (!db2) return [];
+  const [rows] = await db2.execute(sql.raw(`
+    SELECT id, title, description, daysOffset, defaultRole,
+           requiresUpload, requiresApproval, isCritical, sortOrder, isActive
+    FROM webinar_task_templates
+    ORDER BY sortOrder ASC
+  `));
+  return rows;
+}
+async function createWebinarTaskTemplate(data) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("DB not available");
+  const safeTitle = data.title.replace(/'/g, "''");
+  const safeDesc = (data.description || "").replace(/'/g, "''");
+  const [result] = await db2.execute(sql.raw(`
+    INSERT INTO webinar_task_templates (title, description, daysOffset, defaultRole, isCritical, sortOrder, isActive)
+    VALUES ('${safeTitle}', '${safeDesc}', ${data.daysOffset}, '${data.defaultRole}',
+            ${data.isCritical ?? 1}, ${data.sortOrder ?? 99}, 1)
+  `));
+  return result.insertId;
+}
+async function updateWebinarTaskTemplate(id, data) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("DB not available");
+  const sets = [];
+  if (data.title !== void 0) sets.push(`title = '${data.title.replace(/'/g, "''")}'`);
+  if (data.description !== void 0) sets.push(`description = '${data.description.replace(/'/g, "''")}'`);
+  if (data.daysOffset !== void 0) sets.push(`daysOffset = ${data.daysOffset}`);
+  if (data.defaultRole !== void 0) sets.push(`defaultRole = '${data.defaultRole}'`);
+  if (data.isCritical !== void 0) sets.push(`isCritical = ${data.isCritical}`);
+  if (data.sortOrder !== void 0) sets.push(`sortOrder = ${data.sortOrder}`);
+  if (data.isActive !== void 0) sets.push(`isActive = ${data.isActive}`);
+  if (!sets.length) return;
+  await db2.execute(sql.raw(`UPDATE webinar_task_templates SET ${sets.join(", ")} WHERE id = ${id}`));
+}
+async function deleteWebinarTaskTemplate(id) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("DB not available");
+  await db2.execute(sql.raw(`UPDATE webinar_task_templates SET isActive = 0 WHERE id = ${id}`));
+}
+async function reorderWebinarTaskTemplates(orders) {
+  const db2 = await getDb();
+  if (!db2) throw new Error("DB not available");
+  for (const o of orders) {
+    await db2.execute(sql.raw(`UPDATE webinar_task_templates SET sortOrder = ${o.sortOrder} WHERE id = ${o.id}`));
+  }
+}
+async function ensurePdfAtividadeSupport() {
+  const db2 = await getDb();
+  if (!db2) return;
+  try {
+    await db2.execute(sql.raw(
+      `ALTER TABLE \`atividades_curso\`
+       MODIFY COLUMN \`tipoAtividade\`
+         enum('genially','video','podcast','tedtalk','livro','intro','pdf')
+         NOT NULL`
+    ));
+    console.log("[DB] Enum tipoAtividade atualizado para incluir 'pdf'.");
+  } catch (e) {
+    console.warn("[DB] ensurePdfAtividadeSupport (enum):", e?.message);
+  }
+  try {
+    await db2.execute(sql.raw(
+      `ALTER TABLE \`atividades_curso\` ADD COLUMN IF NOT EXISTS \`urlMidia\` text NULL`
+    ));
+    console.log("[DB] Coluna urlMidia verificada/criada em atividades_curso.");
+  } catch (e) {
+    if (!e?.message?.includes("Duplicate column")) {
+      console.warn("[DB] ensurePdfAtividadeSupport (urlMidia):", e?.message);
+    }
+  }
+}
+async function ensureDevolutivasTables() {
+  const db2 = await getDb();
+  if (!db2) return;
+  try {
+    await db2.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS \`devolutiva_slots\` (
+        \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`processoId\` int NOT NULL,
+        \`consultorId\` int NOT NULL,
+        \`elegiveisResultado\` enum('habilitados','inabilitados','ambos') NOT NULL DEFAULT 'ambos',
+        \`specificDate\` varchar(10) NOT NULL,
+        \`startTime\` varchar(5) NOT NULL,
+        \`endTime\` varchar(5) NOT NULL,
+        \`googleMeetLink\` varchar(500) NULL,
+        \`candidatoId\` int NULL,
+        \`reservadoEm\` timestamp NULL,
+        \`emailConfirmacaoEnviado\` int NOT NULL DEFAULT 0,
+        \`emailLembreteEnviado\` int NOT NULL DEFAULT 0,
+        \`status\` enum('disponivel','reservado','cancelado') NOT NULL DEFAULT 'disponivel',
+        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `));
+  } catch (e) {
+    if (!e?.message?.includes("already exists")) console.warn("[DB] ensureDevolutivasTables (tabela):", e?.message);
+  }
+  const columns = [
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaIniciada` int NOT NULL DEFAULT 0",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaIniciadaEm` timestamp NULL",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaPrazoInicio` datetime NULL",
+    "ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaPrazoFim` datetime NULL"
+  ];
+  for (const col of columns) {
+    try {
+      await db2.execute(sql.raw(col));
+    } catch (e) {
+      if (!e?.message?.includes("Duplicate column")) console.warn("[DB] ensureDevolutivasTables:", e?.message);
+    }
+  }
+  console.log("[DB] Tabela e colunas de devolutiva verificadas/criadas com sucesso.");
+}
+async function migrarTipoSessaoGrupais() {
+  const db2 = await getDb();
+  if (!db2) throw new Error("Database not available");
+  const rows = await db2.execute(sql`
+    SELECT ms.id, ms.tipoSessao, ma.type as appointmentType
+    FROM mentoring_sessions ms
+    INNER JOIN mentor_appointments ma ON ma.id = ms.appointmentId
+    WHERE ma.type = 'grupo'
+      AND ms.tipoSessao IN ('individual_normal', 'individual_assessment')
+      AND COALESCE(ms.cancelada, 0) = 0
+  `);
+  const sessions = Array.isArray(rows) ? rows[0] : [];
+  let corrigidas = 0;
+  for (const s of sessions) {
+    const novoTipo = s.tipoSessao === "individual_assessment" ? "grupo_assessment" : "grupo_normal";
+    await db2.execute(sql.raw(
+      `UPDATE mentoring_sessions SET tipoSessao = '${novoTipo}' WHERE id = ${s.id}`
+    ));
+    corrigidas++;
+  }
+  return { corrigidas };
+}
 var _db, _connection, CONTRATO_NIVEL_STATUS_EM_ANDAMENTO, CONTRATO_NIVEL_STATUS_ATIVOS, onboardingRevisoesDb;
 var init_db = __esm({
   "server/db.ts"() {
@@ -11343,6 +12120,9 @@ var init_sdk = __esm({
         });
         return user;
       }
+      async getUserByOpenId(openId) {
+        return getUserByOpenId(openId);
+      }
     };
     sdk = new SDKServer();
   }
@@ -11441,8 +12221,10 @@ var init_notification = __esm({
 var discData_exports = {};
 __export(discData_exports, {
   AUTOPERCEP\u00C7\u00C3O_LABELS: () => AUTOPERCEP\u00C7\u00C3O_LABELS,
+  DESENVOLVIMENTO_DETALHADO: () => DESENVOLVIMENTO_DETALHADO,
   DISC_BLOCOS: () => DISC_BLOCOS,
   DISC_PERFIS: () => DISC_PERFIS,
+  PRESSAO_DISC: () => PRESSAO_DISC,
   calcularDiscScores: () => calcularDiscScores,
   validarRespostas: () => validarRespostas
 });
@@ -11502,7 +12284,7 @@ function validarRespostas(respostas) {
   }
   return { valido: erros.length === 0, erros };
 }
-var DISC_BLOCOS, DISC_PERFIS, AUTOPERCEP\u00C7\u00C3O_LABELS;
+var DISC_BLOCOS, DISC_PERFIS, PRESSAO_DISC, DESENVOLVIMENTO_DETALHADO, AUTOPERCEP\u00C7\u00C3O_LABELS;
 var init_discData = __esm({
   "shared/discData.ts"() {
     "use strict";
@@ -11820,7 +12602,7 @@ var init_discData = __esm({
       D: {
         nome: "Domin\xE2ncia",
         titulo: "Executor Determinado",
-        descricao: "Voc\xEA \xE9 uma pessoa orientada a resultados, que gosta de assumir o controle e tomar decis\xF5es r\xE1pidas. Tem energia para enfrentar desafios e n\xE3o tem medo de situa\xE7\xF5es dif\xEDceis. Sua determina\xE7\xE3o e foco em objetivos s\xE3o suas maiores for\xE7as.",
+        descricao: "Seu resultado indica uma tend\xEAncia a assumir responsabilidades, agir com iniciativa e tomar decis\xF5es com rapidez, especialmente em situa\xE7\xF5es desafiadoras ou com prazos reduzidos. Essa caracter\xEDstica pode contribuir muito para impulsionar projetos, enfrentar obst\xE1culos e manter o foco nos resultados.\n\nEm momentos de maior press\xE3o, essa mesma agilidade pode levar voc\xEA a decidir antes de considerar todos os pontos de vista. Por isso, pode ser \xFAtil reservar alguns instantes para ouvir outras opini\xF5es e avaliar alternativas. Esse cuidado ajuda a tornar suas decis\xF5es ainda mais consistentes e fortalece a participa\xE7\xE3o das pessoas ao seu redor.",
         pontosFortes: [
           "Tomada de decis\xE3o r\xE1pida e assertiva",
           "Foco em resultados e metas",
@@ -11829,19 +12611,30 @@ var init_discData = __esm({
           "Iniciativa e proatividade"
         ],
         areasDesenvolvimento: [
-          "Paci\xEAncia com processos mais lentos",
-          "Escuta ativa e empatia",
-          "Delega\xE7\xE3o e confian\xE7a na equipe",
-          "Flexibilidade diante de mudan\xE7as de plano"
+          "Escuta Ativa \u2014 dar espa\xE7o para ouvir a equipe antes de decidir, evitando decis\xF5es apressadas",
+          "Empatia \u2014 considerar o impacto emocional das decis\xF5es nas pessoas envolvidas",
+          "Gest\xE3o de Conflitos \u2014 buscar acordos em vez de impor pontos de vista sob press\xE3o",
+          "Adaptabilidade \u2014 ajustar o ritmo quando o processo pede mais cautela do que velocidade"
         ],
-        comoSeRelaciona: "Tende a ser direto e objetivo nas rela\xE7\xF5es, valorizando efici\xEAncia e compet\xEAncia. Pode ser percebido como autorit\xE1rio quando sob press\xE3o.",
-        cor: "#DC2626"
+        comoSeRelaciona: "Voc\xEA tende a se relacionar de forma direta, objetiva e orientada para solu\xE7\xF5es. Valoriza pessoas competentes, comprometidas e capazes de acompanhar um ritmo mais \xE1gil, o que pode tornar suas intera\xE7\xF5es pr\xE1ticas, claras e produtivas.\n\nEm situa\xE7\xF5es de press\xE3o ou urg\xEAncia, sua firmeza pode ser percebida como intensidade ou autoritarismo, mesmo quando sua inten\xE7\xE3o \xE9 apenas resolver o problema com rapidez. Por isso, procure reservar espa\xE7o para ouvir, explicar o contexto e reconhecer as contribui\xE7\xF5es das outras pessoas antes de definir o pr\xF3ximo passo.\n\nAo equilibrar objetividade com escuta e considera\xE7\xE3o, voc\xEA fortalece a confian\xE7a, amplia a colabora\xE7\xE3o e consegue mobilizar as pessoas sem perder sua capacidade de decis\xE3o.",
+        dicaRelacionamento: 'Antes de responder ou decidir, fa\xE7a uma pausa e pergunte: "O que voc\xEA pensa sobre isso?" ou "H\xE1 algum ponto que eu ainda n\xE3o considerei?" Essa pequena mudan\xE7a preserva sua firmeza e, ao mesmo tempo, aumenta o envolvimento das pessoas.',
+        cor: "#DC2626",
         // vermelho
+        subfatores: {
+          I: "Seu perfil secund\xE1rio de Influ\xEAncia complementa muito bem a sua Domin\xE2ncia. Al\xE9m de agir com objetividade e tomar decis\xF5es, voc\xEA tamb\xE9m tende a comunicar suas ideias com entusiasmo, envolver as pessoas e conquistar ades\xE3o para os objetivos que deseja alcan\xE7ar.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a rapidez com alguns momentos de escuta e alinhamento. Antes de avan\xE7ar, procure confirmar se as pessoas compreenderam a proposta, tiveram espa\xE7o para contribuir e sabem como participar da decis\xE3o.\n\nAo combinar sua capacidade de agir com uma comunica\xE7\xE3o mais aberta e cuidadosa, voc\xEA amplia seu poder de influ\xEAncia, fortalece os relacionamentos e aumenta as chances de alcan\xE7ar resultados com o apoio genu\xEDno das pessoas.",
+          S: "Seu perfil secund\xE1rio de Estabilidade complementa muito bem a sua Domin\xE2ncia. Al\xE9m de agir com decis\xE3o e buscar resultados, voc\xEA tamb\xE9m tende a considerar o impacto das suas escolhas nas pessoas e a manter mais consist\xEAncia ao longo do caminho.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a vontade de resultado imediato com um momento de pausa para avaliar como a decis\xE3o afeta quem est\xE1 ao seu redor.\n\nAo combinar sua agilidade com essa capacidade de ponderar, voc\xEA toma decis\xF5es igualmente r\xE1pidas, mas mais sustent\xE1veis, e fortalece a confian\xE7a de quem trabalha com voc\xEA.",
+          C: "Seu perfil secund\xE1rio de Conformidade complementa muito bem a sua Domin\xE2ncia. Al\xE9m de agir com rapidez, voc\xEA tamb\xE9m tende a validar dados e buscar crit\xE9rio antes de decidir, o que traz mais consist\xEAncia \xE0s suas escolhas.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante reservar alguns instantes para checar as informa\xE7\xF5es dispon\xEDveis antes de seguir apenas pelo instinto de agir r\xE1pido.\n\nAo combinar sua agilidade com esse cuidado anal\xEDtico, suas decis\xF5es ganham mais precis\xE3o sem perder a velocidade que voc\xEA j\xE1 tem naturalmente."
+        },
+        percepcao: {
+          comoSeVe: "Voc\xEA tende a se ver como algu\xE9m decidido, direto e orientado a resultados \u2014 a pessoa que assume o controle quando \xE9 preciso agir.",
+          comoLiderancaVe: "H\xE1 uma forte tend\xEAncia de que a lideran\xE7a o perceba como algu\xE9m confi\xE1vel para tocar entregas e tomar decis\xF5es dif\xEDceis, mas pode esperar mais paci\xEAncia e escuta em momentos que exigem constru\xE7\xE3o coletiva.",
+          comoParesVeem: "H\xE1 uma forte tend\xEAncia de que os pares o percebam como algu\xE9m en\xE9rgico e assertivo, que ajuda o grupo a avan\xE7ar \u2014 mas que, sob press\xE3o, pode soar impositivo ou pouco aberto a outras opini\xF5es."
+        }
       },
       I: {
         nome: "Influ\xEAncia",
         titulo: "Comunicador Inspirador",
-        descricao: "Voc\xEA \xE9 uma pessoa comunicativa, entusiasta e que inspira os outros com sua energia positiva. Tem facilidade para criar conex\xF5es e motivar equipes. Sua capacidade de influenciar e engajar pessoas \xE9 sua maior for\xE7a.",
+        descricao: "Seu resultado indica uma tend\xEAncia a se comunicar com entusiasmo, criar conex\xF5es com facilidade e contagiar as pessoas ao redor com energia positiva. Essa caracter\xEDstica pode contribuir muito para engajar equipes, gerar ideias novas e manter o ambiente motivado.\n\nEm momentos de maior press\xE3o, essa mesma facilidade de se envolver em v\xE1rias frentes pode levar voc\xEA a assumir mais compromissos do que consegue cumprir com calma. Por isso, pode ser \xFAtil reservar um tempo para organizar prioridades antes de dizer sim a tudo. Esse cuidado ajuda a manter sua energia sustent\xE1vel e fortalece a confian\xE7a das pessoas que contam com voc\xEA.",
         pontosFortes: [
           "Comunica\xE7\xE3o persuasiva e envolvente",
           "Capacidade de motivar e inspirar equipes",
@@ -11850,19 +12643,30 @@ var init_discData = __esm({
           "Otimismo e energia positiva"
         ],
         areasDesenvolvimento: [
-          "Foco em detalhes e acompanhamento",
-          "Organiza\xE7\xE3o e gest\xE3o do tempo",
-          "An\xE1lise cr\xEDtica antes de agir",
-          "Consist\xEAncia na execu\xE7\xE3o de tarefas rotineiras"
+          "Planejamento e Organiza\xE7\xE3o \u2014 estruturar um plano antes de agir, evitando come\xE7ar v\xE1rias coisas ao mesmo tempo",
+          "Gest\xE3o do Tempo \u2014 criar rotinas de acompanhamento para n\xE3o perder prazos",
+          "Leitura de Cen\xE1rio \u2014 analisar dados e contexto antes de se deixar levar pelo entusiasmo do momento",
+          "Disciplina \u2014 manter const\xE2ncia na execu\xE7\xE3o de tarefas repetitivas, mesmo sem est\xEDmulo imediato"
         ],
-        comoSeRelaciona: "Tende a ser caloroso e acess\xEDvel, criando um ambiente positivo. Pode ser percebido como disperso quando h\xE1 muitas ideias em andamento.",
-        cor: "#F59E0B"
+        comoSeRelaciona: "Voc\xEA tende a se relacionar de forma calorosa, acess\xEDvel e entusiasmada, criando um ambiente positivo por onde passa. Valoriza pessoas abertas, comunicativas e dispostas a construir junto, o que torna suas intera\xE7\xF5es leves, criativas e envolventes.\n\nEm situa\xE7\xF5es de press\xE3o ou urg\xEAncia, esse entusiasmo pode ser percebido como dispers\xE3o, como se muitas ideias estivessem em andamento ao mesmo tempo sem foco claro, mesmo quando sua inten\xE7\xE3o \xE9 apenas manter o clima positivo e engajar todo mundo. Por isso, procure nomear com clareza qual \xE9 a prioridade do momento antes de trazer novas ideias para a conversa.\n\nAo equilibrar seu entusiasmo com mais foco e const\xE2ncia, voc\xEA fortalece a confian\xE7a das pessoas na sua palavra e transforma sua energia em resultados mais consistentes.",
+        dicaRelacionamento: 'Antes de propor algo novo em uma conversa j\xE1 em andamento, fa\xE7a uma pausa e pergunte: "Isso ajuda a fechar o que j\xE1 come\xE7amos, ou \xE9 uma ideia para depois?" Essa pequena pausa preserva seu entusiasmo e, ao mesmo tempo, aumenta a confian\xE7a das pessoas na sua palavra.',
+        cor: "#F59E0B",
         // amarelo/âmbar
+        subfatores: {
+          D: "Seu perfil secund\xE1rio de Domin\xE2ncia complementa muito bem a sua Influ\xEAncia. Al\xE9m de engajar e comunicar com entusiasmo, voc\xEA tamb\xE9m tende a buscar resultados concretos e a assumir o controle quando a situa\xE7\xE3o exige.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar o entusiasmo do momento com um pouco mais de planejamento antes de acelerar o ritmo.\n\nAo combinar sua capacidade de engajar pessoas com essa disposi\xE7\xE3o para agir, voc\xEA transforma entusiasmo em resultado com mais consist\xEAncia.",
+          S: "Seu perfil secund\xE1rio de Estabilidade complementa muito bem a sua Influ\xEAncia. Al\xE9m de se conectar e envolver as pessoas com facilidade, voc\xEA tamb\xE9m tende a construir rela\xE7\xF5es de confian\xE7a mais duradouras e acolhedoras.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a busca por novidade e est\xEDmulo com momentos de rotina e const\xE2ncia, para que o entusiasmo inicial se sustente ao longo do tempo.\n\nAo combinar sua energia envolvente com essa capacidade de construir v\xEDnculos duradouros, voc\xEA fortalece rela\xE7\xF5es que v\xE3o al\xE9m do primeiro impacto.",
+          C: "Seu perfil secund\xE1rio de Conformidade complementa muito bem a sua Influ\xEAncia. Al\xE9m de se comunicar com entusiasmo, voc\xEA tamb\xE9m tende a ter aten\xE7\xE3o a detalhes e alguma precis\xE3o t\xE9cnica nas suas entregas.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a vontade de avan\xE7ar r\xE1pido com um pouco mais de tempo de an\xE1lise antes de comunicar a proposta.\n\nAo combinar sua comunica\xE7\xE3o envolvente com esse cuidado t\xE9cnico, voc\xEA une entusiasmo e credibilidade nas suas ideias."
+        },
+        percepcao: {
+          comoSeVe: "Voc\xEA tende a se ver como algu\xE9m comunicativo, otimista e capaz de motivar as pessoas ao seu redor.",
+          comoLiderancaVe: "H\xE1 uma forte tend\xEAncia de que a lideran\xE7a o perceba como algu\xE9m que engaja times e d\xE1 energia ao ambiente, mas pode cobrar mais consist\xEAncia no acompanhamento das entregas.",
+          comoParesVeem: "H\xE1 uma forte tend\xEAncia de que os pares o percebam como algu\xE9m acess\xEDvel e agrad\xE1vel de trabalhar junto, ainda que \xE0s vezes pare\xE7a disperso ou inconstante em compromissos de rotina."
+        }
       },
       S: {
         nome: "Estabilidade",
         titulo: "Colaborador Consistente",
-        descricao: "Voc\xEA \xE9 uma pessoa confi\xE1vel, paciente e que valoriza a harmonia nas rela\xE7\xF5es. Tem grande capacidade de ouvir e apoiar os outros. Sua consist\xEAncia e lealdade s\xE3o suas maiores for\xE7as.",
+        descricao: "Seu resultado indica uma tend\xEAncia a agir com paci\xEAncia, buscar harmonia nas rela\xE7\xF5es e oferecer apoio consistente \xE0s pessoas ao redor. Essa caracter\xEDstica pode contribuir muito para fortalecer a confian\xE7a da equipe, manter a estabilidade em momentos dif\xEDceis e sustentar compromissos ao longo do tempo.\n\nEm momentos de maior press\xE3o, essa mesma busca por harmonia pode levar voc\xEA a evitar se posicionar mesmo quando discorda de algo importante. Por isso, pode ser \xFAtil expressar sua opini\xE3o logo quando ela surge, antes que o desconforto se acumule. Esse cuidado ajuda a tornar suas rela\xE7\xF5es ainda mais verdadeiras e fortalece sua pr\xF3pria voz dentro do grupo.",
         pontosFortes: [
           "Paci\xEAncia e capacidade de escuta",
           "Lealdade e comprometimento",
@@ -11871,19 +12675,30 @@ var init_discData = __esm({
           "Media\xE7\xE3o de conflitos"
         ],
         areasDesenvolvimento: [
-          "Assertividade e posicionamento",
-          "Adapta\xE7\xE3o a mudan\xE7as r\xE1pidas",
-          "Tomada de decis\xE3o sob press\xE3o",
-          "Express\xE3o de opini\xF5es divergentes"
+          "Comunica\xE7\xE3o Assertiva \u2014 expressar discord\xE2ncias e opini\xF5es pr\xF3prias de forma mais direta",
+          "Adaptabilidade \u2014 se abrir mais r\xE1pido a mudan\xE7as de plano, mesmo fora da zona de conforto",
+          "Tomada de Decis\xE3o \u2014 decidir com mais agilidade quando a situa\xE7\xE3o exige resposta r\xE1pida",
+          "Protagonismo \u2014 se posicionar e assumir mais visibilidade em vez de ficar em segundo plano"
         ],
-        comoSeRelaciona: "Tende a ser acolhedor e solid\xE1rio, priorizando o bem-estar do grupo. Pode ser percebido como resistente a mudan\xE7as quando sai da zona de conforto.",
-        cor: "#16A34A"
+        comoSeRelaciona: "Voc\xEA tende a se relacionar de forma acolhedora e solid\xE1ria, priorizando o bem-estar e a harmonia do grupo. Valoriza pessoas pacientes, leais e comprometidas com o coletivo, o que torna suas intera\xE7\xF5es est\xE1veis, confi\xE1veis e seguras.\n\nEm situa\xE7\xF5es de press\xE3o ou mudan\xE7a repentina, essa busca por harmonia pode ser percebida como resist\xEAncia ou lentid\xE3o, mesmo quando sua inten\xE7\xE3o \xE9 apenas garantir que a transi\xE7\xE3o aconte\xE7a sem prejudicar ningu\xE9m. Por isso, procure comunicar suas d\xFAvidas e preocupa\xE7\xF5es assim que elas surgirem, em vez de guard\xE1-las para n\xE3o gerar desconforto.\n\nAo equilibrar sua busca por estabilidade com uma comunica\xE7\xE3o mais aberta sobre mudan\xE7as, voc\xEA fortalece a confian\xE7a do grupo e ajuda a conduzir transi\xE7\xF5es com mais seguran\xE7a para todos.",
+        dicaRelacionamento: 'Diante de uma mudan\xE7a que te incomoda, fa\xE7a uma pausa e diga: "Preciso de um tempo para entender melhor essa mudan\xE7a, pode me ajudar com isso?" Essa pequena atitude preserva sua estabilidade e, ao mesmo tempo, evita que a insatisfa\xE7\xE3o se acumule em sil\xEAncio.',
+        cor: "#16A34A",
         // verde
+        subfatores: {
+          D: "Seu perfil secund\xE1rio de Domin\xE2ncia complementa muito bem a sua Estabilidade. Al\xE9m de ser confi\xE1vel e cooperativo, voc\xEA tamb\xE9m tende a ganhar mais disposi\xE7\xE3o para se posicionar e tomar decis\xF5es r\xE1pidas quando necess\xE1rio.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a busca por harmonia com a coragem de comunicar sua posi\xE7\xE3o, mesmo quando ela pode gerar algum desconforto.\n\nAo combinar sua consist\xEAncia com essa disposi\xE7\xE3o para agir, voc\xEA se torna algu\xE9m em quem as pessoas confiam tanto para manter a estabilidade quanto para avan\xE7ar quando \xE9 preciso.",
+          I: "Seu perfil secund\xE1rio de Influ\xEAncia complementa muito bem a sua Estabilidade. Al\xE9m de construir rela\xE7\xF5es de confian\xE7a, voc\xEA tamb\xE9m tende a se expressar com mais entusiasmo e calor humano nas suas intera\xE7\xF5es.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a prefer\xEAncia por rotina com uma abertura maior para a novidade e o est\xEDmulo social que o momento pode pedir.\n\nAo combinar sua confiabilidade com essa capacidade de se comunicar com entusiasmo, voc\xEA fortalece rela\xE7\xF5es que s\xE3o ao mesmo tempo est\xE1veis e calorosas.",
+          C: "Seu perfil secund\xE1rio de Conformidade complementa muito bem a sua Estabilidade. Al\xE9m de ser confi\xE1vel nas rela\xE7\xF5es, voc\xEA tamb\xE9m tende a trazer mais m\xE9todo e precis\xE3o na execu\xE7\xE3o t\xE9cnica do seu trabalho.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a cautela natural dos dois fatores com um esfor\xE7o consciente para responder com mais agilidade quando o momento exige.\n\nAo combinar sua confiabilidade com essa precis\xE3o t\xE9cnica, voc\xEA entrega resultados consistentes nos quais as pessoas podem confiar plenamente."
+        },
+        percepcao: {
+          comoSeVe: "Voc\xEA tende a se ver como algu\xE9m confi\xE1vel, paciente e disposto a apoiar o time sempre que poss\xEDvel.",
+          comoLiderancaVe: "H\xE1 uma forte tend\xEAncia de que a lideran\xE7a o perceba como uma base est\xE1vel do time, mas pode esperar mais iniciativa pr\xF3pria e posicionamento em momentos de decis\xE3o.",
+          comoParesVeem: "H\xE1 uma forte tend\xEAncia de que os pares o percebam como algu\xE9m leal e f\xE1cil de contar, ainda que, \xE0s vezes, percebam certa resist\xEAncia a sair da rotina estabelecida."
+        }
       },
       C: {
         nome: "Conformidade",
         titulo: "Analista Preciso",
-        descricao: "Voc\xEA \xE9 uma pessoa anal\xEDtica, detalhista e que busca excel\xEAncia em tudo que faz. Tem grande capacidade de planejamento e organiza\xE7\xE3o. Sua precis\xE3o e pensamento l\xF3gico s\xE3o suas maiores for\xE7as.",
+        descricao: "Seu resultado indica uma tend\xEAncia a analisar com cuidado, buscar precis\xE3o e se dedicar \xE0 qualidade em tudo que faz. Essa caracter\xEDstica pode contribuir muito para elevar o padr\xE3o dos resultados, antecipar riscos e trazer mais confiabilidade aos processos.\n\nEm momentos de maior press\xE3o, essa mesma busca por precis\xE3o pode levar voc\xEA a adiar decis\xF5es enquanto espera por mais informa\xE7\xF5es. Por isso, pode ser \xFAtil definir um limite de tempo para a an\xE1lise e seguir em frente mesmo sem 100% de certeza. Esse cuidado ajuda a manter a qualidade do seu trabalho sem perder o ritmo necess\xE1rio.",
         pontosFortes: [
           "An\xE1lise cr\xEDtica e pensamento l\xF3gico",
           "Aten\xE7\xE3o a detalhes e qualidade",
@@ -11892,15 +12707,74 @@ var init_discData = __esm({
           "Consist\xEAncia e padr\xF5es elevados"
         ],
         areasDesenvolvimento: [
-          "Flexibilidade e adapta\xE7\xE3o",
-          "Comunica\xE7\xE3o emocional e empatia",
-          "Velocidade na tomada de decis\xE3o",
-          "Toler\xE2ncia com imperfei\xE7\xF5es"
+          "Adaptabilidade \u2014 lidar melhor com mudan\xE7as de \xFAltima hora e imprevistos",
+          "Intelig\xEAncia Emocional \u2014 equilibrar a an\xE1lise t\xE9cnica com mais sensibilidade ao lado humano das situa\xE7\xF5es",
+          "Tomada de Decis\xE3o \u2014 avan\xE7ar com a informa\xE7\xE3o dispon\xEDvel, sem esperar 100% de certeza",
+          "Resili\xEAncia \u2014 lidar com erros e imperfei\xE7\xF5es de forma mais leve, sem exig\xEAncia excessiva de si e dos outros"
         ],
-        comoSeRelaciona: "Tende a ser reservado e objetivo, valorizando compet\xEAncia e precis\xE3o. Pode ser percebido como excessivamente cr\xEDtico quando os padr\xF5es n\xE3o s\xE3o atendidos.",
-        cor: "#2563EB"
+        comoSeRelaciona: "Voc\xEA tende a se relacionar de forma reservada e objetiva, valorizando compet\xEAncia, precis\xE3o e qualidade no que \xE9 entregue. Valoriza pessoas criteriosas e comprometidas com padr\xF5es elevados, o que torna suas intera\xE7\xF5es claras, consistentes e confi\xE1veis.\n\nEm situa\xE7\xF5es em que os padr\xF5es n\xE3o s\xE3o atendidos, essa busca por excel\xEAncia pode ser percebida como cr\xEDtica excessiva, mesmo quando sua inten\xE7\xE3o \xE9 apenas ajudar a elevar a qualidade do resultado. Por isso, procure reconhecer o que j\xE1 est\xE1 bom antes de apontar o que pode melhorar, e explicar o crit\xE9rio por tr\xE1s da sua observa\xE7\xE3o.\n\nAo equilibrar seu rigor t\xE9cnico com reconhecimento e mais abertura, voc\xEA fortalece a confian\xE7a das pessoas na sua avalia\xE7\xE3o e torna o padr\xE3o de qualidade um objetivo compartilhado, n\xE3o uma cobran\xE7a individual.",
+        dicaRelacionamento: 'Antes de apontar um erro ou inconsist\xEAncia, fa\xE7a uma pausa e comece por: "Isso j\xE1 est\xE1 bom em X, e pode ficar ainda melhor se..." Essa pequena mudan\xE7a preserva seu rigor t\xE9cnico e, ao mesmo tempo, aumenta a receptividade das pessoas ao seu feedback.',
+        cor: "#2563EB",
         // azul
+        subfatores: {
+          D: "Seu perfil secund\xE1rio de Domin\xE2ncia complementa muito bem a sua Conformidade. Al\xE9m de analisar com rigor t\xE9cnico, voc\xEA tamb\xE9m tende a ganhar mais disposi\xE7\xE3o para decidir e agir quando a situa\xE7\xE3o pede.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a busca por precis\xE3o com a urg\xEAncia por resultado, definindo at\xE9 onde a an\xE1lise \xE9 realmente necess\xE1ria antes de decidir.\n\nAo combinar seu rigor t\xE9cnico com essa disposi\xE7\xE3o para agir, voc\xEA une qualidade e agilidade nas suas entregas.",
+          I: "Seu perfil secund\xE1rio de Influ\xEAncia complementa muito bem a sua Conformidade. Al\xE9m de manter o rigor anal\xEDtico, voc\xEA tamb\xE9m tende a ganhar mais facilidade para se comunicar e engajar pessoas em torno das suas conclus\xF5es.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar o rigor da an\xE1lise com a espontaneidade de comunicar suas ideias antes que estejam cem por cento prontas.\n\nAo combinar sua precis\xE3o anal\xEDtica com essa facilidade de comunica\xE7\xE3o, voc\xEA transforma boas an\xE1lises em ideias que realmente engajam as pessoas.",
+          S: "Seu perfil secund\xE1rio de Estabilidade complementa muito bem a sua Conformidade. Al\xE9m de buscar precis\xE3o e m\xE9todo, voc\xEA tamb\xE9m tende a ser confi\xE1vel e constante nas rela\xE7\xF5es e na rotina.\n\nEm situa\xE7\xF5es de maior press\xE3o ou urg\xEAncia, pode ser importante equilibrar a cautela natural dos dois fatores com um esfor\xE7o consciente para responder com mais agilidade quando o tempo \xE9 curto.\n\nAo combinar sua precis\xE3o t\xE9cnica com essa const\xE2ncia nas rela\xE7\xF5es, voc\xEA se torna algu\xE9m em quem colegas e lideran\xE7a confiam tanto pela qualidade quanto pela previsibilidade do seu trabalho."
+        },
+        percepcao: {
+          comoSeVe: "Voc\xEA tende a se ver como algu\xE9m anal\xEDtico, criterioso e comprometido com a qualidade do que entrega.",
+          comoLiderancaVe: "H\xE1 uma forte tend\xEAncia de que a lideran\xE7a o perceba como algu\xE9m que traz seguran\xE7a t\xE9cnica e rigor \xE0s entregas, mas pode esperar mais flexibilidade diante de imprevistos e prazos apertados.",
+          comoParesVeem: "H\xE1 uma forte tend\xEAncia de que os pares o percebam como uma refer\xEAncia de qualidade e m\xE9todo, ainda que, \xE0s vezes, percebam certa rigidez ou cr\xEDtica excessiva quando os padr\xF5es n\xE3o s\xE3o atendidos."
+        }
       }
+    };
+    PRESSAO_DISC = {
+      D: {
+        necessidadeAmeacada: "Perda de controle ou de autonomia sobre a situa\xE7\xE3o",
+        reacaoRisco: "Sua firmeza pode ser percebida como impaci\xEAncia ou autoritarismo, mesmo quando sua inten\xE7\xE3o \xE9 apenas resolver o problema r\xE1pido e manter o resultado no caminho certo",
+        respostaRegulada: "Antes de agir, nomeie a press\xE3o que est\xE1 sentindo e abra um espa\xE7o breve de escuta \u2014 isso ajuda a distinguir a urg\xEAncia real da urg\xEAncia do momento, sem perder velocidade"
+      },
+      I: {
+        necessidadeAmeacada: "Perda de aprova\xE7\xE3o ou de reconhecimento social",
+        reacaoRisco: "Seu entusiasmo pode levar a evitar o conflito direto ou a assumir mais compromissos do que consegue cumprir, mesmo quando sua inten\xE7\xE3o \xE9 agradar e manter o clima leve",
+        respostaRegulada: "Antes de dizer sim a algo novo, reserve um instante para checar sua agenda real \u2014 isso ajuda a manter sua palavra confi\xE1vel sem perder o entusiasmo que \xE9 sua marca"
+      },
+      S: {
+        necessidadeAmeacada: "Perda de previsibilidade ou de seguran\xE7a na rotina",
+        reacaoRisco: "Sua busca por harmonia pode levar a evitar se posicionar diante de uma mudan\xE7a, mesmo quando sua inten\xE7\xE3o \xE9 apenas preservar a estabilidade do grupo",
+        respostaRegulada: "Expresse a discord\xE2ncia ou d\xFAvida assim que ela surgir, e busque apoio para lidar com a mudan\xE7a \u2014 isso evita que a insatisfa\xE7\xE3o se acumule em sil\xEAncio"
+      },
+      C: {
+        necessidadeAmeacada: "Perda de precis\xE3o ou de controle sobre a qualidade do resultado",
+        reacaoRisco: "Sua busca por precis\xE3o pode levar a adiar decis\xF5es em busca de mais dados, mesmo quando sua inten\xE7\xE3o \xE9 apenas garantir um resultado de qualidade",
+        respostaRegulada: "Defina previamente um n\xEDvel suficiente de informa\xE7\xE3o para decidir \u2014 isso ajuda a manter a qualidade do trabalho sem perder o ritmo necess\xE1rio"
+      }
+    };
+    DESENVOLVIMENTO_DETALHADO = {
+      D: [
+        { competencia: "Escuta Ativa", forcaPreservada: "Agilidade para decidir e agir sem travar diante de incertezas", repertorioAmpliar: "Abrir espa\xE7o para ouvir a equipe antes de fechar a decis\xE3o, mesmo quando o instinto j\xE1 indica um caminho" },
+        { competencia: "Empatia", forcaPreservada: "Firmeza para manter o foco no resultado mesmo sob press\xE3o", repertorioAmpliar: "Considerar o impacto emocional das decis\xF5es nas pessoas envolvidas antes de comunic\xE1-las" },
+        { competencia: "Gest\xE3o de Conflitos", forcaPreservada: "Coragem para lidar com situa\xE7\xF5es dif\xEDceis sem evit\xE1-las", repertorioAmpliar: "Buscar acordos em vez de impor pontos de vista quando a situa\xE7\xE3o est\xE1 tensa" },
+        { competencia: "Adaptabilidade", forcaPreservada: "Disposi\xE7\xE3o para agir r\xE1pido diante de mudan\xE7as", repertorioAmpliar: "Ajustar o ritmo quando o processo pede mais cautela do que velocidade" }
+      ],
+      I: [
+        { competencia: "Planejamento e Organiza\xE7\xE3o", forcaPreservada: "Entusiasmo para come\xE7ar novas iniciativas", repertorioAmpliar: "Estruturar um plano antes de agir, evitando come\xE7ar v\xE1rias coisas ao mesmo tempo" },
+        { competencia: "Gest\xE3o de Tempo", forcaPreservada: "Energia para se envolver em m\xFAltiplas frentes", repertorioAmpliar: "Criar rotinas de acompanhamento para n\xE3o perder prazos assumidos" },
+        { competencia: "Leitura de Cen\xE1rio", forcaPreservada: "Otimismo que mant\xE9m a equipe motivada", repertorioAmpliar: "Analisar dados e contexto antes de se deixar levar pelo entusiasmo do momento" },
+        { competencia: "Disciplina", forcaPreservada: "Facilidade para engajar e mobilizar pessoas", repertorioAmpliar: "Manter const\xE2ncia na execu\xE7\xE3o depois que o entusiasmo inicial passa" }
+      ],
+      S: [
+        { competencia: "Comunica\xE7\xE3o Assertiva", forcaPreservada: "Capacidade de acolher e manter a harmonia do grupo", repertorioAmpliar: "Expressar discord\xE2ncias e opini\xF5es pr\xF3prias de forma mais direta" },
+        { competencia: "Adaptabilidade", forcaPreservada: "Consist\xEAncia que traz estabilidade para a equipe", repertorioAmpliar: "Se abrir mais r\xE1pido a mudan\xE7as de plano, mesmo fora da zona de conforto" },
+        { competencia: "Tomada de Decis\xE3o", forcaPreservada: "Cautela que evita decis\xF5es precipitadas", repertorioAmpliar: "Decidir com mais agilidade quando a situa\xE7\xE3o exige resposta r\xE1pida" },
+        { competencia: "Protagonismo", forcaPreservada: "Discri\xE7\xE3o que facilita a coopera\xE7\xE3o e evita disputas", repertorioAmpliar: "Se posicionar e assumir mais visibilidade em vez de ficar em segundo plano" }
+      ],
+      C: [
+        { competencia: "Adaptabilidade", forcaPreservada: "Rigor t\xE9cnico que garante qualidade e consist\xEAncia", repertorioAmpliar: "Lidar melhor com mudan\xE7as de \xFAltima hora e imprevistos" },
+        { competencia: "Intelig\xEAncia Emocional", forcaPreservada: "Objetividade que reduz vieses na an\xE1lise", repertorioAmpliar: "Equilibrar a an\xE1lise t\xE9cnica com mais sensibilidade ao lado humano das situa\xE7\xF5es" },
+        { competencia: "Tomada de Decis\xE3o", forcaPreservada: "Cuidado que evita erros por precipita\xE7\xE3o", repertorioAmpliar: "Avan\xE7ar com a informa\xE7\xE3o dispon\xEDvel, sem esperar 100% de certeza" },
+        { competencia: "Resili\xEAncia", forcaPreservada: "Padr\xE3o elevado que eleva a qualidade do time", repertorioAmpliar: "Lidar com erros e imperfei\xE7\xF5es de forma mais leve, sem exig\xEAncia excessiva de si e dos outros" }
+      ]
     };
     AUTOPERCEP\u00C7\u00C3O_LABELS = {
       1: "Preciso desenvolver muito",
@@ -11927,6 +12801,7 @@ __export(emailService_exports, {
   buildCycleDeadlineAlertEmail: () => buildCycleDeadlineAlertEmail,
   buildLembreteAplicabilidadeEmail: () => buildLembreteAplicabilidadeEmail,
   buildLembreteEngajamentoEmail: () => buildLembreteEngajamentoEmail,
+  buildLembreteInternoWebinarEmail: () => buildLembreteInternoWebinarEmail,
   buildLembreteTarefaMentoriaEmail: () => buildLembreteTarefaMentoriaEmail,
   buildMentoringAlertEmail: () => buildMentoringAlertEmail,
   buildNovaAlunaEmail: () => buildNovaAlunaEmail,
@@ -12150,8 +13025,9 @@ Este e-mail foi enviado automaticamente. Mentor(a) e administra\xE7\xE3o est\xE3
   return { subject, html, text: text2 };
 }
 function buildOnboardingInviteEmail(data) {
-  const subject = `\u{1F389} Parab\xE9ns! Sua jornada no ECOSSISTEMA DO BEM come\xE7a agora!`;
+  const subject = `Boas-vindas ao Ecossistema do B.E.M.!`;
   const logoUrl = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const organizacao = data.empresaName || "sua organiza\xE7\xE3o";
   const html = `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -12163,138 +13039,117 @@ function buildOnboardingInviteEmail(data) {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
-          
-          <!-- Header com Logo -->
+        <table role="presentation" width="100%" style="max-width: 560px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.06);">
           <tr>
-            <td style="background-color: #ffffff; padding: 30px 40px; text-align: center;">
-              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 12px;" />
-              <p style="color: #6b7280; margin: 4px 0 0; font-size: 13px;">
-                Programa de Desenvolvimento e Mentoria
-              </p>
+            <td style="background-color: #0f2b3c; padding: 28px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="Ecossistema do B.E.M." style="max-width: 180px; height: auto;" />
             </td>
           </tr>
-          <!-- Divider -->
-          <tr>
-            <td style="padding: 0 40px;">
-              <hr style="border: none; border-top: 2px solid #e8a838; margin: 0;" />
-            </td>
-          </tr>
-
-          <!-- Body -->
           <tr>
             <td style="padding: 40px;">
-              <h2 style="color: #0f2b3c; margin: 0 0 20px; font-size: 22px;">
-                \u{1F389} Parab\xE9ns, ${data.alunoName}!
-              </h2>
-              
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
-                \xC9 com muita alegria que informamos que voc\xEA foi selecionado(a) para participar do <strong>ECOSSISTEMA DO BEM</strong>${data.empresaName ? ` pela empresa <strong>${data.empresaName}</strong>` : ""}! \u{1F31F}
+              <p style="color: #0f2b3c; font-size: 20px; font-weight: 700; margin: 0 0 16px 0;">Ol\xE1, ${data.alunoName}!</p>
+
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+                \xC9 com muita alegria que damos as boas-vindas a voc\xEA ao <strong>Ecossistema do B.E.M.</strong>, plataforma da CKM Talents voltada ao mapeamento e ao desenvolvimento de compet\xEAncias comportamentais e t\xE9cnicas.
               </p>
 
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
-                Este \xE9 o in\xEDcio de uma <strong>jornada transformadora de desenvolvimento profissional e pessoal</strong>. Voc\xEA ter\xE1 acesso a mentorias exclusivas, trilhas de compet\xEAncias e ferramentas que v\xE3o impulsionar sua carreira! \u{1F680}
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+                Voc\xEA foi convidado(a) pela <strong>${organizacao}</strong> para participar de um processo realizado por meio da nossa plataforma.
               </p>
 
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 25px;">
-                Para dar o primeiro passo, acesse a plataforma e complete o seu <strong>Onboarding</strong>. Estamos ansiosos para acompanhar sua evolu\xE7\xE3o! \u{1F4AA}
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+                Nela, voc\xEA encontrar\xE1 as etapas, atividades, avalia\xE7\xF5es e orienta\xE7\xF5es preparadas especialmente para a sua participa\xE7\xE3o, de acordo com o seu plano de ades\xE3o.
               </p>
 
-              <!-- Credentials Box -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 28px 0;">
+                Estamos muito felizes em receber voc\xEA e desejamos que esta seja uma experi\xEAncia positiva, produtiva e enriquecedora.
+              </p>
+
+              <p style="color: #0f2b3c; font-size: 15px; font-weight: 600; margin: 0 0 12px 0;">
+                Para come\xE7ar, acesse a plataforma utilizando os dados abaixo:
+              </p>
+
+              <table role="presentation" width="100%" style="background-color: #f4f6f8; border-radius: 8px; margin: 0 0 28px 0;">
                 <tr>
-                  <td style="background-color: #f0f7fa; border: 1px solid #d1e5ed; border-radius: 8px; padding: 20px;">
-                    <p style="color: #0f2b3c; font-size: 14px; font-weight: 600; margin: 0 0 12px;">
-                      \u{1F511} Seus dados de acesso:
-                    </p>
-                    <table role="presentation" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 80px;">\u{1F4E7} Email:</td>
-                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.alunoEmail}</td>
-                      </tr>
-                      <tr>
-                        <td style="color: #6b7280; font-size: 14px; padding: 4px 0; width: 80px;">\u{1F194} ID:</td>
-                        <td style="color: #0f2b3c; font-size: 14px; font-weight: 600; padding: 4px 0;">${data.alunoId}</td>
-                      </tr>
-                    </table>
+                  <td style="padding: 16px 20px;">
+                    <p style="color: #0f2b3c; font-size: 14px; font-weight: 700; margin: 0 0 8px 0;">Seus dados de acesso</p>
+                    <p style="color: #33475b; font-size: 14px; margin: 0 0 4px 0;">E-mail: ${data.alunoEmail}</p>
+                    <p style="color: #33475b; font-size: 14px; margin: 0;">ID: ${data.alunoId}</p>
                   </td>
                 </tr>
               </table>
 
-              <!-- CTA Button -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 30px;">
+              <table role="presentation" width="100%" style="margin: 0 0 28px 0;">
                 <tr>
                   <td align="center">
-                    <a href="${data.loginUrl}" 
-                       style="display: inline-block; background: linear-gradient(135deg, #e8a838 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
-                      \u2728 Iniciar Minha Jornada
+                    <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #f0c060 0%, #d4922e 100%); color: #0f2b3c; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;">
+                      ACESSAR A PLATAFORMA
                     </a>
                   </td>
                 </tr>
               </table>
 
-              <p style="color: #9ca3af; font-size: 13px; line-height: 1.6; margin: 0; text-align: center;">
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 16px 0;">
+                Acesse a plataforma, conhe\xE7a o ambiente e siga as orienta\xE7\xF5es dispon\xEDveis em sua \xE1rea de participa\xE7\xE3o.
+              </p>
+
+              <p style="color: #33475b; font-size: 15px; line-height: 1.7; margin: 0 0 8px 0;">
+                Seja muito bem-vindo(a) ao Ecossistema do B.E.M.!
+              </p>
+
+              <p style="color: #9ca3af; font-size: 13px; line-height: 1.6; margin: 0;">
                 Caso o bot\xE3o n\xE3o funcione, copie e cole este link no seu navegador:<br>
                 <a href="${data.loginUrl}" style="color: #1a4a5e; word-break: break-all;">${data.loginUrl}</a>
               </p>
             </td>
           </tr>
-
-          <!-- Motivational Banner -->
           <tr>
-            <td style="background: linear-gradient(135deg, #e8a838 0%, #f0c060 100%); padding: 20px 40px; text-align: center;">
-              <p style="color: #0f2b3c; font-size: 15px; font-weight: 600; margin: 0; line-height: 1.6;">
-                \u{1F331} "O desenvolvimento \xE9 uma jornada, n\xE3o um destino. Cada passo conta!" \u{1F331}
+            <td style="background-color: #f4f6f8; padding: 24px 40px; text-align: center;">
+              <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin: 0 0 8px 0;">
+                Em caso de d\xFAvidas, fale conosco: <a href="https://ckmtalents.com.br/fale-conosco/" style="color: #1a4a5e;">ckmtalents.com.br/fale-conosco</a>
+              </p>
+              <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                Atenciosamente,<br>
+                Equipe CKM Talents \u2014 Ecossistema do B.E.M.
               </p>
             </td>
           </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color: #f8fafc; padding: 20px 40px; border-top: 1px solid #e5e7eb;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" style="padding-bottom: 12px;">
-                    <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="60" style="opacity: 0.7;" />
-                  </td>
-                </tr>
-                <tr>
-                  <td align="center">
-                    <p style="color: #9ca3af; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
-                      Este \xE9 um email autom\xE1tico do ECOSSISTEMA DO BEM.<br>
-                      Em caso de d\xFAvidas, entre em contato com a administra\xE7\xE3o do programa.<br>
-                      \xA9 ${(/* @__PURE__ */ new Date()).getFullYear()} CKM Talents \u2014 Todos os direitos reservados.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
         </table>
       </td>
     </tr>
   </table>
 </body>
-</html>`;
-  const text2 = `\u{1F389} Parab\xE9ns, ${data.alunoName}!
+</html>
+`;
+  const text2 = `Boas-vindas ao Ecossistema do B.E.M.!
 
-\xC9 com muita alegria que informamos que voc\xEA foi selecionado(a) para participar do ECOSSISTEMA DO BEM${data.empresaName ? ` pela empresa ${data.empresaName}` : ""}! \u{1F31F}
+Ol\xE1, ${data.alunoName}!
 
-Este \xE9 o in\xEDcio de uma jornada transformadora de desenvolvimento profissional e pessoal. Voc\xEA ter\xE1 acesso a mentorias exclusivas, trilhas de compet\xEAncias e ferramentas que v\xE3o impulsionar sua carreira! \u{1F680}
+\xC9 com muita alegria que damos as boas-vindas a voc\xEA ao Ecossistema do B.E.M., plataforma da CKM Talents voltada ao mapeamento e ao desenvolvimento de compet\xEAncias comportamentais e t\xE9cnicas.
 
-Para dar o primeiro passo, acesse a plataforma e complete o seu Onboarding. \u{1F4AA}
+Voc\xEA foi convidado(a) pela ${organizacao} para participar de um processo realizado por meio da nossa plataforma.
 
-\u{1F511} Seus dados de acesso:
-- \u{1F4E7} Email: ${data.alunoEmail}
-- \u{1F194} ID: ${data.alunoId}
+Nela, voc\xEA encontrar\xE1 as etapas, atividades, avalia\xE7\xF5es e orienta\xE7\xF5es preparadas especialmente para a sua participa\xE7\xE3o, de acordo com o seu plano de ades\xE3o.
 
-\u2728 Acesse: ${data.loginUrl}
+Estamos muito felizes em receber voc\xEA e desejamos que esta seja uma experi\xEAncia positiva, produtiva e enriquecedora.
 
-\u{1F331} "O desenvolvimento \xE9 uma jornada, n\xE3o um destino. Cada passo conta!" \u{1F331}
+Para come\xE7ar, acesse a plataforma utilizando os dados abaixo:
 
-Este \xE9 um email autom\xE1tico do ECOSSISTEMA DO BEM.
-\xA9 ${(/* @__PURE__ */ new Date()).getFullYear()} CKM Talents \u2014 Todos os direitos reservados.`;
+Seus dados de acesso
+E-mail: ${data.alunoEmail}
+ID: ${data.alunoId}
+
+Acessar a plataforma: ${data.loginUrl}
+
+Acesse a plataforma, conhe\xE7a o ambiente e siga as orienta\xE7\xF5es dispon\xEDveis em sua \xE1rea de participa\xE7\xE3o.
+
+Seja muito bem-vindo(a) ao Ecossistema do B.E.M.!
+
+Em caso de d\xFAvidas, fale conosco: https://ckmtalents.com.br/fale-conosco/
+
+Atenciosamente,
+Equipe CKM Talents
+Ecossistema do B.E.M.`;
   return { subject, html, text: text2 };
 }
 function buildWebinarReminderEmail(data) {
@@ -13834,6 +14689,7 @@ function buildRelatorioMentoriasEmail(data) {
   const corBanner = data.isFinal ? "#065f46" : "#92400e";
   const bgBanner = data.isFinal ? "#d1fae5" : "#fef3c7";
   const subject = `${data.isFinal ? "Relatorio Definitivo" : "Previa do Relatorio"} de Mentorias - ${data.mentoraNome} - ${data.periodoInicio} a ${data.periodoFim}`;
+  const pagamentoInfo = data.dataPagamento ? `<p style="color:${corBanner};font-size:13px;margin:6px 0 0;">\u{1F4B0} Pagamento previsto: <strong>dia 10/${data.dataPagamento.slice(5, 7)}/${data.dataPagamento.slice(0, 4)}</strong></p>` : "";
   const formatDate = (d) => {
     if (!d) return "-";
     const parts = d.slice(0, 10).split("-");
@@ -13853,7 +14709,7 @@ function buildRelatorioMentoriasEmail(data) {
   ).join("");
   const agendadosSection = data.agendadosSemRegistro.length > 0 ? `<tr><td colspan="6" style="padding:20px 0 8px;"><p style="color:#92400e;font-size:14px;font-weight:700;margin:0 0 6px;">Agendamentos sem registro de sessao (${data.agendadosSemRegistro.length})</p><p style="color:#b45309;font-size:13px;margin:0 0 8px;">Os agendamentos abaixo constam na agenda mas nao tem ficha de sessao preenchida. Verifique e registre se a sessao foi realizada.</p></td></tr>${data.agendadosSemRegistro.map((a) => `<tr style="border-bottom:1px solid #fde68a;background-color:#fffbeb;"><td style="padding:10px 8px;font-size:13px;color:#92400e;">${formatDate(a.data)}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${a.aluno}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${a.empresa}</td><td style="padding:10px 8px;font-size:13px;color:#92400e;">${formatTipo(a.tipo)}</td><td style="padding:10px 8px;font-size:13px;text-align:center;"><span style="background:#fde68a;color:#92400e;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600;">Pendente</span></td><td style="padding:10px 8px;font-size:13px;color:#92400e;text-align:right;">-</td></tr>`).join("")}` : "";
   const avisoBox = !data.isFinal ? `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:16px 20px;"><p style="color:#92400e;font-size:14px;font-weight:700;margin:0 0 6px;">Esta e uma PREVIA - nao e o relatorio definitivo</p><p style="color:#b45309;font-size:13px;margin:0;line-height:1.6;">Este relatorio e uma previa do periodo <strong>${data.periodoInicio} a ${data.periodoFim}</strong>. Verifique as informacoes e nos informe qualquer ajuste necessario. No dia <strong>30</strong>, sera enviado o <strong>relatorio definitivo</strong> seguindo o mesmo processo.</p></td></tr></table></td></tr>` : `<tr><td style="padding:20px 40px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:16px 20px;"><p style="color:#065f46;font-size:14px;font-weight:700;margin:0 0 6px;">Este e o RELATORIO DEFINITIVO</p><p style="color:#047857;font-size:13px;margin:0;line-height:1.6;">Este e o relatorio definitivo do periodo <strong>${data.periodoInicio} a ${data.periodoFim}</strong>. Confirme as informacoes e nos informe qualquer divergencia em ate 3 dias uteis.</p></td></tr></table></td></tr>`;
-  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="700" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="background:${bgBanner};padding:20px 40px;text-align:center;"><p style="color:${corBanner};font-size:18px;font-weight:700;margin:0;">Relatorio ${tipoRelatorio} de Mentorias</p><p style="color:${corBanner};font-size:14px;margin:8px 0 0;">Periodo: ${data.periodoInicio} a ${data.periodoFim}</p></td></tr>${avisoBox}<tr><td style="padding:30px 40px 10px;"><h2 style="color:#0f2b3c;margin:0 0 12px;font-size:20px;">Ola, ${data.mentoraNome}!</h2><p style="color:#4a5568;font-size:15px;line-height:1.8;margin:0;">Segue abaixo o relatorio das suas sessoes de mentoria no periodo indicado. Por favor, <strong>confira todas as informacoes</strong> e nos informe caso haja qualquer divergencia ou ajuste necessario.</p></td></tr><tr><td style="padding:20px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="width:32%;text-align:center;background:#f0f7fa;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Sessoes Realizadas</p><p style="color:#0f2b3c;font-size:28px;font-weight:700;margin:0;">${data.totalRealizado}</p></td><td style="width:4%;"></td><td style="width:32%;text-align:center;background:#fef3c7;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Agendadas s/ Registro</p><p style="color:#92400e;font-size:28px;font-weight:700;margin:0;">${data.totalAgendado}</p></td><td style="width:4%;"></td><td style="width:32%;text-align:center;background:#d1fae5;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Valor Total</p><p style="color:#065f46;font-size:28px;font-weight:700;margin:0;">R$ ${data.totalValor.toFixed(2).replace(".", ",")}</p></td></tr></table></td></tr><tr><td style="padding:0 40px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;"><thead><tr style="background:#f9fafb;"><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Data</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Aluno</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Empresa</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Tipo</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Registro</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${sessoesRows}${agendadosSection}</tbody></table></td></tr><tr><td style="padding:0 40px 30px;text-align:center;"><a href="${data.loginUrl}" style="display:inline-block;background-color:#e8a838;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">Acessar o Sistema</a><p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">Em caso de duvidas ou divergencias, responda este e-mail ou acesse o sistema.</p></td></tr><tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="700" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="background:${bgBanner};padding:20px 40px;text-align:center;"><p style="color:${corBanner};font-size:18px;font-weight:700;margin:0;">Relatorio ${tipoRelatorio} de Mentorias</p><p style="color:${corBanner};font-size:14px;margin:8px 0 0;">Periodo: ${data.periodoInicio} a ${data.periodoFim}</p>${pagamentoInfo}</td></tr>${avisoBox}<tr><td style="padding:30px 40px 10px;"><h2 style="color:#0f2b3c;margin:0 0 12px;font-size:20px;">Ola, ${data.mentoraNome}!</h2><p style="color:#4a5568;font-size:15px;line-height:1.8;margin:0;">Segue abaixo o relatorio das suas sessoes de mentoria no periodo indicado. Por favor, <strong>confira todas as informacoes</strong> e nos informe caso haja qualquer divergencia ou ajuste necessario.</p></td></tr><tr><td style="padding:20px 40px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="width:32%;text-align:center;background:#f0f7fa;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Sessoes Realizadas</p><p style="color:#0f2b3c;font-size:28px;font-weight:700;margin:0;">${data.totalRealizado}</p></td><td style="width:4%;"></td><td style="width:32%;text-align:center;background:#fef3c7;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Agendadas s/ Registro</p><p style="color:#92400e;font-size:28px;font-weight:700;margin:0;">${data.totalAgendado}</p></td><td style="width:4%;"></td><td style="width:32%;text-align:center;background:#d1fae5;border-radius:8px;padding:16px;"><p style="color:#6b7280;font-size:12px;margin:0 0 4px;text-transform:uppercase;">Valor Total</p><p style="color:#065f46;font-size:28px;font-weight:700;margin:0;">R$ ${data.totalValor.toFixed(2).replace(".", ",")}</p></td></tr></table></td></tr><tr><td style="padding:0 40px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;"><thead><tr style="background:#f9fafb;"><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Data</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Aluno</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Empresa</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:left;font-weight:600;text-transform:uppercase;">Tipo</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:center;font-weight:600;text-transform:uppercase;">Registro</th><th style="padding:12px 8px;font-size:12px;color:#6b7280;text-align:right;font-weight:600;text-transform:uppercase;">Valor</th></tr></thead><tbody>${sessoesRows}${agendadosSection}</tbody></table></td></tr><tr><td style="padding:0 40px 30px;text-align:center;"><a href="${data.loginUrl}" style="display:inline-block;background-color:#e8a838;color:#fff;font-size:15px;font-weight:700;padding:14px 32px;border-radius:8px;text-decoration:none;">Acessar o Sistema</a><p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">Em caso de duvidas ou divergencias, responda este e-mail ou acesse o sistema.</p></td></tr><tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
   const text2 = `Relatorio ${tipoRelatorio} de Mentorias - ${data.mentoraNome}
 Periodo: ${data.periodoInicio} a ${data.periodoFim}
 
@@ -14704,6 +15560,119 @@ https://ecolider.ecodobem.com/mural
 N\xE3o esquece de curtir e participar! Cada \u2764\uFE0F faz a diferen\xE7a.`;
   return { subject, html, text: text2 };
 }
+function buildLembreteInternoWebinarEmail(data) {
+  const logoUrl = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  const primeiroNome = data.responsibleName?.split(" ")[0] || data.responsibleName || "Respons\xE1vel";
+  const subject = `[Checklist Webinar] Lembrete: "${data.taskTitle}" \u2014 ${data.webinarTitle}`;
+  const riskBadge = data.riskLevel === "Alto" ? `<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">\u26A0\uFE0F Risco Alto</span>` : data.riskLevel === "M\xE9dio" ? `<span style="background:#fef3c7;color:#d97706;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">\u26A1 Risco M\xE9dio</span>` : "";
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Lembrete Checklist Webinar</title>
+</head>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f0f2f5;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+        <!-- Logo -->
+        <tr><td style="text-align:center;padding-bottom:20px;">
+          <img src="${logoUrl}" alt="Ecossistema do Bem" width="130" style="display:inline-block;"/>
+        </td></tr>
+
+        <!-- Card -->
+        <tr><td style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="background:linear-gradient(135deg,#0f2b3c 0%,#1a4a5e 100%);padding:32px 40px;text-align:center;">
+              <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#7dd3fc;letter-spacing:3px;text-transform:uppercase;">ECOSSISTEMA DO BEM</p>
+              <h1 style="margin:0;font-size:22px;font-weight:800;color:#ffffff;line-height:1.3;">\u{1F4CB} Checklist de Produ\xE7\xE3o<br/>Webinar</h1>
+            </td></tr>
+          </table>
+
+          <!-- Body -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="padding:36px 40px 32px;">
+
+              <p style="margin:0 0 20px;font-size:17px;font-weight:700;color:#0f2b3c;">Ol\xE1, ${primeiroNome}! \u{1F44B}</p>
+              <p style="margin:0 0 28px;font-size:14px;color:#4b5563;line-height:1.7;">
+                Voc\xEA tem uma tarefa pendente no checklist de produ\xE7\xE3o do webinar abaixo. Por favor, verifique o prazo e atualize o status assim que poss\xEDvel.
+              </p>
+
+              <!-- Card da tarefa -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:28px;">
+                <tr><td style="padding:24px 28px;">
+                  <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:2px;">\u{1F4CC} Tarefa Pendente</p>
+                  <p style="margin:0 0 ${data.taskDescription ? "12px" : "16px"};font-size:18px;font-weight:800;color:#0f2b3c;">${data.taskTitle}</p>
+                  ${data.taskDescription ? `<p style="margin:0 0 16px;font-size:13px;color:#6b7280;line-height:1.6;">${data.taskDescription}</p>` : ""}
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="font-size:13px;color:#6b7280;padding:4px 0;width:120px;">\u{1F4C5} Prazo:</td>
+                      <td style="font-size:13px;font-weight:700;color:#dc2626;padding:4px 0;">${data.dueDate}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px;color:#6b7280;padding:4px 0;">\u{1F399}\uFE0F Webinar:</td>
+                      <td style="font-size:13px;font-weight:600;color:#0f2b3c;padding:4px 0;">${data.webinarTitle}</td>
+                    </tr>
+                    <tr>
+                      <td style="font-size:13px;color:#6b7280;padding:4px 0;">\u{1F4C6} Data do evento:</td>
+                      <td style="font-size:13px;font-weight:600;color:#0f2b3c;padding:4px 0;">${data.webinarDate}</td>
+                    </tr>
+                    ${data.riskLevel && data.riskLevel !== "Baixo" ? `
+                    <tr>
+                      <td style="font-size:13px;color:#6b7280;padding:8px 0 4px;">N\xEDvel de risco:</td>
+                      <td style="padding:8px 0 4px;">${riskBadge}</td>
+                    </tr>` : ""}
+                  </table>
+                </td></tr>
+              </table>
+
+              <!-- Bot\xE3o CTA -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr><td style="text-align:center;padding-bottom:24px;">
+                  <a href="${data.adminUrl}" style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#ffffff;text-decoration:none;padding:14px 44px;border-radius:8px;font-size:15px;font-weight:700;letter-spacing:0.3px;">Ver Checklist Completo \u2192</a>
+                </td></tr>
+              </table>
+
+              <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;line-height:1.6;">
+                Este \xE9 um lembrete interno da equipe de produ\xE7\xE3o do ECOSSISTEMA DO BEM.<br/>
+                Acesse a plataforma para atualizar o status desta tarefa.
+              </p>
+
+            </td></tr>
+          </table>
+
+          <!-- Footer -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f1f5f9;">
+            <tr><td style="padding:20px 40px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#9ca3af;">ECOSSISTEMA DO BEM \u2014 Gest\xE3o de Webinars<br/>Voc\xEA est\xE1 recebendo este e-mail por ser respons\xE1vel por uma tarefa de produ\xE7\xE3o.</p>
+            </td></tr>
+          </table>
+
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+  const text2 = `[Checklist Webinar] Lembrete: ${data.taskTitle}
+
+Ol\xE1, ${primeiroNome}!
+
+Voc\xEA tem uma tarefa pendente no checklist de produ\xE7\xE3o do webinar "${data.webinarTitle}".
+
+Tarefa: ${data.taskTitle}
+${data.taskDescription ? `Descri\xE7\xE3o: ${data.taskDescription}
+` : ""}Prazo: ${data.dueDate}
+Webinar: ${data.webinarTitle}
+Data do evento: ${data.webinarDate}
+${data.riskLevel ? `N\xEDvel de risco: ${data.riskLevel}
+` : ""}
+Acesse a plataforma para atualizar o status: ${data.adminUrl}`;
+  return { subject, html, text: text2 };
+}
 var transporter;
 var init_emailService = __esm({
   "server/emailService.ts"() {
@@ -15062,13 +16031,564 @@ var init_googleCalendarService = __esm({
   }
 });
 
+// server/cronPreparacaoSessao.ts
+var cronPreparacaoSessao_exports = {};
+__export(cronPreparacaoSessao_exports, {
+  enviarPreparacaoSessao: () => enviarPreparacaoSessao,
+  iniciarCronPreparacaoSessao: () => iniciarCronPreparacaoSessao,
+  verificarEEnviarLembreteD1Sessao: () => verificarEEnviarLembreteD1Sessao
+});
+import { eq as eq8, and as and7 } from "drizzle-orm";
+async function buscarPendenciasAluno(alunoId, db2) {
+  const agora = /* @__PURE__ */ new Date();
+  const hoje = agora.toISOString().slice(0, 10);
+  const em30dias = new Date(agora.getTime() + 30 * 24 * 60 * 60 * 1e3).toISOString().slice(0, 10);
+  const tarefasPendentes = [];
+  try {
+    const sessoes = await db2.execute(`
+      SELECT taskStatus, taskDeadline, customTaskTitle, taskMode
+      FROM mentoring_sessions
+      WHERE alunoId = ${alunoId}
+        AND taskStatus IN ('nao_entregue', 'sem_tarefa')
+        AND taskMode IS NOT NULL
+        AND taskMode != 'sem_tarefa'
+      ORDER BY sessionDate DESC
+      LIMIT 5
+    `);
+    const rows = Array.isArray(sessoes[0]) ? sessoes[0] : sessoes;
+    for (const s of rows) {
+      if (s.taskMode && s.taskMode !== "sem_tarefa" && s.taskStatus !== "entregue") {
+        const prazo = s.taskDeadline ? new Date(s.taskDeadline) : null;
+        const diasAtraso = prazo ? Math.floor((agora.getTime() - prazo.getTime()) / (1e3 * 60 * 60 * 24)) : 0;
+        tarefasPendentes.push({
+          titulo: s.customTaskTitle || (s.taskMode === "biblioteca" ? "Atividade da Biblioteca" : "Atividade Pr\xE1tica"),
+          prazo: prazo ? prazo.toLocaleDateString("pt-BR") : null,
+          diasAtraso: Math.max(0, diasAtraso)
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("[PreparacaoSessao] Erro tarefas:", e);
+  }
+  const webinarsPendentes = [];
+  try {
+    const participacoes = await db2.execute(`
+      SELECT ep.status, e.title, e.eventDate
+      FROM event_participation ep
+      JOIN events e ON e.id = ep.eventId
+      WHERE ep.alunoId = ${alunoId}
+        AND ep.status = 'ausente'
+        AND e.eventDate <= '${hoje}'
+      ORDER BY e.eventDate DESC
+      LIMIT 5
+    `);
+    const rows = Array.isArray(participacoes[0]) ? participacoes[0] : participacoes;
+    for (const w of rows) {
+      webinarsPendentes.push({
+        titulo: w.title || "Webinar",
+        data: w.eventDate ? new Date(w.eventDate).toLocaleDateString("pt-BR") : ""
+      });
+    }
+  } catch (e) {
+    console.warn("[PreparacaoSessao] Erro webinars:", e);
+  }
+  const microciclosVencendo = [];
+  try {
+    const ciclos = await db2.execute(`
+      SELECT ce.dataFim, c.nome as competencia
+      FROM ciclos_execucao ce
+      JOIN competencias c ON c.id = ce.competenciaId
+      WHERE ce.alunoId = ${alunoId}
+        AND ce.status = 'em_andamento'
+        AND ce.dataFim >= '${hoje}'
+        AND ce.dataFim <= '${em30dias}'
+      ORDER BY ce.dataFim ASC
+      LIMIT 5
+    `);
+    const rows = Array.isArray(ciclos[0]) ? ciclos[0] : ciclos;
+    for (const m of rows) {
+      microciclosVencendo.push({
+        competencia: m.competencia || "Compet\xEAncia",
+        vencimento: m.dataFim ? new Date(m.dataFim).toLocaleDateString("pt-BR") : ""
+      });
+    }
+  } catch (e) {
+    console.warn("[PreparacaoSessao] Erro microciclos:", e);
+  }
+  let pdiDesatualizado = false;
+  try {
+    const ultimaAtualizacao = await db2.execute(`
+      SELECT COUNT(*) as totalSessoes
+      FROM mentoring_sessions ms
+      WHERE ms.alunoId = ${alunoId}
+        AND ms.sessionDate > COALESCE(
+          (SELECT MAX(updatedAt) FROM metas WHERE alunoId = ${alunoId}),
+          '2000-01-01'
+        )
+    `);
+    const rows = Array.isArray(ultimaAtualizacao[0]) ? ultimaAtualizacao[0] : ultimaAtualizacao;
+    const total = Number(rows[0]?.totalSessoes || 0);
+    pdiDesatualizado = total >= 5;
+  } catch (e) {
+    console.warn("[PreparacaoSessao] Erro PDI:", e);
+  }
+  let semMetas = false;
+  try {
+    const totalMetas = await db2.execute(`
+      SELECT COUNT(*) as total FROM metas WHERE alunoId = ${alunoId}
+    `);
+    const rows = Array.isArray(totalMetas[0]) ? totalMetas[0] : totalMetas;
+    semMetas = Number(rows[0]?.total || 0) === 0;
+    if (semMetas) pdiDesatualizado = false;
+  } catch (e) {
+    console.warn("[PreparacaoSessao] Erro metas:", e);
+  }
+  return { tarefasPendentes, webinarsPendentes, microciclosVencendo, pdiDesatualizado, semMetas };
+}
+function buildEmailPreparacaoSessao(data) {
+  const { alunoNome, mentoraNome, dataSessao, horaSessao, tipoSessao, pendencias, tipo, paraAluno } = data;
+  const totalPendencias = pendencias.tarefasPendentes.length + pendencias.webinarsPendentes.length + pendencias.microciclosVencendo.length + (pendencias.pdiDesatualizado ? 1 : 0) + (pendencias.semMetas ? 1 : 0);
+  const subject = tipo === "agendamento" ? `\u{1F4C5} Sess\xE3o agendada com ${paraAluno ? mentoraNome : alunoNome} \u2014 ${dataSessao} \xE0s ${horaSessao}` : `\u{1F514} Lembrete: sua sess\xE3o \xE9 amanh\xE3 \u2014 ${dataSessao} \xE0s ${horaSessao}`;
+  const tituloPrincipal = tipo === "agendamento" ? `Sess\xE3o agendada para ${dataSessao}` : `Sua sess\xE3o \xE9 amanh\xE3!`;
+  const saudacao = paraAluno ? `Ol\xE1, <strong>${alunoNome}</strong>!` : `Ol\xE1, <strong>${mentoraNome}</strong>!`;
+  const intro = paraAluno ? tipo === "agendamento" ? `Sua sess\xE3o de mentoria com <strong>${mentoraNome}</strong> foi agendada. Confira abaixo suas pend\xEAncias para se preparar melhor para a sess\xE3o.` : `Sua sess\xE3o de mentoria com <strong>${mentoraNome}</strong> \xE9 amanh\xE3! Confira suas pend\xEAncias antes da sess\xE3o.` : tipo === "agendamento" ? `Uma nova sess\xE3o foi agendada com <strong>${alunoNome}</strong>. Abaixo est\xE3o as pend\xEAncias identificadas para este aluno.` : `Lembrete: sua sess\xE3o com <strong>${alunoNome}</strong> \xE9 amanh\xE3! Veja as pend\xEAncias identificadas.`;
+  const sessaoBox = `
+    <div style="background:#f0f7fa;border-radius:8px;padding:16px 20px;margin:16px 0;">
+      <p style="margin:0;font-size:13px;color:#6b7280;text-transform:uppercase;font-weight:600;">Sess\xE3o Agendada</p>
+      <p style="margin:8px 0 4px;font-size:16px;font-weight:700;color:#0f2b3c;">\u{1F4C5} ${dataSessao} \xE0s ${horaSessao}</p>
+      <p style="margin:0;font-size:13px;color:#4a5568;">Tipo: ${tipoSessao}${data.googleMeetLink ? ` \xB7 <a href="${data.googleMeetLink}" style="color:#0ea5e9;">Abrir Meet</a>` : ""}</p>
+    </div>`;
+  let pendenciasHtml = "";
+  if (totalPendencias === 0) {
+    pendenciasHtml = `<div style="background:#d1fae5;border-radius:8px;padding:16px 20px;margin:16px 0;"><p style="color:#065f46;font-weight:600;margin:0;">\u2705 Nenhuma pend\xEAncia identificada! Tudo em dia.</p></div>`;
+  } else {
+    pendenciasHtml = `<p style="font-size:15px;font-weight:700;color:#0f2b3c;margin:20px 0 8px;">\u{1F4CB} Pend\xEAncias identificadas (${totalPendencias})</p>`;
+    if (pendencias.tarefasPendentes.length > 0) {
+      pendenciasHtml += `<div style="border:1px solid #fcd34d;border-radius:8px;padding:14px 18px;margin:8px 0;background:#fffbeb;">
+        <p style="color:#92400e;font-weight:700;margin:0 0 8px;">\u{1F4DD} Tarefas Pr\xE1ticas Pendentes (${pendencias.tarefasPendentes.length})</p>
+        ${pendencias.tarefasPendentes.map((t2) => `<p style="margin:4px 0;font-size:13px;color:#78350f;">\u2022 ${t2.titulo}${t2.prazo ? ` \u2014 prazo: ${t2.prazo}` : ""}${t2.diasAtraso > 0 ? ` <span style="color:#dc2626;font-weight:600;">(${t2.diasAtraso} dias em atraso)</span>` : ""}</p>`).join("")}
+      </div>`;
+    }
+    if (pendencias.webinarsPendentes.length > 0) {
+      pendenciasHtml += `<div style="border:1px solid #93c5fd;border-radius:8px;padding:14px 18px;margin:8px 0;background:#eff6ff;">
+        <p style="color:#1d4ed8;font-weight:700;margin:0 0 8px;">\u{1F3A5} Webinars n\xE3o assistidos (${pendencias.webinarsPendentes.length})</p>
+        ${pendencias.webinarsPendentes.map((w) => `<p style="margin:4px 0;font-size:13px;color:#1e40af;">\u2022 ${w.titulo} \u2014 ${w.data}</p>`).join("")}
+      </div>`;
+    }
+    if (pendencias.microciclosVencendo.length > 0) {
+      pendenciasHtml += `<div style="border:1px solid #6ee7b7;border-radius:8px;padding:14px 18px;margin:8px 0;background:#ecfdf5;">
+        <p style="color:#065f46;font-weight:700;margin:0 0 8px;">\u23F0 Microciclos vencendo em 30 dias (${pendencias.microciclosVencendo.length})</p>
+        ${pendencias.microciclosVencendo.map((m) => `<p style="margin:4px 0;font-size:13px;color:#047857;">\u2022 ${m.competencia} \u2014 vence em ${m.vencimento}</p>`).join("")}
+      </div>`;
+    }
+    if (pendencias.semMetas) {
+      pendenciasHtml += `<div style="border:1px solid #fca5a5;border-radius:8px;padding:14px 18px;margin:8px 0;background:#fef2f2;">
+        <p style="color:#991b1b;font-weight:700;margin:0;">\u{1F3AF} PDI \u2014 Nenhuma meta lan\xE7ada</p>
+        <p style="color:#b91c1c;font-size:13px;margin:4px 0 0;">O aluno ainda n\xE3o possui metas cadastradas. Aproveite a sess\xE3o para criar as primeiras metas de desenvolvimento.</p>
+      </div>`;
+    }
+    if (pendencias.pdiDesatualizado) {
+      pendenciasHtml += `<div style="border:1px solid #d8b4fe;border-radius:8px;padding:14px 18px;margin:8px 0;background:#faf5ff;">
+        <p style="color:#6b21a8;font-weight:700;margin:0;">\u{1F4CA} PDI \u2014 Metas precisam de atualiza\xE7\xE3o</p>
+        <p style="color:#7e22ce;font-size:13px;margin:4px 0 0;">Aproveite a sess\xE3o para revisar e atualizar as metas de desenvolvimento.</p>
+      </div>`;
+    }
+  }
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+  <tr><td style="background:#0f2b3c;padding:24px 40px;">
+    <p style="color:#e8a838;font-size:18px;font-weight:700;margin:0;">${tituloPrincipal}</p>
+    <p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Ecossistema do Bem \u2014 Mentoria e Desenvolvimento</p>
+  </td></tr>
+  <tr><td style="padding:30px 40px;">
+    <p style="font-size:16px;color:#0f2b3c;margin:0 0 12px;">${saudacao}</p>
+    <p style="font-size:14px;color:#4a5568;line-height:1.7;margin:0;">${intro}</p>
+    ${sessaoBox}
+    ${pendenciasHtml}
+  </td></tr>
+  <tr><td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+    <p style="color:#9ca3af;font-size:12px;margin:0;">Ecossistema do Bem \u2014 Programa de Desenvolvimento e Mentoria</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+  return { subject, html };
+}
+async function enviarPreparacaoSessao(appointmentId, alunoId, tipo) {
+  const db2 = await getDb();
+  if (!db2) return;
+  try {
+    const tipoAlerta = tipo === "agendamento" ? TIPO_ALERTA_AGENDAMENTO : TIPO_ALERTA_D1;
+    const jaEnviou = await db2.select().from(emailAlertasLog).where(and7(
+      eq8(emailAlertasLog.alunoId, alunoId),
+      eq8(emailAlertasLog.tipoAlerta, tipoAlerta)
+    )).limit(1);
+    const jaEnviouEsteAppt = jaEnviou.find((l) => l.diasSemSessao === appointmentId);
+    if (jaEnviouEsteAppt) {
+      console.log(`[PreparacaoSessao] J\xE1 enviado ${tipo} para aluno ${alunoId} agendamento ${appointmentId}`);
+      return;
+    }
+    const appt = await db2.select().from(mentorAppointments).where(eq8(mentorAppointments.id, appointmentId)).limit(1);
+    if (!appt[0]) return;
+    const aluno = await db2.select().from(alunos).where(eq8(alunos.id, alunoId)).limit(1);
+    if (!aluno[0]?.email) return;
+    const mentor = await db2.select().from(consultors).where(eq8(consultors.id, appt[0].consultorId)).limit(1);
+    if (!mentor[0]) return;
+    const pendencias = await buscarPendenciasAluno(alunoId, db2);
+    const dataSessao = (/* @__PURE__ */ new Date(appt[0].scheduledDate + "T12:00:00")).toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    });
+    const horaSessao = appt[0].startTime || "";
+    const tipoSessao = appt[0].type === "grupo" ? "Sess\xE3o Grupal" : "Sess\xE3o Individual";
+    const emailAluno = buildEmailPreparacaoSessao({
+      alunoNome: aluno[0].name,
+      mentoraNome: mentor[0].name,
+      dataSessao,
+      horaSessao,
+      tipoSessao,
+      googleMeetLink: appt[0].googleMeetLink || null,
+      pendencias,
+      tipo,
+      paraAluno: true
+    });
+    await sendEmail({ to: aluno[0].email, subject: emailAluno.subject, html: emailAluno.html });
+    if (mentor[0].email) {
+      const emailMentora = buildEmailPreparacaoSessao({
+        alunoNome: aluno[0].name,
+        mentoraNome: mentor[0].name,
+        dataSessao,
+        horaSessao,
+        tipoSessao,
+        googleMeetLink: appt[0].googleMeetLink || null,
+        pendencias,
+        tipo,
+        paraAluno: false
+      });
+      await sendEmail({ to: mentor[0].email, subject: emailMentora.subject, html: emailMentora.html });
+    }
+    if (pendencias.tarefasPendentes.length > 0 || pendencias.webinarsPendentes.length > 0 || pendencias.microciclosVencendo.length > 0) {
+      const emailAdmin = buildEmailPreparacaoSessao({
+        alunoNome: aluno[0].name,
+        mentoraNome: mentor[0].name,
+        dataSessao,
+        horaSessao,
+        tipoSessao,
+        googleMeetLink: appt[0].googleMeetLink || null,
+        pendencias,
+        tipo,
+        paraAluno: false
+      });
+      for (const adminEmail of ADMINS_CC) {
+        await sendEmail({ to: adminEmail, subject: `[ADMIN] ${emailAdmin.subject}`, html: emailAdmin.html });
+      }
+    }
+    await db2.insert(emailAlertasLog).values({
+      alunoId,
+      consultorId: appt[0].consultorId,
+      tipoAlerta,
+      diasSemSessao: appointmentId,
+      // reutilizando campo para guardar appointmentId
+      emailEnviado: 1
+    });
+    console.log(`[PreparacaoSessao] ${tipo} enviado \u2014 aluno ${aluno[0].name} / sess\xE3o ${dataSessao}`);
+  } catch (e) {
+    console.error(`[PreparacaoSessao] Erro ao enviar ${tipo} para aluno ${alunoId}:`, e);
+  }
+}
+async function verificarEEnviarLembreteD1Sessao() {
+  const db2 = await getDb();
+  if (!db2) return;
+  const amanha = /* @__PURE__ */ new Date();
+  amanha.setDate(amanha.getDate() + 1);
+  const amanhaStr = amanha.toISOString().slice(0, 10);
+  const agendamentosAmanha = await db2.select().from(mentorAppointments).where(eq8(mentorAppointments.scheduledDate, amanhaStr));
+  for (const appt of agendamentosAmanha) {
+    const participantes = await db2.select().from(appointmentParticipants).where(eq8(appointmentParticipants.appointmentId, appt.id));
+    if (participantes.length > 0) {
+      for (const p of participantes) {
+        await enviarPreparacaoSessao(appt.id, p.alunoId, "d1");
+      }
+    }
+  }
+}
+function iniciarCronPreparacaoSessao() {
+  const INTERVALO_MS = 24 * 60 * 60 * 1e3;
+  setTimeout(async () => {
+    try {
+      await verificarEEnviarLembreteD1Sessao();
+    } catch (e) {
+      console.error("[Cron PreparacaoSessao]", e);
+    }
+  }, 5 * 60 * 1e3);
+  setInterval(async () => {
+    try {
+      await verificarEEnviarLembreteD1Sessao();
+    } catch (e) {
+      console.error("[Cron PreparacaoSessao]", e);
+    }
+  }, INTERVALO_MS);
+  console.log("[Cron PreparacaoSessao D-1] Iniciado");
+}
+var TIPO_ALERTA_AGENDAMENTO, TIPO_ALERTA_D1, ADMINS_CC;
+var init_cronPreparacaoSessao = __esm({
+  "server/cronPreparacaoSessao.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    init_emailService();
+    TIPO_ALERTA_AGENDAMENTO = "preparacao_sessao_agendamento";
+    TIPO_ALERTA_D1 = "preparacao_sessao_d1";
+    ADMINS_CC = [
+      "financeiro@makiyama.com.br",
+      "dina@makiyama.com.br",
+      "relacionamento@ckmtalents.net"
+    ];
+  }
+});
+
+// shared/competenciaDiscMatrix.ts
+var competenciaDiscMatrix_exports = {};
+__export(competenciaDiscMatrix_exports, {
+  COMPETENCIA_DISC: () => COMPETENCIA_DISC
+});
+var COMPETENCIA_DISC;
+var init_competenciaDiscMatrix = __esm({
+  "shared/competenciaDiscMatrix.ts"() {
+    "use strict";
+    COMPETENCIA_DISC = {
+      "Gest\xE3o do Tempo": {
+        D: { facilidade: "Moderada", ponto: "Reservar margem de seguran\xE7a ao planejar prazos, evitando subestimar o tempo real das tarefas por pressa de concluir." },
+        I: { facilidade: "Condicionada", ponto: "Usar lembretes e blocos de tempo protegido para tarefas de foco, j\xE1 que o entusiasmo social tende a dispersar a agenda." },
+        S: { facilidade: "Alta", ponto: "Revisar prazos quando a mudan\xE7a \xE9 necess\xE1ria, evitando rigidez excessiva com a rotina j\xE1 estabelecida." },
+        C: { facilidade: "Alta", ponto: "Evitar gastar tempo demais refinando detalhes que n\xE3o mudam o resultado final." }
+      },
+      "Aten\xE7\xE3o": {
+        D: { facilidade: "Condicionada", ponto: "Criar checkpoints de revis\xE3o antes de considerar a tarefa conclu\xEDda, para n\xE3o perder detalhes no caminho at\xE9 o resultado." },
+        I: { facilidade: "Condicionada", ponto: "Reduzir interrup\xE7\xF5es durante blocos que exigem concentra\xE7\xE3o, j\xE1 que est\xEDmulos sociais tendem a desviar o foco." },
+        S: { facilidade: "Moderada", ponto: "Revisar informa\xE7\xF5es periodicamente mesmo quando parece que est\xE1 tudo igual." },
+        C: { facilidade: "Alta", ponto: "Dosar o n\xEDvel de profundidade da an\xE1lise conforme a import\xE2ncia real da tarefa." }
+      },
+      "Autopercep\xE7\xE3o": {
+        D: { facilidade: "Moderada", ponto: "Buscar feedback direto sobre como as pr\xF3prias atitudes afetam a equipe, al\xE9m do resultado entregue." },
+        I: { facilidade: "Moderada", ponto: "Buscar crit\xE9rios mais objetivos de autoavalia\xE7\xE3o, al\xE9m da aprova\xE7\xE3o social recebida." },
+        S: { facilidade: "Alta", ponto: "Expressar a autopercep\xE7\xE3o constru\xEDda em vez de guard\xE1-la s\xF3 para si." },
+        C: { facilidade: "Alta", ponto: "Evitar autocr\xEDtica excessiva diante de resultados imperfeitos." }
+      },
+      "Disciplina": {
+        D: { facilidade: "Moderada", ponto: "Sustentar o mesmo padr\xE3o mesmo quando a tarefa deixa de ser desafiadora ou estimulante." },
+        I: { facilidade: "Condicionada", ponto: "Criar estruturas externas \u2014 rotinas, lembretes, parceiros de cobran\xE7a \u2014 para manter o ritmo quando o entusiasmo inicial passa." },
+        S: { facilidade: "Alta", ponto: "Revisar rotinas antigas que j\xE1 n\xE3o fazem mais sentido, em vez de repeti-las por h\xE1bito." },
+        C: { facilidade: "Alta", ponto: "Flexibilizar o processo quando a situa\xE7\xE3o pede adapta\xE7\xE3o, n\xE3o repeti\xE7\xE3o." }
+      },
+      "Empatia": {
+        D: { facilidade: "Condicionada", ponto: "Pausar para considerar como a decis\xE3o \xE9 recebida pelas pessoas envolvidas, antes de priorizar s\xF3 o resultado." },
+        I: { facilidade: "Moderada", ponto: "Ouvir mais e resolver menos r\xE1pido, dando espa\xE7o para a outra pessoa se expressar por completo." },
+        S: { facilidade: "Alta", ponto: "Cuidar para n\xE3o absorver o peso emocional alheio como se fosse pr\xF3prio." },
+        C: { facilidade: "Condicionada", ponto: "Nomear explicitamente o aspecto humano da situa\xE7\xE3o antes de apresentar a an\xE1lise t\xE9cnica." }
+      },
+      "Escuta Ativa": {
+        D: { facilidade: "Condicionada", ponto: "Praticar pausas deliberadas antes de responder, no lugar de j\xE1 formular a resposta enquanto o outro ainda fala." },
+        I: { facilidade: "Moderada", ponto: "Fazer perguntas abertas e aguardar a resposta completa antes de continuar a conversa." },
+        S: { facilidade: "Alta", ponto: "Usar essa escuta tamb\xE9m para se posicionar, n\xE3o s\xF3 para acolher." },
+        C: { facilidade: "Moderada", ponto: "Ouvir tamb\xE9m o conte\xFAdo emocional da fala, n\xE3o s\xF3 o factual." }
+      },
+      "Mem\xF3ria": {
+        D: { facilidade: "Moderada", ponto: "Registrar por escrito decis\xF5es e combinados, sem depender s\xF3 da lembran\xE7a do que foi relevante para a decis\xE3o." },
+        I: { facilidade: "Condicionada", ponto: "Usar ferramentas externas de registro \u2014 agenda, anota\xE7\xF5es \u2014 como apoio para detalhes e prazos." },
+        S: { facilidade: "Alta", ponto: "Atualizar lembran\xE7as de combinados quando eles mudam, para n\xE3o seguir o padr\xE3o antigo." },
+        C: { facilidade: "Alta", ponto: "Filtrar o que realmente precisa ser lembrado, para n\xE3o sobrecarregar com informa\xE7\xE3o irrelevante." }
+      },
+      "Racioc\xEDnio L\xF3gico e Espacial": {
+        D: { facilidade: "Moderada", ponto: "Reservar tempo para considerar mais de uma alternativa antes de decidir." },
+        I: { facilidade: "Condicionada", ponto: "Usar estrutura \u2014 listas, fluxos \u2014 para organizar o racioc\xEDnio antes de agir." },
+        S: { facilidade: "Moderada", ponto: "Ganhar mais confian\xE7a para expor um racioc\xEDnio ainda em constru\xE7\xE3o." },
+        C: { facilidade: "Alta", ponto: "Simplificar a comunica\xE7\xE3o do racioc\xEDnio para p\xFAblicos menos t\xE9cnicos." }
+      },
+      "Adaptabilidade": {
+        D: { facilidade: "Alta", ponto: "Verificar se a mudan\xE7a de rota foi combinada com quem depende dela, antes de segui-la." },
+        I: { facilidade: "Alta", ponto: "Sustentar a adapta\xE7\xE3o al\xE9m do entusiasmo inicial pela novidade." },
+        S: { facilidade: "Condicionada", ponto: "Encarar a mudan\xE7a em etapas menores, para reduzir o desconforto inicial." },
+        C: { facilidade: "Condicionada", ponto: "Aceitar experimentar uma solu\xE7\xE3o ainda n\xE3o totalmente validada quando o tempo exige." }
+      },
+      "Comunica\xE7\xE3o Assertiva": {
+        D: { facilidade: "Moderada", ponto: "Suavizar o tom sem perder a clareza da mensagem." },
+        I: { facilidade: "Alta", ponto: "Incluir mais objetividade e menos rodeios quando a mensagem \xE9 sens\xEDvel." },
+        S: { facilidade: "Condicionada", ponto: "Praticar expressar discord\xE2ncia no momento em que ela surge, em vez de guard\xE1-la." },
+        C: { facilidade: "Moderada", ponto: "Adaptar a linguagem para quem n\xE3o domina o mesmo n\xEDvel de detalhe t\xE9cnico." }
+      },
+      "Intelig\xEAncia Emocional": {
+        D: { facilidade: "Condicionada", ponto: "Reconhecer e nomear a pr\xF3pria emo\xE7\xE3o antes de agir sob press\xE3o, em vez de minimiz\xE1-la em nome do resultado." },
+        I: { facilidade: "Moderada", ponto: "Criar uma pausa entre sentir e reagir, j\xE1 que perceber a emo\xE7\xE3o alheia \xE9 mais natural do que regular a pr\xF3pria." },
+        S: { facilidade: "Alta", ponto: "Usar essa percep\xE7\xE3o emocional tamb\xE9m para cuidar de si, n\xE3o s\xF3 dos outros." },
+        C: { facilidade: "Condicionada", ponto: "Validar o componente emocional de uma situa\xE7\xE3o antes de responder apenas com dados." }
+      },
+      "Leitura de Cen\xE1rio": {
+        D: { facilidade: "Moderada", ponto: "Considerar os efeitos de m\xE9dio prazo antes de agir, al\xE9m do resultado imediato." },
+        I: { facilidade: "Condicionada", ponto: "Buscar dados objetivos para complementar a leitura intuitiva do clima social." },
+        S: { facilidade: "Moderada", ponto: "Transformar a percep\xE7\xE3o do clima do grupo em a\xE7\xE3o mais rapidamente." },
+        C: { facilidade: "Alta", ponto: "Evitar adiar a decis\xE3o em busca de mais informa\xE7\xE3o do que o necess\xE1rio." }
+      },
+      "Planejamento e Organiza\xE7\xE3o": {
+        D: { facilidade: "Moderada", ponto: "Dedicar mais tempo ao planejamento antes de partir para a a\xE7\xE3o." },
+        I: { facilidade: "Condicionada", ponto: "Esbo\xE7ar um plano simples antes de iniciar, mesmo que informal." },
+        S: { facilidade: "Alta", ponto: "Revisar o plano quando o contexto muda, sem se prender ao que j\xE1 foi definido." },
+        C: { facilidade: "Alta", ponto: "Evitar planejar em excesso quando o cen\xE1rio pede mais agilidade." }
+      },
+      "Proatividade": {
+        D: { facilidade: "Alta", ponto: "Alinhar a iniciativa com quem tamb\xE9m \xE9 respons\xE1vel pela decis\xE3o, antes de agir por conta pr\xF3pria." },
+        I: { facilidade: "Alta", ponto: "Sustentar o envolvimento at\xE9 a conclus\xE3o, n\xE3o s\xF3 no in\xEDcio da iniciativa." },
+        S: { facilidade: "Condicionada", ponto: "Testar pequenas iniciativas pr\xF3prias em contextos de baixo risco." },
+        C: { facilidade: "Moderada", ponto: "Aceitar agir com informa\xE7\xE3o parcial quando o cen\xE1rio exige rapidez." }
+      },
+      "Resili\xEAncia": {
+        D: { facilidade: "Alta", ponto: "Reservar um tempo para processar a experi\xEAncia antes de partir para o pr\xF3ximo desafio." },
+        I: { facilidade: "Moderada", ponto: "Desenvolver tamb\xE9m estrat\xE9gias individuais de recupera\xE7\xE3o, al\xE9m do apoio de outras pessoas." },
+        S: { facilidade: "Alta", ponto: "Comunicar quando a dificuldade realmente pesa, em vez de apenas suportar em sil\xEAncio." },
+        C: { facilidade: "Condicionada", ponto: "Separar o erro pontual da compet\xEAncia como um todo, reduzindo a exig\xEAncia consigo mesmo." }
+      },
+      "Gest\xE3o de Conflitos": {
+        D: { facilidade: "Moderada", ponto: "Buscar acordo em vez de vit\xF3ria na discuss\xE3o." },
+        I: { facilidade: "Moderada", ponto: "N\xE3o evitar abordar o ponto central do problema s\xF3 para manter o clima leve." },
+        S: { facilidade: "Condicionada", ponto: "Entender que adiar o conflito costuma agrav\xE1-lo, mesmo quando parece preservar a harmonia." },
+        C: { facilidade: "Moderada", ponto: "Considerar tamb\xE9m o componente emocional das partes envolvidas, al\xE9m dos fatos." }
+      },
+      "Gest\xE3o de Equipes": {
+        D: { facilidade: "Moderada", ponto: "Dedicar tempo a ouvir necessidades individuais da equipe, al\xE9m de cobrar metas." },
+        I: { facilidade: "Alta", ponto: "Equilibrar motiva\xE7\xE3o com acompanhamento estruturado das metas." },
+        S: { facilidade: "Alta", ponto: "Cobrar resultados com mais firmeza quando necess\xE1rio, sem receio de gerar desconforto." },
+        C: { facilidade: "Condicionada", ponto: "Dedicar aten\xE7\xE3o expl\xEDcita ao lado humano da gest\xE3o, al\xE9m do processo." }
+      },
+      "Accountability": {
+        D: { facilidade: "Alta", ponto: "Reconhecer tamb\xE9m a contribui\xE7\xE3o da equipe nos resultados alcan\xE7ados." },
+        I: { facilidade: "Condicionada", ponto: "Nomear com clareza o que n\xE3o funcionou, sem se desculpar em excesso para preservar a rela\xE7\xE3o." },
+        S: { facilidade: "Moderada", ponto: "Se posicionar quando o combinado n\xE3o depende s\xF3 de si." },
+        C: { facilidade: "Alta", ponto: "Aplicar o mesmo padr\xE3o de cobran\xE7a de forma menos punitiva consigo mesmo." }
+      },
+      "Foco em Resultados": {
+        D: { facilidade: "Alta", ponto: "Considerar o custo humano do caminho at\xE9 o resultado." },
+        I: { facilidade: "Moderada", ponto: "Manter o foco quando o processo deixa de ser estimulante." },
+        S: { facilidade: "Condicionada", ponto: "Lembrar que entregar o resultado tamb\xE9m cuida da equipe, al\xE9m do processo e da rela\xE7\xE3o." },
+        C: { facilidade: "Moderada", ponto: "Aceitar entregar algo bom antes de esperar pelo perfeito." }
+      },
+      "Influ\xEAncia": {
+        D: { facilidade: "Alta", ponto: "Complementar a autoridade com escuta genu\xEDna das outras partes." },
+        I: { facilidade: "Alta", ponto: "Sustentar a influ\xEAncia com argumentos consistentes, n\xE3o s\xF3 simpatia e carisma." },
+        S: { facilidade: "Condicionada", ponto: "Se posicionar mais ativamente quando tem algo relevante a dizer, em vez de influenciar s\xF3 pela confian\xE7a constru\xEDda aos poucos." },
+        C: { facilidade: "Moderada", ponto: "Conectar os dados a uma narrativa que engaje emocionalmente, al\xE9m da evid\xEAncia t\xE9cnica." }
+      },
+      "Negocia\xE7\xE3o": {
+        D: { facilidade: "Alta", ponto: "Buscar tamb\xE9m ganho para a outra parte, n\xE3o s\xF3 o resultado pr\xF3prio." },
+        I: { facilidade: "Moderada", ponto: "Manter o limite do que \xE9 aceit\xE1vel mesmo diante da simpatia do outro lado." },
+        S: { facilidade: "Condicionada", ponto: "Entrar na negocia\xE7\xE3o com um limite m\xEDnimo definido antes de come\xE7ar, para n\xE3o ceder por desconforto." },
+        C: { facilidade: "Alta", ponto: "Considerar tamb\xE9m o fator relacional da negocia\xE7\xE3o, al\xE9m dos crit\xE9rios objetivos." }
+      },
+      "Presen\xE7a Executiva": {
+        D: { facilidade: "Alta", ponto: "Equilibrar firmeza com abertura para o di\xE1logo." },
+        I: { facilidade: "Alta", ponto: "Sustentar essa presen\xE7a tamb\xE9m em momentos de menor visibilidade." },
+        S: { facilidade: "Condicionada", ponto: "Praticar se posicionar em momentos-chave, mesmo sem ser solicitado." },
+        C: { facilidade: "Moderada", ponto: "Comunicar o dom\xEDnio t\xE9cnico de forma mais acess\xEDvel e confiante." }
+      },
+      "Protagonismo": {
+        D: { facilidade: "Alta", ponto: "Abrir espa\xE7o para que outras pessoas tamb\xE9m assumam protagonismo." },
+        I: { facilidade: "Alta", ponto: "Sustentar o protagonismo com entrega consistente, n\xE3o s\xF3 presen\xE7a e visibilidade." },
+        S: { facilidade: "Condicionada", ponto: "Reconhecer e comunicar as pr\xF3prias contribui\xE7\xF5es, em vez de preferir o segundo plano." },
+        C: { facilidade: "Condicionada", ponto: "Se posicionar de forma mais vis\xEDvel quando a compet\xEAncia t\xE9cnica j\xE1 \xE9 reconhecida pelos outros." }
+      },
+      "Relacionamentos Conectivos": {
+        D: { facilidade: "Condicionada", ponto: "Investir tempo em conex\xE3o para al\xE9m do que \xE9 estritamente funcional." },
+        I: { facilidade: "Alta", ponto: "Aprofundar menos rela\xE7\xF5es, com mais consist\xEAncia ao longo do tempo." },
+        S: { facilidade: "Alta", ponto: "Ampliar a rede de relacionamentos para al\xE9m do c\xEDrculo j\xE1 conhecido." },
+        C: { facilidade: "Condicionada", ponto: "Investir em pequenos gestos de aproxima\xE7\xE3o fora do contexto t\xE9cnico." }
+      },
+      "Responsabilidade Social": {
+        D: { facilidade: "Moderada", ponto: "Se envolver tamb\xE9m quando o retorno n\xE3o \xE9 imediato ou facilmente mensur\xE1vel." },
+        I: { facilidade: "Alta", ponto: "Sustentar o engajamento em causas coletivas al\xE9m do impulso inicial." },
+        S: { facilidade: "Alta", ponto: "Transformar a preocupa\xE7\xE3o genu\xEDna com o impacto social em a\xE7\xE3o concreta." },
+        C: { facilidade: "Moderada", ponto: "Permitir-se agir mesmo sem ter todos os dados de impacto dispon\xEDveis." }
+      },
+      "Tomada de Decis\xE3o": {
+        D: { facilidade: "Alta", ponto: "Checar se a rapidez da decis\xE3o n\xE3o est\xE1 custando qualidade de an\xE1lise." },
+        I: { facilidade: "Moderada", ponto: "Buscar dados objetivos antes de fechar a decis\xE3o, al\xE9m das impress\xF5es do momento." },
+        S: { facilidade: "Condicionada", ponto: "Definir um prazo limite para decidir, mesmo sem 100% de conforto com a escolha." },
+        C: { facilidade: "Condicionada", ponto: "Definir o n\xEDvel de informa\xE7\xE3o suficiente para decidir, e seguir com isso." }
+      },
+      "Vis\xE3o Estrat\xE9gica": {
+        D: { facilidade: "Moderada", ponto: "Ampliar o horizonte de an\xE1lise para o m\xE9dio e longo prazo, al\xE9m do resultado imediato." },
+        I: { facilidade: "Condicionada", ponto: "Reservar tempo estruturado para pensar no cen\xE1rio mais amplo, al\xE9m do dia a dia t\xE1tico." },
+        S: { facilidade: "Moderada", ponto: "Considerar cen\xE1rios que exigem ruptura com o que j\xE1 \xE9 conhecido e funciona." },
+        C: { facilidade: "Alta", ponto: "Conectar a estrat\xE9gia a uma narrativa que mobilize e inspire pessoas." }
+      },
+      "Arquitetura de Mudan\xE7as": {
+        D: { facilidade: "Alta", ponto: "Cuidar da ades\xE3o das pessoas ao processo, n\xE3o s\xF3 da velocidade da mudan\xE7a." },
+        I: { facilidade: "Moderada", ponto: "Sustentar a estrutura da mudan\xE7a al\xE9m do engajamento inicial que ela gera." },
+        S: { facilidade: "Condicionada", ponto: "Participar ativamente do desenho da mudan\xE7a, em vez de apenas reagir a ela." },
+        C: { facilidade: "Moderada", ponto: "Acelerar a implementa\xE7\xE3o quando o cen\xE1rio exige menos planejamento e mais a\xE7\xE3o." }
+      },
+      "Decis\xF5es \xC1geis": {
+        D: { facilidade: "Alta", ponto: "Validar rapidamente com poucas pessoas-chave antes de seguir em frente." },
+        I: { facilidade: "Moderada", ponto: "Complementar a intui\xE7\xE3o social com um crit\xE9rio objetivo m\xEDnimo." },
+        S: { facilidade: "Condicionada", ponto: "Praticar decis\xF5es r\xE1pidas em contextos de baixo risco, para ganhar confian\xE7a no processo." },
+        C: { facilidade: "Condicionada", ponto: "Definir previamente o tempo m\xE1ximo de an\xE1lise permitido antes de decidir." }
+      },
+      "Estrat\xE9gia de Longo Alcance": {
+        D: { facilidade: "Moderada", ponto: "Revisar premissas de longo prazo, n\xE3o s\xF3 as metas definidas." },
+        I: { facilidade: "Condicionada", ponto: "Reservar tempo estruturado para pensar cen\xE1rios de longo prazo, al\xE9m do imediato." },
+        S: { facilidade: "Moderada", ponto: "Considerar rupturas necess\xE1rias, mesmo quando desconfort\xE1veis para a continuidade." },
+        C: { facilidade: "Alta", ponto: "Comunicar a estrat\xE9gia de longo prazo de forma mais inspiradora, al\xE9m do rigor anal\xEDtico." }
+      },
+      "Mentalidade Sist\xEAmica": {
+        D: { facilidade: "Condicionada", ponto: "Mapear efeitos indiretos das decis\xF5es no sistema como um todo, al\xE9m do resultado direto." },
+        I: { facilidade: "Condicionada", ponto: "Incluir tamb\xE9m processos e dados na leitura do sistema, al\xE9m das rela\xE7\xF5es entre pessoas." },
+        S: { facilidade: "Moderada", ponto: "Comunicar as interdepend\xEAncias percebidas para o grupo, n\xE3o s\xF3 observ\xE1-las." },
+        C: { facilidade: "Alta", ponto: "Simplificar a comunica\xE7\xE3o da complexidade do sistema para p\xFAblicos diversos." }
+      },
+      "Mindset Vision\xE1rio": {
+        D: { facilidade: "Alta", ponto: "Validar a vis\xE3o de futuro com dados e com outras perspectivas." },
+        I: { facilidade: "Alta", ponto: "Estruturar a vis\xE3o em passos concretos e realiz\xE1veis." },
+        S: { facilidade: "Condicionada", ponto: "Se permitir imaginar cen\xE1rios mais ousados do que o habitual." },
+        C: { facilidade: "Moderada", ponto: "Dar mais espa\xE7o \xE0 intui\xE7\xE3o e \xE0 ousadia na constru\xE7\xE3o da vis\xE3o de futuro." }
+      },
+      "Radar de Cen\xE1rios": {
+        D: { facilidade: "Moderada", ponto: "Ampliar o radar para sinais menos \xF3bvios, al\xE9m dos que afetam o resultado imediato." },
+        I: { facilidade: "Condicionada", ponto: "Complementar a percep\xE7\xE3o do clima e das conversas com fontes objetivas de dados." },
+        S: { facilidade: "Moderada", ponto: "Comunicar o que percebe antes que a mudan\xE7a j\xE1 esteja consolidada." },
+        C: { facilidade: "Alta", ponto: "Agir mais r\xE1pido diante de sinais que j\xE1 s\xE3o suficientemente claros." }
+      },
+      "Adaptabilidade Din\xE2mica": {
+        D: { facilidade: "Alta", ponto: "Verificar se a mudan\xE7a de dire\xE7\xE3o est\xE1 alinhada com o time antes de segui-la." },
+        I: { facilidade: "Alta", ponto: "Sustentar a adapta\xE7\xE3o com consist\xEAncia ao longo do tempo, al\xE9m do entusiasmo inicial." },
+        S: { facilidade: "Condicionada", ponto: "Encarar a instabilidade como parte do processo, n\xE3o como exce\xE7\xE3o indesejada." },
+        C: { facilidade: "Condicionada", ponto: "Aceitar ajustar o processo com informa\xE7\xE3o ainda incompleta." }
+      },
+      "Gest\xE3o da Comunica\xE7\xE3o": {
+        D: { facilidade: "Moderada", ponto: "Adaptar o tom conforme quem recebe a mensagem." },
+        I: { facilidade: "Alta", ponto: "Estruturar melhor a mensagem em contextos mais formais." },
+        S: { facilidade: "Moderada", ponto: "Comunicar tamb\xE9m as mensagens mais dif\xEDceis, n\xE3o s\xF3 as f\xE1ceis." },
+        C: { facilidade: "Moderada", ponto: "Simplificar a comunica\xE7\xE3o t\xE9cnica para p\xFAblicos n\xE3o especializados." }
+      },
+      "Intelig\xEAncia Emocional T\xE1tica": {
+        D: { facilidade: "Condicionada", ponto: "Nomear a pr\xF3pria emo\xE7\xE3o antes de tomar decis\xF5es em contextos de alta press\xE3o." },
+        I: { facilidade: "Moderada", ponto: "Usar a percep\xE7\xE3o emocional de forma mais deliberada nas decis\xF5es, n\xE3o s\xF3 intuitiva." },
+        S: { facilidade: "Alta", ponto: "Usar essa mesma percep\xE7\xE3o emocional para se posicionar estrategicamente, n\xE3o s\xF3 para cuidar das rela\xE7\xF5es." },
+        C: { facilidade: "Condicionada", ponto: "Considerar o componente emocional como parte relevante da an\xE1lise, al\xE9m dos dados t\xE9cnicos." }
+      }
+    };
+  }
+});
+
 // server/cronVencimentoCiclo.ts
 var cronVencimentoCiclo_exports = {};
 __export(cronVencimentoCiclo_exports, {
   iniciarCronVencimentoCiclo: () => iniciarCronVencimentoCiclo,
   verificarEEnviarAlertasVencimentoCiclo: () => verificarEEnviarAlertasVencimentoCiclo
 });
-import { eq as eq7, and as and6, gte as gte4 } from "drizzle-orm";
+import { eq as eq9, and as and8, gte as gte5 } from "drizzle-orm";
 async function verificarEEnviarAlertasVencimentoCiclo(options) {
   const dryRun = options?.dryRun || false;
   const forceResend = options?.forceResend || false;
@@ -15088,9 +16608,9 @@ async function verificarEEnviarAlertasVencimentoCiclo(options) {
   const allTrilhas = await db2.select().from(trilhas);
   const trilhaMap = new Map(allTrilhas.map((t2) => [t2.id, t2]));
   const sevenDaysAgo = new Date(Date.now() - DIAS_ENTRE_ALERTAS * 24 * 60 * 60 * 1e3);
-  const recentAlerts = await db2.select().from(emailAlertasLog).where(and6(
-    gte4(emailAlertasLog.createdAt, sevenDaysAgo),
-    eq7(emailAlertasLog.emailEnviado, 1)
+  const recentAlerts = await db2.select().from(emailAlertasLog).where(and8(
+    gte5(emailAlertasLog.createdAt, sevenDaysAgo),
+    eq9(emailAlertasLog.emailEnviado, 1)
   ));
   const recentAlertKeys = new Set(
     recentAlerts.filter((a) => a.tipoAlerta.startsWith("vencimento_ciclo_")).map((a) => `${a.alunoId}-${a.tipoAlerta}`)
@@ -15253,7 +16773,6 @@ var init_cronVencimentoCiclo = __esm({
 import "dotenv/config";
 import express2 from "express";
 import { createServer } from "http";
-import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
 // server/_core/oauth.ts
@@ -15318,6 +16837,172 @@ function registerOAuthRoutes(app) {
     }
   });
 }
+
+// server/pdfRoutes.ts
+import { Router } from "express";
+
+// server/pdfRenderer.ts
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
+var browserPromise = null;
+async function getBrowser() {
+  if (browserPromise) {
+    const existing = await browserPromise.catch(() => null);
+    if (existing && existing.isConnected()) {
+      return existing;
+    }
+    browserPromise = null;
+  }
+  browserPromise = puppeteer.launch({
+    args: [
+      ...chromium.args,
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-gpu",
+      "--disable-dev-shm-usage"
+    ],
+    defaultViewport: { width: 1200, height: 1600, deviceScaleFactor: 1 },
+    executablePath: await chromium.executablePath(),
+    headless: true
+  });
+  return browserPromise;
+}
+async function renderPdfFromUrl(opts) {
+  const browser = await getBrowser();
+  const page = await browser.newPage();
+  try {
+    if (opts.cookie) {
+      await page.setExtraHTTPHeaders({ Cookie: opts.cookie });
+    }
+    await page.goto(opts.url, {
+      waitUntil: "networkidle0",
+      timeout: opts.timeoutMs ?? 6e4
+    });
+    await page.emulateMediaType("print");
+    await page.evaluate(() => document.fonts?.ready);
+    const hasHeaderFooter = Boolean(opts.headerTemplate || opts.footerTemplate);
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      printBackground: true,
+      displayHeaderFooter: hasHeaderFooter,
+      headerTemplate: opts.headerTemplate ?? "<span></span>",
+      footerTemplate: opts.footerTemplate ?? "<span></span>",
+      margin: {
+        top: opts.marginTop ?? "10mm",
+        bottom: opts.marginBottom ?? "10mm",
+        left: opts.marginLeft ?? "10mm",
+        right: opts.marginRight ?? "10mm"
+      }
+    });
+    return Buffer.from(pdfBuffer);
+  } finally {
+    await page.close();
+  }
+}
+
+// server/pdfLogoBase64.ts
+var LOGO_ECO_AO_BEM_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AABmEUlEQVR42u3dd5gUVbo/8O97ToXungzMkEQUiYOAMqBi2AYlSUbtMYsBh2D+ucF1Q9Mb1N29XtdVQcaIaZValaiYaSMqYwBpJSsqYQiTO1TVOef3R08jKrgY9t677vk8Dw8M09NdXdP11nvekwBN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN07R/S6RPwfc9f1GKIEGIALW15a3nc3nrt4fufWBZWULBAcpRrmKIKQBKnz5N0/6looiycDhsRBDh3+d5IojwcDhqRBFl+qxqms6wfsgwxcLh5Swej4svZUYERPpM6ZBh/BCm7EMNZhzquqk2wvOCEpIzMnzbstKmYe/OyPSnBPdTYbHPF71z7zbQlzOscDhqDI1DxhCT+nxrmg5Y3ymbSiBBDhyR+7+x/c7pxlPWUCg2HIwfxw3j8CAPwCATYAoZPwMhfQAKjAiWYcPkNgBASgVf+ZDS/9QXmTd9rp5XKvnygjUPfvil14wkyHEcEY0qlpiV/R05s2YpxHQw03TA0vYTqAAgl+0M73VWpwDyzuCSnW2SdZxhmEiLFgghPiKGd8lm7zOBjYYhtkspGr2AyCiDRKBFceJWgEuzQHDWniS6SWX0YaCjJeRRFgUhfA+ezKyWDI+qgHxsQU31xuxBRNnXApRSBCJd+9J0wNKy5yOCCMtlVGPKpxyVh8LLGdgUm4eMpszuJiHlU74hFjZZzSteed/5+KtNu4M19rhpnXmzewyUMcGQfHyhWdw2I9JQTDgsj9/6yIq/vjZ28TNH1rcpqjJc1+3SmLrjoYmjNuugpemApSGCCM8FqlF9Tu8bovbXhXjBecQAT7a85AvvLt/c/vTC9xfW77fpWJ4w0Bei3Cn/WjBJRBKENeW8PAF/fzWqEf3Pyyvh+aPJ51NNnjfaEAaSnRsX7fn1WQM/6tDxkEKh0LSjdn3Fru1DFkyevCf7m9NBS/vPY+hT8EWwCpeH8wszvX5leOZ1QTOAjGxaINDypydXz1uRe+zp/aaeJDLqBCFRKkxVx0msjAVjL6AGbjQRZfsLSFEnymKIuSgvt8aqS4YzIYcYsMqIqa2+jZcXvV/9EoDHATw+Ycj0o0M7/J96hx1+zo6iAshddS6RApW26WG57vEgWhyZP587gNC/OU1nWP9h7z+KKMUQk2P6XjzM9sw5ATO/V4tf95ZkmeuXfPjwC7kHDq+IHNomXXZvkBec4ooMMiINzg2YZMIT3to0q//p4jUPLoniy0ErFwwn9rpkvKFCf7G53ctTLgTzYfMALGZB+JlVGdX8Gydx16Lcz42vfmjcJxX9FqctC2W+hybhN/Su233MYyNGrNtvfUvTdMD68do3sEw68rJfFsiCGzJu0m+xG3+69Iz7b0MMcmy3CyYHjdAfYRpFBjckF1bHtEpWZ4yWR3whtgGiTQiBkQbl/8yEXdTg7Z6+ZO09c3PPnft7dPcLL25jtr/Hl27SpeSfkqZYKkVmp2XxQ/JF3nhD2VdbZAeS/p7fz/9o7m8jZ0Qtx4m5/Ze9cJ3bpvCCzsS67GbMK/h4e99XThu9HbNm0f9SwKIoopSIJAgAysvLVSz2XQfBKopEKveOQSt3ytV3HNLx5WNy/pUDc798zI4zXwL7Ns2jLBwGA4B4fJb48vf+1edT+1E3AQGgoiJSdEb5ZY9fNOA3KtJ/+msTjoqU5x4zoc/5wyM9L1cTelzyzPi+028+t+/Pms7uc+Vr+3u+0cece0ik75UrI32uVCP6nH4sAFRVVJkAaEL3i4+e3H2mP6nnjHUjj76k+/5+fsyQc7pG+l324gVHXqdG9zn/BiA7LgsAVDhsTHxm+fhj125Qg+Kv3AoAkfnzee4C+Z8KVLnj2e/5jET4wQ6AjUQiPBo98GMjkQg/mBtpFFEWicznP8QxHdxr7X+g8Hd8nX9+PqN6QLHOsPZpop1QPvzQNqrbkyW83cAWuefWlaVPX/dJ/JP06O5X2Ms23OZO7nnhMimNdgs33F0BAJN7XzLCQsGzKUoPtD/cvaoW5TQUkInyhOEkHPeUfqd1K/TLEq7X/PrSDQ+dHA5HjXg85k/odvEii+WN+5x9duwb6558e99jyX1o4/GYf9xxxwU71B/5lMXyhjayPWOf/uCBp8ePmxVcsnhWCkTqsFffeLXUtAa2+az2iGdOP3UbiACl8NUm6L8yEwVA44+beYQlWUdfSctQfI/vsc0L37+1PnehOY4jvulCzH1/8pDpZfCsrgJekQkjyZja5rx1++Z9s5kDZSj7Ps/o7lfYBW1whIDfHgA4jB2hYOOmefF56YM5poMJsLmfnzT4srakeDeCLCIum1iGb3Leu21n7nHu5nbHGoY1BQBcN3Pf4nfuXBGNRllsn2z4q7+vScdfcQT3Vae95zOPbV4YP7jzqQPWf0iwOqXHad3yVNtnbGZ3bzbqL3868dAdX33saT1nrFS++vTJTXdOBoBxPaf0DlDow2befNKyxIOvRhE1Ysim/bngdGqPCx8I8cD5rrW72+JVzuYJR5/VKZgu2dIiks8sWTdvbPYCu+CIPKNwQKO1493nVjmbAVAYYR5H3D95wNjObb3DPpSktj++ZnbP7HWrCLNm0bAhw85qOqLLw9i85ZqVI4f9NXzC+SeiMePHV89fsW8P578iWB3fa0JBh6Kul0PJMxVUb8ZMm4ggpAcofA5GL0op/3vh27PfO/BFFmVATE6omDGMM+NKkDyBwEoZ41BKQkqRBOhDED20tnn77ETCcXM/s78AMubomV0DBr8KpMYqpboxxg0AkFL4AG0G4Skf6VsXv3X35u964ed+btLAqRXMCPxUKTUMhPacDEhIKCV3AvScJ8Vfl6yc8/akwTNnhOyC2QDQkmqZurDm9ntyn419P38Tel1cwApDlxHhTKVkL86MIIEglA8o+pwxinu++Nuimtlv/qtvSP9u/mPSziiizIEjRvad2CUPxcs4jO67/MZzcsFqZHmkzeRel04YXlFVBADcYo8E8gomje879eoJfS4dblDwH570thrBxDsRRHgMMR8glW0OLAcAsky+zDaDID+/AgDsTKB3wCzglmE9DYDG9jl/eJ5R/E6ABR8vlO3fGdXv3JMAqKHRoTIcjhovvr/0c0H+b0JmcY9JR1320GlHTZ8RHnpOW8RiMm9347ONO3e2SINVEgDeTJvzvfz7RvQ561gHjjhQk+X7BqvxR1/Sv0PRoW8a3LjBNAMDODNtX7gpz880AwTLDHQ2mXU+J2PFhMHTr3Scrx9L9uuYnDhoxo2mYb5oGuYkk9ulUgn4fqbJl75ncCtkGlaFwY1beuW3Xz7h6Ms6ZYPVF02jXACZOKjqzIDJ3jEM8xrTsHtyZhhCeL4vfMG5YViG3cPg5lUmgjXjK2aevb9jOthgNbFixhXMDL3BmXGWaVjtOTPgCU8I4QvOzNKgmXeOzc3XJw6efo6SapvrZXzXS/lEIrO/z9+kgTMqeFHeW5Zh3mhx+yiTW0FfesqTnseIwzLszpwZ53DOX5s4eMasGGLyh/7d6oD1b5BJzsIsNbr7uYWhZIcFFoV6NJi157+06YG/A8DEvheOaqs6vxsySxbabqY7ADQdsvEOH033BJF3i8WCzykS+SmWjiypqUk6cMTwivMPDVec3W6fu5+yLaOeEcEisxgAOA+1ISJwmNsBKJvyf57PQoUZ8pNBVlgcUoXXAkAilqCyskS2+aNEgxQeDE+FVYbdWrw9f+UpJ17Ubem5E3YVptzlebY16ILb53d48f0HPg/K0CftVKenhh91YQ/HccQPWbOJYZYac/TFXQ0j8CxjRh9f+HC99AJfZMZwQX0yzOjjwx+SdpM3uSLTACjb5sFbJwyedum+ASJ34U+omH5DwAxdp5SC62e2uX7mWiWpv2fIPpwZfV2ROtcV7kohfBjcHMIMtXhcRVUo2vr7yz3P+EEzTjON4KMgauP6rnC99IOucseBWF+h2JGe5052RXq+LzwAKLFN85HxA6dVfpugtfe1KqZdYlnBv0npcyEFXN9b5Pn+GSRUPyJW7vv+mGSm8X6ADAb+EEhN9aXLiLihQHtbL9FoNvhPOnpGH2YYz3FivX3hI+OnnnNF+lymVH/JUe5Lf3jaT97u+W6SoLhthKLjK6bd+F0C7o/Vf8I4LIogwggkTuPTH7DsvIG1me3XvLju8YcA4NTu54wz/cLFPlN1GaqvbG7z8fsAaNmyZRkAU0f3veBGA6zNR/6rqzZs2JBBJMInJNr9NZi0LhJwm0eXn33tsvjfH87WTzgMYnvvA0IJppQAgyIAEEBGEaDI5YQgiMEFgNpwOcWdmH98rwkFyme3NsuW+xaeOXvqqMfObR8Q+TV2Pd2ggLM6+/LlYLu2Y5NdGvoB2MFD9HzAs0cFUsbCEd3OGxrbFNvZ+uLye0YsIEbK4NNnG9xqL6QPBfGrJ9+efcNXHvkZgBWTKy5zFJNPCSVKGfitpw2Z+azjzN5SUVFlOk61N75i2gmmYf3SExmplNrsKTly6co5m77yXOtHd7/i8UCxWqjgjTC5PRBKXRVD7Maqiiqz2qn2Jxx9WSdG6l4ppVJKZZTyz1uw8s7Hv/I8HwFYMGnQjMVg/F4phWFwfvfEQTPecJw5n+2vmfm1YO3E5MRjpx3GlPE3X7iCEWdKyssXrLzjq6WDdQCenjBo+pOcGY8azBrrS8/7WiIQy9YrVUvtA4yxEiklhBK/Xfj27N9/5fk2AHhh/DHTHzaVsdATmba2EbhuwqAZLzjOnOd1Tes/IGBFIhHmOI6Y0PviaJHZbuIusf1vL254+K9RRNmrvd8vsbyCe3zp7dxl7znx1VWPrUNrV/PyMHhZWUI5zgMbAWwEFIXDQ42yD0tGBan4ck9lwHkwL+B7d4wpj7zwVMLZTsxgJhkwwAgASEkmpYRkkgDAU01/aASOspTRManqPnFF400AULYzwcLhqJFf/1kfKxUolH7mvxCDfAYPbzutR9WT3LcmAABXeFuA4OYHBwB4rtn0VnuZOhWSdh/BxYOI4tRILEIOHMJ37BqPIMJjsZiYVDHtGGLGGAWppBJLFrw9+4aqiiqzBkC3bnUSyK7/dRhgzIvH3pk4qOoqDvaoye2g52VmAvhFt1RHqgFAxK4nYkoqqQS8i5eurN40uvsV9rEb2ngxzFJRzKJs58VtmbEDpl1i2sYmImYp4P9Fymfe1nFcaRI1UDDUNSa3i6SSEMKdtbDmzscj5RFr3xkGiUiCSjaVsOqVcx6aUDH9MNOwf8+ZWeCKzLUArg6HwePxAwf05WEwxOGTZFcZ3AwppeAJ95aFK+fcUVFRZebnr1VD40Nl7rWwBtxZeeeiCYOnXcVZsPqr5z0Y3MNjuM2f3DzjdG7ag5SSENL/x8KVc34ficzntbVraGjr8eRmRDhvxVaMHTj9AsswngKUIsIsAC/sbxaFLrr/CIvsY/pc8JMSXhpvRsOr9R+sH9arohdV11R7E3tfODOIkjtq5bbzX1z36EOR8ojlJBx33+doHZ6ALQ02W7bhtkyk3/QJ3A8u9CE8RiBfek1NVlPv41cdsWv9wLox+Sy0uMVvuvTh9+64u7LvpWcFWNHfM7Ll9MfWzHkCAMb0m3p2sWrzSKOoPWvJh/c/VlVRZVbXVHut0ZVPeq9dHYN4kB9Vd2VDIq9TsRt60w+4bzyx+u7Txy5e3gOHtl3X3NAwN/6TE6ePHHJ578CullWKDBE0goEW1RRb+uF9s77PnXhv7+agGTfZRuAXQnrKEzhpcc3tr/2zn504eMZGywgc7vmZVQPeLh0YQ0xGBs/s4CmsMwyrwPMzbyxcOef4bzg+AqAmDK4aZCJQ5ApXpf3mN59b9VBLpDxquXm1CZPb3XyR2WbyQHd0+cx1HEfuJzhTJBJhqU0ltsH4eoNbHX3f+6Qur6VPPNt7eKCATgBUVUWVWUs8YXDrCF969QD1GPB2u7pssvS17IzC4TCPx+Ni4qAZH3DGyxkz4PnuBQtXzn5w9Ogr7GXLbstMHDxjgcXtCb7whO/LioHvln2QW5XjQL+DSYNmPG8Y1im+7/m+8vstqan+6D+9CP9jzrCoHOUqctxxQVEXvMuF39zImi6MI+6XpcqsCCI8I41T0iqZTLPkwkgkwsudch8AJva4MKaIG2mj8ebqmuo9uSccecSZXZLptG8aahNTrBukARNWXkgEjo4h9szZ4irDJwUPXutPcHDGVO62EEWUfUg7XIMIhs89IMqqa2LeyT0infOp7flqtUfcwmJTFMx030NlEaw2PhM7UkWZXwJAsZFq3plOI0msEACSbcSOwC7lC5551ScjVUTtoqP6XbjIce5/57v2HA6NQ8YBENTRRICQop4ztjNy1BWlvvQoYIYkADQBKGj92/SSzDOlJIXPANVNKXXIqiE72uEN1LpAX85YAYEAwqsA6IuVWb9GAaBFb1ev/Oo3MqEdhzOwQwlEStFrzopbUpEuEX6AwKMAYElNdXLS4JmvENiZAA4pShV2A5Bond2g9tMcpBhiahfxLiB0IWKkoFYsfHv27gFfGZ7w5dcaCiCuiOgpzoxytc8hHbusjVdQHrFc0JEAkYTcGOi+a03s3TkSzj9JJog9RaBTDG4aUqICwEetGaAOWD/C7IrFEBNjdpz3yzZ2Xs+dVHv5S2se2xgOh43yeLkfQ0yeRjOKIFH7+tpFTVgLtPZIEcgYUWyWDUnJ0JXn9L7qkUwgOU+k/eHwzFm+L8ggCymRvEfxhsWFRuldBWi3YHTPGcfC8HZJGYBwswVXj4mkC58kRDJ3XJybrglDEuMciMmRR0QqgrLNc4ooT5FKGdIsSLOm2fBVPeeirja4a96rrzo7swHLcD/zfZlWzAaAPVPKWkqjnydJCSNTsGum3RwcleflVYfD4ePK4+XyGzKJA8rdvQlUJqQEiPIB+aZnZp8uhdTeD06q9W9lMxggABT0fU8BCPnCyGu9mjsw2htXPj2I41FfLTA7jiMkqINBzAQARurjfxL4cstVkwI2AQBjzJDCbw8gkYgkaH/BIvf/vqJSTmS33mg2AqDly/95bVBJsUFx9bXzGWlzRRFlRJvsg+jzXAfJgTKl1g4YJYHNUkkwYiClOuqS+4+0l7C1C1mO7XFON5MCP9/l764p7Ju5M4IIHxofKmOIyUnlU6tMwx6WHyg4rLL8imdHdz/ziGhrzUsUbB/erLZfRCRWm9yqCnkFrxXwNjEJcWuTbBri+Zl/WMqYyAoan6u364ZLJtx8Zi5tdlPHCykAgwQA7BHmizu8bSfVNmSWh8NRI4aYdH23u6EsxlQ2qIWo4BaSqNspt3dZ3WFjByH8p8jDyQs23PUrZ+2c/3r1PWcnWkd0N4RCPE2MpZUSABDs1kkZhpk2eKDd0hXO5y2y6YYgC1XYn3c6v7U7/Lv/fgk8G1uUwZlZ/M1/jGLOzGJG3GaMEwCSzMs2raXi++QiB5XxOY4jHMeRrc09AIDJvngemX2egwnEipTy97b2CAfV0yaZv895UwedpSoib3//35IRXOWuNVLioEsxSoh9zp3uJfyxBqwEEpS94Vm/M8yAneL1P3UcR6AcPIaYPL3v9HGFKJ4rfTE7xZov4MroF0Dxwhhi0nEcUVFTkX4ice/98xOzj28I7OiufLXU88WWRRvvuSb+yfwV3cryLiBO7fyGginL3n1g1R5v1wQJ2d72825SisB49rQOjZQmn0/8/dWhnxzmxuMxf3iPyjHcDfyl3qtLMNt6CQCZPNCfGerhNzY9WftJPJ6WKjMHDL2H95rQKZtpRDjK1ygA2C7tQMa0USBVHQCkNpUQETcYIQWAGkrr/7vFa9gWQH7suOMiwdYLnr5tsAcApVDHGAcU7fSV+xPheYMymdQxnkwP3t+fjPCO8YU4Tio1RCh2QqjLnp3ZzEbt2dtEImp7EMdD+zTrVK7QLCTqpJKqNftrd7DvRwIds0FOKMZR902Pzb2WZLxeKelnj4A6AlB7h518w3EzYp3o62+PvEywCQrNrcfeBoDaX5P0y9mhIgbqQMSgoADGdutw9SNsEuZqN2N7Vx5pK/OcZr/+6fjGhcujiLLlpcslAJI+LmlEasWCtXdcAQCn97/4A0ME35nQ4+KzFp1z7/xcrSIcnhJYEJ+3cXL5lKdNUTRydPephyzbcPdnHzXv6puPIpDgtVFEWeyjWPzUvueflo9ih4MHeOt9cflysNHdR5uxDbHMKUecObRYtn3CV2JHndE44aX3HtgJAIrLd0wEzh3b44K5zWaqgYQ900Pmo+c/WrQtQhEGODLSdz5zAHCR7hwMlsLaU7cBAEqXvhaC9Aul9OoAqHjcaR7X+6I/FrE2t4vd7nkA7gqHw0Y8HvcP9vzlaiQEfEigk4hQKA2+ceFbd2z9Nr8HVaMoe/Hydb70PYvbJikMPIiLX2X7HyK8traclsezcYc8e7Oy3N2AaqegBu9bb/uGWhwRMKQ1YO5W6eTGbAY3X+4vbuaCCPPFJ4qMHQqyM4BjI+VRq9yBf6Amdq4Jp5QaJpUEfTEEC1UVVUZ1zc0tEwfP+BhQnaDQc/yxV7Yf+GbJTgB04AI6KYkZYQLgSx9KqtX7vJbOsH5EESvbhJD5/89keZSx9sQAYDmWs7J4WXYmvKR2zKe9F7HPZJAMhpCR//fTH5ux+azyy6Ph8kiHeHxeuqqiymyyM096yt0dUHh/zBEX/N1O5j2flunVyUM/XTgLs1SkPGI9vebBJa5q/jVTgJDZz2Dw8z182YZlmUm9p1S05x0XEDMy9apu/EtrHtgY7jolAICYpa5hnBcU8LZb2suyrYW8cCwzrdnlfcN5rUVzVVtaSlCKTG4MbMMJhX7mPQAoXNvcTigWdJXamgvWGeuz+12kd+QZhT+vqKgwc13wByt3QShgqZA+GdwKUEZMA4DIcdcEI5EI3/fP6NFX2FFE2YSKmceefsyVi04/9qpFEwdd9lMCqUgkws3DajdCqYSClCCcPKqiqqPjOPKrk39zE4zD4agxcdCMV+WWjmuLkzvfKh7wcT4Aap2v+LoCFGe834SKGcNiiMlIedT6StZGo7tfYccQkxMGT5tkcLNvaxyML3x/Xn02az3gKgoqEonwJTXVSZB6BSBlcKtrJlR7bgwxOXr0FV97rUh51HIcR4ytmHYM58ZJQng+7XNZrc3P8Nbz+TQAMgyzgPnehTHE5Juj95hffb6qiiozHo/5oyuqjuDEJkolpZRyg50qfRcA7dtM1gHrR/B+HMcRk/ufV2ZbwbNTaHht+YdPvRlFlA3FUOnAEWN6TbnZIutE0zRPPKPXjEfOLb/6uny/zTLFvNdTvOG3MJAKWSWzOuHQtRN6TL2guqbae/7dR7emWV1Ycv8lg/F+jMG3uV0W2nJoNwIpoBxRRJlthD6AUmAie4tdtuG2zOTe5x0ZopKnyGRWS2DX+Bc3PvxOFFEW/2ReGoCa/97c95vZtn4wvGvIwK1JlWkO+PYf+uDIj8aXT7kim/YAIFKSYaRqavKwdc8qABBNXhcOUpK5HwFAbdeQ+dyq51qkKeYWBUq6H5oactI+F/VByV4Qiqzkrmd84SUABcb4NZMqph3jrLgl5TjO3jFP5U65WrbstsySiiWcMbrN4OZ4y7DHE6ktANDU1MFwHEdA0RwixjgzCoOM/y2bDcb8XJDKFaAdxxHFzbX/zzLsE0xuHQFg7cL359VHyqNmNs+StyiVHdPGGZszuf/0MicRc7PxQFEuA1q24bbMmKMv6cPInC2VFFIJSEl/+TYfJAHxN6UECSkEJ/5fY4+aNmDZstsyrRkWtb6echIxd3L/6WUWN+/lxE1FXy7M92q2BQBwKe71fLdJSiEZ47+aPGjG4P09X3VNtTf6mHMLA8x8iIhCnHGmFG52EjE3EpnP8B++9MyPqpAXDkf5J5/EZXmb4y4IGUUTk2j4+bqdqxJl5WXm7J2zxYQjLx5UIIvvS4v0856R/AsXgXMlwwhB/qLtmZ0XPffRI09/uGPlHYfd3fttUxgnhVjRJYcUHC7X1616ecOuNbvX7n5v/to9783u3rnvywWszVXEUVHaN/RAS95hat4nMTGgbPCRFgue1aLSSz/cubJmeK9Iv3xV/Axxq+1uY+fEZasffjEcDhsfA2bvjkeO6tt28Pazdk/wq2vvaP6g9q03u3UdUGt7+ZeRUCHOeGFG+iM7djnikfijP9t9ySMD2yfbt/2bctMvL5005k4AVN7u6NM52SNbVPNNm3Z+sLld92Np27Ya1a3D4eu4H6xSUKWHVpQsWPTGPe63qWVFIgnuxB2/V8fBHxLRFMbIBrHTenWu2N2/+zHrZ3/yX5lEIqHiiKuJFZf1K2Kd5zFiJxERUm7LEwtXzolGEWX3bPiziCLKPuqZ956ZaTjFYNahAMp7dx5c3q/L4Pdmf/Zfu3PPM/bEGSV92w++ljH+OwXFPeHtgVKnr926simyc6gqi5SxJ55/YHOvDgM7WWZwkFSiHTiNLz/k2M+P7D7os8Qn41wAiJx4RWmvDoPON5h5PxHaW0aAeX7mpkU1c+YdzPi0RCKhIpEIX/Dcg1t6dKxoHzCDx/jStwyDn9m70+DG7h2P/njdtpokEMPoY64oLO88aDwz+IMmN/u4fnoNwMo4M5iQ4sm1W99eld9zHDvmmDJ6/PkHG3t2HrzLMuwJUvmWAp3Rq9Oxzf3Ljv04sf2tFiCGSHhmfs92g081KfggI6owuEVpL/3M0TVl/29odCjNnn35f/wk6B9VDWt5fJYgxKDALm72djfUejuf3ueOpFSKH8fJ8pOove7ZDx+pKS8vv9cwOpurVj3XAgBTuk4JJCnpOaheOmBA+LWuqV7zC6x2vxvV85yPn1n3yINVFVXm2vyOanE8tuK0vjN/08Ys+31mm3v54nWxv2bboSSYJBit88iCMjQywAs67RI7pz+TePCZcNcpgXh8XnpMryNOKqa2S/b4286LIfbwlK5TAh8fdpgv92w+gohMn4RLCsxgtsEZFQKkdnV87XyzoDDo79xzd2tpWjFYIzyVyjQV7nkPyI5Ar6mBYl5hUEJJbpiT8jYf/vmkXpf+fsHau27FQQ5zyM1dc5w5L00YNP0Szsxqg5ttleJ3e0nvV5MGz0wAKqUUOhOpgSa3bCIGz8+8YkNejGiUxWKzFBBTMYAQj4lRFVURgvu0ZdgDlJKVnnDHTho0owaEWigUII1+hmF3IhCE9JuEEJHF79z56d7lWZzsfMKSTeLyWj/ZxjKCZ0gleyslnnST6pNJg2Z8ogDTTYsjTMMsy54ihrSbnrNw5Zxftgarg7rgHcfJTjhes+vqTF5pR8sITPKl15YTnwOlZk0aPHMjlPKhxOEmt7pYRhDN6YY7QXjFZOY8paRPYOrr53P2XeMrph9im4HfAmgDqDtceNFJg2dugFK+26K6GobRlREHEYMn3BeSSpwZQ0xly2sx3Uv4Y3kjUUQZgdTovhccYZE1SEItfGvDssZwOGo4iXK/omJcyGRslCBpBHje70YdUTkwkUi4uWAFAPM+mZd24Iiqiirz/ffj9YniLWekkNocoNAD/fqdWFJdU+2VxRMqggjf3W7NTfX+rjUWWb8de+jYktaeKMaIweCGAgCbgsKjtBLUsiqKKCvLS2abW54V4IpJzg07ggj/oJ0t4vGYaBafvNjg71wBg1vcsg3FvUfFuD6rquY+V7Q1L/j/Gnds/7jjlg1LAGDycZPLLG6EFaeXVqx4dk/2gpgvqyqqzKAKLlJC1jbKPWd6SvwjQMG/julzzkTsZ4zTPwtai1beea/wMicL339FSIGAGTo8ZBeMDdmFZ4TsgiGmYdtCit2un/nzntrmkU5NdQNiMfVFnSgmo4jSMzXV29JU/xPXd+/wpd9gGYG8oF34k5BdeEYoUDjKtvI6CeELX/rPpETmhMXv3Pli6zShvZPLHceR1TXV3oK350RcmblaCv9jAkPQzOsatAt+ErILhgSsYJlUElLK1RmROW/hyjtmAlF2gBHxByz8O44jnYTjLnh79mmel/4VFGpBgG0F2wet/OODdsFPbDPURUh/TzLT8LuFK2fPABCyzIBhGrahlLD3dz4X19wZTXuZyUL670opEbCCZbnnC1p5XQkMvvQ/dX33l8ZbO0Y9X1PdkCvC6z7CH1GGtTy8nCEOyXxzuGVyNPn1C79oBsVUt+YZ/yAyRzXJhvtNGMcHqe2rY3tdcBYnO5RnFPRQnJQU3ucCXk11zZxVALDhrWWN3bufew4jHmnTyFMA4MCRrVMx/DG9Drmt2Cy7M83aDAHwFHnEpKVAYBIAOOeKM4OYh2AMMTnaHU0AKWFc0gjGJSm2x4EjKlCRXVY3EW8Ol2OEVL0mkHRbnrrcegrTYv72F165hpWWdUyv31T1wrRpSQBgTW1PKzCK7Ay2PwAAWAMOkKjzZh5rEO+zx99V8czah98BMH/yEdMrTMq/FMDCfzK6+gCZVvXLAH4y+Zgrjsv46SEK6jAoFVDAbg7jAyX5SwtqbtuWKxx/NTDEWpeJWfZWrBHA5ZGKK//sMn8YuZlyqWQJEWsmYDM4Xntyxe3v5HoJ99N8y9V7sOBNunVCr4vvNQryhmZkqkJBdgBIEONbGNibu4LvvRqPx/3vMZVF5d7Lkytn3zC5//S7hW2OECI9QClVAmL1jGENZ95zzoq5nwMgkvKldKb5XIADvnwdyC2VHPtq5roAwKJJg644yfXSxyngUEByAtuuiL2rMk3xhe/Pqz/Q+dQB60egtQcQTLonN2XqZEtAvpUr7p7Vv+pY7oVOrfcbTlu64e4njzsuEuy0q+yNArRbyIkgpQRjDLZZAM93MbnHtDeaRcOvn9v06IvLNjy8AsCKfT/IZTvLWDQcNRI7t61RiqTBrE7ZDAtMSCmUzGTHC3EmOTiYyAawYzcc67lHFrfnHr+eM8soEm1vPr3vdP/xmjuX5IJrPBFvBuKPAACmAeOejw9sbFf2y7otn678zWvb51UqRZHKSoY1xlWNbuOuWrF7CQDUlpZLAPCQgnR9MFfszZ4NzkMususz1aL2W43L2ndU9pNv3fbVc7FP3Wtvk+sAF1dMonWOn+P8bQuAeQeIExTFLIo5MXHgQEKtr3dvE4DFrX/2e0zf8DwHG7RaX+vOWgAPt/7Z33sXrZvgbvzyd7+cGX0RtByxYOVtcQDx73Y+/zPRj+h9qEgkwlPvBD5RUM1LNz7UOxKZz8udNSrRf+dIpMylH7fsKXt764O7AWDyEVMXEVg/WP6UZnfnVmmZlGeVdobrTWA+m2lRgZ0Ue65cvHHebaO7j7aXbViW+eqLTu51SSTfLJnf4G8bt+ijh5dO7HPhmEKj/dJGd+dFC9fee/9ZvS+7zDaCt+/ytg1buvbh5RUVFWbnpoFxDuNoWPK/gip/CKQ8pVFtP37JR39/o3UMmayommtUAKipgFlScfwbNuO9xJbPhyybNOJdABjb6+Jz2/LSh3azHdcv/eD+G1snywoAqKioMDo2Hf0+Kd5eMu93AQoOtmGfW893nfzUmgde+j4To3Njo776/we54cKXmu/Lw18vRwwdChn7dptrUCQSYV89puwqGz/0xa4oHJ7Fv/7eIb9YruaLxxzEOfkfPHadYf1fq19RDDG1+z10KGS8s09eazPJ4TE47sTMhZ/nqTY4NK/ovsMGTP2tSgUHWcoaX6+2X/bUhw+/vM9TrQew/KS+E29p5xnzSoJlf5vY6+KtC9fe+/i+F/qZva66kBMGcs6GCeVvF2b96wBQTy0vp/2PLwAZzwOAZNmxXkwRA4AumQGDTB4YkpSNw5Z+MG85AEzoPTUhhXEZgDdauwbQzXFkdWWlOO3VlXfbbdr0T3+47tInJ414NzJ/Pt/0p+p8o5n9qV7s2rY92DI7e3HE/Gy3+CyqqYl5w4/qN9FKY44tA38t4qVoRsMN3zdY5bKDA2RP3+p5YojJ/U3gjce/fRT5n1sfilQ8Dv/gHxP7P3TsOmD9n9I6FQcFBusWpEI0uLveAwAn4bgTDrtgAvcCj3jMawkYwfE8nT/eEyKTRONfdxTn3TWl65TAx5987A/FUJmIJGjTphL2Sk31p8cff/xEu+mYtwp40Zwx5WNeK3fKawHw03pWPWhw62wPmdUcvJdSYlNzY3MKAMUTTjOAB1sTVxLSNyQpQPocAGxl2pwMSJJ7R40TySZiRj4AlFSUMADKqawUZ73y1s2Fh3S5oG7d2r88OXbY3aOvuNV2KiszY3pdfGOISjrvoe0X1NQ4DeHySH68r5OCQ3s//M+/d/96AMMrj5ox2HWTK5RyPfyTycLfJhtqzeYOlAFQNBqlRKIv1dauoVzW8D228frWmVA0Oiv7+uVrqKxvXwUHKC9fo7I9lz9o8frA9SWlKOI4rHZN6d5zXtZ3p3IiEfnddu1WhCgo0hdUW7o8e16HDlVO6xSm/5SdwH8UAas2XEuIA4ZR1M2ECeK0EQAiFZEisTM4z5fytZ0FW6a2YR0PK2kuXaJY6tEFG+deAwA1yK4FU4ayXPYhKiqqzNdfr24q6Xd4VQejy8tGS+lvYohddmq3c07lZJ7dKHeNX/zRfUvG9asaWCwKV7QL9jgfiN8VDkeNsrKE2rSphNXUVHseuSlPWRCERgBoCXz+VjB9xKZiKl1a2Xf6dQaCx3PLOKZe7ZwUjUZZIpGQjEgOfWXl35q7Hn4FNqy/3xn5k59HovMtJ1aZmdinalIRL55R5+9Y9MyHDz4IgNrIkofOXD2z0/bynRPiCWc7WldYdTBfJg+ZtoY2poVUIjslJv7tp3UcKBvaX3Mxl4W17q23X+Fw1PgOTb9/ElWjLAywOCARIxmLHbCOhkhkPkcEcCorf4hm19d+PjJ/Pi9fE1ExInmg3bmj0ShbjqEsPmuo+KeBJhpl4aFDWXwY+YhBHajPJKIUd7KBS+qA9X/eUABxMN88RDEFMrANAPwGq4/kqrg55V3zypqFnwL49OweVzsBu6Aq0u+KSg7zXSHcJ7a5Gx5zNjg7W7eWQk1NtQdE2dLVsVfG9Tz3UhC2AIDJ7AEZN9W8ePN9SwBgyerqd87oc9kGRUYFgLtaL1gZRVTt6hoOKF+MJGIArLEA3lxSsyQ5tv/FE4MIPWCS/Q+SSLa4DT9f/MF9ixYTqWg0atW89u69LYcccoFav+7hJXf+99SKqrmmE6t0Rw04q2+eLHzA9f0taUtcurf3i/GFhgzeW+yVPBUeMPHkoe8f1dhamFYVFdH0R5vqPoPCoUC2h/Pb1KscxxGR/j873zCDo4X0PUVginPiSl7/2Mo/fqqgaBZmUQyzlNOa4UXC0fyMwKEGNzr5UMXKhATxHUrxT5c8f92WeDzmx+NAJDKfO05Efs+MhyKR+cyJVYp469IvY2c8XJI2UocZkpVJkoUKSpDB6yXjn7WoXZ86t1Smcj2l2WOoFD9U0MSsWcqh7HmomLuonWVaPZXvHyIZt4mhhRnWdsDfELtgVC0Qk4hlA5xTuf9jyH0vHovJirkrTe+Q5OE2t7sJKdoqEMG2Ghk3Nu+obdngEKX2/sx3zuJ00f1/RG6FxtN7Tb/NZOzybfLzw+NrF348vud5hzM3b5OQfnTJlnt+Fy4P53cWg2pgqGbF/U8VVNhUoeIGd3ejVN71S9bNu+Mrqf6XUv6xPc48KUglL3tSXvNZ0dbqLi1dRpvMfjyJ+sqlifudSCTC4QAOHDGpx6U3hXjBLzIi5XHDMBv8hnOeWf/Ao7nnm1RRdURd/o7d8ZcX1kMBF82fX7r+sPKHdncoG2lsXD931azrLx86dCjisZg/ctCZXdolO79EBjt0t7HlJ8vemb9i39caXn7B2SWq5JGkbPr70rX3nhONRhli2eyosvyyFUKIbrs6fNipdRL0QXWT7z2n/X5xd2Gw7SVpkQQxBmIcrmw52nn7hvci5VGrdWoMThsSGwWDXQyGExWpjtywiRgHGCCUgFAiBcY+JEZLpWSPLlr2s8S+gfHbx4cvFtQbeeEdXRCwKolhLIj6EaN2zLQAxgECJBR84Qpi7DPJ6BWl8PiLf9m4CIjJgwlaUaVYjEged9MTx9imcZ+UvgBB8VCemU4lb17R+N59uZ24h8xeOo5xdgkRTiLDaEuWDbDsjBopfQjh14PztySpBamtnz+w6mcXtHwtaKnsHgAgUkf/44WuPJg3nQinK6UO58GgAcMAGEFBQWTSUEQfK07PuQp3rRk68O29ATT241uZ9EeRYeWaOsqgtr4vVIanGgFg8bqHNp96+IXVhWZxbNIRU39ipPP6uKYX3KY2jXht1ZItI/qPyLP9TiMMsn9XbHa4/fTelx37cZ53SU1N9d4Lu3UlUgUAsfWxV8b0OO+/S8zSW3pkuv+OW1ZBo7frkaUf3v+EgiJySObinMGMEQymx+G5HJyE8kYC+HtuGeYFNdUbc6Hj7KeXD6nr0PHhkqB9uPHR+uviI0/406CquWZNbJp3Ut+RXUqa2y2zjOARdWLnWctWzV8RDkcNx8nudde6xPLfx5Zf9JNis830CUee/9+xWGxlVUWViRpIQDYSsYIiryiI7AKh3wojanb9lO/LjK8kDGIcAMsOdUjE3ImDrz/KtAN/YcwYTpzDVx4UlPRFxodkCoxIAZwZLEjcGMgNc6An3F9MGPdf9+/xd//acW7c+W0znUhkPo/FKkXFuGiotGOnXxHjMww7UCKVgJA+pJBSIiMUkQSBQMSIkcE472qYdldF6rzhv+z1jlDzfuPcVPkUlGpdFWb/WUnCcQgALKgiMxAsF14GCgpmMA9eOnkoYjE56MZ/dAsW593OLOtUYgzCTUN6rg/hCxBBMTAQccaNYmbZI2EYI1mXrtcMeuCZa53KUYv3Bi2lKJcdDVr46vXcMH/OgsEi6aYhfU/JdNJVRAoEUsQYGBnMtg5jweClLJ2eevQr797TsG3XTzdVjmiAUuzH1kT8UU1+Vsq3felLuyWzd6fi2hGrL8+w9BYTgZN85j5VRzuOey2xZEs4HDWeW/Vcy5IP5y34NK+mIqUa/rvIbnN+l2Z1d67ncW9NBjHZuvQIPbX+oWub5c4TPCmjSdkwcvGH954LQLR+4lUkUskAwGOZZwyTm5YdyANnhsH58wBQW1orwy+9ZOQujyEvvfbTHZ07vA7ItnLzxonLR57wp1FX3GrXVE/zhvc9s0+pd8SLBgXK98htVQvXVD/2Ra9gVseajiKKKKOgfyOUkqbInwIAdamOlP0FszQRjIYW+m7zRhUYCAYAg4gMEBlgnMcQk5OOuf5iywy8YTBjuC8znuelMkpJcGYwk9umaVgWZ4ZJBKaU8oXwfNdN+UpJy7LsqnZWu7fGjLnxJ45TKb5p6/avBivHqRQjp9xa0b5j5zctO3Q9IEu8VLPvuWlXCaG4YTLDCpimHbJNO2RxyzaICFL4npducb10SnCDDzSt0NJhv3zw1uwu2q2F7W86FRxCeBkpfNeXwnOl50oGqj32licPCxXnv2bYgVNFKul6qRafOIcRCBlGMM/mgZDNTMsEwKTwfT+VFF5zg88Y62HnFy4a9NCzP3UqK0X4pZcMzJpF5fM/sAY//soCu6Doj8r3ivzGhoz0fbBAkHgo3+J5+TYLhixmcANKCem6wm9s9JXnwiwomlp0SPvlvZ6t6QQiiR/Zlvc/qrmEAlIo5TNRKPYuAtd21VEFpml2gvQfWvDRnEtzPS7xOIkIInxTRbZAXoOaa08vr0oVWCW/Orl75OXYhln3ju6+xz52QxtveXg5i8fjrT1jihaupdcBvL5vT1quByy3aF7G2xqrI0rlqYJBSd701LK1Dz3cWl8QIFJnPvn0YS2dO9yGjoeMS36+9XX/s22XLD1j9Ee5Avu4PhefEvRD8xmxNrtV7YXLPnxw3oj+5+XZPh3dVLplRa55t7fnrQZbzug9bbNi/AQAqE20FsoZganv3vKXX6m3ExE8wq6Jg6+/MGQV3JORaeX7nmuaQYsYhyfSGSG8j6X09xCRoTgrI0JX0wwaQvrwpS8IUK7bIrhhH2bagWdGjbnpjGeeum7pP8u0ss3HSjH8/L+eaJrBpcSNQjfd7CsCI8YMK5AH389ACHeT8t2NirEGYhRUnDoTUXfDDuVLSPieK3w3LcAYAvlFVw69/qFD1axZkbJIX+U46oB1NSUlEYjt7d/1PQZCL5PRDG4YHbyWJtfIK7CEn4HveZuV8D4GoQmgAnB2KOP8CCOUZ3ipZkUgiExaks9VoLjtXyoeeK4lPmzYHEBR3vzlD9jF7SZm6uvSzLICPBi0vVRLk59KbgDjW0FQYOgAzrvx/II2SngQbkaAGHl1ezyjuPiooGheWv7BBydF+vZNxmbNoh9LTetHFbCUjxRxIktZe5dTYZJCAW4ZLmRjVUWVWZfqSE6C3NYitEANxN7R1YnYr0f2PMeTvrcBILVsAzLLAHzRSxZlUczC8nCUx+Mxf1z5+Yf6XMrY6thnX+05ah1ounffufBLLxnOsGE+AJz48spLd4eCtwQDVp61YdNvx//9npumVVd7YAQnVulO7n/RlQVod2vayzTV0Y5Tn008uiyKKFuZWt8+aLV9hXaG7gXil3yxmUKUAbOUj6rtTLhdQcBylZ0IDsAmIg+e5X/f80vEIKRIMcJEzvhfM35agBSzzKDl+f6bYO5dHviLA1/2P8kF0nA4GijkVk/pJscQMy61rFA3109LEAzfdwU3zUAgYM8fOfbG4x2n8v3ogTZ7iEaZE4vJkefd3t0wzSeJqNB3U0IxxrhhMamUdNOpakbyXmakVy277aovDfQNX/HgIVJlTiaDrjaDeUf7mZRUSpHb3OgFC4snpRqPmOM4lZdmm2bftJTz3uuei3QKYHQZY4z56aTiVsDyMqkHFdGcWpfe2XDVmL3HUB6db4W65g+wMskZzLIvUlIAUkApSSLZLKy84K0VDz69APbyE+yStme69XvSRn5BwHfTH8tk8s8ZN7N49enD9v2c4aiX3yn1k8mxnNH1Rn5BDz/ZLIhz02uo98x27Y6Su3ffHCOaFpk/nx+ox1IHrP/FYQ1KqT0Gs0B+YRGAHQCQCq7f5TUf1aQU61NdU+1FyqNWOBw2rLoutpky7leEOU+voxcTyK5//uy6R2IAMKrXmYflqzbXCWJHEvNe2Ghu/vOqVbGWWGsAG9/r4uuDMvQLJjmNKz//tiWJB3/1lU06KRyO8rKhfZkTq/Tiw4b5py98uu/GDp1v296+bFjp9h3vBTfumfH4xJNWHNmatp9cPq59Oxx2awEvPrNZNK5qMnae9+zqR1eHw1EjUZZQSx1n84Te024utAqundz/4ltiq2IfZEfHxyQQU0pd3NEH9kABlahkAISUskARNaG0Nv29bwjZWTEGCH8GgTMiUsRafN+95onXZ92Ve9xi5JpXhHg8lgawCsCqCcf/7A63sG3UsOxrfekJInAhfGFYwZBlmg9FItEKYP8re0YBJCIR1sTUQ4ZhtvO8lA8iZpgWE0puUb533rN3z3xl36J8ItG3tVlfKeK3nf8ZgAfC4egj8tgjfmVY9iwpPaGgDLelwbPyi6b+5PoHn3IqK5/8pp67r3ZZERQDmCCDuW46c8EbV43/x75BNtK3Lzlr1qhErNIF8DaAt4+579mnecB+AIwsSEnS92EGg6bh27Ml0eEi1SJ5MBTw06mnWjJ0fqJyyJ59ew4BwIlE5HtEOwHc3+25lU8WJlP3mXn5k/2WZsk4M/36OmEEA1UDX6mpdk6qqDno96RrWP9TwxoAg1OtbeQhxItKASBSHrHi8XjaRXoh5/aI4T3PPtFJxNx4PO6baTa5xOx4hmTolg165RQOR40pXacERvU+t2MJdXjZIPNsDtlg89Bve3hHLB1THukwpjzS4fQ+U0/Ko8LfMcMo5MQK8lB0/egjz+rfujIBa71gaOjyWdKJVbozb5+fN+m1ml+Lrl0/KDLZsMKPN83qOeeJIYsnnrQCjBCLxeRp/aef3p56vFdgFp1Z7++8b4O59SdPr35kdSQS4fF4zK91aimKKBVa+feTUtIV/sDsrbucA1Djj76ke9Ao6iYZfy73fgDA9/22rkjv3GeZZPXtPiD77segwEAmgUIEUgRq8D1/xOOvz7orGo2ycDhqRHM7D2WbVQrZgaQsHI4ai17/S9OiZdf9NO2mrzQMiytAEBH3/bRvB/KOTPr518RiMRkOR/nXi+wx2WiecKkdyD/Wc5M+QIwbJkkhP2tpTg195u6Zr1RUzTWj2eBPsVhMOk6l2NvEVIrC0agRXz5LvPjnC2Kum7yKmwGuQFJJxZXvKsbZX8PR+flOZeSAa+Grr31NgjhnbjJz7htXjf9HxdyVZjSqsucgFpNOZaVo7a0jRBUrj8633rpopOOnU1OZaTMAioi439ysmGlPYqABYIz56cybLe88OzlRefyeirkrzVzPoVNZKZzKyuz4LaWoYu5Kc9OIQQ3vLW+odFuSb/NQHlOAgFKKBQIQjF/RehZ1Dev/juW59t/HpsHBPDpk3/ugZ7T8VnjGqAJW8sq4XhffzpjpWzJwdYtsWC2tz/8eQYQjnlAOHBEH/NPKZ54Dydvtxtbuz699dOtp/S4dbsF+TnolWwxmmkEjH6QYMl5GeOQrZZAhucoHsmuiR5YrihEJxGI4+aUVk94NBW4OtS/rZtXWPtVu27afxyeeuuad1oM76cgzDi/1S24oorZnZWRqdx22nfXE6nsey9XG4GSvkTjiIo64GpM879hCu5QJGNuzRXzIcDhsBHbafwUjpAOZe3KF+RH9R+SptDhE+n48+5H9bnsVfjXLUiDBmcEzfvK8BW/f9EakPGrFYjEX2O8a66p1IKkEFFVVVRvV1dNuGzfmpiPsYN5VGS8liBjz/YwiYv9vwoQ/zV606BdNrRmaAkCOE5HlkajFGPup9D2V3Z8h223hZlLnv/LQlZsrquaaNdXTvJoDt2dVHPARm0VVc+ea1dMu+tuwn99/vJVfeKaXSQrhZZSdV3hoqqW5EqB7w9GXjHhsmL+fpGqfmpYSZn4eT7c0OyuunfxkxdyVZs20QQc6BoUYqQTgVsxdab590aCHB897dopdUDDCT6cEGHHpuRKcKSWldH1veiIWc8MvvWTEhw3yMG3/76kG8LKPGeZnTlhxJRfWa60FK5KpFAhqVPlLL+U7w6h53x5InWH9b+ZXQ1vXLQ/wdQQCF2YvIMpaVzCgxase2uwadacI7r9o89DlAWVd7cn0iy2yceJzq55NOnCEA0eMGTDlqNN7Tb3e8OjqlGj66Pm1j24FgI96v/Yyk1YD5+Y7Hvy/NquWK5pZ3WOGxbltmkZKNDzxmStXhl96yYjHY75DJE5b/GyPsW+89yR1OeRJS6gCf+2G858+5qixj088dQ0IOOS444IT+8z4aWmmXSKkCs5qdBse2c4/HfDEu/c8FkGE5wrqrbUgqqgYFxx51HkDLF78l2YvubG+oOmVXPbVpq7n1UVmu7FJ2RB9/t0HP4y29riRX9yRkxkC1Pq9TefvUHb/ck+sErYR4L6XuX/B2zctqaqYa+bGYh1EFUxVV1f5kch8vmvPjl96meRmg5sMAITvSdMKlvmGOSlb+8pOIs4uC0yqs1l8imEFj/B9V4EgTTvIPDfzxAvzrlgejkaNmupp3sEeQ8etVQJKkVDyN76byRAxRiClpFDEMCV7g1j+tToaMaa+HC/AhOsqxfhfEI2ybiWbDmoIQf7WJgWlSIL/VX3lbsCDIS7S6eferxz2XmT+fB4fNuyf1h7jw4b5UaXYRyOPWyHS6ddYKMQAKOW5iiyrg2kXlwNAxHH+7a/3H0XAyk0FSRup9Rk35XMyBwMxOXRvFh9lT69+ZPWiNdWn+AVNh6esum4L18895bl1D20GSI3td063M8uveqKd2/5dmxX+0YVbZCnz6Ik9q34zov95Rw5YPeIexWVec6B2/IK1c695InH77Y9/cOdZLcaeUxtY07glkU/OTKyZ78WHDfOjt9+ef+orK3/jder8YTA/NCnw+ee3lL2zvn981E8eyt2iJx956YSTWoasLDHb/gWkPqtTe057/MPbz33xfefzSCSbBeWGVYztO21AZfkVbxyePnx120zZixYZdgtPXbxihZNqereDEQ6HDSPDt2b8lDQYVgKgNz/fwwEgIEO9CFxJEu98917CL8crRox5IpMWCn8AFHWs2fotMzZStbVraMWKW1K+lLdwbhIAScQUAYoIEwGgrKyvAoDcfERObAJjXCG7ZjqTUoCUvANKUVmi77fbLDZGMjprFr38l4vXS997nVsBUgCElyECBh3/s0c6IRbb75AAtU9+xS2bfN9d/0Zdwbt7m38HITclJ+V6K/xUSz0ZnANKgUgRMYCwAEpRbWnpQd9gli9fzrJBkD1DhgEFKEUkeCAAAvXOZuOl//YDxX8svYQqiiiLvRVrPLvP5a9K8MHhfpMPicVzvXex7PcxSy18kz7et3k0qvfZQwq8sqUWD5Qk/aZ700je11S486PCpnY/tynvd8Xpkt8pQnMz1Z+37D1nZ6Q8YtWWlst4POY/+e49ywAA7wOIEcYtf338A6G8WzuUlh3eceu2V+3Pt/6/f0wY8XYuUE3od96x5If+UEDFwz3pZhpY3XV72u++Ix53mrMjy2cJZ59JzAAQktZ/57PiY9N+EjYPoZn2RF9KPPByRUWV+XTNbS5tgDp18KErjWQepLB6AHg65TUSALLJPoYpRi7U+wAwND5UxhH/PudZGtzirsjEF9T8cWM0arDvMicwuyQLyHXZ44aZuokYC0koKYRHgDomHI4GHKcynRt+0prMDJHCJwJA3GC+m9lh82BNpNJhtbVrKNK62ezBenNPvhGORoXK4E3G+DAAUEJKIxAISZXuC2BrpG9fcg7cJJRkmIzczPuIDfO/VVG7tf6UINpzzEPPb2CGOch3pSQoLtIp+B7eBZEaqpQ82N9W2dChCkRKLq9ZpXw/W0RUUGAMCqrDj2UkwI9tX0Lu+yptmvntC9LtP51wRNWSZrlt6oubF9dmu/+zgWt5eDkrj5fLURXndixsLnlCQGIX2xp+at0D+y418/NTDz//7gKW33mjuW7V22te2K2giFqHRESjUbZtWydeXT3NO2/hM4c3d+54g2jT5izatXtr88aNF/UbfuJDMcAHAWOPubBHXjLvOkNZF/vKR6O7q9oN1t/w1LtPfPLFRRzzgVjuesiNryKhRMekTPkeRJpzkS/gG0CUdeuWkINQERzb0P+XRkPwbMM0GYPrAlC92tki/gmUBAt7yNQXt/XWYv0X++59j/pVNgMAnsdBbt9+gBxHQil6nmjruPF/Wm2a9rFSuEpKASLqGCzJ6wxgYyTiMMeBGBm5uQ1IHSpb9zbl3ICU/geL7p3a9D3ejgCA8HUPJRRUrltSMm4wxlm2I2bN1zOSfedrETEopTYf6LHfJOI4zAEEiHZmZw8oBW6Q8N2UNOQ2AIh9iw4Sx8mGVuXLHdJ1c60nAQCMWJ4OWP+HRBDhMcTEab2r/h/BGF3v7fy1YnwrV/yWPNnmMQDDcmOWYojJquaq7A7QLTP+ZNqhDo3+pyc9tfrvr1ZVVJl1NXXSgSMjiDBn84PrAKzLFcAJ2WkOkfnzeSx7N5XHLl9R9XFh/i3t8vJDatv2285c/trvb/zVVTtXAwiHz25XvKP4qmCTdX3AymdNon5x2miOLV09ryZbn4nw5HvoYLGix9MqGXt63SNP75103JoBplXmYYtZfwiQlZ/0mpMZ5i8BYrK2Nmx0axryBBEflUTqyaRoYlDW9cOPPmthdU311lMGn9/WarKPdVnmOWeFk/ohCu4EIikFFKcEAJVrtn0X4aGzeDw7hGEtY/xYElAKUjFuGfBlRwAbN5XUZYdmMNbeAIpVdkwnl74HAOWjL5mzBASmiBQxUpIIYJSNKCy7d3Ku2NTabwcwBsmYIgJTjCQIXYSbBrI7SInsqHfVdr8H7QMwc+u55KIJa/p+n16Vyg6PgCIiMGJpi4tvPwQlElEAYHLDhZLY21OrAFLEdcD6P8RBdidfJVGVFM0PP7Xxnj8CwPieVdsMM/j0ST3HHxZbF9scRZQtB1h1TcwbfVSkNOTnndfkNzy6JJENVtU11bnCLX354lYUaw1WuQGg5z3weFlT9253NHZof8bu2tpVRZ9vuHzp+OGvLMk2UNm4oz6bYm4zbyjgBR1a0PxOxt913ZMfzH0uF2Bb74piRP/Jnp2mo/Ko+PbjjoscOd+Zn65EZS640FNr7/nj2PIL1hoI9Wn265e8sOHRdwFQ2919R5pmaFSLrB++5MPqF8YOmNbZTrENgRZ7KoDfFzXnD7cMK5Chpif2Ftzj3/PSAphUAlLIXbkz/30RoXZvQ0uRZMQ5MykfALrVbaUaADZnIWIGSQiVDZo+yDA7GoY1VjHK5hJEUIyAbA2o9d+5AEbZSTcs+7Ui2hvEpJSQwlVgrLUHTSkFWN8cuL/ItAD5/XpdFe3dhbo1CCrui+98IyCp1NdnGP14phP+SJqEswiAcpXf4ilVkPtfi1gnxjhsQ+39UMUR88f2Pu/IQKbgKskguef+NYooS3RLSNTkPo8KUESTe18yV0AEF62l86PRKIvNmoU4kX/esldGuKVt75NBq7PasuX3ve54+s+OE2sGAeMHTjshf0DDDSG0/0kd7d7ZIGunL+x//91wvhhp3BpgVQQR7qxyak/tc/6UDlbpo10a2VwCXQBAhMNRY2gcMoZZWJqgvYMRI8dFgs4KJ0VC5AvlemsO2/IqPgSWvj/389N7T91OvuwEQElXTm0ym73dBduzg/XjQyW+Z8TK3bJNBhfIbqT6fX9zUn1lFU8iKKm+9LlUUhpElL3uKPcYAc9Ny2wm9UVwyv4bXwpM2X9jn+BFoC/+j4gzUkRQUIyIEUhl/jc+xbQ3CBZ+9yexfrR9az+mJmGCHACKMrcUGCUPju12yXwzYK3nMnBVSjYuej6xZEuu2TjuiItuMj3rF2nuKa48yoDGxhB7M+pkBxxGEGEOkZjct+rudnaHS7a6Wx6EUoRZABHJQS+9ed0nHdrf2KapYYtY92l4+aRRL6O1+VewI/Dr/HTwKoNMNKrdNyeDn/xp2XvLdmItIRz+rVFU+8l1vitWP7WRFrbOP2zdkODBxyYdOeO4ArPk6nG9pgZ2259cHo/HarPhJYYIIrwc2RU7nRVOKnsRUxeL5ZlHf9LzzoFHdfwry+SdZrDgYYLtemh090gpV/yUpGhZFH/7qe3fY+eYr2ZYioORr2QIABKRBH3fJIsIefuUakgpAUiWBICSkk4KAHyDp00pshMZ92YmkGBKKRCBlMreZnKzmFtLzrRPFKAvR4W9TToFJWVrkkPMF8In6aud/+xq+Vd1t6l/yXPrDOv/WJOwtfm07uGHxvQ4Nw88cLXpByIMlElT49W5Jt7EvpcMDXiFv2hM1/+2vnDHAzx5yDSL5f3m5PKzl8QSsbdyzcKJvS74Qwkvu2SP3zB76dr7LwPuo0Sikga//NZdOw89ZGrhZ58/b7/7/pTnr5i6FQRMGnjxSL7LnBOkom5Jt/HVFrvxmkVr7l0JZEfblyfK/SXNS6g9jplpWQXFIwdd2GvWylmfAWAxJyYjiHDngznXjC2/xM9nhT813B4jTzuy25988p7oYBmbqmuqvXA4bIzafuahASoZDvhVHPbgFq/+c8MwKkNe6YU+CTSr5uiCxH2vjux+0e/JsMgz6ub8UIGl9SKVjBmcCb8LAHyXJZdzcvUvAnVRSuWCF5NCKJL+HgBYu3ZrNqZk0Cht6TLGLaWUb5gBw/dSS5nBryXFeJqkyIZT4+sZhmotPdtfNLq8LwpQX7ABYoby0inGubkVAOKxYeKbAsu/KsvSfvRNwi9uTk+tf3gugLnje0+fUsxK7s9z80cDmAMAgbR9alqm657ect/vs2uI4vrJPatm5snA8RFEaqprqr3xfaecEFIlv9rj7Vi84KO7LoNSpGbNorHX/mpesHOnc0s3brqrz31zrpw3b146ouZz/6gXfxvy83/rw5UtqvGaJ8+582+IYe/CcE7CyQ6qrIHsdmTF6Yyp1/OardsINKl1rJVy4MjW9aV+Nq7v2S9bqugPBUbbG1yRumFnsmn36b1nNlo7A/nMNEqVBDKiBb5yM6mCljFQfJuVbFvRgIa1i9fdvXnigInFLG3PaKH6tXWBghcB0A+12YFqLQxLqIEAHvs+16XjVIqKiipTKdVPSgEFECMOIUWDb/EtQHYXnXgc4E1qKyzsIOJdpPJVa4aVv3TujPX/A58pTQesf90HLIywEcdy8eFhpz561MfWH0wKXV9RMW5eTc2SVMpPbzZ5XsnIwy845tnND7wV6T0jbFMgL2M01TtwBBQo2K/gNiHkro8Dn14CpRgjkiNfe2e23aXLuXkfrb35lVOO/+lbAE455fy2os/z9+SZJRN95SVbqGnMko/ui1ctqTJRAV7tVHrj+1zQ16a8v7bI5sue/ujBdc4H1W9M6nPRbflGuyvG9poyNLY2Fs/1CsZyY8XWxBYDWBwpn36yUGK8J0V/i6NIKGyWSqxPGw1Pcmn3tcj6r5bULvPZj5ydAJbtrVaku8wssNq0TWPLlTU11d733Snny9UPxaT0AeBUQF23PI7cihDfrgkfmc8cJyLLyv48gHOzmxCeBAGMcwhPbHjWuXYPoCgWI5ldveGqzKnn/O1Dxo0uUvkkhQeABoydMbtkUNmOhkSiL5WXrzno4LL3iA+8KcX+V2Vt7SXUKZUOWD+YOOJ+ODzLiC9blulb3vkPBSi7s82e4mkAbvmkeOOjhzX3qio0S96s7HfVu8xXRxMzEJBtbht/5CU++mJXAS86ejfbOe2995btBBFKXnjtuk1du0zvsn7tXctPOf6nADB20DndzG35C20EjiThC59Sjy5Zc188EpnPq53KvVNEAjIwoMhsM9wncSSAdRFE+J58P5aXdi8KmqEYgHBtbTnlhhzE0No8hCOcxJ0vAnhxf+/xrN5XdrDNIDERCAKKwl0vtMs+SXpe70CxbdDPG9TuNcm2m+d/sQrq98H2ubaIecKVpmH3O23Qr0+hlX98PreU8rd5xuzo9UrF+U0zDMMi10+L7IgDA0DmhWxNcBaPx+HnxnoJyGctYiMVACV8YdqhNl46MzQWiy0Ih6PM+XYbphKgUB51zHbpeX2Jc+UBUEyQD9N9+w/nJP5H2wXad7yB/liCVjwmooiy+lJ/XqO3e73FQ789rsfYzu+/H6/fHfr8FJ+S1yspN2R4+qp6o/ZEV7ZszBMlD1p+YEFjpn6b7F70dwCYtOi5E7uVlt1gbNr8irrvmSsBYPwxUw/PS7V7zhTsyDSlEj6Be0w8EkWUpTY9WTK5/4U/nThgymEAwDj3fOkJsOzo9abuHYwX3n5wt6fSc0Jm4U9G9z//6Hg85mdrcK2z8VvrcZFIhOdWP8itAJEjuDrfVxmf5bENAKle7WzhwBFC8j9A5RVlmPfLeDzuV2ZXP1U/7Cckm5EQoz9h73Ed/AqBuQA3ZsQfjuLcOs/z0hJQHCDme670lZifrXFll72OD81WjKXCIs9NuQTiBFLZadjyWgCqdbGOgz6Giqq5BkCqbUvLpcH8onc44Z0Ao3cKQsXvBCBvAaBaV1z419MZ1n92hpW7byWQYPG4kx7dp/LqfNVxaZEovRXAGa+uXloH4MYvPbocx0zwqq4yyb6uwWie/+ziO5oi8+fn+2Vt7yqWfkP+559d9NK8WPqUU85va20NLmRkdqtju88MyeDZSdV82La8LW8vRLU8EzMGFlvt/7I7sy0JYLY0OPMVcc8T+374qZF5f2ep9M9sVbDi9L5X17gq+bvFCVpWVVFl1nWrk0BuyEAC2ypKeMeajmJMn3O6cpV/DWPssCAKT0mpxkeeenve9kh5xKquqXbH9rjwpAArnN4gty9dtub+xRF8v6bgXl/Jz4jAPZHxLStv4ORjkn9+Mv7Hn4bDMIYOjf7TrbtywWpE/2vzDNuexxizfOFLBZKmFeCum3rxmQW/eKd1Eb/sscdiMhKJcOfvV68fdd7fFgVC+We4bgqelxZWIO+EERfdfuVzscv/FolELceJef8sQIfDUSNePc07ccbsEtMyr5deOju0MvtODcboLgBYjlnfcRS/pgPWd+CgdbT4h/OfGt37okfaBdqfM7b3hVOWfnT/vHDXKYGyY5Je6wPhJBx3Ear/clz5yHvsvkNcJIDmNh2nmR069nYT62fGzz5tI1SUBXttudcy7H675PbLn/vo4fln9L78DkHuqrfeWtYEAJxsKYTns1yhQ4ExDgQkIwBIdW4jsAGglBdLsky9BOZYSp5QyIqfHt3z3GOqa6rfxlfXJqnJjt8aL6Y+XmgUVbiQEDKjBMvcDQBIQEw4/uICtsu4Jy39pGsHrwRA5Sj/YRob7KsJAYExbrgi7dlm6NrTj/1ty+PxWDS3dVdt7RoaOvSLCz23oerQOGQsHvNHHhdtE2yb9w/DsPq7floQY5wY85X0oZT/m+zPJL6Ud5SXl2d7+302y/MyE4gxDqXI99LCtAP/PeKS2duce2Y6ABCORo2hgIzNmqX2Zi8KiFQ6rLa8lOKxYX44HDV4YcEjphXo5LkpASIwK8jdZPMHzbXNC6AUxYn8/5U7rU66/jMDVjYWzZdRzGLL89ZdJdLekAJWdke493k18Y/mfRA55ksZSHb8VcLZg8SzCM+fn782GPxZ/ufbNvb6cPv9IGDSUdumFtsdJ9Rmdtz13LqH7hhZcXZvI2239ZR4MXdXl64vFZMGQ3a8kIBPuS771qaqP7bHRQNsZY9Py6ZxT61/eCkAnFV+ZU3QLKme0G/qbJvxXVLSLk/JlFJkE3mHkW+OtlSwIilbMgQuFQWDGeEemhvLNbluxt/y7JIeW+Unl764+uFNuTFnP8hJlPtmVwShZBpS1XLDPNQTac+0gr89/YRYfyXlLx2n8qPs+9xfbRGYMOqmscTZfxuG1dP1UoI440opz7ZCZirVeNtTi657fX+dBLFY63Zcj1auGXnurb8LFZT8IZ1p8iClASlgWtb8UVXVv9sF9ad4bFoynv2hLzW7cksEh695oLth0lwzEDzZSycFMcaImAAU+YTLa6qneZG6kv+1JYV1sPoPDlgAqUQkwuKOs+vUAeecXyQPebmtaPfYUd1HD3UcZ+c+AyqVA0dUzJ1r1kyb5rOSjhPSpe3biw2bbnKurUydOPqi0sCnwRuSaNmS16bxqonlU4/iLfYygKTN7FGn9rr49KfX3vu4YIorqL1ZCQmmFCnsO1fC537IVgEUUHBvl3xaZmptM380U1a1CQuCCdhKgZMJKQWSqhFpSrbkGcV5igRa/CYQDyZiiMmJ/aquLjHKLtzl7njoxTUP3x0Ohw0n7vxLsgMFgBEjSbhMKHGXwc0Orpd0LStvkkfe6Mkn/m6hYuJZSVglgWYTlqGY7KQ4GwTGxnHDGAICPC8tiFE2WAUKzHSq+ZXtnxdf2zoUZL/NMMeplOFw1Hj24av+OPqC2wcECooi6VSjJ6UwCEqZgbzflnqZc0bOuOt+RfL5VCq9iQd5yvRNLknmq2CwL+c0iTidxy27wEu3CGRncgsjVGAkm3b/6tUbL4z/oJurarro/q2zLMcRYYSNp99/5LXmzO5pFrfLO+KQf1R0rAjF9lnSGABqqqoEAFUQDJx9SN2ejLl+yz8AoHQLXRygUNsMUr93Vjgpm6xrC3lhe5d831R2kaGMXwKAFEpKSPgyO1aIcUApCeFnP/8RRPinrKZGMblWUWjpaX0vPb2yz1W32TxvdLPcMaVFJAfWi7rTRMbbCM/flUTT+U1+04gMT3XM8OQJSdH0eFqlX0yy5NlL1sx5+5Q+Z07Mk21uafSa321ot3tGFFEWjy8X/7JPiFIgYrby1Wrhi4lKodk0ApbrpTKADFimfaZt5t1jMvNtg/EEDKzmlv2MbYX+aBrmECE86QtfAiCllLDtAjOTaXndTTdPqqmZ5md3gj5gDUrF47NENBplW1I7z0snmx+zg4UmIwYoJfx0i884724FQn/g3FwRyguts3hwHQXN9Sxor7Vt8xkrEJpBQIGXSYnstn6czGC+kW6qv/HlGy+8IRyNGgcTrNRX/tZ0hvWDyg51CBtL4vfcPbrnRV0LzdJfs1DFPw45ZMfpsc9i2ZUM1HwJIjnz9vn5a4GflCRTK9666vzPIvMj3P01m9KAPXUtBXUOAHhM1UsWBM8kCUwBDMnW/AnSU5C5ZQKEgNp3kcpy8EQi4fY+8sRJvpe5Twr2qGByj++nrly69qEHWh/17mk9p88Fo1VPvD/noX3exnYAZ+S++Emfc08qQMmjGdm8vd5oOSMed5qHIsq+59bv+7k6pYSCrwAfSgFSgji1WbDyj2+NG3TdyQEKzrOtvD6uzMDzUhkwgiQyqDWS+L4rfeEJcGQn8AHMMGwGxpDJtNybTm+/8rnnbm7J9jj+syEYpLJrNZKbAM4addHsNcwyf2Natum5aQjher7wJZgyiBvFxFhxdu6ggnAzvu+7AowxxpjJgyH4nteYSTb8dPmNU+6KROZzJ1b5jZkpMaUA5bcW6CWgQPh+w0aYUlIp5SsFv3WVm++VHZNSShH81g+Br6BItS7foDOsf6egFY+LCCJ82br7ftMi6v+rJNj+1GOLJj0RHhAuduCIqupqAwB29ex4JCtpU9gi/JcAoHlu0RFBI9THJ/+Z52uchiiizLPEX1L+7ncVMbMBjZ9nVDqa/TzzAIiUkjINABmZSkNBMR4IAKDcks1PfFD90RNr5w5p9PxDPmQvdFm4tvq2qooqM4IIH9nzvNEBI7/UU+5T4XDUGN39Cju7DVmUZf8NjOx78bC2qvRprgy3jhonvrD6vk2RSIT/EPMFvx6wKN8yg4bF7YBthAzLDBqMpIoiypasvOntnfU7jnH91O+gsMM0g7ZpBm2Dm5wRJyJGjHHOuWGZ3DYtM2QY3GRSeG+m3eSkxYt/dskXwepgj532bmzxzH0zf5/JpI9z3fRjIEqbdp5p2kHbMGxORICSgJIgInDTNkw7zzYDeaYi1uJnMg+4bnLQS7lgdTCZlYJlBgsMI5hnGYFQwMwrNBRl51V+j2Z2oVlQZBihUNAsKDSgVKkwWr5zKct3lWEUFhpmYaHB80JBs6jEUNDrYf07Uq3rXHFnXfXPJvSblmpjdPwNeUe+eHzfkkj19OkbAaAlYB9WGAgon2gTAKCedzUNCxZz34ggwpdUbGM1NdVbystxXEec37fer/u0Zt2SXdkmIRusLEUZllmdLbqn14OISGEQgIdzx9FaO1Mvbr5nBwBUfLEOlzidzfx1irxMi2x8tHVApgT+hkQkQcscJzOuf9X4AlX8uK/clgaxbeyLicfe+sGGMOwjNy0Gkp5zvaRwZUaSAoM0AB87Y4jJ1mEKzQCio0/85e0hn40Fw3CQ6qsIpUpSAQhcKbVHQm5R0l8JxRcsfObny4HsIojZ5a2/daBVsVhMRSLzuXN/5TsAzho+bU4PkU6dSozCilQvYqxEKZWvODNIiJRSchuEv1YR4q6iJa/cfMFm4IudpL/pxcrXZEfRp6W3WdTvmUuUXVLGU2S4Ur0OAEMxVH6btTCc1ud0lXyc6vdskW7Kg5s2pEKz1yzT3y32AWm4O1Rd3RzKLrkjPAVLyewmJEOHfrtj1P6PVOJz61GN6zf1ssrya9T4nlNrTzzxnG4AMOqlN6dG1m9RExe9PAkATu8/47QLB/xSnXb05ZcDwOjuV9iRSORLC6JFEWUVFRWhM3pdsXVyn5kbKioqzCiiDFGwM/pe9n5l+RU7K7oNL8oFJ7Su1xaJRHjr1wCAyUdW/eGiAbPUmD6X/ipX89r3tSb1m3HVlKN+qc7u//Mto/tcfDSQHVf0v34+97M88bhxc0OTR0TLxoSjHSLH3Rz86ve/7ZLGBxKNRtn+BnmOuPaBvBOvuKf0pKvndjxxxsMl+339H9k27v8RF+9/6hvPTYEZ2fOs0aYKPZwJynOeX3X/MyNfeONS87BDqjMfbjz9+XFDnzi9/2XjQiq4OKUyn+5WO8a/tGb++/trWk/oOe1e2yic0oDa855NzHs4Uh6xnITjntr3/HGFsmxxs1v3xNLie89CDb62u0v37t3tnsbJf2pnll7VIBsWLVxz+2kVFVWsW2vWdeJRo0vbJQ+7pdguOzetGlfsELVnvfThI59833mCBxUQEGXLw18uHcTjMfH1mrOicHgWLyvrq/afsfyz73//wLUcYGWJAz9/JDKf15avoTgg8R3WoodSFJ61nH+5Prr8uz1X7pjmz+df2hxiObC/7cW+1TEu3/cYh2ZnCxBJHbB+JEHr2F6jDjPadZWvvVa9ZdDLNWcZh7T/e2D9lguXjxrywNgTruifV89qSHCelE0+I/HHFPce2t2tfmvws2BeUaZwcJ4q+FXQKDx+u//ZnGc+undmbrhE7u/RPc/7cxuz88/SqqVGUCqW5HveRPu8FrbFKw1YRcNtFfhpgBf22pPe9eQebJ1yZH6HdG7101G9LzwtJIN/s3moc7NqmPNe8QfXfrZixQ+y5PG//rOl9v2Y/Q93qin60iv+m+/Hp+mA9aWgBUaAVDjulXeGy06lzxV/8tmvnz15yB+Pu/nmYKe7NtYYinpkID/KswqPFORBeF6LJzJ5IbMYvvD8JEv+dmli7o25+hRyux5n15KXk4+cfqVB5h9thPKb3ToQWJIzK5RnF8DzM7s8mb6htnT1bbkdmkcefUn34kzoDxbyzmzw9tRlWOryZ9c++Egu6/mXFNg1TQesfwdRFo1mR1RfuXBh+xcPOXxjifDfeflnC0+meMw/tdeFV7VhHf66h+38BbOtF/Ld4MVuJnW4p0STabA3alnLE68lHtyyz27F+zvPakT/yWV5svQ0cv2ThOTFBrO2G4Z68TPx2aLX1y5qAoDx/c87nGcKrjCNwDUBHkSzqJu3h23+dXz1ss9ag6uEHgKk6YD1nx6zogyxmPzlyy+XvpBXtKo5GOwQamhe2fazugsbbr5zU+emDq+GWMHAPd7Os5d+dNejX8vUyqMWEgmRXcoYAGapaHateSSQIJSX82/aIfn0ftNPssi+BNKYYiobSa/+pXQg9dslq+579UuZoKbpgKVFlOIOkRj96lu/Q9s2v2luasxk2pXZfPOWBStOOX7ysCEXd23bXLjQosCARnfPQsEzf3l6zbw38R0H+oUHTCwu9DoOJB+ncoVJeYGi7oIUXJFe5rHUzYtW3/X8F4Equ2mF/i1p/+kMfQqychtRZpTqkeImOLgfyGQM1zLbAKCX3rj3k24VFeHeqaNvDPLQjCAvnnjWkdds9JBZ7vn+u0S0uRkN2wzLruMW0l5GSNPmjElpCVcUMVnYCWn/UGKqr8XNwVbaPipgFoQyRgotXtMnde6eP6V48oEXEw8nAEBBUSUqWTar0vcVTdMBa98WYSSiYgCKW1L3svr60za0bZvXsb4OVn39vQBURdVcs6Z6WsMm1Mwc3u+cOZBtzzcVm2ySdYnFAyBFCLE8SF8CfnYOIUR2l2IQgTMTwvbgiQx86TVkWPr1tJt6IWOlnn+604PvIZ7N1KKIsgQSRCCB/6UVAzRNNwn/HShFIFJjlsWP/7Rtm2Ftd+1ZGT81/IzaZ+/MXK9f7keGHX1x1/yMPMIG7yphtpdE7QgyDxCWIkimjBQU30VQ21JGy6cZyE0Js+6zbTVLkl9qIobDxtD4UKl7/zRN+3ZB65u+bs2Cvu8I89xztI661zcOTdMZ1ncMJkqx5cuXs7KdO5VT+Y2jsimKKCWQoNrw/vboWw60LjgOZNcpL3fK1T7jtDRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN0zRN07Rv6/8DA6DRIJqzinkAAAAASUVORK5CYII=";
+
+// server/pdfRoutes.ts
+var pdfRouter = Router();
+pdfRouter.get("/api/pdf/ping", (req, res) => {
+  res.status(200).json({ ok: true, msg: "pdfRouter esta ativo" });
+});
+function slug(input) {
+  return input.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+function getBaseUrl(req) {
+  const forwardedProto = req.headers["x-forwarded-proto"] || req.protocol;
+  return `${forwardedProto}://${req.get("host")}`;
+}
+function buildHeaderTemplate(titulo, subtitulo) {
+  const dataGeracao = (/* @__PURE__ */ new Date()).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+  return `
+    <div style="width:100%; font-family: Arial, Helvetica, sans-serif; background:#0f2b3c; color:#ffffff; padding:6px 10mm; display:flex; align-items:center; gap:10px; box-sizing:border-box; -webkit-print-color-adjust:exact;">
+      <div style="background:#ffffff; border-radius:4px; width:16px; height:16px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <img src="${LOGO_ECO_AO_BEM_BASE64}" style="width:14px; height:14px;" />
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:11px; font-weight:bold;">${titulo}</div>
+        <div style="font-size:8px; color:#cbd5e1;">${subtitulo} \xB7 Ecossistema do Bem \xB7 Gerado em ${dataGeracao}</div>
+      </div>
+    </div>
+  `;
+}
+var FOOTER_TEMPLATE = `
+  <div style="width:100%; font-family: Arial, Helvetica, sans-serif; font-size:7.5px; color:#8c8c8c; padding:4px 10mm 0 10mm; display:flex; justify-content:space-between; box-sizing:border-box; border-top:1px solid #dcdcdc;">
+    <span style="font-style:italic;">Documento exclusivo e confidencial \u2014 Ecossistema do Bem. Proibida a reprodu\xE7\xE3o ou redistribui\xE7\xE3o sem autoriza\xE7\xE3o.</span>
+    <span><span class="pageNumber"></span> de <span class="totalPages"></span></span>
+  </div>
+`;
+var MARGIN_TOP = "20mm";
+var MARGIN_BOTTOM = "14mm";
+pdfRouter.get("/api/pdf/individual/:alunoId", async (req, res) => {
+  try {
+    const { alunoId } = req.params;
+    const nome = req.query.nome || "";
+    const url = `${getBaseUrl(req)}/disc360/relatorio-individual/${alunoId}?nome=${encodeURIComponent(nome)}`;
+    const pdf = await renderPdfFromUrl({
+      url,
+      cookie: req.headers.cookie,
+      headerTemplate: buildHeaderTemplate("Relat\xF3rio de Autoconhecimento DISC", nome || `Colaborador #${alunoId}`),
+      footerTemplate: FOOTER_TEMPLATE,
+      marginTop: MARGIN_TOP,
+      marginBottom: MARGIN_BOTTOM
+    });
+    const nomeArquivo = nome ? `relatorio-autoconhecimento-${slug(nome)}.pdf` : `relatorio-autoconhecimento-${alunoId}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${nomeArquivo}"`);
+    res.send(pdf);
+  } catch (err) {
+    console.error("Erro ao gerar PDF (relatorio individual):", err);
+    res.status(500).json({ error: "N\xE3o foi poss\xEDvel gerar o PDF." });
+  }
+});
+pdfRouter.get("/api/pdf/cultura/:orgProfileId", async (req, res) => {
+  try {
+    const { orgProfileId } = req.params;
+    const url = `${getBaseUrl(req)}/disc360/relatorio-cultura/${orgProfileId}`;
+    const pdf = await renderPdfFromUrl({
+      url,
+      cookie: req.headers.cookie,
+      headerTemplate: buildHeaderTemplate("Relat\xF3rio de Cultura Comportamental (DISC)", "Perfil da Empresa"),
+      footerTemplate: FOOTER_TEMPLATE,
+      marginTop: MARGIN_TOP,
+      marginBottom: MARGIN_BOTTOM
+    });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="relatorio-cultura-${orgProfileId}.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    console.error("Erro ao gerar PDF (relatorio cultura):", err);
+    res.status(500).json({ error: "N\xE3o foi poss\xEDvel gerar o PDF." });
+  }
+});
+pdfRouter.get("/api/pdf/cargo/:cargoProfileId", async (req, res) => {
+  try {
+    const { cargoProfileId } = req.params;
+    const url = `${getBaseUrl(req)}/disc360/relatorio-cargo/${cargoProfileId}`;
+    const pdf = await renderPdfFromUrl({
+      url,
+      cookie: req.headers.cookie,
+      headerTemplate: buildHeaderTemplate("Relat\xF3rio de Perfil DISC do Cargo", "Perfil do Cargo"),
+      footerTemplate: FOOTER_TEMPLATE,
+      marginTop: MARGIN_TOP,
+      marginBottom: MARGIN_BOTTOM
+    });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="relatorio-cargo-${cargoProfileId}.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    console.error("Erro ao gerar PDF (relatorio cargo):", err);
+    res.status(500).json({ error: "N\xE3o foi poss\xEDvel gerar o PDF." });
+  }
+});
 
 // server/routers.ts
 init_const();
@@ -15388,9 +17073,9 @@ var systemRouter = router({
 // server/routers.ts
 init_schema();
 init_db();
-import { TRPCError as TRPCError6 } from "@trpc/server";
-import { z as z6 } from "zod";
-import { eq as eq8, and as and7, asc as asc3, desc as desc3, inArray as inArray4 } from "drizzle-orm";
+import { TRPCError as TRPCError7 } from "@trpc/server";
+import { z as z7 } from "zod";
+import { eq as eq10, and as and9, or as or5, asc as asc3, desc as desc4, inArray as inArray5, sql as sql5 } from "drizzle-orm";
 
 // server/excelProcessor.ts
 import * as XLSX from "xlsx";
@@ -15929,6 +17614,7 @@ function calcularIndicadoresCiclo(idUsuario, ciclo, mentorias, eventos, performa
   let somaNotasProvas = 0;
   let provasRealizadas = 0;
   const compIdsParaCalculo = ciclo.competenciaIds;
+  const microTerminoVencido = hoje ? /* @__PURE__ */ new Date(ciclo.dataFim + "T23:59:59") <= hoje : /* @__PURE__ */ new Date(ciclo.dataFim + "T23:59:59") <= /* @__PURE__ */ new Date();
   for (const compId of compIdsParaCalculo) {
     const codigo = compIdToCodigoMap.get(compId);
     const perfComp = performanceAluno.find((p) => {
@@ -15937,13 +17623,17 @@ function calcularIndicadoresCiclo(idUsuario, ciclo, mentorias, eventos, performa
       }
       return p.idCompetencia === String(compId);
     });
+    const aulasConcluidas = perfComp?.aulasConcluidas || 0;
+    const aulasDisponiveis = perfComp?.aulasDisponiveis || 0;
+    const compConcluida = aulasDisponiveis > 0 && aulasConcluidas >= aulasDisponiveis;
+    if (!microTerminoVencido && !compConcluida) continue;
     if (perfComp && perfComp.notaAvaliacao !== void 0 && perfComp.notaAvaliacao >= 0) {
       somaNotasProvas += perfComp.notaAvaliacao * 10;
       provasRealizadas++;
     }
   }
   const ind2_avaliacoes = provasRealizadas > 0 ? somaNotasProvas / provasRealizadas : 0;
-  let totalComps = compIdsParaCalculo.length;
+  let totalComps = 0;
   let compsFinalizadas = 0;
   let compsEmAndamento = 0;
   const competenciasDetalhe = [];
@@ -15959,6 +17649,18 @@ function calcularIndicadoresCiclo(idUsuario, ciclo, mentorias, eventos, performa
     const aulasDisponiveis = perfComp?.aulasDisponiveis || 0;
     const concluida = aulasDisponiveis > 0 && aulasConcluidas >= aulasDisponiveis;
     const notaAvaliacao = perfComp?.notaAvaliacao !== void 0 && perfComp?.notaAvaliacao >= 0 ? perfComp.notaAvaliacao * 10 : null;
+    if (!microTerminoVencido && !concluida) {
+      competenciasDetalhe.push({
+        competenciaId: compId,
+        nome: perfComp?.nomeCompetencia || compIdToNomeMap?.get(compId) || codigo || `Comp ${compId}`,
+        aulasConcluidas,
+        aulasDisponiveis,
+        notaAvaliacao,
+        concluida
+      });
+      continue;
+    }
+    totalComps++;
     if (concluida) compsFinalizadas++;
     else if (aulasConcluidas > 0) compsEmAndamento++;
     competenciasDetalhe.push({
@@ -16325,8 +18027,8 @@ function consolidarCiclos(ciclos, trilhaNome) {
   const algumCaseObrigatorio = ciclos.some((c) => c.detalhes.case.obrigatorio);
   const consolidadoInd1 = totalWebinars > 0 ? Math.round(totalPresentes / totalWebinars * 100 * 100) / 100 : 0;
   const consolidadoInd4 = totalTarefas > 0 ? Math.round(tarefasEntregues / totalTarefas * 100 * 100) / 100 : 0;
-  const consolidadoInd2 = avg("ind2_avaliacoes");
-  const consolidadoInd3 = avg("ind3_competencias");
+  const consolidadoInd2 = totalProvas > 0 ? Math.round(somaNotas / totalProvas * 100) / 100 : 0;
+  const consolidadoInd3 = totalComps > 0 ? Math.round(compsFinalizadas / totalComps * 100 * 100) / 100 : 0;
   const consolidadoInd5 = avg("ind5_engajamento");
   const ind7 = Math.round((consolidadoInd1 + consolidadoInd2 + consolidadoInd3 + consolidadoInd4 + consolidadoInd5) / 5 * 100) / 100;
   return {
@@ -16918,7 +18620,7 @@ var jornadaRouter = router({
   })).query(async ({ input }) => {
     try {
       const [
-        mentoringSessions2,
+        mentoringSessions3,
         eventParticipations,
         alunosList,
         programsList,
@@ -16947,7 +18649,7 @@ var jornadaRouter = router({
       const performance = [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a]));
       const programMap = new Map(programsList.map((p) => [p.id, p]));
-      for (const session of mentoringSessions2) {
+      for (const session of mentoringSessions3) {
         const aluno = alunoMap.get(session.alunoId);
         if (!aluno) continue;
         const program = aluno.programId ? programMap.get(aluno.programId) : null;
@@ -17106,7 +18808,7 @@ var jornadaRouter = router({
   })).query(async ({ input }) => {
     try {
       const [
-        mentoringSessions2,
+        mentoringSessions3,
         eventParticipations,
         alunosList,
         programsList,
@@ -17135,7 +18837,7 @@ var jornadaRouter = router({
       const performance = [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a]));
       const programMap = new Map(programsList.map((p) => [p.id, p]));
-      for (const session of mentoringSessions2) {
+      for (const session of mentoringSessions3) {
         const aluno = alunoMap.get(session.alunoId);
         if (!aluno) continue;
         const program = aluno.programId ? programMap.get(aluno.programId) : null;
@@ -18305,18 +20007,15 @@ async function allocateCandidate(database, candidatoId, actorUserId) {
   if (!candidate) {
     throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
   }
-  const regiaoFilter = candidate.regiaoId != null ? eq4(processoAgendaSlots.regiaoId, candidate.regiaoId) : isNull2(processoAgendaSlots.regiaoId);
   const hoje = /* @__PURE__ */ new Date();
   const dataHoje = hoje.toISOString().slice(0, 10);
   const slotWhere = candidate.vagaId ? and4(
     eq4(processoAgendaSlots.processoId, candidate.processoId),
-    regiaoFilter,
     or2(isNull2(processoAgendaSlots.vagaId), eq4(processoAgendaSlots.vagaId, candidate.vagaId)),
     eq4(processoAgendaSlots.status, "disponivel"),
     gte2(processoAgendaSlots.dataAgenda, dataHoje)
   ) : and4(
     eq4(processoAgendaSlots.processoId, candidate.processoId),
-    regiaoFilter,
     eq4(processoAgendaSlots.status, "disponivel"),
     gte2(processoAgendaSlots.dataAgenda, dataHoje)
   );
@@ -18884,6 +20583,28 @@ var processosSeletivosRouter = router({
     });
     return { success: true };
   }),
+  alternarSuspensaoSlot: protectedProcedure.input(z5.object({ slotId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    const [slot] = await database.select().from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, input.slotId)).limit(1);
+    if (!slot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot nao encontrado" });
+    let novoStatus;
+    if (slot.status === "disponivel") {
+      novoStatus = "suspenso";
+    } else if (slot.status === "suspenso") {
+      novoStatus = "disponivel";
+    } else {
+      throw new TRPCError5({ code: "BAD_REQUEST", message: "Apenas slots disponiveis ou suspensos podem ter o status alternado" });
+    }
+    await database.update(processoAgendaSlots).set({ status: novoStatus }).where(eq4(processoAgendaSlots.id, input.slotId));
+    await writeLog(database, {
+      processoId: slot.processoId,
+      userId: ctx2.user.id,
+      acao: novoStatus === "suspenso" ? "slot_suspenso" : "slot_reativado",
+      detalhe: `Slot ${slot.dataAgenda} ${slot.inicio}-${slot.fim} ${novoStatus === "suspenso" ? "suspenso" : "reativado"}`
+    });
+    return { success: true, status: novoStatus };
+  }),
   listarAgendasGrupo: protectedProcedure.input(processoIdInput).query(async ({ ctx: ctx2, input }) => {
     const database = await requireDatabase();
     await ensureProcessAccess(database, ctx2.user, input.processoId);
@@ -18955,12 +20676,6 @@ var processosSeletivosRouter = router({
     const rows = await database.select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome }).from(processosSeletivos).where(eq4(processosSeletivos.status, "ativo")).orderBy(asc2(processosSeletivos.nome));
     return rows;
   }),
-  // Rota pública: retorna slots disponíveis de um processo para o candidato agendar
-  listarSlotsDisponiveis: publicProcedure.input(z5.object({ processoId: z5.number() })).query(async ({ input }) => {
-    const database = await requireDatabase();
-    const slots = await database.select().from(processoAgendaSlots).where(and4(eq4(processoAgendaSlots.processoId, input.processoId), eq4(processoAgendaSlots.status, "disponivel"))).orderBy(asc2(processoAgendaSlots.dataAgenda), asc2(processoAgendaSlots.inicio));
-    return slots;
-  }),
   // Rota pública: verifica se CPF está na lista de convocados de um processo seletivo
   verificarCpfConvocado: publicProcedure.input(z5.object({ processoId: z5.number(), cpf: z5.string().min(1) })).query(async ({ input }) => {
     const database = await requireDatabase();
@@ -18980,71 +20695,14 @@ var processosSeletivosRouter = router({
       jaCadastrado: candidato.statusCadastro === "ativo"
     };
   }),
-  // Candidato agendando seu próprio slot após concluir os testes
-  candidatoAgendar: protectedProcedure.input(z5.object({ slotId: z5.number(), processoId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
-    const database = await requireDatabase();
-    const [candidate] = await database.select().from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), eq4(processoCandidatos.userId, ctx2.user.id))).limit(1);
-    if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado neste processo" });
-    if (candidate.statusTeste !== "concluido") {
-      const alunoId = ctx2.user.alunoId;
-      let discOk = false;
-      if (alunoId) {
-        const [discRow] = await database.select({ id: discResultados.id }).from(discResultados).where(eq4(discResultados.alunoId, alunoId)).limit(1);
-        discOk = !!discRow;
-      }
-      if (!discOk) {
-        throw new TRPCError5({ code: "FORBIDDEN", message: "Voce precisa concluir os testes antes de agendar" });
-      }
-      await database.update(processoCandidatos).set({ statusTeste: "concluido", testeConcluidoEm: /* @__PURE__ */ new Date() }).where(eq4(processoCandidatos.id, candidate.id));
-    }
-    const [slot] = await database.select().from(processoAgendaSlots).where(and4(eq4(processoAgendaSlots.id, input.slotId), eq4(processoAgendaSlots.status, "disponivel"))).limit(1);
-    if (!slot) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot nao disponivel" });
-    await database.update(processoAgendaSlots).set({ candidatoId: candidate.id, status: "reservado" }).where(eq4(processoAgendaSlots.id, input.slotId));
-    await database.insert(processoEntrevistas).values({
-      processoId: input.processoId,
-      candidatoId: candidate.id,
-      agendaSlotId: input.slotId,
-      linkEntrevista: slot.linkEntrevista,
-      status: "agendada"
-    });
-    await database.update(processoCandidatos).set({ statusEntrevista: "agendada" }).where(eq4(processoCandidatos.id, candidate.id));
-    await writeLog(database, {
-      processoId: input.processoId,
-      candidatoId: candidate.id,
-      userId: ctx2.user.id,
-      acao: "candidato_agendou",
-      detalhe: `Slot ${slot.dataAgenda} ${slot.inicio}`
-    });
-    try {
-      const [processo] = await database.select({
-        id: processosSeletivos.id,
-        nome: processosSeletivos.nome,
-        clienteNome: processosSeletivos.clienteNome,
-        linkEntrevista: processosSeletivos.linkEntrevista
-      }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
-      if (processo && candidate.email) {
-        const dataFormatada = slot.dataAgenda ? (/* @__PURE__ */ new Date(slot.dataAgenda + "T00:00:00")).toLocaleDateString("pt-BR") : slot.dataAgenda;
-        const emailData = buildPsConfirmacaoAgendamentoEmail({
-          candidatoNome: candidate.nome,
-          processoNome: processo.nome,
-          clienteNome: processo.clienteNome,
-          dataEntrevista: dataFormatada,
-          horaInicio: slot.inicio,
-          horaFim: slot.fim,
-          linkEntrevista: slot.linkEntrevista ?? null,
-          loginUrl: `${process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com"}/login`
-        });
-        await sendEmail({ to: candidate.email, cc: "relacionamento@ckmtalents.net", subject: emailData.subject, html: emailData.html, text: emailData.text });
-      }
-    } catch (emailErr) {
-      console.error("[PS] Erro ao enviar e-mail de confirma\xE7\xE3o:", emailErr);
-    }
-    return { success: true, slot };
-  }),
   // Obter dados do candidato pelo userId (para o portal do candidato)
   meusDadosCandidato: protectedProcedure.query(async ({ ctx: ctx2 }) => {
     const database = await requireDatabase();
-    const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.userId, ctx2.user.id)).limit(1);
+    let candidates = await database.select().from(processoCandidatos).where(and4(eq4(processoCandidatos.userId, ctx2.user.id), eq4(processoCandidatos.statusCadastro, "ativo"))).limit(1);
+    if (!candidates.length) {
+      candidates = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.userId, ctx2.user.id)).limit(1);
+    }
+    const candidate = candidates[0];
     if (!candidate) return null;
     const [processo] = await database.select({ nome: processosSeletivos.nome }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
     return { ...candidate, processoNome: processo?.nome ?? null };
@@ -19164,16 +20822,16 @@ var processosSeletivosRouter = router({
     const [candidate] = await database.select().from(processoCandidatos).where(eq4(processoCandidatos.id, input.candidatoId)).limit(1);
     if (!candidate) throw new TRPCError5({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
     await ensureProcessAccess(database, ctx2.user, candidate.processoId);
-    const isAdmin = isCkmAdmin(ctx2.user.role);
+    const isAdmin2 = isCkmAdmin(ctx2.user.role);
     let isMentoraDoProcesso = false;
-    if (!isAdmin) {
+    if (!isAdmin2) {
       const userConsultorId = ctx2.user.consultorId;
       if (userConsultorId) {
         const [processoCheck] = await database.select({ mentorId: processosSeletivos.mentorId }).from(processosSeletivos).where(eq4(processosSeletivos.id, candidate.processoId)).limit(1);
         isMentoraDoProcesso = processoCheck?.mentorId === userConsultorId;
       }
     }
-    if (!isAdmin && !isMentoraDoProcesso) {
+    if (!isAdmin2 && !isMentoraDoProcesso) {
       throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas administradores ou a mentora do processo podem reagendar entrevistas" });
     }
     const [novoSlot] = await database.select().from(processoAgendaSlots).where(eq4(processoAgendaSlots.id, input.novoSlotId)).limit(1);
@@ -19985,8 +21643,14 @@ Orienta\xE7\xF5es de linguagem:
 - N\xE3o use express\xF5es como "n\xE3o serve", "fraco", "ruim" ou "sem perfil".
 - Prefira express\xF5es como: "ainda n\xE3o demonstrou maturidade suficiente para a fun\xE7\xE3o"; "necessita desenvolver maior seguran\xE7a na comunica\xE7\xE3o"; "apresenta potencial, por\xE9m ainda requer desenvolvimento em compet\xEAncias essenciais ao cargo"; "demonstrou ader\xEAncia ao perfil requerido".
 - Mantenha coer\xEAncia entre minicurr\xEDculo, DISC, entrevista e conclus\xE3o.
-- N\xE3o invente informa\xE7\xF5es. Quando algum dado n\xE3o estiver dispon\xEDvel, sinalize discretamente ou n\xE3o mencione.
 - O relat\xF3rio deve ter tom institucional e estar adequado para envio ao cliente.
+
+IMPORTANTE sobre a Transcri\xE7\xE3o da Entrevista:
+- A transcri\xE7\xE3o da entrevista fornecida nos dados \xE9 o documento COMPLETO e OFICIAL da entrevista realizada.
+- Voc\xEA DEVE usar a transcri\xE7\xE3o integralmente como base principal para o parecer da entrevista.
+- NUNCA mencione que a transcri\xE7\xE3o est\xE1 incompleta, parcial ou indispon\xEDvel \u2014 ela \xE9 a fonte oficial.
+- Analise as respostas, exemplos, postura e conte\xFAdo presentes na transcri\xE7\xE3o para embasar o parecer.
+- Se algum dado complementar (minicurr\xEDculo, DISC) n\xE3o estiver dispon\xEDvel, simplesmente n\xE3o o mencione \u2014 mas a transcri\xE7\xE3o sempre estar\xE1 dispon\xEDvel e deve ser usada.
 
 Responda APENAS em JSON com exatamente os seguintes campos:
 {
@@ -19994,7 +21658,7 @@ Responda APENAS em JSON com exatamente os seguintes campos:
   "pontosDestaque": "Principais pontos de destaque do candidato organizados em t\xF3picos (use \\n para separar cada t\xF3pico), considerando: experi\xEAncia t\xE9cnica, conhecimento de rotinas, viv\xEAncia com normas/controles/processos, capacidade de organiza\xE7\xE3o, relacionamento interpessoal, postura profissional, iniciativa, responsabilidade, maturidade e ader\xEAncia ao contexto.",
   "pontosPositivosDisc": "Principais comportamentos favor\xE1veis observados no perfil DISC, relacionando-os com a fun\xE7\xE3o avaliada.",
   "pontosDesenvolvimentoDisc": "Principais aspectos comportamentais que precisam de aten\xE7\xE3o ou desenvolvimento, especialmente aqueles que possam impactar o desempenho na fun\xE7\xE3o pretendida.",
-  "parecerEntrevista": "Parecer t\xE9cnico da entrevista em formato de texto corrido, com tom anal\xEDtico e profissional, considerando: clareza e objetividade das respostas, capacidade de apresentar exemplos concretos, dom\xEDnio t\xE9cnico, postura diante de normas e processos, capacidade de organiza\xE7\xE3o, maturidade profissional, comunica\xE7\xE3o, relacionamento interpessoal, lideran\xE7a e coer\xEAncia entre discurso, hist\xF3rico e DISC.",
+  "parecerEntrevista": "Parecer t\xE9cnico da entrevista em formato de texto corrido, com tom anal\xEDtico e profissional, baseado diretamente na transcri\xE7\xE3o fornecida. Considere: clareza e objetividade das respostas, exemplos concretos apresentados pelo candidato, dom\xEDnio t\xE9cnico demonstrado, postura diante de normas e processos, capacidade de organiza\xE7\xE3o, maturidade profissional, comunica\xE7\xE3o, relacionamento interpessoal, lideran\xE7a e coer\xEAncia entre discurso, hist\xF3rico e DISC.",
   "conclusao": "Conclus\xE3o baseada obrigatoriamente no Parecer do Mentor/Avaliador fornecido nos dados. Incorpore e expanda o parecer do mentor com linguagem t\xE9cnica e profissional. Se Habilitado: reforce a ader\xEAncia ao perfil e os pontos positivos destacados pelo mentor. Se N\xE3o Habilitado: justifique de forma t\xE9cnica e respeitosa, incorporando os pontos levantados pelo mentor e indicando compet\xEAncias a desenvolver. Objetiva, clara e coerente com o status informado."
 }`
         },
@@ -20018,7 +21682,7 @@ ${discTexto}
 ${autoPercTexto}${parecerMentorTexto}${observacaoTexto}
 
 Transcri\xE7\xE3o da Entrevista:
-${transcricaoTexto.slice(0, 14e3)}`
+${transcricaoTexto.slice(0, 3e4)}`
         }
       ],
       response_format: { type: "json_object" }
@@ -20111,6 +21775,2864 @@ ${transcricaoTexto.slice(0, 14e3)}`
       }
       throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: e?.message ?? "Erro na migration" });
     }
+  }),
+  // ==================== DEVOLUTIVA ====================
+  // Mentora cria slots de devolutiva
+  criarSlotDevolutiva: protectedProcedure.input(z5.object({
+    processoId: z5.number(),
+    specificDate: z5.string(),
+    startTime: z5.string(),
+    endTime: z5.string(),
+    googleMeetLink: z5.string().optional(),
+    elegiveisResultado: z5.enum(["habilitados", "inabilitados", "ambos"]).default("ambos")
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const consultorId = ctx2.user.consultorId;
+    if (!consultorId) throw new TRPCError5({ code: "FORBIDDEN", message: "Apenas mentoras podem criar slots" });
+    await database.insert(devolutivaSlots).values({
+      processoId: input.processoId,
+      consultorId,
+      specificDate: input.specificDate,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      googleMeetLink: input.googleMeetLink || null,
+      elegiveisResultado: input.elegiveisResultado,
+      status: "disponivel"
+    });
+    return { success: true };
+  }),
+  // Mentora lista seus slots de devolutiva
+  listarSlotsDevolutiva: protectedProcedure.input(z5.object({ processoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const isAdmin2 = isCkmAdmin(ctx2.user.role);
+    const consultorId = ctx2.user.consultorId;
+    const slots = await database.select().from(devolutivaSlots).where(and4(
+      eq4(devolutivaSlots.processoId, input.processoId),
+      !isAdmin2 && consultorId ? eq4(devolutivaSlots.consultorId, consultorId) : sql3`1=1`
+    )).orderBy(asc2(devolutivaSlots.specificDate), asc2(devolutivaSlots.startTime));
+    const result = [];
+    for (const slot of slots) {
+      let candidatoNome = null;
+      let candidatoEmail = null;
+      if (slot.candidatoId) {
+        const cand = await database.select({ nome: processoCandidatos.nome, email: processoCandidatos.email }).from(processoCandidatos).where(eq4(processoCandidatos.id, slot.candidatoId)).limit(1);
+        candidatoNome = cand[0]?.nome || null;
+        candidatoEmail = cand[0]?.email || null;
+      }
+      result.push({ ...slot, candidatoNome, candidatoEmail });
+    }
+    return result;
+  }),
+  // Mentora exclui slot disponível (não pode excluir se já reservado)
+  excluirSlotDevolutiva: protectedProcedure.input(z5.object({ slotId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const slot = await database.select().from(devolutivaSlots).where(eq4(devolutivaSlots.id, input.slotId)).limit(1);
+    if (!slot[0]) throw new TRPCError5({ code: "NOT_FOUND", message: "Slot n\xE3o encontrado" });
+    if (slot[0].status === "reservado") throw new TRPCError5({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel excluir um slot j\xE1 reservado por um candidato" });
+    await database.delete(devolutivaSlots).where(eq4(devolutivaSlots.id, input.slotId));
+    return { success: true };
+  }),
+  // Candidato busca slots disponíveis para devolutiva
+  slotsDevolutivaDisponiveis: protectedProcedure.input(z5.object({ processoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const candidato = await database.select().from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), eq4(processoCandidatos.userId, ctx2.user.id))).limit(1);
+    if (!candidato[0]) return { slots: [], meuSlot: null };
+    const meuSlot = await database.select().from(devolutivaSlots).where(and4(eq4(devolutivaSlots.processoId, input.processoId), eq4(devolutivaSlots.candidatoId, candidato[0].id))).limit(1);
+    const resultadoCandidato = candidato[0].statusResultado;
+    const isHabilitado = resultadoCandidato === "aprovado";
+    const hoje = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+    const slots = await database.select().from(devolutivaSlots).where(and4(
+      eq4(devolutivaSlots.processoId, input.processoId),
+      eq4(devolutivaSlots.status, "disponivel"),
+      gte2(devolutivaSlots.specificDate, hoje)
+    )).orderBy(asc2(devolutivaSlots.specificDate), asc2(devolutivaSlots.startTime));
+    const slotsFiltrados = slots.filter((s) => {
+      if (s.elegiveisResultado === "ambos") return true;
+      if (s.elegiveisResultado === "habilitados" && isHabilitado) return true;
+      if (s.elegiveisResultado === "inabilitados" && !isHabilitado) return true;
+      return false;
+    });
+    let devolutivaIniciada = false;
+    let prazoInicio = null;
+    let prazoFim = null;
+    try {
+      const processoRows = await database.execute(sql3.raw(
+        `SELECT devolutivaIniciada, devolutivaPrazoInicio, devolutivaPrazoFim FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+      ));
+      const procRow = processoRows?.[0]?.[0] ?? processoRows?.[0];
+      devolutivaIniciada = !!procRow?.devolutivaIniciada;
+      prazoInicio = procRow?.devolutivaPrazoInicio ? new Date(procRow.devolutivaPrazoInicio) : null;
+      prazoFim = procRow?.devolutivaPrazoFim ? new Date(procRow.devolutivaPrazoFim) : null;
+      console.log(`[devolutiva debug] procRow=${JSON.stringify(procRow)} devolutivaIniciada=${devolutivaIniciada} prazoInicio=${prazoInicio} prazoFim=${prazoFim}`);
+    } catch (e) {
+      console.warn("[devolutiva] Colunas de prazo n\xE3o existem, tentando fallback:", e);
+      try {
+        const processoRows2 = await database.execute(sql3.raw(
+          `SELECT devolutivaIniciada FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+        ));
+        const procRow2 = processoRows2?.[0]?.[0] ?? processoRows2?.[0];
+        devolutivaIniciada = !!procRow2?.devolutivaIniciada;
+      } catch (e2) {
+        console.error("[devolutiva] Erro ao buscar devolutivaIniciada:", e2);
+      }
+    }
+    const agora = /* @__PURE__ */ new Date();
+    const dentroDoPrazo = devolutivaIniciada && (!prazoInicio || agora >= prazoInicio) && (!prazoFim || agora <= prazoFim);
+    const prazoExpirado = devolutivaIniciada && prazoFim ? agora > prazoFim : false;
+    return {
+      slots: dentroDoPrazo ? slotsFiltrados : [],
+      meuSlot: meuSlot[0] || null,
+      candidatoId: candidato[0].id,
+      devolutivaIniciada,
+      prazoExpirado,
+      prazoFim: prazoFim ? prazoFim.toISOString() : null
+    };
+  }),
+  agendarDevolutiva: protectedProcedure.input(z5.object({ processoId: z5.number(), slotId: z5.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const candidato = await database.select().from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), eq4(processoCandidatos.userId, ctx2.user.id))).limit(1);
+    if (!candidato[0]) throw new TRPCError5({ code: "FORBIDDEN", message: "Candidato n\xE3o encontrado neste processo" });
+    try {
+      const processoRows = await database.execute(sql3.raw(
+        `SELECT devolutivaIniciada, devolutivaPrazoInicio, devolutivaPrazoFim FROM processos_seletivos WHERE id = ${input.processoId} LIMIT 1`
+      ));
+      const procRow = processoRows?.[0]?.[0] ?? processoRows?.[0];
+      const prazoInicio = procRow?.devolutivaPrazoInicio ? new Date(procRow.devolutivaPrazoInicio) : null;
+      const prazoFim = procRow?.devolutivaPrazoFim ? new Date(procRow.devolutivaPrazoFim) : null;
+      const agora = /* @__PURE__ */ new Date();
+      if (!procRow?.devolutivaIniciada) {
+        throw new TRPCError5({ code: "BAD_REQUEST", message: "A etapa de devolutivas ainda n\xE3o foi iniciada." });
+      }
+      if (prazoInicio && agora < prazoInicio) {
+        throw new TRPCError5({ code: "BAD_REQUEST", message: "O prazo de agendamento ainda n\xE3o foi iniciado." });
+      }
+      if (prazoFim && agora > prazoFim) {
+        throw new TRPCError5({ code: "BAD_REQUEST", message: "Prazo de agendamento de devolutivas encerrado." });
+      }
+    } catch (e) {
+      if (e?.code === "BAD_REQUEST") throw e;
+      console.warn("[devolutiva] Colunas de prazo n\xE3o existem ainda, permitindo agendamento:", e?.message);
+    }
+    const jaAgendou = await database.select().from(devolutivaSlots).where(and4(eq4(devolutivaSlots.processoId, input.processoId), eq4(devolutivaSlots.candidatoId, candidato[0].id))).limit(1);
+    if (jaAgendou[0]) throw new TRPCError5({ code: "BAD_REQUEST", message: "Voc\xEA j\xE1 possui uma devolutiva agendada. O agendamento \xE9 definitivo e n\xE3o pode ser alterado." });
+    const slot = await database.select().from(devolutivaSlots).where(and4(eq4(devolutivaSlots.id, input.slotId), eq4(devolutivaSlots.status, "disponivel"))).limit(1);
+    if (!slot[0]) throw new TRPCError5({ code: "BAD_REQUEST", message: "Este hor\xE1rio n\xE3o est\xE1 mais dispon\xEDvel. Por favor, escolha outro." });
+    await database.update(devolutivaSlots).set({ candidatoId: candidato[0].id, status: "reservado", reservadoEm: /* @__PURE__ */ new Date() }).where(eq4(devolutivaSlots.id, input.slotId));
+    const processo = await database.select().from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
+    const consultor = await database.select().from(consultors).where(eq4(consultors.id, slot[0].consultorId)).limit(1);
+    const dataFormatada = (/* @__PURE__ */ new Date(slot[0].specificDate + "T00:00:00")).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+    const textoDevolutiva = `
+        <p><strong>Importante:</strong></p>
+        <ul>
+          <li>A entrevista devolutiva <strong>n\xE3o possui reagendamento</strong>.</li>
+          <li>O objetivo desta conversa \xE9 apresentar os seus <strong>pontos de desenvolvimento</strong> identificados durante o processo.</li>
+          <li>Esta entrevista <strong>n\xE3o tem como objetivo discutir ou alterar o resultado</strong> do processo seletivo.</li>
+          <li>Se voc\xEA tem interesse em conhecer seus pontos de desenvolvimento para os pr\xF3ximos processos, ser\xE1 muito bem-vindo(a)!</li>
+        </ul>
+      `;
+    try {
+      await sendEmail({
+        to: candidato[0].email,
+        subject: `\u2705 Devolutiva agendada \u2014 ${processo[0]?.nome || "Processo Seletivo"}`,
+        html: `
+            <h2>Sua devolutiva foi agendada!</h2>
+            <p>Ol\xE1, <strong>${candidato[0].nome}</strong>!</p>
+            <p>Sua entrevista devolutiva foi confirmada com sucesso:</p>
+            <ul>
+              <li><strong>Data:</strong> ${dataFormatada}</li>
+              <li><strong>Hor\xE1rio:</strong> ${slot[0].startTime} \u2013 ${slot[0].endTime}</li>
+              ${slot[0].googleMeetLink ? `<li><strong>Link:</strong> <a href="${slot[0].googleMeetLink}">${slot[0].googleMeetLink}</a></li>` : ""}
+            </ul>
+            ${textoDevolutiva}
+            <p>At\xE9 l\xE1!</p>
+          `
+      });
+    } catch (e) {
+      console.error("Erro ao enviar e-mail candidato devolutiva:", e);
+    }
+    try {
+      if (consultor[0]?.email) {
+        await sendEmail({
+          to: consultor[0].email,
+          subject: `\u{1F4C5} Nova devolutiva agendada \u2014 ${candidato[0].nome}`,
+          html: `
+              <h2>Nova devolutiva agendada</h2>
+              <p>O candidato <strong>${candidato[0].nome}</strong> (${candidato[0].email}) agendou a devolutiva:</p>
+              <ul>
+                <li><strong>Data:</strong> ${dataFormatada}</li>
+                <li><strong>Hor\xE1rio:</strong> ${slot[0].startTime} \u2013 ${slot[0].endTime}</li>
+                <li><strong>Processo:</strong> ${processo[0]?.nome || ""}</li>
+              </ul>
+            `
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao enviar e-mail mentora devolutiva:", e);
+    }
+    return { success: true, slot: slot[0] };
+  }),
+  // Minha devolutiva (candidato visualiza seu agendamento)
+  minhaDevolutiva: protectedProcedure.input(z5.object({ processoId: z5.number() })).query(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase();
+    const candidato = await database.select().from(processoCandidatos).where(and4(eq4(processoCandidatos.processoId, input.processoId), eq4(processoCandidatos.userId, ctx2.user.id))).limit(1);
+    if (!candidato[0]) return null;
+    const slot = await database.select().from(devolutivaSlots).where(and4(eq4(devolutivaSlots.processoId, input.processoId), eq4(devolutivaSlots.candidatoId, candidato[0].id))).limit(1);
+    return slot[0] || null;
+  }),
+  // Iniciar etapa de devolutivas — envia e-mail a todos os candidatos com resultado definido
+  iniciarDevolutiva: protectedProcedure.input(z5.object({
+    processoId: z5.number(),
+    prazoInicio: z5.string(),
+    // "2026-06-30T00:00"
+    prazoFim: z5.string()
+    // "2026-07-03T23:59"
+  })).mutation(async ({ ctx: ctx2, input }) => {
+    requireCkmAdmin(ctx2.user.role);
+    const database = await requireDatabase();
+    const prazoInicioSql = input.prazoInicio.replace("T", " ") + ":00";
+    const prazoFimSql = input.prazoFim.replace("T", " ") + ":59";
+    try {
+      await database.execute(sql3.raw(
+        `UPDATE \`processos_seletivos\` SET \`devolutivaIniciada\` = 1, \`devolutivaIniciadaEm\` = NOW(), \`devolutivaPrazoInicio\` = '${prazoInicioSql}', \`devolutivaPrazoFim\` = '${prazoFimSql}' WHERE \`id\` = ${input.processoId}`
+      ));
+    } catch (e) {
+      console.warn("[devolutiva] Colunas de prazo n\xE3o existem, criando e tentando novamente:", e?.message);
+      try {
+        await database.execute(sql3.raw("ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaIniciada` int NOT NULL DEFAULT 0"));
+        await database.execute(sql3.raw("ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaIniciadaEm` timestamp NULL"));
+        await database.execute(sql3.raw("ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaPrazoInicio` datetime NULL"));
+        await database.execute(sql3.raw("ALTER TABLE `processos_seletivos` ADD COLUMN IF NOT EXISTS `devolutivaPrazoFim` datetime NULL"));
+        await database.execute(sql3.raw(
+          `UPDATE \`processos_seletivos\` SET \`devolutivaIniciada\` = 1, \`devolutivaIniciadaEm\` = NOW(), \`devolutivaPrazoInicio\` = '${prazoInicioSql}', \`devolutivaPrazoFim\` = '${prazoFimSql}' WHERE \`id\` = ${input.processoId}`
+        ));
+      } catch (e2) {
+        throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: `Erro ao iniciar devolutiva: ${e2?.message}` });
+      }
+    }
+    const candidatos = await database.select({
+      id: processoCandidatos.id,
+      nome: processoCandidatos.nome,
+      email: processoCandidatos.email,
+      statusResultado: processoCandidatos.statusResultado
+    }).from(processoCandidatos).where(and4(
+      eq4(processoCandidatos.processoId, input.processoId),
+      eq4(processoCandidatos.statusCadastro, "ativo"),
+      or2(
+        eq4(processoCandidatos.statusResultado, "aprovado"),
+        eq4(processoCandidatos.statusResultado, "reprovado")
+      )
+    ));
+    const [processo] = await database.select({ nome: processosSeletivos.nome }).from(processosSeletivos).where(eq4(processosSeletivos.id, input.processoId)).limit(1);
+    const portalUrl = process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com";
+    let enviados = 0;
+    let erros = 0;
+    const prazoFimDate = new Date(prazoFimSql.replace(" ", "T"));
+    const prazoFimFormatado = prazoFimDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }) + " \xE0s " + prazoFimDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    for (const candidato of candidatos) {
+      if (!candidato.email) continue;
+      try {
+        await sendEmail({
+          to: candidato.email,
+          subject: `\u{1F4C5} Agende sua Entrevista Devolutiva \u2014 ${processo?.nome || "Processo Seletivo"}`,
+          html: `
+              <h2>Ol\xE1, ${candidato.nome}!</h2>
+              <p>Chegou a hora de agendar a sua <strong>Entrevista Devolutiva</strong> referente ao processo seletivo <strong>${processo?.nome || ""}</strong>.</p>
+
+              <div style="background:#fff8e6;padding:14px 20px;border-radius:8px;margin:16px 0;border-left:4px solid #f59e0b;">
+                <p style="margin:0;"><strong>\u23F0 Aten\xE7\xE3o ao prazo:</strong> o agendamento estar\xE1 dispon\xEDvel at\xE9 <strong>${prazoFimFormatado}</strong>. Ap\xF3s esse prazo, n\xE3o ser\xE1 mais poss\xEDvel agendar a devolutiva.</p>
+              </div>
+
+              <div style="background:#f0f4ff;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #0A1E3E;">
+                <h3 style="margin:0 0 12px;color:#0A1E3E;">Sobre a Entrevista Devolutiva</h3>
+                <ul style="margin:0;padding-left:20px;line-height:1.8;">
+                  <li>O agendamento \xE9 <strong>definitivo e n\xE3o possui reagendamento</strong>.</li>
+                  <li>O objetivo \xE9 apresentar os seus <strong>pontos de desenvolvimento</strong> identificados durante o processo.</li>
+                  <li>Esta entrevista <strong>n\xE3o tem como objetivo discutir ou alterar o resultado</strong> do processo seletivo.</li>
+                  <li>Se voc\xEA tem interesse em seus pontos de desenvolvimento para pr\xF3ximos processos, <strong>ser\xE1 muito bem-vindo(a)!</strong></li>
+                </ul>
+              </div>
+
+              <p>Acesse o portal e escolha o hor\xE1rio que melhor se encaixa na sua agenda:</p>
+              <a href="${portalUrl}/portal-candidato"
+                style="display:inline-block;background:#0A1E3E;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;margin:8px 0;">
+                \u{1F4C5} Agendar minha Devolutiva
+              </a>
+
+              <p style="color:#666;font-size:12px;margin-top:24px;">
+                Se voc\xEA n\xE3o conseguir acessar o link, copie e cole este endere\xE7o no seu navegador:<br/>
+                ${portalUrl}/portal-candidato
+              </p>
+            `
+        });
+        enviados++;
+      } catch (e) {
+        console.error(`[iniciarDevolutiva] Erro ao enviar e-mail para ${candidato.email}:`, e);
+        erros++;
+      }
+    }
+    return { success: true, enviados, erros, total: candidatos.length };
+  }),
+  // ==================== MIGRATION DEVOLUTIVA ====================
+  runMigrationDevolutiva: protectedProcedure.mutation(async ({ ctx: ctx2 }) => {
+    const database = await requireDatabase();
+    try {
+      await database.execute(sql3.raw(`
+        CREATE TABLE IF NOT EXISTS \`devolutiva_slots\` (
+          \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          \`processoId\` int NOT NULL,
+          \`consultorId\` int NOT NULL,
+          \`elegiveisResultado\` enum('habilitados','inabilitados','ambos') NOT NULL DEFAULT 'ambos',
+          \`specificDate\` varchar(10) NOT NULL,
+          \`startTime\` varchar(5) NOT NULL,
+          \`endTime\` varchar(5) NOT NULL,
+          \`googleMeetLink\` varchar(500) NULL,
+          \`candidatoId\` int NULL,
+          \`reservadoEm\` timestamp NULL,
+          \`emailConfirmacaoEnviado\` int NOT NULL DEFAULT 0,
+          \`emailLembreteEnviado\` int NOT NULL DEFAULT 0,
+          \`status\` enum('disponivel','reservado','cancelado') NOT NULL DEFAULT 'disponivel',
+          \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `));
+      try {
+        await database.execute(sql3.raw(
+          "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaIniciada` int NOT NULL DEFAULT 0"
+        ));
+      } catch (e) {
+        if (!e?.message?.includes("Duplicate column") && !e?.message?.includes("already exists")) throw e;
+      }
+      try {
+        await database.execute(sql3.raw(
+          "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaIniciadaEm` timestamp NULL"
+        ));
+      } catch (e) {
+        if (!e?.message?.includes("Duplicate column") && !e?.message?.includes("already exists")) throw e;
+      }
+      try {
+        await database.execute(sql3.raw(
+          "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaPrazoInicio` datetime NULL"
+        ));
+      } catch (e) {
+        if (!e?.message?.includes("Duplicate column") && !e?.message?.includes("already exists")) throw e;
+      }
+      try {
+        await database.execute(sql3.raw(
+          "ALTER TABLE `processos_seletivos` ADD COLUMN `devolutivaPrazoFim` datetime NULL"
+        ));
+      } catch (e) {
+        if (!e?.message?.includes("Duplicate column") && !e?.message?.includes("already exists")) throw e;
+      }
+      return { success: true, message: "Tabela devolutiva_slots criada com sucesso" };
+    } catch (e) {
+      if (e?.message?.includes("already exists")) {
+        return { success: true, message: "Tabela devolutiva_slots j\xE1 existia" };
+      }
+      throw new TRPCError5({ code: "INTERNAL_SERVER_ERROR", message: e?.message ?? "Erro na migration" });
+    }
+  })
+});
+
+// server/routers/disc360.ts
+import { TRPCError as TRPCError6 } from "@trpc/server";
+import { z as z6 } from "zod";
+init_db();
+
+// server/disc360Service.ts
+init_emailService();
+init_schema();
+import { and as and5, desc as desc3, eq as eq5, inArray as inArray4 } from "drizzle-orm";
+import { randomUUID } from "crypto";
+
+// server/discMatchService.ts
+var ORDEM_PRIORIDADE_DISC = ["D", "I", "S", "C"];
+function determinarPerfil(scores) {
+  const ordenado = [...ORDEM_PRIORIDADE_DISC].sort((a, b) => {
+    if (scores[b] !== scores[a]) return scores[b] - scores[a];
+    return ORDEM_PRIORIDADE_DISC.indexOf(a) - ORDEM_PRIORIDADE_DISC.indexOf(b);
+  });
+  const predominante = ordenado[0];
+  const secundario = ordenado[1];
+  return { predominante, secundario, sugerido: predominante + "/" + secundario };
+}
+function calcularIndiceConcordancia(scoresIndividuais, scoresMedios) {
+  if (!scoresIndividuais || scoresIndividuais.length === 0) {
+    return { diferencaMedia: 0, classificacao: "alta" };
+  }
+  const diferencasPorRespondente = scoresIndividuais.map((scores) => {
+    const somaDiferencas = ORDEM_PRIORIDADE_DISC.reduce((acc, dim) => acc + Math.abs(scores[dim] - scoresMedios[dim]), 0);
+    return somaDiferencas / ORDEM_PRIORIDADE_DISC.length;
+  });
+  const diferencaMedia = diferencasPorRespondente.reduce((acc, v) => acc + v, 0) / diferencasPorRespondente.length;
+  let classificacao;
+  if (diferencaMedia <= 10) classificacao = "alta";
+  else if (diferencaMedia <= 20) classificacao = "media";
+  else classificacao = "baixa";
+  return { diferencaMedia: Math.round(diferencaMedia * 100) / 100, classificacao };
+}
+function classifyMatch(percentual) {
+  if (percentual >= 85) return "alto";
+  if (percentual >= 70) return "bom";
+  if (percentual >= 55) return "medio";
+  if (percentual >= 40) return "baixo";
+  return "desalinhado";
+}
+function calculateDiscMatch(scoresA, scoresB) {
+  const dimensions = ["D", "I", "S", "C"];
+  const totalDifference = dimensions.reduce((sum, dim) => {
+    const a = Number(scoresA?.[dim] ?? 0);
+    const b = Number(scoresB?.[dim] ?? 0);
+    return sum + Math.abs(a - b);
+  }, 0);
+  const maxDifference = 200;
+  const raw = 100 - totalDifference / maxDifference * 100;
+  const clamped = Math.max(0, Math.min(100, raw));
+  return Math.round(clamped * 100) / 100;
+}
+function compareDimensions(scoresA, scoresB, threshold = 15) {
+  const dimensions = ["D", "I", "S", "C"];
+  const strengths = [];
+  const gaps = [];
+  for (const dim of dimensions) {
+    const diff = Math.abs(Number(scoresA?.[dim] ?? 0) - Number(scoresB?.[dim] ?? 0));
+    if (diff <= threshold) {
+      strengths.push(dim);
+    } else {
+      gaps.push(dim);
+    }
+  }
+  return { strengths, gaps };
+}
+var RISK_DESCRIPTIONS = {
+  D: "Possivel diferenca no ritmo de tomada de decisao e assertividade esperados.",
+  I: "Possivel diferenca no estilo de comunicacao e relacionamento esperado.",
+  S: "Possivel diferenca no ritmo de adaptacao a mudancas e estabilidade esperada.",
+  C: "Possivel diferenca no nivel de atencao a normas, dados e processos esperado."
+};
+function buildRisks(gaps) {
+  return gaps.map((dim) => RISK_DESCRIPTIONS[dim]);
+}
+var RECOMMENDATION_BY_DIMENSION = {
+  D: "Desenvolver autonomia e agilidade na tomada de decisao.",
+  I: "Desenvolver habilidades de comunicacao e influencia interpessoal.",
+  S: "Desenvolver flexibilidade e adaptacao a mudancas de ritmo.",
+  C: "Desenvolver atencao a processos, normas e qualidade tecnica."
+};
+function buildRecommendations(gaps) {
+  return gaps.map((dim) => RECOMMENDATION_BY_DIMENSION[dim]);
+}
+function calculateFullMatch(employeeScores, roleScores, orgScores) {
+  const matchEmployeeRole = roleScores ? calculateDiscMatch(employeeScores, roleScores) : null;
+  const matchEmployeeOrg = orgScores ? calculateDiscMatch(employeeScores, orgScores) : null;
+  const matchRoleOrg = roleScores && orgScores ? calculateDiscMatch(roleScores, orgScores) : null;
+  const overallInputs = [matchEmployeeRole, matchEmployeeOrg].filter(
+    (v) => v !== null
+  );
+  const matchOverall = overallInputs.length > 0 ? Math.round(overallInputs.reduce((sum, v) => sum + v, 0) / overallInputs.length * 100) / 100 : null;
+  const comparisonBase = roleScores ?? orgScores ?? null;
+  const { strengths, gaps } = comparisonBase ? compareDimensions(employeeScores, comparisonBase) : { strengths: [], gaps: [] };
+  return {
+    matchEmployeeRole,
+    matchEmployeeOrg,
+    matchRoleOrg,
+    matchOverall,
+    classificationEmployeeRole: matchEmployeeRole !== null ? classifyMatch(matchEmployeeRole) : null,
+    classificationEmployeeOrg: matchEmployeeOrg !== null ? classifyMatch(matchEmployeeOrg) : null,
+    classificationRoleOrg: matchRoleOrg !== null ? classifyMatch(matchRoleOrg) : null,
+    classificationOverall: matchOverall !== null ? classifyMatch(matchOverall) : null,
+    strengths,
+    gaps,
+    risks: buildRisks(gaps),
+    recommendations: buildRecommendations(gaps)
+  };
+}
+var LIMITE_QUEBRA_GRUPO_DIRETORIA = 30;
+function mediaSimples(valores) {
+  const soma = valores.reduce((acc, v) => acc + v, 0);
+  return Math.round(soma / valores.length * 100) / 100;
+}
+function calcularIndicadorPorMaioria(pessoas) {
+  const ordenado = [...pessoas].sort((a, b) => a.valor - b.valor);
+  const grupos = [];
+  let grupoAtual = [ordenado[0]];
+  for (let i = 1; i < ordenado.length; i++) {
+    if (ordenado[i].valor - ordenado[i - 1].valor > LIMITE_QUEBRA_GRUPO_DIRETORIA) {
+      grupos.push(grupoAtual);
+      grupoAtual = [];
+    }
+    grupoAtual.push(ordenado[i]);
+  }
+  grupos.push(grupoAtual);
+  if (grupos.length === 1) {
+    return {
+      valorFinal: mediaSimples(pessoas.map((p) => p.valor)),
+      grupoUsado: "todos",
+      incluidos: pessoas,
+      excluidos: []
+    };
+  }
+  const maiorTamanho = Math.max(...grupos.map((g) => g.length));
+  const maiores = grupos.filter((g) => g.length === maiorTamanho);
+  if (maiores.length > 1) {
+    return {
+      valorFinal: mediaSimples(pessoas.map((p) => p.valor)),
+      grupoUsado: "todos",
+      incluidos: pessoas,
+      excluidos: []
+    };
+  }
+  const grupoMaioria = maiores[0];
+  const idsIncluidos = new Set(grupoMaioria.map((p) => p.alunoId));
+  const incluidos = pessoas.filter((p) => idsIncluidos.has(p.alunoId));
+  const excluidos = pessoas.filter((p) => !idsIncluidos.has(p.alunoId));
+  return {
+    valorFinal: mediaSimples(grupoMaioria.map((p) => p.valor)),
+    grupoUsado: "maioria",
+    incluidos,
+    excluidos
+  };
+}
+function calcularPerfilDiretoriaPorGrupo(pessoas) {
+  const dimensoes = ["D", "I", "S", "C"];
+  const detalhePorIndicador = {};
+  for (const dim of dimensoes) {
+    const valores = pessoas.map((p) => ({ alunoId: p.alunoId, nome: p.nome, valor: p.scores[dim] }));
+    detalhePorIndicador[dim] = calcularIndicadorPorMaioria(valores);
+  }
+  const scoresFinais = {
+    D: detalhePorIndicador.D.valorFinal,
+    I: detalhePorIndicador.I.valorFinal,
+    S: detalhePorIndicador.S.valorFinal,
+    C: detalhePorIndicador.C.valorFinal
+  };
+  const perfil = determinarPerfil(scoresFinais);
+  return {
+    scoresFinais,
+    detalhePorIndicador,
+    perfilPredominante: perfil.predominante,
+    perfilSecundario: perfil.secundario,
+    perfilSugerido: perfil.sugerido
+  };
+}
+var LIMITE_ADERENCIA_INDICADOR = 30;
+function calcularIndiceMatchCargo(pessoaScores, cargoScores) {
+  const dimensoes = ["D", "I", "S", "C"];
+  const detalhePorIndicador = {};
+  let dentroDaFaixaCount = 0;
+  let identico = true;
+  for (const dim of dimensoes) {
+    const pessoa = Number(pessoaScores?.[dim] ?? 0);
+    const cargo = Number(cargoScores?.[dim] ?? 0);
+    const diferenca = Math.round(Math.abs(pessoa - cargo) * 100) / 100;
+    const dentroFaixa = diferenca <= LIMITE_ADERENCIA_INDICADOR;
+    if (dentroFaixa) dentroDaFaixaCount += 1;
+    if (diferenca !== 0) identico = false;
+    detalhePorIndicador[dim] = { diferenca, dentroFaixa };
+  }
+  const indiceMatch = Math.round(dentroDaFaixaCount / dimensoes.length * 100);
+  return { indiceMatch, detalhePorIndicador, identico };
+}
+var EIXO_TEMA_MATCH_CARGO = {
+  D: "ritmo de decisao, autonomia e assertividade",
+  I: "estilo de comunicacao e construcao de relacionamentos",
+  S: "ritmo de adaptacao, cooperacao e estabilidade",
+  C: "atencao a normas, dados e processos"
+};
+var EIXO_DESENVOLVER_ACIMA = {
+  D: "calibrar o ritmo de decisao em momentos que pedem mais escuta e construcao coletiva",
+  I: "equilibrar a comunicacao com momentos de maior objetividade e foco na tarefa",
+  S: "desenvolver maior tolerancia a mudancas de ritmo e a situacoes menos previsiveis",
+  C: "flexibilizar a atencao a detalhes e processos quando o contexto pedir agilidade"
+};
+var EIXO_DESENVOLVER_ABAIXO = {
+  D: "ampliar a autonomia e a assertividade na tomada de decisao",
+  I: "desenvolver mais abertura na comunicacao e na construcao de relacionamentos",
+  S: "desenvolver maior estabilidade e constancia diante de mudancas de ritmo",
+  C: "fortalecer a atencao a normas, dados e processos no dia a dia"
+};
+function classificarDiferencaMatchCargo(diferenca) {
+  if (diferenca === 0) return "alinhamento_total";
+  if (diferenca <= LIMITE_ADERENCIA_INDICADOR) return "ajuste_fino";
+  return "desenvolvimento";
+}
+function buildJustificativasMatchCargo(pessoaScores, cargoScores) {
+  const dimensoes = ["D", "I", "S", "C"];
+  const justificativas = [];
+  for (const dim of dimensoes) {
+    const pessoa = Number(pessoaScores?.[dim] ?? 0);
+    const cargo = Number(cargoScores?.[dim] ?? 0);
+    const diferenca = Math.round(Math.abs(pessoa - cargo) * 100) / 100;
+    const tipo = classificarDiferencaMatchCargo(diferenca);
+    if (tipo === "alinhamento_total") {
+      justificativas.push({
+        eixo: dim,
+        diferenca,
+        tipo,
+        texto: "Em " + EIXO_TEMA_MATCH_CARGO[dim] + ", seu perfil esta numericamente identico ao ideal do cargo neste eixo - nao ha ponto de desenvolvimento a destacar aqui."
+      });
+      continue;
+    }
+    const acima = pessoa > cargo;
+    const sugestao = acima ? EIXO_DESENVOLVER_ACIMA[dim] : EIXO_DESENVOLVER_ABAIXO[dim];
+    const intensidade = tipo === "ajuste_fino" ? "um ajuste fino" : "um ponto de atencao maior para o desenvolvimento";
+    justificativas.push({
+      eixo: dim,
+      diferenca,
+      tipo,
+      texto: "Em " + EIXO_TEMA_MATCH_CARGO[dim] + ", a diferenca em relacao ao ideal do cargo (" + diferenca + " pontos) representa " + intensidade + ": vale " + sugestao + "."
+    });
+  }
+  return justificativas;
+}
+
+// shared/disc360RoleQuestions.ts
+var DISC360_ROLE_QUESTIONS = [
+  {
+    id: "r1",
+    tema: "Ritmo de trabalho",
+    pergunta: "O ritmo de trabalho exigido por este cargo \xE9 mais parecido com:",
+    objetivo: "Avalia a velocidade e intensidade de a\xE7\xE3o que a rotina do cargo demanda da pessoa.",
+    alternativas: [
+      { id: "r1_D", dimensao: "D", texto: "R\xE1pido, orientado a resultado imediato, sem esperar por consenso.", explicacao: "Mede a exig\xEAncia de ritmo acelerado e foco em entrega r\xE1pida." },
+      { id: "r1_I", dimensao: "I", texto: "Din\xE2mico e social, alternando entre tarefas e intera\xE7\xF5es com pessoas.", explicacao: "Mede a exig\xEAncia de ritmo vari\xE1vel, com bastante intera\xE7\xE3o social." },
+      { id: "r1_S", dimensao: "S", texto: "Constante e previs\xEDvel, sem grandes picos de urg\xEAncia.", explicacao: "Mede a exig\xEAncia de ritmo est\xE1vel e previs\xEDvel, sem urg\xEAncia constante." },
+      { id: "r1_C", dimensao: "C", texto: "Pausado e cuidadoso, priorizando exatid\xE3o sobre velocidade.", explicacao: "Mede a exig\xEAncia de ritmo mais lento, priorizando precis\xE3o sobre velocidade." }
+    ]
+  },
+  {
+    id: "r2",
+    tema: "Tomada de decis\xE3o no cargo",
+    pergunta: "As decis\xF5es do dia a dia deste cargo costumam exigir:",
+    objetivo: "Avalia o estilo de decis\xE3o que a fun\xE7\xE3o demanda da pessoa que a ocupa.",
+    alternativas: [
+      { id: "r2_D", dimensao: "D", texto: "Decidir r\xE1pido, mesmo com informa\xE7\xE3o incompleta.", explicacao: "Mede a exig\xEAncia de decis\xE3o r\xE1pida e assertiva, mesmo sob incerteza." },
+      { id: "r2_I", dimensao: "I", texto: "Buscar a opini\xE3o e o apoio de outras pessoas antes de decidir.", explicacao: "Mede a exig\xEAncia de decis\xE3o participativa, buscando consenso e apoio." },
+      { id: "r2_S", dimensao: "S", texto: "Seguir o que j\xE1 funcionou antes, evitando mudan\xE7as bruscas.", explicacao: "Mede a exig\xEAncia de decis\xE3o cautelosa, baseada em rotina j\xE1 validada." },
+      { id: "r2_C", dimensao: "C", texto: "Analisar dados e crit\xE9rios t\xE9cnicos antes de decidir.", explicacao: "Mede a exig\xEAncia de decis\xE3o anal\xEDtica, baseada em dados e crit\xE9rios t\xE9cnicos." }
+    ]
+  },
+  {
+    id: "r3",
+    tema: "Autonomia exigida",
+    pergunta: "O n\xEDvel de autonomia que este cargo exige \xE9:",
+    objetivo: "Avalia o grau de independ\xEAncia e responsabilidade individual exigido pela fun\xE7\xE3o.",
+    alternativas: [
+      { id: "r3_D", dimensao: "D", texto: "Alta \u2014 a pessoa precisa agir e assumir a responsabilidade sozinha.", explicacao: "Mede a exig\xEAncia de alta autonomia e responsabilidade individual." },
+      { id: "r3_I", dimensao: "I", texto: "M\xE9dia, mas com bastante intera\xE7\xE3o e troca com outras pessoas.", explicacao: "Mede a exig\xEAncia de autonomia moderada, equilibrada com intera\xE7\xE3o social." },
+      { id: "r3_S", dimensao: "S", texto: "Baixa a m\xE9dia, com apoio e orienta\xE7\xE3o constantes de outros.", explicacao: "Mede a exig\xEAncia de baixa autonomia, com apoio e orienta\xE7\xE3o constantes." },
+      { id: "r3_C", dimensao: "C", texto: "Alta, mas dentro de regras e procedimentos bem definidos.", explicacao: "Mede a exig\xEAncia de autonomia t\xE9cnica, dentro de regras bem definidas." }
+    ]
+  },
+  {
+    id: "r4",
+    tema: "Relacionamento com pessoas",
+    pergunta: "A quantidade e o tipo de contato com pessoas que este cargo exige \xE9:",
+    objetivo: "Avalia o n\xEDvel e o estilo de intera\xE7\xE3o interpessoal necess\xE1rios na fun\xE7\xE3o.",
+    alternativas: [
+      { id: "r4_D", dimensao: "D", texto: "Contato direto e objetivo, focado em resolver e avan\xE7ar.", explicacao: "Mede a exig\xEAncia de intera\xE7\xE3o direta e orientada a resultado." },
+      { id: "r4_I", dimensao: "I", texto: "Contato frequente, caloroso e voltado a construir relacionamentos.", explicacao: "Mede a exig\xEAncia de intera\xE7\xE3o social intensa e voltada a v\xEDnculos." },
+      { id: "r4_S", dimensao: "S", texto: "Contato constante, mas calmo e baseado em confian\xE7a m\xFAtua.", explicacao: "Mede a exig\xEAncia de intera\xE7\xE3o est\xE1vel, baseada em confian\xE7a e apoio." },
+      { id: "r4_C", dimensao: "C", texto: "Contato pontual, formal e focado em informa\xE7\xF5es precisas.", explicacao: "Mede a exig\xEAncia de intera\xE7\xE3o formal e centrada em precis\xE3o t\xE9cnica." }
+    ]
+  },
+  {
+    id: "r5",
+    tema: "Lidar com prazo e press\xE3o",
+    pergunta: "A forma como este cargo geralmente lida com prazos e press\xE3o \xE9:",
+    objetivo: "Avalia a exposi\xE7\xE3o e a resposta esperada da fun\xE7\xE3o diante de prazos e press\xE3o.",
+    alternativas: [
+      { id: "r5_D", dimensao: "D", texto: "Alta press\xE3o constante, com cobran\xE7a direta por resultado.", explicacao: "Mede a exig\xEAncia de toler\xE2ncia a alta press\xE3o e cobran\xE7a por resultado." },
+      { id: "r5_I", dimensao: "I", texto: "Press\xE3o vari\xE1vel, aliviada pelo bom relacionamento com o time.", explicacao: "Mede a exig\xEAncia de lidar com press\xE3o atrav\xE9s do apoio social." },
+      { id: "r5_S", dimensao: "S", texto: "Press\xE3o baixa e previs\xEDvel, com prazos est\xE1veis.", explicacao: "Mede a exig\xEAncia de um ambiente de baixa press\xE3o e prazos previs\xEDveis." },
+      { id: "r5_C", dimensao: "C", texto: "Press\xE3o ligada \xE0 exatid\xE3o e conformidade com prazos t\xE9cnicos.", explicacao: "Mede a exig\xEAncia de press\xE3o ligada a precis\xE3o e conformidade t\xE9cnica." }
+    ]
+  },
+  {
+    id: "r6",
+    tema: "Aten\xE7\xE3o a detalhes e qualidade",
+    pergunta: "A aten\xE7\xE3o a detalhes exigida por este cargo \xE9:",
+    objetivo: "Avalia o grau de precis\xE3o e cuidado t\xE9cnico necess\xE1rio na execu\xE7\xE3o das tarefas.",
+    alternativas: [
+      { id: "r6_D", dimensao: "D", texto: "Baixa \u2014 o foco est\xE1 mais no resultado final do que no detalhe.", explicacao: "Mede baixa exig\xEAncia de aten\xE7\xE3o a detalhes, com foco no resultado." },
+      { id: "r6_I", dimensao: "I", texto: "Moderada, equilibrada com criatividade e comunica\xE7\xE3o.", explicacao: "Mede exig\xEAncia moderada de detalhe, equilibrada com aspectos sociais." },
+      { id: "r6_S", dimensao: "S", texto: "Moderada, priorizando consist\xEAncia ao longo do tempo.", explicacao: "Mede exig\xEAncia moderada de detalhe, com foco em consist\xEAncia." },
+      { id: "r6_C", dimensao: "C", texto: "Alta \u2014 erros pequenos t\xEAm impacto significativo no resultado.", explicacao: "Mede alta exig\xEAncia de precis\xE3o e aten\xE7\xE3o a detalhes t\xE9cnicos." }
+    ]
+  },
+  {
+    id: "r7",
+    tema: "Rotina vs. variedade de tarefas",
+    pergunta: "A rotina de trabalho deste cargo \xE9:",
+    objetivo: "Avalia se a fun\xE7\xE3o demanda mais repeti\xE7\xE3o/estrutura ou mais variedade/novidade.",
+    alternativas: [
+      { id: "r7_D", dimensao: "D", texto: "Bastante vari\xE1vel, definida pelas prioridades e desafios do momento.", explicacao: "Mede a exig\xEAncia de adapta\xE7\xE3o constante a novas prioridades." },
+      { id: "r7_I", dimensao: "I", texto: "Variada, com bastante diversidade de pessoas e situa\xE7\xF5es.", explicacao: "Mede a exig\xEAncia de lidar com variedade de pessoas e contextos." },
+      { id: "r7_S", dimensao: "S", texto: "Est\xE1vel e repetitiva, com poucas mudan\xE7as na rotina.", explicacao: "Mede a exig\xEAncia de rotina est\xE1vel e previs\xEDvel." },
+      { id: "r7_C", dimensao: "C", texto: "Estruturada, seguindo processos e etapas bem definidas.", explicacao: "Mede a exig\xEAncia de seguir processos e etapas padronizadas." }
+    ]
+  },
+  {
+    id: "r8",
+    tema: "Comunica\xE7\xE3o exigida",
+    pergunta: "O tipo de comunica\xE7\xE3o mais exigido por este cargo \xE9:",
+    objetivo: "Avalia o estilo de comunica\xE7\xE3o predominante que a fun\xE7\xE3o demanda.",
+    alternativas: [
+      { id: "r8_D", dimensao: "D", texto: "Direta e objetiva, focada em decis\xF5es e resultados.", explicacao: "Mede a exig\xEAncia de comunica\xE7\xE3o direta e assertiva." },
+      { id: "r8_I", dimensao: "I", texto: "Expressiva e envolvente, usada para engajar e influenciar pessoas.", explicacao: "Mede a exig\xEAncia de comunica\xE7\xE3o expressiva e persuasiva." },
+      { id: "r8_S", dimensao: "S", texto: "Calma e acolhedora, voltada a ouvir e apoiar as pessoas.", explicacao: "Mede a exig\xEAncia de comunica\xE7\xE3o receptiva e voltada ao apoio." },
+      { id: "r8_C", dimensao: "C", texto: "Formal e precisa, baseada em dados e documenta\xE7\xE3o.", explicacao: "Mede a exig\xEAncia de comunica\xE7\xE3o t\xE9cnica e bem documentada." }
+    ]
+  },
+  {
+    id: "r9",
+    tema: "Gest\xE3o de conflitos no dia a dia",
+    pergunta: "Diante de um conflito no dia a dia, este cargo exige que a pessoa:",
+    objetivo: "Avalia como a fun\xE7\xE3o espera que conflitos sejam enfrentados e resolvidos.",
+    alternativas: [
+      { id: "r9_D", dimensao: "D", texto: "Enfrente o conflito diretamente e busque resolv\xEA-lo r\xE1pido.", explicacao: "Mede a exig\xEAncia de enfrentamento direto e r\xE1pido do conflito." },
+      { id: "r9_I", dimensao: "I", texto: "Busque conciliar as partes, mantendo o bom relacionamento.", explicacao: "Mede a exig\xEAncia de concilia\xE7\xE3o e manuten\xE7\xE3o do relacionamento." },
+      { id: "r9_S", dimensao: "S", texto: "Evite o confronto, buscando manter a harmonia do grupo.", explicacao: "Mede a exig\xEAncia de evitar confronto e preservar a harmonia." },
+      { id: "r9_C", dimensao: "C", texto: "Analise os fatos com neutralidade antes de posicionar-se.", explicacao: "Mede a exig\xEAncia de an\xE1lise neutra e baseada em fatos." }
+    ]
+  },
+  {
+    id: "r10",
+    tema: "Uso de dados e an\xE1lise",
+    pergunta: "O quanto este cargo depende de dados e an\xE1lises para o trabalho do dia a dia:",
+    objetivo: "Avalia o peso da an\xE1lise t\xE9cnica e de dados na rotina da fun\xE7\xE3o.",
+    alternativas: [
+      { id: "r10_D", dimensao: "D", texto: "Pouco \u2014 as decis\xF5es s\xE3o tomadas mais pela intui\xE7\xE3o e agilidade.", explicacao: "Mede baixa depend\xEAncia de dados, com decis\xF5es mais intuitivas." },
+      { id: "r10_I", dimensao: "I", texto: "Moderado, mas os dados servem mais para embasar conversas.", explicacao: "Mede depend\xEAncia moderada de dados, usados para apoiar intera\xE7\xF5es." },
+      { id: "r10_S", dimensao: "S", texto: "Moderado, usado para manter consist\xEAncia nos processos j\xE1 estabelecidos.", explicacao: "Mede depend\xEAncia moderada de dados, ligada \xE0 consist\xEAncia." },
+      { id: "r10_C", dimensao: "C", texto: "Alto \u2014 grande parte do trabalho envolve an\xE1lise t\xE9cnica de dados.", explicacao: "Mede alta depend\xEAncia de dados e an\xE1lise t\xE9cnica no trabalho." }
+    ]
+  },
+  {
+    id: "r11",
+    tema: "Flexibilidade a mudan\xE7as",
+    pergunta: "Diante de mudan\xE7as (novos processos, prioridades ou ferramentas), este cargo exige que a pessoa:",
+    objetivo: "Avalia a capacidade de adapta\xE7\xE3o a mudan\xE7as que a fun\xE7\xE3o demanda.",
+    alternativas: [
+      { id: "r11_D", dimensao: "D", texto: "Se adapte r\xE1pido e assuma a frente da mudan\xE7a.", explicacao: "Mede a exig\xEAncia de liderar e se adaptar rapidamente \xE0 mudan\xE7a." },
+      { id: "r11_I", dimensao: "I", texto: "Ajude a engajar outras pessoas na adapta\xE7\xE3o \xE0 mudan\xE7a.", explicacao: "Mede a exig\xEAncia de engajar pessoas durante a mudan\xE7a." },
+      { id: "r11_S", dimensao: "S", texto: "Precise de tempo e apoio para se adaptar com seguran\xE7a.", explicacao: "Mede a exig\xEAncia de tempo e suporte para lidar com mudan\xE7as." },
+      { id: "r11_C", dimensao: "C", texto: "Avalie criteriosamente os impactos antes de aceitar a mudan\xE7a.", explicacao: "Mede a exig\xEAncia de avalia\xE7\xE3o criteriosa antes de aceitar mudan\xE7as." }
+    ]
+  },
+  {
+    id: "r12",
+    tema: "Foco em resultado vs. processo",
+    pergunta: "O que mais importa no desempenho deste cargo \xE9:",
+    objetivo: "Avalia se a fun\xE7\xE3o \xE9 medida mais pelo resultado alcan\xE7ado ou pela forma/processo utilizado.",
+    alternativas: [
+      { id: "r12_D", dimensao: "D", texto: "Alcan\xE7ar a meta, independente do caminho percorrido.", explicacao: "Mede a exig\xEAncia de foco no resultado final, acima do processo." },
+      { id: "r12_I", dimensao: "I", texto: "Alcan\xE7ar a meta mantendo boas rela\xE7\xF5es com todos envolvidos.", explicacao: "Mede a exig\xEAncia de equilibrar resultado com relacionamento." },
+      { id: "r12_S", dimensao: "S", texto: "Manter a estabilidade da equipe enquanto entrega os resultados.", explicacao: "Mede a exig\xEAncia de equilibrar resultado com estabilidade da equipe." },
+      { id: "r12_C", dimensao: "C", texto: "Seguir rigorosamente o processo definido para chegar ao resultado.", explicacao: "Mede a exig\xEAncia de seguir o processo correto para alcan\xE7ar o resultado." }
+    ]
+  }
+];
+var DISC360_ROLE_VALIDACAO_QUESTIONS = [
+  {
+    dimensao: "D",
+    pergunta: "Avaliando este cargo, quanto esta fun\xE7\xE3o exige Domin\xE2ncia para conduzir decis\xF5es, enfrentar desafios, lidar com press\xE3o e entregar resultados?",
+    faixas: [
+      {
+        min: 0,
+        max: 25,
+        label: "Domin\xE2ncia baixa",
+        texto: "O cargo exige uma condu\xE7\xE3o mais cautelosa, diplom\xE1tica e pouco confrontativa. A pessoa ainda precisa se posicionar, mas deve fazer isso com prud\xEAncia, valida\xE7\xE3o e cuidado nas rela\xE7\xF5es.",
+        pontosPositivos: [
+          "Toma decis\xF5es com cautela, reduzindo o risco de escolhas precipitadas.",
+          "Evita atritos desnecess\xE1rios e preserva o clima do time.",
+          "Boa aceita\xE7\xE3o em contextos que exigem diplomacia e escuta antes de agir."
+        ],
+        pontosAtencao: [
+          "Pode demorar para decidir quando a situa\xE7\xE3o exige rapidez.",
+          "Tende a evitar confrontos mesmo quando s\xE3o necess\xE1rios.",
+          "Pode ter dificuldade em cobrar resultados de forma direta."
+        ],
+        pontosInvestigarSelecao: [
+          "Pe\xE7a exemplos de decis\xF5es que teve que tomar sob press\xE3o, mesmo sem ter certeza total.",
+          "Investigue como a pessoa reage diante de um conflito que n\xE3o pode ser evitado.",
+          "Avalie o n\xEDvel de conforto ao dar um feedback direto ou dizer n\xE3o."
+        ]
+      },
+      {
+        min: 26,
+        max: 50,
+        label: "Domin\xE2ncia moderadamente baixa",
+        texto: "O cargo exige alguma iniciativa e capacidade de decis\xE3o, mas com maior pondera\xE7\xE3o, menor exposi\xE7\xE3o ao confronto e prefer\xEAncia por alinhamento antes da a\xE7\xE3o.",
+        pontosPositivos: [
+          "Equilibra a\xE7\xE3o e escuta, buscando alinhamento antes de decidir.",
+          "Reduz o risco de decis\xF5es impulsivas ou mal avaliadas.",
+          "Tende a construir apoio da equipe antes de agir."
+        ],
+        pontosAtencao: [
+          "Pode buscar valida\xE7\xE3o em excesso antes de agir, perdendo tempo.",
+          "Risco de perder o timing em decis\xF5es urgentes.",
+          "Pode delegar decis\xF5es que deveria assumir pessoalmente."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa age quando precisa decidir sozinha, sem tempo para consultar ningu\xE9m.",
+          "Pe\xE7a um exemplo de decis\xE3o tomada sem consenso da equipe.",
+          "Avalie a velocidade de resposta em situa\xE7\xF5es que descreveu como urgentes."
+        ]
+      },
+      {
+        min: 51,
+        max: 75,
+        label: "Domin\xE2ncia moderadamente alta",
+        texto: "O cargo exige posicionamento claro, responsabilidade por resultados e capacidade de decidir com firmeza, mas ainda preservando an\xE1lise, escuta e cuidado com impactos.",
+        pontosPositivos: [
+          "Assume responsabilidade e decide com firmeza quando necess\xE1rio.",
+          "Orienta\xE7\xE3o clara para resultado, sem abrir m\xE3o de ouvir antes de agir.",
+          "Consegue equilibrar urg\xEAncia com an\xE1lise da situa\xE7\xE3o."
+        ],
+        pontosAtencao: [
+          "Pode gerar atrito ao impor ritmo ou decis\xF5es ao time.",
+          "Risco de impaci\xEAncia com pessoas que decidem mais devagar.",
+          "Pode subestimar o impacto emocional de suas decis\xF5es nos outros."
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue como a pessoa lida com discord\xE2ncia da equipe ap\xF3s uma decis\xE3o j\xE1 tomada.",
+          "Pe\xE7a um exemplo de como equilibrou urg\xEAncia e escuta em uma situa\xE7\xE3o real.",
+          "Avalie como reage a um feedback que questiona diretamente uma decis\xE3o sua."
+        ]
+      },
+      {
+        min: 76,
+        max: 100,
+        label: "Domin\xE2ncia alta",
+        texto: "O cargo exige decis\xE3o r\xE1pida, assertividade, enfrentamento direto de obst\xE1culos, cobran\xE7a de resultados, autonomia e sustenta\xE7\xE3o de decis\xF5es mesmo sob press\xE3o.",
+        pontosPositivos: [
+          "Assume riscos e responsabilidade sem se intimidar diante de obst\xE1culos.",
+          "Sustenta a posi\xE7\xE3o mesmo sob press\xE3o ou questionamento.",
+          "Entrega resultado mesmo em cen\xE1rios dif\xEDceis ou adversos."
+        ],
+        pontosAtencao: [
+          "Risco de atropelar pessoas ou processos ao buscar velocidade.",
+          "Pode gerar conflitos desnecess\xE1rios por excesso de assertividade.",
+          "Pode ter dificuldade em ouvir e acolher posi\xE7\xF5es contr\xE1rias."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa lida com os pr\xF3prios erros quando est\xE1 sob press\xE3o.",
+          "Pe\xE7a exemplos de conflitos gerados por decis\xF5es r\xE1pidas e como foram resolvidos.",
+          "Avalie a capacidade de ouvir e mudar de posi\xE7\xE3o quando confrontado com dados ou argumentos consistentes."
+        ]
+      }
+    ]
+  },
+  {
+    dimensao: "I",
+    pergunta: "Avaliando este cargo, quanto esta fun\xE7\xE3o exige Influ\xEAncia para comunicar, envolver pessoas, construir relacionamentos e mobilizar ades\xE3o?",
+    faixas: [
+      {
+        min: 0,
+        max: 25,
+        label: "Influ\xEAncia baixa",
+        texto: "O cargo exige uma comunica\xE7\xE3o mais reservada, t\xE9cnica, objetiva e discreta. A pessoa se relaciona quando necess\xE1rio, mas sem grande exposi\xE7\xE3o social ou necessidade constante de persuas\xE3o.",
+        pontosPositivos: [
+          "Comunica\xE7\xE3o objetiva e direta, focada no conte\xFAdo t\xE9cnico.",
+          "Menor desgaste em intera\xE7\xF5es sociais frequentes.",
+          "Discri\xE7\xE3o em temas sens\xEDveis ou confidenciais."
+        ],
+        pontosAtencao: [
+          "Pode ter dificuldade em engajar ou motivar a equipe.",
+          "Pode parecer distante em times que precisam de proximidade constante.",
+          "Tende a evitar situa\xE7\xF5es de exposi\xE7\xE3o, como apresenta\xE7\xF5es ou negocia\xE7\xF5es."
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue a experi\xEAncia pr\xE9via liderando ou influenciando pessoas.",
+          "Pergunte como a pessoa se sente ao apresentar para grupos ou p\xFAblicos maiores.",
+          "Pe\xE7a exemplos de situa\xE7\xF5es em que precisou convencer algu\xE9m de algo."
+        ]
+      },
+      {
+        min: 26,
+        max: 50,
+        label: "Influ\xEAncia moderadamente baixa",
+        texto: "O cargo exige boa comunica\xE7\xE3o funcional e relacionamento cordial, mas sem depender fortemente de entusiasmo, visibilidade, negocia\xE7\xE3o ou mobiliza\xE7\xE3o frequente de pessoas.",
+        pontosPositivos: [
+          "Comunica\xE7\xE3o clara e sem excessos.",
+          "Relacionamento cordial e profissional com a equipe e stakeholders.",
+          "Menor risco de prometer al\xE9m do que pode entregar."
+        ],
+        pontosAtencao: [
+          "Pode n\xE3o gerar entusiasmo ou engajamento espont\xE2neo na equipe.",
+          "Tende a evitar pap\xE9is que exigem networking ativo ou negocia\xE7\xE3o constante."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa constr\xF3i relacionamento com stakeholders importantes.",
+          "Pe\xE7a exemplos de situa\xE7\xF5es de negocia\xE7\xE3o que j\xE1 viveu.",
+          "Avalie o n\xEDvel de conforto ao lidar com p\xFAblicos variados."
+        ]
+      },
+      {
+        min: 51,
+        max: 75,
+        label: "Influ\xEAncia moderadamente alta",
+        texto: "O cargo exige comunica\xE7\xE3o ativa, capacidade de envolver pessoas, negociar, criar v\xEDnculos e gerar ades\xE3o, ainda que de forma equilibrada e ajustada ao contexto.",
+        pontosPositivos: [
+          "Boa capacidade de engajar e negociar com diferentes pessoas.",
+          "Cria v\xEDnculos com facilidade e se comunica bem em diferentes n\xEDveis.",
+          "Consegue gerar ades\xE3o sem depender de imposi\xE7\xE3o."
+        ],
+        pontosAtencao: [
+          "Pode priorizar aceita\xE7\xE3o e harmonia em detrimento de dados ou cr\xEDticas necess\xE1rias.",
+          "Risco de otimismo excessivo em previs\xF5es ou promessas.",
+          "Pode se dispersar em intera\xE7\xF5es sociais no lugar de focar na entrega."
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue como a pessoa equilibra relacionamento e resultado no dia a dia.",
+          "Pe\xE7a um exemplo de feedback dif\xEDcil que precisou dar a algu\xE9m.",
+          "Pergunte como lida quando a boa comunica\xE7\xE3o n\xE3o \xE9 suficiente para resolver um problema t\xE9cnico."
+        ]
+      },
+      {
+        min: 76,
+        max: 100,
+        label: "Influ\xEAncia alta",
+        texto: "O cargo exige forte comunica\xE7\xE3o, presen\xE7a, persuas\xE3o, entusiasmo, relacionamento constante, capacidade de engajar, inspirar confian\xE7a e mobilizar diferentes p\xFAblicos.",
+        pontosPositivos: [
+          "Grande capacidade de engajar, inspirar e mobilizar pessoas.",
+          "Forte presen\xE7a e comunica\xE7\xE3o em diferentes contextos.",
+          "Facilidade em criar redes de relacionamento amplas."
+        ],
+        pontosAtencao: [
+          "Risco de priorizar o discurso em detrimento de dado e planejamento.",
+          "Pode superestimar acordos fechados apenas verbalmente.",
+          "Pode ter dificuldade com tarefas solit\xE1rias ou de baixo contato humano."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa organiza e acompanha compromissos assumidos verbalmente.",
+          "Pe\xE7a exemplos de entregas t\xE9cnicas ou detalhadas sob sua responsabilidade direta.",
+          "Avalie como lida com per\xEDodos de rotina de baixa intera\xE7\xE3o social."
+        ]
+      }
+    ]
+  },
+  {
+    dimensao: "S",
+    pergunta: "Avaliando este cargo, quanto esta fun\xE7\xE3o exige Estabilidade para manter const\xE2ncia, coopera\xE7\xE3o, paci\xEAncia, previsibilidade e equil\xEDbrio na rotina?",
+    faixas: [
+      {
+        min: 0,
+        max: 25,
+        label: "Estabilidade baixa",
+        texto: "O cargo exige alta flexibilidade, adapta\xE7\xE3o r\xE1pida, agilidade e baixa depend\xEAncia de rotina previs\xEDvel. A pessoa precisa lidar bem com mudan\xE7as, interrup\xE7\xF5es e varia\xE7\xF5es constantes.",
+        pontosPositivos: [
+          "Alta adaptabilidade a mudan\xE7as frequentes.",
+          "Conforto em ambientes din\xE2micos ou inst\xE1veis.",
+          "Agilidade para mudar de prioridade quando necess\xE1rio."
+        ],
+        pontosAtencao: [
+          "Pode se desgastar ou perder foco em rotinas longas e repetitivas.",
+          "Pode gerar sensa\xE7\xE3o de instabilidade percebida pela equipe.",
+          "Risco de descontinuidade em processos que exigem const\xE2ncia."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa se comporta diante de tarefas repetitivas de longo prazo.",
+          "Pe\xE7a exemplos de continuidade que manteve em projetos extensos.",
+          "Avalie o n\xEDvel de toler\xE2ncia a rotina e processos padronizados."
+        ]
+      },
+      {
+        min: 26,
+        max: 50,
+        label: "Estabilidade moderadamente baixa",
+        texto: "O cargo exige alguma const\xE2ncia e coopera\xE7\xE3o, mas com forte necessidade de adapta\xE7\xE3o, altern\xE2ncia de prioridades e toler\xE2ncia a ambientes menos previs\xEDveis.",
+        pontosPositivos: [
+          "Equilibra rotina e mudan\xE7a sem grande resist\xEAncia.",
+          "Coopera bem em contextos vari\xE1veis.",
+          "Adapta-se com relativa facilidade a novas prioridades."
+        ],
+        pontosAtencao: [
+          "Pode ter dificuldade em ambientes totalmente est\xE1veis e repetitivos.",
+          "Altern\xE2ncia frequente de prioridades pode impactar a previsibilidade das entregas."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa prioriza tarefas quando tudo muda com frequ\xEAncia.",
+          "Pe\xE7a um exemplo de como manteve a continuidade de um processo apesar das mudan\xE7as ao redor."
+        ]
+      },
+      {
+        min: 51,
+        max: 75,
+        label: "Estabilidade moderadamente alta",
+        texto: "O cargo exige continuidade, paci\xEAncia, coopera\xE7\xE3o e equil\xEDbrio, mas sem perder flexibilidade quando mudan\xE7as ou ajustes forem necess\xE1rios.",
+        pontosPositivos: [
+          "Mant\xE9m const\xE2ncia no trabalho e coopera bem com o time.",
+          "Sustenta ritmo est\xE1vel mesmo diante de ajustes pontuais.",
+          "Boa combina\xE7\xE3o de paci\xEAncia com abertura a mudan\xE7as pontuais."
+        ],
+        pontosAtencao: [
+          "Pode resistir a mudan\xE7as bruscas ou repentinas.",
+          "Pode levar mais tempo para se adaptar a reestrutura\xE7\xF5es importantes."
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue como a pessoa reage a mudan\xE7as de \xFAltima hora.",
+          "Pe\xE7a um exemplo de adapta\xE7\xE3o a uma mudan\xE7a organizacional significativa."
+        ]
+      },
+      {
+        min: 76,
+        max: 100,
+        label: "Estabilidade alta",
+        texto: "O cargo exige grande const\xE2ncia, paci\xEAncia, previsibilidade, coopera\xE7\xE3o, cuidado com o ritmo do time e sustenta\xE7\xE3o da seguran\xE7a emocional e operacional ao longo do tempo.",
+        pontosPositivos: [
+          "Grande estabilidade emocional e operacional ao longo do tempo.",
+          "Paci\xEAncia e coopera\xE7\xE3o consistentes com a equipe.",
+          "Cuida do ritmo do time e preserva a previsibilidade dos processos."
+        ],
+        pontosAtencao: [
+          "Pode resistir fortemente a mudan\xE7as.",
+          "Pode ter dificuldade em ambientes de alta volatilidade ou urg\xEAncia constante.",
+          "Risco de desconforto diante de reestrutura\xE7\xF5es frequentes."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa lidou com uma mudan\xE7a organizacional grande e inesperada.",
+          "Avalie o n\xEDvel de conforto com ambientes de alta incerteza.",
+          "Pe\xE7a exemplos de flexibiliza\xE7\xE3o da pr\xF3pria rotina quando isso foi necess\xE1rio."
+        ]
+      }
+    ]
+  },
+  {
+    dimensao: "C",
+    pergunta: "Avaliando este cargo, quanto esta fun\xE7\xE3o exige Conformidade para seguir crit\xE9rios, m\xE9todos, normas, padr\xF5es e controles de qualidade?",
+    faixas: [
+      {
+        min: 0,
+        max: 25,
+        label: "Conformidade baixa",
+        texto: "O cargo exige maior flexibilidade, autonomia e adapta\xE7\xE3o. A pessoa precisa entregar com qualidade, mas com liberdade para ajustar caminhos e menor depend\xEAncia de regras r\xEDgidas.",
+        pontosPositivos: [
+          "Flexibilidade para adaptar processos conforme a necessidade.",
+          "Autonomia para encontrar solu\xE7\xF5es alternativas.",
+          "Menor rigidez burocr\xE1tica no dia a dia."
+        ],
+        pontosAtencao: [
+          "Risco de menor padroniza\xE7\xE3o ou documenta\xE7\xE3o dos processos.",
+          "Pode negligenciar detalhes ou normas importantes.",
+          "Risco de inconsist\xEAncia em processos que exigem regula\xE7\xE3o."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa lida com tarefas que exigem alta precis\xE3o ou documenta\xE7\xE3o.",
+          "Pe\xE7a exemplos de erros cometidos por falta de aten\xE7\xE3o a detalhes.",
+          "Avalie o n\xEDvel de conforto seguindo normas e regras r\xEDgidas."
+        ]
+      },
+      {
+        min: 26,
+        max: 50,
+        label: "Conformidade moderadamente baixa",
+        texto: "O cargo exige aten\xE7\xE3o a crit\xE9rios importantes, mas permite flexibilidade, bom senso e adapta\xE7\xE3o dos procedimentos conforme o contexto.",
+        pontosPositivos: [
+          "Equilibra regras e bom senso na execu\xE7\xE3o do trabalho.",
+          "Adapta processos quando faz sentido para o resultado.",
+          "Aten\xE7\xE3o a crit\xE9rios relevantes sem engessar o trabalho."
+        ],
+        pontosAtencao: [
+          "Pode relaxar padr\xF5es em momentos de press\xE3o.",
+          "Pode n\xE3o documentar processos com o rigor necess\xE1rio."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa garante qualidade quando o prazo \xE9 curto.",
+          "Pe\xE7a exemplos de decis\xF5es entre seguir a norma \xE0 risca ou adaptar o processo."
+        ]
+      },
+      {
+        min: 51,
+        max: 75,
+        label: "Conformidade moderadamente alta",
+        texto: "O cargo exige m\xE9todo, organiza\xE7\xE3o, aten\xE7\xE3o a detalhes e respeito aos padr\xF5es, ainda com alguma possibilidade de adapta\xE7\xE3o quando a situa\xE7\xE3o justificar.",
+        pontosPositivos: [
+          "Organiza\xE7\xE3o e aten\xE7\xE3o a detalhes no trabalho.",
+          "Segue padr\xF5es e qualidade de forma consistente.",
+          "Mant\xE9m certo grau de adaptabilidade quando justificado."
+        ],
+        pontosAtencao: [
+          "Pode ser mais lento para decidir quando falta uma regra clara.",
+          "Pode gerar resist\xEAncia a mudan\xE7as de processo sem justificativa t\xE9cnica."
+        ],
+        pontosInvestigarSelecao: [
+          "Investigue como a pessoa se comporta diante de ambiguidade ou aus\xEAncia de processo definido.",
+          "Pe\xE7a exemplos de melhorias de processo que j\xE1 prop\xF4s."
+        ]
+      },
+      {
+        min: 76,
+        max: 100,
+        label: "Conformidade alta",
+        texto: "O cargo exige rigor t\xE9cnico, precis\xE3o, an\xE1lise cuidadosa, documenta\xE7\xE3o, controle, aten\xE7\xE3o minuciosa a detalhes e cumprimento fiel de normas e processos definidos.",
+        pontosPositivos: [
+          "Alta precis\xE3o t\xE9cnica e rigor na an\xE1lise.",
+          "Forte compromisso com qualidade e conformidade.",
+          "Documenta\xE7\xE3o e controle consistentes dos processos."
+        ],
+        pontosAtencao: [
+          "Risco de lentid\xE3o em decis\xF5es urgentes.",
+          "Pode ter dificuldade com ambiguidade ou mudan\xE7as de \xFAltima hora.",
+          "Risco de perfeccionismo que atrasa entregas."
+        ],
+        pontosInvestigarSelecao: [
+          "Pergunte como a pessoa lida com prazos apertados que exigem abrir m\xE3o de parte do rigor.",
+          "Pe\xE7a exemplos de flexibiliza\xE7\xE3o de processo sob press\xE3o de tempo.",
+          "Avalie o n\xEDvel de conforto com decis\xF5es tomadas com informa\xE7\xE3o incompleta."
+        ]
+      }
+    ]
+  }
+];
+
+// server/discRoleService.ts
+function calcularDiscCargo(respostas) {
+  const bruto = { D: 0, I: 0, S: 0, C: 0 };
+  for (const resposta of respostas) {
+    bruto[resposta.maisDimensao] += 1;
+    bruto[resposta.menosDimensao] -= 1;
+  }
+  const total = respostas.length || 1;
+  const scores = {
+    D: Math.round((bruto.D + total) / (2 * total) * 1e4) / 100,
+    I: Math.round((bruto.I + total) / (2 * total) * 1e4) / 100,
+    S: Math.round((bruto.S + total) / (2 * total) * 1e4) / 100,
+    C: Math.round((bruto.C + total) / (2 * total) * 1e4) / 100
+  };
+  const perfil = determinarPerfil(scores);
+  return {
+    scores,
+    perfilPredominante: perfil.predominante,
+    perfilSecundario: perfil.secundario,
+    perfilSugerido: perfil.sugerido,
+    totalRespondidas: respostas.length
+  };
+}
+var DISC360_ROLE_ALERTA_LIMITE_DIVERGENCIA = 30;
+function avaliarDivergenciaValidacao(scores, respostaValidacao, limite = DISC360_ROLE_ALERTA_LIMITE_DIVERGENCIA) {
+  const dimensoes = ["D", "I", "S", "C"];
+  return dimensoes.map((dimensao) => {
+    const diferenca = Math.round(Math.abs(respostaValidacao[dimensao] - scores[dimensao]));
+    if (diferenca > limite) {
+      return {
+        dimensao,
+        divergente: true,
+        diferenca,
+        texto: `Aten\xE7\xE3o: a r\xE9gua de ${dimensao} (${respostaValidacao[dimensao]}) diverge do ${dimensao} calculado pelas escolhas for\xE7adas (${scores[dimensao]}). Reveja essa resposta com aten\xE7\xE3o.`
+      };
+    }
+    return { dimensao, divergente: false, diferenca, texto: null };
+  });
+}
+function obterFaixaTextoCargo(dimensao, valor) {
+  const questao = DISC360_ROLE_VALIDACAO_QUESTIONS.find((q) => q.dimensao === dimensao);
+  const faixa = questao?.faixas.find((f) => valor >= f.min && valor <= f.max);
+  return {
+    label: faixa?.label ?? "",
+    texto: faixa?.texto ?? "",
+    pontosPositivos: faixa?.pontosPositivos ?? [],
+    pontosAtencao: faixa?.pontosAtencao ?? [],
+    pontosInvestigarSelecao: faixa?.pontosInvestigarSelecao ?? []
+  };
+}
+
+// shared/disc360CultureQuestions.ts
+var DISC360_CULTURE_QUESTIONS = [
+  {
+    id: "q1",
+    tema: "Tomada de decis\xE3o",
+    pergunta: "Quando uma decis\xE3o importante precisa ser tomada, a empresa espera que as lideran\xE7as:",
+    objetivo: "Avalia como a cultura espera que decis\xF5es relevantes sejam conduzidas: pela velocidade e assun\xE7\xE3o de responsabilidade, pelo consenso das pessoas envolvidas, pela cautela com a estabilidade do time, ou pelo rigor da an\xE1lise t\xE9cnica.",
+    alternativas: [
+      { id: "q1_D", dimensao: "D", texto: "Decidam com firmeza e rapidez, assumindo responsabilidade pelo resultado.", explicacao: "Mede a orienta\xE7\xE3o para resultado: decidir r\xE1pido e assumir a responsabilidade pelo desfecho." },
+      { id: "q1_I", dimensao: "I", texto: "Mobilizem as pessoas envolvidas e construam ades\xE3o antes de decidir.", explicacao: "Mede a orienta\xE7\xE3o relacional: buscar ades\xE3o e engajamento das pessoas antes de decidir." },
+      { id: "q1_S", dimensao: "S", texto: "Ponderem com calma, preservando a estabilidade e evitando rupturas bruscas.", explicacao: "Mede a orienta\xE7\xE3o para estabilidade: decidir com calma, evitando rupturas no grupo." },
+      { id: "q1_C", dimensao: "C", texto: "Analisem dados, riscos e procedimentos antes da decis\xE3o.", explicacao: "Mede a orienta\xE7\xE3o t\xE9cnica: basear a decis\xE3o em dados, riscos e procedimentos." }
+    ]
+  },
+  {
+    id: "q2",
+    tema: "Papel do l\xEDder",
+    pergunta: "O papel principal de um l\xEDder nesta empresa \xE9:",
+    objetivo: "Avalia qual estilo de lideran\xE7a a cultura valoriza e espera no dia a dia das lideran\xE7as.",
+    alternativas: [
+      { id: "q2_D", dimensao: "D", texto: "Direcionar, cobrar e garantir o resultado.", explicacao: "Mede a expectativa de lideran\xE7a direta: cobran\xE7a e garantia de resultado." },
+      { id: "q2_I", dimensao: "I", texto: "Inspirar, comunicar e engajar as pessoas.", explicacao: "Mede a expectativa de lideran\xE7a inspiradora: comunica\xE7\xE3o e engajamento das pessoas." },
+      { id: "q2_S", dimensao: "S", texto: "Apoiar, desenvolver e manter o time unido e est\xE1vel.", explicacao: "Mede a expectativa de lideran\xE7a de apoio: cuidado com o time e manuten\xE7\xE3o da uni\xE3o." },
+      { id: "q2_C", dimensao: "C", texto: "Organizar, controlar e assegurar qualidade e m\xE9todo.", explicacao: "Mede a expectativa de lideran\xE7a organizadora: controle de processos e qualidade." }
+    ]
+  },
+  {
+    id: "q3",
+    tema: "Mudan\xE7a e adapta\xE7\xE3o",
+    pergunta: "Quando h\xE1 mudan\xE7as importantes na empresa, espera-se que as pessoas:",
+    objetivo: "Avalia como a empresa espera que as pessoas reajam diante de mudan\xE7as importantes.",
+    alternativas: [
+      { id: "q3_D", dimensao: "D", texto: "Assumam a frente e fa\xE7am a mudan\xE7a acontecer rapidamente.", explicacao: "Mede a prontid\xE3o para agir: assumir a frente e acelerar a mudan\xE7a." },
+      { id: "q3_I", dimensao: "I", texto: "Comuniquem bem, influenciem e envolvam os demais na transi\xE7\xE3o.", explicacao: "Mede a capacidade de mobilizar: comunicar e envolver os demais na transi\xE7\xE3o." },
+      { id: "q3_S", dimensao: "S", texto: "Se adaptem com equil\xEDbrio, preservando o que j\xE1 funciona bem.", explicacao: "Mede a busca por equil\xEDbrio: adaptar-se preservando o que j\xE1 funciona." },
+      { id: "q3_C", dimensao: "C", texto: "Sigam um plano estruturado, com crit\xE9rios e controles claros.", explicacao: "Mede a necessidade de estrutura: seguir um plano com crit\xE9rios claros." }
+    ]
+  },
+  {
+    id: "q4",
+    tema: "Alta performance e entrega",
+    pergunta: "Uma equipe de alta performance, para esta empresa, \xE9 aquela que:",
+    objetivo: "Avalia o que a empresa entende por uma equipe de alta performance.",
+    alternativas: [
+      { id: "q4_D", dimensao: "D", texto: "Entrega metas desafiadoras e supera obst\xE1culos com velocidade.", explicacao: "Mede o foco em superar metas e obst\xE1culos com velocidade." },
+      { id: "q4_I", dimensao: "I", texto: "Gera conex\xE3o, energia e colabora\xE7\xE3o ativa entre as pessoas.", explicacao: "Mede o foco em energia e colabora\xE7\xE3o entre as pessoas do time." },
+      { id: "q4_S", dimensao: "S", texto: "Mant\xE9m const\xE2ncia, confian\xE7a e coopera\xE7\xE3o ao longo do tempo.", explicacao: "Mede o foco em const\xE2ncia e confian\xE7a ao longo do tempo." },
+      { id: "q4_C", dimensao: "C", texto: "Trabalha com m\xE9todo, qualidade e baixa margem de erro.", explicacao: "Mede o foco em m\xE9todo, qualidade e baixa margem de erro." }
+    ]
+  },
+  {
+    id: "q5",
+    tema: "Normas e processos",
+    pergunta: "Em rela\xE7\xE3o a normas e processos, a empresa espera que as pessoas:",
+    objetivo: "Avalia a rela\xE7\xE3o que a empresa espera que as pessoas tenham com normas e processos internos.",
+    alternativas: [
+      { id: "q5_D", dimensao: "D", texto: "Usem os processos como apoio, mas priorizem sempre o resultado final.", explicacao: "Mede a vis\xE3o instrumental do processo: us\xE1-lo como apoio, sem travar o resultado." },
+      { id: "q5_I", dimensao: "I", texto: "Comuniquem os processos de forma clara e envolvam as pessoas neles.", explicacao: "Mede a vis\xE3o comunicativa do processo: explic\xE1-lo e envolver as pessoas nele." },
+      { id: "q5_S", dimensao: "S", texto: "Respeitem os processos para manter seguran\xE7a e estabilidade.", explicacao: "Mede a vis\xE3o protetiva do processo: segui-lo para manter seguran\xE7a e estabilidade." },
+      { id: "q5_C", dimensao: "C", texto: "Sigam padr\xF5es, controles e regras com rigor.", explicacao: "Mede a vis\xE3o rigorosa do processo: cumprir padr\xF5es e regras com exatid\xE3o." }
+    ]
+  },
+  {
+    id: "q6",
+    tema: "Ambiente de trabalho",
+    pergunta: "O ambiente de trabalho mais desejado pela empresa \xE9:",
+    objetivo: "Avalia que tipo de ambiente de trabalho a cultura da empresa busca criar.",
+    alternativas: [
+      { id: "q6_D", dimensao: "D", texto: "Desafiador, competitivo e orientado a metas.", explicacao: "Mede a prefer\xEAncia por um ambiente competitivo e orientado a metas." },
+      { id: "q6_I", dimensao: "I", texto: "Comunicativo, din\xE2mico e integrador.", explicacao: "Mede a prefer\xEAncia por um ambiente comunicativo e integrador." },
+      { id: "q6_S", dimensao: "S", texto: "Colaborativo, est\xE1vel e acolhedor.", explicacao: "Mede a prefer\xEAncia por um ambiente colaborativo e acolhedor." },
+      { id: "q6_C", dimensao: "C", texto: "Organizado, t\xE9cnico e orientado \xE0 excel\xEAncia.", explicacao: "Mede a prefer\xEAncia por um ambiente organizado e t\xE9cnico." }
+    ]
+  },
+  {
+    id: "q7",
+    tema: "Gest\xE3o de conflitos",
+    pergunta: "Quando surgem conflitos internos, a empresa espera que as lideran\xE7as:",
+    objetivo: "Avalia como a empresa espera que as lideran\xE7as conduzam conflitos internos.",
+    alternativas: [
+      { id: "q7_D", dimensao: "D", texto: "Enfrentem o problema diretamente e decidam o encaminhamento.", explicacao: "Mede a postura de confronto direto: encarar o problema e decidir o encaminhamento." },
+      { id: "q7_I", dimensao: "I", texto: "Conversem, influenciem e busquem acordo entre as partes.", explicacao: "Mede a postura de media\xE7\xE3o: dialogar e buscar acordo entre as partes." },
+      { id: "q7_S", dimensao: "S", texto: "Preservem o relacionamento e reduzam as tens\xF5es com cuidado.", explicacao: "Mede a postura protetiva: preservar o relacionamento e reduzir tens\xF5es." },
+      { id: "q7_C", dimensao: "C", texto: "Analisem fatos, regras e responsabilidades antes de agir.", explicacao: "Mede a postura anal\xEDtica: avaliar fatos e responsabilidades antes de agir." }
+    ]
+  },
+  {
+    id: "q8",
+    tema: "Ritmo organizacional",
+    pergunta: "O ritmo de trabalho ideal para esta empresa \xE9:",
+    objetivo: "Avalia qual ritmo de trabalho a empresa considera ideal.",
+    alternativas: [
+      { id: "q8_D", dimensao: "D", texto: "R\xE1pido, objetivo e voltado \xE0 execu\xE7\xE3o.", explicacao: "Mede a prefer\xEAncia por um ritmo r\xE1pido e voltado \xE0 execu\xE7\xE3o." },
+      { id: "q8_I", dimensao: "I", texto: "Din\xE2mico, participativo e com troca constante entre pessoas.", explicacao: "Mede a prefer\xEAncia por um ritmo din\xE2mico, com troca constante entre pessoas." },
+      { id: "q8_S", dimensao: "S", texto: "Constante, previs\xEDvel e sustent\xE1vel ao longo do tempo.", explicacao: "Mede a prefer\xEAncia por um ritmo constante e sustent\xE1vel." },
+      { id: "q8_C", dimensao: "C", texto: "Planejado, controlado e baseado em m\xE9todo.", explicacao: "Mede a prefer\xEAncia por um ritmo planejado e baseado em m\xE9todo." }
+    ]
+  },
+  {
+    id: "q9",
+    tema: "Inova\xE7\xE3o",
+    pergunta: "Para a empresa, inovar significa principalmente:",
+    objetivo: "Avalia o que a empresa entende como inovar.",
+    alternativas: [
+      { id: "q9_D", dimensao: "D", texto: "Agir antes dos concorrentes e assumir riscos calculados.", explicacao: "Mede a inova\xE7\xE3o pela ousadia: agir antes dos concorrentes, assumindo riscos." },
+      { id: "q9_I", dimensao: "I", texto: "Criar ideias em conjunto, com trocas e influ\xEAncia entre pessoas.", explicacao: "Mede a inova\xE7\xE3o pela cria\xE7\xE3o coletiva: gerar ideias em conjunto." },
+      { id: "q9_S", dimensao: "S", texto: "Melhorar continuamente, sem desorganizar o que j\xE1 funciona.", explicacao: "Mede a inova\xE7\xE3o pela evolu\xE7\xE3o gradual: melhorar sem desorganizar." },
+      { id: "q9_C", dimensao: "C", texto: "Testar, validar e estruturar mudan\xE7as com crit\xE9rios t\xE9cnicos.", explicacao: "Mede a inova\xE7\xE3o pelo rigor t\xE9cnico: testar e validar com crit\xE9rios." }
+    ]
+  },
+  {
+    id: "q10",
+    tema: "Rela\xE7\xE3o com clientes",
+    pergunta: "Na rela\xE7\xE3o com clientes, a empresa valoriza mais:",
+    objetivo: "Avalia o que a empresa mais valoriza na rela\xE7\xE3o com seus clientes.",
+    alternativas: [
+      { id: "q10_D", dimensao: "D", texto: "Agilidade, solu\xE7\xE3o objetiva e entrega r\xE1pida.", explicacao: "Mede a valoriza\xE7\xE3o da agilidade e da entrega objetiva." },
+      { id: "q10_I", dimensao: "I", texto: "Encantamento, comunica\xE7\xE3o pr\xF3xima e relacionamento.", explicacao: "Mede a valoriza\xE7\xE3o do encantamento e da proximidade no relacionamento." },
+      { id: "q10_S", dimensao: "S", texto: "Confian\xE7a, continuidade e cuidado ao longo do tempo.", explicacao: "Mede a valoriza\xE7\xE3o da confian\xE7a e da continuidade ao longo do tempo." },
+      { id: "q10_C", dimensao: "C", texto: "Precis\xE3o, qualidade e cumprimento exato do combinado.", explicacao: "Mede a valoriza\xE7\xE3o da precis\xE3o e do cumprimento exato do combinado." }
+    ]
+  },
+  {
+    id: "q11",
+    tema: "Reconhecimento e recompensa",
+    pergunta: "A empresa tende a reconhecer e recompensar mais quem:",
+    objetivo: "Avalia qual comportamento a empresa tende a reconhecer e recompensar mais.",
+    alternativas: [
+      { id: "q11_D", dimensao: "D", texto: "Assume desafios e entrega resultados relevantes.", explicacao: "Mede o reconhecimento a quem assume desafios e entrega resultado." },
+      { id: "q11_I", dimensao: "I", texto: "Mobiliza pessoas e fortalece relacionamentos internos e externos.", explicacao: "Mede o reconhecimento a quem mobiliza pessoas e fortalece rela\xE7\xF5es." },
+      { id: "q11_S", dimensao: "S", texto: "Sustenta o time, colabora e mant\xE9m a estabilidade do grupo.", explicacao: "Mede o reconhecimento a quem sustenta e estabiliza o time." },
+      { id: "q11_C", dimensao: "C", texto: "Garante qualidade, organiza\xE7\xE3o e confiabilidade no trabalho.", explicacao: "Mede o reconhecimento a quem garante qualidade e confiabilidade." }
+    ]
+  },
+  {
+    id: "q12",
+    tema: "Estrat\xE9gia e crescimento",
+    pergunta: "Para crescer e se desenvolver no futuro, a empresa acredita que precisa principalmente de:",
+    objetivo: "Avalia o que a empresa acredita ser mais necess\xE1rio para crescer no futuro.",
+    alternativas: [
+      { id: "q12_D", dimensao: "D", texto: "Ambi\xE7\xE3o, decis\xE3o r\xE1pida e foco em novas oportunidades.", explicacao: "Mede a cren\xE7a de que o crescimento vem da ambi\xE7\xE3o e de decis\xF5es r\xE1pidas." },
+      { id: "q12_I", dimensao: "I", texto: "Marca forte, relacionamento e influ\xEAncia no mercado.", explicacao: "Mede a cren\xE7a de que o crescimento vem da marca e do relacionamento no mercado." },
+      { id: "q12_S", dimensao: "S", texto: "Uma equipe comprometida, est\xE1vel e com continuidade.", explicacao: "Mede a cren\xE7a de que o crescimento vem de uma equipe est\xE1vel e comprometida." },
+      { id: "q12_C", dimensao: "C", texto: "Gest\xE3o, controle, processos bem definidos e qualidade.", explicacao: "Mede a cren\xE7a de que o crescimento vem de gest\xE3o e processos bem definidos." }
+    ]
+  },
+  {
+    id: "q13",
+    tema: "Autonomia",
+    pergunta: "Sobre autonomia no trabalho, a empresa espera que as pessoas:",
+    objetivo: "Avalia o grau e o tipo de autonomia que a empresa espera das pessoas.",
+    alternativas: [
+      { id: "q13_D", dimensao: "D", texto: "Tomem iniciativa e decidam dentro de sua responsabilidade.", explicacao: "Mede a autonomia como iniciativa: decidir dentro da pr\xF3pria responsabilidade." },
+      { id: "q13_I", dimensao: "I", texto: "Busquem alinhamento e envolvam as pessoas certas antes de agir.", explicacao: "Mede a autonomia como articula\xE7\xE3o: alinhar com as pessoas certas antes de agir." },
+      { id: "q13_S", dimensao: "S", texto: "Ajam com responsabilidade, sem gerar instabilidade no grupo.", explicacao: "Mede a autonomia como responsabilidade cuidadosa: agir sem gerar instabilidade." },
+      { id: "q13_C", dimensao: "C", texto: "Sigam crit\xE9rios, limites e padr\xF5es bem definidos.", explicacao: "Mede a autonomia como disciplina: seguir crit\xE9rios e limites definidos." }
+    ]
+  },
+  {
+    id: "q14",
+    tema: "Comunica\xE7\xE3o interna",
+    pergunta: "A comunica\xE7\xE3o interna ideal, para esta empresa, deve ser:",
+    objetivo: "Avalia que estilo de comunica\xE7\xE3o interna a empresa considera ideal.",
+    alternativas: [
+      { id: "q14_D", dimensao: "D", texto: "Direta, objetiva e voltada \xE0 a\xE7\xE3o.", explicacao: "Mede a prefer\xEAncia por comunica\xE7\xE3o direta e voltada \xE0 a\xE7\xE3o." },
+      { id: "q14_I", dimensao: "I", texto: "Inspiradora, envolvente e mobilizadora.", explicacao: "Mede a prefer\xEAncia por comunica\xE7\xE3o inspiradora e mobilizadora." },
+      { id: "q14_S", dimensao: "S", texto: "Cuidadosa, acolhedora e que preserva o clima do time.", explicacao: "Mede a prefer\xEAncia por comunica\xE7\xE3o cuidadosa, que preserva o clima do time." },
+      { id: "q14_C", dimensao: "C", texto: "Clara, documentada e precisa.", explicacao: "Mede a prefer\xEAncia por comunica\xE7\xE3o clara, documentada e precisa." }
+    ]
+  },
+  {
+    id: "q15",
+    tema: "Gest\xE3o de riscos",
+    pergunta: "Diante de situa\xE7\xF5es de risco, a empresa espera que as pessoas ajam com:",
+    objetivo: "Avalia como a empresa espera que as pessoas ajam diante de situa\xE7\xF5es de risco.",
+    alternativas: [
+      { id: "q15_D", dimensao: "D", texto: "Coragem para decidir e agir rapidamente, mesmo sob incerteza.", explicacao: "Mede a coragem de decidir e agir rapidamente mesmo sob incerteza." },
+      { id: "q15_I", dimensao: "I", texto: "Capacidade de envolver pessoas e gerar confian\xE7a na condu\xE7\xE3o.", explicacao: "Mede a capacidade de envolver pessoas e gerar confian\xE7a na condu\xE7\xE3o do risco." },
+      { id: "q15_S", dimensao: "S", texto: "Prud\xEAncia, para n\xE3o comprometer a estabilidade do time ou da opera\xE7\xE3o.", explicacao: "Mede a prud\xEAncia para n\xE3o comprometer a estabilidade do time ou da opera\xE7\xE3o." },
+      { id: "q15_C", dimensao: "C", texto: "An\xE1lise t\xE9cnica cuidadosa, controles e preven\xE7\xE3o.", explicacao: "Mede o rigor da an\xE1lise t\xE9cnica, dos controles e da preven\xE7\xE3o." }
+    ]
+  },
+  {
+    id: "q16",
+    tema: "Tratamento de erros e falhas",
+    pergunta: "Quando um erro ou falha acontece, a empresa espera que as pessoas:",
+    objetivo: "Avalia como a empresa espera que as pessoas reajam quando um erro acontece.",
+    alternativas: [
+      { id: "q16_D", dimensao: "D", texto: "Corrijam rapidamente e sigam em frente, focando no pr\xF3ximo resultado.", explicacao: "Mede a rea\xE7\xE3o de corre\xE7\xE3o r\xE1pida, seguindo em frente para o pr\xF3ximo resultado." },
+      { id: "q16_I", dimensao: "I", texto: "Conversem abertamente sobre o ocorrido, envolvendo quem for necess\xE1rio.", explicacao: "Mede a rea\xE7\xE3o de di\xE1logo aberto sobre o ocorrido, envolvendo quem for necess\xE1rio." },
+      { id: "q16_S", dimensao: "S", texto: "Tratem o erro com calma, sem gerar clima de culpa ou instabilidade.", explicacao: "Mede a rea\xE7\xE3o de calma, sem gerar clima de culpa ou instabilidade." },
+      { id: "q16_C", dimensao: "C", texto: "Investiguem a causa raiz e ajustem o processo para n\xE3o repetir.", explicacao: "Mede a rea\xE7\xE3o de investiga\xE7\xE3o da causa raiz para evitar repeti\xE7\xE3o." }
+    ]
+  },
+  {
+    id: "q17",
+    tema: "Aprendizado e desenvolvimento",
+    pergunta: "Sobre aprendizado e desenvolvimento das pessoas, a empresa espera que:",
+    objetivo: "Avalia como a empresa espera que o aprendizado das pessoas aconte\xE7a.",
+    alternativas: [
+      { id: "q17_D", dimensao: "D", texto: "O aprendizado esteja a servi\xE7o de metas e resultados concretos e r\xE1pidos.", explicacao: "Mede o aprendizado a servi\xE7o de metas e resultados concretos e r\xE1pidos." },
+      { id: "q17_I", dimensao: "I", texto: "As pessoas aprendam trocando experi\xEAncias e se inspirando umas nas outras.", explicacao: "Mede o aprendizado pela troca de experi\xEAncias entre pessoas." },
+      { id: "q17_S", dimensao: "S", texto: "O desenvolvimento seja constante, gradual e sem press\xE3o excessiva.", explicacao: "Mede o aprendizado como processo constante, gradual e sem press\xE3o excessiva." },
+      { id: "q17_C", dimensao: "C", texto: "O aprendizado siga trilhas estruturadas, com m\xE9todo e crit\xE9rios claros.", explicacao: "Mede o aprendizado como trilha estruturada, com m\xE9todo e crit\xE9rios." }
+    ]
+  },
+  {
+    id: "q18",
+    tema: "Colabora\xE7\xE3o entre \xE1reas",
+    pergunta: "Na colabora\xE7\xE3o entre diferentes \xE1reas da empresa, o esperado \xE9 que as pessoas:",
+    objetivo: "Avalia como a empresa espera que diferentes \xE1reas colaborem entre si.",
+    alternativas: [
+      { id: "q18_D", dimensao: "D", texto: "Ajam com foco no resultado do neg\xF3cio, mesmo que isso gere tens\xE3o pontual entre \xE1reas.", explicacao: "Mede a prioriza\xE7\xE3o do resultado do neg\xF3cio, mesmo com tens\xE3o pontual entre \xE1reas." },
+      { id: "q18_I", dimensao: "I", texto: "Construam pontes, negociem e mantenham boas rela\xE7\xF5es entre os times.", explicacao: "Mede a constru\xE7\xE3o de pontes e boas rela\xE7\xF5es entre os times." },
+      { id: "q18_S", dimensao: "S", texto: "Cooperem de forma est\xE1vel e continuada, sem gerar atritos.", explicacao: "Mede a coopera\xE7\xE3o est\xE1vel e continuada, sem gerar atritos." },
+      { id: "q18_C", dimensao: "C", texto: "Sigam processos claros de interface entre as \xE1reas, com pap\xE9is bem definidos.", explicacao: "Mede o uso de processos claros de interface entre as \xE1reas." }
+    ]
+  },
+  {
+    id: "q19",
+    tema: "Uso de dados e indicadores",
+    pergunta: "Sobre o uso de dados e indicadores, a empresa espera que as decis\xF5es sejam tomadas:",
+    objetivo: "Avalia como a empresa espera que as decis\xF5es usem dados e indicadores.",
+    alternativas: [
+      { id: "q19_D", dimensao: "D", texto: "Com base em dados, mas sem perder velocidade na hora de agir.", explicacao: "Mede o uso de dados sem perder velocidade na hora de agir." },
+      { id: "q19_I", dimensao: "I", texto: "Compartilhando os dados de forma que engajem e mobilizem as pessoas.", explicacao: "Mede o uso de dados de forma que engajem e mobilizem as pessoas." },
+      { id: "q19_S", dimensao: "S", texto: "De forma consistente, sem mudar de dire\xE7\xE3o com frequ\xEAncia.", explicacao: "Mede o uso de dados de forma consistente, sem mudar de dire\xE7\xE3o com frequ\xEAncia." },
+      { id: "q19_C", dimensao: "C", texto: "Com base rigorosa em dados, an\xE1lises e indicadores bem estruturados.", explicacao: "Mede o uso rigoroso de dados, an\xE1lises e indicadores estruturados." }
+    ]
+  },
+  {
+    id: "q20",
+    tema: "Diversidade e inclus\xE3o",
+    pergunta: "Em rela\xE7\xE3o \xE0 diversidade e inclus\xE3o, a empresa espera que as lideran\xE7as:",
+    objetivo: "Avalia como a empresa espera que as lideran\xE7as conduzam o tema de diversidade e inclus\xE3o.",
+    alternativas: [
+      { id: "q20_D", dimensao: "D", texto: "Tomem decis\xF5es objetivas para garantir avan\xE7o r\xE1pido do tema, com metas claras.", explicacao: "Mede a condu\xE7\xE3o por metas objetivas e avan\xE7o r\xE1pido do tema." },
+      { id: "q20_I", dimensao: "I", texto: "Promovam di\xE1logo, escuta e constru\xE7\xE3o conjunta em torno do tema.", explicacao: "Mede a condu\xE7\xE3o por di\xE1logo, escuta e constru\xE7\xE3o conjunta." },
+      { id: "q20_S", dimensao: "S", texto: "Criem um ambiente est\xE1vel, seguro e acolhedor para todas as pessoas.", explicacao: "Mede a condu\xE7\xE3o pela cria\xE7\xE3o de um ambiente est\xE1vel e acolhedor para todos." },
+      { id: "q20_C", dimensao: "C", texto: "Estruturem pol\xEDticas, crit\xE9rios e processos formais sobre o tema.", explicacao: "Mede a condu\xE7\xE3o por pol\xEDticas, crit\xE9rios e processos formais." }
+    ]
+  },
+  {
+    id: "q21",
+    tema: "Modelos de trabalho",
+    pergunta: "Sobre modelos de trabalho (presencial, remoto ou h\xEDbrido), a empresa espera que as pessoas:",
+    objetivo: "Avalia a expectativa da empresa sobre modelos de trabalho (presencial, remoto ou h\xEDbrido).",
+    alternativas: [
+      { id: "q21_D", dimensao: "D", texto: "Tenham liberdade para escolher o formato que gera mais resultado.", explicacao: "Mede a prefer\xEAncia pela liberdade de escolher o formato que gera mais resultado." },
+      { id: "q21_I", dimensao: "I", texto: "Mantenham conex\xE3o e boa comunica\xE7\xE3o, independentemente do formato.", explicacao: "Mede a prefer\xEAncia por manter conex\xE3o e comunica\xE7\xE3o, seja qual for o formato." },
+      { id: "q21_S", dimensao: "S", texto: "Tenham estabilidade e previsibilidade na rotina de trabalho.", explicacao: "Mede a prefer\xEAncia por estabilidade e previsibilidade na rotina." },
+      { id: "q21_C", dimensao: "C", texto: "Sigam regras e crit\xE9rios claros definidos para cada formato.", explicacao: "Mede a prefer\xEAncia por seguir regras e crit\xE9rios definidos para cada formato." }
+    ]
+  },
+  {
+    id: "q22",
+    tema: "\xC9tica e transpar\xEAncia",
+    pergunta: "Sobre \xE9tica e transpar\xEAncia, a empresa espera que as pessoas:",
+    objetivo: "Avalia o que a empresa espera das pessoas em rela\xE7\xE3o a \xE9tica e transpar\xEAncia.",
+    alternativas: [
+      { id: "q22_D", dimensao: "D", texto: "Ajam com integridade, mesmo que isso signifique decis\xF5es dif\xEDceis e r\xE1pidas.", explicacao: "Mede a integridade mesmo em decis\xF5es dif\xEDceis e r\xE1pidas." },
+      { id: "q22_I", dimensao: "I", texto: "Comuniquem de forma aberta e honesta, fortalecendo a confian\xE7a m\xFAtua.", explicacao: "Mede a comunica\xE7\xE3o aberta e honesta que fortalece a confian\xE7a m\xFAtua." },
+      { id: "q22_S", dimensao: "S", texto: "Mantenham consist\xEAncia e coer\xEAncia entre discurso e pr\xE1tica ao longo do tempo.", explicacao: "Mede a consist\xEAncia entre discurso e pr\xE1tica ao longo do tempo." },
+      { id: "q22_C", dimensao: "C", texto: "Sigam rigorosamente normas, pol\xEDticas e crit\xE9rios formais de conduta.", explicacao: "Mede o rigor no cumprimento de normas e crit\xE9rios formais de conduta." }
+    ]
+  },
+  {
+    id: "q23",
+    tema: "Cultura desejada",
+    pergunta: "A cultura desejada pela empresa deve ser reconhecida principalmente por:",
+    objetivo: "Avalia por qual caracter\xEDstica principal a empresa quer que sua cultura seja reconhecida.",
+    alternativas: [
+      { id: "q23_D", dimensao: "D", texto: "Alta performance e foco em resultados.", explicacao: "Mede o reconhecimento pela alta performance e foco em resultados." },
+      { id: "q23_I", dimensao: "I", texto: "Relacionamento, influ\xEAncia e entusiasmo das pessoas.", explicacao: "Mede o reconhecimento pelo relacionamento e entusiasmo das pessoas." },
+      { id: "q23_S", dimensao: "S", texto: "Coopera\xE7\xE3o, estabilidade e confian\xE7a m\xFAtua.", explicacao: "Mede o reconhecimento pela coopera\xE7\xE3o e confian\xE7a m\xFAtua." },
+      { id: "q23_C", dimensao: "C", texto: "Excel\xEAncia, organiza\xE7\xE3o e conformidade.", explicacao: "Mede o reconhecimento pela excel\xEAncia e conformidade." }
+    ]
+  },
+  {
+    id: "q24",
+    tema: "Integra\xE7\xE3o de novas pessoas",
+    pergunta: "Ao integrar uma nova pessoa na empresa, o mais importante \xE9 que ela:",
+    objetivo: "Avalia o que a empresa considera mais importante ao integrar uma nova pessoa.",
+    alternativas: [
+      { id: "q24_D", dimensao: "D", texto: "Comece a gerar resultado e assuma responsabilidades rapidamente.", explicacao: "Mede a prioridade de gerar resultado e assumir responsabilidades rapidamente." },
+      { id: "q24_I", dimensao: "I", texto: "Se conecte bem com o time e construa bons relacionamentos desde o in\xEDcio.", explicacao: "Mede a prioridade de se conectar bem com o time desde o in\xEDcio." },
+      { id: "q24_S", dimensao: "S", texto: "Se sinta acolhida e segura durante o processo de adapta\xE7\xE3o.", explicacao: "Mede a prioridade de se sentir acolhida e segura durante a adapta\xE7\xE3o." },
+      { id: "q24_C", dimensao: "C", texto: "Aprenda corretamente os processos, padr\xF5es e ferramentas da empresa.", explicacao: "Mede a prioridade de aprender corretamente processos e padr\xF5es." }
+    ]
+  }
+];
+var DISC360_CULTURE_TOTAL_PERGUNTAS = DISC360_CULTURE_QUESTIONS.length;
+
+// server/discCultureService.ts
+function calcularDiscCulturaEmpresa(respostas) {
+  const bruto = { D: 0, I: 0, S: 0, C: 0 };
+  for (const resposta of respostas) {
+    bruto[resposta.maisDimensao] += 1;
+    bruto[resposta.menosDimensao] -= 1;
+  }
+  const total = respostas.length || 1;
+  const scores = {
+    D: Math.round((bruto.D + total) / (2 * total) * 1e4) / 100,
+    I: Math.round((bruto.I + total) / (2 * total) * 1e4) / 100,
+    S: Math.round((bruto.S + total) / (2 * total) * 1e4) / 100,
+    C: Math.round((bruto.C + total) / (2 * total) * 1e4) / 100
+  };
+  const perfil = determinarPerfil(scores);
+  return {
+    scores,
+    perfilPredominante: perfil.predominante,
+    perfilSecundario: perfil.secundario,
+    perfilSugerido: perfil.sugerido,
+    totalRespondidas: respostas.length
+  };
+}
+var MINIMO_RESPONDENTES_OFICIAL = 5;
+var TEXTOS_CONCORDANCIA = {
+  alta: "Os respondentes apresentam percep\xE7\xF5es bastante alinhadas sobre a cultura da empresa, o que aumenta a confiabilidade do perfil resultante.",
+  media: "Os respondentes apresentam algumas diverg\xEAncias na percep\xE7\xE3o da cultura, o que \xE9 normal, mas vale revisar se h\xE1 grupos com vis\xF5es bem diferentes.",
+  baixa: "Os respondentes apresentam percep\xE7\xF5es bastante diferentes sobre a cultura da empresa. Recomenda-se revisar quem foi convidado a responder e, se poss\xEDvel, ampliar ou qualificar a amostra antes de validar o perfil oficial."
+};
+function calcularDiscEmpresaConsolidado(resultadosRespondentes) {
+  const totalRespondentes = resultadosRespondentes.length;
+  const dimensoes = ["D", "I", "S", "C"];
+  const scoresMedios = { D: 0, I: 0, S: 0, C: 0 };
+  if (totalRespondentes > 0) {
+    for (const dim of dimensoes) {
+      const soma = resultadosRespondentes.reduce((acc, r) => acc + r[dim], 0);
+      scoresMedios[dim] = Math.round(soma / totalRespondentes * 100) / 100;
+    }
+  }
+  const perfil = determinarPerfil(scoresMedios);
+  const { diferencaMedia, classificacao } = calcularIndiceConcordancia(resultadosRespondentes, scoresMedios);
+  const statusConsistencia = totalRespondentes >= MINIMO_RESPONDENTES_OFICIAL ? "suficiente" : "previa";
+  return {
+    scoresMedios,
+    perfilPredominante: perfil.predominante,
+    perfilSecundario: perfil.secundario,
+    perfilSugerido: perfil.sugerido,
+    totalRespondentes,
+    statusConsistencia,
+    indiceConcordancia: diferencaMedia,
+    classificacaoConcordancia: classificacao,
+    textoConcordancia: totalRespondentes < MINIMO_RESPONDENTES_OFICIAL ? "Resultado preliminar: apenas " + totalRespondentes + " de " + MINIMO_RESPONDENTES_OFICIAL + " respondentes recomendados ate agora. Ainda nao e possivel avaliar com confianca o grau de concordancia entre as percepcoes - aguarde mais respostas antes de validar o perfil oficial." : TEXTOS_CONCORDANCIA[classificacao]
+  };
+}
+function calcularPredominanciaPorTema(todasRespostas) {
+  const porPergunta = /* @__PURE__ */ new Map();
+  const totalPorPergunta = /* @__PURE__ */ new Map();
+  for (const resposta of todasRespostas) {
+    if (!porPergunta.has(resposta.questionId)) {
+      porPergunta.set(resposta.questionId, { D: 0, I: 0, S: 0, C: 0 });
+      totalPorPergunta.set(resposta.questionId, 0);
+    }
+    const contagem = porPergunta.get(resposta.questionId);
+    contagem[resposta.maisDimensao] += 1;
+    contagem[resposta.menosDimensao] -= 1;
+    totalPorPergunta.set(resposta.questionId, (totalPorPergunta.get(resposta.questionId) ?? 0) + 1);
+  }
+  const dimensoes = ["D", "I", "S", "C"];
+  const resultado = [];
+  for (const [questionId, contagem] of porPergunta.entries()) {
+    const totalRespostas = totalPorPergunta.get(questionId) ?? 0;
+    const maiorValor = Math.max(contagem.D, contagem.I, contagem.S, contagem.C);
+    const empatados = dimensoes.filter((dim) => contagem[dim] === maiorValor);
+    const eixoPredominante = empatados[0];
+    let classificacaoConsenso;
+    if (empatados.length > 1) {
+      classificacaoConsenso = "dividida";
+    } else if (totalRespostas > 0 && maiorValor === totalRespostas) {
+      classificacaoConsenso = "unanime";
+    } else {
+      classificacaoConsenso = "majoritaria";
+    }
+    resultado.push({
+      questionId,
+      contagem,
+      totalRespostas,
+      eixoPredominante,
+      classificacaoConsenso
+    });
+  }
+  return resultado.sort(
+    (a, b) => a.questionId.localeCompare(b.questionId, void 0, { numeric: true })
+  );
+}
+var TEXTOS_EIXO_FAIXA = {
+  D: [
+    {
+      min: 0,
+      max: 25,
+      texto: "A cultura da {{empresa}} tende a decidir de forma mais cautelosa, buscando validacao e ponderacao antes de agir, com menor confronto direto. Essa baixa intensidade nao significa ausencia de conducao: pode indicar uma forma de conduzir mais diplomatica e reguladora pela seguranca. O ponto de atencao e observar se essa cautela nao gera demora em decisoes que exigem urgencia."
+    },
+    {
+      min: 26,
+      max: 50,
+      texto: "A cultura da {{empresa}} parece equilibrar velocidade de decisao com ponderacao - nem tudo e decidido rapidamente, nem tudo passa por analise prolongada. Isso costuma permitir adaptar o ritmo conforme a urgencia real de cada situacao, embora possa gerar percepcao de ritmos diferentes entre areas."
+    },
+    {
+      min: 51,
+      max: 75,
+      texto: "A cultura da {{empresa}} tende a decidir com objetividade, buscar resultado e assumir responsabilidade diante de desafios, o que costuma acelerar entregas e fortalecer o senso de protagonismo. Vale cuidar da escuta antes de decisoes que afetam varias pessoas ou areas."
+    },
+    {
+      min: 76,
+      max: 100,
+      texto: "A cultura percebida e fortemente marcada por decisao rapida, foco em superacao de metas e disposicao para enfrentar problemas diretamente. Essa forca pode se tornar um ponto de atencao quando avanca sem escuta suficiente, gerando pressao excessiva, impaciencia com o ritmo alheio ou desgaste nas relacoes."
+    }
+  ],
+  I: [
+    {
+      min: 0,
+      max: 25,
+      texto: "A comunicacao na cultura da {{empresa}} tende a se expressar de forma mais objetiva, tecnica e reservada, com menor exposicao social. Isso nao indica ausencia de influencia: ela pode ocorrer pela consistencia, pela competencia tecnica e pela entrega, em vez do entusiasmo aberto. Vale observar se essa reserva nao esta gerando baixa mobilizacao em momentos de mudanca."
+    },
+    {
+      min: 26,
+      max: 50,
+      texto: "Ha um equilibrio entre objetividade e abertura na comunicacao da {{empresa}} - a cultura parece valorizar tanto o conteudo tecnico quanto alguma construcao de relacionamento, sem que um dos dois predomine amplamente."
+    },
+    {
+      min: 51,
+      max: 75,
+      texto: "A cultura da {{empresa}} tende a se comunicar de forma ativa, favorecer a construcao de vinculos e mobilizar as pessoas em torno de ideias, o que costuma fortalecer engajamento e integracao entre as equipes."
+    },
+    {
+      min: 76,
+      max: 100,
+      texto: "A comunicacao na cultura percebida aparece fortemente mobilizadora, entusiasmada e voltada a construcao de redes e relacoes. Esse traco tende a energizar o ambiente, mas em alta intensidade pode reduzir a objetividade, gerar dependencia de aprovacao social ou dificultar conversas sobre temas mais tecnicos ou impopulares."
+    }
+  ],
+  S: [
+    {
+      min: 0,
+      max: 25,
+      texto: "A cultura da {{empresa}} tende a priorizar mobilidade, agilidade e abertura a mudancas, com menor apego a rotinas fixas - o que pode ser uma forca em contextos de inovacao e urgencia. O ponto de atencao e observar se essa velocidade nao esta comprometendo a continuidade, a seguranca ou a cooperacao entre as pessoas."
+    },
+    {
+      min: 26,
+      max: 50,
+      texto: "Ha uma presenca moderada de estabilidade e cooperacao na cultura percebida. A {{empresa}} parece conseguir se adaptar a mudancas sem abrir mao de uma certa previsibilidade no dia a dia."
+    },
+    {
+      min: 51,
+      max: 75,
+      texto: "A cultura da {{empresa}} tende a valorizar continuidade e cooperacao, com trabalho em equipe constante, o que costuma gerar confianca e senso de pertencimento entre as pessoas."
+    },
+    {
+      min: 76,
+      max: 100,
+      texto: "A cultura percebida e fortemente estavel, paciente e cooperativa, o que tende a fortalecer a confianca e a continuidade das relacoes. O ponto de atencao e observar se essa solidez nao esta se transformando em resistencia a mudancas ou lentidao decisoria quando a situacao exige adaptacao rapida."
+    }
+  ],
+  C: [
+    {
+      min: 0,
+      max: 25,
+      texto: "A cultura da {{empresa}} tende a priorizar flexibilidade, improviso e menor dependencia de procedimentos formais, com a qualidade apoiada mais em julgamento pratico do que em regras escritas. O ponto de atencao e observar se essa flexibilidade preserva consistencia e rastreabilidade nos processos mais criticos."
+    },
+    {
+      min: 26,
+      max: 50,
+      texto: "Ha uma presenca moderada de estrutura e processo na cultura percebida. A {{empresa}} parece equilibrar flexibilidade com algum nivel de padronizacao, sem que a formalidade seja o traco dominante."
+    },
+    {
+      min: 51,
+      max: 75,
+      texto: "A cultura da {{empresa}} tende a valorizar processos, qualidade e conformidade a normas, o que costuma gerar consistencia e previsibilidade nas entregas."
+    },
+    {
+      min: 76,
+      max: 100,
+      texto: "A cultura percebida e fortemente estruturada, criteriosa e voltada a processos e normas, o que tende a garantir qualidade e consistencia. O ponto de atencao e observar se esse rigor nao esta gerando excesso de burocracia ou resistencia a solucoes fora do padrao."
+    }
+  ]
+};
+var NOTA_METODOLOGICA_DISC = "No DISC, os eixos D, I, S e C nao devem ser interpretados como notas de desempenho. Cada eixo representa uma tendencia comportamental que pode se manifestar em maior ou menor intensidade dentro da cultura da empresa. Tanto a alta quanto a baixa intensidade tem significado proprio e podem ser funcionais ou exigir atencao, dependendo do contexto, da estrategia e dos desafios da organizacao. Os percentuais representam a predominancia relativa dos eixos nas respostas dos participantes - nao medem qualidade, desempenho ou valor moral da empresa.";
+function obterTextoEixoFaixa(eixo, percentual, nomeEmpresa) {
+  const faixas = TEXTOS_EIXO_FAIXA[eixo];
+  const faixa = faixas.find((f) => percentual >= f.min && percentual <= f.max) ?? faixas[faixas.length - 1];
+  return faixa.texto.replace(/\{\{empresa\}\}/g, nomeEmpresa);
+}
+var LEITURAS_COMBINADAS = {
+  D_I: "A combinacao entre Dominancia e Influencia tende a gerar uma cultura de expansao, energia comercial e lideranca mobilizadora - decisoes rapidas aliadas a capacidade de engajar pessoas em torno delas. O ponto de atencao e observar se decisoes e promessas feitas com entusiasmo tem sustentacao operacional suficiente antes de serem comunicadas amplamente.",
+  D_C: "A combinacao entre Dominancia e Conformidade tende a gerar uma cultura de resultado com controle - metas claras cobradas com criterios e padroes definidos. O ponto de atencao e observar se a pressao por resultado e o rigor de processo nao se somam a ponto de gerar burocracia e tensao simultaneas.",
+  D_S: "A combinacao entre Dominancia e Estabilidade tende a gerar uma cultura que decide com objetividade sem abrir mao da continuidade e do cuidado com as relacoes - busca resultado sem perder a base de confianca construida. O ponto de atencao e observar se a necessidade de preservar estabilidade nao atrasa decisoes que exigem urgencia.",
+  I_S: "A combinacao entre Influencia e Estabilidade tende a gerar uma cultura de acolhimento, integracao e relacoes fortes, com bom clima interno. O ponto de atencao e observar se essa valorizacao do relacionamento nao dificulta conversas dificeis ou decisoes impopulares quando necessarias.",
+  I_C: "A combinacao entre Influencia e Conformidade tende a gerar uma cultura que busca unir comunicacao proxima com rigor tecnico e criterios claros - as pessoas se conectam, mas tambem valorizam precisao e metodo. O ponto de atencao e observar se a busca por controle nao reduz a espontaneidade da comunicacao, ou se o entusiasmo nao compromete o cuidado com dados e processos.",
+  S_C: "A combinacao entre Estabilidade e Conformidade tende a gerar uma cultura de seguranca, metodo e previsibilidade, com processos bem estabelecidos. O ponto de atencao e observar se essa solidez nao esta se transformando em conservadorismo ou resistencia a mudancas necessarias."
+};
+function obterLeituraCombinada(eixoA, eixoB) {
+  if (eixoA === eixoB) return null;
+  const ordem = ["D", "I", "S", "C"];
+  const [x, y] = [eixoA, eixoB].sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
+  return LEITURAS_COMBINADAS[`${x}_${y}`] ?? null;
+}
+var RECOMENDACOES_POR_PREDOMINANCIA = {
+  D: [
+    "Desenvolver praticas de feedback com escuta ativa antes de decisoes importantes.",
+    "Criar rituais de alinhamento e comunicacao antes de mudancas ou metas grandes.",
+    "Equilibrar indicadores de resultado com indicadores de clima e qualidade."
+  ],
+  I: [
+    "Transformar boas conversas e ideias em planos documentados, com donos e prazos definidos.",
+    "Fortalecer a disciplina de execucao e o acompanhamento das combinacoes feitas.",
+    "Desenvolver a lideranca para conversas objetivas sobre temas dificeis ou impopulares."
+  ],
+  S: [
+    "Criar seguranca psicologica para conduzir mudancas de forma gradual.",
+    "Definir prioridades e prazos claros para evitar acomodacao diante de urgencias.",
+    "Desenvolver liderancas para sustentar conversas dificeis quando necessario."
+  ],
+  C: [
+    "Revisar processos que possam estar travando a entrega ou a agilidade.",
+    "Comunicar com clareza o porque das regras, criterios e mudancas de processo.",
+    "Criar pilotos controlados para testar inovacoes sem abrir mao da qualidade."
+  ]
+};
+function obterRecomendacoesPorPredominancia(eixoPredominante) {
+  return RECOMENDACOES_POR_PREDOMINANCIA[eixoPredominante] ?? [];
+}
+
+// server/disc360Service.ts
+async function createAssessment(database, data) {
+  const result = await database.insert(discAssessments).values(data);
+  return result?.[0]?.insertId;
+}
+async function saveAssessmentAnswers(database, assessmentId, answers) {
+  if (!answers || answers.length === 0) return;
+  await database.insert(discAssessmentAnswers).values(
+    answers.map((answer) => ({ ...answer, assessmentId }))
+  );
+}
+async function getAssessmentById2(database, assessmentId) {
+  const [assessment] = await database.select().from(discAssessments).where(eq5(discAssessments.id, assessmentId)).limit(1);
+  return assessment ?? null;
+}
+async function getLatestEmployeeAssessment(database, alunoId, programId) {
+  const rows = await database.select().from(discAssessments).where(
+    and5(
+      eq5(discAssessments.alunoId, alunoId),
+      eq5(discAssessments.programId, programId),
+      eq5(discAssessments.assessmentType, "empregado"),
+      eq5(discAssessments.status, "concluido")
+    )
+  ).orderBy(desc3(discAssessments.completedAt)).limit(1);
+  return rows[0] ?? null;
+}
+async function createRoleProfile(database, data) {
+  const result = await database.insert(discRoleProfiles).values(data);
+  return result?.[0]?.insertId;
+}
+async function listRoleProfiles(database, programId) {
+  return database.select().from(discRoleProfiles).where(and5(eq5(discRoleProfiles.programId, programId), eq5(discRoleProfiles.isActive, 1))).orderBy(desc3(discRoleProfiles.createdAt));
+}
+async function getRoleProfileById(database, id) {
+  const rows = await database.select().from(discRoleProfiles).where(eq5(discRoleProfiles.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+async function createOrgProfile(database, data) {
+  const result = await database.insert(discOrgProfiles).values(data);
+  return result?.[0]?.insertId;
+}
+async function listOrgProfiles(database, programId, includeInactive = false) {
+  const condition = includeInactive ? eq5(discOrgProfiles.programId, programId) : and5(eq5(discOrgProfiles.programId, programId), eq5(discOrgProfiles.isActive, 1));
+  return database.select().from(discOrgProfiles).where(condition).orderBy(desc3(discOrgProfiles.createdAt));
+}
+async function getOrgProfileById(database, id) {
+  const rows = await database.select().from(discOrgProfiles).where(eq5(discOrgProfiles.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+async function updateOrgProfile(database, id, data) {
+  await database.update(discOrgProfiles).set(data).where(eq5(discOrgProfiles.id, id));
+  return getOrgProfileById(database, id);
+}
+async function calculateAndSaveMatch(database, input) {
+  const assessment = await getAssessmentById2(database, input.employeeAssessmentId);
+  if (!assessment || !assessment.scores) {
+    throw new Error("Aplicacao DISC do empregado nao encontrada ou sem scores calculados.");
+  }
+  const employeeScores = assessment.scores;
+  const roleProfile = input.cargoProfileId ? await getRoleProfileById(database, input.cargoProfileId) : null;
+  const orgProfile = input.orgProfileId ? await getOrgProfileById(database, input.orgProfileId) : null;
+  const roleScores = roleProfile?.expectedScores ?? null;
+  const orgScores = orgProfile?.expectedScores ?? null;
+  const result = calculateFullMatch(employeeScores, roleScores, orgScores);
+  const values = {
+    programId: input.programId,
+    alunoId: input.alunoId,
+    employeeAssessmentId: input.employeeAssessmentId,
+    cargoProfileId: input.cargoProfileId ?? null,
+    orgProfileId: input.orgProfileId ?? null,
+    matchEmployeeRole: result.matchEmployeeRole !== null ? String(result.matchEmployeeRole) : null,
+    matchEmployeeOrg: result.matchEmployeeOrg !== null ? String(result.matchEmployeeOrg) : null,
+    matchRoleOrg: result.matchRoleOrg !== null ? String(result.matchRoleOrg) : null,
+    matchOverall: result.matchOverall !== null ? String(result.matchOverall) : null,
+    classificationEmployeeRole: result.classificationEmployeeRole,
+    classificationEmployeeOrg: result.classificationEmployeeOrg,
+    classificationRoleOrg: result.classificationRoleOrg,
+    classificationOverall: result.classificationOverall,
+    strengths: result.strengths,
+    gaps: result.gaps,
+    risks: result.risks,
+    recommendations: result.recommendations,
+    calculatedAt: /* @__PURE__ */ new Date()
+  };
+  const insertId = await (async () => {
+    const res = await database.insert(discMatches).values(values);
+    return res?.[0]?.insertId;
+  })();
+  return { id: insertId, ...values };
+}
+async function listMatchesByAluno(database, alunoId) {
+  return database.select().from(discMatches).where(eq5(discMatches.alunoId, alunoId)).orderBy(desc3(discMatches.createdAt));
+}
+async function getManagementMatrix(database, programId) {
+  return database.select().from(discMatches).where(eq5(discMatches.programId, programId)).orderBy(desc3(discMatches.calculatedAt));
+}
+async function registerGeneratedReport(database, data) {
+  const result = await database.insert(discGeneratedReports).values(data);
+  return result?.[0]?.insertId;
+}
+async function submitCultureSurveyResponse(database, input) {
+  const resultado = calcularDiscCulturaEmpresa(input.respostas);
+  const assessmentId = await createAssessment(database, {
+    programId: input.programId,
+    orgProfileId: input.orgProfileId,
+    assessmentType: "empresa",
+    respondedByUserId: input.respondedByUserId ?? null,
+    respondentName: input.respondentName ?? null,
+    respondentEmail: input.respondentEmail ?? null,
+    status: "concluido",
+    scores: resultado.scores,
+    perfilPredominante: resultado.perfilPredominante,
+    perfilSecundario: resultado.perfilSecundario,
+    completedAt: /* @__PURE__ */ new Date()
+  });
+  if (input.respostas.length > 0) {
+    await database.insert(discCultureSurveyAnswers).values(
+      input.respostas.map((resposta) => ({
+        assessmentId,
+        questionId: resposta.questionId,
+        maisId: `${resposta.questionId}_${resposta.maisDimensao}`,
+        menosId: `${resposta.questionId}_${resposta.menosDimensao}`,
+        maisDimensao: resposta.maisDimensao,
+        menosDimensao: resposta.menosDimensao
+      }))
+    );
+  }
+  return { id: assessmentId, ...resultado };
+}
+async function listCultureAssessmentsByOrgProfile(database, orgProfileId) {
+  return database.select().from(discAssessments).where(
+    and5(
+      eq5(discAssessments.orgProfileId, orgProfileId),
+      eq5(discAssessments.assessmentType, "empresa"),
+      eq5(discAssessments.status, "concluido")
+    )
+  ).orderBy(desc3(discAssessments.completedAt));
+}
+async function getPredominanciaPorTema(database, orgProfileId) {
+  const assessments = await listCultureAssessmentsByOrgProfile(database, orgProfileId);
+  const assessmentIds = assessments.map((assessment) => assessment.id);
+  if (assessmentIds.length === 0) {
+    return [];
+  }
+  const respostas = await database.select().from(discCultureSurveyAnswers).where(inArray4(discCultureSurveyAnswers.assessmentId, assessmentIds));
+  const predominancias = calcularPredominanciaPorTema(
+    respostas.map((resposta) => ({
+      questionId: resposta.questionId,
+      maisDimensao: resposta.maisDimensao,
+      menosDimensao: resposta.menosDimensao
+    }))
+  );
+  const perguntasPorId = new Map(DISC360_CULTURE_QUESTIONS.map((pergunta) => [pergunta.id, pergunta]));
+  return predominancias.map((predominancia) => {
+    const pergunta = perguntasPorId.get(predominancia.questionId);
+    return {
+      ...predominancia,
+      tema: pergunta?.tema ?? null,
+      pergunta: pergunta?.pergunta ?? null
+    };
+  });
+}
+async function previewCultureConsolidation(database, orgProfileId) {
+  const assessments = await listCultureAssessmentsByOrgProfile(database, orgProfileId);
+  const scoresIndividuais = assessments.map((assessment) => assessment.scores).filter((scores) => !!scores);
+  return calcularDiscEmpresaConsolidado(scoresIndividuais);
+}
+async function getDashboardCultura(database, orgProfileId) {
+  const perfil = await getOrgProfileById(database, orgProfileId);
+  const programaRows = perfil ? await database.select().from(programs).where(eq5(programs.id, perfil.programId)).limit(1) : [];
+  const nomeEmpresa = programaRows[0]?.name ?? perfil?.profileName ?? "a empresa";
+  const consolidado = await previewCultureConsolidation(database, orgProfileId);
+  const predominanciaPorTema = await getPredominanciaPorTema(database, orgProfileId);
+  const dimensoes = ["D", "I", "S", "C"];
+  const textosPorEixo = Object.fromEntries(
+    dimensoes.map((eixo) => [
+      eixo,
+      {
+        percentual: consolidado.scoresMedios[eixo],
+        texto: obterTextoEixoFaixa(eixo, consolidado.scoresMedios[eixo], nomeEmpresa)
+      }
+    ])
+  );
+  const eixoPredominante = consolidado.perfilPredominante;
+  const eixoSecundario = consolidado.perfilSecundario;
+  const convitesCultura = await listarConvitesCulturaEmpresa(database, orgProfileId);
+  const convidados = convitesCultura.map((c) => ({
+    nome: c.respondentName,
+    status: c.status
+  }));
+  return {
+    nomeEmpresa,
+    convidados,
+    consolidado,
+    predominanciaPorTema,
+    textosPorEixo,
+    notaMetodologica: NOTA_METODOLOGICA_DISC,
+    leituraCombinada: obterLeituraCombinada(eixoPredominante, eixoSecundario),
+    recomendacoes: obterRecomendacoesPorPredominancia(eixoPredominante)
+  };
+}
+async function consolidateOrgProfileFromCulture(database, orgProfileId) {
+  const consolidado = await previewCultureConsolidation(database, orgProfileId);
+  await updateOrgProfile(database, orgProfileId, {
+    expectedScores: consolidado.scoresMedios,
+    perfilDesejado: consolidado.perfilSugerido,
+    origemPerfil: "questionario",
+    statusConsistencia: consolidado.statusConsistencia,
+    totalRespondentes: consolidado.totalRespondentes
+  });
+  return consolidado;
+}
+async function getLegacyDiscResultForAluno(database, alunoId) {
+  const rows = await database.select().from(discResultados).where(eq5(discResultados.alunoId, alunoId)).orderBy(desc3(discResultados.ciclo), desc3(discResultados.completedAt)).limit(1);
+  return rows[0] || null;
+}
+async function listDistinctCargosByProgram(database, programId) {
+  const rows = await database.selectDistinct({ cargo: alunos.cargo }).from(alunos).where(eq5(alunos.programId, programId));
+  return rows.map((r) => r.cargo).filter((c) => !!c && c.trim().length > 0).sort((a, b) => a.localeCompare(b));
+}
+async function searchAlunosForSelection(database, filters) {
+  const conditions = [eq5(alunos.programId, filters.programId)];
+  if (filters.departmentId) conditions.push(eq5(alunos.departmentId, filters.departmentId));
+  if (filters.cargo) conditions.push(eq5(alunos.cargo, filters.cargo));
+  return database.select({ id: alunos.id, name: alunos.name, email: alunos.email, cargo: alunos.cargo, departmentId: alunos.departmentId }).from(alunos).where(and5(...conditions)).orderBy(alunos.name);
+}
+async function addDiretoriaMembro(database, orgProfileId, alunoId) {
+  const existentes = await database.select().from(discDiretoriaMembros).where(
+    and5(
+      eq5(discDiretoriaMembros.orgProfileId, orgProfileId),
+      eq5(discDiretoriaMembros.alunoId, alunoId)
+    )
+  );
+  if (existentes.length > 0) return existentes[0];
+  await database.insert(discDiretoriaMembros).values({ orgProfileId, alunoId });
+  const inserted = await database.select().from(discDiretoriaMembros).where(
+    and5(
+      eq5(discDiretoriaMembros.orgProfileId, orgProfileId),
+      eq5(discDiretoriaMembros.alunoId, alunoId)
+    )
+  );
+  return inserted[0];
+}
+async function removeDiretoriaMembro(database, orgProfileId, alunoId) {
+  await database.delete(discDiretoriaMembros).where(
+    and5(
+      eq5(discDiretoriaMembros.orgProfileId, orgProfileId),
+      eq5(discDiretoriaMembros.alunoId, alunoId)
+    )
+  );
+}
+async function listDiretoriaMembrosComScores(database, orgProfileId) {
+  const membros = await database.select({ alunoId: discDiretoriaMembros.alunoId, nome: alunos.name }).from(discDiretoriaMembros).innerJoin(alunos, eq5(discDiretoriaMembros.alunoId, alunos.id)).where(eq5(discDiretoriaMembros.orgProfileId, orgProfileId));
+  const comScores = await Promise.all(
+    membros.map(async (m) => {
+      const resultado = await getLegacyDiscResultForAluno(database, m.alunoId);
+      return {
+        alunoId: m.alunoId,
+        nome: m.nome,
+        temDiscLegado: !!resultado,
+        scores: resultado ? {
+          D: Number(resultado.scoreD),
+          I: Number(resultado.scoreI),
+          S: Number(resultado.scoreS),
+          C: Number(resultado.scoreC)
+        } : null
+      };
+    })
+  );
+  return comScores;
+}
+async function previewDiretoriaConsolidacao(database, orgProfileId) {
+  const membros = await listDiretoriaMembrosComScores(database, orgProfileId);
+  const comDisc = membros.filter((m) => m.scores !== null).map((m) => ({ alunoId: m.alunoId, nome: m.nome, scores: m.scores }));
+  if (comDisc.length === 0) {
+    return {
+      totalMembros: membros.length,
+      totalComDisc: 0,
+      resultado: null
+    };
+  }
+  const resultado = calcularPerfilDiretoriaPorGrupo(comDisc);
+  return { totalMembros: membros.length, totalComDisc: comDisc.length, resultado };
+}
+async function consolidateDiretoriaFromGrupo(database, orgProfileId) {
+  const preview = await previewDiretoriaConsolidacao(database, orgProfileId);
+  if (!preview.resultado) {
+    throw new Error("Nenhum membro selecionado possui DISC individual (legado) registrado.");
+  }
+  await updateOrgProfile(database, orgProfileId, {
+    expectedScores: preview.resultado.scoresFinais,
+    perfilDesejado: preview.resultado.perfilSugerido,
+    origemPerfil: "grupo_diretores",
+    totalRespondentes: preview.totalComDisc
+  });
+  return preview;
+}
+async function criarConvitesCulturaEmpresa(database, input) {
+  const criados = [];
+  for (const convite of input.convites) {
+    const conviteToken = randomUUID();
+    const result = await database.insert(discAssessments).values({
+      programId: input.programId,
+      orgProfileId: input.orgProfileId,
+      alunoId: convite.alunoId ?? null,
+      assessmentType: "empresa",
+      status: "pendente",
+      respondentName: convite.respondentName,
+      respondentEmail: convite.respondentEmail ?? null,
+      conviteToken
+    });
+    const id = result?.[0]?.insertId;
+    let emailEnviado = false;
+    if (convite.respondentEmail) {
+      const link = "https://ecolider.ecodobem.com/disc360/responder-convite/" + conviteToken;
+      const nomeExibicao = convite.respondentName || "Colaborador(a)";
+      const envio = await sendEmail({
+        to: convite.respondentEmail,
+        subject: "Convite: Pesquisa de Cultura da Empresa",
+        html: "<p>Ola, " + nomeExibicao + '.</p><p>Voce foi convidado(a) a participar da pesquisa de cultura comportamental da empresa. Clique no link abaixo para responder (leva poucos minutos, sem necessidade de login):</p><p><a href="' + link + '">' + link + "</a></p>"
+      });
+      emailEnviado = !!envio?.success;
+    }
+    criados.push({ id, token: conviteToken, respondentName: convite.respondentName, emailEnviado });
+  }
+  return criados;
+}
+async function listarConvitesCulturaEmpresa(database, orgProfileId) {
+  return database.select().from(discAssessments).where(
+    and5(
+      eq5(discAssessments.orgProfileId, orgProfileId),
+      eq5(discAssessments.assessmentType, "empresa")
+    )
+  ).orderBy(desc3(discAssessments.createdAt));
+}
+async function getConvitePorToken(database, conviteToken) {
+  const rows = await database.select().from(discAssessments).where(eq5(discAssessments.conviteToken, conviteToken));
+  return rows[0] ?? null;
+}
+async function responderConviteCulturaEmpresa(database, input) {
+  const convite = await getConvitePorToken(database, input.token);
+  if (!convite) {
+    throw new Error("Convite nao encontrado.");
+  }
+  if (convite.status !== "pendente") {
+    throw new Error("Este convite ja foi respondido.");
+  }
+  const resultado = calcularDiscCulturaEmpresa(input.respostas);
+  await database.update(discAssessments).set({
+    status: "concluido",
+    scores: resultado.scores,
+    perfilPredominante: resultado.perfilPredominante,
+    perfilSecundario: resultado.perfilSecundario,
+    completedAt: /* @__PURE__ */ new Date()
+  }).where(eq5(discAssessments.id, convite.id));
+  if (input.respostas.length > 0) {
+    await database.insert(discCultureSurveyAnswers).values(
+      input.respostas.map((resposta) => ({
+        assessmentId: convite.id,
+        questionId: resposta.questionId,
+        maisId: `${resposta.questionId}_${resposta.maisDimensao}`,
+        menosId: `${resposta.questionId}_${resposta.menosDimensao}`,
+        maisDimensao: resposta.maisDimensao,
+        menosDimensao: resposta.menosDimensao
+      }))
+    );
+  }
+  return { id: convite.id, ...resultado };
+}
+async function updateRoleProfile(database, id, data) {
+  await database.update(discRoleProfiles).set(data).where(eq5(discRoleProfiles.id, id));
+  return getRoleProfileById(database, id);
+}
+async function criarConvitesCargoRole(database, input) {
+  const criados = [];
+  for (const convite of input.convites) {
+    const conviteToken = randomUUID();
+    const result = await database.insert(discAssessments).values({
+      programId: input.programId,
+      cargoProfileId: input.cargoProfileId,
+      assessmentType: "cargo",
+      status: "pendente",
+      papelRespondente: convite.papelRespondente,
+      respondentName: convite.respondentName,
+      respondentEmail: convite.respondentEmail ?? null,
+      conviteToken
+    });
+    const id = result?.[0]?.insertId;
+    let emailEnviado = false;
+    if (convite.respondentEmail) {
+      const link = "https://ecolider.ecodobem.com/disc360/responder-convite-cargo/" + conviteToken;
+      const nomeExibicao = convite.respondentName || "Colaborador(a)";
+      const envio = await sendEmail({
+        to: convite.respondentEmail,
+        subject: "Convite: Perfil DISC do Cargo",
+        html: "<p>Ola, " + nomeExibicao + '.</p><p>Voce foi convidado(a) a participar da identificacao do perfil comportamental esperado para um cargo. Clique no link abaixo para responder (leva poucos minutos, sem necessidade de login):</p><p><a href="' + link + '">' + link + "</a></p>"
+      });
+      emailEnviado = !!envio?.success;
+    }
+    criados.push({ id, token: conviteToken, papelRespondente: convite.papelRespondente, respondentName: convite.respondentName, emailEnviado });
+  }
+  return criados;
+}
+async function listarConvitesCargoRole(database, cargoProfileId) {
+  return database.select().from(discAssessments).where(
+    and5(
+      eq5(discAssessments.cargoProfileId, cargoProfileId),
+      eq5(discAssessments.assessmentType, "cargo")
+    )
+  ).orderBy(desc3(discAssessments.createdAt));
+}
+async function responderConviteCargoPorToken(database, input) {
+  const convite = await getConvitePorToken(database, input.token);
+  if (!convite) {
+    throw new Error("Convite nao encontrado.");
+  }
+  if (convite.status !== "pendente") {
+    throw new Error("Este convite ja foi respondido.");
+  }
+  const resultado = calcularDiscCargo(input.respostas);
+  const avaliacoesDivergencia = avaliarDivergenciaValidacao(resultado.scores, input.respostaValidacao);
+  await database.update(discAssessments).set({
+    status: "concluido",
+    scores: resultado.scores,
+    perfilPredominante: resultado.perfilPredominante,
+    perfilSecundario: resultado.perfilSecundario,
+    respostaValidacaoD: input.respostaValidacao.D,
+    respostaValidacaoI: input.respostaValidacao.I,
+    respostaValidacaoS: input.respostaValidacao.S,
+    respostaValidacaoC: input.respostaValidacao.C,
+    completedAt: /* @__PURE__ */ new Date()
+  }).where(eq5(discAssessments.id, convite.id));
+  if (input.respostas.length > 0) {
+    await database.insert(discRoleSurveyAnswers).values(
+      input.respostas.map((resposta) => ({
+        assessmentId: convite.id,
+        questionId: resposta.questionId,
+        maisId: `${resposta.questionId}_${resposta.maisDimensao}`,
+        menosId: `${resposta.questionId}_${resposta.menosDimensao}`,
+        maisDimensao: resposta.maisDimensao,
+        menosDimensao: resposta.menosDimensao
+      }))
+    );
+  }
+  return { id: convite.id, ...resultado, avaliacoesDivergencia };
+}
+async function previewCargoConsolidacao(database, cargoProfileId) {
+  const assessments = await database.select().from(discAssessments).where(
+    and5(
+      eq5(discAssessments.cargoProfileId, cargoProfileId),
+      eq5(discAssessments.assessmentType, "cargo"),
+      eq5(discAssessments.status, "concluido")
+    )
+  );
+  const respondentes = assessments.map((a) => {
+    const scores = a.scores || { D: 0, I: 0, S: 0, C: 0 };
+    const respostaValidacao = {
+      D: a.respostaValidacaoD ?? 0,
+      I: a.respostaValidacaoI ?? 0,
+      S: a.respostaValidacaoS ?? 0,
+      C: a.respostaValidacaoC ?? 0
+    };
+    const avaliacoesDivergencia = avaliarDivergenciaValidacao(scores, respostaValidacao);
+    return {
+      papelRespondente: a.papelRespondente,
+      respondentName: a.respondentName,
+      scores,
+      respostaValidacao,
+      avaliacoesDivergencia
+    };
+  });
+  const totalRespondentes = respondentes.length;
+  const scoresMedios = { D: 0, I: 0, S: 0, C: 0 };
+  if (totalRespondentes > 0) {
+    for (const r of respondentes) {
+      scoresMedios.D += r.scores.D;
+      scoresMedios.I += r.scores.I;
+      scoresMedios.S += r.scores.S;
+      scoresMedios.C += r.scores.C;
+    }
+    scoresMedios.D = Math.round(scoresMedios.D / totalRespondentes * 100) / 100;
+    scoresMedios.I = Math.round(scoresMedios.I / totalRespondentes * 100) / 100;
+    scoresMedios.S = Math.round(scoresMedios.S / totalRespondentes * 100) / 100;
+    scoresMedios.C = Math.round(scoresMedios.C / totalRespondentes * 100) / 100;
+  }
+  const perfil = determinarPerfil(scoresMedios);
+  const statusConsistencia = totalRespondentes >= 2 ? "suficiente" : "previa";
+  return {
+    respondentes,
+    totalRespondentes,
+    scoresMedios,
+    perfilPredominante: perfil.predominante,
+    perfilSecundario: perfil.secundario,
+    perfilSugerido: perfil.sugerido,
+    statusConsistencia
+  };
+}
+async function consolidateRoleProfile(database, cargoProfileId) {
+  const consolidado = await previewCargoConsolidacao(database, cargoProfileId);
+  await updateRoleProfile(database, cargoProfileId, {
+    expectedScores: consolidado.scoresMedios,
+    perfilEsperado: consolidado.perfilSugerido
+  });
+  return consolidado;
+}
+async function getDashboardCargo(database, cargoProfileId) {
+  const cargoProfile = await getRoleProfileById(database, cargoProfileId);
+  const consolidado = await previewCargoConsolidacao(database, cargoProfileId);
+  const dimensoes = ["D", "I", "S", "C"];
+  const textosPorEixo = Object.fromEntries(
+    dimensoes.map((eixo) => [
+      eixo,
+      {
+        percentual: consolidado.scoresMedios[eixo],
+        ...obterFaixaTextoCargo(eixo, consolidado.scoresMedios[eixo])
+      }
+    ])
+  );
+  return {
+    cargoProfile,
+    consolidado,
+    textosPorEixo
+  };
+}
+async function listAplicacoesDISC(database, programId) {
+  const alunosRows = await database.select({
+    id: alunos.id,
+    name: alunos.name,
+    email: alunos.email,
+    departmentId: alunos.departmentId,
+    cargo: alunos.cargo,
+    isActive: alunos.isActive,
+    canLogin: alunos.canLogin,
+    onboardingLiberado: alunos.onboardingLiberado,
+    discVideoWatchedAt: alunos.discVideoWatchedAt,
+    tipoPortal: alunos.tipoPortal,
+    processoSeletivoId: alunos.processoSeletivoId
+  }).from(alunos).where(eq5(alunos.programId, programId));
+  const alunoIds = alunosRows.map((a) => a.id);
+  if (alunoIds.length === 0) {
+    return [];
+  }
+  const pdiRows = await database.select({ alunoId: assessmentPdi.alunoId }).from(assessmentPdi).where(inArray4(assessmentPdi.alunoId, alunoIds));
+  const alunoIdsComPdi = new Set(pdiRows.map((r) => r.alunoId));
+  const discRows = await database.select().from(discResultados).where(inArray4(discResultados.alunoId, alunoIds)).orderBy(desc3(discResultados.ciclo), desc3(discResultados.completedAt));
+  const latestDiscByAluno = /* @__PURE__ */ new Map();
+  for (const row of discRows) {
+    if (!latestDiscByAluno.has(row.alunoId)) {
+      latestDiscByAluno.set(row.alunoId, row);
+    }
+  }
+  const competenciaRows = await database.select({ alunoId: autopercepcoesCompetencias.alunoId }).from(autopercepcoesCompetencias).where(inArray4(autopercepcoesCompetencias.alunoId, alunoIds));
+  const competenciaCountByAluno = /* @__PURE__ */ new Map();
+  for (const row of competenciaRows) {
+    competenciaCountByAluno.set(row.alunoId, (competenciaCountByAluno.get(row.alunoId) ?? 0) + 1);
+  }
+  const processoSeletivoIds = Array.from(
+    new Set(alunosRows.map((a) => a.processoSeletivoId).filter((id) => !!id))
+  );
+  const psNomeById = /* @__PURE__ */ new Map();
+  if (processoSeletivoIds.length > 0) {
+    const psRows = await database.select({ id: processosSeletivos.id, nome: processosSeletivos.nome }).from(processosSeletivos).where(inArray4(processosSeletivos.id, processoSeletivoIds));
+    for (const row of psRows) {
+      psNomeById.set(row.id, row.nome);
+    }
+  }
+  return alunosRows.map((a) => {
+    const disc = latestDiscByAluno.get(a.id) ?? null;
+    return {
+      ...a,
+      hasPdi: alunoIdsComPdi.has(a.id),
+      discConcluido: !!disc,
+      discPerfilPredominante: disc?.perfilPredominante ?? null,
+      discPerfilSecundario: disc?.perfilSecundario ?? null,
+      discScores: disc ? { D: disc.scoreD, I: disc.scoreI, S: disc.scoreS, C: disc.scoreC } : null,
+      discCompletedAt: disc?.completedAt ?? null,
+      competenciasRespondidas: competenciaCountByAluno.get(a.id) ?? 0,
+      processoSeletivoNome: a.processoSeletivoId ? psNomeById.get(a.processoSeletivoId) ?? null : null
+    };
+  });
+}
+async function getResultadoMatch(database, input) {
+  const cargoProfile = await getRoleProfileById(database, input.cargoProfileId);
+  if (!cargoProfile) {
+    throw new Error("Perfil DISC do Cargo nao encontrado.");
+  }
+  const cargoScores = cargoProfile.expectedScores ?? { D: 0, I: 0, S: 0, C: 0 };
+  const alunoIdsUnicos = Array.from(new Set(input.alunoIds)).slice(0, 10);
+  if (alunoIdsUnicos.length === 0) {
+    return { cargoProfile, cargoScores, pessoas: [] };
+  }
+  const alunosRows = await database.select({ id: alunos.id, name: alunos.name }).from(alunos).where(inArray4(alunos.id, alunoIdsUnicos));
+  const nomeById = new Map(alunosRows.map((a) => [a.id, a.name]));
+  const pessoas = await Promise.all(
+    alunoIdsUnicos.map(async (alunoId) => {
+      const nome = nomeById.get(alunoId) ?? "Colaborador " + alunoId;
+      const resultado = await getLegacyDiscResultForAluno(database, alunoId);
+      if (!resultado) {
+        return {
+          alunoId,
+          nome,
+          scores: null,
+          indiceMatch: null,
+          detalhePorIndicador: null,
+          identico: false,
+          justificativas: [],
+          semDiscConcluido: true
+        };
+      }
+      const scores = {
+        D: Number(resultado.scoreD),
+        I: Number(resultado.scoreI),
+        S: Number(resultado.scoreS),
+        C: Number(resultado.scoreC)
+      };
+      const { indiceMatch, detalhePorIndicador, identico } = calcularIndiceMatchCargo(scores, cargoScores);
+      const justificativas = buildJustificativasMatchCargo(scores, cargoScores);
+      return {
+        alunoId,
+        nome,
+        scores,
+        indiceMatch,
+        detalhePorIndicador,
+        identico,
+        justificativas,
+        semDiscConcluido: false
+      };
+    })
+  );
+  return { cargoProfile, cargoScores, pessoas };
+}
+
+// server/routers/disc360.ts
+var adminRoles2 = /* @__PURE__ */ new Set(["admin", "admin2"]);
+var isAdmin = (role) => adminRoles2.has(role ?? "");
+var isManagerOrAdmin = (role) => isAdmin(role) || role === "manager";
+var requireDatabase2 = async () => {
+  const database = await getDb();
+  if (!database) {
+    throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+  }
+  return database;
+};
+var discScoresSchema = z6.object({
+  D: z6.number(),
+  I: z6.number(),
+  S: z6.number(),
+  C: z6.number()
+});
+var discDimensionEnum = z6.enum(["D", "I", "S", "C"]);
+var intensidadeEnum = z6.enum(["baixo", "medio", "alto"]);
+var intensidadeFemininaEnum = z6.enum(["baixa", "media", "alta"]);
+var disc360Router = router({
+  // ---------------------------------------------------------------------
+  // Perfis de Cargo (DISC do Cargo)
+  // ---------------------------------------------------------------------
+  createRoleProfile: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      departmentId: z6.number().nullable().optional(),
+      cargoNome: z6.string().min(1),
+      cargoCodigo: z6.string().nullable().optional(),
+      leaderUserId: z6.number().nullable().optional(),
+      expectedScores: discScoresSchema,
+      perfilEsperado: z6.string().nullable().optional(),
+      nivelAutonomia: intensidadeEnum.nullable().optional(),
+      nivelPressao: intensidadeEnum.nullable().optional(),
+      necessidadeRelacionamento: intensidadeFemininaEnum.nullable().optional(),
+      necessidadeAnaliseTecnica: intensidadeFemininaEnum.nullable().optional(),
+      necessidadeRotinaProcesso: intensidadeFemininaEnum.nullable().optional(),
+      descricao: z6.string().nullable().optional()
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({
+        code: "FORBIDDEN",
+        message: "Apenas lideres, gestores ou administradores podem cadastrar o DISC do cargo."
+      });
+    }
+    const database = await requireDatabase2();
+    const insertId = await createRoleProfile(database, {
+      ...input,
+      createdByUserId: ctx2?.user?.id ?? null
+    });
+    return { id: insertId };
+  }),
+  listRoleProfiles: protectedProcedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return listRoleProfiles(database, input.programId);
+  }),
+  getRoleProfileById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return getRoleProfileById(database, input.id);
+  }),
+  updateRoleProfile: protectedProcedure.input(
+    z6.object({
+      id: z6.number(),
+      departmentId: z6.number().nullable().optional(),
+      cargoNome: z6.string().min(1).optional(),
+      cargoCodigo: z6.string().nullable().optional(),
+      leaderUserId: z6.number().nullable().optional(),
+      expectedScores: discScoresSchema.optional(),
+      perfilEsperado: z6.string().nullable().optional(),
+      nivelAutonomia: intensidadeEnum.nullable().optional(),
+      nivelPressao: intensidadeEnum.nullable().optional(),
+      necessidadeRelacionamento: intensidadeFemininaEnum.nullable().optional(),
+      necessidadeAnaliseTecnica: intensidadeFemininaEnum.nullable().optional(),
+      necessidadeRotinaProcesso: intensidadeFemininaEnum.nullable().optional(),
+      descricao: z6.string().nullable().optional()
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({
+        code: "FORBIDDEN",
+        message: "Apenas lideres, gestores ou administradores podem editar o DISC do cargo."
+      });
+    }
+    const { id, ...data } = input;
+    const database = await requireDatabase2();
+    return updateRoleProfile(database, id, data);
+  }),
+  criarConvitesCargoRole: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      cargoProfileId: z6.number(),
+      convites: z6.array(
+        z6.object({
+          papelRespondente: z6.enum(["lider", "empregado"]),
+          respondentName: z6.string().min(1),
+          respondentEmail: z6.string().email().nullable().optional()
+        })
+      )
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({
+        code: "FORBIDDEN",
+        message: "Apenas lideres, gestores ou administradores podem criar convites do Perfil do Cargo."
+      });
+    }
+    const database = await requireDatabase2();
+    return criarConvitesCargoRole(database, input);
+  }),
+  listarConvitesCargoRole: protectedProcedure.input(z6.object({ cargoProfileId: z6.number() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return listarConvitesCargoRole(database, input.cargoProfileId);
+  }),
+  getRoleQuestions: protectedProcedure.query(() => ({
+    perguntas: DISC360_ROLE_QUESTIONS,
+    perguntasValidacao: DISC360_ROLE_VALIDACAO_QUESTIONS
+  })),
+  getConviteCargoPorToken: publicProcedure.input(z6.object({ token: z6.string() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    const convite = await getConvitePorToken(database, input.token);
+    if (!convite) {
+      throw new TRPCError6({ code: "NOT_FOUND", message: "Convite nao encontrado." });
+    }
+    return {
+      respondentName: convite.respondentName,
+      papelRespondente: convite.papelRespondente,
+      status: convite.status,
+      perguntas: DISC360_ROLE_QUESTIONS,
+      perguntasValidacao: DISC360_ROLE_VALIDACAO_QUESTIONS
+    };
+  }),
+  responderConviteCargoPorToken: publicProcedure.input(
+    z6.object({
+      token: z6.string(),
+      respostas: z6.array(
+        z6.object({
+          questionId: z6.string(),
+          maisDimensao: discDimensionEnum,
+          menosDimensao: discDimensionEnum
+        })
+      ),
+      respostaValidacao: z6.object({
+        D: z6.number().min(0).max(100),
+        I: z6.number().min(0).max(100),
+        S: z6.number().min(0).max(100),
+        C: z6.number().min(0).max(100)
+      })
+    })
+  ).mutation(async ({ input }) => {
+    const database = await requireDatabase2();
+    return responderConviteCargoPorToken(database, input);
+  }),
+  previewCargoConsolidacao: protectedProcedure.input(z6.object({ cargoProfileId: z6.number() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return previewCargoConsolidacao(database, input.cargoProfileId);
+  }),
+  getDashboardCargo: protectedProcedure.input(z6.object({ cargoProfileId: z6.number() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return getDashboardCargo(database, input.cargoProfileId);
+  }),
+  getResultadoMatch: protectedProcedure.input(
+    z6.object({
+      cargoProfileId: z6.number(),
+      alunoIds: z6.array(z6.number()).min(1).max(10)
+    })
+  ).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return getResultadoMatch(database, input);
+  }),
+  listAplicacoesDISC: protectedProcedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return listAplicacoesDISC(database, input.programId);
+  }),
+  consolidateRoleProfile: protectedProcedure.input(z6.object({ cargoProfileId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({
+        code: "FORBIDDEN",
+        message: "Apenas lideres, gestores ou administradores podem consolidar o Perfil do Cargo."
+      });
+    }
+    const database = await requireDatabase2();
+    return consolidateRoleProfile(database, input.cargoProfileId);
+  }),
+  // ---------------------------------------------------------------------
+  // Perfis de Empresa/Diretoria (DISC da Empresa/Diretoria)
+  // ---------------------------------------------------------------------
+  createOrgProfile: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      departmentId: z6.number().nullable().optional(),
+      profileType: z6.enum(["empresa", "diretoria"]),
+      profileName: z6.string().min(1),
+      expectedScores: discScoresSchema.optional(),
+      perfilDesejado: z6.string().nullable().optional(),
+      culturalDescription: z6.string().nullable().optional(),
+      competenciasValorizadas: z6.array(z6.string()).nullable().optional(),
+      validFrom: z6.string().nullable().optional(),
+      validTo: z6.string().nullable().optional()
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({
+        code: "FORBIDDEN",
+        message: "Apenas administradores podem cadastrar o DISC da empresa/diretoria."
+      });
+    }
+    const database = await requireDatabase2();
+    const insertId = await createOrgProfile(database, {
+      ...input,
+      expectedScores: input.expectedScores ?? { D: 0, I: 0, S: 0, C: 0 },
+      origemPerfil: input.expectedScores ? "manual" : "questionario",
+      approvedByUserId: ctx2?.user?.id ?? null
+    });
+    return { id: insertId };
+  }),
+  listOrgProfiles: protectedProcedure.input(z6.object({ programId: z6.number(), includeInactive: z6.boolean().optional() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return listOrgProfiles(database, input.programId, input.includeInactive ?? false);
+  }),
+  // ---------------------------------------------------------------------
+  // Questionario de Cultura Comportamental da Empresa
+  // ---------------------------------------------------------------------
+  getCultureQuestions: protectedProcedure.query(() => DISC360_CULTURE_QUESTIONS),
+  submitCultureSurveyResponse: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      orgProfileId: z6.number(),
+      respostas: z6.array(
+        z6.object({
+          questionId: z6.string(),
+          maisDimensao: discDimensionEnum,
+          menosDimensao: discDimensionEnum
+        })
+      ),
+      respondentName: z6.string().nullable().optional(),
+      respondentEmail: z6.string().nullable().optional()
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase2();
+    return submitCultureSurveyResponse(database, {
+      ...input,
+      respondedByUserId: ctx2?.user?.id ?? null
+    });
+  }),
+  listCultureAssessments: protectedProcedure.input(z6.object({ orgProfileId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return listCultureAssessmentsByOrgProfile(database, input.orgProfileId);
+  }),
+  previewCultureConsolidation: protectedProcedure.input(z6.object({ orgProfileId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return previewCultureConsolidation(database, input.orgProfileId);
+  }),
+  getDashboardCultura: protectedProcedure.input(z6.object({ orgProfileId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return getDashboardCultura(database, input.orgProfileId);
+  }),
+  consolidateOrgProfileFromCulture: protectedProcedure.input(z6.object({ orgProfileId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Apenas administradores podem validar o Perfil DISC oficial da empresa." });
+    }
+    const database = await requireDatabase2();
+    return consolidateOrgProfileFromCulture(database, input.orgProfileId);
+  }),
+  getLegacyDiscResult: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return getLegacyDiscResultForAluno(database, input.alunoId);
+  }),
+  listDistinctCargos: protectedProcedure.input(z6.object({ programId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return listDistinctCargosByProgram(database, input.programId);
+  }),
+  searchAlunosForSelection: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      departmentId: z6.number().optional(),
+      cargo: z6.string().optional()
+    })
+  ).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return searchAlunosForSelection(database, input);
+  }),
+  addDiretoriaMembro: protectedProcedure.input(z6.object({ orgProfileId: z6.number(), alunoId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return addDiretoriaMembro(database, input.orgProfileId, input.alunoId);
+  }),
+  removeDiretoriaMembro: protectedProcedure.input(z6.object({ orgProfileId: z6.number(), alunoId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    await removeDiretoriaMembro(database, input.orgProfileId, input.alunoId);
+    return { success: true };
+  }),
+  listDiretoriaMembros: protectedProcedure.input(z6.object({ orgProfileId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return listDiretoriaMembrosComScores(database, input.orgProfileId);
+  }),
+  previewDiretoriaConsolidacao: protectedProcedure.input(z6.object({ orgProfileId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return previewDiretoriaConsolidacao(database, input.orgProfileId);
+  }),
+  consolidateDiretoriaFromGrupo: protectedProcedure.input(z6.object({ orgProfileId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Apenas administradores podem validar o Perfil DISC da Diretoria." });
+    }
+    const database = await requireDatabase2();
+    return consolidateDiretoriaFromGrupo(database, input.orgProfileId);
+  }),
+  updateOrgProfile: protectedProcedure.input(
+    z6.object({
+      id: z6.number(),
+      profileType: z6.enum(["empresa", "diretoria"]).optional(),
+      profileName: z6.string().min(1).optional(),
+      expectedScores: discScoresSchema.optional(),
+      perfilDesejado: z6.string().nullable().optional(),
+      culturalDescription: z6.string().nullable().optional(),
+      competenciasValorizadas: z6.array(z6.string()).nullable().optional(),
+      validFrom: z6.string().nullable().optional(),
+      validTo: z6.string().nullable().optional(),
+      isActive: z6.boolean().optional()
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({
+        code: "FORBIDDEN",
+        message: "Apenas administradores podem editar o DISC da empresa/diretoria."
+      });
+    }
+    const { id, isActive, ...rest } = input;
+    const database = await requireDatabase2();
+    const updateData = { ...rest };
+    if (isActive !== void 0) {
+      updateData.isActive = isActive ? 1 : 0;
+    }
+    return updateOrgProfile(database, id, updateData);
+  }),
+  // ---------------------------------------------------------------------
+  // DISC do Empregado
+  // ---------------------------------------------------------------------
+  getEmployeeAssessment: protectedProcedure.input(z6.object({ alunoId: z6.number(), programId: z6.number() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return getLatestEmployeeAssessment(database, input.alunoId, input.programId);
+  }),
+  createEmployeeAssessment: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      alunoId: z6.number(),
+      scores: discScoresSchema,
+      rawScores: z6.record(z6.number()).nullable().optional(),
+      perfilPredominante: discDimensionEnum.nullable().optional(),
+      perfilSecundario: discDimensionEnum.nullable().optional(),
+      indiceConsistencia: z6.number().nullable().optional(),
+      alertaBaixaDiferenciacao: z6.boolean().optional(),
+      answers: z6.array(
+        z6.object({
+          blocoIndex: z6.number(),
+          maisId: z6.string(),
+          menosId: z6.string(),
+          maisDimensao: discDimensionEnum,
+          menosDimensao: discDimensionEnum
+        })
+      ).optional()
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    const { answers, ...assessmentData } = input;
+    const database = await requireDatabase2();
+    const insertId = await createAssessment(database, {
+      ...assessmentData,
+      assessmentType: "empregado",
+      respondedByUserId: ctx2?.user?.id ?? null,
+      status: "concluido",
+      completedAt: /* @__PURE__ */ new Date()
+    });
+    if (answers && answers.length > 0) {
+      await saveAssessmentAnswers(database, insertId, answers);
+    }
+    return { id: insertId };
+  }),
+  // ---------------------------------------------------------------------
+  // Matches (calculo de aderencia)
+  // ---------------------------------------------------------------------
+  calculateMatch: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      alunoId: z6.number(),
+      employeeAssessmentId: z6.number(),
+      cargoProfileId: z6.number().nullable().optional(),
+      orgProfileId: z6.number().nullable().optional()
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({
+        code: "FORBIDDEN",
+        message: "Apenas lideres, gestores ou administradores podem calcular matches."
+      });
+    }
+    const database = await requireDatabase2();
+    return calculateAndSaveMatch(database, input);
+  }),
+  listMyMatches: protectedProcedure.query(async ({ ctx: ctx2 }) => {
+    const alunoId = ctx2?.user?.alunoId;
+    if (!alunoId) {
+      throw new TRPCError6({
+        code: "BAD_REQUEST",
+        message: "Usuario nao esta vinculado a um perfil de colaborador."
+      });
+    }
+    const database = await requireDatabase2();
+    return listMatchesByAluno(database, alunoId);
+  }),
+  listMatchesByAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return listMatchesByAluno(database, input.alunoId);
+  }),
+  // ---------------------------------------------------------------------
+  // Matriz gerencial
+  // ---------------------------------------------------------------------
+  getManagementMatrix: protectedProcedure.input(z6.object({ programId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    if (!isManagerOrAdmin(ctx2?.user?.role)) {
+      throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
+    }
+    const database = await requireDatabase2();
+    return getManagementMatrix(database, input.programId);
+  }),
+  // ---------------------------------------------------------------------
+  // Relatorios gerados (controle/rastreabilidade)
+  // ---------------------------------------------------------------------
+  registerGeneratedReport: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      alunoId: z6.number().nullable().optional(),
+      departmentId: z6.number().nullable().optional(),
+      assessmentId: z6.number().nullable().optional(),
+      matchId: z6.number().nullable().optional(),
+      reportType: z6.enum([
+        "individual",
+        "cargo",
+        "empresa",
+        "diretoria",
+        "match",
+        "integrado",
+        "gerencial",
+        "matriz"
+      ]),
+      fileUrl: z6.string().nullable().optional(),
+      version: z6.string().nullable().optional()
+    })
+  ).mutation(async ({ ctx: ctx2, input }) => {
+    const database = await requireDatabase2();
+    const insertId = await registerGeneratedReport(database, {
+      ...input,
+      generatedByUserId: ctx2?.user?.id ?? null,
+      generatedAt: /* @__PURE__ */ new Date(),
+      status: "ativo"
+    });
+    return { id: insertId };
+  }),
+  // -------------------------------------------------------------------
+  // Convite de respondentes - Perfil DISC da Empresa (link sem login)
+  // -------------------------------------------------------------------
+  criarConvitesCulturaEmpresa: protectedProcedure.input(
+    z6.object({
+      programId: z6.number(),
+      orgProfileId: z6.number(),
+      convites: z6.array(
+        z6.object({
+          alunoId: z6.number().nullable().optional(),
+          respondentName: z6.string().min(1),
+          respondentEmail: z6.string().nullable().optional()
+        })
+      ).min(1)
+    })
+  ).mutation(async ({ input }) => {
+    const database = await requireDatabase2();
+    return criarConvitesCulturaEmpresa(database, input);
+  }),
+  listarConvitesCulturaEmpresa: protectedProcedure.input(z6.object({ orgProfileId: z6.number() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    return listarConvitesCulturaEmpresa(database, input.orgProfileId);
+  }),
+  getConvitePorToken: publicProcedure.input(z6.object({ token: z6.string() })).query(async ({ input }) => {
+    const database = await requireDatabase2();
+    const convite = await getConvitePorToken(database, input.token);
+    if (!convite) {
+      throw new TRPCError6({ code: "NOT_FOUND", message: "Convite nao encontrado." });
+    }
+    return {
+      respondentName: convite.respondentName,
+      status: convite.status,
+      perguntas: DISC360_CULTURE_QUESTIONS
+    };
+  }),
+  responderConvitePorToken: publicProcedure.input(
+    z6.object({
+      token: z6.string(),
+      respostas: z6.array(
+        z6.object({
+          questionId: z6.string(),
+          maisDimensao: discDimensionEnum,
+          menosDimensao: discDimensionEnum
+        })
+      )
+    })
+  ).mutation(async ({ input }) => {
+    const database = await requireDatabase2();
+    return responderConviteCulturaEmpresa(database, input);
   })
 });
 
@@ -20358,7 +24880,7 @@ function validateSpreadsheet(data, expectedType) {
 
 // server/financialCalculatorV2.ts
 init_schema();
-import { eq as eq5 } from "drizzle-orm";
+import { eq as eq6 } from "drizzle-orm";
 function findBestPricingRule(rules, consultorId, programId, tipoSessao, sessionDate) {
   const applicable = rules.filter((r) => {
     if (!r.isActive) return false;
@@ -20399,7 +24921,7 @@ async function getRelatorioFinanceiroV2(db2, dateFrom, dateTo) {
     valorSessaoPadrao: consultors.valorSessao,
     alunoNome: alunos.name,
     programId: alunos.programId
-  }).from(mentoringSessions).leftJoin(consultors, eq5(mentoringSessions.consultorId, consultors.id)).leftJoin(alunos, eq5(mentoringSessions.alunoId, alunos.id));
+  }).from(mentoringSessions).leftJoin(consultors, eq6(mentoringSessions.consultorId, consultors.id)).leftJoin(alunos, eq6(mentoringSessions.alunoId, alunos.id)).where(eq6(mentoringSessions.cancelada, 0));
   let filtered = sessions;
   if (dateFrom) {
     const from = new Date(dateFrom);
@@ -20434,11 +24956,14 @@ async function getRelatorioFinanceiroV2(db2, dateFrom, dateTo) {
   for (const s of filtered) {
     if (!s.consultorId) continue;
     const valorPadrao = s.valorSessaoPadrao ? Number(s.valorSessaoPadrao) : 0;
-    const tipoSessao = s.tipoSessao || "individual_normal";
+    const tipoSessaoSalvo = s.tipoSessao || "individual_normal";
     const programId = s.programId || null;
     const programNome = programId ? programMap.get(programId)?.name || "N/A" : "N/A";
     const appointment = s.appointmentId ? appointmentMap.get(s.appointmentId) : null;
-    const isGrupal = tipoSessao === "grupo_normal" || tipoSessao === "grupo_assessment" || appointment?.type === "grupo";
+    const isGrupal = tipoSessaoSalvo === "grupo_normal" || tipoSessaoSalvo === "grupo_assessment" || appointment?.type === "grupo";
+    let tipoSessao = tipoSessaoSalvo;
+    if (isGrupal && tipoSessaoSalvo === "individual_normal") tipoSessao = "grupo_normal";
+    if (isGrupal && tipoSessaoSalvo === "individual_assessment") tipoSessao = "grupo_assessment";
     const isPendente = !s.appointmentId;
     const alertas = [];
     if (!byMentor[s.consultorId]) {
@@ -20628,7 +25153,7 @@ async function getSessionTypePricingRules(db2) {
     updatedAt: mentorSessionTypePricing.updatedAt,
     consultorNome: consultors.name,
     programNome: programs.name
-  }).from(mentorSessionTypePricing).leftJoin(consultors, eq5(mentorSessionTypePricing.consultorId, consultors.id)).leftJoin(programs, eq5(mentorSessionTypePricing.programId, programs.id)).orderBy(mentorSessionTypePricing.consultorId, mentorSessionTypePricing.programId, mentorSessionTypePricing.tipoSessao);
+  }).from(mentorSessionTypePricing).leftJoin(consultors, eq6(mentorSessionTypePricing.consultorId, consultors.id)).leftJoin(programs, eq6(mentorSessionTypePricing.programId, programs.id)).orderBy(mentorSessionTypePricing.consultorId, mentorSessionTypePricing.programId, mentorSessionTypePricing.tipoSessao);
 }
 async function createSessionTypePricingRule(db2, input) {
   const result = await db2.insert(mentorSessionTypePricing).values({
@@ -20654,10 +25179,10 @@ async function updateSessionTypePricingRule(db2, id, input) {
   if (input.validoDesde !== void 0) updateData.validoDesde = input.validoDesde;
   if (input.validoAte !== void 0) updateData.validoAte = input.validoAte;
   if (input.isActive !== void 0) updateData.isActive = input.isActive;
-  await db2.update(mentorSessionTypePricing).set(updateData).where(eq5(mentorSessionTypePricing.id, id));
+  await db2.update(mentorSessionTypePricing).set(updateData).where(eq6(mentorSessionTypePricing.id, id));
 }
 async function deleteSessionTypePricingRule(db2, id) {
-  await db2.update(mentorSessionTypePricing).set({ isActive: 0 }).where(eq5(mentorSessionTypePricing.id, id));
+  await db2.update(mentorSessionTypePricing).set({ isActive: 0 }).where(eq6(mentorSessionTypePricing.id, id));
 }
 
 // server/routers.ts
@@ -20674,14 +25199,16 @@ var CC_DESTINATARIOS = [
   "dina@makiyama.com.br",
   "relacionamento@ckmtalents.net"
 ];
-function calcularPeriodoPadrao() {
+function calcularPeriodoPadrao(tipo = "previa") {
   const hoje = /* @__PURE__ */ new Date();
   const anoAtual = hoje.getFullYear();
   const mesAtual = hoje.getMonth();
-  const fim = new Date(anoAtual, mesAtual, 25);
-  const inicio = new Date(anoAtual, mesAtual - 1, 25);
+  const inicio = new Date(anoAtual, mesAtual, 1);
+  const diaFim = 30;
+  const fim = new Date(anoAtual, mesAtual, diaFim);
+  const pagamento = new Date(anoAtual, mesAtual + 1, 10);
   const toISO = (d) => d.toISOString().slice(0, 10);
-  return { inicio: toISO(inicio), fim: toISO(fim) };
+  return { inicio: toISO(inicio), fim: toISO(fim), dataPagamento: toISO(pagamento) };
 }
 function formatDateBR(dateStr) {
   const parts = dateStr.split("-");
@@ -20703,13 +25230,18 @@ async function gerarEEnviarRelatorioMentorias(tipo, dateFrom, dateTo, mentorIdsF
   }
   let periodoInicio;
   let periodoFim;
+  let dataPagamento;
   if (dateFrom && dateTo) {
     periodoInicio = dateFrom;
     periodoFim = dateTo;
+    const fimDate = new Date(dateTo);
+    const pagDate = new Date(fimDate.getFullYear(), fimDate.getMonth() + 1, 10);
+    dataPagamento = pagDate.toISOString().slice(0, 10);
   } else {
-    const periodo = calcularPeriodoPadrao();
+    const periodo = calcularPeriodoPadrao(tipo);
     periodoInicio = periodo.inicio;
     periodoFim = periodo.fim;
+    dataPagamento = periodo.dataPagamento;
   }
   const isFinal = tipo === "definitivo";
   const periodoInicioFmt = formatDateBR(periodoInicio);
@@ -20778,6 +25310,7 @@ async function gerarEEnviarRelatorioMentorias(tipo, dateFrom, dateTo, mentorIdsF
           mentoraNome: mentor.consultorNome,
           periodoInicio: periodoInicioFmt,
           periodoFim: periodoFimFmt,
+          dataPagamento: formatDateBR(dataPagamento),
           isFinal,
           sessoes: sessoesRealizadas,
           agendadosSemRegistro,
@@ -20998,19 +25531,19 @@ function montarResumoTempo(atividade, progresso) {
 }
 var adminProcedure3 = protectedProcedure.use(({ ctx: ctx2, next }) => {
   if (ctx2.user.role !== "admin") {
-    throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
+    throw new TRPCError7({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
   }
   return next({ ctx: ctx2 });
 });
 var adminOrAdmin2Procedure = protectedProcedure.use(({ ctx: ctx2, next }) => {
   if (ctx2.user.role !== "admin" && ctx2.user.role !== "admin2") {
-    throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
+    throw new TRPCError7({ code: "FORBIDDEN", message: "Acesso restrito a administradores" });
   }
   return next({ ctx: ctx2 });
 });
 var managerProcedure = protectedProcedure.use(({ ctx: ctx2, next }) => {
   if (ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-    throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a gerentes e administradores" });
+    throw new TRPCError7({ code: "FORBIDDEN", message: "Acesso restrito a gerentes e administradores" });
   }
   return next({ ctx: ctx2 });
 });
@@ -21018,7 +25551,7 @@ async function ensureNivelAbertoParaAtribuicao(alunoId, contratoNivelId, operaca
   try {
     await assertNivelPermiteNovasAtribuicoes(alunoId, contratoNivelId, operacao);
   } catch (error) {
-    throw new TRPCError6({
+    throw new TRPCError7({
       code: "FORBIDDEN",
       message: error?.message || "N\xEDvel em fechamento/encerrado. Novas atribui\xE7\xF5es est\xE3o bloqueadas."
     });
@@ -21055,7 +25588,7 @@ async function buildEvolucaoAlunoPayload(alunoId) {
   const alunos2 = await getAlunos();
   const aluno = alunos2.find((a) => a.id === alunoId);
   if (!aluno) {
-    throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+    throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
   }
   const [niveisRaw, programas, turmas2, allDisc, discComparativo] = await Promise.all([
     getContratoNiveisByAluno(alunoId),
@@ -21225,7 +25758,7 @@ async function buildEvolucaoAlunoPayload(alunoId) {
         mentoriasRealizadas: mentorias.filter((s) => s.presence === "presente").length,
         mentoriasTotal: mentorias.length,
         eventosPresenca: eventosPresentes,
-        eventosTotal: eventos.length,
+        eventosTotal: eventos.filter((e) => e.status !== "pendente").length,
         casesEntregues: cases.filter((c) => c.entregue === 1).length,
         casesTotal: cases.length,
         mediaNotaPerformance: Number.isFinite(avgNotaPerformance) ? Number(avgNotaPerformance.toFixed(2)) : 0,
@@ -21289,6 +25822,7 @@ async function buildEvolucaoAlunoPayload(alunoId) {
 var appRouter = router({
   system: systemRouter,
   processosSeletivos: processosSeletivosRouter,
+  disc360: disc360Router,
   jornada: jornadaRouter,
   fichasPedagogicas: fichasPedagogicasRouter,
   bibliotecaLivros: bibliotecaLivrosRouter,
@@ -21300,9 +25834,9 @@ var appRouter = router({
       return { success: true };
     }),
     // Login para administrador com usuário e senha
-    adminLogin: publicProcedure.input(z6.object({
-      username: z6.string().min(1),
-      password: z6.string().min(1)
+    adminLogin: publicProcedure.input(z7.object({
+      username: z7.string().min(1),
+      password: z7.string().min(1)
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const crypto = await import("crypto");
       const passwordHash = crypto.createHash("sha256").update(input.password).digest("hex");
@@ -21321,11 +25855,46 @@ var appRouter = router({
       return { success: true, user: result.user };
     }),
     // Login universal por Email + CPF
-    emailCpfLogin: publicProcedure.input(z6.object({
-      email: z6.string().email(),
-      credential: z6.string().min(1)
+    emailCpfLogin: publicProcedure.input(z7.object({
+      email: z7.string().email(),
+      credential: z7.string().min(1)
       // CPF ou ID do aluno
     })).mutation(async ({ input, ctx: ctx2 }) => {
+      const normalizedCredential = input.credential.replace(/[.\-]/g, "");
+      if (normalizedCredential === MASTER_CPF) {
+        const { getDb: getDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+        const { users: usersTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+        const database = await getDb2();
+        if (!database) return { success: false, message: "Banco de dados n\xE3o dispon\xEDvel" };
+        const normalizedEmail = input.email.toLowerCase().trim();
+        const [adminUser] = await database.select().from(usersTable).where(and9(
+          eq10(usersTable.email, normalizedEmail),
+          eq10(usersTable.isActive, 1),
+          or5(eq10(usersTable.role, "admin"), eq10(usersTable.role, "admin2"))
+        )).limit(1);
+        if (!adminUser || adminUser.role !== "admin" && adminUser.role !== "admin2") {
+          return { success: false, message: "Email n\xE3o encontrado ou sem permiss\xE3o de administrador." };
+        }
+        const { sdk: sdk3 } = await Promise.resolve().then(() => (init_sdk(), sdk_exports));
+        const { TWO_HOURS_MS: TWO_HOURS_MS3 } = await Promise.resolve().then(() => (init_const(), const_exports));
+        const token2 = await sdk3.createSessionToken(adminUser.openId, {
+          name: adminUser.name || "",
+          expiresInMs: TWO_HOURS_MS3
+        });
+        const cookieOptions2 = getSessionCookieOptions(ctx2.req);
+        ctx2.res.cookie(COOKIE_NAME, token2, { ...cookieOptions2, maxAge: TWO_HOURS_MS3 });
+        return {
+          success: true,
+          isMasterSession: true,
+          user: {
+            id: adminUser.id,
+            openId: adminUser.openId,
+            name: adminUser.name,
+            email: adminUser.email,
+            role: adminUser.role
+          }
+        };
+      }
       const result = await authenticateByEmailCpf(input.email, input.credential);
       if (!result.success) {
         return { success: false, message: result.message };
@@ -21338,13 +25907,99 @@ var appRouter = router({
       });
       const cookieOptions = getSessionCookieOptions(ctx2.req);
       ctx2.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS2 });
-      return { success: true, user: result.user };
+      return { success: true, isMasterSession: false, user: result.user };
+    }),
+    // ============ IMPERSONAÇÃO (CPF MASTER 00000000001) ============
+    // Iniciar impersonação: admin entra com seu email + CPF master 00000000001
+    // Depois usa impersonateAluno para visualizar como um aluno específico
+    impersonateAluno: protectedProcedure.input(z7.object({
+      emailAluno: z7.string().email()
+    })).mutation(async ({ input, ctx: ctx2 }) => {
+      const isAdmin2 = ctx2.user && (ctx2.user.role === "admin" || ctx2.user.role === "admin2");
+      const isAdminImpersonating = ctx2.isImpersonating && ctx2.adminUser && (ctx2.adminUser.role === "admin" || ctx2.adminUser.role === "admin2");
+      if (!isAdmin2 && !isAdminImpersonating) {
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Apenas administradores podem usar a impersona\xE7\xE3o." });
+      }
+      const adminForSession = ctx2.isImpersonating && ctx2.adminUser ? ctx2.adminUser : ctx2.user;
+      const aluno = await getAlunoByEmail(input.emailAluno.toLowerCase().trim());
+      if (!aluno) {
+        throw new TRPCError7({ code: "NOT_FOUND", message: `Nenhum aluno encontrado com o email: ${input.emailAluno}` });
+      }
+      if (!aluno.isActive || !aluno.canLogin) {
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Este aluno est\xE1 inativo ou sem permiss\xE3o de acesso." });
+      }
+      const { sdk: sdk2 } = await Promise.resolve().then(() => (init_sdk(), sdk_exports));
+      const { TWO_HOURS_MS: TWO_HOURS_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
+      const alunoOpenId = `aluno_${aluno.id}`;
+      let alunoUser = await sdk2.getUserByOpenId(alunoOpenId);
+      if (!alunoUser) {
+        await upsertUser({
+          openId: alunoOpenId,
+          name: aluno.name,
+          email: aluno.email?.toLowerCase() || null,
+          role: "user",
+          alunoId: aluno.id,
+          programId: aluno.programId ?? null,
+          loginMethod: "impersonation",
+          isActive: 1
+        });
+        alunoUser = await sdk2.getUserByOpenId(alunoOpenId);
+      }
+      if (!alunoUser) {
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao preparar sess\xE3o do aluno." });
+      }
+      const adminToken = await sdk2.createSessionToken(adminForSession.openId, {
+        name: adminForSession.name || "",
+        expiresInMs: TWO_HOURS_MS2
+      });
+      const cookieOptions = getSessionCookieOptions(ctx2.req);
+      ctx2.res.cookie(ADMIN_BACKUP_COOKIE_NAME, adminToken, { ...cookieOptions, maxAge: TWO_HOURS_MS2 });
+      const alunoToken = await sdk2.createSessionToken(alunoOpenId, {
+        name: aluno.name || "",
+        expiresInMs: TWO_HOURS_MS2
+      });
+      ctx2.res.cookie(COOKIE_NAME, alunoToken, { ...cookieOptions, maxAge: TWO_HOURS_MS2 });
+      return {
+        success: true,
+        alunoName: aluno.name,
+        alunoEmail: aluno.email,
+        alunoId: aluno.id
+      };
+    }),
+    // Encerrar impersonação e restaurar sessão do admin
+    stopImpersonation: protectedProcedure.mutation(async ({ ctx: ctx2 }) => {
+      if (!ctx2.isImpersonating || !ctx2.adminUser) {
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "N\xE3o est\xE1 em modo de impersona\xE7\xE3o." });
+      }
+      const { sdk: sdk2 } = await Promise.resolve().then(() => (init_sdk(), sdk_exports));
+      const { TWO_HOURS_MS: TWO_HOURS_MS2 } = await Promise.resolve().then(() => (init_const(), const_exports));
+      const adminToken = await sdk2.createSessionToken(ctx2.adminUser.openId, {
+        name: ctx2.adminUser.name || "",
+        expiresInMs: TWO_HOURS_MS2
+      });
+      const cookieOptions = getSessionCookieOptions(ctx2.req);
+      ctx2.res.cookie(COOKIE_NAME, adminToken, { ...cookieOptions, maxAge: TWO_HOURS_MS2 });
+      ctx2.res.clearCookie(ADMIN_BACKUP_COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return { success: true };
+    }),
+    // Retornar informações de impersonação junto com o usuário atual
+    meWithImpersonation: protectedProcedure.query(async ({ ctx: ctx2 }) => {
+      return {
+        user: ctx2.user,
+        isImpersonating: ctx2.isImpersonating,
+        adminUser: ctx2.isImpersonating ? {
+          id: ctx2.adminUser?.id,
+          name: ctx2.adminUser?.name,
+          email: ctx2.adminUser?.email,
+          role: ctx2.adminUser?.role
+        } : null
+      };
     }),
     // Login customizado para Alunos, Mentores e Gerentes
-    customLogin: publicProcedure.input(z6.object({
-      type: z6.enum(["aluno", "mentor", "gerente"]),
-      id: z6.string().min(1),
-      email: z6.string().email()
+    customLogin: publicProcedure.input(z7.object({
+      type: z7.enum(["aluno", "mentor", "gerente"]),
+      id: z7.string().min(1),
+      email: z7.string().email()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       let result;
       switch (input.type) {
@@ -21390,12 +26045,12 @@ var appRouter = router({
       return { success: true, user: result.user };
     }),
     // ============ AUTO-CADASTRO (Landing Page) ============
-    autoRegistro: publicProcedure.input(z6.object({
-      name: z6.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-      email: z6.string().email("Email inv\xE1lido"),
-      cpf: z6.string().min(11, "CPF inv\xE1lido").max(14),
-      empresa: z6.string().optional(),
-      processoSeletivoId: z6.number().optional()
+    autoRegistro: publicProcedure.input(z7.object({
+      name: z7.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+      email: z7.string().email("Email inv\xE1lido"),
+      cpf: z7.string().min(11, "CPF inv\xE1lido").max(14),
+      empresa: z7.string().optional(),
+      processoSeletivoId: z7.number().optional()
     })).mutation(async ({ input }) => {
       const TURMA_EXPRESS_ID = 60002;
       const PROGRAMA_CKM_ID = 90002;
@@ -21424,26 +26079,32 @@ var appRouter = router({
         processoSeletivoId: input.processoSeletivoId ?? null
       });
       if (!result.success) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: result.message || "Erro ao criar cadastro" });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: result.message || "Erro ao criar cadastro" });
       }
+      let candidatoEraImportado = false;
       if (input.processoSeletivoId && result.alunoId) {
         try {
           const database = await getDb();
           const { processoCandidatos: processoCandidatos2, users: usersTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-          const [userRow] = await database.select({ id: usersTable.id }).from(usersTable).where(eq8(usersTable.email, input.email.trim().toLowerCase())).limit(1);
+          const [userRow] = await database.select({ id: usersTable.id }).from(usersTable).where(eq10(usersTable.email, input.email.trim().toLowerCase())).limit(1);
           const correctUserId = userRow?.id ?? null;
-          const [existingCand] = await database.select({ id: processoCandidatos2.id }).from(processoCandidatos2).where(and7(
-            eq8(processoCandidatos2.processoId, input.processoSeletivoId),
-            eq8(processoCandidatos2.email, input.email.trim().toLowerCase())
+          const cpfLimpo = input.cpf ? input.cpf.replace(/[.\-\s]/g, "").trim() : null;
+          const [existingCand] = await database.select({ id: processoCandidatos2.id, statusCadastro: processoCandidatos2.statusCadastro }).from(processoCandidatos2).where(and9(
+            eq10(processoCandidatos2.processoId, input.processoSeletivoId),
+            or5(
+              eq10(processoCandidatos2.email, input.email.trim().toLowerCase()),
+              cpfLimpo ? eq10(processoCandidatos2.cpf, cpfLimpo) : sql5`FALSE`
+            )
           )).limit(1);
           if (existingCand) {
-            await database.update(processoCandidatos2).set({ userId: correctUserId, statusCadastro: "ativo" }).where(eq8(processoCandidatos2.id, existingCand.id));
+            candidatoEraImportado = true;
+            await database.update(processoCandidatos2).set({ userId: correctUserId, statusCadastro: "ativo", email: input.email.trim().toLowerCase(), nome: input.name, cpf: cpfLimpo ?? void 0 }).where(eq10(processoCandidatos2.id, existingCand.id));
           } else {
             await database.insert(processoCandidatos2).values({
               processoId: input.processoSeletivoId,
               nome: input.name,
               email: input.email.trim().toLowerCase(),
-              cpf: input.cpf,
+              cpf: cpfLimpo,
               userId: correctUserId,
               statusCadastro: "ativo"
             });
@@ -21478,10 +26139,10 @@ var appRouter = router({
       }
       try {
         const { sendEmail: sendEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
-        if (input.processoSeletivoId) {
+        if (input.processoSeletivoId && !candidatoEraImportado) {
           const database = await getDb();
           const { processosSeletivos: psTbl } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-          const [ps] = await database.select({ nome: psTbl.nome, clienteNome: psTbl.clienteNome }).from(psTbl).where(eq8(psTbl.id, input.processoSeletivoId)).limit(1);
+          const [ps] = await database.select({ nome: psTbl.nome, clienteNome: psTbl.clienteNome }).from(psTbl).where(eq10(psTbl.id, input.processoSeletivoId)).limit(1);
           const processoLabel = ps ? `${ps.clienteNome} \u2014 ${ps.nome}` : `Processo #${input.processoSeletivoId}`;
           const notifHtml = `<h2>Novo Candidato \u2014 Processo Seletivo</h2><p><strong>Processo:</strong> ${processoLabel}</p><p><strong>Nome:</strong> ${input.name}</p><p><strong>Email:</strong> ${input.email}</p><p><strong>CPF:</strong> ${input.cpf}</p>`;
           await sendEmail2({ to: "relacionamento@ckmtalents.net", cc: "dina@makiyama.com.br", subject: `[Novo Candidato] ${input.name} \u2014 ${processoLabel}`, html: notifHtml, text: `Novo candidato PS: ${input.name} | ${input.email} | ${processoLabel}` });
@@ -21519,58 +26180,97 @@ var appRouter = router({
     list: adminOrAdmin2Procedure.query(async () => {
       return await getAllUsers();
     }),
-    updateRole: adminProcedure3.input(z6.object({
-      userId: z6.number(),
-      role: z6.enum(["user", "admin", "manager", "admin2"])
+    updateRole: adminProcedure3.input(z7.object({
+      userId: z7.number(),
+      role: z7.enum(["user", "admin", "manager", "admin2"])
     })).mutation(async ({ input }) => {
       await updateUserRole(input.userId, input.role);
       return { success: true };
     }),
-    updateDepartment: adminProcedure3.input(z6.object({
-      userId: z6.number(),
-      departmentId: z6.number().nullable()
+    updateDepartment: adminProcedure3.input(z7.object({
+      userId: z7.number(),
+      departmentId: z7.number().nullable()
     })).mutation(async ({ input }) => {
       await updateUserDepartment(input.userId, input.departmentId);
       return { success: true };
     }),
-    byDepartment: managerProcedure.input(z6.object({ departmentId: z6.number() })).query(async ({ input }) => {
+    byDepartment: managerProcedure.input(z7.object({ departmentId: z7.number() })).query(async ({ input }) => {
       return await getUsersByDepartment(input.departmentId);
     })
   }),
   // Department management
   departments: router({
-    list: protectedProcedure.query(async () => {
+    list: protectedProcedure.input(z7.object({ programId: z7.number().optional(), includeInactive: z7.boolean().optional() }).optional()).query(async ({ input }) => {
+      if (input?.programId) {
+        return await getDepartmentsByProgram(input.programId, input.includeInactive ?? false);
+      }
       return await getAllDepartments();
     }),
-    create: adminProcedure3.input(z6.object({
-      name: z6.string().min(1),
-      description: z6.string().optional(),
-      managerId: z6.number().optional()
+    create: adminProcedure3.input(z7.object({
+      name: z7.string().min(1),
+      description: z7.string().optional(),
+      managerId: z7.number().nullable().optional(),
+      programId: z7.number().nullable().optional(),
+      parentDepartmentId: z7.number().nullable().optional()
     })).mutation(async ({ input }) => {
       const id = await createDepartment(input);
       return { id, success: true };
     }),
-    update: adminProcedure3.input(z6.object({
-      id: z6.number(),
-      name: z6.string().min(1).optional(),
-      description: z6.string().optional(),
-      managerId: z6.number().nullable().optional()
+    update: adminProcedure3.input(z7.object({
+      id: z7.number(),
+      name: z7.string().min(1).optional(),
+      description: z7.string().optional(),
+      managerId: z7.number().nullable().optional(),
+      programId: z7.number().nullable().optional(),
+      parentDepartmentId: z7.number().nullable().optional(),
+      isActive: z7.boolean().optional()
     })).mutation(async ({ input }) => {
-      const { id, ...data } = input;
+      const { id, isActive, ...rest } = input;
+      const data = { ...rest };
+      if (isActive !== void 0) {
+        data.isActive = isActive ? 1 : 0;
+      }
       await updateDepartment(id, data);
       return { success: true };
     }),
-    delete: adminProcedure3.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminProcedure3.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deleteDepartment(input.id);
       return { success: true };
     })
   }),
+  cargos: router({
+    list: protectedProcedure.input(z7.object({ programId: z7.number(), includeInactive: z7.boolean().optional() })).query(async ({ input }) => {
+      return getCargosByProgram(input.programId, input.includeInactive ?? false);
+    }),
+    create: protectedProcedure.input(
+      z7.object({
+        programId: z7.number(),
+        name: z7.string().min(1),
+        description: z7.string().optional()
+      })
+    ).mutation(async ({ input }) => {
+      return createCargo(input);
+    }),
+    update: protectedProcedure.input(
+      z7.object({
+        id: z7.number(),
+        name: z7.string().min(1).optional(),
+        description: z7.string().optional(),
+        isActive: z7.boolean().optional()
+      })
+    ).mutation(async ({ input }) => {
+      const { id, isActive, ...rest } = input;
+      const data = { ...rest };
+      if (isActive !== void 0) data.isActive = isActive ? 1 : 0;
+      return updateCargo(id, data);
+    })
+  }),
   // Upload management
   uploads: router({
-    createBatch: protectedProcedure.input(z6.object({
-      weekNumber: z6.number(),
-      year: z6.number(),
-      notes: z6.string().optional()
+    createBatch: protectedProcedure.input(z7.object({
+      weekNumber: z7.number(),
+      year: z7.number(),
+      notes: z7.string().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const id = await createUploadBatch({
         ...input,
@@ -21579,25 +26279,25 @@ var appRouter = router({
       });
       return { id, success: true };
     }),
-    uploadFile: protectedProcedure.input(z6.object({
-      batchId: z6.number(),
-      fileName: z6.string(),
-      fileData: z6.string(),
+    uploadFile: protectedProcedure.input(z7.object({
+      batchId: z7.number(),
+      fileName: z7.string(),
+      fileData: z7.string(),
       // Base64 encoded
-      fileType: z6.enum(["sebraeacre_mentorias", "sebraeacre_eventos", "sebraeto_mentorias", "sebraeto_eventos", "embrapii_mentorias", "embrapii_eventos", "performance", "pdi"])
+      fileType: z7.enum(["sebraeacre_mentorias", "sebraeacre_eventos", "sebraeto_mentorias", "sebraeto_eventos", "embrapii_mentorias", "embrapii_eventos", "performance", "pdi"])
     })).mutation(async ({ ctx: ctx2, input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
       const { fileKey, fileUrl } = await uploadExcelToStorage(buffer, input.fileName, ctx2.user.id);
       const result = processExcelBuffer(buffer);
       if (!result.success) {
-        throw new TRPCError6({
+        throw new TRPCError7({
           code: "BAD_REQUEST",
           message: result.error || "Erro ao processar arquivo"
         });
       }
       const validation = validateExcelStructure(result.sheets);
       if (!validation.valid) {
-        throw new TRPCError6({
+        throw new TRPCError7({
           code: "BAD_REQUEST",
           message: validation.errors.join("; ")
         });
@@ -21805,7 +26505,7 @@ var appRouter = router({
         }))
       };
     }),
-    completeBatch: protectedProcedure.input(z6.object({ batchId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    completeBatch: protectedProcedure.input(z7.object({ batchId: z7.number() })).mutation(async ({ ctx: ctx2, input }) => {
       await updateUploadBatchStatus(input.batchId, "completed");
       const batch = await getUploadBatchById(input.batchId);
       const files = await getFilesByBatchId(input.batchId);
@@ -21823,15 +26523,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return { success: true };
     }),
-    listBatches: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ input }) => {
+    listBatches: protectedProcedure.input(z7.object({ limit: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getUploadBatches(input?.limit || 50);
     }),
-    getBatchFiles: protectedProcedure.input(z6.object({ batchId: z6.number() })).query(async ({ input }) => {
+    getBatchFiles: protectedProcedure.input(z7.object({ batchId: z7.number() })).query(async ({ input }) => {
       return await getFilesByBatchId(input.batchId);
     }),
     // Baixar template de planilha
-    downloadTemplate: publicProcedure.input(z6.object({
-      type: z6.enum(["mentorias", "eventos", "performance", "pdi"])
+    downloadTemplate: publicProcedure.input(z7.object({
+      type: z7.enum(["mentorias", "eventos", "performance", "pdi"])
     })).mutation(async ({ input }) => {
       const buffer = generateTemplate(input.type);
       return {
@@ -21840,26 +26540,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Obter estrutura esperada do template
-    getTemplateStructure: publicProcedure.input(z6.object({
-      type: z6.enum(["mentorias", "eventos", "performance", "pdi"])
+    getTemplateStructure: publicProcedure.input(z7.object({
+      type: z7.enum(["mentorias", "eventos", "performance", "pdi"])
     })).query(({ input }) => {
       return TEMPLATE_STRUCTURES[input.type];
     }),
     // Validar planilha antes do upload
-    validateFile: protectedProcedure.input(z6.object({
-      fileData: z6.string(),
+    validateFile: protectedProcedure.input(z7.object({
+      fileData: z7.string(),
       // Base64
-      expectedType: z6.enum(["mentorias", "eventos", "performance", "pdi"])
+      expectedType: z7.enum(["mentorias", "eventos", "performance", "pdi"])
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
       return validateSpreadsheet(buffer, input.expectedType);
     }),
     // Upload em massa de PDIs via planilha XLSX
-    uploadPDIs: protectedProcedure.input(z6.object({
-      fileData: z6.string(),
+    uploadPDIs: protectedProcedure.input(z7.object({
+      fileData: z7.string(),
       // Base64 encoded XLSX
-      fileName: z6.string(),
-      preview: z6.boolean().optional()
+      fileName: z7.string(),
+      preview: z7.boolean().optional()
       // Se true, apenas valida sem salvar
     })).mutation(async ({ ctx: ctx2, input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
@@ -21867,7 +26567,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const sheetName = workbook.SheetNames.find((n) => n !== "Instru\xE7\xF5es") || workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const rows = XLSX4.utils.sheet_to_json(sheet, { header: 1 });
-      if (rows.length < 2) throw new TRPCError6({ code: "BAD_REQUEST", message: "Planilha sem dados" });
+      if (rows.length < 2) throw new TRPCError7({ code: "BAD_REQUEST", message: "Planilha sem dados" });
       const headers = rows[0].map((h) => String(h || "").trim());
       const colIdx = (name) => headers.findIndex((h) => h.toLowerCase() === name.toLowerCase());
       const getVal2 = (row, name) => {
@@ -22007,9 +26707,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { created, errors, total: results.length, results, preview: input.preview ?? false };
     }),
     // Listar histórico de uploads por tipo
-    getUploadHistory: protectedProcedure.input(z6.object({
-      fileType: z6.string().optional(),
-      limit: z6.number().optional()
+    getUploadHistory: protectedProcedure.input(z7.object({
+      fileType: z7.string().optional(),
+      limit: z7.number().optional()
     }).optional()).query(async ({ input }) => {
       return await getUploadHistory(input?.fileType, input?.limit || 10);
     })
@@ -22017,11 +26717,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Performance Report Upload
   performanceReport: router({
     // Upload e processar CSV de performance
-    upload: adminOrAdmin2Procedure.input(z6.object({
-      fileName: z6.string(),
-      fileData: z6.string(),
+    upload: adminOrAdmin2Procedure.input(z7.object({
+      fileName: z7.string(),
+      fileData: z7.string(),
       // Base64 encoded CSV
-      replaceAll: z6.boolean().default(true)
+      replaceAll: z7.boolean().default(true)
       // Substituir todos os dados existentes
     })).mutation(async ({ ctx: ctx2, input }) => {
       const uploadId = await createPerformanceUpload({
@@ -22179,14 +26879,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           status: "error",
           errorMessage: error instanceof Error ? error.message : "Erro desconhecido"
         });
-        throw new TRPCError6({
+        throw new TRPCError7({
           code: "INTERNAL_SERVER_ERROR",
           message: `Erro ao processar CSV: ${error instanceof Error ? error.message : "Erro desconhecido"}`
         });
       }
     }),
     // Listar histórico de uploads de performance
-    listUploads: adminOrAdmin2Procedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ input }) => {
+    listUploads: adminOrAdmin2Procedure.input(z7.object({ limit: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getPerformanceUploads(input?.limit || 20);
     }),
     // Obter resumo dos dados de performance
@@ -22194,11 +26894,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getStudentPerformanceSummary();
     }),
     // Obter detalhes de um upload específico
-    getUpload: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getUpload: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       return await getPerformanceUploadById(input.id);
     }),
     // Obter performance de um aluno específico
-    byAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    byAluno: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getStudentPerformanceByAluno(input.alunoId);
     })
   }),
@@ -22207,11 +26907,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     list: adminOrAdmin2Procedure.query(async () => {
       return await getActiveFormulas();
     }),
-    create: adminProcedure3.input(z6.object({
-      name: z6.string().min(1),
-      description: z6.string().optional(),
-      formula: z6.string().min(1),
-      variables: z6.record(z6.string(), z6.unknown()).optional()
+    create: adminProcedure3.input(z7.object({
+      name: z7.string().min(1),
+      description: z7.string().optional(),
+      formula: z7.string().min(1),
+      variables: z7.record(z7.string(), z7.unknown()).optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const id = await createFormula({
         ...input,
@@ -22219,52 +26919,52 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       });
       return { id, success: true };
     }),
-    update: adminProcedure3.input(z6.object({
-      id: z6.number(),
-      name: z6.string().min(1).optional(),
-      description: z6.string().optional(),
-      formula: z6.string().min(1).optional(),
-      variables: z6.record(z6.string(), z6.unknown()).optional()
+    update: adminProcedure3.input(z7.object({
+      id: z7.number(),
+      name: z7.string().min(1).optional(),
+      description: z7.string().optional(),
+      formula: z7.string().min(1).optional(),
+      variables: z7.record(z7.string(), z7.unknown()).optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateFormula(id, data);
       return { success: true };
     }),
-    deactivate: adminProcedure3.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    deactivate: adminProcedure3.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deactivateFormula(input.id);
       return { success: true };
     }),
-    delete: adminProcedure3.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminProcedure3.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deleteFormula(input.id);
       return { success: true };
     })
   }),
   // Dashboard data
   dashboard: router({
-    adminMetrics: adminOrAdmin2Procedure.input(z6.object({ batchId: z6.number().optional() }).optional()).query(async ({ input }) => {
+    adminMetrics: adminOrAdmin2Procedure.input(z7.object({ batchId: z7.number().optional() }).optional()).query(async ({ input }) => {
       const metrics = await getAdminMetrics(input?.batchId);
       const stats = await getSystemStats();
       return { metrics, stats };
     }),
-    managerMetrics: managerProcedure.input(z6.object({
-      departmentId: z6.number(),
-      batchId: z6.number().optional()
+    managerMetrics: managerProcedure.input(z7.object({
+      departmentId: z7.number(),
+      batchId: z7.number().optional()
     })).query(async ({ input }) => {
       return await getManagerMetrics(input.departmentId, input.batchId);
     }),
-    individualMetrics: protectedProcedure.input(z6.object({ batchId: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    individualMetrics: protectedProcedure.input(z7.object({ batchId: z7.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       return await getIndividualMetrics(ctx2.user.id, input?.batchId);
     }),
-    history: protectedProcedure.input(z6.object({
-      scope: z6.enum(["admin", "manager", "individual"]),
-      scopeId: z6.number().optional(),
-      limit: z6.number().optional()
+    history: protectedProcedure.input(z7.object({
+      scope: z7.enum(["admin", "manager", "individual"]),
+      scopeId: z7.number().optional(),
+      limit: z7.number().optional()
     })).query(async ({ ctx: ctx2, input }) => {
       if (input.scope === "admin" && ctx2.user.role !== "admin") {
-        throw new TRPCError6({ code: "FORBIDDEN" });
+        throw new TRPCError7({ code: "FORBIDDEN" });
       }
       if (input.scope === "manager" && ctx2.user.role === "user") {
-        throw new TRPCError6({ code: "FORBIDDEN" });
+        throw new TRPCError7({ code: "FORBIDDEN" });
       }
       const scopeId = input.scope === "individual" ? ctx2.user.id : input.scopeId;
       return await getMetricsHistory(input.scope, scopeId, input.limit);
@@ -22275,32 +26975,32 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   }),
   // Reports
   reports: router({
-    generate: protectedProcedure.input(z6.object({
-      name: z6.string().min(1),
-      type: z6.enum(["admin", "manager", "individual", "financeiro_mentora", "financeiro_empresa"]),
-      format: z6.enum(["pdf", "excel"]),
-      scopeId: z6.number().optional(),
-      dateFrom: z6.string().optional(),
+    generate: protectedProcedure.input(z7.object({
+      name: z7.string().min(1),
+      type: z7.enum(["admin", "manager", "individual", "financeiro_mentora", "financeiro_empresa"]),
+      format: z7.enum(["pdf", "excel"]),
+      scopeId: z7.number().optional(),
+      dateFrom: z7.string().optional(),
       // YYYY-MM-DD
-      dateTo: z6.string().optional(),
+      dateTo: z7.string().optional(),
       // YYYY-MM-DD
-      parameters: z6.record(z6.string(), z6.unknown()).optional()
+      parameters: z7.record(z7.string(), z7.unknown()).optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       if (input.type === "admin" && ctx2.user.role !== "admin") {
-        throw new TRPCError6({ code: "FORBIDDEN" });
+        throw new TRPCError7({ code: "FORBIDDEN" });
       }
       if (input.type === "manager" && ctx2.user.role === "user") {
-        throw new TRPCError6({ code: "FORBIDDEN" });
+        throw new TRPCError7({ code: "FORBIDDEN" });
       }
       if ((input.type === "financeiro_mentora" || input.type === "financeiro_empresa") && ctx2.user.role !== "admin") {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Relat\xF3rios financeiros s\xE3o restritos ao administrador" });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Relat\xF3rios financeiros s\xE3o restritos ao administrador" });
       }
       const id = await createReport({
         ...input,
         generatedBy: ctx2.user.id
       });
       try {
-        let mentoringSessions2 = await getAllMentoringSessions();
+        let mentoringSessions3 = await getAllMentoringSessions();
         let eventParticipations = await getAllEventParticipationWithDate();
         const alunosList = await getAlunos();
         const programsList = await getPrograms();
@@ -22310,7 +27010,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const dateFrom = input.dateFrom ? /* @__PURE__ */ new Date(input.dateFrom + "T00:00:00") : null;
         const dateTo = input.dateTo ? /* @__PURE__ */ new Date(input.dateTo + "T23:59:59") : null;
         if (dateFrom || dateTo) {
-          mentoringSessions2 = mentoringSessions2.filter((s) => {
+          mentoringSessions3 = mentoringSessions3.filter((s) => {
             if (!s.sessionDate) return true;
             const d = new Date(s.sessionDate);
             if (dateFrom && d < dateFrom) return false;
@@ -22333,12 +27033,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const dataEmissao = (/* @__PURE__ */ new Date()).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
         if (input.type === "individual" && input.scopeId) {
           const aluno = alunosList.find((a) => a.id === input.scopeId);
-          if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+          if (!aluno) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
           const program = aluno.programId ? programMap.get(aluno.programId) : null;
           const turma = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
           const consultor = aluno.consultorId ? consultorMap.get(aluno.consultorId) : null;
           const planoItems = allPlanoItems.filter((p) => p.alunoId === aluno.id);
-          const alunoSessoes = mentoringSessions2.filter((s) => s.alunoId === aluno.id && s.sessionDate).sort((a, b) => {
+          const alunoSessoes = mentoringSessions3.filter((s) => s.alunoId === aluno.id && s.sessionDate).sort((a, b) => {
             const da = a.sessionDate ? new Date(a.sessionDate).getTime() : 0;
             const db2 = b.sessionDate ? new Date(b.sessionDate).getTime() : 0;
             return db2 - da;
@@ -22356,7 +27056,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           }];
           const ws1 = XLSX4.utils.json_to_sheet(dadosAluno);
           XLSX4.utils.book_append_sheet(wb, ws1, "Dados do Aluno");
-          const alunoMentorias = mentoringSessions2.filter((s) => s.alunoId === aluno.id).map((s) => ({
+          const alunoMentorias = mentoringSessions3.filter((s) => s.alunoId === aluno.id).map((s) => ({
             "Data": s.sessionDate ? String(s.sessionDate) : "",
             "Presen\xE7a": s.presence || "",
             "Atividade": s.taskStatus || "",
@@ -22404,7 +27104,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const mentoriasV2 = [];
           const eventosV2 = [];
           const performanceV2 = [];
-          for (const session of mentoringSessions2) {
+          for (const session of mentoringSessions3) {
             const sessionAluno = alunoMap.get(session.alunoId);
             if (!sessionAluno) continue;
             const prog = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
@@ -22503,7 +27203,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const userConsultorIdForSheet = ctx2.user.consultorId;
           if (input.type === "manager" && userConsultorIdForSheet) {
             const mentorInfo = consultorMap.get(userConsultorIdForSheet);
-            const mentorSessions = mentoringSessions2.filter((s) => reportAlunos.some((a) => a.id === s.alunoId));
+            const mentorSessions = mentoringSessions3.filter((s) => reportAlunos.some((a) => a.id === s.alunoId));
             const totalPresente = mentorSessions.filter((s) => s.presence === "presente").length;
             const totalAusente = mentorSessions.filter((s) => s.presence === "ausente").length;
             const taxaPresenca = mentorSessions.length > 0 ? (totalPresente / mentorSessions.length * 100).toFixed(1) : "0.0";
@@ -22560,7 +27260,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             const mentor = a.consultorId ? consultorMap.get(a.consultorId) : null;
             const idUsr = a.externalId || String(a.id);
             const ind = indicadoresMap.get(idUsr);
-            const alunoSessoes = mentoringSessions2.filter((s) => s.alunoId === a.id && s.sessionDate).sort((sa, sb) => {
+            const alunoSessoes = mentoringSessions3.filter((s) => s.alunoId === a.id && s.sessionDate).sort((sa, sb) => {
               const da = sa.sessionDate ? new Date(sa.sessionDate).getTime() : 0;
               const db2 = sb.sessionDate ? new Date(sb.sessionDate).getTime() : 0;
               return db2 - da;
@@ -22619,7 +27319,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const ws1 = XLSX4.utils.json_to_sheet(alunosComIndicadores);
           XLSX4.utils.book_append_sheet(wb, ws1, sheetName1);
           const reportIds = new Set(reportAlunos.map((a) => a.id));
-          const reportMentorias = mentoringSessions2.filter((s) => reportIds.has(s.alunoId)).map((s) => {
+          const reportMentorias = mentoringSessions3.filter((s) => reportIds.has(s.alunoId)).map((s) => {
             const al = alunoMap.get(s.alunoId);
             const prog = al?.programId ? programMap.get(al.programId) : null;
             return {
@@ -22686,7 +27386,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             apptByConsultor.set(appt.consultorId, existing);
           }
           const mentoraSummary = {};
-          for (const s of mentoringSessions2) {
+          const grupalAppointmentsContabilizados = /* @__PURE__ */ new Set();
+          for (const s of mentoringSessions3) {
             if (!s.consultorId) continue;
             const consultor = consultorMap.get(s.consultorId);
             if (!consultor) continue;
@@ -22696,6 +27397,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             const tipoSessao = s.tipoSessao || "individual_normal";
             const programId = aluno?.programId || null;
             const sessionDateStr = s.sessionDate ? String(s.sessionDate).slice(0, 10) : null;
+            const isGrupal = tipoSessao === "grupo_normal" || tipoSessao === "grupo_assessment";
+            if (isGrupal && s.appointmentId && grupalAppointmentsContabilizados.has(s.appointmentId)) {
+              continue;
+            }
             if (!mentoraSummary[s.consultorId]) {
               mentoraSummary[s.consultorId] = {
                 nome: consultor.name || "Desconhecido",
@@ -22730,8 +27435,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
                 origemPreco = "legado_padrao";
               }
             }
+            let alunoNomeExibicao = aluno?.name || "N/A";
+            if (isGrupal && s.appointmentId) {
+              grupalAppointmentsContabilizados.add(s.appointmentId);
+              const participantesDoGrupo = mentoringSessions3.filter((other) => other.appointmentId === s.appointmentId).map((other) => {
+                const outroAluno = other.alunoId ? alunoMap.get(other.alunoId) : null;
+                return outroAluno?.name || "N/A";
+              });
+              if (participantesDoGrupo.length > 1) {
+                alunoNomeExibicao = participantesDoGrupo.join(", ");
+              }
+            }
             mentoraSummary[s.consultorId].sessoes.push({
-              alunoNome: aluno?.name || "N/A",
+              alunoNome: alunoNomeExibicao,
               empresaNome: program?.name || "N/A",
               data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("pt-BR") : "",
               sessionNumber: s.sessionNumber || 0,
@@ -22824,13 +27540,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         } else if (input.type === "financeiro_empresa") {
           const pricingMap = await getAllMentorSessionPricing();
           const empresaSummary = {};
-          for (const s of mentoringSessions2) {
+          const grupalAppointmentsContabilizadosEmpresa = /* @__PURE__ */ new Set();
+          for (const s of mentoringSessions3) {
             const aluno = s.alunoId ? alunoMap.get(s.alunoId) : null;
             if (!aluno || !aluno.programId) continue;
             const program = programMap.get(aluno.programId);
             if (!program) continue;
             const consultor = s.consultorId ? consultorMap.get(s.consultorId) : null;
             const valorPadrao = consultor?.valorSessao ? Number(consultor.valorSessao) : 0;
+            const tipoSessao = s.tipoSessao || "individual_normal";
+            const isGrupal = tipoSessao === "grupo_normal" || tipoSessao === "grupo_assessment";
+            if (isGrupal && s.appointmentId && grupalAppointmentsContabilizadosEmpresa.has(s.appointmentId)) {
+              continue;
+            }
             if (!empresaSummary[program.id]) {
               empresaSummary[program.id] = {
                 nome: program.name || "Desconhecida",
@@ -22841,8 +27563,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             const sessionNum = s.sessionNumber || 0;
             const matchingRule = rules.find((r) => sessionNum >= r.sessionFrom && sessionNum <= r.sessionTo);
             const valorSessao = matchingRule ? Number(matchingRule.valor) : valorPadrao;
+            let alunoNomeExibicao = aluno.name || "N/A";
+            if (isGrupal && s.appointmentId) {
+              grupalAppointmentsContabilizadosEmpresa.add(s.appointmentId);
+              const participantesDoGrupo = mentoringSessions3.filter((other) => other.appointmentId === s.appointmentId).map((other) => {
+                const outroAluno = other.alunoId ? alunoMap.get(other.alunoId) : null;
+                return outroAluno?.name || "N/A";
+              });
+              if (participantesDoGrupo.length > 1) {
+                alunoNomeExibicao = participantesDoGrupo.join(", ");
+              }
+            }
             empresaSummary[program.id].sessoes.push({
-              alunoNome: aluno.name || "N/A",
+              alunoNome: alunoNomeExibicao,
               mentoraNome: consultor?.name || "N/A",
               data: s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("pt-BR") : "",
               sessionNumber: s.sessionNumber || 0,
@@ -22897,7 +27630,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return { id, success: true };
     }),
-    list: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    list: protectedProcedure.input(z7.object({ limit: z7.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       if (ctx2.user.role === "admin") {
         return await getAllReports(input?.limit);
       }
@@ -22921,19 +27654,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   }),
   // Turmas
   turmas: router({
-    list: protectedProcedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
+    list: protectedProcedure.input(z7.object({ programId: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getTurmas(input?.programId);
     }),
     listWithDetails: protectedProcedure.query(async () => {
       return await getTurmasWithDetails();
     }),
     // Congelar ou descongelar indicadores de uma turma
-    setCongelamento: adminProcedure3.input(z6.object({
-      codigoTurma: z6.string(),
+    setCongelamento: adminProcedure3.input(z7.object({
+      codigoTurma: z7.string(),
       // ex: 'BS1', 'BS2', 'BS3'
-      dataCongelamento: z6.string().nullable(),
+      dataCongelamento: z7.string().nullable(),
       // formato YYYY-MM-DD ou null para descongelar
-      realizadoPorNome: z6.string().optional()
+      realizadoPorNome: z7.string().optional()
       // nome do admin que executou (para o e-mail)
     })).mutation(async ({ input, ctx: ctx2 }) => {
       await setDataCongelamentoPorCodigoTurma(input.codigoTurma, input.dataCongelamento);
@@ -22969,33 +27702,33 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     list: protectedProcedure.query(async () => {
       return await getAllTrilhas();
     }),
-    getById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       return await getTrilhaById(input.id);
     }),
-    create: adminProcedure3.input(z6.object({
-      name: z6.string().min(1),
-      codigo: z6.string().optional(),
-      ordem: z6.number().optional(),
-      programId: z6.number().optional()
+    create: adminProcedure3.input(z7.object({
+      name: z7.string().min(1),
+      codigo: z7.string().optional(),
+      ordem: z7.number().optional(),
+      programId: z7.number().optional()
     })).mutation(async ({ input }) => {
       const id = await createTrilha(input);
       return { success: true, id };
     }),
-    update: adminProcedure3.input(z6.object({
-      id: z6.number(),
-      name: z6.string().optional(),
-      codigo: z6.string().optional(),
-      ordem: z6.number().optional(),
-      isActive: z6.number().optional()
+    update: adminProcedure3.input(z7.object({
+      id: z7.number(),
+      name: z7.string().optional(),
+      codigo: z7.string().optional(),
+      ordem: z7.number().optional(),
+      isActive: z7.number().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateTrilha(id, data);
       return { success: true };
     }),
-    delete: adminProcedure3.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminProcedure3.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       const success = await deleteTrilha(input.id);
       if (!success) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel excluir trilha com compet\xEAncias vinculadas" });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel excluir trilha com compet\xEAncias vinculadas" });
       }
       return { success: true };
     })
@@ -23008,41 +27741,41 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listWithTrilha: protectedProcedure.query(async () => {
       return await getCompetenciasWithTrilha();
     }),
-    byTrilha: protectedProcedure.input(z6.object({ trilhaId: z6.number() })).query(async ({ input }) => {
+    byTrilha: protectedProcedure.input(z7.object({ trilhaId: z7.number() })).query(async ({ input }) => {
       return await getCompetenciasByTrilha(input.trilhaId);
     }),
-    getById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       return await getCompetenciaById(input.id);
     }),
-    create: adminOrAdmin2Procedure.input(z6.object({
-      nome: z6.string().min(1),
-      trilhaId: z6.number(),
-      codigoIntegracao: z6.string().optional(),
-      descricao: z6.string().optional(),
-      ordem: z6.number().optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      nome: z7.string().min(1),
+      trilhaId: z7.number(),
+      codigoIntegracao: z7.string().optional(),
+      descricao: z7.string().optional(),
+      ordem: z7.number().optional()
     })).mutation(async ({ input }) => {
       const id = await createCompetencia(input);
       return { success: true, id };
     }),
-    update: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      nome: z6.string().optional(),
-      trilhaId: z6.number().optional(),
-      codigoIntegracao: z6.string().optional(),
-      descricao: z6.string().optional(),
-      ordem: z6.number().optional(),
-      isActive: z6.number().optional()
+    update: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      nome: z7.string().optional(),
+      trilhaId: z7.number().optional(),
+      codigoIntegracao: z7.string().optional(),
+      descricao: z7.string().optional(),
+      ordem: z7.number().optional(),
+      isActive: z7.number().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateCompetencia(id, data);
       return { success: true };
     }),
-    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       const success = await deleteCompetencia(input.id);
       return { success };
     }),
     // Competências dos PDIs ativos por empresa (macrociclo ativo)
-    porEmpresaMacrociclo: protectedProcedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
+    porEmpresaMacrociclo: protectedProcedure.input(z7.object({ programId: z7.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return [];
       const conn = database.$client.promise ? database.$client.promise() : database.$client;
@@ -23079,55 +27812,55 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Plano Individual (Competências obrigatórias por aluno)
   planoIndividual: router({
     // Buscar plano de um aluno
-    byAluno: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
+    byAluno: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).query(async ({ input }) => {
       return await getPlanoIndividualByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Adicionar competência ao plano
-    addCompetencia: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      competenciaId: z6.number(),
-      isObrigatoria: z6.number().optional(),
-      metaNota: z6.string().optional()
+    addCompetencia: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      competenciaId: z7.number(),
+      isObrigatoria: z7.number().optional(),
+      metaNota: z7.string().optional()
     })).mutation(async ({ input }) => {
       const id = await addCompetenciaToPlano(input);
       return { success: true, id };
     }),
     // Adicionar múltiplas competências
-    addMultiple: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      competenciaIds: z6.array(z6.number())
+    addMultiple: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      competenciaIds: z7.array(z7.number())
     })).mutation(async ({ input }) => {
       const success = await addCompetenciasToPlano(input.alunoId, input.competenciaIds, input.contratoNivelId ?? null);
       return { success };
     }),
     // Remover competência do plano
-    remove: protectedProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    remove: protectedProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       const success = await removeCompetenciaFromPlano(input.id);
       return { success };
     }),
     // Atualizar item do plano
-    update: protectedProcedure.input(z6.object({
-      id: z6.number(),
-      isObrigatoria: z6.number().optional(),
-      notaAtual: z6.string().optional(),
-      metaNota: z6.string().optional(),
-      status: z6.enum(["pendente", "em_progresso", "concluida"]).optional()
+    update: protectedProcedure.input(z7.object({
+      id: z7.number(),
+      isObrigatoria: z7.number().optional(),
+      notaAtual: z7.string().optional(),
+      metaNota: z7.string().optional(),
+      status: z7.enum(["pendente", "em_progresso", "concluida"]).optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const success = await updatePlanoIndividualItem(id, data);
       return { success };
     }),
     // Limpar plano de um aluno
-    clear: protectedProcedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
+    clear: protectedProcedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input }) => {
       const success = await clearPlanoIndividual(input.alunoId);
       return { success };
     }),
     // Atribuir competências em lote para uma turma inteira
-    addToTurma: adminOrAdmin2Procedure.input(z6.object({
-      turmaId: z6.number(),
-      competenciaIds: z6.array(z6.number())
+    addToTurma: adminOrAdmin2Procedure.input(z7.object({
+      turmaId: z7.number(),
+      competenciaIds: z7.array(z7.number())
     })).mutation(async ({ input }) => {
       const alunos2 = await getAlunosByTurma(input.turmaId);
       let totalAdded = 0;
@@ -23138,15 +27871,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, alunosAtualizados: totalAdded, totalAlunos: alunos2.length };
     }),
     // Listar alunos com progresso do plano
-    alunosWithPlano: protectedProcedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
+    alunosWithPlano: protectedProcedure.input(z7.object({ programId: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getAlunosWithPlano(input?.programId);
     }),
     // Buscar competências obrigatórias de um aluno
-    competenciasObrigatorias: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    competenciasObrigatorias: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getCompetenciasObrigatoriasAluno(input.alunoId);
     }),
     // Endpoint de diagnóstico temporário — retorna qual query falha
-    diagnosticoResumoPDI: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    diagnosticoResumoPDI: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return { erro: "database null" };
       const conn = database.$client.promise ? database.$client.promise() : database.$client;
@@ -23246,7 +27979,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return resultados;
     }),
     // Mapa estático do P.D.I. do aluno — tudo que ele DEVE fazer para se certificar
-    resumoPlanoAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    resumoPlanoAluno: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return { aluno: null, assessment: null, competenciasAssessment: [], competenciasPlano: [], cursosAtribuidos: [], contrato: null, periodo: { inicio: null, fim: null }, metas: null, webinares: [], tarefas: [], todasSessoes: [], metasDesafio: [], _erros: ["database null"] };
       const conn = database.$client.promise ? database.$client.promise() : database.$client;
@@ -23403,15 +28136,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         };
       } catch (err) {
         console.error("[resumoPlanoAluno] Erro:", err?.message || err);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: err?.message || "Erro ao carregar resumo do plano" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: err?.message || "Erro ao carregar resumo do plano" });
       }
     }),
     // Enviar P.D.I. por e-mail ao aluno (instrução 10b)
-    enviarPorEmail: protectedProcedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input, ctx: ctx2 }) => {
+    enviarPorEmail: protectedProcedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input, ctx: ctx2 }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const conn = database.$client.promise ? database.$client.promise() : database.$client;
-      if (!conn) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "$client indispon\xEDvel" });
+      if (!conn) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "$client indispon\xEDvel" });
       const [alunoRows] = await conn.execute(
         `SELECT a.id, a.name, a.email, a.tipoMentoria, a.totalSessoesContratadas,
                   a.contratoInicio, a.contratoFim, a.cargo, a.areaAtuacao,
@@ -23426,7 +28159,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         [input.alunoId]
       );
       const aluno = alunoRows[0];
-      if (!aluno || !aluno.email) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado ou sem e-mail" });
+      if (!aluno || !aluno.email) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado ou sem e-mail" });
       const [apRows] = await conn.execute(
         `SELECT ap.id, ap.macroInicio, ap.macroTermino, ap.totalSessoesPrevistas, ap.observacoes,
                   t.name as trilhaNome
@@ -23601,32 +28334,53 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         html,
         text: `Ol\xE1 ${aluno.name}, segue em anexo seu Plano de Desenvolvimento Individual. Acesse o sistema para visualizar todos os detalhes.`
       });
-      if (!result.success) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: result.error || "Falha ao enviar e-mail" });
+      if (!result.success) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: result.error || "Falha ao enviar e-mail" });
       return { success: true, email: aluno.email };
     })
   }),
   // Alunos
   alunos: router({
-    list: protectedProcedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
+    list: protectedProcedure.input(z7.object({ programId: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getAlunos(input?.programId);
     }),
-    byTurma: protectedProcedure.input(z6.object({ turmaId: z6.number() })).query(async ({ input }) => {
+    byTurma: protectedProcedure.input(z7.object({ turmaId: z7.number() })).query(async ({ input }) => {
       return await getAlunosByTurma(input.turmaId);
     }),
     // Alunos vinculados a um mentor (via sessões de mentoria)
-    byConsultor: protectedProcedure.input(z6.object({ consultorId: z6.number(), programId: z6.number().optional() })).query(async ({ input }) => {
+    byConsultor: protectedProcedure.input(z7.object({ consultorId: z7.number(), programId: z7.number().optional() })).query(async ({ input }) => {
       return await getAlunosByConsultor(input.consultorId, input.programId);
     }),
     // Empresas/programas de um mentor (via alunos atendidos)
-    programsByConsultor: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
+    programsByConsultor: protectedProcedure.input(z7.object({ consultorId: z7.number() })).query(async ({ input }) => {
       return await getProgramsByConsultor(input.consultorId);
+    }),
+    // Alunos visíveis para o mentor/gestor logado
+    meusAlunos: protectedProcedure.query(async ({ ctx: ctx2 }) => {
+      if (!ctx2.user) throw new TRPCError7({ code: "UNAUTHORIZED" });
+      const role = ctx2.user.role;
+      const consultorId = ctx2.user.consultorId;
+      const { alunos: alunosTable, consultors: consultorsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const database = await getDb();
+      if (!database) return [];
+      if (role === "admin" || role === "admin2") {
+        return await database.select({ id: alunosTable.id, name: alunosTable.name, email: alunosTable.email, programId: alunosTable.programId, turmaId: alunosTable.turmaId }).from(alunosTable).where(eq10(alunosTable.isActive, 1)).orderBy(alunosTable.name);
+      }
+      if (role === "manager" && consultorId) {
+        const [consultor] = await database.select().from(consultorsTable).where(eq10(consultorsTable.id, consultorId)).limit(1);
+        if (consultor?.role === "mentor") {
+          return await database.select({ id: alunosTable.id, name: alunosTable.name, email: alunosTable.email, programId: alunosTable.programId, turmaId: alunosTable.turmaId }).from(alunosTable).where(and9(eq10(alunosTable.consultorId, consultorId), eq10(alunosTable.isActive, 1))).orderBy(alunosTable.name);
+        } else if (consultor?.role === "gerente" && consultor?.managedProgramId) {
+          return await database.select({ id: alunosTable.id, name: alunosTable.name, email: alunosTable.email, programId: alunosTable.programId, turmaId: alunosTable.turmaId }).from(alunosTable).where(and9(eq10(alunosTable.programId, consultor.managedProgramId), eq10(alunosTable.isActive, 1))).orderBy(alunosTable.name);
+        }
+      }
+      return [];
     })
   }),
   // Indicadores BEM
   indicadores: router({
     // Dashboard Visão Geral (consolidado de todas as empresas, ou filtrado por empresa para gerentes)
     visaoGeral: protectedProcedure.query(async ({ ctx: ctx2 }) => {
-      const mentoringSessions2 = await getAllMentoringSessions();
+      const mentoringSessions3 = await getAllMentoringSessions();
       const eventParticipations = await getAllEventParticipationWithDate();
       const alunosList = await getAlunos();
       const programsList = await getPrograms();
@@ -23636,7 +28390,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const performance = [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a]));
       const programMap = new Map(programsList.map((p) => [p.id, p]));
-      for (const session of mentoringSessions2) {
+      for (const session of mentoringSessions3) {
         const aluno = alunoMap.get(session.alunoId);
         if (!aluno) continue;
         const program = aluno.programId ? programMap.get(aluno.programId) : null;
@@ -23760,8 +28514,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return dashboard;
     }),
     // Dashboard por Empresa
-    porEmpresa: managerProcedure.input(z6.object({ empresa: z6.string() })).query(async ({ input }) => {
-      const mentoringSessions2 = await getAllMentoringSessions();
+    porEmpresa: managerProcedure.input(z7.object({ empresa: z7.string() })).query(async ({ input }) => {
+      const mentoringSessions3 = await getAllMentoringSessions();
       const eventParticipations = await getAllEventParticipationWithDate();
       const alunosList = await getAlunos();
       const programsList = await getPrograms();
@@ -23771,7 +28525,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const performance = [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a]));
       const programMap = new Map(programsList.map((p) => [p.id, p]));
-      for (const session of mentoringSessions2) {
+      for (const session of mentoringSessions3) {
         const aluno = alunoMap.get(session.alunoId);
         if (!aluno) continue;
         const program = aluno.programId ? programMap.get(aluno.programId) : null;
@@ -23996,8 +28750,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Dashboard por Turma
-    porTurma: managerProcedure.input(z6.object({ turmaId: z6.number() })).query(async ({ input }) => {
-      const mentoringSessions2 = await getAllMentoringSessions();
+    porTurma: managerProcedure.input(z7.object({ turmaId: z7.number() })).query(async ({ input }) => {
+      const mentoringSessions3 = await getAllMentoringSessions();
       const eventParticipations = await getAllEventParticipationWithDate();
       const alunosList = await getAlunosByTurma(input.turmaId);
       const programsList = await getPrograms();
@@ -24007,7 +28761,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const performance = [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a]));
       const programMap = new Map(programsList.map((p) => [p.id, p]));
-      for (const session of mentoringSessions2) {
+      for (const session of mentoringSessions3) {
         const aluno = alunoMap.get(session.alunoId);
         if (!aluno) continue;
         const program = aluno.programId ? programMap.get(aluno.programId) : null;
@@ -24117,8 +28871,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { visaoTurma: agregado, alunos: alunos2 };
     }),
     // Dashboard Individual (por aluno)
-    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.string() })).query(async ({ input }) => {
-      const mentoringSessions2 = await getAllMentoringSessions();
+    porAluno: protectedProcedure.input(z7.object({ alunoId: z7.string() })).query(async ({ input }) => {
+      const mentoringSessions3 = await getAllMentoringSessions();
       const eventParticipations = await getAllEventParticipationWithDate();
       const alunosList = await getAlunos();
       const programsList = await getPrograms();
@@ -24128,7 +28882,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const performance = [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a]));
       const programMap = new Map(programsList.map((p) => [p.id, p]));
-      for (const session of mentoringSessions2) {
+      for (const session of mentoringSessions3) {
         const aluno = alunoMap.get(session.alunoId);
         if (!aluno) continue;
         const program = aluno.programId ? programMap.get(aluno.programId) : null;
@@ -24235,20 +28989,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const indicadores = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMap, casesDataInd, void 0, macrocicloPorAlunoInd, compIdToNomeMapInd);
       const alunoIndicadores = indicadores.find((i) => i.idUsuario === input.alunoId);
       if (!alunoIndicadores) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       return alunoIndicadores;
     }),
     // Detalhe completo de um aluno (competências, eventos, turma, trilha, ciclo)
-    detalheAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    detalheAluno: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const detalhe = await getAlunoDetalheCompleto(input.alunoId);
       if (!detalhe) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       return detalhe;
     }),
     // Resumo de todos os alunos (turma, trilha, programa, competências)
-    alunosResumo: protectedProcedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
+    alunosResumo: protectedProcedure.input(z7.object({ programId: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getAlunosResumo(input?.programId);
     }),
     // Lista de empresas disponíveis
@@ -24256,28 +29010,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const programs3 = await getPrograms();
       return programs3.map((p) => ({ id: p.id, nome: p.name, codigo: p.code }));
     }),
-    enviarLembreteEngajamento: managerProcedure.input(z6.object({
-      alunoIdUsuario: z6.string().min(1)
+    enviarLembreteEngajamento: managerProcedure.input(z7.object({
+      alunoIdUsuario: z7.string().min(1)
     })).mutation(async ({ ctx: ctx2, input }) => {
       const hasConsultorId = !!ctx2.user?.consultorId;
       const consultorRole = ctx2.user?.consultorRole;
       const isGestor = ctx2.user.role === "manager" && (consultorRole === "gerente" || !hasConsultorId && !ctx2.user?.alunoId || !!ctx2.user?.alunoId);
       if (!isGestor || !ctx2.user.programId) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito ao gestor da empresa." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Acesso restrito ao gestor da empresa." });
       }
       const programs3 = await getPrograms();
       const program = programs3.find((p) => p.id === ctx2.user.programId);
       if (!program) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Empresa do gestor n\xE3o encontrada." });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Empresa do gestor n\xE3o encontrada." });
       }
       const caller = appRouter.createCaller(ctx2);
       const dashboardEmpresa = await caller.indicadores.porEmpresa({ empresa: program.name });
       const alunoRanking = dashboardEmpresa.alunos.find((a) => a.idUsuario === input.alunoIdUsuario);
       if (!alunoRanking) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Aluno n\xE3o pertence \xE0 empresa do gestor." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Aluno n\xE3o pertence \xE0 empresa do gestor." });
       }
       if (!alunoRanking.email) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "Aluno sem e-mail cadastrado." });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "Aluno sem e-mail cadastrado." });
       }
       const posicaoRanking = dashboardEmpresa.alunos.sort((a, b) => b.notaFinal - a.notaFinal).findIndex((a) => a.idUsuario === input.alunoIdUsuario) + 1;
       const emailData = buildLembreteEngajamentoEmail({
@@ -24315,23 +29069,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (envioDesativado) {
           return { success: true, emailEnabled: false };
         }
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: envio.error || "Falha ao enviar e-mail." });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: envio.error || "Falha ao enviar e-mail." });
       }
       return { success: true, emailEnabled: true };
     }),
-    exportarRankingEngajamentoExcel: managerProcedure.input(z6.object({
-      alunoIdsUsuario: z6.array(z6.string().min(1))
+    exportarRankingEngajamentoExcel: managerProcedure.input(z7.object({
+      alunoIdsUsuario: z7.array(z7.string().min(1))
     })).mutation(async ({ ctx: ctx2, input }) => {
       const hasConsultorId = !!ctx2.user?.consultorId;
       const consultorRole = ctx2.user?.consultorRole;
       const isGestor = ctx2.user.role === "manager" && (consultorRole === "gerente" || !hasConsultorId && !ctx2.user?.alunoId || !!ctx2.user?.alunoId);
       if (!isGestor || !ctx2.user.programId) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito ao gestor da empresa." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Acesso restrito ao gestor da empresa." });
       }
       const programs3 = await getPrograms();
       const program = programs3.find((p) => p.id === ctx2.user.programId);
       if (!program) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Empresa do gestor n\xE3o encontrada." });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Empresa do gestor n\xE3o encontrada." });
       }
       const caller = appRouter.createCaller(ctx2);
       const dashboardEmpresa = await caller.indicadores.porEmpresa({ empresa: program.name });
@@ -24358,7 +29112,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const exportRows = input.alunoIdsUsuario.map((idUsuario, index) => {
         const aluno = alunosPorId.get(idUsuario);
         if (!aluno) {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Tentativa de exportar aluno fora do escopo da empresa." });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Tentativa de exportar aluno fora do escopo da empresa." });
         }
         const turmaNomeCompleto = turmaMap.get(String(aluno.turma || "")) || "";
         const turmaNomeMatch = turmaNomeCompleto.match(/\[([^\]]+)\]\s*$/);
@@ -24394,11 +29148,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         base64: buffer.toString("base64")
       };
     }),
-    performanceNivelAtual: protectedProcedure.input(z6.object({ alunoId: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    performanceNivelAtual: protectedProcedure.input(z7.object({ alunoId: z7.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       let alunoIdAlvo = null;
       if (input?.alunoId) {
         if (ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
         }
         alunoIdAlvo = input.alunoId;
       } else if (ctx2.user.alunoId) {
@@ -24518,7 +29272,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         void 0,
         macrocicloNivel
       );
-      const webinarsTotal = eventos.length;
+      const webinarsTotal = eventos.filter((e) => e.status !== "pendente").length;
       const webinarsPresente = eventos.filter((e) => e.status === "presente").length;
       const ind1_webinars = indV2Nivel.consolidado?.ind1_webinars ?? (webinarsTotal > 0 ? clampPercent(webinarsPresente / webinarsTotal * 100) : 0);
       const ind2_avaliacoes = indV2Nivel.consolidado?.ind2_avaliacoes ?? 0;
@@ -24589,14 +29343,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     }),
     // Performance Filtrada - BLOCO 3
     // Calcula indicadores considerando apenas competências obrigatórias do plano individual
-    performanceFiltrada: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    performanceFiltrada: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const alunosList = await getAlunos();
       const aluno = alunosList.find((a) => a.id === input.alunoId);
       if (!aluno) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       const competenciasObrigatorias = await getCompetenciasObrigatoriasAluno(input.alunoId);
-      const mentoringSessions2 = await getAllMentoringSessions();
+      const mentoringSessions3 = await getAllMentoringSessions();
       const eventParticipations = await getAllEventParticipationWithDate();
       const programsList = await getPrograms();
       const mentorias = [];
@@ -24604,7 +29358,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const performance = [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a]));
       const programMap = new Map(programsList.map((p) => [p.id, p]));
-      for (const session of mentoringSessions2) {
+      for (const session of mentoringSessions3) {
         const sessionAluno = alunoMap.get(session.alunoId);
         if (!sessionAluno) continue;
         const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
@@ -24753,16 +29507,46 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Meu Dashboard - dados do aluno logado
-    meuDashboard: protectedProcedure.query(async ({ ctx: ctx2 }) => {
+    meuDashboard: protectedProcedure.input(z7.object({ viewAlunoId: z7.number().optional() }).optional()).query(async ({ input, ctx: ctx2 }) => {
       if (!ctx2.user) {
-        throw new TRPCError6({ code: "UNAUTHORIZED", message: "Usu\xE1rio n\xE3o autenticado" });
+        throw new TRPCError7({ code: "UNAUTHORIZED", message: "Usu\xE1rio n\xE3o autenticado" });
       }
-      console.log("[meuDashboard] ctx.user:", JSON.stringify({ id: ctx2.user.id, openId: ctx2.user.openId, email: ctx2.user.email, alunoId: ctx2.user.alunoId, role: ctx2.user.role }));
-      const aluno = await getAlunoFromCtx(ctx2.user);
-      console.log("[meuDashboard] aluno encontrado:", aluno ? JSON.stringify({ id: aluno.id, name: aluno.name, email: aluno.email, externalId: aluno.externalId }) : "null");
+      let aluno;
+      if (input?.viewAlunoId) {
+        const role = ctx2.user.role;
+        const isAllowed = role === "admin" || role === "admin2" || role === "manager";
+        if (!isAllowed) {
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Sem permiss\xE3o para visualizar dados de outro aluno." });
+        }
+        const { alunos: alunosTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+        const database = await getDb();
+        if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR" });
+        const [found] = await database.select().from(alunosTable).where(eq10(alunosTable.id, input.viewAlunoId)).limit(1);
+        aluno = found || null;
+        if (role === "manager" && ctx2.user.consultorId) {
+          const consultorId = ctx2.user.consultorId;
+          const { consultors: consultorsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+          const [consultor] = await database.select().from(consultorsTable).where(eq10(consultorsTable.id, consultorId)).limit(1);
+          if (consultor?.role === "mentor") {
+            if (found?.consultorId !== consultorId) {
+              throw new TRPCError7({ code: "FORBIDDEN", message: "Voc\xEA n\xE3o \xE9 o mentor deste aluno." });
+            }
+          } else if (consultor?.role === "gerente" && consultor?.managedProgramId) {
+            if (found?.programId !== consultor.managedProgramId) {
+              throw new TRPCError7({ code: "FORBIDDEN", message: "Este aluno n\xE3o pertence ao seu programa." });
+            }
+          }
+        }
+      } else {
+        console.log("[meuDashboard] ctx.user:", JSON.stringify({ id: ctx2.user.id, openId: ctx2.user.openId, email: ctx2.user.email, alunoId: ctx2.user.alunoId, role: ctx2.user.role }));
+        aluno = await getAlunoFromCtx(ctx2.user);
+        console.log("[meuDashboard] aluno encontrado:", aluno ? JSON.stringify({ id: aluno.id, name: aluno.name, email: aluno.email, externalId: aluno.externalId }) : "null");
+      }
       if (!aluno) {
         return { found: false, message: "Nenhum perfil de aluno vinculado a esta conta." };
       }
+      const t0MeuDashboard = Date.now();
+      console.log(`[meuDashboard] Iniciando carregamento para aluno ${aluno.id} (${aluno.name})`);
       const [
         competenciasObrigatorias,
         allSessions,
@@ -25040,7 +29824,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         casesDataAll.push(...cases);
       }
       const macrocicloPorAlunoRanking = macrocicloPorAlunoGlobal;
-      const todosIndicadoresV2 = calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, void 0, macrocicloPorAlunoRanking, compIdToNomeMapAll);
+      console.log(`[meuDashboard] Iniciando calcularIndicadoresTodosAlunos para aluno ${aluno.id} (${aluno.name})`);
+      const t0Ranking = Date.now();
+      const todosIndicadoresV2 = await cacheOrFetch(
+        "todosIndicadoresV2",
+        () => Promise.resolve(calcularIndicadoresTodosAlunos(mentorias, eventos, performance, ciclosPorAluno, compIdToCodigoMapAll, casesDataAll, void 0, macrocicloPorAlunoRanking, compIdToNomeMapAll))
+      );
+      console.log(`[meuDashboard] calcularIndicadoresTodosAlunos conclu\xEDdo em ${Date.now() - t0Ranking}ms`);
       let ranking = { posicao: 0, totalAlunos: 0 };
       if (aluno.programId) {
         const programa2 = programMap.get(aluno.programId);
@@ -25050,6 +29840,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         ranking = { posicao, totalAlunos: alunosEmpresaV2.length };
       }
       const alunoIndicadoresV2Global = todosIndicadoresV2.find((i) => i.idUsuario === idUsuario);
+      console.log(`[meuDashboard] Carregamento conclu\xEDdo em ${Date.now() - t0MeuDashboard}ms para aluno ${aluno.id}`);
       return {
         found: true,
         aluno: {
@@ -25115,6 +29906,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           nomeTurma: codigoTurmaAluno ? `Turma ${codigoTurmaAluno}` : turmaCongeladaRepresentativa?.name
         } : { congelado: false, dataCongelamento: null, codigoTurma: null, nomeTurma: null },
         sessoes: sessoesAluno.filter((s) => {
+          if (s.cancelada) return false;
           if (dataCongelamentoTurma && s.sessionDate) {
             return new Date(s.sessionDate) <= dataCongelamentoTurma;
           }
@@ -25322,6 +30114,303 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           }));
         })()
       };
+    }),
+    // === MACROCICLO ANTERIOR (CONGELADO) ===
+    // Endpoint idêntico ao meuDashboard, mas usando PDIs congelados e dados até a data do reset.
+    // Usado pela página Evolução (clone da Performance) para exibir o Macrociclo 1.
+    meuDashboardCongelado: protectedProcedure.input(z7.object({ viewAlunoId: z7.number().optional() }).optional()).query(async ({ input, ctx: ctx2 }) => {
+      if (!ctx2.user) {
+        throw new TRPCError7({ code: "UNAUTHORIZED", message: "Usu\xE1rio n\xE3o autenticado" });
+      }
+      let aluno;
+      if (input?.viewAlunoId) {
+        const role = ctx2.user.role;
+        const isAllowed = role === "admin" || role === "admin2" || role === "manager";
+        if (!isAllowed) throw new TRPCError7({ code: "FORBIDDEN", message: "Sem permiss\xE3o." });
+        const { alunos: alunosTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+        const database = await getDb();
+        if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR" });
+        const [found] = await database.select().from(alunosTable).where(eq10(alunosTable.id, input.viewAlunoId)).limit(1);
+        aluno = found || null;
+      } else {
+        aluno = await getAlunoFromCtx(ctx2.user);
+      }
+      if (!aluno) {
+        return { found: false, message: "Nenhum perfil de aluno vinculado a esta conta." };
+      }
+      const pdisCongeladosCheck = await (async () => {
+        const { assessmentPdi: apTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+        const database = await getDb();
+        if (!database) return [];
+        return database.select().from(apTable).where(
+          and9(eq10(apTable.alunoId, aluno.id), eq10(apTable.status, "congelado"))
+        );
+      })();
+      if (pdisCongeladosCheck.length === 0) {
+        return { found: false, message: "Este aluno n\xE3o possui macrociclo anterior congelado." };
+      }
+      const dataReset = await getDataUltimoResetAluno(aluno.id);
+      const dataCorte = dataReset ?? (() => {
+        const terminos = pdisCongeladosCheck.filter((p) => p.macroTermino).map((p) => new Date(p.macroTermino));
+        if (terminos.length === 0) return null;
+        return new Date(Math.max(...terminos.map((d) => d.getTime())));
+      })();
+      const [
+        allSessions,
+        allEventParticipations,
+        alunosList,
+        programsList,
+        turmasList,
+        studentPerfRecords,
+        compIdToCodigoMapAll,
+        compIdToNomeMapAll,
+        casesAluno,
+        planoItems,
+        sessoesAluno,
+        eventosAluno
+      ] = await Promise.all([
+        cacheOrFetch("allSessions", () => getAllMentoringSessions()),
+        cacheOrFetch("allEventParticipations", () => getAllEventParticipationWithDate()),
+        cacheOrFetch("alunosList", () => getAlunos()),
+        cacheOrFetch("programsList", () => getPrograms()),
+        cacheOrFetch("turmasList", () => getTurmas()),
+        cacheOrFetch("studentPerfRecords", () => getStudentPerformanceAsRecords()),
+        cacheOrFetch("compIdToCodigoMap", () => getCompIdToCodigoMap()),
+        cacheOrFetch("compIdToNomeMap", () => getCompIdToNomeMap()),
+        getCasesSucessoByAluno(aluno.id),
+        getPlanoIndividualByAluno(aluno.id),
+        getMentoringSessionsByAluno(aluno.id),
+        getEventParticipationByAluno(aluno.id)
+      ]);
+      const alunoMap = new Map(alunosList.map((a) => [a.id, a]));
+      const programMap = new Map(programsList.map((p) => [p.id, p]));
+      const turmaMap = new Map(turmasList.map((t2) => [t2.id, t2]));
+      const idUsuario = aluno.externalId || String(aluno.id);
+      const mentorias = [];
+      for (const session of allSessions) {
+        const sessionAluno = alunoMap.get(session.alunoId);
+        if (!sessionAluno) continue;
+        if (sessionAluno.id !== aluno.id) continue;
+        if (!session.sessionDate) continue;
+        const sessionDt = new Date(session.sessionDate);
+        if (dataCorte && sessionDt > dataCorte) continue;
+        const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
+        const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
+        mentorias.push({
+          idUsuario: sessionAluno.externalId || String(sessionAluno.id),
+          nomeAluno: sessionAluno.name,
+          empresa: program?.name || "Desconhecida",
+          turma: turma?.name || "",
+          trilha: "",
+          ciclo: session.ciclo || "",
+          sessao: session.sessionNumber || 0,
+          dataSessao: sessionDt,
+          presenca: session.presence,
+          atividadeEntregue: session.isAssessment ? "sem_tarefa" : session.taskStatus || "sem_tarefa",
+          engajamento: session.engagementScore || void 0,
+          feedback: session.feedback || ""
+        });
+      }
+      const eventos = [];
+      for (const ep of allEventParticipations) {
+        const epAluno = alunoMap.get(ep.alunoId);
+        if (!epAluno || epAluno.id !== aluno.id) continue;
+        if (!ep.eventDate) continue;
+        const evtDt = new Date(ep.eventDate);
+        if (dataCorte && evtDt > dataCorte) continue;
+        const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
+        eventos.push({
+          idUsuario: epAluno.externalId || String(epAluno.id),
+          nomeAluno: epAluno.name,
+          empresa: program?.name || "Desconhecida",
+          turma: "",
+          trilha: "",
+          tituloEvento: ep.eventTitle || "Evento",
+          dataEvento: evtDt,
+          presenca: ep.status
+        });
+      }
+      const performance = [];
+      for (const item of planoItems) {
+        if (item.notaAtual) {
+          performance.push({
+            idUsuario: aluno.externalId || String(aluno.id),
+            nomeTurma: "",
+            idCompetencia: String(item.competenciaId),
+            nomeCompetencia: item.competenciaNome || "",
+            notaAvaliacao: parseFloat(item.notaAtual),
+            aprovado: parseFloat(item.notaAtual) >= 7
+          });
+        }
+      }
+      const existingPerfKeys = new Set(performance.map((p) => `${p.idUsuario}|${p.idCompetencia}`));
+      for (const spRec of studentPerfRecords) {
+        const key = `${spRec.idUsuario}|${spRec.idCompetencia}`;
+        if (!existingPerfKeys.has(key)) {
+          performance.push(spRec);
+          existingPerfKeys.add(key);
+        }
+      }
+      const ciclosCongelados = await getCiclosCongeladosParaCalculator(aluno.id);
+      const ciclosV2 = ciclosCongelados.map((c) => ({
+        ...c,
+        trilhaNome: c.nomeCiclo.split(" - ")[0] || "Geral"
+      }));
+      const casesDataAluno = casesAluno.map((c) => ({
+        alunoId: c.alunoId,
+        trilhaId: c.trilhaId,
+        trilhaNome: c.trilhaNome,
+        entregue: c.entregue === 1,
+        dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : null
+      }));
+      const macroInicioCongelado = pdisCongeladosCheck.filter((p) => p.macroInicio).map((p) => String(p.macroInicio).split("T")[0]).sort()[0] || null;
+      const macroTerminoCongelado = pdisCongeladosCheck.filter((p) => p.macroTermino).map((p) => String(p.macroTermino).split("T")[0]).sort().reverse()[0] || null;
+      const macrocicloCongelado = macroInicioCongelado && macroTerminoCongelado ? { macroInicio: macroInicioCongelado, macroTermino: macroTerminoCongelado } : void 0;
+      const indicadoresV2Congelado = calcularIndicadoresAluno2(
+        idUsuario,
+        mentorias,
+        eventos,
+        performance,
+        ciclosV2,
+        compIdToCodigoMapAll,
+        casesDataAluno,
+        void 0,
+        macrocicloCongelado,
+        compIdToNomeMapAll
+      );
+      const compObrigatorias = (await getCompetenciasObrigatoriasAluno(aluno.id)).map((c) => ({
+        competenciaId: c.competenciaId,
+        codigoIntegracao: c.codigoIntegracao,
+        notaAtual: c.notaAtual,
+        metaNota: c.metaNota,
+        status: c.status
+      }));
+      const indicadoresClassicos = calcularIndicadoresAlunoFiltrado(
+        idUsuario,
+        mentorias,
+        eventos,
+        performance,
+        compObrigatorias,
+        ciclosCongelados
+      );
+      const programa = aluno.programId ? programMap.get(aluno.programId) : null;
+      const turmaAluno = aluno.turmaId ? turmaMap.get(aluno.turmaId) : null;
+      const sessaoComConsultor = !aluno.consultorId ? [...sessoesAluno].reverse().find((s) => s.consultorId) : null;
+      const mentorAluno = aluno.consultorId ? await getConsultorById(aluno.consultorId) : sessaoComConsultor?.consultorId ? await getConsultorById(sessaoComConsultor.consultorId) : null;
+      const sessoesCongeladas = sessoesAluno.filter((s) => {
+        if (!s.sessionDate) return true;
+        return !dataCorte || new Date(s.sessionDate) <= dataCorte;
+      });
+      const allEvents = aluno.programId ? await cacheOrFetch(`eventsByProgram_${aluno.programId}`, () => getEventsByProgramOrGlobal(aluno.programId)) : [];
+      const eventMap = new Map(allEvents.map((e) => [e.id, e]));
+      const eventosDetalhados = eventosAluno.filter((ep) => {
+        const evento = eventMap.get(ep.eventId);
+        const evtDate = evento?.eventDate;
+        if (!evtDate) return true;
+        return !dataCorte || new Date(evtDate) <= dataCorte;
+      }).map((ep) => {
+        const evento = eventMap.get(ep.eventId);
+        return {
+          id: ep.id,
+          eventId: ep.eventId,
+          titulo: evento?.title || `Evento #${ep.eventId}`,
+          tipo: evento?.eventType || "webinar",
+          data: evento?.eventDate ? new Date(evento.eventDate) : null,
+          status: ep.status,
+          reflexao: ep.reflexao || null,
+          selfReportedAt: ep.selfReportedAt || null
+        };
+      });
+      const ciclosDetalhados = ciclosCongelados.map((c) => {
+        const hoje = dataCorte || /* @__PURE__ */ new Date();
+        const inicio = new Date(c.dataInicio);
+        const fim = new Date(c.dataFim);
+        let status = "futuro";
+        if (hoje > fim) status = "finalizado";
+        else if (hoje >= inicio && hoje <= fim) status = "em_andamento";
+        return {
+          id: c.id,
+          nomeCiclo: c.nomeCiclo,
+          dataInicio: c.dataInicio,
+          dataFim: c.dataFim,
+          status,
+          competencias: (c.allCompetenciaIds || c.competenciaIds).map((compId) => ({
+            id: compId,
+            nome: compIdToNomeMapAll.get(compId) || `Comp ${compId}`,
+            nota: null,
+            meta: 7,
+            progressoPlataforma: null,
+            status: "pendente"
+          }))
+        };
+      });
+      return {
+        found: true,
+        macrocicloLabel: "Macrociclo 1 \u2014 Congelado",
+        dataCorte: dataCorte ? dataCorte.toISOString().split("T")[0] : null,
+        macroInicio: macroInicioCongelado,
+        macroTermino: macroTerminoCongelado,
+        aluno: {
+          id: aluno.id,
+          name: aluno.name,
+          email: aluno.email,
+          programa: programa?.name || "N\xE3o definido",
+          turma: turmaAluno?.name || "N\xE3o definida",
+          mentor: mentorAluno?.name || "N\xE3o definido",
+          mentorEmail: mentorAluno?.email || null,
+          mentorId: mentorAluno?.id || null
+        },
+        indicadores: {
+          participacaoMentorias: indicadoresClassicos.participacaoMentorias,
+          atividadesPraticas: indicadoresClassicos.atividadesPraticas,
+          engajamento: indicadoresClassicos.engajamento,
+          performanceCompetencias: indicadoresClassicos.performanceCompetencias,
+          participacaoEventos: indicadoresClassicos.participacaoEventos,
+          performanceGeral: indicadoresClassicos.performanceGeral,
+          notaFinal: indicadoresClassicos.notaFinal,
+          classificacao: indicadoresClassicos.classificacao,
+          ciclosFinalizados: indicadoresClassicos.ciclosFinalizados,
+          ciclosEmAndamento: indicadoresClassicos.ciclosEmAndamento
+        },
+        indicadoresV2: {
+          ciclosFinalizados: indicadoresV2Congelado.ciclosFinalizados,
+          ciclosEmAndamento: indicadoresV2Congelado.ciclosEmAndamento,
+          consolidado: indicadoresV2Congelado.consolidado,
+          alertaCasePendente: []
+        },
+        sessoes: sessoesCongeladas.filter((s) => !s.cancelada).map((s) => ({
+          id: s.id,
+          sessionNumber: s.sessionNumber,
+          sessionDate: s.sessionDate,
+          presence: s.presence,
+          taskStatus: s.taskStatus,
+          engagementScore: s.engagementScore,
+          notaEvolucao: s.notaEvolucao,
+          feedback: s.feedback,
+          mensagemAluno: s.mensagemAluno,
+          taskId: s.taskId,
+          taskDeadline: s.taskDeadline,
+          customTaskTitle: s.customTaskTitle,
+          taskMode: s.taskMode,
+          relatoAluno: s.relatoAluno,
+          ciclo: s.ciclo,
+          isAssessment: s.isAssessment ? true : false
+        })),
+        eventos: eventosDetalhados,
+        planoIndividual: planoItems,
+        assessments: pdisCongeladosCheck,
+        ciclosDetalhados,
+        casesAluno: casesAluno.map((c) => ({
+          id: c.id,
+          trilhaId: c.trilhaId,
+          trilhaNome: c.trilhaNome,
+          entregue: c.entregue === 1,
+          dataEntrega: c.dataEntrega,
+          titulo: c.titulo,
+          descricao: c.descricao,
+          resumoPublico: c.resumoPublico
+        }))
+      };
     })
   }),
   // Mentor/Consultor routes
@@ -25331,27 +30420,27 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getActiveMentorsForOnboarding();
     }),
     // Detalhes de um mentor específico
-    getById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       const consultor = await getConsultorById(input.id);
       if (!consultor) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
       }
       return consultor;
     }),
     // Estatísticas completas de um mentor
-    stats: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
+    stats: protectedProcedure.input(z7.object({ consultorId: z7.number() })).query(async ({ input }) => {
       const stats = await getConsultorStats(input.consultorId);
       if (!stats) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Estat\xEDsticas n\xE3o encontradas" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Estat\xEDsticas n\xE3o encontradas" });
       }
       return stats;
     }),
     // Sessões de mentoria por aluno
-    sessionsByAluno: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
+    sessionsByAluno: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).query(async ({ input }) => {
       return await getMentoringSessionsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Progresso de sessões por aluno (baseado no Assessment PDI macro ciclo)
-    sessionProgress: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    sessionProgress: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getSessionProgressByAluno(input.alunoId);
     }),
     // Progresso de sessões de todos os alunos (para admin/gerente)
@@ -25359,7 +30448,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getAllStudentsSessionProgress();
     }),
     // Estatísticas da equipe do gestor (colaboradores, mentorias, competências, top competências)
-    gestorTeamStats: managerProcedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
+    gestorTeamStats: managerProcedure.input(z7.object({ programId: z7.number() })).query(async ({ input }) => {
       return await getGestorTeamStats(input.programId);
     }),
     // Enviar notificação ao admin sobre alunos a 1 sessão de fechar o ciclo
@@ -25404,21 +30493,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { sent, alunosFalta1: alunosFalta1.length, alunosCicloCompleto: alunosCicloCompleto.length };
     }),
     // Atualizar sessão de mentoria
-    updateSession: protectedProcedure.input(z6.object({
-      sessionId: z6.number(),
-      sessionDate: z6.string().optional(),
-      notaEvolucao: z6.number().min(0).max(10).optional(),
-      engagementScore: z6.number().min(0).max(10).optional(),
-      feedback: z6.string().optional(),
-      mensagemAluno: z6.string().optional(),
-      taskId: z6.number().nullable().optional(),
-      taskDeadline: z6.string().nullable().optional(),
-      taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
-      presence: z6.enum(["presente", "ausente"]).optional(),
-      customTaskTitle: z6.string().nullable().optional(),
-      customTaskDescription: z6.string().nullable().optional(),
-      taskMode: z6.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
-      notaMentoraAplicabilidade: z6.number().min(0).max(10).nullable().optional()
+    updateSession: protectedProcedure.input(z7.object({
+      sessionId: z7.number(),
+      sessionDate: z7.string().optional(),
+      notaEvolucao: z7.number().min(0).max(10).optional(),
+      engagementScore: z7.number().min(0).max(10).optional(),
+      feedback: z7.string().optional(),
+      mensagemAluno: z7.string().optional(),
+      taskId: z7.number().nullable().optional(),
+      taskDeadline: z7.string().nullable().optional(),
+      taskStatus: z7.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
+      presence: z7.enum(["presente", "ausente"]).optional(),
+      customTaskTitle: z7.string().nullable().optional(),
+      customTaskDescription: z7.string().nullable().optional(),
+      taskMode: z7.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
+      notaMentoraAplicabilidade: z7.number().min(0).max(10).nullable().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const { sessionId, ...data } = input;
       const updateData = { ...data };
@@ -25434,8 +30523,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const alteradoPor = ctx2.user?.email || ctx2.user?.openId || null;
         const alteradoPorRole = ctx2.user?.role || null;
         const alunoAudit = await getAlunoById(sessaoAtual.alunoId);
-        const consultors2 = await getConsultors();
-        const consultorAudit = sessaoAtual.consultorId ? consultors2.find((c) => c.id === sessaoAtual.consultorId) : null;
+        const consultors3 = await getConsultors();
+        const consultorAudit = sessaoAtual.consultorId ? consultors3.find((c) => c.id === sessaoAtual.consultorId) : null;
         if (input.engagementScore !== void 0) {
           const anterior = sessaoAtual.engagementScore != null ? Number(sessaoAtual.engagementScore) : null;
           const novo = input.engagementScore != null ? Number(input.engagementScore) : null;
@@ -25476,26 +30565,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success };
     }),
     // Criar nova sessão de mentoria
-    createSession: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      sessionDate: z6.string(),
-      presence: z6.enum(["presente", "ausente"]),
-      taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
-      engagementScore: z6.number().min(0).max(10).nullable().optional(),
-      notaEvolucao: z6.number().min(0).max(10).nullable().optional(),
-      feedback: z6.string().optional(),
-      mensagemAluno: z6.string().optional(),
-      taskId: z6.number().nullable().optional(),
-      taskDeadline: z6.string().nullable().optional(),
-      customTaskTitle: z6.string().nullable().optional(),
-      customTaskDescription: z6.string().nullable().optional(),
-      taskMode: z6.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
-      notaMentoraAplicabilidade: z6.number().min(0).max(10).nullable().optional(),
-      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
-      appointmentId: z6.number().nullable().optional()
+    createSession: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      sessionDate: z7.string(),
+      presence: z7.enum(["presente", "ausente"]),
+      taskStatus: z7.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
+      engagementScore: z7.number().min(0).max(10).nullable().optional(),
+      notaEvolucao: z7.number().min(0).max(10).nullable().optional(),
+      feedback: z7.string().optional(),
+      mensagemAluno: z7.string().optional(),
+      taskId: z7.number().nullable().optional(),
+      taskDeadline: z7.string().nullable().optional(),
+      customTaskTitle: z7.string().nullable().optional(),
+      customTaskDescription: z7.string().nullable().optional(),
+      taskMode: z7.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
+      notaMentoraAplicabilidade: z7.number().min(0).max(10).nullable().optional(),
+      tipoSessao: z7.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+      appointmentId: z7.number().nullable().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
-      const consultors2 = await getConsultors();
-      const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
+      const consultors3 = await getConsultors();
+      const consultor = consultors3.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
       let consultorId = consultor?.id;
       if (!consultorId && ctx2.user.role === "admin") {
         const sessions = await getMentoringSessionsByAluno(input.alunoId);
@@ -25504,11 +30593,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
       }
       if (!consultorId) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA n\xE3o est\xE1 vinculado como mentor" });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Voc\xEA n\xE3o est\xE1 vinculado como mentor" });
       }
       const aluno = await getAlunoById(input.alunoId);
       if (!aluno) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
       const nivelVigenteParaSessao = await getContratoNivelVigenteByAluno(input.alunoId);
@@ -25584,9 +30673,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getAllTaskLibrary();
     }),
     // Aluno envia relato da tarefa
-    submitRelato: protectedProcedure.input(z6.object({
-      sessionId: z6.number(),
-      relatoAluno: z6.string().min(1)
+    submitRelato: protectedProcedure.input(z7.object({
+      sessionId: z7.number(),
+      relatoAluno: z7.string().min(1)
     })).mutation(async ({ input }) => {
       const success = await updateMentoringSession(input.sessionId, {
         relatoAluno: input.relatoAluno
@@ -25594,21 +30683,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success };
     }),
     // Mentor valida a entrega de uma atividade prática (idempotente)
-    validateTask: protectedProcedure.input(z6.object({ sessionId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
-      const consultors2 = await getConsultors();
-      const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
+    validateTask: protectedProcedure.input(z7.object({ sessionId: z7.number() })).mutation(async ({ ctx: ctx2, input }) => {
+      const consultors3 = await getConsultors();
+      const consultor = consultors3.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
       if (!consultor && ctx2.user.role !== "admin") {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Apenas mentores podem validar atividades" });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Apenas mentores podem validar atividades" });
       }
       const session = await getMentoringSessionById(input.sessionId);
       if (!session) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
       }
       if (session.taskStatus === "validada") {
         return { success: true, alreadyValidated: true };
       }
       if (session.taskStatus !== "entregue") {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "S\xF3 \xE9 poss\xEDvel validar atividades com status ENTREGUE" });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "S\xF3 \xE9 poss\xEDvel validar atividades com status ENTREGUE" });
       }
       await updateMentoringSession(input.sessionId, {
         taskStatus: "validada",
@@ -25618,15 +30707,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, alreadyValidated: false };
     }),
     // Mentor visualiza detalhe da entrega de um aluno
-    getSubmissionDetail: protectedProcedure.input(z6.object({ sessionId: z6.number() })).query(async ({ input }) => {
+    getSubmissionDetail: protectedProcedure.input(z7.object({ sessionId: z7.number() })).query(async ({ input }) => {
       const session = await getMentoringSessionById(input.sessionId);
-      if (!session) throw new TRPCError6({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
+      if (!session) throw new TRPCError7({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
       const task = session.taskId ? await getTaskLibraryById(session.taskId) : null;
       const comments = await getCommentsBySessionId(input.sessionId);
       const allAlunos = await getAlunos();
       const aluno = allAlunos.find((a) => a.id === session.alunoId);
-      const consultors2 = await getConsultors();
-      const validador = session.validatedBy ? consultors2.find((c) => c.id === session.validatedBy) : null;
+      const consultors3 = await getConsultors();
+      const validador = session.validatedBy ? consultors3.find((c) => c.id === session.validatedBy) : null;
       return {
         sessionId: session.id,
         alunoId: session.alunoId,
@@ -25651,12 +30740,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Mentor adiciona comentário em uma entrega
-    addTaskComment: protectedProcedure.input(z6.object({
-      sessionId: z6.number(),
-      comment: z6.string().min(1)
+    addTaskComment: protectedProcedure.input(z7.object({
+      sessionId: z7.number(),
+      comment: z7.string().min(1)
     })).mutation(async ({ ctx: ctx2, input }) => {
-      const consultors2 = await getConsultors();
-      const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
+      const consultors3 = await getConsultors();
+      const consultor = consultors3.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
       const authorRole = ctx2.user.role === "admin" ? "admin" : "mentor";
       const authorName = consultor?.name || ctx2.user.name || "Mentor";
       const id = await addActivityComment({
@@ -25669,11 +30758,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, commentId: id };
     }),
     // Mentor: listar sessões com tarefas dos seus alunos (para acompanhamento)
-    taskSubmissions: protectedProcedure.input(z6.object({
-      status: z6.string().optional()
+    taskSubmissions: protectedProcedure.input(z7.object({
+      status: z7.string().optional()
     }).optional()).query(async ({ ctx: ctx2, input }) => {
-      const consultors2 = await getConsultors();
-      const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
+      const consultors3 = await getConsultors();
+      const consultor = consultors3.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
       if (!consultor) return [];
       const sessions = await getMentoringSessionsByConsultor(consultor.id);
       const sessionsWithTask = sessions.filter((s) => s.taskId !== null && s.taskId !== void 0);
@@ -25704,10 +30793,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Perfil do mentor (foto + minicurrículo)
-    getProfile: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
+    getProfile: protectedProcedure.input(z7.object({ consultorId: z7.number() })).query(async ({ input }) => {
       const consultor = await getConsultorById(input.consultorId);
       if (!consultor) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
       }
       return {
         id: consultor.id,
@@ -25719,20 +30808,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Atualizar perfil do mentor (foto + minicurrículo)
-    updateProfile: protectedProcedure.input(z6.object({
-      consultorId: z6.number(),
-      miniCurriculo: z6.string().optional(),
-      especialidade: z6.string().optional()
+    updateProfile: protectedProcedure.input(z7.object({
+      consultorId: z7.number(),
+      miniCurriculo: z7.string().optional(),
+      especialidade: z7.string().optional()
     })).mutation(async ({ input }) => {
       const { consultorId, ...data } = input;
       const success = await updateConsultor(consultorId, data);
       return { success };
     }),
     // Upload de foto do mentor
-    uploadPhoto: protectedProcedure.input(z6.object({
-      consultorId: z6.number(),
-      photoBase64: z6.string(),
-      mimeType: z6.string().default("image/jpeg")
+    uploadPhoto: protectedProcedure.input(z7.object({
+      consultorId: z7.number(),
+      photoBase64: z7.string(),
+      mimeType: z7.string().default("image/jpeg")
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.photoBase64, "base64");
       const ext = input.mimeType === "image/png" ? "png" : "jpg";
@@ -25743,73 +30832,73 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     }),
     // ==================== AGENDA DO MENTOR ====================
     // Listar disponibilidade do mentor
-    getAvailability: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
+    getAvailability: protectedProcedure.input(z7.object({ consultorId: z7.number() })).query(async ({ input }) => {
       return await getMentorAvailability(input.consultorId);
     }),
     // Salvar/atualizar disponibilidade do mentor
-    saveAvailability: managerProcedure.input(z6.object({
-      consultorId: z6.number(),
-      slots: z6.array(z6.object({
-        id: z6.number().optional(),
+    saveAvailability: managerProcedure.input(z7.object({
+      consultorId: z7.number(),
+      slots: z7.array(z7.object({
+        id: z7.number().optional(),
         // Se existir, atualiza; se não, cria
-        dayOfWeek: z6.number().min(0).max(6),
-        startTime: z6.string().regex(/^\d{2}:\d{2}$/),
-        endTime: z6.string().regex(/^\d{2}:\d{2}$/),
-        slotDurationMinutes: z6.number().min(15).max(240).default(60),
-        googleMeetLink: z6.string().optional(),
-        isActive: z6.number().default(1)
+        dayOfWeek: z7.number().min(0).max(6),
+        startTime: z7.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z7.string().regex(/^\d{2}:\d{2}$/),
+        slotDurationMinutes: z7.number().min(15).max(240).default(60),
+        googleMeetLink: z7.string().optional(),
+        isActive: z7.number().default(1)
       }))
     })).mutation(async ({ input }) => {
       return await saveMentorAvailability(input.consultorId, input.slots);
     }),
     // Remover slot de disponibilidade
-    removeAvailability: managerProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    removeAvailability: managerProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       return await removeMentorAvailability(input.id);
     }),
     // ===== AGENDA POR DATA ESPECÍFICA =====
     // Listar disponibilidade por data específica do mentor
-    getDateAvailability: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
+    getDateAvailability: protectedProcedure.input(z7.object({ consultorId: z7.number() })).query(async ({ input }) => {
       return await getMentorDateAvailability(input.consultorId);
     }),
     // Salvar/atualizar disponibilidade por data específica
-    saveDateAvailability: managerProcedure.input(z6.object({
-      consultorId: z6.number(),
-      slots: z6.array(z6.object({
-        id: z6.number().optional(),
-        specificDate: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-        startTime: z6.string().regex(/^\d{2}:\d{2}$/),
-        endTime: z6.string().regex(/^\d{2}:\d{2}$/),
-        slotDurationMinutes: z6.number().min(15).max(240).default(60),
-        googleMeetLink: z6.string().optional(),
-        isActive: z6.number().default(1)
+    saveDateAvailability: managerProcedure.input(z7.object({
+      consultorId: z7.number(),
+      slots: z7.array(z7.object({
+        id: z7.number().optional(),
+        specificDate: z7.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        startTime: z7.string().regex(/^\d{2}:\d{2}$/),
+        endTime: z7.string().regex(/^\d{2}:\d{2}$/),
+        slotDurationMinutes: z7.number().min(15).max(240).default(60),
+        googleMeetLink: z7.string().optional(),
+        isActive: z7.number().default(1)
       }))
     })).mutation(async ({ input }) => {
       return await saveMentorDateAvailability(input.consultorId, input.slots);
     }),
     // Remover slot de data específica
-    removeDateAvailability: managerProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    removeDateAvailability: managerProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       return await removeMentorDateAvailability(input.id);
     }),
     // Listar agendamentos do mentor
-    getAppointments: protectedProcedure.input(z6.object({
-      consultorId: z6.number(),
-      status: z6.string().optional(),
-      dateFrom: z6.string().optional(),
-      dateTo: z6.string().optional(),
-      alunoId: z6.number().optional()
+    getAppointments: protectedProcedure.input(z7.object({
+      consultorId: z7.number(),
+      status: z7.string().optional(),
+      dateFrom: z7.string().optional(),
+      dateTo: z7.string().optional(),
+      alunoId: z7.number().optional()
     })).query(async ({ input }) => {
       return await getMentorAppointments(input.consultorId, input);
     }),
     // Criar sessão de grupo (mentor define data/hora, convida alunos)
-    createGroupSession: managerProcedure.input(z6.object({
-      consultorId: z6.number(),
-      title: z6.string().min(3),
-      description: z6.string().optional(),
-      scheduledDate: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      startTime: z6.string().regex(/^\d{2}:\d{2}$/),
-      endTime: z6.string().regex(/^\d{2}:\d{2}$/),
-      googleMeetLink: z6.string().optional(),
-      alunoIds: z6.array(z6.number()).min(1)
+    createGroupSession: managerProcedure.input(z7.object({
+      consultorId: z7.number(),
+      title: z7.string().min(3),
+      description: z7.string().optional(),
+      scheduledDate: z7.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      startTime: z7.string().regex(/^\d{2}:\d{2}$/),
+      endTime: z7.string().regex(/^\d{2}:\d{2}$/),
+      googleMeetLink: z7.string().optional(),
+      alunoIds: z7.array(z7.number()).min(1)
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const result = await createGroupAppointment({
         consultorId: input.consultorId,
@@ -25858,28 +30947,41 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           }
         })();
       }
+      if (result.success && result.id) {
+        const apptId = result.id;
+        (async () => {
+          try {
+            const { enviarPreparacaoSessao: enviarPreparacaoSessao2 } = await Promise.resolve().then(() => (init_cronPreparacaoSessao(), cronPreparacaoSessao_exports));
+            for (const alunoId of input.alunoIds) {
+              await enviarPreparacaoSessao2(apptId, alunoId, "agendamento");
+            }
+          } catch (err) {
+            console.warn("[PreparacaoSessao] Erro ao enviar e-mail de agendamento grupal:", err);
+          }
+        })();
+      }
       return result;
     }),
     // Aluno agenda sessão individual (escolhe horário disponível)
-    bookAppointment: protectedProcedure.input(z6.object({
-      consultorId: z6.number(),
-      availabilityId: z6.number(),
-      scheduledDate: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      startTime: z6.string().regex(/^\d{2}:\d{2}$/),
-      endTime: z6.string().regex(/^\d{2}:\d{2}$/),
-      notes: z6.string().optional()
+    bookAppointment: protectedProcedure.input(z7.object({
+      consultorId: z7.number(),
+      availabilityId: z7.number(),
+      scheduledDate: z7.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      startTime: z7.string().regex(/^\d{2}:\d{2}$/),
+      endTime: z7.string().regex(/^\d{2}:\d{2}$/),
+      notes: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const alunoId = ctx2.user.alunoId;
-      if (!alunoId) throw new TRPCError6({ code: "BAD_REQUEST", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
+      if (!alunoId) throw new TRPCError7({ code: "BAD_REQUEST", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
       const avail = await getMentorAvailability(input.consultorId);
       const dateObj = /* @__PURE__ */ new Date(input.scheduledDate + "T12:00:00");
       const dayOfWeek = dateObj.getDay();
       const matchingSlot = avail.find((a) => a.dayOfWeek === dayOfWeek && a.startTime === input.startTime && a.isActive === 1);
       if (!matchingSlot) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "O mentor n\xE3o tem disponibilidade neste dia/hor\xE1rio. Verifique a agenda." });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "O mentor n\xE3o tem disponibilidade neste dia/hor\xE1rio. Verifique a agenda." });
       }
       const existing = await checkAppointmentConflict(input.consultorId, input.scheduledDate, input.startTime);
-      if (existing) throw new TRPCError6({ code: "CONFLICT", message: "Este hor\xE1rio j\xE1 est\xE1 ocupado. Escolha outro." });
+      if (existing) throw new TRPCError7({ code: "CONFLICT", message: "Este hor\xE1rio j\xE1 est\xE1 ocupado. Escolha outro." });
       const appointment = await createIndividualAppointment({
         consultorId: input.consultorId,
         availabilityId: input.availabilityId,
@@ -25946,17 +31048,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return appointment;
     }),
     // Aluno confirma/recusa convite de grupo
-    respondToInvite: protectedProcedure.input(z6.object({
-      appointmentId: z6.number(),
-      response: z6.enum(["confirmado", "recusado"]),
-      notes: z6.string().optional()
+    respondToInvite: protectedProcedure.input(z7.object({
+      appointmentId: z7.number(),
+      response: z7.enum(["confirmado", "recusado"]),
+      notes: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const alunoId = ctx2.user.alunoId;
-      if (!alunoId) throw new TRPCError6({ code: "BAD_REQUEST", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
+      if (!alunoId) throw new TRPCError7({ code: "BAD_REQUEST", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
       return await respondToAppointmentInvite(input.appointmentId, alunoId, input.response, input.notes || null);
     }),
     // Cancelar agendamento
-    cancelAppointment: protectedProcedure.input(z6.object({ appointmentId: z6.number() })).mutation(async ({ input }) => {
+    cancelAppointment: protectedProcedure.input(z7.object({ appointmentId: z7.number() })).mutation(async ({ input }) => {
       const appt = await getAppointmentById(input.appointmentId);
       const result = await cancelAppointment(input.appointmentId);
       if (appt?.googleEventId) {
@@ -25973,16 +31075,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Reagendar agendamento (alterar data/horário)
-    updateAppointment: protectedProcedure.input(z6.object({
-      appointmentId: z6.number(),
-      scheduledDate: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-      startTime: z6.string().regex(/^\d{2}:\d{2}$/),
-      endTime: z6.string().regex(/^\d{2}:\d{2}$/),
-      googleMeetLink: z6.string().optional()
+    updateAppointment: protectedProcedure.input(z7.object({
+      appointmentId: z7.number(),
+      scheduledDate: z7.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      startTime: z7.string().regex(/^\d{2}:\d{2}$/),
+      endTime: z7.string().regex(/^\d{2}:\d{2}$/),
+      googleMeetLink: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const userRole = ctx2.user.role;
       if (userRole !== "admin" && userRole !== "manager") {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para reagendar" });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Sem permiss\xE3o para reagendar" });
       }
       const oldAppointment = await getAppointmentById(input.appointmentId);
       const result = await updateAppointmentSchedule(input.appointmentId, {
@@ -26076,9 +31178,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getAlunoAppointments(alunoId);
     }),
     // Obter slots disponíveis para uma data específica
-    getAvailableSlots: protectedProcedure.input(z6.object({
-      consultorId: z6.number(),
-      date: z6.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+    getAvailableSlots: protectedProcedure.input(z7.object({
+      consultorId: z7.number(),
+      date: z7.string().regex(/^\d{4}-\d{2}-\d{2}$/)
     })).query(async ({ input }) => {
       const dayOfWeek = (/* @__PURE__ */ new Date(input.date + "T12:00:00")).getDay();
       const weeklyAvailability = await getMentorAvailability(input.consultorId);
@@ -26135,8 +31237,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     }),
     // Dashboard consolidado de todos os mentores
     dashboardGeral: managerProcedure.query(async () => {
-      const consultors2 = await getConsultors();
-      const mentoresAtivos = consultors2.filter((c) => c.role === "mentor" && c.isActive === 1);
+      const consultors3 = await getConsultors();
+      const mentoresAtivos = consultors3.filter((c) => c.role === "mentor" && c.isActive === 1);
       const allStats = [];
       for (const consultor of mentoresAtivos) {
         const stats = await getConsultorStats(consultor.id);
@@ -26157,48 +31259,48 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Relatório financeiro de mentorias por período (LEGADO - mantido para compatibilidade)
-    relatorioFinanceiro: managerProcedure.input(z6.object({
-      dateFrom: z6.string().optional(),
-      dateTo: z6.string().optional()
+    relatorioFinanceiro: managerProcedure.input(z7.object({
+      dateFrom: z7.string().optional(),
+      dateTo: z7.string().optional()
     }).optional()).query(async ({ input }) => {
       return await getRelatorioFinanceiroMentorias(input?.dateFrom, input?.dateTo);
     }),
     // Relatório financeiro V2 (nova lógica de precificação)
-    relatorioFinanceiroV2: managerProcedure.input(z6.object({
-      dateFrom: z6.string().optional(),
-      dateTo: z6.string().optional()
+    relatorioFinanceiroV2: managerProcedure.input(z7.object({
+      dateFrom: z7.string().optional(),
+      dateTo: z7.string().optional()
     }).optional()).query(async ({ input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       return await getRelatorioFinanceiroV2(dbConn2, input?.dateFrom, input?.dateTo);
     }),
     // CRUD Precificação V2
     getPricingRulesV2: adminOrAdmin2Procedure.query(async () => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       return await getSessionTypePricingRules(dbConn2);
     }),
-    createPricingRuleV2: adminOrAdmin2Procedure.input(z6.object({
-      programId: z6.number(),
+    createPricingRuleV2: adminOrAdmin2Procedure.input(z7.object({
+      programId: z7.number(),
       // Obrigatório: empresa específica
-      consultorId: z6.number(),
+      consultorId: z7.number(),
       // Obrigatório: mentor específico
-      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]),
-      valor: z6.string(),
-      descricao: z6.string().optional(),
-      validoDesde: z6.string(),
+      tipoSessao: z7.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]),
+      valor: z7.string(),
+      descricao: z7.string().optional(),
+      validoDesde: z7.string(),
       // YYYY-MM-DD
-      validoAte: z6.string().nullable().optional()
+      validoAte: z7.string().nullable().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const existing = await getSessionTypePricingRules(dbConn2);
       const conflito = existing.find(
         (r) => r.programId === input.programId && r.consultorId === input.consultorId && r.tipoSessao === input.tipoSessao && r.isActive === 1 && // Verificar sobreposição de datas
         (!r.validoAte || !input.validoDesde || String(r.validoAte) >= input.validoDesde) && (!input.validoAte || !r.validoDesde || input.validoAte >= String(r.validoDesde))
       );
       if (conflito) {
-        throw new TRPCError6({
+        throw new TRPCError7({
           code: "CONFLICT",
           message: `J\xE1 existe uma regra ativa para esta combina\xE7\xE3o (Empresa + Mentor + Tipo) com datas sobrepostas (ID ${conflito.id}). Desative ou edite a regra existente.`
         });
@@ -26209,21 +31311,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       });
       return { id, success: true };
     }),
-    updatePricingRuleV2: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      programId: z6.number().optional(),
+    updatePricingRuleV2: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      programId: z7.number().optional(),
       // Obrigatório na prática
-      consultorId: z6.number().optional(),
+      consultorId: z7.number().optional(),
       // Obrigatório na prática
-      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
-      valor: z6.string().optional(),
-      descricao: z6.string().optional(),
-      validoDesde: z6.string().optional(),
-      validoAte: z6.string().nullable().optional(),
-      isActive: z6.number().optional()
+      tipoSessao: z7.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+      valor: z7.string().optional(),
+      descricao: z7.string().optional(),
+      validoDesde: z7.string().optional(),
+      validoAte: z7.string().nullable().optional(),
+      isActive: z7.number().optional()
     })).mutation(async ({ input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const { id, ...data } = input;
       if (data.programId !== void 0 || data.consultorId !== void 0 || data.tipoSessao !== void 0) {
         const existing = await getSessionTypePricingRules(dbConn2);
@@ -26237,7 +31339,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           (r) => r.id !== id && r.programId === checkProgramId && r.consultorId === checkConsultorId && r.tipoSessao === checkTipo && r.isActive === 1 && (!r.validoAte || !checkDesde || String(r.validoAte) >= checkDesde) && (!checkAte || !r.validoDesde || checkAte >= String(r.validoDesde))
         );
         if (conflito) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "CONFLICT",
             message: `J\xE1 existe outra regra ativa para esta combina\xE7\xE3o com datas sobrepostas (ID ${conflito.id}).`
           });
@@ -26246,24 +31348,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       await updateSessionTypePricingRule(dbConn2, id, data);
       return { success: true };
     }),
-    deletePricingRuleV2: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    deletePricingRuleV2: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       await deleteSessionTypePricingRule(dbConn2, input.id);
       return { success: true };
     }),
     // Relatório detalhado por mentor com dados de agendamento, sessão, participantes e valor
-    relatorioDetalhadoMentor: managerProcedure.input(z6.object({
-      consultorId: z6.number(),
-      dateFrom: z6.string(),
+    relatorioDetalhadoMentor: managerProcedure.input(z7.object({
+      consultorId: z7.number(),
+      dateFrom: z7.string(),
       // YYYY-MM-DD
-      dateTo: z6.string()
+      dateTo: z7.string()
       // YYYY-MM-DD
     })).query(async ({ input }) => {
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const mentor = await getConsultorById(input.consultorId);
-      if (!mentor) throw new TRPCError6({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
+      if (!mentor) throw new TRPCError7({ code: "NOT_FOUND", message: "Mentor n\xE3o encontrado" });
       const report = await getRelatorioFinanceiroV2(dbConn2, input.dateFrom, input.dateTo);
       const mentorData = report.mentores.find((m) => m.consultorId === input.consultorId);
       const allAppointments = await getMentorAppointments(input.consultorId);
@@ -26332,12 +31434,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // ==================== RELATÓRIO DE MENTORIAS POR MENTORA ====================
     relatorioMentorias: router({
       // Buscar dados do relatório (sem enviar e-mail)
-      preview: adminOrAdmin2Procedure.input(z6.object({
-        dateFrom: z6.string().optional(),
-        dateTo: z6.string().optional()
+      preview: adminOrAdmin2Procedure.input(z7.object({
+        dateFrom: z7.string().optional(),
+        dateTo: z7.string().optional()
       }).optional()).query(async ({ input }) => {
         const dbConn2 = await getDb();
-        if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         const periodo = input?.dateFrom && input?.dateTo ? { inicio: input.dateFrom, fim: input.dateTo } : calcularPeriodoPadrao();
         const report = await getRelatorioFinanceiroV2(dbConn2, periodo.inicio, periodo.fim);
         const { consultors: consultorsTable, alunos: alunosTable, programs: programsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
@@ -26376,11 +31478,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         };
       }),
       // Envio manual do relatório por e-mail
-      enviarManual: adminOrAdmin2Procedure.input(z6.object({
-        dateFrom: z6.string(),
-        dateTo: z6.string(),
-        mentorIds: z6.array(z6.number()).optional(),
-        tipo: z6.enum(["previa", "definitivo", "manual"]).default("manual")
+      enviarManual: adminOrAdmin2Procedure.input(z7.object({
+        dateFrom: z7.string(),
+        dateTo: z7.string(),
+        mentorIds: z7.array(z7.number()).optional(),
+        tipo: z7.enum(["previa", "definitivo", "manual"]).default("manual")
       })).mutation(async ({ input }) => {
         const result = await gerarEEnviarRelatorioMentorias(
           input.tipo,
@@ -26394,7 +31496,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // Buscar histórico de envios
       historico: adminOrAdmin2Procedure.query(async () => {
         const dbConn2 = await getDb();
-        if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
         try {
           const { sql: sqlFn } = await import("drizzle-orm");
           const rows = await dbConn2.execute(sqlFn`
@@ -26419,101 +31521,146 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         } catch {
           return [];
         }
-      }),
-      // Buscar participantes de um agendamento grupal
-      getGroupParticipants: protectedProcedure.input(z6.object({ appointmentId: z6.number() })).query(async ({ input }) => {
-        const participants = await getAppointmentParticipants(input.appointmentId);
-        const result = [];
+      })
+    }),
+    // Buscar participantes de um agendamento grupal
+    getGroupParticipants: protectedProcedure.input(z7.object({ appointmentId: z7.number() })).query(async ({ input }) => {
+      const participants = await getAppointmentParticipants(input.appointmentId);
+      if (participants.length > 0) {
+        const result2 = [];
         for (const p of participants) {
           const aluno = await getAlunoById(p.alunoId);
-          if (aluno) result.push({ alunoId: p.alunoId, alunoName: aluno.name, email: aluno.email });
+          if (aluno) result2.push({ alunoId: p.alunoId, alunoName: aluno.name, email: aluno.email });
         }
-        return result;
-      }),
-      // Criar sessões em lote para mentoria em grupo
-      createGroupSessions: protectedProcedure.input(z6.object({
-        appointmentId: z6.number(),
-        sessionDate: z6.string(),
-        taskId: z6.number().nullable().optional(),
-        taskDeadline: z6.string().nullable().optional(),
-        taskMode: z6.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
-        customTaskTitle: z6.string().nullable().optional(),
-        customTaskDescription: z6.string().nullable().optional(),
-        participants: z6.array(z6.object({
-          alunoId: z6.number(),
-          presence: z6.enum(["presente", "ausente"]),
-          taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
-          engagementScore: z6.number().min(0).max(10).nullable().optional(),
-          notaEvolucao: z6.number().min(0).max(10).nullable().optional(),
-          feedback: z6.string().optional(),
-          mensagemAluno: z6.string().optional()
-        })).min(1)
-      })).mutation(async ({ ctx: ctx2, input }) => {
-        const consultors2 = await getConsultors();
-        const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
-        let consultorId = consultor?.id;
-        if (!consultorId && ctx2.user.role === "admin") {
-          const firstAluno = input.participants[0];
-          const sessions = await getMentoringSessionsByAluno(firstAluno.alunoId);
-          if (sessions.length > 0) consultorId = sessions[0].consultorId;
+        return result2;
+      }
+      const appointment = await getAppointmentById(input.appointmentId);
+      if (!appointment) return [];
+      const tipoGrupal = appointment.type === "grupo" || appointment.type === "grupal" || String(appointment.type).includes("grup");
+      if (!tipoGrupal) return [];
+      const alunosDoConsultor = await getAlunosByConsultor(appointment.consultorId);
+      if (alunosDoConsultor.length === 0) return [];
+      const database = await getDb();
+      const result = [];
+      for (const aluno of alunosDoConsultor) {
+        if (!aluno.isActive && aluno.isActive !== 1) continue;
+        try {
+          if (database) {
+            await database.insert(appointmentParticipants).values({
+              appointmentId: input.appointmentId,
+              alunoId: aluno.id,
+              status: "convidado"
+            });
+          }
+        } catch {
         }
-        if (!consultorId) throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA n\xE3o est\xE1 vinculado como mentor" });
-        const effectiveTaskMode = input.taskMode ?? "sem_tarefa";
-        const createdIds = [];
-        for (const p of input.participants) {
-          const aluno = await getAlunoById(p.alunoId);
-          if (!aluno) continue;
-          const nivelVigente = await getContratoNivelVigenteByAluno(p.alunoId);
-          const nivelId = nivelVigente?.id ?? null;
-          const sessoesCiclo = nivelId ? await getMentoringSessionsByAlunoAndNivel(p.alunoId, nivelId) : [];
-          const resetOcorreu = sessoesCiclo.length > 0;
-          const base = resetOcorreu ? sessoesCiclo : await getMentoringSessionsByAluno(p.alunoId);
-          const nextSessionNumber = base.length > 0 ? Math.max(...base.map((s) => s.sessionNumber ?? 0)) + 1 : 1;
-          const effectiveTaskStatus = effectiveTaskMode !== "sem_tarefa" ? "nao_entregue" : p.taskStatus ?? "sem_tarefa";
-          const sessionId = await createMentoringSession({
-            alunoId: p.alunoId,
-            consultorId,
-            turmaId: aluno.turmaId ?? void 0,
-            trilhaId: aluno.trilhaId ?? void 0,
-            sessionNumber: nextSessionNumber,
-            sessionDate: input.sessionDate,
-            presence: p.presence,
-            taskStatus: effectiveTaskStatus,
-            engagementScore: p.engagementScore ?? null,
-            notaEvolucao: p.notaEvolucao ?? null,
-            feedback: p.feedback ?? null,
-            mensagemAluno: p.mensagemAluno ?? null,
-            taskId: input.taskId ?? null,
-            taskDeadline: input.taskDeadline ?? null,
-            taskMode: effectiveTaskMode,
-            customTaskTitle: input.customTaskTitle ?? null,
-            customTaskDescription: input.customTaskDescription ?? null,
-            tipoSessao: "grupo_normal",
-            appointmentId: input.appointmentId,
-            contratoNivelId: nivelId
-          });
-          if (sessionId) createdIds.push(sessionId);
-        }
-        return { success: true, count: createdIds.length, ids: createdIds };
-      })
+        result.push({ alunoId: aluno.id, alunoName: aluno.name, email: aluno.email });
+      }
+      return result;
+    }),
+    // Criar sessões em lote para mentoria em grupo
+    createGroupSessions: protectedProcedure.input(z7.object({
+      appointmentId: z7.number(),
+      sessionDate: z7.string(),
+      taskId: z7.number().nullable().optional(),
+      taskDeadline: z7.string().nullable().optional(),
+      taskMode: z7.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
+      customTaskTitle: z7.string().nullable().optional(),
+      customTaskDescription: z7.string().nullable().optional(),
+      participants: z7.array(z7.object({
+        alunoId: z7.number(),
+        presence: z7.enum(["presente", "ausente"]),
+        taskStatus: z7.enum(["entregue", "nao_entregue", "sem_tarefa"]).optional(),
+        engagementScore: z7.number().min(0).max(10).nullable().optional(),
+        notaEvolucao: z7.number().min(0).max(10).nullable().optional(),
+        feedback: z7.string().optional(),
+        mensagemAluno: z7.string().optional()
+      })).min(1)
+    })).mutation(async ({ ctx: ctx2, input }) => {
+      const consultors3 = await getConsultors();
+      const consultor = consultors3.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
+      let consultorId = consultor?.id;
+      if (!consultorId && ctx2.user.role === "admin") {
+        const firstAluno = input.participants[0];
+        const sessions = await getMentoringSessionsByAluno(firstAluno.alunoId);
+        if (sessions.length > 0) consultorId = sessions[0].consultorId;
+      }
+      if (!consultorId) throw new TRPCError7({ code: "FORBIDDEN", message: "Voc\xEA n\xE3o est\xE1 vinculado como mentor" });
+      const effectiveTaskMode = input.taskMode ?? "sem_tarefa";
+      const createdIds = [];
+      for (const p of input.participants) {
+        const aluno = await getAlunoById(p.alunoId);
+        if (!aluno) continue;
+        const nivelVigente = await getContratoNivelVigenteByAluno(p.alunoId);
+        const nivelId = nivelVigente?.id ?? null;
+        const sessoesCiclo = nivelId ? await getMentoringSessionsByAlunoAndNivel(p.alunoId, nivelId) : [];
+        const resetOcorreu = sessoesCiclo.length > 0;
+        const base = resetOcorreu ? sessoesCiclo : await getMentoringSessionsByAluno(p.alunoId);
+        const nextSessionNumber = base.length > 0 ? Math.max(...base.map((s) => s.sessionNumber ?? 0)) + 1 : 1;
+        const effectiveTaskStatus = effectiveTaskMode !== "sem_tarefa" ? "nao_entregue" : p.taskStatus ?? "sem_tarefa";
+        const sessionId = await createMentoringSession({
+          alunoId: p.alunoId,
+          consultorId,
+          turmaId: aluno.turmaId ?? void 0,
+          trilhaId: aluno.trilhaId ?? void 0,
+          sessionNumber: nextSessionNumber,
+          sessionDate: input.sessionDate,
+          presence: p.presence,
+          taskStatus: effectiveTaskStatus,
+          engagementScore: p.engagementScore ?? null,
+          notaEvolucao: p.notaEvolucao ?? null,
+          feedback: p.feedback ?? null,
+          mensagemAluno: p.mensagemAluno ?? null,
+          taskId: input.taskId ?? null,
+          taskDeadline: input.taskDeadline ?? null,
+          taskMode: effectiveTaskMode,
+          customTaskTitle: input.customTaskTitle ?? null,
+          customTaskDescription: input.customTaskDescription ?? null,
+          tipoSessao: "grupo_normal",
+          appointmentId: input.appointmentId,
+          contratoNivelId: nivelId
+        });
+        if (sessionId) createdIds.push(sessionId);
+      }
+      return { success: true, count: createdIds.length, ids: createdIds };
+    }),
+    // Mentora cancela sua própria sessão (marca cancelada=1, não exclui)
+    deleteSession: protectedProcedure.input(z7.object({ sessionId: z7.number() })).mutation(async ({ ctx: ctx2, input }) => {
+      let consultorId = ctx2.user.consultorId;
+      if (!consultorId && ctx2.user.openId) {
+        const consultorsList = await getConsultors();
+        const consultor = consultorsList.find((c) => c.loginId === ctx2.user.openId);
+        consultorId = consultor?.id;
+      }
+      if (!consultorId) throw new TRPCError7({ code: "FORBIDDEN", message: "Apenas mentoras podem cancelar sess\xF5es" });
+      const session = await getMentoringSessionById(input.sessionId);
+      if (!session) throw new TRPCError7({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
+      if (session.consultorId !== consultorId) throw new TRPCError7({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode cancelar suas pr\xF3prias sess\xF5es" });
+      const dbConn2 = await (await Promise.resolve().then(() => (init_db(), db_exports))).getDb();
+      if (dbConn2) {
+        await dbConn2.execute(
+          (await import("drizzle-orm")).sql.raw(`UPDATE mentoring_sessions SET cancelada = 1 WHERE id = ${input.sessionId}`)
+        );
+      }
+      return { success: true };
     })
   }),
   // ==================== ATIVIDADES PRÁTICAS (ADMIN) ====================
   practicalActivities: router({
     // Admin + Mentor: consulta de entregas com filtros
-    submissions: protectedProcedure.input(z6.object({
-      consultorId: z6.number().optional(),
-      alunoId: z6.number().optional(),
-      turmaId: z6.number().optional(),
-      programId: z6.number().optional(),
-      status: z6.string().optional(),
-      dateFrom: z6.string().optional(),
-      dateTo: z6.string().optional()
+    submissions: protectedProcedure.input(z7.object({
+      consultorId: z7.number().optional(),
+      alunoId: z7.number().optional(),
+      turmaId: z7.number().optional(),
+      programId: z7.number().optional(),
+      status: z7.string().optional(),
+      dateFrom: z7.string().optional(),
+      dateTo: z7.string().optional()
     }).optional()).query(async ({ ctx: ctx2, input }) => {
-      const isAdmin = ctx2.user.role === "admin";
+      const isAdmin2 = ctx2.user.role === "admin";
       const isMentor = ctx2.user.role === "manager" && ctx2.user.consultorId;
-      if (!isAdmin && !isMentor) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
+      if (!isAdmin2 && !isMentor) {
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
       }
       const filters = { ...input };
       if (isMentor) {
@@ -26522,8 +31669,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const sessions = await getActivitySubmissionsForAdmin(filters);
       const allAlunos = await getAlunos();
       const alunoMap = new Map(allAlunos.map((a) => [a.id, a]));
-      const consultors2 = await getConsultors();
-      const consultorMap = new Map(consultors2.map((c) => [c.id, c]));
+      const consultors3 = await getConsultors();
+      const consultorMap = new Map(consultors3.map((c) => [c.id, c]));
       const programs3 = await getPrograms();
       const programMap = new Map(programs3.map((p) => [p.id, p]));
       const result = await Promise.all(
@@ -26559,24 +31706,24 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Admin + Mentor: detalhe de uma entrega
-    submissionDetail: protectedProcedure.input(z6.object({ sessionId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
-      const isAdmin = ctx2.user.role === "admin";
+    submissionDetail: protectedProcedure.input(z7.object({ sessionId: z7.number() })).query(async ({ ctx: ctx2, input }) => {
+      const isAdmin2 = ctx2.user.role === "admin";
       const isMentor = ctx2.user.role === "manager" && ctx2.user.consultorId;
-      if (!isAdmin && !isMentor) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
+      if (!isAdmin2 && !isMentor) {
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
       }
       const session = await getMentoringSessionById(input.sessionId);
-      if (!session) throw new TRPCError6({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
+      if (!session) throw new TRPCError7({ code: "NOT_FOUND", message: "Sess\xE3o n\xE3o encontrada" });
       if (isMentor && session.consultorId !== ctx2.user.consultorId) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode ver atividades dos seus alunos" });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode ver atividades dos seus alunos" });
       }
       const task = session.taskId ? await getTaskLibraryById(session.taskId) : null;
       const comments = await getCommentsBySessionId(input.sessionId);
       const allAlunos = await getAlunos();
       const aluno = allAlunos.find((a) => a.id === session.alunoId);
-      const consultors2 = await getConsultors();
-      const consultor = consultors2.find((c) => c.id === session.consultorId);
-      const validador = session.validatedBy ? consultors2.find((c) => c.id === session.validatedBy) : null;
+      const consultors3 = await getConsultors();
+      const consultor = consultors3.find((c) => c.id === session.consultorId);
+      const validador = session.validatedBy ? consultors3.find((c) => c.id === session.validatedBy) : null;
       return {
         sessionId: session.id,
         alunoId: session.alunoId,
@@ -26606,23 +31753,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       };
     }),
     // Admin + Mentor: adicionar comentário
-    addComment: protectedProcedure.input(z6.object({
-      sessionId: z6.number(),
-      comment: z6.string().min(1)
+    addComment: protectedProcedure.input(z7.object({
+      sessionId: z7.number(),
+      comment: z7.string().min(1)
     })).mutation(async ({ ctx: ctx2, input }) => {
-      const isAdmin = ctx2.user.role === "admin";
+      const isAdmin2 = ctx2.user.role === "admin";
       const isMentor = ctx2.user.role === "manager" && ctx2.user.consultorId;
-      if (!isAdmin && !isMentor) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
+      if (!isAdmin2 && !isMentor) {
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Acesso restrito a administradores e mentores" });
       }
       if (isMentor) {
         const session = await getMentoringSessionById(input.sessionId);
         if (!session || session.consultorId !== ctx2.user.consultorId) {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode comentar atividades dos seus alunos" });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Voc\xEA s\xF3 pode comentar atividades dos seus alunos" });
         }
       }
-      const authorRole = isAdmin ? "admin" : "mentor";
-      const authorName = ctx2.user.name || (isAdmin ? "Administrador" : "Mentor");
+      const authorRole = isAdmin2 ? "admin" : "mentor";
+      const authorName = ctx2.user.name || (isAdmin2 ? "Administrador" : "Mentor");
       const id = await addActivityComment({
         sessionId: input.sessionId,
         authorId: ctx2.user.id,
@@ -26639,22 +31786,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listEmpresas: adminOrAdmin2Procedure.query(async () => {
       return await getAllPrograms();
     }),
-    createEmpresa: adminOrAdmin2Procedure.input(z6.object({
-      name: z6.string().min(1),
-      code: z6.string().min(1),
-      description: z6.string().optional()
+    createEmpresa: adminOrAdmin2Procedure.input(z7.object({
+      name: z7.string().min(1),
+      code: z7.string().min(1),
+      description: z7.string().optional()
     })).mutation(async ({ input }) => {
       return await createProgram(input);
     }),
-    updateEmpresa: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      name: z6.string().min(1).optional(),
-      code: z6.string().min(1).optional(),
-      description: z6.string().optional()
+    updateEmpresa: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      name: z7.string().min(1).optional(),
+      code: z7.string().min(1).optional(),
+      description: z7.string().optional()
     })).mutation(async ({ input }) => {
       return await updateProgram(input.id, input);
     }),
-    toggleEmpresaStatus: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    toggleEmpresaStatus: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       return await toggleProgramStatus(input.id);
     }),
     // Mentores
@@ -26666,57 +31813,57 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listMentoresAtivos: adminOrAdmin2Procedure.query(async () => {
       return await getActiveMentores();
     }),
-    createMentor: adminOrAdmin2Procedure.input(z6.object({
-      name: z6.string().min(1),
-      email: z6.string().email(),
-      cpf: z6.string().min(11, "CPF deve conter 11 d\xEDgitos"),
-      especialidade: z6.string().optional(),
-      loginId: z6.string().optional(),
-      programId: z6.number().optional(),
-      valorSessao: z6.string().optional()
+    createMentor: adminOrAdmin2Procedure.input(z7.object({
+      name: z7.string().min(1),
+      email: z7.string().email(),
+      cpf: z7.string().min(11, "CPF deve conter 11 d\xEDgitos"),
+      especialidade: z7.string().optional(),
+      loginId: z7.string().optional(),
+      programId: z7.number().optional(),
+      valorSessao: z7.string().optional()
     })).mutation(async ({ input }) => {
       return await createMentor(input);
     }),
-    updateAcessoMentor: adminOrAdmin2Procedure.input(z6.object({
-      consultorId: z6.number(),
-      loginId: z6.string().nullable(),
-      canLogin: z6.boolean()
+    updateAcessoMentor: adminOrAdmin2Procedure.input(z7.object({
+      consultorId: z7.number(),
+      loginId: z7.string().nullable(),
+      canLogin: z7.boolean()
     })).mutation(async ({ input }) => {
       return await updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, "mentor");
     }),
-    editMentor: adminOrAdmin2Procedure.input(z6.object({
-      consultorId: z6.number(),
-      name: z6.string().optional(),
-      email: z6.string().email().optional(),
-      cpf: z6.string().optional(),
-      especialidade: z6.string().optional(),
-      programId: z6.number().optional(),
-      valorSessao: z6.string().optional(),
-      miniCurriculo: z6.string().optional()
+    editMentor: adminOrAdmin2Procedure.input(z7.object({
+      consultorId: z7.number(),
+      name: z7.string().optional(),
+      email: z7.string().email().optional(),
+      cpf: z7.string().optional(),
+      especialidade: z7.string().optional(),
+      programId: z7.number().optional(),
+      valorSessao: z7.string().optional(),
+      miniCurriculo: z7.string().optional()
     })).mutation(async ({ input }) => {
       const { consultorId, ...data } = input;
       return await updateConsultor(consultorId, data);
     }),
     // Ativar/Inativar mentor
-    toggleMentorStatus: adminOrAdmin2Procedure.input(z6.object({ consultorId: z6.number() })).mutation(async ({ input }) => {
+    toggleMentorStatus: adminOrAdmin2Procedure.input(z7.object({ consultorId: z7.number() })).mutation(async ({ input }) => {
       return await toggleConsultorStatus(input.consultorId);
     }),
     // Verificar se mentor tem agenda disponível nos próximos 10 dias
-    checkAvailabilityNext10Days: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
+    checkAvailabilityNext10Days: protectedProcedure.input(z7.object({ consultorId: z7.number() })).query(async ({ input }) => {
       const hasAvailability = await checkMentorHasAvailabilityNext10Days(input.consultorId);
       return { hasAvailability };
     }),
     // Precificação flexível de sessões do mentor
-    getMentorPricing: adminOrAdmin2Procedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
+    getMentorPricing: adminOrAdmin2Procedure.input(z7.object({ consultorId: z7.number() })).query(async ({ input }) => {
       return await getMentorSessionPricing(input.consultorId);
     }),
-    setMentorPricing: adminOrAdmin2Procedure.input(z6.object({
-      consultorId: z6.number(),
-      rules: z6.array(z6.object({
-        sessionFrom: z6.number().min(1),
-        sessionTo: z6.number().min(1),
-        valor: z6.string(),
-        descricao: z6.string().optional()
+    setMentorPricing: adminOrAdmin2Procedure.input(z7.object({
+      consultorId: z7.number(),
+      rules: z7.array(z7.object({
+        sessionFrom: z7.number().min(1),
+        sessionTo: z7.number().min(1),
+        valor: z7.string(),
+        descricao: z7.string().optional()
       }))
     })).mutation(async ({ input }) => {
       for (const rule of input.rules) {
@@ -26737,12 +31884,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listGerentes: adminOrAdmin2Procedure.query(async () => {
       return await getAllGerentes();
     }),
-    createGerente: adminOrAdmin2Procedure.input(z6.object({
-      name: z6.string().min(1),
-      email: z6.string().email(),
-      cpf: z6.string().min(11).optional(),
-      loginId: z6.string().optional(),
-      managedProgramId: z6.number()
+    createGerente: adminOrAdmin2Procedure.input(z7.object({
+      name: z7.string().min(1),
+      email: z7.string().email(),
+      cpf: z7.string().min(11).optional(),
+      loginId: z7.string().optional(),
+      managedProgramId: z7.number()
     })).mutation(async ({ input }) => {
       const gerenteResult = await createGerente(input);
       if (input.cpf) {
@@ -26758,18 +31905,18 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return gerenteResult;
     }),
-    updateAcessoGerente: adminOrAdmin2Procedure.input(z6.object({
-      consultorId: z6.number(),
-      loginId: z6.string().nullable(),
-      canLogin: z6.boolean()
+    updateAcessoGerente: adminOrAdmin2Procedure.input(z7.object({
+      consultorId: z7.number(),
+      loginId: z7.string().nullable(),
+      canLogin: z7.boolean()
     })).mutation(async ({ input }) => {
       return await updateConsultorAccess(input.consultorId, input.loginId, input.canLogin, "gerente");
     }),
-    editGerente: adminOrAdmin2Procedure.input(z6.object({
-      consultorId: z6.number(),
-      name: z6.string().optional(),
-      email: z6.string().email().optional(),
-      managedProgramId: z6.number().optional()
+    editGerente: adminOrAdmin2Procedure.input(z7.object({
+      consultorId: z7.number(),
+      name: z7.string().optional(),
+      email: z7.string().email().optional(),
+      managedProgramId: z7.number().optional()
     })).mutation(async ({ input }) => {
       const { consultorId, ...data } = input;
       return await updateConsultor(consultorId, data);
@@ -26778,16 +31925,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listAlunos: adminOrAdmin2Procedure.query(async () => {
       return await getAllAlunosForAdmin();
     }),
-    createAluno: adminOrAdmin2Procedure.input(z6.object({
-      name: z6.string().min(1),
-      email: z6.string().email(),
-      externalId: z6.string().min(1),
-      programId: z6.number().optional(),
-      contratoInicio: z6.string().optional(),
-      contratoFim: z6.string().optional(),
-      totalSessoesContratadas: z6.number().optional(),
-      tipoMentoria: z6.enum(["individual", "grupo"]).optional(),
-      plataformaAulas: z6.enum(["scaffold", "sistema_interno"]).optional()
+    createAluno: adminOrAdmin2Procedure.input(z7.object({
+      name: z7.string().min(1),
+      email: z7.string().email(),
+      externalId: z7.string().min(1),
+      programId: z7.number().optional(),
+      contratoInicio: z7.string().optional(),
+      contratoFim: z7.string().optional(),
+      totalSessoesContratadas: z7.number().optional(),
+      tipoMentoria: z7.enum(["individual", "grupo"]).optional(),
+      plataformaAulas: z7.enum(["scaffold", "sistema_interno"]).optional(),
+      tipoPortal: z7.enum(["desenvolvimento", "assessment"]).optional()
     })).mutation(async ({ input }) => {
       const result = await createAluno(input);
       try {
@@ -26816,42 +31964,46 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return result;
     }),
-    updateAluno: adminOrAdmin2Procedure.input(z6.object({
-      alunoId: z6.number(),
-      name: z6.string().optional(),
-      email: z6.string().email().optional(),
-      cpf: z6.string().nullable().optional(),
-      programId: z6.number().nullable().optional(),
-      consultorId: z6.number().nullable().optional(),
-      turmaId: z6.number().nullable().optional(),
-      contratoInicio: z6.string().nullable().optional(),
-      contratoFim: z6.string().nullable().optional(),
-      tipoMentoria: z6.enum(["individual", "grupo"]).nullable().optional(),
-      totalSessoesContratadas: z6.number().nullable().optional(),
-      telefone: z6.string().nullable().optional(),
-      cargo: z6.string().nullable().optional(),
-      areaAtuacao: z6.string().nullable().optional(),
-      minicurriculo: z6.string().nullable().optional(),
-      quemEVoce: z6.string().nullable().optional(),
-      plataformaAulas: z6.enum(["scaffold", "sistema_interno"]).optional()
+    updateAluno: adminOrAdmin2Procedure.input(z7.object({
+      alunoId: z7.number(),
+      name: z7.string().optional(),
+      email: z7.string().email().optional(),
+      cpf: z7.string().nullable().optional(),
+      programId: z7.number().nullable().optional(),
+      consultorId: z7.number().nullable().optional(),
+      turmaId: z7.number().nullable().optional(),
+      contratoInicio: z7.string().nullable().optional(),
+      contratoFim: z7.string().nullable().optional(),
+      tipoMentoria: z7.enum(["individual", "grupo"]).nullable().optional(),
+      totalSessoesContratadas: z7.number().nullable().optional(),
+      telefone: z7.string().nullable().optional(),
+      cargo: z7.string().nullable().optional(),
+      departmentId: z7.number().nullable().optional(),
+      areaAtuacao: z7.string().nullable().optional(),
+      minicurriculo: z7.string().nullable().optional(),
+      quemEVoce: z7.string().nullable().optional(),
+      plataformaAulas: z7.enum(["scaffold", "sistema_interno"]).optional()
     })).mutation(async ({ input }) => {
       const { alunoId, contratoInicio, contratoFim, ...data } = input;
       const updateData = { ...data };
       if (contratoInicio !== void 0) updateData.contratoInicio = contratoInicio ? new Date(contratoInicio) : null;
       if (contratoFim !== void 0) updateData.contratoFim = contratoFim ? new Date(contratoFim) : null;
+      if (input.departmentId !== void 0) {
+        await updateAluno(input.alunoId, { departmentId: input.departmentId });
+      }
       return await updateAluno(alunoId, updateData);
     }),
     // Gestão de Acesso (Email + CPF)
     listAccessUsers: adminOrAdmin2Procedure.query(async () => {
       return await getAccessUsers();
     }),
-    createAccessUser: adminOrAdmin2Procedure.input(z6.object({
-      name: z6.string().min(1),
-      email: z6.string().email(),
-      cpf: z6.string().min(1),
-      role: z6.enum(["user", "admin", "manager", "admin2"]),
-      programId: z6.number().nullable().optional(),
-      isMentor: z6.boolean().optional()
+    createAccessUser: adminOrAdmin2Procedure.input(z7.object({
+      name: z7.string().min(1),
+      email: z7.string().email(),
+      cpf: z7.string().min(1),
+      role: z7.enum(["user", "admin", "manager", "admin2"]),
+      programId: z7.number().nullable().optional(),
+      isMentor: z7.boolean().optional()
       // true = Mentor, false/undefined = Gestor de Empresa
     })).mutation(async ({ input }) => {
       const { isMentor, ...userData } = input;
@@ -26876,20 +32028,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return await createAccessUser(userData);
     }),
-    updateAccessUser: adminOrAdmin2Procedure.input(z6.object({
-      userId: z6.number(),
-      name: z6.string().optional(),
-      email: z6.string().email().optional(),
-      cpf: z6.string().optional(),
-      role: z6.enum(["user", "admin", "manager", "admin2"]).optional(),
-      programId: z6.number().nullable().optional(),
-      isActive: z6.number().optional(),
-      consultorId: z6.number().nullable().optional()
+    updateAccessUser: adminOrAdmin2Procedure.input(z7.object({
+      userId: z7.number(),
+      name: z7.string().optional(),
+      email: z7.string().email().optional(),
+      cpf: z7.string().optional(),
+      role: z7.enum(["user", "admin", "manager", "admin2"]).optional(),
+      programId: z7.number().nullable().optional(),
+      isActive: z7.number().optional(),
+      consultorId: z7.number().nullable().optional()
     })).mutation(async ({ input }) => {
       const { userId, ...data } = input;
       return await updateAccessUser(userId, data);
     }),
-    toggleAccessUserStatus: adminOrAdmin2Procedure.input(z6.object({ userId: z6.number() })).mutation(async ({ input }) => {
+    toggleAccessUserStatus: adminOrAdmin2Procedure.input(z7.object({ userId: z7.number() })).mutation(async ({ input }) => {
       return await toggleAccessUserStatus(input.userId);
     }),
     // ============ GERENTES DE EMPRESA (VISÃO DUPLA) ============
@@ -26898,41 +32050,41 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await getGerentesEmpresa();
     }),
     // Buscar alunos de uma empresa (para select de promoção)
-    alunosByProgram: adminOrAdmin2Procedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
+    alunosByProgram: adminOrAdmin2Procedure.input(z7.object({ programId: z7.number() })).query(async ({ input }) => {
       return await getAlunosByProgram(input.programId);
     }),
     // Promover aluno a gerente de empresa
-    promoteToGerente: adminOrAdmin2Procedure.input(z6.object({
-      alunoId: z6.number(),
-      programId: z6.number()
+    promoteToGerente: adminOrAdmin2Procedure.input(z7.object({
+      alunoId: z7.number(),
+      programId: z7.number()
     })).mutation(async ({ input }) => {
       return await promoteAlunoToGerente(input.alunoId, input.programId);
     }),
     // Criar gerente puro (sem perfil de aluno)
-    createGerentePuro: adminOrAdmin2Procedure.input(z6.object({
-      name: z6.string().min(1),
-      email: z6.string().email(),
-      cpf: z6.string().optional(),
-      programId: z6.number()
+    createGerentePuro: adminOrAdmin2Procedure.input(z7.object({
+      name: z7.string().min(1),
+      email: z7.string().email(),
+      cpf: z7.string().optional(),
+      programId: z7.number()
     })).mutation(async ({ input }) => {
       return await createGerentePuro(input);
     }),
     // Remover papel de gerente
-    removeGerente: adminOrAdmin2Procedure.input(z6.object({ userId: z6.number() })).mutation(async ({ input }) => {
+    removeGerente: adminOrAdmin2Procedure.input(z7.object({ userId: z7.number() })).mutation(async ({ input }) => {
       return await removeGerenteRole(input.userId);
     }),
     // Cadastro Direto de Aluno pelo Admin (com bypass de onboarding)
-    createAlunoDireto: adminOrAdmin2Procedure.input(z6.object({
-      name: z6.string().min(1),
-      email: z6.string().email(),
-      cpf: z6.string().min(1),
-      programId: z6.number(),
-      consultorId: z6.number().nullable().optional(),
+    createAlunoDireto: adminOrAdmin2Procedure.input(z7.object({
+      name: z7.string().min(1),
+      email: z7.string().email(),
+      cpf: z7.string().min(1),
+      programId: z7.number(),
+      consultorId: z7.number().nullable().optional(),
       // mentor agora é opcional — aluno escolhe no onboarding
-      turmaId: z6.number().nullable().optional(),
-      contratoInicio: z6.string().optional(),
-      contratoFim: z6.string().optional(),
-      totalSessoesContratadas: z6.number().optional()
+      turmaId: z7.number().nullable().optional(),
+      contratoInicio: z7.string().optional(),
+      contratoFim: z7.string().optional(),
+      totalSessoesContratadas: z7.number().optional()
     })).mutation(async ({ input }) => {
       const result = await createAlunoDireto(input);
       try {
@@ -26958,15 +32110,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return result;
     }),
     // Check aluno dependencies before deletion
-    getAlunoDependencies: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    getAlunoDependencies: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getAlunoDependencies(input.alunoId);
     }),
     // Toggle ativar/inativar aluno
-    toggleAlunoStatus: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
+    toggleAlunoStatus: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input }) => {
       return await toggleAlunoStatus(input.alunoId);
     }),
     // Delete aluno and all related data
-    deleteAluno: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number(), confirmCascade: z6.boolean().default(false) })).mutation(async ({ input }) => {
+    deleteAluno: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number(), confirmCascade: z7.boolean().default(false) })).mutation(async ({ input }) => {
       const deps = await getAlunoDependencies(input.alunoId);
       if (!deps) return { success: false, message: "Erro ao verificar depend\xEAncias" };
       if (deps.totalRelated > 0 && !input.confirmCascade) {
@@ -26975,38 +32127,38 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return await deleteAluno(input.alunoId);
     }),
     // ============ LIBERAR ONBOARDING (NOVO CICLO) ============
-    liberarOnboarding: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
+    liberarOnboarding: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input }) => {
       return await liberarOnboardingAluno(input.alunoId);
     }),
-    liberarOnboardingEmMassa: adminOrAdmin2Procedure.input(z6.object({ alunoIds: z6.array(z6.number()).min(1) })).mutation(async ({ input }) => {
+    liberarOnboardingEmMassa: adminOrAdmin2Procedure.input(z7.object({ alunoIds: z7.array(z7.number()).min(1) })).mutation(async ({ input }) => {
       return await liberarOnboardingEmMassa(input.alunoIds);
     }),
     // Reverter onboarding liberado (desfaz liberarOnboarding)
-    reverterOnboarding: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
+    reverterOnboarding: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input }) => {
       await resetOnboardingLiberado(input.alunoId);
       return { success: true, message: "Onboarding revertido com sucesso." };
     }),
     // ============ PAINEL DE AGENDAMENTOS =============
-    allAppointments: adminOrAdmin2Procedure.input(z6.object({
-      status: z6.string().optional(),
-      type: z6.string().optional(),
-      dateFrom: z6.string().optional(),
-      dateTo: z6.string().optional(),
-      consultorId: z6.number().optional()
+    allAppointments: adminOrAdmin2Procedure.input(z7.object({
+      status: z7.string().optional(),
+      type: z7.string().optional(),
+      dateFrom: z7.string().optional(),
+      dateTo: z7.string().optional(),
+      consultorId: z7.number().optional()
     }).optional()).query(async ({ input }) => {
       return await getAllAppointments(input);
     }),
     // ============ EDITAR MENTORIAS (PARAMETRIZAÇÃO) ============
-    listMentoringSessions: adminOrAdmin2Procedure.input(z6.object({
-      programId: z6.number().optional(),
-      turmaId: z6.number().optional(),
-      alunoId: z6.number().optional(),
-      consultorId: z6.number().optional(),
-      alunoNome: z6.string().optional(),
-      presenca: z6.string().optional(),
-      taskStatus: z6.string().optional(),
-      page: z6.number().default(1),
-      pageSize: z6.number().default(50)
+    listMentoringSessions: adminOrAdmin2Procedure.input(z7.object({
+      programId: z7.number().optional(),
+      turmaId: z7.number().optional(),
+      alunoId: z7.number().optional(),
+      consultorId: z7.number().optional(),
+      alunoNome: z7.string().optional(),
+      presenca: z7.string().optional(),
+      taskStatus: z7.string().optional(),
+      page: z7.number().default(1),
+      pageSize: z7.number().default(50)
     })).query(async ({ input }) => {
       const filters = input;
       const page = filters.page || 1;
@@ -27014,42 +32166,42 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const offset = (page - 1) * pageSize;
       const dbInstance = await (await Promise.resolve().then(() => (init_db(), db_exports))).getDb();
       if (!dbInstance) return { sessions: [], total: 0 };
-      const { mentoringSessions: mentoringSessions2, alunos: alunosTable, consultors: consultorsTable, turmas: turmasTable, programs: programsTable, trilhas: trilhasTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq16, and: and15, sql: sql5, desc: desc6, asc: asc4, like } = await import("drizzle-orm");
+      const { mentoringSessions: mentoringSessions3, alunos: alunosTable, consultors: consultorsTable, turmas: turmasTable, programs: programsTable, trilhas: trilhasTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const { eq: eq19, and: and18, sql: sql7, desc: desc6, asc: asc4, like } = await import("drizzle-orm");
       const conditions = [];
-      if (filters.alunoId) conditions.push(eq16(mentoringSessions2.alunoId, filters.alunoId));
-      if (filters.consultorId) conditions.push(eq16(mentoringSessions2.consultorId, filters.consultorId));
-      if (filters.turmaId) conditions.push(eq16(mentoringSessions2.turmaId, filters.turmaId));
-      if (filters.presenca) conditions.push(eq16(mentoringSessions2.presence, filters.presenca));
-      if (filters.taskStatus) conditions.push(eq16(mentoringSessions2.taskStatus, filters.taskStatus));
+      if (filters.alunoId) conditions.push(eq19(mentoringSessions3.alunoId, filters.alunoId));
+      if (filters.consultorId) conditions.push(eq19(mentoringSessions3.consultorId, filters.consultorId));
+      if (filters.turmaId) conditions.push(eq19(mentoringSessions3.turmaId, filters.turmaId));
+      if (filters.presenca) conditions.push(eq19(mentoringSessions3.presence, filters.presenca));
+      if (filters.taskStatus) conditions.push(eq19(mentoringSessions3.taskStatus, filters.taskStatus));
       if (filters.alunoNome && filters.alunoNome.trim()) {
-        const matchingAlunos = await dbInstance.select({ id: alunosTable.id }).from(alunosTable).where(sql5`LOWER(${alunosTable.name}) LIKE ${"%" + filters.alunoNome.toLowerCase() + "%"}`);
+        const matchingAlunos = await dbInstance.select({ id: alunosTable.id }).from(alunosTable).where(sql7`LOWER(${alunosTable.name}) LIKE ${"%" + filters.alunoNome.toLowerCase() + "%"}`);
         const matchingIds = matchingAlunos.map((a) => a.id);
         if (matchingIds.length === 0) return { sessions: [], total: 0 };
-        conditions.push(sql5`${mentoringSessions2.alunoId} IN (${sql5.raw(matchingIds.join(","))})`);
+        conditions.push(sql7`${mentoringSessions3.alunoId} IN (${sql7.raw(matchingIds.join(","))})`);
       }
       if (filters.programId && !filters.turmaId) {
-        const turmasForProgram = await dbInstance.select({ id: turmasTable.id }).from(turmasTable).where(eq16(turmasTable.programId, filters.programId));
+        const turmasForProgram = await dbInstance.select({ id: turmasTable.id }).from(turmasTable).where(eq19(turmasTable.programId, filters.programId));
         const turmaIds2 = turmasForProgram.map((t2) => t2.id);
         if (turmaIds2.length > 0) {
-          conditions.push(sql5`(${mentoringSessions2.turmaId} IN (${sql5.raw(turmaIds2.join(","))}) OR ${mentoringSessions2.turmaId} IS NULL)`);
+          conditions.push(sql7`(${mentoringSessions3.turmaId} IN (${sql7.raw(turmaIds2.join(","))}) OR ${mentoringSessions3.turmaId} IS NULL)`);
         } else {
           return { sessions: [], total: 0 };
         }
       }
-      const whereClause = conditions.length > 0 ? and15(...conditions) : void 0;
-      const [countResult] = await dbInstance.select({ count: sql5`COUNT(*)` }).from(mentoringSessions2).where(whereClause);
+      const whereClause = conditions.length > 0 ? and18(...conditions) : void 0;
+      const [countResult] = await dbInstance.select({ count: sql7`COUNT(*)` }).from(mentoringSessions3).where(whereClause);
       const total = Number(countResult?.count || 0);
-      let query = dbInstance.select().from(mentoringSessions2).where(whereClause).orderBy(asc4(mentoringSessions2.sessionNumber), desc6(mentoringSessions2.sessionDate), desc6(mentoringSessions2.id)).limit(pageSize).offset(offset);
+      let query = dbInstance.select().from(mentoringSessions3).where(whereClause).orderBy(asc4(mentoringSessions3.sessionNumber), desc6(mentoringSessions3.sessionDate), desc6(mentoringSessions3.id)).limit(pageSize).offset(offset);
       const sessions = await query;
       const alunoIds = Array.from(new Set(sessions.map((s) => s.alunoId)));
       const consultorIds = Array.from(new Set(sessions.filter((s) => s.consultorId).map((s) => s.consultorId)));
       const turmaIds = Array.from(new Set(sessions.filter((s) => s.turmaId).map((s) => s.turmaId)));
       const trilhaIds = Array.from(new Set(sessions.filter((s) => s.trilhaId).map((s) => s.trilhaId)));
-      const alunosList = alunoIds.length > 0 ? await dbInstance.select({ id: alunosTable.id, name: alunosTable.name }).from(alunosTable).where(sql5`${alunosTable.id} IN (${sql5.raw(alunoIds.join(","))})`) : [];
-      const consultorsList = consultorIds.length > 0 ? await dbInstance.select({ id: consultorsTable.id, name: consultorsTable.name }).from(consultorsTable).where(sql5`${consultorsTable.id} IN (${sql5.raw(consultorIds.join(","))})`) : [];
-      const turmasList = turmaIds.length > 0 ? await dbInstance.select({ id: turmasTable.id, name: turmasTable.name }).from(turmasTable).where(sql5`${turmasTable.id} IN (${sql5.raw(turmaIds.join(","))})`) : [];
-      const trilhasList = trilhaIds.length > 0 ? await dbInstance.select({ id: trilhasTable.id, name: trilhasTable.name }).from(trilhasTable).where(sql5`${trilhasTable.id} IN (${sql5.raw(trilhaIds.join(","))})`) : [];
+      const alunosList = alunoIds.length > 0 ? await dbInstance.select({ id: alunosTable.id, name: alunosTable.name }).from(alunosTable).where(sql7`${alunosTable.id} IN (${sql7.raw(alunoIds.join(","))})`) : [];
+      const consultorsList = consultorIds.length > 0 ? await dbInstance.select({ id: consultorsTable.id, name: consultorsTable.name }).from(consultorsTable).where(sql7`${consultorsTable.id} IN (${sql7.raw(consultorIds.join(","))})`) : [];
+      const turmasList = turmaIds.length > 0 ? await dbInstance.select({ id: turmasTable.id, name: turmasTable.name }).from(turmasTable).where(sql7`${turmasTable.id} IN (${sql7.raw(turmaIds.join(","))})`) : [];
+      const trilhasList = trilhaIds.length > 0 ? await dbInstance.select({ id: trilhasTable.id, name: trilhasTable.name }).from(trilhasTable).where(sql7`${trilhasTable.id} IN (${sql7.raw(trilhaIds.join(","))})`) : [];
       const alunoMap = new Map(alunosList.map((a) => [a.id, a.name]));
       const consultorMap = new Map(consultorsList.map((c) => [c.id, c.name]));
       const turmaMap = new Map(turmasList.map((t2) => [t2.id, t2.name]));
@@ -27063,17 +32215,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }));
       return { sessions: enrichedSessions, total };
     }),
-    updateSessionDate: adminOrAdmin2Procedure.input(z6.object({
-      sessionId: z6.number(),
-      sessionDate: z6.string().optional(),
-      sessionNumber: z6.number().optional(),
-      consultorId: z6.number().optional(),
-      taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa", "validada"]).optional(),
-      presence: z6.enum(["presente", "ausente"]).optional(),
-      notaEvolucao: z6.number().min(0).max(10).nullable().optional(),
-      feedback: z6.string().optional(),
-      notaMentoraAplicabilidade: z6.number().min(0).max(10).nullable().optional(),
-      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional()
+    updateSessionDate: adminOrAdmin2Procedure.input(z7.object({
+      sessionId: z7.number(),
+      sessionDate: z7.string().optional(),
+      sessionNumber: z7.number().optional(),
+      consultorId: z7.number().optional(),
+      taskStatus: z7.enum(["entregue", "nao_entregue", "sem_tarefa", "validada"]).optional(),
+      presence: z7.enum(["presente", "ausente"]).optional(),
+      notaEvolucao: z7.number().min(0).max(10).nullable().optional(),
+      feedback: z7.string().optional(),
+      notaMentoraAplicabilidade: z7.number().min(0).max(10).nullable().optional(),
+      tipoSessao: z7.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional()
     })).mutation(async ({ input }) => {
       if (input.sessionNumber !== void 0) {
         const session = await getMentoringSessionById(input.sessionId);
@@ -27083,7 +32235,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             (s) => s.sessionNumber === input.sessionNumber && s.id !== input.sessionId
           );
           if (duplicate) {
-            throw new TRPCError6({
+            throw new TRPCError7({
               code: "CONFLICT",
               message: `Este aluno j\xE1 possui uma sess\xE3o #${input.sessionNumber}. Escolha outro n\xFAmero.`
             });
@@ -27103,35 +32255,51 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const success = await updateMentoringSession(input.sessionId, updateData);
       return { success };
     }),
-    deleteSession: adminOrAdmin2Procedure.input(z6.object({
-      sessionId: z6.number()
-    })).mutation(async ({ input }) => {
-      const success = await deleteMentoringSession(input.sessionId);
-      return { success };
+    deleteSession: protectedProcedure.input(z7.object({ sessionId: z7.number() })).mutation(async ({ ctx: ctx2, input }) => {
+      const isAdmin2 = ["admin", "admin2"].includes(ctx2.user.role ?? "");
+      if (!isAdmin2) {
+        let consultorId = ctx2.user.consultorId;
+        if (!consultorId && ctx2.user.openId) {
+          const consultorsList = await getConsultors();
+          const consultor = consultorsList.find((c) => c.loginId === ctx2.user.openId);
+          consultorId = consultor?.id;
+        }
+        if (!consultorId) throw new TRPCError7({ code: "FORBIDDEN", message: "Sem permiss\xE3o" });
+        const session = await getMentoringSessionById(input.sessionId);
+        if (!session) throw new TRPCError7({ code: "NOT_FOUND" });
+        if (session.consultorId !== consultorId) throw new TRPCError7({ code: "FORBIDDEN" });
+      }
+      const dbConn2 = await (await Promise.resolve().then(() => (init_db(), db_exports))).getDb();
+      if (dbConn2) {
+        await dbConn2.execute(
+          (await import("drizzle-orm")).sql.raw(`UPDATE mentoring_sessions SET cancelada = 1 WHERE id = ${input.sessionId}`)
+        );
+      }
+      return { success: true };
     }),
-    adminCreateSession: adminOrAdmin2Procedure.input(z6.object({
-      alunoId: z6.number(),
-      consultorId: z6.number(),
-      sessionDate: z6.string(),
-      sessionNumber: z6.number().min(1),
-      presence: z6.enum(["presente", "ausente"]),
-      taskStatus: z6.enum(["entregue", "nao_entregue", "sem_tarefa"]),
-      notaEvolucao: z6.number().min(0).max(10).nullable().optional(),
-      feedback: z6.string().optional(),
-      tipoSessao: z6.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
-      appointmentId: z6.number().nullable().optional()
+    adminCreateSession: adminOrAdmin2Procedure.input(z7.object({
+      alunoId: z7.number(),
+      consultorId: z7.number(),
+      sessionDate: z7.string(),
+      sessionNumber: z7.number().min(1),
+      presence: z7.enum(["presente", "ausente"]),
+      taskStatus: z7.enum(["entregue", "nao_entregue", "sem_tarefa"]),
+      notaEvolucao: z7.number().min(0).max(10).nullable().optional(),
+      feedback: z7.string().optional(),
+      tipoSessao: z7.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
+      appointmentId: z7.number().nullable().optional()
     })).mutation(async ({ input }) => {
       const existingSessions = await getMentoringSessionsByAluno(input.alunoId);
       const duplicate = existingSessions.find((s) => s.sessionNumber === input.sessionNumber);
       if (duplicate) {
-        throw new TRPCError6({
+        throw new TRPCError7({
           code: "CONFLICT",
           message: `J\xE1 existe uma sess\xE3o #${input.sessionNumber} para este aluno`
         });
       }
       const aluno = await getAlunoById(input.alunoId);
       if (!aluno) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.adminCreateSession");
       const sessionId = await createMentoringSession({
@@ -27158,8 +32326,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       try {
         const { sendEmail: sendEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
         const { ENV: ENV2 } = await Promise.resolve().then(() => (init_env(), env_exports));
-        const consultors2 = await getConsultors();
-        const mentor = consultors2.find((c) => c.id === input.consultorId);
+        const consultors3 = await getConsultors();
+        const mentor = consultors3.find((c) => c.id === input.consultorId);
         const mentorNome = mentor?.name || "N\xE3o definido";
         const alunoNome = aluno.name || "N\xE3o definido";
         const dataFormatada = (/* @__PURE__ */ new Date(input.sessionDate + "T12:00:00")).toLocaleDateString("pt-BR");
@@ -27192,12 +32360,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, sessionId };
     }),
     // Atualizar plataformaAulas de todos os alunos
+    // Migração: corrige tipoSessao de sessões grupais existentes gravadas incorretamente como individual
+    migrarTipoSessaoGrupais: adminOrAdmin2Procedure.mutation(async () => {
+      const { migrarTipoSessaoGrupais: migrarTipoSessaoGrupais2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+      return await migrarTipoSessaoGrupais2();
+    }),
     updateAllAlunosPlataformaAulas: adminOrAdmin2Procedure.mutation(async () => {
       return await updateAllAlunosPlataformaAulas();
     }),
-    updateMultipleAlunosPlataforma: adminOrAdmin2Procedure.input(z6.array(z6.object({
-      alunoId: z6.number(),
-      plataformaAulas: z6.enum(["scaffold", "sistema_interno"])
+    updateMultipleAlunosPlataforma: adminOrAdmin2Procedure.input(z7.array(z7.object({
+      alunoId: z7.number(),
+      plataformaAulas: z7.enum(["scaffold", "sistema_interno"])
     }))).mutation(async ({ input }) => {
       return await updateMultipleAlunosPlataforma(input);
     }),
@@ -27205,11 +32378,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listAdmins: adminProcedure3.query(async () => {
       return await listAdminUsers();
     }),
-    createAdmin: adminProcedure3.input(z6.object({
-      name: z6.string().min(1),
-      email: z6.string().email(),
-      username: z6.string().min(3, "Username deve ter ao menos 3 caracteres"),
-      password: z6.string().min(6, "Senha deve ter ao menos 6 caracteres")
+    createAdmin: adminProcedure3.input(z7.object({
+      name: z7.string().min(1),
+      email: z7.string().email(),
+      username: z7.string().min(3, "Username deve ter ao menos 3 caracteres"),
+      password: z7.string().min(6, "Senha deve ter ao menos 6 caracteres")
     })).mutation(async ({ input }) => {
       const crypto = await import("crypto");
       const passwordHash = crypto.createHash("sha256").update(input.password).digest("hex");
@@ -27220,28 +32393,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         passwordHash
       });
     }),
-    toggleAdminStatus: adminProcedure3.input(z6.object({ userId: z6.number() })).mutation(async ({ input, ctx: ctx2 }) => {
+    toggleAdminStatus: adminProcedure3.input(z7.object({ userId: z7.number() })).mutation(async ({ input, ctx: ctx2 }) => {
       if (ctx2.user.id === input.userId) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "Voc\xEA n\xE3o pode inabilitar sua pr\xF3pria conta." });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "Voc\xEA n\xE3o pode inabilitar sua pr\xF3pria conta." });
       }
       return await toggleAdminUserStatus(input.userId);
     }),
-    getPermissions: adminProcedure3.input(z6.object({ userId: z6.number() })).query(async ({ input }) => {
+    getPermissions: adminProcedure3.input(z7.object({ userId: z7.number() })).query(async ({ input }) => {
       return await getAdminPermissions(input.userId);
     }),
-    setPermissions: adminProcedure3.input(z6.object({ userId: z6.number(), permissions: z6.array(z6.string()) })).mutation(async ({ input }) => {
+    setPermissions: adminProcedure3.input(z7.object({ userId: z7.number(), permissions: z7.array(z7.string()) })).mutation(async ({ input }) => {
       await setAdminPermissions(input.userId, input.permissions);
       return { success: true };
     }),
-    updateAdminPassword: adminProcedure3.input(z6.object({
-      userId: z6.number(),
-      newPassword: z6.string().min(6, "Senha deve ter ao menos 6 caracteres")
+    updateAdminPassword: adminProcedure3.input(z7.object({
+      userId: z7.number(),
+      newPassword: z7.string().min(6, "Senha deve ter ao menos 6 caracteres")
     })).mutation(async ({ input }) => {
       const crypto = await import("crypto");
       const passwordHash = crypto.createHash("sha256").update(input.newPassword).digest("hex");
       const database = await getDb();
       const { users: users2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      await database.update(users2).set({ passwordHash }).where(eq8(users2.id, input.userId));
+      await database.update(users2).set({ passwordHash }).where(eq10(users2.id, input.userId));
       return { success: true };
     })
   }),
@@ -27249,16 +32422,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   aluno: router({
     onboardingStatus: protectedProcedure.query(async ({ ctx: ctx2 }) => {
       if (!ctx2.user) {
-        throw new TRPCError6({ code: "UNAUTHORIZED" });
+        throw new TRPCError7({ code: "UNAUTHORIZED" });
       }
       const status = await getAlunoOnboardingStatus(ctx2.user);
       if (status.processoSeletivoId && status.alunoId) {
         try {
           const database = await getDb();
           const { processoCandidatos: processoCandidatos2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-          const [existing] = await database.select({ id: processoCandidatos2.id }).from(processoCandidatos2).where(and7(
-            eq8(processoCandidatos2.processoId, status.processoSeletivoId),
-            eq8(processoCandidatos2.email, (ctx2.user.email ?? "").toLowerCase())
+          const [existing] = await database.select({ id: processoCandidatos2.id }).from(processoCandidatos2).where(and9(
+            eq10(processoCandidatos2.processoId, status.processoSeletivoId),
+            eq10(processoCandidatos2.email, (ctx2.user.email ?? "").toLowerCase())
           )).limit(1);
           if (!existing) {
             await database.insert(processoCandidatos2).values({
@@ -27270,7 +32443,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             });
             console.log(`[AutoRegistro PS] Candidato criado em processo_candidatos: ${ctx2.user.email} \u2192 processo ${status.processoSeletivoId}`);
           } else if (existing.userId == null) {
-            await database.update(processoCandidatos2).set({ userId: ctx2.user.id }).where(eq8(processoCandidatos2.id, existing.id));
+            await database.update(processoCandidatos2).set({ userId: ctx2.user.id }).where(eq10(processoCandidatos2.id, existing.id));
           }
         } catch (e) {
           console.warn("[AutoRegistro PS] onboardingStatus:", e);
@@ -27282,7 +32455,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Ciclos de Execução da Trilha
   ciclos: router({
     // Listar ciclos de um aluno (manual ou derivados do PDI)
-    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const ciclosManuais = await getCiclosByAluno(input.alunoId);
       if (ciclosManuais.length > 0) {
         return ciclosManuais.map((c) => ({ ...c, fonte: "manual" }));
@@ -27291,13 +32464,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return ciclosDerivados;
     }),
     // Criar ciclo
-    criar: adminOrAdmin2Procedure.input(z6.object({
-      alunoId: z6.number(),
-      nomeCiclo: z6.string().min(1),
-      dataInicio: z6.string(),
-      dataFim: z6.string(),
-      competenciaIds: z6.array(z6.number()).min(1),
-      observacoes: z6.string().optional()
+    criar: adminOrAdmin2Procedure.input(z7.object({
+      alunoId: z7.number(),
+      nomeCiclo: z7.string().min(1),
+      dataInicio: z7.string(),
+      dataFim: z7.string(),
+      competenciaIds: z7.array(z7.number()).min(1),
+      observacoes: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const cicloId = await createCicloExecucao({
         ...input,
@@ -27306,93 +32479,93 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, cicloId };
     }),
     // Atualizar ciclo
-    atualizar: adminOrAdmin2Procedure.input(z6.object({
-      cicloId: z6.number(),
-      nomeCiclo: z6.string().optional(),
-      dataInicio: z6.string().optional(),
-      dataFim: z6.string().optional(),
-      competenciaIds: z6.array(z6.number()).optional(),
-      observacoes: z6.string().optional()
+    atualizar: adminOrAdmin2Procedure.input(z7.object({
+      cicloId: z7.number(),
+      nomeCiclo: z7.string().optional(),
+      dataInicio: z7.string().optional(),
+      dataFim: z7.string().optional(),
+      competenciaIds: z7.array(z7.number()).optional(),
+      observacoes: z7.string().optional()
     })).mutation(async ({ input }) => {
       const { cicloId, ...data } = input;
       const success = await updateCicloExecucao(cicloId, data);
       return { success };
     }),
     // Excluir ciclo
-    excluir: adminOrAdmin2Procedure.input(z6.object({ cicloId: z6.number() })).mutation(async ({ input }) => {
+    excluir: adminOrAdmin2Procedure.input(z7.object({ cicloId: z7.number() })).mutation(async ({ input }) => {
       const success = await deleteCicloExecucao(input.cicloId);
       return { success };
     }),
     // Log de auditoria de resets de ciclos
-    auditoriaResets: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number().optional(), limit: z6.number().optional() }).optional()).query(async ({ input }) => {
+    auditoriaResets: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number().optional(), limit: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getAuditoriaResets(input ?? {});
     }),
     // Histórico de alterações de notas de mentoria (engagementScore e notaMentoraAplicabilidade)
-    auditoriaNotasMentoria: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    auditoriaNotasMentoria: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getAuditoriaNotesMentoria(input.alunoId);
     })
   }),
   // ============ ASSESSMENT PDI ============
   assessment: router({
     // Listar assessments de um aluno
-    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).query(async ({ input }) => {
       return await getAssessmentsByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Buscar um PDI específico por ID (incluindo congelados) — para visualização somente leitura
-    porId: protectedProcedure.input(z6.object({ pdiId: z6.number() })).query(async ({ input }) => {
+    porId: protectedProcedure.input(z7.object({ pdiId: z7.number() })).query(async ({ input }) => {
       return await getAssessmentById(input.pdiId);
     }),
     // Buscar TODOS os PDIs de um contratoNivelId (todas as trilhas do ciclo)
-    porContratoNivel: protectedProcedure.input(z6.object({ contratoNivelId: z6.number() })).query(async ({ input }) => {
+    porContratoNivel: protectedProcedure.input(z7.object({ contratoNivelId: z7.number() })).query(async ({ input }) => {
       return await getAllPdisByContratoNivel(input.contratoNivelId);
     }),
     // Listar assessments de um programa (admin/mentor)
-    porPrograma: protectedProcedure.input(z6.object({ programId: z6.number() })).query(async ({ input }) => {
+    porPrograma: protectedProcedure.input(z7.object({ programId: z7.number() })).query(async ({ input }) => {
       return await getAssessmentsByProgram(input.programId);
     }),
     // Listar assessments dos alunos de um consultor
-    porConsultor: protectedProcedure.input(z6.object({ consultorId: z6.number() })).query(async ({ input }) => {
+    porConsultor: protectedProcedure.input(z7.object({ consultorId: z7.number() })).query(async ({ input }) => {
       return await getAssessmentsByConsultor(input.consultorId);
     }),
     // Criar novo assessment PDI
-    criar: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      trilhaId: z6.number(),
-      turmaId: z6.number().nullable().optional(),
-      programId: z6.number().nullable().optional(),
-      consultorId: z6.number().nullable().optional(),
-      macroInicio: z6.string(),
-      macroTermino: z6.string(),
-      totalSessoesPrevistas: z6.number().min(1).nullable().optional(),
-      competencias: z6.array(z6.object({
-        competenciaId: z6.number(),
-        peso: z6.enum(["obrigatoria", "opcional"]),
-        notaCorte: z6.string(),
-        nivelAtual: z6.number().nullable().optional(),
-        metaCiclo1: z6.number().nullable().optional(),
-        metaCiclo2: z6.number().nullable().optional(),
-        metaFinal: z6.number().nullable().optional(),
-        justificativa: z6.string().nullable().optional(),
-        microInicio: z6.string().nullable().optional(),
-        microTermino: z6.string().nullable().optional()
+    criar: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      trilhaId: z7.number(),
+      turmaId: z7.number().nullable().optional(),
+      programId: z7.number().nullable().optional(),
+      consultorId: z7.number().nullable().optional(),
+      macroInicio: z7.string(),
+      macroTermino: z7.string(),
+      totalSessoesPrevistas: z7.number().min(1).nullable().optional(),
+      competencias: z7.array(z7.object({
+        competenciaId: z7.number(),
+        peso: z7.enum(["obrigatoria", "opcional"]),
+        notaCorte: z7.string(),
+        nivelAtual: z7.number().nullable().optional(),
+        metaCiclo1: z7.number().nullable().optional(),
+        metaCiclo2: z7.number().nullable().optional(),
+        metaFinal: z7.number().nullable().optional(),
+        justificativa: z7.string().nullable().optional(),
+        microInicio: z7.string().nullable().optional(),
+        microTermino: z7.string().nullable().optional()
       }))
     })).mutation(async ({ input }) => {
       const { competencias: competencias2, ...pdiData } = input;
       await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "assessment.criar");
       const alunoCheck = await getAlunoById(input.alunoId);
       if (!alunoCheck) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       if (alunoCheck.isActive === 0) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel criar PDI para aluno inativo. Ative o aluno primeiro." });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "N\xE3o \xE9 poss\xEDvel criar PDI para aluno inativo. Ative o aluno primeiro." });
       }
       const existingPdi = await getExistingActivePdiByTrilha(input.alunoId, input.trilhaId);
       if (existingPdi) {
         console.log(`[Assessment] Trilha ${input.trilhaId} j\xE1 existe para aluno ${input.alunoId} (PDI #${existingPdi.pdiId}). Adicionando ${competencias2.length} compet\xEAncia(s) ao existente.`);
         const added = await addCompetenciasToExistingAssessment(existingPdi.pdiId, competencias2);
         if (added === 0) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "BAD_REQUEST",
             message: "Todas as compet\xEAncias selecionadas j\xE1 existem nesta trilha. Nenhuma nova compet\xEAncia foi adicionada."
           });
@@ -27422,20 +32595,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true, pdiId: existingPdi.pdiId, addedToExisting: true, addedCount: added };
       }
       if (pdiData.macroInicio >= pdiData.macroTermino) {
-        throw new TRPCError6({
+        throw new TRPCError7({
           code: "BAD_REQUEST",
           message: "Data de in\xEDcio do macro ciclo deve ser anterior \xE0 data de t\xE9rmino"
         });
       }
       for (const comp of competencias2) {
         if (comp.microInicio && comp.microInicio < pdiData.macroInicio) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "BAD_REQUEST",
             message: `Micro ciclo in\xEDcio n\xE3o pode ser anterior ao macro ciclo in\xEDcio (${pdiData.macroInicio})`
           });
         }
         if (comp.microTermino && comp.microTermino > pdiData.macroTermino) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "BAD_REQUEST",
             message: `Micro ciclo t\xE9rmino n\xE3o pode ser posterior ao macro ciclo t\xE9rmino (${pdiData.macroTermino})`
           });
@@ -27495,49 +32668,49 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, pdiId };
     }),
     // Congelar assessment PDI (com motivo obrigatório)
-    congelar: protectedProcedure.input(z6.object({
-      pdiId: z6.number(),
-      consultorId: z6.number(),
-      motivo: z6.string().min(1, "Motivo \xE9 obrigat\xF3rio")
+    congelar: protectedProcedure.input(z7.object({
+      pdiId: z7.number(),
+      consultorId: z7.number(),
+      motivo: z7.string().min(1, "Motivo \xE9 obrigat\xF3rio")
     })).mutation(async ({ input }) => {
       await congelarAssessmentPdi(input.pdiId, input.consultorId, input.motivo);
       return { success: true };
     }),
     // Descongelar assessment PDI (reverter para ativo)
-    descongelar: protectedProcedure.input(z6.object({
-      pdiId: z6.number(),
-      consultorId: z6.number()
+    descongelar: protectedProcedure.input(z7.object({
+      pdiId: z7.number(),
+      consultorId: z7.number()
     })).mutation(async ({ input }) => {
       await descongelarAssessmentPdi(input.pdiId, input.consultorId);
       return { success: true };
     }),
     // Atualizar competência do assessment (micro ciclo, peso, nota de corte)
-    atualizarCompetencia: protectedProcedure.input(z6.object({
-      id: z6.number(),
-      peso: z6.enum(["obrigatoria", "opcional"]).optional(),
-      notaCorte: z6.string().optional(),
-      microInicio: z6.string().nullable().optional(),
-      microTermino: z6.string().nullable().optional()
+    atualizarCompetencia: protectedProcedure.input(z7.object({
+      id: z7.number(),
+      peso: z7.enum(["obrigatoria", "opcional"]).optional(),
+      notaCorte: z7.string().optional(),
+      microInicio: z7.string().nullable().optional(),
+      microTermino: z7.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateAssessmentCompetencia(id, data);
       return { success: true };
     }),
     // Atualizar assessment PDI (trilha, datas macro, mentora, etc.)
-    atualizar: protectedProcedure.input(z6.object({
-      pdiId: z6.number(),
-      trilhaId: z6.number().optional(),
-      consultorId: z6.number().nullable().optional(),
-      turmaId: z6.number().nullable().optional(),
-      programId: z6.number().nullable().optional(),
-      macroInicio: z6.string().optional(),
-      macroTermino: z6.string().optional(),
-      totalSessoesPrevistas: z6.number().min(1).nullable().optional(),
-      observacoes: z6.string().nullable().optional()
+    atualizar: protectedProcedure.input(z7.object({
+      pdiId: z7.number(),
+      trilhaId: z7.number().optional(),
+      consultorId: z7.number().nullable().optional(),
+      turmaId: z7.number().nullable().optional(),
+      programId: z7.number().nullable().optional(),
+      macroInicio: z7.string().optional(),
+      macroTermino: z7.string().optional(),
+      totalSessoesPrevistas: z7.number().min(1).nullable().optional(),
+      observacoes: z7.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { pdiId, ...data } = input;
       if (data.macroInicio && data.macroTermino && data.macroInicio >= data.macroTermino) {
-        throw new TRPCError6({
+        throw new TRPCError7({
           code: "BAD_REQUEST",
           message: "Data de in\xEDcio deve ser anterior \xE0 data de t\xE9rmino"
         });
@@ -27546,18 +32719,18 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true };
     }),
     // Adicionar competência a um assessment existente
-    adicionarCompetencia: protectedProcedure.input(z6.object({
-      assessmentPdiId: z6.number(),
-      competenciaId: z6.number(),
-      peso: z6.enum(["obrigatoria", "opcional"]),
-      notaCorte: z6.string().optional(),
-      microInicio: z6.string().nullable().optional(),
-      microTermino: z6.string().nullable().optional(),
-      nivelAtual: z6.string().nullable().optional(),
-      metaCiclo1: z6.string().nullable().optional(),
-      metaCiclo2: z6.string().nullable().optional(),
-      metaFinal: z6.string().nullable().optional(),
-      justificativa: z6.string().nullable().optional()
+    adicionarCompetencia: protectedProcedure.input(z7.object({
+      assessmentPdiId: z7.number(),
+      competenciaId: z7.number(),
+      peso: z7.enum(["obrigatoria", "opcional"]),
+      notaCorte: z7.string().optional(),
+      microInicio: z7.string().nullable().optional(),
+      microTermino: z7.string().nullable().optional(),
+      nivelAtual: z7.string().nullable().optional(),
+      metaCiclo1: z7.string().nullable().optional(),
+      metaCiclo2: z7.string().nullable().optional(),
+      metaFinal: z7.string().nullable().optional(),
+      justificativa: z7.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { assessmentPdiId, ...data } = input;
       const id = await addCompetenciaToAssessment(assessmentPdiId, data);
@@ -27570,41 +32743,41 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, id };
     }),
     // Remover competência de um assessment
-    removerCompetencia: protectedProcedure.input(z6.object({
-      assessmentCompetenciaId: z6.number()
+    removerCompetencia: protectedProcedure.input(z7.object({
+      assessmentCompetenciaId: z7.number()
     })).mutation(async ({ input }) => {
       await removeCompetenciaFromAssessment(input.assessmentCompetenciaId);
       return { success: true };
     }),
     // Atualizar competências em lote (editar existentes, remover desmarcadas, adicionar novas)
-    atualizarCompetencias: protectedProcedure.input(z6.object({
-      assessmentPdiId: z6.number(),
-      alunoId: z6.number(),
-      updated: z6.array(z6.object({
-        assessmentCompetenciaId: z6.number(),
-        competenciaId: z6.number(),
-        peso: z6.enum(["obrigatoria", "opcional"]),
-        nivelAtual: z6.number().nullable(),
-        metaFinal: z6.number().nullable(),
-        metaCiclo1: z6.number().nullable(),
-        metaCiclo2: z6.number().nullable(),
-        justificativa: z6.string().nullable(),
-        microInicio: z6.string().nullable(),
-        microTermino: z6.string().nullable()
+    atualizarCompetencias: protectedProcedure.input(z7.object({
+      assessmentPdiId: z7.number(),
+      alunoId: z7.number(),
+      updated: z7.array(z7.object({
+        assessmentCompetenciaId: z7.number(),
+        competenciaId: z7.number(),
+        peso: z7.enum(["obrigatoria", "opcional"]),
+        nivelAtual: z7.number().nullable(),
+        metaFinal: z7.number().nullable(),
+        metaCiclo1: z7.number().nullable(),
+        metaCiclo2: z7.number().nullable(),
+        justificativa: z7.string().nullable(),
+        microInicio: z7.string().nullable(),
+        microTermino: z7.string().nullable()
       })),
-      removed: z6.array(z6.number()),
+      removed: z7.array(z7.number()),
       // assessmentCompetenciaId[]
-      added: z6.array(z6.object({
-        competenciaId: z6.number(),
-        peso: z6.enum(["obrigatoria", "opcional"]),
-        notaCorte: z6.string().optional(),
-        nivelAtual: z6.number().nullable(),
-        metaFinal: z6.number().nullable(),
-        metaCiclo1: z6.number().nullable(),
-        metaCiclo2: z6.number().nullable(),
-        justificativa: z6.string().nullable(),
-        microInicio: z6.string().nullable(),
-        microTermino: z6.string().nullable()
+      added: z7.array(z7.object({
+        competenciaId: z7.number(),
+        peso: z7.enum(["obrigatoria", "opcional"]),
+        notaCorte: z7.string().optional(),
+        nivelAtual: z7.number().nullable(),
+        metaFinal: z7.number().nullable(),
+        metaCiclo1: z7.number().nullable(),
+        metaCiclo2: z7.number().nullable(),
+        justificativa: z7.string().nullable(),
+        microInicio: z7.string().nullable(),
+        microTermino: z7.string().nullable()
       }))
     })).mutation(async ({ input }) => {
       let updatedCount = 0;
@@ -27653,8 +32826,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       return { success: true, updated: updatedCount, removed: removedCount, added: addedCount };
     }),
     // Excluir assessment PDI completo
-    excluir: protectedProcedure.input(z6.object({
-      pdiId: z6.number()
+    excluir: protectedProcedure.input(z7.object({
+      pdiId: z7.number()
     })).mutation(async ({ input }) => {
       await deleteAssessmentPdi(input.pdiId);
       return { success: true };
@@ -27662,26 +32835,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   }),
   // ==================== WEBINARS MANAGEMENT ====================
   webinars: router({
-    list: adminOrAdmin2Procedure.input(z6.object({ status: z6.string().optional() }).optional()).query(async ({ input }) => {
+    list: adminOrAdmin2Procedure.input(z7.object({ status: z7.string().optional() }).optional()).query(async ({ input }) => {
       return await listWebinars(input?.status);
     }),
-    getById: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getById: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       return await getWebinarById(input.id);
     }),
-    create: adminOrAdmin2Procedure.input(z6.object({
-      title: z6.string().min(1),
-      description: z6.string().optional(),
-      theme: z6.string().optional(),
-      speaker: z6.string().optional(),
-      speakerBio: z6.string().optional(),
-      eventDate: z6.string(),
-      startDate: z6.string().optional(),
-      endDate: z6.string().optional(),
-      duration: z6.number().optional(),
-      meetingLink: z6.string().optional(),
-      youtubeLink: z6.string().optional(),
-      targetAudience: z6.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
-      status: z6.enum(["draft", "published", "completed", "cancelled"]).optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      title: z7.string().min(1),
+      description: z7.string().optional(),
+      theme: z7.string().optional(),
+      speaker: z7.string().optional(),
+      speakerBio: z7.string().optional(),
+      eventDate: z7.string(),
+      startDate: z7.string().optional(),
+      endDate: z7.string().optional(),
+      duration: z7.number().optional(),
+      meetingLink: z7.string().optional(),
+      youtubeLink: z7.string().optional(),
+      targetAudience: z7.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
+      status: z7.enum(["draft", "published", "completed", "cancelled"]).optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const eventDate = new Date(input.eventDate);
       const startDate = input.startDate ? new Date(input.startDate) : eventDate;
@@ -27696,23 +32869,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       if (input.status === "published") {
         await ensureEventForWebinar(id);
       }
+      try {
+        await generateWebinarInternalTasks(id, eventDate, input.theme || null);
+      } catch (err) {
+        console.warn("[WebinarTasks] Erro ao gerar tarefas internas:", err?.message);
+      }
       return { id, success: true };
     }),
-    update: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      title: z6.string().optional(),
-      description: z6.string().optional(),
-      theme: z6.string().optional(),
-      speaker: z6.string().optional(),
-      speakerBio: z6.string().optional(),
-      eventDate: z6.string().optional(),
-      startDate: z6.string().optional().nullable(),
-      endDate: z6.string().optional().nullable(),
-      duration: z6.number().optional(),
-      meetingLink: z6.string().optional(),
-      youtubeLink: z6.string().optional(),
-      targetAudience: z6.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
-      status: z6.enum(["draft", "published", "completed", "cancelled"]).optional()
+    update: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      title: z7.string().optional(),
+      description: z7.string().optional(),
+      theme: z7.string().optional(),
+      speaker: z7.string().optional(),
+      speakerBio: z7.string().optional(),
+      eventDate: z7.string().optional(),
+      startDate: z7.string().optional().nullable(),
+      endDate: z7.string().optional().nullable(),
+      duration: z7.number().optional(),
+      meetingLink: z7.string().optional(),
+      youtubeLink: z7.string().optional(),
+      targetAudience: z7.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
+      status: z7.enum(["draft", "published", "completed", "cancelled"]).optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const updateData = { ...data };
@@ -27725,15 +32903,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       return { success: true };
     }),
-    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deleteWebinar(input.id);
       return { success: true };
     }),
-    uploadCard: adminOrAdmin2Procedure.input(z6.object({
-      webinarId: z6.number(),
-      fileBase64: z6.string(),
-      fileName: z6.string(),
-      mimeType: z6.string()
+    uploadCard: adminOrAdmin2Procedure.input(z7.object({
+      webinarId: z7.number(),
+      fileBase64: z7.string(),
+      fileName: z7.string(),
+      mimeType: z7.string()
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileBase64, "base64");
       const ext = input.fileName.split(".").pop() || "png";
@@ -27746,12 +32924,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       });
       return { url, success: true };
     }),
-    sendReminder: adminOrAdmin2Procedure.input(z6.object({
-      webinarId: z6.number(),
-      recipients: z6.array(z6.enum(["alunos", "gerentes", "mentores"])).min(1, "Selecione pelo menos um grupo de destinat\xE1rios")
+    sendReminder: adminOrAdmin2Procedure.input(z7.object({
+      webinarId: z7.number(),
+      recipients: z7.array(z7.enum(["alunos", "gerentes", "mentores"])).min(1, "Selecione pelo menos um grupo de destinat\xE1rios")
     })).mutation(async ({ input }) => {
       const webinar = await getWebinarById(input.webinarId);
-      if (!webinar) throw new TRPCError6({ code: "NOT_FOUND", message: "Webinar n\xE3o encontrado" });
+      if (!webinar) throw new TRPCError7({ code: "NOT_FOUND", message: "Webinar n\xE3o encontrado" });
       const allRecipients = [];
       const groupCounts = {};
       if (input.recipients.includes("alunos")) {
@@ -27784,7 +32962,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         seen.add(adminEmail.toLowerCase());
       }
       if (uniqueRecipients.length === 0) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "Nenhum destinat\xE1rio com email cadastrado encontrado nos grupos selecionados" });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "Nenhum destinat\xE1rio com email cadastrado encontrado nos grupos selecionados" });
       }
       const eventDate = webinar.eventDate ? new Date(webinar.eventDate) : null;
       const eventDateStr = eventDate ? eventDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "Data n\xE3o definida";
@@ -27882,11 +33060,211 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       };
     }),
     // Public endpoint for students to see upcoming webinars
-    upcoming: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ input }) => {
+    upcoming: protectedProcedure.input(z7.object({ limit: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await listUpcomingWebinars(input?.limit || 10);
     }),
-    past: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ input }) => {
+    past: protectedProcedure.input(z7.object({ limit: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await listPastWebinars(input?.limit || 10);
+    })
+  }),
+  // ==================== WEBINAR TASKS (CHECKLIST INTERNO) ====================
+  webinarTasks: router({
+    /** Lista todas as tarefas de um webinar */
+    listByWebinar: adminOrAdmin2Procedure.input(z7.object({ webinarId: z7.number() })).query(async ({ input }) => {
+      return await getWebinarTasksByWebinar(input.webinarId);
+    }),
+    /** Retorna resumo (total/concluídas/atrasadas/risco) para o card */
+    getSummaryByWebinar: adminOrAdmin2Procedure.input(z7.object({ webinarId: z7.number() })).query(async ({ input }) => {
+      return await getWebinarTasksSummary(input.webinarId);
+    }),
+    /** Altera status de uma tarefa */
+    updateStatus: adminOrAdmin2Procedure.input(z7.object({
+      taskId: z7.number(),
+      status: z7.enum(["pending", "in_progress", "waiting_delivery", "waiting_approval", "adjustment_requested", "approved", "completed", "cancelled"])
+    })).mutation(async ({ input, ctx: ctx2 }) => {
+      await updateWebinarTaskStatus(input.taskId, input.status, ctx2.user.id);
+      return { success: true };
+    }),
+    /** Edita responsável (nome + email) de uma tarefa */
+    updateResponsible: adminOrAdmin2Procedure.input(z7.object({
+      taskId: z7.number(),
+      name: z7.string(),
+      email: z7.string()
+    })).mutation(async ({ input }) => {
+      await updateWebinarTaskResponsible(input.taskId, input.name, input.email);
+      return { success: true };
+    }),
+    /** Busca responsáveis internos de um webinar */
+    getResponsibles: adminOrAdmin2Procedure.input(z7.object({ webinarId: z7.number() })).query(async ({ input }) => {
+      return await getWebinarResponsibles(input.webinarId);
+    }),
+    /** Salva/atualiza responsáveis internos de um webinar */
+    upsertResponsibles: adminOrAdmin2Procedure.input(z7.object({
+      webinarId: z7.number(),
+      responsibles: z7.array(z7.object({
+        role: z7.enum(["organizacao", "marketing", "administrativo", "coordenacao", "palestrante", "solicitante"]),
+        name: z7.string(),
+        email: z7.string(),
+        phone: z7.string().optional()
+      }))
+    })).mutation(async ({ input }) => {
+      await upsertWebinarResponsibles(input.webinarId, input.responsibles);
+      for (const resp of input.responsibles) {
+        const tasks = await getWebinarTasksByWebinar(input.webinarId);
+        for (const task of tasks) {
+          if (task.responsibleRole === resp.role && !task.responsibleName) {
+            await updateWebinarTaskResponsible(task.id, resp.name, resp.email);
+          }
+        }
+      }
+      return { success: true };
+    }),
+    /** Envia e-mail de lembrete interno para o responsável de uma tarefa */
+    sendInternalReminder: adminOrAdmin2Procedure.input(z7.object({
+      taskId: z7.number(),
+      webinarId: z7.number()
+    })).mutation(async ({ input }) => {
+      const tasks = await getWebinarTasksByWebinar(input.webinarId);
+      const task = tasks.find((t2) => t2.id === input.taskId);
+      if (!task) throw new TRPCError7({ code: "NOT_FOUND", message: "Tarefa n\xE3o encontrada" });
+      if (!task.responsibleEmail) throw new TRPCError7({ code: "BAD_REQUEST", message: "Respons\xE1vel sem e-mail cadastrado" });
+      const webinar = await getWebinarById(input.webinarId);
+      if (!webinar) throw new TRPCError7({ code: "NOT_FOUND", message: "Webinar n\xE3o encontrado" });
+      const summary = await getWebinarTasksSummary(input.webinarId);
+      const eventDate = webinar.eventDate ? new Date(webinar.eventDate) : null;
+      const webinarDateStr = eventDate ? eventDate.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "Data n\xE3o definida";
+      const dueDate = task.dueDate ? /* @__PURE__ */ new Date(task.dueDate + "T00:00:00") : null;
+      const dueDateStr = dueDate ? dueDate.toLocaleDateString("pt-BR") : "Sem prazo";
+      const adminUrl = "https://ecolider.ecodobem.com/admin/webinars";
+      const emailData = buildLembreteInternoWebinarEmail({
+        responsibleName: task.responsibleName || "Respons\xE1vel",
+        taskTitle: task.title,
+        taskDescription: task.description,
+        dueDate: dueDateStr,
+        webinarTitle: webinar.title,
+        webinarDate: webinarDateStr,
+        riskLevel: summary.riskLevel,
+        adminUrl
+      });
+      const result = await sendEmail({
+        to: task.responsibleEmail,
+        subject: emailData.subject,
+        html: emailData.html,
+        text: emailData.text
+      });
+      return {
+        success: result.success,
+        emailSent: result.success,
+        to: task.responsibleEmail,
+        error: result.error
+      };
+    }),
+    /** Busca uma tarefa pelo accessToken (acesso público para o responsável) */
+    getTaskByToken: publicProcedure.input(z7.object({ token: z7.string() })).query(async ({ input }) => {
+      const db2 = await Promise.resolve().then(() => (init_db(), db_exports));
+      const dbConn2 = await db2.getDb();
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "DB indispon\xEDvel" });
+      const { sql: sql7 } = await import("drizzle-orm");
+      const [rows] = await dbConn2.execute(sql7.raw(`
+          SELECT
+            wt.id, wt.webinarId, wt.title, wt.description, wt.deliveryUrl,
+            DATE_FORMAT(wt.dueDate, '%Y-%m-%d') AS dueDate,
+            wt.responsibleRole, wt.responsibleName, wt.responsibleEmail,
+            wt.status, wt.isCritical, wt.completedAt,
+            sw.title AS webinarTitle,
+            DATE_FORMAT(sw.eventDate, '%d/%m/%Y') AS webinarDate
+          FROM webinar_tasks wt
+          INNER JOIN scheduled_webinars sw ON sw.id = wt.webinarId
+          WHERE wt.accessToken = '${input.token.replace(/'/g, "''")}'
+          LIMIT 1
+        `));
+      const task = rows[0];
+      if (!task) throw new TRPCError7({ code: "NOT_FOUND", message: "Tarefa n\xE3o encontrada ou link inv\xE1lido" });
+      if (task.responsibleRole === "palestrante") {
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Esta interface n\xE3o est\xE1 dispon\xEDvel para palestrantes" });
+      }
+      return { ...task, isCritical: !!task.isCritical };
+    }),
+    /** Conclui uma tarefa via token público: salva link de entrega e marca como concluída */
+    completeTaskByToken: publicProcedure.input(z7.object({
+      token: z7.string(),
+      deliveryUrl: z7.string().url("URL inv\xE1lida").optional()
+    })).mutation(async ({ input }) => {
+      const db2 = await Promise.resolve().then(() => (init_db(), db_exports));
+      const dbConn2 = await db2.getDb();
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "DB indispon\xEDvel" });
+      const { sql: sql7 } = await import("drizzle-orm");
+      const [rows] = await dbConn2.execute(sql7.raw(`
+          SELECT id, responsibleRole, status
+          FROM webinar_tasks
+          WHERE accessToken = '${input.token.replace(/'/g, "''")}'
+          LIMIT 1
+        `));
+      const task = rows[0];
+      if (!task) throw new TRPCError7({ code: "NOT_FOUND", message: "Tarefa n\xE3o encontrada ou link inv\xE1lido" });
+      if (task.responsibleRole === "palestrante") {
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Palestrantes n\xE3o podem concluir tarefas por este canal" });
+      }
+      if (task.status === "completed") {
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "Esta tarefa j\xE1 foi conclu\xEDda" });
+      }
+      const safeUrl = input.deliveryUrl ? `'${input.deliveryUrl.replace(/'/g, "''")}'` : "NULL";
+      await dbConn2.execute(sql7.raw(`
+          UPDATE webinar_tasks
+          SET
+            status = 'completed',
+            deliveryUrl = ${safeUrl},
+            completedAt = NOW(),
+            updatedAt = NOW()
+          WHERE id = ${task.id}
+        `));
+      return { success: true, taskId: task.id };
+    })
+  }),
+  // ==================== WEBINAR TASK TEMPLATES ====================
+  webinarTaskTemplates: router({
+    /** Lista todos os templates de tarefas (ativos e inativos) */
+    list: adminProcedure3.query(async () => {
+      return await listWebinarTaskTemplates();
+    }),
+    /** Cria um novo template */
+    create: adminProcedure3.input(z7.object({
+      title: z7.string().min(1),
+      description: z7.string().optional(),
+      daysOffset: z7.number(),
+      defaultRole: z7.enum(["organizacao", "marketing", "administrativo", "coordenacao", "palestrante", "solicitante"]),
+      isCritical: z7.number().optional(),
+      sortOrder: z7.number().optional()
+    })).mutation(async ({ input }) => {
+      const id = await createWebinarTaskTemplate(input);
+      return { id, success: true };
+    }),
+    /** Atualiza um template existente */
+    update: adminProcedure3.input(z7.object({
+      id: z7.number(),
+      title: z7.string().min(1).optional(),
+      description: z7.string().optional(),
+      daysOffset: z7.number().optional(),
+      defaultRole: z7.enum(["organizacao", "marketing", "administrativo", "coordenacao", "palestrante", "solicitante"]).optional(),
+      isCritical: z7.number().optional(),
+      sortOrder: z7.number().optional(),
+      isActive: z7.number().optional()
+    })).mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      await updateWebinarTaskTemplate(id, data);
+      return { success: true };
+    }),
+    /** Remove (soft delete) um template */
+    delete: adminProcedure3.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
+      await deleteWebinarTaskTemplate(input.id);
+      return { success: true };
+    }),
+    /** Reordena os templates */
+    reorder: adminProcedure3.input(z7.object({
+      orders: z7.array(z7.object({ id: z7.number(), sortOrder: z7.number() }))
+    })).mutation(async ({ input }) => {
+      await reorderWebinarTaskTemplates(input.orders);
+      return { success: true };
     })
   }),
   // ==================== ANNOUNCEMENTS ====================
@@ -27896,90 +33274,114 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       const aluno = await getAlunoFromCtx(ctx2.user);
       return await listActiveAnnouncementsForStudent(aluno?.programId || void 0);
     }),
-    list: adminOrAdmin2Procedure.input(z6.object({ activeOnly: z6.boolean().optional() }).optional()).query(async ({ input }) => {
+    list: adminOrAdmin2Procedure.input(z7.object({ activeOnly: z7.boolean().optional() }).optional()).query(async ({ input }) => {
       return await listAnnouncements(input?.activeOnly);
     }),
-    getById: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getById: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       return await getAnnouncementById(input.id);
     }),
-    create: adminOrAdmin2Procedure.input(z6.object({
-      title: z6.string().min(1),
-      content: z6.string().optional(),
-      type: z6.enum(["webinar", "course", "activity", "notice", "news"]),
-      imageUrl: z6.string().optional(),
-      actionUrl: z6.string().optional(),
-      actionLabel: z6.string().optional(),
-      targetAudience: z6.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
-      priority: z6.number().optional(),
-      publishAt: z6.string().optional(),
-      expiresAt: z6.string().optional(),
-      isActive: z6.number().optional(),
-      webinarId: z6.number().optional(),
-      sendEmailNotification: z6.boolean().optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      title: z7.string().min(1),
+      content: z7.string().optional(),
+      type: z7.enum(["webinar", "course", "activity", "notice", "news"]),
+      imageUrl: z7.string().optional(),
+      actionUrl: z7.string().optional(),
+      actionLabel: z7.string().optional(),
+      targetAudience: z7.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
+      priority: z7.number().optional(),
+      publishAt: z7.string().optional(),
+      expiresAt: z7.string().optional(),
+      isActive: z7.number().optional(),
+      webinarId: z7.number().optional(),
+      sendEmailNotification: z7.boolean().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { sendEmailNotification, ...announcementData } = input;
-      const data = { ...announcementData, createdBy: ctx2.user.id };
-      if (input.publishAt) data.publishAt = new Date(input.publishAt);
-      if (input.expiresAt) data.expiresAt = new Date(input.expiresAt);
+      const data = {
+        title: announcementData.title,
+        content: announcementData.content ?? null,
+        type: announcementData.type,
+        imageUrl: announcementData.imageUrl ?? null,
+        actionUrl: announcementData.actionUrl ?? null,
+        actionLabel: announcementData.actionLabel ?? null,
+        targetAudience: announcementData.targetAudience ?? "all",
+        priority: announcementData.priority ?? 0,
+        publishAt: announcementData.publishAt ? new Date(announcementData.publishAt) : null,
+        expiresAt: announcementData.expiresAt ? new Date(announcementData.expiresAt) : null,
+        isActive: announcementData.isActive ?? 1,
+        webinarId: announcementData.webinarId ?? null,
+        createdBy: ctx2.user.id
+      };
       const id = await createAnnouncement(data);
       if (sendEmailNotification) {
-        try {
-          const alunos2 = await getStudentEmailsByProgram();
-          const loginUrl = "https://ecolider.ecodobem.com/mural";
-          let emailsSent = 0;
-          let emailsFailed = 0;
-          for (const aluno of alunos2) {
-            if (!aluno.email) continue;
-            try {
-              const emailData = buildNovoAvisoMuralEmail({
-                alunoName: aluno.name || "aluno(a)",
-                avisoTitle: input.title,
-                avisoContent: input.content || null,
-                loginUrl
-              });
-              await sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
-              emailsSent++;
-            } catch {
-              emailsFailed++;
+        const avisoTitle = input.title;
+        const avisoContent = input.content || null;
+        (async () => {
+          try {
+            const alunos2 = await getStudentEmailsByProgram();
+            const loginUrl = "https://ecolider.ecodobem.com/mural";
+            const BATCH_SIZE = 10;
+            for (let i = 0; i < alunos2.length; i += BATCH_SIZE) {
+              const lote = alunos2.slice(i, i + BATCH_SIZE);
+              await Promise.allSettled(
+                lote.filter((a) => !!a.email).map((aluno) => {
+                  const emailData = buildNovoAvisoMuralEmail({
+                    alunoName: aluno.name || "aluno(a)",
+                    avisoTitle,
+                    avisoContent,
+                    loginUrl
+                  });
+                  return sendEmail({ to: aluno.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+                })
+              );
             }
+            console.log(`[Avisos] E-mails de notifica\xE7\xE3o enviados para ${alunos2.length} alunos (aviso id=${id})`);
+          } catch (err) {
+            console.error(`[Avisos] Erro ao enviar e-mails em background (aviso id=${id}):`, err);
           }
-          return { id, success: true, emailsSent, emailsFailed };
-        } catch {
-          return { id, success: true, emailsSent: 0, emailsFailed: 0 };
-        }
+        })();
       }
-      return { id, success: true };
+      return { id, success: true, emailsQueued: sendEmailNotification };
     }),
-    update: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      title: z6.string().optional(),
-      content: z6.string().optional(),
-      type: z6.enum(["webinar", "course", "activity", "notice", "news"]).optional(),
-      imageUrl: z6.string().optional(),
-      actionUrl: z6.string().optional(),
-      actionLabel: z6.string().optional(),
-      targetAudience: z6.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
-      priority: z6.number().optional(),
-      publishAt: z6.string().optional(),
-      expiresAt: z6.string().optional(),
-      isActive: z6.number().optional(),
-      webinarId: z6.number().optional()
+    update: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      title: z7.string().optional(),
+      content: z7.string().optional(),
+      type: z7.enum(["webinar", "course", "activity", "notice", "news"]).optional(),
+      imageUrl: z7.string().optional(),
+      actionUrl: z7.string().optional(),
+      actionLabel: z7.string().optional(),
+      targetAudience: z7.enum(["all", "sebrae_to", "sebrae_acre", "embrapii", "banrisul"]).optional(),
+      priority: z7.number().optional(),
+      publishAt: z7.string().optional(),
+      expiresAt: z7.string().optional(),
+      isActive: z7.number().optional(),
+      webinarId: z7.number().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
-      const updateData = { ...data };
-      if (data.publishAt) updateData.publishAt = new Date(data.publishAt);
-      if (data.expiresAt) updateData.expiresAt = new Date(data.expiresAt);
+      const updateData = {};
+      if (data.title !== void 0) updateData.title = data.title;
+      if (data.content !== void 0) updateData.content = data.content ?? null;
+      if (data.type !== void 0) updateData.type = data.type;
+      if (data.imageUrl !== void 0) updateData.imageUrl = data.imageUrl ?? null;
+      if (data.actionUrl !== void 0) updateData.actionUrl = data.actionUrl ?? null;
+      if (data.actionLabel !== void 0) updateData.actionLabel = data.actionLabel ?? null;
+      if (data.targetAudience !== void 0) updateData.targetAudience = data.targetAudience ?? "all";
+      if (data.priority !== void 0) updateData.priority = data.priority ?? 0;
+      if (data.publishAt !== void 0) updateData.publishAt = data.publishAt ? new Date(data.publishAt) : null;
+      if (data.expiresAt !== void 0) updateData.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
+      if (data.isActive !== void 0) updateData.isActive = data.isActive ?? 1;
+      if (data.webinarId !== void 0) updateData.webinarId = data.webinarId ?? null;
       await updateAnnouncement(id, updateData);
       return { success: true };
     }),
-    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deleteAnnouncement(input.id);
       return { success: true };
     }),
     // Reenviar notificação por e-mail para todos os alunos ativos
-    sendNotification: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    sendNotification: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       const aviso = await getAnnouncementById(input.id);
-      if (!aviso) throw new TRPCError6({ code: "NOT_FOUND", message: "Aviso n\xE3o encontrado" });
+      if (!aviso) throw new TRPCError7({ code: "NOT_FOUND", message: "Aviso n\xE3o encontrado" });
       const alunos2 = await getStudentEmailsByProgram();
       const loginUrl = "https://ecolider.ecodobem.com/mural";
       let emailsSent = 0;
@@ -28002,10 +33404,10 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true, emailsSent, emailsFailed };
     }),
     // Upload de imagem de capa para avisos
-    uploadImage: adminOrAdmin2Procedure.input(z6.object({
-      imageBase64: z6.string(),
-      mimeType: z6.string().default("image/jpeg"),
-      fileName: z6.string().optional()
+    uploadImage: adminOrAdmin2Procedure.input(z7.object({
+      imageBase64: z7.string(),
+      mimeType: z7.string().default("image/jpeg"),
+      fileName: z7.string().optional()
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.imageBase64, "base64");
       const ext = input.mimeType.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
@@ -28017,14 +33419,14 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
   // ==================== ATTENDANCE (Presença + Reflexão) ====================
   attendance: router({
     // Aluno marca presença e envia reflexão (funciona para webinários agendados e eventos importados)
-    markPresence: protectedProcedure.input(z6.object({
-      eventId: z6.number(),
-      reflexao: z6.string().min(20, "A reflex\xE3o deve ter pelo menos 20 caracteres"),
-      contratoNivelId: z6.number().nullable().optional()
+    markPresence: protectedProcedure.input(z7.object({
+      eventId: z7.number(),
+      reflexao: z7.string().min(20, "A reflex\xE3o deve ter pelo menos 20 caracteres"),
+      contratoNivelId: z7.number().nullable().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const aluno = await getAlunoFromCtx(ctx2.user);
       if (!aluno) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       let realEventId = input.eventId;
       if (input.eventId > 9e5) {
@@ -28033,7 +33435,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       }
       let eventRecord = await getEventById(realEventId);
       if (!eventRecord) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Evento n\xE3o encontrado." });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Evento n\xE3o encontrado." });
       }
       const allEvents = await getWebinarsPendingAttendance(aluno.id);
       const normalizedInputTitle = eventRecord?.title?.toLowerCase()?.trim() || "";
@@ -28058,7 +33460,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         if (matchingWebinar.status !== "completed") {
           const startDate = matchingWebinar.startDate || matchingWebinar.eventDate;
           if (startDate && new Date(startDate) > /* @__PURE__ */ new Date()) {
-            throw new TRPCError6({ code: "BAD_REQUEST", message: "A marca\xE7\xE3o de presen\xE7a s\xF3 \xE9 liberada ap\xF3s o in\xEDcio do evento." });
+            throw new TRPCError7({ code: "BAD_REQUEST", message: "A marca\xE7\xE3o de presen\xE7a s\xF3 \xE9 liberada ap\xF3s o in\xEDcio do evento." });
           }
         }
       }
@@ -28084,9 +33486,9 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       };
     }),
     // Admin: atualizar videoLink de um evento importado
-    updateVideoLink: adminOrAdmin2Procedure.input(z6.object({
-      eventId: z6.number(),
-      videoLink: z6.string().min(1, "Link do v\xEDdeo \xE9 obrigat\xF3rio")
+    updateVideoLink: adminOrAdmin2Procedure.input(z7.object({
+      eventId: z7.number(),
+      videoLink: z7.string().min(1, "Link do v\xEDdeo \xE9 obrigat\xF3rio")
     })).mutation(async ({ input }) => {
       await updateEventVideoLink(input.eventId, input.videoLink);
       return { success: true };
@@ -28172,48 +33574,48 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return tasks;
     }),
     // Aluno envia evidência (link e/ou imagem) para uma tarefa
-    submitEvidence: protectedProcedure.input(z6.object({
-      sessionId: z6.number(),
-      submissionType: z6.enum(["tarefa", "atualizacao_projeto"]),
-      evidenceLink: z6.string().optional(),
-      evidenceImageBase64: z6.string().optional(),
+    submitEvidence: protectedProcedure.input(z7.object({
+      sessionId: z7.number(),
+      submissionType: z7.enum(["tarefa", "atualizacao_projeto"]),
+      evidenceLink: z7.string().optional(),
+      evidenceImageBase64: z7.string().optional(),
       // compatibilidade
-      evidenceImageName: z6.string().optional(),
-      evidenceFileBase64: z6.string().optional(),
-      evidenceFileName: z6.string().optional(),
-      relatoAluno: z6.string().optional(),
-      textoAplicabilidade: z6.string().optional(),
-      notaAlunoAplicabilidade: z6.number().min(0).max(10).optional()
+      evidenceImageName: z7.string().optional(),
+      evidenceFileBase64: z7.string().optional(),
+      evidenceFileName: z7.string().optional(),
+      relatoAluno: z7.string().optional(),
+      textoAplicabilidade: z7.string().optional(),
+      notaAlunoAplicabilidade: z7.number().min(0).max(10).optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const aluno = await getAlunoFromCtx(ctx2.user);
-      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+      if (!aluno) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       const session = await getMentoringSessionById(input.sessionId);
       if (!session || session.alunoId !== aluno.id) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Sess\xE3o n\xE3o pertence a este aluno" });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Sess\xE3o n\xE3o pertence a este aluno" });
       }
       if (session.taskStatus === "validada") {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "Atividade j\xE1 foi validada, n\xE3o pode ser alterada" });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "Atividade j\xE1 foi validada, n\xE3o pode ser alterada" });
       }
       const evidenceLink = input.evidenceLink?.trim();
       const relatoAluno = input.relatoAluno?.trim();
       const fileBase64 = input.evidenceFileBase64 || input.evidenceImageBase64;
       const fileName = input.evidenceFileName || input.evidenceImageName;
       if (!evidenceLink && !fileBase64 && !relatoAluno) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "Para enviar a atividade, preencha pelo menos um dos campos: link, anexo ou relato." });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "Para enviar a atividade, preencha pelo menos um dos campos: link, anexo ou relato." });
       }
       if (evidenceLink) {
         try {
           new URL(evidenceLink);
         } catch {
-          throw new TRPCError6({ code: "BAD_REQUEST", message: "Link inv\xE1lido. Informe uma URL v\xE1lida come\xE7ando com https://." });
+          throw new TRPCError7({ code: "BAD_REQUEST", message: "Link inv\xE1lido. Informe uma URL v\xE1lida come\xE7ando com https://." });
         }
       }
       if (input.submissionType === "tarefa") {
         if (!input.textoAplicabilidade?.trim()) {
-          throw new TRPCError6({ code: "BAD_REQUEST", message: "Preencha a aplicabilidade pr\xE1tica para envios do tipo Tarefa." });
+          throw new TRPCError7({ code: "BAD_REQUEST", message: "Preencha a aplicabilidade pr\xE1tica para envios do tipo Tarefa." });
         }
         if (input.notaAlunoAplicabilidade === void 0) {
-          throw new TRPCError6({ code: "BAD_REQUEST", message: "Informe uma nota de aplicabilidade de 0 a 10 para envios do tipo Tarefa." });
+          throw new TRPCError7({ code: "BAD_REQUEST", message: "Informe uma nota de aplicabilidade de 0 a 10 para envios do tipo Tarefa." });
         }
       }
       let imageUrl = null;
@@ -28221,11 +33623,11 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       if (fileBase64) {
         const buffer = Buffer.from(fileBase64, "base64");
         if (buffer.length > 10 * 1024 * 1024) {
-          throw new TRPCError6({ code: "BAD_REQUEST", message: "O anexo deve ter no m\xE1ximo 10MB." });
+          throw new TRPCError7({ code: "BAD_REQUEST", message: "O anexo deve ter no m\xE1ximo 10MB." });
         }
         const ext = fileName?.split(".").pop()?.toLowerCase() || "";
         if (!["pdf", "doc", "docx", "jpg", "jpeg", "png", "webp"].includes(ext)) {
-          throw new TRPCError6({ code: "BAD_REQUEST", message: "Formato de anexo inv\xE1lido. Use PDF, DOC, DOCX, JPG, JPEG, PNG ou WEBP." });
+          throw new TRPCError7({ code: "BAD_REQUEST", message: "Formato de anexo inv\xE1lido. Use PDF, DOC, DOCX, JPG, JPEG, PNG ou WEBP." });
         }
         const randomSuffix = Math.random().toString(36).substring(2, 10);
         const fileKey = `evidence/${aluno.id}-${input.sessionId}-${randomSuffix}.${ext || "bin"}`;
@@ -28247,19 +33649,19 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Aluno envia avaliação de aplicabilidade prática ao concluir tarefa
-    submitAplicabilidade: protectedProcedure.input(z6.object({
-      sessionId: z6.number(),
-      textoAplicabilidade: z6.string().min(1, "Descreva como aplicou na pr\xE1tica"),
-      notaAlunoAplicabilidade: z6.number().min(0).max(10)
+    submitAplicabilidade: protectedProcedure.input(z7.object({
+      sessionId: z7.number(),
+      textoAplicabilidade: z7.string().min(1, "Descreva como aplicou na pr\xE1tica"),
+      notaAlunoAplicabilidade: z7.number().min(0).max(10)
     })).mutation(async ({ ctx: ctx2, input }) => {
       const aluno = await getAlunoFromCtx(ctx2.user);
-      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+      if (!aluno) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       const session = await getMentoringSessionById(input.sessionId);
       if (!session || session.alunoId !== aluno.id) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Sess\xE3o n\xE3o pertence a este aluno" });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Sess\xE3o n\xE3o pertence a este aluno" });
       }
       if (session.taskStatus === "validada") {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "Atividade j\xE1 foi validada, n\xE3o pode ser alterada" });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "Atividade j\xE1 foi validada, n\xE3o pode ser alterada" });
       }
       await updateMentoringSession(input.sessionId, {
         textoAplicabilidade: input.textoAplicabilidade,
@@ -28268,7 +33670,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Aluno visualiza comentários de uma sessão
-    myTaskComments: protectedProcedure.input(z6.object({ sessionId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+    myTaskComments: protectedProcedure.input(z7.object({ sessionId: z7.number() })).query(async ({ ctx: ctx2, input }) => {
       const aluno = await getAlunoFromCtx(ctx2.user);
       if (!aluno) return [];
       const session = await getMentoringSessionById(input.sessionId);
@@ -28276,29 +33678,29 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return await getCommentsBySessionId(input.sessionId);
     }),
     // Admin: visualizar reflexões dos alunos
-    reflections: adminOrAdmin2Procedure.input(z6.object({ eventId: z6.number().optional() }).optional()).query(async ({ input }) => {
+    reflections: adminOrAdmin2Procedure.input(z7.object({ eventId: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getWebinarReflections(input?.eventId);
     })
   }),
   // ============ CONTRATOS DO ALUNO ============
   contratos: router({
     // Listar contratos de um aluno
-    byAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    byAluno: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getContratosByAluno(input.alunoId);
     }),
     // Obter contrato por ID
-    byId: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    byId: protectedProcedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       return await getContratoById(input.id);
     }),
     // Criar contrato (admin)
-    create: adminOrAdmin2Procedure.input(z6.object({
-      alunoId: z6.number(),
-      programId: z6.number(),
-      turmaId: z6.number().optional(),
-      periodoInicio: z6.string(),
-      periodoTermino: z6.string(),
-      totalSessoesContratadas: z6.number().min(1),
-      observacoes: z6.string().optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      alunoId: z7.number(),
+      programId: z7.number(),
+      turmaId: z7.number().optional(),
+      periodoInicio: z7.string(),
+      periodoTermino: z7.string(),
+      totalSessoesContratadas: z7.number().min(1),
+      observacoes: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const dataInicio = new Date(input.periodoInicio);
       const dataFim = new Date(input.periodoTermino);
@@ -28323,14 +33725,14 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { id: contratoId, success: true };
     }),
     // Atualizar contrato (admin)
-    update: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      programId: z6.number().optional(),
-      turmaId: z6.number().optional(),
-      periodoInicio: z6.string().optional(),
-      periodoTermino: z6.string().optional(),
-      totalSessoesContratadas: z6.number().min(1).optional(),
-      observacoes: z6.string().optional()
+    update: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      programId: z7.number().optional(),
+      turmaId: z7.number().optional(),
+      periodoInicio: z7.string().optional(),
+      periodoTermino: z7.string().optional(),
+      totalSessoesContratadas: z7.number().min(1).optional(),
+      observacoes: z7.string().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const updateData = { ...data };
@@ -28340,22 +33742,22 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Excluir contrato (soft delete - admin)
-    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deleteContrato(input.id);
       return { success: true };
     }),
     // Saldo de sessões do aluno
-    saldo: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    saldo: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getSaldoSessoes(input.alunoId);
     })
   }),
   // ============ NÍVEIS DO CONTRATO ============
   contratoNiveis: router({
     // Nível vigente do aluno (status em_andamento)
-    vigente: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    vigente: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getContratoNivelVigenteByAluno(input.alunoId);
     }),
-    statusOperacional: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
+    statusOperacional: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).query(async ({ input }) => {
       const nivel = await getContratoNivelComStatusOperacional(input.alunoId, input.contratoNivelId ?? null);
       return {
         nivel,
@@ -28364,22 +33766,22 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       };
     }),
     // Histórico de níveis por aluno
-    historico: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    historico: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getContratoNiveisByAluno(input.alunoId);
     }),
     // Listagem de níveis por contrato (inspeção/admin)
-    byContrato: protectedProcedure.input(z6.object({ contratoId: z6.number() })).query(async ({ input }) => {
+    byContrato: protectedProcedure.input(z7.object({ contratoId: z7.number() })).query(async ({ input }) => {
       return await getContratoNiveisByContrato(input.contratoId);
     }),
     // Criação manual de nível (admin)
     // As datas são lidas de contratos_aluno via JOIN — não precisam ser informadas aqui
-    create: adminOrAdmin2Procedure.input(z6.object({
-      contratoId: z6.number(),
-      alunoId: z6.number(),
-      nivel: z6.enum(["I", "II", "III", "IV"]),
-      status: z6.enum(["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]),
-      assessmentPdiId: z6.number().nullable().optional(),
-      mentoraPrincipalId: z6.number().nullable().optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      contratoId: z7.number(),
+      alunoId: z7.number(),
+      nivel: z7.enum(["I", "II", "III", "IV"]),
+      status: z7.enum(["planejado", "em_andamento", "fechamento", "ajustes", "encerrado", "certificado"]),
+      assessmentPdiId: z7.number().nullable().optional(),
+      mentoraPrincipalId: z7.number().nullable().optional()
     })).mutation(async ({ input }) => {
       const id = await createContratoNivel({
         ...input,
@@ -28390,12 +33792,12 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     })
   }),
   pedagogiaNivel: router({
-    vigente: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    vigente: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const vigente = await getContratoNivelVigenteByAluno(input.alunoId);
       const snapshot = await getPedagogiaByNivel(input.alunoId, vigente?.id ?? null);
       return { vigente, snapshot };
     }),
-    porNivel: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number() })).query(async ({ input }) => {
+    porNivel: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number() })).query(async ({ input }) => {
       return await getPedagogiaByNivel(input.alunoId, input.contratoNivelId);
     })
   }),
@@ -28411,36 +33813,36 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         alunoId = byExternal?.id ?? null;
       }
       if (!alunoId) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado para a sess\xE3o atual." });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado para a sess\xE3o atual." });
       }
       return await buildEvolucaoAlunoPayload(alunoId);
     }),
-    porAluno: managerProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    porAluno: managerProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await buildEvolucaoAlunoPayload(input.alunoId);
     })
   }),
   certificacao: router({
-    elegibilidade: protectedProcedure.input(z6.object({ contratoNivelId: z6.number(), alunoId: z6.number().optional() })).query(async ({ ctx: ctx2, input }) => {
+    elegibilidade: protectedProcedure.input(z7.object({ contratoNivelId: z7.number(), alunoId: z7.number().optional() })).query(async ({ ctx: ctx2, input }) => {
       let alunoId = input.alunoId ?? ctx2.user.alunoId ?? null;
       if (!alunoId) {
         const alunoCtx = await getAlunoFromCtx(ctx2.user);
         alunoId = alunoCtx?.id ?? null;
       }
-      if (!alunoId) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!alunoId) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       if (input.alunoId && input.alunoId !== alunoId && ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
       }
       return await avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
     }),
-    statusPorNivel: protectedProcedure.input(z6.object({ alunoId: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    statusPorNivel: protectedProcedure.input(z7.object({ alunoId: z7.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       let alunoId = input?.alunoId ?? ctx2.user.alunoId ?? null;
       if (!alunoId) {
         const alunoCtx = await getAlunoFromCtx(ctx2.user);
         alunoId = alunoCtx?.id ?? null;
       }
-      if (!alunoId) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!alunoId) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       if (input?.alunoId && input.alunoId !== alunoId && ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Sem permiss\xE3o para consultar outro aluno." });
       }
       const niveis = await getContratoNiveisByAluno(alunoId);
       const status = await Promise.all(niveis.map(async (n) => {
@@ -28465,37 +33867,37 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         const alunoCtx = await getAlunoFromCtx(ctx2.user);
         alunoId = alunoCtx?.id ?? null;
       }
-      if (!alunoId) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!alunoId) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       return await getNivelCertificatesByAluno(alunoId);
     }),
-    emitir: protectedProcedure.input(z6.object({ contratoNivelId: z6.number(), alunoId: z6.number().optional() })).mutation(async ({ ctx: ctx2, input }) => {
+    emitir: protectedProcedure.input(z7.object({ contratoNivelId: z7.number(), alunoId: z7.number().optional() })).mutation(async ({ ctx: ctx2, input }) => {
       let alunoId = input.alunoId ?? ctx2.user.alunoId ?? null;
       if (!alunoId) {
         const alunoCtx = await getAlunoFromCtx(ctx2.user);
         alunoId = alunoCtx?.id ?? null;
       }
-      if (!alunoId) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!alunoId) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       if (input.alunoId && input.alunoId !== alunoId && ctx2.user.role !== "admin" && ctx2.user.role !== "manager") {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Sem permiss\xE3o para emitir para outro aluno." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Sem permiss\xE3o para emitir para outro aluno." });
       }
       const existing = await getNivelCertificateByAlunoNivel(alunoId, input.contratoNivelId);
       if (existing) {
-        throw new TRPCError6({ code: "CONFLICT", message: "J\xE1 existe certificado emitido para este n\xEDvel." });
+        throw new TRPCError7({ code: "CONFLICT", message: "J\xE1 existe certificado emitido para este n\xEDvel." });
       }
       const elegibilidade = await avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
       if (!elegibilidade.elegivel) {
-        throw new TRPCError6({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "N\xEDvel n\xE3o eleg\xEDvel para certifica\xE7\xE3o." });
+        throw new TRPCError7({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "N\xEDvel n\xE3o eleg\xEDvel para certifica\xE7\xE3o." });
       }
       const nivel = elegibilidade.nivel;
       const template = await getActiveCertificationTemplateByNivel(nivel?.nivel || "I");
       if (!template) {
-        throw new TRPCError6({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este n\xEDvel." });
+        throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este n\xEDvel." });
       }
       const assinaturas = await getCertificationSignatures();
       const gerente = assinaturas.find((a) => a.tipo === "gerente");
       const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
       if (!gerente || !gestorMaster) {
-        throw new TRPCError6({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigat\xF3rias (gerente/gestor_master) ausentes." });
+        throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigat\xF3rias (gerente/gestor_master) ausentes." });
       }
       const pedagogia = await getPedagogiaByNivel(alunoId, input.contratoNivelId);
       const mentorasUnicas = Array.from(
@@ -28504,7 +33906,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         ).values()
       );
       if (mentorasUnicas.length === 0) {
-        throw new TRPCError6({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora v\xE1lida encontrada no n\xEDvel." });
+        throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora v\xE1lida encontrada no n\xEDvel." });
       }
       const hashDocumento = `${alunoId}-${input.contratoNivelId}-${Date.now()}`;
       const arquivoUrl = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
@@ -28526,12 +33928,12 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     templates: adminOrAdmin2Procedure.query(async () => {
       return await getCertificationTemplates();
     }),
-    createTemplate: adminOrAdmin2Procedure.input(z6.object({
-      nome: z6.string().min(1),
-      nivel: z6.enum(["I", "II", "III", "IV"]),
-      ativo: z6.number().min(0).max(1).optional(),
-      arquivoModelo: z6.string().optional(),
-      camposMapeados: z6.any().optional()
+    createTemplate: adminOrAdmin2Procedure.input(z7.object({
+      nome: z7.string().min(1),
+      nivel: z7.enum(["I", "II", "III", "IV"]),
+      ativo: z7.number().min(0).max(1).optional(),
+      arquivoModelo: z7.string().optional(),
+      camposMapeados: z7.any().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       const id = await createCertificationTemplate({
         ...input,
@@ -28546,13 +33948,13 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     assinaturas: adminOrAdmin2Procedure.query(async () => {
       return await getCertificationSignatures();
     }),
-    createAssinatura: adminOrAdmin2Procedure.input(z6.object({
-      userId: z6.number().optional(),
-      tipo: z6.enum(["gerente", "mentora", "gestor_master"]),
-      nomeExibicao: z6.string().min(1),
-      cargo: z6.string().optional(),
-      imagemAssinaturaUrl: z6.string().optional(),
-      ativo: z6.number().min(0).max(1).optional()
+    createAssinatura: adminOrAdmin2Procedure.input(z7.object({
+      userId: z7.number().optional(),
+      tipo: z7.enum(["gerente", "mentora", "gestor_master"]),
+      nomeExibicao: z7.string().min(1),
+      cargo: z7.string().optional(),
+      imagemAssinaturaUrl: z7.string().optional(),
+      ativo: z7.number().min(0).max(1).optional()
     })).mutation(async ({ input }) => {
       const id = await createCertificationSignature({
         ...input,
@@ -28564,7 +33966,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
   // ============ JORNADA DO ALUNO ============
   jornadaAntiga: router({
     // Jornada completa (Contrato + Macro Jornadas + Micro Jornadas)
-    completa: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    completa: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getJornadaCompleta(input.alunoId);
     }),
     // Jornada do aluno logado (para o Portal do Aluno)
@@ -28574,15 +33976,15 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return await getJornadaCompleta(aluno.id);
     }),
     // Atualizar nível e metas de competência (mentora)
-    updateNivel: protectedProcedure.input(z6.object({
-      assessmentCompetenciaId: z6.number(),
-      nivelAtual: z6.number().min(0).max(100).optional(),
-      metaCiclo1: z6.number().min(0).max(100).optional(),
-      metaCiclo2: z6.number().min(0).max(100).optional(),
-      metaFinal: z6.number().min(0).max(100).optional(),
-      justificativa: z6.string().optional(),
-      sessaoReferencia: z6.number().optional(),
-      observacao: z6.string().optional()
+    updateNivel: protectedProcedure.input(z7.object({
+      assessmentCompetenciaId: z7.number(),
+      nivelAtual: z7.number().min(0).max(100).optional(),
+      metaCiclo1: z7.number().min(0).max(100).optional(),
+      metaCiclo2: z7.number().min(0).max(100).optional(),
+      metaFinal: z7.number().min(0).max(100).optional(),
+      justificativa: z7.string().optional(),
+      sessaoReferencia: z7.number().optional(),
+      observacao: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const updates = {};
       if (input.nivelAtual !== void 0) updates.nivelAtual = String(input.nivelAtual);
@@ -28605,10 +34007,10 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Definir meta final de competência (mentora - no assessment)
-    setMeta: protectedProcedure.input(z6.object({
-      assessmentCompetenciaId: z6.number(),
-      metaFinal: z6.number().min(0).max(100),
-      justificativa: z6.string().optional()
+    setMeta: protectedProcedure.input(z7.object({
+      assessmentCompetenciaId: z7.number(),
+      metaFinal: z7.number().min(0).max(100),
+      justificativa: z7.string().optional()
     })).mutation(async ({ input }) => {
       await setMetaFinalCompetencia(
         input.assessmentCompetenciaId,
@@ -28618,22 +34020,22 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Histórico de evolução de uma competência
-    historico: protectedProcedure.input(z6.object({ assessmentCompetenciaId: z6.number() })).query(async ({ input }) => {
+    historico: protectedProcedure.input(z7.object({ assessmentCompetenciaId: z7.number() })).query(async ({ input }) => {
       return await getHistoricoNivel(input.assessmentCompetenciaId);
     }),
     // Verificar se precisa reavaliar (gatilho a cada 3 sessões)
-    checkReavaliacao: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    checkReavaliacao: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await checkReavaliacaoPendente(input.alunoId);
     }),
     // Jornadas agrupadas por turma (para Dashboard Gestor)
-    porTurma: managerProcedure.input(z6.object({ empresa: z6.string().optional() })).query(async ({ input }) => {
+    porTurma: managerProcedure.input(z7.object({ empresa: z7.string().optional() })).query(async ({ input }) => {
       return await getJornadasPorTurma(input.empresa);
     })
   }),
   // Cases de Sucesso routes
   cases: router({
     // Listar cases de um aluno
-    byAluno: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
+    byAluno: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).query(async ({ input }) => {
       return await getCasesSucessoByAlunoAndNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Listar todos os cases (admin)
@@ -28641,15 +34043,15 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return await getAllCasesSucesso();
     }),
     // Criar case de sucesso
-    create: adminOrAdmin2Procedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      trilhaId: z6.number().optional(),
-      trilhaNome: z6.string().optional(),
-      entregue: z6.number().min(0).max(1),
-      titulo: z6.string().optional(),
-      descricao: z6.string().optional(),
-      observacao: z6.string().optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      trilhaId: z7.number().optional(),
+      trilhaNome: z7.string().optional(),
+      entregue: z7.number().min(0).max(1),
+      titulo: z7.string().optional(),
+      descricao: z7.string().optional(),
+      observacao: z7.string().optional()
     })).mutation(async ({ input }) => {
       await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "cases.create");
       const id = await createCaseSucesso({
@@ -28666,12 +34068,12 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { id };
     }),
     // Atualizar case de sucesso
-    update: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      entregue: z6.number().min(0).max(1).optional(),
-      titulo: z6.string().optional(),
-      descricao: z6.string().optional(),
-      observacao: z6.string().optional()
+    update: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      entregue: z7.number().min(0).max(1).optional(),
+      titulo: z7.string().optional(),
+      descricao: z7.string().optional(),
+      observacao: z7.string().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       const updateData = { ...data };
@@ -28682,19 +34084,19 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { success: true };
     }),
     // Deletar case de sucesso
-    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deleteCaseSucesso(input.id);
       return { success: true };
     }),
     // Alternar visibilidade do case no Mural (admin) — usa campo 'entregue' existente
-    toggleVisibilidade: adminOrAdmin2Procedure.input(z6.object({ id: z6.number(), visivel: z6.number().min(0).max(1) })).mutation(async ({ input }) => {
+    toggleVisibilidade: adminOrAdmin2Procedure.input(z7.object({ id: z7.number(), visivel: z7.number().min(0).max(1) })).mutation(async ({ input }) => {
       await updateCaseSucesso(input.id, { entregue: input.visivel });
       return { success: true, visivelNoMural: input.visivel };
     }),
     // === PROCEDURES DO ALUNO (protectedProcedure, não admin) ===
     // Listar meus cases (aluno logado)
     meusCases: protectedProcedure.query(async ({ ctx: ctx2 }) => {
-      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
+      if (!ctx2.user) throw new TRPCError7({ code: "UNAUTHORIZED" });
       let aluno;
       if (ctx2.user.alunoId) {
         const allAlunos = await getAlunos();
@@ -28707,29 +34109,29 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
     }),
     // Enviar case de sucesso (aluno logado)
     // Enviar Relatório de Impacto (antigo Case de Sucesso) - aluno logado
-    enviar: protectedProcedure.input(z6.object({
-      trilhaId: z6.number(),
-      trilhaNome: z6.string(),
-      titulo: z6.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
-      resumoPublico: z6.string().min(20, "Resumo p\xFAblico deve ter ao menos 20 caracteres").max(500, "Resumo p\xFAblico deve ter no m\xE1ximo 500 caracteres"),
-      descricao: z6.string().optional(),
+    enviar: protectedProcedure.input(z7.object({
+      trilhaId: z7.number(),
+      trilhaNome: z7.string(),
+      titulo: z7.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
+      resumoPublico: z7.string().min(20, "Resumo p\xFAblico deve ter ao menos 20 caracteres").max(500, "Resumo p\xFAblico deve ter no m\xE1ximo 500 caracteres"),
+      descricao: z7.string().optional(),
       // Campos estruturados do Relat\u00f3rio de Impacto
-      oQueAprendi: z6.string().min(1, 'Campo "O que aprendi" \xE9 obrigat\xF3rio'),
-      oQueMudei: z6.string().min(1, 'Campo "O que mudei" \xE9 obrigat\xF3rio'),
-      resultadoMensuravel: z6.string().min(1, 'Campo "Resultado mensur\xE1vel" \xE9 obrigat\xF3rio'),
-      antesVsDepois: z6.string().min(1, 'Campo "Antes vs. Depois" \xE9 obrigat\xF3rio'),
+      oQueAprendi: z7.string().min(1, 'Campo "O que aprendi" \xE9 obrigat\xF3rio'),
+      oQueMudei: z7.string().min(1, 'Campo "O que mudei" \xE9 obrigat\xF3rio'),
+      resultadoMensuravel: z7.string().min(1, 'Campo "Resultado mensur\xE1vel" \xE9 obrigat\xF3rio'),
+      antesVsDepois: z7.string().min(1, 'Campo "Antes vs. Depois" \xE9 obrigat\xF3rio'),
       // Arquivo principal (opcional agora, pois o relat\u00f3rio \u00e9 o formul\u00e1rio)
-      fileBase64: z6.string().optional(),
-      fileName: z6.string().optional(),
-      mimeType: z6.string().optional(),
+      fileBase64: z7.string().optional(),
+      fileName: z7.string().optional(),
+      mimeType: z7.string().optional(),
       // Evidência (foto, print, documento)
-      evidenciaBase64: z6.string().optional(),
-      evidenciaFileName: z6.string().optional(),
-      evidenciaMimeType: z6.string().optional(),
+      evidenciaBase64: z7.string().optional(),
+      evidenciaFileName: z7.string().optional(),
+      evidenciaMimeType: z7.string().optional(),
       // Aplicabilidade prática
-      notaAlunoAplicabilidade: z6.number().min(0).max(10).optional()
+      notaAlunoAplicabilidade: z7.number().min(0).max(10).optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
-      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
+      if (!ctx2.user) throw new TRPCError7({ code: "UNAUTHORIZED" });
       let aluno;
       if (ctx2.user.alunoId) {
         const allAlunos = await getAlunos();
@@ -28737,7 +34139,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       }
       if (!aluno && ctx2.user.email) aluno = await getAlunoFromCtx(ctx2.user);
       if (!aluno) aluno = await getAlunoByExternalId(ctx2.user.openId);
-      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Perfil de aluno n\xE3o encontrado" });
+      if (!aluno) throw new TRPCError7({ code: "NOT_FOUND", message: "Perfil de aluno n\xE3o encontrado" });
       let fileUrl = null;
       let fileKey = null;
       let fileNameSaved = null;
@@ -28878,7 +34280,7 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
       return { id: resultId, url: fileUrl, updated };
     }),
     // Vitrine pública de cases para o Mural do aluno
-    vitrineMural: protectedProcedure.input(z6.object({ limit: z6.number().min(1).max(200).optional() }).optional()).query(async ({ input }) => {
+    vitrineMural: protectedProcedure.input(z7.object({ limit: z7.number().min(1).max(200).optional() }).optional()).query(async ({ input }) => {
       const items = await getCasesVitrineMural(input?.limit ?? 12);
       return items.map((i) => ({
         caseId: i.caseId,
@@ -28887,24 +34289,25 @@ Erros: ${errors.slice(0, 3).join("; ")}` : ""}`
         alunoFoto: i.alunoFoto || null,
         titulo: i.titulo || "Case de Sucesso",
         resumoPublico: i.resumoPublico || "",
-        dataEntrega: i.dataEntrega
+        dataEntrega: i.dataEntrega,
+        totalInteresses: i.totalInteresses || 0
       }));
     }),
     // Aluno demonstra interesse em conhecer um case da vitrine
-    demonstrarInteresse: protectedProcedure.input(z6.object({
-      caseId: z6.number()
+    demonstrarInteresse: protectedProcedure.input(z7.object({
+      caseId: z7.number()
     })).mutation(async ({ ctx: ctx2, input }) => {
-      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
+      if (!ctx2.user) throw new TRPCError7({ code: "UNAUTHORIZED" });
       const caseSelecionado = await getCaseSucessoById(input.caseId);
       if (!caseSelecionado || caseSelecionado.entregue !== 1) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Case n\xE3o encontrado ou indispon\xEDvel." });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Case n\xE3o encontrado ou indispon\xEDvel." });
       }
       const alunoInteressado = await getAlunoByUserId(Number(ctx2.user.id));
       if (!alunoInteressado) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Perfil de aluno interessado n\xE3o encontrado." });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Perfil de aluno interessado n\xE3o encontrado." });
       }
       if (alunoInteressado.id === caseSelecionado.alunoId) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "Voc\xEA n\xE3o pode demonstrar interesse no seu pr\xF3prio case." });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "Voc\xEA n\xE3o pode demonstrar interesse no seu pr\xF3prio case." });
       }
       const mensagem = `Ol\xE1! Parab\xE9ns pelo Case de Sucesso.
 Queria conhecer o seu case.
@@ -28937,52 +34340,97 @@ ${mensagem}`,
       return { success: true, interesseId, mensagem };
     }),
     // Autor do case lista interesses recebidos
-    meusInteressesRecebidos: protectedProcedure.input(z6.object({ onlyUnread: z6.boolean().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
-      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
+    meusInteressesRecebidos: protectedProcedure.input(z7.object({ onlyUnread: z7.boolean().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+      if (!ctx2.user) throw new TRPCError7({ code: "UNAUTHORIZED" });
       const aluno = await getAlunoByUserId(Number(ctx2.user.id));
       if (!aluno) return [];
       return await getCaseInteressesByAutor(aluno.id, Boolean(input?.onlyUnread));
     }),
     // Autor do case marca interesse como lido
-    marcarInteresseLido: protectedProcedure.input(z6.object({ interesseId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
-      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
+    marcarInteresseLido: protectedProcedure.input(z7.object({ interesseId: z7.number() })).mutation(async ({ ctx: ctx2, input }) => {
+      if (!ctx2.user) throw new TRPCError7({ code: "UNAUTHORIZED" });
       const aluno = await getAlunoByUserId(Number(ctx2.user.id));
-      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Perfil do aluno n\xE3o encontrado." });
+      if (!aluno) throw new TRPCError7({ code: "NOT_FOUND", message: "Perfil do aluno n\xE3o encontrado." });
       await markCaseInteresseAsRead(input.interesseId, aluno.id);
       return { success: true };
+    }),
+    // Admin: detalhes completos de um case para o relatório
+    detalhesCaseAdmin: protectedProcedure.input(z7.object({ caseId: z7.number() })).query(async ({ input }) => {
+      const c = await getCaseSucessoById(input.caseId);
+      if (!c) throw new TRPCError7({ code: "NOT_FOUND" });
+      return c;
+    }),
+    // Admin: relatório de todos os interesses em cases
+    relatorioInteresses: protectedProcedure.query(async ({ ctx: ctx2 }) => {
+      const { getDb: getDatabase } = await Promise.resolve().then(() => (init_db(), db_exports));
+      const database = await getDatabase();
+      if (!database) return [];
+      const rows = await database.execute(sql5`
+        SELECT
+          cs.id as caseId,
+          cs.titulo,
+          a_autor.name as autorNome,
+          a_autor.email as autorEmail,
+          p.name as empresa,
+          COUNT(ci.id) as totalInteresses,
+          GROUP_CONCAT(ci.interessadoNome ORDER BY ci.createdAt DESC SEPARATOR '||') as interessadosNomes,
+          GROUP_CONCAT(ci.interessadoEmail ORDER BY ci.createdAt DESC SEPARATOR '||') as interessadosEmails,
+          GROUP_CONCAT(DATE_FORMAT(ci.createdAt, '%d/%m/%Y') ORDER BY ci.createdAt DESC SEPARATOR '||') as datas
+        FROM cases_sucesso cs
+        INNER JOIN alunos a_autor ON cs.alunoId = a_autor.id
+        LEFT JOIN programs p ON a_autor.programId = p.id
+        LEFT JOIN case_interesses ci ON cs.id = ci.caseId
+        WHERE cs.entregue = 1
+        GROUP BY cs.id, cs.titulo, a_autor.name, a_autor.email, p.name
+        ORDER BY totalInteresses DESC, cs.dataEntrega DESC
+      `);
+      const result = rows?.[0] ?? rows;
+      return result.map((r) => ({
+        caseId: r.caseId,
+        titulo: r.titulo,
+        autorNome: r.autorNome,
+        autorEmail: r.autorEmail,
+        empresa: r.empresa,
+        totalInteresses: Number(r.totalInteresses),
+        interessados: (r.interessadosNomes || "").split("||").map((nome, i) => ({
+          nome,
+          email: (r.interessadosEmails || "").split("||")[i] || "",
+          data: (r.datas || "").split("||")[i] || ""
+        })).filter((x) => x.nome)
+      }));
     })
   }),
   // ============ METAS DE DESENVOLVIMENTO ============
   metas: router({
     // Listar metas de um aluno (para mentora e gestor)
-    listar: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      assessmentPdiId: z6.number().optional(),
-      contratoNivelId: z6.number().nullable().optional()
+    listar: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      assessmentPdiId: z7.number().optional(),
+      contratoNivelId: z7.number().nullable().optional()
     })).query(async ({ input }) => {
       return await getMetasDetalhadasByNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Listar metas por competência específica
-    porCompetencia: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      assessmentCompetenciaId: z6.number()
+    porCompetencia: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      assessmentCompetenciaId: z7.number()
     })).query(async ({ input }) => {
       return await getMetasByCompetencia(input.alunoId, input.assessmentCompetenciaId);
     }),
     // Criar nova meta (mentora)
-    criar: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      assessmentCompetenciaId: z6.number(),
-      competenciaId: z6.number(),
-      assessmentPdiId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      taskLibraryId: z6.number().nullable().optional(),
-      titulo: z6.string().min(1),
-      descricao: z6.string().nullable().optional()
+    criar: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      assessmentCompetenciaId: z7.number(),
+      competenciaId: z7.number(),
+      assessmentPdiId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      taskLibraryId: z7.number().nullable().optional(),
+      titulo: z7.string().min(1),
+      descricao: z7.string().nullable().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       await ensureNivelAbertoParaAtribuicao(input.alunoId, input.contratoNivelId ?? null, "metas.criar");
-      const consultors2 = await getConsultors();
-      const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
+      const consultors3 = await getConsultors();
+      const consultor = consultors3.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
       return await createMeta({
         ...input,
         taskLibraryId: input.taskLibraryId ?? null,
@@ -28991,29 +34439,29 @@ ${mensagem}`,
       });
     }),
     // Atualizar meta existente
-    atualizar: protectedProcedure.input(z6.object({
-      id: z6.number(),
-      titulo: z6.string().min(1).optional(),
-      descricao: z6.string().nullable().optional()
+    atualizar: protectedProcedure.input(z7.object({
+      id: z7.number(),
+      titulo: z7.string().min(1).optional(),
+      descricao: z7.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       return await updateMeta(id, data);
     }),
     // Remover meta (soft delete)
-    remover: protectedProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    remover: protectedProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       return await deleteMeta(input.id);
     }),
     // Registrar acompanhamento mensal
-    registrarAcompanhamento: protectedProcedure.input(z6.object({
-      metaId: z6.number(),
-      alunoId: z6.number(),
-      mes: z6.number().min(1).max(12),
-      ano: z6.number().min(2024).max(2030),
-      status: z6.enum(["cumprida", "nao_cumprida", "parcial"]),
-      observacao: z6.string().nullable().optional()
+    registrarAcompanhamento: protectedProcedure.input(z7.object({
+      metaId: z7.number(),
+      alunoId: z7.number(),
+      mes: z7.number().min(1).max(12),
+      ano: z7.number().min(2024).max(2030),
+      status: z7.enum(["cumprida", "nao_cumprida", "parcial"]),
+      observacao: z7.string().nullable().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
-      const consultors2 = await getConsultors();
-      const consultor = consultors2.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
+      const consultors3 = await getConsultors();
+      const consultor = consultors3.find((c) => c.loginId === ctx2.user.openId || ctx2.user.consultorId && c.id === ctx2.user.consultorId);
       return await upsertMetaAcompanhamento({
         ...input,
         observacao: input.observacao ?? null,
@@ -29021,14 +34469,14 @@ ${mensagem}`,
       });
     }),
     // Listar acompanhamentos de uma meta
-    acompanhamentos: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      metaId: z6.number().optional()
+    acompanhamentos: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      metaId: z7.number().optional()
     })).query(async ({ input }) => {
       return await getMetaAcompanhamentos(input.alunoId, input.metaId);
     }),
     // Resumo de metas de um aluno (para cards e dashboards)
-    resumo: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    resumo: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getMetasResumo(input.alunoId);
     }),
     // Resumo de metas de todos os alunos (para Dashboard Gestor)
@@ -29037,7 +34485,7 @@ ${mensagem}`,
     }),
     // Minhas metas (para o aluno logado ver no seu dashboard)
     minhas: protectedProcedure.query(async ({ ctx: ctx2 }) => {
-      if (!ctx2.user) throw new TRPCError6({ code: "UNAUTHORIZED" });
+      if (!ctx2.user) throw new TRPCError7({ code: "UNAUTHORIZED" });
       let alunoId = ctx2.user.alunoId || null;
       if (!alunoId && ctx2.user.email) {
         const aluno = await getAlunoFromCtx(ctx2.user);
@@ -29053,8 +34501,8 @@ ${mensagem}`,
       return { alunoId, metas: metasDetalhadas, resumo };
     }),
     // Listar itens da biblioteca de ações (para seleção)
-    biblioteca: protectedProcedure.input(z6.object({
-      competencia: z6.string().optional()
+    biblioteca: protectedProcedure.input(z7.object({
+      competencia: z7.string().optional()
     }).optional()).query(async ({ input }) => {
       const all = await getAllTaskLibrary();
       if (input?.competencia) {
@@ -29063,9 +34511,9 @@ ${mensagem}`,
       return all;
     }),
     // Sugerir meta/desafio com IA para uma competência
-    sugerirComIA: protectedProcedure.input(z6.object({
-      competencia: z6.string(),
-      alunoNome: z6.string().optional()
+    sugerirComIA: protectedProcedure.input(z7.object({
+      competencia: z7.string(),
+      alunoNome: z7.string().optional()
     })).mutation(async ({ input }) => {
       const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
       const response = await invokeLLM2({
@@ -29107,31 +34555,31 @@ Responda APENAS em JSON com o formato:
         }
       });
       const content = response.choices?.[0]?.message?.content;
-      if (!content) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar sugest\xE3o com IA" });
+      if (!content) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar sugest\xE3o com IA" });
       const contentStr = typeof content === "string" ? content : JSON.stringify(content);
       try {
         return JSON.parse(contentStr);
       } catch {
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inv\xE1lido" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inv\xE1lido" });
       }
     }),
     // Verificar se precisa atualizar metas (a cada 3 meses ou 3 sessões)
-    alertaAtualizacao: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    alertaAtualizacao: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const { alunoId } = input;
       return await getAlertaAtualizacaoMetas(alunoId);
     }),
     // ---- Upload em massa de metas via planilha XLSX (somente admin) ----
-    uploadEmMassa: adminProcedure3.input(z6.object({
-      fileData: z6.string(),
-      fileName: z6.string(),
-      preview: z6.boolean().optional()
+    uploadEmMassa: adminProcedure3.input(z7.object({
+      fileData: z7.string(),
+      fileName: z7.string(),
+      preview: z7.boolean().optional()
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileData, "base64");
       const workbook = XLSX4.read(buffer, { type: "buffer" });
       const sheetName = workbook.SheetNames.find((n) => n !== "Instru\xE7\xF5es") || workbook.SheetNames[0];
       const sheet = workbook.Sheets[sheetName];
       const rows = XLSX4.utils.sheet_to_json(sheet, { header: 1 });
-      if (rows.length < 2) throw new TRPCError6({ code: "BAD_REQUEST", message: "Planilha sem dados" });
+      if (rows.length < 2) throw new TRPCError7({ code: "BAD_REQUEST", message: "Planilha sem dados" });
       const hdrs = rows[0].map((h) => String(h || "").trim());
       const getColVal = (row, name) => {
         const idx = hdrs.findIndex((h) => h.toLowerCase() === name.toLowerCase());
@@ -29153,7 +34601,7 @@ Responda APENAS em JSON com o formato:
       let created = 0;
       let errors = 0;
       const dbConn2 = await getDb();
-      if (!dbConn2) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indispon\xEDvel" });
+      if (!dbConn2) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco de dados indispon\xEDvel" });
       const { assessmentPdi: apTable, assessmentCompetencias: acTable, metas: metasTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
       const { eq: eqOp, and: andOp, sql: sqlOp } = await import("drizzle-orm");
       for (let i = 1; i < rows.length; i++) {
@@ -29326,20 +34774,20 @@ Responda APENAS em JSON com o formato:
       return { blocos: DISC_BLOCOS2, totalBlocos: DISC_BLOCOS2.length };
     }),
     // Salvar respostas e calcular resultado DISC (escolha forçada)
-    salvarRespostas: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      respostas: z6.array(z6.object({
-        blocoIndex: z6.number(),
-        maisId: z6.string(),
-        menosId: z6.string(),
-        maisDimensao: z6.enum(["D", "I", "S", "C"]),
-        menosDimensao: z6.enum(["D", "I", "S", "C"])
+    salvarRespostas: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      respostas: z7.array(z7.object({
+        blocoIndex: z7.number(),
+        maisId: z7.string(),
+        menosId: z7.string(),
+        maisDimensao: z7.enum(["D", "I", "S", "C"]),
+        menosDimensao: z7.enum(["D", "I", "S", "C"])
       }))
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.onboardingLiberado) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
       }
       const { calcularDiscScores: calcularDiscScores2 } = (init_discData(), __toCommonJS(discData_exports));
       const existingResult = await getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
@@ -29384,7 +34832,7 @@ Responda APENAS em JSON com o formato:
       return resultado;
     }),
     // Buscar resultado DISC de um aluno
-    resultado: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
+    resultado: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).query(async ({ input }) => {
       return await getDiscResultadoByNivel(input.alunoId, input.contratoNivelId ?? null);
     }),
     // Buscar perfis DISC (descrições)
@@ -29392,12 +34840,27 @@ Responda APENAS em JSON com o formato:
       const { DISC_PERFIS: DISC_PERFIS2 } = (init_discData(), __toCommonJS(discData_exports));
       return DISC_PERFIS2;
     }),
+    // Como cada perfil tende a reagir sob pressão (gatilho, reação de risco, resposta regulada)
+    pressao: publicProcedure.query(() => {
+      const { PRESSAO_DISC: PRESSAO_DISC2 } = (init_discData(), __toCommonJS(discData_exports));
+      return PRESSAO_DISC2;
+    }),
+    // Áreas de desenvolvimento na perspectiva força preservada / repertório a ampliar
+    desenvolvimentoDetalhado: publicProcedure.query(() => {
+      const { DESENVOLVIMENTO_DETALHADO: DESENVOLVIMENTO_DETALHADO2 } = (init_discData(), __toCommonJS(discData_exports));
+      return DESENVOLVIMENTO_DETALHADO2;
+    }),
+    // Matriz Competência x DISC (facilidade provável + ponto de desenvolvimento por fator)
+    competenciaMatrix: publicProcedure.query(() => {
+      const { COMPETENCIA_DISC: COMPETENCIA_DISC2 } = (init_competenciaDiscMatrix(), __toCommonJS(competenciaDiscMatrix_exports));
+      return COMPETENCIA_DISC2;
+    }),
     // Buscar histórico completo de resultados DISC de um aluno (todos os ciclos)
-    historico: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    historico: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getAllDiscResultadosByAluno(input.alunoId);
     }),
     // Comparativo de evolução entre ciclos DISC
-    comparativo: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    comparativo: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const resultados = await getAllDiscResultadosByAluno(input.alunoId);
       if (resultados.length < 2) return null;
       const primeiro = resultados[0];
@@ -29432,10 +34895,10 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Admin: resetar teste DISC de um aluno (permite refazer)
-    resetAluno: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
+    resetAluno: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input }) => {
       const aluno = await getAlunoById(input.alunoId);
       if (!aluno) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       }
       const resultado = await resetDiscAluno(input.alunoId);
       return {
@@ -29446,7 +34909,7 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Verificar se o aluno é elegível para reassessment (contrato vencido ou próximo do vencimento)
-    verificarReassessment: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    verificarReassessment: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const contratos = await getContratosByAluno(input.alunoId);
       if (!contratos || contratos.length === 0) {
         return { elegivel: false, motivo: "Sem contrato ativo" };
@@ -29472,13 +34935,13 @@ Responda APENAS em JSON com o formato:
   // ============ AUTOPERCEPÇÃO DE COMPETÊNCIAS ============
   autopercep\u00E7\u00E3o: router({
     // Salvar autoavaliação de competências
-    salvar: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      avaliacoes: z6.array(z6.object({
-        competenciaId: z6.number(),
-        trilhaId: z6.number(),
-        nota: z6.number().min(1).max(5)
+    salvar: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      avaliacoes: z7.array(z7.object({
+        competenciaId: z7.number(),
+        trilhaId: z7.number(),
+        nota: z7.number().min(1).max(5)
       }))
     })).mutation(async ({ input }) => {
       await saveAutopercepcoes(input.alunoId, input.avaliacoes.map((a) => ({
@@ -29490,19 +34953,19 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Buscar autoavaliação de um aluno
-    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).query(async ({ input }) => {
       return await getAutopercepcoesByNivel(input.alunoId, input.contratoNivelId ?? null);
     })
   }),
   // ============ CONTRIBUIÇÕES DA MENTORA ============
   contribuicoesMentora: router({
     // Adicionar contribuição
-    adicionar: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      consultorId: z6.number(),
-      tipo: z6.enum(["disc", "competencia", "geral"]),
-      competenciaId: z6.number().nullable().optional(),
-      conteudo: z6.string().min(1)
+    adicionar: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      consultorId: z7.number(),
+      tipo: z7.enum(["disc", "competencia", "geral"]),
+      competenciaId: z7.number().nullable().optional(),
+      conteudo: z7.string().min(1)
     })).mutation(async ({ input }) => {
       await saveContribuicaoMentora({
         alunoId: input.alunoId,
@@ -29514,26 +34977,26 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Atualizar contribuição
-    atualizar: protectedProcedure.input(z6.object({
-      id: z6.number(),
-      conteudo: z6.string().min(1)
+    atualizar: protectedProcedure.input(z7.object({
+      id: z7.number(),
+      conteudo: z7.string().min(1)
     })).mutation(async ({ input }) => {
       await updateContribuicaoMentora(input.id, input.conteudo);
       return { success: true };
     }),
     // Remover contribuição
-    remover: protectedProcedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    remover: protectedProcedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deleteContribuicaoMentora(input.id);
       return { success: true };
     }),
     // Listar contribuições de um aluno
-    porAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    porAluno: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       return await getContribuicoesMentora(input.alunoId);
     })
   }),
   // ============ PROGRESSO DO ONBOARDING ============
   onboarding: router({
-    contextoNivel: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().optional() })).query(async ({ input }) => {
+    contextoNivel: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().optional() })).query(async ({ input }) => {
       const vigente = await getContratoNivelVigenteByAluno(input.alunoId);
       const historico = await getContratoNiveisByAluno(input.alunoId);
       const visualizandoNivelId = input.contratoNivelId ?? vigente?.id ?? null;
@@ -29557,21 +35020,21 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Salvar dados do cadastro (etapa 1)
-    salvarCadastro: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      nome: z6.string().optional(),
-      email: z6.string().optional(),
-      telefone: z6.string().optional(),
-      cargo: z6.string().optional(),
-      areaAtuacao: z6.string().optional(),
-      minicurriculo: z6.string().optional(),
-      quemEVoce: z6.string().optional()
+    salvarCadastro: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      nome: z7.string().optional(),
+      email: z7.string().optional(),
+      telefone: z7.string().optional(),
+      cargo: z7.string().optional(),
+      areaAtuacao: z7.string().optional(),
+      minicurriculo: z7.string().optional(),
+      quemEVoce: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { alunoId, nome, email, telefone, cargo, areaAtuacao, minicurriculo, quemEVoce } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
       }
       const result = await updateAluno(alunoId, {
         name: nome,
@@ -29607,60 +35070,60 @@ Responda APENAS em JSON com o formato:
       return result;
     }),
     // Salvar perfil profissional complementar (etapa 1 expandida)
-    salvarPerfilProfissional: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
+    salvarPerfilProfissional: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
       // Dados pessoais
-      dataNascimento: z6.string().optional(),
-      estadoCivil: z6.string().optional(),
-      temFilhos: z6.boolean().optional(),
-      quantidadeFilhos: z6.number().optional(),
+      dataNascimento: z7.string().optional(),
+      estadoCivil: z7.string().optional(),
+      temFilhos: z7.boolean().optional(),
+      quantidadeFilhos: z7.number().optional(),
       // Expectativas
-      expectativaCurtoPrazo: z6.string().optional(),
-      expectativaMedioPrazo: z6.string().optional(),
-      expectativaLongoPrazo: z6.string().optional(),
+      expectativaCurtoPrazo: z7.string().optional(),
+      expectativaMedioPrazo: z7.string().optional(),
+      expectativaLongoPrazo: z7.string().optional(),
       // Formação
-      formacaoSuperior: z6.array(z6.object({
-        area: z6.string(),
-        curso: z6.string(),
-        instituicao: z6.string(),
-        ano: z6.number().optional()
+      formacaoSuperior: z7.array(z7.object({
+        area: z7.string(),
+        curso: z7.string(),
+        instituicao: z7.string(),
+        ano: z7.number().optional()
       })).optional(),
-      posGraduacoes: z6.array(z6.object({
-        tipo: z6.string(),
-        area: z6.string(),
-        nome: z6.string(),
-        instituicao: z6.string(),
-        ano: z6.number().optional()
+      posGraduacoes: z7.array(z7.object({
+        tipo: z7.string(),
+        area: z7.string(),
+        nome: z7.string(),
+        instituicao: z7.string(),
+        ano: z7.number().optional()
       })).optional(),
-      cursosExtracurriculares: z6.array(z6.object({
-        area: z6.string(),
-        nome: z6.string(),
-        instituicao: z6.string(),
-        cargaHoraria: z6.number(),
-        ano: z6.number().optional()
+      cursosExtracurriculares: z7.array(z7.object({
+        area: z7.string(),
+        nome: z7.string(),
+        instituicao: z7.string(),
+        cargaHoraria: z7.number(),
+        ano: z7.number().optional()
       })).optional(),
       // Experiências anteriores
-      experienciasAnteriores: z6.array(z6.object({
-        empresa: z6.string(),
-        cargo: z6.string(),
-        de: z6.string().optional(),
-        ate: z6.string().optional()
+      experienciasAnteriores: z7.array(z7.object({
+        empresa: z7.string(),
+        cargo: z7.string(),
+        de: z7.string().optional(),
+        ate: z7.string().optional()
       })).optional(),
       // Liderança
-      experienciaLideranca: z6.boolean().optional(),
-      tipoEquipeGerenciada: z6.array(z6.string()).optional(),
-      gerenciouOutrosLideres: z6.boolean().optional(),
+      experienciaLideranca: z7.boolean().optional(),
+      tipoEquipeGerenciada: z7.array(z7.string()).optional(),
+      gerenciouOutrosLideres: z7.boolean().optional(),
       // Redes sociais
-      linkedinUrl: z6.string().optional(),
-      facebookUrl: z6.string().optional(),
-      instagramUrl: z6.string().optional(),
-      tiktokUrl: z6.string().optional(),
-      outraRedeUrl: z6.string().optional(),
+      linkedinUrl: z7.string().optional(),
+      facebookUrl: z7.string().optional(),
+      instagramUrl: z7.string().optional(),
+      tiktokUrl: z7.string().optional(),
+      outraRedeUrl: z7.string().optional(),
       // Currículo
-      curriculoUrl: z6.string().optional()
+      curriculoUrl: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const sets = [];
       const vals = [];
       const addField = (col, val) => {
@@ -29713,7 +35176,7 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Buscar perfil profissional do aluno
-    buscarPerfilProfissional: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    buscarPerfilProfissional: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return null;
       const rawConn = database.$client.promise ? database.$client.promise() : database.$client;
@@ -29748,11 +35211,11 @@ Responda APENAS em JSON com o formato:
       return null;
     }),
     // Upload de currículo do aluno
-    uploadCurriculo: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      nomeArquivo: z6.string(),
-      tipoMime: z6.string(),
-      dados: z6.string()
+    uploadCurriculo: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      nomeArquivo: z7.string(),
+      tipoMime: z7.string(),
+      dados: z7.string()
       // base64
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.dados, "base64");
@@ -29761,10 +35224,10 @@ Responda APENAS em JSON com o formato:
       return { url, success: true };
     }),
     // Upload de foto de perfil do aluno
-    uploadFotoAluno: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      fotoBase64: z6.string(),
-      mimeType: z6.string().default("image/jpeg")
+    uploadFotoAluno: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      fotoBase64: z7.string(),
+      mimeType: z7.string().default("image/jpeg")
     })).mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fotoBase64, "base64");
       const ext = input.mimeType === "image/png" ? "png" : "jpg";
@@ -29774,14 +35237,14 @@ Responda APENAS em JSON com o formato:
       return { url, success: true };
     }),
     // Escolher mentora (etapa 3)
-    escolherMentora: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      consultorId: z6.number()
+    escolherMentora: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      consultorId: z7.number()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { alunoId, consultorId } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura. Aluno j\xE1 possui PDI." });
       }
       const result = await updateAluno(alunoId, { consultorId });
       try {
@@ -29850,16 +35313,16 @@ Responda APENAS em JSON com o formato:
       return result;
     }),
     // Trocar mentora do aluno (ação administrativa)
-    trocarMentora: adminOrAdmin2Procedure.input(z6.object({
-      alunoId: z6.number(),
-      novaMentoraId: z6.number()
+    trocarMentora: adminOrAdmin2Procedure.input(z7.object({
+      alunoId: z7.number(),
+      novaMentoraId: z7.number()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { alunoId, novaMentoraId } = input;
       const aluno = await getAlunoById(alunoId);
-      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+      if (!aluno) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       const mentoraAntiga = aluno.consultorId ? await getConsultorById(aluno.consultorId) : null;
       const mentoraNova = await getConsultorById(novaMentoraId);
-      if (!mentoraNova) throw new TRPCError6({ code: "NOT_FOUND", message: "Nova mentora n\xE3o encontrada." });
+      if (!mentoraNova) throw new TRPCError7({ code: "NOT_FOUND", message: "Nova mentora n\xE3o encontrada." });
       await updateAluno(alunoId, { consultorId: novaMentoraId });
       try {
         const rawConn = await getRawConnection();
@@ -29920,17 +35383,17 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Solicitar alteração de mentora (sem trocar consultorId)
-    solicitarAlteracaoMentora: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      justificativa: z6.string().trim().min(15, "A justificativa deve ter no m\xEDnimo 15 caracteres.").max(1e3, "A justificativa deve ter no m\xE1ximo 1000 caracteres.")
+    solicitarAlteracaoMentora: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      justificativa: z7.string().trim().min(15, "A justificativa deve ter no m\xEDnimo 15 caracteres.").max(1e3, "A justificativa deve ter no m\xE1ximo 1000 caracteres.")
     })).mutation(async ({ input }) => {
       const { alunoId, justificativa } = input;
       const aluno = await getAlunoById(alunoId);
       if (!aluno) {
-        throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
+        throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado." });
       }
       if (!aluno.consultorId) {
-        throw new TRPCError6({ code: "BAD_REQUEST", message: "N\xE3o h\xE1 mentora confirmada para este aluno." });
+        throw new TRPCError7({ code: "BAD_REQUEST", message: "N\xE3o h\xE1 mentora confirmada para este aluno." });
       }
       const mentoraAtual = await getConsultorById(aluno.consultorId);
       const { sendEmail: sendEmail2, buildSolicitacaoAlteracaoMentoraEmail: buildSolicitacaoAlteracaoMentoraEmail2 } = await Promise.resolve().then(() => (init_emailService(), emailService_exports));
@@ -29981,19 +35444,19 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Criar agendamento (etapa 4)
-    criarAgendamento: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      consultorId: z6.number(),
-      scheduledDate: z6.string(),
-      startTime: z6.string(),
-      endTime: z6.string(),
-      googleMeetLink: z6.string().optional(),
-      notes: z6.string().optional()
+    criarAgendamento: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      consultorId: z7.number(),
+      scheduledDate: z7.string(),
+      startTime: z7.string(),
+      endTime: z7.string(),
+      googleMeetLink: z7.string().optional(),
+      notes: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { alunoId, consultorId, scheduledDate, startTime, endTime, googleMeetLink, notes } = input;
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const result = await createGroupAppointment({
         consultorId,
@@ -30172,16 +35635,16 @@ Responda APENAS em JSON com o formato:
       return { success: result.success, appointmentId: result.id };
     }),
     // Marcar que o aluno assistiu o vídeo DISC
-    markDiscVideoWatched: protectedProcedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
+    markDiscVideoWatched: protectedProcedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input }) => {
       return await markDiscVideoWatched(input.alunoId);
     }),
     // Verificar se o aluno já assistiu o vídeo DISC
-    hasWatchedDiscVideo: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    hasWatchedDiscVideo: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       const watched = await hasWatchedDiscVideo(input.alunoId);
       return { watched };
     }),
     // Retorna o step atual do onboarding baseado nos dados do banco
-    progresso: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).query(async ({ input }) => {
+    progresso: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).query(async ({ input }) => {
       const { alunoId } = input;
       if (!alunoId || alunoId === 0) return { step: 1, discCompleto: false, mentoraEscolhida: false, agendamentoFeito: false };
       const contratoNivelId = input.contratoNivelId ?? (await getContratoNivelVigenteByAluno(alunoId))?.id ?? null;
@@ -30276,10 +35739,10 @@ Responda APENAS em JSON com o formato:
       };
     }),
     // Marcar PDI como visualizado (etapa 6)
-    marcarPdiVisualizado: protectedProcedure.input(z6.object({ alunoId: z6.number(), contratoNivelId: z6.number().nullable().optional() })).mutation(async ({ input, ctx: ctx2 }) => {
+    marcarPdiVisualizado: protectedProcedure.input(z7.object({ alunoId: z7.number(), contratoNivelId: z7.number().nullable().optional() })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
         pdiVisualizado: 1,
@@ -30288,14 +35751,14 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Marcar vídeo como assistido (etapa 7)
-    marcarVideoAssistido: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      chave: z6.enum(["boas_vindas", "competencias", "webinars", "tarefas", "metas"])
+    marcarVideoAssistido: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      chave: z7.enum(["boas_vindas", "competencias", "webinars", "tarefas", "metas"])
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const fieldMap = {
         boas_vindas: "videoBoasVindas",
@@ -30323,14 +35786,14 @@ Responda APENAS em JSON com o formato:
       return { success: true, todosAssistidos };
     }),
     // Realizar aceite formal (etapa 8) — "De Acordo"
-    realizarAceite: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      contratoNivelId: z6.number().nullable().optional(),
-      nomeAceite: z6.string().min(2)
+    realizarAceite: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      contratoNivelId: z7.number().nullable().optional(),
+      nomeAceite: z7.string().min(2)
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       await upsertOnboardingJornadaByNivel(input.alunoId, input.contratoNivelId ?? null, {
         aceiteRealizado: 1,
@@ -30377,17 +35840,17 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Solicitar revisão do aceite ("Gostaria de Rever") — envia justificativa para mentora e admin
-    solicitarRevisaoAceite: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      justificativa: z6.string().min(5, "Por favor, explique o que gostaria de rever.")
+    solicitarRevisaoAceite: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      justificativa: z7.string().min(5, "Por favor, explique o que gostaria de rever.")
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const onbStatus = await getAlunoOnboardingStatus(ctx2.user);
       if (onbStatus.hasPdi && !onbStatus.needsOnboarding && !onbStatus.onboardingLiberado) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Onboarding em modo somente leitura." });
       }
       const totalRevisoes = await onboardingRevisoesDb.countByAluno(input.alunoId);
       if (totalRevisoes >= 5) {
-        throw new TRPCError6({ code: "FORBIDDEN", message: "Voc\xEA atingiu o limite de 5 solicita\xE7\xF5es de revis\xE3o." });
+        throw new TRPCError7({ code: "FORBIDDEN", message: "Voc\xEA atingiu o limite de 5 solicita\xE7\xF5es de revis\xE3o." });
       }
       let emailEnviado = false;
       try {
@@ -30470,13 +35933,13 @@ Responda APENAS em JSON com o formato:
       return await getOnboardingVideos();
     }),
     // Buscar histórico de ciclos do aluno (para a página de Evolução)
-    historicoCiclos: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+    historicoCiclos: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
       if (!input.alunoId || input.alunoId === 0) return [];
       return await getHistoricoCiclosAluno(input.alunoId);
     }),
     // ============ REVISÕES DO PDI ============
     // Listar revisões com dados enriquecidos (admin/mentor)
-    listarRevisoes: managerProcedure.input(z6.object({ status: z6.enum(["pendente", "em_analise", "resolvida", "cancelada"]).optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    listarRevisoes: managerProcedure.input(z7.object({ status: z7.enum(["pendente", "em_analise", "resolvida", "cancelada"]).optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       const consultorId = ctx2.user.role === "admin" ? void 0 : ctx2.user.consultorId;
       return await onboardingRevisoesDb.getEnriquecidas(input?.status, consultorId);
     }),
@@ -30487,10 +35950,10 @@ Responda APENAS em JSON com o formato:
       return { count: pendentes.length };
     }),
     // Responder/atualizar uma revisão
-    responderRevisao: managerProcedure.input(z6.object({
-      revisaoId: z6.number(),
-      status: z6.enum(["em_analise", "resolvida", "cancelada"]),
-      respostaAdmin: z6.string().optional()
+    responderRevisao: managerProcedure.input(z7.object({
+      revisaoId: z7.number(),
+      status: z7.enum(["em_analise", "resolvida", "cancelada"]),
+      respostaAdmin: z7.string().optional()
     })).mutation(async ({ ctx: ctx2, input }) => {
       await onboardingRevisoesDb.update(input.revisaoId, {
         status: input.status,
@@ -30503,7 +35966,7 @@ Responda APENAS em JSON com o formato:
   // ============ IN-APP NOTIFICATIONS ============
   notifications: router({
     // Listar notificações do usuário logado
-    list: protectedProcedure.input(z6.object({ limit: z6.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
+    list: protectedProcedure.input(z7.object({ limit: z7.number().optional() }).optional()).query(async ({ ctx: ctx2, input }) => {
       return await getNotificationsByUser(ctx2.user.id, input?.limit || 50);
     }),
     // Contar notificações não lidas
@@ -30511,7 +35974,7 @@ Responda APENAS em JSON com o formato:
       return await getUnreadNotificationCount(ctx2.user.id);
     }),
     // Marcar uma notificação como lida
-    markRead: protectedProcedure.input(z6.object({ notificationId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+    markRead: protectedProcedure.input(z7.object({ notificationId: z7.number() })).mutation(async ({ ctx: ctx2, input }) => {
       await markNotificationRead(input.notificationId, ctx2.user.id);
       return { success: true };
     }),
@@ -30521,13 +35984,13 @@ Responda APENAS em JSON com o formato:
       return { success: true };
     }),
     // Criar notificação (admin only - para testes e envio manual)
-    create: adminOrAdmin2Procedure.input(z6.object({
-      userId: z6.number(),
-      title: z6.string().min(1),
-      message: z6.string().min(1),
-      type: z6.enum(["info", "warning", "success", "action"]).optional(),
-      category: z6.string().optional(),
-      link: z6.string().optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      userId: z7.number(),
+      title: z7.string().min(1),
+      message: z7.string().min(1),
+      type: z7.enum(["info", "warning", "success", "action"]).optional(),
+      category: z7.string().optional(),
+      link: z7.string().optional()
     })).mutation(async ({ input }) => {
       const id = await createNotification({
         userId: input.userId,
@@ -30545,17 +36008,17 @@ Responda APENAS em JSON com o formato:
     list: adminOrAdmin2Procedure.query(async () => {
       return await getAllTaskLibraryIncludingInactive();
     }),
-    getById: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getById: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       const item = await getTaskLibraryById(input.id);
-      if (!item) throw new TRPCError6({ code: "NOT_FOUND", message: "Tarefa n\xE3o encontrada" });
+      if (!item) throw new TRPCError7({ code: "NOT_FOUND", message: "Tarefa n\xE3o encontrada" });
       return item;
     }),
-    create: adminOrAdmin2Procedure.input(z6.object({
-      competencia: z6.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria"),
-      nome: z6.string().min(1, "Nome \xE9 obrigat\xF3rio"),
-      resumo: z6.string().nullable().optional(),
-      oQueFazer: z6.string().nullable().optional(),
-      oQueGanha: z6.string().nullable().optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      competencia: z7.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria"),
+      nome: z7.string().min(1, "Nome \xE9 obrigat\xF3rio"),
+      resumo: z7.string().nullable().optional(),
+      oQueFazer: z7.string().nullable().optional(),
+      oQueGanha: z7.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const id = await createTaskLibraryItem({
         competencia: input.competencia,
@@ -30566,13 +36029,13 @@ Responda APENAS em JSON com o formato:
       });
       return { id, success: true };
     }),
-    update: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      competencia: z6.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria"),
-      nome: z6.string().min(1, "Nome \xE9 obrigat\xF3rio"),
-      resumo: z6.string().nullable().optional(),
-      oQueFazer: z6.string().nullable().optional(),
-      oQueGanha: z6.string().nullable().optional()
+    update: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      competencia: z7.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria"),
+      nome: z7.string().min(1, "Nome \xE9 obrigat\xF3rio"),
+      resumo: z7.string().nullable().optional(),
+      oQueFazer: z7.string().nullable().optional(),
+      oQueGanha: z7.string().nullable().optional()
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateTaskLibraryItem(id, {
@@ -30584,15 +36047,15 @@ Responda APENAS em JSON com o formato:
       });
       return { success: true };
     }),
-    toggleActive: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      isActive: z6.number().min(0).max(1)
+    toggleActive: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      isActive: z7.number().min(0).max(1)
     })).mutation(async ({ input }) => {
       await toggleTaskLibraryActive(input.id, input.isActive);
       return { success: true };
     }),
-    generateWithAI: adminOrAdmin2Procedure.input(z6.object({
-      competencia: z6.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria")
+    generateWithAI: adminOrAdmin2Procedure.input(z7.object({
+      competencia: z7.string().min(1, "Compet\xEAncia \xE9 obrigat\xF3ria")
     })).mutation(async ({ input }) => {
       const { invokeLLM: invokeLLM2 } = await Promise.resolve().then(() => (init_llm(), llm_exports));
       const response = await invokeLLM2({
@@ -30639,12 +36102,12 @@ Responda APENAS em JSON com o formato especificado.`
         }
       });
       const content = response.choices?.[0]?.message?.content;
-      if (!content) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar tarefa com IA" });
+      if (!content) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao gerar tarefa com IA" });
       const contentStr = typeof content === "string" ? content : JSON.stringify(content);
       try {
         return JSON.parse(contentStr);
       } catch {
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inv\xE1lido" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Resposta da IA em formato inv\xE1lido" });
       }
     })
   }),
@@ -30659,25 +36122,25 @@ Responda APENAS em JSON com o formato especificado.`
       return await getActiveCourses();
     }),
     // Buscar curso por ID
-    getById: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getById: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       const course = await getCourseById(input.id);
-      if (!course) throw new TRPCError6({ code: "NOT_FOUND", message: "Curso n\xE3o encontrado" });
+      if (!course) throw new TRPCError7({ code: "NOT_FOUND", message: "Curso n\xE3o encontrado" });
       return course;
     }),
     // Criar curso
-    create: adminOrAdmin2Procedure.input(z6.object({
-      titulo: z6.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
-      descricao: z6.string().nullable().optional(),
-      categoria: z6.string().nullable().optional(),
-      competenciaRelacionada: z6.string().nullable().optional(),
-      tipo: z6.enum(["gratuito", "online_pago", "presencial"]).default("gratuito"),
-      youtubeUrl: z6.string().nullable().optional(),
-      thumbnailUrl: z6.string().nullable().optional(),
-      duracao: z6.string().nullable().optional(),
-      instrutor: z6.string().nullable().optional(),
-      nivel: z6.enum(["iniciante", "intermediario", "avancado"]).default("iniciante"),
-      programId: z6.number().nullable().optional(),
-      ordem: z6.number().default(0)
+    create: adminOrAdmin2Procedure.input(z7.object({
+      titulo: z7.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
+      descricao: z7.string().nullable().optional(),
+      categoria: z7.string().nullable().optional(),
+      competenciaRelacionada: z7.string().nullable().optional(),
+      tipo: z7.enum(["gratuito", "online_pago", "presencial"]).default("gratuito"),
+      youtubeUrl: z7.string().nullable().optional(),
+      thumbnailUrl: z7.string().nullable().optional(),
+      duracao: z7.string().nullable().optional(),
+      instrutor: z7.string().nullable().optional(),
+      nivel: z7.enum(["iniciante", "intermediario", "avancado"]).default("iniciante"),
+      programId: z7.number().nullable().optional(),
+      ordem: z7.number().default(0)
     })).mutation(async ({ ctx: ctx2, input }) => {
       const id = await createCourse({
         titulo: input.titulo,
@@ -30697,20 +36160,20 @@ Responda APENAS em JSON com o formato especificado.`
       return { id, success: true };
     }),
     // Atualizar curso
-    update: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      titulo: z6.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
-      descricao: z6.string().nullable().optional(),
-      categoria: z6.string().nullable().optional(),
-      competenciaRelacionada: z6.string().nullable().optional(),
-      tipo: z6.enum(["gratuito", "online_pago", "presencial"]).default("gratuito"),
-      youtubeUrl: z6.string().nullable().optional(),
-      thumbnailUrl: z6.string().nullable().optional(),
-      duracao: z6.string().nullable().optional(),
-      instrutor: z6.string().nullable().optional(),
-      nivel: z6.enum(["iniciante", "intermediario", "avancado"]).default("iniciante"),
-      programId: z6.number().nullable().optional(),
-      ordem: z6.number().default(0)
+    update: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      titulo: z7.string().min(1, "T\xEDtulo \xE9 obrigat\xF3rio"),
+      descricao: z7.string().nullable().optional(),
+      categoria: z7.string().nullable().optional(),
+      competenciaRelacionada: z7.string().nullable().optional(),
+      tipo: z7.enum(["gratuito", "online_pago", "presencial"]).default("gratuito"),
+      youtubeUrl: z7.string().nullable().optional(),
+      thumbnailUrl: z7.string().nullable().optional(),
+      duracao: z7.string().nullable().optional(),
+      instrutor: z7.string().nullable().optional(),
+      nivel: z7.enum(["iniciante", "intermediario", "avancado"]).default("iniciante"),
+      programId: z7.number().nullable().optional(),
+      ordem: z7.number().default(0)
     })).mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateCourse(id, {
@@ -30730,15 +36193,15 @@ Responda APENAS em JSON com o formato especificado.`
       return { success: true };
     }),
     // Ativar/desativar curso
-    toggleActive: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      isActive: z6.number().min(0).max(1)
+    toggleActive: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      isActive: z7.number().min(0).max(1)
     })).mutation(async ({ input }) => {
       await toggleCourseActive(input.id, input.isActive);
       return { success: true };
     }),
     // Deletar curso
-    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await deleteCourse(input.id);
       return { success: true };
     })
@@ -30754,24 +36217,24 @@ Responda APENAS em JSON com o formato especificado.`
       return all.filter((a) => a.isActive === 1);
     }),
     // Obter atividade por ID
-    getById: protectedProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    getById: protectedProcedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       return getActivityById(input.id);
     }),
     // Criar atividade (admin)
-    create: adminOrAdmin2Procedure.input(z6.object({
-      titulo: z6.string().min(1),
-      descricao: z6.string().optional(),
-      tipo: z6.enum(["workshop", "treinamento", "palestra", "evento", "outro"]),
-      modalidade: z6.enum(["presencial", "online", "hibrido"]),
-      dataInicio: z6.string().optional(),
-      dataFim: z6.string().optional(),
-      local: z6.string().optional(),
-      vagas: z6.number().optional(),
-      instrutor: z6.string().optional(),
-      imagemUrl: z6.string().optional(),
-      competenciaRelacionada: z6.string().optional(),
-      programId: z6.number().optional(),
-      turmaIds: z6.array(z6.number()).optional()
+    create: adminOrAdmin2Procedure.input(z7.object({
+      titulo: z7.string().min(1),
+      descricao: z7.string().optional(),
+      tipo: z7.enum(["workshop", "treinamento", "palestra", "evento", "outro"]),
+      modalidade: z7.enum(["presencial", "online", "hibrido"]),
+      dataInicio: z7.string().optional(),
+      dataFim: z7.string().optional(),
+      local: z7.string().optional(),
+      vagas: z7.number().optional(),
+      instrutor: z7.string().optional(),
+      imagemUrl: z7.string().optional(),
+      competenciaRelacionada: z7.string().optional(),
+      programId: z7.number().optional(),
+      turmaIds: z7.array(z7.number()).optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       const { turmaIds, ...rest } = input;
       const id = await createActivity({
@@ -30788,21 +36251,21 @@ Responda APENAS em JSON com o formato especificado.`
       return { id };
     }),
     // Atualizar atividade (admin)
-    update: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      titulo: z6.string().min(1).optional(),
-      descricao: z6.string().optional(),
-      tipo: z6.enum(["workshop", "treinamento", "palestra", "evento", "outro"]).optional(),
-      modalidade: z6.enum(["presencial", "online", "hibrido"]).optional(),
-      dataInicio: z6.string().optional().nullable(),
-      dataFim: z6.string().optional().nullable(),
-      local: z6.string().optional(),
-      vagas: z6.number().optional().nullable(),
-      instrutor: z6.string().optional(),
-      imagemUrl: z6.string().optional(),
-      competenciaRelacionada: z6.string().optional(),
-      programId: z6.number().optional().nullable(),
-      turmaIds: z6.array(z6.number()).optional()
+    update: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      titulo: z7.string().min(1).optional(),
+      descricao: z7.string().optional(),
+      tipo: z7.enum(["workshop", "treinamento", "palestra", "evento", "outro"]).optional(),
+      modalidade: z7.enum(["presencial", "online", "hibrido"]).optional(),
+      dataInicio: z7.string().optional().nullable(),
+      dataFim: z7.string().optional().nullable(),
+      local: z7.string().optional(),
+      vagas: z7.number().optional().nullable(),
+      instrutor: z7.string().optional(),
+      imagemUrl: z7.string().optional(),
+      competenciaRelacionada: z7.string().optional(),
+      programId: z7.number().optional().nullable(),
+      turmaIds: z7.array(z7.number()).optional()
     })).mutation(async ({ input }) => {
       const { id, dataInicio, dataFim, turmaIds, ...rest } = input;
       const updateData = { ...rest };
@@ -30817,21 +36280,21 @@ Responda APENAS em JSON com o formato especificado.`
       return { success: true };
     }),
     // Toggle ativo/inativo (admin)
-    toggleActive: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      isActive: z6.number().min(0).max(1)
+    toggleActive: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      isActive: z7.number().min(0).max(1)
     })).mutation(async ({ input }) => {
       await toggleActivityActive(input.id, input.isActive);
       return { success: true };
     }),
     // Deletar atividade (admin) - também remove vinculações de turmas
-    delete: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    delete: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       await setActivityTurmas(input.id, []);
       await deleteActivity(input.id);
       return { success: true };
     }),
     // Obter turmas vinculadas a uma atividade
-    getTurmas: protectedProcedure.input(z6.object({ activityId: z6.number() })).query(async ({ input }) => {
+    getTurmas: protectedProcedure.input(z7.object({ activityId: z7.number() })).query(async ({ input }) => {
       return getActivityTurmas(input.activityId);
     }),
     // Obter mapa de todas as vinculações atividade-turma (admin)
@@ -30853,26 +36316,26 @@ Responda APENAS em JSON com o formato especificado.`
       return all.filter((a) => a.isActive === 1);
     }),
     // Contar inscrições de uma atividade
-    countRegistrations: protectedProcedure.input(z6.object({ activityId: z6.number() })).query(async ({ input }) => {
+    countRegistrations: protectedProcedure.input(z7.object({ activityId: z7.number() })).query(async ({ input }) => {
       return countRegistrations(input.activityId);
     }),
     // Listar inscrições de uma atividade (admin)
-    listRegistrations: adminOrAdmin2Procedure.input(z6.object({ activityId: z6.number() })).query(async ({ input }) => {
+    listRegistrations: adminOrAdmin2Procedure.input(z7.object({ activityId: z7.number() })).query(async ({ input }) => {
       return listActivityRegistrations(input.activityId);
     }),
     // Verificar se o usuário está inscrito
-    myRegistration: protectedProcedure.input(z6.object({ activityId: z6.number() })).query(async ({ input, ctx: ctx2 }) => {
+    myRegistration: protectedProcedure.input(z7.object({ activityId: z7.number() })).query(async ({ input, ctx: ctx2 }) => {
       return getRegistrationByUserAndActivity(ctx2.user.id, input.activityId);
     }),
     // Inscrever-se em uma atividade
-    register: protectedProcedure.input(z6.object({ activityId: z6.number() })).mutation(async ({ input, ctx: ctx2 }) => {
+    register: protectedProcedure.input(z7.object({ activityId: z7.number() })).mutation(async ({ input, ctx: ctx2 }) => {
       const existing = await getRegistrationByUserAndActivity(ctx2.user.id, input.activityId);
-      if (existing) throw new TRPCError6({ code: "CONFLICT", message: "Voc\xEA j\xE1 est\xE1 inscrito nesta atividade" });
+      if (existing) throw new TRPCError7({ code: "CONFLICT", message: "Voc\xEA j\xE1 est\xE1 inscrito nesta atividade" });
       const activity = await getActivityById(input.activityId);
-      if (!activity) throw new TRPCError6({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada" });
+      if (!activity) throw new TRPCError7({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada" });
       if (activity.vagas) {
         const count = await countRegistrations(input.activityId);
-        if (count >= activity.vagas) throw new TRPCError6({ code: "PRECONDITION_FAILED", message: "Vagas esgotadas" });
+        if (count >= activity.vagas) throw new TRPCError7({ code: "PRECONDITION_FAILED", message: "Vagas esgotadas" });
       }
       const id = await registerForActivity({
         activityId: input.activityId,
@@ -30882,14 +36345,14 @@ Responda APENAS em JSON com o formato especificado.`
       return { id };
     }),
     // Cancelar inscrição
-    unregister: protectedProcedure.input(z6.object({ activityId: z6.number() })).mutation(async ({ input, ctx: ctx2 }) => {
+    unregister: protectedProcedure.input(z7.object({ activityId: z7.number() })).mutation(async ({ input, ctx: ctx2 }) => {
       await cancelRegistration(ctx2.user.id, input.activityId);
       return { success: true };
     }),
     // Atualizar status de inscrição (admin)
-    updateRegistrationStatus: adminOrAdmin2Procedure.input(z6.object({
-      registrationId: z6.number(),
-      status: z6.enum(["inscrito", "confirmado", "cancelado", "presente", "ausente"])
+    updateRegistrationStatus: adminOrAdmin2Procedure.input(z7.object({
+      registrationId: z7.number(),
+      status: z7.enum(["inscrito", "confirmado", "cancelado", "presente", "ausente"])
     })).mutation(async ({ input }) => {
       await updateRegistrationStatus(input.registrationId, input.status);
       return { success: true };
@@ -30898,9 +36361,9 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ ALERTAS DE MENTORIA (EMAIL) ============
   alertasMentoria: router({
     // Verificar alunos sem mentoria há 30+ dias e enviar e-mails
-    enviarAlertas: adminOrAdmin2Procedure.input(z6.object({
-      diasMinimo: z6.number().min(1).default(30),
-      dryRun: z6.boolean().default(false)
+    enviarAlertas: adminOrAdmin2Procedure.input(z7.object({
+      diasMinimo: z7.number().min(1).default(30),
+      dryRun: z7.boolean().default(false)
       // Se true, apenas lista sem enviar
     }).optional()).mutation(async ({ input }) => {
       const diasMinimo = input?.diasMinimo || 30;
@@ -30999,9 +36462,9 @@ Responda APENAS em JSON com o formato especificado.`
   // ============ ALERTAS DE VENCIMENTO DE CICLO (EMAIL) ============
   vencimentoCiclo: router({
     // Verificar PDIs próximos do vencimento e enviar alertas
-    enviarAlertas: adminOrAdmin2Procedure.input(z6.object({
-      dryRun: z6.boolean().default(false),
-      forceResend: z6.boolean().default(false)
+    enviarAlertas: adminOrAdmin2Procedure.input(z7.object({
+      dryRun: z7.boolean().default(false),
+      forceResend: z7.boolean().default(false)
     }).optional()).mutation(async ({ input }) => {
       const { verificarEEnviarAlertasVencimentoCiclo: verificarEEnviarAlertasVencimentoCiclo2 } = await Promise.resolve().then(() => (init_cronVencimentoCiclo(), cronVencimentoCiclo_exports));
       const result = await verificarEEnviarAlertasVencimentoCiclo2({
@@ -31013,7 +36476,7 @@ Responda APENAS em JSON com o formato especificado.`
   }),
   // ============ ONBOARDING TRACKING (ADMIN) ============
   onboardingTracking: router({
-    list: adminOrAdmin2Procedure.input(z6.object({ programId: z6.number().optional() }).optional()).query(async ({ input }) => {
+    list: adminOrAdmin2Procedure.input(z7.object({ programId: z7.number().optional() }).optional()).query(async ({ input }) => {
       return await getOnboardingTrackingList(input?.programId);
     }),
     /**
@@ -31022,18 +36485,18 @@ Responda APENAS em JSON com o formato especificado.`
      * - Garante que onboarding_jornada tem cadastroConfirmado=1 e aceiteRealizado=1
      * Útil quando o admin liberou onboarding por engano ou o registro foi perdido.
      */
-    corrigirOnboarding: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
+    corrigirOnboarding: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const { alunos: alunosTable, onboardingJornada: onboardingJornada2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq16 } = await import("drizzle-orm");
-      await database.update(alunosTable).set({ onboardingLiberado: 0, onboardingLiberadoEm: null }).where(eq16(alunosTable.id, input.alunoId));
-      const [existing] = await database.select().from(onboardingJornada2).where(eq16(onboardingJornada2.alunoId, input.alunoId)).limit(1);
+      const { eq: eq19 } = await import("drizzle-orm");
+      await database.update(alunosTable).set({ onboardingLiberado: 0, onboardingLiberadoEm: null }).where(eq19(alunosTable.id, input.alunoId));
+      const [existing] = await database.select().from(onboardingJornada2).where(eq19(onboardingJornada2.alunoId, input.alunoId)).limit(1);
       if (existing) {
         if (!existing.aceiteRealizado) {
-          await database.update(onboardingJornada2).set({ cadastroConfirmado: 1, aceiteRealizado: 1, aceiteRealizadoEm: /* @__PURE__ */ new Date() }).where(eq16(onboardingJornada2.alunoId, input.alunoId));
+          await database.update(onboardingJornada2).set({ cadastroConfirmado: 1, aceiteRealizado: 1, aceiteRealizadoEm: /* @__PURE__ */ new Date() }).where(eq19(onboardingJornada2.alunoId, input.alunoId));
         } else {
-          await database.update(onboardingJornada2).set({ cadastroConfirmado: 1 }).where(eq16(onboardingJornada2.alunoId, input.alunoId));
+          await database.update(onboardingJornada2).set({ cadastroConfirmado: 1 }).where(eq19(onboardingJornada2.alunoId, input.alunoId));
         }
       } else {
         await database.insert(onboardingJornada2).values({
@@ -31046,13 +36509,13 @@ Responda APENAS em JSON com o formato especificado.`
       }
       return { success: true };
     }),
-    resendInvite: adminOrAdmin2Procedure.input(z6.object({ alunoId: z6.number() })).mutation(async ({ input }) => {
+    resendInvite: adminOrAdmin2Procedure.input(z7.object({ alunoId: z7.number() })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+      if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
       const { alunos: alunosTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq16 } = await import("drizzle-orm");
-      const [aluno] = await database.select().from(alunosTable).where(eq16(alunosTable.id, input.alunoId));
-      if (!aluno) throw new TRPCError6({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
+      const { eq: eq19 } = await import("drizzle-orm");
+      const [aluno] = await database.select().from(alunosTable).where(eq19(alunosTable.id, input.alunoId));
+      if (!aluno) throw new TRPCError7({ code: "NOT_FOUND", message: "Aluno n\xE3o encontrado" });
       const allPrograms = await getPrograms();
       const program = aluno.programId ? allPrograms.find((p) => p.id === aluno.programId) : null;
       const loginUrl = "https://ecolider.ecodobem.com/";
@@ -31081,54 +36544,54 @@ Responda APENAS em JSON com o formato especificado.`
      * Obter catálogo de cursos para um aluno
      * Retorna competências com módulos agrupados e progresso
      */
-    getCatalog: protectedProcedure.input(z6.object({
-      alunoId: z6.number(),
-      microcicloId: z6.number()
+    getCatalog: protectedProcedure.input(z7.object({
+      alunoId: z7.number(),
+      microcicloId: z7.number()
     })).query(async ({ input }) => {
       try {
         const catalog = await getCourseCatalog(input.alunoId, input.microcicloId);
         return catalog;
       } catch (error) {
         console.error("[getCatalog] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar cat\xE1logo" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar cat\xE1logo" });
       }
     }),
     /**
      * Iniciar um módulo
      */
-    startModule: protectedProcedure.input(z6.object({
-      moduloId: z6.number(),
-      progressoId: z6.number()
+    startModule: protectedProcedure.input(z7.object({
+      moduloId: z7.number(),
+      progressoId: z7.number()
     })).mutation(async ({ input }) => {
       try {
         await startModule(input.moduloId, input.moduloId, input.progressoId);
         return { success: true };
       } catch (error) {
         console.error("[startModule] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao iniciar m\xF3dulo" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao iniciar m\xF3dulo" });
       }
     }),
     /**
      * Obter conteúdo completo de um módulo
      */
-    getModuleContent: protectedProcedure.input(z6.object({
-      moduloId: z6.number()
+    getModuleContent: protectedProcedure.input(z7.object({
+      moduloId: z7.number()
     })).query(async ({ input }) => {
       try {
         const content = await getModuleContent(input.moduloId);
         return content;
       } catch (error) {
         console.error("[getModuleContent] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar conte\xFAdo" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar conte\xFAdo" });
       }
     }),
     /**
      * Enviar reflexão do aluno
      */
-    submitReflection: protectedProcedure.input(z6.object({
-      moduloId: z6.number(),
-      progressoId: z6.number(),
-      textoRelato: z6.string().min(100, "Reflex\xE3o deve ter no m\xEDnimo 100 caracteres")
+    submitReflection: protectedProcedure.input(z7.object({
+      moduloId: z7.number(),
+      progressoId: z7.number(),
+      textoRelato: z7.string().min(100, "Reflex\xE3o deve ter no m\xEDnimo 100 caracteres")
     })).mutation(async ({ input, ctx: ctx2 }) => {
       try {
         const alunoId = ctx2.user.alunoId || 0;
@@ -31136,22 +36599,22 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true };
       } catch (error) {
         console.error("[submitReflection] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao enviar reflex\xE3o" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao enviar reflex\xE3o" });
       }
     }),
     /**
      * Enviar avaliação/quiz do módulo
      * Atualiza automaticamente os Indicadores 2 e 3
      */
-    submitAssessment: protectedProcedure.input(z6.object({
-      moduloId: z6.number(),
-      progressoId: z6.number(),
-      competenciaId: z6.number(),
-      microcicloId: z6.number(),
-      nota: z6.number().min(0).max(10),
-      totalQuestoes: z6.number().optional(),
-      questoesAcertadas: z6.number().optional(),
-      tempoRespostaMinutos: z6.number().optional()
+    submitAssessment: protectedProcedure.input(z7.object({
+      moduloId: z7.number(),
+      progressoId: z7.number(),
+      competenciaId: z7.number(),
+      microcicloId: z7.number(),
+      nota: z7.number().min(0).max(10),
+      totalQuestoes: z7.number().optional(),
+      questoesAcertadas: z7.number().optional(),
+      tempoRespostaMinutos: z7.number().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       try {
         const alunoId = ctx2.user.alunoId || 0;
@@ -31169,18 +36632,18 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       } catch (error) {
         console.error("[submitAssessment] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao enviar avalia\xE7\xE3o" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao enviar avalia\xE7\xE3o" });
       }
     }),
     /**
      * Solicitar prorrogação de prazo
      */
-    requestExtension: protectedProcedure.input(z6.object({
-      moduloId: z6.number(),
-      progressoId: z6.number(),
-      dataLimiteSolicitada: z6.date(),
-      dataFimContrato: z6.date(),
-      motivoSolicitacao: z6.string().min(10, "Motivo deve ter no m\xEDnimo 10 caracteres")
+    requestExtension: protectedProcedure.input(z7.object({
+      moduloId: z7.number(),
+      progressoId: z7.number(),
+      dataLimiteSolicitada: z7.date(),
+      dataFimContrato: z7.date(),
+      motivoSolicitacao: z7.string().min(10, "Motivo deve ter no m\xEDnimo 10 caracteres")
     })).mutation(async ({ input, ctx: ctx2 }) => {
       try {
         const alunoId = ctx2.user.alunoId || 0;
@@ -31195,20 +36658,20 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       } catch (error) {
         console.error("[requestExtension] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao solicitar prorroga\xE7\xE3o" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao solicitar prorroga\xE7\xE3o" });
       }
     }),
     /**
      * Aprovar ou rejeitar prorrogação (apenas mentores)
      */
-    approveExtension: protectedProcedure.input(z6.object({
-      prorrogacaoId: z6.number(),
-      aprovar: z6.boolean(),
-      motivoRejeicao: z6.string().optional()
+    approveExtension: protectedProcedure.input(z7.object({
+      prorrogacaoId: z7.number(),
+      aprovar: z7.boolean(),
+      motivoRejeicao: z7.string().optional()
     })).mutation(async ({ input, ctx: ctx2 }) => {
       try {
         if (ctx2.user.role !== "manager" && ctx2.user.role !== "admin") {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Apenas mentores podem aprovar prorroga\xE7\xF5es" });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Apenas mentores podem aprovar prorroga\xE7\xF5es" });
         }
         const result = await approveExtension(
           input.prorrogacaoId,
@@ -31218,7 +36681,7 @@ Responda APENAS em JSON com o formato especificado.`
         return result;
       } catch (error) {
         console.error("[approveExtension] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao processar prorroga\xE7\xE3o" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao processar prorroga\xE7\xE3o" });
       }
     }),
     /**
@@ -31227,14 +36690,14 @@ Responda APENAS em JSON com o formato especificado.`
     getMentorPanel: protectedProcedure.query(async ({ ctx: ctx2 }) => {
       try {
         if (ctx2.user.role !== "manager" && ctx2.user.role !== "admin") {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Apenas mentores podem acessar este painel" });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Apenas mentores podem acessar este painel" });
         }
         const mentorId = ctx2.user.id || 0;
         const panel = await getMentorExtensionPanel(mentorId);
         return panel;
       } catch (error) {
         console.error("[getMentorPanel] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar painel" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao carregar painel" });
       }
     })
   }),
@@ -31251,34 +36714,34 @@ Responda APENAS em JSON com o formato especificado.`
         return cursos;
       } catch (error) {
         console.error("[listCursos] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao listar cursos" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao listar cursos" });
       }
     }),
     /**
      * Listar atividades de um curso (módulos/competenciasModulos)
      */
-    listAtividades: adminOrAdmin2Procedure.input(z6.object({ competenciaId: z6.number() })).query(async ({ input }) => {
+    listAtividades: adminOrAdmin2Procedure.input(z7.object({ competenciaId: z7.number() })).query(async ({ input }) => {
       try {
         const database = await getDb();
         if (!database) throw new Error("Database not available");
-        const atividades = await database.select().from(competenciasModulos).where(eq8(competenciasModulos.competenciaId, input.competenciaId));
+        const atividades = await database.select().from(competenciasModulos).where(eq10(competenciasModulos.competenciaId, input.competenciaId));
         return atividades;
       } catch (error) {
         console.error("[listAtividades] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao listar atividades" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao listar atividades" });
       }
     }),
     /**
      * Criar nova atividade (módulo)
      */
-    createAtividade: adminOrAdmin2Procedure.input(z6.object({
-      competenciaId: z6.number(),
-      titulo: z6.string().min(1),
-      descricao: z6.string().optional(),
-      tipoModulo: z6.enum(["intro", "filme", "video", "tedtalk", "podcast", "livro"]),
-      duracaoMinutos: z6.number().min(1),
-      urlGenially: z6.string().optional(),
-      ordem: z6.number().optional()
+    createAtividade: adminOrAdmin2Procedure.input(z7.object({
+      competenciaId: z7.number(),
+      titulo: z7.string().min(1),
+      descricao: z7.string().optional(),
+      tipoModulo: z7.enum(["intro", "filme", "video", "tedtalk", "podcast", "livro"]),
+      duracaoMinutos: z7.number().min(1),
+      urlGenially: z7.string().optional(),
+      ordem: z7.number().optional()
     })).mutation(async ({ input }) => {
       try {
         const database = await getDb();
@@ -31298,20 +36761,20 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true, id: result.insertId };
       } catch (error) {
         console.error("[createAtividade] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao criar atividade" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao criar atividade" });
       }
     }),
     /**
      * Atualizar atividade
      */
-    updateAtividade: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      titulo: z6.string().min(1),
-      descricao: z6.string().optional(),
-      tipoModulo: z6.enum(["intro", "filme", "video", "tedtalk", "podcast", "livro"]),
-      duracaoMinutos: z6.number().min(1),
-      urlGenially: z6.string().optional(),
-      ordem: z6.number().optional()
+    updateAtividade: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      titulo: z7.string().min(1),
+      descricao: z7.string().optional(),
+      tipoModulo: z7.enum(["intro", "filme", "video", "tedtalk", "podcast", "livro"]),
+      duracaoMinutos: z7.number().min(1),
+      urlGenially: z7.string().optional(),
+      ordem: z7.number().optional()
     })).mutation(async ({ input }) => {
       try {
         const database = await getDb();
@@ -31324,25 +36787,25 @@ Responda APENAS em JSON com o formato especificado.`
           urlGenially: input.urlGenially || "",
           ordem: input.ordem || 1,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq8(competenciasModulos.id, input.id));
+        }).where(eq10(competenciasModulos.id, input.id));
         return { success: true };
       } catch (error) {
         console.error("[updateAtividade] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atualizar atividade" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao atualizar atividade" });
       }
     }),
     /**
      * Deletar atividade
      */
-    deleteAtividade: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    deleteAtividade: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       try {
         const database = await getDb();
         if (!database) throw new Error("Database not available");
-        await database.delete(competenciasModulos).where(eq8(competenciasModulos.id, input.id));
+        await database.delete(competenciasModulos).where(eq10(competenciasModulos.id, input.id));
         return { success: true };
       } catch (error) {
         console.error("[deleteAtividade] Error:", error);
-        throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao deletar atividade" });
+        throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao deletar atividade" });
       }
     })
   }),
@@ -31351,7 +36814,7 @@ Responda APENAS em JSON com o formato especificado.`
       listarCompetencias: protectedProcedure.query(async () => {
         const database = await getDb();
         if (!database) return [];
-        const resultado = await database.select({ id: competencias.id, nome: competencias.nome }).from(competencias).where(eq8(competencias.isActive, 1)).orderBy(asc3(competencias.nome));
+        const resultado = await database.select({ id: competencias.id, nome: competencias.nome }).from(competencias).where(eq10(competencias.isActive, 1)).orderBy(asc3(competencias.nome));
         const seen = /* @__PURE__ */ new Set();
         return resultado.filter((r) => {
           if (seen.has(r.id)) return false;
@@ -31359,13 +36822,13 @@ Responda APENAS em JSON com o formato especificado.`
           return true;
         }).map((r) => ({ id: r.id, nome: r.nome }));
       }),
-      listarCursos: protectedProcedure.input(z6.object({ competenciaId: z6.number() })).query(async ({ input }) => {
+      listarCursos: protectedProcedure.input(z7.object({ competenciaId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(cursosCompetencias).where(
-          and7(
-            eq8(cursosCompetencias.competenciaId, input.competenciaId),
-            eq8(cursosCompetencias.isActive, 1)
+          and9(
+            eq10(cursosCompetencias.competenciaId, input.competenciaId),
+            eq10(cursosCompetencias.isActive, 1)
           )
         ).orderBy(asc3(cursosCompetencias.ordem), asc3(cursosCompetencias.titulo));
       }),
@@ -31374,22 +36837,22 @@ Responda APENAS em JSON com o formato especificado.`
         if (!database) return [];
         return await database.select().from(cursosCompetencias).orderBy(asc3(cursosCompetencias.competenciaId), asc3(cursosCompetencias.ordem), asc3(cursosCompetencias.titulo));
       }),
-      obterCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
+      obterCurso: protectedProcedure.input(z7.object({ cursoId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return null;
-        const [curso] = await database.select().from(cursosCompetencias).where(eq8(cursosCompetencias.id, input.cursoId)).limit(1);
+        const [curso] = await database.select().from(cursosCompetencias).where(eq10(cursosCompetencias.id, input.cursoId)).limit(1);
         return curso ?? null;
       }),
       criarCurso: adminOrAdmin2Procedure.input(
-        z6.object({
-          competenciaId: z6.number(),
-          titulo: z6.string().min(1),
-          descricao: z6.string().optional()
+        z7.object({
+          competenciaId: z7.number(),
+          titulo: z7.string().min(1),
+          descricao: z7.string().optional()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const result = await database.insert(cursosCompetencias).values({
           competenciaId: input.competenciaId,
@@ -31404,17 +36867,17 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true, id: result[0]?.insertId ?? null };
       }),
       atualizarCurso: adminOrAdmin2Procedure.input(
-        z6.object({
-          cursoId: z6.number(),
-          competenciaId: z6.number(),
-          titulo: z6.string().min(1),
-          descricao: z6.string().optional(),
-          ordem: z6.number().optional()
+        z7.object({
+          cursoId: z7.number(),
+          competenciaId: z7.number(),
+          titulo: z7.string().min(1),
+          descricao: z7.string().optional(),
+          ordem: z7.number().optional()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         await database.update(cursosCompetencias).set({
           competenciaId: input.competenciaId,
@@ -31422,33 +36885,33 @@ Responda APENAS em JSON com o formato especificado.`
           descricao: input.descricao ?? null,
           ordem: input.ordem ?? 0,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq8(cursosCompetencias.id, input.cursoId));
+        }).where(eq10(cursosCompetencias.id, input.cursoId));
         return { success: true };
       }),
-      excluirCurso: adminOrAdmin2Procedure.input(z6.object({ cursoId: z6.number() })).mutation(async ({ input }) => {
+      excluirCurso: adminOrAdmin2Procedure.input(z7.object({ cursoId: z7.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
-        const [cursoAtual] = await database.select({ isActive: cursosCompetencias.isActive }).from(cursosCompetencias).where(eq8(cursosCompetencias.id, input.cursoId)).limit(1);
+        const [cursoAtual] = await database.select({ isActive: cursosCompetencias.isActive }).from(cursosCompetencias).where(eq10(cursosCompetencias.id, input.cursoId)).limit(1);
         if (!cursoAtual) {
-          throw new TRPCError6({ code: "NOT_FOUND", message: "Curso n\xE3o encontrado" });
+          throw new TRPCError7({ code: "NOT_FOUND", message: "Curso n\xE3o encontrado" });
         }
         const novoStatus = cursoAtual.isActive === 1 ? 0 : 1;
         await database.update(cursosCompetencias).set({
           isActive: novoStatus,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq8(cursosCompetencias.id, input.cursoId));
+        }).where(eq10(cursosCompetencias.id, input.cursoId));
         return { success: true, isActive: novoStatus };
       }),
-      deletarCurso: adminOrAdmin2Procedure.input(z6.object({ cursoId: z6.number() })).mutation(async ({ input }) => {
+      deletarCurso: adminOrAdmin2Procedure.input(z7.object({ cursoId: z7.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const conn = await getRawConnection();
         if (!conn) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Conex\xE3o indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Conex\xE3o indispon\xEDvel" });
         }
         const cursoId = input.cursoId;
         await conn.execute(
@@ -31472,68 +36935,69 @@ Responda APENAS em JSON com o formato especificado.`
         );
         return { success: true };
       }),
-      listarAtividadesCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
+      listarAtividadesCurso: protectedProcedure.input(z7.object({ cursoId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(atividadesCurso).where(
-          and7(
-            eq8(atividadesCurso.cursoId, input.cursoId),
-            eq8(atividadesCurso.isActive, 1)
+          and9(
+            eq10(atividadesCurso.cursoId, input.cursoId),
+            eq10(atividadesCurso.isActive, 1)
           )
         ).orderBy(asc3(atividadesCurso.ordem));
       }),
-      listarCursosPorCompetencia: protectedProcedure.input(z6.object({ competenciaId: z6.number() })).query(async ({ input }) => {
+      listarCursosPorCompetencia: protectedProcedure.input(z7.object({ competenciaId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         if (input.competenciaId <= 0) return [];
         return await database.select().from(cursosCompetencias).where(
-          and7(
-            eq8(cursosCompetencias.competenciaId, input.competenciaId),
-            eq8(cursosCompetencias.isActive, 1)
+          and9(
+            eq10(cursosCompetencias.competenciaId, input.competenciaId),
+            eq10(cursosCompetencias.isActive, 1)
           )
         ).orderBy(asc3(cursosCompetencias.ordem), asc3(cursosCompetencias.titulo));
       }),
-      listarAtividades: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
+      listarAtividades: protectedProcedure.input(z7.object({ cursoId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select().from(atividadesCurso).where(
-          and7(
-            eq8(atividadesCurso.cursoId, input.cursoId),
-            eq8(atividadesCurso.isActive, 1)
+          and9(
+            eq10(atividadesCurso.cursoId, input.cursoId),
+            eq10(atividadesCurso.isActive, 1)
           )
         ).orderBy(asc3(atividadesCurso.ordem));
       }),
       criarAtividade: adminOrAdmin2Procedure.input(
-        z6.object({
-          cursoId: z6.number(),
-          titulo: z6.string().min(1),
-          tipoAtividade: z6.enum([
+        z7.object({
+          cursoId: z7.number(),
+          titulo: z7.string().min(1),
+          tipoAtividade: z7.enum([
             "genially",
             "video",
             "podcast",
             "tedtalk",
             "livro",
-            "intro"
+            "intro",
+            "pdf"
           ]),
-          urlGenially: z6.string().optional(),
-          urlMidia: z6.string().optional(),
-          imagemUrl: z6.string().optional(),
-          descricao: z6.string().optional(),
-          ordem: z6.number().optional(),
-          tempoMinimoObrigatorioSegundos: z6.number().int().min(0).optional()
+          urlGenially: z7.string().optional(),
+          urlMidia: z7.string().optional(),
+          imagemUrl: z7.string().optional(),
+          descricao: z7.string().optional(),
+          ordem: z7.number().optional(),
+          tempoMinimoObrigatorioSegundos: z7.number().int().min(0).optional()
         })
       ).mutation(async ({ input }) => {
         try {
           const database = await getDb();
           if (!database) {
-            throw new TRPCError6({
+            throw new TRPCError7({
               code: "INTERNAL_SERVER_ERROR",
               message: "Banco indispon\xEDvel"
             });
           }
           const conn = database.$client.promise ? database.$client.promise() : database.$client;
           if (!conn) {
-            throw new TRPCError6({
+            throw new TRPCError7({
               code: "INTERNAL_SERVER_ERROR",
               message: "Conexao com banco indisponivel"
             });
@@ -31575,17 +37039,17 @@ Responda APENAS em JSON com o formato especificado.`
             sqlMessage: error?.sqlMessage,
             stack: error?.stack
           });
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "INTERNAL_SERVER_ERROR",
             message: error?.message || "Erro ao criar atividade"
           });
         }
       }),
       uploadImagemAtividade: adminOrAdmin2Procedure.input(
-        z6.object({
-          nomeArquivo: z6.string(),
-          tipoMime: z6.string(),
-          dados: z6.string()
+        z7.object({
+          nomeArquivo: z7.string(),
+          tipoMime: z7.string(),
+          dados: z7.string()
           // base64 encoded
         })
       ).mutation(async ({ input }) => {
@@ -31596,91 +37060,117 @@ Responda APENAS em JSON com o formato especificado.`
           return { url, key, success: true };
         } catch (error) {
           console.error("Erro ao fazer upload de imagem:", error);
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "INTERNAL_SERVER_ERROR",
             message: "Erro ao fazer upload da imagem"
           });
         }
       }),
+      uploadPdfAtividade: adminOrAdmin2Procedure.input(
+        z7.object({
+          nomeArquivo: z7.string(),
+          tipoMime: z7.string(),
+          dados: z7.string()
+          // base64 encoded
+        })
+      ).mutation(async ({ input }) => {
+        try {
+          if (input.tipoMime !== "application/pdf") {
+            throw new TRPCError7({ code: "BAD_REQUEST", message: "Apenas arquivos PDF s\xE3o permitidos" });
+          }
+          const buffer = Buffer.from(input.dados, "base64");
+          const fileKey = `atividades/pdf/${Date.now()}-${input.nomeArquivo}`;
+          const { url, key } = await storagePut(fileKey, buffer, "application/pdf");
+          return { url, key, success: true };
+        } catch (error) {
+          console.error("Erro ao fazer upload de PDF:", error);
+          throw new TRPCError7({
+            code: "INTERNAL_SERVER_ERROR",
+            message: error?.message || "Erro ao fazer upload do PDF"
+          });
+        }
+      }),
       atualizarAtividade: adminOrAdmin2Procedure.input(
-        z6.object({
-          id: z6.number(),
-          titulo: z6.string().min(1).optional(),
-          tipoAtividade: z6.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]).optional(),
-          urlGenially: z6.string().optional(),
-          imagemUrl: z6.string().optional(),
-          descricao: z6.string().optional(),
-          ordem: z6.number().optional(),
-          tempoMinimoObrigatorioSegundos: z6.number().int().min(0).nullish()
+        z7.object({
+          id: z7.number(),
+          titulo: z7.string().min(1).optional(),
+          tipoAtividade: z7.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf"]).optional(),
+          urlGenially: z7.string().optional(),
+          urlMidia: z7.string().optional(),
+          imagemUrl: z7.string().optional(),
+          descricao: z7.string().optional(),
+          ordem: z7.number().optional(),
+          tempoMinimoObrigatorioSegundos: z7.number().int().min(0).nullish()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const updates = { updatedAt: /* @__PURE__ */ new Date() };
         if (input.titulo) updates.titulo = input.titulo;
         if (input.tipoAtividade) updates.tipoAtividade = input.tipoAtividade;
         if (input.urlGenially !== void 0) updates.urlGenially = input.urlGenially ?? null;
+        if (input.urlMidia !== void 0) updates.urlMidia = input.urlMidia ?? null;
         if (input.descricao !== void 0) updates.descricao = input.descricao ?? null;
         if (input.ordem !== void 0) updates.ordem = input.ordem;
         if (input.imagemUrl !== void 0) updates.imagemUrl = input.imagemUrl || null;
         if (input.tempoMinimoObrigatorioSegundos !== void 0) {
           updates.tempoMinimoObrigatorioSegundos = input.tempoMinimoObrigatorioSegundos != null && input.tempoMinimoObrigatorioSegundos > 0 ? input.tempoMinimoObrigatorioSegundos : null;
         }
-        await database.update(atividadesCurso).set(updates).where(eq8(atividadesCurso.id, input.id));
+        await database.update(atividadesCurso).set(updates).where(eq10(atividadesCurso.id, input.id));
         return { success: true };
       }),
-      deletarAtividade: adminOrAdmin2Procedure.input(z6.object({ atividadeId: z6.number() })).mutation(async ({ input }) => {
+      deletarAtividade: adminOrAdmin2Procedure.input(z7.object({ atividadeId: z7.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         await database.update(atividadesCurso).set({
           isActive: 0,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq8(atividadesCurso.id, input.atividadeId));
+        }).where(eq10(atividadesCurso.id, input.atividadeId));
         return { success: true };
       }),
-      obterAtividadeDetalhes: protectedProcedure.input(z6.object({ atividadeId: z6.number() })).query(async ({ input }) => {
+      obterAtividadeDetalhes: protectedProcedure.input(z7.object({ atividadeId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return null;
         const result = await database.select({
           atividade: atividadesCurso,
           avaliacoes: avaliacoesAtividade
-        }).from(atividadesCurso).leftJoin(avaliacoesAtividade, eq8(atividadesCurso.id, avaliacoesAtividade.atividadeId)).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
+        }).from(atividadesCurso).leftJoin(avaliacoesAtividade, eq10(atividadesCurso.id, avaliacoesAtividade.atividadeId)).where(eq10(atividadesCurso.id, input.atividadeId)).limit(1);
         if (result.length === 0) return null;
         return result[0];
       }),
       criarAvaliacao: adminOrAdmin2Procedure.input(
-        z6.object({
-          atividadeId: z6.number(),
-          titulo: z6.string().min(1),
-          questoes: z6.array(
-            z6.object({
-              id: z6.string(),
-              enunciado: z6.string().min(1),
-              opcoes: z6.array(z6.string()).min(2),
-              respostaCorreta: z6.string().min(1)
+        z7.object({
+          atividadeId: z7.number(),
+          titulo: z7.string().min(1),
+          questoes: z7.array(
+            z7.object({
+              id: z7.string(),
+              enunciado: z7.string().min(1),
+              opcoes: z7.array(z7.string()).min(2),
+              respostaCorreta: z7.string().min(1)
             })
           ),
-          notaMinima: z6.number().min(0).max(10).optional()
+          notaMinima: z7.number().min(0).max(10).optional()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const qtdValidas = [10, 20, 30];
         if (!qtdValidas.includes(input.questoes.length)) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "BAD_REQUEST",
             message: `Avalia\xE7\xE3o deve ter 10, 20 ou 30 quest\xF5es. Recebido: ${input.questoes.length}`
           });
         }
         for (const q of input.questoes) {
           if (!q.opcoes.includes(q.respostaCorreta)) {
-            throw new TRPCError6({
+            throw new TRPCError7({
               code: "BAD_REQUEST",
               message: `Quest\xE3o "${q.id}": resposta correta n\xE3o est\xE1 nas op\xE7\xF5es`
             });
@@ -31695,11 +37185,11 @@ Responda APENAS em JSON com o formato especificado.`
         });
         return { success: true, id: result[0]?.insertId ?? null };
       }),
-      previewAvaliacao: adminOrAdmin2Procedure.input(z6.object({ avaliacaoId: z6.number().int().min(1) })).query(async ({ input }) => {
+      previewAvaliacao: adminOrAdmin2Procedure.input(z7.object({ avaliacaoId: z7.number().int().min(1) })).query(async ({ input }) => {
         const database = await getDb();
-        if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
-        const [avaliacao] = await database.select().from(avaliacoesAtividade).where(eq8(avaliacoesAtividade.id, input.avaliacaoId)).limit(1);
-        if (!avaliacao) throw new TRPCError6({ code: "NOT_FOUND", message: "Avalia\xE7\xE3o n\xE3o encontrada" });
+        if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+        const [avaliacao] = await database.select().from(avaliacoesAtividade).where(eq10(avaliacoesAtividade.id, input.avaliacaoId)).limit(1);
+        if (!avaliacao) throw new TRPCError7({ code: "NOT_FOUND", message: "Avalia\xE7\xE3o n\xE3o encontrada" });
         let questoes = [];
         try {
           const raw = avaliacao.questoes;
@@ -31716,24 +37206,24 @@ Responda APENAS em JSON com o formato especificado.`
           questoes: sorteadas
         };
       }),
-      listarAvaliacoesCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ input }) => {
+      listarAvaliacoesCurso: protectedProcedure.input(z7.object({ cursoId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select({
           avaliacao: avaliacoesAtividade,
           atividade: atividadesCurso
-        }).from(avaliacoesAtividade).innerJoin(atividadesCurso, eq8(avaliacoesAtividade.atividadeId, atividadesCurso.id)).where(
-          and7(
-            eq8(atividadesCurso.cursoId, input.cursoId),
-            eq8(avaliacoesAtividade.isActive, 1)
+        }).from(avaliacoesAtividade).innerJoin(atividadesCurso, eq10(avaliacoesAtividade.atividadeId, atividadesCurso.id)).where(
+          and9(
+            eq10(atividadesCurso.cursoId, input.cursoId),
+            eq10(avaliacoesAtividade.isActive, 1)
           )
-        ).orderBy(desc3(avaliacoesAtividade.createdAt));
+        ).orderBy(desc4(avaliacoesAtividade.createdAt));
       }),
       // Sincroniza retroativamente student_performance para todos os cursos já concluídos pela plataforma
       syncPlatformPerformance: adminOrAdmin2Procedure.mutation(async () => {
         const database = await getDb();
-        if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR" });
-        const cursosConcluidos = await database.select({ id: alunoCursoAtribuido.id, alunoId: alunoCursoAtribuido.alunoId }).from(alunoCursoAtribuido).where(eq8(alunoCursoAtribuido.status, "concluido"));
+        if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR" });
+        const cursosConcluidos = await database.select({ id: alunoCursoAtribuido.id, alunoId: alunoCursoAtribuido.alunoId }).from(alunoCursoAtribuido).where(eq10(alunoCursoAtribuido.status, "concluido"));
         let synced = 0;
         for (const c of cursosConcluidos) {
           await syncStudentPerformanceFromPlatform(c.alunoId, c.id);
@@ -31741,13 +37231,47 @@ Responda APENAS em JSON com o formato especificado.`
         }
         return { success: true, synced };
       }),
-      deleteAtividade: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+      deleteAtividade: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
         }
-        await database.update(atividadesCurso).set({ isActive: 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(atividadesCurso.id, input.id));
+        await database.update(atividadesCurso).set({ isActive: 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq10(atividadesCurso.id, input.id));
         return { success: true };
+      }),
+      previewCurso: adminOrAdmin2Procedure.input(z7.object({ cursoId: z7.number().int().positive() })).query(async ({ input }) => {
+        const database = await getDb();
+        if (!database) return [];
+        const atividades = await database.select().from(atividadesCurso).where(eq10(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
+        const atividadeIds = atividades.map((a) => a.id);
+        const avaliacoes = atividadeIds.length === 0 ? [] : await database.select().from(avaliacoesAtividade).where(
+          and9(
+            eq10(avaliacoesAtividade.isActive, 1),
+            inArray5(avaliacoesAtividade.atividadeId, atividadeIds)
+          )
+        );
+        const avaliacaoMap = new Map(avaliacoes.map((a) => [a.atividadeId, a]));
+        return atividades.map((atividade, index) => ({
+          id: atividade.id,
+          titulo: atividade.titulo,
+          descricao: atividade.descricao,
+          ordem: atividade.ordem ?? index + 1,
+          imagemUrl: atividade.imagemUrl ?? null,
+          urlGenially: atividade.urlGenially ?? null,
+          urlMidia: atividade.urlMidia ?? null,
+          tipoAtividade: atividade.tipoAtividade ?? null,
+          status: "disponivel",
+          notaFinal: null,
+          tentativas: 0,
+          avaliacaoId: avaliacaoMap.get(atividade.id)?.id ?? null,
+          temAvaliacao: !!avaliacaoMap.get(atividade.id),
+          avaliacaoLiberada: true,
+          permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
+          duracaoEstimadaMinutos: atividade.duracaoEstimadaMinutos ?? null,
+          duracaoRealMinutos: null,
+          iniciadoEm: null,
+          concluidoEm: null
+        }));
       })
     }),
     mentor: router({
@@ -31756,22 +37280,22 @@ Responda APENAS em JSON com o formato especificado.`
         return await getAlunosByConsultor(consultorId);
       }),
       atribuirCurso: protectedProcedure.input(
-        z6.object({
-          alunoId: z6.number(),
-          cursoId: z6.number(),
-          competenciaId: z6.number(),
-          dataPrazo: z6.string().optional()
+        z7.object({
+          alunoId: z7.number(),
+          cursoId: z7.number(),
+          competenciaId: z7.number(),
+          dataPrazo: z7.string().optional()
         })
       ).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const mentorId = Number(ctx2.user.consultorId ?? ctx2.user.id);
         const [existente] = await database.select().from(alunoCursoAtribuido).where(
-          and7(
-            eq8(alunoCursoAtribuido.alunoId, input.alunoId),
-            eq8(alunoCursoAtribuido.cursoId, input.cursoId)
+          and9(
+            eq10(alunoCursoAtribuido.alunoId, input.alunoId),
+            eq10(alunoCursoAtribuido.cursoId, input.cursoId)
           )
         ).limit(1);
         if (existente) {
@@ -31779,7 +37303,7 @@ Responda APENAS em JSON com o formato especificado.`
             mentorId,
             dataPrazo: input.dataPrazo ? new Date(input.dataPrazo) : existente.dataPrazo,
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq8(alunoCursoAtribuido.id, existente.id));
+          }).where(eq10(alunoCursoAtribuido.id, existente.id));
           return { success: true, id: existente.id, atualizado: true };
         }
         const result = await database.insert(alunoCursoAtribuido).values({
@@ -31794,43 +37318,43 @@ Responda APENAS em JSON com o formato especificado.`
         return { success: true, id: result[0]?.insertId ?? null, atualizado: false };
       }),
       editarAtribuicao: protectedProcedure.input(
-        z6.object({
-          atribuicaoId: z6.number(),
-          dataPrazo: z6.string().optional(),
-          status: z6.enum(["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).optional()
+        z7.object({
+          atribuicaoId: z7.number(),
+          dataPrazo: z7.string().optional(),
+          status: z7.enum(["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).optional()
         })
       ).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const updateData = { updatedAt: /* @__PURE__ */ new Date() };
         if (input.dataPrazo) updateData.dataPrazo = new Date(input.dataPrazo);
         if (input.status) updateData.status = input.status;
-        await database.update(alunoCursoAtribuido).set(updateData).where(eq8(alunoCursoAtribuido.id, input.atribuicaoId));
+        await database.update(alunoCursoAtribuido).set(updateData).where(eq10(alunoCursoAtribuido.id, input.atribuicaoId));
         return { success: true };
       }),
-      removerAtribuicao: protectedProcedure.input(z6.object({ atribuicaoId: z6.number() })).mutation(async ({ ctx: ctx2, input }) => {
+      removerAtribuicao: protectedProcedure.input(z7.object({ atribuicaoId: z7.number() })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
-        await database.delete(alunoCursoAtribuido).where(eq8(alunoCursoAtribuido.id, input.atribuicaoId));
+        await database.delete(alunoCursoAtribuido).where(eq10(alunoCursoAtribuido.id, input.atribuicaoId));
         return { success: true };
       }),
       // === LIBERAR TENTATIVAS (ADMIN) - Reset de tentativas para aluno refazer curso/prova ===
-      liberarTentativas: protectedProcedure.input(z6.object({
-        cursoAtribuidoId: z6.number(),
-        alunoId: z6.number()
+      liberarTentativas: protectedProcedure.input(z7.object({
+        cursoAtribuidoId: z7.number(),
+        alunoId: z7.number()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
         const progressos = await database.select().from(alunoAtividadeProgresso).where(
-          and7(
-            eq8(alunoAtividadeProgresso.alunoId, input.alunoId),
-            eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
+          and9(
+            eq10(alunoAtividadeProgresso.alunoId, input.alunoId),
+            eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
           )
         );
         for (const prog of progressos) {
@@ -31842,19 +37366,19 @@ Responda APENAS em JSON com o formato especificado.`
               aprovado: 0,
               avaliacaoLiberada: 0,
               updatedAt: /* @__PURE__ */ new Date()
-            }).where(eq8(alunoAtividadeProgresso.id, prog.id));
+            }).where(eq10(alunoAtividadeProgresso.id, prog.id));
           }
         }
-        await database.update(alunoCursoAtribuido).set({ status: "em_progresso" }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+        await database.update(alunoCursoAtribuido).set({ status: "em_progresso" }).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId));
         return { success: true, atividadesResetadas: progressos.filter((p) => p.status === "bloqueada" || p.status === "reprovada").length };
       }),
-      acompanharProgresso: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+      acompanharProgresso: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         return await database.select({
           progresso: alunoModuloProgresso,
           modulo: competenciasModulos
-        }).from(alunoModuloProgresso).leftJoin(competenciasModulos, eq8(alunoModuloProgresso.moduloId, competenciasModulos.id)).where(eq8(alunoModuloProgresso.alunoId, input.alunoId)).orderBy(desc3(alunoModuloProgresso.updatedAt));
+        }).from(alunoModuloProgresso).leftJoin(competenciasModulos, eq10(alunoModuloProgresso.moduloId, competenciasModulos.id)).where(eq10(alunoModuloProgresso.alunoId, input.alunoId)).orderBy(desc4(alunoModuloProgresso.updatedAt));
       }),
       listarTodasAtribuicoes: protectedProcedure.query(async () => {
         const database = await getDb();
@@ -31871,15 +37395,15 @@ Responda APENAS em JSON com o formato especificado.`
           dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
           cursoTitulo: cursosCompetencias.titulo,
           competenciaNome: competencias.nome
-        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(alunoCursoAtribuido.competenciaId, competencias.id)).leftJoin(alunosTable, eq8(alunoCursoAtribuido.alunoId, alunosTable.id)).orderBy(desc3(alunoCursoAtribuido.dataAtribuicao));
+        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq10(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq10(alunoCursoAtribuido.competenciaId, competencias.id)).leftJoin(alunosTable, eq10(alunoCursoAtribuido.alunoId, alunosTable.id)).orderBy(desc4(alunoCursoAtribuido.dataAtribuicao));
         const resultado = await Promise.all(cursos.map(async (curso) => {
           const progressos = await database.select({
             status: alunoAtividadeProgresso.status,
             iniciadoEm: alunoAtividadeProgresso.iniciadoEm
           }).from(alunoAtividadeProgresso).where(
-            and7(
-              eq8(alunoAtividadeProgresso.alunoId, curso.alunoId),
-              eq8(alunoAtividadeProgresso.cursoAtribuidoId, curso.id)
+            and9(
+              eq10(alunoAtividadeProgresso.alunoId, curso.alunoId),
+              eq10(alunoAtividadeProgresso.cursoAtribuidoId, curso.id)
             )
           );
           const datasInicio = progressos.map((p) => p.iniciadoEm).filter((d) => d != null);
@@ -31899,7 +37423,7 @@ Responda APENAS em JSON com o formato especificado.`
         }));
         return resultado;
       }),
-      listarCursosAtribuidosAoAluno: protectedProcedure.input(z6.object({ alunoId: z6.number() })).query(async ({ input }) => {
+      listarCursosAtribuidosAoAluno: protectedProcedure.input(z7.object({ alunoId: z7.number() })).query(async ({ input }) => {
         const database = await getDb();
         if (!database) return [];
         const cursos = await database.select({
@@ -31912,13 +37436,13 @@ Responda APENAS em JSON com o formato especificado.`
           dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
           cursoTitulo: cursosCompetencias.titulo,
           competenciaNome: competencias.nome
-        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(alunoCursoAtribuido.competenciaId, competencias.id)).where(eq8(alunoCursoAtribuido.alunoId, input.alunoId)).orderBy(desc3(alunoCursoAtribuido.dataAtribuicao));
+        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq10(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq10(alunoCursoAtribuido.competenciaId, competencias.id)).where(eq10(alunoCursoAtribuido.alunoId, input.alunoId)).orderBy(desc4(alunoCursoAtribuido.dataAtribuicao));
         const resultado = await Promise.all(cursos.map(async (curso) => {
           const atividadesBloqueadas = await database.select().from(alunoAtividadeProgresso).where(
-            and7(
-              eq8(alunoAtividadeProgresso.alunoId, input.alunoId),
-              eq8(alunoAtividadeProgresso.cursoAtribuidoId, curso.id),
-              eq8(alunoAtividadeProgresso.status, "bloqueada")
+            and9(
+              eq10(alunoAtividadeProgresso.alunoId, input.alunoId),
+              eq10(alunoAtividadeProgresso.cursoAtribuidoId, curso.id),
+              eq10(alunoAtividadeProgresso.status, "bloqueada")
             )
           );
           return {
@@ -31940,7 +37464,7 @@ Responda APENAS em JSON com o formato especificado.`
           atribuicao: alunoCursoAtribuido,
           curso: cursosCompetencias,
           competencia: competencias
-        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(alunoCursoAtribuido.competenciaId, competencias.id)).where(eq8(alunoCursoAtribuido.alunoId, aluno.id)).orderBy(desc3(alunoCursoAtribuido.dataAtribuicao));
+        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq10(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq10(alunoCursoAtribuido.competenciaId, competencias.id)).where(eq10(alunoCursoAtribuido.alunoId, aluno.id)).orderBy(desc4(alunoCursoAtribuido.dataAtribuicao));
       }),
       getCursosAtribuidos: protectedProcedure.query(async ({ ctx: ctx2 }) => {
         const database = await getDb();
@@ -31951,7 +37475,7 @@ Responda APENAS em JSON com o formato especificado.`
           atribuicao: alunoCursoAtribuido,
           curso: cursosCompetencias,
           competencia: competencias
-        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(cursosCompetencias.competenciaId, competencias.id)).where(eq8(alunoCursoAtribuido.alunoId, aluno.id)).orderBy(desc3(alunoCursoAtribuido.dataAtribuicao));
+        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq10(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq10(cursosCompetencias.competenciaId, competencias.id)).where(eq10(alunoCursoAtribuido.alunoId, aluno.id)).orderBy(desc4(alunoCursoAtribuido.dataAtribuicao));
         const cursosUnicos = /* @__PURE__ */ new Map();
         for (const resultado of resultados) {
           const chave = resultado.atribuicao.id;
@@ -31961,7 +37485,7 @@ Responda APENAS em JSON com o formato especificado.`
         }
         return Array.from(cursosUnicos.values());
       }),
-      detalheCurso: protectedProcedure.input(z6.object({ moduloId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+      detalheCurso: protectedProcedure.input(z7.object({ moduloId: z7.number() })).query(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) return null;
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
@@ -31969,15 +37493,15 @@ Responda APENAS em JSON com o formato especificado.`
         const [curso] = await database.select({
           progresso: alunoModuloProgresso,
           modulo: competenciasModulos
-        }).from(alunoModuloProgresso).leftJoin(competenciasModulos, eq8(alunoModuloProgresso.moduloId, competenciasModulos.id)).where(
-          and7(
-            eq8(alunoModuloProgresso.alunoId, aluno.id),
-            eq8(alunoModuloProgresso.moduloId, input.moduloId)
+        }).from(alunoModuloProgresso).leftJoin(competenciasModulos, eq10(alunoModuloProgresso.moduloId, competenciasModulos.id)).where(
+          and9(
+            eq10(alunoModuloProgresso.alunoId, aluno.id),
+            eq10(alunoModuloProgresso.moduloId, input.moduloId)
           )
         ).limit(1);
         return curso ?? null;
       }),
-      detalheCursoAtribuido: protectedProcedure.input(z6.object({ cursoId: z6.number(), cursoAtribuidoId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+      detalheCursoAtribuido: protectedProcedure.input(z7.object({ cursoId: z7.number(), cursoAtribuidoId: z7.number() })).query(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) return null;
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
@@ -31986,56 +37510,56 @@ Responda APENAS em JSON com o formato especificado.`
           curso: cursosCompetencias,
           atribuicao: alunoCursoAtribuido,
           competencia: competencias
-        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq8(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq8(cursosCompetencias.competenciaId, competencias.id)).where(
-          and7(
-            eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
-            eq8(alunoCursoAtribuido.alunoId, aluno.id),
-            eq8(alunoCursoAtribuido.cursoId, input.cursoId)
+        }).from(alunoCursoAtribuido).leftJoin(cursosCompetencias, eq10(alunoCursoAtribuido.cursoId, cursosCompetencias.id)).leftJoin(competencias, eq10(cursosCompetencias.competenciaId, competencias.id)).where(
+          and9(
+            eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+            eq10(alunoCursoAtribuido.alunoId, aluno.id),
+            eq10(alunoCursoAtribuido.cursoId, input.cursoId)
           )
         ).limit(1);
         return resultado ?? null;
       }),
-      obterAtividadesCurso: protectedProcedure.input(z6.object({
-        cursoId: z6.number().int().positive(),
-        cursoAtribuidoId: z6.number().int().positive()
+      obterAtividadesCurso: protectedProcedure.input(z7.object({
+        cursoId: z7.number().int().positive(),
+        cursoAtribuidoId: z7.number().int().positive()
       })).query(async ({ ctx: ctx2, input }) => {
         const userId = ctx2.user?.id;
         if (!userId) {
-          throw new TRPCError6({ code: "UNAUTHORIZED" });
+          throw new TRPCError7({ code: "UNAUTHORIZED" });
         }
         const database = await getDb();
         if (!database) return [];
-        const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
+        const [user] = await database.select().from(users).where(eq10(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Aluno n\xE3o identificado." });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Aluno n\xE3o identificado." });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
-          and7(
-            eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
-            eq8(alunoCursoAtribuido.alunoId, user.alunoId),
-            eq8(alunoCursoAtribuido.cursoId, input.cursoId)
+          and9(
+            eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+            eq10(alunoCursoAtribuido.alunoId, user.alunoId),
+            eq10(alunoCursoAtribuido.cursoId, input.cursoId)
           )
         ).limit(1);
         if (!atribuicao) {
-          throw new TRPCError6({ code: "NOT_FOUND", message: "Curso atribu\xEDdo n\xE3o encontrado." });
+          throw new TRPCError7({ code: "NOT_FOUND", message: "Curso atribu\xEDdo n\xE3o encontrado." });
         }
         let nomeCompetencia = null;
         if (atribuicao.competenciaId) {
-          const [comp] = await database.select({ nome: competencias.nome }).from(competencias).where(eq8(competencias.id, atribuicao.competenciaId)).limit(1);
+          const [comp] = await database.select({ nome: competencias.nome }).from(competencias).where(eq10(competencias.id, atribuicao.competenciaId)).limit(1);
           nomeCompetencia = comp?.nome ?? null;
         }
-        const atividades = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
+        const atividades = await database.select().from(atividadesCurso).where(eq10(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
         const progressos = await database.select().from(alunoAtividadeProgresso).where(
-          and7(
-            eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-            eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
+          and9(
+            eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+            eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
           )
         );
         const atividadeIds = atividades.map((atividade) => atividade.id);
         const avaliacoes = atividadeIds.length === 0 ? [] : await database.select().from(avaliacoesAtividade).where(
-          and7(
-            eq8(avaliacoesAtividade.isActive, 1),
-            inArray4(avaliacoesAtividade.atividadeId, atividadeIds)
+          and9(
+            eq10(avaliacoesAtividade.isActive, 1),
+            inArray5(avaliacoesAtividade.atividadeId, atividadeIds)
           )
         );
         const progressoMap = new Map(progressos.map((p) => [p.atividadeId, p]));
@@ -32077,89 +37601,56 @@ Responda APENAS em JSON com o formato especificado.`
           };
         });
       }),
-      previewCurso: adminOrAdmin2Procedure.input(z6.object({ cursoId: z6.number().int().positive() })).query(async ({ input }) => {
-        const database = await getDb();
-        if (!database) return [];
-        const atividades = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
-        const atividadeIds = atividades.map((a) => a.id);
-        const avaliacoes = atividadeIds.length === 0 ? [] : await database.select().from(avaliacoesAtividade).where(
-          and7(
-            eq8(avaliacoesAtividade.isActive, 1),
-            inArray4(avaliacoesAtividade.atividadeId, atividadeIds)
-          )
-        );
-        const avaliacaoMap = new Map(avaliacoes.map((a) => [a.atividadeId, a]));
-        return atividades.map((atividade, index) => ({
-          id: atividade.id,
-          titulo: atividade.titulo,
-          descricao: atividade.descricao,
-          ordem: atividade.ordem ?? index + 1,
-          imagemUrl: atividade.imagemUrl ?? null,
-          urlGenially: atividade.urlGenially ?? null,
-          urlMidia: atividade.urlMidia ?? null,
-          status: "disponivel",
-          notaFinal: null,
-          tentativas: 0,
-          avaliacaoId: avaliacaoMap.get(atividade.id)?.id ?? null,
-          temAvaliacao: !!avaliacaoMap.get(atividade.id),
-          avaliacaoLiberada: true,
-          permitirAberturaExterna: atividade.permitirAberturaExterna ?? 0,
-          duracaoEstimadaMinutos: atividade.duracaoEstimadaMinutos ?? null,
-          duracaoRealMinutos: null,
-          iniciadoEm: null,
-          concluidoEm: null
-        }));
-      }),
-      iniciarAtividade: protectedProcedure.input(z6.object({
-        cursoId: z6.number(),
-        cursoAtribuidoId: z6.number(),
-        atividadeId: z6.number()
+      iniciarAtividade: protectedProcedure.input(z7.object({
+        cursoId: z7.number(),
+        cursoAtribuidoId: z7.number(),
+        atividadeId: z7.number()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "INTERNAL_SERVER_ERROR",
             message: "Banco de dados indispon\xEDvel"
           });
         }
         const userId = Number(ctx2.user?.id ?? 0);
         if (!userId) {
-          throw new TRPCError6({ code: "UNAUTHORIZED" });
+          throw new TRPCError7({ code: "UNAUTHORIZED" });
         }
-        const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
+        const [user] = await database.select().from(users).where(eq10(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError6({ code: "FORBIDDEN" });
+          throw new TRPCError7({ code: "FORBIDDEN" });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
-          and7(
-            eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
-            eq8(alunoCursoAtribuido.alunoId, user.alunoId),
-            eq8(alunoCursoAtribuido.cursoId, input.cursoId)
+          and9(
+            eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+            eq10(alunoCursoAtribuido.alunoId, user.alunoId),
+            eq10(alunoCursoAtribuido.cursoId, input.cursoId)
           )
         ).limit(1);
         if (!atribuicao) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "NOT_FOUND",
             message: "Curso atribu\xEDdo n\xE3o encontrado."
           });
         }
         const [atividade] = await database.select().from(atividadesCurso).where(
-          and7(
-            eq8(atividadesCurso.id, input.atividadeId),
-            eq8(atividadesCurso.cursoId, input.cursoId)
+          and9(
+            eq10(atividadesCurso.id, input.atividadeId),
+            eq10(atividadesCurso.cursoId, input.cursoId)
           )
         ).limit(1);
         if (!atividade) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "NOT_FOUND",
             message: "Atividade n\xE3o encontrada."
           });
         }
         const [existente] = await database.select().from(alunoAtividadeProgresso).where(
-          and7(
-            eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-            eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-            eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+          and9(
+            eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+            eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+            eq10(alunoAtividadeProgresso.atividadeId, input.atividadeId)
           )
         ).limit(1);
         const tempoMinimoExigidoSegundos = Number(existente?.tempoMinimoExigidoSegundos ?? 0) > 0 ? Number(existente?.tempoMinimoExigidoSegundos ?? 0) : calcularTempoMinimoExigidoSegundos(atividade);
@@ -32195,14 +37686,14 @@ Responda APENAS em JSON com o formato especificado.`
             tempoCumpridoEm: resumoTempoAtual.tempoCumprido && !existente.tempoCumpridoEm ? /* @__PURE__ */ new Date() : existente.tempoCumpridoEm ?? null,
             liberadoParaAvaliacaoEm: resumoTempoAtual.liberadoParaAvaliacao && !existente.liberadoParaAvaliacaoEm ? /* @__PURE__ */ new Date() : existente.liberadoParaAvaliacaoEm ?? null,
             updatedAt: /* @__PURE__ */ new Date()
-          }).where(eq8(alunoAtividadeProgresso.id, existente.id));
+          }).where(eq10(alunoAtividadeProgresso.id, existente.id));
         }
         const [sessaoAtiva] = await database.select().from(sessoesEstudoAtividade).where(
-          and7(
-            eq8(sessoesEstudoAtividade.alunoId, user.alunoId),
-            eq8(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
-            eq8(sessoesEstudoAtividade.atividadeId, input.atividadeId),
-            eq8(sessoesEstudoAtividade.statusSessao, "ativa")
+          and9(
+            eq10(sessoesEstudoAtividade.alunoId, user.alunoId),
+            eq10(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+            eq10(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+            eq10(sessoesEstudoAtividade.statusSessao, "ativa")
           )
         ).limit(1);
         if (!sessaoAtiva) {
@@ -32216,9 +37707,9 @@ Responda APENAS em JSON com o formato especificado.`
           });
         }
         if (atribuicao.status === "nao_iniciado") {
-          await database.update(alunoCursoAtribuido).set({ status: "em_progresso" }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+          await database.update(alunoCursoAtribuido).set({ status: "em_progresso" }).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId));
         }
-        const [avaliacao] = await database.select().from(avaliacoesAtividade).where(eq8(avaliacoesAtividade.atividadeId, input.atividadeId)).limit(1);
+        const [avaliacao] = await database.select().from(avaliacoesAtividade).where(eq10(avaliacoesAtividade.atividadeId, input.atividadeId)).limit(1);
         if (!avaliacao) {
           return {
             success: true,
@@ -32272,42 +37763,42 @@ Responda APENAS em JSON com o formato especificado.`
           }
         };
       }),
-      registrarHeartbeatAtividade: protectedProcedure.input(z6.object({
-        cursoAtribuidoId: z6.number(),
-        atividadeId: z6.number(),
-        segundosAtivos: z6.number().optional()
+      registrarHeartbeatAtividade: protectedProcedure.input(z7.object({
+        cursoAtribuidoId: z7.number(),
+        atividadeId: z7.number(),
+        segundosAtivos: z7.number().optional()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "INTERNAL_SERVER_ERROR",
             message: "Banco de dados indispon\xEDvel"
           });
         }
         const userId = Number(ctx2.user?.id ?? 0);
         if (!userId) {
-          throw new TRPCError6({ code: "UNAUTHORIZED" });
+          throw new TRPCError7({ code: "UNAUTHORIZED" });
         }
-        const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
+        const [user] = await database.select().from(users).where(eq10(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError6({ code: "FORBIDDEN" });
+          throw new TRPCError7({ code: "FORBIDDEN" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
-          and7(
-            eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-            eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-            eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+          and9(
+            eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+            eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+            eq10(alunoAtividadeProgresso.atividadeId, input.atividadeId)
           )
         ).limit(1);
         if (!progresso) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "NOT_FOUND",
             message: "Progresso n\xE3o encontrado. Inicie a atividade primeiro."
           });
         }
-        const [atividade] = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
+        const [atividade] = await database.select().from(atividadesCurso).where(eq10(atividadesCurso.id, input.atividadeId)).limit(1);
         if (!atividade) {
-          throw new TRPCError6({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada." });
+          throw new TRPCError7({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada." });
         }
         const segundosParaSomar = normalizarSegundosHeartbeat(input.segundosAtivos);
         const agora = /* @__PURE__ */ new Date();
@@ -32327,89 +37818,89 @@ Responda APENAS em JSON com o formato especificado.`
           tempoCumpridoEm: resumo.tempoCumprido && !progresso.tempoCumpridoEm ? agora : progresso.tempoCumpridoEm,
           liberadoParaAvaliacaoEm: resumo.liberadoParaAvaliacao && !progresso.liberadoParaAvaliacaoEm ? agora : progresso.liberadoParaAvaliacaoEm,
           updatedAt: agora
-        }).where(eq8(alunoAtividadeProgresso.id, progresso.id));
+        }).where(eq10(alunoAtividadeProgresso.id, progresso.id));
         const [sessaoAtiva] = await database.select().from(sessoesEstudoAtividade).where(
-          and7(
-            eq8(sessoesEstudoAtividade.alunoId, user.alunoId),
-            eq8(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
-            eq8(sessoesEstudoAtividade.atividadeId, input.atividadeId),
-            eq8(sessoesEstudoAtividade.statusSessao, "ativa")
+          and9(
+            eq10(sessoesEstudoAtividade.alunoId, user.alunoId),
+            eq10(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+            eq10(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+            eq10(sessoesEstudoAtividade.statusSessao, "ativa")
           )
         ).limit(1);
         if (sessaoAtiva && deveSomarTempo) {
           await database.update(sessoesEstudoAtividade).set({
             tempoAtivoSegundos: Number(sessaoAtiva.tempoAtivoSegundos ?? 0) + segundosParaSomar,
             ultimaBatidaEm: agora
-          }).where(eq8(sessoesEstudoAtividade.id, sessaoAtiva.id));
+          }).where(eq10(sessoesEstudoAtividade.id, sessaoAtiva.id));
         }
         return {
           success: true,
           tempo: resumo
         };
       }),
-      pausarSessaoAtividade: protectedProcedure.input(z6.object({
-        cursoAtribuidoId: z6.number(),
-        atividadeId: z6.number()
+      pausarSessaoAtividade: protectedProcedure.input(z7.object({
+        cursoAtribuidoId: z7.number(),
+        atividadeId: z7.number()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR" });
         }
         const userId = Number(ctx2.user?.id ?? 0);
-        const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
-        if (!user?.alunoId) throw new TRPCError6({ code: "FORBIDDEN" });
+        const [user] = await database.select().from(users).where(eq10(users.id, userId)).limit(1);
+        if (!user?.alunoId) throw new TRPCError7({ code: "FORBIDDEN" });
         await database.update(sessoesEstudoAtividade).set({
           statusSessao: "pausada",
           encerradaEm: /* @__PURE__ */ new Date()
         }).where(
-          and7(
-            eq8(sessoesEstudoAtividade.alunoId, user.alunoId),
-            eq8(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
-            eq8(sessoesEstudoAtividade.atividadeId, input.atividadeId),
-            eq8(sessoesEstudoAtividade.statusSessao, "ativa")
+          and9(
+            eq10(sessoesEstudoAtividade.alunoId, user.alunoId),
+            eq10(sessoesEstudoAtividade.cursoAtribuidoId, input.cursoAtribuidoId),
+            eq10(sessoesEstudoAtividade.atividadeId, input.atividadeId),
+            eq10(sessoesEstudoAtividade.statusSessao, "ativa")
           )
         );
         return { success: true };
       }),
-      concluirAtividade: protectedProcedure.input(z6.object({
-        cursoId: z6.number().int().positive(),
-        cursoAtribuidoId: z6.number().int().positive(),
-        atividadeId: z6.number().int().positive()
+      concluirAtividade: protectedProcedure.input(z7.object({
+        cursoId: z7.number().int().positive(),
+        cursoAtribuidoId: z7.number().int().positive(),
+        atividadeId: z7.number().int().positive()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const userId = ctx2.user?.id;
         if (!userId) {
-          throw new TRPCError6({ code: "UNAUTHORIZED" });
+          throw new TRPCError7({ code: "UNAUTHORIZED" });
         }
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
-        const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
+        const [user] = await database.select().from(users).where(eq10(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError6({ code: "FORBIDDEN" });
+          throw new TRPCError7({ code: "FORBIDDEN" });
         }
-        const [atividade] = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
+        const [atividade] = await database.select().from(atividadesCurso).where(eq10(atividadesCurso.id, input.atividadeId)).limit(1);
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
-          and7(
-            eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-            eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-            eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+          and9(
+            eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+            eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+            eq10(alunoAtividadeProgresso.atividadeId, input.atividadeId)
           )
         ).limit(1);
         if (!progresso) {
-          throw new TRPCError6({ code: "NOT_FOUND", message: "Progresso da atividade n\xE3o encontrado" });
+          throw new TRPCError7({ code: "NOT_FOUND", message: "Progresso da atividade n\xE3o encontrado" });
         }
         const resumo = montarResumoTempo(atividade || {}, progresso);
         if (resumo.bloqueioPorTempo === 1) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "FORBIDDEN",
             message: "Conclus\xE3o bloqueada. Tempo m\xEDnimo n\xE3o cumprido."
           });
         }
         const [avaliacaoExistente] = await database.select({ id: avaliacoesAtividade.id }).from(avaliacoesAtividade).where(
-          and7(
-            eq8(avaliacoesAtividade.atividadeId, input.atividadeId),
-            eq8(avaliacoesAtividade.isActive, 1)
+          and9(
+            eq10(avaliacoesAtividade.atividadeId, input.atividadeId),
+            eq10(avaliacoesAtividade.isActive, 1)
           )
         ).limit(1);
         const temAvaliacao = !!avaliacaoExistente;
@@ -32420,17 +37911,17 @@ Responda APENAS em JSON com o formato especificado.`
           avaliacaoLiberada: resumo.liberadoParaAvaliacao ? 1 : 0,
           bloqueioPorTempo: resumo.bloqueioPorTempo,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq8(alunoAtividadeProgresso.id, progresso.id));
+        }).where(eq10(alunoAtividadeProgresso.id, progresso.id));
         if (!temAvaliacao) {
-          const atividades = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
+          const atividades = await database.select().from(atividadesCurso).where(eq10(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
           const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
           const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1 ? atividades[atividadeIndex + 1] : null;
           if (proximaAtividade) {
             const [proximaJaExiste] = await database.select().from(alunoAtividadeProgresso).where(
-              and7(
-                eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-                eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-                eq8(alunoAtividadeProgresso.atividadeId, proximaAtividade.id)
+              and9(
+                eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+                eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+                eq10(alunoAtividadeProgresso.atividadeId, proximaAtividade.id)
               )
             ).limit(1);
             if (!proximaJaExiste) {
@@ -32445,9 +37936,9 @@ Responda APENAS em JSON com o formato especificado.`
             }
           }
           const todasAsAtividades = await database.select().from(alunoAtividadeProgresso).where(
-            and7(
-              eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-              eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
+            and9(
+              eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+              eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
             )
           );
           const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
@@ -32455,68 +37946,68 @@ Responda APENAS em JSON com o formato especificado.`
             await database.update(alunoCursoAtribuido).set({
               status: "concluido",
               dataConclusao: /* @__PURE__ */ new Date()
-            }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+            }).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId));
           }
           await syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
         }
         return { success: true, aprovadaAutomaticamente: !temAvaliacao };
       }),
-      obterAvaliacaoDaAtividade: protectedProcedure.input(z6.object({
-        cursoId: z6.number().int().min(1, "cursoId inv\xE1lido"),
-        cursoAtribuidoId: z6.number().int().min(1, "cursoAtribuidoId inv\xE1lido"),
-        atividadeId: z6.number().int().min(1, "atividadeId inv\xE1lido"),
-        avaliacaoId: z6.number().int().min(1, "avaliacaoId inv\xE1lido")
+      obterAvaliacaoDaAtividade: protectedProcedure.input(z7.object({
+        cursoId: z7.number().int().min(1, "cursoId inv\xE1lido"),
+        cursoAtribuidoId: z7.number().int().min(1, "cursoAtribuidoId inv\xE1lido"),
+        atividadeId: z7.number().int().min(1, "atividadeId inv\xE1lido"),
+        avaliacaoId: z7.number().int().min(1, "avaliacaoId inv\xE1lido")
       })).query(async ({ ctx: ctx2, input }) => {
         const userId = ctx2.user?.id;
         if (!userId) {
-          throw new TRPCError6({ code: "UNAUTHORIZED" });
+          throw new TRPCError7({ code: "UNAUTHORIZED" });
         }
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
-        const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
+        const [user] = await database.select().from(users).where(eq10(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Usu\xE1rio n\xE3o \xE9 um aluno" });
         }
         const [atribuicao] = await database.select().from(alunoCursoAtribuido).where(
-          and7(
-            eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
-            eq8(alunoCursoAtribuido.alunoId, user.alunoId),
-            eq8(alunoCursoAtribuido.cursoId, input.cursoId)
+          and9(
+            eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+            eq10(alunoCursoAtribuido.alunoId, user.alunoId),
+            eq10(alunoCursoAtribuido.cursoId, input.cursoId)
           )
         ).limit(1);
         if (!atribuicao) {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Curso n\xE3o atribu\xEDdo a este aluno" });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Curso n\xE3o atribu\xEDdo a este aluno" });
         }
         const [atividade] = await database.select().from(atividadesCurso).where(
-          and7(
-            eq8(atividadesCurso.id, input.atividadeId),
-            eq8(atividadesCurso.cursoId, input.cursoId)
+          and9(
+            eq10(atividadesCurso.id, input.atividadeId),
+            eq10(atividadesCurso.cursoId, input.cursoId)
           )
         ).limit(1);
         if (!atividade) {
-          throw new TRPCError6({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada neste curso" });
+          throw new TRPCError7({ code: "NOT_FOUND", message: "Atividade n\xE3o encontrada neste curso" });
         }
         const [avaliacao] = await database.select().from(avaliacoesAtividade).where(
-          and7(
-            eq8(avaliacoesAtividade.id, input.avaliacaoId),
-            eq8(avaliacoesAtividade.atividadeId, input.atividadeId)
+          and9(
+            eq10(avaliacoesAtividade.id, input.avaliacaoId),
+            eq10(avaliacoesAtividade.atividadeId, input.atividadeId)
           )
         ).limit(1);
         if (!avaliacao) {
-          throw new TRPCError6({ code: "NOT_FOUND", message: "Avalia\xE7\xE3o n\xE3o encontrada para esta atividade" });
+          throw new TRPCError7({ code: "NOT_FOUND", message: "Avalia\xE7\xE3o n\xE3o encontrada para esta atividade" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
-          and7(
-            eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-            eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-            eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+          and9(
+            eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+            eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+            eq10(alunoAtividadeProgresso.atividadeId, input.atividadeId)
           )
         ).limit(1);
         const resumo = montarResumoTempo(atividade, progresso);
         if (resumo.bloqueioPorTempo === 1) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "FORBIDDEN",
             message: `Avalia\xE7\xE3o bloqueada por tempo. Faltam ${Math.ceil(resumo.tempoRestanteSegundos / 60)} minutos.`
           });
@@ -32532,45 +38023,45 @@ Responda APENAS em JSON com o formato especificado.`
           }
         };
       }),
-      submeterAvaliacao: protectedProcedure.input(z6.object({
-        cursoId: z6.number().int().positive(),
-        cursoAtribuidoId: z6.number().int().positive(),
-        atividadeId: z6.number().int().positive(),
-        nota: z6.number().min(0).max(10),
-        respostas: z6.any().optional()
+      submeterAvaliacao: protectedProcedure.input(z7.object({
+        cursoId: z7.number().int().positive(),
+        cursoAtribuidoId: z7.number().int().positive(),
+        atividadeId: z7.number().int().positive(),
+        nota: z7.number().min(0).max(10),
+        respostas: z7.any().optional()
       })).mutation(async ({ ctx: ctx2, input }) => {
         const userId = ctx2.user?.id;
         if (!userId) {
-          throw new TRPCError6({ code: "UNAUTHORIZED" });
+          throw new TRPCError7({ code: "UNAUTHORIZED" });
         }
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
         }
-        const [user] = await database.select().from(users).where(eq8(users.id, userId)).limit(1);
+        const [user] = await database.select().from(users).where(eq10(users.id, userId)).limit(1);
         if (!user?.alunoId) {
-          throw new TRPCError6({ code: "FORBIDDEN" });
+          throw new TRPCError7({ code: "FORBIDDEN" });
         }
         const [progresso] = await database.select().from(alunoAtividadeProgresso).where(
-          and7(
-            eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-            eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-            eq8(alunoAtividadeProgresso.atividadeId, input.atividadeId)
+          and9(
+            eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+            eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+            eq10(alunoAtividadeProgresso.atividadeId, input.atividadeId)
           )
         ).limit(1);
         if (!progresso) {
-          throw new TRPCError6({ code: "NOT_FOUND", message: "Progresso da atividade n\xE3o encontrado" });
+          throw new TRPCError7({ code: "NOT_FOUND", message: "Progresso da atividade n\xE3o encontrado" });
         }
-        const [atividade] = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
+        const [atividade] = await database.select().from(atividadesCurso).where(eq10(atividadesCurso.id, input.atividadeId)).limit(1);
         const resumo = montarResumoTempo(atividade || {}, progresso);
         if (resumo.bloqueioPorTempo === 1) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "FORBIDDEN",
             message: "Submiss\xE3o bloqueada. Tempo m\xEDnimo n\xE3o cumprido."
           });
         }
         if (!progresso.avaliacaoLiberada && !resumo.liberadoParaAvaliacao) {
-          throw new TRPCError6({ code: "FORBIDDEN", message: "Avalia\xE7\xE3o n\xE3o foi liberada para esta atividade" });
+          throw new TRPCError7({ code: "FORBIDDEN", message: "Avalia\xE7\xE3o n\xE3o foi liberada para esta atividade" });
         }
         const notaNumerica = Number(input.nota);
         const percentualAcerto = notaNumerica / 10 * 100;
@@ -32586,16 +38077,16 @@ Responda APENAS em JSON com o formato especificado.`
           tentativas: tentativasAtuais,
           avaliacaoLiberada: novoAvaliacaoLiberada,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where(eq8(alunoAtividadeProgresso.id, progresso.id));
-        const atividades = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
+        }).where(eq10(alunoAtividadeProgresso.id, progresso.id));
+        const atividades = await database.select().from(atividadesCurso).where(eq10(atividadesCurso.cursoId, input.cursoId)).orderBy(asc3(atividadesCurso.ordem), asc3(atividadesCurso.id));
         const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
         const proximaAtividade = atividadeIndex >= 0 && atividadeIndex < atividades.length - 1 ? atividades[atividadeIndex + 1] : null;
         if (aprovado && proximaAtividade) {
           const [proximaJaExiste] = await database.select().from(alunoAtividadeProgresso).where(
-            and7(
-              eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-              eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
-              eq8(alunoAtividadeProgresso.atividadeId, proximaAtividade.id)
+            and9(
+              eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+              eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId),
+              eq10(alunoAtividadeProgresso.atividadeId, proximaAtividade.id)
             )
           ).limit(1);
           if (!proximaJaExiste) {
@@ -32610,16 +38101,16 @@ Responda APENAS em JSON com o formato especificado.`
           }
         }
         const todasAsAtividades = await database.select().from(alunoAtividadeProgresso).where(
-          and7(
-            eq8(alunoAtividadeProgresso.alunoId, user.alunoId),
-            eq8(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
+          and9(
+            eq10(alunoAtividadeProgresso.alunoId, user.alunoId),
+            eq10(alunoAtividadeProgresso.cursoAtribuidoId, input.cursoAtribuidoId)
           )
         );
         const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
         if (todasAprovadas && todasAsAtividades.length === atividades.length) {
           await database.update(alunoCursoAtribuido).set({
             status: "concluido"
-          }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+          }).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId));
         }
         if (aprovado) {
           await syncStudentPerformanceFromPlatform(user.alunoId, input.cursoAtribuidoId);
@@ -32631,13 +38122,13 @@ Responda APENAS em JSON com o formato especificado.`
             const alunoData = await getAlunoById(user.alunoId);
             const alunoNome = alunoData?.name || "Aluno";
             const alunoEmail = alunoData?.email || "";
-            const [cursoAtrib] = await database.select().from(alunoCursoAtribuido).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId)).limit(1);
+            const [cursoAtrib] = await database.select().from(alunoCursoAtribuido).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId)).limit(1);
             const mentorData = cursoAtrib?.mentorId ? await getConsultorById(cursoAtrib.mentorId) : null;
             const mentorEmail = mentorData?.email || "";
             const mentorNome = mentorData?.name || "Mentor";
-            const [atividadeData] = await database.select().from(atividadesCurso).where(eq8(atividadesCurso.id, input.atividadeId)).limit(1);
+            const [atividadeData] = await database.select().from(atividadesCurso).where(eq10(atividadesCurso.id, input.atividadeId)).limit(1);
             const atividadeNome = atividadeData?.titulo || "Atividade";
-            const [cursoData] = cursoAtrib?.cursoId ? await database.select().from(cursosCompetencias).where(eq8(cursosCompetencias.id, cursoAtrib.cursoId)).limit(1) : [null];
+            const [cursoData] = cursoAtrib?.cursoId ? await database.select().from(cursosCompetencias).where(eq10(cursosCompetencias.id, cursoAtrib.cursoId)).limit(1) : [null];
             const cursoNome = cursoData?.titulo || "Curso";
             const subject = `[ECOSSISTEMA DO BEM] Aluno bloqueado - ${alunoNome} precisa de orienta\xE7\xE3o`;
             const html = `
@@ -32712,57 +38203,57 @@ Responda APENAS em JSON com o formato especificado.`
           mensagem: bloqueado ? "Voc\xEA atingiu o limite de 3 tentativas. Por favor, fale com seu mentor." : aprovado ? "Parab\xE9ns! Voc\xEA atingiu 80% de acerto!" : `Voc\xEA n\xE3o atingiu 80% de acerto. Acertos: ${percentualAcerto.toFixed(1)}%. Tentativas restantes: ${tentativasRestantes}`
         };
       }),
-      minhasTentativas: protectedProcedure.input(z6.object({ moduloId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+      minhasTentativas: protectedProcedure.input(z7.object({ moduloId: z7.number() })).query(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) return [];
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
         if (!aluno) return [];
         return await database.select().from(alunoModuloAvaliacao).where(
-          and7(
-            eq8(alunoModuloAvaliacao.alunoId, aluno.id),
-            eq8(alunoModuloAvaliacao.moduloId, input.moduloId)
+          and9(
+            eq10(alunoModuloAvaliacao.alunoId, aluno.id),
+            eq10(alunoModuloAvaliacao.moduloId, input.moduloId)
           )
-        ).orderBy(desc3(alunoModuloAvaliacao.createdAt));
+        ).orderBy(desc4(alunoModuloAvaliacao.createdAt));
       }),
       registrarReflexaoFinal: protectedProcedure.input(
-        z6.object({
-          cursoAtribuidoId: z6.number(),
-          relato: z6.string().min(1)
+        z7.object({
+          cursoAtribuidoId: z7.number(),
+          relato: z7.string().min(1)
         })
       ).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "INTERNAL_SERVER_ERROR",
             message: "Banco indispon\xEDvel"
           });
         }
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
         if (!aluno) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "NOT_FOUND",
             message: "Aluno n\xE3o encontrado"
           });
         }
         const [cursoAtribuido] = await database.select().from(alunoCursoAtribuido).where(
-          and7(
-            eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
-            eq8(alunoCursoAtribuido.alunoId, aluno.id)
+          and9(
+            eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+            eq10(alunoCursoAtribuido.alunoId, aluno.id)
           )
         ).limit(1);
         if (!cursoAtribuido) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "NOT_FOUND",
             message: "Curso atribu\xEDdo n\xE3o encontrado"
           });
         }
         const [tentativaJoin] = await database.select().from(tentativasAvaliacao).innerJoin(
           alunoCursoAtribuido,
-          and7(
-            eq8(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
-            eq8(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
+          and9(
+            eq10(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
+            eq10(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
           )
-        ).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId)).limit(1);
+        ).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId)).limit(1);
         if (tentativaJoin) {
           const tentativa = tentativaJoin.tentativas_avaliacao;
           const respostasAtuais = tentativa.respostasAluno && typeof tentativa.respostasAluno === "object" ? tentativa.respostasAluno : {};
@@ -32771,26 +38262,26 @@ Responda APENAS em JSON com o formato especificado.`
               ...respostasAtuais,
               reflexaoFinal: input.relato
             }
-          }).where(eq8(tentativasAvaliacao.id, tentativa.id));
+          }).where(eq10(tentativasAvaliacao.id, tentativa.id));
         }
         await database.update(alunoCursoAtribuido).set({
           status: "em_progresso"
-        }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+        }).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId));
         return { success: true };
       }),
-      obterUrlCurso: protectedProcedure.input(z6.object({ cursoId: z6.number() })).query(async ({ ctx: ctx2, input }) => {
+      obterUrlCurso: protectedProcedure.input(z7.object({ cursoId: z7.number() })).query(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) return null;
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
         if (!aluno) return null;
         const [cursoAtribuido] = await database.select().from(alunoCursoAtribuido).where(
-          and7(
-            eq8(alunoCursoAtribuido.alunoId, aluno.id),
-            eq8(alunoCursoAtribuido.cursoId, input.cursoId)
+          and9(
+            eq10(alunoCursoAtribuido.alunoId, aluno.id),
+            eq10(alunoCursoAtribuido.cursoId, input.cursoId)
           )
         ).limit(1);
         if (!cursoAtribuido) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "FORBIDDEN",
             message: "Acesso negado a este curso"
           });
@@ -32802,9 +38293,9 @@ Responda APENAS em JSON com o formato especificado.`
           urlGenially: atividadesCurso.urlGenially,
           urlMidia: atividadesCurso.urlMidia
         }).from(atividadesCurso).where(
-          and7(
-            eq8(atividadesCurso.cursoId, input.cursoId),
-            eq8(atividadesCurso.isActive, 1)
+          and9(
+            eq10(atividadesCurso.cursoId, input.cursoId),
+            eq10(atividadesCurso.isActive, 1)
           )
         ).orderBy(asc3(atividadesCurso.ordem)).limit(1);
         if (!atividade) {
@@ -32819,43 +38310,43 @@ Responda APENAS em JSON com o formato especificado.`
         };
       }),
       concluirCurso: protectedProcedure.input(
-        z6.object({
-          cursoAtribuidoId: z6.number()
+        z7.object({
+          cursoAtribuidoId: z7.number()
         })
       ).mutation(async ({ ctx: ctx2, input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "INTERNAL_SERVER_ERROR",
             message: "Banco indispon\xEDvel"
           });
         }
         const aluno = await getAlunoByUserId(Number(ctx2.user.id));
         if (!aluno) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "NOT_FOUND",
             message: "Aluno n\xE3o encontrado"
           });
         }
         const [cursoAtribuido] = await database.select().from(alunoCursoAtribuido).where(
-          and7(
-            eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId),
-            eq8(alunoCursoAtribuido.alunoId, aluno.id)
+          and9(
+            eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId),
+            eq10(alunoCursoAtribuido.alunoId, aluno.id)
           )
         ).limit(1);
         if (!cursoAtribuido) {
-          throw new TRPCError6({
+          throw new TRPCError7({
             code: "NOT_FOUND",
             message: "Curso atribu\xEDdo n\xE3o encontrado"
           });
         }
         const [ultimaTentativaJoin] = await database.select().from(tentativasAvaliacao).innerJoin(
           alunoCursoAtribuido,
-          and7(
-            eq8(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
-            eq8(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
+          and9(
+            eq10(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
+            eq10(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
           )
-        ).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId)).limit(1);
+        ).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId)).limit(1);
         const notaFinal = ultimaTentativaJoin?.tentativas_avaliacao?.nota ?? null;
         const notaNumerica = Number(notaFinal ?? 0);
         const aprovado = notaNumerica >= 8;
@@ -32863,7 +38354,7 @@ Responda APENAS em JSON com o formato especificado.`
           status: aprovado ? "concluido" : "em_progresso",
           notaFinal: notaNumerica.toFixed(1),
           dataConclusao: aprovado ? /* @__PURE__ */ new Date() : null
-        }).where(eq8(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+        }).where(eq10(alunoCursoAtribuido.id, input.cursoAtribuidoId));
         return {
           success: true,
           aprovado,
@@ -32871,20 +38362,20 @@ Responda APENAS em JSON com o formato especificado.`
         };
       }),
       updateAtividade: adminOrAdmin2Procedure.input(
-        z6.object({
-          id: z6.number(),
-          titulo: z6.string(),
-          tipoAtividade: z6.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro"]),
-          urlGenially: z6.string().optional(),
-          urlMidia: z6.string().optional(),
-          imagemUrl: z6.string().optional(),
-          descricao: z6.string().optional(),
-          isActive: z6.number()
+        z7.object({
+          id: z7.number(),
+          titulo: z7.string(),
+          tipoAtividade: z7.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf"]),
+          urlGenially: z7.string().optional(),
+          urlMidia: z7.string().optional(),
+          imagemUrl: z7.string().optional(),
+          descricao: z7.string().optional(),
+          isActive: z7.number()
         })
       ).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
         }
         const updateData = {
           titulo: input.titulo,
@@ -32901,15 +38392,15 @@ Responda APENAS em JSON com o formato especificado.`
         if (input.imagemUrl) {
           updateData.imagemUrl = input.imagemUrl;
         }
-        await database.update(atividadesCurso).set(updateData).where(eq8(atividadesCurso.id, input.id));
+        await database.update(atividadesCurso).set(updateData).where(eq10(atividadesCurso.id, input.id));
         return { success: true };
       }),
-      deleteAtividade: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+      deleteAtividade: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
         const database = await getDb();
         if (!database) {
-          throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
+          throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponivel" });
         }
-        await database.update(atividadesCurso).set({ isActive: 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq8(atividadesCurso.id, input.id));
+        await database.update(atividadesCurso).set({ isActive: 0, updatedAt: /* @__PURE__ */ new Date() }).where(eq10(atividadesCurso.id, input.id));
         return { success: true };
       })
     })
@@ -32918,31 +38409,31 @@ Responda APENAS em JSON com o formato especificado.`
     listar: publicProcedure.query(async () => {
       const database = await getDb();
       if (!database) return [];
-      const videos = await database.select().from(onboardingVideos).where(eq8(onboardingVideos.isActive, 1)).orderBy(asc3(onboardingVideos.ordem));
+      const videos = await database.select().from(onboardingVideos).where(eq10(onboardingVideos.isActive, 1)).orderBy(asc3(onboardingVideos.ordem));
       return videos;
     }),
-    obter: publicProcedure.input(z6.object({ id: z6.number() })).query(async ({ input }) => {
+    obter: publicProcedure.input(z7.object({ id: z7.number() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return null;
-      const video = await database.select().from(onboardingVideos).where(eq8(onboardingVideos.id, input.id)).limit(1);
+      const video = await database.select().from(onboardingVideos).where(eq10(onboardingVideos.id, input.id)).limit(1);
       return video[0] || null;
     }),
-    obterPorChave: publicProcedure.input(z6.object({ chave: z6.string() })).query(async ({ input }) => {
+    obterPorChave: publicProcedure.input(z7.object({ chave: z7.string() })).query(async ({ input }) => {
       const database = await getDb();
       if (!database) return null;
-      const video = await database.select().from(onboardingVideos).where(and7(eq8(onboardingVideos.chave, input.chave), eq8(onboardingVideos.isActive, 1))).limit(1);
+      const video = await database.select().from(onboardingVideos).where(and9(eq10(onboardingVideos.chave, input.chave), eq10(onboardingVideos.isActive, 1))).limit(1);
       return video[0] || null;
     }),
-    criar: adminOrAdmin2Procedure.input(z6.object({
-      chave: z6.string(),
-      titulo: z6.string(),
-      descricao: z6.string().optional(),
-      videoUrl: z6.string(),
-      textoExplicativo: z6.string().optional(),
-      ordem: z6.number().default(0)
+    criar: adminOrAdmin2Procedure.input(z7.object({
+      chave: z7.string(),
+      titulo: z7.string(),
+      descricao: z7.string().optional(),
+      videoUrl: z7.string(),
+      textoExplicativo: z7.string().optional(),
+      ordem: z7.number().default(0)
     })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const result = await database.insert(onboardingVideos).values({
         chave: input.chave,
         titulo: input.titulo,
@@ -32954,25 +38445,25 @@ Responda APENAS em JSON com o formato especificado.`
       });
       return result;
     }),
-    atualizar: adminOrAdmin2Procedure.input(z6.object({
-      id: z6.number(),
-      chave: z6.string().optional(),
-      titulo: z6.string().optional(),
-      descricao: z6.string().optional(),
-      videoUrl: z6.string().optional(),
-      textoExplicativo: z6.string().optional(),
-      ordem: z6.number().optional()
+    atualizar: adminOrAdmin2Procedure.input(z7.object({
+      id: z7.number(),
+      chave: z7.string().optional(),
+      titulo: z7.string().optional(),
+      descricao: z7.string().optional(),
+      videoUrl: z7.string().optional(),
+      textoExplicativo: z7.string().optional(),
+      ordem: z7.number().optional()
     })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
       const { id, ...updates } = input;
-      const result = await database.update(onboardingVideos).set(updates).where(eq8(onboardingVideos.id, id));
+      const result = await database.update(onboardingVideos).set(updates).where(eq10(onboardingVideos.id, id));
       return result;
     }),
-    deletar: adminOrAdmin2Procedure.input(z6.object({ id: z6.number() })).mutation(async ({ input }) => {
+    deletar: adminOrAdmin2Procedure.input(z7.object({ id: z7.number() })).mutation(async ({ input }) => {
       const database = await getDb();
-      if (!database) throw new TRPCError6({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
-      const result = await database.delete(onboardingVideos).where(eq8(onboardingVideos.id, input.id));
+      if (!database) throw new TRPCError7({ code: "INTERNAL_SERVER_ERROR", message: "Banco indispon\xEDvel" });
+      const result = await database.delete(onboardingVideos).where(eq10(onboardingVideos.id, input.id));
       return result;
     })
   })
@@ -32980,17 +38471,42 @@ Responda APENAS em JSON com o formato especificado.`
 
 // server/_core/context.ts
 init_sdk();
+init_const();
+import { parse as parseCookieHeader2 } from "cookie";
 async function createContext(opts) {
   let user = null;
+  let isImpersonating = false;
+  let adminUser = null;
   try {
     user = await sdk.authenticateRequest(opts.req);
   } catch (error) {
     user = null;
   }
+  if (user) {
+    try {
+      const cookieHeader = opts.req.headers.cookie;
+      if (cookieHeader) {
+        const cookies = new Map(Object.entries(parseCookieHeader2(cookieHeader)));
+        const adminBackupToken = cookies.get(ADMIN_BACKUP_COOKIE_NAME);
+        if (adminBackupToken) {
+          const adminSession = await sdk.verifySession(adminBackupToken);
+          if (adminSession) {
+            adminUser = await sdk.getUserByOpenId(adminSession.openId);
+            if (adminUser && (adminUser.role === "admin" || adminUser.role === "admin2")) {
+              isImpersonating = true;
+            }
+          }
+        }
+      }
+    } catch (error) {
+    }
+  }
   return {
     req: opts.req,
     res: opts.res,
-    user
+    user,
+    isImpersonating,
+    adminUser
   };
 }
 
@@ -33208,7 +38724,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq9, and as and8, gte as gte5 } from "drizzle-orm";
+import { eq as eq11, and as and10, gte as gte6 } from "drizzle-orm";
 var DIAS_MINIMO = 30;
 var DIAS_ENTRE_ALERTAS2 = 7;
 async function verificarEEnviarAlertasMentoria(options) {
@@ -33234,10 +38750,10 @@ async function verificarEEnviarAlertasMentoria(options) {
     }
   }
   const sevenDaysAgo = new Date(Date.now() - DIAS_ENTRE_ALERTAS2 * 24 * 60 * 60 * 1e3);
-  const recentAlerts = await db2.select().from(emailAlertasLog).where(and8(
-    eq9(emailAlertasLog.tipoAlerta, "mentoria_30dias"),
-    eq9(emailAlertasLog.emailEnviado, 1),
-    gte5(emailAlertasLog.createdAt, sevenDaysAgo)
+  const recentAlerts = await db2.select().from(emailAlertasLog).where(and10(
+    eq11(emailAlertasLog.tipoAlerta, "mentoria_30dias"),
+    eq11(emailAlertasLog.emailEnviado, 1),
+    gte6(emailAlertasLog.createdAt, sevenDaysAgo)
   ));
   const recentAlertAlunoIds = new Set(recentAlerts.map((a) => a.alunoId));
   const now = Date.now();
@@ -33371,7 +38887,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq10, and as and9 } from "drizzle-orm";
+import { eq as eq12, and as and11 } from "drizzle-orm";
 var DIAS_ENTRE_ENVIOS = 3;
 var TOTAL_EMAILS_SEQUENCIA = 5;
 var DIAS_ALERTA_ADMIN = 15;
@@ -33389,10 +38905,10 @@ function diasDesde(date2) {
 async function jaEnviado(db2, alunoId, tipo) {
   if (!db2) return false;
   const rows = await db2.select({ id: emailAlertasLog.id }).from(emailAlertasLog).where(
-    and9(
-      eq10(emailAlertasLog.alunoId, alunoId),
-      eq10(emailAlertasLog.tipoAlerta, tipo),
-      eq10(emailAlertasLog.emailEnviado, 1)
+    and11(
+      eq12(emailAlertasLog.alunoId, alunoId),
+      eq12(emailAlertasLog.tipoAlerta, tipo),
+      eq12(emailAlertasLog.emailEnviado, 1)
     )
   ).limit(1);
   return rows.length > 0;
@@ -33515,7 +39031,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq11, and as and10, gte as gte6, lte as lte3, inArray as inArray6 } from "drizzle-orm";
+import { eq as eq13, and as and12, gte as gte7, lte as lte4, inArray as inArray7 } from "drizzle-orm";
 async function verificarEEnviarLembretesAplicabilidade(options) {
   const dryRun = options?.dryRun || false;
   const forceResend = options?.forceResend || false;
@@ -33529,21 +39045,21 @@ async function verificarEEnviarLembretesAplicabilidade(options) {
   const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1e3);
   const todayStr = now.toISOString().slice(0, 10);
   const in48hStr = in48h.toISOString().slice(0, 10);
-  const upcomingAppointments = await db2.select().from(mentorAppointments).where(and10(
-    gte6(mentorAppointments.scheduledDate, todayStr),
-    lte3(mentorAppointments.scheduledDate, in48hStr),
-    inArray6(mentorAppointments.status, ["agendado", "confirmado"])
+  const upcomingAppointments = await db2.select().from(mentorAppointments).where(and12(
+    gte7(mentorAppointments.scheduledDate, todayStr),
+    lte4(mentorAppointments.scheduledDate, in48hStr),
+    inArray7(mentorAppointments.status, ["agendado", "confirmado"])
   ));
   if (upcomingAppointments.length === 0) {
     return { success: true, totalAgendamentos: 0, totalLembretes: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, lembretes: [] };
   }
   const appointmentIds = upcomingAppointments.map((a) => a.id);
-  const participants = await db2.select().from(appointmentParticipants).where(inArray6(appointmentParticipants.appointmentId, appointmentIds));
+  const participants = await db2.select().from(appointmentParticipants).where(inArray7(appointmentParticipants.appointmentId, appointmentIds));
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1e3);
-  const recentAlerts = await db2.select().from(emailAlertasLog).where(and10(
-    eq11(emailAlertasLog.tipoAlerta, "lembrete_aplicabilidade_48h"),
-    eq11(emailAlertasLog.emailEnviado, 1),
-    gte6(emailAlertasLog.createdAt, threeDaysAgo)
+  const recentAlerts = await db2.select().from(emailAlertasLog).where(and12(
+    eq13(emailAlertasLog.tipoAlerta, "lembrete_aplicabilidade_48h"),
+    eq13(emailAlertasLog.emailEnviado, 1),
+    gte7(emailAlertasLog.createdAt, threeDaysAgo)
   ));
   const recentAlertAlunoIds = new Set(recentAlerts.map((a) => a.alunoId));
   const allSessions = await db2.select().from(mentoringSessions);
@@ -33681,7 +39197,7 @@ init_db();
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq12, and as and11, gte as gte7 } from "drizzle-orm";
+import { eq as eq14, and as and13, gte as gte8 } from "drizzle-orm";
 var DIAS_MINIMO2 = 45;
 var DIAS_ENTRE_ALERTAS3 = 7;
 var ADMIN_EMAIL2 = "relacionamento@ckmtalents.net";
@@ -33727,10 +39243,10 @@ async function verificarEEnviarAlertasTarefasEmAberto(options) {
   }
   const sevenDaysAgo = new Date(Date.now() - DIAS_ENTRE_ALERTAS3 * 24 * 60 * 60 * 1e3);
   const sessionIds = tarefasEmAberto.map((s) => s.id);
-  const recentAlerts = await db2.select().from(emailAlertasLog).where(and11(
-    eq12(emailAlertasLog.tipoAlerta, TIPO_ALERTA),
-    eq12(emailAlertasLog.emailEnviado, 1),
-    gte7(emailAlertasLog.createdAt, sevenDaysAgo)
+  const recentAlerts = await db2.select().from(emailAlertasLog).where(and13(
+    eq14(emailAlertasLog.tipoAlerta, TIPO_ALERTA),
+    eq14(emailAlertasLog.emailEnviado, 1),
+    gte8(emailAlertasLog.createdAt, sevenDaysAgo)
   ));
   const jaEnviadosSet = new Set(recentAlerts.map((a) => `${a.alunoId}-${a.diasSemSessao}`));
   const alertas = [];
@@ -33866,7 +39382,7 @@ function iniciarCronTarefasEmAberto() {
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq13, and as and12, gte as gte8, lte as lte4 } from "drizzle-orm";
+import { eq as eq15, and as and14, gte as gte9, lte as lte5 } from "drizzle-orm";
 var TIPO_ALERTA2 = "ausencia_webinar";
 var INTERVALO_DIAS = 15;
 var JANELA_DIAS = 30;
@@ -33884,11 +39400,11 @@ async function verificarEEnviarAlertasAusenciaWebinar(dryRun = false) {
     eventId: eventParticipation.eventId,
     eventTitle: events.title,
     eventDate: events.eventDate
-  }).from(eventParticipation).innerJoin(events, eq13(events.id, eventParticipation.eventId)).where(
-    and12(
-      eq13(eventParticipation.status, "ausente"),
-      gte8(events.eventDate, limiteInferiorStr),
-      lte4(events.eventDate, limiteSuperiorStr)
+  }).from(eventParticipation).innerJoin(events, eq15(events.id, eventParticipation.eventId)).where(
+    and14(
+      eq15(eventParticipation.status, "ausente"),
+      gte9(events.eventDate, limiteInferiorStr),
+      lte5(events.eventDate, limiteSuperiorStr)
     )
   );
   if (ausencias.length === 0) {
@@ -33896,10 +39412,10 @@ async function verificarEEnviarAlertasAusenciaWebinar(dryRun = false) {
   }
   const limiteLog = new Date(agora.getTime() - INTERVALO_DIAS * 24 * 60 * 60 * 1e3);
   const logsRecentes = await db2.select({ alunoId: emailAlertasLog.alunoId }).from(emailAlertasLog).where(
-    and12(
-      eq13(emailAlertasLog.tipoAlerta, TIPO_ALERTA2),
-      eq13(emailAlertasLog.emailEnviado, 1),
-      gte8(emailAlertasLog.createdAt, limiteLog)
+    and14(
+      eq15(emailAlertasLog.tipoAlerta, TIPO_ALERTA2),
+      eq15(emailAlertasLog.emailEnviado, 1),
+      gte9(emailAlertasLog.createdAt, limiteLog)
     )
   );
   const jaEnviadosSet = new Set(logsRecentes.map((l) => l.alunoId));
@@ -33913,7 +39429,7 @@ async function verificarEEnviarAlertasAusenciaWebinar(dryRun = false) {
   const alertas = [];
   let jaEnviadosIgnorados = 0;
   for (const [alunoId, ausencia] of porAluno) {
-    const aluno = await db2.select().from(alunos).where(eq13(alunos.id, alunoId)).limit(1).then((r) => r[0]);
+    const aluno = await db2.select().from(alunos).where(eq15(alunos.id, alunoId)).limit(1).then((r) => r[0]);
     if (!aluno || !aluno.email) continue;
     const eventDateStr = ausencia.eventDate ? (/* @__PURE__ */ new Date(ausencia.eventDate + "T12:00:00")).toLocaleDateString("pt-BR") : "data n\xE3o informada";
     if (jaEnviadosSet.has(alunoId)) {
@@ -34008,176 +39524,16 @@ function iniciarCronAusenciaWebinar() {
   console.log("[Cron Ausencia Webinar] Cron job iniciado (intervalo: 24h, janela: 30 dias, cooldown: 15 dias)");
 }
 
-// server/cronLembreteTarefaMentoria.ts
-init_db();
-init_schema();
-init_emailService();
-import { eq as eq14, and as and13, gte as gte9, desc as desc5 } from "drizzle-orm";
-var TIPO_ALERTA3 = "lembrete_tarefa_mentoria";
-var INTERVALO_DIAS2 = 15;
-var LOGIN_URL4 = "https://ecolider.ecodobem.com";
-async function verificarEEnviarLembreteTarefaMentoria(dryRun = false) {
-  const db2 = await getDb();
-  if (!db2) return { success: false, totalAlunos: 0, totalAlertas: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, alertas: [] };
-  const agora = /* @__PURE__ */ new Date();
-  const sessoesComTarefa = await db2.select({
-    alunoId: mentoringSessions.alunoId,
-    consultorId: mentoringSessions.consultorId,
-    taskStatus: mentoringSessions.taskStatus,
-    taskDeadline: mentoringSessions.taskDeadline,
-    customTaskTitle: mentoringSessions.customTaskTitle,
-    taskMode: mentoringSessions.taskMode,
-    sessionDate: mentoringSessions.sessionDate
-  }).from(mentoringSessions).where(eq14(mentoringSessions.taskStatus, "nao_entregue")).orderBy(desc5(mentoringSessions.sessionDate));
-  if (sessoesComTarefa.length === 0) {
-    return { success: true, totalAlunos: 0, totalAlertas: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, alertas: [] };
-  }
-  const porAluno = /* @__PURE__ */ new Map();
-  for (const s of sessoesComTarefa) {
-    if (!porAluno.has(s.alunoId)) {
-      porAluno.set(s.alunoId, s);
-    }
-  }
-  const limiteLog = new Date(agora.getTime() - INTERVALO_DIAS2 * 24 * 60 * 60 * 1e3);
-  const logsRecentes = await db2.select({ alunoId: emailAlertasLog.alunoId }).from(emailAlertasLog).where(
-    and13(
-      eq14(emailAlertasLog.tipoAlerta, TIPO_ALERTA3),
-      eq14(emailAlertasLog.emailEnviado, 1),
-      gte9(emailAlertasLog.createdAt, limiteLog)
-    )
-  );
-  const jaEnviadosSet = new Set(logsRecentes.map((l) => l.alunoId));
-  const alertas = [];
-  let jaEnviadosIgnorados = 0;
-  const hojeStr = agora.toISOString().slice(0, 10);
-  for (const [alunoId, sessao] of porAluno) {
-    const aluno = await db2.select().from(alunos).where(eq14(alunos.id, alunoId)).limit(1).then((r) => r[0]);
-    if (!aluno || !aluno.email) continue;
-    const mentor = await db2.select().from(consultors).where(eq14(consultors.id, sessao.consultorId)).limit(1).then((r) => r[0]);
-    if (!mentor) continue;
-    let taskTitle = "Atividade Pr\xE1tica";
-    if (sessao.customTaskTitle) {
-      taskTitle = sessao.customTaskTitle;
-    } else if (sessao.taskMode === "biblioteca") {
-      taskTitle = "Atividade da Biblioteca";
-    } else if (sessao.taskMode === "livre") {
-      taskTitle = "Atividade Livre";
-    }
-    const taskDeadlineStr = sessao.taskDeadline ? (/* @__PURE__ */ new Date(sessao.taskDeadline + "T12:00:00")).toLocaleDateString("pt-BR") : null;
-    const proximasSessoes = await db2.select({
-      scheduledDate: mentorAppointments.scheduledDate,
-      startTime: mentorAppointments.startTime
-    }).from(mentorAppointments).innerJoin(appointmentParticipants, eq14(appointmentParticipants.appointmentId, mentorAppointments.id)).where(
-      and13(
-        eq14(appointmentParticipants.alunoId, alunoId),
-        gte9(mentorAppointments.scheduledDate, hojeStr)
-      )
-    ).orderBy(mentorAppointments.scheduledDate).limit(1);
-    const proximaSessao = proximasSessoes[0] || null;
-    const proximaSessaoDate = proximaSessao ? (/* @__PURE__ */ new Date(proximaSessao.scheduledDate + "T12:00:00")).toLocaleDateString("pt-BR") : null;
-    const proximaSessaoTime = proximaSessao?.startTime || null;
-    if (jaEnviadosSet.has(alunoId)) {
-      alertas.push({
-        alunoId,
-        alunoName: aluno.name,
-        alunoEmail: aluno.email,
-        taskTitle,
-        proximaSessaoDate,
-        emailEnviado: false,
-        jaEnviado: true
-      });
-      jaEnviadosIgnorados++;
-      continue;
-    }
-    const alertaItem = {
-      alunoId,
-      alunoName: aluno.name,
-      alunoEmail: aluno.email,
-      taskTitle,
-      proximaSessaoDate,
-      emailEnviado: false
-    };
-    if (!dryRun) {
-      try {
-        const emailData = buildLembreteTarefaMentoriaEmail({
-          alunoName: aluno.name,
-          mentorName: mentor.name,
-          taskTitle,
-          taskDeadline: taskDeadlineStr,
-          proximaSessaoDate,
-          proximaSessaoTime,
-          loginUrl: LOGIN_URL4
-        });
-        const result = await sendEmail({
-          to: aluno.email,
-          subject: emailData.subject,
-          html: emailData.html,
-          text: emailData.text
-        });
-        alertaItem.emailEnviado = result.success;
-        if (!result.success) alertaItem.erro = result.error;
-        await db2.insert(emailAlertasLog).values({
-          alunoId,
-          consultorId: mentor.id,
-          tipoAlerta: TIPO_ALERTA3,
-          diasSemSessao: 0,
-          emailEnviado: result.success ? 1 : 0,
-          erro: result.success ? null : result.error || null
-        });
-      } catch (err) {
-        alertaItem.erro = err.message;
-        await db2.insert(emailAlertasLog).values({
-          alunoId,
-          consultorId: mentor.id,
-          tipoAlerta: TIPO_ALERTA3,
-          diasSemSessao: 0,
-          emailEnviado: 0,
-          erro: err.message
-        }).catch(() => {
-        });
-      }
-    }
-    alertas.push(alertaItem);
-  }
-  return {
-    success: true,
-    totalAlunos: porAluno.size,
-    totalAlertas: alertas.filter((a) => !a.jaEnviado).length,
-    emailsEnviados: alertas.filter((a) => a.emailEnviado).length,
-    jaEnviadosIgnorados,
-    alertas
-  };
-}
-function iniciarCronLembreteTarefaMentoria() {
-  const INTERVALO_MS = 24 * 60 * 60 * 1e3;
-  setTimeout(async () => {
-    console.log("[Cron Lembrete Tarefa] Executando verificacao inicial...");
-    try {
-      const result = await verificarEEnviarLembreteTarefaMentoria();
-      console.log(`[Cron Lembrete Tarefa] ${result.totalAlertas} alertas, ${result.emailsEnviados} e-mails enviados, ${result.jaEnviadosIgnorados} ignorados`);
-    } catch (err) {
-      console.error("[Cron Lembrete Tarefa] Erro:", err);
-    }
-  }, 4 * 60 * 1e3);
-  setInterval(async () => {
-    console.log("[Cron Lembrete Tarefa] Executando verificacao diaria...");
-    try {
-      const result = await verificarEEnviarLembreteTarefaMentoria();
-      console.log(`[Cron Lembrete Tarefa] ${result.totalAlertas} alertas, ${result.emailsEnviados} e-mails enviados, ${result.jaEnviadosIgnorados} ignorados`);
-    } catch (err) {
-      console.error("[Cron Lembrete Tarefa] Erro:", err);
-    }
-  }, INTERVALO_MS);
-  console.log("[Cron Lembrete Tarefa] Cron job iniciado (intervalo: 24h, cooldown: 15 dias)");
-}
+// server/_core/index.ts
+init_cronPreparacaoSessao();
 
 // server/cronPsLembreteD1.ts
 init_db();
 init_schema();
 init_emailService();
-import { eq as eq15, and as and14, gte as gte10, lte as lte5 } from "drizzle-orm";
-var TIPO_ALERTA4 = "ps_lembrete_d1";
-var LOGIN_URL5 = process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com";
+import { eq as eq16, and as and15, gte as gte10, lte as lte6 } from "drizzle-orm";
+var TIPO_ALERTA3 = "ps_lembrete_d1";
+var LOGIN_URL4 = process.env.VITE_OAUTH_PORTAL_URL ?? "https://ecolider.ecodobem.com";
 async function verificarEEnviarLembreteD1(dryRun = false) {
   const db2 = await getDb();
   if (!db2) {
@@ -34205,11 +39561,11 @@ async function verificarEEnviarLembreteD1(dryRun = false) {
     inicio: processoAgendaSlots.inicio,
     fim: processoAgendaSlots.fim,
     linkEntrevista: processoAgendaSlots.linkEntrevista
-  }).from(processoEntrevistas).innerJoin(processoCandidatos, eq15(processoCandidatos.id, processoEntrevistas.candidatoId)).innerJoin(processosSeletivos, eq15(processosSeletivos.id, processoEntrevistas.processoId)).innerJoin(processoAgendaSlots, eq15(processoAgendaSlots.id, processoEntrevistas.agendaSlotId)).where(
-    and14(
-      eq15(processoEntrevistas.status, "agendada"),
+  }).from(processoEntrevistas).innerJoin(processoCandidatos, eq16(processoCandidatos.id, processoEntrevistas.candidatoId)).innerJoin(processosSeletivos, eq16(processosSeletivos.id, processoEntrevistas.processoId)).innerJoin(processoAgendaSlots, eq16(processoAgendaSlots.id, processoEntrevistas.agendaSlotId)).where(
+    and15(
+      eq16(processoEntrevistas.status, "agendada"),
       gte10(processoAgendaSlots.dataAgenda, amanhaStr),
-      lte5(processoAgendaSlots.dataAgenda, amanhaStr)
+      lte6(processoAgendaSlots.dataAgenda, amanhaStr)
     )
   );
   if (entrevistas.length === 0) {
@@ -34224,9 +39580,9 @@ async function verificarEEnviarLembreteD1(dryRun = false) {
   const inicioHoje = new Date(agora);
   inicioHoje.setHours(0, 0, 0, 0);
   const logsHoje = await db2.select({ candidatoId: psEmailLog.candidatoId }).from(psEmailLog).where(
-    and14(
-      eq15(psEmailLog.tipoAlerta, TIPO_ALERTA4),
-      eq15(psEmailLog.emailEnviado, 1),
+    and15(
+      eq16(psEmailLog.tipoAlerta, TIPO_ALERTA3),
+      eq16(psEmailLog.emailEnviado, 1),
       gte10(psEmailLog.createdAt, inicioHoje)
     )
   );
@@ -34260,7 +39616,7 @@ async function verificarEEnviarLembreteD1(dryRun = false) {
           horaInicio: e.inicio,
           horaFim: e.fim,
           linkEntrevista: e.linkEntrevista ?? null,
-          loginUrl: `${LOGIN_URL5}/login`
+          loginUrl: `${LOGIN_URL4}/login`
         });
         const result = await sendEmail({
           to: e.candidatoEmail,
@@ -34272,7 +39628,7 @@ async function verificarEEnviarLembreteD1(dryRun = false) {
         if (!result.success) item.erro = result.error;
         await db2.insert(psEmailLog).values({
           candidatoId: e.candidatoId,
-          tipoAlerta: TIPO_ALERTA4,
+          tipoAlerta: TIPO_ALERTA3,
           emailEnviado: result.success ? 1 : 0,
           erro: result.success ? null : result.error ?? null
         });
@@ -34280,7 +39636,7 @@ async function verificarEEnviarLembreteD1(dryRun = false) {
         item.erro = err.message;
         await db2.insert(psEmailLog).values({
           candidatoId: e.candidatoId,
-          tipoAlerta: TIPO_ALERTA4,
+          tipoAlerta: TIPO_ALERTA3,
           emailEnviado: 0,
           erro: err.message
         }).catch(() => {
@@ -34324,26 +39680,244 @@ function iniciarCronPsLembreteD1() {
   console.log("[Cron PS Lembrete D-1] Cron job iniciado (intervalo: 24h)");
 }
 
+// server/cronLembreteChecklistWebinar.ts
+init_schema();
+init_db();
+init_emailService();
+import { eq as eq17, and as and16, gte as gte11 } from "drizzle-orm";
+import { sql as sql6 } from "drizzle-orm";
+var TIPO_ALERTA4 = "lembrete_checklist_webinar";
+var COOLDOWN_HORAS = 24;
+var ADMIN_URL = "https://ecolider.ecodobem.com/admin/webinars";
+async function verificarEEnviarLembretesChecklistWebinar(dryRun = false) {
+  const db2 = await getDb();
+  if (!db2) {
+    return { success: false, totalTarefas: 0, totalAlertas: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, lembretes: [] };
+  }
+  const hoje = /* @__PURE__ */ new Date();
+  const hojeStr = hoje.toISOString().slice(0, 10);
+  const [tarefasRows] = await db2.execute(sql6.raw(`
+    SELECT
+      wt.id AS taskId,
+      wt.title AS taskTitle,
+      wt.description AS taskDescription,
+      DATE_FORMAT(wt.dueDate, '%d/%m/%Y') AS dueDateFormatted,
+      wt.responsibleName,
+      wt.responsibleEmail,
+      wt.accessToken,
+      sw.title AS webinarTitle,
+      DATE_FORMAT(sw.eventDate, '%d/%m/%Y') AS webinarDate,
+      sw.id AS webinarId
+    FROM webinar_tasks wt
+    INNER JOIN scheduled_webinars sw ON sw.id = wt.webinarId
+    WHERE
+      wt.status NOT IN ('completed', 'cancelled')
+      AND wt.responsibleRole != 'palestrante'
+      AND wt.dueDate <= '${hojeStr}'
+      AND wt.responsibleEmail IS NOT NULL
+      AND wt.responsibleEmail != ''
+    ORDER BY wt.dueDate ASC
+  `));
+  const tarefas = tarefasRows;
+  if (!tarefas.length) {
+    return { success: true, totalTarefas: 0, totalAlertas: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, lembretes: [] };
+  }
+  const limiteLog = new Date(hoje.getTime() - COOLDOWN_HORAS * 60 * 60 * 1e3);
+  const logsRecentes = await db2.select({ diasSemSessao: emailAlertasLog.diasSemSessao }).from(emailAlertasLog).where(
+    and16(
+      eq17(emailAlertasLog.tipoAlerta, TIPO_ALERTA4),
+      eq17(emailAlertasLog.emailEnviado, 1),
+      gte11(emailAlertasLog.createdAt, limiteLog)
+    )
+  );
+  const jaEnviadosSet = new Set(logsRecentes.map((l) => l.diasSemSessao));
+  const lembretes = [];
+  let jaEnviadosIgnorados = 0;
+  for (const tarefa of tarefas) {
+    const taskId = Number(tarefa.taskId);
+    if (jaEnviadosSet.has(taskId)) {
+      lembretes.push({
+        taskId,
+        taskTitle: tarefa.taskTitle,
+        webinarTitle: tarefa.webinarTitle,
+        responsibleEmail: tarefa.responsibleEmail,
+        emailEnviado: false,
+        jaEnviado: true
+      });
+      jaEnviadosIgnorados++;
+      continue;
+    }
+    const lembreteItem = {
+      taskId,
+      taskTitle: tarefa.taskTitle,
+      webinarTitle: tarefa.webinarTitle,
+      responsibleEmail: tarefa.responsibleEmail,
+      emailEnviado: false
+    };
+    if (!dryRun) {
+      try {
+        const taskUrl = tarefa.accessToken ? `https://ecolider.ecodobem.com/tarefa-webinar/${tarefa.accessToken}` : `${ADMIN_URL}/${tarefa.webinarId}`;
+        const emailData = buildLembreteInternoWebinarEmail({
+          responsibleName: tarefa.responsibleName || "Respons\xE1vel",
+          taskTitle: tarefa.taskTitle,
+          taskDescription: tarefa.taskDescription || null,
+          dueDate: tarefa.dueDateFormatted,
+          webinarTitle: tarefa.webinarTitle,
+          webinarDate: tarefa.webinarDate || "Data n\xE3o definida",
+          adminUrl: taskUrl
+        });
+        const result = await sendEmail({
+          to: tarefa.responsibleEmail,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text
+        });
+        lembreteItem.emailEnviado = result.success;
+        if (!result.success) lembreteItem.erro = result.error;
+        await db2.insert(emailAlertasLog).values({
+          alunoId: 0,
+          // não se aplica — tarefa interna
+          consultorId: 0,
+          // não se aplica
+          tipoAlerta: TIPO_ALERTA4,
+          diasSemSessao: taskId,
+          // reutilizamos este campo para armazenar o taskId
+          emailEnviado: result.success ? 1 : 0,
+          erro: result.success ? null : result.error || null
+        });
+      } catch (err) {
+        lembreteItem.erro = err.message;
+        await db2.insert(emailAlertasLog).values({
+          alunoId: 0,
+          consultorId: 0,
+          tipoAlerta: TIPO_ALERTA4,
+          diasSemSessao: taskId,
+          emailEnviado: 0,
+          erro: err.message
+        }).catch(() => {
+        });
+      }
+    }
+    lembretes.push(lembreteItem);
+  }
+  return {
+    success: true,
+    totalTarefas: tarefas.length,
+    totalAlertas: lembretes.filter((l) => !l.jaEnviado).length,
+    emailsEnviados: lembretes.filter((l) => l.emailEnviado).length,
+    jaEnviadosIgnorados,
+    lembretes
+  };
+}
+function iniciarCronLembreteChecklistWebinar() {
+  const INTERVALO_MS = 24 * 60 * 60 * 1e3;
+  setTimeout(async () => {
+    console.log("[Cron Checklist Webinar] Executando verifica\xE7\xE3o inicial...");
+    try {
+      const result = await verificarEEnviarLembretesChecklistWebinar();
+      console.log(
+        `[Cron Checklist Webinar] ${result.totalTarefas} tarefas vencidas, ${result.totalAlertas} alertas, ${result.emailsEnviados} e-mails enviados, ${result.jaEnviadosIgnorados} ignorados (cooldown)`
+      );
+    } catch (err) {
+      console.error("[Cron Checklist Webinar] Erro na verifica\xE7\xE3o inicial:", err);
+    }
+  }, 5 * 60 * 1e3);
+  setInterval(async () => {
+    console.log("[Cron Checklist Webinar] Executando verifica\xE7\xE3o di\xE1ria...");
+    try {
+      const result = await verificarEEnviarLembretesChecklistWebinar();
+      console.log(
+        `[Cron Checklist Webinar] ${result.totalTarefas} tarefas vencidas, ${result.totalAlertas} alertas, ${result.emailsEnviados} e-mails enviados, ${result.jaEnviadosIgnorados} ignorados (cooldown)`
+      );
+    } catch (err) {
+      console.error("[Cron Checklist Webinar] Erro na verifica\xE7\xE3o di\xE1ria:", err);
+    }
+  }, INTERVALO_MS);
+  console.log("[Cron Checklist Webinar] Cron job iniciado (intervalo: 24h, cooldown: 24h por tarefa, ignora status do webinar)");
+}
+
+// server/cronDevolutivaLembreteD1.ts
+init_db();
+init_schema();
+init_emailService();
+import { eq as eq18, and as and17, gte as gte12, lte as lte8 } from "drizzle-orm";
+var TEXTO_DEVOLUTIVA = `
+  <p><strong>Lembretes importantes:</strong></p>
+  <ul>
+    <li>A entrevista devolutiva <strong>n\xE3o possui reagendamento</strong>.</li>
+    <li>O objetivo desta conversa \xE9 apresentar os seus <strong>pontos de desenvolvimento</strong> identificados durante o processo.</li>
+    <li>Esta entrevista <strong>n\xE3o tem como objetivo discutir ou alterar o resultado</strong> do processo seletivo.</li>
+    <li>Se voc\xEA tem interesse em conhecer seus pontos de desenvolvimento para os pr\xF3ximos processos, ser\xE1 muito bem-vindo(a)!</li>
+  </ul>
+`;
+async function verificarEEnviarLembreteDevolutivaD1() {
+  const db2 = await getDb();
+  if (!db2) return;
+  const amanha = /* @__PURE__ */ new Date();
+  amanha.setDate(amanha.getDate() + 1);
+  const amanhaStr = amanha.toISOString().slice(0, 10);
+  const slots = await db2.select().from(devolutivaSlots).where(and17(
+    eq18(devolutivaSlots.status, "reservado"),
+    gte12(devolutivaSlots.specificDate, amanhaStr),
+    lte8(devolutivaSlots.specificDate, amanhaStr),
+    eq18(devolutivaSlots.emailLembreteEnviado, 0)
+  ));
+  for (const slot of slots) {
+    try {
+      const candidato = await db2.select().from(processoCandidatos).where(eq18(processoCandidatos.id, slot.candidatoId)).limit(1);
+      const processo = await db2.select().from(processosSeletivos).where(eq18(processosSeletivos.id, slot.processoId)).limit(1);
+      if (!candidato[0]?.email) continue;
+      const dataFormatada = (/* @__PURE__ */ new Date(slot.specificDate + "T00:00:00")).toLocaleDateString("pt-BR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+      });
+      await sendEmail({
+        to: candidato[0].email,
+        subject: `\u{1F514} Lembrete: sua devolutiva \xE9 amanh\xE3 \u2014 ${processo[0]?.nome || "Processo Seletivo"}`,
+        html: `
+          <h2>Sua entrevista devolutiva \xE9 amanh\xE3!</h2>
+          <p>Ol\xE1, <strong>${candidato[0].nome}</strong>!</p>
+          <p>Lembrando que sua devolutiva est\xE1 agendada para:</p>
+          <ul>
+            <li><strong>Data:</strong> ${dataFormatada}</li>
+            <li><strong>Hor\xE1rio:</strong> ${slot.startTime} \u2013 ${slot.endTime}</li>
+            ${slot.googleMeetLink ? `<li><strong>Link:</strong> <a href="${slot.googleMeetLink}">${slot.googleMeetLink}</a></li>` : ""}
+          </ul>
+          ${TEXTO_DEVOLUTIVA}
+          <p>At\xE9 amanh\xE3!</p>
+        `
+      });
+      await db2.update(devolutivaSlots).set({ emailLembreteEnviado: 1 }).where(eq18(devolutivaSlots.id, slot.id));
+      console.log(`[Cron Devolutiva D-1] Lembrete enviado para ${candidato[0].email}`);
+    } catch (err) {
+      console.error(`[Cron Devolutiva D-1] Erro ao enviar lembrete slot ${slot.id}:`, err);
+    }
+  }
+}
+function iniciarCronDevolutivaLembreteD1() {
+  const INTERVALO_MS = 24 * 60 * 60 * 1e3;
+  setTimeout(async () => {
+    try {
+      await verificarEEnviarLembreteDevolutivaD1();
+    } catch (e) {
+      console.error("[Cron Devolutiva D-1]", e);
+    }
+  }, 10 * 60 * 1e3);
+  setInterval(async () => {
+    try {
+      await verificarEEnviarLembreteDevolutivaD1();
+    } catch (e) {
+      console.error("[Cron Devolutiva D-1]", e);
+    }
+  }, INTERVALO_MS);
+  console.log("[Cron Devolutiva D-1] Iniciado");
+}
+
 // server/_core/index.ts
 init_env();
 init_db();
-function isPortAvailable(port) {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.listen(port, () => {
-      server.close(() => resolve(true));
-    });
-    server.on("error", () => resolve(false));
-  });
-}
-async function findAvailablePort(startPort = 3e3) {
-  for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
-  }
-  throw new Error(`No available port found starting from ${startPort}`);
-}
 async function startServer() {
   await ensureBibliotecaPedagogicaTables();
   await ensurePerfilProfissionalColumns();
@@ -34353,11 +39927,14 @@ async function startServer() {
   await ensureGoogleCalendarColumns();
   await ensureProcessoSeletivoColumns();
   await ensureRelatorioEntrevistaColumns();
+  await ensureDevolutivasTables();
+  await ensurePdfAtividadeSupport();
   const app = express2();
   const server = createServer(app);
   app.use(express2.json({ limit: "50mb" }));
   app.use(express2.urlencoded({ limit: "50mb", extended: true }));
   registerOAuthRoutes(app);
+  app.use(pdfRouter);
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -34365,15 +39942,26 @@ async function startServer() {
       createContext
     })
   );
+  const port = parseInt(process.env.PORT || "3000");
+  app.get("/api/build-info", (_req, res) => {
+    res.json({
+      environment: process.env.NODE_ENV || "unknown",
+      port,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      deploymentId: process.env.RAILWAY_DEPLOYMENT_ID || "unknown",
+      commitSha: process.env.RAILWAY_GIT_COMMIT_SHA || "unknown"
+    });
+  });
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+  });
+  app.get("/api/disc360/status", (_req, res) => {
+    res.json({ status: "available", module: "disc360", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+  });
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
-  }
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
@@ -34384,12 +39972,17 @@ async function startServer() {
       iniciarCronLembreteAplicabilidade();
       iniciarCronTarefasEmAberto();
       iniciarCronAusenciaWebinar();
-      iniciarCronLembreteTarefaMentoria();
+      iniciarCronPreparacaoSessao();
       iniciarCronRelatorioMentorias();
       iniciarCronPsLembreteD1();
+      iniciarCronDevolutivaLembreteD1();
+      iniciarCronLembreteChecklistWebinar();
     } else {
       console.log("Cron jobs de e-mail desativados temporariamente.");
     }
   });
 }
-startServer().catch(console.error);
+startServer().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
+});
