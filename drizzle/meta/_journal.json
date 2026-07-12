@@ -631,6 +631,13 @@
       "when": 1783688343607,
       "tag": "0097_disc_role_validacao_4_eixos",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "5",
+      "when": 1783700000000,
+      "tag": "0098_disc_diretoria_empresa_link",
+      "breakpoints": true
     }
   ]
 }

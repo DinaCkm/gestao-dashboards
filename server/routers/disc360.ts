@@ -25,7 +25,6 @@ import {
   consolidateRoleProfile,
   getDashboardCargo,
   getResultadoMatch,
-  getResultadoMatch,
   listAplicacoesDISC,
   createOrgProfile,
   listOrgProfiles,
@@ -296,6 +295,11 @@ export const disc360Router = router({
         departmentId: z.number().nullable().optional(),
         profileType: z.enum(["empresa", "diretoria"]),
         profileName: z.string().min(1),
+        // Quando um Perfil de Diretoria e criado, este campo indica a qual
+        // Perfil de Empresa (ciclo de pesquisa) ele pertence. As respostas
+        // desta Diretoria passam a compor tambem o consolidado da Empresa
+        // vinculada. Nao se aplica a perfis do tipo "empresa".
+        empresaProfileId: z.number().nullable().optional(),
         expectedScores: discScoresSchema.optional(),
         perfilDesejado: z.string().nullable().optional(),
         culturalDescription: z.string().nullable().optional(),
@@ -489,6 +493,9 @@ export const disc360Router = router({
         id: z.number(),
         profileType: z.enum(["empresa", "diretoria"]).optional(),
         profileName: z.string().min(1).optional(),
+        // Permite vincular (ou desvincular, passando null) uma Diretoria
+        // ja cadastrada ao Perfil de Empresa/ciclo correspondente.
+        empresaProfileId: z.number().nullable().optional(),
         expectedScores: discScoresSchema.optional(),
         perfilDesejado: z.string().nullable().optional(),
         culturalDescription: z.string().nullable().optional(),

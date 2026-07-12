@@ -153,6 +153,59 @@ export async function updateOrgProfile(database: DbClient, id: number, data: Par
   return getOrgProfileById(database, id);
 }
 
+/**
+ * Lista os Perfis de Diretoria vinculados a um determinado Perfil de Empresa
+ * (via empresaProfileId), usado para agregar as respostas do questionario de
+ * cultura de cada Diretoria dentro do consolidado da Empresa.
+ */
+export async function listDiretoriasVinculadasAEmpresa(database: DbClient, empresaProfileId: number) {
+  return database
+    .select()
+    .from(discOrgProfiles)
+    .where(
+      and(
+        eq(discOrgProfiles.empresaProfileId, empresaProfileId),
+        eq(discOrgProfiles.profileType, "diretoria")
+      )
+    );
+}
+
+/**
+ * Resolve a lista de orgProfileId cujas respostas do questionario de cultura
+ * devem compor a consolidacao de um determinado perfil:
+ * - Perfil da Empresa: o proprio perfil + todas as Diretorias vinculadas a ele.
+ * - Perfil da Diretoria (ou qualquer outro caso): apenas o proprio perfil.
+ * Isso evita misturar ciclos/pesquisas diferentes que porventura coexistam.
+ */
+async function resolveOrgProfileIdsParaConsolidacao(database: DbClient, orgProfileId: number): Promise<number[]> {
+  const perfil = await getOrgProfileById(database, orgProfileId);
+  if (!perfil || perfil.profileType !== "empresa") {
+    return [orgProfileId];
+  }
+  const diretoriasVinculadas = await listDiretoriasVinculadasAEmpresa(database, orgProfileId);
+  return [orgProfileId, ...diretoriasVinculadas.map((d: any) => d.id)];
+}
+
+/**
+ * Lista as aplicacoes do questionario de cultura ja concluidas que devem
+ * compor a consolidacao de um perfil (empresa = proprio perfil + Diretorias
+ * vinculadas; diretoria = somente o proprio perfil).
+ */
+export async function listCultureAssessmentsParaConsolidacao(database: DbClient, orgProfileId: number) {
+  const orgProfileIds = await resolveOrgProfileIdsParaConsolidacao(database, orgProfileId);
+  return database
+    .select()
+    .from(discAssessments)
+    .where(
+      and(
+        inArray(discAssessments.orgProfileId, orgProfileIds),
+        eq(discAssessments.assessmentType, "empresa"),
+        eq(discAssessments.status, "concluido")
+      )
+    )
+    .orderBy(desc(discAssessments.completedAt));
+}
+
 // ---------------------------------------------------------------------------
 // Matches (calculo e persistencia)
 // ---------------------------------------------------------------------------
@@ -288,7 +341,10 @@ export async function submitCultureSurveyResponse(database: DbClient, input: Sub
 
 /**
  * Lista as aplicacoes individuais (respondentes) do questionario de cultura
- * ja concluidas para um determinado Perfil DISC da Empresa.
+ * ja concluidas para um determinado Perfil DISC (Empresa OU Diretoria),
+ * SEM agregar outros perfis vinculados. Usado nas telas de "selecionar
+ * respondentes" / contador, que mostram apenas quem respondeu diretamente
+ * para aquele perfil especifico.
  */
 export async function listCultureAssessmentsByOrgProfile(database: DbClient, orgProfileId: number) {
   return database
@@ -307,11 +363,13 @@ export async function listCultureAssessmentsByOrgProfile(database: DbClient, org
 /**
  * Para cada uma das perguntas do questionario de cultura, retorna qual eixo
  * comportamental (D/I/S/C) foi mais escolhido entre os respondentes ja
- * concluidos de um Perfil DISC da Empresa, com o nivel de consenso entre
- * eles (unanime / majoritaria / dividida) e o texto da pergunta/tema.
+ * concluidos que compoem a consolidacao de um Perfil DISC (para a Empresa,
+ * isso inclui as respostas de todas as Diretorias vinculadas a ela), com o
+ * nivel de consenso entre eles (unanime / majoritaria / dividida) e o texto
+ * da pergunta/tema.
  */
 export async function getPredominanciaPorTema(database: DbClient, orgProfileId: number) {
-  const assessments = await listCultureAssessmentsByOrgProfile(database, orgProfileId);
+  const assessments = await listCultureAssessmentsParaConsolidacao(database, orgProfileId);
   const assessmentIds = assessments.map((assessment) => assessment.id);
 
   if (assessmentIds.length === 0) {
@@ -344,11 +402,13 @@ export async function getPredominanciaPorTema(database: DbClient, orgProfileId: 
 }
 
 /**
- * Calcula a consolidacao do Perfil DISC da Empresa SEM salvar - usado para
- * mostrar uma previa do resultado antes de o admin validar oficialmente.
+ * Calcula a consolidacao do Perfil DISC SEM salvar - usado para mostrar uma
+ * previa do resultado antes de o admin validar oficialmente. Para um Perfil
+ * de Empresa, agrega tambem as respostas de todas as Diretorias vinculadas
+ * a ele (via empresaProfileId), formando uma base de analise unica.
  */
 export async function previewCultureConsolidation(database: DbClient, orgProfileId: number) {
-  const assessments = await listCultureAssessmentsByOrgProfile(database, orgProfileId);
+  const assessments = await listCultureAssessmentsParaConsolidacao(database, orgProfileId);
   const scoresIndividuais = assessments
     .map((assessment) => assessment.scores as unknown as DiscScores)
     .filter((scores) => !!scores);
@@ -358,8 +418,9 @@ export async function previewCultureConsolidation(database: DbClient, orgProfile
 /**
  * Reune tudo que o Dashboard de Cultura precisa em uma unica chamada:
  * o consolidado geral (D/I/S/C medio, predominante/secundario, status,
- * concordancia), a predominancia por tema (24 perguntas) e o texto fixo
- * ja correto para cada eixo (para exibir direto nos cards).
+ * concordancia), a predominancia por tema (24 perguntas), o texto fixo
+ * ja correto para cada eixo (para exibir direto nos cards) e, quando o
+ * perfil e do tipo Empresa, as Diretorias que estao vinculadas a ele.
  */
 export async function getDashboardCultura(database: DbClient, orgProfileId: number) {
   const perfil = await getOrgProfileById(database, orgProfileId);
@@ -391,6 +452,9 @@ export async function getDashboardCultura(database: DbClient, orgProfileId: numb
     status: c.status as string,
   }));
 
+  const diretoriasVinculadas =
+    perfil?.profileType === "empresa" ? await listDiretoriasVinculadasAEmpresa(database, orgProfileId) : [];
+
   return {
     nomeEmpresa,
     convidados,
@@ -400,11 +464,17 @@ export async function getDashboardCultura(database: DbClient, orgProfileId: numb
     notaMetodologica: NOTA_METODOLOGICA_DISC,
     leituraCombinada: obterLeituraCombinada(eixoPredominante, eixoSecundario),
     recomendacoes: obterRecomendacoesPorPredominancia(eixoPredominante),
+    diretoriasVinculadas: (diretoriasVinculadas as any[]).map((d) => ({
+      id: d.id,
+      profileName: d.profileName,
+      totalRespondentes: d.totalRespondentes ?? null,
+    })),
   };
 }
 /**
- * Consolida e SALVA o Perfil DISC da Empresa a partir das respostas do
- * questionario de cultura ja recebidas, marcando origemPerfil="questionario".
+ * Consolida e SALVA o Perfil DISC da Empresa (ou da Diretoria) a partir das
+ * respostas do questionario de cultura ja recebidas, marcando
+ * origemPerfil="questionario".
  */
 export async function consolidateOrgProfileFromCulture(database: DbClient, orgProfileId: number) {
   const consolidado = await previewCultureConsolidation(database, orgProfileId);

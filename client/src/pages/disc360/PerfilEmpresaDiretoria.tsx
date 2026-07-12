@@ -73,6 +73,8 @@ function PerfilEmpresaDiretoriaContent() {
   const numericProgramId = programId ? Number(programId) : undefined;
   const [activeTab, setActiveTab] = useState<ProfileType>("empresa");
   const [empresaModo, setEmpresaModo] = useState<"escolha" | "questionario" | "manual">("escolha");
+  const [diretoriaModo, setDiretoriaModo] = useState<"escolha" | "questionario" | "selecionar_diretores">("escolha");
+  const [empresaVinculadaId, setEmpresaVinculadaId] = useState<string>("");
   const [form, setForm] = useState<FormState>(emptyForm("empresa"));
   const [questionarioOrgProfileId, setQuestionarioOrgProfileId] = useState<number | null>(null);
   const [perfilAcoesDialogAberto, setPerfilAcoesDialogAberto] = useState(false);
@@ -102,6 +104,12 @@ function PerfilEmpresaDiretoriaContent() {
 
   const perfisEmpresa = perfis.filter((p: any) => p.profileType === "empresa");
   const perfisDiretoria = perfis.filter((p: any) => p.profileType === "diretoria");
+
+  // Perfil (empresa ou diretoria) atualmente aberto no dialog de ações do
+  // questionário — usado para saber se o mínimo de 5 respondentes se aplica
+  // (só para Empresa; Diretoria não tem mínimo obrigatório).
+  const perfilAtualDialog = perfis.find((p: any) => p.id === questionarioOrgProfileId);
+  const minimoRespondentes = perfilAtualDialog?.profileType === "diretoria" ? 1 : 5;
 
   const {
     data: assessmentsCultura = [],
@@ -150,7 +158,7 @@ function PerfilEmpresaDiretoriaContent() {
 
   const consolidarMutation = trpc.disc360.consolidateOrgProfileFromCulture.useMutation({
     onSuccess: () => {
-      toast.success("Perfil Oficial da Empresa validado e consolidado.");
+      toast.success("Perfil Oficial validado e consolidado.");
       refetchPerfis();
       setMostrarPrevia(false);
     },
@@ -258,6 +266,37 @@ function PerfilEmpresaDiretoriaContent() {
     );
   };
 
+  // Cria um Perfil de Diretoria a ser respondido via questionário de cultura
+  // (mesmo mecanismo da Empresa, em escala menor). Se uma Empresa/ciclo for
+  // selecionada, as respostas desta Diretoria também compõem o consolidado
+  // daquela Empresa (via empresaProfileId).
+  const handleIniciarQuestionarioDiretoria = () => {
+    if (!numericProgramId) {
+      toast.error("Selecione um programa/empresa.");
+      return;
+    }
+    if (!form.profileName.trim()) {
+      toast.error("Informe o nome do perfil.");
+      return;
+    }
+    createMutation.mutate(
+      {
+        programId: numericProgramId,
+        profileType: "diretoria",
+        profileName: form.profileName.trim(),
+        empresaProfileId: empresaVinculadaId ? Number(empresaVinculadaId) : null,
+      },
+      {
+        onSuccess: (data: any) => {
+          setQuestionarioOrgProfileId(data.id);
+          resetForm();
+          setEmpresaVinculadaId("");
+          setDiretoriaModo("escolha");
+        },
+      }
+    );
+  };
+
   const handleCriarDiretoria = () => {
     if (!numericProgramId) {
       toast.error("Selecione um programa/empresa.");
@@ -321,25 +360,34 @@ function PerfilEmpresaDiretoriaContent() {
                   {perfil.isActive === 1 ? <Badge variant="secondary">Ativo</Badge> : <Badge variant="outline">Inativo</Badge>}
                 </TableCell>
                 <TableCell className="text-right space-x-2">
-                  {perfil.profileType === "empresa" && perfil.origemPerfil === "questionario" && (
-                          <div className="flex flex-col items-end gap-1">
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" onClick={() => setPreviewQuestionarioAberto(true)} title="Visualizar questionário">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => { setQuestionarioOrgProfileId(perfil.id); setPerfilAcoesDialogAberto(true); }} title="Selecionar respondentes e ver resultado">
-                                <Users className="h-4 w-4" />
-                              </Button>
-                              <Link href={`/disc360/dashboard-cultura/${perfil.id}`}>
-                                <Button variant="ghost" size="icon" title="Visualizar Dashboard">
-                                  <LayoutDashboard className="h-4 w-4" />
-                                </Button>
-                              </Link>
-                            </div>
-                            <ContadorRespondentes orgProfileId={perfil.id} />
-                          </div>
-                        )}{perfil.profileType === "diretoria" && (
-                    <Button variant="ghost" size="icon" onClick={() => setDiretoriaSelecionadaId(perfil.id)} title="Selecionar diretores">
+                  {perfil.origemPerfil === "questionario" && (perfil.profileType === "empresa" || perfil.profileType === "diretoria") && (
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => setPreviewQuestionarioAberto(true)} title="Visualizar questionário">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setQuestionarioOrgProfileId(perfil.id); setPerfilAcoesDialogAberto(true); }} title="Selecionar respondentes e ver resultado">
+                          <Users className="h-4 w-4" />
+                        </Button>
+                        <Link href={`/disc360/dashboard-cultura/${perfil.id}`}>
+                          <Button variant="ghost" size="icon" title="Visualizar Dashboard">
+                            <LayoutDashboard className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                      <ContadorRespondentes orgProfileId={perfil.id} />
+                    </div>
+                  )}
+                  {perfil.profileType === "diretoria" && perfil.origemPerfil !== "questionario" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setDiretoriaSelecionadaId(perfil.id);
+                        setDiretoriaModo("selecionar_diretores");
+                      }}
+                      title="Selecionar diretores"
+                    >
                       <ClipboardList className="h-4 w-4" />
                     </Button>
                   )}
@@ -404,6 +452,7 @@ function PerfilEmpresaDiretoriaContent() {
       {!programId ? (
         <p className="text-sm text-muted-foreground">Selecione um programa/empresa para continuar.</p>
       ) : (
+        <>
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ProfileType); resetForm(); }}>
           <TabsList>
             <TabsTrigger value="empresa">Perfil da Empresa</TabsTrigger>
@@ -415,7 +464,7 @@ function PerfilEmpresaDiretoriaContent() {
               <CardHeader>
                 <CardTitle className="text-base">Sobre o Perfil DISC da Empresa</CardTitle>
                 <CardDescription>
-                  O Perfil DISC da Empresa representa a cultura comportamental desejada da organização. Ele pode ser calculado por meio de um questionário respondido por profissionais elegíveis ou preenchido manualmente quando a empresa já possuir essa definição.
+                  O Perfil DISC da Empresa representa a cultura comportamental desejada da organização. Ele é calculado a partir das respostas da pesquisa de cultura — tanto as respondidas diretamente para a Empresa quanto as que vieram de cada Diretoria vinculada a este ciclo, formando uma base de análise única — ou pode ser preenchido manualmente quando a empresa já possuir essa definição.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -443,64 +492,6 @@ function PerfilEmpresaDiretoriaContent() {
                       <Button variant="outline" onClick={() => setEmpresaModo("escolha")}>Voltar</Button>
                     </div>
                   </div>
-                )}
-
-                {perfilAcoesDialogAberto && questionarioOrgProfileId && (
-                  <Dialog open={perfilAcoesDialogAberto} onOpenChange={setPerfilAcoesDialogAberto}>
-                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto overflow-x-hidden" style={{ maxWidth: "48rem", width: "95vw" }}>
-                  <div ref={questionarioSectionRef} className="space-y-4">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <p className="text-sm text-muted-foreground">
-                        {assessmentsCultura.length} resposta(s) registrada(s) até o momento. Mínimo recomendado: 5 respondentes.
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setMostrarFormularioPerguntas((v) => !v)}>
-                          {mostrarFormularioPerguntas ? "Ocultar seleção de respondentes" : "Selecionar respondentes"}
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={handleVerPrevia} disabled={carregandoPrevia}>
-                          Ver prévia do resultado
-                        </Button>
-                        <Button size="sm" onClick={handleValidarOficial} disabled={consolidarMutation.isPending || assessmentsCultura.length < 5}>
-                          Validar Perfil Oficial
-                        </Button>
-                        {questionarioOrgProfileId && (
-                          <Link href={`/disc360/dashboard-cultura/${questionarioOrgProfileId}`}>
-                            <Button variant="secondary" size="sm">
-                              Ver dashboard completo
-                            </Button>
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-
-                    {mostrarFormularioPerguntas && numericProgramId && questionarioOrgProfileId && (
-                            <SelecaoRespondentesCultura
-                                programId={numericProgramId}
-                                orgProfileId={questionarioOrgProfileId}
-                            />
-                        )}
-
-                        {mostrarPrevia && previa && (
-                      <Card className="bg-muted/40">
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm">Prévia do resultado</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-sm">
-                          <p>D {previa.scoresMedios?.D ?? 0}% · I {previa.scoresMedios?.I ?? 0}% · S {previa.scoresMedios?.S ?? 0}% · C {previa.scoresMedios?.C ?? 0}%</p>
-                          <p>Perfil sugerido: <strong>{previa.perfilSugerido}</strong></p>
-                          <p>Situação: {STATUS_LABELS[previa.statusConsistencia] || previa.statusConsistencia}</p>
-                          <p>Grau de concordância: {CONCORDANCIA_LABELS[previa.classificacaoConcordancia] || previa.classificacaoConcordancia}</p>
-                          <p className="text-muted-foreground">{previa.textoConcordancia}</p>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    <Button variant="ghost" size="sm" onClick={() => setPerfilAcoesDialogAberto(false)}>
-                      Fechar
-                    </Button>
-                  </div>
-                    </DialogContent>
-                    </Dialog>
                 )}
 
                     {previewQuestionarioAberto && (
@@ -555,37 +546,78 @@ function PerfilEmpresaDiretoriaContent() {
               <CardHeader>
                 <CardTitle className="text-base">Sobre o Perfil DISC da Diretoria</CardTitle>
                 <CardDescription>
-                  O Perfil DISC da Diretoria é calculado a partir dos perfis DISC individuais dos diretores vinculados à área, permitindo identificar a predominância comportamental, o grau de similaridade entre os líderes e o estilo diretivo predominante.
+                  O Perfil DISC da Diretoria usa o mesmo mecanismo da Empresa — a pesquisa de cultura comportamental —, em uma escala menor: o(a) diretor(a) da área e os convidados escolhidos respondem ao questionário, e o resultado é consolidado com a mesma lógica de predominância e concordância usada na Empresa. As respostas desta Diretoria também compõem o Perfil da Empresa ao qual ela estiver vinculada. Alternativamente, o Perfil da Diretoria pode ser calculado a partir dos perfis DISC individuais (legado) dos diretores selecionados para a área.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-3 text-sm text-muted-foreground">
-                  <p>
-                    <strong className="text-foreground">Como o cálculo funciona:</strong> o Perfil DISC da Diretoria é a média dos perfis DISC individuais dos diretores selecionados para esta área. Além da média, o sistema calcula o grau de concordância entre eles — ou seja, o quanto os estilos de liderança dos diretores selecionados se parecem entre si. Concordância alta indica um time diretivo com estilo de liderança coeso; concordância baixa indica estilos bem diferentes entre os diretores.
-                  </p>
-                  <p>
-                    <strong className="text-foreground">Como escolher os profissionais:</strong> selecione apenas pessoas que ocupam o cargo de Diretor(a) nesta área e que já tenham respondido ao DISC individual. Inclua todos os diretores relevantes da área — quanto mais diretores incluídos, mais representativo é o resultado. Evite selecionar diretores de outras áreas ou pessoas em cargos diferentes de Diretor.
-                  </p>
-                  <p className="italic">
-                    A seleção dos diretores e a busca automática dos DISCs individuais usam o DISC que a pessoa já respondeu na plataforma.
-                  </p>
-                </div>
-
-                {!diretoriaSelecionadaId ? (
-                  <div className="space-y-2 max-w-md">
-                    <Label className="text-xs">Nome do perfil de Diretoria</Label>
-                    <Input value={nomeNovaDiretoria} onChange={(e) => setNomeNovaDiretoria(e.target.value)} placeholder="Ex: Diretoria Comercial" />
-                    <Button size="sm" onClick={handleCriarDiretoria} disabled={isSaving}>
-                      Criar e selecionar diretores
+                {diretoriaModo === "escolha" && !diretoriaSelecionadaId && (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button onClick={() => { resetForm(); setDiretoriaModo("questionario"); }}>
+                      <ClipboardList className="h-4 w-4 mr-2" /> Aplicar questionário de cultura
+                    </Button>
+                    <Button variant="outline" onClick={() => setDiretoriaModo("selecionar_diretores")}>
+                      Selecionar diretores (DISC individual)
                     </Button>
                   </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">Selecionando diretores para este perfil</p>
-                      <Button variant="ghost" size="sm" onClick={() => setDiretoriaSelecionadaId(null)}>Fechar</Button>
+                )}
+
+                {diretoriaModo === "questionario" && !questionarioOrgProfileId && (
+                  <div className="space-y-3 max-w-md">
+                    <div className="space-y-2">
+                      <Label>Nome do perfil (ex: Diretoria Comercial)</Label>
+                      <Input value={form.profileName} onChange={(e) => setForm((f) => ({ ...f, profileName: e.target.value }))} />
                     </div>
-                    {numericProgramId && <SelecaoDiretores programId={numericProgramId} orgProfileId={diretoriaSelecionadaId} />}
+                    <div className="space-y-2">
+                      <Label>Vincular ao Perfil da Empresa (opcional)</Label>
+                      <Select value={empresaVinculadaId} onValueChange={setEmpresaVinculadaId}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o Perfil da Empresa" /></SelectTrigger>
+                        <SelectContent>
+                          {perfisEmpresa.map((p: any) => (<SelectItem key={p.id} value={String(p.id)}>{p.profileName}</SelectItem>))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">As respostas desta Diretoria também vão compor o Perfil da Empresa selecionado.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={handleIniciarQuestionarioDiretoria} disabled={isSaving}>Criar Perfil da Diretoria</Button>
+                      <Button variant="outline" onClick={() => setDiretoriaModo("escolha")}>Voltar</Button>
+                    </div>
+                  </div>
+                )}
+
+                {diretoriaModo === "selecionar_diretores" && (
+                  <div className="space-y-3">
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>
+                        <strong className="text-foreground">Como o cálculo funciona:</strong> o Perfil DISC da Diretoria é a média dos perfis DISC individuais dos diretores selecionados para esta área. Além da média, o sistema calcula o grau de concordância entre eles — ou seja, o quanto os estilos de liderança dos diretores selecionados se parecem entre si. Concordância alta indica um time diretivo com estilo de liderança coeso; concordância baixa indica estilos bem diferentes entre os diretores.
+                      </p>
+                      <p>
+                        <strong className="text-foreground">Como escolher os profissionais:</strong> selecione apenas pessoas que ocupam o cargo de Diretor(a) nesta área e que já tenham respondido ao DISC individual. Inclua todos os diretores relevantes da área — quanto mais diretores incluídos, mais representativo é o resultado. Evite selecionar diretores de outras áreas ou pessoas em cargos diferentes de Diretor.
+                      </p>
+                      <p className="italic">
+                        A seleção dos diretores e a busca automática dos DISCs individuais usam o DISC que a pessoa já respondeu na plataforma.
+                      </p>
+                    </div>
+
+                    {!diretoriaSelecionadaId ? (
+                      <div className="space-y-2 max-w-md">
+                        <Label className="text-xs">Nome do perfil de Diretoria</Label>
+                        <Input value={nomeNovaDiretoria} onChange={(e) => setNomeNovaDiretoria(e.target.value)} placeholder="Ex: Diretoria Comercial" />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleCriarDiretoria} disabled={isSaving}>
+                            Criar e selecionar diretores
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setDiretoriaModo("escolha")}>Voltar</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium">Selecionando diretores para este perfil</p>
+                          <Button variant="ghost" size="sm" onClick={() => { setDiretoriaSelecionadaId(null); setDiretoriaModo("escolha"); }}>Fechar</Button>
+                        </div>
+                        {numericProgramId && <SelecaoDiretores programId={numericProgramId} orgProfileId={diretoriaSelecionadaId} />}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -596,7 +628,7 @@ function PerfilEmpresaDiretoriaContent() {
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-3">
-                    <p className="text-xs text-muted-foreground mb-3">Use apenas em caráter excepcional, quando o valor da Diretoria já for conhecido e não precisar ser calculado a partir dos diretores.</p>
+                    <p className="text-xs text-muted-foreground mb-3">Use apenas em caráter excepcional, quando o valor da Diretoria já for conhecido e não precisar ser calculado a partir do questionário ou dos diretores.</p>
                     {form.profileType === "diretoria" ? renderFormularioManual() : (
                       <Button variant="outline" size="sm" onClick={() => { resetForm(); setForm((f) => ({ ...f, profileType: "diretoria" })); }}>
                         Preencher manualmente
@@ -613,6 +645,68 @@ function PerfilEmpresaDiretoriaContent() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {perfilAcoesDialogAberto && questionarioOrgProfileId && (
+          <Dialog open={perfilAcoesDialogAberto} onOpenChange={setPerfilAcoesDialogAberto}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto overflow-x-hidden" style={{ maxWidth: "48rem", width: "95vw" }}>
+          <div ref={questionarioSectionRef} className="space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <p className="text-sm text-muted-foreground">
+                {assessmentsCultura.length} resposta(s) registrada(s) até o momento.{" "}
+                {perfilAtualDialog?.profileType === "diretoria"
+                  ? "Não há mínimo obrigatório de respondentes para a Diretoria."
+                  : "Mínimo recomendado: " + minimoRespondentes + " respondentes."}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setMostrarFormularioPerguntas((v) => !v)}>
+                  {mostrarFormularioPerguntas ? "Ocultar seleção de respondentes" : "Selecionar respondentes"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleVerPrevia} disabled={carregandoPrevia}>
+                  Ver prévia do resultado
+                </Button>
+                <Button size="sm" onClick={handleValidarOficial} disabled={consolidarMutation.isPending || assessmentsCultura.length < minimoRespondentes}>
+                  Validar Perfil Oficial
+                </Button>
+                {questionarioOrgProfileId && (
+                  <Link href={`/disc360/dashboard-cultura/${questionarioOrgProfileId}`}>
+                    <Button variant="secondary" size="sm">
+                      Ver dashboard completo
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {mostrarFormularioPerguntas && numericProgramId && questionarioOrgProfileId && (
+                    <SelecaoRespondentesCultura
+                        programId={numericProgramId}
+                        orgProfileId={questionarioOrgProfileId}
+                    />
+                )}
+
+                {mostrarPrevia && previa && (
+              <Card className="bg-muted/40">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Prévia do resultado</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <p>D {previa.scoresMedios?.D ?? 0}% · I {previa.scoresMedios?.I ?? 0}% · S {previa.scoresMedios?.S ?? 0}% · C {previa.scoresMedios?.C ?? 0}%</p>
+                  <p>Perfil sugerido: <strong>{previa.perfilSugerido}</strong></p>
+                  <p>Situação: {STATUS_LABELS[previa.statusConsistencia] || previa.statusConsistencia}</p>
+                  <p>Grau de concordância: {CONCORDANCIA_LABELS[previa.classificacaoConcordancia] || previa.classificacaoConcordancia}</p>
+                  <p className="text-muted-foreground">{previa.textoConcordancia}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            <Button variant="ghost" size="sm" onClick={() => setPerfilAcoesDialogAberto(false)}>
+              Fechar
+            </Button>
+          </div>
+            </DialogContent>
+            </Dialog>
+        )}
+        </>
       )}
     </div>
   );
