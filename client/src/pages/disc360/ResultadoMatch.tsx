@@ -351,6 +351,40 @@ function ResultadoMatchContent() {
                       ))}
                     </ul>
                   )}
+                  {p.correlacaoCompetencias && !p.semDiscConcluido && (p.correlacaoCompetencias.pontosFortes.length > 0 || p.correlacaoCompetencias.pontosAtencao.length > 0) && (
+                    <div className="mt-3 pt-3 border-t space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Competencias mais associadas ao estilo comportamental do cargo ({p.correlacaoCompetencias.perfilCargo}), comparadas ao perfil predominante do profissional ({p.correlacaoCompetencias.perfilPessoa}).
+                      </p>
+                      {p.correlacaoCompetencias.pontosFortes.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-semibold text-emerald-700 mb-1.5">Pontos fortes</h5>
+                          <div className="flex flex-wrap gap-1.5">
+                            {p.correlacaoCompetencias.pontosFortes.map((pf: any) => (
+                              <span
+                                key={pf.competencia}
+                                className="text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full px-2 py-0.5"
+                              >
+                                {pf.competencia}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {p.correlacaoCompetencias.pontosAtencao.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-semibold text-amber-700 mb-1.5">Pontos de atencao</h5>
+                          <ul className="space-y-1.5">
+                            {p.correlacaoCompetencias.pontosAtencao.map((pa: any) => (
+                              <li key={pa.competencia} className="text-sm text-muted-foreground">
+                                <strong className="text-foreground">{pa.competencia}</strong> - {pa.dica}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
