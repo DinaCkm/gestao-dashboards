@@ -10303,9 +10303,18 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         const updateData: any = { ...data };
         if (data.periodoInicio) updateData.periodoInicio = new Date(data.periodoInicio);
         if (data.periodoTermino) updateData.periodoTermino = new Date(data.periodoTermino);
-        // Atualizar apenas contratos_aluno — contrato_niveis lê as datas via JOIN
+        // Se o término mudou, validar a propagação ANTES de gravar o contrato
+        // (propagarPeriodoContrato lança erro se houver micro jornadas iniciando após a nova data)
+        let propagacao: { macrosAjustadas: number; microsAjustadas: number } | null = null;
+        if (data.periodoTermino) {
+          const contrato = await db.getContratoById(id);
+          if (contrato?.alunoId) {
+            propagacao = await db.propagarPeriodoContrato(contrato.alunoId, updateData.periodoTermino);
+          }
+        }
+        // Atualizar contratos_aluno — contrato_niveis lê as datas via JOIN
         await db.updateContrato(id, updateData);
-        return { success: true };
+        return { success: true, propagacao };
       }),
 
     // Excluir contrato (soft delete - admin)

@@ -2156,6 +2156,27 @@ export async function updateAluno(alunoId: number, data: {
     }
   }
   
+  // Se o contratoFim mudou pelo cadastro, sincronizar com o contrato formal e
+  // propagar para macro/micro jornadas (fonte única de datas, sem divergência)
+  let contratoFimAlterado = false;
+  if (data.contratoFim !== undefined && data.contratoFim !== null) {
+    const [alunoAtual] = await db.select({ contratoFim: alunos.contratoFim })
+      .from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+    const atualStr = alunoAtual?.contratoFim
+      ? new Date(alunoAtual.contratoFim).toISOString().split('T')[0]
+      : null;
+    const novoStr = new Date(data.contratoFim).toISOString().split('T')[0];
+    contratoFimAlterado = atualStr !== novoStr;
+    if (contratoFimAlterado) {
+      // Valida antes de gravar qualquer coisa (lança erro se micro inicia após a nova data)
+      await propagarPeriodoContrato(alunoId, new Date(data.contratoFim));
+      // Sincronizar o contrato formal ativo, se existir
+      await db.update(contratosAluno)
+        .set({ periodoTermino: novoStr as any })
+        .where(and(eq(contratosAluno.alunoId, alunoId), eq(contratosAluno.isActive, 1)));
+    }
+  }
+
   if (Object.keys(updateData).length > 0) {
     await db.update(alunos)
       .set(updateData)
@@ -6595,6 +6616,90 @@ export async function updateContrato(contratoId: number, data: Partial<InsertCon
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(contratosAluno).set(data).where(eq(contratosAluno.id, contratoId));
+}
+
+/**
+ * Propaga a alteração do término do contrato para toda a cadeia de datas do aluno:
+ *   contratos_aluno.periodoTermino (fonte) → alunos.contratoFim (cópia)
+ *   → assessment_pdi.macroTermino (macro jornadas ativas)
+ *   → assessment_competencias.microTermino (micro jornadas)
+ *
+ * Regra: nenhuma macro/micro pode ultrapassar o período do contrato. Datas que
+ * ultrapassam o novo término são encurtadas (clamp) para o novo término.
+ * Datas que já terminam antes permanecem intactas.
+ *
+ * Bloqueia (throw) se existirem micro jornadas que INICIAM após o novo término,
+ * pois encurtá-las geraria início > término — nesse caso a mentora precisa
+ * ajustar ou remover essas competências do PDI antes.
+ *
+ * Contexto: criada após a antecipação manual da turma BS3 (jul/2026), quando a
+ * ausência dessa propagação deixou macro/micros defasadas de contratos editados
+ * individualmente (caso Ana Cássia, abr/2026).
+ */
+export async function propagarPeriodoContrato(alunoId: number, novoTermino: Date): Promise<{
+  macrosAjustadas: number;
+  microsAjustadas: number;
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const terminoStr = novoTermino.toISOString().split('T')[0];
+  const terminoDate = new Date(terminoStr + 'T00:00:00');
+
+  // PDIs ativos do aluno
+  const pdis = await db.select({ id: assessmentPdi.id })
+    .from(assessmentPdi)
+    .where(and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.status, 'ativo')));
+  const pdiIds = pdis.map(p => p.id);
+
+  // Validação: micro jornadas que iniciam após o novo término bloqueiam a operação
+  if (pdiIds.length > 0) {
+    const conflitos = await db.select({
+      id: assessmentCompetencias.id,
+      microInicio: assessmentCompetencias.microInicio,
+    }).from(assessmentCompetencias)
+      .where(and(
+        inArray(assessmentCompetencias.assessmentPdiId, pdiIds),
+        sql`${assessmentCompetencias.microInicio} > ${terminoStr}`
+      ));
+    if (conflitos.length > 0) {
+      throw new Error(
+        `Não é possível definir o término do contrato em ${terminoStr}: ` +
+        `${conflitos.length} micro jornada(s) do PDI iniciam após essa data. ` +
+        `Ajuste ou remova essas competências no PDI antes de alterar o contrato.`
+      );
+    }
+  }
+
+  // 1. Sincronizar a cópia no cadastro do aluno
+  await db.update(alunos)
+    .set({ contratoFim: terminoDate })
+    .where(eq(alunos.id, alunoId));
+
+  let macrosAjustadas = 0;
+  let microsAjustadas = 0;
+
+  if (pdiIds.length > 0) {
+    // 2. Encurtar macro jornadas ativas que ultrapassam o novo término
+    const resMacro: any = await db.update(assessmentPdi)
+      .set({ macroTermino: terminoDate })
+      .where(and(
+        inArray(assessmentPdi.id, pdiIds),
+        sql`${assessmentPdi.macroTermino} > ${terminoStr}`
+      ));
+    macrosAjustadas = Number(resMacro?.[0]?.affectedRows ?? 0);
+
+    // 3. Encurtar micro jornadas que ultrapassam o novo término
+    const resMicro: any = await db.update(assessmentCompetencias)
+      .set({ microTermino: terminoDate })
+      .where(and(
+        inArray(assessmentCompetencias.assessmentPdiId, pdiIds),
+        sql`${assessmentCompetencias.microTermino} > ${terminoStr}`
+      ));
+    microsAjustadas = Number(resMicro?.[0]?.affectedRows ?? 0);
+  }
+
+  console.log(`[propagarPeriodoContrato] aluno ${alunoId} → término ${terminoStr}: ${macrosAjustadas} macro(s), ${microsAjustadas} micro(s) ajustadas`);
+  return { macrosAjustadas, microsAjustadas };
 }
 
 export async function deleteContrato(contratoId: number) {
