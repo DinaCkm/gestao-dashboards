@@ -22,6 +22,7 @@ import {
   users,
   emailAlertasLog,
   appointmentParticipants,
+  alunos,
 } from "../drizzle/schema";
 import * as db from "./db";
 import { processExcelBuffer, uploadExcelToStorage, generateDashboardData, validateExcelStructure, createExcelFromData, processBemExcelFile, detectBemFileType, MentoringRecord, EventRecord, PerformanceRecord } from "./excelProcessor";
@@ -8625,6 +8626,32 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   }),
   // Status de onboarding do aluno logado
   aluno: router({
+    // Aviso de prazo de encerramento do programa — turmas [2025] SEBRAE Tocantins
+    // Basic [BS3] (id 30008) e [2026] SEBRAE Tocantins Essential [BS3] (id 60001).
+    // Exibido uma vez por login enquanto a data limite não passou.
+    avisoPrazoTurma: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user?.alunoId) return null;
+      const TURMAS_COM_AVISO: Record<number, { titulo: string; mensagem: string; limite: string }> = {
+        30008: {
+          titulo: 'Atenção',
+          mensagem: 'O prazo de conclusão do programa Banco de Sucessores é 30/07/2026. Finalize as atividades.',
+          limite: '2026-07-30',
+        },
+        60001: {
+          titulo: 'Atenção',
+          mensagem: 'O prazo de conclusão do programa Banco de Sucessores é 30/07/2026. Finalize as atividades.',
+          limite: '2026-07-30',
+        },
+      };
+      const [aluno] = await (await getDb())!.select({ turmaId: alunos.turmaId })
+        .from(alunos).where(eq(alunos.id, ctx.user.alunoId)).limit(1);
+      if (!aluno?.turmaId) return null;
+      const config = TURMAS_COM_AVISO[aluno.turmaId];
+      if (!config) return null;
+      const hoje = new Date().toISOString().split('T')[0];
+      if (hoje > config.limite) return null; // não exibe mais após o prazo
+      return config;
+    }),
     onboardingStatus: protectedProcedure.query(async ({ ctx }) => {
       if (!ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });

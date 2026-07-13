@@ -1,4 +1,4 @@
-import { ReactNode, useMemo, useEffect } from "react";
+import { ReactNode, useMemo, useEffect, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
@@ -6,8 +6,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle } from "lucide-react";
+import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle, AlertTriangle } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -55,6 +57,22 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => { window.location.href = "/"; },
   });
+
+  // Aviso de prazo de encerramento do programa (turmas específicas, ex: BS3)
+  const { data: avisoPrazo } = trpc.aluno.avisoPrazoTurma.useQuery(undefined, {
+    enabled: !!user && (user.role === 'user' || (user.role === 'manager' && !!(user as any).alunoId)),
+  });
+  const [avisoPrazoAberto, setAvisoPrazoAberto] = useState(false);
+  useEffect(() => {
+    if (!avisoPrazo) return;
+    const chave = `aviso_prazo_dismissed_${avisoPrazo.limite}`;
+    if (sessionStorage.getItem(chave) === '1') return;
+    setAvisoPrazoAberto(true);
+  }, [avisoPrazo]);
+  const fecharAvisoPrazo = () => {
+    if (avisoPrazo) sessionStorage.setItem(`aviso_prazo_dismissed_${avisoPrazo.limite}`, '1');
+    setAvisoPrazoAberto(false);
+  };
 
   // Buscar status de onboarding (aceite + data de criação)
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
@@ -298,6 +316,28 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
           <span>FALE CONOSCO</span>
         </a>
       </div>
+
+      {/* Aviso de prazo de encerramento do programa */}
+      {avisoPrazo && (
+        <Dialog open={avisoPrazoAberto} onOpenChange={(open) => { if (!open) fecharAvisoPrazo(); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                <DialogTitle>{avisoPrazo.titulo}</DialogTitle>
+              </div>
+              <DialogDescription className="pt-2 text-base text-foreground">
+                {avisoPrazo.mensagem}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={fecharAvisoPrazo} className="w-full sm:w-auto">
+                Entendi
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
