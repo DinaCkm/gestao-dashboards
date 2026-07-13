@@ -24,7 +24,7 @@ import {
   mentoringSessions,
   emailAlertasLog,
 } from '../drizzle/schema';
-import { eq, and, gte, lte, or, isNull } from 'drizzle-orm';
+import { eq, and, gte, lte, or, isNull, inArray } from 'drizzle-orm';
 import { sendEmail } from './emailService';
 
 const TIPO_ALERTA_AGENDAMENTO = 'preparacao_sessao_agendamento';
@@ -32,7 +32,7 @@ const TIPO_ALERTA_D1 = 'preparacao_sessao_d1';
 
 const ADMINS_CC = [
   'financeiro@makiyama.com.br',
-  'dina@makiyama.com.br',
+  'dina@ckmtalents.net',
   'relacionamento@ckmtalents.net',
 ];
 
@@ -300,6 +300,20 @@ export async function enviarPreparacaoSessao(
     const mentor = await db.select().from(consultors).where(eq(consultors.id, appt[0].consultorId)).limit(1);
     if (!mentor[0]) return;
 
+    // Demais participantes do agendamento (para cópia — inclui outros alunos
+    // convidados na mesma sessão grupal; em sessão individual não há outros)
+    const participantes = await db.select().from(appointmentParticipants)
+      .where(eq(appointmentParticipants.appointmentId, appointmentId));
+    const participantesIds = participantes.map((p: any) => p.alunoId).filter((id: number) => id !== alunoId);
+    const outrosParticipantes = participantesIds.length > 0
+      ? await db.select().from(alunos).where(inArray(alunos.id, participantesIds))
+      : [];
+    const outrosParticipantesEmails = outrosParticipantes.map((a: any) => a.email).filter(Boolean);
+    const ccOutrosParticipantes = outrosParticipantesEmails.length > 0 ? outrosParticipantesEmails.join(',') : undefined;
+    // Para o e-mail da mentora, cc inclui TODOS os alunos participantes (o atual + os demais)
+    const todosParticipantesEmails = [aluno[0].email, ...outrosParticipantesEmails].filter(Boolean);
+    const ccTodosParticipantes = todosParticipantesEmails.length > 0 ? todosParticipantesEmails.join(',') : undefined;
+
     // Buscar pendências do aluno
     const pendencias = await buscarPendenciasAluno(alunoId, db);
 
@@ -309,7 +323,7 @@ export async function enviarPreparacaoSessao(
     const horaSessao = appt[0].startTime || '';
     const tipoSessao = appt[0].type === 'grupo' ? 'Sessão Grupal' : 'Sessão Individual';
 
-    // E-mail para o ALUNO
+    // E-mail para o ALUNO — cópia para os demais participantes do agendamento (sessão grupal)
     const emailAluno = buildEmailPreparacaoSessao({
       alunoNome: aluno[0].name,
       mentoraNome: mentor[0].name,
@@ -321,9 +335,9 @@ export async function enviarPreparacaoSessao(
       tipo,
       paraAluno: true,
     });
-    await sendEmail({ to: aluno[0].email, subject: emailAluno.subject, html: emailAluno.html });
+    await sendEmail({ to: aluno[0].email, cc: ccOutrosParticipantes, subject: emailAluno.subject, html: emailAluno.html });
 
-    // E-mail para a MENTORA
+    // E-mail para a MENTORA — cópia para todos os participantes do agendamento
     if (mentor[0].email) {
       const emailMentora = buildEmailPreparacaoSessao({
         alunoNome: aluno[0].name,
@@ -336,11 +350,12 @@ export async function enviarPreparacaoSessao(
         tipo,
         paraAluno: false,
       });
-      await sendEmail({ to: mentor[0].email, subject: emailMentora.subject, html: emailMentora.html });
+      await sendEmail({ to: mentor[0].email, cc: ccTodosParticipantes, subject: emailMentora.subject, html: emailMentora.html });
     }
 
-    // E-mail para ADMINISTRADORES (CC)
-    if (pendencias.tarefasPendentes.length > 0 || pendencias.webinarsPendentes.length > 0 || pendencias.microciclosVencendo.length > 0) {
+    // E-mail para ADMINISTRADORES (CC) — sempre enviado, mesmo sem pendências
+    // (o template já informa "Nenhuma pendência identificada! Tudo em dia." quando é o caso)
+    {
       const emailAdmin = buildEmailPreparacaoSessao({
         alunoNome: aluno[0].name,
         mentoraNome: mentor[0].name,

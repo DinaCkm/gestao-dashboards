@@ -6883,6 +6883,20 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           console.error('[bookAppointment] Erro ao preparar e-mail de confirmacao:', err);
         }
 
+        // Disparar e-mail de preparação (pendências) ao aluno + mentora + admin (assíncrono)
+        // Mesmo fluxo usado no agendamento de sessão grupal (createGroupSession)
+        if (appointment?.id) {
+          const apptId = appointment.id;
+          (async () => {
+            try {
+              const { enviarPreparacaoSessao } = await import('./cronPreparacaoSessao');
+              await enviarPreparacaoSessao(apptId, alunoId, 'agendamento');
+            } catch (err) {
+              console.warn('[bookAppointment] Erro ao enviar e-mail de preparação:', err);
+            }
+          })();
+        }
+
         // Integração Google Calendar (assíncrono)
         if (appointment?.id) {
           const apptId = appointment.id;
