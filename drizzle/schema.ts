@@ -2084,6 +2084,8 @@ export const discOrgProfiles = mysqlTable("disc_org_profiles", {
   origemPerfil: mysqlEnum("origemPerfil", ["manual","questionario","grupo_diretores"]),
   statusConsistencia: mysqlEnum("statusConsistencia", ["previa","suficiente"]),
   totalRespondentes: int("totalRespondentes"),
+  // Vincula um perfil de diretoria ao perfil da empresa correspondente (migration 0098)
+  empresaProfileId: int("empresaProfileId"),
 });
 
 export type DiscOrgProfile = typeof discOrgProfiles.$inferSelect;
