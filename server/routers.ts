@@ -536,20 +536,22 @@ export const appRouter = router({
         if (!conn) throw new Error('Sem conexão com o banco');
         const { novaData } = input;
 
-        // 0. Turma
+        // 0. Turma(s) — codigoTurma agrupa trilhas da mesma turma (pode haver várias linhas)
         const [turmasRows] = await conn.execute(
-          `SELECT id, nome FROM turmas WHERE nome LIKE ?`, [`%${input.turma}%`]
+          `SELECT id, name, codigoTurma FROM turmas WHERE codigoTurma = ? OR name LIKE ?`,
+          [input.turma, `%${input.turma}%`]
         );
         const turmasEncontradas = turmasRows as any[];
-        if (turmasEncontradas.length !== 1) {
-          return { erro: `Esperava 1 turma "${input.turma}", encontrei ${turmasEncontradas.length}`, turmasEncontradas };
+        if (turmasEncontradas.length === 0) {
+          return { erro: `Nenhuma turma encontrada para "${input.turma}"`, turmasEncontradas };
         }
-        const turmaId = turmasEncontradas[0].id;
+        const turmaIds = turmasEncontradas.map(t => t.id);
+        const inTurmas = turmaIds.map(() => '?').join(',');
 
         // Alunos ativos
         const [alunosRows] = await conn.execute(
-          `SELECT id, name, contratoFim FROM alunos WHERE turmaId = ? AND isActive = 1 ORDER BY name`,
-          [turmaId]
+          `SELECT id, name, contratoFim FROM alunos WHERE turmaId IN (${inTurmas}) AND isActive = 1 ORDER BY name`,
+          turmaIds
         );
         const alunosAtivos = alunosRows as any[];
 
@@ -557,31 +559,31 @@ export const appRouter = router({
         const [contratos] = await conn.execute(
           `SELECT c.id, c.alunoId, a.name AS aluno, c.periodoInicio, c.periodoTermino
            FROM contratos_aluno c JOIN alunos a ON a.id = c.alunoId
-           WHERE a.turmaId = ? AND a.isActive = 1 AND c.isActive = 1 AND c.periodoTermino > ?
-           ORDER BY a.name`, [turmaId, novaData]
+           WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1 AND c.isActive = 1 AND c.periodoTermino > ?
+           ORDER BY a.name`, [...turmaIds, novaData]
         );
 
         // A1b. Alunos sem contrato formal (dependem do fallback alunos.contratoFim)
         const [semContrato] = await conn.execute(
           `SELECT a.id, a.name, a.contratoFim FROM alunos a
-           WHERE a.turmaId = ? AND a.isActive = 1
+           WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1
              AND NOT EXISTS (SELECT 1 FROM contratos_aluno c WHERE c.alunoId = a.id AND c.isActive = 1)`,
-          [turmaId]
+          [...turmaIds]
         );
 
         // A2. Cópia alunos.contratoFim
         const [alunosContratoFim] = await conn.execute(
           `SELECT id, name, contratoFim FROM alunos
-           WHERE turmaId = ? AND isActive = 1 AND contratoFim IS NOT NULL AND contratoFim > ?
-           ORDER BY name`, [turmaId, novaData]
+           WHERE turmaId IN (${inTurmas}) AND isActive = 1 AND contratoFim IS NOT NULL AND contratoFim > ?
+           ORDER BY name`, [...turmaIds, novaData]
         );
 
         // A3. Macro jornadas (PDIs ativos)
         const [macros] = await conn.execute(
           `SELECT ap.id AS pdiId, a.name AS aluno, ap.macroInicio, ap.macroTermino
            FROM assessment_pdi ap JOIN alunos a ON a.id = ap.alunoId
-           WHERE a.turmaId = ? AND a.isActive = 1 AND ap.status = 'ativo' AND ap.macroTermino > ?
-           ORDER BY a.name`, [turmaId, novaData]
+           WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1 AND ap.status = 'ativo' AND ap.macroTermino > ?
+           ORDER BY a.name`, [...turmaIds, novaData]
         );
 
         // A4. Micro jornadas
@@ -590,8 +592,8 @@ export const appRouter = router({
            FROM assessment_competencias ac
            JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId
            JOIN alunos a ON a.id = ap.alunoId
-           WHERE a.turmaId = ? AND a.isActive = 1 AND ap.status = 'ativo' AND ac.microTermino > ?
-           ORDER BY a.name, ac.microInicio`, [turmaId, novaData]
+           WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1 AND ap.status = 'ativo' AND ac.microTermino > ?
+           ORDER BY a.name, ac.microInicio`, [...turmaIds, novaData]
         );
 
         // A4b. Micros com início após a nova data (exigem decisão da mentora)
@@ -600,16 +602,16 @@ export const appRouter = router({
            FROM assessment_competencias ac
            JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId
            JOIN alunos a ON a.id = ap.alunoId
-           WHERE a.turmaId = ? AND a.isActive = 1 AND ap.status = 'ativo' AND ac.microInicio > ?`,
-          [turmaId, novaData]
+           WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1 AND ap.status = 'ativo' AND ac.microInicio > ?`,
+          [...turmaIds, novaData]
         );
 
         // A5. Ciclos de execução manuais
         const [ciclos] = await conn.execute(
           `SELECT ce.id, a.name AS aluno, ce.nomeCiclo, ce.dataInicio, ce.dataFim
            FROM ciclos_execucao ce JOIN alunos a ON a.id = ce.alunoId
-           WHERE a.turmaId = ? AND a.isActive = 1 AND ce.dataFim > ?
-           ORDER BY a.name`, [turmaId, novaData]
+           WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1 AND ce.dataFim > ?
+           ORDER BY a.name`, [...turmaIds, novaData]
         );
 
         // B1. Agendamentos após a nova data (não cancelados)
@@ -620,9 +622,9 @@ export const appRouter = router({
              FROM mentor_appointments ma
              JOIN appointment_participants app ON app.appointmentId = ma.id
              JOIN alunos a ON a.id = app.alunoId
-             WHERE a.turmaId = ? AND a.isActive = 1 AND ma.appointmentDate > ?
+             WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1 AND ma.appointmentDate > ?
                AND ma.status NOT IN ('cancelado','cancelled')
-             ORDER BY ma.appointmentDate`, [turmaId, novaData]
+             ORDER BY ma.appointmentDate`, [...turmaIds, novaData]
           );
           agendamentosForaPeriodo = rows;
         } catch (e: any) {
@@ -635,10 +637,10 @@ export const appRouter = router({
           const [rows] = await conn.execute(
             `SELECT ms.id AS sessaoId, a.name AS aluno, ms.taskDeadline, ms.taskStatus
              FROM mentoring_sessions ms JOIN alunos a ON a.id = ms.alunoId
-             WHERE a.turmaId = ? AND a.isActive = 1 AND ms.taskDeadline > ?
+             WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1 AND ms.taskDeadline > ?
                AND COALESCE(ms.cancelada, 0) = 0
                AND (ms.taskStatus IS NULL OR ms.taskStatus <> 'entregue')
-             ORDER BY ms.taskDeadline`, [turmaId, novaData]
+             ORDER BY ms.taskDeadline`, [...turmaIds, novaData]
           );
           tarefasForaPeriodo = rows;
         } catch (e: any) {
@@ -651,8 +653,8 @@ export const appRouter = router({
           const [rows] = await conn.execute(
             `SELECT p.id, a.name AS aluno, p.data_limite_aprovada AS dataLimiteAprovada, p.status
              FROM aluno_competencia_prorrogacao p JOIN alunos a ON a.id = p.aluno_id
-             WHERE a.turmaId = ? AND a.isActive = 1 AND p.status = 'aprovada'
-               AND p.data_limite_aprovada > ?`, [turmaId, novaData]
+             WHERE a.turmaId IN (${inTurmas}) AND a.isActive = 1 AND p.status = 'aprovada'
+               AND p.data_limite_aprovada > ?`, [...turmaIds, novaData]
           );
           prorrogacoesForaPeriodo = rows;
         } catch (e: any) {
@@ -661,7 +663,7 @@ export const appRouter = router({
 
         return {
           modo: 'DRY-RUN (nada foi alterado)',
-          turma: { id: turmaId, nome: turmasEncontradas[0].nome },
+          turma: turmasEncontradas,
           novaData,
           totalAlunosAtivos: alunosAtivos.length,
           alteracoesPrevistas: {
