@@ -316,6 +316,24 @@ function MetasContent() {
     onError: err => toast.error(err.message),
   });
 
+  const validarMetaEvidencia = trpc.metas.validarEvidencia.useMutation({
+    onSuccess: () => {
+      toast.success("Evidência da micro meta aprovada e validada.");
+      refetchMetas();
+      refetchResumo();
+    },
+    onError: err => toast.error(err.message),
+  });
+
+  const rejeitarMetaEvidencia = trpc.metas.rejeitarEvidencia.useMutation({
+    onSuccess: () => {
+      toast.success("Evidência devolvida ao aluno para reenvio.");
+      refetchMetas();
+      refetchResumo();
+    },
+    onError: err => toast.error(err.message),
+  });
+
   const adicionarComentario = trpc.mentor.addTaskComment.useMutation({
     onSuccess: () => {
       refetchMentorSubmissions();
@@ -449,32 +467,24 @@ function MetasContent() {
     );
   }, [metaPrincipal, microMetas]);
 
+  // Evidência e validação são próprias da meta (Jornada de Superação), não dependem
+  // de mentoring_sessions. Antes, este mapa "casava" por taskId === taskLibraryId,
+  // o que quebrava para metas personalizadas (taskLibraryId null) — múltiplas metas
+  // acabavam exibindo a evidência de uma sessão qualquer.
   const submissaoPorMeta = useMemo(() => {
     const map = new Map<number, any>();
     for (const meta of metasOrdenadas as any[]) {
-      const candidatos = (mentorSubmissions || []).filter(
-        (s: any) => Number(s.taskId) === Number(meta.taskLibraryId)
-      );
-      if (candidatos.length > 0) {
-        const escolhido = [...candidatos].sort(
-          (a: any, b: any) =>
-            new Date(b.sessionDate || 0).getTime() -
-            new Date(a.sessionDate || 0).getTime()
-        )[0];
-        map.set(meta.id, escolhido);
+      if (meta.submittedAt || meta.status === 'entregue' || meta.status === 'validada') {
+        map.set(meta.id, meta);
       }
     }
     return map;
-  }, [metasOrdenadas, mentorSubmissions]);
+  }, [metasOrdenadas]);
 
   const expandedMetaSubmission = expandedMetaId
     ? submissaoPorMeta.get(expandedMetaId)
     : null;
-  const { data: expandedSubmissionDetail } =
-    trpc.mentor.getSubmissionDetail.useQuery(
-      { sessionId: expandedMetaSubmission?.sessionId ?? 0 },
-      { enabled: !!expandedMetaSubmission?.sessionId }
-    );
+  const expandedSubmissionDetail = expandedMetaSubmission;
 
   function resetMetaForm() {
     setMetaTitulo("");
@@ -1106,39 +1116,35 @@ function MetasContent() {
                                 <p className="text-xs font-semibold text-blue-800 mb-1">
                                   Evidência enviada pelo aluno
                                 </p>
-                                {!expandedSubmissionDetail ||
-                                expandedMetaId !== meta.id ? (
+                                {!submission ? (
                                   <p className="text-xs text-muted-foreground">
-                                    {submission
-                                      ? "Carregando detalhes da evidência..."
-                                      : "Ainda não há evidência enviada para esta micro meta."}
+                                    Ainda não há evidência enviada para esta micro meta.
                                   </p>
                                 ) : (
                                   <div className="space-y-2 text-xs">
                                     <p>
                                       Status atual:{" "}
                                       <strong>
-                                        {expandedSubmissionDetail.taskStatus ||
-                                          "—"}
+                                        {submission.status === "validada"
+                                          ? "Validada pela mentora"
+                                          : submission.status === "entregue"
+                                          ? "Aguardando validação"
+                                          : "Pendente"}
                                       </strong>
                                     </p>
                                     <p>
                                       Data de envio:{" "}
-                                      {formatDate(
-                                        expandedSubmissionDetail.submittedAt
-                                      )}
+                                      {formatDate(submission.submittedAt)}
                                     </p>
-                                    {expandedSubmissionDetail.relatoAluno && (
+                                    {submission.relatoAluno && (
                                       <p>
                                         Relato:{" "}
-                                        {expandedSubmissionDetail.relatoAluno}
+                                        {submission.relatoAluno}
                                       </p>
                                     )}
-                                    {expandedSubmissionDetail.evidenceLink && (
+                                    {submission.evidenceLink && (
                                       <a
-                                        href={
-                                          expandedSubmissionDetail.evidenceLink
-                                        }
+                                        href={submission.evidenceLink}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 hover:underline inline-flex items-center gap-1"
@@ -1147,11 +1153,9 @@ function MetasContent() {
                                         Abrir link enviado
                                       </a>
                                     )}
-                                    {expandedSubmissionDetail.evidenceImageUrl && (
+                                    {submission.evidenceImageUrl && (
                                       <img
-                                        src={
-                                          expandedSubmissionDetail.evidenceImageUrl
-                                        }
+                                        src={submission.evidenceImageUrl}
                                         alt="Evidência do aluno"
                                         className="max-h-40 rounded border"
                                       />
@@ -1165,13 +1169,13 @@ function MetasContent() {
                                   <Button
                                     size="sm"
                                     onClick={() =>
-                                      validarEvidencia.mutate({
-                                        sessionId: submission.sessionId,
+                                      validarMetaEvidencia.mutate({
+                                        metaId: meta.id,
                                       })
                                     }
                                     disabled={
-                                      validarEvidencia.isPending ||
-                                      submission.taskStatus !== "entregue"
+                                      validarMetaEvidencia.isPending ||
+                                      submission.status !== "entregue"
                                     }
                                   >
                                     Aprovar evidência
@@ -1608,27 +1612,14 @@ function MetasContent() {
                   feedbackAction === "ajuste"
                     ? "Solicitação de ajuste"
                     : "Evidência reprovada";
-                adicionarComentario.mutate({
-                  sessionId: submission.sessionId,
-                  comment: `${prefixo}: ${feedbackText.trim()}`,
-                });
-                setAcompStatus(
-                  feedbackAction === "ajuste" ? "parcial" : "nao_cumprida"
-                );
-                setAcompObs(feedbackText.trim());
-                registrarAcomp.mutate({
+                rejeitarMetaEvidencia.mutate({
                   metaId: meta.id,
-                  alunoId: selectedAlunoId!,
-                  mes: acompMes,
-                  ano: acompAno,
-                  status:
-                    feedbackAction === "ajuste" ? "parcial" : "nao_cumprida",
-                  observacao: feedbackText.trim(),
+                  motivo: `${prefixo}: ${feedbackText.trim()}`,
                 });
                 setFeedbackMetaId(null);
                 setFeedbackText("");
               }}
-              disabled={adicionarComentario.isPending || !feedbackText.trim()}
+              disabled={rejeitarMetaEvidencia.isPending || !feedbackText.trim()}
             >
               Confirmar
             </Button>

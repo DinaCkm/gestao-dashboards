@@ -950,6 +950,17 @@ export const metas = mysqlTable("metas", {
   descricao: text("descricao"), // Descrição detalhada da meta
   definidaPor: int("definidaPor"), // FK para consultors (mentora que definiu)
   isActive: int("isActive").default(1).notNull(), // 1 = ativa, 0 = removida
+  // Evidência e validação — próprias da meta (Jornada de Superação), independentes de mentoring_sessions.
+  // Fluxo: aluno envia (status 'entregue') → mentora valida (status 'validada', só então conta no indicador).
+  status: mysqlEnum("status", ["pendente", "entregue", "validada"]).default("pendente").notNull(),
+  relatoAluno: text("relatoAluno"), // Relato do aluno sobre a evidência enviada
+  evidenceLink: varchar("evidenceLink", { length: 1000 }), // URL da evidência (link)
+  evidenceImageUrl: text("evidenceImageUrl"), // URL da imagem no S3
+  evidenceImageKey: varchar("evidenceImageKey", { length: 512 }), // Key da imagem no S3
+  submittedAt: timestamp("submittedAt"), // Data/hora que o aluno enviou a evidência
+  validatedBy: int("validatedBy"), // FK para consultors (mentora que validou)
+  validatedAt: timestamp("validatedAt"), // Data/hora da validação
+  motivoRejeicao: text("motivoRejeicao"), // Motivo caso a mentora devolva a evidência (volta para 'pendente')
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

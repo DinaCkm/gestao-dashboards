@@ -9279,6 +9279,86 @@ export async function getMetasDetalhadasByNivel(alunoId: number, contratoNivelId
 }
 
 /**
+ * Aluno envia evidência de uma micro meta (Jornada de Superação).
+ * Evidência e validação são próprias da meta — não dependem de sessão de mentoria.
+ * Status muda para 'entregue' (aguardando validação da mentora).
+ */
+export async function submitMetaEvidencia(
+  metaId: number,
+  alunoId: number,
+  data: {
+    relatoAluno?: string | null;
+    evidenceLink?: string | null;
+    evidenceImageUrl?: string | null;
+    evidenceImageKey?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [meta] = await db.select().from(metas).where(eq(metas.id, metaId)).limit(1);
+  if (!meta) throw new Error("Meta não encontrada");
+  if (meta.alunoId !== alunoId) throw new Error("Meta não pertence a este aluno");
+  if (meta.status === 'validada') throw new Error("Esta meta já foi validada pela mentora e não pode ser alterada");
+
+  await db.update(metas).set({
+    relatoAluno: data.relatoAluno ?? null,
+    evidenceLink: data.evidenceLink ?? null,
+    evidenceImageUrl: data.evidenceImageUrl ?? null,
+    evidenceImageKey: data.evidenceImageKey ?? null,
+    submittedAt: new Date(),
+    status: 'entregue',
+    // Reenvio após rejeição limpa o motivo anterior
+    motivoRejeicao: null,
+  }).where(eq(metas.id, metaId));
+
+  return { success: true };
+}
+
+/**
+ * Mentora valida a evidência enviada pelo aluno para uma micro meta.
+ * Só a partir da validação a meta conta como cumprida no indicador
+ * "Jornada de Superação" (percentual e "X de Y metas cumpridas").
+ */
+export async function validarMetaEvidencia(metaId: number, consultorId: number | null) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [meta] = await db.select().from(metas).where(eq(metas.id, metaId)).limit(1);
+  if (!meta) throw new Error("Meta não encontrada");
+  if (meta.status === 'validada') return { success: true, alreadyValidated: true };
+  if (meta.status !== 'entregue') throw new Error("Só é possível validar metas com evidência ENVIADA (aguardando validação)");
+
+  await db.update(metas).set({
+    status: 'validada',
+    validatedBy: consultorId,
+    validatedAt: new Date(),
+  }).where(eq(metas.id, metaId));
+
+  return { success: true, alreadyValidated: false };
+}
+
+/**
+ * Mentora rejeita/devolve a evidência enviada — volta para 'pendente' para o
+ * aluno reenviar, com o motivo registrado.
+ */
+export async function rejeitarMetaEvidencia(metaId: number, motivo: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [meta] = await db.select().from(metas).where(eq(metas.id, metaId)).limit(1);
+  if (!meta) throw new Error("Meta não encontrada");
+  if (meta.status !== 'entregue') throw new Error("Só é possível devolver metas com evidência ENVIADA (aguardando validação)");
+
+  await db.update(metas).set({
+    status: 'pendente',
+    motivoRejeicao: motivo,
+  }).where(eq(metas.id, metaId));
+
+  return { success: true };
+}
+
+/**
  * Atualizar uma meta existente
  */
 export async function updateMeta(id: number, data: Partial<InsertMeta>) {
@@ -9369,31 +9449,19 @@ export async function getMetasResumo(alunoId: number) {
   
   if (allMetas.length === 0) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
   
-  // Buscar todos os acompanhamentos do aluno
-  const allAcomp = await db.select().from(metaAcompanhamento)
-    .where(eq(metaAcompanhamento.alunoId, alunoId));
-  
-  // Para cada meta, verificar se o último acompanhamento é "cumprida"
-  const metasComStatus = allMetas.map(meta => {
-    const acomps = allAcomp
-      .filter(a => a.metaId === meta.id)
-      .sort((a, b) => (b.ano * 100 + b.mes) - (a.ano * 100 + a.mes));
-    const ultimoStatus = acomps.length > 0 ? acomps[0].status : 'nao_cumprida';
-    return { ...meta, ultimoStatus };
-  });
-  
-  const cumpridas = metasComStatus.filter(m => m.ultimoStatus === 'cumprida').length;
+  // Cumprida = evidência validada pela mentora (metas.status = 'validada')
+  const cumpridas = allMetas.filter(m => m.status === 'validada').length;
   
   // Agrupar por competência
   const porCompetenciaMap = new Map<number, { competenciaId: number, assessmentCompetenciaId: number, total: number, cumpridas: number }>();
-  for (const meta of metasComStatus) {
+  for (const meta of allMetas) {
     const key = meta.assessmentCompetenciaId;
     if (!porCompetenciaMap.has(key)) {
       porCompetenciaMap.set(key, { competenciaId: meta.competenciaId, assessmentCompetenciaId: key, total: 0, cumpridas: 0 });
     }
     const entry = porCompetenciaMap.get(key)!;
     entry.total++;
-    if (meta.ultimoStatus === 'cumprida') entry.cumpridas++;
+    if (meta.status === 'validada') entry.cumpridas++;
   }
   
   const porCompetencia = Array.from(porCompetenciaMap.values()).map(c => ({
@@ -9470,16 +9538,12 @@ export async function getMetasResumoTodos() {
   const allMetas = await db.select().from(metas).where(eq(metas.isActive, 1));
   if (allMetas.length === 0) return [];
   
-  const metaIds = allMetas.map(m => m.id);
-  const allAcomp = await db.select().from(metaAcompanhamento)
-    .where(inArray(metaAcompanhamento.metaId, metaIds));
-  
   // Buscar dados dos alunos para enriquecer o retorno
   const alunoIds = Array.from(new Set(allMetas.map(m => m.alunoId)));
   const alunosList = await db.select().from(alunos).where(inArray(alunos.id, alunoIds));
   const alunosMap = new Map(alunosList.map(a => [a.id, a]));
   
-  // Agrupar por aluno
+  // Agrupar por aluno — cumprida = evidência validada pela mentora (metas.status = 'validada')
   const porAluno = new Map<number, { total: number, cumpridas: number, naoCumpridas: number, emAndamento: number }>();
   for (const meta of allMetas) {
     if (!porAluno.has(meta.alunoId)) {
@@ -9487,18 +9551,8 @@ export async function getMetasResumoTodos() {
     }
     const entry = porAluno.get(meta.alunoId)!;
     entry.total++;
-    
-    // Verificar último acompanhamento
-    const acomps = allAcomp
-      .filter(a => a.metaId === meta.id)
-      .sort((a, b) => (b.ano * 100 + b.mes) - (a.ano * 100 + a.mes));
-    if (acomps.length > 0) {
-      if (acomps[0].status === 'cumprida') entry.cumpridas++;
-      else if (acomps[0].status === 'nao_cumprida') entry.naoCumpridas++;
-      else entry.emAndamento++;
-    } else {
-      entry.emAndamento++; // Sem acompanhamento = em andamento
-    }
+    if (meta.status === 'validada') entry.cumpridas++;
+    else entry.emAndamento++; // pendente ou entregue (aguardando validação) = em andamento
   }
   
   return Array.from(porAluno.entries()).map(([alunoId, data]) => {
@@ -12753,33 +12807,20 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   );
 
   // Metas: total e cumpridas do PDI ativo
-  // A tabela `metas` não tem coluna `status` — o status vem de `meta_acompanhamento` (ultimo registro por meta)
+  // Cumprida = evidência enviada pelo aluno E validada pela mentora (metas.status = 'validada').
+  // Fonte única: coluna `metas.status`, ligada diretamente ao envio/validação de evidência
+  // (substituiu o antigo cálculo via `meta_acompanhamento`, que era manual e desconectado da evidência).
   let metasTotal = 0;
   let metasCumpridas = 0;
   if (pdiId) {
     const [metaRows] = await db.execute(sql.raw(`
-      SELECT COUNT(*) as total FROM metas m
+      SELECT COUNT(*) as total, SUM(CASE WHEN status = 'validada' THEN 1 ELSE 0 END) as cumpridas
+      FROM metas m
       WHERE m.alunoId = ${alunoId} AND m.assessmentPdiId = ${pdiId} AND m.isActive = 1
     `)) as any;
-    metasTotal = Number(Array.isArray(metaRows) && metaRows[0] ? metaRows[0].total : 0);
-
-    if (metasTotal > 0) {
-      // Para cada meta, pega o último acompanhamento e verifica se é 'cumprida'
-      const [cumpridasRows] = await db.execute(sql.raw(`
-        SELECT COUNT(DISTINCT m.id) as cumpridas
-        FROM metas m
-        INNER JOIN meta_acompanhamento ma ON ma.metaId = m.id AND ma.alunoId = m.alunoId
-        WHERE m.alunoId = ${alunoId} AND m.assessmentPdiId = ${pdiId} AND m.isActive = 1
-          AND ma.status = 'cumprida'
-          AND ma.id = (
-            SELECT id FROM meta_acompanhamento ma2
-            WHERE ma2.metaId = m.id AND ma2.alunoId = m.alunoId
-            ORDER BY ma2.ano DESC, ma2.mes DESC, ma2.id DESC
-            LIMIT 1
-          )
-      `)) as any;
-      metasCumpridas = Number(Array.isArray(cumpridasRows) && cumpridasRows[0] ? cumpridasRows[0].cumpridas : 0);
-    }
+    const row = Array.isArray(metaRows) && metaRows[0] ? metaRows[0] : null;
+    metasTotal = Number(row?.total ?? 0);
+    metasCumpridas = Number(row?.cumpridas ?? 0);
   }
 
   // === MACROINDICADORES: Calcular os 3 valores que aparecem na página de Performance ===
@@ -13476,6 +13517,59 @@ export async function markAppointmentRealized(appointmentId: number): Promise<vo
   await db.update(mentorAppointments)
     .set({ status: 'realizado' })
     .where(eq(mentorAppointments.id, appointmentId));
+}
+
+// ============ METAS: GARANTIR COLUNAS DE EVIDÊNCIA E VALIDAÇÃO (Jornada de Superação) ============
+export async function ensureMetaEvidenciaColumns(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const columns = [
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `status` enum('pendente','entregue','validada') NOT NULL DEFAULT 'pendente'",
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `relatoAluno` text NULL",
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `evidenceLink` varchar(1000) NULL",
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `evidenceImageUrl` text NULL",
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `evidenceImageKey` varchar(512) NULL",
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `submittedAt` timestamp NULL",
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `validatedBy` int NULL",
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `validatedAt` timestamp NULL",
+    "ALTER TABLE `metas` ADD COLUMN IF NOT EXISTS `motivoRejeicao` text NULL",
+  ];
+  for (const col of columns) {
+    try {
+      await db.execute(sql.raw(col));
+    } catch (e: any) {
+      if (!e?.message?.includes("Duplicate column")) {
+        console.warn("[DB] ensureMetaEvidenciaColumns:", e?.message);
+      }
+    }
+  }
+  console.log("[DB] Colunas de evidência/validação de Metas (Jornada de Superação) verificadas/criadas com sucesso.");
+
+  // Backfill: preservar metas que já haviam sido marcadas como "cumprida" no controle
+  // mensal antigo (meta_acompanhamento), para que o novo cálculo (metas.status) não
+  // regrida o indicador de alunos com progresso já registrado antes desta mudança.
+  // Só toca metas ainda no estado padrão 'pendente' — não sobrescreve nada já processado
+  // pelo novo fluxo (entregue/validada), então é seguro rodar a cada startup.
+  try {
+    await db.execute(sql.raw(`
+      UPDATE metas m
+      INNER JOIN (
+        SELECT ma.metaId, ma.status, ma.registradoPor, ma.updatedAt
+        FROM meta_acompanhamento ma
+        INNER JOIN (
+          SELECT metaId, MAX(ano * 100 + mes) as maxPeriodo
+          FROM meta_acompanhamento GROUP BY metaId
+        ) ult ON ult.metaId = ma.metaId AND (ma.ano * 100 + ma.mes) = ult.maxPeriodo
+      ) ultimo ON ultimo.metaId = m.id
+      SET m.status = 'validada',
+          m.validatedBy = ultimo.registradoPor,
+          m.validatedAt = ultimo.updatedAt,
+          m.submittedAt = COALESCE(m.submittedAt, ultimo.updatedAt)
+      WHERE m.status = 'pendente' AND ultimo.status = 'cumprida'
+    `));
+  } catch (e: any) {
+    console.warn("[DB] Backfill de metas cumpridas (meta_acompanhamento → metas.status):", e?.message);
+  }
 }
 
 // ============ PROCESSO SELETIVO: GARANTIR COLUNAS ============

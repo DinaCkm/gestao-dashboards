@@ -11230,6 +11230,95 @@ E-mail: ${alunoInteressado.email || ctx.user.email || "não informado"}`;
         return await db.deleteMeta(input.id);
       }),
 
+    // Aluno envia evidência de uma micro meta (Jornada de Superação) — status vira 'entregue'
+    enviarEvidencia: protectedProcedure
+      .input(z.object({
+        metaId: z.number(),
+        relatoAluno: z.string().optional(),
+        evidenceLink: z.string().optional(),
+        evidenceImageBase64: z.string().optional(),
+        evidenceImageName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const aluno = await db.getAlunoFromCtx(ctx.user);
+        if (!aluno) throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
+
+        const relatoAluno = input.relatoAluno?.trim();
+        const evidenceLink = input.evidenceLink?.trim();
+
+        if (!evidenceLink && !input.evidenceImageBase64 && !relatoAluno) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Preencha pelo menos um dos campos: link, imagem ou relato.' });
+        }
+        if (evidenceLink) {
+          try { new URL(evidenceLink); } catch {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Link inválido. Informe uma URL válida começando com https://.' });
+          }
+        }
+
+        let imageUrl: string | null = null;
+        let imageKey: string | null = null;
+        if (input.evidenceImageBase64) {
+          const buffer = Buffer.from(input.evidenceImageBase64, 'base64');
+          if (buffer.length > 10 * 1024 * 1024) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'A imagem deve ter no máximo 10MB.' });
+          }
+          const ext = input.evidenceImageName?.split('.').pop()?.toLowerCase() || 'jpg';
+          if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Formato de imagem inválido. Use JPG, JPEG, PNG ou WEBP.' });
+          }
+          const randomSuffix = Math.random().toString(36).substring(2, 10);
+          const fileKey = `meta-evidence/${aluno.id}-${input.metaId}-${randomSuffix}.${ext}`;
+          const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+          const result = await storagePut(fileKey, buffer, contentType);
+          imageUrl = result.url;
+          imageKey = result.key;
+        }
+
+        try {
+          await db.submitMetaEvidencia(input.metaId, aluno.id, {
+            relatoAluno: relatoAluno || null,
+            evidenceLink: evidenceLink || null,
+            evidenceImageUrl: imageUrl,
+            evidenceImageKey: imageKey,
+          });
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e?.message || 'Não foi possível enviar a evidência.' });
+        }
+        return { success: true };
+      }),
+
+    // Mentora valida a evidência enviada — status vira 'validada' e passa a contar no indicador
+    validarEvidencia: protectedProcedure
+      .input(z.object({ metaId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
+        if (!consultor && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentores podem validar evidências' });
+        }
+        try {
+          return await db.validarMetaEvidencia(input.metaId, consultor?.id ?? null);
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e?.message || 'Não foi possível validar a evidência.' });
+        }
+      }),
+
+    // Mentora devolve a evidência para o aluno reenviar (volta para 'pendente')
+    rejeitarEvidencia: protectedProcedure
+      .input(z.object({ metaId: z.number(), motivo: z.string().min(1, 'Informe o motivo da devolução') }))
+      .mutation(async ({ ctx, input }) => {
+        const consultors = await db.getConsultors();
+        const consultor = consultors.find(c => c.loginId === ctx.user.openId || (ctx.user.consultorId && c.id === ctx.user.consultorId));
+        if (!consultor && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Apenas mentores podem devolver evidências' });
+        }
+        try {
+          return await db.rejeitarMetaEvidencia(input.metaId, input.motivo);
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e?.message || 'Não foi possível devolver a evidência.' });
+        }
+      }),
+
     // Registrar acompanhamento mensal
     registrarAcompanhamento: protectedProcedure
       .input(z.object({
