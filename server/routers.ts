@@ -518,6 +518,169 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
 export const appRouter = router({
   system: systemRouter,
   processosSeletivos: processosSeletivosRouter,
+
+  // ============ DIAGNÓSTICO OPERACIONAL (somente leitura, admin) ============
+  // Dry-run da antecipação de término de contrato de uma turma inteira.
+  // Acessível via navegador (logada como admin):
+  //   /api/trpc/diagnostico.anteciparTermino?input=<json url-encoded>
+  // Retorna tudo que SERIA alterado + auditoria de registros fora do novo período.
+  // NÃO grava nada no banco.
+  diagnostico: router({
+    anteciparTermino: adminOrAdmin2Procedure
+      .input(z.object({
+        turma: z.string().default('BS3'),
+        novaData: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).default('2026-07-30'),
+      }).default({ turma: 'BS3', novaData: '2026-07-30' }))
+      .query(async ({ input }) => {
+        const conn = await db.getRawConnection();
+        if (!conn) throw new Error('Sem conexão com o banco');
+        const { novaData } = input;
+
+        // 0. Turma
+        const [turmasRows] = await conn.execute(
+          `SELECT id, nome FROM turmas WHERE nome LIKE ?`, [`%${input.turma}%`]
+        );
+        const turmasEncontradas = turmasRows as any[];
+        if (turmasEncontradas.length !== 1) {
+          return { erro: `Esperava 1 turma "${input.turma}", encontrei ${turmasEncontradas.length}`, turmasEncontradas };
+        }
+        const turmaId = turmasEncontradas[0].id;
+
+        // Alunos ativos
+        const [alunosRows] = await conn.execute(
+          `SELECT id, name, contratoFim FROM alunos WHERE turmaId = ? AND isActive = 1 ORDER BY name`,
+          [turmaId]
+        );
+        const alunosAtivos = alunosRows as any[];
+
+        // A1. Contratos formais a antecipar
+        const [contratos] = await conn.execute(
+          `SELECT c.id, c.alunoId, a.name AS aluno, c.periodoInicio, c.periodoTermino
+           FROM contratos_aluno c JOIN alunos a ON a.id = c.alunoId
+           WHERE a.turmaId = ? AND a.isActive = 1 AND c.isActive = 1 AND c.periodoTermino > ?
+           ORDER BY a.name`, [turmaId, novaData]
+        );
+
+        // A1b. Alunos sem contrato formal (dependem do fallback alunos.contratoFim)
+        const [semContrato] = await conn.execute(
+          `SELECT a.id, a.name, a.contratoFim FROM alunos a
+           WHERE a.turmaId = ? AND a.isActive = 1
+             AND NOT EXISTS (SELECT 1 FROM contratos_aluno c WHERE c.alunoId = a.id AND c.isActive = 1)`,
+          [turmaId]
+        );
+
+        // A2. Cópia alunos.contratoFim
+        const [alunosContratoFim] = await conn.execute(
+          `SELECT id, name, contratoFim FROM alunos
+           WHERE turmaId = ? AND isActive = 1 AND contratoFim IS NOT NULL AND contratoFim > ?
+           ORDER BY name`, [turmaId, novaData]
+        );
+
+        // A3. Macro jornadas (PDIs ativos)
+        const [macros] = await conn.execute(
+          `SELECT ap.id AS pdiId, a.name AS aluno, ap.macroInicio, ap.macroTermino
+           FROM assessment_pdi ap JOIN alunos a ON a.id = ap.alunoId
+           WHERE a.turmaId = ? AND a.isActive = 1 AND ap.status = 'ativo' AND ap.macroTermino > ?
+           ORDER BY a.name`, [turmaId, novaData]
+        );
+
+        // A4. Micro jornadas
+        const [micros] = await conn.execute(
+          `SELECT ac.id, a.name AS aluno, ac.microInicio, ac.microTermino
+           FROM assessment_competencias ac
+           JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId
+           JOIN alunos a ON a.id = ap.alunoId
+           WHERE a.turmaId = ? AND a.isActive = 1 AND ap.status = 'ativo' AND ac.microTermino > ?
+           ORDER BY a.name, ac.microInicio`, [turmaId, novaData]
+        );
+
+        // A4b. Micros com início após a nova data (exigem decisão da mentora)
+        const [microsInicioInvalido] = await conn.execute(
+          `SELECT ac.id, a.name AS aluno, ac.microInicio, ac.microTermino
+           FROM assessment_competencias ac
+           JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId
+           JOIN alunos a ON a.id = ap.alunoId
+           WHERE a.turmaId = ? AND a.isActive = 1 AND ap.status = 'ativo' AND ac.microInicio > ?`,
+          [turmaId, novaData]
+        );
+
+        // A5. Ciclos de execução manuais
+        const [ciclos] = await conn.execute(
+          `SELECT ce.id, a.name AS aluno, ce.nomeCiclo, ce.dataInicio, ce.dataFim
+           FROM ciclos_execucao ce JOIN alunos a ON a.id = ce.alunoId
+           WHERE a.turmaId = ? AND a.isActive = 1 AND ce.dataFim > ?
+           ORDER BY a.name`, [turmaId, novaData]
+        );
+
+        // B1. Agendamentos após a nova data (não cancelados)
+        let agendamentosForaPeriodo: any = [];
+        try {
+          const [rows] = await conn.execute(
+            `SELECT ma.id, a.name AS aluno, ma.appointmentDate, ma.status
+             FROM mentor_appointments ma
+             JOIN appointment_participants app ON app.appointmentId = ma.id
+             JOIN alunos a ON a.id = app.alunoId
+             WHERE a.turmaId = ? AND a.isActive = 1 AND ma.appointmentDate > ?
+               AND ma.status NOT IN ('cancelado','cancelled')
+             ORDER BY ma.appointmentDate`, [turmaId, novaData]
+          );
+          agendamentosForaPeriodo = rows;
+        } catch (e: any) {
+          agendamentosForaPeriodo = { erroConsulta: e.message };
+        }
+
+        // B2. Tarefas pendentes com prazo após a nova data
+        let tarefasForaPeriodo: any = [];
+        try {
+          const [rows] = await conn.execute(
+            `SELECT ms.id AS sessaoId, a.name AS aluno, ms.taskDeadline, ms.taskStatus
+             FROM mentoring_sessions ms JOIN alunos a ON a.id = ms.alunoId
+             WHERE a.turmaId = ? AND a.isActive = 1 AND ms.taskDeadline > ?
+               AND COALESCE(ms.cancelada, 0) = 0
+               AND (ms.taskStatus IS NULL OR ms.taskStatus <> 'entregue')
+             ORDER BY ms.taskDeadline`, [turmaId, novaData]
+          );
+          tarefasForaPeriodo = rows;
+        } catch (e: any) {
+          tarefasForaPeriodo = { erroConsulta: e.message };
+        }
+
+        // B3. Prorrogações aprovadas com limite após a nova data
+        let prorrogacoesForaPeriodo: any = [];
+        try {
+          const [rows] = await conn.execute(
+            `SELECT p.id, a.name AS aluno, p.data_limite_aprovada AS dataLimiteAprovada, p.status
+             FROM aluno_competencia_prorrogacao p JOIN alunos a ON a.id = p.aluno_id
+             WHERE a.turmaId = ? AND a.isActive = 1 AND p.status = 'aprovada'
+               AND p.data_limite_aprovada > ?`, [turmaId, novaData]
+          );
+          prorrogacoesForaPeriodo = rows;
+        } catch (e: any) {
+          prorrogacoesForaPeriodo = { erroConsulta: e.message };
+        }
+
+        return {
+          modo: 'DRY-RUN (nada foi alterado)',
+          turma: { id: turmaId, nome: turmasEncontradas[0].nome },
+          novaData,
+          totalAlunosAtivos: alunosAtivos.length,
+          alteracoesPrevistas: {
+            contratosAluno: contratos,
+            alunosSemContratoFormal: semContrato,
+            alunosContratoFim: alunosContratoFim,
+            macroJornadas: macros,
+            microJornadas: micros,
+            microsComInicioAposNovaData_ATENCAO: microsInicioInvalido,
+            ciclosExecucao: ciclos,
+          },
+          auditoria: {
+            agendamentosForaPeriodo,
+            tarefasPendentesForaPeriodo: tarefasForaPeriodo,
+            prorrogacoesAprovadasForaPeriodo: prorrogacoesForaPeriodo,
+          },
+        };
+      }),
+  }),
   disc360: disc360Router,
   jornada: jornadaRouter,
   fichasPedagogicas: fichasPedagogicasRouter,
