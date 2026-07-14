@@ -8201,6 +8201,33 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.removeGerenteRole(input.userId);
       }),
 
+    // ============ DIRETORES/ÁREA (ECODISC 360 - VISÃO RESTRITA POR DIRETORIA) ============
+
+    // Listar diretores cadastrados
+    listDiretores: adminOrAdmin2Procedure.query(async () => {
+      return await db.listDiretores();
+    }),
+
+    // Criar diretor puro (vinculado a uma empresa e a UMA diretoria especifica)
+    createDiretorPuro: adminOrAdmin2Procedure
+      .input(z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        cpf: z.string().optional(),
+        programId: z.number(),
+        departmentId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.createDiretorPuro(input);
+      }),
+
+    // Remover papel de diretor
+    removeDiretor: adminOrAdmin2Procedure
+      .input(z.object({ consultorId: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.removeDiretorRole(input.consultorId);
+      }),
+
     // Cadastro Direto de Aluno pelo Admin (com bypass de onboarding)
     createAlunoDireto: adminOrAdmin2Procedure
       .input(z.object({
