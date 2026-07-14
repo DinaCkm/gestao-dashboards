@@ -58,6 +58,41 @@ const adminRoles = new Set(["admin", "admin2"]);
 const isAdmin = (role?: string | null) => adminRoles.has(role ?? "");
 const isManagerOrAdmin = (role?: string | null) => isAdmin(role) || role === "manager";
 
+/**
+ * Escopo de acesso do usuario logado dentro do EcoDISC 360.
+ * - Admin/Admin2: sem restricao (companyId e departmentId ficam null).
+ * - Gerente (gestor de empresa): companyId = empresa que gerencia, departmentId = null (ve tudo da empresa).
+ * - Diretor (gestor de diretoria): companyId = empresa, departmentId = diretoria que gerencia (ve so a sua area).
+ * - Demais papeis: sem acesso amplo (companyId = -1, nunca bate com nenhuma empresa real).
+ */
+type Disc360Scope = {
+  isAdminUser: boolean;
+  companyId: number | null;
+  departmentId: number | null;
+};
+
+const getDisc360Scope = (ctx: any): Disc360Scope => {
+  const role = ctx?.user?.role;
+  if (isAdmin(role)) {
+    return { isAdminUser: true, companyId: null, departmentId: null };
+  }
+  if (role === "manager") {
+    const companyId = (ctx?.user?.managedProgramId as number | null | undefined) ?? null;
+    const isDiretor = ctx?.user?.consultorRole === "diretor";
+    const departmentId = isDiretor ? ((ctx?.user?.managedDepartmentId as number | null | undefined) ?? null) : null;
+    return { isAdminUser: false, companyId: companyId ?? -1, departmentId };
+  }
+  return { isAdminUser: false, companyId: -1, departmentId: null };
+};
+
+/** Garante que o programId solicitado pertence a empresa do usuario logado (admin sempre passa). */
+const assertProgramAccess = (scope: Disc360Scope, programId: number) => {
+  if (scope.isAdminUser) return;
+  if (scope.companyId !== programId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a dados da sua propria empresa." });
+  }
+};
+
 const requireDatabase = async () => {
   const database = await getDb();
   if (!database) {
@@ -106,6 +141,7 @@ export const disc360Router = router({
           message: "Apenas lideres, gestores ou administradores podem cadastrar o DISC do cargo.",
         });
       }
+      assertProgramAccess(getDisc360Scope(ctx), input.programId);
       const database = await requireDatabase();
       const insertId = await createRoleProfile(database, {
         ...input,
@@ -116,7 +152,8 @@ export const disc360Router = router({
 
   listRoleProfiles: protectedProcedure
     .input(z.object({ programId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      assertProgramAccess(getDisc360Scope(ctx), input.programId);
       const database = await requireDatabase();
       return listRoleProfiles(database, input.programId);
     }),
@@ -267,9 +304,15 @@ export const disc360Router = router({
 
   listAplicacoesDISC: protectedProcedure
     .input(z.object({ programId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      const scope = getDisc360Scope(ctx);
+      assertProgramAccess(scope, input.programId);
       const database = await requireDatabase();
-      return listAplicacoesDISC(database, input.programId);
+      const resultado = await listAplicacoesDISC(database, input.programId);
+      if (scope.departmentId) {
+        return (resultado as any[]).filter((a) => a.departmentId === scope.departmentId);
+      }
+      return resultado;
     }),
 
   consolidateRoleProfile: protectedProcedure
@@ -327,9 +370,16 @@ export const disc360Router = router({
 
   listOrgProfiles: protectedProcedure
     .input(z.object({ programId: z.number(), includeInactive: z.boolean().optional() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      const scope = getDisc360Scope(ctx);
+      assertProgramAccess(scope, input.programId);
       const database = await requireDatabase();
-      return listOrgProfiles(database, input.programId, input.includeInactive ?? false);
+      const resultado = await listOrgProfiles(database, input.programId, input.includeInactive ?? false);
+      if (scope.departmentId) {
+        // Diretor ve apenas o perfil da propria diretoria (nao ve o perfil geral da empresa nem de outras diretorias)
+        return (resultado as any[]).filter((p) => p.departmentId === scope.departmentId);
+      }
+      return resultado;
     }),
 
   // ---------------------------------------------------------------------
@@ -416,6 +466,7 @@ export const disc360Router = router({
       if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
       }
+      assertProgramAccess(getDisc360Scope(ctx), input.programId);
       const database = await requireDatabase();
       return listDistinctCargosByProgram(database, input.programId);
     }),
@@ -432,8 +483,12 @@ export const disc360Router = router({
       if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
       }
+      const scope = getDisc360Scope(ctx);
+      assertProgramAccess(scope, input.programId);
+      // Se for diretor, a diretoria da busca fica travada na diretoria dele, mesmo que o front tente enviar outra.
+      const effectiveInput = scope.departmentId ? { ...input, departmentId: scope.departmentId } : input;
       const database = await requireDatabase();
-      return searchAlunosForSelection(database, input);
+      return searchAlunosForSelection(database, effectiveInput);
     }),
 
   addDiretoriaMembro: protectedProcedure
@@ -626,6 +681,7 @@ export const disc360Router = router({
       if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "Acesso restrito a lideres, gestores ou administradores." });
       }
+      assertProgramAccess(getDisc360Scope(ctx), input.programId);
       const database = await requireDatabase();
       return getManagementMatrix(database, input.programId);
     }),
@@ -685,7 +741,8 @@ export const disc360Router = router({
           .min(1),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      assertProgramAccess(getDisc360Scope(ctx), input.programId);
       const database = await requireDatabase();
       return criarConvitesCulturaEmpresa(database, input);
     }),
