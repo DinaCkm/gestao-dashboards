@@ -393,6 +393,35 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro: ${err.message}`),
   });
 
+  // Queries e mutations para Diretores/Área (EcoDISC 360 - visão restrita por diretoria)
+  const { data: diretoresList, refetch: refetchDiretores, isLoading: loadingDiretores } = trpc.admin.listDiretores.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+
+  const createDiretorPuro = trpc.admin.createDiretorPuro.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Diretor criado!");
+        refetchDiretores();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao criar diretor");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const removeDiretor = trpc.admin.removeDiretor.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Diretor removido!");
+        refetchDiretores();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao remover diretor");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
   const createAluno = trpc.admin.createAluno.useMutation({
     onSuccess: () => {
       toast.success("Aluno cadastrado! Ele receberá acesso ao Onboarding para iniciar sua participação no programa.");
@@ -519,7 +548,7 @@ export default function AdminCadastros() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="acesso" className="flex items-center gap-2">
               <GraduationCap className="h-4 w-4" />
               Alunos
@@ -535,6 +564,10 @@ export default function AdminCadastros() {
             <TabsTrigger value="gerentes-empresa" className="flex items-center gap-2">
               <Crown className="h-4 w-4" />
               Gerentes
+            </TabsTrigger>
+            <TabsTrigger value="diretores" className="flex items-center gap-2">
+              <Layers className="h-4 w-4" />
+              Diretores/Área
             </TabsTrigger>
             <TabsTrigger value="administradores" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
@@ -607,6 +640,19 @@ export default function AdminCadastros() {
               isPromoting={promoteToGerente.isPending}
               isCreatingPuro={createGerentePuro.isPending}
               isRemoving={removeGerente.isPending}
+            />
+          </TabsContent>
+
+          {/* Diretores/Área Tab */}
+          <TabsContent value="diretores">
+            <DiretoresTab
+              diretores={diretoresList || []}
+              empresas={empresas || []}
+              loading={loadingDiretores}
+              onCreatePuro={createDiretorPuro.mutate}
+              onRemove={removeDiretor.mutate}
+              isCreatingPuro={createDiretorPuro.isPending}
+              isRemoving={removeDiretor.isPending}
             />
           </TabsContent>
 
@@ -3201,6 +3247,229 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                 )}
               </TableBody>
             </Table>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ ABA DIRETORES/ÁREA (ECODISC 360 - VISÃO RESTRITA POR DIRETORIA) ============
+function DiretoresTab({ diretores, empresas, loading, onCreatePuro, onRemove, isCreatingPuro, isRemoving }: {
+  diretores: any[];
+  empresas: any[];
+  loading: boolean;
+  onCreatePuro: (data: { name: string; email: string; cpf?: string; programId: number; departmentId: number }) => void;
+  onRemove: (data: { consultorId: number }) => void;
+  isCreatingPuro: boolean;
+  isRemoving: boolean;
+}) {
+  const [puroOpen, setPuroOpen] = useState(false);
+  const [searchDiretor, setSearchDiretor] = useState("");
+
+  const [puroNome, setPuroNome] = useState("");
+  const [puroEmail, setPuroEmail] = useState("");
+  const [puroCpf, setPuroCpf] = useState("");
+  const [puroProgramId, setPuroProgramId] = useState("");
+  const [puroDepartmentId, setPuroDepartmentId] = useState("");
+
+  const { data: departamentosDaEmpresa = [] } = trpc.departments.list.useQuery(
+    { programId: parseInt(puroProgramId), includeInactive: false },
+    { enabled: !!puroProgramId && puroOpen }
+  );
+
+  const handleCreatePuro = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!puroProgramId || !puroDepartmentId) {
+      toast.error("Selecione a empresa e a diretoria");
+      return;
+    }
+    const cpfDigits = puroCpf.replace(/\D/g, '');
+    if (cpfDigits.length > 0 && cpfDigits.length !== 11) {
+      toast.error("CPF deve conter 11 dígitos");
+      return;
+    }
+    onCreatePuro({
+      name: puroNome,
+      email: puroEmail,
+      cpf: cpfDigits || undefined,
+      programId: parseInt(puroProgramId),
+      departmentId: parseInt(puroDepartmentId),
+    });
+    setPuroNome("");
+    setPuroEmail("");
+    setPuroCpf("");
+    setPuroProgramId("");
+    setPuroDepartmentId("");
+    setPuroOpen(false);
+  };
+
+  const handleRemove = (consultorId: number, name: string) => {
+    if (window.confirm(`Tem certeza que deseja remover o diretor "${name}"? Ele perderá o acesso ao EcoDISC 360.`)) {
+      onRemove({ consultorId });
+    }
+  };
+
+  const filteredDiretores = diretores.filter((d: any) => {
+    const term = searchDiretor.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      (d.name || "").toLowerCase().includes(term) ||
+      (d.email || "").toLowerCase().includes(term) ||
+      (d.programName || "").toLowerCase().includes(term) ||
+      (d.departmentName || "").toLowerCase().includes(term)
+    );
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-purple-500" />
+              Diretores/Área (Visão Restrita por Diretoria)
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Cada diretor acessa somente o EcoDISC 360 (Aplicações e Perfil) da diretoria vinculada a ele.
+              Para uma pessoa que precisa ver todas as diretorias da empresa (ex: presidência, RH), use a aba "Gerentes".
+            </CardDescription>
+          </div>
+          <Dialog open={puroOpen} onOpenChange={setPuroOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Novo Diretor
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <form onSubmit={handleCreatePuro}>
+                <DialogHeader>
+                  <DialogTitle>Cadastrar Diretor/Área</DialogTitle>
+                  <DialogDescription>
+                    O diretor terá acesso apenas ao EcoDISC 360 da diretoria selecionada abaixo — não vê outras diretorias nem outras empresas.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Nome Completo *</Label>
+                    <Input value={puroNome} onChange={(e) => setPuroNome(e.target.value)} placeholder="Nome do diretor" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <Input type="email" value={puroEmail} onChange={(e) => setPuroEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CPF</Label>
+                    <Input value={puroCpf} onChange={(e) => setPuroCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                    <p className="text-xs text-muted-foreground">CPF é usado para login (Email + CPF)</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Empresa *</Label>
+                    <Select value={puroProgramId} onValueChange={(v) => { setPuroProgramId(v); setPuroDepartmentId(""); }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a empresa" />
+                      </SelectTrigger>
+                      <SelectContentNoPortal>
+                        {empresas.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                        ))}
+                      </SelectContentNoPortal>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Diretoria que Gerencia *</Label>
+                    <Select value={puroDepartmentId} onValueChange={setPuroDepartmentId} disabled={!puroProgramId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={puroProgramId ? "Selecione a diretoria" : "Selecione a empresa primeiro"} />
+                      </SelectTrigger>
+                      <SelectContentNoPortal>
+                        {(departamentosDaEmpresa as any[]).map((dep) => (
+                          <SelectItem key={dep.id} value={dep.id.toString()}>{dep.name}</SelectItem>
+                        ))}
+                      </SelectContentNoPortal>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Se a diretoria ainda não existe, cadastre-a antes em EcoDISC 360 → Estrutura Organizacional.</p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={isCreatingPuro}>
+                    {isCreatingPuro ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando...</> : "Criar Diretor"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <>
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, email, empresa ou diretoria..."
+                value={searchDiretor}
+                onChange={(e) => setSearchDiretor(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchDiretor && (
+                <button onClick={() => setSearchDiretor("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome Completo</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Diretoria</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDiretores.map((d: any) => (
+                    <TableRow key={d.id}>
+                      <TableCell className="font-medium">{d.name}</TableCell>
+                      <TableCell className="text-sm">{d.email || "-"}</TableCell>
+                      <TableCell>{d.programName || "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          <Layers className="h-3 w-3 mr-1" />
+                          {d.departmentName || "-"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRemove(d.id, d.name)}
+                          disabled={isRemoving}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Remover
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredDiretores.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        {diretores.length === 0
+                          ? "Nenhum diretor cadastrado. Use \"Novo Diretor\" para adicionar."
+                          : "Nenhum diretor encontrado com os filtros aplicados."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </>
         )}
