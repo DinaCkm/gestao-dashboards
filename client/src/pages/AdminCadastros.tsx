@@ -3257,6 +3257,16 @@ const ADMIN_PAGE_GROUPS = [
     ],
   },
   {
+    group: 'EcoDISC 360',
+    pages: [
+      { path: '/disc360/estrutura-organizacional', label: 'Estrutura Organizacional' },
+      { path: '/disc360/perfis-empresa', label: 'Perfis de Empresa/Diretoria' },
+      { path: '/disc360/perfis-cargo', label: 'Perfis de Cargo' },
+      { path: '/disc360/aplicacoes', label: 'Aplicações DISC' },
+      { path: '/disc360/resultado-match', label: 'Resultado / Match' },
+    ],
+  },
+  {
     group: 'Parametrização',
     pages: [
       { path: '/cadastros', label: 'Cadastros' },
