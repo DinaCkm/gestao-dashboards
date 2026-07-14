@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,11 @@ export default function AplicacoesDISC() {
 }
 
 function AplicacoesDISCContent() {
+  const { user } = useAuth();
+  const isDiretor = (user as any)?.consultorRole === 'diretor';
+  const diretorProgramId = (user as any)?.managedProgramId as number | null | undefined;
+  const diretorDepartmentId = (user as any)?.managedDepartmentId as number | null | undefined;
+
   const [programId, setProgramId] = useState("");
   const numericProgramId = programId ? Number(programId) : undefined;
   const [filtroDepartamento, setFiltroDepartamento] = useState(NONE_VALUE);
@@ -59,6 +65,14 @@ function AplicacoesDISCContent() {
   const [novoTotalSessoes, setNovoTotalSessoes] = useState("");
   const [novoTipoMentoria, setNovoTipoMentoria] = useState<"individual" | "grupo" | "">("");
   const [novoTipoPortal, setNovoTipoPortal] = useState<"desenvolvimento" | "assessment">("desenvolvimento");
+
+  // Diretor: trava automaticamente na empresa e diretoria dele (nao pode escolher outra).
+  useEffect(() => {
+    if (isDiretor && diretorProgramId) {
+      setProgramId(String(diretorProgramId));
+      setFiltroDepartamento(diretorDepartmentId ? String(diretorDepartmentId) : NONE_VALUE);
+    }
+  }, [isDiretor, diretorProgramId, diretorDepartmentId]);
 
   const { data: empresas = [] } = trpc.admin.listEmpresas.useQuery();
   const { data: departamentos = [] } = trpc.departments.list.useQuery(
@@ -317,6 +331,7 @@ function AplicacoesDISCContent() {
                 setProgramId(v);
                 setFiltroDepartamento(NONE_VALUE);
               }}
+              disabled={isDiretor}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione" />
@@ -333,7 +348,7 @@ function AplicacoesDISCContent() {
 
           <div className="space-y-1">
             <Label>Departamento</Label>
-            <Select value={filtroDepartamento} onValueChange={setFiltroDepartamento} disabled={!numericProgramId}>
+            <Select value={filtroDepartamento} onValueChange={setFiltroDepartamento} disabled={!numericProgramId || isDiretor}>
               <SelectTrigger>
                 <SelectValue placeholder="Todos os departamentos" />
               </SelectTrigger>
