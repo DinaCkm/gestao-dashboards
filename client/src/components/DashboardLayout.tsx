@@ -161,7 +161,11 @@ const adminMenuGroups: MenuGroup[] = [
     icon: Sparkles,
     label: "EcoDISC 360",
     items: [
-      { icon: Sparkles, label: "Painel EcoDISC 360", path: "/disc360" },
+      { icon: Layers, label: "Estrutura Organizacional", path: "/disc360/estrutura-organizacional" },
+      { icon: Building2, label: "Perfis de Empresa/Diretoria", path: "/disc360/perfis-empresa" },
+      { icon: BriefcaseBusiness, label: "Perfis de Cargo", path: "/disc360/perfis-cargo" },
+      { icon: ClipboardCheck, label: "Aplicações DISC", path: "/disc360/aplicacoes" },
+      { icon: Target, label: "Resultado / Match", path: "/disc360/resultado-match" },
     ],
   },
   {
@@ -352,6 +356,25 @@ function DashboardLayoutContent({
     { enabled: isAdmin && !!(user as any)?.id }
   );
   const hasPageRestrictions = isAdmin && Array.isArray(adminPagePerms) && adminPagePerms.length > 0;
+  // Cada seção do EcoDISC 360 cobre as rotas de detalhe/relatório abertas a
+  // partir dela (que têm base de path diferente da tela de menu).
+  const DISC360_SECTION_COVERAGE: Record<string, string[]> = {
+    '/disc360/perfis-empresa': [
+      '/disc360/dashboard-cultura',
+      '/disc360/relatorio-cultura',
+    ],
+    '/disc360/perfis-cargo': [
+      '/disc360/dashboard-cargo',
+      '/disc360/relatorio-cargo',
+    ],
+    '/disc360/aplicacoes': [
+      '/disc360/relatorio-individual',
+    ],
+    '/disc360/resultado-match': [
+      '/disc360/relatorio-individual',
+    ],
+  };
+
   const canAccessPage = (path: string) => {
     if (!hasPageRestrictions) return true;
     // Verifica match exato (incluindo query params) ou match por path base
@@ -359,7 +382,16 @@ function DashboardLayoutContent({
     return adminPagePerms!.some(p => {
       if (p === path) return true; // match exato (ex: /processos-seletivos?tab=comunicado)
       const pBase = p.split('?')[0];
-      return pBase === basePath || basePath.startsWith(pBase + '/');
+      // Raiz do módulo: tratar /disc360 como match EXATO, para o painel não
+      // funcionar como "libera tudo" quando a permissão for granular.
+      if (pBase === '/disc360') return basePath === '/disc360';
+      if (pBase === basePath || basePath.startsWith(pBase + '/')) return true;
+      // Telas de detalhe/relatório cobertas pela seção concedida.
+      const extra = DISC360_SECTION_COVERAGE[pBase];
+      if (extra && extra.some(base => basePath === base || basePath.startsWith(base + '/'))) {
+        return true;
+      }
+      return false;
     });
   };
   const hasConsultorId = !!(user as any)?.consultorId;
