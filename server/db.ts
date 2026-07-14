@@ -220,10 +220,10 @@ export async function getUserByOpenId(openId: string) {
   const user = result[0];
   // Enriquecer com consultorRole e managedProgramId se o user tem consultorId
   if (user.consultorId) {
-    const [consultor] = await db.select({ role: consultors.role, managedProgramId: consultors.managedProgramId }).from(consultors).where(eq(consultors.id, user.consultorId)).limit(1);
-    return { ...user, consultorRole: consultor?.role || null, managedProgramId: consultor?.managedProgramId || null } as typeof user & { consultorRole: string | null; managedProgramId: number | null };
+    const [consultor] = await db.select({ role: consultors.role, managedProgramId: consultors.managedProgramId, managedDepartmentId: consultors.managedDepartmentId }).from(consultors).where(eq(consultors.id, user.consultorId)).limit(1);
+    return { ...user, consultorRole: consultor?.role || null, managedProgramId: consultor?.managedProgramId || null, managedDepartmentId: consultor?.managedDepartmentId || null } as typeof user & { consultorRole: string | null; managedProgramId: number | null; managedDepartmentId: number | null };
   }
-  return { ...user, consultorRole: null, managedProgramId: null } as typeof user & { consultorRole: string | null; managedProgramId: number | null };
+  return { ...user, consultorRole: null, managedProgramId: null, managedDepartmentId: null } as typeof user & { consultorRole: string | null; managedProgramId: number | null; managedDepartmentId: number | null };
 }
 
 export async function getAllUsers() {
@@ -12525,6 +12525,160 @@ export async function ensureBibliotecaPedagogicaTables(): Promise<void> {
   } catch (error) {
     console.error("[DB] Erro ao criar tabelas da Biblioteca Pedagógica:", error);
   }
+}
+
+// ============ ECODISC 360 - PAPEL DE DIRETOR (VISAO RESTRITA POR DIRETORIA) ============
+export async function ensureDiretorSupport(): Promise<void> {
+  const database = await getDb();
+  if (!database) return;
+  try {
+    // Adiciona 'diretor' ao enum de role da tabela consultors (mantendo os valores existentes)
+    await database.execute(sql.raw(
+      "ALTER TABLE `consultors` MODIFY COLUMN `role` ENUM('mentor','gerente','diretor') NOT NULL DEFAULT 'mentor'"
+    ));
+  } catch (e: any) {
+    console.warn("[DB] ensureDiretorSupport (role enum):", e?.message);
+  }
+  try {
+    await database.execute(sql.raw(
+      "ALTER TABLE `consultors` ADD COLUMN IF NOT EXISTS `managedDepartmentId` int"
+    ));
+  } catch (e: any) {
+    if (!e?.message?.includes("Duplicate column")) {
+      console.warn("[DB] ensureDiretorSupport (managedDepartmentId):", e?.message);
+    }
+  }
+  console.log("[DB] Suporte a Diretor/Área (EcoDISC 360) verificado/criado com sucesso.");
+}
+
+/**
+ * Listar diretores (papel 'diretor' na tabela consultors), com nome da empresa e da diretoria.
+ */
+export async function listDiretores(): Promise<any[]> {
+  const database = await getDb();
+  if (!database) return [];
+  const rows = await database.select({
+    id: consultors.id,
+    name: consultors.name,
+    email: consultors.email,
+    cpf: consultors.cpf,
+    canLogin: consultors.canLogin,
+    isActive: consultors.isActive,
+    managedProgramId: consultors.managedProgramId,
+    managedDepartmentId: consultors.managedDepartmentId,
+  }).from(consultors).where(eq(consultors.role, 'diretor')).orderBy(consultors.name);
+
+  if (rows.length === 0) return [];
+
+  const programIds = Array.from(new Set(rows.map(r => r.managedProgramId).filter((v): v is number => !!v)));
+  const departmentIds = Array.from(new Set(rows.map(r => r.managedDepartmentId).filter((v): v is number => !!v)));
+
+  const programsList = programIds.length ? await database.select({ id: programs.id, name: programs.name }).from(programs).where(inArray(programs.id, programIds)) : [];
+  const departmentsList = departmentIds.length ? await database.select({ id: departments.id, name: departments.name }).from(departments).where(inArray(departments.id, departmentIds)) : [];
+
+  const programMap = new Map(programsList.map(p => [p.id, p.name]));
+  const departmentMap = new Map(departmentsList.map(d => [d.id, d.name]));
+
+  return rows.map(r => ({
+    ...r,
+    programName: r.managedProgramId ? programMap.get(r.managedProgramId) || null : null,
+    departmentName: r.managedDepartmentId ? departmentMap.get(r.managedDepartmentId) || null : null,
+  }));
+}
+
+/**
+ * Criar diretor puro (sem perfil de aluno), vinculado a uma empresa E a uma diretoria especifica.
+ * O diretor so consegue ver, no EcoDISC 360, os dados da sua diretoria.
+ */
+export async function createDiretorPuro(data: {
+  name: string;
+  email: string;
+  cpf?: string;
+  programId: number;
+  departmentId: number;
+}): Promise<{ success: boolean; message?: string }> {
+  const database = await getDb();
+  if (!database) return { success: false, message: "Banco de dados não disponível" };
+
+  const normalizedEmail = data.email.toLowerCase().trim();
+  const [existingDiretor] = await database.select()
+    .from(consultors)
+    .where(and(
+      eq(consultors.email, normalizedEmail),
+      eq(consultors.role, 'diretor'),
+      eq(consultors.isActive, 1)
+    ))
+    .limit(1);
+
+  if (existingDiretor) {
+    return { success: false, message: `Já existe um diretor cadastrado com o email ${normalizedEmail}.` };
+  }
+
+  if (data.cpf) {
+    const normalizedCpf = data.cpf.replace(/\D/g, '');
+    const [existingCpfUser] = await database.select().from(users).where(and(eq(users.cpf, normalizedCpf), eq(users.isActive, 1))).limit(1);
+    if (existingCpfUser) {
+      return { success: false, message: "Este CPF já está cadastrado no sistema." };
+    }
+  }
+
+  // Confirma que a diretoria pertence de fato a empresa selecionada
+  const [dept] = await database.select().from(departments).where(eq(departments.id, data.departmentId)).limit(1);
+  if (!dept || dept.programId !== data.programId) {
+    return { success: false, message: "A diretoria selecionada não pertence à empresa escolhida." };
+  }
+
+  const [consultorResult] = await database.insert(consultors).values({
+    name: data.name,
+    email: normalizedEmail,
+    cpf: data.cpf?.replace(/\D/g, '') || null,
+    role: 'diretor' as const,
+    managedProgramId: data.programId,
+    managedDepartmentId: data.departmentId,
+    canLogin: data.cpf ? 1 : 0,
+    isActive: 1,
+  });
+
+  const consultorId = consultorResult.insertId;
+
+  if (data.cpf) {
+    const normalizedCpf = data.cpf.replace(/\D/g, '');
+    const openId = `diretor_puro_${consultorId}`;
+
+    await database.insert(users).values({
+      openId,
+      name: data.name,
+      email: normalizedEmail,
+      cpf: normalizedCpf,
+      role: 'manager' as const,
+      loginMethod: 'email_cpf',
+      isActive: 1,
+      consultorId: Number(consultorId),
+      programId: data.programId,
+      departmentId: data.departmentId,
+      lastSignedIn: new Date(),
+    });
+  }
+
+  return { success: true, message: `Diretor ${data.name} criado com sucesso.` };
+}
+
+/**
+ * Remover papel de diretor (desativa o usuario e o consultor).
+ */
+export async function removeDiretorRole(consultorId: number): Promise<{ success: boolean; message?: string }> {
+  const database = await getDb();
+  if (!database) return { success: false, message: "Banco de dados não disponível" };
+
+  const [consultor] = await database.select().from(consultors).where(eq(consultors.id, consultorId)).limit(1);
+  if (!consultor || consultor.role !== 'diretor') {
+    return { success: false, message: "Diretor não encontrado" };
+  }
+
+  await database.update(consultors).set({ isActive: 0 }).where(eq(consultors.id, consultorId));
+  await database.update(users).set({ isActive: 0 }).where(eq(users.consultorId, consultorId));
+
+  return { success: true, message: "Diretor removido com sucesso." };
 }
 
 // ============ PERFIL PROFISSIONAL DO ALUNO ============
