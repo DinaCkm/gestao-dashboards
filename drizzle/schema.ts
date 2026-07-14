@@ -53,8 +53,9 @@ export const consultors = mysqlTable("consultors", {
   cpf: varchar("cpf", { length: 11 }), // CPF do mentor para login
   especialidade: text("especialidade"), // Área de especialidade do mentor (ex: Gestão, Finanças, Marketing)
   programId: int("programId"),
-  role: mysqlEnum("role", ["mentor", "gerente"]).default("mentor").notNull(),
-  managedProgramId: int("managedProgramId"), // Para gerentes: qual empresa gerencia
+  role: mysqlEnum("role", ["mentor", "gerente", "diretor"]).default("mentor").notNull(),
+  managedProgramId: int("managedProgramId"), // Para gerentes/diretores: qual empresa gerencia
+  managedDepartmentId: int("managedDepartmentId"), // Para diretores: qual diretoria/departamento gerencia (visão restrita a essa área)
   isActive: int("isActive").default(1).notNull(),
   photoUrl: text("photoUrl"), // URL da foto do mentor (S3)
   miniCurriculo: text("miniCurriculo"), // Minicurrículo / biografia do mentor
