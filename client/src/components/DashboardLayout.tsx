@@ -229,7 +229,7 @@ type MenuItemExtended = {
   label: string;
   path: string;
   roles: ("admin" | "manager" | "user")[];
-  requireConsultorRole?: 'mentor' | 'gerente'; // Filtra por tipo de consultor
+  requireConsultorRole?: 'mentor' | 'gerente' | 'diretor'; // Filtra por tipo de consultor
   requireConsultorId?: boolean; // Legacy: mantido para compatibilidade
   hideIfConsultorId?: boolean; // Legacy: mantido para compatibilidade
 };
@@ -262,6 +262,12 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: BarChart3, label: "Performance dos Alunos", path: "/performance", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: FileText, label: "Relatórios", path: "/relatorios", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: ClipboardCheck, label: "Avaliação PS", path: "/processos-seletivos/avaliacao", roles: ["manager"], requireConsultorRole: 'gerente' },
+  // === ECODISC 360 (Gerente = vê toda a empresa) ===
+  { icon: ClipboardCheck, label: "Aplicações DISC", path: "/disc360/aplicacoes", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: Building2, label: "Perfis de Empresa/Diretoria", path: "/disc360/perfis-empresa", roles: ["manager"], requireConsultorRole: 'gerente' },
+  // === ECODISC 360 (Diretor = vê apenas a sua diretoria) ===
+  { icon: ClipboardCheck, label: "DISC da Minha Diretoria", path: "/disc360/aplicacoes", roles: ["manager"], requireConsultorRole: 'diretor' },
+  { icon: Building2, label: "Perfil da Minha Diretoria", path: "/disc360/perfis-empresa", roles: ["manager"], requireConsultorRole: 'diretor' },
   // === PROCESSOS SELETIVOS (apenas para candidatos/alunos sem consultorId) ===
   { icon: BriefcaseBusiness, label: "Processo Seletivo", path: "/processos-seletivos", roles: ["user"], hideIfConsultorId: true },
 
@@ -452,6 +458,9 @@ function DashboardLayoutContent({
           return consultorRole === 'gerente' || 
                  (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId) ||
                  (userRole === 'manager' && (user as any)?.alunoId);
+        }
+        if (item.requireConsultorRole === 'diretor') {
+          return consultorRole === 'diretor';
         }
       }
       // Legacy fallback
