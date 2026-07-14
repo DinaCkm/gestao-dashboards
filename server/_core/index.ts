@@ -20,7 +20,7 @@ import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
 import { iniciarCronLembreteChecklistWebinar } from "../cronLembreteChecklistWebinar";
 import { iniciarCronDevolutivaLembreteD1 } from "../cronDevolutivaLembreteD1";
 import { ENV } from "./env";
-import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport, ensureDevolutivasTables, ensureMetaEvidenciaColumns } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport, ensureDevolutivasTables, ensureMetaEvidenciaColumns, ensureDiretorSupport } from "../db";
 
 
 
@@ -37,6 +37,7 @@ async function startServer() {
   await ensureDevolutivasTables(); // v4: garante tabela e colunas de devolutiva PS
   await ensurePdfAtividadeSupport(); // garante suporte a PDF nas atividades de curso
   await ensureMetaEvidenciaColumns(); // garante colunas de evidência/validação em Metas (Jornada de Superação)
+  await ensureDiretorSupport(); // garante papel de Diretor/Área (EcoDISC 360) com visão restrita por diretoria
 
   const app = express();
   const server = createServer(app);
