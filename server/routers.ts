@@ -182,6 +182,14 @@ const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+// Admin, Admin N2 ou Manager (gestor) — para endpoints de leitura que gestores também precisam acessar
+const adminOrManagerProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== 'admin' && ctx.user.role !== 'admin2' && ctx.user.role !== 'manager') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores e gerentes' });
+  }
+  return next({ ctx });
+});
+
 async function ensureNivelAbertoParaAtribuicao(
   alunoId: number,
   contratoNivelId: number | null | undefined,
@@ -7823,7 +7831,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Admin - Cadastros
   admin: router({
     // Empresas/Programas
-    listEmpresas: adminOrAdmin2Procedure.query(async () => {
+    listEmpresas: adminOrManagerProcedure.query(async () => {
       return await db.getAllPrograms();
     }),
     
