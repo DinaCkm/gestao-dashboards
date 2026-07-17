@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,8 @@ type Props = {
 };
 
 export default function SelecaoRespondentesCultura({ programId, orgProfileId }: Props) {
+  const { user } = useAuth();
+  const isGestor = user?.role === "manager";
   const { data: alunos = [] } = trpc.disc360.searchAlunosForSelection.useQuery({ programId });
   const { data: convites = [], refetch: refetchConvites } = trpc.disc360.listarConvitesCulturaEmpresa.useQuery(
     { orgProfileId },
@@ -102,7 +105,11 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {alunosDisponiveis.length === 0 ? (
+        {isGestor ? (
+          <p className="text-sm text-muted-foreground">
+            O envio de convites do questionário é restrito à administração. Fale com o time CKM para convidar novos respondentes.
+          </p>
+        ) : alunosDisponiveis.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Todos os colaboradores elegiveis ja foram convidados.
           </p>
@@ -126,12 +133,12 @@ export default function SelecaoRespondentesCultura({ programId, orgProfileId }: 
           </div>
         )}
 
-        <Button
+        {!isGestor && <Button
           onClick={handleGerarConvites}
           disabled={criarConvitesMutation.isPending || selecionados.length === 0}
         >
           {criarConvitesMutation.isPending ? "Gerando..." : `Gerar convite (${selecionados.length})`}
-        </Button>
+        </Button>}
 
         {listaConvites.length > 0 && (
           <div className="space-y-2 pt-2 border-t">
