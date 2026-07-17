@@ -158,6 +158,8 @@ function AplicacoesDISCContent() {
 
   const aplicacaoAberta = (aplicacoes as any[]).find((a) => a.id === resultadoAbertoId) ?? null;
 
+  const isGestor = user?.role === "manager";
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between gap-2">
@@ -167,7 +169,7 @@ function AplicacoesDISCContent() {
             Voltar
           </Button>
         </Link>
-        <Dialog
+        {!isGestor && <Dialog
           open={cadastroAberto}
           onOpenChange={(open) => {
             setCadastroAberto(open);
@@ -311,7 +313,7 @@ function AplicacoesDISCContent() {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>
+        </Dialog>}
       </div>
 
       <Card>
@@ -520,7 +522,7 @@ function AplicacoesDISCContent() {
                               Ver resultado completo
                             </Button>
                           )}
-                          {!a.discConcluido && (
+                          {!a.discConcluido && !isGestor && (
                             <Button
                               variant="ghost"
                               size="sm"

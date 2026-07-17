@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { ArrowLeft, Copy, Eye } from "lucide-react";
 
 const NONE_VALUE = "none";
@@ -30,6 +31,8 @@ export default function PerfisCargo() {
 }
 
 function PerfisCargoContent() {
+  const { user } = useAuth();
+  const isGestor = user?.role === "manager";
   const [programId, setProgramId] = useState("");
   const numericProgramId = programId ? Number(programId) : undefined;
 
@@ -377,6 +380,8 @@ function CargoAcoesDialog({
   onConsolidado: () => void;
 }) {
   const { data: perfil } = trpc.disc360.getRoleProfileById.useQuery({ id: cargoProfileId });
+  const { user } = useAuth();
+  const isGestor = user?.role === "manager";
   const { data: convites = [], refetch: refetchConvites } = trpc.disc360.listarConvitesCargoRole.useQuery({
     cargoProfileId,
   });
@@ -443,7 +448,7 @@ function CargoAcoesDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {!jaTemConvites && (
+        {!jaTemConvites && !isGestor && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Informe o líder da posição e um empregado que ocupa o cargo para gerar os links de convite.
