@@ -210,7 +210,14 @@ export const disc360Router = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!isManagerOrAdmin((ctx as any)?.user?.role)) {
+      const role = (ctx as any)?.user?.role;
+      if (role === "manager") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Gestores não podem criar ou enviar convites de teste. Fale com a administração.",
+        });
+      }
+      if (!isManagerOrAdmin(role)) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Apenas lideres, gestores ou administradores podem criar convites do Perfil do Cargo.",
@@ -742,6 +749,12 @@ export const disc360Router = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      if ((ctx as any)?.user?.role === "manager") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Gestores não podem criar ou enviar convites de teste. Fale com a administração.",
+        });
+      }
       assertProgramAccess(getDisc360Scope(ctx), input.programId);
       const database = await requireDatabase();
       return criarConvitesCulturaEmpresa(database, input);
