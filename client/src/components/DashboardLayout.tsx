@@ -265,6 +265,9 @@ const otherMenuItems: MenuItemExtended[] = [
   // === ECODISC 360 (Gerente = vê toda a empresa) ===
   { icon: ClipboardCheck, label: "Aplicações DISC", path: "/disc360/aplicacoes", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Building2, label: "Perfis de Empresa/Diretoria", path: "/disc360/perfis-empresa", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: Layers, label: "Estrutura Organizacional", path: "/disc360/estrutura-organizacional", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: BriefcaseBusiness, label: "Perfis de Cargo", path: "/disc360/perfis-cargo", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: Target, label: "Resultado / Match", path: "/disc360/resultado-match", roles: ["manager"], requireConsultorRole: 'gerente' },
   // === ECODISC 360 (Diretor = vê apenas a sua diretoria) ===
   { icon: ClipboardCheck, label: "DISC da Minha Diretoria", path: "/disc360/aplicacoes", roles: ["manager"], requireConsultorRole: 'diretor' },
   { icon: Building2, label: "Perfil da Minha Diretoria", path: "/disc360/perfis-empresa", roles: ["manager"], requireConsultorRole: 'diretor' },
