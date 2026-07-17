@@ -7831,8 +7831,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
   // Admin - Cadastros
   admin: router({
     // Empresas/Programas
-    listEmpresas: adminOrManagerProcedure.query(async () => {
-      return await db.getAllPrograms();
+    listEmpresas: adminOrManagerProcedure.query(async ({ ctx }) => {
+      const todas = await db.getAllPrograms();
+      if (ctx.user.role === "manager") {
+        // Gestor só pode ver a própria empresa. O vínculo pode vir de duas formas:
+        // managedProgramId (contas ligadas a um registro de consultor) ou
+        // programId (contas de gestor vinculadas diretamente). Checamos as duas.
+        const empresaId = (ctx.user as any).managedProgramId ?? ctx.user.programId ?? null;
+        return todas.filter((p: any) => p.id === empresaId);
+      }
+      return todas;
     }),
     
     createEmpresa: adminOrAdmin2Procedure
