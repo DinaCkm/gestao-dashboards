@@ -111,7 +111,12 @@ export function getContratoNivelOperationalStatus(
 }
 
 export function isContratoNivelBloqueadoParaNovasAtribuicoes(status: ContratoNivelOperationalStatus): boolean {
-  return status === "fechamento" || status === "ajustes" || status === "encerrado";
+  // Regra de negócio: NÃO bloquear de forma antecipada. Enquanto o nível está em
+  // "fechamento" ou "ajustes" o aluno ainda está dentro do prazo (a data-fim não
+  // chegou) e deve poder entregar normalmente — envio de case, metas, assessments
+  // e mentorias. O bloqueio só passa a valer quando o nível está ENCERRADO
+  // (hoje >= data-fim), pois a partir daí novos envios alterariam performance/resultado.
+  return status === "encerrado";
 }
 
 export function isContratoNivelEncerrado(status: ContratoNivelOperationalStatus): boolean {
