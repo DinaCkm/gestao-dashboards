@@ -323,18 +323,24 @@ export default function AlunoConteudoCurso() {
                       onLoad={() => setIframeCarregando(false)}
                       style={{ opacity: iframeCarregando ? 0 : 1, transition: 'opacity 0.4s' }}
                     />
-                    {/* Overlay inferior: cobre toda a barra de controles do YouTube */}
-                    <div
-                      className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10"
-                      style={{ height: 80, background: "rgba(0,0,0,0.01)" }}
-                      aria-hidden="true"
-                    />
-                    {/* Overlay barra de progresso vermelha */}
-                    <div
-                      className="pointer-events-auto absolute left-0 right-0 z-10"
-                      style={{ bottom: 78, height: 12, background: "rgba(0,0,0,0.01)" }}
-                      aria-hidden="true"
-                    />
+                    {/* Camadas que cobrem a barra do YouTube (impedir pular o vídeo).
+                        NÃO aplicar em Genially: ele tem controles e interações próprios
+                        na parte de baixo (som, "Descobrir →", navegação) que ficariam
+                        bloqueados por estas camadas. */}
+                    {!/genially/i.test(urlOriginal) && (
+                      <>
+                        <div
+                          className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10"
+                          style={{ height: 80, background: "rgba(0,0,0,0.01)" }}
+                          aria-hidden="true"
+                        />
+                        <div
+                          className="pointer-events-auto absolute left-0 right-0 z-10"
+                          style={{ bottom: 78, height: 12, background: "rgba(0,0,0,0.01)" }}
+                          aria-hidden="true"
+                        />
+                      </>
+                    )}
                   </>
                 )}
               </div>
