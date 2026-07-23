@@ -318,7 +318,7 @@ export default function AlunoConteudoCurso() {
                       src={urlEmbed}
                       title={atividade.titulo}
                       className="h-[75vh] w-full"
-                      allow="fullscreen; autoplay"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
                       allowFullScreen
                       onLoad={() => setIframeCarregando(false)}
                       style={{ opacity: iframeCarregando ? 0 : 1, transition: 'opacity 0.4s' }}
