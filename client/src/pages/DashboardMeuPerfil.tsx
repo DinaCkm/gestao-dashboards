@@ -32,7 +32,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DualIndicators from "@/components/DualIndicators";
 import { TaskSubmissionForm } from "@/components/tasks/TaskSubmissionForm";
-import { MetaEvidenciaForm } from "@/components/tasks/MetaEvidenciaForm";
 import { lazy, Suspense, useCallback } from "react";
 const RelatorioAutoconhecimentoTab = lazy(() => import("./TesteDiscOnboarding").then(m => ({ default: m.default })));
 
@@ -245,6 +244,16 @@ function AlertaCasePendente({ alerta, onEnviar }: { alerta: any; onEnviar: () =>
   );
 }
 
+// Regra da visão de Aulas: uma trilha é "Finalizada" quando TODAS as aulas de
+// todas as competências que possuem aulas estão concluídas — independente do
+// período da trilha estar aberto e independente das metas. Enquanto houver
+// alguma aula não concluída, a trilha permanece "Em Andamento".
+function aulasTrilhaFinalizadas(mj: any): boolean {
+  const comAulas = (mj?.microJornadas || []).filter((m: any) => Number(m?.aulasDisponiveis || 0) > 0);
+  if (comAulas.length === 0) return false;
+  return comAulas.every((m: any) => Number(m?.aulasConcluidas || 0) >= Number(m?.aulasDisponiveis || 0));
+}
+
 export default function DashboardMeuPerfil() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -427,12 +436,6 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
     onSuccess: () => {
       utils.attendance.myTasks.invalidate();
       setTaskDetailOpen(null);
-    },
-  });
-  const enviarMetaEvidencia = trpc.metas.enviarEvidencia.useMutation({
-    onSuccess: () => {
-      utils.metas.minhas.invalidate();
-      utils.indicadores.meuDashboard.invalidate();
     },
   });
   const markPresence = trpc.attendance.markPresence.useMutation({
@@ -1738,7 +1741,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                   {(["todos", "ativo", "congelado"] as const).map((status) => {
                     const count = status === "todos"
                       ? jornadaData.macroJornadas.length
-                      : jornadaData.macroJornadas.filter((a: any) => a.status === status).length;
+                      : jornadaData.macroJornadas.filter((a: any) => (status === "congelado" ? aulasTrilhaFinalizadas(a) : !aulasTrilhaFinalizadas(a))).length;
                     const isActive = pdiStatusFilter === status;
                     const colorMap = {
                       todos: isActive ? "bg-[#0A1E3E] text-white border-[#0A1E3E]" : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50",
@@ -1760,7 +1763,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
 
                 {/* Macro Jornadas (por trilha) */}
                 {jornadaData.macroJornadas
-                  .filter((mj: any) => pdiStatusFilter === "todos" || mj.status === pdiStatusFilter)
+                  .filter((mj: any) => pdiStatusFilter === "todos" || (pdiStatusFilter === "congelado" ? aulasTrilhaFinalizadas(mj) : !aulasTrilhaFinalizadas(mj)))
                   .map((macroJornada: any) => (
                   <Card key={macroJornada.id} className="bg-white border border-gray-200 shadow-sm">
                     <CardHeader>
@@ -1788,8 +1791,8 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                               <p className="text-lg font-bold text-blue-700">{safeToFixed(macroJornada?.metaGeralFinal ?? 0, 0)}%</p>
                             </div>
                           )}
-                          <Badge variant="outline" className={macroJornada.status === "ativo" ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
-                            {macroJornada.status === "ativo" ? "Em Andamento" : "Finalizada"}
+                          <Badge variant="outline" className={!aulasTrilhaFinalizadas(macroJornada) ? "bg-emerald-50 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}>
+                            {!aulasTrilhaFinalizadas(macroJornada) ? "Em Andamento" : "Finalizada"}
                           </Badge>
                         </div>
                       </div>
@@ -2705,14 +2708,10 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                       ) : (
                         <div className="space-y-3">
                           {microMetas.map((meta: any, idx: number) => {
-                            const status: string = meta.status || 'pendente';
-                            const statusConfig = status === 'validada'
-                              ? { label: 'Validada', className: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '✅' }
-                              : status === 'entregue'
-                              ? { label: 'Aguardando validação', className: 'bg-amber-50 text-amber-700 border-amber-200', icon: '⏳' }
-                              : { label: 'Pendente', className: 'bg-gray-100 text-gray-600 border-gray-200', icon: '—' };
-                            const podeEnviar = status !== 'validada';
-                            const possuiEnvio = !!(meta.evidenceLink || meta.evidenceImageUrl || meta.relatoAluno || meta.submittedAt);
+                            const metaStatus = getMetaStatusConfig(meta.ultimoStatus);
+                            const tarefaVinculada = (myTasks || []).find((task: any) => Number(task.taskId) === Number(meta.taskLibraryId));
+                            const possuiEnvio = !!tarefaVinculada && (tarefaVinculada.taskStatus === "entregue" || tarefaVinculada.taskStatus === "validada") && !!(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
+                            const podeEnviar = !!tarefaVinculada && tarefaVinculada.taskStatus !== 'validada' && !(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
 
                             return (
                               <div key={meta.id} className="p-4 rounded-lg border bg-gray-50 border-gray-100">
@@ -2720,8 +2719,8 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                                       <p className="text-sm font-semibold text-gray-900">{idx + 1}. {meta.titulo}</p>
-                                      <Badge variant="outline" className={statusConfig.className}>
-                                        <span className="flex items-center gap-1">{statusConfig.icon} {statusConfig.label}</span>
+                                      <Badge variant="outline" className={metaStatus.className}>
+                                        <span className="flex items-center gap-1">{metaStatus.icon} {metaStatus.label}</span>
                                       </Badge>
                                     </div>
                                     {meta.descricao && (
@@ -2730,9 +2729,6 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                     <p className="text-xs text-gray-500 mt-1">
                                       Competência: {meta.competenciaNome} • Prazo: {meta.ultimoMes && meta.ultimoAno ? `${String(meta.ultimoMes).padStart(2, "0")}/${meta.ultimoAno}` : "não informado"}
                                     </p>
-                                    {status === 'pendente' && meta.motivoRejeicao && (
-                                      <p className="text-xs text-red-600 mt-1">Evidência devolvida pela mentora: {meta.motivoRejeicao}</p>
-                                    )}
                                   </div>
 
                                   <div className="flex items-center gap-1">
@@ -2740,9 +2736,10 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                       variant="outline"
                                       size="sm"
                                       onClick={() => setMetaDetailOpen(meta.id)}
-                                      className="text-[#F5991F] border-[#F5991F] hover:bg-[#F5991F]/10 text-xs"
+                                      disabled={!tarefaVinculada}
+                                      className="text-[#F5991F] border-[#F5991F] hover:bg-[#F5991F]/10 text-xs disabled:opacity-60"
                                     >
-                                      <Upload className="h-3 w-3 mr-1" /> {possuiEnvio ? "Ver Evidência" : "Enviar Evidência"}
+                                      <Upload className="h-3 w-3 mr-1" /> Enviar Evidência
                                     </Button>
                                     <Button
                                       variant="ghost"
@@ -2757,23 +2754,24 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
 
                                 {expandedMeta === meta.id && (
                                   <div className="mt-3 space-y-2">
-                                    {possuiEnvio ? (
+                                    {tarefaVinculada ? (
                                       <div className="p-3 rounded bg-white border border-gray-200 space-y-2">
                                         <p className="text-xs text-gray-600">
-                                          Status: <strong>{statusConfig.label}</strong>
+                                          Sessão vinculada: <strong>{tarefaVinculada.sessionNumber}</strong> • Status de validação:{" "}
+                                          <strong>{tarefaVinculada.taskStatus === "validada" ? "Validada pela mentora" : tarefaVinculada.taskStatus === "entregue" ? "Aguardando validação" : "Pendente de envio"}</strong>
                                         </p>
-                                        {meta.submittedAt && (
-                                          <p className="text-xs text-gray-500">Data de envio: {new Date(meta.submittedAt).toLocaleString("pt-BR")}</p>
+                                        {tarefaVinculada.submittedAt && (
+                                          <p className="text-xs text-gray-500">Data de envio: {new Date(tarefaVinculada.submittedAt).toLocaleString("pt-BR")}</p>
                                         )}
-                                        {meta.evidenceLink && (
-                                          <a href={meta.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                            <ExternalLink className="h-3 w-3" /> {meta.evidenceLink}
+                                        {tarefaVinculada.evidenceLink && (
+                                          <a href={tarefaVinculada.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                            <ExternalLink className="h-3 w-3" /> {tarefaVinculada.evidenceLink}
                                           </a>
                                         )}
                                       </div>
                                     ) : (
                                       <div className="p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-700">
-                                        Nenhuma evidência enviada ainda para esta micro meta.
+                                        Esta micro meta ainda não possui tarefa vinculada para envio de evidência.
                                       </div>
                                     )}
                                   </div>
@@ -2791,46 +2789,50 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                       </DialogDescription>
                                     </DialogHeader>
 
-                                    <div className="space-y-3">
-                                      {podeEnviar && (
-                                        <MetaEvidenciaForm
-                                          isSubmitting={enviarMetaEvidencia.isPending}
-                                          submitError={enviarMetaEvidencia.error?.message}
-                                          onSubmit={async (payload) => {
-                                            await enviarMetaEvidencia.mutateAsync({ metaId: meta.id, ...payload });
-                                          }}
-                                          onSuccess={() => setTimeout(() => setMetaDetailOpen(null), 100)}
-                                        />
-                                      )}
+                                    {!tarefaVinculada ? (
+                                      <div className="p-3 rounded bg-amber-50 border border-amber-200 text-xs text-amber-700">
+                                        Não encontramos uma tarefa vinculada a esta micro meta para envio de evidência.
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {podeEnviar && (
+                                          <TaskSubmissionForm
+                                            submitLabel="Enviar evidência da micro meta"
+                                            isSubmitting={submitEvidence.isPending}
+                                            submitError={submitEvidence.error?.message}
+                                            onSubmit={async (payload) => {
+                                              await submitEvidence.mutateAsync({ sessionId: tarefaVinculada.sessionId, ...payload });
+                                            }}
+                                            onSuccess={() => setTimeout(() => setMetaDetailOpen(null), 100)}
+                                            successMessage="Evidência da micro meta enviada com sucesso!"
+                                          />
+                                        )}
 
-                                      {possuiEnvio && (
-                                        <div className="space-y-2 pt-2 border-t">
-                                          <p className="text-xs text-gray-600">
-                                            Enviado em: {meta.submittedAt ? new Date(meta.submittedAt).toLocaleString("pt-BR") : "—"}
-                                            {status === 'validada' && meta.validatedAt && (
-                                              <> • Validado em: {new Date(meta.validatedAt).toLocaleString("pt-BR")}</>
+                                        {possuiEnvio && (
+                                          <div className="space-y-2">
+                                            <p className="text-xs text-gray-600">
+                                              Enviado em: {tarefaVinculada.submittedAt ? new Date(tarefaVinculada.submittedAt).toLocaleString("pt-BR") : "—"}
+                                            </p>
+                                            {tarefaVinculada.relatoAluno && (
+                                              <div className="p-3 rounded bg-gray-50 border border-gray-200">
+                                                <p className="text-xs font-medium text-gray-700 mb-1">Relato do aluno</p>
+                                                <p className="text-xs text-gray-600">{tarefaVinculada.relatoAluno}</p>
+                                              </div>
                                             )}
-                                          </p>
-                                          {meta.relatoAluno && (
-                                            <div className="p-3 rounded bg-gray-50 border border-gray-200">
-                                              <p className="text-xs font-medium text-gray-700 mb-1">Relato do aluno</p>
-                                              <p className="text-xs text-gray-600">{meta.relatoAluno}</p>
-                                            </div>
-                                          )}
-                                          {meta.evidenceImageUrl && (
-                                            <img src={meta.evidenceImageUrl} alt="Evidência da micro meta" className="max-w-full max-h-64 rounded-lg border" />
-                                          )}
-                                          {meta.evidenceLink && (
-                                            <a href={meta.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                              <ExternalLink className="h-3 w-3" /> Abrir link da evidência
-                                            </a>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
+                                            {tarefaVinculada.evidenceImageUrl && (
+                                              <img src={tarefaVinculada.evidenceImageUrl} alt="Evidência da micro meta" className="max-w-full max-h-64 rounded-lg border" />
+                                            )}
+                                            {tarefaVinculada.evidenceLink && (
+                                              <a href={tarefaVinculada.evidenceLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                                <ExternalLink className="h-3 w-3" /> Abrir link da evidência
+                                              </a>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
                                   </DialogContent>
                                 </Dialog>
-
                               </div>
                             );
                           })}
