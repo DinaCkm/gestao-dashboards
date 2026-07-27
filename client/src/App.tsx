@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
+import RelatorioMentorado from "./pages/RelatorioMentorado";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch, Redirect } from "wouter";
@@ -115,6 +116,7 @@ import WebinarTaskResponsavel from "./pages/WebinarTaskResponsavel";
 function Router() {
   return (
     <Switch>
+      <Route path={"/relatorios/mentorado"} component={RelatorioMentorado} />
       <Route path={"/tarefa-webinar/:token"} component={WebinarTaskResponsavel} />
       <Route path={"/login"} component={Login} />
       <Route path={"/registro"} component={AutoRegistro} />
