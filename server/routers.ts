@@ -35,6 +35,7 @@ import { fichasPedagogicasRouter } from "./routers/fichasPedagogicas";
 import { bibliotecaLivrosRouter } from "./routers/bibliotecaLivros";
 import { processosSeletivosRouter } from "./routers/processosSeletivos";
 import { disc360Router } from "./routers/disc360";
+import { relatorioMentoradoRouter } from "./routers/relatorioMentorado";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
@@ -696,6 +697,7 @@ export const appRouter = router({
   jornada: jornadaRouter,
   fichasPedagogicas: fichasPedagogicasRouter,
   bibliotecaLivros: bibliotecaLivrosRouter,
+  relatorioMentorado: relatorioMentoradoRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
