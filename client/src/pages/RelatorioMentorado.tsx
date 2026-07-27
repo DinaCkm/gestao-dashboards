@@ -1,20 +1,16 @@
 /**
  * client/src/pages/RelatorioMentorado.tsx
  *
- * Página de relatório de mentorado gerado por IA.
- * Mesmo componente serve para admin (escolhe qualquer aluno) e mentor
- * (escolhe entre seus próprios mentorados) — o backend já filtra isso em
- * `listarAlunosDisponiveis`.
+ * Página de relatório de mentorado gerado por IA. Mesmo componente serve
+ * para admin (escolhe qualquer aluno) e mentor (escolhe entre seus próprios
+ * mentorados) — o backend já filtra isso em `listarAlunosDisponiveis`.
  *
- * INTEGRAÇÃO NECESSÁRIA (veja instruções completas no chat):
- * 1. Colocar este arquivo em client/src/pages/
- * 2. Adicionar a rota em App.tsx, ex:
- *      <Route path="/relatorios/mentorado" element={<RelatorioMentorado />} />
- * 3. Adicionar um item de menu em DashboardLayout.tsx apontando pra essa rota
- *    (visível tanto no grupo do admin quanto no grupo do mentor)
+ * O relatório agora vem como um texto único e estruturado (RELATÓRIO
+ * SINTÉTICO DE ACOMPANHAMENTO), com campos em MAIÚSCULAS e análise em
+ * texto normal — por isso é renderizado como um bloco formatado, em vez
+ * de caixas separadas de "pontos positivos" / "pontos de atenção".
  *
- * Ajuste o import de `trpc` abaixo para o caminho real usado no projeto
- * (ex: "@/lib/trpc" ou "../utils/trpc"), conforme o restante do código.
+ * Ajuste o import de `trpc` conforme o caminho real usado no projeto.
  */
 
 import { useState } from "react";
@@ -35,7 +31,7 @@ export default function RelatorioMentorado() {
     <div style={styles.wrap}>
       <div style={styles.header}>
         <h1 style={styles.title}>Relatório de Mentorado</h1>
-        <span style={styles.subtitle}>Gerado com IA a partir dos indicadores e comentários da mentoria</span>
+        <span style={styles.subtitle}>Gerado com IA a partir dos indicadores, comentários da mentoria e assessment DISC</span>
       </div>
 
       <div style={styles.card}>
@@ -70,23 +66,10 @@ export default function RelatorioMentorado() {
       )}
 
       {gerarMutation.data && (
-        <div style={styles.resultWrap}>
-          <div style={styles.statsGrid}>
-            <Stat label="Sessões realizadas" value={gerarMutation.data.stats.sessoesRealizadas} />
-            <Stat label="Faltas" value={gerarMutation.data.stats.faltas} />
-            <Stat label="Metas validadas" value={gerarMutation.data.stats.metasValidadas} />
-            <Stat label="Nota evolução" value={gerarMutation.data.stats.notaEvolucaoMedia} />
-            <Stat label="Engagement" value={gerarMutation.data.stats.engagementMedio} />
-          </div>
-
-          <div style={{ ...styles.reportBlock, background: "#eaf2ea", borderColor: "#b9d3bd" }}>
-            <h3 style={{ ...styles.reportTitle, color: "#3a6b46" }}>Pontos positivos</h3>
-            <div style={styles.reportContent}>{gerarMutation.data.pontosPositivos}</div>
-          </div>
-
-          <div style={{ ...styles.reportBlock, background: "#fbf1e6", borderColor: "#e3c79a" }}>
-            <h3 style={{ ...styles.reportTitle, color: "#95601f" }}>Pontos de atenção</h3>
-            <div style={styles.reportContent}>{gerarMutation.data.pontosAtencao}</div>
+        <div style={styles.reportCard}>
+          <RelatorioFormatado texto={gerarMutation.data.relatorioTexto} />
+          <div style={styles.timestamp}>
+            Gerado em {new Date(gerarMutation.data.geradoEm).toLocaleString("pt-BR")}
           </div>
         </div>
       )}
@@ -94,11 +77,37 @@ export default function RelatorioMentorado() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: any }) {
+// Renderiza o texto do relatório distinguindo visualmente linhas em
+// MAIÚSCULAS (campos/títulos) de linhas de análise em texto normal.
+function RelatorioFormatado({ texto }: { texto: string }) {
+  const linhas = texto.split("\n");
+
+  const ehCabecalho = (linha: string) => {
+    const trimmed = linha.trim();
+    if (!trimmed) return false;
+    const letras = trimmed.replace(/[^a-zA-ZÀ-ÿ]/g, "");
+    if (letras.length === 0) return false;
+    return trimmed === trimmed.toUpperCase() && letras.length >= 3;
+  };
+
   return (
-    <div style={styles.statBox}>
-      <div style={styles.statValue}>{value ?? "—"}</div>
-      <div style={styles.statLabel}>{label}</div>
+    <div style={styles.reportBody}>
+      {linhas.map((linha, i) => {
+        if (!linha.trim()) return <div key={i} style={{ height: 8 }} />;
+        if (linha.trim() === "---") return <hr key={i} style={styles.divider} />;
+        if (ehCabecalho(linha)) {
+          return (
+            <div key={i} style={styles.fieldLabel}>
+              {linha.trim()}
+            </div>
+          );
+        }
+        return (
+          <div key={i} style={styles.bodyLine}>
+            {linha}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -113,12 +122,10 @@ const styles: Record<string, React.CSSProperties> = {
   select: { width: "100%", padding: "9px 10px", borderRadius: 4, border: "1px solid #dde2dd", marginBottom: 14, fontSize: 14 },
   button: { width: "100%", background: "#2f4f3e", color: "#fff", border: "none", padding: 12, borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: "pointer" },
   errorBox: { background: "#fbe9e7", border: "1px solid #e3a89a", color: "#8a2d1c", borderRadius: 6, padding: 14, fontSize: 13, marginBottom: 16 },
-  resultWrap: { marginTop: 8 },
-  statsGrid: { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, marginBottom: 20 },
-  statBox: { background: "#fff", border: "1px solid #dde2dd", borderRadius: 6, padding: "10px 6px", textAlign: "center" },
-  statValue: { fontSize: 20, fontWeight: 700, color: "#1e352a" },
-  statLabel: { fontSize: 10, color: "#5b675f", textTransform: "uppercase", marginTop: 4 },
-  reportBlock: { border: "1px solid", borderRadius: 6, padding: "18px 20px", marginBottom: 16 },
-  reportTitle: { fontSize: 12, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 10px 0" },
-  reportContent: { whiteSpace: "pre-wrap", fontSize: 15, color: "#1f2a24" },
+  reportCard: { background: "#fff", border: "1px solid #dde2dd", borderRadius: 6, padding: "24px 28px" },
+  reportBody: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+  fieldLabel: { fontSize: 11.5, fontWeight: 700, letterSpacing: 0.4, color: "#2f4f3e", marginTop: 10, textTransform: "none" },
+  bodyLine: { fontSize: 14.5, color: "#1f2a24", lineHeight: 1.6, whiteSpace: "pre-wrap" },
+  divider: { border: "none", borderTop: "1px solid #e5e5e5", margin: "14px 0" },
+  timestamp: { marginTop: 20, fontSize: 11, color: "#9aa79f", textAlign: "right" },
 };
