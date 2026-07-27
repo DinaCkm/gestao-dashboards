@@ -4,7 +4,8 @@
  * Relatório de mentorado gerado por IA: agrega indicadores de performance,
  * os comentários que a mentora registra em cada sessão (feedback interno +
  * mensagemAluno) e os resultados de assessment DISC do aluno, e usa a API
- * da Anthropic para sintetizar pontos positivos e pontos de atenção.
+ * da Anthropic para gerar um relatório sintético de acompanhamento seguindo
+ * um formato estruturado com regras rígidas contra invenção de dados.
  */
 
 import { z } from "zod";
@@ -17,7 +18,7 @@ import { DISC_PERFIS } from "../../shared/discData";
 // ---------------------------------------------------------------------------
 // Anthropic API (server-side, usa a variável de ambiente ANTHROPIC_API_KEY)
 // ---------------------------------------------------------------------------
-async function gerarSinteseIA(prompt: string): Promise<{ pontosPositivos: string; pontosAtencao: string }> {
+async function gerarSinteseIA(prompt: string): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new TRPCError({
@@ -35,7 +36,7 @@ async function gerarSinteseIA(prompt: string): Promise<{ pontosPositivos: string
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 1200,
+      max_tokens: 2000,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -54,11 +55,7 @@ async function gerarSinteseIA(prompt: string): Promise<{ pontosPositivos: string
     .map((b: any) => b.text)
     .join("\n");
 
-  const parts = fullText.split(/PONTOS DE ATEN[ÇC][ÃA]O:/i);
-  const pontosPositivos = (parts[0] || "").replace(/PONTOS POSITIVOS:/i, "").trim();
-  const pontosAtencao = (parts[1] || "").trim() || "(não retornado pela IA)";
-
-  return { pontosPositivos, pontosAtencao };
+  return fullText.trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -101,7 +98,6 @@ async function buscarDadosAluno(alunoId: number) {
     LIMIT 12
   `);
 
-  // Resultados de assessment DISC do aluno (função já existente no projeto)
   let discResultados: any[] = [];
   try {
     discResultados = await getAllDiscResultadosByAluno(alunoId);
@@ -112,79 +108,211 @@ async function buscarDadosAluno(alunoId: number) {
   return { aluno, stats, sessions: sessionRows || [], discResultados };
 }
 
-function montarResumoDisc(discResultados: any[]): string {
+function montarBlocoDisc(discResultados: any[]): string {
   if (!discResultados || discResultados.length === 0) {
-    return "(aluno não possui assessment DISC registrado)";
+    return "Não há assessment DISC registrado para este mentorado.";
   }
 
-  // Usa o resultado mais recente como referência principal
   const ordenados = [...discResultados].sort(
     (a, b) => new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime()
   );
   const maisRecente = ordenados[0];
   const perfil = DISC_PERFIS[maisRecente.perfilPredominante as keyof typeof DISC_PERFIS];
 
-  let resumo = `Perfil DISC predominante mais recente (ciclo ${maisRecente.ciclo || "?"}): ${maisRecente.perfilPredominante}`;
-  resumo += `\nScores: D=${maisRecente.scoreD}, I=${maisRecente.scoreI}, S=${maisRecente.scoreS}, C=${maisRecente.scoreC}`;
+  let bloco = `PERFIL PREDOMINANTE (ciclo ${maisRecente.ciclo || "não informado"}): ${maisRecente.perfilPredominante}`;
+  bloco += `\nÍNDICES: D=${maisRecente.scoreD} | I=${maisRecente.scoreI} | S=${maisRecente.scoreS} | C=${maisRecente.scoreC}`;
 
   if (perfil) {
-    resumo += `\nTítulo do perfil: ${perfil.titulo}`;
-    if (perfil.pontosFortes) resumo += `\nPontos fortes típicos do perfil: ${perfil.pontosFortes}`;
-    if (perfil.areasDesenvolvimento) resumo += `\nÁreas de desenvolvimento típicas do perfil: ${perfil.areasDesenvolvimento}`;
+    bloco += `\nTÍTULO DO PERFIL: ${perfil.titulo}`;
+    if (perfil.pontosFortes) bloco += `\nPONTOS FORTES TÍPICOS DO PERFIL: ${perfil.pontosFortes}`;
+    if (perfil.areasDesenvolvimento) bloco += `\nÁREAS DE DESENVOLVIMENTO TÍPICAS DO PERFIL: ${perfil.areasDesenvolvimento}`;
   }
 
   if (ordenados.length > 1) {
     const primeiro = ordenados[ordenados.length - 1];
-    resumo += `\n\nEvolução desde o primeiro assessment (ciclo ${primeiro.ciclo || "?"}):`;
-    resumo += `\nD: ${primeiro.scoreD} → ${maisRecente.scoreD}`;
-    resumo += `\nI: ${primeiro.scoreI} → ${maisRecente.scoreI}`;
-    resumo += `\nS: ${primeiro.scoreS} → ${maisRecente.scoreS}`;
-    resumo += `\nC: ${primeiro.scoreC} → ${maisRecente.scoreC}`;
-    resumo += `\nTotal de aplicações do assessment: ${ordenados.length}`;
+    bloco += `\n\nEVOLUÇÃO DESDE O PRIMEIRO ASSESSMENT (ciclo ${primeiro.ciclo || "não informado"}):`;
+    bloco += `\nD: ${primeiro.scoreD} → ${maisRecente.scoreD}`;
+    bloco += `\nI: ${primeiro.scoreI} → ${maisRecente.scoreI}`;
+    bloco += `\nS: ${primeiro.scoreS} → ${maisRecente.scoreS}`;
+    bloco += `\nC: ${primeiro.scoreC} → ${maisRecente.scoreC}`;
+    bloco += `\nTOTAL DE APLICAÇÕES DO ASSESSMENT: ${ordenados.length}`;
   }
 
-  return resumo;
+  return bloco;
+}
+
+function montarBlocoSessoes(sessions: any[]): string {
+  if (!sessions || sessions.length === 0) {
+    return "Não há registros de sessões de mentoria com comentários disponíveis.";
+  }
+  return sessions
+    .map((s) => {
+      const data = s.sessionDate ? new Date(s.sessionDate).toISOString().slice(0, 10) : "não informada";
+      return `DATA DA SESSÃO:\n${data}\n\nCOMENTÁRIO INTERNO DA MENTORA:\n${s.feedback || "não registrado"}\n\nMENSAGEM DIRECIONADA AO MENTORADO:\n${s.mensagemAluno || "não registrada"}`;
+    })
+    .join("\n\n---\n\n");
 }
 
 function montarPrompt(aluno: any, stats: any, sessions: any[], discResultados: any[]) {
-  const sessionsText = sessions
-    .map((s, i) => {
-      const data = s.sessionDate ? new Date(s.sessionDate).toISOString().slice(0, 10) : "sem data";
-      return `Sessão ${i + 1} (${data}):\n- Comentário interno da mentora: ${s.feedback || "(vazio)"}\n- Mensagem enviada ao aluno: ${s.mensagemAluno || "(vazio)"}`;
-    })
-    .join("\n\n") || "(nenhum comentário registrado)";
+  const blocoDisc = montarBlocoDisc(discResultados);
+  const blocoSessoes = montarBlocoSessoes(sessions);
 
-  const discText = montarResumoDisc(discResultados);
+  return `Você é um assistente especializado em análise de desenvolvimento humano e acompanhamento de mentorias do Programa Ecolíder.
 
-  return `Você é um assistente que ajuda uma equipe de gestão de mentorias (programa Ecolider) a sintetizar o progresso de um mentorado a partir de dados de performance, comentários que as mentoras registram em cada sessão, e resultados de assessment comportamental DISC.
+Sua tarefa é elaborar um RELATÓRIO SINTÉTICO DE ACOMPANHAMENTO a partir dos indicadores de performance, dos registros realizados pelas mentoras durante as sessões e dos resultados do assessment comportamental DISC.
 
-Dados do aluno:
-- Nome: ${aluno.nome}
+Utilize SOMENTE as informações fornecidas. Não complete lacunas com suposições, interpretações genéricas ou informações que não estejam expressamente registradas.
 
-Indicadores de performance:
-- Sessões realizadas: ${stats.sessoesRealizadas ?? "não informado"}
-- Faltas: ${stats.faltas ?? "não informado"}
-- Metas validadas: ${stats.metasValidadas ?? "não informado"}
-- Metas pendentes/não entregues: ${stats.metasPendentes ?? "não informado"}
-- Nota de evolução média: ${stats.notaEvolucaoMedia ?? "não informado"}
-- Nota de aplicabilidade média: ${stats.notaAplicabilidadeMedia ?? "não informado"}
-- Engagement score médio: ${stats.engagementMedio ?? "não informado"}
+DADOS DO MENTORADO
 
-Resultado do assessment comportamental DISC:
-${discText}
+NOME:
+${aluno.nome}
 
-Comentários registrados pela mentora ao longo das sessões (interno = uso administrativo; mensagem ao aluno = o que o próprio aluno vê):
-${sessionsText}
+INDICADORES DE PERFORMANCE
 
-Tarefa: com base SOMENTE nas informações acima, escreva uma síntese objetiva em português, em duas seções, no seguinte formato exato:
+SESSÕES REALIZADAS:
+${stats.sessoesRealizadas ?? "não informado"}
+
+FALTAS:
+${stats.faltas ?? "não informado"}
+
+METAS VALIDADAS:
+${stats.metasValidadas ?? "não informado"}
+
+METAS PENDENTES OU NÃO ENTREGUES:
+${stats.metasPendentes ?? "não informado"}
+
+NOTA MÉDIA DE EVOLUÇÃO:
+${stats.notaEvolucaoMedia ?? "não informado"}
+
+NOTA MÉDIA DE APLICABILIDADE:
+${stats.notaAplicabilidadeMedia ?? "não informado"}
+
+ENGAGEMENT SCORE MÉDIO:
+${stats.engagementMedio ?? "não informado"}
+
+RESULTADO DO ASSESSMENT COMPORTAMENTAL DISC
+
+${blocoDisc}
+
+REGISTROS DAS SESSÕES DE MENTORIA
+
+${blocoSessoes}
+
+REGRAS OBRIGATÓRIAS PARA A ANÁLISE
+
+1. Utilize exclusivamente os dados apresentados neste prompt.
+2. Não invente comportamentos, resultados, dificuldades, avanços, metas ou conclusões que não estejam sustentados pelos registros.
+3. Todos os TÍTULOS, SUBTÍTULOS E CAMPOS QUE REPRESENTAM DADOS devem ser escritos em LETRAS MAIÚSCULAS.
+4. Os textos de análise devem ser escritos normalmente, sem o uso integral de letras maiúsculas. Essa diferenciação deve permitir a identificação visual entre:
+   * DADOS OBJETIVOS;
+   * ANÁLISE E INTERPRETAÇÃO.
+5. Somente mencione metas quando existirem registros objetivos de metas definidas, validadas, entregues, pendentes ou não entregues.
+6. Quando não forem localizadas metas nos indicadores ou nos registros das sessões, considere internamente que a mentora não definiu ou não registrou metas. Nesse caso:
+   * não fale sobre metas no relatório;
+   * não diga que o mentorado não possui metas;
+   * não atribua ao mentorado falta de entrega, engajamento ou comprometimento;
+   * não apresente a ausência de metas como ponto de atenção;
+   * não mencione que a mentora deixou de defini-las;
+   * simplesmente omita qualquer análise relacionada a metas.
+7. Diferencie ausência de informação de resultado negativo. Um dado não registrado não pode ser interpretado como falta de desempenho, falta de comprometimento ou ausência de evolução.
+8. Considere as faltas apenas quando o número estiver expressamente informado. Não interprete ausência de registro de sessões como falta.
+9. Utilize o DISC somente como elemento complementar da análise. Não transforme características típicas do perfil em afirmações definitivas sobre o mentorado.
+10. Uma característica do DISC somente poderá ser relacionada ao comportamento do mentorado quando houver evidência correspondente nos registros das sessões ou nos indicadores.
+11. Caso não exista assessment DISC, mencione apenas que não há dados comportamentais disponíveis para complementar a análise. Não estime ou atribua um perfil.
+12. Considere a evolução entre ciclos apenas quando houver mais de um assessment ou registros comparáveis.
+13. Evite expressões genéricas, como:
+    * "demonstra grande potencial";
+    * "precisa melhorar";
+    * "deve se desenvolver mais";
+    * "apresenta bom desempenho".
+    Sempre explique qual dado ou registro sustenta a conclusão.
+
+FORMATO OBRIGATÓRIO DO RELATÓRIO
+
+RELATÓRIO SINTÉTICO DE ACOMPANHAMENTO – PROGRAMA ECOLÍDER
+
+IDENTIFICAÇÃO DO MENTORADO
+
+NOME:
+[nome do aluno]
+
+DADOS OBJETIVOS DE ACOMPANHAMENTO
+
+SESSÕES REALIZADAS:
+[valor]
+
+FALTAS:
+[valor]
+
+METAS VALIDADAS:
+[apresentar somente se houver informação]
+
+METAS PENDENTES OU NÃO ENTREGUES:
+[apresentar somente se houver informação]
+
+NOTA MÉDIA DE EVOLUÇÃO:
+[valor]
+
+NOTA MÉDIA DE APLICABILIDADE:
+[valor]
+
+ENGAGEMENT SCORE MÉDIO:
+[valor]
+
+PERFIL COMPORTAMENTAL DISC
+
+PERFIL PREDOMINANTE:
+[valor, se disponível]
+
+ÍNDICES DISC:
+D: [valor] | I: [valor] | S: [valor] | C: [valor]
+
+SÍNTESE DO PERFIL:
+[síntese breve e objetiva, somente quando houver assessment]
+
+ANÁLISE DO ACOMPANHAMENTO
 
 PONTOS POSITIVOS:
-[lista com 3 a 5 pontos concretos, cada um em uma linha começando com "- ", citando evidências específicas dos dados quando possível, incluindo, se fizer sentido, como o perfil DISC do aluno se relaciona com pontos fortes observados]
+
+* Apresente de 3 a 5 pontos concretos.
+* Cada ponto deve começar com "- ".
+* Relacione cada conclusão a evidências específicas dos indicadores ou dos registros das sessões.
+* Quando pertinente, relacione os pontos fortes do DISC aos comportamentos efetivamente observados.
+* Não repita o mesmo argumento com palavras diferentes.
 
 PONTOS DE ATENÇÃO:
-[lista com 3 a 5 pontos concretos sobre desenvolvimento e engajamento, cada um em uma linha começando com "- ", incluindo sinais de risco ou estagnação quando aplicável, e considerando áreas de desenvolvimento típicas do perfil DISC quando relevante]
 
-Não invente dados que não foram fornecidos. Se faltar informação relevante (por exemplo, se o aluno não tiver assessment DISC), mencione isso brevemente dentro da seção apropriada em vez de inventar. Seja direto e específico, evite generalidades vazias.`;
+* Apresente de 3 a 5 pontos concretos.
+* Cada ponto deve começar com "- ".
+* Considere aspectos de desenvolvimento, participação, aplicabilidade, evolução e engajamento.
+* Apresente sinais de risco ou estagnação somente quando existirem evidências objetivas.
+* Utilize as áreas de desenvolvimento do DISC apenas quando houver registros que confirmem essa relação.
+* Não apresente a ausência de dados como deficiência do mentorado.
+* Não mencione metas caso elas não tenham sido expressamente registradas.
+
+SÍNTESE CONCLUSIVA:
+
+Elabore um parágrafo curto, objetivo e profissional, consolidando o momento atual do mentorado.
+
+A conclusão deve:
+* integrar os principais indicadores e registros;
+* apresentar a evolução observada, quando houver;
+* indicar os aspectos que devem continuar sendo acompanhados;
+* evitar diagnósticos, julgamentos pessoais ou conclusões sem evidência;
+* não mencionar metas quando não houver metas registradas.
+
+ESTILO DO TEXTO
+
+* Linguagem profissional, técnica e objetiva.
+* Tom institucional e respeitoso.
+* Frases claras e diretas.
+* Não utilizar emojis.
+* Não utilizar linguagem excessivamente elogiosa ou punitiva.
+* Não apresentar recomendações que não estejam relacionadas aos dados.
+* Não repetir os indicadores sem interpretá-los.
+* Manter todos os títulos e campos de dados em LETRAS MAIÚSCULAS.
+* Manter os textos de análise em escrita normal.`;
 }
 
 async function assertMentorOwnsAluno(userId: number, alunoId: number) {
@@ -206,7 +334,6 @@ async function assertMentorOwnsAluno(userId: number, alunoId: number) {
 // Router
 // ---------------------------------------------------------------------------
 export const relatorioMentoradoRouter = router({
-  // Lista alunos para o seletor. Admin vê todos; mentor vê só os seus mentorados.
   listarAlunosDisponiveis: protectedProcedure.query(async ({ ctx }) => {
     const role = (ctx as any)?.user?.role;
     const userId = (ctx as any)?.user?.id;
@@ -222,7 +349,6 @@ export const relatorioMentoradoRouter = router({
       return rows;
     }
 
-    // mentor / consultor: só os próprios mentorados
     const [rows]: any = await database.execute(sql`
       SELECT DISTINCT a.id, a.name AS nome
       FROM alunos a
@@ -233,7 +359,6 @@ export const relatorioMentoradoRouter = router({
     return rows;
   }),
 
-  // Gera o relatório de IA para um aluno específico.
   gerar: protectedProcedure
     .input(z.object({ alunoId: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -247,14 +372,13 @@ export const relatorioMentoradoRouter = router({
 
       const { aluno, stats, sessions, discResultados } = await buscarDadosAluno(input.alunoId);
       const prompt = montarPrompt(aluno, stats, sessions, discResultados);
-      const { pontosPositivos, pontosAtencao } = await gerarSinteseIA(prompt);
+      const relatorioTexto = await gerarSinteseIA(prompt);
 
       return {
         aluno: { id: aluno.id, nome: aluno.nome },
         stats,
         temDisc: discResultados.length > 0,
-        pontosPositivos,
-        pontosAtencao,
+        relatorioTexto,
         geradoEm: new Date().toISOString(),
       };
     }),
