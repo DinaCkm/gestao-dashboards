@@ -438,6 +438,12 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
       setTaskDetailOpen(null);
     },
   });
+const submitMetaEvidence = trpc.metas.enviarEvidencia.useMutation({
+  onSuccess: () => {
+    utils.metas.minhas.invalidate();
+    setMetaDetailOpen(null);
+  },
+});
   const markPresence = trpc.attendance.markPresence.useMutation({
     onSuccess: () => {
       utils.attendance.myAttendance.invalidate();
@@ -2709,9 +2715,10 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                         <div className="space-y-3">
                           {microMetas.map((meta: any, idx: number) => {
                             const metaStatus = getMetaStatusConfig(meta.ultimoStatus);
-                            const tarefaVinculada = (myTasks || []).find((task: any) => Number(task.taskId) === Number(meta.taskLibraryId));
-                            const possuiEnvio = !!tarefaVinculada && (tarefaVinculada.taskStatus === "entregue" || tarefaVinculada.taskStatus === "validada") && !!(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
-                            const podeEnviar = !!tarefaVinculada && tarefaVinculada.taskStatus !== 'validada' && !(tarefaVinculada.evidenceLink || tarefaVinculada.evidenceImageUrl || tarefaVinculada.submittedAt);
+                            const metaTemEvidencia = !!(meta.evidenceLink || meta.relatoAluno || meta.evidenceImageUrl || meta.submittedAt);
+                            const tarefaVinculada = metaTemEvidencia ? { ...meta, taskStatus: meta.validatedAt ? "validada" : "entregue" } : null;
+                            const possuiEnvio = metaTemEvidencia;
+                            const podeEnviar = !meta.validatedAt;
 
                             return (
                               <div key={meta.id} className="p-4 rounded-lg border bg-gray-50 border-gray-100">
@@ -2757,7 +2764,7 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                     {tarefaVinculada ? (
                                       <div className="p-3 rounded bg-white border border-gray-200 space-y-2">
                                         <p className="text-xs text-gray-600">
-                                          Sessão vinculada: <strong>{tarefaVinculada.sessionNumber}</strong> • Status de validação:{" "}
+                                          Status de validação:{" "}
                                           <strong>{tarefaVinculada.taskStatus === "validada" ? "Validada pela mentora" : tarefaVinculada.taskStatus === "entregue" ? "Aguardando validação" : "Pendente de envio"}</strong>
                                         </p>
                                         {tarefaVinculada.submittedAt && (
@@ -2798,11 +2805,11 @@ const acessarCursoCompetencia = useCallback((competenciaId: number) => {
                                         {podeEnviar && (
                                           <TaskSubmissionForm
                                             submitLabel="Enviar evidência da micro meta"
-                                            isSubmitting={submitEvidence.isPending}
-                                            submitError={submitEvidence.error?.message}
-                                            onSubmit={async (payload) => {
-                                              await submitEvidence.mutateAsync({ sessionId: tarefaVinculada.sessionId, ...payload });
-                                            }}
+                                            isSubmitting={submitMetaEvidence.isPending}
+                          submitError={submitMetaEvidence.error?.message}
+                          onSubmit={async (payload) => {
+                            await submitMetaEvidence.mutateAsync({ metaId: meta.id, ...payload });
+                          }}
                                             onSuccess={() => setTimeout(() => setMetaDetailOpen(null), 100)}
                                             successMessage="Evidência da micro meta enviada com sucesso!"
                                           />
