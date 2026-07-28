@@ -2716,7 +2716,7 @@ const submitMetaEvidence = trpc.metas.enviarEvidencia.useMutation({
                           {microMetas.map((meta: any, idx: number) => {
                             const metaStatus = getMetaStatusConfig(meta.ultimoStatus);
                             const metaTemEvidencia = !!(meta.evidenceLink || meta.relatoAluno || meta.evidenceImageUrl || meta.submittedAt);
-                            const tarefaVinculada = metaTemEvidencia ? { ...meta, taskStatus: meta.validatedAt ? "validada" : "entregue" } : null;
+                            const tarefaVinculada = { ...meta, taskStatus: meta.validatedAt ? "validada" : (metaTemEvidencia ? "entregue" : "pendente") };
                             const possuiEnvio = metaTemEvidencia;
                             const podeEnviar = !meta.validatedAt;
 
