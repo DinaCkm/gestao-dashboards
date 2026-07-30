@@ -6261,6 +6261,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         customTaskDescription: z.string().nullable().optional(),
         taskMode: z.enum(["biblioteca", "personalizada", "livre", "sem_tarefa"]).optional(),
         notaMentoraAplicabilidade: z.number().min(0).max(10).nullable().optional(),
+        tipoSessao: z.enum(["individual_normal", "individual_assessment", "grupo_normal", "grupo_assessment"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { sessionId, ...data } = input;

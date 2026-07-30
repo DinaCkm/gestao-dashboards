@@ -925,6 +925,7 @@ export async function updateMentoringSession(sessionId: number, data: {
   notaAlunoAplicabilidade?: number | null;
   notaMentoraAplicabilidade?: number | null;
   aplicabilidadeAvaliadaEm?: Date | null;
+  tipoSessao?: "individual_normal" | "individual_assessment" | "grupo_normal" | "grupo_assessment";
 }): Promise<boolean> {
   const db = await getDb();
   if (!db) return false;
@@ -955,6 +956,7 @@ export async function updateMentoringSession(sessionId: number, data: {
   if (data.notaAlunoAplicabilidade !== undefined) updateData.notaAlunoAplicabilidade = data.notaAlunoAplicabilidade;
   if (data.notaMentoraAplicabilidade !== undefined) updateData.notaMentoraAplicabilidade = data.notaMentoraAplicabilidade;
   if (data.aplicabilidadeAvaliadaEm !== undefined) updateData.aplicabilidadeAvaliadaEm = data.aplicabilidadeAvaliadaEm;
+  if (data.tipoSessao !== undefined) updateData.tipoSessao = data.tipoSessao;
   
   if (Object.keys(updateData).length === 0) return true;
   
