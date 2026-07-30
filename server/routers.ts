@@ -6367,7 +6367,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
-        await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
+        // O bloqueio de nivel encerrado vale para NOVAS ATRIBUICOES ao aluno, nao para o registro
+        // da sessao em si pela mentora. So checa se uma tarefa esta sendo atribuida nesta sessao.
+        if (input.taskMode && input.taskMode !== 'sem_tarefa') {
+          await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
+        }
 
         // Calcular próximo número de sessão
         // REGRA: o reset é o marco que reinicia a contagem e ativa o nível como orientador de tudo.
@@ -8537,7 +8541,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (!aluno) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Aluno não encontrado' });
         }
-        await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.adminCreateSession");
+        // O bloqueio de nivel encerrado vale para NOVAS ATRIBUICOES ao aluno, nao para o registro
+        // da sessao em si pela mentora/admin. So checa se uma tarefa esta sendo atribuida.
+        if (input.taskStatus !== 'sem_tarefa') {
+          await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.adminCreateSession");
+        }
 
         const sessionId = await db.createMentoringSession({
           alunoId: input.alunoId,
