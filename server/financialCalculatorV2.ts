@@ -229,14 +229,18 @@ export async function getRelatorioFinanceiroV2(
     const programId = s.programId || null;
     const programNome = programId ? (programMap.get(programId)?.name || "N/A") : "N/A";
     const appointment = s.appointmentId ? appointmentMap.get(s.appointmentId) : null;
-    const isGrupal = tipoSessaoSalvo === "grupo_normal" || tipoSessaoSalvo === "grupo_assessment" || appointment?.type === "grupo";
+    // Só usamos o tipo do agendamento como respaldo quando a sessão NUNCA teve tipoSessao
+    // gravado (dados históricos). Se a sessão já tem um valor explícito, ele é a fonte da
+    // verdade e não deve ser sobrescrito pelo tipo do agendamento — isso permite que
+    // correções manuais feitas na sessão (ex: individual -> grupo ou vice-versa) valham.
+    const tipoSessaoNuncaGravado = s.tipoSessao == null;
+    const isGrupal = tipoSessaoSalvo === "grupo_normal" || tipoSessaoSalvo === "grupo_assessment" || (tipoSessaoNuncaGravado && appointment?.type === "grupo");
 
-    // Se o agendamento é grupal mas a sessão foi salva com tipoSessao individual
-    // (lançamentos via fluxo que não gravou grupo_normal), corrigir para grupo
-    // para que a precificação use a regra de grupo correta.
+    // Se o agendamento é grupal mas a sessão (histórica, sem tipoSessao gravado) não tem
+    // esse dado, corrigir para grupo para que a precificação use a regra de grupo correta.
     let tipoSessao: TipoSessao = tipoSessaoSalvo;
-    if (isGrupal && tipoSessaoSalvo === "individual_normal") tipoSessao = "grupo_normal";
-    if (isGrupal && tipoSessaoSalvo === "individual_assessment") tipoSessao = "grupo_assessment";
+    if (tipoSessaoNuncaGravado && isGrupal && tipoSessaoSalvo === "individual_normal") tipoSessao = "grupo_normal";
+    if (tipoSessaoNuncaGravado && isGrupal && tipoSessaoSalvo === "individual_assessment") tipoSessao = "grupo_assessment";
     const isPendente = !s.appointmentId; // Sessão sem agendamento = pendente
     const alertas: string[] = [];
 
