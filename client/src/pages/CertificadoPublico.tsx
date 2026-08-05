@@ -94,6 +94,11 @@ export default function CertificadoPublico() {
           <span>Emitido em {formatarData(data.emitidoEm)}</span>
           <span>Código de verificação: {data.hashDocumento}</span>
         </div>
+        {data.emissaoManual && (
+          <p className="text-center text-[9px] text-gray-400 mt-2 print:mt-1">
+            Certificado emitido mediante revisão administrativa dos registros do aluno.
+          </p>
+        )}
       </div>
     </div>
   );
