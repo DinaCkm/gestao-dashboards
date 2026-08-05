@@ -39,6 +39,7 @@ import { relatorioMentoradoRouter } from "./routers/relatorioMentorado";
 import { meuDesempenhoRouter } from "./routers/meuDesempenho";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
+import { renderPdfFromUrl } from "./pdfRenderer";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
 import { gerarEEnviarRelatorioMentorias, calcularPeriodoPadrao } from "./cronRelatorioMentorias";
@@ -10583,6 +10584,32 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
       return await db.getNivelCertificatesByAluno(alunoId);
     }),
 
+    /** Consulta pública (sem autenticação) por hash de verificação — também é a
+     * fonte de dados usada pela página que o Puppeteer renderiza em PDF na emissão. */
+    publico: publicProcedure
+      .input(z.object({ hash: z.string().min(1) }))
+      .query(async ({ input }) => {
+        const data = await db.getNivelCertificateByHash(input.hash);
+        if (!data || data.certificado.status !== "emitido") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Certificado não encontrado ou inválido." });
+        }
+        return {
+          alunoNome: data.certificado.alunoNome,
+          programaNome: data.certificado.programaNome,
+          nivel: data.certificado.nivel,
+          periodo: data.periodo,
+          emitidoEm: data.certificado.emitidoEm,
+          hashDocumento: data.certificado.hashDocumento,
+          mentoras: (data.mentoras || []).map((m: any) => m.nomeMentora),
+          assinaturas: (data.assinaturas || []).map((a: any) => ({
+            tipo: a.tipo,
+            nomeExibicao: a.nomeExibicao,
+            cargo: a.cargo,
+            imagemAssinaturaUrl: a.imagemAssinaturaUrl,
+          })),
+        };
+      }),
+
     emitir: protectedProcedure
       .input(z.object({ contratoNivelId: z.number(), alunoId: z.number().optional() }))
       .mutation(async ({ ctx, input }) => {
@@ -10632,7 +10659,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         }
 
         const hashDocumento = `${alunoId}-${input.contratoNivelId}-${Date.now()}`;
-        const arquivoUrl = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
+        const arquivoUrlProvisorio = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
         const certId = await db.createNivelCertificate(
           {
             alunoId,
@@ -10640,12 +10667,32 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
             nivel: (nivel?.nivel || "I") as any,
             templateId: template.id,
             status: "emitido",
-            arquivoUrl,
+            arquivoUrl: arquivoUrlProvisorio,
             emitidoPor: (ctx.user as any).id || null,
             hashDocumento,
           } as any,
           mentorasUnicas.map((m: any) => ({ consultorId: m.consultorId, nomeMentora: m.consultorNome || `Mentora #${m.consultorId}` }))
         );
+
+        // Gera o PDF real a partir da página pública de verificação (Chromium headless)
+        // e substitui a URL provisória pela URL definitiva no storage (R2).
+        let arquivoUrl = arquivoUrlProvisorio;
+        try {
+          const forwardedProto = (ctx.req.headers["x-forwarded-proto"] as string) || (ctx.req as any).protocol || "https";
+          const host = ctx.req.headers.host;
+          const baseUrl = `${forwardedProto}://${host}`;
+          const verifyUrl = `${baseUrl}/certificados/verificar/${hashDocumento}`;
+
+          const pdfBuffer = await renderPdfFromUrl({ url: verifyUrl, landscape: true });
+          const storageKey = `certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
+          const { url } = await storagePut(storageKey, pdfBuffer, "application/pdf");
+          await db.updateNivelCertificateArquivo(certId, url);
+          arquivoUrl = url;
+        } catch (err) {
+          // Não bloqueia a emissão (o registro já existe e é a fonte de verdade);
+          // a geração do PDF pode ser reprocessada depois se falhar aqui.
+          console.error("[certificacao.emitir] Falha ao gerar/armazenar o PDF do certificado:", err);
+        }
 
         return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
       }),
