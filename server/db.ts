@@ -7068,6 +7068,7 @@ export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: num
     getCasesSucessoByAlunoAndNivel(alunoId, nivelId),
     getStudentPerformanceByAlunoAndNivel(alunoId, nivelId),
   ]);
+  let dadosNaoSegmentadosPorNivel = false;
 
   // Fallback para alunos legados (turmas anteriores ao sistema de contrato_niveis):
   // os registros deles nunca ganharam o vínculo contratoNivelId, então a busca
@@ -7119,19 +7120,48 @@ export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: num
           getStudentPerformanceByAlunoAndNivel(alunoId, null),
         ]);
 
-        assessments = assessmentsAll;
-        plano = planoAll.filter((p: any) => dentroDoPeriodo(p.createdAt));
-        metasNivel = metasAll.filter((m: any) => dentroDoPeriodo(m.createdAt));
-        mentorias = mentoriasAll.filter((s: any) => dentroDoPeriodo(s.sessionDate));
-        participacoes = participacoesAll.filter((e: any) => dentroDoPeriodo(e.selfReportedAt || e.createdAt));
-        cases = casesAll.filter((c: any) => dentroDoPeriodo(c.dataEntrega));
-        performance = performanceAll.filter((p: any) => dentroDoPeriodo(p.dataConclusao || p.dataInicio));
+        const planoFiltrado = planoAll.filter((p: any) => dentroDoPeriodo(p.createdAt));
+        const metasFiltradas = metasAll.filter((m: any) => dentroDoPeriodo(m.createdAt));
+        const mentoriasFiltradas = mentoriasAll.filter((s: any) => dentroDoPeriodo(s.sessionDate));
+        const participacoesFiltradas = participacoesAll.filter((e: any) => dentroDoPeriodo(e.selfReportedAt || e.createdAt));
+        const casesFiltrados = casesAll.filter((c: any) => dentroDoPeriodo(c.dataEntrega));
+        const performanceFiltrada = performanceAll.filter((p: any) => dentroDoPeriodo(p.dataConclusao || p.dataInicio));
+
+        const filtroPorDataFuncionou = planoFiltrado.length > 0 || metasFiltradas.length > 0 ||
+          mentoriasFiltradas.length > 0 || participacoesFiltradas.length > 0 || casesFiltrados.length > 0;
+
+        if (filtroPorDataFuncionou) {
+          // Datas dos registros batem com o período do nível — usa o recorte certo.
+          assessments = assessmentsAll;
+          plano = planoFiltrado;
+          metasNivel = metasFiltradas;
+          mentorias = mentoriasFiltradas;
+          participacoes = participacoesFiltradas;
+          cases = casesFiltrados;
+          performance = performanceFiltrada;
+        } else {
+          // Segunda camada de segurança: as datas dos registros não batem com o
+          // período do nível (ex.: dados migrados com data genérica de importação,
+          // não a data real). Em vez de deixar a tela zerada sem explicação, mostra
+          // o histórico completo do aluno e sinaliza para o front que não foi
+          // possível segmentar por nível — melhor mostrar dado real "não separado"
+          // do que uma tela vazia e enganosa.
+          dadosNaoSegmentadosPorNivel = true;
+          assessments = assessmentsAll;
+          plano = planoAll;
+          metasNivel = metasAll;
+          mentorias = mentoriasAll;
+          participacoes = participacoesAll;
+          cases = casesAll;
+          performance = performanceAll;
+        }
       }
     }
   }
 
   return {
     contratoNivelId: nivelId,
+    dadosNaoSegmentadosPorNivel,
     assessments,
     competencias: assessments.flatMap((a: any) => a.competencias || []),
     planoIndividual: plano,
@@ -12479,6 +12509,7 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
   const criterios = {
     nivelEncerrado,
     snapshotCongelado,
+    dadosSegmentadosPorNivel: !pedagogia.dadosNaoSegmentadosPorNivel,
     resultadoFinalFechado,
     engajamentoMin80: engajamento >= 80,
     desafiosMin80: desafios >= 80,
@@ -12487,6 +12518,7 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
 
   const elegivel = criterios.nivelEncerrado
     && criterios.snapshotCongelado
+    && criterios.dadosSegmentadosPorNivel
     && criterios.resultadoFinalFechado
     && criterios.engajamentoMin80
     && criterios.desafiosMin80
@@ -12495,6 +12527,7 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
   const motivos: string[] = [];
   if (!criterios.nivelEncerrado) motivos.push("Nível não está encerrado.");
   if (!criterios.snapshotCongelado) motivos.push("Este ciclo ainda não foi arquivado (reset) — dados ainda não estão congelados.");
+  if (!criterios.dadosSegmentadosPorNivel) motivos.push("Não foi possível separar os dados deste aluno por nível — requer revisão manual (use a emissão manual do admin).");
   if (!criterios.resultadoFinalFechado) motivos.push("Resultado final do nível não está fechado.");
   if (!criterios.engajamentoMin80) motivos.push("Engajamento final abaixo de 80%.");
   if (!criterios.desafiosMin80) motivos.push("Desafios concluídos abaixo de 80%.");
