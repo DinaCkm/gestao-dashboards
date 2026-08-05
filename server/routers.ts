@@ -5842,7 +5842,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     // Endpoint idêntico ao meuDashboard, mas usando PDIs congelados e dados até a data do reset.
     // Usado pela página Evolução (clone da Performance) para exibir o Macrociclo 1.
     meuDashboardCongelado: protectedProcedure
-      .input(z.object({ viewAlunoId: z.number().optional() }).optional())
+      .input(z.object({ viewAlunoId: z.number().optional(), historicoId: z.number().optional() }).optional())
       .query(async ({ input, ctx }) => {
       if (!ctx.user) {
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Usuário não autenticado' });
@@ -5878,19 +5878,33 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { found: false as const, message: 'Este aluno não possui macrociclo anterior congelado.' };
       }
 
-      // Data do reset = data do último reset do aluno (marco zero do ciclo atual)
-      // Os dados do Macrociclo 1 são todos os dados ATÉ essa data
-      const dataReset = await db.getDataUltimoResetAluno(aluno.id);
-
-      // Se não há reset registrado, usar a data de congelamento do PDI mais recente
-      const dataCorte: Date | null = dataReset ?? (() => {
-        // Usar macroTermino do PDI congelado mais recente como corte
-        const terminos = pdisCongeladosCheck
-          .filter(p => p.macroTermino)
-          .map(p => new Date(p.macroTermino as any));
-        if (terminos.length === 0) return null;
-        return new Date(Math.max(...terminos.map(d => d.getTime())));
-      })();
+      // Data do reset: se um historicoId específico for informado, usa a janela
+      // exata desse reset (início = reset anterior, fim = este reset) — permite
+      // um aluno com múltiplos resets ter cada período congelado separadamente.
+      // Sem historicoId (uso padrão, ex.: aba Evolução), mantém o comportamento
+      // original: último reset do aluno como corte.
+      let dataCorte: Date | null;
+      let dataInicioPeriodo: Date | null = null;
+      let numeroCicloArquivadoAtual: number | null = null;
+      if (input?.historicoId) {
+        const janela = await db.getResetPorHistoricoId(aluno.id, input.historicoId);
+        if (!janela) {
+          return { found: false as const, message: 'Reset não encontrado para este aluno.' };
+        }
+        dataCorte = janela.dataFim;
+        dataInicioPeriodo = janela.dataInicio;
+        numeroCicloArquivadoAtual = janela.numeroCicloArquivado;
+      } else {
+        const dataReset = await db.getDataUltimoResetAluno(aluno.id);
+        // Se não há reset registrado, usar a data de congelamento do PDI mais recente
+        dataCorte = dataReset ?? (() => {
+          const terminos = pdisCongeladosCheck
+            .filter(p => p.macroTermino)
+            .map(p => new Date(p.macroTermino as any));
+          if (terminos.length === 0) return null;
+          return new Date(Math.max(...terminos.map(d => d.getTime())));
+        })();
+      }
 
       // Buscar dados globais em paralelo
       const [
@@ -5934,8 +5948,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (sessionAluno.id !== aluno.id) continue;
         if (!session.sessionDate) continue;
         const sessionDt = new Date(session.sessionDate);
-        // Só incluir sessões até a data de corte
+        // Só incluir sessões dentro da janela deste macrociclo congelado
         if (dataCorte && sessionDt > dataCorte) continue;
+        if (dataInicioPeriodo && sessionDt <= dataInicioPeriodo) continue;
         const program = sessionAluno.programId ? programMap.get(sessionAluno.programId) : null;
         const turma = sessionAluno.turmaId ? turmaMap.get(sessionAluno.turmaId) : null;
         mentorias.push({
@@ -5962,6 +5977,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (!ep.eventDate) continue;
         const evtDt = new Date(ep.eventDate);
         if (dataCorte && evtDt > dataCorte) continue;
+        if (dataInicioPeriodo && evtDt <= dataInicioPeriodo) continue;
         const program = epAluno.programId ? programMap.get(epAluno.programId) : null;
         eventos.push({
           idUsuario: epAluno.externalId || String(epAluno.id),
@@ -6054,13 +6070,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           ? await db.getConsultorById(sessaoComConsultor.consultorId)
           : null;
 
-      // Sessões filtradas até a data de corte
+      // Sessões filtradas pela janela deste macrociclo congelado
       const sessoesCongeladas = sessoesAluno.filter(s => {
         if (!s.sessionDate) return true;
-        return !dataCorte || new Date(s.sessionDate) <= dataCorte;
+        const d = new Date(s.sessionDate);
+        if (dataCorte && d > dataCorte) return false;
+        if (dataInicioPeriodo && d <= dataInicioPeriodo) return false;
+        return true;
       });
 
-      // Eventos detalhados filtrados até a data de corte
+      // Eventos detalhados filtrados pela janela deste macrociclo congelado
       const allEvents = aluno.programId
         ? await cacheOrFetch(`eventsByProgram_${aluno.programId}`, () => db.getEventsByProgramOrGlobal(aluno.programId!))
         : [];
@@ -6070,7 +6089,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const evento = eventMap.get(ep.eventId);
           const evtDate = evento?.eventDate;
           if (!evtDate) return true;
-          return !dataCorte || new Date(evtDate) <= dataCorte;
+          const d = new Date(evtDate);
+          if (dataCorte && d > dataCorte) return false;
+          if (dataInicioPeriodo && d <= dataInicioPeriodo) return false;
+          return true;
         })
         .map(ep => {
           const evento = eventMap.get(ep.eventId);
@@ -6113,8 +6135,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
       return {
         found: true as const,
-        macrocicloLabel: 'Macrociclo 1 — Congelado',
+        macrocicloLabel: numeroCicloArquivadoAtual
+          ? `Macrociclo ${numeroCicloArquivadoAtual} — Congelado`
+          : 'Macrociclo 1 — Congelado',
         dataCorte: dataCorte ? dataCorte.toISOString().split('T')[0] : null,
+        dataInicioPeriodo: dataInicioPeriodo ? dataInicioPeriodo.toISOString().split('T')[0] : null,
         macroInicio: macroInicioCongelado,
         macroTermino: macroTerminoCongelado,
         aluno: {
