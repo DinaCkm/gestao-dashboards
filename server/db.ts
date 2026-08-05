@@ -12282,11 +12282,67 @@ export async function getCertificateMentoras(certificateId: number): Promise<Niv
   return await db.select().from(nivelCertificateMentoras).where(eq(nivelCertificateMentoras.certificateId, certificateId));
 }
 
+/**
+ * Busca o nível SEM recalcular/sincronizar o status por data de contrato.
+ * getContratoNivelComStatusOperacional() sobrescreve o status no banco com base em
+ * contratos_aluno.periodoTermino (fim do contrato inteiro, não do macrociclo), o que
+ * pode reabrir silenciosamente um nível que já foi encerrado de verdade pelo reset
+ * (arquivarCicloAtual). Para elegibilidade de certificado, o status gravado pelo
+ * reset é a fonte confiável — lemos ele bruto, sem side-effect de escrita.
+ */
+async function getContratoNivelBruto(contratoNivelId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [nivel] = await db.select().from(contratoNiveis).where(eq(contratoNiveis.id, contratoNivelId)).limit(1);
+  return nivel ?? null;
+}
+
+/**
+ * Resolve o snapshot congelado (historico_ciclos_aluno) correspondente a um nível,
+ * e as datas de exibição do macrociclo, com fallback para alunos que ainda não têm
+ * contrato_niveis.nivelInicio/nivelFim preenchidos (cadastro antigo):
+ *   1) contrato_niveis.nivelInicio / nivelFim (alunos cadastrados com o modelo novo)
+ *   2) assessment_pdi.macroInicio / macroTermino do PDI vinculado ao nível (alunos existentes)
+ */
+async function resolverSnapshotEDatasDoNivel(alunoId: number, nivel: ContratoNivel) {
+  const db = await getDb();
+  if (!db) return { snapshot: null, dataInicio: nivel.nivelInicio ?? null, dataFim: nivel.nivelFim ?? null };
+
+  // PDI vinculado ao nível: primeiro contrato_niveis.assessmentPdiId, senão busca reversa por contratoNivelId
+  let pdi: any = null;
+  if (nivel.assessmentPdiId) {
+    const [row] = await db.select().from(assessmentPdi).where(eq(assessmentPdi.id, nivel.assessmentPdiId)).limit(1);
+    pdi = row ?? null;
+  }
+  if (!pdi) {
+    const [row] = await db.select().from(assessmentPdi)
+      .where(and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.contratoNivelId, nivel.id)))
+      .orderBy(desc(assessmentPdi.createdAt))
+      .limit(1);
+    pdi = row ?? null;
+  }
+
+  const dataInicio = nivel.nivelInicio ?? pdi?.macroInicio ?? null;
+  const dataFim = nivel.nivelFim ?? pdi?.macroTermino ?? null;
+
+  let snapshot: any = null;
+  if (pdi?.id) {
+    const [snapRows] = await db.execute(sql.raw(
+      `SELECT * FROM historico_ciclos_aluno WHERE assessmentPdiId = ${pdi.id} ORDER BY id DESC LIMIT 1`
+    )) as any;
+    snapshot = Array.isArray(snapRows) && snapRows[0] ? snapRows[0] : null;
+  }
+
+  return { snapshot, dataInicio, dataFim, pdi };
+}
+
 export async function avaliarElegibilidadeCertificacao(alunoId: number, contratoNivelId: number) {
-  const nivel = await getContratoNivelComStatusOperacional(alunoId, contratoNivelId);
-  if (!nivel) {
+  const nivel = await getContratoNivelBruto(contratoNivelId);
+  if (!nivel || nivel.alunoId !== alunoId) {
     return { elegivel: false, motivo: "Nível não encontrado." };
   }
+
+  const { snapshot, dataInicio, dataFim } = await resolverSnapshotEDatasDoNivel(alunoId, nivel);
 
   const pedagogia = await getPedagogiaByNivel(alunoId, contratoNivelId);
   const assessments = pedagogia.assessments || [];
@@ -12294,18 +12350,28 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
   const eventos = pedagogia.eventParticipation || [];
   const cases = pedagogia.casesSucesso || [];
 
-  const nivelEncerrado = nivel.statusOperacional === "encerrado";
+  // "Encerrado" é o status gravado pelo reset (arquivarCicloAtual), não um cálculo por data.
+  const nivelEncerrado = nivel.status === "encerrado" || nivel.status === "certificado";
+  // Prova de que o reset realmente rodou e os dados deste ciclo foram congelados/arquivados.
+  const snapshotCongelado = !!snapshot;
+
   const resultadoFinalFechado = assessments.some((a: any) => ["finalizado", "concluido"].includes(String(a.status)));
+
+  // Quando existe snapshot, ele é a fonte mais segura para desafios/metas (imutável após o reset).
+  const desafios = snapshot
+    ? (Number(snapshot.metasTotal) > 0 ? (Number(snapshot.metasCumpridas) / Number(snapshot.metasTotal)) * 100 : 0)
+    : (metasNivel.length > 0
+        ? (metasNivel.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length / metasNivel.length) * 100
+        : 0);
+
   const engajamento = eventos.length > 0
     ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
-    : 0;
-  const desafios = metasNivel.length > 0
-    ? (metasNivel.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length / metasNivel.length) * 100
     : 0;
   const evidencias = cases.filter((c: any) => c.entregue === 1).length;
 
   const criterios = {
     nivelEncerrado,
+    snapshotCongelado,
     resultadoFinalFechado,
     engajamentoMin80: engajamento >= 80,
     desafiosMin80: desafios >= 80,
@@ -12313,6 +12379,7 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
   };
 
   const elegivel = criterios.nivelEncerrado
+    && criterios.snapshotCongelado
     && criterios.resultadoFinalFechado
     && criterios.engajamentoMin80
     && criterios.desafiosMin80
@@ -12320,6 +12387,7 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
 
   const motivos: string[] = [];
   if (!criterios.nivelEncerrado) motivos.push("Nível não está encerrado.");
+  if (!criterios.snapshotCongelado) motivos.push("Este ciclo ainda não foi arquivado (reset) — dados ainda não estão congelados.");
   if (!criterios.resultadoFinalFechado) motivos.push("Resultado final do nível não está fechado.");
   if (!criterios.engajamentoMin80) motivos.push("Engajamento final abaixo de 80%.");
   if (!criterios.desafiosMin80) motivos.push("Desafios concluídos abaixo de 80%.");
@@ -12333,6 +12401,7 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
       desafios: Number(desafios.toFixed(2)),
       evidencias,
     },
+    periodo: { dataInicio, dataFim },
     motivo: motivos.join(" "),
     nivel,
   };
