@@ -40,6 +40,7 @@ export interface RenderPdfOptions {
   marginLeft?: string;
   marginRight?: string;
   timeoutMs?: number;
+  landscape?: boolean;
 }
 
 /**
@@ -67,6 +68,7 @@ export async function renderPdfFromUrl(opts: RenderPdfOptions): Promise<Buffer> 
 
     const pdfBuffer = await page.pdf({
       format: "A4",
+      landscape: opts.landscape ?? false,
       printBackground: true,
       displayHeaderFooter: hasHeaderFooter,
       headerTemplate: opts.headerTemplate ?? "<span></span>",
