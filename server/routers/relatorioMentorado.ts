@@ -61,7 +61,7 @@ async function gerarSinteseIA(prompt: string): Promise<string> {
 // ---------------------------------------------------------------------------
 // Helpers de dados
 // ---------------------------------------------------------------------------
-async function buscarDadosAluno(alunoId: number) {
+async function buscarDadosAluno(alunoId: number, contratoNivelId?: number | null) {
   const database = await getDb();
   if (!database) {
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Sem conexão com o banco de dados." });
@@ -75,6 +75,11 @@ async function buscarDadosAluno(alunoId: number) {
     throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
   }
 
+  // Escopo por macrociclo/nível: sem isso, o relatório mistura sessões de todos os
+  // níveis do aluno, contrariando a regra de que cada relatório/anexo cobre só o
+  // período do nível ao qual pertence.
+  const nivelFilter = contratoNivelId ? sql`AND contratoNivelId = ${contratoNivelId}` : sql``;
+
   const [statsRows]: any = await database.execute(sql`
     SELECT
       COUNT(*) AS sessoesRealizadas,
@@ -85,14 +90,25 @@ async function buscarDadosAluno(alunoId: number) {
       ROUND(AVG(notaMentoraAplicabilidade), 1) AS notaAplicabilidadeMedia,
       ROUND(AVG(engagementScore), 1) AS engagementMedio
     FROM mentoring_sessions
-    WHERE alunoId = ${alunoId} AND cancelada = 0
+    WHERE alunoId = ${alunoId} AND cancelada = 0 ${nivelFilter}
   `);
   const stats = statsRows?.[0] || {};
+
+  // Sem sessões registradas neste escopo, não há base factual pra síntese — bloqueia
+  // com mensagem clara em vez de gerar um relatório vazio/genérico via IA.
+  if (!stats.sessoesRealizadas || Number(stats.sessoesRealizadas) === 0) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message: contratoNivelId
+        ? "Ainda não há sessões de mentoria registradas neste nível. O relatório fica disponível após a primeira sessão."
+        : "Ainda não há sessões de mentoria registradas para este aluno.",
+    });
+  }
 
   const [sessionRows]: any = await database.execute(sql`
     SELECT sessionDate, feedback, mensagemAluno
     FROM mentoring_sessions
-    WHERE alunoId = ${alunoId} AND cancelada = 0
+    WHERE alunoId = ${alunoId} AND cancelada = 0 ${nivelFilter}
       AND (feedback IS NOT NULL OR mensagemAluno IS NOT NULL)
     ORDER BY sessionDate DESC
     LIMIT 12
@@ -367,7 +383,7 @@ export const relatorioMentoradoRouter = router({
   }),
 
   gerar: protectedProcedure
-    .input(z.object({ alunoId: z.number() }))
+    .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().optional() }))
     .mutation(async ({ ctx, input }) => {
       const role = (ctx as any)?.user?.role;
       const userId = (ctx as any)?.user?.id;
@@ -386,7 +402,7 @@ export const relatorioMentoradoRouter = router({
         await assertMentorOwnsAluno(userId, input.alunoId);
       }
 
-      const { aluno, stats, sessions, discResultados } = await buscarDadosAluno(input.alunoId);
+      const { aluno, stats, sessions, discResultados } = await buscarDadosAluno(input.alunoId, input.contratoNivelId ?? null);
       const prompt = montarPrompt(aluno, stats, sessions, discResultados);
       const relatorioTexto = await gerarSinteseIA(prompt);
 
