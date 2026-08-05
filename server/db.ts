@@ -12283,6 +12283,52 @@ export async function getCertificateMentoras(certificateId: number): Promise<Niv
 }
 
 /**
+ * Busca todos os dados necessários para exibir/imprimir o certificado público
+ * (página de verificação por hash, também usada como fonte para o Puppeteer
+ * gerar o PDF real no momento da emissão).
+ */
+export async function getNivelCertificateByHash(hash: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [certRows]: any = await db.execute(sql.raw(
+    `SELECT nc.*, a.name AS alunoNome, p.name AS programaNome
+     FROM nivel_certificates nc
+     JOIN alunos a ON a.id = nc.alunoId
+     LEFT JOIN programs p ON p.id = a.programId
+     WHERE nc.hashDocumento = ${JSON.stringify(hash)}
+     LIMIT 1`
+  ));
+  const certificado = Array.isArray(certRows) && certRows[0] ? certRows[0] : null;
+  if (!certificado) return null;
+
+  const nivelBruto = await getContratoNivelBruto(certificado.contratoNivelId);
+  const periodo = nivelBruto
+    ? await resolverSnapshotEDatasDoNivel(certificado.alunoId, nivelBruto)
+    : { dataInicio: null, dataFim: null };
+
+  const mentoras = await getCertificateMentoras(certificado.id);
+
+  const [assinaturasRows]: any = await db.execute(sql.raw(
+    `SELECT * FROM certification_signatures WHERE ativo = 1 AND tipo IN ('gerente', 'gestor_master') ORDER BY FIELD(tipo, 'gerente', 'gestor_master')`
+  ));
+
+  return {
+    certificado,
+    periodo: { dataInicio: periodo.dataInicio, dataFim: periodo.dataFim },
+    mentoras,
+    assinaturas: Array.isArray(assinaturasRows) ? assinaturasRows : [],
+  };
+}
+
+/** Atualiza o arquivoUrl de um certificado já criado (usado após a geração real do PDF). */
+export async function updateNivelCertificateArquivo(certificateId: number, arquivoUrl: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(nivelCertificates).set({ arquivoUrl }).where(eq(nivelCertificates.id, certificateId));
+}
+
+/**
  * Busca o nível SEM recalcular/sincronizar o status por data de contrato.
  * getContratoNivelComStatusOperacional() sobrescreve o status no banco com base em
  * contratos_aluno.periodoTermino (fim do contrato inteiro, não do macrociclo), o que
@@ -12290,7 +12336,7 @@ export async function getCertificateMentoras(certificateId: number): Promise<Niv
  * (arquivarCicloAtual). Para elegibilidade de certificado, o status gravado pelo
  * reset é a fonte confiável — lemos ele bruto, sem side-effect de escrita.
  */
-async function getContratoNivelBruto(contratoNivelId: number) {
+export async function getContratoNivelBruto(contratoNivelId: number) {
   const db = await getDb();
   if (!db) return null;
   const [nivel] = await db.select().from(contratoNiveis).where(eq(contratoNiveis.id, contratoNivelId)).limit(1);
@@ -12304,7 +12350,7 @@ async function getContratoNivelBruto(contratoNivelId: number) {
  *   1) contrato_niveis.nivelInicio / nivelFim (alunos cadastrados com o modelo novo)
  *   2) assessment_pdi.macroInicio / macroTermino do PDI vinculado ao nível (alunos existentes)
  */
-async function resolverSnapshotEDatasDoNivel(alunoId: number, nivel: ContratoNivel) {
+export async function resolverSnapshotEDatasDoNivel(alunoId: number, nivel: ContratoNivel) {
   const db = await getDb();
   if (!db) return { snapshot: null, dataInicio: nivel.nivelInicio ?? null, dataFim: nivel.nivelFim ?? null };
 
