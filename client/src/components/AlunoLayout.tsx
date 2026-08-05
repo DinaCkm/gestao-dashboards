@@ -9,7 +9,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle, AlertTriangle } from "lucide-react";
+import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle, AlertTriangle, Award } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -27,6 +27,7 @@ const ALL_NAV_ITEMS = [
   { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass, requiresAceite: true },
   // { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true }, // oculto — acesso via Portal do Aluno > Metas
   { label: "Performance", path: "/performance", icon: TrendingUp, requiresAceite: true },
+  { label: "Meu Progresso e Certificados", path: "/aluno/meu-progresso", icon: Award, requiresAceite: true },
   { label: "Evolução", path: "/evolucao-v2", icon: Sparkles, requiresAceite: true },
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
 ];
@@ -136,9 +137,11 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Banner de impersonação - aparece quando admin está visualizando como aluno */}
-      <ImpersonationBanner />
+      <div className="print:hidden">
+        <ImpersonationBanner />
+      </div>
       {/* Header */}
-      <header className="bg-[#0A1E3E] text-white shadow-lg sticky top-0 z-50">
+      <header className="bg-[#0A1E3E] text-white shadow-lg sticky top-0 z-50 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}

@@ -30,7 +30,7 @@ interface RingProps {
   isNA?: boolean;      // Not Applicable state
 }
 
-function ProgressRing({ value, target, size = 120, strokeWidth = 10, color, bgColor = "text-gray-200", isNA = false }: RingProps) {
+export function ProgressRing({ value, target, size = 120, strokeWidth = 10, color, bgColor = "text-gray-200", isNA = false }: RingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const clampedValue = isNA ? 0 : Math.min(Math.max(value, 0), 100);
