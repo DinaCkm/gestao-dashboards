@@ -101,6 +101,8 @@ import AlunoConteudoCurso from "./pages/aluno/AlunoConteudoCurso";
 import AlunoAvaliacao from "./pages/aluno/AlunoAvaliacao";
 import AlunoResultadoAvaliacao from "./pages/aluno/AlunoResultadoAvaliacao";
 import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
+import MeuProgresso from "./pages/aluno/MeuProgresso";
+import CertificadoPublico from "./pages/CertificadoPublico";
 import OnboardingVideos from "./pages/admin/OnboardingVideos";
 import BibliotecaPedagogica from "./pages/admin/BibliotecaPedagogica";
 import AdminBibliotecaLivros from "./pages/admin/BibliotecaLivros";
@@ -121,6 +123,7 @@ function Router() {
       <Route path={"/login"} component={Login} />
       <Route path={"/registro"} component={AutoRegistro} />
       <Route path={"/candidato-ps"} component={PortalCandidatoPS} />
+      <Route path={"/certificados/verificar/:hash"} component={CertificadoPublico} />
       <Route path={"/"} component={Home} />
       <Route path={"/upload"} component={Upload} />
       <Route path={"/admin"}>{() => { window.location.replace("/dashboard/admin"); return null; }}</Route>
@@ -219,6 +222,7 @@ function Router() {
       <Route path={"/aluno/competencias-comp-tec/avaliacao"} component={AlunoAvaliacao} />
       <Route path={"/aluno/competencias-comp-tec/resultado"} component={AlunoResultadoAvaliacao} />
       <Route path={"/aluno/competencias-comp-tec/reflexao"} component={AlunoReflexaoFinal} />
+      <Route path={"/aluno/meu-progresso"} component={MeuProgresso} />
       <Route path={"/admin/onboarding-videos"} component={OnboardingVideos} />
       <Route path={"/admin/biblioteca-pedagogica"} component={BibliotecaPedagogica} />
       <Route path={"/admin/biblioteca-livros"} component={AdminBibliotecaLivros} />
