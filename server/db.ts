@@ -7141,8 +7141,35 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
   const database = await getDb();
   if (!database) return null;
 
-  // Ciclo congelado: competências vêm do PDI que foi congelado nesse reset (exato).
+  // Ciclo congelado: um reset pode congelar VÁRIOS PDIs de uma vez (uma trilha
+  // por competência básica, por exemplo) — não só o PDI referenciado no
+  // snapshot. Busca todos os PDIs congelados dentro da janela deste reset
+  // (mesmo macroTermino do reset, e depois do reset anterior, se houver) e
+  // soma as competências de todos.
   if (macrociclo.origem === "reset" && macrociclo.status === "encerrado" && macrociclo.historicoId) {
+    const dataFim = macrociclo.dataFim ? new Date(macrociclo.dataFim) : null;
+    const dataInicioPeriodo = macrociclo.dataInicio ? new Date(macrociclo.dataInicio) : null;
+
+    const pdisCongelados = await database.select().from(assessmentPdi).where(
+      and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.status, "congelado"))
+    );
+    const pdisDesteReset = pdisCongelados.filter((p) => {
+      if (!p.macroTermino) return false;
+      const termino = new Date(`${p.macroTermino}T23:59:59`);
+      if (dataFim && termino > dataFim) return false;
+      if (dataInicioPeriodo && termino <= dataInicioPeriodo) return false;
+      return true;
+    });
+
+    if (pdisDesteReset.length > 0) {
+      const competenciasPorPdi = await Promise.all(
+        pdisDesteReset.map((p) => resolverCompetenciasDoPdi(database, p.id))
+      );
+      return { competencias: competenciasPorPdi.flat() };
+    }
+
+    // Fallback: nenhum PDI encontrado pela janela de datas (dados antigos sem
+    // macroTermino consistente) — usa ao menos o PDI referenciado no snapshot.
     const [snapRows]: any = await database.execute(sql.raw(
       `SELECT assessmentPdiId FROM historico_ciclos_aluno WHERE id = ${macrociclo.historicoId} LIMIT 1`
     ));
