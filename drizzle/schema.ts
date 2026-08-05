@@ -759,6 +759,8 @@ export const nivelCertificates = mysqlTable("nivel_certificates", {
   emitidoEm: timestamp("emitidoEm").defaultNow().notNull(),
   emitidoPor: int("emitidoPor"),
   hashDocumento: varchar("hashDocumento", { length: 128 }).notNull(),
+  emissaoManual: int("emissaoManual").default(0).notNull(),
+  justificativaEmissaoManual: text("justificativaEmissaoManual"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
