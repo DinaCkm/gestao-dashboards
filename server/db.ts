@@ -7074,7 +7074,10 @@ export async function getMacrociclosByAluno(alunoId: number) {
   if (resets.length > 0) {
     const resetsAsc = [...resets].reverse();
     const todosNiveis = await getContratoNiveisByAluno(alunoId);
-    const niveisAsc = [...todosNiveis].sort((a: any, b: any) => a.id - b.id);
+    const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
+    const niveisAsc = [...todosNiveis].sort(
+      (a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99)
+    );
 
     const macrociclos: any[] = [];
     let inicio: any = null;
@@ -7107,159 +7110,86 @@ export async function getMacrociclosByAluno(alunoId: number) {
     return macrociclos;
   }
 
-  // Fallback: aluno nunca passou pelo reset formal.
-  const todosNiveis = await getContratoNiveisByAluno(alunoId);
-  if (todosNiveis.length === 0) {
-    return [{
-      chave: "unico",
-      origem: "sem-vinculo",
-      historicoId: null,
-      numeroCiclo: 1,
-      dataInicio: null,
-      dataFim: null,
-      status: "ativo",
-      contratoNivelId: null,
-      nivelLabel: null,
-    }];
-  }
-
-  return Promise.all(todosNiveis.map(async (n: any, idx: number) => {
-    const nivelBruto = await getContratoNivelBruto(n.id);
-    const periodo = nivelBruto
-      ? await resolverSnapshotEDatasDoNivel(alunoId, nivelBruto)
-      : { dataInicio: null, dataFim: null };
-    return {
-      chave: `nivel:${n.id}`,
-      origem: "nivel-sem-reset",
-      historicoId: null,
-      numeroCiclo: idx + 1,
-      dataInicio: periodo.dataInicio,
-      dataFim: periodo.dataFim,
-      status: n.status,
-      contratoNivelId: n.id,
-      nivelLabel: n.nivel,
-    };
-  }));
+  // Aluno nunca passou pelo reset formal: não existe fronteira real entre
+  // "níveis" ainda, então não faz sentido fingir que são macrociclos separados
+  // — mostra só o progresso atual (vira card único "Progresso Atual" na tela).
+  const nivelVigente = await getContratoNivelVigenteByAluno(alunoId);
+  return [{
+    chave: "atual",
+    origem: "sem-reset",
+    historicoId: null,
+    numeroCiclo: 1,
+    dataInicio: null,
+    dataFim: null,
+    status: "ativo",
+    contratoNivelId: nivelVigente?.id ?? null,
+    nivelLabel: nivelVigente?.nivel ?? null,
+  }];
 }
 
 export type MacrocicloAluno = Awaited<ReturnType<typeof getMacrociclosByAluno>>[number];
 
 /**
- * Dados pedagógicos de um macrociclo específico (um item retornado por
- * getMacrociclosByAluno). Ciclos com origem "reset" e já encerrados usam o
- * snapshot congelado (historico_ciclos_aluno) — indicadores exatos, sem
- * recalcular. Os demais (ciclo atual, ou níveis legados sem reset) calculam
- * ao vivo, filtrando pelo período do macrociclo.
+ * Resolve só a tabela de competências (nota x meta) de um macrociclo — os
+ * indicadores agregados (engajamento, desafios etc.) não são mais calculados
+ * aqui: para o ciclo atual a tela usa indicadores.meuDashboard, e para ciclos
+ * congelados usa indicadores.meuDashboardCongelado — ambos endpoints já
+ * testados e usados por /performance e /evolucao, mais confiáveis que um
+ * recálculo próprio.
  */
 export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: MacrocicloAluno) {
   const database = await getDb();
   if (!database) return null;
 
+  // Ciclo congelado: competências vêm do PDI que foi congelado nesse reset (exato).
   if (macrociclo.origem === "reset" && macrociclo.status === "encerrado" && macrociclo.historicoId) {
     const [snapRows]: any = await database.execute(sql.raw(
-      `SELECT * FROM historico_ciclos_aluno WHERE id = ${macrociclo.historicoId} LIMIT 1`
+      `SELECT assessmentPdiId FROM historico_ciclos_aluno WHERE id = ${macrociclo.historicoId} LIMIT 1`
     ));
     const snapshot = Array.isArray(snapRows) && snapRows[0] ? snapRows[0] : null;
-    if (!snapshot) return null;
-
-    let competencias: any[] = [];
-    if (snapshot.assessmentPdiId) {
-      const compsPdi = await database.select().from(assessmentCompetencias)
-        .where(eq(assessmentCompetencias.assessmentPdiId, snapshot.assessmentPdiId));
-      const compIds = compsPdi.map((c) => c.competenciaId);
-      const catalogo = compIds.length > 0
-        ? await database.select().from(competencias).where(inArray(competencias.id, compIds))
-        : [];
-      const nomeById = new Map(catalogo.map((c) => [c.id, c.nome]));
-      competencias = compsPdi.map((c) => ({
-        competenciaId: c.competenciaId,
-        competenciaNome: nomeById.get(c.competenciaId) || null,
-        obrigatoria: c.peso === "obrigatoria",
-        nota: c.nivelAtual !== null && c.nivelAtual !== undefined ? Number(c.nivelAtual) : null,
-        meta: c.metaFinal !== null && c.metaFinal !== undefined ? Number(c.metaFinal) : 100,
-      }));
+    if (snapshot?.assessmentPdiId) {
+      return { competencias: await resolverCompetenciasDoPdi(database, snapshot.assessmentPdiId) };
     }
-
-    return {
-      snapshot,
-      competencias,
-      snapshotIndicadores: {
-        engajamento: Number(snapshot.ind1Webinars ?? 0),
-        desafios: Number(snapshot.metasTotal) > 0
-          ? (Number(snapshot.metasCumpridas) / Number(snapshot.metasTotal)) * 100
-          : 0,
-        engajamentoFinal: Number(snapshot.ind7EngajamentoFinal ?? 0),
-      },
-      metas: [],
-      mentoringSessions: [],
-      eventParticipation: [],
-      casesSucesso: [],
-    };
+    return { competencias: [] };
   }
 
-  // Ciclo ao vivo (atual, ou nível legado sem reset): filtra por período.
-  const inicio = macrociclo.dataInicio ? new Date(macrociclo.dataInicio) : null;
-  const fim = macrociclo.dataFim ? new Date(macrociclo.dataFim) : null;
-  const dentroDoPeriodo = (valor: any): boolean => {
-    if (!valor) return false;
-    const dt = new Date(valor);
-    if (Number.isNaN(dt.getTime())) return false;
-    if (inicio && dt < inicio) return false;
-    if (fim && dt > fim) return false;
-    return true;
-  };
-
-  const [mentoriasAll, participacoesAll, casesAll, metasAll] = await Promise.all([
-    getMentoringSessionsByAluno(alunoId),
-    getEventParticipationByAluno(alunoId),
-    getCasesSucessoByAluno(alunoId),
-    getMetasDetalhadas(alunoId),
-  ]);
-
-  // Competências: PDI vinculado ao nível deste macrociclo (se houver), senão o PDI ativo do aluno.
-  let pdiRelevante: any = null;
+  // Ciclo atual (ou legado sem reset): competências do PDI vinculado ao nível
+  // deste macrociclo, ou o PDI ativo do aluno como último recurso.
+  let pdiId: number | null = null;
   if (macrociclo.contratoNivelId) {
     const nivelBruto = await getContratoNivelBruto(macrociclo.contratoNivelId);
     if (nivelBruto) {
       const resolvido = await resolverSnapshotEDatasDoNivel(alunoId, nivelBruto);
-      pdiRelevante = resolvido.pdi ?? null;
+      pdiId = resolvido.pdi?.id ?? null;
     }
   }
-  if (!pdiRelevante) {
+  if (!pdiId) {
     const [ativo] = await database.select().from(assessmentPdi)
       .where(and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.status, "ativo")))
       .orderBy(desc(assessmentPdi.createdAt))
       .limit(1);
-    pdiRelevante = ativo ?? null;
+    pdiId = ativo?.id ?? null;
   }
 
-  let competencias: any[] = [];
-  if (pdiRelevante?.id) {
-    const compsPdi = await database.select().from(assessmentCompetencias)
-      .where(eq(assessmentCompetencias.assessmentPdiId, pdiRelevante.id));
-    const compIds = compsPdi.map((c) => c.competenciaId);
-    const catalogo = compIds.length > 0
-      ? await database.select().from(competencias).where(inArray(competencias.id, compIds))
-      : [];
-    const nomeById = new Map(catalogo.map((c) => [c.id, c.nome]));
-    competencias = compsPdi.map((c) => ({
-      competenciaId: c.competenciaId,
-      competenciaNome: nomeById.get(c.competenciaId) || null,
-      obrigatoria: c.peso === "obrigatoria",
-      nota: c.nivelAtual !== null && c.nivelAtual !== undefined ? Number(c.nivelAtual) : null,
-      meta: c.metaFinal !== null && c.metaFinal !== undefined ? Number(c.metaFinal) : 100,
-    }));
-  }
+  return { competencias: pdiId ? await resolverCompetenciasDoPdi(database, pdiId) : [] };
+}
 
-  return {
-    snapshot: null,
-    competencias,
-    snapshotIndicadores: null,
-    metas: (metasAll as any[]).filter((m: any) => dentroDoPeriodo(m.createdAt)),
-    mentoringSessions: (mentoriasAll as any[]).filter((s: any) => dentroDoPeriodo(s.sessionDate)),
-    eventParticipation: (participacoesAll as any[]).filter((e: any) => dentroDoPeriodo(e.selfReportedAt || e.createdAt)),
-    casesSucesso: (casesAll as any[]).filter((c: any) => dentroDoPeriodo(c.dataEntrega)),
-  };
+/** Busca as competências de um PDI (assessment_competencias) já com nome, nota e meta resolvidos. */
+async function resolverCompetenciasDoPdi(database: NonNullable<Awaited<ReturnType<typeof getDb>>>, assessmentPdiId: number) {
+  const compsPdi = await database.select().from(assessmentCompetencias)
+    .where(eq(assessmentCompetencias.assessmentPdiId, assessmentPdiId));
+  const compIds = compsPdi.map((c) => c.competenciaId);
+  const catalogo = compIds.length > 0
+    ? await database.select().from(competencias).where(inArray(competencias.id, compIds))
+    : [];
+  const nomeById = new Map(catalogo.map((c) => [c.id, c.nome]));
+  return compsPdi.map((c) => ({
+    competenciaId: c.competenciaId,
+    competenciaNome: nomeById.get(c.competenciaId) || null,
+    obrigatoria: c.peso === "obrigatoria",
+    nota: c.nivelAtual !== null && c.nivelAtual !== undefined ? Number(c.nivelAtual) : null,
+    meta: c.metaFinal !== null && c.metaFinal !== undefined ? Number(c.metaFinal) : 100,
+  }));
 }
 
 export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: number | null) {
@@ -13807,6 +13737,32 @@ export async function ensureRelatorioMentoriasLogTable(): Promise<void> {
  * Usado pela página de Performance para filtrar eventos e mentorias anteriores ao reset.
  * Se o aluno nunca sofreu reset, retorna null.
  */
+/**
+ * Resolve a janela [dataInicio, dataFim] de um reset específico de um aluno —
+ * dataFim é a data do próprio reset (criadoEm); dataInicio é a data do reset
+ * ANTERIOR do mesmo aluno (ou null, se for o primeiro reset dele — nesse caso
+ * a janela cobre "desde o início da jornada").
+ * Sem isso, um aluno com 2+ resets teria todo o histórico anterior ao último
+ * reset agrupado num "Macrociclo 1" só, misturando períodos que deveriam
+ * ficar congelados separadamente.
+ */
+export async function getResetPorHistoricoId(
+  alunoId: number,
+  historicoId: number
+): Promise<{ dataInicio: Date | null; dataFim: Date; numeroCicloArquivado: number } | null> {
+  const resets = await getAuditoriaResets({ alunoId, limit: 100 });
+  const resetsAsc = [...resets].reverse(); // cronológico (mais antigo primeiro)
+  const idx = resetsAsc.findIndex((r: any) => r.historicoId === historicoId);
+  if (idx === -1) return null;
+  const este = resetsAsc[idx];
+  const anterior = idx > 0 ? resetsAsc[idx - 1] : null;
+  return {
+    dataInicio: anterior ? new Date(anterior.criadoEm) : null,
+    dataFim: new Date(este.criadoEm),
+    numeroCicloArquivado: este.numeroCicloArquivado,
+  };
+}
+
 export async function getDataUltimoResetAluno(alunoId: number): Promise<Date | null> {
   const db = await getDb();
   if (!db) return null;
