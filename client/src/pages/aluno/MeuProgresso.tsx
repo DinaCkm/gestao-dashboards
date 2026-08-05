@@ -208,6 +208,15 @@ export default function MeuProgresso() {
 
         {desempenho && (
           <div ref={conteudoRef} className="space-y-6 bg-white p-2">
+            {(desempenho as any).dadosNaoSegmentadosPorNivel && (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-3">
+                <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>
+                  Os registros deste aluno são de antes do sistema separar dados por nível — os
+                  indicadores abaixo mostram o histórico completo dele, não só deste nível específico.
+                </span>
+              </div>
+            )}
             {/* Cabeçalho do nível */}
             <Card>
               <CardHeader>
