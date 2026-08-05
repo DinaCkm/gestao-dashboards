@@ -22,6 +22,8 @@ import {
   getPedagogiaByNivel,
   avaliarElegibilidadeCertificacao,
   getNivelCertificateByAlunoNivel,
+  getMacrociclosByAluno,
+  getPedagogiaPorMacrociclo,
 } from "../db";
 
 /**
@@ -172,6 +174,146 @@ export const meuDesempenhoRouter = router({
               }
             : null,
         },
+      };
+    }),
+
+  /**
+   * Lista os macrociclos REAIS do aluno — um card por ciclo, usando resets
+   * formais como fronteira quando existirem, ou os níveis (contrato_niveis)
+   * como fallback pra quem nunca foi resetado.
+   */
+  listarMacrociclos: protectedProcedure
+    .input(z.object({ alunoId: z.number().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const alunoId = await resolverAlunoAlvo(ctx, input?.alunoId);
+      const macrociclos = await getMacrociclosByAluno(alunoId);
+
+      return Promise.all(
+        macrociclos.map(async (m: any) => {
+          let certificadoEmitido = false;
+          if (m.contratoNivelId) {
+            const cert = await getNivelCertificateByAlunoNivel(alunoId, m.contratoNivelId);
+            certificadoEmitido = !!cert;
+          }
+          return { ...m, certificadoEmitido };
+        })
+      );
+    }),
+
+  /**
+   * Visão completa de um macrociclo: indicadores, avaliação por competência e
+   * status de certificação (quando o macrociclo está vinculado a um nível
+   * formal — senão, indica que a certificação depende de emissão manual).
+   * `chave` é o identificador retornado por listarMacrociclos.
+   */
+  porMacrociclo: protectedProcedure
+    .input(z.object({ alunoId: z.number().optional(), chave: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const alunoId = await resolverAlunoAlvo(ctx, input.alunoId);
+
+      const aluno = await getAlunoById(alunoId);
+      if (!aluno) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+      }
+
+      const macrociclos = await getMacrociclosByAluno(alunoId);
+      const macrociclo = macrociclos.find((m: any) => m.chave === input.chave);
+      if (!macrociclo) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Macrociclo não encontrado para este aluno." });
+      }
+
+      const pedagogia = await getPedagogiaPorMacrociclo(alunoId, macrociclo);
+      if (!pedagogia) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Não foi possível carregar os dados deste macrociclo." });
+      }
+
+      const competencias = pedagogia.competencias || [];
+      const obrigatorias = competencias.filter((c: any) => c.obrigatoria);
+      const obrigatoriasAprovadas = obrigatorias.filter((c: any) => c.nota !== null && c.nota >= c.meta).length;
+
+      const avaliacaoCompetencias = competencias.map((c: any) => ({
+        competenciaId: c.competenciaId,
+        competenciaNome: c.competenciaNome,
+        obrigatoria: c.obrigatoria,
+        nota: c.nota,
+        meta: c.meta,
+        aprovada: c.nota !== null && c.nota >= c.meta,
+      }));
+
+      let indicadores: { competenciasTotal: number; competenciasAprovadas: number; engajamento: number; desafios: number; evidencias: number };
+      if (pedagogia.snapshotIndicadores) {
+        // Ciclo congelado — indicadores exatos, vindos do snapshot (não recalculados).
+        indicadores = {
+          competenciasTotal: obrigatorias.length,
+          competenciasAprovadas: obrigatoriasAprovadas,
+          engajamento: pedagogia.snapshotIndicadores.engajamento,
+          desafios: pedagogia.snapshotIndicadores.desafios,
+          evidencias: pedagogia.snapshotIndicadores.engajamentoFinal >= 80 ? 1 : 0,
+        };
+      } else {
+        const metasLista = pedagogia.metas || [];
+        const eventos = pedagogia.eventParticipation || [];
+        const cases = pedagogia.casesSucesso || [];
+        const engajamento = eventos.length > 0
+          ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
+          : 0;
+        const desafios = metasLista.length > 0
+          ? (metasLista.filter((m: any) => String(m.status || "").toLowerCase() === "validada").length / metasLista.length) * 100
+          : 0;
+        const evidencias = cases.filter((c: any) => c.entregue === 1).length;
+        indicadores = {
+          competenciasTotal: obrigatorias.length,
+          competenciasAprovadas: obrigatoriasAprovadas,
+          engajamento: Number(engajamento.toFixed(2)),
+          desafios: Number(desafios.toFixed(2)),
+          evidencias,
+        };
+      }
+
+      // Certificação só existe quando o macrociclo está vinculado a um nível formal.
+      let certificacao: any = {
+        elegivel: false,
+        motivo: "Este macrociclo ainda não está vinculado a um nível formal — a certificação, quando aplicável, depende de emissão manual do admin.",
+        criterios: null,
+        certificadoEmitido: null,
+      };
+      if (macrociclo.contratoNivelId) {
+        const [elegibilidadeRaw, certificado] = await Promise.all([
+          avaliarElegibilidadeCertificacao(alunoId, macrociclo.contratoNivelId),
+          getNivelCertificateByAlunoNivel(alunoId, macrociclo.contratoNivelId),
+        ]);
+        const elegibilidade: any = elegibilidadeRaw;
+        certificacao = {
+          elegivel: elegibilidade.elegivel,
+          motivo: elegibilidade.motivo || null,
+          criterios: elegibilidade.criterios,
+          contratoNivelId: macrociclo.contratoNivelId,
+          certificadoEmitido: certificado
+            ? {
+                id: certificado.id,
+                status: certificado.status,
+                arquivoUrl: certificado.arquivoUrl,
+                emitidoEm: certificado.emitidoEm,
+                hashDocumento: certificado.hashDocumento,
+              }
+            : null,
+        };
+      }
+
+      return {
+        aluno: { id: aluno.id, nome: aluno.name },
+        macrociclo: {
+          chave: macrociclo.chave,
+          origem: macrociclo.origem,
+          numeroCiclo: macrociclo.numeroCiclo,
+          status: macrociclo.status,
+          periodo: { dataInicio: macrociclo.dataInicio, dataFim: macrociclo.dataFim },
+          contratoNivelId: macrociclo.contratoNivelId,
+          nivelLabel: macrociclo.nivelLabel ?? null,
+        },
+        indicadores,
+        avaliacaoCompetencias,
+        certificacao,
       };
     }),
 });
