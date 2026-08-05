@@ -2,10 +2,13 @@
  * server/routers/meuDesempenho.ts
  *
  * Endpoint agregador para a tela de progresso/certificação do aluno.
- * Junta, por macrociclo (nível): indicadores de performance, a tabela de
- * avaliação por competência (nota x meta), e o status de elegibilidade/emissão
- * do certificado — tudo em uma única chamada, evitando que o front precise
- * combinar 4 endpoints diferentes.
+ * Junta, por macrociclo: a tabela de avaliação por competência (nota x meta)
+ * e o status de elegibilidade/emissão do certificado.
+ *
+ * Os indicadores agregados (engajamento, desafios etc.) NÃO são calculados
+ * aqui — a tela busca eles direto de indicadores.meuDashboard (ciclo atual)
+ * ou indicadores.meuDashboardCongelado (ciclo já congelado por reset), os
+ * mesmos endpoints testados que /performance e /evolucao já usam.
  *
  * Não gera o relatório de IA aqui (isso continua em relatorioMentorado.gerar,
  * que é uma mutation sob demanda, não uma leitura agregada).
@@ -18,8 +21,6 @@ import {
   getAlunoFromCtx,
   getAlunoById,
   getContratoNiveisByAluno,
-  getContratoNivelVigenteByAluno,
-  getPedagogiaByNivel,
   avaliarElegibilidadeCertificacao,
   getNivelCertificateByAlunoNivel,
   getMacrociclosByAluno,
@@ -62,8 +63,8 @@ async function resolverAlunoAlvo(ctx: any, alunoIdInput?: number): Promise<numbe
 
 export const meuDesempenhoRouter = router({
   /**
-   * Lista os macrociclos (níveis) do aluno, com status resumido — usado pra
-   * montar a linha do tempo/seletor de nível na tela do aluno.
+   * Lista os níveis formais (contrato_niveis) do aluno — usado hoje só pela
+   * emissão manual de certificado no admin, pra escolher qual nível emitir.
    */
   listarNiveis: protectedProcedure
     .input(z.object({ alunoId: z.number().optional() }).optional())
@@ -89,98 +90,9 @@ export const meuDesempenhoRouter = router({
     }),
 
   /**
-   * Visão completa de um macrociclo: indicadores, tabela de avaliação por
-   * competência e status de certificação. Se contratoNivelId não for informado,
-   * usa o nível vigente do aluno.
-   */
-  porNivel: protectedProcedure
-    .input(z.object({ alunoId: z.number().optional(), contratoNivelId: z.number().optional() }).optional())
-    .query(async ({ ctx, input }) => {
-      const alunoId = await resolverAlunoAlvo(ctx, input?.alunoId);
-
-      let contratoNivelId = input?.contratoNivelId ?? null;
-      if (!contratoNivelId) {
-        const vigente = await getContratoNivelVigenteByAluno(alunoId);
-        if (!vigente) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não possui nível/macrociclo em andamento." });
-        }
-        contratoNivelId = vigente.id;
-      }
-
-      const aluno = await getAlunoById(alunoId);
-      if (!aluno) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
-      }
-
-      const [pedagogia, elegibilidadeRaw, certificado] = await Promise.all([
-        getPedagogiaByNivel(alunoId, contratoNivelId),
-        avaliarElegibilidadeCertificacao(alunoId, contratoNivelId),
-        getNivelCertificateByAlunoNivel(alunoId, contratoNivelId),
-      ]);
-      // avaliarElegibilidadeCertificacao pode retornar um shape reduzido ({elegivel, motivo})
-      // quando o nível não é encontrado; tratamos como any para acessar os campos extras com segurança.
-      const elegibilidade: any = elegibilidadeRaw;
-
-      const plano = pedagogia.planoIndividual || [];
-      const obrigatorias = plano.filter((p: any) => Number(p.isObrigatoria ?? 1) === 1);
-      const obrigatoriasAprovadas = obrigatorias.filter((p: any) => {
-        const nota = Number(p.notaAtual ?? 0);
-        const meta = Number(p.metaNota ?? 7);
-        return Number.isFinite(nota) && nota >= meta;
-      }).length;
-
-      // Tabela de avaliação por competência — base do "relatório de avaliação" dentro do anexo de desempenho.
-      const avaliacaoCompetencias = plano.map((p: any) => ({
-        competenciaId: p.competenciaId,
-        competenciaNome: p.competenciaNome,
-        trilhaNome: p.trilhaNome,
-        obrigatoria: Number(p.isObrigatoria ?? 1) === 1,
-        nota: p.notaAtual !== null && p.notaAtual !== undefined ? Number(p.notaAtual) : null,
-        meta: p.metaNota !== null && p.metaNota !== undefined ? Number(p.metaNota) : 7,
-        status: p.status,
-        aprovada: p.notaAtual !== null && p.notaAtual !== undefined
-          ? Number(p.notaAtual) >= Number(p.metaNota ?? 7)
-          : false,
-      }));
-
-      return {
-        aluno: { id: aluno.id, nome: aluno.name },
-        nivel: {
-          id: contratoNivelId,
-          nivel: elegibilidade.nivel?.nivel ?? null,
-          status: elegibilidade.nivel?.status ?? null,
-          periodo: (elegibilidade as any).periodo ?? { dataInicio: null, dataFim: null },
-        },
-        dadosNaoSegmentadosPorNivel: !!(pedagogia as any).dadosNaoSegmentadosPorNivel,
-        indicadores: {
-          competenciasTotal: obrigatorias.length,
-          competenciasAprovadas: obrigatoriasAprovadas,
-          engajamento: elegibilidade.metricas?.engajamento ?? null,
-          desafios: elegibilidade.metricas?.desafios ?? null,
-          evidencias: elegibilidade.metricas?.evidencias ?? null,
-        },
-        avaliacaoCompetencias,
-        certificacao: {
-          elegivel: elegibilidade.elegivel,
-          motivo: elegibilidade.motivo || null,
-          criterios: elegibilidade.criterios,
-          certificadoEmitido: certificado
-            ? {
-                id: certificado.id,
-                status: certificado.status,
-                arquivoUrl: certificado.arquivoUrl,
-                emitidoEm: certificado.emitidoEm,
-                hashDocumento: certificado.hashDocumento,
-              }
-            : null,
-        },
-      };
-    }),
-
-  /**
-   * Lista os macrociclos REAIS do aluno — um card por ciclo, usando resets
-   * formais como fronteira quando existirem, ou os níveis (contrato_niveis)
-   * como fallback pra quem nunca foi resetado.
+   * Lista os macrociclos REAIS do aluno — um card por reset formal (mais o
+   * ciclo atual), ou um único card "Progresso Atual" se o aluno nunca foi
+   * resetado.
    */
   listarMacrociclos: protectedProcedure
     .input(z.object({ alunoId: z.number().optional() }).optional())
@@ -201,10 +113,10 @@ export const meuDesempenhoRouter = router({
     }),
 
   /**
-   * Visão completa de um macrociclo: indicadores, avaliação por competência e
-   * status de certificação (quando o macrociclo está vinculado a um nível
-   * formal — senão, indica que a certificação depende de emissão manual).
-   * `chave` é o identificador retornado por listarMacrociclos.
+   * Avaliação por competência e status de certificação de um macrociclo.
+   * Indicadores agregados não vêm daqui — a tela busca eles de
+   * indicadores.meuDashboard ou indicadores.meuDashboardCongelado,
+   * conforme a origem do macrociclo (`chave`, retornado por listarMacrociclos).
    */
   porMacrociclo: protectedProcedure
     .input(z.object({ alunoId: z.number().optional(), chave: z.string() }))
@@ -222,55 +134,26 @@ export const meuDesempenhoRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Macrociclo não encontrado para este aluno." });
       }
 
-      const pedagogia = await getPedagogiaPorMacrociclo(alunoId, macrociclo);
-      if (!pedagogia) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Não foi possível carregar os dados deste macrociclo." });
-      }
-
-      const competencias = pedagogia.competencias || [];
-      const obrigatorias = competencias.filter((c: any) => c.obrigatoria);
-      const obrigatoriasAprovadas = obrigatorias.filter((c: any) => c.nota !== null && c.nota >= c.meta).length;
-
-      const avaliacaoCompetencias = competencias.map((c: any) => ({
-        competenciaId: c.competenciaId,
-        competenciaNome: c.competenciaNome,
-        obrigatoria: c.obrigatoria,
-        nota: c.nota,
-        meta: c.meta,
-        aprovada: c.nota !== null && c.nota >= c.meta,
-      }));
-
-      let indicadores: { competenciasTotal: number; competenciasAprovadas: number; engajamento: number; desafios: number; evidencias: number };
-      if (pedagogia.snapshotIndicadores) {
-        // Ciclo congelado — indicadores exatos, vindos do snapshot (não recalculados).
-        indicadores = {
-          competenciasTotal: obrigatorias.length,
-          competenciasAprovadas: obrigatoriasAprovadas,
-          engajamento: pedagogia.snapshotIndicadores.engajamento,
-          desafios: pedagogia.snapshotIndicadores.desafios,
-          evidencias: pedagogia.snapshotIndicadores.engajamentoFinal >= 80 ? 1 : 0,
-        };
-      } else {
-        const metasLista = pedagogia.metas || [];
-        const eventos = pedagogia.eventParticipation || [];
-        const cases = pedagogia.casesSucesso || [];
-        const engajamento = eventos.length > 0
-          ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
-          : 0;
-        const desafios = metasLista.length > 0
-          ? (metasLista.filter((m: any) => String(m.status || "").toLowerCase() === "validada").length / metasLista.length) * 100
-          : 0;
-        const evidencias = cases.filter((c: any) => c.entregue === 1).length;
-        indicadores = {
-          competenciasTotal: obrigatorias.length,
-          competenciasAprovadas: obrigatoriasAprovadas,
-          engajamento: Number(engajamento.toFixed(2)),
-          desafios: Number(desafios.toFixed(2)),
-          evidencias,
-        };
+      let avaliacaoCompetencias: any[] = [];
+      try {
+        const pedagogia = await getPedagogiaPorMacrociclo(alunoId, macrociclo);
+        const competencias = pedagogia?.competencias || [];
+        avaliacaoCompetencias = competencias.map((c: any) => ({
+          competenciaId: c.competenciaId,
+          competenciaNome: c.competenciaNome,
+          obrigatoria: c.obrigatoria,
+          nota: c.nota,
+          meta: c.meta,
+          aprovada: c.nota !== null && c.nota >= c.meta,
+        }));
+      } catch (err) {
+        console.error("[meuDesempenho.porMacrociclo] Falha ao carregar avaliação de competências:", err);
       }
 
       // Certificação só existe quando o macrociclo está vinculado a um nível formal.
+      // Isolado em try/catch: se a checagem falhar por algum caso extremo de dados
+      // legados, a página não deve cair inteira — só a seção de certificado fica
+      // indisponível, o resto do macrociclo continua funcionando.
       let certificacao: any = {
         elegivel: false,
         motivo: "Este macrociclo ainda não está vinculado a um nível formal — a certificação, quando aplicável, depende de emissão manual do admin.",
@@ -278,26 +161,37 @@ export const meuDesempenhoRouter = router({
         certificadoEmitido: null,
       };
       if (macrociclo.contratoNivelId) {
-        const [elegibilidadeRaw, certificado] = await Promise.all([
-          avaliarElegibilidadeCertificacao(alunoId, macrociclo.contratoNivelId),
-          getNivelCertificateByAlunoNivel(alunoId, macrociclo.contratoNivelId),
-        ]);
-        const elegibilidade: any = elegibilidadeRaw;
-        certificacao = {
-          elegivel: elegibilidade.elegivel,
-          motivo: elegibilidade.motivo || null,
-          criterios: elegibilidade.criterios,
-          contratoNivelId: macrociclo.contratoNivelId,
-          certificadoEmitido: certificado
-            ? {
-                id: certificado.id,
-                status: certificado.status,
-                arquivoUrl: certificado.arquivoUrl,
-                emitidoEm: certificado.emitidoEm,
-                hashDocumento: certificado.hashDocumento,
-              }
-            : null,
-        };
+        try {
+          const [elegibilidadeRaw, certificado] = await Promise.all([
+            avaliarElegibilidadeCertificacao(alunoId, macrociclo.contratoNivelId),
+            getNivelCertificateByAlunoNivel(alunoId, macrociclo.contratoNivelId),
+          ]);
+          const elegibilidade: any = elegibilidadeRaw;
+          certificacao = {
+            elegivel: elegibilidade.elegivel,
+            motivo: elegibilidade.motivo || null,
+            criterios: elegibilidade.criterios,
+            contratoNivelId: macrociclo.contratoNivelId,
+            certificadoEmitido: certificado
+              ? {
+                  id: certificado.id,
+                  status: certificado.status,
+                  arquivoUrl: certificado.arquivoUrl,
+                  emitidoEm: certificado.emitidoEm,
+                  hashDocumento: certificado.hashDocumento,
+                }
+              : null,
+          };
+        } catch (err) {
+          console.error("[meuDesempenho.porMacrociclo] Falha ao avaliar certificação:", err);
+          certificacao = {
+            elegivel: false,
+            motivo: "Não foi possível avaliar a certificação deste macrociclo no momento.",
+            criterios: null,
+            contratoNivelId: macrociclo.contratoNivelId,
+            certificadoEmitido: null,
+          };
+        }
       }
 
       return {
@@ -305,13 +199,13 @@ export const meuDesempenhoRouter = router({
         macrociclo: {
           chave: macrociclo.chave,
           origem: macrociclo.origem,
+          historicoId: macrociclo.historicoId,
           numeroCiclo: macrociclo.numeroCiclo,
           status: macrociclo.status,
           periodo: { dataInicio: macrociclo.dataInicio, dataFim: macrociclo.dataFim },
           contratoNivelId: macrociclo.contratoNivelId,
           nivelLabel: macrociclo.nivelLabel ?? null,
         },
-        indicadores,
         avaliacaoCompetencias,
         certificacao,
       };
