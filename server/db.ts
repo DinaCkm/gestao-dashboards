@@ -7059,7 +7059,7 @@ export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: num
     : await getContratoNivelVigenteByAluno(alunoId);
   const nivelId = contratoNivelId ?? nivelVigente?.id ?? null;
 
-  const [assessments, plano, metasNivel, mentorias, participacoes, cases, performance] = await Promise.all([
+  let [assessments, plano, metasNivel, mentorias, participacoes, cases, performance] = await Promise.all([
     getAssessmentsByAlunoAndNivel(alunoId, nivelId),
     getPlanoIndividualByAlunoAndNivel(alunoId, nivelId),
     getMetasDetalhadasByNivel(alunoId, nivelId),
@@ -7068,6 +7068,29 @@ export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: num
     getCasesSucessoByAlunoAndNivel(alunoId, nivelId),
     getStudentPerformanceByAlunoAndNivel(alunoId, nivelId),
   ]);
+
+  // Fallback para alunos legados (turmas anteriores ao sistema de contrato_niveis):
+  // os registros deles nunca ganharam o vínculo contratoNivelId, então a busca
+  // escopada acima volta vazia mesmo quando existe desempenho real. Se o nível
+  // não trouxe NENHUM dado vinculado e o aluno só tem um nível registrado (ou seja,
+  // toda a jornada dele é esse único nível), busca sem o filtro de nível.
+  const semDadosVinculados = plano.length === 0 && metasNivel.length === 0 &&
+    participacoes.length === 0 && cases.length === 0 && mentorias.length === 0;
+
+  if (nivelId && semDadosVinculados) {
+    const todosNiveis = await getContratoNiveisByAluno(alunoId);
+    if (todosNiveis.length <= 1) {
+      [assessments, plano, metasNivel, mentorias, participacoes, cases, performance] = await Promise.all([
+        getAssessmentsByAlunoAndNivel(alunoId, null),
+        getPlanoIndividualByAlunoAndNivel(alunoId, null),
+        getMetasDetalhadasByNivel(alunoId, null),
+        getMentoringSessionsByAlunoAndNivel(alunoId, null),
+        getEventParticipationByAlunoAndNivel(alunoId, null),
+        getCasesSucessoByAlunoAndNivel(alunoId, null),
+        getStudentPerformanceByAlunoAndNivel(alunoId, null),
+      ]);
+    }
+  }
 
   return {
     contratoNivelId: nivelId,
