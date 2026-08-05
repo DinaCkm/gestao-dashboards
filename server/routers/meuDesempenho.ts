@@ -149,6 +149,7 @@ export const meuDesempenhoRouter = router({
           status: elegibilidade.nivel?.status ?? null,
           periodo: (elegibilidade as any).periodo ?? { dataInicio: null, dataFim: null },
         },
+        dadosNaoSegmentadosPorNivel: !!(pedagogia as any).dadosNaoSegmentadosPorNivel,
         indicadores: {
           competenciasTotal: obrigatorias.length,
           competenciasAprovadas: obrigatoriasAprovadas,
