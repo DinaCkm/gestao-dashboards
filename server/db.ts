@@ -7097,9 +7097,12 @@ export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: num
       // as datas do próprio nível (nivelInicio/nivelFim), do mesmo jeito que o
       // resto do sistema já faz pra "macrociclo" quando não há vínculo direto.
       const nivelBruto = await getContratoNivelBruto(nivelId);
-      if (nivelBruto?.nivelInicio && nivelBruto?.nivelFim) {
-        const inicio = new Date(`${nivelBruto.nivelInicio}T00:00:00`);
-        const fim = new Date(`${nivelBruto.nivelFim}T23:59:59`);
+      const { dataInicio: periodoInicio, dataFim: periodoFim } = nivelBruto
+        ? await resolverSnapshotEDatasDoNivel(alunoId, nivelBruto)
+        : { dataInicio: null, dataFim: null };
+      if (periodoInicio && periodoFim) {
+        const inicio = new Date(`${String(periodoInicio).slice(0, 10)}T00:00:00`);
+        const fim = new Date(`${String(periodoFim).slice(0, 10)}T23:59:59`);
         const dentroDoPeriodo = (valor: any): boolean => {
           if (!valor) return false;
           const dt = new Date(valor);
