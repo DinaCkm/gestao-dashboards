@@ -103,6 +103,7 @@ import AlunoResultadoAvaliacao from "./pages/aluno/AlunoResultadoAvaliacao";
 import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
 import MeuProgresso from "./pages/aluno/MeuProgresso";
 import CertificadoPublico from "./pages/CertificadoPublico";
+import EmitirCertificadoManual from "./pages/admin/EmitirCertificadoManual";
 import OnboardingVideos from "./pages/admin/OnboardingVideos";
 import BibliotecaPedagogica from "./pages/admin/BibliotecaPedagogica";
 import AdminBibliotecaLivros from "./pages/admin/BibliotecaLivros";
@@ -124,6 +125,7 @@ function Router() {
       <Route path={"/registro"} component={AutoRegistro} />
       <Route path={"/candidato-ps"} component={PortalCandidatoPS} />
       <Route path={"/certificados/verificar/:hash"} component={CertificadoPublico} />
+      <Route path={"/admin/certificado-manual"} component={EmitirCertificadoManual} />
       <Route path={"/"} component={Home} />
       <Route path={"/upload"} component={Upload} />
       <Route path={"/admin"}>{() => { window.location.replace("/dashboard/admin"); return null; }}</Route>
