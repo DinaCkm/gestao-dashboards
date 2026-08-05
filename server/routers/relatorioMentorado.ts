@@ -12,7 +12,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { sql } from "drizzle-orm";
 import { router, protectedProcedure } from "../_core/trpc";
-import { getDb, getAllDiscResultadosByAluno } from "../db";
+import { getDb, getAllDiscResultadosByAluno, getAlunoFromCtx } from "../db";
 import { DISC_PERFIS } from "../../shared/discData";
 
 // ---------------------------------------------------------------------------
@@ -349,6 +349,13 @@ export const relatorioMentoradoRouter = router({
       return rows;
     }
 
+    // Autoacesso: aluno logado só vê a si mesmo na listagem.
+    if (role === "user") {
+      const aluno = await getAlunoFromCtx(ctx.user as any);
+      if (!aluno) return [];
+      return [{ id: aluno.id, nome: aluno.name }];
+    }
+
     const [rows]: any = await database.execute(sql`
       SELECT DISTINCT a.id, a.name AS nome
       FROM alunos a
@@ -366,7 +373,16 @@ export const relatorioMentoradoRouter = router({
       const userId = (ctx as any)?.user?.id;
 
       const isAdmin = role === "admin" || role === "admin2";
-      if (!isAdmin) {
+      if (isAdmin) {
+        // segue direto
+      } else if (role === "user") {
+        // Autoacesso do aluno: resolve o alunoId real a partir do contexto de login
+        // (não assume ctx.user.id === alunoId — nem todo fluxo de login do aluno gera essa igualdade).
+        const alunoCtx = await getAlunoFromCtx(ctx.user as any);
+        if (!alunoCtx || alunoCtx.id !== input.alunoId) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Você só pode gerar o relatório do seu próprio perfil." });
+        }
+      } else {
         await assertMentorOwnsAluno(userId, input.alunoId);
       }
 
