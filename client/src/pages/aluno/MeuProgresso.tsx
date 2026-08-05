@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import {
   XCircle,
   Sparkles,
   FileText,
+  TrendingUp,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
@@ -34,12 +36,7 @@ function carregarHtml2Canvas(): Promise<any> {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  planejado: "Planejado",
-  em_andamento: "Em andamento",
-  fechamento: "Em fechamento",
-  ajustes: "Em ajustes",
-  encerrado: "Encerrado",
-  certificado: "Certificado",
+  encerrado: "Congelado",
   ativo: "Em andamento",
 };
 
@@ -51,9 +48,20 @@ function formatarData(d: string | null | undefined) {
 }
 
 function labelMacrociclo(m: any) {
-  if (m.nivelLabel) return `Nível ${m.nivelLabel}`;
-  return m.status === "ativo" ? "Ciclo atual" : `Ciclo ${m.numeroCiclo}`;
+  if (m.status === "ativo") return "Progresso Atual";
+  if (m.nivelLabel) return `Nível ${m.nivelLabel} — Congelado`;
+  return `Macrociclo ${m.numeroCiclo} — Congelado`;
 }
+
+const criteriosLabels: Record<string, string> = {
+  nivelEncerrado: "Nível encerrado",
+  snapshotCongelado: "Dados do ciclo congelados (reset realizado)",
+  dadosSegmentadosPorNivel: "Dados corretamente separados por nível",
+  resultadoFinalFechado: "Resultado final do nível fechado",
+  engajamentoMin80: "Engajamento final ≥ 80%",
+  desafiosMin80: "Metas/desafios concluídos ≥ 80%",
+  evidenciasMinimas: "Ao menos uma evidência/case entregue",
+};
 
 export default function MeuProgresso() {
   const conteudoRef = useRef<HTMLDivElement>(null);
@@ -64,11 +72,28 @@ export default function MeuProgresso() {
 
   const chave = macrocicloSelecionado ?? macrociclos?.[macrociclos.length - 1]?.chave ?? undefined;
 
-  const { data: desempenho, isLoading: carregandoDesempenho, refetch: refetchDesempenho } =
+  const { data: desempenho, isLoading: carregandoDesempenho, error: erroDesempenho, refetch: refetchDesempenho } =
     trpc.meuDesempenho.porMacrociclo.useQuery(
       { chave: chave as string },
-      { enabled: !!chave }
+      { enabled: !!chave, retry: false }
     );
+
+  const cicloAtual = desempenho?.macrociclo?.status === "ativo";
+  const cicloCongelado = desempenho?.macrociclo?.origem === "reset" && !cicloAtual && !!desempenho?.macrociclo?.historicoId;
+
+  // Indicadores nunca são recalculados aqui — vêm sempre dos mesmos motores
+  // já testados que /performance (ciclo atual) e /evolucao (ciclo congelado) usam.
+  const { data: dashboardAtual, isLoading: carregandoAtual } = trpc.indicadores.meuDashboard.useQuery(undefined, {
+    enabled: cicloAtual,
+  });
+  const { data: dashboardCongelado, isLoading: carregandoCongelado } = trpc.indicadores.meuDashboardCongelado.useQuery(
+    { historicoId: desempenho?.macrociclo?.historicoId ?? undefined },
+    { enabled: cicloCongelado }
+  );
+
+  const fonteIndicadores: any = cicloAtual ? dashboardAtual : dashboardCongelado;
+  const consolidado = fonteIndicadores?.found !== false ? fonteIndicadores?.indicadoresV2?.consolidado : null;
+  const carregandoIndicadores = cicloAtual ? carregandoAtual : carregandoCongelado;
 
   const utils = trpc.useUtils();
 
@@ -90,16 +115,6 @@ export default function MeuProgresso() {
   });
 
   const criterios = desempenho?.certificacao?.criterios as Record<string, boolean> | undefined;
-
-  const criteriosLabels: Record<string, string> = {
-    nivelEncerrado: "Nível encerrado",
-    snapshotCongelado: "Dados do ciclo congelados (reset realizado)",
-    dadosSegmentadosPorNivel: "Dados corretamente separados por nível",
-    resultadoFinalFechado: "Resultado final do nível fechado",
-    engajamentoMin80: "Engajamento final ≥ 80%",
-    desafiosMin80: "Metas/desafios concluídos ≥ 80%",
-    evidenciasMinimas: "Ao menos uma evidência/case entregue",
-  };
 
   const handleBaixarPdf = async () => {
     if (!conteudoRef.current) return;
@@ -152,31 +167,21 @@ export default function MeuProgresso() {
               Meu Progresso e Certificados
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Acompanhe seu desempenho por macrociclo e baixe seu certificado quando elegível.
+              Certificado e relatório ficam disponíveis por macrociclo, assim que ele é encerrado.
             </p>
           </div>
-          <div className="flex gap-2 print:hidden">
-            <Button
-              variant="outline"
-              onClick={() => window.print()}
-              disabled={!desempenho}
-            >
-              <Printer className="w-4 h-4 mr-2" />
-              Imprimir
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleBaixarPdf}
-              disabled={gerandoPdf || !desempenho}
-            >
-              {gerandoPdf ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-2" />
-              )}
-              Exportar PDF
-            </Button>
-          </div>
+          {cicloCongelado && (
+            <div className="flex gap-2 print:hidden">
+              <Button variant="outline" onClick={() => window.print()} disabled={!desempenho}>
+                <Printer className="w-4 h-4 mr-2" />
+                Imprimir
+              </Button>
+              <Button variant="outline" onClick={handleBaixarPdf} disabled={gerandoPdf || !desempenho}>
+                {gerandoPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                Exportar PDF
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Seletor de macrociclo */}
@@ -187,12 +192,12 @@ export default function MeuProgresso() {
                 key={m.chave}
                 onClick={() => setMacrocicloSelecionado(m.chave)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  (chave === m.chave)
+                  chave === m.chave
                     ? "bg-emerald-600 text-white border-emerald-600"
                     : "bg-white text-gray-600 border-gray-200 hover:border-emerald-300"
                 }`}
               >
-                {labelMacrociclo(m)} — {STATUS_LABEL[m.status] || m.status}
+                {labelMacrociclo(m)}
                 {m.certificadoEmitido && <CheckCircle2 className="inline w-3.5 h-3.5 ml-1 -mt-0.5" />}
               </button>
             ))}
@@ -208,22 +213,15 @@ export default function MeuProgresso() {
         {!carregando && !desempenho && (
           <Card>
             <CardContent className="py-10 text-center text-gray-500">
-              Nenhum macrociclo encontrado ainda.
+              {erroDesempenho
+                ? `Não foi possível carregar este macrociclo: ${(erroDesempenho as any).message}`
+                : "Nenhum macrociclo encontrado ainda."}
             </CardContent>
           </Card>
         )}
 
         {desempenho && (
           <div ref={conteudoRef} className="space-y-6 bg-white p-2">
-            {desempenho.macrociclo.origem !== "reset" && (
-              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-3">
-                <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>
-                  Este aluno ainda não passou por um reset formal de ciclo — os indicadores abaixo são
-                  calculados pelo período deste macrociclo, não por um snapshot congelado.
-                </span>
-              </div>
-            )}
             {/* Cabeçalho do macrociclo */}
             <Card>
               <CardHeader>
@@ -237,40 +235,66 @@ export default function MeuProgresso() {
               </CardHeader>
             </Card>
 
-            {/* Indicadores — visual reaproveitado de /performance */}
+            {cicloAtual && (
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 text-blue-800 text-sm rounded-lg p-3 print:hidden">
+                <TrendingUp className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>
+                  Este é o seu ciclo em andamento — ainda pode mudar, então não gera certificado nem
+                  relatório formal ainda. Pra acompanhar seu desempenho em detalhe, veja a aba{" "}
+                  <Link href="/performance" className="underline font-medium">Performance</Link>.
+                  Quando este ciclo for encerrado, ele vira um card fixo aqui, com certificado e relatório disponíveis.
+                </span>
+              </div>
+            )}
+
+            {/* Indicadores — mesmo motor de /performance (atual) ou /evolucao (congelado) */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Indicadores do nível</CardTitle>
+                <CardTitle className="text-base">Indicadores</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap justify-around gap-6 py-4">
-                <div className="flex flex-col items-center gap-2">
-                  <ProgressRing
-                    value={desempenho.indicadores.engajamento ?? 0}
-                    target={80}
-                    color={(desempenho.indicadores.engajamento ?? 0) >= 80 ? "text-emerald-500" : "text-amber-500"}
-                  />
-                  <span className="text-sm text-gray-600 font-medium">Engajamento</span>
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <ProgressRing
-                    value={desempenho.indicadores.desafios ?? 0}
-                    target={80}
-                    color={(desempenho.indicadores.desafios ?? 0) >= 80 ? "text-emerald-500" : "text-amber-500"}
-                  />
-                  <span className="text-sm text-gray-600 font-medium">Metas/Desafios</span>
-                </div>
-                <div className="flex flex-col items-center gap-2">
-                  <ProgressRing
-                    value={
-                      desempenho.indicadores.competenciasTotal > 0
-                        ? (desempenho.indicadores.competenciasAprovadas / desempenho.indicadores.competenciasTotal) * 100
-                        : 0
-                    }
-                    target={100}
-                    color="text-blue-500"
-                  />
-                  <span className="text-sm text-gray-600 font-medium">Competências aprovadas</span>
-                </div>
+                {carregandoIndicadores ? (
+                  <div className="flex items-center text-gray-400 text-sm py-6">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> Carregando indicadores...
+                  </div>
+                ) : !consolidado ? (
+                  <p className="text-sm text-gray-400 py-6">Indicadores não disponíveis para este macrociclo ainda.</p>
+                ) : (
+                  <>
+                    <div className="flex flex-col items-center gap-2">
+                      <ProgressRing
+                        value={consolidado.ind1_webinars ?? 0}
+                        target={80}
+                        color={(consolidado.ind1_webinars ?? 0) >= 80 ? "text-emerald-500" : "text-amber-500"}
+                      />
+                      <span className="text-sm text-gray-600 font-medium">Webinars</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <ProgressRing
+                        value={consolidado.ind4_tarefas ?? 0}
+                        target={80}
+                        color={(consolidado.ind4_tarefas ?? 0) >= 80 ? "text-emerald-500" : "text-amber-500"}
+                      />
+                      <span className="text-sm text-gray-600 font-medium">Tarefas</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <ProgressRing
+                        value={consolidado.ind3_competencias ?? 0}
+                        target={100}
+                        color="text-blue-500"
+                      />
+                      <span className="text-sm text-gray-600 font-medium">Competências</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <ProgressRing
+                        value={consolidado.ind7_engajamentoFinal ?? 0}
+                        target={80}
+                        color={(consolidado.ind7_engajamentoFinal ?? 0) >= 80 ? "text-emerald-500" : "text-amber-500"}
+                      />
+                      <span className="text-sm text-gray-600 font-medium">Engajamento Final</span>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -309,7 +333,7 @@ export default function MeuProgresso() {
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-gray-500">
-                                  <XCircle className="w-3.5 h-3.5" /> {c.status === "concluida" ? "Reprovada" : "Pendente"}
+                                  <XCircle className="w-3.5 h-3.5" /> Pendente
                                 </span>
                               )}
                             </td>
@@ -322,115 +346,124 @@ export default function MeuProgresso() {
               </CardContent>
             </Card>
 
-            {/* Certificação */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Award className="w-4 h-4" /> Certificado
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {desempenho.certificacao.certificadoEmitido ? (
-                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-lg p-4">
-                    <div>
-                      <p className="font-medium text-emerald-800">Certificado emitido</p>
-                      <p className="text-xs text-emerald-700">
-                        Em {formatarData(desempenho.certificacao.certificadoEmitido.emitidoEm)} · código{" "}
-                        {desempenho.certificacao.certificadoEmitido.hashDocumento}
-                      </p>
-                    </div>
-                    {desempenho.certificacao.certificadoEmitido.arquivoUrl && (
-                      <Button asChild size="sm" variant="outline">
-                        <a href={desempenho.certificacao.certificadoEmitido.arquivoUrl} target="_blank" rel="noreferrer">
-                          <Download className="w-4 h-4 mr-1" /> Baixar
-                        </a>
-                      </Button>
+            {/* Certificação e relatório de IA só existem pra ciclos já congelados */}
+            {cicloAtual ? (
+              <Card className="border-dashed">
+                <CardContent className="py-6 text-center text-sm text-gray-400">
+                  Certificado e síntese de IA ficam disponíveis quando este ciclo for encerrado.
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Award className="w-4 h-4" /> Certificado
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {desempenho.certificacao.certificadoEmitido ? (
+                      <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-lg p-4">
+                        <div>
+                          <p className="font-medium text-emerald-800">Certificado emitido</p>
+                          <p className="text-xs text-emerald-700">
+                            Em {formatarData(desempenho.certificacao.certificadoEmitido.emitidoEm)} · código{" "}
+                            {desempenho.certificacao.certificadoEmitido.hashDocumento}
+                          </p>
+                        </div>
+                        {desempenho.certificacao.certificadoEmitido.arquivoUrl && (
+                          <Button asChild size="sm" variant="outline">
+                            <a href={desempenho.certificacao.certificadoEmitido.arquivoUrl} target="_blank" rel="noreferrer">
+                              <Download className="w-4 h-4 mr-1" /> Baixar
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <ul className="space-y-1.5">
+                          {criterios &&
+                            Object.entries(criterios).map(([chaveCriterio, atendido]) => (
+                              <li key={chaveCriterio} className="flex items-center gap-2 text-sm">
+                                {atendido ? (
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                ) : (
+                                  <XCircle className="w-4 h-4 text-gray-300 shrink-0" />
+                                )}
+                                <span className={atendido ? "text-gray-700" : "text-gray-400"}>
+                                  {criteriosLabels[chaveCriterio] || chaveCriterio}
+                                </span>
+                              </li>
+                            ))}
+                        </ul>
+                        <Button
+                          onClick={() => {
+                            const cnId = (desempenho.certificacao as any).contratoNivelId ?? desempenho.macrociclo.contratoNivelId;
+                            if (cnId) emitirMutation.mutate({ contratoNivelId: cnId });
+                          }}
+                          disabled={!desempenho.certificacao.elegivel || emitirMutation.isPending}
+                        >
+                          {emitirMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Award className="w-4 h-4 mr-2" />
+                          )}
+                          Emitir certificado
+                        </Button>
+                        {!desempenho.certificacao.elegivel && desempenho.certificacao.motivo && (
+                          <p className="text-xs text-gray-500">{desempenho.certificacao.motivo}</p>
+                        )}
+                      </>
                     )}
-                  </div>
-                ) : (
-                  <>
-                    <ul className="space-y-1.5">
-                      {criterios &&
-                        Object.entries(criterios).map(([chave, atendido]) => (
-                          <li key={chave} className="flex items-center gap-2 text-sm">
-                            {atendido ? (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                            ) : (
-                              <XCircle className="w-4 h-4 text-gray-300 shrink-0" />
-                            )}
-                            <span className={atendido ? "text-gray-700" : "text-gray-400"}>
-                              {criteriosLabels[chave] || chave}
-                            </span>
-                          </li>
-                        ))}
-                    </ul>
-                    <Button
-                      onClick={() => {
-                        const cnId = (desempenho.certificacao as any).contratoNivelId ?? desempenho.macrociclo.contratoNivelId;
-                        if (cnId) emitirMutation.mutate({ contratoNivelId: cnId });
-                      }}
-                      disabled={!desempenho.certificacao.elegivel || emitirMutation.isPending}
-                    >
-                      {emitirMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Award className="w-4 h-4 mr-2" />
-                      )}
-                      Emitir certificado
-                    </Button>
-                    {!desempenho.certificacao.elegivel && desempenho.certificacao.motivo && (
-                      <p className="text-xs text-gray-500">{desempenho.certificacao.motivo}</p>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            {/* Síntese gerada por IA */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-purple-500" /> Síntese de acompanhamento (gerada por IA)
-                </CardTitle>
-                <CardDescription>
-                  Resumo qualitativo elaborado a partir dos dados registrados neste macrociclo — não é um critério de certificação.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {relatorioIAMutation.data ? (
-                  <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-700">
-                    {relatorioIAMutation.data.relatorioTexto}
-                  </div>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        desempenho.aluno.id &&
-                        relatorioIAMutation.mutate({
-                          alunoId: desempenho.aluno.id,
-                          contratoNivelId: desempenho.macrociclo.contratoNivelId ?? undefined,
-                        })
-                      }
-                      disabled={relatorioIAMutation.isPending}
-                    >
-                      {relatorioIAMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <FileText className="w-4 h-4 mr-2" />
-                      )}
-                      Gerar síntese com IA
-                    </Button>
-                    {relatorioIAMutation.isError && (
-                      <p className="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
-                        <XCircle className="w-3.5 h-3.5 shrink-0" />
-                        {(relatorioIAMutation.error as any)?.message || "Não foi possível gerar o relatório."}
-                      </p>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-purple-500" /> Síntese de acompanhamento (gerada por IA)
+                    </CardTitle>
+                    <CardDescription>
+                      Resumo qualitativo elaborado a partir dos dados registrados neste macrociclo — não é um critério de certificação.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {relatorioIAMutation.data ? (
+                      <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-700">
+                        {relatorioIAMutation.data.relatorioTexto}
+                      </div>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() =>
+                            desempenho.aluno.id &&
+                            relatorioIAMutation.mutate({
+                              alunoId: desempenho.aluno.id,
+                              contratoNivelId: desempenho.macrociclo.contratoNivelId ?? undefined,
+                            })
+                          }
+                          disabled={relatorioIAMutation.isPending}
+                        >
+                          {relatorioIAMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <FileText className="w-4 h-4 mr-2" />
+                          )}
+                          Gerar síntese com IA
+                        </Button>
+                        {relatorioIAMutation.isError && (
+                          <p className="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
+                            <XCircle className="w-3.5 h-3.5 shrink-0" />
+                            {(relatorioIAMutation.error as any)?.message || "Não foi possível gerar o relatório."}
+                          </p>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
         )}
       </div>
