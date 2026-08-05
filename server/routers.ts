@@ -527,6 +527,35 @@ async function buildEvolucaoAlunoPayload(alunoId: number) {
   };
 }
 
+/**
+ * Gera o PDF real do certificado (via Chromium headless na página pública de
+ * verificação) e sobe pro storage, atualizando o arquivoUrl do registro.
+ * Não lança erro: falha aqui não deve reverter uma emissão já registrada no banco.
+ */
+async function gerarESalvarCertificadoPdf(
+  req: any,
+  alunoId: number,
+  contratoNivelId: number,
+  hashDocumento: string,
+  certId: number
+): Promise<string | null> {
+  try {
+    const forwardedProto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "https";
+    const host = req.headers.host;
+    const baseUrl = `${forwardedProto}://${host}`;
+    const verifyUrl = `${baseUrl}/certificados/verificar/${hashDocumento}`;
+
+    const pdfBuffer = await renderPdfFromUrl({ url: verifyUrl, landscape: true });
+    const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}.pdf`;
+    const { url } = await storagePut(storageKey, pdfBuffer, "application/pdf");
+    await db.updateNivelCertificateArquivo(certId, url);
+    return url;
+  } catch (err) {
+    console.error("[certificacao] Falha ao gerar/armazenar o PDF do certificado:", err);
+    return null;
+  }
+}
+
 export const appRouter = router({
   system: systemRouter,
   processosSeletivos: processosSeletivosRouter,
@@ -10600,6 +10629,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           periodo: data.periodo,
           emitidoEm: data.certificado.emitidoEm,
           hashDocumento: data.certificado.hashDocumento,
+          emissaoManual: !!data.certificado.emissaoManual,
           mentoras: (data.mentoras || []).map((m: any) => m.nomeMentora),
           assinaturas: (data.assinaturas || []).map((a: any) => ({
             tipo: a.tipo,
@@ -10676,25 +10706,82 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
         // Gera o PDF real a partir da página pública de verificação (Chromium headless)
         // e substitui a URL provisória pela URL definitiva no storage (R2).
-        let arquivoUrl = arquivoUrlProvisorio;
-        try {
-          const forwardedProto = (ctx.req.headers["x-forwarded-proto"] as string) || (ctx.req as any).protocol || "https";
-          const host = ctx.req.headers.host;
-          const baseUrl = `${forwardedProto}://${host}`;
-          const verifyUrl = `${baseUrl}/certificados/verificar/${hashDocumento}`;
-
-          const pdfBuffer = await renderPdfFromUrl({ url: verifyUrl, landscape: true });
-          const storageKey = `certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
-          const { url } = await storagePut(storageKey, pdfBuffer, "application/pdf");
-          await db.updateNivelCertificateArquivo(certId, url);
-          arquivoUrl = url;
-        } catch (err) {
-          // Não bloqueia a emissão (o registro já existe e é a fonte de verdade);
-          // a geração do PDF pode ser reprocessada depois se falhar aqui.
-          console.error("[certificacao.emitir] Falha ao gerar/armazenar o PDF do certificado:", err);
-        }
+        const urlGerada = await gerarESalvarCertificadoPdf(ctx.req, alunoId, input.contratoNivelId, hashDocumento, certId);
+        const arquivoUrl = urlGerada || arquivoUrlProvisorio;
 
         return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
+      }),
+
+    /**
+     * Emissão manual (admin), para contratos já finalizados que nunca passaram
+     * por um reset formal — sem snapshot congelado para validar automaticamente.
+     * Exige justificativa e fica marcado como emissaoManual=1 para auditoria.
+     */
+    emitirManual: adminOrAdmin2Procedure
+      .input(z.object({
+        alunoId: z.number(),
+        contratoNivelId: z.number(),
+        justificativa: z.string().min(10, "Justificativa deve ter ao menos 10 caracteres."),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { alunoId, contratoNivelId, justificativa } = input;
+
+        const existing = await db.getNivelCertificateByAlunoNivel(alunoId, contratoNivelId);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "Já existe certificado emitido para este nível." });
+        }
+
+        const nivel = await db.getContratoNivelBruto(contratoNivelId);
+        if (!nivel || nivel.alunoId !== alunoId) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Nível não encontrado para este aluno." });
+        }
+
+        const template = await db.getActiveCertificationTemplateByNivel((nivel.nivel || "I") as any);
+        if (!template) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este nível." });
+        }
+
+        const assinaturas = await db.getCertificationSignatures();
+        const gerente = assinaturas.find((a) => a.tipo === "gerente");
+        const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
+        if (!gerente || !gestorMaster) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigatórias (gerente/gestor_master) ausentes." });
+        }
+
+        // Sem exigir snapshotCongelado/nivelEncerrado (é justamente o caso desses
+        // alunos legados) — mas ainda tenta identificar as mentoras reais do nível;
+        // se não encontrar nenhuma vinculada ao nível, não bloqueia (dado legado).
+        const pedagogia = await db.getPedagogiaByNivel(alunoId, contratoNivelId);
+        const mentorasUnicas = Array.from(
+          new Map(
+            (pedagogia.mentoringSessions || [])
+              .filter((s: any) => s.consultorId)
+              .map((s: any) => [s.consultorId, s])
+          ).values()
+        );
+
+        const hashDocumento = `${alunoId}-${contratoNivelId}-${Date.now()}`;
+        const arquivoUrlProvisorio = `/certificados/${alunoId}/${contratoNivelId}/${hashDocumento}.pdf`;
+        const certId = await db.createNivelCertificate(
+          {
+            alunoId,
+            contratoNivelId,
+            nivel: (nivel.nivel || "I") as any,
+            templateId: template.id,
+            status: "emitido",
+            arquivoUrl: arquivoUrlProvisorio,
+            emitidoPor: (ctx.user as any).id || null,
+            hashDocumento,
+            emissaoManual: 1,
+            justificativaEmissaoManual: justificativa,
+          } as any,
+          mentorasUnicas.map((m: any) => ({ consultorId: m.consultorId, nomeMentora: m.consultorNome || `Mentora #${m.consultorId}` }))
+        );
+
+        const urlGerada = await gerarESalvarCertificadoPdf(ctx.req, alunoId, contratoNivelId, hashDocumento, certId);
+        const arquivoUrl = urlGerada || arquivoUrlProvisorio;
+
+        return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length, emissaoManual: true };
       }),
 
     templates: adminOrAdmin2Procedure.query(async () => {
