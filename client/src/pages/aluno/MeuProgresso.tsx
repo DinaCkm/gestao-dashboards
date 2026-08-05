@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -40,6 +40,7 @@ const STATUS_LABEL: Record<string, string> = {
   ajustes: "Em ajustes",
   encerrado: "Encerrado",
   certificado: "Certificado",
+  ativo: "Em andamento",
 };
 
 function formatarData(d: string | null | undefined) {
@@ -49,19 +50,24 @@ function formatarData(d: string | null | undefined) {
   return date.toLocaleDateString("pt-BR");
 }
 
+function labelMacrociclo(m: any) {
+  if (m.nivelLabel) return `Nível ${m.nivelLabel}`;
+  return m.status === "ativo" ? "Ciclo atual" : `Ciclo ${m.numeroCiclo}`;
+}
+
 export default function MeuProgresso() {
   const conteudoRef = useRef<HTMLDivElement>(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
-  const [nivelSelecionado, setNivelSelecionado] = useState<number | null>(null);
+  const [macrocicloSelecionado, setMacrocicloSelecionado] = useState<string | null>(null);
 
-  const { data: niveis, isLoading: carregandoNiveis } = trpc.meuDesempenho.listarNiveis.useQuery();
+  const { data: macrociclos, isLoading: carregandoMacrociclos } = trpc.meuDesempenho.listarMacrociclos.useQuery();
 
-  const contratoNivelId = nivelSelecionado ?? niveis?.[niveis.length - 1]?.contratoNivelId ?? undefined;
+  const chave = macrocicloSelecionado ?? macrociclos?.[macrociclos.length - 1]?.chave ?? undefined;
 
   const { data: desempenho, isLoading: carregandoDesempenho, refetch: refetchDesempenho } =
-    trpc.meuDesempenho.porNivel.useQuery(
-      { contratoNivelId },
-      { enabled: !!contratoNivelId }
+    trpc.meuDesempenho.porMacrociclo.useQuery(
+      { chave: chave as string },
+      { enabled: !!chave }
     );
 
   const utils = trpc.useUtils();
@@ -70,7 +76,7 @@ export default function MeuProgresso() {
     onSuccess: () => {
       toast.success("Certificado emitido com sucesso!");
       refetchDesempenho();
-      utils.meuDesempenho.listarNiveis.invalidate();
+      utils.meuDesempenho.listarMacrociclos.invalidate();
     },
     onError: (err: any) => {
       toast.error(err?.message || "Não foi possível emitir o certificado.");
@@ -88,6 +94,7 @@ export default function MeuProgresso() {
   const criteriosLabels: Record<string, string> = {
     nivelEncerrado: "Nível encerrado",
     snapshotCongelado: "Dados do ciclo congelados (reset realizado)",
+    dadosSegmentadosPorNivel: "Dados corretamente separados por nível",
     resultadoFinalFechado: "Resultado final do nível fechado",
     engajamentoMin80: "Engajamento final ≥ 80%",
     desafiosMin80: "Metas/desafios concluídos ≥ 80%",
@@ -123,7 +130,7 @@ export default function MeuProgresso() {
         heightLeft -= pageHeight;
       }
 
-      const nomeArquivo = `relatorio-desempenho-nivel-${desempenho?.nivel?.nivel || ""}.pdf`;
+      const nomeArquivo = `relatorio-desempenho-${desempenho?.macrociclo?.nivelLabel || desempenho?.macrociclo?.numeroCiclo || ""}.pdf`;
       pdf.save(nomeArquivo);
     } catch (e) {
       console.error(e);
@@ -133,7 +140,7 @@ export default function MeuProgresso() {
     }
   };
 
-  const carregando = carregandoNiveis || carregandoDesempenho;
+  const carregando = carregandoMacrociclos || carregandoDesempenho;
 
   return (
     <AlunoLayout>
@@ -145,7 +152,7 @@ export default function MeuProgresso() {
               Meu Progresso e Certificados
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Acompanhe seu desempenho por nível e baixe seu certificado quando elegível.
+              Acompanhe seu desempenho por macrociclo e baixe seu certificado quando elegível.
             </p>
           </div>
           <div className="flex gap-2 print:hidden">
@@ -172,21 +179,21 @@ export default function MeuProgresso() {
           </div>
         </div>
 
-        {/* Seletor de nível / macrociclo */}
-        {niveis && niveis.length > 0 && (
+        {/* Seletor de macrociclo */}
+        {macrociclos && macrociclos.length > 0 && (
           <div className="flex flex-wrap gap-2 print:hidden">
-            {niveis.map((n: any) => (
+            {macrociclos.map((m: any) => (
               <button
-                key={n.contratoNivelId}
-                onClick={() => setNivelSelecionado(n.contratoNivelId)}
+                key={m.chave}
+                onClick={() => setMacrocicloSelecionado(m.chave)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  (contratoNivelId === n.contratoNivelId)
+                  (chave === m.chave)
                     ? "bg-emerald-600 text-white border-emerald-600"
                     : "bg-white text-gray-600 border-gray-200 hover:border-emerald-300"
                 }`}
               >
-                Nível {n.nivel} — {STATUS_LABEL[n.status] || n.status}
-                {n.certificadoEmitido && <CheckCircle2 className="inline w-3.5 h-3.5 ml-1 -mt-0.5" />}
+                {labelMacrociclo(m)} — {STATUS_LABEL[m.status] || m.status}
+                {m.certificadoEmitido && <CheckCircle2 className="inline w-3.5 h-3.5 ml-1 -mt-0.5" />}
               </button>
             ))}
           </div>
@@ -201,31 +208,31 @@ export default function MeuProgresso() {
         {!carregando && !desempenho && (
           <Card>
             <CardContent className="py-10 text-center text-gray-500">
-              Nenhum nível/macrociclo encontrado ainda.
+              Nenhum macrociclo encontrado ainda.
             </CardContent>
           </Card>
         )}
 
         {desempenho && (
           <div ref={conteudoRef} className="space-y-6 bg-white p-2">
-            {(desempenho as any).dadosNaoSegmentadosPorNivel && (
+            {desempenho.macrociclo.origem !== "reset" && (
               <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-3">
                 <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>
-                  Os registros deste aluno são de antes do sistema separar dados por nível — os
-                  indicadores abaixo mostram o histórico completo dele, não só deste nível específico.
+                  Este aluno ainda não passou por um reset formal de ciclo — os indicadores abaixo são
+                  calculados pelo período deste macrociclo, não por um snapshot congelado.
                 </span>
               </div>
             )}
-            {/* Cabeçalho do nível */}
+            {/* Cabeçalho do macrociclo */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>Nível {desempenho.nivel.nivel}</span>
-                  <Badge variant="outline">{STATUS_LABEL[desempenho.nivel.status || ""] || desempenho.nivel.status}</Badge>
+                  <span>{labelMacrociclo(desempenho.macrociclo)}</span>
+                  <Badge variant="outline">{STATUS_LABEL[desempenho.macrociclo.status || ""] || desempenho.macrociclo.status}</Badge>
                 </CardTitle>
                 <CardDescription>
-                  {formatarData(desempenho.nivel.periodo?.dataInicio)} até {formatarData(desempenho.nivel.periodo?.dataFim)} · {desempenho.aluno.nome}
+                  {formatarData(desempenho.macrociclo.periodo?.dataInicio)} até {formatarData(desempenho.macrociclo.periodo?.dataFim)} · {desempenho.aluno.nome}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -271,11 +278,11 @@ export default function MeuProgresso() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Relatório de avaliação</CardTitle>
-                <CardDescription>Competências cursadas neste nível, nota obtida e meta.</CardDescription>
+                <CardDescription>Competências cursadas neste macrociclo, nota obtida e meta.</CardDescription>
               </CardHeader>
               <CardContent>
                 {desempenho.avaliacaoCompetencias.length === 0 ? (
-                  <p className="text-sm text-gray-400">Nenhuma competência atribuída neste nível ainda.</p>
+                  <p className="text-sm text-gray-400">Nenhuma competência atribuída neste macrociclo ainda.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -358,7 +365,10 @@ export default function MeuProgresso() {
                         ))}
                     </ul>
                     <Button
-                      onClick={() => contratoNivelId && emitirMutation.mutate({ contratoNivelId })}
+                      onClick={() => {
+                        const cnId = (desempenho.certificacao as any).contratoNivelId ?? desempenho.macrociclo.contratoNivelId;
+                        if (cnId) emitirMutation.mutate({ contratoNivelId: cnId });
+                      }}
                       disabled={!desempenho.certificacao.elegivel || emitirMutation.isPending}
                     >
                       {emitirMutation.isPending ? (
@@ -383,7 +393,7 @@ export default function MeuProgresso() {
                   <Sparkles className="w-4 h-4 text-purple-500" /> Síntese de acompanhamento (gerada por IA)
                 </CardTitle>
                 <CardDescription>
-                  Resumo qualitativo elaborado a partir dos dados registrados neste nível — não é um critério de certificação.
+                  Resumo qualitativo elaborado a partir dos dados registrados neste macrociclo — não é um critério de certificação.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -397,7 +407,10 @@ export default function MeuProgresso() {
                       variant="outline"
                       onClick={() =>
                         desempenho.aluno.id &&
-                        relatorioIAMutation.mutate({ alunoId: desempenho.aluno.id, contratoNivelId: contratoNivelId })
+                        relatorioIAMutation.mutate({
+                          alunoId: desempenho.aluno.id,
+                          contratoNivelId: desempenho.macrociclo.contratoNivelId ?? undefined,
+                        })
                       }
                       disabled={relatorioIAMutation.isPending}
                     >
