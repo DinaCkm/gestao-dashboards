@@ -8,6 +8,7 @@ import { ProgressRing } from "@/components/DualIndicators";
 import {
   Award,
   Download,
+  Printer,
   Loader2,
   CheckCircle2,
   XCircle,
@@ -147,23 +148,33 @@ export default function MeuProgresso() {
               Acompanhe seu desempenho por nível e baixe seu certificado quando elegível.
             </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleBaixarPdf}
-            disabled={gerandoPdf || !desempenho}
-          >
-            {gerandoPdf ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4 mr-2" />
-            )}
-            Exportar PDF
-          </Button>
+          <div className="flex gap-2 print:hidden">
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              disabled={!desempenho}
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              Imprimir
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleBaixarPdf}
+              disabled={gerandoPdf || !desempenho}
+            >
+              {gerandoPdf ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Exportar PDF
+            </Button>
+          </div>
         </div>
 
         {/* Seletor de nível / macrociclo */}
         {niveis && niveis.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 print:hidden">
             {niveis.map((n: any) => (
               <button
                 key={n.contratoNivelId}
