@@ -7089,6 +7089,41 @@ export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: num
         getCasesSucessoByAlunoAndNivel(alunoId, null),
         getStudentPerformanceByAlunoAndNivel(alunoId, null),
       ]);
+    } else {
+      // Aluno com múltiplos níveis, nenhum deles com vínculo de FK (ex.: turmas
+      // migradas que já têm o histórico de níveis recriado, mas nunca tiveram os
+      // dados taggeados por nível). Aqui não dá pra simplesmente remover o filtro
+      // (misturaria os 4 níveis num só) — em vez disso, separa por PERÍODO, usando
+      // as datas do próprio nível (nivelInicio/nivelFim), do mesmo jeito que o
+      // resto do sistema já faz pra "macrociclo" quando não há vínculo direto.
+      const nivelBruto = await getContratoNivelBruto(nivelId);
+      if (nivelBruto?.nivelInicio && nivelBruto?.nivelFim) {
+        const inicio = new Date(`${nivelBruto.nivelInicio}T00:00:00`);
+        const fim = new Date(`${nivelBruto.nivelFim}T23:59:59`);
+        const dentroDoPeriodo = (valor: any): boolean => {
+          if (!valor) return false;
+          const dt = new Date(valor);
+          return !Number.isNaN(dt.getTime()) && dt >= inicio && dt <= fim;
+        };
+
+        const [assessmentsAll, planoAll, metasAll, mentoriasAll, participacoesAll, casesAll, performanceAll] = await Promise.all([
+          getAssessmentsByAlunoAndNivel(alunoId, null),
+          getPlanoIndividualByAlunoAndNivel(alunoId, null),
+          getMetasDetalhadasByNivel(alunoId, null),
+          getMentoringSessionsByAlunoAndNivel(alunoId, null),
+          getEventParticipationByAlunoAndNivel(alunoId, null),
+          getCasesSucessoByAlunoAndNivel(alunoId, null),
+          getStudentPerformanceByAlunoAndNivel(alunoId, null),
+        ]);
+
+        assessments = assessmentsAll;
+        plano = planoAll.filter((p: any) => dentroDoPeriodo(p.createdAt));
+        metasNivel = metasAll.filter((m: any) => dentroDoPeriodo(m.createdAt));
+        mentorias = mentoriasAll.filter((s: any) => dentroDoPeriodo(s.sessionDate));
+        participacoes = participacoesAll.filter((e: any) => dentroDoPeriodo(e.selfReportedAt || e.createdAt));
+        cases = casesAll.filter((c: any) => dentroDoPeriodo(c.dataEntrega));
+        performance = performanceAll.filter((p: any) => dentroDoPeriodo(p.dataConclusao || p.dataInicio));
+      }
     }
   }
 
