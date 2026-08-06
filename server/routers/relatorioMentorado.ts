@@ -61,7 +61,11 @@ async function gerarSinteseIA(prompt: string): Promise<string> {
 // ---------------------------------------------------------------------------
 // Helpers de dados
 // ---------------------------------------------------------------------------
-async function buscarDadosAluno(alunoId: number, contratoNivelId?: number | null) {
+async function buscarDadosAluno(
+  alunoId: number,
+  contratoNivelId?: number | null,
+  periodo?: { dataInicio?: string | null; dataFim?: string | null } | null
+) {
   const database = await getDb();
   if (!database) {
     throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Sem conexão com o banco de dados." });
@@ -75,10 +79,15 @@ async function buscarDadosAluno(alunoId: number, contratoNivelId?: number | null
     throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
   }
 
-  // Escopo por macrociclo/nível: sem isso, o relatório mistura sessões de todos os
-  // níveis do aluno, contrariando a regra de que cada relatório/anexo cobre só o
-  // período do nível ao qual pertence.
-  const nivelFilter = contratoNivelId ? sql`AND contratoNivelId = ${contratoNivelId}` : sql``;
+  // Escopo por macrociclo: preferimos filtrar por DATA (período real do macrociclo,
+  // vindo da tela do aluno) em vez do vínculo contratoNivelId — que muitas sessões
+  // legadas não têm preenchido, o que fazia o relatório achar "zero sessões" mesmo
+  // quando existiam muitas dentro do período certo. Sem período nem nível, cai pro
+  // comportamento antigo (tudo do aluno) — usado pela tela administrativa.
+  const temPeriodo = !!(periodo?.dataInicio || periodo?.dataFim);
+  const escopoFilter = temPeriodo
+    ? sql`AND sessionDate >= ${periodo?.dataInicio ?? "1970-01-01"} AND sessionDate <= ${periodo?.dataFim ?? "2999-12-31"}`
+    : (contratoNivelId ? sql`AND contratoNivelId = ${contratoNivelId}` : sql``);
 
   const [statsRows]: any = await database.execute(sql`
     SELECT
@@ -90,7 +99,7 @@ async function buscarDadosAluno(alunoId: number, contratoNivelId?: number | null
       ROUND(AVG(notaMentoraAplicabilidade), 1) AS notaAplicabilidadeMedia,
       ROUND(AVG(engagementScore), 1) AS engagementMedio
     FROM mentoring_sessions
-    WHERE alunoId = ${alunoId} AND cancelada = 0 ${nivelFilter}
+    WHERE alunoId = ${alunoId} AND cancelada = 0 ${escopoFilter}
   `);
   const stats = statsRows?.[0] || {};
 
@@ -99,8 +108,8 @@ async function buscarDadosAluno(alunoId: number, contratoNivelId?: number | null
   if (!stats.sessoesRealizadas || Number(stats.sessoesRealizadas) === 0) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
-      message: contratoNivelId
-        ? "Ainda não há sessões de mentoria registradas neste nível. O relatório fica disponível após a primeira sessão."
+      message: (temPeriodo || contratoNivelId)
+        ? "Ainda não há sessões de mentoria registradas neste macrociclo. O relatório fica disponível após a primeira sessão."
         : "Ainda não há sessões de mentoria registradas para este aluno.",
     });
   }
@@ -108,7 +117,7 @@ async function buscarDadosAluno(alunoId: number, contratoNivelId?: number | null
   const [sessionRows]: any = await database.execute(sql`
     SELECT sessionDate, feedback, mensagemAluno
     FROM mentoring_sessions
-    WHERE alunoId = ${alunoId} AND cancelada = 0 ${nivelFilter}
+    WHERE alunoId = ${alunoId} AND cancelada = 0 ${escopoFilter}
       AND (feedback IS NOT NULL OR mensagemAluno IS NOT NULL)
     ORDER BY sessionDate DESC
     LIMIT 12
@@ -383,7 +392,12 @@ export const relatorioMentoradoRouter = router({
   }),
 
   gerar: protectedProcedure
-    .input(z.object({ alunoId: z.number(), contratoNivelId: z.number().optional() }))
+    .input(z.object({
+      alunoId: z.number(),
+      contratoNivelId: z.number().optional(),
+      dataInicio: z.string().optional(),
+      dataFim: z.string().optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       const role = (ctx as any)?.user?.role;
       const userId = (ctx as any)?.user?.id;
@@ -402,7 +416,11 @@ export const relatorioMentoradoRouter = router({
         await assertMentorOwnsAluno(userId, input.alunoId);
       }
 
-      const { aluno, stats, sessions, discResultados } = await buscarDadosAluno(input.alunoId, input.contratoNivelId ?? null);
+      const { aluno, stats, sessions, discResultados } = await buscarDadosAluno(
+        input.alunoId,
+        input.contratoNivelId ?? null,
+        { dataInicio: input.dataInicio ?? null, dataFim: input.dataFim ?? null }
+      );
       const prompt = montarPrompt(aluno, stats, sessions, discResultados);
       const relatorioTexto = await gerarSinteseIA(prompt);
 
