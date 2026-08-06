@@ -17,6 +17,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../_core/trpc";
+import { renderPdfFromUrl } from "../pdfRenderer";
 import {
   getAlunoFromCtx,
   getAlunoById,
@@ -25,6 +26,7 @@ import {
   getNivelCertificateByAlunoNivel,
   getMacrociclosByAluno,
   getPedagogiaPorMacrociclo,
+  getCertificationSignatures,
 } from "../db";
 
 /**
@@ -208,6 +210,49 @@ export const meuDesempenhoRouter = router({
         },
         avaliacaoCompetencias,
         certificacao,
+        assinaturas: (await getCertificationSignatures()).map((a: any) => ({
+          tipo: a.tipo,
+          nomeExibicao: a.nomeExibicao,
+          cargo: a.cargo,
+        })),
       };
+    }),
+
+  /**
+   * Gera o PDF do Relatório Final de um macrociclo, renderizando a página
+   * /aluno/relatorio-final/:chave num Chromium headless real (mesma técnica já
+   * usada pro certificado) — nunca mais via captura de tela no navegador, que
+   * nunca produziu um layout confiável. Retorna o PDF em base64 pra download
+   * direto, sem precisar persistir arquivo.
+   */
+  gerarRelatorioPdf: protectedProcedure
+    .input(z.object({ chave: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const alunoId = await resolverAlunoAlvo(ctx);
+      const macrociclos = await getMacrociclosByAluno(alunoId);
+      const macrociclo = macrociclos.find((m: any) => m.chave === input.chave);
+      if (!macrociclo) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Macrociclo não encontrado." });
+      }
+
+      const forwardedProto = (ctx.req.headers["x-forwarded-proto"] as string) || (ctx.req as any).protocol || "https";
+      const host = ctx.req.headers.host;
+      const baseUrl = `${forwardedProto}://${host}`;
+      const url = `${baseUrl}/aluno/relatorio-final/${encodeURIComponent(input.chave)}`;
+
+      try {
+        const pdfBuffer = await renderPdfFromUrl({
+          url,
+          cookie: ctx.req.headers.cookie,
+          marginTop: "8mm",
+          marginBottom: "8mm",
+          marginLeft: "8mm",
+          marginRight: "8mm",
+        });
+        return { pdfBase64: pdfBuffer.toString("base64") };
+      } catch (err) {
+        console.error("[meuDesempenho.gerarRelatorioPdf] Falha ao gerar PDF:", err);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível gerar o PDF do relatório agora." });
+      }
     }),
 });
