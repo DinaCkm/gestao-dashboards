@@ -7166,7 +7166,7 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
 
     if (pdisDesteReset.length > 0) {
       const competenciasPorPdi = await Promise.all(
-        pdisDesteReset.map((p) => resolverCompetenciasDoPdi(database, p.id))
+        pdisDesteReset.map((p) => resolverCompetenciasDoPdi(database, p.id, alunoId))
       );
       return { competencias: competenciasPorPdi.flat() };
     }
@@ -7178,7 +7178,7 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
     ));
     const snapshot = Array.isArray(snapRows) && snapRows[0] ? snapRows[0] : null;
     if (snapshot?.assessmentPdiId) {
-      return { competencias: await resolverCompetenciasDoPdi(database, snapshot.assessmentPdiId) };
+      return { competencias: await resolverCompetenciasDoPdi(database, snapshot.assessmentPdiId, alunoId) };
     }
     return { competencias: [] };
   }
@@ -7201,11 +7201,11 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
     pdiId = ativo?.id ?? null;
   }
 
-  return { competencias: pdiId ? await resolverCompetenciasDoPdi(database, pdiId) : [] };
+  return { competencias: pdiId ? await resolverCompetenciasDoPdi(database, pdiId, alunoId) : [] };
 }
 
 /** Busca as competências de um PDI (assessment_competencias) já com nome, nota e meta resolvidos. */
-async function resolverCompetenciasDoPdi(database: NonNullable<Awaited<ReturnType<typeof getDb>>>, assessmentPdiId: number) {
+async function resolverCompetenciasDoPdi(database: NonNullable<Awaited<ReturnType<typeof getDb>>>, assessmentPdiId: number, alunoId: number) {
   const compsPdi = await database.select().from(assessmentCompetencias)
     .where(eq(assessmentCompetencias.assessmentPdiId, assessmentPdiId));
   const compIds = compsPdi.map((c) => c.competenciaId);
@@ -7213,13 +7213,38 @@ async function resolverCompetenciasDoPdi(database: NonNullable<Awaited<ReturnTyp
     ? await database.select().from(competencias).where(inArray(competencias.id, compIds))
     : [];
   const nomeById = new Map(catalogo.map((c) => [c.id, c.nome]));
-  return compsPdi.map((c) => ({
-    competenciaId: c.competenciaId,
-    competenciaNome: nomeById.get(c.competenciaId) || null,
-    obrigatoria: c.peso === "obrigatoria",
-    nota: c.nivelAtual !== null && c.nivelAtual !== undefined ? Number(c.nivelAtual) : null,
-    meta: c.metaFinal !== null && c.metaFinal !== undefined ? Number(c.metaFinal) : 100,
-  }));
+
+  // assessment_competencias.nivelAtual/metaFinal costumam estar vazios (nunca
+  // preenchidos por esse fluxo) — a nota e a meta reais ficam em plano_individual,
+  // vinculado por competenciaId + alunoId (não tem FK direta pro PDI).
+  const planoDoAluno = compIds.length > 0
+    ? await database.select().from(planoIndividual).where(
+        and(eq(planoIndividual.alunoId, alunoId), inArray(planoIndividual.competenciaId, compIds))
+      )
+    : [];
+  const planoPorCompetencia = new Map<number, typeof planoDoAluno[number]>();
+  for (const p of planoDoAluno) {
+    // Se houver mais de um registro pra mesma competência, fica com o mais recente.
+    const atual = planoPorCompetencia.get(p.competenciaId);
+    if (!atual || (p.id ?? 0) > (atual.id ?? 0)) planoPorCompetencia.set(p.competenciaId, p);
+  }
+
+  return compsPdi.map((c) => {
+    const plano = planoPorCompetencia.get(c.competenciaId);
+    const nota = plano?.notaAtual !== null && plano?.notaAtual !== undefined
+      ? Number(plano.notaAtual)
+      : (c.nivelAtual !== null && c.nivelAtual !== undefined ? Number(c.nivelAtual) : null);
+    const meta = plano?.metaNota !== null && plano?.metaNota !== undefined
+      ? Number(plano.metaNota)
+      : (c.metaFinal !== null && c.metaFinal !== undefined ? Number(c.metaFinal) : 7);
+    return {
+      competenciaId: c.competenciaId,
+      competenciaNome: nomeById.get(c.competenciaId) || null,
+      obrigatoria: c.peso === "obrigatoria",
+      nota,
+      meta,
+    };
+  });
 }
 
 export async function getPedagogiaByNivel(alunoId: number, contratoNivelId?: number | null) {
@@ -12642,13 +12667,38 @@ export async function resolverSnapshotEDatasDoNivel(alunoId: number, nivel: Cont
   return { snapshot, dataInicio, dataFim, pdi };
 }
 
-export async function avaliarElegibilidadeCertificacao(alunoId: number, contratoNivelId: number) {
+export async function avaliarElegibilidadeCertificacao(alunoId: number, contratoNivelId: number, historicoIdConhecido?: number | null) {
   const nivel = await getContratoNivelBruto(contratoNivelId);
   if (!nivel || nivel.alunoId !== alunoId) {
     return { elegivel: false, motivo: "Nível não encontrado." };
   }
 
-  const { snapshot, dataInicio, dataFim } = await resolverSnapshotEDatasDoNivel(alunoId, nivel);
+  // Se quem chamou já sabe qual snapshot (historico_ciclos_aluno) corresponde a
+  // este nível — vindo da tela de macrociclos, que já resolve isso de forma
+  // confiável via auditoria_resets_ciclo — usa direto, em vez de tentar
+  // redescobrir pela cadeia nivel→PDI (que falha quando o PDI não tem
+  // contratoNivelId vinculado, caso comum em turmas legadas já resetadas).
+  let snapshot: any = null;
+  let dataInicio: any = null;
+  let dataFim: any = null;
+  if (historicoIdConhecido) {
+    const database = await getDb();
+    if (database) {
+      const [snapRows]: any = await database.execute(sql.raw(
+        `SELECT * FROM historico_ciclos_aluno WHERE id = ${historicoIdConhecido} LIMIT 1`
+      ));
+      snapshot = Array.isArray(snapRows) && snapRows[0] ? snapRows[0] : null;
+    }
+  }
+  if (snapshot) {
+    dataInicio = nivel.nivelInicio ?? null;
+    dataFim = nivel.nivelFim ?? null;
+  } else {
+    const resolvido = await resolverSnapshotEDatasDoNivel(alunoId, nivel);
+    snapshot = resolvido.snapshot;
+    dataInicio = resolvido.dataInicio;
+    dataFim = resolvido.dataFim;
+  }
 
   const pedagogia = await getPedagogiaByNivel(alunoId, contratoNivelId);
   const assessments = pedagogia.assessments || [];
@@ -12661,24 +12711,32 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
   // Prova de que o reset realmente rodou e os dados deste ciclo foram congelados/arquivados.
   const snapshotCongelado = !!snapshot;
 
-  const resultadoFinalFechado = assessments.some((a: any) => ["finalizado", "concluido"].includes(String(a.status)));
+  const resultadoFinalFechado = snapshot ? true : assessments.some((a: any) => ["finalizado", "concluido"].includes(String(a.status)));
 
-  // Quando existe snapshot, ele é a fonte mais segura para desafios/metas (imutável após o reset).
+  // Quando existe snapshot, ele é a fonte mais segura pra tudo — os mesmos
+  // números já mostrados pro aluno em indicadores.meuDashboardCongelado,
+  // em vez de recalcular com consultas escopadas por nível que podem voltar
+  // vazias pros mesmos motivos do snapshot não ter sido encontrado antes.
   const desafios = snapshot
     ? (Number(snapshot.metasTotal) > 0 ? (Number(snapshot.metasCumpridas) / Number(snapshot.metasTotal)) * 100 : 0)
     : (metasNivel.length > 0
         ? (metasNivel.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length / metasNivel.length) * 100
         : 0);
 
-  const engajamento = eventos.length > 0
-    ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
-    : 0;
-  const evidencias = cases.filter((c: any) => c.entregue === 1).length;
+  const engajamento = snapshot
+    ? Number(snapshot.ind7EngajamentoFinal ?? 0)
+    : (eventos.length > 0
+        ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
+        : 0);
+
+  const evidencias = snapshot
+    ? (Number(snapshot.ind6Aplicabilidade ?? 0) > 0 ? 1 : 0)
+    : cases.filter((c: any) => c.entregue === 1).length;
 
   const criterios = {
     nivelEncerrado,
     snapshotCongelado,
-    dadosSegmentadosPorNivel: !pedagogia.dadosNaoSegmentadosPorNivel,
+    dadosSegmentadosPorNivel: snapshot ? true : !pedagogia.dadosNaoSegmentadosPorNivel,
     resultadoFinalFechado,
     engajamentoMin80: engajamento >= 80,
     desafiosMin80: desafios >= 80,
