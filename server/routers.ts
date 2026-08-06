@@ -10683,7 +10683,14 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           throw new TRPCError({ code: "CONFLICT", message: "Já existe certificado emitido para este nível." });
         }
 
-        const elegibilidade = await db.avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId);
+        // Resolve o historicoId (snapshot congelado) correspondente a este nível,
+        // pela mesma listagem de macrociclos que a tela do aluno usa — evita
+        // depender da cadeia nivel→PDI, que falha quando o PDI congelado não
+        // tem contratoNivelId vinculado (comum em turmas legadas já resetadas).
+        const macrociclosDoAluno = await db.getMacrociclosByAluno(alunoId);
+        const macrocicloCorrespondente = macrociclosDoAluno.find((m: any) => m.contratoNivelId === input.contratoNivelId);
+
+        const elegibilidade = await db.avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId, macrocicloCorrespondente?.historicoId ?? null);
         if (!elegibilidade.elegivel) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: elegibilidade.motivo || "Nível não elegível para certificação." });
         }
