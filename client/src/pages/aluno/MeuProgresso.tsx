@@ -340,13 +340,15 @@ export default function MeuProgresso() {
                             <td className="py-2 pr-4">{c.nota !== null ? c.nota.toFixed(1) : "—"}</td>
                             <td className="py-2 pr-4">{c.meta.toFixed(1)}</td>
                             <td className="py-2 pr-4">
-                              {c.aprovada ? (
+                              {c.nota === null ? (
+                                <span className="text-gray-400">—</span>
+                              ) : c.aprovada ? (
                                 <span className="inline-flex items-center gap-1 text-emerald-700">
                                   <CheckCircle2 className="w-3.5 h-3.5" /> Aprovada
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-gray-500">
-                                  <XCircle className="w-3.5 h-3.5" /> Pendente
+                                <span className="inline-flex items-center gap-1 text-amber-600">
+                                  <XCircle className="w-3.5 h-3.5" /> Abaixo da meta
                                 </span>
                               )}
                             </td>
