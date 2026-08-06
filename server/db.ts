@@ -7147,17 +7147,20 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
   // (mesmo macroTermino do reset, e depois do reset anterior, se houver) e
   // soma as competências de todos.
   if (macrociclo.origem === "reset" && macrociclo.status === "encerrado" && macrociclo.historicoId) {
-    const dataFim = macrociclo.dataFim ? new Date(macrociclo.dataFim) : null;
-    const dataInicioPeriodo = macrociclo.dataInicio ? new Date(macrociclo.dataInicio) : null;
+    // Compara só a DATA (não a hora exata) — macroTermino é um campo de data,
+    // e o reset tem timestamp com hora; comparar timestamps completos excluía
+    // sistematicamente os PDIs certos (fim do dia do PDI sempre > hora exata do reset).
+    const dataFimDia = macrociclo.dataFim ? String(macrociclo.dataFim).slice(0, 10) : null;
+    const dataInicioDia = macrociclo.dataInicio ? String(macrociclo.dataInicio).slice(0, 10) : null;
 
     const pdisCongelados = await database.select().from(assessmentPdi).where(
       and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.status, "congelado"))
     );
     const pdisDesteReset = pdisCongelados.filter((p) => {
       if (!p.macroTermino) return false;
-      const termino = new Date(`${p.macroTermino}T23:59:59`);
-      if (dataFim && termino > dataFim) return false;
-      if (dataInicioPeriodo && termino <= dataInicioPeriodo) return false;
+      const terminoDia = String(p.macroTermino).slice(0, 10);
+      if (dataFimDia && terminoDia > dataFimDia) return false;
+      if (dataInicioDia && terminoDia <= dataInicioDia) return false;
       return true;
     });
 
