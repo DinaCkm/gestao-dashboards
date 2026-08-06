@@ -163,7 +163,7 @@ export const meuDesempenhoRouter = router({
       if (macrociclo.contratoNivelId) {
         try {
           const [elegibilidadeRaw, certificado] = await Promise.all([
-            avaliarElegibilidadeCertificacao(alunoId, macrociclo.contratoNivelId),
+            avaliarElegibilidadeCertificacao(alunoId, macrociclo.contratoNivelId, macrociclo.historicoId),
             getNivelCertificateByAlunoNivel(alunoId, macrociclo.contratoNivelId),
           ]);
           const elegibilidade: any = elegibilidadeRaw;
