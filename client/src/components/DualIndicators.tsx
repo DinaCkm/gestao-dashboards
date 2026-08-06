@@ -81,7 +81,7 @@ export function ProgressRing({ value, target, size = 120, strokeWidth = 10, colo
         )}
       </svg>
       {/* Center text */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="absolute top-0 left-0 right-0 bottom-0 flex flex-col items-center justify-center">
         <span className={`text-2xl font-bold ${isNA ? 'text-gray-400' : isAboveTarget ? 'text-emerald-600' : 'text-gray-800'}`}>
           {isNA ? 'N/A' : `${Math.round(clampedValue)}%`}
         </span>
