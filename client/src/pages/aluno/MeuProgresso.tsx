@@ -13,8 +13,6 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
-  Sparkles,
-  FileText,
   TrendingUp,
 } from "lucide-react";
 import jsPDF from "jspdf";
@@ -105,12 +103,6 @@ export default function MeuProgresso() {
     },
     onError: (err: any) => {
       toast.error(err?.message || "Não foi possível emitir o certificado.");
-    },
-  });
-
-  const relatorioIAMutation = trpc.relatorioMentorado.gerar.useMutation({
-    onError: (err: any) => {
-      toast.error(err?.message || "Não foi possível gerar o relatório de IA.");
     },
   });
 
@@ -427,53 +419,6 @@ export default function MeuProgresso() {
                         </Button>
                         {!desempenho.certificacao.elegivel && desempenho.certificacao.motivo && (
                           <p className="text-xs text-gray-500">{desempenho.certificacao.motivo}</p>
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-purple-500" /> Síntese de acompanhamento (gerada por IA)
-                    </CardTitle>
-                    <CardDescription>
-                      Resumo qualitativo elaborado a partir dos dados registrados neste macrociclo — não é um critério de certificação.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {relatorioIAMutation.data ? (
-                      <div className="prose prose-sm max-w-none whitespace-pre-wrap text-gray-700">
-                        {relatorioIAMutation.data.relatorioTexto}
-                      </div>
-                    ) : (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={() =>
-                            desempenho.aluno.id &&
-                            relatorioIAMutation.mutate({
-                              alunoId: desempenho.aluno.id,
-                              contratoNivelId: desempenho.macrociclo.contratoNivelId ?? undefined,
-                              dataInicio: desempenho.macrociclo.periodo?.dataInicio ?? undefined,
-                              dataFim: desempenho.macrociclo.periodo?.dataFim ?? undefined,
-                            })
-                          }
-                          disabled={relatorioIAMutation.isPending}
-                        >
-                          {relatorioIAMutation.isPending ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <FileText className="w-4 h-4 mr-2" />
-                          )}
-                          Gerar síntese com IA
-                        </Button>
-                        {relatorioIAMutation.isError && (
-                          <p className="text-xs text-amber-600 mt-2 flex items-center gap-1.5">
-                            <XCircle className="w-3.5 h-3.5 shrink-0" />
-                            {(relatorioIAMutation.error as any)?.message || "Não foi possível gerar o relatório."}
-                          </p>
                         )}
                       </>
                     )}
