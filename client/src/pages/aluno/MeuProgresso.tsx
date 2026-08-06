@@ -123,7 +123,20 @@ export default function MeuProgresso() {
       const html2canvas = await carregarHtml2Canvas();
       const container = conteudoRef.current;
 
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      // Espera fontes carregarem e o layout assentar antes de capturar —
+      // sem isso, textos posicionados por cima de elementos (como o número
+      // dentro do anel de progresso) podem sair da posição na captura.
+      if ((document as any).fonts?.ready) {
+        await (document as any).fonts.ready;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        foreignObjectRendering: false,
+      });
       const imgData = canvas.toDataURL("image/png");
 
       const pdf = new jsPDF("p", "mm", "a4");
@@ -441,6 +454,8 @@ export default function MeuProgresso() {
                             relatorioIAMutation.mutate({
                               alunoId: desempenho.aluno.id,
                               contratoNivelId: desempenho.macrociclo.contratoNivelId ?? undefined,
+                              dataInicio: desempenho.macrociclo.periodo?.dataInicio ?? undefined,
+                              dataFim: desempenho.macrociclo.periodo?.dataFim ?? undefined,
                             })
                           }
                           disabled={relatorioIAMutation.isPending}
