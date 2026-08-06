@@ -388,9 +388,9 @@ export const relatorioMentoradoRouter = router({
       const role = (ctx as any)?.user?.role;
       const userId = (ctx as any)?.user?.id;
 
-      const isAdmin = role === "admin" || role === "admin2";
+      const isAdmin = role === "admin" || role === "admin2" || role === "manager";
       if (isAdmin) {
-        // segue direto
+        // segue direto (admin/admin2/manager — mesmo padrão já usado no restante do sistema)
       } else if (role === "user") {
         // Autoacesso do aluno: resolve o alunoId real a partir do contexto de login
         // (não assume ctx.user.id === alunoId — nem todo fluxo de login do aluno gera essa igualdade).
