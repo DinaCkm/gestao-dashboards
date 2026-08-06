@@ -128,6 +128,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas" },
       { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas" },
       { icon: Award, label: "Emissão Manual de Certificado", path: "/admin/certificado-manual" },
+      { icon: Award, label: "Configuração de Certificados", path: "/admin/configuracao-certificados" },
     ],
   },
   {
