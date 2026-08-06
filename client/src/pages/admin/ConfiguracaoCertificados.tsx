@@ -49,8 +49,7 @@ export default function ConfiguracaoCertificados() {
   });
 
   const niveisComTemplate = new Set((templates || []).filter((t: any) => t.ativo === 1).map((t: any) => t.nivel));
-  const temGerente = (assinaturas || []).some((a: any) => a.tipo === "gerente" && a.ativo === 1);
-  const temGestorMaster = (assinaturas || []).some((a: any) => a.tipo === "gestor_master" && a.ativo === 1);
+  const totalAssinaturas = (assinaturas || []).filter((a: any) => a.ativo === 1).length;
 
   return (
     <DashboardLayout>
@@ -142,15 +141,12 @@ export default function ConfiguracaoCertificados() {
             <CardTitle className="text-base flex items-center gap-2">
               <Signature className="w-4 h-4" /> Assinaturas obrigatórias
             </CardTitle>
-            <CardDescription>Todo certificado exige uma assinatura ativa do tipo "gerente" e uma do tipo "gestor_master".</CardDescription>
+            <CardDescription>O certificado exige ao menos uma assinatura ativa (o modelo atual mostra uma única assinatura, do responsável institucional).</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              <Badge variant={temGerente ? "default" : "outline"} className={temGerente ? "bg-emerald-600" : "text-gray-400"}>
-                {temGerente && <CheckCircle2 className="w-3 h-3 mr-1" />} Gerente
-              </Badge>
-              <Badge variant={temGestorMaster ? "default" : "outline"} className={temGestorMaster ? "bg-emerald-600" : "text-gray-400"}>
-                {temGestorMaster && <CheckCircle2 className="w-3 h-3 mr-1" />} Gestor Master
+              <Badge variant={totalAssinaturas > 0 ? "default" : "outline"} className={totalAssinaturas > 0 ? "bg-emerald-600" : "text-gray-400"}>
+                {totalAssinaturas > 0 && <CheckCircle2 className="w-3 h-3 mr-1" />} {totalAssinaturas} assinatura(s) ativa(s)
               </Badge>
             </div>
 
