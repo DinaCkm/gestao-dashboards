@@ -80,15 +80,39 @@ export function ProgressRing({ value, target, size = 120, strokeWidth = 10, colo
           />
         )}
       </svg>
-      {/* Center text */}
-      <div className="absolute top-0 left-0 right-0 bottom-0 flex flex-col items-center justify-center">
-        <span className={`text-2xl font-bold ${isNA ? 'text-gray-400' : isAboveTarget ? 'text-emerald-600' : 'text-gray-800'}`}>
-          {isNA ? 'N/A' : `${Math.round(clampedValue)}%`}
-        </span>
-        <span className="text-[10px] text-gray-400 font-medium">
-          {isNA ? 'Sem metas' : `Meta: ${target}%`}
-        </span>
-      </div>
+      {/* Center text — SVG nativo, num segundo <svg> NÃO rotacionado e sobreposto ao
+          primeiro. Texto HTML posicionado por cima de um SVG (via position: absolute)
+          é conhecido por sair da posição em ferramentas de captura de tela pra PDF;
+          texto SVG nativo não tem esse problema, sempre é capturado corretamente. */}
+      <svg
+        width={size}
+        height={size}
+        className="absolute top-0 left-0"
+        style={{ pointerEvents: "none" }}
+      >
+        <text
+          x={size / 2}
+          y={size / 2 - 6}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="currentColor"
+          className={`font-bold ${isNA ? "text-gray-400" : isAboveTarget ? "text-emerald-600" : "text-gray-800"}`}
+          style={{ fontSize: Math.round(size * 0.2) }}
+        >
+          {isNA ? "N/A" : `${Math.round(clampedValue)}%`}
+        </text>
+        <text
+          x={size / 2}
+          y={size / 2 + 14}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="currentColor"
+          className="text-gray-400 font-medium"
+          style={{ fontSize: 10 }}
+        >
+          {isNA ? "Sem metas" : `Meta: ${target}%`}
+        </text>
+      </svg>
     </div>
   );
 }
