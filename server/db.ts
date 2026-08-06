@@ -12598,6 +12598,29 @@ export async function createNivelCertificate(
   return certificateId;
 }
 
+/**
+ * Gera o "Código de Identificação do Conjunto Documental" — formato
+ * EDB-LID-AAAA-0000, sequencial por ano. É o MESMO código impresso no
+ * certificado e no relatório de aproveitamento (é assim que os dois se
+ * validam como pertencentes ao mesmo conjunto documental, contra fraude).
+ * Reaproveita o campo hashDocumento já existente — só muda o formato do
+ * valor gerado, sem exigir mudança de schema nem nos pontos que já usam
+ * esse campo pra montar a URL de verificação.
+ */
+export async function gerarCodigoIdentificacaoCertificado(): Promise<string> {
+  const db = await getDb();
+  const ano = new Date().getFullYear();
+  const prefixo = `EDB-LID-${ano}-`;
+  let sequencial = 1;
+  if (db) {
+    const [rows]: any = await db.execute(sql.raw(
+      `SELECT COUNT(*) AS total FROM nivel_certificates WHERE hashDocumento LIKE '${prefixo}%'`
+    ));
+    sequencial = (Number(rows?.[0]?.total) || 0) + 1;
+  }
+  return `${prefixo}${String(sequencial).padStart(4, "0")}`;
+}
+
 export async function getCertificateMentoras(certificateId: number): Promise<NivelCertificateMentora[]> {
   const db = await getDb();
   if (!db) return [];
@@ -12614,10 +12637,11 @@ export async function getNivelCertificateByHash(hash: string) {
   if (!db) return null;
 
   const [certRows]: any = await db.execute(sql.raw(
-    `SELECT nc.*, a.name AS alunoNome, p.name AS programaNome
+    `SELECT nc.*, a.name AS alunoNome, p.name AS programaNome, t.name AS turmaNome
      FROM nivel_certificates nc
      JOIN alunos a ON a.id = nc.alunoId
      LEFT JOIN programs p ON p.id = a.programId
+     LEFT JOIN turmas t ON t.id = a.turmaId
      WHERE nc.hashDocumento = ${JSON.stringify(hash)}
      LIMIT 1`
   ));
@@ -12632,7 +12656,7 @@ export async function getNivelCertificateByHash(hash: string) {
   const mentoras = await getCertificateMentoras(certificado.id);
 
   const [assinaturasRows]: any = await db.execute(sql.raw(
-    `SELECT * FROM certification_signatures WHERE ativo = 1 AND tipo IN ('gerente', 'gestor_master') ORDER BY FIELD(tipo, 'gerente', 'gestor_master')`
+    `SELECT * FROM certification_signatures WHERE ativo = 1 ORDER BY id ASC`
   ));
 
   return {
