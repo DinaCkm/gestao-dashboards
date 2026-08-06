@@ -10650,6 +10650,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         return {
           alunoNome: data.certificado.alunoNome,
           programaNome: data.certificado.programaNome,
+          turmaNome: data.certificado.turmaNome,
           nivel: data.certificado.nivel,
           periodo: data.periodo,
           emitidoEm: data.certificado.emitidoEm,
@@ -10701,11 +10702,12 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este nível." });
         }
 
+        // O modelo atual do certificado usa uma única assinatura (responsável
+        // institucional) — basta ter ao menos uma assinatura ativa cadastrada,
+        // não mais exigir especificamente "gerente" e "gestor_master" juntos.
         const assinaturas = await db.getCertificationSignatures();
-        const gerente = assinaturas.find((a) => a.tipo === "gerente");
-        const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
-        if (!gerente || !gestorMaster) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigatórias (gerente/gestor_master) ausentes." });
+        if (assinaturas.length === 0) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Nenhuma assinatura cadastrada — cadastre ao menos uma em Configuração de Certificados." });
         }
 
         const pedagogia = await db.getPedagogiaByNivel(alunoId, input.contratoNivelId);
@@ -10720,7 +10722,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Nenhuma mentora válida encontrada no nível." });
         }
 
-        const hashDocumento = `${alunoId}-${input.contratoNivelId}-${Date.now()}`;
+        const hashDocumento = await db.gerarCodigoIdentificacaoCertificado();
         const arquivoUrlProvisorio = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
         const certId = await db.createNivelCertificate(
           {
@@ -10773,11 +10775,12 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sem template ativo para este nível." });
         }
 
+        // O modelo atual do certificado usa uma única assinatura (responsável
+        // institucional) — basta ter ao menos uma assinatura ativa cadastrada,
+        // não mais exigir especificamente "gerente" e "gestor_master" juntos.
         const assinaturas = await db.getCertificationSignatures();
-        const gerente = assinaturas.find((a) => a.tipo === "gerente");
-        const gestorMaster = assinaturas.find((a) => a.tipo === "gestor_master");
-        if (!gerente || !gestorMaster) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Assinaturas obrigatórias (gerente/gestor_master) ausentes." });
+        if (assinaturas.length === 0) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Nenhuma assinatura cadastrada — cadastre ao menos uma em Configuração de Certificados." });
         }
 
         // Sem exigir snapshotCongelado/nivelEncerrado (é justamente o caso desses
@@ -10792,7 +10795,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           ).values()
         );
 
-        const hashDocumento = `${alunoId}-${contratoNivelId}-${Date.now()}`;
+        const hashDocumento = await db.gerarCodigoIdentificacaoCertificado();
         const arquivoUrlProvisorio = `/certificados/${alunoId}/${contratoNivelId}/${hashDocumento}.pdf`;
         const certId = await db.createNivelCertificate(
           {
