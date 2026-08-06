@@ -7141,6 +7141,20 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
   const database = await getDb();
   if (!database) return null;
 
+  // Nota real por competência vem de student_performance (a mesma fonte do
+  // Indicador 2 "Avaliações" em /performance) — casada pelo CÓDIGO da
+  // competência (não o id numérico) e pelo externalId do aluno. Busca uma vez
+  // só aqui e reaproveita pra todos os PDIs deste macrociclo.
+  const [alunoRow] = await database.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  const idUsuarioAluno = alunoRow?.externalId || String(alunoId);
+  const compIdToCodigoMap = await getCompIdToCodigoMap();
+  const [perfStudentPerformance, perfAtividadeFallback] = await Promise.all([
+    getStudentPerformanceAsRecords(),
+    getAlunoAtividadePerformanceAsRecords(),
+  ]);
+  const performanceDoAluno = [...perfStudentPerformance, ...perfAtividadeFallback]
+    .filter((p) => p.idUsuario === idUsuarioAluno);
+
   // Ciclo congelado: um reset pode congelar VÁRIOS PDIs de uma vez (uma trilha
   // por competência básica, por exemplo) — não só o PDI referenciado no
   // snapshot. Busca todos os PDIs congelados dentro da janela deste reset
@@ -7166,7 +7180,7 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
 
     if (pdisDesteReset.length > 0) {
       const competenciasPorPdi = await Promise.all(
-        pdisDesteReset.map((p) => resolverCompetenciasDoPdi(database, p.id, alunoId))
+        pdisDesteReset.map((p) => resolverCompetenciasDoPdi(database, p.id, alunoId, compIdToCodigoMap, performanceDoAluno))
       );
       return { competencias: competenciasPorPdi.flat() };
     }
@@ -7178,7 +7192,7 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
     ));
     const snapshot = Array.isArray(snapRows) && snapRows[0] ? snapRows[0] : null;
     if (snapshot?.assessmentPdiId) {
-      return { competencias: await resolverCompetenciasDoPdi(database, snapshot.assessmentPdiId, alunoId) };
+      return { competencias: await resolverCompetenciasDoPdi(database, snapshot.assessmentPdiId, alunoId, compIdToCodigoMap, performanceDoAluno) };
     }
     return { competencias: [] };
   }
@@ -7201,11 +7215,24 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
     pdiId = ativo?.id ?? null;
   }
 
-  return { competencias: pdiId ? await resolverCompetenciasDoPdi(database, pdiId, alunoId) : [] };
+  return { competencias: pdiId ? await resolverCompetenciasDoPdi(database, pdiId, alunoId, compIdToCodigoMap, performanceDoAluno) : [] };
 }
 
-/** Busca as competências de um PDI (assessment_competencias) já com nome, nota e meta resolvidos. */
-async function resolverCompetenciasDoPdi(database: NonNullable<Awaited<ReturnType<typeof getDb>>>, assessmentPdiId: number, alunoId: number) {
+/**
+ * Busca as competências de um PDI (assessment_competencias) com nome, meta e
+ * nota resolvidos. A nota real vem de student_performance (mesma fonte do
+ * Indicador 2 em /performance), casada por CÓDIGO de competência — nunca por
+ * assessment_competencias.nivelAtual, que fica sempre vazio nesse fluxo. Se
+ * não encontrar a nota em lugar nenhum, retorna null (a tela não deve inventar
+ * ou mostrar valor de outro campo no lugar).
+ */
+async function resolverCompetenciasDoPdi(
+  database: NonNullable<Awaited<ReturnType<typeof getDb>>>,
+  assessmentPdiId: number,
+  alunoId: number,
+  compIdToCodigoMap: Map<number, string>,
+  performanceDoAluno: Awaited<ReturnType<typeof getStudentPerformanceAsRecords>>
+) {
   const compsPdi = await database.select().from(assessmentCompetencias)
     .where(eq(assessmentCompetencias.assessmentPdiId, assessmentPdiId));
   const compIds = compsPdi.map((c) => c.competenciaId);
@@ -7214,9 +7241,7 @@ async function resolverCompetenciasDoPdi(database: NonNullable<Awaited<ReturnTyp
     : [];
   const nomeById = new Map(catalogo.map((c) => [c.id, c.nome]));
 
-  // assessment_competencias.nivelAtual/metaFinal costumam estar vazios (nunca
-  // preenchidos por esse fluxo) — a nota e a meta reais ficam em plano_individual,
-  // vinculado por competenciaId + alunoId (não tem FK direta pro PDI).
+  // Meta real: plano_individual (metaNota) quando existir; senão o padrão da plataforma (7.0).
   const planoDoAluno = compIds.length > 0
     ? await database.select().from(planoIndividual).where(
         and(eq(planoIndividual.alunoId, alunoId), inArray(planoIndividual.competenciaId, compIds))
@@ -7224,19 +7249,31 @@ async function resolverCompetenciasDoPdi(database: NonNullable<Awaited<ReturnTyp
     : [];
   const planoPorCompetencia = new Map<number, typeof planoDoAluno[number]>();
   for (const p of planoDoAluno) {
-    // Se houver mais de um registro pra mesma competência, fica com o mais recente.
     const atual = planoPorCompetencia.get(p.competenciaId);
     if (!atual || (p.id ?? 0) > (atual.id ?? 0)) planoPorCompetencia.set(p.competenciaId, p);
   }
 
   return compsPdi.map((c) => {
     const plano = planoPorCompetencia.get(c.competenciaId);
-    const nota = plano?.notaAtual !== null && plano?.notaAtual !== undefined
-      ? Number(plano.notaAtual)
-      : (c.nivelAtual !== null && c.nivelAtual !== undefined ? Number(c.nivelAtual) : null);
+
+    // Nota obtida: só de student_performance, casada pelo código externo da
+    // competência. -1 no notaAvaliacao significa "não cursou" — trata como
+    // sem nota, igual a não encontrar registro nenhum.
+    const codigo = compIdToCodigoMap.get(c.competenciaId);
+    const perf = codigo
+      ? performanceDoAluno.find((p) =>
+          p.idCompetencia === codigo ||
+          p.idCompetencia?.toLowerCase?.() === codigo.toLowerCase()
+        )
+      : undefined;
+    const nota = perf && perf.notaAvaliacao !== undefined && perf.notaAvaliacao >= 0
+      ? Number(perf.notaAvaliacao)
+      : null;
+
     const meta = plano?.metaNota !== null && plano?.metaNota !== undefined
       ? Number(plano.metaNota)
       : (c.metaFinal !== null && c.metaFinal !== undefined ? Number(c.metaFinal) : 7);
+
     return {
       competenciaId: c.competenciaId,
       competenciaNome: nomeById.get(c.competenciaId) || null,
