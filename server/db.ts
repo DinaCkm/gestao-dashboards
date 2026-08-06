@@ -12770,14 +12770,21 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
     ? (Number(snapshot.ind6Aplicabilidade ?? 0) > 0 ? 1 : 0)
     : cases.filter((c: any) => c.entregue === 1).length;
 
+  // "Em branco" = a mentoria não tinha meta/evidência definida nesse período
+  // (ex.: aluno resetado antes do rastreamento de metas existir) — isso não é
+  // uma reprovação, é ausência de expectativa, então não deve travar o
+  // certificado. Só bloqueia quando havia meta/evidência esperada e ela
+  // realmente não foi cumprida.
+  const metasEvidenciasDefinidas = snapshot ? Number(snapshot.metasTotal) > 0 : metasNivel.length > 0;
+
   const criterios = {
     nivelEncerrado,
     snapshotCongelado,
     dadosSegmentadosPorNivel: snapshot ? true : !pedagogia.dadosNaoSegmentadosPorNivel,
     resultadoFinalFechado,
     engajamentoMin80: engajamento >= 80,
-    desafiosMin80: desafios >= 80,
-    evidenciasMinimas: evidencias > 0,
+    desafiosMin80: !metasEvidenciasDefinidas || desafios >= 80,
+    evidenciasMinimas: !metasEvidenciasDefinidas || evidencias > 0,
   };
 
   const elegivel = criterios.nivelEncerrado
