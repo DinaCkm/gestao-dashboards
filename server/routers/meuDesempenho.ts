@@ -179,6 +179,7 @@ export const meuDesempenhoRouter = router({
                   id: certificado.id,
                   status: certificado.status,
                   arquivoUrl: certificado.arquivoUrl,
+                  relatorioUrl: (certificado as any).relatorioUrl ?? null,
                   emitidoEm: certificado.emitidoEm,
                   hashDocumento: certificado.hashDocumento,
                 }
