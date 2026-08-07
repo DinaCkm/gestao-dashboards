@@ -31,6 +31,7 @@ const emptyProcesso = {
   descricao: "",
   mentorId: "",
   emailsRelatorio: "",
+  tipoInscricao: "restrito" as "restrito" | "aberto",
 };
 
 export default function ProcessosSeletivosDashboard() {
@@ -377,6 +378,7 @@ function ProcessosSeletivosContent() {
       linkEntrevista: processoForm.linkEntrevista || undefined,
       descricao: processoForm.descricao || undefined,
       emailsRelatorio: processoForm.emailsRelatorio || undefined,
+      tipoInscricao: processoForm.tipoInscricao,
       mentorId: processoForm.mentorId ? Number(processoForm.mentorId) : undefined,
       status: "ativo",
     });
@@ -517,6 +519,7 @@ function ProcessosSeletivosContent() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Cliente</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Inscrição</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -526,6 +529,9 @@ function ProcessosSeletivosContent() {
                     <TableCell className="font-medium">{processo.nome}</TableCell>
                     <TableCell>{processo.clienteNome}</TableCell>
                     <TableCell><ProcessoStatusBadge status={processo.status} /></TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {(processo as any).tipoInscricao === "aberto" ? "Aberta" : "Restrita (CPF)"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
                         {processo.status !== "ativo" && (
@@ -578,6 +584,18 @@ function ProcessosSeletivosContent() {
               <Input placeholder="Link da sala de entrevista (ex: meet.google.com/...)" type="url" value={processoForm.linkEntrevista} onChange={(event) => setProcessoForm((form) => ({ ...form, linkEntrevista: event.target.value }))} />
               <Input placeholder="Descricao curta" value={processoForm.descricao} onChange={(event) => setProcessoForm((form) => ({ ...form, descricao: event.target.value }))} />
               <Input placeholder="E-mails para relatório (separados por vírgula)" value={processoForm.emailsRelatorio} onChange={(event) => setProcessoForm((form) => ({ ...form, emailsRelatorio: event.target.value }))} />
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Inscrição de candidatos</Label>
+                <Select value={processoForm.tipoInscricao} onValueChange={(value) => setProcessoForm((form) => ({ ...form, tipoInscricao: value as "restrito" | "aberto" }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="restrito">Restrita — exige CPF pré-cadastrado</SelectItem>
+                    <SelectItem value="aberto">Aberta — qualquer pessoa com o link pode se inscrever</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Select value={processoForm.mentorId} onValueChange={(value) => setProcessoForm((form) => ({ ...form, mentorId: value }))}>
                 <SelectTrigger><SelectValue placeholder="Selecionadora (opcional)" /></SelectTrigger>
                 <SelectContent>
@@ -632,6 +650,24 @@ function ProcessosSeletivosContent() {
                         }
                       }}
                     />
+                  </div>
+                )}
+                {isAdmin && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">Inscrição de candidatos:</span>
+                    <Select
+                      value={((selectedProcesso as any).tipoInscricao as "restrito" | "aberto") ?? "restrito"}
+                      onValueChange={(value) => atualizarProcesso.mutate({ processoId: selectedProcesso.id, tipoInscricao: value as "restrito" | "aberto" })}
+                      disabled={atualizarProcesso.isPending}
+                    >
+                      <SelectTrigger className="h-7 text-xs max-w-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="restrito">Restrita — exige CPF pré-cadastrado</SelectItem>
+                        <SelectItem value="aberto">Aberta — qualquer pessoa com o link</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </div>
