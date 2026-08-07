@@ -58,6 +58,9 @@ export default function ConfiguracaoCertificados() {
     onError: (err: any) => toast.error(err?.message || "Não foi possível regenerar."),
   });
 
+  // --- Certificados emitidos recentemente (pra achar o código sem procurar em outro lugar) ---
+  const { data: emitidos, isLoading: carregandoEmitidos } = trpc.certificacao.listarEmitidos.useQuery();
+
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -207,6 +210,51 @@ export default function ConfiguracaoCertificados() {
                 o certificado sai só com o nome e cargo por extenso.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Certificados emitidos recentemente — pra achar o código de cada um sem procurar em outro lugar */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileBadge className="w-4 h-4" /> Certificados emitidos recentemente
+            </CardTitle>
+            <CardDescription>Os 30 mais recentes, com o Código de Identificação de cada um — clique no código pra copiar.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {carregandoEmitidos ? (
+              <div className="flex items-center text-gray-400 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" /> Carregando...
+              </div>
+            ) : emitidos && emitidos.length > 0 ? (
+              <div className="text-sm divide-y">
+                {emitidos.map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between py-2 gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-800 truncate">{c.alunoNome}</p>
+                      <p className="text-xs text-gray-400">
+                        Nível {c.nivel} · {new Date(c.emitidoEm).toLocaleDateString("pt-BR")}
+                        {c.emissaoManual ? " · emissão manual" : ""}
+                        {!c.relatorioUrl && <span className="text-amber-600"> · sem relatório</span>}
+                      </p>
+                    </div>
+                    <button
+                      className="font-mono text-xs bg-gray-100 hover:bg-gray-200 rounded px-2 py-1 shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(c.hashDocumento);
+                        setCodigoRegenerar(c.hashDocumento);
+                        toast.success(`Código ${c.hashDocumento} copiado e preenchido abaixo.`);
+                      }}
+                      title="Clique para copiar e preencher no campo de regenerar"
+                    >
+                      {c.hashDocumento}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Nenhum certificado emitido ainda.</p>
+            )}
           </CardContent>
         </Card>
 
