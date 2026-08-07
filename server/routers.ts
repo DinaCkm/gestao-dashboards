@@ -1092,10 +1092,18 @@ export const appRouter = router({
           let emailData;
           if (input.processoSeletivoId) {
             // Candidato de processo seletivo — e-mail específico sem mencionar trilha de desenvolvimento
+            let processoNomeEmail: string | undefined;
+            try {
+              const database = await getDb();
+              const { processosSeletivos: psTblEmail } = await import('../drizzle/schema');
+              const [psEmail] = await database.select({ nome: psTblEmail.nome }).from(psTblEmail).where(eq(psTblEmail.id, input.processoSeletivoId)).limit(1);
+              processoNomeEmail = psEmail?.nome;
+            } catch (e) { console.warn('[AutoRegistro] buscar nome do processo p/ email:', e); }
             emailData = buildBoasVindasPSEmail({
               candidatoName: input.name,
               candidatoEmail: input.email,
               cpf: input.cpf.replace(/[.\-]/g, ''),
+              processoNome: processoNomeEmail,
               loginUrl: 'https://ecolider.ecodobem.com/login',
             });
           } else {
