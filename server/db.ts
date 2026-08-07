@@ -12582,6 +12582,26 @@ export async function getNivelCertificateByAlunoNivel(alunoId: number, contratoN
   return cert || null;
 }
 
+/**
+ * Lista os certificados emitidos mais recentes, com o nome do aluno — pra
+ * telas administrativas mostrarem o Código de Identificação sem precisar
+ * que o admin guarde/procure manualmente onde anotou cada um.
+ */
+export async function listarCertificadosEmitidosRecentes(limite: number = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows]: any = await db.execute(sql.raw(
+    `SELECT nc.id, nc.hashDocumento, nc.nivel, nc.emitidoEm, nc.arquivoUrl, nc.relatorioUrl, nc.emissaoManual,
+            a.name AS alunoNome
+     FROM nivel_certificates nc
+     JOIN alunos a ON a.id = nc.alunoId
+     WHERE nc.status = 'emitido'
+     ORDER BY nc.emitidoEm DESC
+     LIMIT ${Number(limite)}`
+  ));
+  return Array.isArray(rows) ? rows : [];
+}
+
 export async function createNivelCertificate(
   data: InsertNivelCertificate,
   mentoras: Array<{ consultorId: number; nomeMentora: string }>
