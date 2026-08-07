@@ -2,7 +2,6 @@ import { useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { LOGO_ECO_DO_BEM_FULL_BASE64, LOGO_CKM_BASE64 } from "@/lib/certificadoLogos";
 import { Loader2, CheckSquare, Square } from "lucide-react";
-
 function formatarData(d: string | null | undefined) {
   if (!d) return "—";
   const date = new Date(String(d).length <= 10 ? `${d}T00:00:00` : d);
@@ -36,18 +35,26 @@ function Checkbox({ marcado, children }: { marcado: boolean; children: React.Rea
 export default function RelatorioFinalImpressao() {
   const [, params] = useRoute("/aluno/relatorio-final/:chave");
   const chave = params?.chave || "";
+  // alunoId só é necessário quando a página é renderizada fora do contexto do
+  // próprio aluno (ex.: emissão manual pelo admin, gerando o PDF via cookie
+  // administrativo) — nesse caso o admin passa ?alunoId=X na URL.
+  const alunoIdParam = new URLSearchParams(window.location.search).get("alunoId");
+  const alunoId = alunoIdParam ? Number(alunoIdParam) : undefined;
 
   const { data: desempenho, isLoading } = trpc.meuDesempenho.porMacrociclo.useQuery(
-    { chave },
+    { chave, alunoId },
     { enabled: !!chave, retry: false }
   );
 
   const cicloAtual = desempenho?.macrociclo?.status === "ativo";
   const cicloCongelado = desempenho?.macrociclo?.origem === "reset" && !cicloAtual && !!desempenho?.macrociclo?.historicoId;
 
-  const { data: dashboardAtual } = trpc.indicadores.meuDashboard.useQuery(undefined, { enabled: cicloAtual });
+  const { data: dashboardAtual } = trpc.indicadores.meuDashboard.useQuery(
+    { viewAlunoId: alunoId },
+    { enabled: cicloAtual }
+  );
   const { data: dashboardCongelado } = trpc.indicadores.meuDashboardCongelado.useQuery(
-    { historicoId: desempenho?.macrociclo?.historicoId ?? undefined },
+    { historicoId: desempenho?.macrociclo?.historicoId ?? undefined, viewAlunoId: alunoId },
     { enabled: cicloCongelado }
   );
   const fonteIndicadores: any = cicloAtual ? dashboardAtual : dashboardCongelado;
