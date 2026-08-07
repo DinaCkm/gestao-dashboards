@@ -1767,6 +1767,7 @@ export const processosSeletivos = mysqlTable("processos_seletivos", {
   linkEntrevista: varchar("linkEntrevista", { length: 500 }),
   descricao: text("descricao"),
   status: mysqlEnum("status", ["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho").notNull(),
+  tipoInscricao: mysqlEnum("tipoInscricao", ["restrito", "aberto"]).default("restrito").notNull(), // restrito = exige CPF pré-cadastrado; aberto = qualquer pessoa com o link pode se inscrever
   dataInicio: date("dataInicio", { mode: "string" }),
   dataFim: date("dataFim", { mode: "string" }),
   responsavelCkmId: int("responsavelCkmId"),
