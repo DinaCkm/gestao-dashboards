@@ -756,6 +756,7 @@ export const nivelCertificates = mysqlTable("nivel_certificates", {
   templateId: int("templateId").notNull(),
   status: mysqlEnum("status", ["emitido", "revogado"]).default("emitido").notNull(),
   arquivoUrl: text("arquivoUrl"),
+  relatorioUrl: text("relatorioUrl"),
   emitidoEm: timestamp("emitidoEm").defaultNow().notNull(),
   emitidoPor: int("emitidoPor"),
   hashDocumento: varchar("hashDocumento", { length: 128 }).notNull(),
