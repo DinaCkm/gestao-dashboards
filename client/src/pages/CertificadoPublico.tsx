@@ -51,7 +51,7 @@ export default function CertificadoPublico() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6 print:p-0 print:bg-white">
       <div
-        className="w-full max-w-5xl bg-white shadow-lg print:shadow-none p-10 print:p-8"
+        className="w-full max-w-5xl bg-white shadow-lg print:shadow-none p-10 print:p-6"
         style={{ border: "3px solid #351A4F" }}
       >
         {/* Cabeçalho: logo Eco do Bem, título do programa, logo CKM */}
@@ -64,14 +64,14 @@ export default function CertificadoPublico() {
         </div>
 
         {/* Corpo */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-4 print:mt-3">
           <h1 className="text-4xl font-bold" style={{ color: "#1F2937" }}>CERTIFICADO</h1>
           <p className="text-gray-500 mt-1">de conclusão de nível, ciclo ou trilha</p>
 
-          <p className="text-gray-600 mt-8">Certificamos que</p>
+          <p className="text-gray-600 mt-4 print:mt-3">Certificamos que</p>
           <p className="text-2xl font-bold mt-2" style={{ color: "#33BACE" }}>{data.alunoNome}</p>
 
-          <p className="text-gray-700 max-w-3xl mx-auto leading-relaxed mt-6">
+          <p className="text-gray-700 max-w-3xl mx-auto leading-relaxed mt-4 print:mt-3">
             concluiu a etapa <strong>{nivelTitulo}</strong>
             {data.turmaNome ? <>, da turma <strong>{data.turmaNome}</strong></> : null}, do Programa de
             Desenvolvimento de Competências de Liderança - Eco do Bem
@@ -81,11 +81,11 @@ export default function CertificadoPublico() {
             participação, desempenho e entregas estabelecidos para esta etapa de desenvolvimento.
           </p>
 
-          <p className="text-gray-500 mt-6">{formatarData(data.emitidoEm)}.</p>
+          <p className="text-gray-500 mt-4 print:mt-3">{formatarData(data.emitidoEm)}.</p>
         </div>
 
         {/* Validade documental */}
-        <div className="mt-6 p-3 border text-center" style={{ borderColor: "#33BACE", backgroundColor: "#F0FBFC" }}>
+        <div className="mt-4 print:mt-3 p-3 border text-center" style={{ borderColor: "#33BACE", backgroundColor: "#F0FBFC" }}>
           <p className="text-xs font-bold" style={{ color: "#351A4F" }}>VALIDADE DOCUMENTAL</p>
           <p className="text-xs text-gray-600 mt-1">
             Este certificado somente é válido quando apresentado em conjunto com o Relatório de
@@ -99,7 +99,7 @@ export default function CertificadoPublico() {
         </p>
 
         {/* Assinatura(s) */}
-        <div className="flex justify-center items-end gap-10 mt-8">
+        <div className="flex justify-center items-end gap-10 mt-4 print:mt-3">
           {assinaturas.length > 0 ? (
             assinaturas.map((a: any) => (
               <div key={a.tipo + a.nomeExibicao} className="flex flex-col items-center text-center w-72">
@@ -122,7 +122,7 @@ export default function CertificadoPublico() {
         </div>
 
         {/* Código de identificação e verificação */}
-        <div className="text-center mt-6">
+        <div className="text-center mt-3 print:mt-2">
           <p className="text-sm font-bold" style={{ color: "#351A4F" }}>Código de Identificação: {data.hashDocumento}</p>
           <p className="text-xs text-gray-500 mt-1">
             Consulta de autenticidade: ecolider.ecodobem.com/certificados/verificar/{data.hashDocumento}
