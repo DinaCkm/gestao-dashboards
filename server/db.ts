@@ -12674,6 +12674,12 @@ export async function updateNivelCertificateArquivo(certificateId: number, arqui
   await db.update(nivelCertificates).set({ arquivoUrl }).where(eq(nivelCertificates.id, certificateId));
 }
 
+export async function updateNivelCertificateRelatorioUrl(certificateId: number, relatorioUrl: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(nivelCertificates).set({ relatorioUrl }).where(eq(nivelCertificates.id, certificateId));
+}
+
 /**
  * Busca o nível SEM recalcular/sincronizar o status por data de contrato.
  * getContratoNivelComStatusOperacional() sobrescreve o status no banco com base em
