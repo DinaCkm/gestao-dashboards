@@ -313,6 +313,7 @@ const processoInput = z.object({
   linkEntrevista: z.string().url().optional().or(z.literal("")),
   descricao: z.string().optional(),
   status: z.enum(["rascunho", "ativo", "pausado", "encerrado"]).default("rascunho"),
+  tipoInscricao: z.enum(["restrito", "aberto"]).default("restrito"),
   dataInicio: z.string().optional().nullable(),
   emailsRelatorio: z.string().optional().nullable(),
   mentorId: z.number().optional().nullable(),
@@ -333,6 +334,7 @@ export const processosSeletivosRouter = router({
       linkEntrevista: processosSeletivos.linkEntrevista,
       descricao: processosSeletivos.descricao,
       status: processosSeletivos.status,
+      tipoInscricao: processosSeletivos.tipoInscricao,
       dataInicio: processosSeletivos.dataInicio,
       responsavelCkmId: processosSeletivos.responsavelCkmId,
       criadoPor: processosSeletivos.criadoPor,
@@ -440,6 +442,7 @@ export const processosSeletivosRouter = router({
       linkEntrevista: processosSeletivos.linkEntrevista,
       descricao: processosSeletivos.descricao,
       status: processosSeletivos.status,
+      tipoInscricao: processosSeletivos.tipoInscricao,
       dataInicio: processosSeletivos.dataInicio,
       responsavelCkmId: processosSeletivos.responsavelCkmId,
       criadoPor: processosSeletivos.criadoPor,
@@ -461,6 +464,7 @@ export const processosSeletivosRouter = router({
       linkEntrevista: input.linkEntrevista || null,
       descricao: input.descricao || null,
       status: input.status,
+      tipoInscricao: input.tipoInscricao,
       dataInicio: input.dataInicio || null,
       emailsRelatorio: input.emailsRelatorio || null,
       mentorId: input.mentorId ?? null,
@@ -484,6 +488,7 @@ export const processosSeletivosRouter = router({
         ...(data.linkEntrevista !== undefined && { linkEntrevista: data.linkEntrevista || null }),
         ...(data.descricao !== undefined && { descricao: data.descricao || null }),
         ...(data.status !== undefined && { status: data.status }),
+        ...(data.tipoInscricao !== undefined && { tipoInscricao: data.tipoInscricao }),
         ...(data.dataInicio !== undefined && { dataInicio: data.dataInicio || null }),
         ...(data.emailsRelatorio !== undefined && { emailsRelatorio: data.emailsRelatorio || null }),
         ...(data.mentorId !== undefined && { mentorId: data.mentorId ?? null }),
@@ -1048,7 +1053,7 @@ export const processosSeletivosRouter = router({
   listProcessosAtivos: publicProcedure.query(async () => {
     const database = await requireDatabase();
     const rows = await database
-      .select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome })
+      .select({ id: processosSeletivos.id, nome: processosSeletivos.nome, clienteNome: processosSeletivos.clienteNome, tipoInscricao: processosSeletivos.tipoInscricao })
       .from(processosSeletivos)
       .where(eq(processosSeletivos.status, "ativo"))
       .orderBy(asc(processosSeletivos.nome));
