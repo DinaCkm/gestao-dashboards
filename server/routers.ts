@@ -10781,6 +10781,32 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
      * por um reset formal — sem snapshot congelado para validar automaticamente.
      * Exige justificativa e fica marcado como emissaoManual=1 para auditoria.
      */
+    /**
+     * Regenera o PDF (certificado + relatório de aproveitamento) de um
+     * certificado JÁ emitido — útil quando a geração original falhou (ex.:
+     * ambiente do Chromium indisponível no momento da emissão) e o registro
+     * ficou apontando pra uma URL provisória.
+     */
+    regenerarPdfs: adminOrAdmin2Procedure
+      .input(z.object({ hashDocumento: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const dados = await db.getNivelCertificateByHash(input.hashDocumento);
+        if (!dados) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Certificado não encontrado para este código." });
+        }
+        const { certificadoUrl, relatorioUrl } = await gerarESalvarCertificadoPdf(
+          ctx.req,
+          dados.certificado.alunoId,
+          dados.certificado.contratoNivelId,
+          dados.certificado.hashDocumento,
+          dados.certificado.id
+        );
+        if (!certificadoUrl) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível gerar o PDF do certificado. Veja os logs do servidor." });
+        }
+        return { certificadoUrl, relatorioUrl };
+      }),
+
     emitirManual: adminOrAdmin2Procedure
       .input(z.object({
         alunoId: z.number(),
