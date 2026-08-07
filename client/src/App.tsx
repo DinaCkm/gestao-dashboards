@@ -102,6 +102,7 @@ import AlunoAvaliacao from "./pages/aluno/AlunoAvaliacao";
 import AlunoResultadoAvaliacao from "./pages/aluno/AlunoResultadoAvaliacao";
 import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
 import MeuProgresso from "./pages/aluno/MeuProgresso";
+import RelatorioFinalImpressao from "./pages/aluno/RelatorioFinalImpressao";
 import CertificadoPublico from "./pages/CertificadoPublico";
 import EmitirCertificadoManual from "./pages/admin/EmitirCertificadoManual";
 import ConfiguracaoCertificados from "./pages/admin/ConfiguracaoCertificados";
@@ -227,6 +228,7 @@ function Router() {
       <Route path={"/aluno/competencias-comp-tec/resultado"} component={AlunoResultadoAvaliacao} />
       <Route path={"/aluno/competencias-comp-tec/reflexao"} component={AlunoReflexaoFinal} />
       <Route path={"/aluno/meu-progresso"} component={MeuProgresso} />
+      <Route path={"/aluno/relatorio-final/:chave"} component={RelatorioFinalImpressao} />
       <Route path={"/admin/onboarding-videos"} component={OnboardingVideos} />
       <Route path={"/admin/biblioteca-pedagogica"} component={BibliotecaPedagogica} />
       <Route path={"/admin/biblioteca-livros"} component={AdminBibliotecaLivros} />
