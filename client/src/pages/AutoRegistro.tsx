@@ -48,6 +48,18 @@ export default function AutoRegistro() {
   const [cpfJaCadastrado, setCpfJaCadastrado] = useState(false);
   const [cpfErro, setCpfErro] = useState<string | null>(null);
 
+  // Processo pré-selecionado via link (?ps=): usado para saber se a inscrição é aberta ou restrita por CPF
+  const processoAtualPS = (processos || []).find((p: any) => String(p.id) === processoId);
+  const processoInscricaoAberta = processoAtualPS?.tipoInscricao === "aberto";
+
+  // Processos de inscrição aberta pulam a etapa de verificação de CPF —
+  // qualquer pessoa com o link preenche o formulário completo direto
+  useEffect(() => {
+    if (modo === "processo_seletivo" && processoTravado && processoInscricaoAberta && etapaCpf) {
+      setEtapaCpf(false);
+    }
+  }, [modo, processoTravado, processoInscricaoAberta, etapaCpf]);
+
   const verificarCpfQuery = trpc.processosSeletivos.verificarCpfConvocado.useQuery(
     { processoId: Number(processoId), cpf: cpf.replace(/[.\-]/g, '').trim() },
     { enabled: false }
@@ -359,7 +371,7 @@ export default function AutoRegistro() {
                 </button>
 
                 {/* ETAPA DE VERIFICAÇÃO DE CPF — apenas para processo_seletivo */}
-                {modo === "processo_seletivo" && etapaCpf && (
+                {modo === "processo_seletivo" && etapaCpf && !processoInscricaoAberta && (
                   <>
                     <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0d1117", marginBottom: "6px", textAlign: "center" }}>Verificar convocação</h2>
                     <p style={{ color: "#6b7280", fontSize: "14px", textAlign: "center", marginBottom: "24px", lineHeight: "1.5" }}>
@@ -421,7 +433,7 @@ export default function AutoRegistro() {
                 )}
 
                 {/* FORMULÁRIO COMPLETO — exibido após CPF verificado (ou em modo desenvolvimento) */}
-                {(modo !== "processo_seletivo" || !etapaCpf) && (
+                {(modo !== "processo_seletivo" || !etapaCpf || processoInscricaoAberta) && (
                   <>
                     {cpfNomeConvocado && (
                       <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "12px", padding: "12px 16px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
