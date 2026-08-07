@@ -10791,6 +10791,15 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
      * ambiente do Chromium indisponível no momento da emissão) e o registro
      * ficou apontando pra uma URL provisória.
      */
+    /**
+     * Lista os certificados emitidos recentemente, com o Código de
+     * Identificação de cada um — pra tela de configuração mostrar sem o
+     * admin precisar procurar/anotar em outro lugar.
+     */
+    listarEmitidos: adminOrAdmin2Procedure.query(async () => {
+      return await db.listarCertificadosEmitidosRecentes(30);
+    }),
+
     regenerarPdfs: adminOrAdmin2Procedure
       .input(z.object({ hashDocumento: z.string() }))
       .mutation(async ({ ctx, input }) => {
