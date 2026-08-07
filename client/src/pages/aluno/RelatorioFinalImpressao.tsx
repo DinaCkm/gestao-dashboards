@@ -34,14 +34,18 @@ function Checkbox({ marcado, children }: { marcado: boolean; children: React.Rea
 
 export default function RelatorioFinalImpressao() {
   const [, params] = useRoute("/aluno/relatorio-final/:chave");
-  const chave = params?.chave || "";
+  // wouter não decodifica automaticamente o parâmetro de rota — como o link
+  // que leva aqui é montado com encodeURIComponent (necessário pra chaves com
+  // ":", tipo "historico:14"), sem decodificar aqui a chave chega ao servidor
+  // com o "%3A" literal, nunca batendo com nenhum macrociclo real.
+  const chave = params?.chave ? decodeURIComponent(params.chave) : "";
   // alunoId só é necessário quando a página é renderizada fora do contexto do
   // próprio aluno (ex.: emissão manual pelo admin, gerando o PDF via cookie
   // administrativo) — nesse caso o admin passa ?alunoId=X na URL.
   const alunoIdParam = new URLSearchParams(window.location.search).get("alunoId");
   const alunoId = alunoIdParam ? Number(alunoIdParam) : undefined;
 
-  const { data: desempenho, isLoading } = trpc.meuDesempenho.porMacrociclo.useQuery(
+  const { data: desempenho, isLoading, error } = trpc.meuDesempenho.porMacrociclo.useQuery(
     { chave, alunoId },
     { enabled: !!chave, retry: false }
   );
@@ -59,6 +63,19 @@ export default function RelatorioFinalImpressao() {
   );
   const fonteIndicadores: any = cicloAtual ? dashboardAtual : dashboardCongelado;
   const consolidado = fonteIndicadores?.found !== false ? fonteIndicadores?.indicadoresV2?.consolidado : null;
+
+  // Erro real (ex.: macrociclo não encontrado, sem permissão) — mostra a
+  // mensagem em vez de girar pra sempre. Sem isso, qualquer falha na busca
+  // dos dados fazia a página (e a geração do PDF em cima dela) travar
+  // "carregando" indefinidamente, sem nenhum sinal do que deu errado.
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
+        <p className="text-gray-600 font-medium">Não foi possível carregar este relatório.</p>
+        <p className="text-sm text-gray-400 mt-2">{error.message}</p>
+      </div>
+    );
+  }
 
   if (isLoading || !desempenho) {
     return (
