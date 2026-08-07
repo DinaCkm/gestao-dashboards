@@ -24,7 +24,7 @@ import {
 } from "../../drizzle/schema";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { createNotification, getDb } from "../db";
-import { buildPsAlertaAdminSemSlotEmail, buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, buildPsRelatorioEmail, sendEmail } from "../emailService";
+import { buildPsAlertaAdminSemSlotEmail, buildPsConfirmacaoAgendamentoEmail, buildPsReagendamentoEmail, buildPsRelatorioEmail, buildBoasVindasPSEmail, sendEmail } from "../emailService";
 import { storagePut, storageGet, storageDownloadBuffer } from "../storage";
 
 const adminRoles = new Set(["admin", "admin2"]);
@@ -1812,6 +1812,28 @@ export const processosSeletivosRouter = router({
         }
       }
       return { success: true };
+    }),
+
+  // ── Reenviar e-mail de boas-vindas (admin) — útil quando o envio original falhou (ex: SMTP fora do ar) ──
+  reenviarBoasVindas: protectedProcedure
+    .input(z.object({ candidatoId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      requireCkmAdmin(ctx.user.role);
+      const database = await requireDatabase();
+      const [candidato] = await database.select().from(processoCandidatos).where(eq(processoCandidatos.id, input.candidatoId)).limit(1);
+      if (!candidato) throw new TRPCError({ code: "NOT_FOUND", message: "Candidato nao encontrado" });
+      if (!candidato.email) throw new TRPCError({ code: "BAD_REQUEST", message: "Candidato sem e-mail cadastrado" });
+      const [processo] = await database.select({ nome: processosSeletivos.nome }).from(processosSeletivos).where(eq(processosSeletivos.id, candidato.processoId)).limit(1);
+      const emailData = buildBoasVindasPSEmail({
+        candidatoName: candidato.nome,
+        candidatoEmail: candidato.email,
+        cpf: (candidato.cpf || "").replace(/[.\-]/g, ""),
+        processoNome: processo?.nome,
+        loginUrl: "https://ecolider.ecodobem.com/login",
+      });
+      const result = await sendEmail({ to: candidato.email, subject: emailData.subject, html: emailData.html, text: emailData.text });
+      await writeLog(database, { processoId: candidato.processoId, candidatoId: input.candidatoId, userId: ctx.user.id, acao: "boas_vindas_reenviada" });
+      return { success: result.success, email: candidato.email, error: result.error };
     }),
 
   // ── Salvar comunicado do processo (admin) ──
