@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -15,23 +15,7 @@ import {
   XCircle,
   TrendingUp,
 } from "lucide-react";
-import jsPDF from "jspdf";
 import { toast } from "sonner";
-
-// Carrega o html2canvas via CDN sob demanda (mesmo padrão usado em RelatorioIndividualDISC.tsx)
-function carregarHtml2Canvas(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).html2canvas) {
-      resolve((window as any).html2canvas);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/html2canvas-pro@2.0.4/dist/html2canvas-pro.min.js";
-    script.onload = () => resolve((window as any).html2canvas);
-    script.onerror = () => reject(new Error("Não foi possível carregar o gerador de PDF."));
-    document.body.appendChild(script);
-  });
-}
 
 const STATUS_LABEL: Record<string, string> = {
   encerrado: "Congelado",
@@ -62,7 +46,6 @@ const criteriosLabels: Record<string, string> = {
 };
 
 export default function MeuProgresso() {
-  const conteudoRef = useRef<HTMLDivElement>(null);
   const [gerandoPdf, setGerandoPdf] = useState(false);
   const [macrocicloSelecionado, setMacrocicloSelecionado] = useState<string | null>(null);
 
@@ -108,56 +91,40 @@ export default function MeuProgresso() {
 
   const criterios = desempenho?.certificacao?.criterios as Record<string, boolean> | undefined;
 
+  const gerarRelatorioPdfMutation = trpc.meuDesempenho.gerarRelatorioPdf.useMutation();
+
+  // PDF gerado no servidor (Chromium headless), renderizando a página dedicada
+  // /aluno/relatorio-final/:chave — substitui a captura de tela no navegador,
+  // que nunca produzia um layout confiável.
   const handleBaixarPdf = async () => {
-    if (!conteudoRef.current) return;
+    if (!chave) return;
     setGerandoPdf(true);
     try {
-      const html2canvas = await carregarHtml2Canvas();
-      const container = conteudoRef.current;
-
-      // Espera fontes carregarem e o layout assentar antes de capturar —
-      // sem isso, textos posicionados por cima de elementos (como o número
-      // dentro do anel de progresso) podem sair da posição na captura.
-      if ((document as any).fonts?.ready) {
-        await (document as any).fonts.ready;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 150));
-
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        foreignObjectRendering: false,
-      });
-      const imgData = canvas.toDataURL("image/png");
-
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgWidthMm = pageWidth;
-      const imgHeightMm = (canvas.height * imgWidthMm) / canvas.width;
-
-      let heightLeft = imgHeightMm;
-      let position = 0;
-
-      pdf.addImage(imgData, "PNG", 0, position, imgWidthMm, imgHeightMm);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeightMm;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidthMm, imgHeightMm);
-        heightLeft -= pageHeight;
-      }
-
-      const nomeArquivo = `relatorio-desempenho-${desempenho?.macrociclo?.nivelLabel || desempenho?.macrociclo?.numeroCiclo || ""}.pdf`;
-      pdf.save(nomeArquivo);
+      const resultado = await gerarRelatorioPdfMutation.mutateAsync({ chave });
+      const byteChars = atob(resultado.pdfBase64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([new Uint8Array(byteNumbers)], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const nomeArquivo = `relatorio-final-${desempenho?.macrociclo?.nivelLabel || desempenho?.macrociclo?.numeroCiclo || ""}.pdf`;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nomeArquivo;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (e) {
       console.error(e);
       toast.error("Erro ao gerar o PDF. Tente novamente.");
     } finally {
       setGerandoPdf(false);
     }
+  };
+
+  // Abre a página dedicada do relatório numa aba nova — já formatada pra
+  // impressão, o próprio navegador cuida do "Imprimir" a partir dela.
+  const handleImprimir = () => {
+    if (!chave) return;
+    window.open(`/aluno/relatorio-final/${encodeURIComponent(chave)}`, "_blank");
   };
 
   const carregando = carregandoMacrociclos || carregandoDesempenho;
@@ -177,7 +144,7 @@ export default function MeuProgresso() {
           </div>
           {cicloCongelado && (
             <div className="flex gap-2 print:hidden">
-              <Button variant="outline" onClick={() => window.print()} disabled={!desempenho}>
+              <Button variant="outline" onClick={handleImprimir} disabled={!desempenho}>
                 <Printer className="w-4 h-4 mr-2" />
                 Imprimir
               </Button>
@@ -226,7 +193,7 @@ export default function MeuProgresso() {
         )}
 
         {desempenho && (
-          <div ref={conteudoRef} className="space-y-6 bg-white p-2">
+          <div className="space-y-6 bg-white p-2">
             {/* Cabeçalho do macrociclo */}
             <Card>
               <CardHeader>
@@ -378,13 +345,22 @@ export default function MeuProgresso() {
                             {desempenho.certificacao.certificadoEmitido.hashDocumento}
                           </p>
                         </div>
-                        {desempenho.certificacao.certificadoEmitido.arquivoUrl && (
-                          <Button asChild size="sm" variant="outline">
-                            <a href={desempenho.certificacao.certificadoEmitido.arquivoUrl} target="_blank" rel="noreferrer">
-                              <Download className="w-4 h-4 mr-1" /> Baixar
-                            </a>
-                          </Button>
-                        )}
+                        <div className="flex gap-2">
+                          {(desempenho.certificacao.certificadoEmitido as any).relatorioUrl && (
+                            <Button asChild size="sm" variant="outline">
+                              <a href={(desempenho.certificacao.certificadoEmitido as any).relatorioUrl} target="_blank" rel="noreferrer">
+                                <Download className="w-4 h-4 mr-1" /> Baixar relatório
+                              </a>
+                            </Button>
+                          )}
+                          {desempenho.certificacao.certificadoEmitido.arquivoUrl && (
+                            <Button asChild size="sm" variant="outline">
+                              <a href={desempenho.certificacao.certificadoEmitido.arquivoUrl} target="_blank" rel="noreferrer">
+                                <Download className="w-4 h-4 mr-1" /> Baixar certificado
+                              </a>
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ) : (
                       <>
