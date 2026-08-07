@@ -538,22 +538,51 @@ async function gerarESalvarCertificadoPdf(
   contratoNivelId: number,
   hashDocumento: string,
   certId: number
-): Promise<string | null> {
-  try {
-    const forwardedProto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "https";
-    const host = req.headers.host;
-    const baseUrl = `${forwardedProto}://${host}`;
-    const verifyUrl = `${baseUrl}/certificados/verificar/${hashDocumento}`;
+): Promise<{ certificadoUrl: string | null; relatorioUrl: string | null }> {
+  const forwardedProto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "https";
+  const host = req.headers.host;
+  const baseUrl = `${forwardedProto}://${host}`;
 
+  let certificadoUrl: string | null = null;
+  try {
+    const verifyUrl = `${baseUrl}/certificados/verificar/${hashDocumento}`;
     const pdfBuffer = await renderPdfFromUrl({ url: verifyUrl, landscape: true });
     const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}.pdf`;
     const { url } = await storagePut(storageKey, pdfBuffer, "application/pdf");
     await db.updateNivelCertificateArquivo(certId, url);
-    return url;
+    certificadoUrl = url;
   } catch (err) {
     console.error("[certificacao] Falha ao gerar/armazenar o PDF do certificado:", err);
-    return null;
   }
+
+  // Gera também o Relatório de Aproveitamento, com o mesmo Código de
+  // Identificação — os dois documentos saem juntos na emissão, como pares de
+  // um mesmo conjunto documental (pedido explícito para rastreamento contra
+  // fraude: um nunca deve existir sem o outro).
+  let relatorioUrl: string | null = null;
+  try {
+    const macrociclos = await db.getMacrociclosByAluno(alunoId);
+    const macrociclo = macrociclos.find((m: any) => m.contratoNivelId === contratoNivelId);
+    if (macrociclo) {
+      const relatorioPageUrl = `${baseUrl}/aluno/relatorio-final/${encodeURIComponent(macrociclo.chave)}?alunoId=${alunoId}`;
+      const pdfBuffer = await renderPdfFromUrl({
+        url: relatorioPageUrl,
+        cookie: req.headers.cookie,
+        marginTop: "8mm",
+        marginBottom: "8mm",
+        marginLeft: "8mm",
+        marginRight: "8mm",
+      });
+      const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}-relatorio.pdf`;
+      const { url } = await storagePut(storageKey, pdfBuffer, "application/pdf");
+      await db.updateNivelCertificateRelatorioUrl(certId, url);
+      relatorioUrl = url;
+    }
+  } catch (err) {
+    console.error("[certificacao] Falha ao gerar/armazenar o PDF do relatório de aproveitamento:", err);
+  }
+
+  return { certificadoUrl, relatorioUrl };
 }
 
 export const appRouter = router({
@@ -1092,18 +1121,10 @@ export const appRouter = router({
           let emailData;
           if (input.processoSeletivoId) {
             // Candidato de processo seletivo — e-mail específico sem mencionar trilha de desenvolvimento
-            let processoNomeEmail: string | undefined;
-            try {
-              const database = await getDb();
-              const { processosSeletivos: psTblEmail } = await import('../drizzle/schema');
-              const [psEmail] = await database.select({ nome: psTblEmail.nome }).from(psTblEmail).where(eq(psTblEmail.id, input.processoSeletivoId)).limit(1);
-              processoNomeEmail = psEmail?.nome;
-            } catch (e) { console.warn('[AutoRegistro] buscar nome do processo p/ email:', e); }
             emailData = buildBoasVindasPSEmail({
               candidatoName: input.name,
               candidatoEmail: input.email,
               cpf: input.cpf.replace(/[.\-]/g, ''),
-              processoNome: processoNomeEmail,
               loginUrl: 'https://ecolider.ecodobem.com/login',
             });
           } else {
@@ -10747,11 +10768,12 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         );
 
         // Gera o PDF real a partir da página pública de verificação (Chromium headless)
-        // e substitui a URL provisória pela URL definitiva no storage (R2).
-        const urlGerada = await gerarESalvarCertificadoPdf(ctx.req, alunoId, input.contratoNivelId, hashDocumento, certId);
-        const arquivoUrl = urlGerada || arquivoUrlProvisorio;
+        // e substitui a URL provisória pela URL definitiva no storage (R2) — gera também
+        // o Relatório de Aproveitamento pareado, com o mesmo Código de Identificação.
+        const { certificadoUrl, relatorioUrl } = await gerarESalvarCertificadoPdf(ctx.req, alunoId, input.contratoNivelId, hashDocumento, certId);
+        const arquivoUrl = certificadoUrl || arquivoUrlProvisorio;
 
-        return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
+        return { id: certId, arquivoUrl, relatorioUrl, hashDocumento, totalMentoras: mentorasUnicas.length };
       }),
 
     /**
@@ -10821,10 +10843,10 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           mentorasUnicas.map((m: any) => ({ consultorId: m.consultorId, nomeMentora: m.consultorNome || `Mentora #${m.consultorId}` }))
         );
 
-        const urlGerada = await gerarESalvarCertificadoPdf(ctx.req, alunoId, contratoNivelId, hashDocumento, certId);
-        const arquivoUrl = urlGerada || arquivoUrlProvisorio;
+        const { certificadoUrl, relatorioUrl } = await gerarESalvarCertificadoPdf(ctx.req, alunoId, contratoNivelId, hashDocumento, certId);
+        const arquivoUrl = certificadoUrl || arquivoUrlProvisorio;
 
-        return { id: certId, arquivoUrl, hashDocumento, totalMentoras: mentorasUnicas.length, emissaoManual: true };
+        return { id: certId, arquivoUrl, relatorioUrl, hashDocumento, totalMentoras: mentorasUnicas.length, emissaoManual: true };
       }),
 
     templates: adminOrAdmin2Procedure.query(async () => {
