@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FileBadge, Signature, Loader2, CheckCircle2 } from "lucide-react";
+import { FileBadge, Signature, Loader2, CheckCircle2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 const NIVEIS = ["I", "II", "III", "IV"] as const;
@@ -50,6 +50,13 @@ export default function ConfiguracaoCertificados() {
 
   const niveisComTemplate = new Set((templates || []).filter((t: any) => t.ativo === 1).map((t: any) => t.nivel));
   const totalAssinaturas = (assinaturas || []).filter((a: any) => a.ativo === 1).length;
+
+  // --- Regenerar PDF de um certificado já emitido ---
+  const [codigoRegenerar, setCodigoRegenerar] = useState("");
+  const regenerarPdfs = trpc.certificacao.regenerarPdfs.useMutation({
+    onSuccess: () => toast.success("PDFs regenerados — certificado e relatório já atualizados."),
+    onError: (err: any) => toast.error(err?.message || "Não foi possível regenerar."),
+  });
 
   return (
     <DashboardLayout>
@@ -200,6 +207,53 @@ export default function ConfiguracaoCertificados() {
                 o certificado sai só com o nome e cargo por extenso.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Regenerar PDF de certificado já emitido */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" /> Regenerar PDF de um certificado
+            </CardTitle>
+            <CardDescription>
+              Use quando um certificado foi emitido mas o PDF (ou o relatório) não gerou corretamente —
+              cole o Código de Identificação (ex: EDB-LID-2026-0001) e regenere os dois documentos sem
+              precisar emitir de novo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input
+                placeholder="Código de Identificação (ex: EDB-LID-2026-0001)"
+                value={codigoRegenerar}
+                onChange={(e) => setCodigoRegenerar(e.target.value)}
+              />
+              <Button
+                onClick={() => codigoRegenerar.trim() && regenerarPdfs.mutate({ hashDocumento: codigoRegenerar.trim() })}
+                disabled={!codigoRegenerar.trim() || regenerarPdfs.isPending}
+              >
+                {regenerarPdfs.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Regenerar"}
+              </Button>
+            </div>
+            {regenerarPdfs.data && (
+              <div className="text-xs text-gray-600 space-y-1">
+                <p>
+                  Certificado:{" "}
+                  <a href={regenerarPdfs.data.certificadoUrl} target="_blank" rel="noreferrer" className="text-emerald-700 underline">
+                    baixar
+                  </a>
+                </p>
+                {regenerarPdfs.data.relatorioUrl && (
+                  <p>
+                    Relatório:{" "}
+                    <a href={regenerarPdfs.data.relatorioUrl} target="_blank" rel="noreferrer" className="text-emerald-700 underline">
+                      baixar
+                    </a>
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
