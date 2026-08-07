@@ -563,8 +563,10 @@ async function gerarESalvarCertificadoPdf(
   try {
     const macrociclos = await db.getMacrociclosByAluno(alunoId);
     const macrociclo = macrociclos.find((m: any) => m.contratoNivelId === contratoNivelId);
+    console.log(`[certificacao] relatório: macrociclo ${macrociclo ? `encontrado (chave=${macrociclo.chave})` : "NÃO encontrado"} para alunoId=${alunoId} contratoNivelId=${contratoNivelId}`);
     if (macrociclo) {
       const relatorioPageUrl = `${baseUrl}/aluno/relatorio-final/${encodeURIComponent(macrociclo.chave)}?alunoId=${alunoId}`;
+      console.log(`[certificacao] relatório: renderizando ${relatorioPageUrl}`);
       const pdfBuffer = await renderPdfFromUrl({
         url: relatorioPageUrl,
         cookie: req.headers.cookie,
@@ -573,8 +575,10 @@ async function gerarESalvarCertificadoPdf(
         marginLeft: "8mm",
         marginRight: "8mm",
       });
+      console.log(`[certificacao] relatório: PDF renderizado, ${pdfBuffer.length} bytes`);
       const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}-relatorio.pdf`;
       const { url } = await storagePut(storageKey, pdfBuffer, "application/pdf");
+      console.log(`[certificacao] relatório: armazenado em storageKey=${storageKey} url=${url}`);
       await db.updateNivelCertificateRelatorioUrl(certId, url);
       relatorioUrl = url;
     }
