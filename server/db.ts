@@ -7095,17 +7095,27 @@ export async function getMacrociclosByAluno(alunoId: number) {
       });
       inicio = r.criadoEm;
     });
+
+    // O próximo nível na sequência pode já estar com status "encerrado" no
+    // contrato SEM nunca ter passado pelo reset formal (ex.: encerrado por
+    // outro processo, como o congelamento por turma) — nesse caso não é o
+    // "ciclo atual em andamento", é um nível fechado que ainda não tem
+    // arquivamento/snapshot. Tratar como "ativo" faria a tela escondê-lo
+    // como se ainda estivesse em progresso, quando na verdade só falta
+    // arquivar. Reflete o status real do contrato em vez de assumir.
     const ultimoNumero = resetsAsc[resetsAsc.length - 1]?.numeroCicloArquivado ?? 0;
+    const proximoNivel = niveisAsc[resetsAsc.length];
+    const proximoRealmenteEncerrado = proximoNivel && proximoNivel.status === "encerrado";
     macrociclos.push({
       chave: "atual",
-      origem: "reset",
+      origem: proximoRealmenteEncerrado ? "encerrado-sem-arquivamento" : "reset",
       historicoId: null,
       numeroCiclo: ultimoNumero + 1,
       dataInicio: inicio,
       dataFim: null,
-      status: "ativo",
-      contratoNivelId: niveisAsc[resetsAsc.length]?.id ?? null,
-      nivelLabel: niveisAsc[resetsAsc.length]?.nivel ?? null,
+      status: proximoRealmenteEncerrado ? "encerrado" : "ativo",
+      contratoNivelId: proximoNivel?.id ?? null,
+      nivelLabel: proximoNivel?.nivel ?? null,
     });
     return macrociclos;
   }
@@ -12746,11 +12756,28 @@ export async function getNivelCertificateByHash(hash: string) {
     `SELECT * FROM certification_signatures WHERE ativo = 1 ORDER BY id ASC`
   ));
 
+  // Todos os níveis do aluno, com seus próprios períodos — mostrado no
+  // certificado pra dar transparência total quando a fronteira exata entre
+  // dois níveis não foi capturada por um reset formal (ex.: nível encerrado
+  // via congelamento de turma, sem o snapshot individual). Em vez de tentar
+  // reconstruir retroativamente uma data exata de transição (arriscado),
+  // mostra o período de CADA nível lado a lado, sem inventar precisão que
+  // os dados não têm.
+  const todosNiveisAluno = await getContratoNiveisByAluno(certificado.alunoId);
+  const todosNiveis = todosNiveisAluno
+    .filter((n: any) => n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim)
+    .map((n: any) => ({
+      nivel: n.nivel,
+      dataInicio: n.nivelInicio ?? n.dataInicio ?? null,
+      dataFim: n.nivelFim ?? n.dataFim ?? null,
+    }));
+
   return {
     certificado,
     periodo: { dataInicio: periodo.dataInicio, dataFim: periodo.dataFim },
     mentoras,
     assinaturas: Array.isArray(assinaturasRows) ? assinaturasRows : [],
+    todosNiveis,
   };
 }
 
