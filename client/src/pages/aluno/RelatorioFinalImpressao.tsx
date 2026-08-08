@@ -178,20 +178,29 @@ export default function RelatorioFinalImpressao() {
       </div>
 
       <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>2. Indicadores de participação e desempenho</h2>
-      <div className="grid grid-cols-4 border" style={{ borderColor: "#E5E7EB" }}>
+      <div className="grid grid-cols-3 border" style={{ borderColor: "#E5E7EB" }}>
         {[
-          ["Webinars", consolidado?.ind1_webinars],
-          ["Tarefas", consolidado?.ind4_tarefas],
-          ["Competências", consolidado?.ind3_competencias],
-          ["Engajamento Final", consolidado?.ind7_engajamentoFinal],
-        ].map(([label, value], idx) => (
-          <div key={label as string} className={`p-3 text-center ${idx < 3 ? "border-r" : ""}`} style={{ borderColor: "#E5E7EB" }}>
+          ["Ind.1 Webinars", consolidado?.ind1_webinars, 80],
+          ["Ind.2 Avaliações", consolidado?.ind2_avaliacoes, 80],
+          ["Ind.3 Competências", consolidado?.ind3_competencias, 80],
+          ["Ind.4 Tarefas", consolidado?.ind4_tarefas, 80],
+          ["Ind.5 Engajamento", consolidado?.ind5_engajamento, 80],
+          ["Ind.6 Aplicabilidade", consolidado?.ind6_aplicabilidade, 80],
+        ].map(([label, value, meta], idx) => (
+          <div
+            key={label as string}
+            className={`p-3 text-center ${idx % 3 < 2 ? "border-r" : ""} ${idx < 3 ? "border-b" : ""}`}
+            style={{ borderColor: "#E5E7EB" }}
+          >
             <p className="text-[10px] uppercase text-gray-500 font-semibold">{label}</p>
             <p className="text-xl font-bold" style={{ color: "#351A4F" }}>{value !== null && value !== undefined ? `${value}%` : "—"}</p>
-            <p className="text-[10px] text-gray-400">Meta: 80%</p>
+            <p className="text-[10px] text-gray-400">Meta: {meta}%</p>
           </div>
         ))}
       </div>
+      <p className="text-[10px] text-gray-400 mt-1">
+        Resultado Final (Engajamento Final consolidado): {engajamentoFinal !== null ? `${engajamentoFinal}%` : "—"} — ver Síntese executiva acima.
+      </p>
 
       <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>3. Avaliação das competências</h2>
       <p className="text-xs text-gray-500 mb-1">{aprovadas} de {obrigatorias.length} competências obrigatórias aprovadas.</p>
