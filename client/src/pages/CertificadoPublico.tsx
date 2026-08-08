@@ -14,7 +14,11 @@ function formatarData(d: string | null | undefined) {
   if (!d) return "";
   const date = new Date(String(d).length <= 10 ? `${d}T00:00:00` : d);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  // timeZone: "UTC" evita o deslocamento de um dia que aparecia quando o
+  // valor chegava como objeto Date (meia-noite UTC) e era exibido no fuso
+  // local de quem estava vendo a página — sempre mostra a data-calendário
+  // como ela realmente é, sem depender do fuso de quem gerou/visualizou.
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
 export default function CertificadoPublico() {
