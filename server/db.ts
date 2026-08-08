@@ -8405,6 +8405,56 @@ export async function liberarOnboardingAluno(alunoId: number) {
   return { success: true, message: `Onboarding liberado para novo ciclo. Ciclo ${numeroCiclo} arquivado na página de Evolução.` };
 }
 
+/**
+ * Lista alunos com onboardingLiberado=1 mas SEM nenhum registro em
+ * historico_ciclos_aluno — ou seja, foram marcados como "liberados" mas o
+ * arquivamento do ciclo anterior nunca foi de fato gravado (bug corrigido em
+ * 2026-08-08: consulta de webinars em arquivarCicloAtual usava uma coluna
+ * inexistente, derrubando o arquivamento silenciosamente pra todo mundo no
+ * reset em massa). Serve pra identificar e corrigir esses casos retroativos.
+ */
+export async function listarAlunosSemArquivamento() {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows]: any = await db.execute(sql.raw(`
+    SELECT a.id, a.name, a.onboardingLiberadoEm
+    FROM alunos a
+    WHERE a.onboardingLiberado = 1
+      AND NOT EXISTS (SELECT 1 FROM historico_ciclos_aluno h WHERE h.alunoId = a.id)
+    ORDER BY a.onboardingLiberadoEm DESC, a.name
+  `));
+  return Array.isArray(rows) ? rows : [];
+}
+
+/**
+ * Roda o arquivamento retroativo (arquivarCicloAtual) pra uma lista de alunos
+ * que já estão com onboardingLiberado=1 — SEM alterar esse campo, já que ele
+ * já está correto. Só preenche o registro de histórico/auditoria que faltou.
+ */
+export async function backfillArquivamento(alunoIds: number[]) {
+  const db = await getDb();
+  if (!db) return { sucesso: 0, erros: [] as string[] };
+
+  const alunosEncontrados = await db.select({ id: alunos.id, name: alunos.name })
+    .from(alunos)
+    .where(inArray(alunos.id, alunoIds));
+
+  let sucesso = 0;
+  const erros: string[] = [];
+  for (const id of alunoIds) {
+    const aluno = alunosEncontrados.find(a => a.id === id);
+    try {
+      await arquivarCicloAtual(id);
+      sucesso++;
+    } catch (e: any) {
+      const errMsg = e?.message || String(e);
+      console.error(`[DB] Erro no backfill de arquivamento do aluno ${id} (${aluno?.name}):`, e);
+      erros.push(`${aluno?.name || `Aluno ID ${id}`}: ${errMsg}`);
+    }
+  }
+  return { sucesso, erros };
+}
+
 export async function liberarOnboardingEmMassa(alunoIds: number[]) {
   const db = await getDb();
   if (!db) return { success: false, message: 'Erro de conexão com banco', liberados: 0, erros: [] as string[] };
