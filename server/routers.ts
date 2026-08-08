@@ -542,13 +542,19 @@ async function gerarESalvarCertificadoPdf(
   const forwardedProto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "https";
   const host = req.headers.host;
   const baseUrl = `${forwardedProto}://${host}`;
+  // Cada (re)geração grava num caminho com carimbo de hora — garante que a
+  // URL nunca se repete, então não tem cache de CDN antigo pra aparecer no
+  // lugar do PDF novo (o Cache-Control ajuda, mas isso é definitivo).
+  const versao = Date.now();
 
   let certificadoUrl: string | null = null;
   try {
     const verifyUrl = `${baseUrl}/certificados/verificar/${hashDocumento}`;
     const pdfBuffer = await renderPdfFromUrl({ url: verifyUrl, landscape: true });
-    const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}.pdf`;
+    console.log(`[certificacao] certificado: PDF renderizado, ${pdfBuffer.length} bytes`);
+    const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}-v${versao}.pdf`;
     const { url } = await storagePut(storageKey, pdfBuffer, "application/pdf");
+    console.log(`[certificacao] certificado: armazenado em storageKey=${storageKey} url=${url}`);
     await db.updateNivelCertificateArquivo(certId, url);
     certificadoUrl = url;
   } catch (err) {
@@ -576,7 +582,7 @@ async function gerarESalvarCertificadoPdf(
         marginRight: "8mm",
       });
       console.log(`[certificacao] relatório: PDF renderizado, ${pdfBuffer.length} bytes`);
-      const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}-relatorio.pdf`;
+      const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}-relatorio-v${versao}.pdf`;
       const { url } = await storagePut(storageKey, pdfBuffer, "application/pdf");
       console.log(`[certificacao] relatório: armazenado em storageKey=${storageKey} url=${url}`);
       await db.updateNivelCertificateRelatorioUrl(certId, url);
