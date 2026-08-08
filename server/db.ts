@@ -8465,6 +8465,60 @@ export async function backfillArquivamento(alunoIds: number[]) {
   return { sucesso, erros };
 }
 
+/**
+ * Lista PDIs congelados que NUNCA tiveram um reset/arquivamento formal —
+ * padrão mais amplo que listarAlunosSemArquivamento (que só pega quem já
+ * está com onboarding liberado). Cobre também o caso de alunos com 2+
+ * níveis "encerrado" no contrato mas menos resets registrados (ex.: nível
+ * fechado por outro caminho, como congelamento de turma, sem passar pelo
+ * reset individual formal). Um mesmo aluno pode aparecer mais de uma vez,
+ * um item por nível pendente.
+ */
+export async function listarNiveisSemArquivamento() {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows]: any = await db.execute(sql.raw(`
+    SELECT p.id AS pdiId, p.alunoId, a.name AS alunoNome, p.macroInicio, p.macroTermino
+    FROM assessment_pdi p
+    JOIN alunos a ON a.id = p.alunoId
+    WHERE p.status = 'congelado'
+      AND NOT EXISTS (SELECT 1 FROM historico_ciclos_aluno h WHERE h.assessmentPdiId = p.id)
+    ORDER BY a.name, p.macroInicio
+  `));
+  return Array.isArray(rows) ? rows : [];
+}
+
+/**
+ * Roda o arquivamento retroativo pra uma lista de PDIs específicos (não
+ * alunos inteiros) — necessário porque um mesmo aluno pode ter mais de um
+ * nível pendente, e cada arquivamento precisa apontar pro PDI certo (ver
+ * comentário em arquivarCicloAtual sobre por que passar o PDI explícito).
+ */
+export async function backfillArquivamentoPorPdi(itens: Array<{ alunoId: number; pdiId: number }>) {
+  const db = await getDb();
+  if (!db) return { sucesso: 0, erros: [] as string[] };
+
+  const alunoIds = Array.from(new Set(itens.map(i => i.alunoId)));
+  const alunosEncontrados = await db.select({ id: alunos.id, name: alunos.name })
+    .from(alunos)
+    .where(inArray(alunos.id, alunoIds));
+
+  let sucesso = 0;
+  const erros: string[] = [];
+  for (const item of itens) {
+    const aluno = alunosEncontrados.find(a => a.id === item.alunoId);
+    try {
+      await arquivarCicloAtual(item.alunoId, item.pdiId);
+      sucesso++;
+    } catch (e: any) {
+      const errMsg = e?.message || String(e);
+      console.error(`[DB] Erro no backfill do PDI ${item.pdiId} do aluno ${item.alunoId} (${aluno?.name}):`, e);
+      erros.push(`${aluno?.name || `Aluno ID ${item.alunoId}`} (PDI ${item.pdiId}): ${errMsg}`);
+    }
+  }
+  return { sucesso, erros };
+}
+
 export async function liberarOnboardingEmMassa(alunoIds: number[]) {
   const db = await getDb();
   if (!db) return { success: false, message: 'Erro de conexão com banco', liberados: 0, erros: [] as string[] };
@@ -13421,7 +13475,7 @@ export async function ensureHistoricoCiclosTable(): Promise<void> {
  * - Snapshot dos 7 indicadores no momento do encerramento
  * - Congelamento dos PDIs ativos e microciclos de execução
  */
-export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo: number }> {
+export async function arquivarCicloAtual(alunoId: number, pdiIdEspecifico?: number): Promise<{ numeroCiclo: number }> {
   const db = await getDb();
   if (!db) return { numeroCiclo: 1 };
 
@@ -13437,10 +13491,22 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
   // REGRA DE NEGÓCIO: o snapshot do ciclo arquivado deve usar o período do PDI CONGELADO
   // (macroInicio do PDI congelado → data do reset), NÃO o PDI ativo (que é o novo macrociclo).
   // Isso garante que Evolução mostre dados do ciclo anterior e Performance mostre dados do ciclo atual.
-  const [pdiCongeladoRows] = await db.execute(sql.raw(
-    `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'congelado' ORDER BY createdAt DESC LIMIT 1`
-  )) as any;
-  const pdiCongeladoRow = Array.isArray(pdiCongeladoRows) ? pdiCongeladoRows[0] : null;
+  // Quando pdiIdEspecifico é passado (backfill de níveis já encerrados sem reset formal, possivelmente
+  // mais de um pendente por aluno), usa ELE diretamente — sem isso, a função sempre pega o PDI congelado
+  // MAIS RECENTE, então rodar em sequência pra um aluno com 2+ níveis pendentes só arquivaria o mesmo de
+  // novo, nunca alcançando o mais antigo.
+  let pdiCongeladoRow: any = null;
+  if (pdiIdEspecifico) {
+    const [rows] = await db.execute(sql.raw(
+      `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE id = ${pdiIdEspecifico} AND alunoId = ${alunoId} LIMIT 1`
+    )) as any;
+    pdiCongeladoRow = Array.isArray(rows) ? rows[0] : null;
+  } else {
+    const [pdiCongeladoRows] = await db.execute(sql.raw(
+      `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'congelado' ORDER BY createdAt DESC LIMIT 1`
+    )) as any;
+    pdiCongeladoRow = Array.isArray(pdiCongeladoRows) ? pdiCongeladoRows[0] : null;
+  }
   // Fallback: PDI ativo (para alunos sem PDI congelado ainda)
   const [pdiActiveRows] = await db.execute(sql.raw(
     `SELECT id, macroInicio, macroTermino FROM assessment_pdi WHERE alunoId = ${alunoId} AND status = 'ativo' ORDER BY createdAt DESC LIMIT 1`
