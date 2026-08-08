@@ -12764,18 +12764,23 @@ export async function getNivelCertificateByHash(hash: string) {
   // mostra o período de CADA nível lado a lado, sem inventar precisão que
   // os dados não têm.
   const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
-  const hojeStr = new Date().toISOString().split("T")[0];
+  const hojeData = new Date();
   const todosNiveisAluno = await getContratoNiveisByAluno(certificado.alunoId);
   const todosNiveis = todosNiveisAluno
     // Só níveis realmente encerrados. O campo status sozinho não é confiável
     // (já vimos casos com "encerrado" gravado num nível que na prática ainda
     // está em andamento) — por segurança, exige também que a data de término
     // já tenha passado, já que um nível não pode estar concluído se a própria
-    // data final dele ainda está no futuro.
+    // data final dele ainda está no futuro. Usa new Date() em vez de recortar
+    // a string, porque o valor pode chegar como string OU como objeto Date
+    // dependendo da origem do campo — recorte de string quebra em silêncio
+    // quando é um objeto Date (virava algo tipo "Thu Apr 30 20...", que nunca
+    // bate numa comparação de string com "AAAA-MM-DD").
     .filter((n: any) => {
       const temStatusEncerrado = n.status === "encerrado" || n.status === "certificado";
-      const dataFim = n.nivelFim ?? n.dataFim ?? null;
-      const dataJaPassou = dataFim ? String(dataFim).slice(0, 10) <= hojeStr : false;
+      const dataFimRaw = n.nivelFim ?? n.dataFim ?? null;
+      const dataFimDate = dataFimRaw ? new Date(dataFimRaw) : null;
+      const dataJaPassou = dataFimDate && !isNaN(dataFimDate.getTime()) ? dataFimDate <= hojeData : false;
       return temStatusEncerrado && dataJaPassou && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
     })
     .sort((a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99))
