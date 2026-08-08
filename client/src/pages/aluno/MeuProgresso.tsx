@@ -31,6 +31,9 @@ function formatarData(d: string | null | undefined) {
 
 function labelMacrociclo(m: any) {
   if (m.status === "ativo") return "Progresso Atual";
+  if (m.origem === "encerrado-sem-arquivamento") {
+    return m.nivelLabel ? `Nível ${m.nivelLabel} — Encerrado (aguardando arquivamento)` : "Encerrado (aguardando arquivamento)";
+  }
   if (m.nivelLabel) return `Nível ${m.nivelLabel} — Congelado`;
   return `Macrociclo ${m.numeroCiclo} — Congelado`;
 }
