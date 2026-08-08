@@ -351,13 +351,10 @@ export default function MeuProgresso() {
                           </p>
                         </div>
                         <div className="flex gap-2">
-                          {(desempenho.certificacao.certificadoEmitido as any).relatorioUrl && (
-                            <Button asChild size="sm" variant="outline">
-                              <a href={(desempenho.certificacao.certificadoEmitido as any).relatorioUrl} target="_blank" rel="noreferrer">
-                                <Download className="w-4 h-4 mr-1" /> Baixar relatório
-                              </a>
-                            </Button>
-                          )}
+                          <Button size="sm" variant="outline" onClick={handleBaixarPdf} disabled={gerandoPdf}>
+                            {gerandoPdf ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Download className="w-4 h-4 mr-1" />}
+                            Baixar relatório
+                          </Button>
                           {desempenho.certificacao.certificadoEmitido.arquivoUrl && (
                             <Button asChild size="sm" variant="outline">
                               <a href={desempenho.certificacao.certificadoEmitido.arquivoUrl} target="_blank" rel="noreferrer">
