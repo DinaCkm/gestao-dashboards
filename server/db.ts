@@ -8445,24 +8445,41 @@ export async function liberarOnboardingEmMassa(alunoIds: number[]) {
   }
 
   if (idsParaLiberar.length > 0) {
-    // Arquivar ciclo atual de cada aluno antes de liberar
+    // Arquivar ciclo atual de cada aluno antes de liberar — só quem realmente
+    // arquivou com sucesso é que tem o onboarding liberado. Antes, uma falha
+    // aqui só gerava um aviso no log e o aluno era liberado mesmo assim, sem
+    // nenhum registro de reset — deixando o onboarding marcado como "feito"
+    // sobre um ciclo que nunca foi congelado de verdade.
+    const idsComSucesso: number[] = [];
     for (const id of idsParaLiberar) {
+      const aluno = alunosEncontrados.find(a => a.id === id);
       try {
         await arquivarCicloAtual(id);
-      } catch (e) {
-        console.warn(`[DB] Erro ao arquivar ciclo do aluno ${id}:`, e);
+        idsComSucesso.push(id);
+      } catch (e: any) {
+        const errMsg = e?.message || String(e);
+        console.error(`[DB] Erro ao arquivar ciclo do aluno ${id} (${aluno?.name}):`, e);
+        erros.push(`${aluno?.name || `Aluno ID ${id}`}: falha ao arquivar o ciclo — ${errMsg}`);
       }
     }
-    await db.update(alunos).set({
-      onboardingLiberado: 1,
-      onboardingLiberadoEm: new Date(),
-    }).where(inArray(alunos.id, idsParaLiberar));
+    if (idsComSucesso.length > 0) {
+      await db.update(alunos).set({
+        onboardingLiberado: 1,
+        onboardingLiberadoEm: new Date(),
+      }).where(inArray(alunos.id, idsComSucesso));
+    }
+    return {
+      success: true,
+      message: `Onboarding liberado para ${idsComSucesso.length} aluno(s)${erros.length > 0 ? `. ${erros.length} ignorado(s)/com falha — veja a lista.` : '.'}`,
+      liberados: idsComSucesso.length,
+      erros,
+    };
   }
 
   return {
     success: true,
-    message: `Onboarding liberado para ${idsParaLiberar.length} aluno(s)${erros.length > 0 ? `. ${erros.length} ignorado(s).` : '.'}`,
-    liberados: idsParaLiberar.length,
+    message: `Onboarding liberado para 0 aluno(s)${erros.length > 0 ? `. ${erros.length} ignorado(s).` : '.'}`,
+    liberados: 0,
     erros,
   };
 }
@@ -13383,19 +13400,21 @@ export async function arquivarCicloAtual(alunoId: number): Promise<{ numeroCiclo
 
   // Filtros de macrociclo para os indicadores baseados em período
   // Se o PDI tem macroInicio/macroTermino, filtrar eventos/sessões/cases dentro do período
-  const macroInicioFilter = macroInicioStr ? `AND ep.eventDate >= '${macroInicioStr}'` : '';
-  const macroTerminoFilterEp = macroTerminoStr ? `AND ep.eventDate <= '${macroTerminoStr}'` : '';
+  const macroInicioFilter = macroInicioStr ? `AND e.eventDate >= '${macroInicioStr}'` : '';
+  const macroTerminoFilterEp = macroTerminoStr ? `AND e.eventDate <= '${macroTerminoStr}'` : '';
   const macroInicioFilterMs = macroInicioStr ? `AND ms.sessionDate >= '${macroInicioStr}'` : '';
   const macroTerminoFilterMs = macroTerminoStr ? `AND ms.sessionDate <= '${macroTerminoStr}'` : '';
   const macroInicioFilterCs = macroInicioStr ? `AND cs.dataEntrega >= '${macroInicioStr}'` : '';
   const macroTerminoFilterCs = macroTerminoStr ? `AND cs.dataEntrega <= '${macroTerminoStr}'` : '';
 
   // Ind.1: Webinars (% de presenças em eventos dentro do macrociclo)
+  // eventDate mora na tabela events, não em event_participation — precisa do JOIN.
   const [webinarRows] = await db.execute(sql.raw(`
     SELECT
       COUNT(*) as total,
       SUM(CASE WHEN ep.status = 'presente' THEN 1 ELSE 0 END) as presentes
     FROM event_participation ep
+    JOIN events e ON e.id = ep.eventId
     WHERE ep.alunoId = ${alunoId}
       ${macroInicioFilter}
       ${macroTerminoFilterEp}
