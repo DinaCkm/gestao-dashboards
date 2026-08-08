@@ -6110,6 +6110,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const indicadoresV2Congelado = calcularIndicadoresAlunoV2(
         idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMapAll, casesDataAluno, undefined, macrocicloCongelado, compIdToNomeMapAll
       );
+      console.log(`[meuDashboardCongelado] DIAGNÓSTICO aluno=${aluno.id} idUsuario=${idUsuario} historicoId=${input?.historicoId ?? "—"}`);
+      console.log(`[meuDashboardCongelado] macrocicloCongelado=${JSON.stringify(macrocicloCongelado)}`);
+      console.log(`[meuDashboardCongelado] mentorias.length=${mentorias.length} eventos.length=${eventos.length} performance.length=${performance.length} ciclosV2.length=${ciclosV2.length}`);
+      console.log(`[meuDashboardCongelado] consolidado=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
 
       // Calcular indicadores clássicos
       const compObrigatorias: CompetenciaObrigatoria[] = (await db.getCompetenciasObrigatoriasAluno(aluno.id)).map(c => ({
