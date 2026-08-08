@@ -6068,14 +6068,27 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
       }));
 
-      // Cases do aluno
-      const casesDataAluno: CaseSucessoData[] = casesAluno.map(c => ({
-        alunoId: c.alunoId,
-        trilhaId: c.trilhaId,
-        trilhaNome: c.trilhaNome,
-        entregue: c.entregue === 1,
-        dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : null,
-      }));
+      // Cases do aluno — filtrados pra APENAS o período deste macrociclo. Sem
+      // isso, um case entregue num nível anterior "passava" no teste de
+      // qualquer nível posterior também (a checagem só olhava "entregue antes
+      // do fim deste ciclo", e um case antigo sempre satisfaz isso pra ciclos
+      // mais recentes) — creditando o mesmo case de aplicabilidade em vários
+      // relatórios ao mesmo tempo.
+      const casesDataAluno: CaseSucessoData[] = casesAluno
+        .filter((c: any) => {
+          if (!c.dataEntrega) return true; // sem data: mantém comportamento antigo (aceita)
+          const dt = new Date(c.dataEntrega);
+          if (dataCorte && dt > dataCorte) return false;
+          if (dataInicioPeriodo && dt <= dataInicioPeriodo) return false;
+          return true;
+        })
+        .map(c => ({
+          alunoId: c.alunoId,
+          trilhaId: c.trilhaId,
+          trilhaNome: c.trilhaNome,
+          entregue: c.entregue === 1,
+          dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : null,
+        }));
 
       // Macrociclo: usar período do(s) PDI(s) congelados. Quando um historicoId
       // específico foi pedido, usa SÓ o PDI daquele snapshot — agregar TODOS os
@@ -6110,6 +6123,43 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const indicadoresV2Congelado = calcularIndicadoresAlunoV2(
         idUsuario, mentorias, eventos, performance, ciclosV2, compIdToCodigoMapAll, casesDataAluno, undefined, macrocicloCongelado, compIdToNomeMapAll
       );
+
+      // O Ind.6 (Aplicabilidade) que sai de calcularIndicadoresAlunoV2 é uma
+      // versão simplificada (só "entregou o case: sim/não"). A fonte oficial
+      // — a mesma usada na tela Performance, com nota da mentora/aluno por
+      // tarefa + o case — é calcularAplicabilidadeFinal. Sobrescreve aqui pra
+      // as duas telas baterem, escopando ao período exato deste macrociclo
+      // (em vez do corte fixo usado na Performance, que é só pro ciclo atual).
+      if (indicadoresV2Congelado?.consolidado) {
+        const sessoesComAplicPeriodo = (sessoesAluno || []).filter((s: any) => {
+          const dt = s.sessionDate ? new Date(s.sessionDate) : null;
+          if (!dt) return false;
+          if (dataCorte && dt > dataCorte) return false;
+          if (dataInicioPeriodo && dt <= dataInicioPeriodo) return false;
+          return s.notaAlunoAplicabilidade !== null || s.notaMentoraAplicabilidade !== null;
+        });
+        const microTarefaCongelado = calcularMicroTarefaAplicabilidade(
+          sessoesComAplicPeriodo.map((s: any) => ({
+            notaAlunoAplicabilidade: s.notaAlunoAplicabilidade,
+            notaMentoraAplicabilidade: s.notaMentoraAplicabilidade,
+          }))
+        );
+        const caseAplicavelCongelado = casesDataAluno.length > 0;
+        const anyCaseEntregueCongelado = casesDataAluno.some((c: any) => c.entregue === true);
+        const microCasePercentualCongelado = caseAplicavelCongelado ? (anyCaseEntregueCongelado ? 100 : 0) : null;
+        const aplicabilidadeCongelada = calcularAplicabilidadeFinal({
+          microTarefaPercentual: microTarefaCongelado.percentual,
+          microCasePercentual: microCasePercentualCongelado,
+          caseAplicavel: caseAplicavelCongelado,
+          provisoria: microTarefaCongelado.provisoria,
+          totalTarefasComAplicabilidade: microTarefaCongelado.total,
+          totalCasesConsiderados: caseAplicavelCongelado ? 1 : 0,
+        });
+        if (aplicabilidadeCongelada.percentualFinal !== null) {
+          (indicadoresV2Congelado.consolidado as any).ind6_aplicabilidade = aplicabilidadeCongelada.percentualFinal;
+        }
+      }
+
       console.log(`[meuDashboardCongelado] DIAGNÓSTICO aluno=${aluno.id} idUsuario=${idUsuario} historicoId=${input?.historicoId ?? "—"}`);
       console.log(`[meuDashboardCongelado] macrocicloCongelado=${JSON.stringify(macrocicloCongelado)}`);
       console.log(`[meuDashboardCongelado] mentorias.length=${mentorias.length} eventos.length=${eventos.length} performance.length=${performance.length} ciclosV2.length=${ciclosV2.length}`);
