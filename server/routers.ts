@@ -10705,6 +10705,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
             cargo: a.cargo,
             imagemAssinaturaUrl: a.imagemAssinaturaUrl,
           })),
+          todosNiveis: data.todosNiveis || [],
         };
       }),
 
