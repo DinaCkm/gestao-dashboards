@@ -47,7 +47,8 @@ function buildPublicUrl(key: string): string {
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream"
+  contentType = "application/octet-stream",
+  cacheControl = "public, max-age=0, must-revalidate"
 ): Promise<{ key: string; url: string }> {
   const { bucketName } = requireR2Env();
   const client = getR2Client();
@@ -59,6 +60,11 @@ export async function storagePut(
       Key: key,
       Body: data,
       ContentType: contentType,
+      // Sem isso, a Cloudflare pode continuar servindo uma cópia em cache do
+      // arquivo antigo mesmo depois de regravar o objeto na mesma URL — foi
+      // exatamente o que aconteceu com PDFs de certificado regenerados
+      // (a URL não muda entre regenerações, então o cache "grudava").
+      CacheControl: cacheControl,
     })
   );
 
