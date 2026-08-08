@@ -6077,12 +6077,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         dataEntrega: c.dataEntrega ? new Date(c.dataEntrega) : null,
       }));
 
-      // Macrociclo: usar período dos PDIs congelados
-      const macroInicioCongelado = pdisCongeladosCheck
+      // Macrociclo: usar período do(s) PDI(s) congelados. Quando um historicoId
+      // específico foi pedido, usa SÓ o PDI daquele snapshot — agregar TODOS os
+      // PDIs congelados do aluno (comportamento anterior) juntava datas de
+      // níveis diferentes numa única janela, bagunçando o cálculo quando o
+      // aluno tem mais de um nível já congelado.
+      let pdisParaJanela = pdisCongeladosCheck;
+      if (input?.historicoId) {
+        const database = await getDb();
+        const [historicoRow]: any = database ? await database.execute(sql.raw(
+          `SELECT assessmentPdiId FROM historico_ciclos_aluno WHERE id = ${input.historicoId} LIMIT 1`
+        )) : [[]];
+        const assessmentPdiIdDoSnapshot = Array.isArray(historicoRow) ? historicoRow[0]?.assessmentPdiId : null;
+        if (assessmentPdiIdDoSnapshot) {
+          const filtrado = pdisCongeladosCheck.filter((p: any) => p.id === assessmentPdiIdDoSnapshot);
+          if (filtrado.length > 0) pdisParaJanela = filtrado;
+        }
+      }
+      const macroInicioCongelado = pdisParaJanela
         .filter(p => p.macroInicio)
         .map(p => String(p.macroInicio).split('T')[0])
         .sort()[0] || null;
-      const macroTerminoCongelado = pdisCongeladosCheck
+      const macroTerminoCongelado = pdisParaJanela
         .filter(p => p.macroTermino)
         .map(p => String(p.macroTermino).split('T')[0])
         .sort().reverse()[0] || null;
