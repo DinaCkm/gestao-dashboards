@@ -82,6 +82,20 @@ export default function CertificadoPublico() {
           </p>
 
           <p className="text-gray-500 mt-4 print:mt-3">{formatarData(data.emitidoEm)}.</p>
+
+          {/* Trajetória completa — só aparece quando o aluno tem mais de um nível.
+              Mostra o período de CADA nível, em vez de tentar precisar uma fronteira
+              exata entre eles que nem sempre foi capturada por um reset formal. */}
+          {data.todosNiveis && data.todosNiveis.length > 1 && (
+            <p className="text-xs text-gray-500 mt-3 max-w-2xl mx-auto">
+              Trajetória completa no programa: {data.todosNiveis.map((n: any, idx: number) => (
+                <span key={n.nivel}>
+                  {idx > 0 ? " · " : ""}
+                  <strong>Nível {n.nivel}</strong>: {formatarData(n.dataInicio)} a {formatarData(n.dataFim)}
+                </span>
+              ))}
+            </p>
+          )}
         </div>
 
         {/* Validade documental */}
