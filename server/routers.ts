@@ -571,6 +571,14 @@ async function gerarESalvarCertificadoPdf(
     const macrociclo = macrociclos.find((m: any) => m.contratoNivelId === contratoNivelId);
     console.log(`[certificacao] relatório: macrociclo ${macrociclo ? `encontrado (chave=${macrociclo.chave})` : "NÃO encontrado"} para alunoId=${alunoId} contratoNivelId=${contratoNivelId}`);
     if (macrociclo) {
+      // Limpa o cache de dados (sessões, eventos, performance etc.) antes de
+      // renderizar — sem isso, se esse cache foi preenchido ANTES do
+      // arquivamento do ciclo acontecer (ex.: na mesma requisição de
+      // emissão), o relatório é gerado com indicadores em branco/zerados,
+      // mesmo com os dados corretos já gravados no banco. É por isso que
+      // "regenerar" minutos depois sempre funciona (o cache de 5 min já
+      // expirou até lá) mas a emissão original às vezes não.
+      cacheInvalidate();
       const relatorioPageUrl = `${baseUrl}/aluno/relatorio-final/${encodeURIComponent(macrociclo.chave)}?alunoId=${alunoId}`;
       console.log(`[certificacao] relatório: renderizando ${relatorioPageUrl}`);
       const pdfBuffer = await renderPdfFromUrl({
