@@ -18,6 +18,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../_core/trpc";
 import { renderPdfFromUrl } from "../pdfRenderer";
+import { cacheInvalidate } from "../dataCache";
 import {
   getAlunoFromCtx,
   getAlunoById,
@@ -263,6 +264,11 @@ export const meuDesempenhoRouter = router({
       const host = ctx.req.headers.host;
       const baseUrl = `${forwardedProto}://${host}`;
       const url = `${baseUrl}/aluno/relatorio-final/${encodeURIComponent(input.chave)}`;
+
+      // Limpa o cache de dados (sessões, eventos, performance etc.) antes de
+      // renderizar — garante que este download sob demanda sempre reflita o
+      // estado mais recente, nunca uma versão calculada minutos atrás.
+      cacheInvalidate();
 
       try {
         const pdfBuffer = await renderPdfFromUrl({
