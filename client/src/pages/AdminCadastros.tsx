@@ -601,36 +601,53 @@ export default function AdminCadastros() {
         )}
 
         {niveisSemArquivamento && niveisSemArquivamento.length > 0 && (
-          <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
-            <RotateCcw className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <p className="font-semibold text-amber-900 text-sm">
-                {niveisSemArquivamento.length} nível(is) já encerrado(s) no contrato mas sem nenhum reset formal
-              </p>
-              <p className="text-amber-700 text-xs mt-0.5">
-                Comum em turmas encerradas por outro caminho (ex.: congelamento de turma) em vez do reset
-                individual. Sem isso, o certificado/relatório desse nível não consegue mostrar os indicadores.
-                Corrige o arquivamento retroativamente, sem alterar mais nada.
-              </p>
-              <details className="mt-1.5">
-                <summary className="text-xs text-amber-700 cursor-pointer underline">Ver lista</summary>
-                <ul className="text-xs text-amber-800 mt-1 space-y-0.5">
-                  {niveisSemArquivamento.map((n: any) => (
-                    <li key={n.pdiId}>{n.alunoNome} — PDI #{n.pdiId} ({n.macroInicio} a {n.macroTermino})</li>
-                  ))}
-                </ul>
-              </details>
+          <div className="bg-amber-50 border border-amber-300 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <RotateCcw className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-amber-900 text-sm">
+                  {niveisSemArquivamento.length} nível(is) já encerrado(s) no contrato mas sem nenhum reset formal
+                </p>
+                <p className="text-amber-700 text-xs mt-0.5">
+                  Comum em turmas encerradas por outro caminho (ex.: congelamento de turma) em vez do reset
+                  individual. Corrige o arquivamento retroativamente, sem alterar mais nada. Corrija por
+                  empresa, uma de cada vez, pra conferir com calma antes de seguir pra próxima.
+                </p>
+              </div>
             </div>
-            <Button
-              size="sm"
-              className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
-              disabled={backfillArquivamentoPorPdi.isPending}
-              onClick={() => backfillArquivamentoPorPdi.mutate({
-                itens: niveisSemArquivamento.map((n: any) => ({ alunoId: n.alunoId, pdiId: n.pdiId })),
-              })}
-            >
-              {backfillArquivamentoPorPdi.isPending ? "Corrigindo..." : `Corrigir ${niveisSemArquivamento.length} nível(is)`}
-            </Button>
+            <div className="mt-3 space-y-2">
+              {Object.entries(
+                niveisSemArquivamento.reduce((acc: Record<string, any[]>, n: any) => {
+                  const key = n.empresaNome || "Sem empresa";
+                  (acc[key] = acc[key] || []).push(n);
+                  return acc;
+                }, {})
+              ).map(([empresa, itens]: [string, any]) => (
+                <details key={empresa} className="bg-white border border-amber-200 rounded-lg">
+                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer text-sm">
+                    <span className="font-medium text-amber-900">{empresa} — {itens.length} nível(is)</span>
+                    <Button
+                      size="sm"
+                      className="bg-amber-600 hover:bg-amber-700 text-white ml-3"
+                      disabled={backfillArquivamentoPorPdi.isPending}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        backfillArquivamentoPorPdi.mutate({
+                          itens: itens.map((n: any) => ({ alunoId: n.alunoId, pdiId: n.pdiId })),
+                        });
+                      }}
+                    >
+                      {backfillArquivamentoPorPdi.isPending ? "Corrigindo..." : `Corrigir ${itens.length}`}
+                    </Button>
+                  </summary>
+                  <ul className="text-xs text-amber-800 px-3 pb-2 space-y-0.5">
+                    {itens.map((n: any) => (
+                      <li key={n.pdiId}>{n.alunoNome} — PDI #{n.pdiId} ({n.macroInicio} a {n.macroTermino})</li>
+                    ))}
+                  </ul>
+                </details>
+              ))}
+            </div>
           </div>
         )}
 
