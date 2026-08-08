@@ -12763,9 +12763,13 @@ export async function getNivelCertificateByHash(hash: string) {
   // reconstruir retroativamente uma data exata de transição (arriscado),
   // mostra o período de CADA nível lado a lado, sem inventar precisão que
   // os dados não têm.
+  const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
   const todosNiveisAluno = await getContratoNiveisByAluno(certificado.alunoId);
   const todosNiveis = todosNiveisAluno
-    .filter((n: any) => n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim)
+    // Só níveis realmente encerrados — um nível ainda em andamento não é
+    // "concluído", mesmo que já tenha data de início registrada.
+    .filter((n: any) => (n.status === "encerrado" || n.status === "certificado") && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim))
+    .sort((a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99))
     .map((n: any) => ({
       nivel: n.nivel,
       dataInicio: n.nivelInicio ?? n.dataInicio ?? null,
