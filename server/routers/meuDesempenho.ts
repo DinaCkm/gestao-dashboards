@@ -197,6 +197,15 @@ export const meuDesempenhoRouter = router({
         }
       }
 
+      const todosNiveisAluno = await getContratoNiveisByAluno(alunoId);
+      const todosNiveis = todosNiveisAluno
+        .filter((n: any) => n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim)
+        .map((n: any) => ({
+          nivel: n.nivel,
+          dataInicio: n.nivelInicio ?? n.dataInicio ?? null,
+          dataFim: n.nivelFim ?? n.dataFim ?? null,
+        }));
+
       return {
         aluno: { id: aluno.id, nome: aluno.name },
         macrociclo: {
@@ -216,6 +225,7 @@ export const meuDesempenhoRouter = router({
           nomeExibicao: a.nomeExibicao,
           cargo: a.cargo,
         })),
+        todosNiveis,
       };
     }),
 
