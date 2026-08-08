@@ -719,7 +719,7 @@ export default function Performance() {
               <p className="font-semibold text-amber-900 text-sm">Novo ciclo de desenvolvimento iniciado</p>
               <p className="text-amber-700 text-xs mt-0.5">
                 Seu ciclo anterior foi arquivado. Os indicadores abaixo refletem o ciclo atual (em andamento).
-                Acesse a página <strong>Evolução</strong> para ver o histórico completo dos ciclos anteriores.
+                Acesse <strong>Meu Progresso e Certificados</strong> para ver o histórico completo dos ciclos anteriores.
               </p>
             </div>
           </div>
