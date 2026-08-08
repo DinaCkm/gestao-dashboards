@@ -212,6 +212,7 @@ export default function AdminCadastros() {
   const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: adminUsers, refetch: refetchAdminUsers, isLoading: loadingAdminUsers } = trpc.admin.listAdmins.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: alunosSemArquivamento, refetch: refetchSemArquivamento } = trpc.admin.listarAlunosSemArquivamento.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: niveisSemArquivamento, refetch: refetchNiveisSemArquivamento } = trpc.admin.listarNiveisSemArquivamento.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
 
 
   // Mutations
@@ -476,6 +477,16 @@ export default function AdminCadastros() {
     },
     onError: (err: any) => toast.error(`Erro ao corrigir arquivamento: ${err.message}`),
   });
+  const backfillArquivamentoPorPdi = trpc.admin.backfillArquivamentoPorPdi.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`Arquivamento corrigido para ${data.sucesso} nível(is).${data.erros?.length ? ` ${data.erros.length} com falha.` : ""}`);
+      if (data.erros && data.erros.length > 0) {
+        data.erros.forEach((e: string) => toast.warning(e));
+      }
+      refetchNiveisSemArquivamento();
+    },
+    onError: (err: any) => toast.error(`Erro ao corrigir arquivamento: ${err.message}`),
+  });
   const liberarOnboardingEmMassa = trpc.admin.liberarOnboardingEmMassa.useMutation({
     onSuccess: (data: any) => {
       if (data.success) {
@@ -585,6 +596,40 @@ export default function AdminCadastros() {
               onClick={() => backfillArquivamento.mutate({ alunoIds: alunosSemArquivamento.map((a: any) => a.id) })}
             >
               {backfillArquivamento.isPending ? "Corrigindo..." : `Corrigir ${alunosSemArquivamento.length} aluno(s)`}
+            </Button>
+          </div>
+        )}
+
+        {niveisSemArquivamento && niveisSemArquivamento.length > 0 && (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+            <RotateCcw className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900 text-sm">
+                {niveisSemArquivamento.length} nível(is) já encerrado(s) no contrato mas sem nenhum reset formal
+              </p>
+              <p className="text-amber-700 text-xs mt-0.5">
+                Comum em turmas encerradas por outro caminho (ex.: congelamento de turma) em vez do reset
+                individual. Sem isso, o certificado/relatório desse nível não consegue mostrar os indicadores.
+                Corrige o arquivamento retroativamente, sem alterar mais nada.
+              </p>
+              <details className="mt-1.5">
+                <summary className="text-xs text-amber-700 cursor-pointer underline">Ver lista</summary>
+                <ul className="text-xs text-amber-800 mt-1 space-y-0.5">
+                  {niveisSemArquivamento.map((n: any) => (
+                    <li key={n.pdiId}>{n.alunoNome} — PDI #{n.pdiId} ({n.macroInicio} a {n.macroTermino})</li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+            <Button
+              size="sm"
+              className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
+              disabled={backfillArquivamentoPorPdi.isPending}
+              onClick={() => backfillArquivamentoPorPdi.mutate({
+                itens: niveisSemArquivamento.map((n: any) => ({ alunoId: n.alunoId, pdiId: n.pdiId })),
+              })}
+            >
+              {backfillArquivamentoPorPdi.isPending ? "Corrigindo..." : `Corrigir ${niveisSemArquivamento.length} nível(is)`}
             </Button>
           </div>
         )}
