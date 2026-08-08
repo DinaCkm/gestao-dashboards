@@ -8423,6 +8423,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .mutation(async ({ input }) => {
         return await db.liberarOnboardingEmMassa(input.alunoIds);
       }),
+    // Alunos liberados sem arquivamento gravado (caso do bug de 2026-08-08) + correção retroativa
+    listarAlunosSemArquivamento: adminOrAdmin2Procedure.query(async () => {
+      return await db.listarAlunosSemArquivamento();
+    }),
+    backfillArquivamento: adminOrAdmin2Procedure
+      .input(z.object({ alunoIds: z.array(z.number()).min(1) }))
+      .mutation(async ({ input }) => {
+        return await db.backfillArquivamento(input.alunoIds);
+      }),
     // Reverter onboarding liberado (desfaz liberarOnboarding)
     reverterOnboarding: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
