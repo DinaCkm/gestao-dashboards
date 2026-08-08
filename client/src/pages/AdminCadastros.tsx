@@ -211,6 +211,7 @@ export default function AdminCadastros() {
   const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
   const { data: adminUsers, refetch: refetchAdminUsers, isLoading: loadingAdminUsers } = trpc.admin.listAdmins.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: alunosSemArquivamento, refetch: refetchSemArquivamento } = trpc.admin.listarAlunosSemArquivamento.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
 
 
   // Mutations
@@ -465,6 +466,16 @@ export default function AdminCadastros() {
     },
     onError: (err: any) => toast.error(`Erro ao reverter onboarding: ${err.message}`),
   });
+  const backfillArquivamento = trpc.admin.backfillArquivamento.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`Arquivamento corrigido para ${data.sucesso} aluno(s).${data.erros?.length ? ` ${data.erros.length} com falha.` : ""}`);
+      if (data.erros && data.erros.length > 0) {
+        data.erros.forEach((e: string) => toast.warning(e));
+      }
+      refetchSemArquivamento();
+    },
+    onError: (err: any) => toast.error(`Erro ao corrigir arquivamento: ${err.message}`),
+  });
   const liberarOnboardingEmMassa = trpc.admin.liberarOnboardingEmMassa.useMutation({
     onSuccess: (data: any) => {
       if (data.success) {
@@ -546,6 +557,37 @@ export default function AdminCadastros() {
             Gerencie empresas, mentores, gerentes e acesso de usuários
           </p>
         </div>
+
+        {alunosSemArquivamento && alunosSemArquivamento.length > 0 && (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+            <RotateCcw className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900 text-sm">
+                {alunosSemArquivamento.length} aluno(s) com onboarding liberado mas sem o ciclo anterior arquivado
+              </p>
+              <p className="text-amber-700 text-xs mt-0.5">
+                Causado por um bug já corrigido (reset em massa de 08/08). Corrige o arquivamento retroativamente,
+                sem alterar o onboarding já liberado desses alunos.
+              </p>
+              <details className="mt-1.5">
+                <summary className="text-xs text-amber-700 cursor-pointer underline">Ver lista</summary>
+                <ul className="text-xs text-amber-800 mt-1 space-y-0.5">
+                  {alunosSemArquivamento.map((a: any) => (
+                    <li key={a.id}>{a.name}</li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+            <Button
+              size="sm"
+              className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
+              disabled={backfillArquivamento.isPending}
+              onClick={() => backfillArquivamento.mutate({ alunoIds: alunosSemArquivamento.map((a: any) => a.id) })}
+            >
+              {backfillArquivamento.isPending ? "Corrigindo..." : `Corrigir ${alunosSemArquivamento.length} aluno(s)`}
+            </Button>
+          </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-7">
