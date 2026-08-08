@@ -75,27 +75,28 @@ export default function CertificadoPublico() {
             concluiu a etapa <strong>{nivelTitulo}</strong>
             {data.turmaNome ? <>, da turma <strong>{data.turmaNome}</strong></> : null}, do Programa de
             Desenvolvimento de Competências de Liderança - Eco do Bem
-            {data.programaNome ? <> (<strong>{data.programaNome}</strong>)</> : null}, realizada no período
-            de <strong>{formatarData(data.periodo?.dataInicio)}</strong> a{" "}
-            <strong>{formatarData(data.periodo?.dataFim)}</strong>, atendendo aos critérios de
-            participação, desempenho e entregas estabelecidos para esta etapa de desenvolvimento.
+            {data.programaNome ? <> (<strong>{data.programaNome}</strong>)</> : null}, realizada no
+            período de{" "}
+            {data.todosNiveis && data.todosNiveis.length > 1 ? (
+              <>
+                {data.todosNiveis.map((n: any, idx: number) => (
+                  <span key={n.nivel}>
+                    <strong>Nível {n.nivel}</strong>: {formatarData(n.dataInicio)} a {formatarData(n.dataFim)}
+                    {idx < data.todosNiveis.length - 1 ? " e " : ""}
+                  </span>
+                ))}
+              </>
+            ) : (
+              <>
+                <strong>{formatarData(data.periodo?.dataInicio)}</strong> a{" "}
+                <strong>{formatarData(data.periodo?.dataFim)}</strong>
+              </>
+            )}
+            , atendendo aos critérios de participação, desempenho e entregas estabelecidos para esta
+            etapa de desenvolvimento.
           </p>
 
           <p className="text-gray-500 mt-4 print:mt-3">{formatarData(data.emitidoEm)}.</p>
-
-          {/* Trajetória completa — só aparece quando o aluno tem mais de um nível.
-              Mostra o período de CADA nível, em vez de tentar precisar uma fronteira
-              exata entre eles que nem sempre foi capturada por um reset formal. */}
-          {data.todosNiveis && data.todosNiveis.length > 1 && (
-            <p className="text-xs text-gray-500 mt-3 max-w-2xl mx-auto">
-              Trajetória completa no programa: {data.todosNiveis.map((n: any, idx: number) => (
-                <span key={n.nivel}>
-                  {idx > 0 ? " · " : ""}
-                  <strong>Nível {n.nivel}</strong>: {formatarData(n.dataInicio)} a {formatarData(n.dataFim)}
-                </span>
-              ))}
-            </p>
-          )}
         </div>
 
         {/* Validade documental */}
