@@ -75,11 +75,11 @@ export default function CertificadoPublico() {
             {data.todosNiveis && data.todosNiveis.length > 1 ? (
               <>concluiu etapas do Programa de Desenvolvimento de Competências de Liderança - Eco do Bem</>
             ) : (
-              <>concluiu a etapa <strong>{nivelTitulo}</strong></>
-            )}
-            {data.turmaNome ? <>, da turma <strong>{data.turmaNome}</strong></> : null}
-            {data.todosNiveis && data.todosNiveis.length > 1 ? null : (
-              <>, do Programa de Desenvolvimento de Competências de Liderança - Eco do Bem</>
+              <>
+                concluiu a etapa <strong>{nivelTitulo}</strong>
+                {data.turmaNome ? <>, da turma <strong>{data.turmaNome}</strong></> : null}, do Programa de
+                Desenvolvimento de Competências de Liderança - Eco do Bem
+              </>
             )}
             {data.programaNome ? <> (<strong>{data.programaNome}</strong>)</> : null}, realizada no
             período de{" "}
