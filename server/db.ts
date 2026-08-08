@@ -8478,12 +8478,14 @@ export async function listarNiveisSemArquivamento() {
   const db = await getDb();
   if (!db) return [];
   const [rows]: any = await db.execute(sql.raw(`
-    SELECT p.id AS pdiId, p.alunoId, a.name AS alunoNome, p.macroInicio, p.macroTermino
+    SELECT p.id AS pdiId, p.alunoId, a.name AS alunoNome, p.macroInicio, p.macroTermino,
+           COALESCE(prog.name, 'Sem empresa') AS empresaNome
     FROM assessment_pdi p
     JOIN alunos a ON a.id = p.alunoId
+    LEFT JOIN programs prog ON prog.id = a.programId
     WHERE p.status = 'congelado'
       AND NOT EXISTS (SELECT 1 FROM historico_ciclos_aluno h WHERE h.assessmentPdiId = p.id)
-    ORDER BY a.name, p.macroInicio
+    ORDER BY empresaNome, a.name, p.macroInicio
   `));
   return Array.isArray(rows) ? rows : [];
 }
