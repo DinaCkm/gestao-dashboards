@@ -8466,6 +8466,17 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .mutation(async ({ input }) => {
         return await db.backfillArquivamento(input.alunoIds);
       }),
+    // Níveis "encerrado" no contrato sem NENHUM reset formal correspondente —
+    // padrão mais amplo, pega também quem nunca teve onboarding liberado
+    // (ex.: nível fechado por congelamento de turma em vez de reset individual).
+    listarNiveisSemArquivamento: adminOrAdmin2Procedure.query(async () => {
+      return await db.listarNiveisSemArquivamento();
+    }),
+    backfillArquivamentoPorPdi: adminOrAdmin2Procedure
+      .input(z.object({ itens: z.array(z.object({ alunoId: z.number(), pdiId: z.number() })).min(1) }))
+      .mutation(async ({ input }) => {
+        return await db.backfillArquivamentoPorPdi(input.itens);
+      }),
     // Reverter onboarding liberado (desfaz liberarOnboarding)
     reverterOnboarding: adminOrAdmin2Procedure
       .input(z.object({ alunoId: z.number() }))
