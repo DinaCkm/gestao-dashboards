@@ -6,7 +6,9 @@ function formatarData(d: string | null | undefined) {
   if (!d) return "—";
   const date = new Date(String(d).length <= 10 ? `${d}T00:00:00` : d);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("pt-BR");
+  // timeZone: "UTC" evita deslocamento de um dia (ver mesmo comentário em
+  // CertificadoPublico.tsx).
+  return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
 function labelMacrociclo(nivelLabel: string | null, numeroCiclo: number | null) {
