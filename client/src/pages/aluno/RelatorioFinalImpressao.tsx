@@ -136,6 +136,20 @@ export default function RelatorioFinalImpressao() {
         </p>
       </div>
 
+      {/* Trajetória completa — só aparece quando o aluno tem mais de um nível.
+          Mostra o período de CADA nível, em vez de tentar precisar uma fronteira
+          exata entre eles que nem sempre foi capturada por um reset formal. */}
+      {desempenho.todosNiveis && desempenho.todosNiveis.length > 1 && (
+        <p className="text-[11px] text-gray-500 text-center mt-1.5">
+          Trajetória completa no programa: {desempenho.todosNiveis.map((n: any, idx: number) => (
+            <span key={n.nivel}>
+              {idx > 0 ? " · " : ""}
+              <strong>Nível {n.nivel}</strong>: {formatarData(n.dataInicio)} a {formatarData(n.dataFim)}
+            </span>
+          ))}
+        </p>
+      )}
+
       <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>1. Síntese executiva</h2>
       <div className="grid grid-cols-3 border" style={{ borderColor: "#E5E7EB" }}>
         <div className="p-3 border-b border-r" style={{ borderColor: "#E5E7EB" }}>
