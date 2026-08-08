@@ -28,7 +28,7 @@ const ALL_NAV_ITEMS = [
   // { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true }, // oculto — acesso via Portal do Aluno > Metas
   { label: "Performance", path: "/performance", icon: TrendingUp, requiresAceite: true },
   { label: "Meu Progresso e Certificados", path: "/aluno/meu-progresso", icon: Award, requiresAceite: true },
-  { label: "Evolução", path: "/evolucao-v2", icon: Sparkles, requiresAceite: true },
+  // { label: "Evolução", path: "/evolucao-v2", icon: Sparkles, requiresAceite: true }, // oculto — Meu Progresso e Certificados já mostra o resultado congelado
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
 ];
 
