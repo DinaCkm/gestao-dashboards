@@ -406,6 +406,24 @@ export function calcularIndicadoresCiclo(
     const concluida = aulasDisponiveis > 0 && aulasConcluidas >= aulasDisponiveis;
     const notaAvaliacao = perfComp?.notaAvaliacao !== undefined && perfComp?.notaAvaliacao >= 0 
       ? perfComp.notaAvaliacao * 10 : null;
+
+    // Competência sem NENHUM conteúdo/aula disponibilizada no sistema (nunca
+    // existiu curso vinculado a ela) não é uma competência "não cumprida" —
+    // é uma competência que o aluno nunca teve como cursar. Contá-la contra
+    // ele penaliza por uma falha de atribuição de conteúdo, não de
+    // desempenho. Fica de fora do cálculo (nem numerador nem denominador),
+    // mas continua no detalhe pra ficar visível que existe/está pendente.
+    if (aulasDisponiveis === 0 && !perfComp) {
+      competenciasDetalhe.push({
+        competenciaId: compId,
+        nome: compIdToNomeMap?.get(compId) || codigo || `Comp ${compId}`,
+        aulasConcluidas: 0,
+        aulasDisponiveis: 0,
+        notaAvaliacao: null,
+        concluida: false,
+      });
+      continue;
+    }
     
     // Só entra no cálculo se prazo vencido OU já concluída
     if (!microTerminoVencido && !concluida) {
