@@ -589,14 +589,9 @@ export default function AdminCadastros() {
                 </ul>
               </details>
             </div>
-            <Button
-              size="sm"
-              className="bg-amber-600 hover:bg-amber-700 text-white shrink-0"
-              disabled={backfillArquivamento.isPending}
-              onClick={() => backfillArquivamento.mutate({ alunoIds: alunosSemArquivamento.map((a: any) => a.id) })}
-            >
-              {backfillArquivamento.isPending ? "Corrigindo..." : `Corrigir ${alunosSemArquivamento.length} aluno(s)`}
-            </Button>
+            {/* Botão de correção em massa temporariamente oculto — descobrimos hoje um
+                bug relacionado (data de conclusão do arquivamento gravada errada) que
+                precisa ser conferido caso a caso antes de rodar em massa de novo. */}
           </div>
         )}
 
@@ -626,19 +621,9 @@ export default function AdminCadastros() {
                 <details key={empresa} className="bg-white border border-amber-200 rounded-lg">
                   <summary className="flex items-center justify-between px-3 py-2 cursor-pointer text-sm">
                     <span className="font-medium text-amber-900">{empresa} — {itens.length} nível(is)</span>
-                    <Button
-                      size="sm"
-                      className="bg-amber-600 hover:bg-amber-700 text-white ml-3"
-                      disabled={backfillArquivamentoPorPdi.isPending}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        backfillArquivamentoPorPdi.mutate({
-                          itens: itens.map((n: any) => ({ alunoId: n.alunoId, pdiId: n.pdiId })),
-                        });
-                      }}
-                    >
-                      {backfillArquivamentoPorPdi.isPending ? "Corrigindo..." : `Corrigir ${itens.length}`}
-                    </Button>
+                    {/* Botão de correção em massa temporariamente oculto — descobrimos hoje um
+                        bug relacionado (data de conclusão do arquivamento gravada errada) que
+                        precisa ser conferido caso a caso antes de rodar em massa de novo. */}
                   </summary>
                   <ul className="text-xs text-amber-800 px-3 pb-2 space-y-0.5">
                     {itens.map((n: any) => (
