@@ -6253,11 +6253,29 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         };
       });
 
+      // Carga horária total do programa (só pedido explícito de um aluno):
+      // 10h por competência concluída, 1h por tarefa entregue, 1h por
+      // mentoria presente, 1h por webinar presente — sempre dentro do
+      // mesmo período usado pros indicadores (o do reset), nunca contando
+      // atividade fora da janela deste nível específico.
+      const horasCompetencias = (indicadoresV2Congelado.consolidado.detalhes.competencias.finalizadas || 0) * 10;
+      const horasTarefas = (indicadoresV2Congelado.consolidado.detalhes.tarefas.entregues || 0) * 1;
+      const horasMentorias = (indicadoresV2Congelado.consolidado.detalhes.engajamento.sessoes || 0) * 1;
+      const horasWebinars = (indicadoresV2Congelado.consolidado.detalhes.webinars.presentes || 0) * 1;
+      const cargaHorariaTotal = horasCompetencias + horasTarefas + horasMentorias + horasWebinars;
+
       return {
         found: true as const,
         macrocicloLabel: numeroCicloArquivadoAtual
           ? `Macrociclo ${numeroCicloArquivadoAtual} — Congelado`
           : 'Macrociclo 1 — Congelado',
+        cargaHoraria: {
+          total: cargaHorariaTotal,
+          competencias: horasCompetencias,
+          tarefas: horasTarefas,
+          mentorias: horasMentorias,
+          webinars: horasWebinars,
+        },
         dataCorte: dataCorte ? dataCorte.toISOString().split('T')[0] : null,
         dataInicioPeriodo: dataInicioPeriodo ? dataInicioPeriodo.toISOString().split('T')[0] : null,
         macroInicio: macroInicioCongelado,
@@ -10804,6 +10822,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
             imagemAssinaturaUrl: a.imagemAssinaturaUrl,
           })),
           todosNiveis: data.todosNiveis || [],
+          cargaHoraria: data.cargaHoraria || null,
         };
       }),
 
