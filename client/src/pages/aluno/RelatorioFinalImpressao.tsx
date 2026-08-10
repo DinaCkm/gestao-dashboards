@@ -65,6 +65,7 @@ export default function RelatorioFinalImpressao() {
   );
   const fonteIndicadores: any = cicloAtual ? dashboardAtual : dashboardCongelado;
   const consolidado = fonteIndicadores?.found !== false ? fonteIndicadores?.indicadoresV2?.consolidado : null;
+  const cargaHoraria = fonteIndicadores?.found !== false ? fonteIndicadores?.cargaHoraria : null;
 
   // Erro real (ex.: macrociclo não encontrado, sem permissão) — mostra a
   // mensagem em vez de girar pra sempre. Sem isso, qualquer falha na busca
@@ -176,6 +177,13 @@ export default function RelatorioFinalImpressao() {
           <p className="font-medium">{criterios.evidenciasMinimas ? "Entregue" : "Pendente"}</p>
         </div>
       </div>
+      {cargaHoraria && (
+        <p className="text-xs text-gray-500 mt-1.5">
+          <strong>Carga horária total do programa nesta etapa:</strong> {cargaHoraria.total}h
+          {" "}(competências: {cargaHoraria.competencias}h · tarefas: {cargaHoraria.tarefas}h ·
+          {" "}mentorias: {cargaHoraria.mentorias}h · webinars: {cargaHoraria.webinars}h)
+        </p>
+      )}
 
       <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>2. Indicadores de participação e desempenho</h2>
       <div className="grid grid-cols-3 border" style={{ borderColor: "#E5E7EB" }}>
