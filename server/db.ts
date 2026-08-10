@@ -3669,7 +3669,10 @@ export async function getCiclosForCalculator(alunoId: number) {
  * Busca ciclos dos PDIs CONGELADOS do aluno para exibição do Macrociclo anterior (Evolução).
  * Lógica idêntica ao fallback de getCiclosForCalculator, mas filtra por status = 'congelado'.
  */
-export async function getCiclosCongeladosParaCalculator(alunoId: number) {
+export async function getCiclosCongeladosParaCalculator(
+  alunoId: number,
+  janela?: { dataInicio?: Date | null; dataFim?: Date | null }
+) {
   const dbConn = await getDb();
   if (!dbConn) return [];
 
@@ -3709,6 +3712,17 @@ export async function getCiclosCongeladosParaCalculator(alunoId: number) {
 
     for (const comp of comps) {
       if (!comp.microInicio || !comp.microTermino) continue;
+      // O referencial pra decidir se uma competência pertence a este nível é o
+      // PERÍODO DO RESET, não o prazo individual da competência comparado a
+      // "hoje" — uma trilha cujo micro-ciclo cai fora da janela do reset
+      // sendo avaliado (ex.: pertence a um nível seguinte, ainda não
+      // formalmente resetado) não deve entrar no cálculo deste nível.
+      const terminoDate = new Date(comp.microTermino);
+      if (janela?.dataFim && terminoDate > janela.dataFim) continue;
+      if (janela?.dataInicio) {
+        const inicioDate = new Date(comp.microInicio);
+        if (inicioDate < janela.dataInicio) continue;
+      }
       const inicio = new Date(comp.microInicio).toISOString().split('T')[0];
       const termino = new Date(comp.microTermino).toISOString().split('T')[0];
       const key = `${inicio}|${termino}`;
@@ -13527,11 +13541,39 @@ export async function arquivarCicloAtual(alunoId: number, pdiIdEspecifico?: numb
   // Extrair macroInicio do PDI congelado (ciclo que está sendo arquivado)
   // e usar a data atual como macroTermino (data do reset = fim do ciclo anterior)
   const pdiMacroRow = pdiCongeladoRow || pdiActiveRow || pdiFallbackRow || null;
-  const macroInicioStr: string | null = pdiMacroRow?.macroInicio
+  let macroInicioStr: string | null = pdiMacroRow?.macroInicio
     ? String(pdiMacroRow.macroInicio).split('T')[0]
     : null;
-  // macroTermino = data do reset (hoje), não o macroTermino do PDI
-  const macroTerminoStr: string = new Date().toISOString().split('T')[0];
+  // macroTermino = data do reset (hoje), não o macroTermino do PDI — EXCETO no
+  // backfill de um PDI específico (pdiIdEspecifico), onde "hoje" estaria muito
+  // longe da data real de término do nível (o backfill roda meses depois do
+  // nível ter realmente terminado). Nesse caso, usa o próprio macroTermino
+  // gravado no PDI, que é o fim real pretendido daquele nível.
+  let macroTerminoStr: string = new Date().toISOString().split('T')[0];
+
+  if (pdiIdEspecifico) {
+    if (pdiMacroRow?.macroTermino) {
+      macroTerminoStr = String(pdiMacroRow.macroTermino).split('T')[0];
+    }
+    // Encadeamento de datas: se o aluno já tem um nível arquivado antes deste
+    // (backfill de aluno com 2+ níveis pendentes, como visto na EMBRAPII —
+    // vários alunos têm o macroInicio do PDI do Nível 2 igual ao do Nível 1,
+    // em vez de começar depois que o Nível 1 terminou), usa o término do
+    // arquivamento anterior como início deste, ao invés de confiar na data
+    // (possivelmente duplicada/errada) gravada no próprio PDI.
+    const [anteriorRows] = await db.execute(sql.raw(
+      `SELECT h.dataFim FROM historico_ciclos_aluno h WHERE h.alunoId = ${alunoId} ORDER BY h.dataFim DESC LIMIT 1`
+    )) as any;
+    const anterior = Array.isArray(anteriorRows) ? anteriorRows[0] : null;
+    if (anterior?.dataFim) {
+      const dataFimAnteriorStr = String(anterior.dataFim).split('T')[0];
+      // Só substitui se realmente ficar uma sequência coerente (não deixa a
+      // data "andar pra trás" caso o histórico anterior seja de outro ramo).
+      if (!macroInicioStr || dataFimAnteriorStr > macroInicioStr) {
+        macroInicioStr = dataFimAnteriorStr;
+      }
+    }
+  }
 
   // Buscar o aceite do onboarding para pegar dataInicio
   const [jornadaRows] = await db.execute(sql.raw(
@@ -13825,7 +13867,7 @@ export async function arquivarCicloAtual(alunoId: number, pdiIdEspecifico?: numb
       createdAt, updatedAt
     ) VALUES (
       ${alunoId}, ${numeroCiclo}, ${discIdStr}, ${pdiIdStr === 'NULL' ? 'NULL' : pdiIdStr},
-      ${dataInicio}, NOW(),
+      ${dataInicio}, '${macroTerminoStr} 23:59:59',
       ${ind1Webinars}, ${ind2Avaliacoes}, ${ind3Competencias}, ${ind4Tarefas},
       ${ind5Engajamento}, ${ind6Aplicabilidade}, ${ind7EngajamentoFinal},
       ${metasTotal}, ${metasCumpridas},
@@ -14119,6 +14161,31 @@ export async function getResetPorHistoricoId(
   const idx = resetsAsc.findIndex((r: any) => r.historicoId === historicoId);
   if (idx === -1) return null;
   const este = resetsAsc[idx];
+
+  // Prioridade 1: as datas gravadas no próprio registro de histórico
+  // (dataInicio/dataConclusao) — refletem o período REAL do nível, já que
+  // agora são gravadas a partir da data real de término (ver arquivarCicloAtual).
+  // Prioridade 2 (fallback): criadoEm da auditoria de resets — só serve como
+  // aproximação quando os resets aconteceram naturalmente espaçados no tempo,
+  // mas fica errado em correções retroativas feitas em sequência rápida (ex.:
+  // dois níveis de um mesmo aluno arquivados minutos um do outro no mesmo dia,
+  // como no backfill da EMBRAPII) — nesse caso "criadoEm" não tem relação
+  // nenhuma com quando o nível realmente aconteceu.
+  const database = await getDb();
+  if (database) {
+    const [histRows]: any = await database.execute(sql.raw(
+      `SELECT dataInicio, dataConclusao FROM historico_ciclos_aluno WHERE id = ${historicoId} LIMIT 1`
+    ));
+    const hist = Array.isArray(histRows) ? histRows[0] : null;
+    if (hist?.dataConclusao) {
+      return {
+        dataInicio: hist.dataInicio ? new Date(hist.dataInicio) : null,
+        dataFim: new Date(hist.dataConclusao),
+        numeroCicloArquivado: este.numeroCicloArquivado,
+      };
+    }
+  }
+
   const anterior = idx > 0 ? resetsAsc[idx - 1] : null;
   return {
     dataInicio: anterior ? new Date(anterior.criadoEm) : null,
