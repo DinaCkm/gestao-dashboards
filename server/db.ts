@@ -12822,6 +12822,12 @@ export async function getNivelCertificateByHash(hash: string) {
 
   const mentoras = await getCertificateMentoras(certificado.id);
 
+  // Carga horária total do programa (pedido explícito de um aluno): 10h por
+  // competência concluída, 1h por tarefa entregue, 1h por mentoria presente,
+  // 1h por webinar presente — sempre escopado ao mesmo período do certificado
+  // (nunca contando atividade fora da janela deste nível/reset específico).
+  const cargaHoraria = await calcularCargaHorariaAluno(certificado.alunoId, periodo.dataInicio, periodo.dataFim);
+
   const [assinaturasRows]: any = await db.execute(sql.raw(
     `SELECT * FROM certification_signatures WHERE ativo = 1 ORDER BY id ASC`
   ));
@@ -12866,7 +12872,74 @@ export async function getNivelCertificateByHash(hash: string) {
     mentoras,
     assinaturas: Array.isArray(assinaturasRows) ? assinaturasRows : [],
     todosNiveis,
+    cargaHoraria,
   };
+}
+
+/**
+ * Carga horária total do programa dentro de um período específico — 10h por
+ * competência concluída, 1h por tarefa entregue, 1h por mentoria presente,
+ * 1h por webinar presente. Usado no certificado e no relatório (pedido
+ * explícito de um aluno). Sempre escopado a [dataInicio, dataFim] — o mesmo
+ * referencial de período usado nos indicadores, nunca "hoje".
+ */
+export async function calcularCargaHorariaAluno(
+  alunoId: number,
+  dataInicio: string | null,
+  dataFim: string | null
+): Promise<{ total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> {
+  const db = await getDb();
+  const zero = { total: 0, competencias: 0, tarefas: 0, mentorias: 0, webinars: 0 };
+  if (!db || !dataFim) return zero;
+
+  const filtroInicio = dataInicio ? `AND ac.microTermino >= '${dataInicio}'` : '';
+
+  // Competências concluídas, escopadas ao período via assessment_competencias
+  // (que tem as datas do micro-ciclo) — sem isso, contaria competências
+  // concluídas em QUALQUER nível do aluno, não só neste específico.
+  const [compRows]: any = await db.execute(sql.raw(`
+    SELECT COUNT(DISTINCT sp.id) AS total
+    FROM student_performance sp
+    JOIN assessment_competencias ac ON ac.competenciaId = sp.competenciaId
+    JOIN assessment_pdi p ON p.id = ac.assessmentPdiId
+    WHERE sp.alunoId = ${alunoId} AND p.alunoId = ${alunoId}
+      AND sp.aulasDisponiveis > 0 AND sp.aulasConcluidas >= sp.aulasDisponiveis
+      ${filtroInicio}
+      AND ac.microTermino <= '${dataFim}'
+  `));
+  const competenciasConcluidas = Array.isArray(compRows) ? Number(compRows[0]?.total ?? 0) : 0;
+
+  const [tarefaRows]: any = await db.execute(sql.raw(`
+    SELECT COUNT(*) AS total FROM mentoring_sessions
+    WHERE alunoId = ${alunoId} AND taskStatus = 'entregue'
+      ${dataInicio ? `AND sessionDate >= '${dataInicio}'` : ''}
+      AND sessionDate <= '${dataFim}'
+  `));
+  const tarefasEntregues = Array.isArray(tarefaRows) ? Number(tarefaRows[0]?.total ?? 0) : 0;
+
+  const [mentoriaRows]: any = await db.execute(sql.raw(`
+    SELECT COUNT(*) AS total FROM mentoring_sessions
+    WHERE alunoId = ${alunoId} AND presence = 'presente'
+      ${dataInicio ? `AND sessionDate >= '${dataInicio}'` : ''}
+      AND sessionDate <= '${dataFim}'
+  `));
+  const mentoriasPresentes = Array.isArray(mentoriaRows) ? Number(mentoriaRows[0]?.total ?? 0) : 0;
+
+  const [webinarRows]: any = await db.execute(sql.raw(`
+    SELECT COUNT(*) AS total FROM event_participation ep
+    JOIN events e ON e.id = ep.eventId
+    WHERE ep.alunoId = ${alunoId} AND ep.status = 'presente'
+      ${dataInicio ? `AND e.eventDate >= '${dataInicio}'` : ''}
+      AND e.eventDate <= '${dataFim}'
+  `));
+  const webinarsPresentes = Array.isArray(webinarRows) ? Number(webinarRows[0]?.total ?? 0) : 0;
+
+  const competencias = competenciasConcluidas * 10;
+  const tarefas = tarefasEntregues * 1;
+  const mentorias = mentoriasPresentes * 1;
+  const webinars = webinarsPresentes * 1;
+
+  return { total: competencias + tarefas + mentorias + webinars, competencias, tarefas, mentorias, webinars };
 }
 
 /** Atualiza o arquivoUrl de um certificado já criado (usado após a geração real do PDF). */
