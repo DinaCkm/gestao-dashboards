@@ -6062,7 +6062,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
 
       // Ciclos dos PDIs CONGELADOS
-      const ciclosCongelados = await db.getCiclosCongeladosParaCalculator(aluno.id);
+      const ciclosCongelados = await db.getCiclosCongeladosParaCalculator(aluno.id, {
+        dataInicio: dataInicioPeriodo,
+        dataFim: dataCorte,
+      });
       const ciclosV2 = ciclosCongelados.map(c => ({
         ...c,
         trilhaNome: c.nomeCiclo.split(' - ')[0] || 'Geral',
