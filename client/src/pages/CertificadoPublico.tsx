@@ -107,6 +107,12 @@ export default function CertificadoPublico() {
           </p>
 
           <p className="text-gray-500 mt-4 print:mt-3">{formatarData(data.emitidoEm)}.</p>
+
+          {data.cargaHoraria && data.cargaHoraria.total > 0 && (
+            <p className="text-xs text-gray-500 mt-2">
+              Carga horária total do programa: <strong>{data.cargaHoraria.total} horas</strong>
+            </p>
+          )}
         </div>
 
         {/* Validade documental */}
