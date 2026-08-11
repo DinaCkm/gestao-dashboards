@@ -832,21 +832,37 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
 
   // Export Excel function
   const [isExporting, setIsExporting] = useState(false);
+  const exportarCompleta = trpc.admin.listAlunosParaExportacaoCompleta.useQuery(undefined, { enabled: false });
   const handleExportExcel = async () => {
     setIsExporting(true);
     try {
       const XLSX = await import('xlsx');
-      const data = filteredAlunos.map((a: any) => ({
-        'Nome': a.name || '',
-        'Email': a.email || '',
-        'CPF': a.cpf ? displayCpf(a.cpf) : '',
-        'ID Externo': a.externalId || '',
-        'Empresa': a.programName || '',
-        'Mentor(a)': a.mentorName || '',
-        'Turma': a.turmaName || '',
-        'Início Contrato': a.contratoInicio ? formatDateSafe(a.contratoInicio) : '',
-        'Fim Contrato': a.contratoFim ? formatDateSafe(a.contratoFim) : '',
-        'Status': a.isActive === 1 ? 'Ativo' : 'Inativo',
+      const { data: linhasCompletas } = await exportarCompleta.refetch();
+      const idsFiltrados = new Set(filteredAlunos.map((a: any) => a.id));
+      const linhasFiltradas = (linhasCompletas || []).filter((l: any) => idsFiltrados.has(l.alunoId));
+      const data = linhasFiltradas.map((l: any) => ({
+        'Nome': l.alunoNome || '',
+        'Email': l.email || '',
+        'ID Externo': l.externalId || '',
+        'Empresa': l.empresa || '',
+        'Turma': l.turma || '',
+        'Início Contrato': l.contratoInicio ? formatDateSafe(l.contratoInicio) : '',
+        'Fim Contrato': l.contratoFim ? formatDateSafe(l.contratoFim) : '',
+        'Nível': l.nivel || '',
+        'Status do Nível': l.nivelStatus || '',
+        'Nível Início (contrato_niveis)': l.nivelInicio ? formatDateSafe(l.nivelInicio) : '',
+        'Nível Fim (contrato_niveis)': l.nivelFim ? formatDateSafe(l.nivelFim) : '',
+        'PDI Status': l.pdiStatus || '',
+        'Macrociclo Início (PDI)': l.macroInicio ? formatDateSafe(l.macroInicio) : '',
+        'Macrociclo Fim (PDI)': l.macroTermino ? formatDateSafe(l.macroTermino) : '',
+        'Macrociclo Início (histórico)': l.macrocicloDataInicio ? formatDateSafe(l.macrocicloDataInicio) : '',
+        'Macrociclo Fim (histórico)': l.macrocicloDataConclusao ? formatDateSafe(l.macrocicloDataConclusao) : '',
+        'Data do Reset': l.dataDoReset ? formatDateSafe(l.dataDoReset) : '',
+        'Data do Congelamento (turma)': l.turmaDataCongelamento ? formatDateSafe(l.turmaDataCongelamento) : '',
+        '_alunoId': l.alunoId ?? '',
+        '_contratoNivelId': l.contratoNivelId ?? '',
+        '_assessmentPdiId': l.assessmentPdiId ?? '',
+        '_historicoId': l.historicoId ?? '',
       }));
       const ws = XLSX.utils.json_to_sheet(data);
       // Auto-width columns
@@ -859,13 +875,14 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Alunos');
       XLSX.writeFile(wb, `alunos_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success(`${data.length} alunos exportados com sucesso!`);
+      toast.success(`${data.length} linha(s) exportadas com sucesso!`);
     } catch (err: any) {
       toast.error(`Erro ao exportar: ${err.message}`);
     } finally {
       setIsExporting(false);
     }
   };
+
 
   // Selection state for mass operations
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
