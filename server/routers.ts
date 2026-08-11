@@ -6255,27 +6255,59 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
       // Carga horária total do programa (só pedido explícito de um aluno):
       // 10h por competência concluída, 1h por tarefa entregue, 1h por
-      // mentoria presente, 1h por webinar presente — sempre dentro do
-      // mesmo período usado pros indicadores (o do reset), nunca contando
-      // atividade fora da janela deste nível específico.
-      const horasCompetencias = (indicadoresV2Congelado.consolidado.detalhes.competencias.finalizadas || 0) * 10;
-      const horasTarefas = (indicadoresV2Congelado.consolidado.detalhes.tarefas.entregues || 0) * 1;
-      const horasMentorias = (indicadoresV2Congelado.consolidado.detalhes.engajamento.sessoes || 0) * 1;
-      const horasWebinars = (indicadoresV2Congelado.consolidado.detalhes.webinars.presentes || 0) * 1;
-      const cargaHorariaTotal = horasCompetencias + horasTarefas + horasMentorias + horasWebinars;
+      // mentoria presente, 1h por webinar presente. Usa a MESMA função e
+      // fonte de dados do certificado (calcularCargaHorariaAluno), pra
+      // garantir que relatório e certificado sempre mostrem o número
+      // idêntico. Quando o aluno tem mais de um nível encerrado, a janela
+      // cobre a jornada inteira (do início do primeiro ao fim do último) —
+      // não só o reset específico deste macrociclo — porque o cabeçalho do
+      // relatório já mostra "Nível I: ... e Nível II: ..." como uma coisa
+      // só, então a carga horária tem que refletir esse mesmo total.
+      const ORDEM_NIVEL_CH: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
+      const todosNiveisAlunoCH = await db.getContratoNiveisByAluno(aluno.id);
+      const hojeCH = new Date();
+      const todosNiveisCH = todosNiveisAlunoCH
+        .filter((n: any) => {
+          const temStatusEncerrado = n.status === "encerrado" || n.status === "certificado";
+          const dataFimRaw = n.nivelFim ?? n.dataFim ?? null;
+          const dataFimDate = dataFimRaw ? new Date(dataFimRaw) : null;
+          const dataJaPassou = dataFimDate && !isNaN(dataFimDate.getTime()) ? dataFimDate <= hojeCH : false;
+          return temStatusEncerrado && dataJaPassou && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
+        })
+        .sort((a: any, b: any) => (ORDEM_NIVEL_CH[a.nivel] ?? 99) - (ORDEM_NIVEL_CH[b.nivel] ?? 99))
+        .map((n: any) => ({
+          nivel: n.nivel,
+          dataInicio: n.nivelInicio ?? n.dataInicio ?? null,
+          dataFim: n.nivelFim ?? n.dataFim ?? null,
+        }));
+
+      let cargaHorariaInicioCH: string | Date | null = dataInicioPeriodo;
+      let cargaHorariaFimCH: string | Date | null = dataCorte;
+      if (todosNiveisCH.length > 1) {
+        const inicios = todosNiveisCH.map((n: any) => n.dataInicio).filter(Boolean).map((d: any) => new Date(d).getTime());
+        const fins = todosNiveisCH.map((n: any) => n.dataFim).filter(Boolean).map((d: any) => new Date(d).getTime());
+        if (inicios.length > 0) cargaHorariaInicioCH = new Date(Math.min(...inicios)).toISOString().split('T')[0];
+        if (fins.length > 0) cargaHorariaFimCH = new Date(Math.max(...fins)).toISOString().split('T')[0];
+      }
+      const cargaHorariaCalc = await db.calcularCargaHorariaAluno(aluno.id, cargaHorariaInicioCH, cargaHorariaFimCH);
+
+      // Espelho por nível — mesmo conceito do certificado: um item por
+      // etapa, como um histórico escolar.
+      let cargaHorariaPorNivelCH: Array<{ nivel: string; dataInicio: string | null; dataFim: string | null; total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> = [];
+      if (todosNiveisCH.length > 1) {
+        for (const n of todosNiveisCH) {
+          const ch = await db.calcularCargaHorariaAluno(aluno.id, n.dataInicio, n.dataFim);
+          cargaHorariaPorNivelCH.push({ nivel: n.nivel, dataInicio: n.dataInicio, dataFim: n.dataFim, ...ch });
+        }
+      }
 
       return {
         found: true as const,
         macrocicloLabel: numeroCicloArquivadoAtual
           ? `Macrociclo ${numeroCicloArquivadoAtual} — Congelado`
           : 'Macrociclo 1 — Congelado',
-        cargaHoraria: {
-          total: cargaHorariaTotal,
-          competencias: horasCompetencias,
-          tarefas: horasTarefas,
-          mentorias: horasMentorias,
-          webinars: horasWebinars,
-        },
+        cargaHoraria: cargaHorariaCalc,
+        cargaHorariaPorNivel: cargaHorariaPorNivelCH,
         dataCorte: dataCorte ? dataCorte.toISOString().split('T')[0] : null,
         dataInicioPeriodo: dataInicioPeriodo ? dataInicioPeriodo.toISOString().split('T')[0] : null,
         macroInicio: macroInicioCongelado,
@@ -10829,6 +10861,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           })),
           todosNiveis: data.todosNiveis || [],
           cargaHoraria: data.cargaHoraria || null,
+          cargaHorariaPorNivel: data.cargaHorariaPorNivel || [],
         };
       }),
 
