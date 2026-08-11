@@ -13010,9 +13010,6 @@ export async function resolverSnapshotEDatasDoNivel(alunoId: number, nivel: Cont
     pdi = row ?? null;
   }
 
-  const dataInicio = nivel.nivelInicio ?? pdi?.macroInicio ?? null;
-  const dataFim = nivel.nivelFim ?? pdi?.macroTermino ?? null;
-
   let snapshot: any = null;
   if (pdi?.id) {
     const [snapRows] = await db.execute(sql.raw(
@@ -13020,9 +13017,34 @@ export async function resolverSnapshotEDatasDoNivel(alunoId: number, nivel: Cont
     )) as any;
     snapshot = Array.isArray(snapRows) && snapRows[0] ? snapRows[0] : null;
   }
+  // Fallback: quando o PDI não tem contratoNivelId vinculado (comum em turmas
+  // legadas já resetadas), a busca acima falha e "snapshot" fica vazio mesmo
+  // quando existe um histórico real pra esse nível — usa o mesmo pareamento
+  // ordinal (reset mais antigo ↔ nível mais antigo) já usado em
+  // getMacrociclosByAluno pra achar o snapshot correto por outro caminho.
+  if (!snapshot) {
+    const macrociclos = await getMacrociclosByAluno(alunoId);
+    const match = macrociclos.find((m: any) => m.contratoNivelId === nivel.id && m.historicoId);
+    if (match?.historicoId) {
+      const [snapRows] = await db.execute(sql.raw(
+        `SELECT * FROM historico_ciclos_aluno WHERE id = ${match.historicoId} LIMIT 1`
+      )) as any;
+      snapshot = Array.isArray(snapRows) && snapRows[0] ? snapRows[0] : null;
+    }
+  }
+
+  // As datas do PRÓPRIO snapshot (historico_ciclos_aluno.dataInicio/dataConclusao)
+  // são mais confiáveis que contrato_niveis.nivelInicio/nivelFim — essa segunda
+  // tabela pode ficar desatualizada quando o aluno avança pra um nível novo e o
+  // MESMO registro de contrato é reaproveitado/sobrescrito, sem refletir mais o
+  // período real do nível já encerrado. Só cai pro contrato/PDI quando não há
+  // snapshot nenhum pra este nível (nível ainda em andamento, nunca congelado).
+  const dataInicio = snapshot?.dataInicio ?? nivel.nivelInicio ?? pdi?.macroInicio ?? null;
+  const dataFim = snapshot?.dataConclusao ?? nivel.nivelFim ?? pdi?.macroTermino ?? null;
 
   return { snapshot, dataInicio, dataFim, pdi };
 }
+
 
 export async function avaliarElegibilidadeCertificacao(alunoId: number, contratoNivelId: number, historicoIdConhecido?: number | null) {
   const nivel = await getContratoNivelBruto(contratoNivelId);
