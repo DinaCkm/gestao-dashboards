@@ -12869,16 +12869,6 @@ export async function getNivelCertificateByHash(hash: string) {
 
   const mentoras = await getCertificateMentoras(certificado.id);
 
-  // Carga horária total do programa (pedido explícito de um aluno): 10h por
-  // competência concluída, 1h por tarefa entregue, 1h por mentoria presente,
-  // 1h por webinar presente — sempre escopado ao mesmo período do certificado
-  // (nunca contando atividade fora da janela deste nível/reset específico).
-  const cargaHoraria = await calcularCargaHorariaAluno(certificado.alunoId, periodo.dataInicio, periodo.dataFim);
-
-  const [assinaturasRows]: any = await db.execute(sql.raw(
-    `SELECT * FROM certification_signatures WHERE ativo = 1 ORDER BY id ASC`
-  ));
-
   // Todos os níveis do aluno, com seus próprios períodos — mostrado no
   // certificado pra dar transparência total quando a fronteira exata entre
   // dois níveis não foi capturada por um reset formal (ex.: nível encerrado
@@ -12913,6 +12903,42 @@ export async function getNivelCertificateByHash(hash: string) {
       dataFim: n.nivelFim ?? n.dataFim ?? null,
     }));
 
+  // Carga horária total do programa (pedido explícito de um aluno): 10h por
+  // competência concluída, 1h por tarefa entregue, 1h por mentoria presente,
+  // 1h por webinar presente. Quando o certificado abrange VÁRIOS níveis (o
+  // texto "concluiu etapas... Nível I: ... e Nível II: ..." no cabeçalho),
+  // a carga horária tem que cobrir a jornada INTEIRA mostrada ali — do
+  // início do primeiro nível ao fim do último —, não só o período do nível
+  // específico deste certificado. Sem isso, a carga horária ficava presa
+  // só ao Nível I mesmo quando o certificado já falava dos 3 níveis,
+  // subcontando tudo que aconteceu nos níveis seguintes.
+  let cargaHorariaInicio = periodo.dataInicio;
+  let cargaHorariaFim = periodo.dataFim;
+  if (todosNiveis.length > 1) {
+    const inicios = todosNiveis.map((n: any) => n.dataInicio).filter(Boolean).map((d: any) => new Date(d).getTime());
+    const fins = todosNiveis.map((n: any) => n.dataFim).filter(Boolean).map((d: any) => new Date(d).getTime());
+    if (inicios.length > 0) cargaHorariaInicio = new Date(Math.min(...inicios)).toISOString().split('T')[0];
+    if (fins.length > 0) cargaHorariaFim = new Date(Math.max(...fins)).toISOString().split('T')[0];
+  }
+  const cargaHoraria = await calcularCargaHorariaAluno(certificado.alunoId, cargaHorariaInicio, cargaHorariaFim);
+
+  // Espelho de carga horária por nível — um item por etapa, como um
+  // histórico escolar, pra mostrar de onde vem cada hora do total acima
+  // (pedido explícito: "detalhando a carga horária... item por item e
+  // período por período"). Só calcula quando há mais de um nível; pra
+  // certificado de nível único o "total" já É o espelho.
+  let cargaHorariaPorNivel: Array<{ nivel: string; dataInicio: string | null; dataFim: string | null; total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> = [];
+  if (todosNiveis.length > 1) {
+    for (const n of todosNiveis) {
+      const ch = await calcularCargaHorariaAluno(certificado.alunoId, n.dataInicio, n.dataFim);
+      cargaHorariaPorNivel.push({ nivel: n.nivel, dataInicio: n.dataInicio, dataFim: n.dataFim, ...ch });
+    }
+  }
+
+  const [assinaturasRows]: any = await db.execute(sql.raw(
+    `SELECT * FROM certification_signatures WHERE ativo = 1 ORDER BY id ASC`
+  ));
+
   return {
     certificado,
     periodo: { dataInicio: periodo.dataInicio, dataFim: periodo.dataFim },
@@ -12920,8 +12946,10 @@ export async function getNivelCertificateByHash(hash: string) {
     assinaturas: Array.isArray(assinaturasRows) ? assinaturasRows : [],
     todosNiveis,
     cargaHoraria,
+    cargaHorariaPorNivel,
   };
 }
+
 
 /**
  * Carga horária total do programa dentro de um período específico — 10h por
