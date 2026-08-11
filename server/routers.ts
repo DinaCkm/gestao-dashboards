@@ -39,7 +39,7 @@ import { relatorioMentoradoRouter } from "./routers/relatorioMentorado";
 import { meuDesempenhoRouter } from "./routers/meuDesempenho";
 import { generateTemplate, validateSpreadsheet, TEMPLATE_STRUCTURES, TemplateType } from "./templateGenerator";
 import { storagePut } from "./storage";
-import { renderPdfFromUrl } from "./pdfRenderer";
+import { renderPdfFromUrl, montarCabecalhoRodapeRelatorio } from "./pdfRenderer";
 import { getRelatorioFinanceiroV2, getSessionTypePricingRules, createSessionTypePricingRule, updateSessionTypePricingRule, deleteSessionTypePricingRule, type TipoSessao } from "./financialCalculatorV2";
 import { getDb } from "./db";
 import { gerarEEnviarRelatorioMentorias, calcularPeriodoPadrao } from "./cronRelatorioMentorias";
@@ -581,13 +581,19 @@ async function gerarESalvarCertificadoPdf(
       cacheInvalidate();
       const relatorioPageUrl = `${baseUrl}/aluno/relatorio-final/${encodeURIComponent(macrociclo.chave)}?alunoId=${alunoId}`;
       console.log(`[certificacao] relatório: renderizando ${relatorioPageUrl}`);
+      const { headerTemplate, footerTemplate } = montarCabecalhoRodapeRelatorio(
+        hashDocumento,
+        `${baseUrl.replace(/^https?:\/\//, '')}/certificados/verificar/${hashDocumento}`
+      );
       const pdfBuffer = await renderPdfFromUrl({
         url: relatorioPageUrl,
         cookie: req.headers.cookie,
-        marginTop: "8mm",
-        marginBottom: "8mm",
+        marginTop: "16mm",
+        marginBottom: "14mm",
         marginLeft: "8mm",
         marginRight: "8mm",
+        headerTemplate,
+        footerTemplate,
       });
       console.log(`[certificacao] relatório: PDF renderizado, ${pdfBuffer.length} bytes`);
       const storageKey = `certificados/${alunoId}/${contratoNivelId}/${hashDocumento}-relatorio-v${versao}.pdf`;
