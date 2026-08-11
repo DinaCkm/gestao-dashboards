@@ -44,6 +44,31 @@ export interface RenderPdfOptions {
 }
 
 /**
+ * Monta o cabeçalho/rodapé repetido em cada página de um relatório — pedido
+ * explícito pra documentos que quebram em mais de uma página: o código de
+ * identificação e o link de verificação precisam aparecer em TODAS as
+ * páginas (não só na última, onde já ficavam antes), e cada página precisa
+ * de numeração ("Página X de Y") pra ficar claro que nada foi perdido entre
+ * uma página e outra. Usa as classes especiais que o próprio Puppeteer
+ * reconhece e preenche sozinho (pageNumber/totalPages) — não dá pra fazer
+ * isso só com CSS de página normal, tem que ser via essas templates.
+ */
+export function montarCabecalhoRodapeRelatorio(codigo: string, urlVerificacao: string): { headerTemplate: string; footerTemplate: string } {
+  const headerTemplate = `
+    <div style="font-size:8px; color:#6B7280; width:100%; padding:0 10mm; display:flex; justify-content:space-between; font-family:Arial,sans-serif;">
+      <span>Código de Identificação: <strong style="color:#351A4F;">${codigo}</strong></span>
+      <span>${urlVerificacao}</span>
+    </div>
+  `;
+  const footerTemplate = `
+    <div style="font-size:8px; color:#6B7280; width:100%; padding:0 10mm; text-align:center; font-family:Arial,sans-serif;">
+      Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+    </div>
+  `;
+  return { headerTemplate, footerTemplate };
+}
+
+/**
  * Renderiza uma página da própria aplicação (com sessão autenticada) usando
  * um Chromium headless real e retorna o PDF resultante. Isso substitui a
  * captura via html2canvas, que falhava em aplicar o CSS do Tailwind de forma
