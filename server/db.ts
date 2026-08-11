@@ -2093,6 +2093,53 @@ export async function getAllAlunosForAdmin() {
   }));
 }
 
+/**
+ * Exportação completa pra planilha: uma linha por (aluno × nível), incluindo
+ * as colunas de macrociclo, nível, data do reset e data do congelamento da
+ * turma — pedido explícito pra permitir revisão/ajuste manual das datas fora
+ * do sistema, sem precisar de extração manual do banco a cada vez.
+ */
+export async function getAlunosParaExportacaoCompleta() {
+  const dbConn = await getDb();
+  if (!dbConn) return [];
+
+  const [rows]: any = await dbConn.execute(sql.raw(`
+    SELECT
+      a.id AS alunoId,
+      a.name AS alunoNome,
+      a.email,
+      a.externalId,
+      prog.name AS empresa,
+      t.name AS turma,
+      t.dataCongelamento AS turmaDataCongelamento,
+      a.contratoInicio,
+      a.contratoFim,
+      cn.id AS contratoNivelId,
+      cn.nivel,
+      cn.status AS nivelStatus,
+      cn.nivelInicio,
+      cn.nivelFim,
+      ap.id AS assessmentPdiId,
+      ap.status AS pdiStatus,
+      ap.macroInicio,
+      ap.macroTermino,
+      h.id AS historicoId,
+      h.dataInicio AS macrocicloDataInicio,
+      h.dataConclusao AS macrocicloDataConclusao,
+      r.criadoEm AS dataDoReset
+    FROM alunos a
+    LEFT JOIN programs prog ON prog.id = a.programId
+    LEFT JOIN turmas t ON t.id = a.turmaId
+    LEFT JOIN contrato_niveis cn ON cn.alunoId = a.id
+    LEFT JOIN assessment_pdi ap ON ap.id = cn.assessmentPdiId
+    LEFT JOIN historico_ciclos_aluno h ON h.assessmentPdiId = ap.id
+    LEFT JOIN auditoria_resets_ciclo r ON r.historicoId = h.id
+    ORDER BY a.name, cn.nivel
+  `));
+
+  return Array.isArray(rows) ? rows : [];
+}
+
 export async function updateAluno(alunoId: number, data: {
   name?: string;
   email?: string;
