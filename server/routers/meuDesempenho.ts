@@ -17,8 +17,9 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../_core/trpc";
-import { renderPdfFromUrl } from "../pdfRenderer";
+import { renderPdfFromUrl, montarCabecalhoRodapeRelatorio } from "../pdfRenderer";
 import { cacheInvalidate } from "../dataCache";
+import { sql } from "drizzle-orm";
 import {
   getAlunoFromCtx,
   getAlunoById,
@@ -28,6 +29,7 @@ import {
   getMacrociclosByAluno,
   getPedagogiaPorMacrociclo,
   getCertificationSignatures,
+  getDb,
 } from "../db";
 
 /**
@@ -270,14 +272,37 @@ export const meuDesempenhoRouter = router({
       // estado mais recente, nunca uma versão calculada minutos atrás.
       cacheInvalidate();
 
+      // Código de identificação do certificado deste nível (se já emitido) —
+      // pra repetir no cabeçalho de cada página do PDF, junto com o link de
+      // verificação. Sem certificado emitido ainda, sai sem essa parte (não
+      // tem código nenhum pra mostrar).
+      let headerTemplate: string | undefined;
+      let footerTemplate: string | undefined;
+      if (macrociclo.contratoNivelId) {
+        const database = await getDb();
+        if (database) {
+          const [certRows]: any = await database.execute(sql.raw(
+            `SELECT hashDocumento FROM nivel_certificates WHERE contratoNivelId = ${macrociclo.contratoNivelId} AND alunoId = ${alunoId} ORDER BY id DESC LIMIT 1`
+          ));
+          const codigo = Array.isArray(certRows) && certRows[0]?.hashDocumento ? certRows[0].hashDocumento : null;
+          if (codigo) {
+            const tpl = montarCabecalhoRodapeRelatorio(codigo, `${baseUrl.replace(/^https?:\/\//, '')}/certificados/verificar/${codigo}`);
+            headerTemplate = tpl.headerTemplate;
+            footerTemplate = tpl.footerTemplate;
+          }
+        }
+      }
+
       try {
         const pdfBuffer = await renderPdfFromUrl({
           url,
           cookie: ctx.req.headers.cookie,
-          marginTop: "8mm",
-          marginBottom: "8mm",
+          marginTop: headerTemplate ? "16mm" : "8mm",
+          marginBottom: footerTemplate ? "14mm" : "8mm",
           marginLeft: "8mm",
           marginRight: "8mm",
+          headerTemplate,
+          footerTemplate,
         });
         return { pdfBase64: pdfBuffer.toString("base64") };
       } catch (err) {
