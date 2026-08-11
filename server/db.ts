@@ -12885,12 +12885,27 @@ export async function getNivelCertificateByHash(hash: string) {
  */
 export async function calcularCargaHorariaAluno(
   alunoId: number,
-  dataInicio: string | null,
-  dataFim: string | null
+  dataInicioRaw: string | Date | null,
+  dataFimRaw: string | Date | null
 ): Promise<{ total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> {
   const db = await getDb();
   const zero = { total: 0, competencias: 0, tarefas: 0, mentorias: 0, webinars: 0 };
-  if (!db || !dataFim) return zero;
+  if (!db || !dataFimRaw) return zero;
+
+  // periodo.dataInicio/dataFim podem chegar como string OU como objeto Date,
+  // dependendo de onde vieram (resolverSnapshotEDatasDoNivel devolve tipos
+  // diferentes conforme a fonte). Interpolar um Date direto na SQL vira
+  // "Sun Apr 20 2025 00:00:00 GMT+..." — o MySQL não entende isso e a
+  // consulta falha inteira, silenciosamente, sem carga horária nenhuma.
+  const paraDataSql = (v: string | Date | null): string | null => {
+    if (!v) return null;
+    const d = v instanceof Date ? v : new Date(v);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split('T')[0];
+  };
+  const dataInicio = paraDataSql(dataInicioRaw);
+  const dataFim = paraDataSql(dataFimRaw);
+  if (!dataFim) return zero;
 
   const filtroInicio = dataInicio ? `AND ac.microTermino >= '${dataInicio}'` : '';
 
