@@ -8233,7 +8233,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     listAlunos: adminOrAdmin2Procedure.query(async () => {
       return await db.getAllAlunosForAdmin();
     }),
-    
+
+    // Exportação completa (uma linha por aluno × nível) pra revisão manual de
+    // datas — macrociclo, nível, reset e congelamento da turma juntos.
+    listAlunosParaExportacaoCompleta: adminOrAdmin2Procedure.query(async () => {
+      return await db.getAlunosParaExportacaoCompleta();
+    }),
+
     createAluno: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
