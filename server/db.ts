@@ -12982,20 +12982,25 @@ export async function calcularCargaHorariaAluno(
   const dataFim = paraDataSql(dataFimRaw);
   if (!dataFim) return zero;
 
-  const filtroInicio = dataInicio ? `AND ac.microTermino >= '${dataInicio}'` : '';
+  const filtroInicio = dataInicio ? `AND sp.dataConclusao >= '${dataInicio}'` : '';
 
-  // Competências concluídas, escopadas ao período via assessment_competencias
-  // (que tem as datas do micro-ciclo) — sem isso, contaria competências
-  // concluídas em QUALQUER nível do aluno, não só neste específico.
+  // Competências concluídas, escopadas pela data REAL de conclusão
+  // (student_performance.dataConclusao) — não mais pela data atribuída/
+  // planejada do micro-ciclo (assessment_competencias.microTermino).
+  // Motivo: o PDI pode ter registros duplicados ou datas desalinhadas entre
+  // níveis (já vimos casos assim), o que fazia competências genuinamente
+  // concluídas dentro de um nível ficarem de fora do cálculo desse nível só
+  // porque o PDI que as contém tinha a data errada. A data de conclusão real
+  // do aluno é a fonte mais confiável — não depende de o PDI estar com a
+  // data certa pra funcionar.
   const [compRows]: any = await db.execute(sql.raw(`
     SELECT COUNT(DISTINCT sp.id) AS total
     FROM student_performance sp
-    JOIN assessment_competencias ac ON ac.competenciaId = sp.competenciaId
-    JOIN assessment_pdi p ON p.id = ac.assessmentPdiId
-    WHERE sp.alunoId = ${alunoId} AND p.alunoId = ${alunoId}
+    WHERE sp.alunoId = ${alunoId}
       AND sp.aulasDisponiveis > 0 AND sp.aulasConcluidas >= sp.aulasDisponiveis
+      AND sp.dataConclusao IS NOT NULL
       ${filtroInicio}
-      AND ac.microTermino <= '${dataFim}'
+      AND sp.dataConclusao <= '${dataFim} 23:59:59'
   `));
   const competenciasConcluidas = Array.isArray(compRows) ? Number(compRows[0]?.total ?? 0) : 0;
 
