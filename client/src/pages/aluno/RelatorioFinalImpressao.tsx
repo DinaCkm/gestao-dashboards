@@ -181,7 +181,7 @@ export default function RelatorioFinalImpressao() {
       {cargaHoraria && (
         <p className="text-xs text-gray-500 mt-1.5">
           <strong>Carga horária total do programa nesta etapa:</strong> {cargaHoraria.total}h
-          {" "}(competências: {cargaHoraria.competencias}h · tarefas: {cargaHoraria.tarefas}h ·
+          {" "}(cursos: {cargaHoraria.competencias}h · tarefas: {cargaHoraria.tarefas}h ·
           {" "}mentorias: {cargaHoraria.mentorias}h · webinars: {cargaHoraria.webinars}h)
         </p>
       )}
@@ -194,7 +194,7 @@ export default function RelatorioFinalImpressao() {
               <tr style={{ backgroundColor: "#351A4F" }}>
                 <th className="text-left p-2 text-white font-semibold">Nível</th>
                 <th className="text-left p-2 text-white font-semibold">Período</th>
-                <th className="text-right p-2 text-white font-semibold">Competências</th>
+                <th className="text-right p-2 text-white font-semibold">Cursos</th>
                 <th className="text-right p-2 text-white font-semibold">Tarefas</th>
                 <th className="text-right p-2 text-white font-semibold">Mentorias</th>
                 <th className="text-right p-2 text-white font-semibold">Webinars</th>
@@ -231,7 +231,7 @@ export default function RelatorioFinalImpressao() {
         {[
           ["Ind.1 Webinars", consolidado?.ind1_webinars, 80],
           ["Ind.2 Avaliações", consolidado?.ind2_avaliacoes, 80],
-          ["Ind.3 Competências", consolidado?.ind3_competencias, 80],
+          ["Ind.3 Cursos", consolidado?.ind3_competencias, 80],
           ["Ind.4 Tarefas", consolidado?.ind4_tarefas, 80],
           ["Ind.5 Engajamento", consolidado?.ind5_engajamento, 80],
           ["Ind.6 Aplicabilidade", consolidado?.ind6_aplicabilidade, 80],
@@ -251,16 +251,17 @@ export default function RelatorioFinalImpressao() {
         Resultado Final (Engajamento Final consolidado): {engajamentoFinal !== null ? `${engajamentoFinal}%` : "—"} — ver Síntese executiva acima.
       </p>
 
-      <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>3. Avaliação das competências</h2>
-      <p className="text-xs text-gray-500 mb-1">{aprovadas} de {obrigatorias.length} competências obrigatórias aprovadas.</p>
+      <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>3. Avaliação dos cursos</h2>
+      <p className="text-xs text-gray-500 mb-1">{aprovadas} de {obrigatorias.length} cursos obrigatórios aprovados.</p>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr style={{ backgroundColor: "#351A4F" }}>
-            <th className="text-left text-white p-2 font-semibold">Competência</th>
+            <th className="text-left text-white p-2 font-semibold">Curso</th>
             <th className="text-left text-white p-2 font-semibold">Obrigatória</th>
             <th className="text-left text-white p-2 font-semibold">Nota</th>
             <th className="text-left text-white p-2 font-semibold">Meta</th>
             <th className="text-left text-white p-2 font-semibold">Status</th>
+            <th className="text-left text-white p-2 font-semibold">Carga Horária</th>
           </tr>
         </thead>
         <tbody>
@@ -272,6 +273,9 @@ export default function RelatorioFinalImpressao() {
               <td className="p-2 border-b" style={{ borderColor: "#E5E7EB" }}>{c.meta.toFixed(1)}</td>
               <td className="p-2 border-b" style={{ borderColor: "#E5E7EB" }}>
                 {c.nota === null ? "—" : c.aprovada ? "Aprovada" : "Abaixo da meta"}
+              </td>
+              <td className="p-2 border-b" style={{ borderColor: "#E5E7EB" }}>
+                {c.aprovada ? "10h" : "—"}
               </td>
             </tr>
           ))}
