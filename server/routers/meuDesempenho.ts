@@ -26,6 +26,7 @@ import {
   getContratoNiveisByAluno,
   avaliarElegibilidadeCertificacao,
   getNivelCertificateByAlunoNivel,
+  getNivelCertificateByAlunoNiveis,
   getMacrociclosByAluno,
   getPedagogiaPorMacrociclo,
   getCertificationSignatures,
@@ -109,7 +110,14 @@ export const meuDesempenhoRouter = router({
         macrociclos.map(async (m: any) => {
           let certificadoEmitido = false;
           if (m.contratoNivelId) {
-            const cert = await getNivelCertificateByAlunoNivel(alunoId, m.contratoNivelId);
+            // Bloco "Plano Congelado" pode cobrir vários níveis — o
+            // certificado pode ter sido emitido contra qualquer um deles,
+            // não só o representante (m.contratoNivelId). Ver comentário
+            // em getNivelCertificateByAlunoNiveis.
+            const idsParaBuscar: number[] = Array.isArray(m.contratoNivelIds) && m.contratoNivelIds.length > 0
+              ? m.contratoNivelIds
+              : [m.contratoNivelId];
+            const cert = await getNivelCertificateByAlunoNiveis(alunoId, idsParaBuscar);
             certificadoEmitido = !!cert;
           }
           return { ...m, certificadoEmitido };
@@ -167,9 +175,20 @@ export const meuDesempenhoRouter = router({
       };
       if (macrociclo.contratoNivelId) {
         try {
+          // Bloco "Plano Congelado" pode juntar vários níveis (ex.: Nível I
+          // e II) num único macrociclo, cujo contratoNivelId representante
+          // é sempre o do ÚLTIMO nível do bloco (ver getMacrociclosByAluno).
+          // O certificado, porém, pode ter sido emitido contra QUALQUER
+          // nível do bloco — buscar só pelo representante deixava o Código
+          // de Identificação em branco no relatório sempre que a emissão
+          // não foi feita exatamente contra o último nível (caso da
+          // Joseane, EDB-LID-2026-0005, emitido contra o Nível I).
+          const idsParaBuscarCertificado: number[] = Array.isArray(macrociclo.contratoNivelIds) && macrociclo.contratoNivelIds.length > 0
+            ? macrociclo.contratoNivelIds
+            : [macrociclo.contratoNivelId];
           const [elegibilidadeRaw, certificado] = await Promise.all([
             avaliarElegibilidadeCertificacao(alunoId, macrociclo.contratoNivelId, macrociclo.historicoId),
-            getNivelCertificateByAlunoNivel(alunoId, macrociclo.contratoNivelId),
+            getNivelCertificateByAlunoNiveis(alunoId, idsParaBuscarCertificado),
           ]);
           const elegibilidade: any = elegibilidadeRaw;
           certificacao = {
@@ -278,8 +297,15 @@ export const meuDesempenhoRouter = router({
       if (macrociclo.contratoNivelId) {
         const database = await getDb();
         if (database) {
+          // Mesmo raciocínio do porMacrociclo acima: o bloco pode cobrir
+          // vários níveis, e o certificado pode ter sido emitido contra
+          // qualquer um deles — não só o representante do bloco.
+          const idsParaBuscar: number[] = Array.isArray(macrociclo.contratoNivelIds) && macrociclo.contratoNivelIds.length > 0
+            ? macrociclo.contratoNivelIds
+            : [macrociclo.contratoNivelId];
+          const placeholders = idsParaBuscar.map((id: number) => Number(id)).join(",");
           const [certRows]: any = await database.execute(sql.raw(
-            `SELECT hashDocumento FROM nivel_certificates WHERE contratoNivelId = ${macrociclo.contratoNivelId} AND alunoId = ${alunoId} ORDER BY id DESC LIMIT 1`
+            `SELECT hashDocumento FROM nivel_certificates WHERE contratoNivelId IN (${placeholders}) AND alunoId = ${alunoId} AND status = 'emitido' ORDER BY id DESC LIMIT 1`
           ));
           const codigo = Array.isArray(certRows) && certRows[0]?.hashDocumento ? certRows[0].hashDocumento : null;
           if (codigo) {
