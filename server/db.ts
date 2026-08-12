@@ -7155,15 +7155,34 @@ export async function getMacrociclosByAluno(alunoId: number) {
     }];
   }
 
-  // Simplificado pra dois grandes blocos (pedido explícito): "Plano
-  // Congelado" e "Plano Ativo" — em vez de tentar casar 1 registro de
-  // histórico por nível individualmente (o vínculo PDI↔nível às vezes vem
-  // quebrado ou duplicado na origem dos dados).
-  // O critério pra decidir o que é "congelado" e o que é "ativo" é o STATUS
-  // gravado no contrato — não uma comparação de data contra "hoje". Já
-  // corrigimos hoje várias datas de nivelFim pra refletir o período real do
-  // programa (que pode legitimamente terminar numa data futura em relação a
-  // "hoje", ex.: contrato que vai até 31/08/2026 mesmo já estando encerrado
+  // Busca a data REAL de congelamento de cada reset (historico_ciclos_
+  // aluno.dataConclusao — "quando o ciclo foi arquivado"), não o criadoEm
+  // da auditoria (que só registra quando a ação foi logada; pode ser um
+  // momento diferente do congelamento em si, ex.: um backfill rodado
+  // depois). É essa data que decide em que ciclo cada nível encerrado cai.
+  const resetsComData = await Promise.all(
+    resets.map(async (r: any) => {
+      if (!r.historicoId) return { ...r, dataCongelamento: null as Date | null };
+      const [rows]: any = await database.execute(sql.raw(
+        `SELECT dataConclusao FROM historico_ciclos_aluno WHERE id = ${r.historicoId} LIMIT 1`
+      ));
+      const dataCongelamento = Array.isArray(rows) && rows[0]?.dataConclusao ? new Date(rows[0].dataConclusao) : null;
+      return { ...r, dataCongelamento };
+    })
+  );
+  // Do mais ANTIGO pro mais recente — é assim que sabemos qual nível caiu
+  // em qual ciclo, na ordem em que os resets realmente aconteceram.
+  const resetsAsc = [...resetsComData].sort((a: any, b: any) => {
+    const ta = a.dataCongelamento ? a.dataCongelamento.getTime() : 0;
+    const tb = b.dataCongelamento ? b.dataCongelamento.getTime() : 0;
+    return ta - tb;
+  });
+
+  // Critério pra decidir o que é "encerrado": o STATUS gravado no contrato
+  // — não uma comparação de data contra "hoje". Já corrigimos várias datas
+  // de nivelFim pra refletir o período real do programa (que pode
+  // legitimamente terminar numa data futura em relação a "hoje", ex.:
+  // contrato que vai até 31/08/2026 mesmo já estando encerrado
   // administrativamente antes disso) — exigir "fim <= hoje" além do status
   // fazia níveis genuinamente encerrados sumirem do bloco "Congelado"
   // inteiro, zerando o relatório por completo. status='encerrado' já É o
@@ -7173,47 +7192,98 @@ export async function getMacrociclosByAluno(alunoId: number) {
 
   const macrociclos: any[] = [];
 
-  if (niveisEncerrados.length > 0) {
-    // Usa o historicoId de QUALQUER reset já feito como âncora pro cálculo
-    // dos indicadores (o cálculo em si já foi ajustado, em outro ponto, pra
-    // olhar a data real de conclusão do aluno em vez de depender do PDI
-    // estar certo) — a janela mostrada, porém, reflete o span real de TODOS
-    // os níveis encerrados, não só o de um reset isolado.
-    const inicios = niveisEncerrados.map((n: any) => n.nivelInicio ?? n.dataInicio).filter(Boolean).map((d: any) => new Date(d).getTime());
-    const fins = niveisEncerrados.map((n: any) => n.nivelFim ?? n.dataFim).filter(Boolean).map((d: any) => new Date(d).getTime());
-    const dataInicioBloco = inicios.length > 0 ? new Date(Math.min(...inicios)) : null;
-    const dataFimBloco = fins.length > 0 ? new Date(Math.max(...fins)) : null;
-    const historicoIdAncora = resets[0]?.historicoId ?? null;
-    macrociclos.push({
-      chave: historicoIdAncora ? `historico:${historicoIdAncora}` : "congelado",
-      origem: "reset",
-      historicoId: historicoIdAncora,
-      numeroCiclo: resets.length,
-      dataInicio: dataInicioBloco,
-      dataFim: dataFimBloco,
-      status: "encerrado",
-      contratoNivelId: niveisEncerrados[niveisEncerrados.length - 1]?.id ?? null,
-      // Todos os IDs de contrato_niveis cobertos por este bloco — necessário
-      // pra emissão de certificado continuar achando o macrociclo certo
-      // mesmo pedindo um nível que NÃO é o último do bloco (ex.: emitir o
-      // certificado do Nível I quando o Nível II também já está congelado
-      // junto no mesmo bloco "Plano Congelado").
-      contratoNivelIds: niveisEncerrados.map((n: any) => n.id),
-      // Quando há só 1 nível encerrado, mantém o rótulo dele ("Nível I") em
-      // vez de esconder atrás de "Ciclo N" — só fica null quando o bloco
-      // realmente junta vários níveis, aí sim não faz sentido escolher só um.
-      nivelLabel: niveisEncerrados.length === 1 ? niveisEncerrados[0]?.nivel ?? null : null,
-      label: "Plano Congelado",
-      niveisIncluidos: niveisEncerrados.map((n: any) => n.nivel),
+  if (resetsAsc.length <= 1) {
+    // Caso mais comum, e o único testado até aqui: 1 reset só na vida do
+    // aluno (ou 0, mas aí nem chegamos até aqui — ver retorno antecipado
+    // acima). Continua exatamente como antes: um único bloco "Plano
+    // Congelado" juntando todo nível encerrado, sem tentar separar por
+    // fronteira nenhuma, já que só existe 1 fronteira possível mesmo.
+    if (niveisEncerrados.length > 0) {
+      const inicios = niveisEncerrados.map((n: any) => n.nivelInicio ?? n.dataInicio).filter(Boolean).map((d: any) => new Date(d).getTime());
+      const fins = niveisEncerrados.map((n: any) => n.nivelFim ?? n.dataFim).filter(Boolean).map((d: any) => new Date(d).getTime());
+      const dataInicioBloco = inicios.length > 0 ? new Date(Math.min(...inicios)) : null;
+      const dataFimBloco = fins.length > 0 ? new Date(Math.max(...fins)) : null;
+      const historicoIdAncora = resetsAsc[0]?.historicoId ?? null;
+      macrociclos.push({
+        chave: historicoIdAncora ? `historico:${historicoIdAncora}` : "congelado",
+        origem: "reset",
+        historicoId: historicoIdAncora,
+        numeroCiclo: resetsAsc.length,
+        dataInicio: dataInicioBloco,
+        dataFim: dataFimBloco,
+        status: "encerrado",
+        contratoNivelId: niveisEncerrados[niveisEncerrados.length - 1]?.id ?? null,
+        // Todos os IDs de contrato_niveis cobertos por este bloco — necessário
+        // pra emissão de certificado continuar achando o macrociclo certo
+        // mesmo pedindo um nível que NÃO é o último do bloco (ex.: emitir o
+        // certificado do Nível I quando o Nível II também já está congelado
+        // junto no mesmo bloco "Plano Congelado").
+        contratoNivelIds: niveisEncerrados.map((n: any) => n.id),
+        // Quando há só 1 nível encerrado, mantém o rótulo dele ("Nível I") em
+        // vez de esconder atrás de "Ciclo N" — só fica null quando o bloco
+        // realmente junta vários níveis, aí sim não faz sentido escolher só um.
+        nivelLabel: niveisEncerrados.length === 1 ? niveisEncerrados[0]?.nivel ?? null : null,
+        label: "Plano Congelado",
+        niveisIncluidos: niveisEncerrados.map((n: any) => n.nivel),
+      });
+    }
+  } else {
+    // 2+ resets: um bloco POR reset, na ordem cronológica real da data de
+    // congelamento — nunca um bloco só juntando tudo. Regra de negócio
+    // explícita (12/08/2026): a troca de nível sozinha não separa nem zera
+    // a carga horária; só um reset efetivo encerra um agrupamento e inicia
+    // outro. Com vários resets, cada um encerra o agrupamento anterior e
+    // começa um novo.
+    let restantesParaAgrupar = [...niveisEncerrados];
+    resetsAsc.forEach((reset: any, idx: number) => {
+      const ehUltimoReset = idx === resetsAsc.length - 1;
+      let niveisDoBloco: any[];
+      if (ehUltimoReset) {
+        // Último reset leva tudo que ainda não foi agrupado — cobre tanto
+        // os níveis com data <= este reset quanto qualquer nível órfão sem
+        // data confiável (fallback seguro: nunca perde nível de vista).
+        niveisDoBloco = restantesParaAgrupar;
+        restantesParaAgrupar = [];
+      } else if (reset.dataCongelamento) {
+        niveisDoBloco = restantesParaAgrupar.filter((n: any) => {
+          const fim = n.nivelFim ?? n.dataFim;
+          return fim && new Date(fim).getTime() <= reset.dataCongelamento.getTime();
+        });
+        restantesParaAgrupar = restantesParaAgrupar.filter((n: any) => !niveisDoBloco.includes(n));
+      } else {
+        // Reset sem data de congelamento localizável — não arrisca
+        // adivinhar; deixa os níveis pro próximo reset (ou pro fallback
+        // do último, acima) resolver.
+        niveisDoBloco = [];
+      }
+      if (niveisDoBloco.length === 0) return;
+
+      const inicios = niveisDoBloco.map((n: any) => n.nivelInicio ?? n.dataInicio).filter(Boolean).map((d: any) => new Date(d).getTime());
+      const fins = niveisDoBloco.map((n: any) => n.nivelFim ?? n.dataFim).filter(Boolean).map((d: any) => new Date(d).getTime());
+      macrociclos.push({
+        chave: reset.historicoId ? `historico:${reset.historicoId}` : `congelado-${idx}`,
+        origem: "reset",
+        historicoId: reset.historicoId ?? null,
+        numeroCiclo: reset.numeroCicloArquivado ?? idx + 1,
+        dataInicio: inicios.length > 0 ? new Date(Math.min(...inicios)) : null,
+        dataFim: fins.length > 0 ? new Date(Math.max(...fins)) : null,
+        status: "encerrado",
+        contratoNivelId: niveisDoBloco[niveisDoBloco.length - 1]?.id ?? null,
+        contratoNivelIds: niveisDoBloco.map((n: any) => n.id),
+        nivelLabel: niveisDoBloco.length === 1 ? niveisDoBloco[0]?.nivel ?? null : null,
+        label: `Plano Congelado — Ciclo ${reset.numeroCicloArquivado ?? idx + 1}`,
+        niveisIncluidos: niveisDoBloco.map((n: any) => n.nivel),
+      });
     });
   }
+
 
   const proximoNivel = niveisRestantes[0] ?? null;
   macrociclos.push({
     chave: "atual",
     origem: "reset",
     historicoId: null,
-    numeroCiclo: (resets[resets.length - 1]?.numeroCicloArquivado ?? 0) + 1,
+    numeroCiclo: (resetsAsc[resetsAsc.length - 1]?.numeroCicloArquivado ?? 0) + 1,
     dataInicio: proximoNivel?.nivelInicio ?? proximoNivel?.dataInicio ?? null,
     dataFim: null,
     status: "ativo",
@@ -7226,6 +7296,61 @@ export async function getMacrociclosByAluno(alunoId: number) {
 }
 
 export type MacrocicloAluno = Awaited<ReturnType<typeof getMacrociclosByAluno>>[number];
+
+/**
+ * Retorna os níveis (com período) que pertencem ao MESMO ciclo do
+ * contratoNivelId informado — onde "mesmo ciclo" significa "sem um reset
+ * formal separando eles no meio", não simplesmente "todo nível com status
+ * fechado". Regra de negócio (explícita, 12/08/2026):
+ *
+ *   A troca de nível, sozinha, NÃO separa nem zera a carga horária — só um
+ *   registro de reset efetivo encerra um agrupamento e inicia outro. Níveis
+ *   fechados só por congelamento de turma (sem reset individual) continuam
+ *   acumulando no MESMO ciclo.
+ *
+ * Reaproveita getMacrociclosByAluno (que já é consciente de reset — usa
+ * auditoria_resets_ciclo pra separar os blocos) em vez de cada consumidor
+ * (certificado, relatório) refazer o próprio filtro "status = encerrado"
+ * isoladamente. As 3 cópias que existiam antes dessa função — uma em
+ * db.ts, uma em routers.ts, uma em meuDesempenho.ts — sempre concordavam
+ * sobre QUAIS níveis estão fechados, mas nunca sobre EM QUE GRUPO cada um
+ * entra quando há mais de um reset na vida do aluno; corrigir uma nunca
+ * corrigia as outras, porque nenhuma olhava pra fronteira de reset.
+ */
+export async function getNiveisDoMesmoCiclo(
+  alunoId: number,
+  contratoNivelId: number | null
+): Promise<{ nivel: string; dataInicio: string | null; dataFim: string | null }[]> {
+  if (!contratoNivelId) return [];
+  const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
+  const [todosNiveisAluno, macrociclos] = await Promise.all([
+    getContratoNiveisByAluno(alunoId),
+    getMacrociclosByAluno(alunoId),
+  ]);
+
+  // Acha o bloco (macrociclo) que contém o nível pedido — pelo
+  // contratoNivelId direto ou pela lista contratoNivelIds do bloco
+  // "Plano Congelado" (que pode cobrir vários níveis).
+  const bloco = macrociclos.find((m: any) =>
+    m.contratoNivelId === contratoNivelId || (m.contratoNivelIds && m.contratoNivelIds.includes(contratoNivelId))
+  );
+
+  // idsDoCiclo: só os níveis do MESMO bloco de reset — nunca "todo nível
+  // fechado na vida do aluno". Se o bloco não tiver contratoNivelIds (ex.:
+  // "Plano Ativo", que é sempre 1 nível só), usa só o próprio nível pedido.
+  const idsDoCiclo: number[] = bloco && Array.isArray(bloco.contratoNivelIds) && bloco.contratoNivelIds.length > 0
+    ? bloco.contratoNivelIds
+    : [contratoNivelId];
+
+  return todosNiveisAluno
+    .filter((n: any) => idsDoCiclo.includes(n.id) && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim))
+    .sort((a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99))
+    .map((n: any) => ({
+      nivel: n.nivel,
+      dataInicio: n.nivelInicio ?? n.dataInicio ?? null,
+      dataFim: n.nivelFim ?? n.dataFim ?? null,
+    }));
+}
 
 /**
  * Resolve só a tabela de competências (nota x meta) de um macrociclo — os
@@ -12920,33 +13045,22 @@ export async function getNivelCertificateByHash(hash: string) {
 
   const mentoras = await getCertificateMentoras(certificado.id);
 
-  // Todos os níveis do aluno, com seus próprios períodos — mostrado no
-  // certificado pra dar transparência total quando a fronteira exata entre
-  // dois níveis não foi capturada por um reset formal (ex.: nível encerrado
-  // via congelamento de turma, sem o snapshot individual). Em vez de tentar
-  // reconstruir retroativamente uma data exata de transição (arriscado),
-  // mostra o período de CADA nível lado a lado, sem inventar precisão que
-  // os dados não têm.
-  const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
-  const todosNiveisAluno = await getContratoNiveisByAluno(certificado.alunoId);
-  const todosNiveis = todosNiveisAluno
-    // Só o STATUS decide o que é "encerrado" — não uma comparação contra
-    // "hoje". Exigir também que a data de término já tivesse passado
-    // parecia uma proteção a mais, mas quebrava sempre que a data real do
-    // nível (corrigida a partir da planilha revisada) cai no futuro em
-    // relação a hoje mesmo o nível já estando oficialmente encerrado — foi
-    // exatamente isso que fez a tabela-espelho de carga horária sumir do
-    // relatório. status='encerrado' já é o sinal suficiente.
-    .filter((n: any) => {
-      const temStatusEncerrado = n.status === "encerrado" || n.status === "certificado";
-      return temStatusEncerrado && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
-    })
-    .sort((a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99))
-    .map((n: any) => ({
-      nivel: n.nivel,
-      dataInicio: n.nivelInicio ?? n.dataInicio ?? null,
-      dataFim: n.nivelFim ?? n.dataFim ?? null,
-    }));
+  // Todos os níveis do MESMO CICLO (mesmo bloco de reset) do aluno, com
+  // seus próprios períodos — mostrado no certificado pra dar transparência
+  // total quando a fronteira exata entre dois níveis não foi capturada por
+  // um reset formal (ex.: nível encerrado via congelamento de turma, sem
+  // o snapshot individual). Em vez de tentar reconstruir retroativamente
+  // uma data exata de transição (arriscado), mostra o período de CADA
+  // nível lado a lado, sem inventar precisão que os dados não têm.
+  //
+  // "Mesmo ciclo" é decidido por getNiveisDoMesmoCiclo — NUNCA "todo nível
+  // com status fechado na vida do aluno". A troca de nível sozinha não
+  // separa o agrupamento; só um reset efetivo faz isso (regra de negócio
+  // explícita, 12/08/2026). Sem essa distinção, um nível que já fechou
+  // DEPOIS de um reset (ex.: Nível IV do Fábio, EDB-LID-2026-0002, que
+  // pode fechar no futuro) apareceria empilhado junto dos níveis do ciclo
+  // ANTERIOR ao reset, mesmo sendo de um ciclo novo e separado.
+  const todosNiveis = await getNiveisDoMesmoCiclo(certificado.alunoId, certificado.contratoNivelId);
 
   // Carga horária total do programa (pedido explícito de um aluno): 10h por
   // competência concluída, 1h por tarefa entregue, 1h por mentoria presente,
@@ -13044,16 +13158,34 @@ export async function calcularCargaHorariaAluno(
   // porque o PDI que as contém tinha a data errada. A data de conclusão real
   // do aluno é a fonte mais confiável — não depende de o PDI estar com a
   // data certa pra funcionar.
+  //
+  // student_performance é alimentada por importação de planilha (alunos em
+  // plataforma externa, ex.: 'scaffold') — o vínculo confiável nessa tabela
+  // é o externalUserId, não o alunoId (que pode vir nulo ou desalinhado
+  // dependendo de como a importação casou os registros). Filtrar só por
+  // alunoId zerava "cursos" inteiro pra esses alunos, mesmo com competências
+  // genuinamente concluídas (caso do Fábio, EDB-LID-2026-0002 — cursos: 0h
+  // mesmo com 3 níveis encerrados).
+  const [alunoExternalRow]: any = await db.execute(sql.raw(
+    `SELECT externalId FROM alunos WHERE id = ${alunoId} LIMIT 1`
+  ));
+  const alunoExternalId = Array.isArray(alunoExternalRow) && alunoExternalRow[0]?.externalId
+    ? String(alunoExternalRow[0].externalId).replace(/'/g, "''")
+    : null;
+  const filtroAlunoComp = alunoExternalId
+    ? `(sp.alunoId = ${alunoId} OR sp.externalUserId = '${alunoExternalId}')`
+    : `sp.alunoId = ${alunoId}`;
   const [compRows]: any = await db.execute(sql.raw(`
     SELECT COUNT(DISTINCT sp.id) AS total
     FROM student_performance sp
-    WHERE sp.alunoId = ${alunoId}
+    WHERE ${filtroAlunoComp}
       AND sp.aulasDisponiveis > 0 AND sp.aulasConcluidas >= sp.aulasDisponiveis
       AND sp.dataConclusao IS NOT NULL AND sp.dataConclusao != ''
       ${filtroInicioComp}
       AND STR_TO_DATE(sp.dataConclusao, '%d/%m/%Y %H:%i:%s') <= '${dataFim} 23:59:59'
   `));
   const competenciasConcluidas = Array.isArray(compRows) ? Number(compRows[0]?.total ?? 0) : 0;
+
 
   const [tarefaRows]: any = await db.execute(sql.raw(`
     SELECT COUNT(*) AS total FROM mentoring_sessions
