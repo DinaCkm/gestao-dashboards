@@ -6299,42 +6299,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       }
       const cargaHorariaCalc = await db.calcularCargaHorariaAluno(aluno.id, cargaHorariaInicioCH, cargaHorariaFimCH);
 
-      // Espelho por nível — mesmo conceito do certificado: um item por
-      // etapa, como um histórico escolar. Sempre monta, mesmo com 1 nível
-      // só — o espelho é o detalhamento da carga horária, não uma
-      // comparação entre níveis.
-      //
-      // Quando dois (ou mais) níveis consecutivos têm o MESMO período
-      // gravado (fronteira de transição não capturada por um reset
-      // formal), calcular a carga horária separadamente pra cada um conta
-      // as mesmas competências/tarefas/mentorias/webinars duas vezes.
-      // Agrupa numa única linha nesse caso — mesma correção aplicada no
-      // certificado (db.ts), pra manter os dois documentos batendo.
-      let cargaHorariaPorNivelCH: Array<{ nivel: string; dataInicio: string | null; dataFim: string | null; total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> = [];
-      {
-        let i = 0;
-        while (i < todosNiveisCH.length) {
-          const atual = todosNiveisCH[i];
-          const grupo = [atual];
-          let j = i + 1;
-          while (
-            j < todosNiveisCH.length &&
-            todosNiveisCH[j].dataInicio === atual.dataInicio &&
-            todosNiveisCH[j].dataFim === atual.dataFim
-          ) {
-            grupo.push(todosNiveisCH[j]);
-            j++;
-          }
-          const ch = await db.calcularCargaHorariaAluno(aluno.id, atual.dataInicio, atual.dataFim);
-          cargaHorariaPorNivelCH.push({
-            nivel: grupo.map((g: any) => g.nivel).join(" e "),
-            dataInicio: atual.dataInicio,
-            dataFim: atual.dataFim,
-            ...ch,
-          });
-          i = j;
-        }
-      }
+      // Removido o "espelho por nível" que existia aqui — mesmo motivo da
+      // limpeza em db.ts: com níveis de período idêntico, calcular a carga
+      // horária separadamente por nível arriscava contar a mesma atividade
+      // duas vezes (foi o que inflou a carga horária da Joseane,
+      // EDB-LID-2026-0005, de 130h pra 260h). `cargaHorariaCalc` abaixo já
+      // cobre o mesmo detalhamento por atividade sem esse risco.
 
       return {
         found: true as const,
@@ -6342,7 +6312,6 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           ? `Macrociclo ${numeroCicloArquivadoAtual} — Congelado`
           : 'Macrociclo 1 — Congelado',
         cargaHoraria: cargaHorariaCalc,
-        cargaHorariaPorNivel: cargaHorariaPorNivelCH,
         dataCorte: dataCorte ? dataCorte.toISOString().split('T')[0] : null,
         dataInicioPeriodo: dataInicioPeriodo ? dataInicioPeriodo.toISOString().split('T')[0] : null,
         macroInicio: macroInicioCongelado,
@@ -10896,7 +10865,6 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
           })),
           todosNiveis: data.todosNiveis || [],
           cargaHoraria: data.cargaHoraria || null,
-          cargaHorariaPorNivel: data.cargaHorariaPorNivel || [],
         };
       }),
 
