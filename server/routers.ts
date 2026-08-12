@@ -5949,6 +5949,32 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         dataCorte = janela.dataFim;
         dataInicioPeriodo = janela.dataInicio;
         numeroCicloArquivadoAtual = janela.numeroCicloArquivado;
+
+        // janela, acima, é a data do registro de histórico ISOLADO que
+        // ancora este historicoId — reflete só o período daquele nível
+        // específico, não o bloco inteiro quando vários níveis foram
+        // congelados juntos sem reset individual entre eles (ex.: Fábio,
+        // EDB-LID-2026-0002: I+II+III no mesmo bloco, mas só 1 registro de
+        // reset). Sem estender aqui, IND.2/IND.3 e a tabela de cursos
+        // ficavam presos à janela estreita de 1 nível só, enquanto a carga
+        // horária (calculada separadamente) já usava o span completo — daí
+        // tarefas/mentorias/webinars saírem certos e cursos/avaliações não,
+        // mesmo vindo do mesmo relatório. Usa o span do BLOCO (já calculado
+        // corretamente em getMacrociclosByAluno, por reset) quando existir.
+        const blocoDoHistorico = (await db.getMacrociclosByAluno(aluno.id))
+          .find((m: any) => m.historicoId === input.historicoId);
+        if (blocoDoHistorico?.dataInicio) {
+          const blocoInicio = new Date(blocoDoHistorico.dataInicio);
+          if (!dataInicioPeriodo || blocoInicio.getTime() < dataInicioPeriodo.getTime()) {
+            dataInicioPeriodo = blocoInicio;
+          }
+        }
+        if (blocoDoHistorico?.dataFim) {
+          const blocoFim = new Date(blocoDoHistorico.dataFim);
+          if (!dataCorte || blocoFim.getTime() > dataCorte.getTime()) {
+            dataCorte = blocoFim;
+          }
+        }
       } else {
         const dataReset = await db.getDataUltimoResetAluno(aluno.id);
         // Se não há reset registrado, usar a data de congelamento do PDI mais recente
@@ -6266,22 +6292,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // mentoria presente, 1h por webinar presente. Usa a MESMA função e
       // fonte de dados do certificado (calcularCargaHorariaAluno), pra
       // garantir que relatório e certificado sempre mostrem o número
-      // idêntico. Quando o aluno tem mais de um nível encerrado, a janela
-      // cobre a jornada inteira (do início do primeiro ao fim do último) —
-      // não só o reset específico deste macrociclo — porque o cabeçalho do
-      // relatório já mostra "Nível I: ... e Nível II: ..." como uma coisa
-      // só, então a carga horária tem que refletir esse mesmo total.
+      // idêntico.
+      //
+      // A janela cobre todo o MESMO CICLO (mesmo bloco de reset) — nunca
+      // "todo nível fechado na vida do aluno". Regra de negócio explícita
+      // (12/08/2026): a troca de nível sozinha não separa nem zera a carga
+      // horária; só um reset efetivo encerra um agrupamento e inicia outro.
+      // Por isso o bloco é achado pelo MESMO historicoId deste macrociclo
+      // congelado (ou pelo bloco "Plano Congelado" quando nenhum historicoId
+      // específico foi pedido) — não por "todo nível com status fechado",
+      // que misturava níveis de ciclos diferentes, separados por resets
+      // distintos, na mesma soma.
+      const macrociclosDoAlunoCH = await db.getMacrociclosByAluno(aluno.id);
+      const blocoCicloCH = input?.historicoId
+        ? macrociclosDoAlunoCH.find((m: any) => m.historicoId === input.historicoId)
+        : macrociclosDoAlunoCH.find((m: any) => m.status === "encerrado");
+      const idsDoCicloCH: number[] = blocoCicloCH && Array.isArray(blocoCicloCH.contratoNivelIds) && blocoCicloCH.contratoNivelIds.length > 0
+        ? blocoCicloCH.contratoNivelIds
+        : (blocoCicloCH?.contratoNivelId ? [blocoCicloCH.contratoNivelId] : []);
       const ORDEM_NIVEL_CH: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
       const todosNiveisAlunoCH = await db.getContratoNiveisByAluno(aluno.id);
-      // Só o STATUS decide o que entra no espelho — não uma comparação de
-      // data contra "hoje" (já removemos essa mesma checagem em duas outras
-      // cópias parecidas desta lógica; essa terceira cópia, usada no
-      // relatório, tinha ficado pra trás por engano).
       const todosNiveisCH = todosNiveisAlunoCH
-        .filter((n: any) => {
-          const temStatusEncerrado = n.status === "encerrado" || n.status === "certificado";
-          return temStatusEncerrado && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
-        })
+        .filter((n: any) => idsDoCicloCH.includes(n.id) && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim))
         .sort((a: any, b: any) => (ORDEM_NIVEL_CH[a.nivel] ?? 99) - (ORDEM_NIVEL_CH[b.nivel] ?? 99))
         .map((n: any) => ({
           nivel: n.nivel,
