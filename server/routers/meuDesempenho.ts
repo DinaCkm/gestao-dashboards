@@ -201,19 +201,16 @@ export const meuDesempenhoRouter = router({
       }
 
       const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
-      const hojeData = new Date();
       const todosNiveisAluno = await getContratoNiveisByAluno(alunoId);
       const todosNiveis = todosNiveisAluno
-        // Só níveis realmente encerrados — ver o mesmo comentário em db.ts
-        // (getNivelCertificateByHash) sobre por que usa new Date() em vez de
-        // recortar a string: o valor pode chegar como objeto Date, e recorte
-        // de string quebra em silêncio nesse caso.
+        // Só o STATUS decide o que é "encerrado" — não uma comparação
+        // contra "hoje". Uma data de término corrigida pode legitimamente
+        // cair no futuro mesmo com o nível já encerrado administrativamente
+        // (ex.: contrato que vai até uma data futura); exigir "já passou"
+        // além do status fazia o nível sumir do cabeçalho e do espelho.
         .filter((n: any) => {
           const temStatusEncerrado = n.status === "encerrado" || n.status === "certificado";
-          const dataFimRaw = n.nivelFim ?? n.dataFim ?? null;
-          const dataFimDate = dataFimRaw ? new Date(dataFimRaw) : null;
-          const dataJaPassou = dataFimDate && !isNaN(dataFimDate.getTime()) ? dataFimDate <= hojeData : false;
-          return temStatusEncerrado && dataJaPassou && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
+          return temStatusEncerrado && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
         })
         .sort((a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99))
         .map((n: any) => ({
