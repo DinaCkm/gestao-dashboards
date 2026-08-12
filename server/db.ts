@@ -12804,6 +12804,30 @@ export async function getNivelCertificateByAlunoNivel(alunoId: number, contratoN
 }
 
 /**
+ * Igual a getNivelCertificateByAlunoNivel, mas aceita VÁRIOS contratoNivelId
+ * de uma vez. Necessário porque um "Plano Congelado" pode juntar vários
+ * níveis (ex.: Nível I e II) num único macrociclo, cujo `contratoNivelId`
+ * representante é sempre o do ÚLTIMO nível do bloco — mas o certificado
+ * pode ter sido emitido contra QUALQUER um dos níveis do bloco (o que o
+ * admin selecionou na tela de emissão). Buscar só pelo representante fazia
+ * o certificado "sumir" (Código de Identificação em branco no relatório)
+ * sempre que a emissão não foi feita exatamente contra o último nível.
+ */
+export async function getNivelCertificateByAlunoNiveis(alunoId: number, contratoNivelIds: number[]): Promise<NivelCertificate | null> {
+  const db = await getDb();
+  if (!db || contratoNivelIds.length === 0) return null;
+  const [cert] = await db.select().from(nivelCertificates)
+    .where(and(
+      eq(nivelCertificates.alunoId, alunoId),
+      inArray(nivelCertificates.contratoNivelId, contratoNivelIds),
+      eq(nivelCertificates.status, "emitido"),
+    ))
+    .orderBy(desc(nivelCertificates.emitidoEm))
+    .limit(1);
+  return cert || null;
+}
+
+/**
  * Lista os certificados emitidos mais recentes, com o nome do aluno — pra
  * telas administrativas mostrarem o Código de Identificação sem precisar
  * que o admin guarde/procure manualmente onde anotou cada um.
