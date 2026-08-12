@@ -568,7 +568,9 @@ async function gerarESalvarCertificadoPdf(
   let relatorioUrl: string | null = null;
   try {
     const macrociclos = await db.getMacrociclosByAluno(alunoId);
-    const macrociclo = macrociclos.find((m: any) => m.contratoNivelId === contratoNivelId);
+    const macrociclo = macrociclos.find((m: any) =>
+      m.contratoNivelId === contratoNivelId || (m.contratoNivelIds && m.contratoNivelIds.includes(contratoNivelId))
+    );
     console.log(`[certificacao] relatório: macrociclo ${macrociclo ? `encontrado (chave=${macrociclo.chave})` : "NÃO encontrado"} para alunoId=${alunoId} contratoNivelId=${contratoNivelId}`);
     if (macrociclo) {
       // Limpa o cache de dados (sessões, eventos, performance etc.) antes de
@@ -10894,7 +10896,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         // depender da cadeia nivel→PDI, que falha quando o PDI congelado não
         // tem contratoNivelId vinculado (comum em turmas legadas já resetadas).
         const macrociclosDoAluno = await db.getMacrociclosByAluno(alunoId);
-        const macrocicloCorrespondente = macrociclosDoAluno.find((m: any) => m.contratoNivelId === input.contratoNivelId);
+        const macrocicloCorrespondente = macrociclosDoAluno.find((m: any) =>
+          m.contratoNivelId === input.contratoNivelId || (m.contratoNivelIds && m.contratoNivelIds.includes(input.contratoNivelId))
+        );
 
         const elegibilidade = await db.avaliarElegibilidadeCertificacao(alunoId, input.contratoNivelId, macrocicloCorrespondente?.historicoId ?? null);
         if (!elegibilidade.elegivel) {
