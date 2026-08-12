@@ -12943,48 +12943,15 @@ export async function getNivelCertificateByHash(hash: string) {
   }
   const cargaHoraria = await calcularCargaHorariaAluno(certificado.alunoId, cargaHorariaInicio, cargaHorariaFim);
 
-  // Espelho de carga horária por nível — um item por etapa, como um
-  // histórico escolar, pra mostrar de onde vem cada hora do total acima
-  // (pedido explícito: "detalhando a carga horária... item por item e
-  // período por período"). Sempre calcula, mesmo com um nível só — o
-  // espelho não é uma comparação entre níveis, é o detalhamento da carga
-  // horária em si; um aluno de nível único também tem direito de ver de
-  // onde vêm as horas dele.
-  //
-  // Quando dois (ou mais) níveis consecutivos têm o MESMO período gravado
-  // (fronteira de transição não capturada por um reset formal — ver
-  // comentário acima sobre "sem inventar precisão que os dados não têm"),
-  // calcular a carga horária separadamente pra cada um contaria as MESMAS
-  // competências/tarefas/mentorias/webinars duas vezes, já que os dois
-  // caem dentro da mesma janela de datas. Nesse caso agrupa numa única
-  // linha do espelho (ex.: "Nível I e II") e calcula uma vez só — foi
-  // exatamente essa duplicação que inflou a carga horária da Joseane
-  // (EDB-LID-2026-0005) de 130h pra 260h.
-  let cargaHorariaPorNivel: Array<{ nivel: string; dataInicio: string | null; dataFim: string | null; total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> = [];
-  {
-    let i = 0;
-    while (i < todosNiveis.length) {
-      const atual = todosNiveis[i];
-      const grupo = [atual];
-      let j = i + 1;
-      while (
-        j < todosNiveis.length &&
-        todosNiveis[j].dataInicio === atual.dataInicio &&
-        todosNiveis[j].dataFim === atual.dataFim
-      ) {
-        grupo.push(todosNiveis[j]);
-        j++;
-      }
-      const ch = await calcularCargaHorariaAluno(certificado.alunoId, atual.dataInicio, atual.dataFim);
-      cargaHorariaPorNivel.push({
-        nivel: grupo.map((g: any) => g.nivel).join(" e "),
-        dataInicio: atual.dataInicio,
-        dataFim: atual.dataFim,
-        ...ch,
-      });
-      i = j;
-    }
-  }
+  // Removido o "espelho de carga horária por nível" que existia aqui: com
+  // níveis de período idêntico (fronteira de transição não capturada por
+  // um reset formal), calcular a carga horária separadamente por nível
+  // sempre corria o risco de contar a mesma atividade duas vezes (foi o
+  // que inflou a carga horária da Joseane, EDB-LID-2026-0005, de 130h pra
+  // 260h). A carga horária total acima (`cargaHoraria`), calculada uma
+  // única vez sobre a janela completa, já cobre o mesmo detalhamento por
+  // atividade (cursos/tarefas/mentorias/webinars) sem esse risco — não
+  // faz sentido manter os dois.
 
   const [assinaturasRows]: any = await db.execute(sql.raw(
     `SELECT * FROM certification_signatures WHERE ativo = 1 ORDER BY id ASC`
@@ -12997,7 +12964,6 @@ export async function getNivelCertificateByHash(hash: string) {
     assinaturas: Array.isArray(assinaturasRows) ? assinaturasRows : [],
     todosNiveis,
     cargaHoraria,
-    cargaHorariaPorNivel,
   };
 }
 
