@@ -27,6 +27,7 @@ import {
   avaliarElegibilidadeCertificacao,
   getNivelCertificateByAlunoNivel,
   getNivelCertificateByAlunoNiveis,
+  getNiveisDoMesmoCiclo,
   getMacrociclosByAluno,
   getPedagogiaPorMacrociclo,
   getCertificationSignatures,
@@ -219,24 +220,15 @@ export const meuDesempenhoRouter = router({
         }
       }
 
-      const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
-      const todosNiveisAluno = await getContratoNiveisByAluno(alunoId);
-      const todosNiveis = todosNiveisAluno
-        // Só o STATUS decide o que é "encerrado" — não uma comparação
-        // contra "hoje". Uma data de término corrigida pode legitimamente
-        // cair no futuro mesmo com o nível já encerrado administrativamente
-        // (ex.: contrato que vai até uma data futura); exigir "já passou"
-        // além do status fazia o nível sumir do cabeçalho e do espelho.
-        .filter((n: any) => {
-          const temStatusEncerrado = n.status === "encerrado" || n.status === "certificado";
-          return temStatusEncerrado && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
-        })
-        .sort((a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99))
-        .map((n: any) => ({
-          nivel: n.nivel,
-          dataInicio: n.nivelInicio ?? n.dataInicio ?? null,
-          dataFim: n.nivelFim ?? n.dataFim ?? null,
-        }));
+      // "Mesmo ciclo" é decidido pela mesma fonte que decide os blocos
+      // Congelado/Ativo (getMacrociclosByAluno, por trás de
+      // getNiveisDoMesmoCiclo) — nunca por "todo nível com status fechado
+      // na vida do aluno". Regra de negócio explícita (12/08/2026): a
+      // troca de nível sozinha não separa o agrupamento; só um reset
+      // efetivo faz isso. Sem essa distinção, ao abrir o relatório de UM
+      // ciclo já congelado, um nível fechado depois DE OUTRO reset (de um
+      // ciclo seguinte) aparecia empilhado aqui também.
+      const todosNiveis = await getNiveisDoMesmoCiclo(alunoId, macrociclo.contratoNivelId);
 
       return {
         aluno: { id: aluno.id, nome: aluno.name },
