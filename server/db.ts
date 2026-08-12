@@ -7378,71 +7378,46 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
   const performanceDoAluno = [...perfStudentPerformance, ...perfAtividadeFallback]
     .filter((p) => p.idUsuario === idUsuarioAluno);
 
-  // Ciclo congelado: um reset pode congelar VÁRIOS PDIs de uma vez (uma trilha
-  // por competência básica, por exemplo) — não só o PDI referenciado no
-  // snapshot. Busca todos os PDIs congelados dentro da janela deste reset
-  // (mesmo macroTermino do reset, e depois do reset anterior, se houver) e
-  // soma as competências de todos.
+  // Ciclo congelado: mesmo critério comprovado que já alimenta o IND.3
+  // (getCiclosCongeladosParaCalculator, com dados corretos hoje pro Fábio)
+  // — pega TODOS os PDIs congelados do aluno, sem tentar casar um PDI
+  // específico com este nível por data de macroTermino ou por FK. Essa
+  // tentativa de "casar o PDI certo" (por janela do PDI inteiro, ou por
+  // contrato_niveis.assessmentPdiId) falhava sempre que a data planejada do
+  // PDI ou o vínculo direto não estavam preenchidos — zerando cursos e
+  // avaliações do ciclo inteiro mesmo com o PDI genuinamente concluído
+  // (Fábio, EDB-LID-2026-0002: 3 níveis de curso, IND.3 zerado dias a fio).
+  // O filtro certo é por COMPETÊNCIA (microInicio/microTermino de cada
+  // uma), não por PDI inteiro — é assim que o IND.3 já funciona.
   if (macrociclo.origem === "reset" && macrociclo.status === "encerrado" && macrociclo.historicoId) {
-    // Compara só a DATA (não a hora exata) — macroTermino é um campo de data,
-    // e o reset tem timestamp com hora; comparar timestamps completos excluía
-    // sistematicamente os PDIs certos (fim do dia do PDI sempre > hora exata do reset).
-    const dataFimDia = macrociclo.dataFim ? String(macrociclo.dataFim).slice(0, 10) : null;
-    const dataInicioDia = macrociclo.dataInicio ? String(macrociclo.dataInicio).slice(0, 10) : null;
+    const janelaBloco = {
+      dataInicio: macrociclo.dataInicio ? new Date(macrociclo.dataInicio) : null,
+      dataFim: macrociclo.dataFim ? new Date(macrociclo.dataFim) : null,
+    };
 
     const pdisCongelados = await database.select().from(assessmentPdi).where(
       and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.status, "congelado"))
     );
-    const pdisPorJanela = pdisCongelados.filter((p) => {
-      if (!p.macroTermino) return false;
-      const terminoDia = String(p.macroTermino).slice(0, 10);
-      if (dataFimDia && terminoDia > dataFimDia) return false;
-      if (dataInicioDia && terminoDia <= dataInicioDia) return false;
-      return true;
-    });
 
-    // A janela por data (acima) pode não bater quando a data PLANEJADA do
-    // PDI (macroTermino) diverge da data OFICIAL do nível no contrato
-    // (nivelInicio/nivelFim — que é o que compõe macrociclo.dataInicio/
-    // dataFim). Isso é comum quando o nível teve a data corrigida
-    // depois (ex.: planilha revisada) sem o PDI acompanhar. Nesse caso a
-    // janela sozinha zerava TODAS as competências do ciclo inteiro, mesmo
-    // com o PDI genuinamente concluído e congelado (caso do Fábio,
-    // EDB-LID-2026-0002: IND.2 e IND.3 em 0%, "0 de 0 cursos obrigatórios"
-    // mesmo com 3 níveis de curso realizados).
-    //
-    // Complementa a janela com o vínculo DIRETO contrato_niveis.
-    // assessmentPdiId de cada nível do bloco — mais confiável que
-    // comparar datas, já que não depende de datas planejadas baterem
-    // com datas oficiais.
-    const idsNiveisDoBloco: number[] = Array.isArray((macrociclo as any).contratoNivelIds) && (macrociclo as any).contratoNivelIds.length > 0
-      ? (macrociclo as any).contratoNivelIds
-      : (macrociclo.contratoNivelId ? [macrociclo.contratoNivelId] : []);
-    let pdisPorVinculoDireto: typeof pdisCongelados = [];
-    if (idsNiveisDoBloco.length > 0) {
-      const [niveisRows]: any = await database.execute(sql.raw(
-        `SELECT assessmentPdiId FROM contrato_niveis WHERE id IN (${idsNiveisDoBloco.join(",")}) AND assessmentPdiId IS NOT NULL`
-      ));
-      const pdiIdsVinculados: number[] = Array.isArray(niveisRows)
-        ? niveisRows.map((r: any) => r.assessmentPdiId).filter((id: any) => id != null)
-        : [];
-      pdisPorVinculoDireto = pdisCongelados.filter((p) => pdiIdsVinculados.includes(p.id));
-    }
-
-    const pdisDesteReset = Array.from(
-      new Map([...pdisPorJanela, ...pdisPorVinculoDireto].map((p) => [p.id, p])).values()
-    );
-
-    if (pdisDesteReset.length > 0) {
+    if (pdisCongelados.length > 0) {
       const competenciasPorPdi = await Promise.all(
-        pdisDesteReset.map((p) => resolverCompetenciasDoPdi(database, p.id, alunoId, compIdToCodigoMap, performanceDoAluno))
+        pdisCongelados.map((p) => resolverCompetenciasDoPdi(database, p.id, alunoId, compIdToCodigoMap, performanceDoAluno, janelaBloco))
       );
-      return { competencias: competenciasPorPdi.flat() };
+      // Dedup por competenciaId — mais de um PDI pode conter a mesma
+      // competência (ex.: replanejamento), e a competência já vem filtrada
+      // pela janela deste bloco em cada PDI.
+      const todasCompetencias = competenciasPorPdi.flat();
+      const competenciasUnicas = Array.from(
+        new Map(todasCompetencias.map((c) => [c.competenciaId, c])).values()
+      );
+      if (competenciasUnicas.length > 0) {
+        return { competencias: competenciasUnicas };
+      }
     }
 
-    // Fallback: nenhum PDI encontrado nem pela janela nem pelo vínculo direto
-    // (dados antigos sem macroTermino consistente e sem assessmentPdiId
-    // preenchido) — usa ao menos o PDI referenciado no snapshot.
+    // Fallback: nenhuma competência encontrada na janela deste bloco (dados
+    // antigos sem microInicio/microTermino consistente) — usa ao menos o
+    // PDI referenciado no snapshot, sem filtro de data.
     const [snapRows]: any = await database.execute(sql.raw(
       `SELECT assessmentPdiId FROM historico_ciclos_aluno WHERE id = ${macrociclo.historicoId} LIMIT 1`
     ));
@@ -7487,10 +7462,29 @@ async function resolverCompetenciasDoPdi(
   assessmentPdiId: number,
   alunoId: number,
   compIdToCodigoMap: Map<number, string>,
-  performanceDoAluno: Awaited<ReturnType<typeof getStudentPerformanceAsRecords>>
+  performanceDoAluno: Awaited<ReturnType<typeof getStudentPerformanceAsRecords>>,
+  janela?: { dataInicio?: Date | null; dataFim?: Date | null }
 ) {
-  const compsPdi = await database.select().from(assessmentCompetencias)
+  let compsPdi = await database.select().from(assessmentCompetencias)
     .where(eq(assessmentCompetencias.assessmentPdiId, assessmentPdiId));
+
+  // Filtro opcional por janela — mesmo critério já usado (e comprovadamente
+  // funcionando) em getCiclosCongeladosParaCalculator pro IND.3: filtra pela
+  // data de CADA competência (microInicio/microTermino), não por tentar
+  // achar o PDI "certo" pra um nível. Competências sem microTermino ficam
+  // de fora quando há janela — sem data não dá pra saber em que ciclo caem.
+  if (janela && (janela.dataInicio || janela.dataFim)) {
+    compsPdi = compsPdi.filter((c) => {
+      if (!c.microTermino) return false;
+      const termino = new Date(c.microTermino);
+      if (janela.dataFim && termino > janela.dataFim) return false;
+      if (janela.dataInicio) {
+        const inicio = c.microInicio ? new Date(c.microInicio) : termino;
+        if (inicio < janela.dataInicio) return false;
+      }
+      return true;
+    });
+  }
   const compIds = compsPdi.map((c) => c.competenciaId);
   const catalogo = compIds.length > 0
     ? await database.select().from(competencias).where(inArray(competencias.id, compIds))
@@ -13217,7 +13211,28 @@ export async function calcularCargaHorariaAluno(
       ${filtroInicioComp}
       AND STR_TO_DATE(sp.dataConclusao, '%d/%m/%Y %H:%i:%s') <= '${dataFim} 23:59:59'
   `));
-  const competenciasConcluidas = Array.isArray(compRows) ? Number(compRows[0]?.total ?? 0) : 0;
+  let competenciasConcluidas = Array.isArray(compRows) ? Number(compRows[0]?.total ?? 0) : 0;
+
+  // Fallback: student_performance não achou nada (aluno em plataforma sem
+  // esse rastro, ex.: 'sistema_interno' sem CSV de aulas) — usa o mesmo
+  // critério que já alimenta o IND.3 corretamente (getCiclosCongeladosPara
+  // Calculator): competências de PDIs CONGELADOS do aluno, filtradas pela
+  // própria data de cada uma (microTermino), não pela data do PDI inteiro
+  // nem por um vínculo aluno↔performance que pode não existir. Foi essa
+  // falta de fallback que deixava "cursos" zerado pro Fábio (EDB-LID-2026-
+  // 0002) mesmo com 3 níveis de curso genuinamente concluídos.
+  if (competenciasConcluidas === 0) {
+    const [compV2Rows]: any = await db.execute(sql.raw(`
+      SELECT COUNT(DISTINCT ac.id) AS total
+      FROM assessment_competencias ac
+      JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId
+      WHERE ap.alunoId = ${alunoId} AND ap.status = 'congelado'
+        AND ac.microTermino IS NOT NULL
+        ${dataInicio ? `AND ac.microInicio >= '${dataInicio}'` : ''}
+        AND ac.microTermino <= '${dataFim}'
+    `));
+    competenciasConcluidas = Array.isArray(compV2Rows) ? Number(compV2Rows[0]?.total ?? 0) : 0;
+  }
 
 
   const [tarefaRows]: any = await db.execute(sql.raw(`
