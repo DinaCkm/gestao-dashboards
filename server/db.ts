@@ -7131,71 +7131,95 @@ export async function getMacrociclosByAluno(alunoId: number) {
   if (!database) return [];
 
   const resets = await getAuditoriaResets({ alunoId, limit: 100 });
+  const todosNiveis = await getContratoNiveisByAluno(alunoId);
+  const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
+  const niveisAsc = [...todosNiveis].sort(
+    (a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99)
+  );
 
-  if (resets.length > 0) {
-    const resetsAsc = [...resets].reverse();
-    const todosNiveis = await getContratoNiveisByAluno(alunoId);
-    const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
-    const niveisAsc = [...todosNiveis].sort(
-      (a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99)
-    );
-
-    const macrociclos: any[] = [];
-    let inicio: any = null;
-    resetsAsc.forEach((r: any, idx: number) => {
-      macrociclos.push({
-        chave: `historico:${r.historicoId}`,
-        origem: "reset",
-        historicoId: r.historicoId,
-        numeroCiclo: r.numeroCicloArquivado,
-        dataInicio: inicio,
-        dataFim: r.criadoEm,
-        status: "encerrado",
-        contratoNivelId: niveisAsc[idx]?.id ?? null,
-        nivelLabel: niveisAsc[idx]?.nivel ?? null,
-      });
-      inicio = r.criadoEm;
-    });
-
-    // O próximo nível na sequência pode já estar com status "encerrado" no
-    // contrato SEM nunca ter passado pelo reset formal (ex.: encerrado por
-    // outro processo, como o congelamento por turma) — nesse caso não é o
-    // "ciclo atual em andamento", é um nível fechado que ainda não tem
-    // arquivamento/snapshot. Tratar como "ativo" faria a tela escondê-lo
-    // como se ainda estivesse em progresso, quando na verdade só falta
-    // arquivar. Reflete o status real do contrato em vez de assumir.
-    const ultimoNumero = resetsAsc[resetsAsc.length - 1]?.numeroCicloArquivado ?? 0;
-    const proximoNivel = niveisAsc[resetsAsc.length];
-    const proximoRealmenteEncerrado = proximoNivel && proximoNivel.status === "encerrado";
-    macrociclos.push({
+  if (resets.length === 0) {
+    // Aluno nunca passou pelo reset formal: não existe fronteira real entre
+    // "níveis" ainda, então não faz sentido fingir que são macrociclos separados
+    // — mostra só o progresso atual (vira card único "Plano Ativo" na tela).
+    const nivelVigente = await getContratoNivelVigenteByAluno(alunoId);
+    return [{
       chave: "atual",
-      origem: proximoRealmenteEncerrado ? "encerrado-sem-arquivamento" : "reset",
+      origem: "sem-reset",
       historicoId: null,
-      numeroCiclo: ultimoNumero + 1,
-      dataInicio: inicio,
+      numeroCiclo: 1,
+      dataInicio: null,
       dataFim: null,
-      status: proximoRealmenteEncerrado ? "encerrado" : "ativo",
-      contratoNivelId: proximoNivel?.id ?? null,
-      nivelLabel: proximoNivel?.nivel ?? null,
-    });
-    return macrociclos;
+      status: "ativo",
+      contratoNivelId: nivelVigente?.id ?? null,
+      nivelLabel: nivelVigente?.nivel ?? null,
+    }];
   }
 
-  // Aluno nunca passou pelo reset formal: não existe fronteira real entre
-  // "níveis" ainda, então não faz sentido fingir que são macrociclos separados
-  // — mostra só o progresso atual (vira card único "Progresso Atual" na tela).
-  const nivelVigente = await getContratoNivelVigenteByAluno(alunoId);
-  return [{
+  // Simplificado pra dois grandes blocos (pedido explícito): "Plano
+  // Congelado" e "Plano Ativo" — em vez de tentar casar 1 registro de
+  // histórico por nível individualmente. Isso é necessário porque o vínculo
+  // PDI↔nível às vezes vem quebrado ou duplicado na origem dos dados (já
+  // vimos casos assim), o que fazia a tela "perder" níveis inteiros que
+  // realmente já tinham terminado. O critério real pra decidir o que é
+  // "congelado" e o que é "ativo" é a DATA, direto da tabela de contrato —
+  // não a presença de um registro de histórico específico.
+  const hoje = new Date();
+  const niveisEncerrados = niveisAsc.filter((n: any) => {
+    const fimRaw = n.nivelFim ?? n.dataFim ?? null;
+    const fim = fimRaw ? new Date(fimRaw) : null;
+    return n.status === "encerrado" && fim && !isNaN(fim.getTime()) && fim <= hoje;
+  });
+  const niveisRestantes = niveisAsc.filter((n: any) => !niveisEncerrados.includes(n));
+
+  const macrociclos: any[] = [];
+
+  if (niveisEncerrados.length > 0) {
+    // Usa o historicoId de QUALQUER reset já feito como âncora pro cálculo
+    // dos indicadores (o cálculo em si já foi ajustado, em outro ponto, pra
+    // olhar a data real de conclusão do aluno em vez de depender do PDI
+    // estar certo) — a janela mostrada, porém, reflete o span real de TODOS
+    // os níveis encerrados, não só o de um reset isolado.
+    const inicios = niveisEncerrados.map((n: any) => n.nivelInicio ?? n.dataInicio).filter(Boolean).map((d: any) => new Date(d).getTime());
+    const fins = niveisEncerrados.map((n: any) => n.nivelFim ?? n.dataFim).filter(Boolean).map((d: any) => new Date(d).getTime());
+    const dataInicioBloco = inicios.length > 0 ? new Date(Math.min(...inicios)) : null;
+    const dataFimBloco = fins.length > 0 ? new Date(Math.max(...fins)) : null;
+    const historicoIdAncora = resets[0]?.historicoId ?? null;
+    macrociclos.push({
+      chave: historicoIdAncora ? `historico:${historicoIdAncora}` : "congelado",
+      origem: "reset",
+      historicoId: historicoIdAncora,
+      numeroCiclo: resets.length,
+      dataInicio: dataInicioBloco,
+      dataFim: dataFimBloco,
+      status: "encerrado",
+      contratoNivelId: niveisEncerrados[niveisEncerrados.length - 1]?.id ?? null,
+      // Todos os IDs de contrato_niveis cobertos por este bloco — necessário
+      // pra emissão de certificado continuar achando o macrociclo certo
+      // mesmo pedindo um nível que NÃO é o último do bloco (ex.: emitir o
+      // certificado do Nível I quando o Nível II também já está congelado
+      // junto no mesmo bloco "Plano Congelado").
+      contratoNivelIds: niveisEncerrados.map((n: any) => n.id),
+      nivelLabel: null,
+      label: "Plano Congelado",
+      niveisIncluidos: niveisEncerrados.map((n: any) => n.nivel),
+    });
+  }
+
+  const proximoNivel = niveisRestantes[0] ?? null;
+  macrociclos.push({
     chave: "atual",
-    origem: "sem-reset",
+    origem: "reset",
     historicoId: null,
-    numeroCiclo: 1,
-    dataInicio: null,
+    numeroCiclo: (resets[resets.length - 1]?.numeroCicloArquivado ?? 0) + 1,
+    dataInicio: proximoNivel?.nivelInicio ?? proximoNivel?.dataInicio ?? null,
     dataFim: null,
     status: "ativo",
-    contratoNivelId: nivelVigente?.id ?? null,
-    nivelLabel: nivelVigente?.nivel ?? null,
-  }];
+    contratoNivelId: proximoNivel?.id ?? null,
+    nivelLabel: proximoNivel?.nivel ?? null,
+    label: "Plano Ativo",
+  });
+
+  return macrociclos;
 }
 
 export type MacrocicloAluno = Awaited<ReturnType<typeof getMacrociclosByAluno>>[number];
@@ -12984,6 +13008,16 @@ export async function calcularCargaHorariaAluno(
 
   const filtroInicio = dataInicio ? `AND sp.dataConclusao >= '${dataInicio}'` : '';
 
+  // "dataConclusao" é varchar (não é uma coluna de data de verdade) e vem
+  // gravada no formato brasileiro "DD/MM/AAAA HH:MM:SS" — comparar direto
+  // como texto contra uma data ISO ('AAAA-MM-DD') sempre dá errado, porque
+  // "04/11/2025..." começa com "0" e qualquer ano ISO começa com "2", então
+  // a comparação de texto sempre considerava a data "menor", nunca batendo
+  // no filtro — por isso competências genuinamente concluídas apareciam
+  // como 0h. Usa STR_TO_DATE pra interpretar o valor como data de verdade
+  // antes de comparar.
+  const filtroInicioComp = dataInicio ? `AND STR_TO_DATE(sp.dataConclusao, '%d/%m/%Y %H:%i:%s') >= '${dataInicio}'` : '';
+
   // Competências concluídas, escopadas pela data REAL de conclusão
   // (student_performance.dataConclusao) — não mais pela data atribuída/
   // planejada do micro-ciclo (assessment_competencias.microTermino).
@@ -12998,9 +13032,9 @@ export async function calcularCargaHorariaAluno(
     FROM student_performance sp
     WHERE sp.alunoId = ${alunoId}
       AND sp.aulasDisponiveis > 0 AND sp.aulasConcluidas >= sp.aulasDisponiveis
-      AND sp.dataConclusao IS NOT NULL
-      ${filtroInicio}
-      AND sp.dataConclusao <= '${dataFim} 23:59:59'
+      AND sp.dataConclusao IS NOT NULL AND sp.dataConclusao != ''
+      ${filtroInicioComp}
+      AND STR_TO_DATE(sp.dataConclusao, '%d/%m/%Y %H:%i:%s') <= '${dataFim} 23:59:59'
   `));
   const competenciasConcluidas = Array.isArray(compRows) ? Number(compRows[0]?.total ?? 0) : 0;
 
