@@ -3603,6 +3603,8 @@ const ADMIN_PAGE_GROUPS = [
       { path: '/plano-individual', label: 'Plano Individual' },
       { path: '/metas', label: 'Metas de Desenvolvimento' },
       { path: '/atividades-praticas', label: 'Atividades Práticas' },
+      { path: '/admin/certificado-manual', label: 'Emissão Manual de Certificado' },
+      { path: '/admin/configuracao-certificados', label: 'Configuração de Certificados' },
     ],
   },
   {
