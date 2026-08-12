@@ -5975,6 +5975,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             dataCorte = blocoFim;
           }
         }
+        console.log(`[DIAG-janela] alunoId=${aluno.id} input.historicoId=${input.historicoId} blocoDoHistorico.historicoId=${blocoDoHistorico?.historicoId ?? "NAO-ENCONTRADO"} blocoDoHistorico.contratoNivelIds=${JSON.stringify(blocoDoHistorico?.contratoNivelIds ?? [])} janela.dataInicio=${janela.dataInicio?.toISOString() ?? "null"} janela.dataFim=${janela.dataFim?.toISOString() ?? "null"} dataInicioPeriodoFinal=${dataInicioPeriodo?.toISOString() ?? "null"} dataCorteFinal=${dataCorte?.toISOString() ?? "null"}`);
       } else {
         const dataReset = await db.getDataUltimoResetAluno(aluno.id);
         // Se não há reset registrado, usar a data de congelamento do PDI mais recente
@@ -6330,6 +6331,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (fins.length > 0) cargaHorariaFimCH = new Date(Math.max(...fins)).toISOString().split('T')[0];
       }
       const cargaHorariaCalc = await db.calcularCargaHorariaAluno(aluno.id, cargaHorariaInicioCH, cargaHorariaFimCH);
+      console.log(`[DIAG-cargaHoraria] alunoId=${aluno.id} blocoCicloCH.historicoId=${blocoCicloCH?.historicoId ?? "NAO-ENCONTRADO"} idsDoCicloCH=${JSON.stringify(idsDoCicloCH)} todosNiveisCH=${JSON.stringify(todosNiveisCH)} cargaHorariaInicioCH=${String(cargaHorariaInicioCH)} cargaHorariaFimCH=${String(cargaHorariaFimCH)} resultado=${JSON.stringify(cargaHorariaCalc)}`);
 
       // Removido o "espelho por nível" que existia aqui — mesmo motivo da
       // limpeza em db.ts: com níveis de período idêntico, calcular a carga
