@@ -32,7 +32,15 @@ function formatarData(d: string | null | undefined) {
 }
 
 function labelMacrociclo(m: any) {
-  if (m.status === "ativo") return "Progresso Atual";
+  // Prioriza o rótulo já pronto vindo do backend ("Plano Congelado" /
+  // "Plano Ativo") — pedido explícito de simplificação: em vez de tentar
+  // achar 1 registro específico por nível (que quebra quando os dados de
+  // origem têm PDIs duplicados ou desalinhados), agrupa tudo que já
+  // encerrou (por data real) num bloco só, e o que está em andamento
+  // noutro. As variantes abaixo continuam servindo de reserva pra quando
+  // esse rótulo não vier (ex.: aluno sem nenhum reset ainda).
+  if (m.label) return m.label;
+  if (m.status === "ativo") return "Plano Ativo";
   if (m.origem === "encerrado-sem-arquivamento") {
     return m.nivelLabel ? `Nível ${m.nivelLabel} — Encerrado (aguardando arquivamento)` : "Encerrado (aguardando arquivamento)";
   }
