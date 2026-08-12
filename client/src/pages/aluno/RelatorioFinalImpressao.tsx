@@ -186,7 +186,7 @@ export default function RelatorioFinalImpressao() {
         </p>
       )}
 
-      {cargaHorariaPorNivel && cargaHorariaPorNivel.length > 1 && (
+      {cargaHorariaPorNivel && cargaHorariaPorNivel.length > 0 && (
         <>
           <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>1.1 Espelho de carga horária por etapa</h2>
           <table className="w-full text-xs border" style={{ borderColor: "#E5E7EB" }}>
