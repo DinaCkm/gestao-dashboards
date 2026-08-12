@@ -66,7 +66,6 @@ export default function RelatorioFinalImpressao() {
   const fonteIndicadores: any = cicloAtual ? dashboardAtual : dashboardCongelado;
   const consolidado = fonteIndicadores?.found !== false ? fonteIndicadores?.indicadoresV2?.consolidado : null;
   const cargaHoraria = fonteIndicadores?.found !== false ? fonteIndicadores?.cargaHoraria : null;
-  const cargaHorariaPorNivel = fonteIndicadores?.found !== false ? (fonteIndicadores?.cargaHorariaPorNivel || []) : [];
 
   // Erro real (ex.: macrociclo não encontrado, sem permissão) — mostra a
   // mensagem em vez de girar pra sempre. Sem isso, qualquer falha na busca
@@ -184,46 +183,6 @@ export default function RelatorioFinalImpressao() {
           {" "}(cursos: {cargaHoraria.competencias}h · tarefas: {cargaHoraria.tarefas}h ·
           {" "}mentorias: {cargaHoraria.mentorias}h · webinars: {cargaHoraria.webinars}h)
         </p>
-      )}
-
-      {cargaHorariaPorNivel && cargaHorariaPorNivel.length > 1 && (
-        <>
-          <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>1.1 Espelho de carga horária por etapa</h2>
-          <table className="w-full text-xs border" style={{ borderColor: "#E5E7EB" }}>
-            <thead>
-              <tr style={{ backgroundColor: "#351A4F" }}>
-                <th className="text-left p-2 text-white font-semibold">Nível</th>
-                <th className="text-left p-2 text-white font-semibold">Período</th>
-                <th className="text-right p-2 text-white font-semibold">Cursos</th>
-                <th className="text-right p-2 text-white font-semibold">Tarefas</th>
-                <th className="text-right p-2 text-white font-semibold">Mentorias</th>
-                <th className="text-right p-2 text-white font-semibold">Webinars</th>
-                <th className="text-right p-2 text-white font-semibold">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cargaHorariaPorNivel.map((n: any) => (
-                <tr key={n.nivel} className="border-t" style={{ borderColor: "#E5E7EB" }}>
-                  <td className="p-2 font-medium">Nível {n.nivel}</td>
-                  <td className="p-2 text-gray-600">{formatarData(n.dataInicio)} a {formatarData(n.dataFim)}</td>
-                  <td className="p-2 text-right">{n.competencias}h</td>
-                  <td className="p-2 text-right">{n.tarefas}h</td>
-                  <td className="p-2 text-right">{n.mentorias}h</td>
-                  <td className="p-2 text-right">{n.webinars}h</td>
-                  <td className="p-2 text-right font-semibold">{n.total}h</td>
-                </tr>
-              ))}
-              <tr className="border-t-2" style={{ borderColor: "#351A4F" }}>
-                <td className="p-2 font-bold" colSpan={2}>Total geral</td>
-                <td className="p-2 text-right font-bold">{cargaHorariaPorNivel.reduce((s: number, n: any) => s + n.competencias, 0)}h</td>
-                <td className="p-2 text-right font-bold">{cargaHorariaPorNivel.reduce((s: number, n: any) => s + n.tarefas, 0)}h</td>
-                <td className="p-2 text-right font-bold">{cargaHorariaPorNivel.reduce((s: number, n: any) => s + n.mentorias, 0)}h</td>
-                <td className="p-2 text-right font-bold">{cargaHorariaPorNivel.reduce((s: number, n: any) => s + n.webinars, 0)}h</td>
-                <td className="p-2 text-right font-bold">{cargaHorariaPorNivel.reduce((s: number, n: any) => s + n.total, 0)}h</td>
-              </tr>
-            </tbody>
-          </table>
-        </>
       )}
 
       <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>2. Indicadores de participação e desempenho</h2>
