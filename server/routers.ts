@@ -6273,14 +6273,14 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // só, então a carga horária tem que refletir esse mesmo total.
       const ORDEM_NIVEL_CH: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
       const todosNiveisAlunoCH = await db.getContratoNiveisByAluno(aluno.id);
-      const hojeCH = new Date();
+      // Só o STATUS decide o que entra no espelho — não uma comparação de
+      // data contra "hoje" (já removemos essa mesma checagem em duas outras
+      // cópias parecidas desta lógica; essa terceira cópia, usada no
+      // relatório, tinha ficado pra trás por engano).
       const todosNiveisCH = todosNiveisAlunoCH
         .filter((n: any) => {
           const temStatusEncerrado = n.status === "encerrado" || n.status === "certificado";
-          const dataFimRaw = n.nivelFim ?? n.dataFim ?? null;
-          const dataFimDate = dataFimRaw ? new Date(dataFimRaw) : null;
-          const dataJaPassou = dataFimDate && !isNaN(dataFimDate.getTime()) ? dataFimDate <= hojeCH : false;
-          return temStatusEncerrado && dataJaPassou && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
+          return temStatusEncerrado && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
         })
         .sort((a: any, b: any) => (ORDEM_NIVEL_CH[a.nivel] ?? 99) - (ORDEM_NIVEL_CH[b.nivel] ?? 99))
         .map((n: any) => ({
