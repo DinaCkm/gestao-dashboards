@@ -7157,18 +7157,18 @@ export async function getMacrociclosByAluno(alunoId: number) {
 
   // Simplificado pra dois grandes blocos (pedido explícito): "Plano
   // Congelado" e "Plano Ativo" — em vez de tentar casar 1 registro de
-  // histórico por nível individualmente. Isso é necessário porque o vínculo
-  // PDI↔nível às vezes vem quebrado ou duplicado na origem dos dados (já
-  // vimos casos assim), o que fazia a tela "perder" níveis inteiros que
-  // realmente já tinham terminado. O critério real pra decidir o que é
-  // "congelado" e o que é "ativo" é a DATA, direto da tabela de contrato —
-  // não a presença de um registro de histórico específico.
-  const hoje = new Date();
-  const niveisEncerrados = niveisAsc.filter((n: any) => {
-    const fimRaw = n.nivelFim ?? n.dataFim ?? null;
-    const fim = fimRaw ? new Date(fimRaw) : null;
-    return n.status === "encerrado" && fim && !isNaN(fim.getTime()) && fim <= hoje;
-  });
+  // histórico por nível individualmente (o vínculo PDI↔nível às vezes vem
+  // quebrado ou duplicado na origem dos dados).
+  // O critério pra decidir o que é "congelado" e o que é "ativo" é o STATUS
+  // gravado no contrato — não uma comparação de data contra "hoje". Já
+  // corrigimos hoje várias datas de nivelFim pra refletir o período real do
+  // programa (que pode legitimamente terminar numa data futura em relação a
+  // "hoje", ex.: contrato que vai até 31/08/2026 mesmo já estando encerrado
+  // administrativamente antes disso) — exigir "fim <= hoje" além do status
+  // fazia níveis genuinamente encerrados sumirem do bloco "Congelado"
+  // inteiro, zerando o relatório por completo. status='encerrado' já É o
+  // sinal de que o nível está fechado; não precisa de mais nada.
+  const niveisEncerrados = niveisAsc.filter((n: any) => n.status === "encerrado");
   const niveisRestantes = niveisAsc.filter((n: any) => !niveisEncerrados.includes(n));
 
   const macrociclos: any[] = [];
