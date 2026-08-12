@@ -12901,24 +12901,18 @@ export async function getNivelCertificateByHash(hash: string) {
   // mostra o período de CADA nível lado a lado, sem inventar precisão que
   // os dados não têm.
   const ORDEM_NIVEL: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4 };
-  const hojeData = new Date();
   const todosNiveisAluno = await getContratoNiveisByAluno(certificado.alunoId);
   const todosNiveis = todosNiveisAluno
-    // Só níveis realmente encerrados. O campo status sozinho não é confiável
-    // (já vimos casos com "encerrado" gravado num nível que na prática ainda
-    // está em andamento) — por segurança, exige também que a data de término
-    // já tenha passado, já que um nível não pode estar concluído se a própria
-    // data final dele ainda está no futuro. Usa new Date() em vez de recortar
-    // a string, porque o valor pode chegar como string OU como objeto Date
-    // dependendo da origem do campo — recorte de string quebra em silêncio
-    // quando é um objeto Date (virava algo tipo "Thu Apr 30 20...", que nunca
-    // bate numa comparação de string com "AAAA-MM-DD").
+    // Só o STATUS decide o que é "encerrado" — não uma comparação contra
+    // "hoje". Exigir também que a data de término já tivesse passado
+    // parecia uma proteção a mais, mas quebrava sempre que a data real do
+    // nível (corrigida a partir da planilha revisada) cai no futuro em
+    // relação a hoje mesmo o nível já estando oficialmente encerrado — foi
+    // exatamente isso que fez a tabela-espelho de carga horária sumir do
+    // relatório. status='encerrado' já é o sinal suficiente.
     .filter((n: any) => {
       const temStatusEncerrado = n.status === "encerrado" || n.status === "certificado";
-      const dataFimRaw = n.nivelFim ?? n.dataFim ?? null;
-      const dataFimDate = dataFimRaw ? new Date(dataFimRaw) : null;
-      const dataJaPassou = dataFimDate && !isNaN(dataFimDate.getTime()) ? dataFimDate <= hojeData : false;
-      return temStatusEncerrado && dataJaPassou && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
+      return temStatusEncerrado && (n.nivelInicio || n.nivelFim || n.dataInicio || n.dataFim);
     })
     .sort((a: any, b: any) => (ORDEM_NIVEL[a.nivel] ?? 99) - (ORDEM_NIVEL[b.nivel] ?? 99))
     .map((n: any) => ({
@@ -12949,14 +12943,14 @@ export async function getNivelCertificateByHash(hash: string) {
   // Espelho de carga horária por nível — um item por etapa, como um
   // histórico escolar, pra mostrar de onde vem cada hora do total acima
   // (pedido explícito: "detalhando a carga horária... item por item e
-  // período por período"). Só calcula quando há mais de um nível; pra
-  // certificado de nível único o "total" já É o espelho.
+  // período por período"). Sempre calcula, mesmo com um nível só — o
+  // espelho não é uma comparação entre níveis, é o detalhamento da carga
+  // horária em si; um aluno de nível único também tem direito de ver de
+  // onde vêm as horas dele.
   let cargaHorariaPorNivel: Array<{ nivel: string; dataInicio: string | null; dataFim: string | null; total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> = [];
-  if (todosNiveis.length > 1) {
-    for (const n of todosNiveis) {
-      const ch = await calcularCargaHorariaAluno(certificado.alunoId, n.dataInicio, n.dataFim);
-      cargaHorariaPorNivel.push({ nivel: n.nivel, dataInicio: n.dataInicio, dataFim: n.dataFim, ...ch });
-    }
+  for (const n of todosNiveis) {
+    const ch = await calcularCargaHorariaAluno(certificado.alunoId, n.dataInicio, n.dataFim);
+    cargaHorariaPorNivel.push({ nivel: n.nivel, dataInicio: n.dataInicio, dataFim: n.dataFim, ...ch });
   }
 
   const [assinaturasRows]: any = await db.execute(sql.raw(
