@@ -13176,62 +13176,52 @@ export async function calcularCargaHorariaAluno(
   // antes de comparar.
   const filtroInicioComp = dataInicio ? `AND STR_TO_DATE(sp.dataConclusao, '%d/%m/%Y %H:%i:%s') >= '${dataInicio}'` : '';
 
-  // Competências concluídas, escopadas pela data REAL de conclusão
-  // (student_performance.dataConclusao) — não mais pela data atribuída/
-  // planejada do micro-ciclo (assessment_competencias.microTermino).
-  // Motivo: o PDI pode ter registros duplicados ou datas desalinhadas entre
-  // níveis (já vimos casos assim), o que fazia competências genuinamente
-  // concluídas dentro de um nível ficarem de fora do cálculo desse nível só
-  // porque o PDI que as contém tinha a data errada. A data de conclusão real
-  // do aluno é a fonte mais confiável — não depende de o PDI estar com a
-  // data certa pra funcionar.
-  //
-  // student_performance é alimentada por importação de planilha (alunos em
-  // plataforma externa, ex.: 'scaffold') — o vínculo confiável nessa tabela
-  // é o externalUserId, não o alunoId (que pode vir nulo ou desalinhado
-  // dependendo de como a importação casou os registros). Filtrar só por
-  // alunoId zerava "cursos" inteiro pra esses alunos, mesmo com competências
-  // genuinamente concluídas (caso do Fábio, EDB-LID-2026-0002 — cursos: 0h
-  // mesmo com 3 níveis encerrados).
-  const [alunoExternalRow]: any = await db.execute(sql.raw(
-    `SELECT externalId FROM alunos WHERE id = ${alunoId} LIMIT 1`
-  ));
-  const alunoExternalId = Array.isArray(alunoExternalRow) && alunoExternalRow[0]?.externalId
-    ? String(alunoExternalRow[0].externalId).replace(/'/g, "''")
-    : null;
-  const filtroAlunoComp = alunoExternalId
-    ? `(sp.alunoId = ${alunoId} OR sp.externalUserId = '${alunoExternalId}')`
-    : `sp.alunoId = ${alunoId}`;
-  const [compRows]: any = await db.execute(sql.raw(`
-    SELECT COUNT(DISTINCT sp.id) AS total
-    FROM student_performance sp
-    WHERE ${filtroAlunoComp}
-      AND sp.aulasDisponiveis > 0 AND sp.aulasConcluidas >= sp.aulasDisponiveis
-      AND sp.dataConclusao IS NOT NULL AND sp.dataConclusao != ''
-      ${filtroInicioComp}
-      AND STR_TO_DATE(sp.dataConclusao, '%d/%m/%Y %H:%i:%s') <= '${dataFim} 23:59:59'
+  // Competências concluídas — fonte PRINCIPAL é a mesma que já alimenta a
+  // tabela "Avaliação dos cursos" e o IND.3 (assessment_competencias de
+  // PDIs congelados, filtradas por microTermino de cada uma). Precisa ser
+  // a MESMA fonte nos dois lugares do relatório, senão eles divergem entre
+  // si mesmo sem nenhum estar "zerado" — foi o caso do Edvaldo (EDB-LID-
+  // 2026-0008): a tabela mostrava certo 9 cursos aprovados, mas a carga
+  // horária contava só 6, porque a fonte antiga (student_performance)
+  // achava ALGUNS registros (não zero) e por isso nunca caía no fallback
+  // que já tínhamos pra quando ela vem inteiramente vazia.
+  const [compV2Rows]: any = await db.execute(sql.raw(`
+    SELECT COUNT(DISTINCT ac.id) AS total
+    FROM assessment_competencias ac
+    JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId
+    WHERE ap.alunoId = ${alunoId} AND ap.status = 'congelado'
+      AND ac.microTermino IS NOT NULL
+      ${dataInicio ? `AND ac.microInicio >= '${dataInicio}'` : ''}
+      AND ac.microTermino <= '${dataFim}'
   `));
-  let competenciasConcluidas = Array.isArray(compRows) ? Number(compRows[0]?.total ?? 0) : 0;
+  let competenciasConcluidas = Array.isArray(compV2Rows) ? Number(compV2Rows[0]?.total ?? 0) : 0;
 
-  // Fallback: student_performance não achou nada (aluno em plataforma sem
-  // esse rastro, ex.: 'sistema_interno' sem CSV de aulas) — usa o mesmo
-  // critério que já alimenta o IND.3 corretamente (getCiclosCongeladosPara
-  // Calculator): competências de PDIs CONGELADOS do aluno, filtradas pela
-  // própria data de cada uma (microTermino), não pela data do PDI inteiro
-  // nem por um vínculo aluno↔performance que pode não existir. Foi essa
-  // falta de fallback que deixava "cursos" zerado pro Fábio (EDB-LID-2026-
-  // 0002) mesmo com 3 níveis de curso genuinamente concluídos.
+  // Reforço: quando a fonte principal não acha nada (aluno sem PDI formal
+  // ainda, ou dados legados sem assessment_competencias), tenta
+  // student_performance — alimentada por importação de planilha (alunos em
+  // plataforma externa, ex.: 'scaffold'). O vínculo confiável nessa tabela
+  // é o externalUserId, não o alunoId (que pode vir nulo ou desalinhado
+  // dependendo de como a importação casou os registros).
   if (competenciasConcluidas === 0) {
-    const [compV2Rows]: any = await db.execute(sql.raw(`
-      SELECT COUNT(DISTINCT ac.id) AS total
-      FROM assessment_competencias ac
-      JOIN assessment_pdi ap ON ap.id = ac.assessmentPdiId
-      WHERE ap.alunoId = ${alunoId} AND ap.status = 'congelado'
-        AND ac.microTermino IS NOT NULL
-        ${dataInicio ? `AND ac.microInicio >= '${dataInicio}'` : ''}
-        AND ac.microTermino <= '${dataFim}'
+    const [alunoExternalRow]: any = await db.execute(sql.raw(
+      `SELECT externalId FROM alunos WHERE id = ${alunoId} LIMIT 1`
+    ));
+    const alunoExternalId = Array.isArray(alunoExternalRow) && alunoExternalRow[0]?.externalId
+      ? String(alunoExternalRow[0].externalId).replace(/'/g, "''")
+      : null;
+    const filtroAlunoComp = alunoExternalId
+      ? `(sp.alunoId = ${alunoId} OR sp.externalUserId = '${alunoExternalId}')`
+      : `sp.alunoId = ${alunoId}`;
+    const [compRows]: any = await db.execute(sql.raw(`
+      SELECT COUNT(DISTINCT sp.id) AS total
+      FROM student_performance sp
+      WHERE ${filtroAlunoComp}
+        AND sp.aulasDisponiveis > 0 AND sp.aulasConcluidas >= sp.aulasDisponiveis
+        AND sp.dataConclusao IS NOT NULL AND sp.dataConclusao != ''
+        ${filtroInicioComp}
+        AND STR_TO_DATE(sp.dataConclusao, '%d/%m/%Y %H:%i:%s') <= '${dataFim} 23:59:59'
     `));
-    competenciasConcluidas = Array.isArray(compV2Rows) ? Number(compV2Rows[0]?.total ?? 0) : 0;
+    competenciasConcluidas = Array.isArray(compRows) ? Number(compRows[0]?.total ?? 0) : 0;
   }
 
 
