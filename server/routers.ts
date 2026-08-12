@@ -6303,10 +6303,37 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // etapa, como um histórico escolar. Sempre monta, mesmo com 1 nível
       // só — o espelho é o detalhamento da carga horária, não uma
       // comparação entre níveis.
+      //
+      // Quando dois (ou mais) níveis consecutivos têm o MESMO período
+      // gravado (fronteira de transição não capturada por um reset
+      // formal), calcular a carga horária separadamente pra cada um conta
+      // as mesmas competências/tarefas/mentorias/webinars duas vezes.
+      // Agrupa numa única linha nesse caso — mesma correção aplicada no
+      // certificado (db.ts), pra manter os dois documentos batendo.
       let cargaHorariaPorNivelCH: Array<{ nivel: string; dataInicio: string | null; dataFim: string | null; total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> = [];
-      for (const n of todosNiveisCH) {
-        const ch = await db.calcularCargaHorariaAluno(aluno.id, n.dataInicio, n.dataFim);
-        cargaHorariaPorNivelCH.push({ nivel: n.nivel, dataInicio: n.dataInicio, dataFim: n.dataFim, ...ch });
+      {
+        let i = 0;
+        while (i < todosNiveisCH.length) {
+          const atual = todosNiveisCH[i];
+          const grupo = [atual];
+          let j = i + 1;
+          while (
+            j < todosNiveisCH.length &&
+            todosNiveisCH[j].dataInicio === atual.dataInicio &&
+            todosNiveisCH[j].dataFim === atual.dataFim
+          ) {
+            grupo.push(todosNiveisCH[j]);
+            j++;
+          }
+          const ch = await db.calcularCargaHorariaAluno(aluno.id, atual.dataInicio, atual.dataFim);
+          cargaHorariaPorNivelCH.push({
+            nivel: grupo.map((g: any) => g.nivel).join(" e "),
+            dataInicio: atual.dataInicio,
+            dataFim: atual.dataFim,
+            ...ch,
+          });
+          i = j;
+        }
       }
 
       return {
