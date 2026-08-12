@@ -7199,7 +7199,10 @@ export async function getMacrociclosByAluno(alunoId: number) {
       // certificado do Nível I quando o Nível II também já está congelado
       // junto no mesmo bloco "Plano Congelado").
       contratoNivelIds: niveisEncerrados.map((n: any) => n.id),
-      nivelLabel: null,
+      // Quando há só 1 nível encerrado, mantém o rótulo dele ("Nível I") em
+      // vez de esconder atrás de "Ciclo N" — só fica null quando o bloco
+      // realmente junta vários níveis, aí sim não faz sentido escolher só um.
+      nivelLabel: niveisEncerrados.length === 1 ? niveisEncerrados[0]?.nivel ?? null : null,
       label: "Plano Congelado",
       niveisIncluidos: niveisEncerrados.map((n: any) => n.nivel),
     });
