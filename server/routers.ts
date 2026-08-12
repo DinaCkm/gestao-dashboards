@@ -6300,13 +6300,13 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       const cargaHorariaCalc = await db.calcularCargaHorariaAluno(aluno.id, cargaHorariaInicioCH, cargaHorariaFimCH);
 
       // Espelho por nível — mesmo conceito do certificado: um item por
-      // etapa, como um histórico escolar.
+      // etapa, como um histórico escolar. Sempre monta, mesmo com 1 nível
+      // só — o espelho é o detalhamento da carga horária, não uma
+      // comparação entre níveis.
       let cargaHorariaPorNivelCH: Array<{ nivel: string; dataInicio: string | null; dataFim: string | null; total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> = [];
-      if (todosNiveisCH.length > 1) {
-        for (const n of todosNiveisCH) {
-          const ch = await db.calcularCargaHorariaAluno(aluno.id, n.dataInicio, n.dataFim);
-          cargaHorariaPorNivelCH.push({ nivel: n.nivel, dataInicio: n.dataInicio, dataFim: n.dataFim, ...ch });
-        }
+      for (const n of todosNiveisCH) {
+        const ch = await db.calcularCargaHorariaAluno(aluno.id, n.dataInicio, n.dataFim);
+        cargaHorariaPorNivelCH.push({ nivel: n.nivel, dataInicio: n.dataInicio, dataFim: n.dataFim, ...ch });
       }
 
       return {
