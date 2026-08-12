@@ -12950,10 +12950,40 @@ export async function getNivelCertificateByHash(hash: string) {
   // espelho não é uma comparação entre níveis, é o detalhamento da carga
   // horária em si; um aluno de nível único também tem direito de ver de
   // onde vêm as horas dele.
+  //
+  // Quando dois (ou mais) níveis consecutivos têm o MESMO período gravado
+  // (fronteira de transição não capturada por um reset formal — ver
+  // comentário acima sobre "sem inventar precisão que os dados não têm"),
+  // calcular a carga horária separadamente pra cada um contaria as MESMAS
+  // competências/tarefas/mentorias/webinars duas vezes, já que os dois
+  // caem dentro da mesma janela de datas. Nesse caso agrupa numa única
+  // linha do espelho (ex.: "Nível I e II") e calcula uma vez só — foi
+  // exatamente essa duplicação que inflou a carga horária da Joseane
+  // (EDB-LID-2026-0005) de 130h pra 260h.
   let cargaHorariaPorNivel: Array<{ nivel: string; dataInicio: string | null; dataFim: string | null; total: number; competencias: number; tarefas: number; mentorias: number; webinars: number }> = [];
-  for (const n of todosNiveis) {
-    const ch = await calcularCargaHorariaAluno(certificado.alunoId, n.dataInicio, n.dataFim);
-    cargaHorariaPorNivel.push({ nivel: n.nivel, dataInicio: n.dataInicio, dataFim: n.dataFim, ...ch });
+  {
+    let i = 0;
+    while (i < todosNiveis.length) {
+      const atual = todosNiveis[i];
+      const grupo = [atual];
+      let j = i + 1;
+      while (
+        j < todosNiveis.length &&
+        todosNiveis[j].dataInicio === atual.dataInicio &&
+        todosNiveis[j].dataFim === atual.dataFim
+      ) {
+        grupo.push(todosNiveis[j]);
+        j++;
+      }
+      const ch = await calcularCargaHorariaAluno(certificado.alunoId, atual.dataInicio, atual.dataFim);
+      cargaHorariaPorNivel.push({
+        nivel: grupo.map((g: any) => g.nivel).join(" e "),
+        dataInicio: atual.dataInicio,
+        dataFim: atual.dataFim,
+        ...ch,
+      });
+      i = j;
+    }
   }
 
   const [assinaturasRows]: any = await db.execute(sql.raw(
