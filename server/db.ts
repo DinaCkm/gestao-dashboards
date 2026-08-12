@@ -7393,13 +7393,45 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
     const pdisCongelados = await database.select().from(assessmentPdi).where(
       and(eq(assessmentPdi.alunoId, alunoId), eq(assessmentPdi.status, "congelado"))
     );
-    const pdisDesteReset = pdisCongelados.filter((p) => {
+    const pdisPorJanela = pdisCongelados.filter((p) => {
       if (!p.macroTermino) return false;
       const terminoDia = String(p.macroTermino).slice(0, 10);
       if (dataFimDia && terminoDia > dataFimDia) return false;
       if (dataInicioDia && terminoDia <= dataInicioDia) return false;
       return true;
     });
+
+    // A janela por data (acima) pode não bater quando a data PLANEJADA do
+    // PDI (macroTermino) diverge da data OFICIAL do nível no contrato
+    // (nivelInicio/nivelFim — que é o que compõe macrociclo.dataInicio/
+    // dataFim). Isso é comum quando o nível teve a data corrigida
+    // depois (ex.: planilha revisada) sem o PDI acompanhar. Nesse caso a
+    // janela sozinha zerava TODAS as competências do ciclo inteiro, mesmo
+    // com o PDI genuinamente concluído e congelado (caso do Fábio,
+    // EDB-LID-2026-0002: IND.2 e IND.3 em 0%, "0 de 0 cursos obrigatórios"
+    // mesmo com 3 níveis de curso realizados).
+    //
+    // Complementa a janela com o vínculo DIRETO contrato_niveis.
+    // assessmentPdiId de cada nível do bloco — mais confiável que
+    // comparar datas, já que não depende de datas planejadas baterem
+    // com datas oficiais.
+    const idsNiveisDoBloco: number[] = Array.isArray((macrociclo as any).contratoNivelIds) && (macrociclo as any).contratoNivelIds.length > 0
+      ? (macrociclo as any).contratoNivelIds
+      : (macrociclo.contratoNivelId ? [macrociclo.contratoNivelId] : []);
+    let pdisPorVinculoDireto: typeof pdisCongelados = [];
+    if (idsNiveisDoBloco.length > 0) {
+      const [niveisRows]: any = await database.execute(sql.raw(
+        `SELECT assessmentPdiId FROM contrato_niveis WHERE id IN (${idsNiveisDoBloco.join(",")}) AND assessmentPdiId IS NOT NULL`
+      ));
+      const pdiIdsVinculados: number[] = Array.isArray(niveisRows)
+        ? niveisRows.map((r: any) => r.assessmentPdiId).filter((id: any) => id != null)
+        : [];
+      pdisPorVinculoDireto = pdisCongelados.filter((p) => pdiIdsVinculados.includes(p.id));
+    }
+
+    const pdisDesteReset = Array.from(
+      new Map([...pdisPorJanela, ...pdisPorVinculoDireto].map((p) => [p.id, p])).values()
+    );
 
     if (pdisDesteReset.length > 0) {
       const competenciasPorPdi = await Promise.all(
@@ -7408,8 +7440,9 @@ export async function getPedagogiaPorMacrociclo(alunoId: number, macrociclo: Mac
       return { competencias: competenciasPorPdi.flat() };
     }
 
-    // Fallback: nenhum PDI encontrado pela janela de datas (dados antigos sem
-    // macroTermino consistente) — usa ao menos o PDI referenciado no snapshot.
+    // Fallback: nenhum PDI encontrado nem pela janela nem pelo vínculo direto
+    // (dados antigos sem macroTermino consistente e sem assessmentPdiId
+    // preenchido) — usa ao menos o PDI referenciado no snapshot.
     const [snapRows]: any = await database.execute(sql.raw(
       `SELECT assessmentPdiId FROM historico_ciclos_aluno WHERE id = ${macrociclo.historicoId} LIMIT 1`
     ));
