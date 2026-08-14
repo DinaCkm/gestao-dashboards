@@ -7202,7 +7202,16 @@ export async function getMacrociclosByAluno(alunoId: number) {
       const inicios = niveisEncerrados.map((n: any) => n.nivelInicio ?? n.dataInicio).filter(Boolean).map((d: any) => new Date(d).getTime());
       const fins = niveisEncerrados.map((n: any) => n.nivelFim ?? n.dataFim).filter(Boolean).map((d: any) => new Date(d).getTime());
       const dataInicioBloco = inicios.length > 0 ? new Date(Math.min(...inicios)) : null;
-      const dataFimBloco = fins.length > 0 ? new Date(Math.max(...fins)) : null;
+      // nivelFim é uma coluna DATE (sem hora) — vira meia-noite ao virar
+      // objeto Date. Quem consome esse dataFim depois (carga horária,
+      // indicadores, tabela de cursos) compara "atividade <= dataFim", e
+      // meia-noite excluía qualquer atividade feita mais tarde NO MESMO
+      // dia (webinar às 14h, por exemplo) — foi o achado principal da
+      // auditoria de 12/08: plataforma sempre com mais presenças do que o
+      // relatório, faltando sempre as mais recentes. Empurra pro fim do
+      // dia (23:59:59.999) aqui, na origem, pra valer em todo mundo que
+      // usa esse dataFim, sem precisar corrigir em cada lugar separado.
+      const dataFimBloco = fins.length > 0 ? new Date(Math.max(...fins) + (24 * 60 * 60 * 1000 - 1)) : null;
       const historicoIdAncora = resetsAsc[0]?.historicoId ?? null;
       macrociclos.push({
         chave: historicoIdAncora ? `historico:${historicoIdAncora}` : "congelado",
@@ -7266,7 +7275,7 @@ export async function getMacrociclosByAluno(alunoId: number) {
         historicoId: reset.historicoId ?? null,
         numeroCiclo: reset.numeroCicloArquivado ?? idx + 1,
         dataInicio: inicios.length > 0 ? new Date(Math.min(...inicios)) : null,
-        dataFim: fins.length > 0 ? new Date(Math.max(...fins)) : null,
+        dataFim: fins.length > 0 ? new Date(Math.max(...fins) + (24 * 60 * 60 * 1000 - 1)) : null,
         status: "encerrado",
         contratoNivelId: niveisDoBloco[niveisDoBloco.length - 1]?.id ?? null,
         contratoNivelIds: niveisDoBloco.map((n: any) => n.id),
@@ -13164,6 +13173,17 @@ export async function calcularCargaHorariaAluno(
   const dataFim = paraDataSql(dataFimRaw);
   if (!dataFim) return zero;
 
+  // dataFim, acima, é só a DATA (ex.: "2026-05-30"). Comparar "coluna <=
+  // '2026-05-30'" contra uma coluna DATETIME/TIMESTAMP equivale a comparar
+  // contra "2026-05-30 00:00:00" — ou seja, qualquer atividade feita
+  // DEPOIS da meia-noite desse último dia (o normal: webinar às 14h, tarefa
+  // entregue à noite etc.) ficava excluída, mesmo estando genuinamente
+  // dentro do período. Isso explica o padrão relatado na auditoria: a
+  // plataforma sempre mostra mais presenças/horas do que o relatório,
+  // faltando sempre as atividades mais recentes/do último dia. Usa o fim
+  // do dia (23:59:59) em toda comparação "<= dataFim".
+  const dataFimFimDoDia = `${dataFim} 23:59:59`;
+
   const filtroInicio = dataInicio ? `AND sp.dataConclusao >= '${dataInicio}'` : '';
 
   // "dataConclusao" é varchar (não é uma coluna de data de verdade) e vem
@@ -13192,7 +13212,7 @@ export async function calcularCargaHorariaAluno(
     WHERE ap.alunoId = ${alunoId} AND ap.status = 'congelado'
       AND ac.microTermino IS NOT NULL
       ${dataInicio ? `AND ac.microInicio >= '${dataInicio}'` : ''}
-      AND ac.microTermino <= '${dataFim}'
+      AND ac.microTermino <= '${dataFimFimDoDia}'
   `));
   let competenciasConcluidas = Array.isArray(compV2Rows) ? Number(compV2Rows[0]?.total ?? 0) : 0;
 
@@ -13229,7 +13249,7 @@ export async function calcularCargaHorariaAluno(
     SELECT COUNT(*) AS total FROM mentoring_sessions
     WHERE alunoId = ${alunoId} AND taskStatus = 'entregue'
       ${dataInicio ? `AND sessionDate >= '${dataInicio}'` : ''}
-      AND sessionDate <= '${dataFim}'
+      AND sessionDate <= '${dataFimFimDoDia}'
   `));
   const tarefasEntregues = Array.isArray(tarefaRows) ? Number(tarefaRows[0]?.total ?? 0) : 0;
 
@@ -13237,7 +13257,7 @@ export async function calcularCargaHorariaAluno(
     SELECT COUNT(*) AS total FROM mentoring_sessions
     WHERE alunoId = ${alunoId} AND presence = 'presente'
       ${dataInicio ? `AND sessionDate >= '${dataInicio}'` : ''}
-      AND sessionDate <= '${dataFim}'
+      AND sessionDate <= '${dataFimFimDoDia}'
   `));
   const mentoriasPresentes = Array.isArray(mentoriaRows) ? Number(mentoriaRows[0]?.total ?? 0) : 0;
 
@@ -13246,7 +13266,7 @@ export async function calcularCargaHorariaAluno(
     JOIN events e ON e.id = ep.eventId
     WHERE ep.alunoId = ${alunoId} AND ep.status = 'presente'
       ${dataInicio ? `AND e.eventDate >= '${dataInicio}'` : ''}
-      AND e.eventDate <= '${dataFim}'
+      AND e.eventDate <= '${dataFimFimDoDia}'
   `));
   const webinarsPresentes = Array.isArray(webinarRows) ? Number(webinarRows[0]?.total ?? 0) : 0;
 
