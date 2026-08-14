@@ -6201,7 +6201,39 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       console.log(`[meuDashboardCongelado] DIAGNÓSTICO aluno=${aluno.id} idUsuario=${idUsuario} historicoId=${input?.historicoId ?? "—"}`);
       console.log(`[meuDashboardCongelado] macrocicloCongelado=${JSON.stringify(macrocicloCongelado)}`);
       console.log(`[meuDashboardCongelado] mentorias.length=${mentorias.length} eventos.length=${eventos.length} performance.length=${performance.length} ciclosV2.length=${ciclosV2.length}`);
-      console.log(`[meuDashboardCongelado] consolidado=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
+      console.log(`[meuDashboardCongelado] consolidado (recalculado ao vivo, antes de checar snapshot)=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
+
+      // Decisão explícita (14/08/2026): o Resultado Final e os 7
+      // indicadores de um ciclo já encerrado são o retrato de QUANDO o
+      // reset aconteceu — nunca mudam depois, mesmo que o método de
+      // cálculo melhore (como aconteceu hoje várias vezes). Isso evita a
+      // confusão de alguém já certificado "deixar de bater a meta"
+      // silenciosamente numa nova geração do mesmo relatório. Sempre que
+      // existir um snapshot congelado (historico_ciclos_aluno) pra este
+      // ciclo, ele é a fonte da verdade pros 7 indicadores — o cálculo ao
+      // vivo acima só serve de base/fallback pra ciclo ainda ativo (sem
+      // snapshot nenhum pra usar).
+      if (input?.historicoId && indicadoresV2Congelado?.consolidado) {
+        const database = await getDb();
+        if (database) {
+          const [snapIndRows]: any = await database.execute(sql.raw(
+            `SELECT ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas, ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal
+             FROM historico_ciclos_aluno WHERE id = ${input.historicoId} LIMIT 1`
+          ));
+          const snapInd = Array.isArray(snapIndRows) && snapIndRows[0] ? snapIndRows[0] : null;
+          if (snapInd && snapInd.ind7EngajamentoFinal !== null) {
+            const c = indicadoresV2Congelado.consolidado as any;
+            c.ind1_webinars = Number(snapInd.ind1Webinars ?? c.ind1_webinars);
+            c.ind2_avaliacoes = Number(snapInd.ind2Avaliacoes ?? c.ind2_avaliacoes);
+            c.ind3_competencias = Number(snapInd.ind3Competencias ?? c.ind3_competencias);
+            c.ind4_tarefas = Number(snapInd.ind4Tarefas ?? c.ind4_tarefas);
+            c.ind5_engajamento = Number(snapInd.ind5Engajamento ?? c.ind5_engajamento);
+            c.ind6_aplicabilidade = Number(snapInd.ind6Aplicabilidade ?? c.ind6_aplicabilidade);
+            c.ind7_engajamentoFinal = Number(snapInd.ind7EngajamentoFinal);
+          }
+        }
+      }
+      console.log(`[meuDashboardCongelado] consolidado (depois de checar snapshot)=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
 
       // Calcular indicadores clássicos
       const compObrigatorias: CompetenciaObrigatoria[] = (await db.getCompetenciasObrigatoriasAluno(aluno.id)).map(c => ({
