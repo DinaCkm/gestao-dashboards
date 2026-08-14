@@ -211,13 +211,13 @@ export default function RelatorioFinalImpressao() {
       </p>
 
       <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>3. Avaliação dos cursos</h2>
-      <p className="text-xs text-gray-500 mb-1">{aprovadas} de {obrigatorias.length} cursos obrigatórios aprovados.</p>
+      <p className="text-xs text-gray-500 mb-1">{aprovadas} de {obrigatorias.length} cursos obrigatórios dentro da meta.</p>
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr style={{ backgroundColor: "#351A4F" }}>
             <th className="text-left text-white p-2 font-semibold">Curso</th>
             <th className="text-left text-white p-2 font-semibold">Obrigatória</th>
-            <th className="text-left text-white p-2 font-semibold">Nota</th>
+            <th className="text-left text-white p-2 font-semibold">Performance de Aproveitamento</th>
             <th className="text-left text-white p-2 font-semibold">Meta</th>
             <th className="text-left text-white p-2 font-semibold">Status</th>
             <th className="text-left text-white p-2 font-semibold">Carga Horária</th>
@@ -231,7 +231,7 @@ export default function RelatorioFinalImpressao() {
               <td className="p-2 border-b" style={{ borderColor: "#E5E7EB" }}>{c.nota !== null ? c.nota.toFixed(1) : "—"}</td>
               <td className="p-2 border-b" style={{ borderColor: "#E5E7EB" }}>{c.meta.toFixed(1)}</td>
               <td className="p-2 border-b" style={{ borderColor: "#E5E7EB" }}>
-                {c.nota === null ? "—" : c.aprovada ? "Aprovada" : "Abaixo da meta"}
+                {c.nota === null ? "—" : c.aprovada ? "Dentro da meta" : "Abaixo da meta"}
               </td>
               <td className="p-2 border-b" style={{ borderColor: "#E5E7EB" }}>
                 {c.aprovada ? "10h" : "—"}
