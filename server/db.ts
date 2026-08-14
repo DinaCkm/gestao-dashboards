@@ -3195,12 +3195,24 @@ export async function syncPlanoFromAssessment(alunoId: number) {
   let added = 0;
   for (const [compId, comp] of Array.from(uniqueMap.entries())) {
     if (!existingIds.has(compId)) {
+      // metaFinal é gravado em ESCALA DE PORCENTAGEM (0-100%, ver comentário
+      // no schema: "Meta final da competência (0-100%)"), mas metaNota é
+      // escala de NOTA (0-10, mesma escala das notas dos cursos — meta
+      // padrão da plataforma é 7.00). Copiar metaFinal direto pra metaNota,
+      // sem converter, grava metas impossíveis (ex.: 80.0 numa escala que
+      // vai até 10) — foi exatamente isso que fez a competência "Feedback"
+      // da Ana Cláudia aparecer "abaixo da meta" com uma nota ótima (9.0).
+      // Converte dividindo por 10 (100% de domínio = nota 10).
+      const metaFinalNum = comp.metaFinal ? Number(comp.metaFinal) : null;
+      const metaNotaConvertida = metaFinalNum !== null && !isNaN(metaFinalNum)
+        ? (metaFinalNum > 10 ? metaFinalNum / 10 : metaFinalNum).toFixed(2)
+        : "7.00";
       await db.insert(planoIndividual).values({
         alunoId,
         competenciaId: compId,
         isObrigatoria: comp.peso === 'obrigatoria' ? 1 : 0,
         notaAtual: comp.nivelAtual ? String(comp.nivelAtual) : null,
-        metaNota: comp.metaFinal ? String(comp.metaFinal) : "7.00",
+        metaNota: metaNotaConvertida,
         status: "pendente",
       });
       added++;
@@ -3305,8 +3317,19 @@ export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
   ))
   .leftJoin(competencias, eq(assessmentCompetencias.competenciaId, competencias.id));
 
+  // metaFinal vem em escala de porcentagem (0-100%); metaNota, escala de
+  // nota (0-10). Mesma correção de escala do syncPlanoFromAssessment —
+  // converte antes de expor como "metaNota" pra quem consome esta função.
+  const resultConvertido = result.map((r) => {
+    const bruto = r.metaNota !== null && r.metaNota !== undefined ? Number(r.metaNota) : null;
+    return {
+      ...r,
+      metaNota: bruto !== null && !isNaN(bruto) ? String(bruto > 10 ? bruto / 10 : bruto) : null,
+    };
+  });
+
   // Fallback: se não há PDI ativo, retornar competências do plano_individual (comportamento anterior)
-  if (result.length === 0) {
+  if (resultConvertido.length === 0) {
     const fallback = await db.select({
       id: planoIndividual.id,
       competenciaId: planoIndividual.competenciaId,
@@ -3323,7 +3346,7 @@ export async function getCompetenciasObrigatoriasAluno(alunoId: number) {
     return fallback;
   }
 
-  return result;
+  return resultConvertido;
 }
 
 // Buscar todos os registros do plano individual (para cálculo de indicadores em massa)
@@ -7529,9 +7552,17 @@ async function resolverCompetenciasDoPdi(
       ? Number(perf.notaAvaliacao)
       : null;
 
-    const meta = plano?.metaNota !== null && plano?.metaNota !== undefined
+    // Nota vai de 0 a 10. plano.metaNota já vem certo nessa escala (com o
+    // syncPlanoFromAssessment corrigido). c.metaFinal, usado só quando não
+    // há plano_individual, vem do assessment_competencias em ESCALA DE
+    // PORCENTAGEM (0-100% — ver comentário no schema), então precisa da
+    // mesma conversão (÷10) antes de comparar com a nota — foi a falta
+    // dessa conversão que fez a competência "Feedback" da Ana Cláudia
+    // aparecer "abaixo da meta" (nota 9.0) contra uma meta de "80".
+    const metaBruta = plano?.metaNota !== null && plano?.metaNota !== undefined
       ? Number(plano.metaNota)
       : (c.metaFinal !== null && c.metaFinal !== undefined ? Number(c.metaFinal) : 7);
+    const meta = metaBruta > 10 ? metaBruta / 10 : metaBruta;
 
     return {
       competenciaId: c.competenciaId,
