@@ -299,7 +299,7 @@ export default function MeuProgresso() {
                         <tr className="text-left text-gray-500 border-b">
                           <th className="py-2 pr-4">Competência</th>
                           <th className="py-2 pr-4">Obrigatória</th>
-                          <th className="py-2 pr-4">Nota</th>
+                          <th className="py-2 pr-4">Performance de Aproveitamento</th>
                           <th className="py-2 pr-4">Meta</th>
                           <th className="py-2 pr-4">Status</th>
                         </tr>
@@ -316,7 +316,7 @@ export default function MeuProgresso() {
                                 <span className="text-gray-400">—</span>
                               ) : c.aprovada ? (
                                 <span className="inline-flex items-center gap-1 text-emerald-700">
-                                  <CheckCircle2 className="w-3.5 h-3.5" /> Aprovada
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Dentro da meta
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-amber-600">
