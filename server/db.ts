@@ -13020,6 +13020,28 @@ export async function getNivelCertificateByAlunoNiveis(alunoId: number, contrato
 }
 
 /**
+ * Busca o certificado EXATO pelo hashDocumento — usada quando se sabe
+ * precisamente qual certificado está sendo renderizado (ex.: durante a
+ * própria geração do PDF). Diferente de getNivelCertificateByAlunoNiveis
+ * (que busca "o mais recente pro bloco"), esta nunca ambigua entre dois
+ * certificados emitidos pro mesmo aluno/bloco — pega exatamente o pedido.
+ * Corrige o caso em que dois certificados emitidos pro mesmo bloco (ex.:
+ * EDB-LID-2026-0003 e EDB-LID-2026-0022, Flávia Vanessa) faziam o PDF do
+ * mais antigo mostrar o código do mais recente no corpo do documento.
+ */
+export async function getNivelCertificateByHashExato(alunoId: number, hashDocumento: string): Promise<NivelCertificate | null> {
+  const db = await getDb();
+  if (!db || !hashDocumento) return null;
+  const [cert] = await db.select().from(nivelCertificates)
+    .where(and(
+      eq(nivelCertificates.alunoId, alunoId),
+      eq(nivelCertificates.hashDocumento, hashDocumento),
+    ))
+    .limit(1);
+  return cert || null;
+}
+
+/**
  * Lista os certificados emitidos mais recentes, com o nome do aluno — pra
  * telas administrativas mostrarem o Código de Identificação sem precisar
  * que o admin guarde/procure manualmente onde anotou cada um.
@@ -13053,6 +13075,37 @@ export async function createNivelCertificate(
     );
   }
   return certificateId;
+}
+
+/**
+ * Revoga qualquer certificado "emitido" já existente pro MESMO bloco de
+ * níveis (mesmo macrociclo/ciclo) antes de emitir um novo — decisão
+ * explícita (14/08/2026): quando o mesmo nível/bloco é certificado mais de
+ * uma vez, o mais recente prevalece, e o anterior é marcado como revogado
+ * (não apagado — fica no histórico). Sem essa trava, dois certificados
+ * "emitido" para o mesmo bloco ficavam ambíguos: qual é o válido? O
+ * relatório de um deles podia até mostrar o código do outro por engano
+ * (caso da Flávia Vanessa, EDB-LID-2026-0003 mostrando o código do
+ * EDB-LID-2026-0022). Chamar ANTES de createNivelCertificate.
+ */
+export async function revogarCertificadosAnterioresDoBloco(alunoId: number, contratoNivelId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const macrociclos = await getMacrociclosByAluno(alunoId);
+  const bloco = macrociclos.find((m: any) =>
+    m.contratoNivelId === contratoNivelId || (m.contratoNivelIds && m.contratoNivelIds.includes(contratoNivelId))
+  );
+  const idsDoBloco: number[] = bloco && Array.isArray(bloco.contratoNivelIds) && bloco.contratoNivelIds.length > 0
+    ? bloco.contratoNivelIds
+    : [contratoNivelId];
+  const result = await db.update(nivelCertificates)
+    .set({ status: "revogado" })
+    .where(and(
+      eq(nivelCertificates.alunoId, alunoId),
+      inArray(nivelCertificates.contratoNivelId, idsDoBloco),
+      eq(nivelCertificates.status, "emitido"),
+    ));
+  return (result as any)?.[0]?.affectedRows ?? 0;
 }
 
 /**
@@ -13476,8 +13529,12 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
     snapshotCongelado,
     dadosSegmentadosPorNivel: snapshot ? true : !pedagogia.dadosNaoSegmentadosPorNivel,
     resultadoFinalFechado,
-    engajamentoMin80: engajamento >= 80,
-    desafiosMin80: !metasEvidenciasDefinidas || desafios >= 80,
+    // Meta padrão da plataforma: 70% (decisão explícita, pra evitar confusão
+    // de ter vários limites diferentes no sistema — o mesmo 70% usado como
+    // meta padrão de nota das competências, agora também como meta do
+    // Resultado Final/Engajamento Final consolidado e dos desafios).
+    engajamentoMin80: engajamento >= 70,
+    desafiosMin80: !metasEvidenciasDefinidas || desafios >= 70,
     evidenciasMinimas: !metasEvidenciasDefinidas || evidencias > 0,
   };
 
