@@ -581,7 +581,7 @@ async function gerarESalvarCertificadoPdf(
       // "regenerar" minutos depois sempre funciona (o cache de 5 min já
       // expirou até lá) mas a emissão original às vezes não.
       cacheInvalidate();
-      const relatorioPageUrl = `${baseUrl}/aluno/relatorio-final/${encodeURIComponent(macrociclo.chave)}?alunoId=${alunoId}`;
+      const relatorioPageUrl = `${baseUrl}/aluno/relatorio-final/${encodeURIComponent(macrociclo.chave)}?alunoId=${alunoId}&hash=${encodeURIComponent(hashDocumento)}`;
       console.log(`[certificacao] relatório: renderizando ${relatorioPageUrl}`);
       const { headerTemplate, footerTemplate } = montarCabecalhoRodapeRelatorio(
         hashDocumento,
@@ -10994,6 +10994,10 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
         const hashDocumento = await db.gerarCodigoIdentificacaoCertificado();
         const arquivoUrlProvisorio = `/certificados/${alunoId}/${input.contratoNivelId}/${hashDocumento}.pdf`;
+        // Revoga qualquer certificado anterior do mesmo bloco antes de criar
+        // o novo — evita dois certificados "emitido" ambíguos pro mesmo
+        // nível/bloco (ver comentário na função).
+        await db.revogarCertificadosAnterioresDoBloco(alunoId, input.contratoNivelId);
         const certId = await db.createNivelCertificate(
           {
             alunoId,
@@ -11103,6 +11107,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
 
         const hashDocumento = await db.gerarCodigoIdentificacaoCertificado();
         const arquivoUrlProvisorio = `/certificados/${alunoId}/${contratoNivelId}/${hashDocumento}.pdf`;
+        // Mesma trava do fluxo de emissão normal — evita dois certificados
+        // "emitido" ambíguos pro mesmo nível/bloco.
+        await db.revogarCertificadosAnterioresDoBloco(alunoId, contratoNivelId);
         const certId = await db.createNivelCertificate(
           {
             alunoId,
