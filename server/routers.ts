@@ -6262,6 +6262,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           const certificadoEmitido = idsDoBlocoCertCheck.length > 0
             ? await db.getNivelCertificateByAlunoNiveis(aluno.id, idsDoBlocoCertCheck)
             : null;
+          console.log(`[meuDashboardCongelado] DIAG-certCheck aluno=${aluno.id} historicoId=${input.historicoId} blocoParaCertCheck.chave=${blocoParaCertCheck?.chave ?? "NAO-ENCONTRADO"} idsDoBlocoCertCheck=${JSON.stringify(idsDoBlocoCertCheck)} certificadoEmitido=${certificadoEmitido ? JSON.stringify({id: certificadoEmitido.id, hashDocumento: certificadoEmitido.hashDocumento, contratoNivelId: certificadoEmitido.contratoNivelId, status: certificadoEmitido.status}) : "null"}`);
           if (certificadoEmitido) {
             const [snapIndRows]: any = await database.execute(sql.raw(
               `SELECT ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas, ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal
