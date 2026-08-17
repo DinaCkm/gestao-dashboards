@@ -6205,10 +6205,10 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       // confiável). Os dois podiam discordar entre si dentro do MESMO
       // relatório — caso da Ana Cássia: IND.3 mostrava 92%, mas a tabela
       // mostrava corretamente "9 de 12 obrigatórias dentro da meta" (75%).
-      // Decisão explícita (17/08/2026): reportar 92% quando só 9 de 12
-      // foram cumpridas é inaceitável — os dois precisam vir da MESMA fonte.
-      // Sobrescreve aqui com o resultado de getPedagogiaPorMacrociclo (a
-      // mesma função que monta a tabela), pra nunca mais divergir.
+      // Recalcula aqui com o resultado de getPedagogiaPorMacrociclo (a mesma
+      // função que monta a tabela) — vira a base usada abaixo, e só é
+      // substituída pelo valor congelado se já existir certificado EMITIDO
+      // pra este bloco (ver bloco "congeladoAplicado" logo adiante).
       if (indicadoresV2Congelado?.consolidado) {
         try {
           const macrociclosParaPedagogia = await db.getMacrociclosByAluno(aluno.id);
@@ -6239,35 +6239,62 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       console.log(`[meuDashboardCongelado] mentorias.length=${mentorias.length} eventos.length=${eventos.length} performance.length=${performance.length} ciclosV2.length=${ciclosV2.length}`);
       console.log(`[meuDashboardCongelado] consolidado (recalculado ao vivo, antes de checar snapshot)=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
 
-      // Decisão explícita (14/08/2026): o Resultado Final e os 7
-      // indicadores de um ciclo já encerrado são o retrato de QUANDO o
-      // reset aconteceu — nunca mudam depois, mesmo que o método de
-      // cálculo melhore (como aconteceu hoje várias vezes). Isso evita a
-      // confusão de alguém já certificado "deixar de bater a meta"
-      // silenciosamente numa nova geração do mesmo relatório. Sempre que
-      // existir um snapshot congelado (historico_ciclos_aluno) pra este
-      // ciclo, ele é a fonte da verdade pros 7 indicadores — o cálculo ao
-      // vivo acima só serve de base/fallback pra ciclo ainda ativo (sem
-      // snapshot nenhum pra usar).
+      // Decisão explícita (14/08/2026, refinada em 17/08/2026): o que não
+      // pode mudar silenciosamente é um DOCUMENTO JÁ ENTREGUE ao aluno — um
+      // certificado efetivamente emitido. O snapshot (historico_ciclos_
+      // aluno) é criado automaticamente todo reset, mesmo sem certificado
+      // nenhum ter sido gerado a partir dele — travar os indicadores nesse
+      // valor nesse caso não protege documento nenhum, só perpetua um
+      // cálculo interno que pode estar errado (caso da Ana Cássia: snapshot
+      // existia, nenhum certificado tinha sido emitido, e o IND.3 do
+      // snapshot estava errado — 92% em vez dos 75% reais). A trava de
+      // "sempre usar o congelado" só faz sentido quando existe um
+      // certificado com status='emitido' pra este bloco.
+      let congeladoAplicado = false;
       if (input?.historicoId && indicadoresV2Congelado?.consolidado) {
         const database = await getDb();
         if (database) {
-          const [snapIndRows]: any = await database.execute(sql.raw(
-            `SELECT ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas, ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal
-             FROM historico_ciclos_aluno WHERE id = ${input.historicoId} LIMIT 1`
-          ));
-          const snapInd = Array.isArray(snapIndRows) && snapIndRows[0] ? snapIndRows[0] : null;
-          if (snapInd && snapInd.ind7EngajamentoFinal !== null) {
-            const c = indicadoresV2Congelado.consolidado as any;
-            c.ind1_webinars = Number(snapInd.ind1Webinars ?? c.ind1_webinars);
-            c.ind2_avaliacoes = Number(snapInd.ind2Avaliacoes ?? c.ind2_avaliacoes);
-            c.ind3_competencias = Number(snapInd.ind3Competencias ?? c.ind3_competencias);
-            c.ind4_tarefas = Number(snapInd.ind4Tarefas ?? c.ind4_tarefas);
-            c.ind5_engajamento = Number(snapInd.ind5Engajamento ?? c.ind5_engajamento);
-            c.ind6_aplicabilidade = Number(snapInd.ind6Aplicabilidade ?? c.ind6_aplicabilidade);
-            c.ind7_engajamentoFinal = Number(snapInd.ind7EngajamentoFinal);
+          const macrociclosParaCertCheck = await db.getMacrociclosByAluno(aluno.id);
+          const blocoParaCertCheck = macrociclosParaCertCheck.find((m: any) => m.historicoId === input.historicoId);
+          const idsDoBlocoCertCheck: number[] = blocoParaCertCheck && Array.isArray(blocoParaCertCheck.contratoNivelIds) && blocoParaCertCheck.contratoNivelIds.length > 0
+            ? blocoParaCertCheck.contratoNivelIds
+            : (blocoParaCertCheck?.contratoNivelId ? [blocoParaCertCheck.contratoNivelId] : []);
+          const certificadoEmitido = idsDoBlocoCertCheck.length > 0
+            ? await db.getNivelCertificateByAlunoNiveis(aluno.id, idsDoBlocoCertCheck)
+            : null;
+          if (certificadoEmitido) {
+            const [snapIndRows]: any = await database.execute(sql.raw(
+              `SELECT ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas, ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal
+               FROM historico_ciclos_aluno WHERE id = ${input.historicoId} LIMIT 1`
+            ));
+            const snapInd = Array.isArray(snapIndRows) && snapIndRows[0] ? snapIndRows[0] : null;
+            if (snapInd && snapInd.ind7EngajamentoFinal !== null) {
+              const c = indicadoresV2Congelado.consolidado as any;
+              c.ind1_webinars = Number(snapInd.ind1Webinars ?? c.ind1_webinars);
+              c.ind2_avaliacoes = Number(snapInd.ind2Avaliacoes ?? c.ind2_avaliacoes);
+              c.ind3_competencias = Number(snapInd.ind3Competencias ?? c.ind3_competencias);
+              c.ind4_tarefas = Number(snapInd.ind4Tarefas ?? c.ind4_tarefas);
+              c.ind5_engajamento = Number(snapInd.ind5Engajamento ?? c.ind5_engajamento);
+              c.ind6_aplicabilidade = Number(snapInd.ind6Aplicabilidade ?? c.ind6_aplicabilidade);
+              c.ind7_engajamentoFinal = Number(snapInd.ind7EngajamentoFinal);
+              congeladoAplicado = true;
+            }
           }
         }
+      }
+      // Sem certificado emitido ainda (nada protegendo o snapshot), o
+      // Resultado Final é sempre a média dos 5 primeiros, recalculada em
+      // cima dos valores finais — nunca fica com um número que não bate com
+      // os indicadores mostrados logo abaixo dele.
+      if (indicadoresV2Congelado?.consolidado && !congeladoAplicado) {
+        const c = indicadoresV2Congelado.consolidado as any;
+        c.ind7_engajamentoFinal = (
+          Number(c.ind1_webinars || 0) +
+          Number(c.ind2_avaliacoes || 0) +
+          Number(c.ind3_competencias || 0) +
+          Number(c.ind4_tarefas || 0) +
+          Number(c.ind5_engajamento || 0)
+        ) / 5;
       }
       console.log(`[meuDashboardCongelado] consolidado (depois de checar snapshot)=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
 
