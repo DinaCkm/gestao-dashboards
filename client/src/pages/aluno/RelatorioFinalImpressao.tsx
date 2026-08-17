@@ -46,9 +46,16 @@ export default function RelatorioFinalImpressao() {
   // administrativo) — nesse caso o admin passa ?alunoId=X na URL.
   const alunoIdParam = new URLSearchParams(window.location.search).get("alunoId");
   const alunoId = alunoIdParam ? Number(alunoIdParam) : undefined;
+  // hash identifica EXATAMENTE qual certificado está sendo renderizado —
+  // passado pela própria geração do PDF (gerarESalvarCertificadoPdf). Sem
+  // isso, quando existe mais de um certificado emitido pro mesmo bloco de
+  // níveis, o relatório não tinha como saber qual dos dois é este, e podia
+  // mostrar o código do certificado errado (o mais recente, não o que
+  // efetivamente estava sendo gerado).
+  const hashDocumento = new URLSearchParams(window.location.search).get("hash") || undefined;
 
   const { data: desempenho, isLoading, error } = trpc.meuDesempenho.porMacrociclo.useQuery(
-    { chave, alunoId },
+    { chave, alunoId, hashDocumento },
     { enabled: !!chave, retry: false }
   );
 
@@ -170,7 +177,7 @@ export default function RelatorioFinalImpressao() {
         </div>
         <div className="p-3 border-r" style={{ borderColor: "#E5E7EB" }}>
           <p className="text-[10px] uppercase text-gray-500 font-semibold">Meta da Etapa</p>
-          <p className="font-medium">80%</p>
+          <p className="font-medium">70%</p>
         </div>
         <div className="p-3">
           <p className="text-[10px] uppercase text-gray-500 font-semibold">Evidência / Case</p>
@@ -188,12 +195,12 @@ export default function RelatorioFinalImpressao() {
       <h2 className="text-base font-bold mt-6 mb-1" style={{ color: "#1F2937" }}>2. Indicadores de participação e desempenho</h2>
       <div className="grid grid-cols-3 border" style={{ borderColor: "#E5E7EB" }}>
         {[
-          ["Ind.1 Webinars", consolidado?.ind1_webinars, 80],
-          ["Ind.2 Avaliações", consolidado?.ind2_avaliacoes, 80],
-          ["Ind.3 Cursos", consolidado?.ind3_competencias, 80],
-          ["Ind.4 Tarefas", consolidado?.ind4_tarefas, 80],
-          ["Ind.5 Engajamento", consolidado?.ind5_engajamento, 80],
-          ["Ind.6 Aplicabilidade", consolidado?.ind6_aplicabilidade, 80],
+          ["Ind.1 Webinars", consolidado?.ind1_webinars, 70],
+          ["Ind.2 Avaliações", consolidado?.ind2_avaliacoes, 70],
+          ["Ind.3 Cursos", consolidado?.ind3_competencias, 70],
+          ["Ind.4 Tarefas", consolidado?.ind4_tarefas, 70],
+          ["Ind.5 Engajamento", consolidado?.ind5_engajamento, 70],
+          ["Ind.6 Aplicabilidade", consolidado?.ind6_aplicabilidade, 70],
         ].map(([label, value, meta], idx) => (
           <div
             key={label as string}
