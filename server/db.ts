@@ -13109,6 +13109,57 @@ export async function revogarCertificadosAnterioresDoBloco(alunoId: number, cont
 }
 
 /**
+ * Regrava IND.2/IND.3 (e recalcula IND.7 = Resultado Final) no snapshot
+ * congelado (historico_ciclos_aluno) no momento da EMISSÃO de um
+ * certificado — chamar sempre logo antes de createNivelCertificate.
+ *
+ * Motivo (17/08/2026): "congelar" só faz sentido protegendo um documento
+ * que está sendo entregue AGORA — não perpetuando um cálculo de uma época
+ * em que a lógica ainda estava errada. Snapshots criados antes da correção
+ * de hoje do IND.3 (que usava student_performance, uma fonte paralela e
+ * menos confiável que assessment_competencias) continuavam com o valor
+ * antigo gravado, então um certificado emitido HOJE, contra um snapshot
+ * ANTIGO, congelava um número errado permanentemente (caso da Ana Cássia:
+ * IND.3 91→92% em vez de 75%, mesmo com a correção já no ar) — e isso vale
+ * pra QUALQUER aluno na mesma situação (nível resetado antes de hoje, sem
+ * certificado emitido até agora), não só ela.
+ */
+export async function atualizarIndicadoresCongeladosNoSnapshot(alunoId: number, contratoNivelId: number): Promise<void> {
+  const database = await getDb();
+  if (!database) return;
+  const macrociclos = await getMacrociclosByAluno(alunoId);
+  const bloco = macrociclos.find((m: any) =>
+    m.contratoNivelId === contratoNivelId || (m.contratoNivelIds && m.contratoNivelIds.includes(contratoNivelId))
+  );
+  if (!bloco?.historicoId) return;
+
+  const [snapRows]: any = await database.execute(sql.raw(
+    `SELECT ind1Webinars, ind4Tarefas, ind5Engajamento, ind6Aplicabilidade FROM historico_ciclos_aluno WHERE id = ${bloco.historicoId} LIMIT 1`
+  ));
+  const snap = Array.isArray(snapRows) && snapRows[0] ? snapRows[0] : null;
+  if (!snap) return;
+
+  const pedagogiaCompetencias = await getPedagogiaPorMacrociclo(alunoId, bloco);
+  const obrigatorias = (pedagogiaCompetencias?.competencias || []).filter((c: any) => c.obrigatoria);
+  if (obrigatorias.length === 0) return;
+
+  const aprovadas = obrigatorias.filter((c: any) => c.nota !== null && c.nota >= (c.meta ?? 7)).length;
+  const ind3 = (aprovadas / obrigatorias.length) * 100;
+  const comNota = obrigatorias.filter((c: any) => c.nota !== null);
+  const ind2 = comNota.length > 0
+    ? comNota.reduce((s: number, c: any) => s + Number(c.nota) * 10, 0) / comNota.length
+    : 0;
+  const ind7 = (
+    Number(snap.ind1Webinars ?? 0) + ind2 + ind3 +
+    Number(snap.ind4Tarefas ?? 0) + Number(snap.ind5Engajamento ?? 0)
+  ) / 5;
+
+  await database.execute(sql.raw(
+    `UPDATE historico_ciclos_aluno SET ind2Avaliacoes = ${Math.round(ind2)}, ind3Competencias = ${Math.round(ind3)}, ind7EngajamentoFinal = ${Math.round(ind7)} WHERE id = ${bloco.historicoId}`
+  ));
+}
+
+/**
  * Gera o "Código de Identificação do Conjunto Documental" — formato
  * EDB-LID-AAAA-0000, sequencial por ano. É o MESMO código impresso no
  * certificado e no relatório de aproveitamento (é assim que os dois se
@@ -13489,6 +13540,7 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
   const metasNivel = pedagogia.metas || [];
   const eventos = pedagogia.eventParticipation || [];
   const cases = pedagogia.casesSucesso || [];
+  const mentorias = pedagogia.mentoringSessions || [];
 
   // "Encerrado" é o status gravado pelo reset (arquivarCicloAtual), não um cálculo por data.
   const nivelEncerrado = nivel.status === "encerrado" || nivel.status === "certificado";
@@ -13497,36 +13549,24 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
 
   const resultadoFinalFechado = snapshot ? true : assessments.some((a: any) => ["finalizado", "concluido"].includes(String(a.status)));
 
-  // "Congelar" só faz sentido quando existe um CERTIFICADO EMITIDO de
-  // verdade pra este bloco — não simplesmente porque existe snapshot (o
-  // snapshot é criado automaticamente todo reset, mesmo sem certificado
-  // nenhum ter sido gerado a partir dele). Travar em cima de um snapshot
-  // sem certificado não protege documento nenhum, só perpetua um cálculo
-  // interno que pode estar errado (caso da Ana Cássia, 17/08/2026: snapshot
-  // existia, nenhum certificado emitido, e o IND.3 do snapshot estava
-  // errado — 92% em vez dos 75% reais).
+  // Decisão final (17/08/2026): a janela de cálculo (período entre um reset
+  // e o próximo) é o que nunca muda — o valor resultante nunca é imutável.
+  // Travar a elegibilidade num valor "congelado" de uma época em que o
+  // cálculo podia estar errado impedia correções legítimas (caso da Ana
+  // Cássia: snapshot de antes da correção do IND.3, 92% em vez dos 75%
+  // reais). Sempre recalcula ao vivo, escopado ao nível — snapshot não é
+  // mais usado pra travar nada aqui.
   const blocoParaPedagogia = snapshot?.id
     ? (await getMacrociclosByAluno(alunoId)).find((m: any) => m.historicoId === snapshot.id)
     : null;
-  const idsDoBlocoElegibilidade: number[] = blocoParaPedagogia && Array.isArray(blocoParaPedagogia.contratoNivelIds) && blocoParaPedagogia.contratoNivelIds.length > 0
-    ? blocoParaPedagogia.contratoNivelIds
-    : (blocoParaPedagogia?.contratoNivelId ? [blocoParaPedagogia.contratoNivelId] : [contratoNivelId]);
-  const certificadoJaEmitido = idsDoBlocoElegibilidade.length > 0
-    ? await getNivelCertificateByAlunoNiveis(alunoId, idsDoBlocoElegibilidade)
-    : null;
-  const usarCongelado = !!(snapshot && certificadoJaEmitido);
 
-  const desafios = usarCongelado
-    ? (Number(snapshot.metasTotal) > 0 ? (Number(snapshot.metasCumpridas) / Number(snapshot.metasTotal)) * 100 : 0)
-    : (metasNivel.length > 0
-        ? (metasNivel.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length / metasNivel.length) * 100
-        : 0);
+  const desafios = metasNivel.length > 0
+    ? (metasNivel.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length / metasNivel.length) * 100
+    : 0;
 
-  // IND.2 e IND.3 SEMPRE vêm de getPedagogiaPorMacrociclo (a mesma fonte da
-  // tabela "Avaliação dos cursos") quando há um bloco resolvido — mesmo com
-  // certificado emitido, esses dois nunca usam o valor cru do snapshot,
-  // porque reportar/aprovar em cima de um IND.3 errado é inaceitável mesmo
-  // que já estivesse congelado (decisão explícita, 17/08/2026).
+  // IND.2 e IND.3 sempre vêm de getPedagogiaPorMacrociclo (a mesma fonte da
+  // tabela "Avaliação dos cursos"), escopados ao bloco inteiro (todos os
+  // níveis entre um reset e o próximo) quando um bloco é resolvido.
   let ind2Fresco = 0;
   let ind3Fresco = 0;
   try {
@@ -13544,21 +13584,23 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
     }
   } catch { /* mantém 0 no erro — não trava a elegibilidade por isso */ }
 
-  const engajamento = usarCongelado
-    ? (
-        Number(snapshot.ind1Webinars ?? 0) +
-        ind2Fresco +
-        ind3Fresco +
-        Number(snapshot.ind4Tarefas ?? 0) +
-        Number(snapshot.ind5Engajamento ?? 0)
-      ) / 5
-    : (eventos.length > 0
-        ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
-        : 0);
+  const ind1Fresco = eventos.length > 0
+    ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
+    : 0;
+  // IND.4 (tarefas) e IND.5 (engajamento/presença em mentoria) vêm das
+  // mesmas sessões de mentoria já carregadas em pedagogia.mentoringSessions
+  // — mesma fonte usada no resto do sistema pra esses dois indicadores.
+  const mentoriasComTarefa = mentorias.filter((m: any) => m.taskStatus && m.taskStatus !== "sem_tarefa");
+  const ind4Fresco = mentoriasComTarefa.length > 0
+    ? (mentoriasComTarefa.filter((m: any) => m.taskStatus === "entregue" || m.taskStatus === "validada").length / mentoriasComTarefa.length) * 100
+    : 0;
+  const ind5Fresco = mentorias.length > 0
+    ? (mentorias.filter((m: any) => m.presence === "presente").length / mentorias.length) * 100
+    : 0;
 
-  const evidencias = usarCongelado
-    ? (Number(snapshot.ind6Aplicabilidade ?? 0) > 0 ? 1 : 0)
-    : cases.filter((c: any) => c.entregue === 1).length;
+  const engajamento = (ind1Fresco + ind2Fresco + ind3Fresco + ind4Fresco + ind5Fresco) / 5;
+
+  const evidencias = cases.filter((c: any) => c.entregue === 1).length;
 
   // "Em branco" = a mentoria não tinha meta/evidência definida nesse período
   // (ex.: aluno resetado antes do rastreamento de metas existir) — isso não é
