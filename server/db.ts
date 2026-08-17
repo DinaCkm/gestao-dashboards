@@ -13497,23 +13497,66 @@ export async function avaliarElegibilidadeCertificacao(alunoId: number, contrato
 
   const resultadoFinalFechado = snapshot ? true : assessments.some((a: any) => ["finalizado", "concluido"].includes(String(a.status)));
 
-  // Quando existe snapshot, ele é a fonte mais segura pra tudo — os mesmos
-  // números já mostrados pro aluno em indicadores.meuDashboardCongelado,
-  // em vez de recalcular com consultas escopadas por nível que podem voltar
-  // vazias pros mesmos motivos do snapshot não ter sido encontrado antes.
-  const desafios = snapshot
+  // "Congelar" só faz sentido quando existe um CERTIFICADO EMITIDO de
+  // verdade pra este bloco — não simplesmente porque existe snapshot (o
+  // snapshot é criado automaticamente todo reset, mesmo sem certificado
+  // nenhum ter sido gerado a partir dele). Travar em cima de um snapshot
+  // sem certificado não protege documento nenhum, só perpetua um cálculo
+  // interno que pode estar errado (caso da Ana Cássia, 17/08/2026: snapshot
+  // existia, nenhum certificado emitido, e o IND.3 do snapshot estava
+  // errado — 92% em vez dos 75% reais).
+  const blocoParaPedagogia = snapshot?.id
+    ? (await getMacrociclosByAluno(alunoId)).find((m: any) => m.historicoId === snapshot.id)
+    : null;
+  const idsDoBlocoElegibilidade: number[] = blocoParaPedagogia && Array.isArray(blocoParaPedagogia.contratoNivelIds) && blocoParaPedagogia.contratoNivelIds.length > 0
+    ? blocoParaPedagogia.contratoNivelIds
+    : (blocoParaPedagogia?.contratoNivelId ? [blocoParaPedagogia.contratoNivelId] : [contratoNivelId]);
+  const certificadoJaEmitido = idsDoBlocoElegibilidade.length > 0
+    ? await getNivelCertificateByAlunoNiveis(alunoId, idsDoBlocoElegibilidade)
+    : null;
+  const usarCongelado = !!(snapshot && certificadoJaEmitido);
+
+  const desafios = usarCongelado
     ? (Number(snapshot.metasTotal) > 0 ? (Number(snapshot.metasCumpridas) / Number(snapshot.metasTotal)) * 100 : 0)
     : (metasNivel.length > 0
         ? (metasNivel.filter((m: any) => String(m.status || "").toLowerCase() === "concluida").length / metasNivel.length) * 100
         : 0);
 
-  const engajamento = snapshot
-    ? Number(snapshot.ind7EngajamentoFinal ?? 0)
+  // IND.2 e IND.3 SEMPRE vêm de getPedagogiaPorMacrociclo (a mesma fonte da
+  // tabela "Avaliação dos cursos") quando há um bloco resolvido — mesmo com
+  // certificado emitido, esses dois nunca usam o valor cru do snapshot,
+  // porque reportar/aprovar em cima de um IND.3 errado é inaceitável mesmo
+  // que já estivesse congelado (decisão explícita, 17/08/2026).
+  let ind2Fresco = 0;
+  let ind3Fresco = 0;
+  try {
+    if (blocoParaPedagogia) {
+      const pedagogiaCompetencias = await getPedagogiaPorMacrociclo(alunoId, blocoParaPedagogia);
+      const obrigatoriasPedagogia = (pedagogiaCompetencias?.competencias || []).filter((c: any) => c.obrigatoria);
+      if (obrigatoriasPedagogia.length > 0) {
+        const aprovadasPedagogia = obrigatoriasPedagogia.filter((c: any) => c.nota !== null && c.nota >= (c.meta ?? 7)).length;
+        ind3Fresco = (aprovadasPedagogia / obrigatoriasPedagogia.length) * 100;
+        const comNota = obrigatoriasPedagogia.filter((c: any) => c.nota !== null);
+        if (comNota.length > 0) {
+          ind2Fresco = comNota.reduce((s: number, c: any) => s + Number(c.nota) * 10, 0) / comNota.length;
+        }
+      }
+    }
+  } catch { /* mantém 0 no erro — não trava a elegibilidade por isso */ }
+
+  const engajamento = usarCongelado
+    ? (
+        Number(snapshot.ind1Webinars ?? 0) +
+        ind2Fresco +
+        ind3Fresco +
+        Number(snapshot.ind4Tarefas ?? 0) +
+        Number(snapshot.ind5Engajamento ?? 0)
+      ) / 5
     : (eventos.length > 0
         ? (eventos.filter((e: any) => e.status === "presente").length / eventos.length) * 100
         : 0);
 
-  const evidencias = snapshot
+  const evidencias = usarCongelado
     ? (Number(snapshot.ind6Aplicabilidade ?? 0) > 0 ? 1 : 0)
     : cases.filter((c: any) => c.entregue === 1).length;
 
