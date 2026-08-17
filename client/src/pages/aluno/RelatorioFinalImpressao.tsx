@@ -98,7 +98,8 @@ export default function RelatorioFinalImpressao() {
   const criterios = (desempenho.certificacao?.criterios || {}) as Record<string, boolean>;
   const elegivel = !!desempenho.certificacao?.elegivel;
   const nivelTitulo = labelMacrociclo(desempenho.macrociclo.nivelLabel, desempenho.macrociclo.numeroCiclo);
-  const engajamentoFinal = consolidado?.ind7_engajamentoFinal ?? null;
+  const engajamentoFinalBruto = consolidado?.ind7_engajamentoFinal ?? null;
+  const engajamentoFinal = engajamentoFinalBruto !== null ? Math.round(Number(engajamentoFinalBruto) * 100) / 100 : null;
   const certificadoEmitido = desempenho.certificacao?.certificadoEmitido as any;
   const codigoIdentificacao = certificadoEmitido?.hashDocumento || null;
 
@@ -208,7 +209,7 @@ export default function RelatorioFinalImpressao() {
             style={{ borderColor: "#E5E7EB" }}
           >
             <p className="text-[10px] uppercase text-gray-500 font-semibold">{label}</p>
-            <p className="text-xl font-bold" style={{ color: "#351A4F" }}>{value !== null && value !== undefined ? `${value}%` : "—"}</p>
+            <p className="text-xl font-bold" style={{ color: "#351A4F" }}>{value !== null && value !== undefined ? `${Math.round(Number(value) * 100) / 100}%` : "—"}</p>
             <p className="text-[10px] text-gray-400">Meta: {meta}%</p>
           </div>
         ))}
