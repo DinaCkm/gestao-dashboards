@@ -6198,6 +6198,42 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         }
       }
 
+      // IND.2 (Avaliações) e IND.3 (Cursos), que saem de calcularIndicadoresAlunoV2,
+      // usam student_performance/aluno_atividade_progresso como fonte — um
+      // sistema PARALELO e independente da tabela "Avaliação dos cursos"
+      // (que usa assessment_competencias, já corrigida hoje e comprovadamente
+      // confiável). Os dois podiam discordar entre si dentro do MESMO
+      // relatório — caso da Ana Cássia: IND.3 mostrava 92%, mas a tabela
+      // mostrava corretamente "9 de 12 obrigatórias dentro da meta" (75%).
+      // Decisão explícita (17/08/2026): reportar 92% quando só 9 de 12
+      // foram cumpridas é inaceitável — os dois precisam vir da MESMA fonte.
+      // Sobrescreve aqui com o resultado de getPedagogiaPorMacrociclo (a
+      // mesma função que monta a tabela), pra nunca mais divergir.
+      if (indicadoresV2Congelado?.consolidado) {
+        try {
+          const macrociclosParaPedagogia = await db.getMacrociclosByAluno(aluno.id);
+          const blocoParaPedagogia = input?.historicoId
+            ? macrociclosParaPedagogia.find((m: any) => m.historicoId === input.historicoId)
+            : macrociclosParaPedagogia.find((m: any) => m.status === "encerrado");
+          if (blocoParaPedagogia) {
+            const pedagogiaCompetencias = await db.getPedagogiaPorMacrociclo(aluno.id, blocoParaPedagogia);
+            const obrigatoriasPedagogia = (pedagogiaCompetencias?.competencias || []).filter((c: any) => c.obrigatoria);
+            if (obrigatoriasPedagogia.length > 0) {
+              const aprovadasPedagogia = obrigatoriasPedagogia.filter((c: any) => c.nota !== null && c.nota >= (c.meta ?? 7)).length;
+              (indicadoresV2Congelado.consolidado as any).ind3_competencias = (aprovadasPedagogia / obrigatoriasPedagogia.length) * 100;
+
+              const comNota = obrigatoriasPedagogia.filter((c: any) => c.nota !== null);
+              if (comNota.length > 0) {
+                const somaNotas = comNota.reduce((s: number, c: any) => s + Number(c.nota) * 10, 0);
+                (indicadoresV2Congelado.consolidado as any).ind2_avaliacoes = somaNotas / comNota.length;
+              }
+            }
+          }
+        } catch (e) {
+          console.error(`[meuDashboardCongelado] erro ao sobrescrever IND.2/IND.3 via assessment_competencias:`, e);
+        }
+      }
+
       console.log(`[meuDashboardCongelado] DIAGNÓSTICO aluno=${aluno.id} idUsuario=${idUsuario} historicoId=${input?.historicoId ?? "—"}`);
       console.log(`[meuDashboardCongelado] macrocicloCongelado=${JSON.stringify(macrocicloCongelado)}`);
       console.log(`[meuDashboardCongelado] mentorias.length=${mentorias.length} eventos.length=${eventos.length} performance.length=${performance.length} ciclosV2.length=${ciclosV2.length}`);
