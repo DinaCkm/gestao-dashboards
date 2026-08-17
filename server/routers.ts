@@ -6239,55 +6239,19 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       console.log(`[meuDashboardCongelado] mentorias.length=${mentorias.length} eventos.length=${eventos.length} performance.length=${performance.length} ciclosV2.length=${ciclosV2.length}`);
       console.log(`[meuDashboardCongelado] consolidado (recalculado ao vivo, antes de checar snapshot)=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
 
-      // Decisão explícita (14/08/2026, refinada em 17/08/2026): o que não
-      // pode mudar silenciosamente é um DOCUMENTO JÁ ENTREGUE ao aluno — um
-      // certificado efetivamente emitido. O snapshot (historico_ciclos_
-      // aluno) é criado automaticamente todo reset, mesmo sem certificado
-      // nenhum ter sido gerado a partir dele — travar os indicadores nesse
-      // valor nesse caso não protege documento nenhum, só perpetua um
-      // cálculo interno que pode estar errado (caso da Ana Cássia: snapshot
-      // existia, nenhum certificado tinha sido emitido, e o IND.3 do
-      // snapshot estava errado — 92% em vez dos 75% reais). A trava de
-      // "sempre usar o congelado" só faz sentido quando existe um
-      // certificado com status='emitido' pra este bloco.
-      let congeladoAplicado = false;
-      if (input?.historicoId && indicadoresV2Congelado?.consolidado) {
-        const database = await getDb();
-        if (database) {
-          const macrociclosParaCertCheck = await db.getMacrociclosByAluno(aluno.id);
-          const blocoParaCertCheck = macrociclosParaCertCheck.find((m: any) => m.historicoId === input.historicoId);
-          const idsDoBlocoCertCheck: number[] = blocoParaCertCheck && Array.isArray(blocoParaCertCheck.contratoNivelIds) && blocoParaCertCheck.contratoNivelIds.length > 0
-            ? blocoParaCertCheck.contratoNivelIds
-            : (blocoParaCertCheck?.contratoNivelId ? [blocoParaCertCheck.contratoNivelId] : []);
-          const certificadoEmitido = idsDoBlocoCertCheck.length > 0
-            ? await db.getNivelCertificateByAlunoNiveis(aluno.id, idsDoBlocoCertCheck)
-            : null;
-          console.log(`[meuDashboardCongelado] DIAG-certCheck aluno=${aluno.id} historicoId=${input.historicoId} blocoParaCertCheck.chave=${blocoParaCertCheck?.chave ?? "NAO-ENCONTRADO"} idsDoBlocoCertCheck=${JSON.stringify(idsDoBlocoCertCheck)} certificadoEmitido=${certificadoEmitido ? JSON.stringify({id: certificadoEmitido.id, hashDocumento: certificadoEmitido.hashDocumento, contratoNivelId: certificadoEmitido.contratoNivelId, status: certificadoEmitido.status}) : "null"}`);
-          if (certificadoEmitido) {
-            const [snapIndRows]: any = await database.execute(sql.raw(
-              `SELECT ind1Webinars, ind2Avaliacoes, ind3Competencias, ind4Tarefas, ind5Engajamento, ind6Aplicabilidade, ind7EngajamentoFinal
-               FROM historico_ciclos_aluno WHERE id = ${input.historicoId} LIMIT 1`
-            ));
-            const snapInd = Array.isArray(snapIndRows) && snapIndRows[0] ? snapIndRows[0] : null;
-            if (snapInd && snapInd.ind7EngajamentoFinal !== null) {
-              const c = indicadoresV2Congelado.consolidado as any;
-              c.ind1_webinars = Number(snapInd.ind1Webinars ?? c.ind1_webinars);
-              c.ind2_avaliacoes = Number(snapInd.ind2Avaliacoes ?? c.ind2_avaliacoes);
-              c.ind3_competencias = Number(snapInd.ind3Competencias ?? c.ind3_competencias);
-              c.ind4_tarefas = Number(snapInd.ind4Tarefas ?? c.ind4_tarefas);
-              c.ind5_engajamento = Number(snapInd.ind5Engajamento ?? c.ind5_engajamento);
-              c.ind6_aplicabilidade = Number(snapInd.ind6Aplicabilidade ?? c.ind6_aplicabilidade);
-              c.ind7_engajamentoFinal = Number(snapInd.ind7EngajamentoFinal);
-              congeladoAplicado = true;
-            }
-          }
-        }
-      }
-      // Sem certificado emitido ainda (nada protegendo o snapshot), o
-      // Resultado Final é sempre a média dos 5 primeiros, recalculada em
-      // cima dos valores finais — nunca fica com um número que não bate com
-      // os indicadores mostrados logo abaixo dele.
-      if (indicadoresV2Congelado?.consolidado && !congeladoAplicado) {
+      // Decisão final (17/08/2026): a janela de cálculo (o período entre um
+      // reset e o próximo) é o que nunca muda — mas o VALOR resultante
+      // nunca é imutável. Se os dados de origem forem corrigidos, ou se a
+      // lógica de cálculo melhorar (como aconteceu hoje várias vezes), o
+      // relatório de um ciclo já encerrado tem que refletir isso — travar
+      // num valor "congelado" de uma época em que o cálculo podia estar
+      // errado (caso da Ana Cássia: snapshot de antes da correção do IND.3,
+      // 92% em vez dos 75% reais) impede exatamente esse tipo de correção
+      // legítima. O snapshot (historico_ciclos_aluno) continua existindo
+      // como registro histórico de quando o reset aconteceu, mas não é mais
+      // usado pra travar o valor exibido — sempre recalcula, dentro da
+      // janela certa (resolvida acima, entre os resets).
+      if (indicadoresV2Congelado?.consolidado) {
         const c = indicadoresV2Congelado.consolidado as any;
         c.ind7_engajamentoFinal = (
           Number(c.ind1_webinars || 0) +
@@ -6297,7 +6261,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           Number(c.ind5_engajamento || 0)
         ) / 5;
       }
-      console.log(`[meuDashboardCongelado] consolidado (depois de checar snapshot)=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
+      console.log(`[meuDashboardCongelado] consolidado (recalculado ao vivo, final)=${JSON.stringify(indicadoresV2Congelado?.consolidado)}`);
 
       // Calcular indicadores clássicos
       const compObrigatorias: CompetenciaObrigatoria[] = (await db.getCompetenciasObrigatoriasAluno(aluno.id)).map(c => ({
@@ -11062,6 +11026,11 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         // o novo — evita dois certificados "emitido" ambíguos pro mesmo
         // nível/bloco (ver comentário na função).
         await db.revogarCertificadosAnterioresDoBloco(alunoId, input.contratoNivelId);
+        // Regrava IND.2/IND.3/Resultado Final no snapshot com a lógica
+        // corrigida de hoje ANTES de emitir — pra não congelar, num
+        // certificado novo, um número calculado com a lógica antiga (ver
+        // comentário na função).
+        await db.atualizarIndicadoresCongeladosNoSnapshot(alunoId, input.contratoNivelId);
         const certId = await db.createNivelCertificate(
           {
             alunoId,
@@ -11174,6 +11143,9 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
         // Mesma trava do fluxo de emissão normal — evita dois certificados
         // "emitido" ambíguos pro mesmo nível/bloco.
         await db.revogarCertificadosAnterioresDoBloco(alunoId, contratoNivelId);
+        // Mesma atualização do fluxo normal — regrava IND.2/IND.3/Resultado
+        // Final no snapshot com a lógica corrigida antes de emitir.
+        await db.atualizarIndicadoresCongeladosNoSnapshot(alunoId, contratoNivelId);
         const certId = await db.createNivelCertificate(
           {
             alunoId,
