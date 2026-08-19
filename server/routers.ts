@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq, and, or, asc, desc, inArray, sql } from "drizzle-orm";
+import { eq, and, or, ne, asc, desc, inArray, sql } from "drizzle-orm";
 import {
   competenciasModulos,
   competencias,
@@ -15699,7 +15699,13 @@ Responda APENAS em JSON com o formato especificado.`
     .from(alunoCursoAtribuido)
     .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
     .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
-    .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+    .where(
+      and(
+        eq(alunoCursoAtribuido.alunoId, aluno.id),
+        // Curso trancado aguardando o diagnóstico (fluxo Alunos Autônomos) não aparece ainda
+        ne(alunoCursoAtribuido.status, "aguardando_avaliacao")
+      )
+    )
     .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
 }),
 
@@ -15719,7 +15725,12 @@ Responda APENAS em JSON com o formato especificado.`
           .from(alunoCursoAtribuido)
           .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
           .leftJoin(competencias, eq(cursosCompetencias.competenciaId, competencias.id))
-          .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+          .where(
+            and(
+              eq(alunoCursoAtribuido.alunoId, aluno.id),
+              ne(alunoCursoAtribuido.status, "aguardando_avaliacao")
+            )
+          )
           .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
 
         // Remover duplicatas
