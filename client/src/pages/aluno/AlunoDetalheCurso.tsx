@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { TrendingUp } from "lucide-react";
 
 export default function AlunoDetalheCurso() {
   const [, setLocation] = useLocation();
@@ -17,6 +18,13 @@ export default function AlunoDetalheCurso() {
   const detalheCursoQuery = trpc.competenciasCompTec.aluno.detalheCursoAtribuido.useQuery(
     { cursoId, cursoAtribuidoId },
     { enabled: cursoId > 0 && cursoAtribuidoId > 0 }
+  );
+
+  // Só existe evolução para alunos que passaram pelo diagnóstico inicial
+  // (fluxo Alunos Autônomos) — para os demais, conhecimentoPrevio vem null.
+  const evolucaoQuery = trpc.alunosAutonomos.evolucaoNoCurso.useQuery(
+    { cursoAtribuidoId },
+    { enabled: cursoAtribuidoId > 0, retry: false }
   );
 
   const dados = useMemo(() => {
@@ -105,6 +113,46 @@ export default function AlunoDetalheCurso() {
           )}
         </CardContent>
       </Card>
+
+      {evolucaoQuery.data?.conhecimentoPrevio !== null &&
+        evolucaoQuery.data?.conhecimentoPrevio !== undefined && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Sua evolução neste curso
+              </CardTitle>
+              <CardDescription>
+                Comparação entre o que você já sabia antes de começar e seu aproveitamento nos
+                conteúdos do curso.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm text-muted-foreground">Conhecimento prévio</p>
+                  <p className="mt-1 text-2xl font-bold">
+                    {Number(evolucaoQuery.data.conhecimentoPrevio).toFixed(0)}%
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Avaliação diagnóstica feita antes do curso
+                  </p>
+                </div>
+                <div className="rounded-lg border p-4">
+                  <p className="text-sm text-muted-foreground">Aproveitamento no curso</p>
+                  <p className="mt-1 text-2xl font-bold">
+                    {dados.notaFinal !== null && dados.notaFinal !== undefined
+                      ? `${(Number(dados.notaFinal) * 10).toFixed(0)}%`
+                      : "Em andamento"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Média das avaliações dos conteúdos já concluídos
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
     </div>
     </AlunoLayout>
   );
