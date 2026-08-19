@@ -86,6 +86,7 @@ import AlunoCatalogo from "./pages/aluno/AlunoCatalogo";
 
 import AdminAtividades from "./pages/admin/AdminAtividades";
 import AdminAlunosAutonomos from "./pages/admin/AdminAlunosAutonomos";
+import AcessoAlunoAutonomo, { AcessoAlunoAutonomoLiberado } from "./pages/AcessoAlunoAutonomo";
 import AdminAvaliacoes from "./pages/admin/AdminAvaliacoes";
 import AdminPreviewAvaliacao from "./pages/admin/AdminPreviewAvaliacao";
 import AdminPreviewCurso from "./pages/admin/AdminPreviewCurso";
@@ -211,6 +212,8 @@ function Router() {
       <Route path={"/admin/competencias-comp-tec/dashboard"} component={AdminDashboardCompTec} />
       <Route path={"/admin/competencias-comp-tec/atividades"} component={AdminAtividades} />
       <Route path={"/admin/alunos-autonomos"} component={AdminAlunosAutonomos} />
+      <Route path={"/acesso/:token/liberado"} component={AcessoAlunoAutonomoLiberado} />
+      <Route path={"/acesso/:token"} component={AcessoAlunoAutonomo} />
       <Route path={"/admin/competencias-comp-tec/avaliacoes"} component={AdminAvaliacoes} />
       <Route path={"/admin/avaliacoes"} component={AdminAvaliacoes} />
       <Route path={"/admin/avaliacoes/preview"} component={AdminPreviewAvaliacao} />
