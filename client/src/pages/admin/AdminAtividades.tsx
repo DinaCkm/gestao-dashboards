@@ -403,6 +403,11 @@ export default function AdminAtividades() {
                 <Label htmlFor="imagem" className="text-xs">
                   Imagem do Card
                 </Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Tamanho recomendado: 800x400px (proporção 2:1, paisagem). O card é
+                  exibido com altura fixa e corta as laterais (object-cover) conforme a
+                  tela, então mantenha o conteúdo importante centralizado na imagem.
+                </p>
                 <div className="mt-2 space-y-2">
                   {imagemPreview && (
                     <div className="relative w-full h-24 bg-gray-200 rounded-lg overflow-hidden">
