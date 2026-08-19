@@ -11,6 +11,7 @@ import {
   atividadesCurso,
   avaliacoesAtividade,
   competencias,
+  consultors,
   cursosCompetencias,
   onboardingJornada,
   tentativasAvaliacao,
@@ -109,6 +110,41 @@ export const alunosAutonomosRouter = router({
   // ==========================================================================
 
   /** Lista as avaliações diagnósticas já cadastradas (opcionalmente de um curso). */
+  // ==========================================================================
+  // Dados de apoio para os dropdowns da tela admin (competência -> curso, mentores)
+  // ==========================================================================
+  listarCompetencias: protectedProcedure.query(async ({ ctx }) => {
+    requireAdmin(ctx);
+    const database = await requireDatabase();
+    return await database
+      .select({ id: competencias.id, nome: competencias.nome })
+      .from(competencias)
+      .where(eq(competencias.isActive, 1))
+      .orderBy(competencias.nome);
+  }),
+
+  listarCursosPorCompetencia: protectedProcedure
+    .input(z.object({ competenciaId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      requireAdmin(ctx);
+      const database = await requireDatabase();
+      return await database
+        .select({ id: cursosCompetencias.id, titulo: cursosCompetencias.titulo })
+        .from(cursosCompetencias)
+        .where(and(eq(cursosCompetencias.competenciaId, input.competenciaId), eq(cursosCompetencias.isActive, 1)))
+        .orderBy(cursosCompetencias.ordem, cursosCompetencias.titulo);
+    }),
+
+  listarMentores: protectedProcedure.query(async ({ ctx }) => {
+    requireAdmin(ctx);
+    const database = await requireDatabase();
+    return await database
+      .select({ id: consultors.id, name: consultors.name })
+      .from(consultors)
+      .where(and(eq(consultors.isActive, 1), eq(consultors.role, "mentor")))
+      .orderBy(consultors.name);
+  }),
+
   listarDiagnosticos: protectedProcedure
     .input(z.object({ cursoId: z.number().int().positive().optional() }).default({}))
     .query(async ({ ctx, input }) => {
