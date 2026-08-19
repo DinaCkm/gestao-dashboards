@@ -8991,8 +8991,8 @@ export async function getAlunoOnboardingStatus(user: {
   // - onboardingLiberado = 1: admin liberou novo ciclo → NÃO bloqueia o portal,
   //   apenas exibe aviso nas páginas de Assessment e Performance
   let needsOnboarding = false;
-  if (aluno.tipoPortal === 'processo_seletivo') {
-    needsOnboarding = false; // Candidatos PS nunca passam pelo onboarding de desenvolvimento
+  if (aluno.tipoPortal === 'processo_seletivo' || aluno.tipoPortal === 'aluno_autonomo') {
+    needsOnboarding = false; // Candidatos PS e Alunos Autônomos têm sua própria jornada, não passam pelo onboarding de desenvolvimento
   } else if (isAlunoNovo && !aceiteRealizado && !onboardingLiberado) {
     needsOnboarding = true; // Aluno novo que ainda não deu aceite no primeiro ciclo
   }
