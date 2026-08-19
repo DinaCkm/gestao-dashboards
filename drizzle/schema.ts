@@ -1577,9 +1577,13 @@ export type TipoAtividade = typeof TIPOS_ATIVIDADE[number];
  */
 export const avaliacoesAtividade = mysqlTable("avaliacoes_atividade", {
   id: int("id").autoincrement().primaryKey(),
-  atividadeId: int("atividadeId").notNull(),
+  // atividadeId é NULL quando tipo = 'diagnostico_inicial' (avaliação do curso, não da atividade)
+  atividadeId: int("atividadeId"),
+  // cursoId é preenchido apenas quando tipo = 'diagnostico_inicial'
+  cursoId: int("cursoId"),
+  tipo: mysqlEnum("tipo", ["atividade", "diagnostico_inicial"]).default("atividade").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  questoes: json("questoes").notNull(), // Array com 30 questões
+  questoes: json("questoes").notNull(), // Array com 30 questões (atividade) ou 10 (diagnóstico)
   notaMinima: decimal("notaMinima", { precision: 3, scale: 1 }).default("8.0").notNull(),
   isActive: int("isActive").default(1).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1595,7 +1599,10 @@ export type InsertAvaliacaoAtividade = typeof avaliacoesAtividade.$inferInsert;
 export const tentativasAvaliacao = mysqlTable("tentativas_avaliacao", {
   id: int("id").autoincrement().primaryKey(),
   alunoId: int("alunoId").notNull(),
-  atividadeId: int("atividadeId").notNull(),
+  // atividadeId é NULL quando tipo = 'diagnostico_inicial'
+  atividadeId: int("atividadeId"),
+  cursoId: int("cursoId"),
+  tipo: mysqlEnum("tipo", ["atividade", "diagnostico_inicial"]).default("atividade").notNull(),
   avaliacaoId: int("avaliacaoId").notNull(),
   questoesSelecionadas: json("questoesSelecionadas").notNull(), // 15 questões aleatórias
   respostasAluno: json("respostasAluno").notNull(),
@@ -1619,14 +1626,42 @@ export const alunoCursoAtribuido = mysqlTable("aluno_curso_atribuido", {
   mentorId: int("mentorId").notNull(),
   dataAtribuicao: timestamp("dataAtribuicao").defaultNow().notNull(),
   dataPrazo: timestamp("dataPrazo").notNull(),
-  status: mysqlEnum("status", ["nao_iniciado", "em_progresso", "concluido", "prorrogado"]).default("nao_iniciado").notNull(),
+  // 'aguardando_avaliacao' = curso reservado ao aluno autônomo, trancado até concluir o diagnóstico
+  status: mysqlEnum("status", ["aguardando_avaliacao", "nao_iniciado", "em_progresso", "concluido", "prorrogado"]).default("nao_iniciado").notNull(),
   notaFinal: decimal("notaFinal", { precision: 3, scale: 1 }),
+  // Avaliação diagnóstica de entrada (fluxo Alunos Autônomos)
+  avaliacaoDiagnosticaId: int("avaliacaoDiagnosticaId"),
+  notaDiagnostica: decimal("notaDiagnostica", { precision: 5, scale: 2 }), // escala 0-100
+  diagnosticoConcluidoEm: timestamp("diagnosticoConcluidoEm"),
   dataConclusao: timestamp("dataConclusao"),
   indicador2Updated: int("indicador2Updated").default(0).notNull(),
   indicador3Updated: int("indicador3Updated").default(0).notNull(),
 });
 export type AlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferSelect;
 export type InsertAlunoCursoAtribuido = typeof alunoCursoAtribuido.$inferInsert;
+
+/**
+ * ALUNOS AUTÔNOMOS - Token de acesso por link (sem senha)
+ * Mesmo padrão já usado em disc_assessments.conviteToken.
+ * etapaAtual controla onde o aluno está na jornada:
+ *   cadastro -> avaliacao -> liberado (mural)
+ */
+export const alunoAcessoToken = mysqlTable("aluno_acesso_token", {
+  id: int("id").autoincrement().primaryKey(),
+  alunoId: int("alunoId").notNull(),
+  cursoAtribuidoId: int("cursoAtribuidoId"),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  etapaAtual: mysqlEnum("etapaAtual", ["cadastro", "avaliacao", "liberado"]).default("cadastro").notNull(),
+  expiraEm: timestamp("expiraEm"),
+  usadoPrimeiraVezEm: timestamp("usadoPrimeiraVezEm"),
+  ultimoAcessoEm: timestamp("ultimoAcessoEm"),
+  isActive: int("isActive").default(1).notNull(),
+  criadoPorUserId: int("criadoPorUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type AlunoAcessoToken = typeof alunoAcessoToken.$inferSelect;
+export type InsertAlunoAcessoToken = typeof alunoAcessoToken.$inferInsert;
 
 /**
  * Aluno Atividade Progresso - Rastreamento de progresso do aluno em cada atividade de um curso
