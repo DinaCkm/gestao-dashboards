@@ -2,6 +2,8 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
+import { COOKIE_NAME } from "@shared/const";
+import { getSessionCookieOptions } from "../_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import * as db from "../db";
 import {
@@ -957,6 +959,71 @@ export const alunosAutonomosRouter = router({
         detalhamento,
         proximaEtapa: "liberado" as const,
       };
+    }),
+
+  /**
+   * Cria a sessão do aluno automaticamente após ele concluir o diagnóstico,
+   * para cair direto no Mural sem precisar digitar email+CPF de novo.
+   * Só funciona quando etapaAtual = 'liberado' (diagnóstico já concluído).
+   */
+  autoLoginPorToken: publicProcedure
+    .input(z.object({ token: z.string().min(10).max(64) }))
+    .mutation(async ({ input, ctx }) => {
+      const database = await requireDatabase();
+
+      const [acesso] = await database
+        .select()
+        .from(alunoAcessoToken)
+        .where(and(eq(alunoAcessoToken.token, input.token), eq(alunoAcessoToken.isActive, 1)))
+        .limit(1);
+
+      if (!acesso || acesso.etapaAtual !== "liberado") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "O acesso ao mural só é liberado após concluir o diagnóstico.",
+        });
+      }
+
+      const [aluno] = await database
+        .select({ id: alunos.id, name: alunos.name, isActive: alunos.isActive, canLogin: alunos.canLogin })
+        .from(alunos)
+        .where(eq(alunos.id, acesso.alunoId))
+        .limit(1);
+
+      if (!aluno || !aluno.isActive || !aluno.canLogin) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Aluno inativo ou sem permissão de acesso." });
+      }
+
+      const { sdk } = await import("../_core/sdk");
+      const { TWO_HOURS_MS } = await import("@shared/const");
+      const alunoOpenId = `aluno_${aluno.id}`;
+
+      let alunoUser = await sdk.getUserByOpenId(alunoOpenId);
+      if (!alunoUser) {
+        await db.upsertUser({
+          openId: alunoOpenId,
+          name: aluno.name,
+          email: null,
+          role: "user",
+          alunoId: aluno.id,
+          loginMethod: "aluno_autonomo",
+          isActive: 1,
+        } as any);
+        alunoUser = await sdk.getUserByOpenId(alunoOpenId);
+      }
+
+      if (!alunoUser) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao preparar sessão do aluno." });
+      }
+
+      const token = await sdk.createSessionToken(alunoUser.openId, {
+        name: aluno.name || "",
+        expiresInMs: TWO_HOURS_MS,
+      });
+      const cookieOptions = getSessionCookieOptions((ctx as any).req);
+      (ctx as any).res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS });
+
+      return { success: true };
     }),
 
   // ==========================================================================
