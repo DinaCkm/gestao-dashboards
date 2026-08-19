@@ -237,6 +237,11 @@ function EtapaAvaliacao({
               Responda as {questoes.length} questões abaixo. Isso nos ajuda a entender seu ponto
               de partida antes de você começar o curso.
             </CardDescription>
+            <p className="text-sm text-muted-foreground mt-2 rounded-md bg-muted/50 p-3">
+              Este diagnóstico não tem caráter eliminatório. Ele foi criado para que você
+              reconheça seu ponto de partida antes de iniciar o curso e acompanhe sua evolução ao
+              longo da aprendizagem.
+            </p>
             <Progress value={(respondidas / questoes.length) * 100} className="mt-2" />
             <p className="text-xs text-muted-foreground">
               {respondidas} de {questoes.length} respondidas
@@ -288,14 +293,23 @@ function ResultadoDiagnostico({
   onContinuar: () => void;
 }) {
   const nivelLabel: Record<string, string> = {
-    iniciante: "Iniciante",
-    intermediario: "Intermediário",
-    avancado: "Avançado",
+    primeiros_passos: "Primeiros passos",
+    inicial: "Inicial",
+    em_desenvolvimento: "Em desenvolvimento",
+    adequado: "Adequado",
+    excelente: "Excelente",
   };
   const nivelDescricao: Record<string, string> = {
-    iniciante: "Você está começando agora — o curso vai cobrir os fundamentos desde o início.",
-    intermediario: "Você já tem uma base sobre o tema — o curso vai aprofundar e completar seu conhecimento.",
-    avancado: "Você já domina boa parte do conteúdo — aproveite o curso para revisar e ir além.",
+    primeiros_passos:
+      "Este é um excelente momento para começar. O curso oferecerá uma base sólida para que você compreenda o tema e desenvolva conhecimento para utilizá-lo com mais confiança.",
+    inicial:
+      "Você está iniciando sua jornada de compreensão sobre este assunto. Não se preocupe: o curso foi estruturado para apresentar os conteúdos de forma clara, prática e progressiva.",
+    em_desenvolvimento:
+      "Você já reconhece aspectos importantes do tema, mas ainda há oportunidades de aprofundamento. O curso ajudará você a consolidar conceitos e a ampliar sua visão prática e estratégica.",
+    adequado:
+      "Bem-vindo(a) ao curso! Seu conhecimento atual é adequado e demonstra boa compreensão dos fundamentos. Ao longo da formação, você aprofundará conceitos e desenvolverá maior segurança para aplicá-los na prática.",
+    excelente:
+      "Você já possui bons conhecimentos sobre o tema. Este curso será uma oportunidade complementar para organizar, aprofundar e ampliar sua capacidade de aplicação prática.",
   };
 
   return (
