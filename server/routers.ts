@@ -34,6 +34,7 @@ import { jornadaRouter } from "./routers/jornada";
 import { fichasPedagogicasRouter } from "./routers/fichasPedagogicas";
 import { bibliotecaLivrosRouter } from "./routers/bibliotecaLivros";
 import { processosSeletivosRouter } from "./routers/processosSeletivos";
+import { alunosAutonomosRouter } from "./routers/alunosAutonomos";
 import { disc360Router } from "./routers/disc360";
 import { relatorioMentoradoRouter } from "./routers/relatorioMentorado";
 import { meuDesempenhoRouter } from "./routers/meuDesempenho";
@@ -614,6 +615,7 @@ async function gerarESalvarCertificadoPdf(
 export const appRouter = router({
   system: systemRouter,
   processosSeletivos: processosSeletivosRouter,
+  alunosAutonomos: alunosAutonomosRouter,
 
   // ============ DIAGNÓSTICO OPERACIONAL (somente leitura, admin) ============
   // Dry-run da antecipação de término de contrato de uma turma inteira.
