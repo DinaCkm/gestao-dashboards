@@ -944,11 +944,13 @@ export const alunosAutonomosRouter = router({
         .set({ etapaAtual: "liberado" })
         .where(eq(alunoAcessoToken.id, acesso.id));
 
-      // Faixa de profundidade do conhecimento prévio
-      let nivel: "iniciante" | "intermediario" | "avancado";
-      if (percentual < 50) nivel = "iniciante";
-      else if (percentual < 80) nivel = "intermediario";
-      else nivel = "avancado";
+      // Faixa de profundidade do conhecimento prévio — régua oficial (baseada em acertos de 10)
+      let nivel: "primeiros_passos" | "inicial" | "em_desenvolvimento" | "adequado" | "excelente";
+      if (acertos >= 9) nivel = "excelente";
+      else if (acertos >= 7) nivel = "adequado";
+      else if (acertos >= 5) nivel = "em_desenvolvimento";
+      else if (acertos >= 3) nivel = "inicial";
+      else nivel = "primeiros_passos";
 
       return {
         success: true,
