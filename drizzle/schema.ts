@@ -1550,7 +1550,7 @@ export const atividadesCurso = mysqlTable("atividades_curso", {
   id: int("id").autoincrement().primaryKey(),
   cursoId: int("cursoId").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  tipoAtividade: mysqlEnum("tipoAtividade", ["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf"]).notNull(),
+  tipoAtividade: mysqlEnum("tipoAtividade", ["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf", "pagina"]).notNull(),
   urlGenially: text("urlGenially"),
   urlMidia: text("urlMidia"),
   imagemUrl: text("imagemUrl"), // URL da imagem do card da atividade (S3)
