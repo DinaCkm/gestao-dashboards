@@ -36,7 +36,18 @@ export default function AdminPreviewCurso() {
 
   if (atividadeAberta) {
     const isPdf = atividadeAberta.tipoAtividade === 'pdf';
+    const isPagina = atividadeAberta.tipoAtividade === 'pagina';
     const url = atividadeAberta.urlGenially || atividadeAberta.urlMidia || "";
+
+    // Para tipo pagina: url contém o HTML do conteúdo
+    function youtubeParaEmbed(u?: string | null): string | null {
+      if (!u?.trim()) return null;
+      const m = u.trim().match(/(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+      if (m) return `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1`;
+      if (u.includes("youtube.com/embed/")) return u;
+      return null;
+    }
+    const youtubeEmbed = isPagina ? youtubeParaEmbed(atividadeAberta.urlMidia) : null;
     return (
       <div className="flex h-screen flex-col">
         {/* Banner de preview */}
@@ -65,7 +76,32 @@ export default function AdminPreviewCurso() {
           </Button>
         </div>
 
-        {url ? (
+        {isPagina ? (
+          <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-gray-50">
+            <div
+              className="prose prose-slate max-w-3xl mx-auto rounded-lg border bg-white p-8"
+              style={{ lineHeight: "1.8", fontSize: "16px" }}
+              dangerouslySetInnerHTML={{ __html: url }}
+            />
+            {youtubeEmbed && (
+              <div className="max-w-3xl mx-auto mt-6 space-y-2">
+                <h3 className="text-base font-semibold flex items-center gap-2">
+                  <span className="text-red-600">▶</span> Vídeo complementar
+                </h3>
+                <div className="relative overflow-hidden rounded-lg border bg-black" style={{ paddingBottom: "56.25%" }}>
+                  <iframe
+                    src={youtubeEmbed}
+                    title="Vídeo complementar"
+                    className="absolute inset-0 h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                    style={{ border: "none" }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        ) : url ? (
           isPdf ? (
             <iframe
               src={url}
