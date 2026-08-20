@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { sendEmail, buildBoasVindasAlunoAutonomoEmail } from "../emailService";
 import * as db from "../db";
 import {
   alunos,
@@ -17,6 +18,7 @@ import {
   cursosCompetencias,
   onboardingJornada,
   tentativasAvaliacao,
+  users,
 } from "../../drizzle/schema";
 
 // ============================================================================
@@ -393,9 +395,22 @@ export const alunosAutonomosRouter = router({
         .limit(1);
 
       if (existente) {
+        // Se já é aluno autônomo, reaproveita o cadastro — é assim que o mesmo
+        // aluno recebe um 2º, 3º curso: cadastra de novo com o mesmo e-mail e
+        // segue direto para liberar o próximo curso, sem duplicar o aluno.
+        if (existente.tipoPortal === "aluno_autonomo") {
+          return {
+            success: true,
+            alunoId: existente.id,
+            name: existente.name,
+            email,
+            jaExistia: true as const,
+          };
+        }
+        // E-mail pertence a um aluno de outro tipo de portal — não mistura os fluxos
         throw new TRPCError({
           code: "CONFLICT",
-          message: `Já existe um aluno cadastrado com este e-mail: ${existente.name}. Use o aluno existente para liberar o curso.`,
+          message: `Já existe um aluno cadastrado com este e-mail (${existente.name}), mas em outro tipo de portal. Não é possível reaproveitar.`,
         });
       }
 
@@ -415,7 +430,7 @@ export const alunosAutonomosRouter = router({
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao cadastrar o aluno." });
       }
 
-      return { success: true, alunoId, name: input.name.trim(), email };
+      return { success: true, alunoId, name: input.name.trim(), email, jaExistia: false as const };
     }),
 
   /**
@@ -476,6 +491,36 @@ export const alunosAutonomosRouter = router({
         caminhoAcesso: `/acesso/${token}`,
         etapaAtual: tokenAtual.etapaAtual,
         expiraEm,
+      };
+    }),
+
+  /**
+   * Verifica se um curso já tem avaliação diagnóstica ativa.
+   * Usado pela tela para avisar o admin ANTES de tentar liberar o curso,
+   * evitando que ele preencha tudo e só então descubra que falta o diagnóstico.
+   */
+  cursoTemDiagnostico: protectedProcedure
+    .input(z.object({ cursoId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      requireAdmin(ctx);
+      const database = await requireDatabase();
+
+      const [diagnostico] = await database
+        .select({ id: avaliacoesAtividade.id, titulo: avaliacoesAtividade.titulo })
+        .from(avaliacoesAtividade)
+        .where(
+          and(
+            eq(avaliacoesAtividade.cursoId, input.cursoId),
+            eq(avaliacoesAtividade.tipo, "diagnostico_inicial"),
+            eq(avaliacoesAtividade.isActive, 1)
+          )
+        )
+        .limit(1);
+
+      return {
+        temDiagnostico: !!diagnostico,
+        avaliacaoId: diagnostico?.id ?? null,
+        titulo: diagnostico?.titulo ?? null,
       };
     }),
 
@@ -565,6 +610,15 @@ export const alunosAutonomosRouter = router({
         ? new Date(Date.now() + input.diasValidadeLink * 24 * 60 * 60 * 1000)
         : null;
 
+      // Se o aluno já preencheu a ficha antes (2º, 3º curso...), pula direto para
+      // a avaliação — não faz sentido pedir CPF de novo de quem já é conhecido.
+      const [alunoAtual] = await database
+        .select({ canLogin: alunos.canLogin })
+        .from(alunos)
+        .where(eq(alunos.id, input.alunoId))
+        .limit(1);
+      const etapaInicial = alunoAtual?.canLogin === 1 ? "avaliacao" : "cadastro";
+
       // Desativa tokens anteriores do aluno (o mais recente sempre prevalece)
       await database
         .update(alunoAcessoToken)
@@ -575,11 +629,63 @@ export const alunosAutonomosRouter = router({
         alunoId: input.alunoId,
         cursoAtribuidoId,
         token,
-        etapaAtual: "cadastro",
+        etapaAtual: etapaInicial,
         expiraEm,
         isActive: 1,
         criadoPorUserId: (ctx as any)?.user?.id ?? null,
       });
+
+      // Quando o cadastro é pulado (aluno já conhecido, 2º/3º curso), a etapa de
+      // cadastro nunca dispara — então a notificação de "novo curso liberado"
+      // precisa sair aqui mesmo, e não esperar salvarCadastroPorToken.
+      if (etapaInicial === "avaliacao") {
+        (async () => {
+          const [alunoInfo] = await database
+            .select({ name: alunos.name, email: alunos.email })
+            .from(alunos)
+            .where(eq(alunos.id, input.alunoId))
+            .limit(1);
+          const [curso] = await database
+            .select({ titulo: cursosCompetencias.titulo })
+            .from(cursosCompetencias)
+            .where(eq(cursosCompetencias.id, input.cursoId))
+            .limit(1);
+          const cursoTitulo = curso?.titulo ?? "";
+          const linkAcesso = `https://ecolider.ecodobem.com/acesso/${token}`;
+
+          try {
+            await sendEmail({
+              to: ((ctx as any)?.user?.email as string) || "relacionamento@ckmtalents.net",
+              subject: `Novo curso liberado: ${alunoInfo?.name ?? "aluno"}`,
+              html: `
+                <p>Um novo curso foi liberado para o aluno autônomo <strong>${alunoInfo?.name ?? ""}</strong> (${alunoInfo?.email ?? ""}): <strong>${cursoTitulo}</strong>.</p>
+                <p>Como ele já é conhecido da plataforma, o cadastro foi pulado — ele vai direto para o diagnóstico.</p>
+              `,
+              text: `Novo curso liberado para ${alunoInfo?.name ?? ""} (${alunoInfo?.email ?? ""}): ${cursoTitulo}. Cadastro pulado (aluno já conhecido) — segue direto para o diagnóstico.`,
+            });
+          } catch (emailErr) {
+            console.error("[alunosAutonomos] Erro ao notificar admin sobre novo curso:", emailErr);
+          }
+
+          try {
+            if (alunoInfo?.email) {
+              const emailData = buildBoasVindasAlunoAutonomoEmail({
+                alunoName: alunoInfo.name ?? "",
+                cursoTitulo: cursoTitulo || "seu novo curso",
+                continuarUrl: linkAcesso,
+              });
+              await sendEmail({
+                to: alunoInfo.email,
+                subject: `📚 Novo curso liberado: ${cursoTitulo || "confira agora"}`,
+                html: emailData.html,
+                text: emailData.text,
+              });
+            }
+          } catch (emailErr) {
+            console.error("[alunosAutonomos] Erro ao enviar e-mail de novo curso ao aluno:", emailErr);
+          }
+        })();
+      }
 
       return {
         success: true,
@@ -590,38 +696,60 @@ export const alunosAutonomosRouter = router({
       };
     }),
 
-  /** Lista os alunos autônomos, com status da jornada e o link de acesso. */
+  /**
+   * Lista os alunos autônomos, com status da jornada — UMA LINHA POR CURSO.
+   * Um mesmo aluno pode ter vários cursos (liberados em momentos diferentes);
+   * todos aparecem, não só o mais recente.
+   */
   listarAlunosAutonomos: protectedProcedure.query(async ({ ctx }) => {
     requireAdmin(ctx);
     const database = await requireDatabase();
 
     const linhas = await database
       .select({
+        cursoAtribuidoId: alunoCursoAtribuido.id,
         alunoId: alunos.id,
         nome: alunos.name,
         email: alunos.email,
-        token: alunoAcessoToken.token,
-        etapaAtual: alunoAcessoToken.etapaAtual,
-        expiraEm: alunoAcessoToken.expiraEm,
-        ultimoAcessoEm: alunoAcessoToken.ultimoAcessoEm,
-        cursoAtribuidoId: alunoCursoAtribuido.id,
         cursoId: alunoCursoAtribuido.cursoId,
         cursoTitulo: cursosCompetencias.titulo,
         statusCurso: alunoCursoAtribuido.status,
         notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
         diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+        dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
       })
-      .from(alunos)
-      .leftJoin(
-        alunoAcessoToken,
-        and(eq(alunoAcessoToken.alunoId, alunos.id), eq(alunoAcessoToken.isActive, 1))
-      )
-      .leftJoin(alunoCursoAtribuido, eq(alunoCursoAtribuido.id, alunoAcessoToken.cursoAtribuidoId))
+      .from(alunoCursoAtribuido)
+      .innerJoin(alunos, eq(alunos.id, alunoCursoAtribuido.alunoId))
       .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
       .where(eq(alunos.tipoPortal, "aluno_autonomo"))
-      .orderBy(desc(alunos.createdAt));
+      .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
 
-    return linhas;
+    if (linhas.length === 0) return [];
+
+    // O token ativo (só existe 1 por aluno) indica qual curso está "em andamento
+    // na jornada de acesso" (cadastro/avaliação pendente). Cursos antigos sem
+    // token ativo já passaram dessa fase — seu status real vem de statusCurso.
+    const alunoIds = [...new Set(linhas.map((l) => l.alunoId))];
+    const tokensAtivos = await database
+      .select({
+        alunoId: alunoAcessoToken.alunoId,
+        cursoAtribuidoId: alunoAcessoToken.cursoAtribuidoId,
+        etapaAtual: alunoAcessoToken.etapaAtual,
+      })
+      .from(alunoAcessoToken)
+      .where(and(inArray(alunoAcessoToken.alunoId, alunoIds), eq(alunoAcessoToken.isActive, 1)));
+
+    const tokenPorAluno = new Map(tokensAtivos.map((t) => [t.alunoId, t]));
+
+    return linhas.map((linha) => {
+      const tokenAtivo = tokenPorAluno.get(linha.alunoId);
+      // etapaAtual só se aplica à linha do curso ao qual o token ativo está de fato vinculado
+      const etapaAtual =
+        tokenAtivo && tokenAtivo.cursoAtribuidoId === linha.cursoAtribuidoId
+          ? tokenAtivo.etapaAtual
+          : null;
+      return { ...linha, etapaAtual };
+    });
   }),
 
   // ==========================================================================
@@ -787,6 +915,79 @@ export const alunosAutonomosRouter = router({
         .update(alunoAcessoToken)
         .set({ etapaAtual: "avaliacao" })
         .where(eq(alunoAcessoToken.id, acesso.id));
+
+      // Notifica o admin que liberou o curso E envia boas-vindas ao aluno.
+      // Cada envio é isolado em seu próprio try/catch — não bloqueiam a resposta
+      // ao aluno nem um afeta o outro se falhar.
+      (async () => {
+        const [alunoAtualizado] = await database
+          .select({ name: alunos.name, email: alunos.email })
+          .from(alunos)
+          .where(eq(alunos.id, acesso.alunoId))
+          .limit(1);
+
+        let cursoTitulo = "";
+        if (acesso.cursoAtribuidoId) {
+          const [atribuicao] = await database
+            .select({ cursoId: alunoCursoAtribuido.cursoId })
+            .from(alunoCursoAtribuido)
+            .where(eq(alunoCursoAtribuido.id, acesso.cursoAtribuidoId))
+            .limit(1);
+          if (atribuicao) {
+            const [curso] = await database
+              .select({ titulo: cursosCompetencias.titulo })
+              .from(cursosCompetencias)
+              .where(eq(cursosCompetencias.id, atribuicao.cursoId))
+              .limit(1);
+            cursoTitulo = curso?.titulo ?? "";
+          }
+        }
+
+        // --- E-mail para o admin -------------------------------------------
+        try {
+          let adminEmail = "relacionamento@ckmtalents.net"; // fallback
+          if (acesso.criadoPorUserId) {
+            const [admin] = await database
+              .select({ email: users.email })
+              .from(users)
+              .where(eq(users.id, acesso.criadoPorUserId))
+              .limit(1);
+            if (admin?.email) adminEmail = admin.email;
+          }
+
+          await sendEmail({
+            to: adminEmail,
+            subject: `Aluno Autônomo cadastrado: ${alunoAtualizado?.name ?? "aluno"}`,
+            html: `
+              <p>O aluno autônomo <strong>${alunoAtualizado?.name ?? ""}</strong> (${alunoAtualizado?.email ?? ""}) confirmou o cadastro e vai iniciar a avaliação diagnóstica${cursoTitulo ? ` do curso <strong>${cursoTitulo}</strong>` : ""}.</p>
+              <p>Assim que ele concluir o diagnóstico, o curso será liberado automaticamente no Mural.</p>
+              <p><a href="https://ecolider.ecodobem.com/admin/alunos-autonomos">Acompanhar no painel de Alunos Autônomos</a></p>
+            `,
+            text: `O aluno autônomo ${alunoAtualizado?.name ?? ""} (${alunoAtualizado?.email ?? ""}) confirmou o cadastro${cursoTitulo ? ` do curso ${cursoTitulo}` : ""} e vai iniciar a avaliação diagnóstica.`,
+          });
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao notificar admin sobre cadastro do aluno:", emailErr);
+        }
+
+        // --- E-mail de boas-vindas para o aluno -----------------------------
+        try {
+          if (alunoAtualizado?.email) {
+            const emailData = buildBoasVindasAlunoAutonomoEmail({
+              alunoName: alunoAtualizado.name ?? "",
+              cursoTitulo: cursoTitulo || "seu curso",
+              continuarUrl: `https://ecolider.ecodobem.com/acesso/${input.token}`,
+            });
+            await sendEmail({
+              to: alunoAtualizado.email,
+              subject: emailData.subject,
+              html: emailData.html,
+              text: emailData.text,
+            });
+          }
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao enviar boas-vindas ao aluno:", emailErr);
+        }
+      })();
 
       return { success: true, proximaEtapa: "avaliacao" as const };
     }),
