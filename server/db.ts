@@ -745,6 +745,64 @@ export async function getAlunos(programId?: number): Promise<Aluno[]> {
   return await db.select().from(alunos);
 }
 
+/**
+ * Retorna apenas alunos com ciclo ATIVO — exclui quem tem o assessment_pdi
+ * mais recente com status 'encerrado' ou 'congelado'.
+ *
+ * Usado pelos crons de lembrete para não enviar e-mails a alunos que já
+ * encerraram ou congelaram sua jornada de desenvolvimento.
+ */
+export async function getAlunosAtivos(programId?: number): Promise<Aluno[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // 1. Buscar todos os alunos (filtro básico por programa se informado)
+  const todosAlunos = programId
+    ? await db.select().from(alunos).where(eq(alunos.programId, programId))
+    : await db.select().from(alunos);
+
+  if (todosAlunos.length === 0) return [];
+
+  // 2. Buscar o PDI mais recente de cada aluno para checar o status do ciclo
+  const alunoIds = todosAlunos.map((a) => a.id);
+  const pdis = await db
+    .select({
+      alunoId: assessmentPdi.alunoId,
+      status: assessmentPdi.status,
+      updatedAt: assessmentPdi.updatedAt,
+    })
+    .from(assessmentPdi)
+    .where(inArray(assessmentPdi.alunoId, alunoIds));
+
+  // Pegar o PDI mais recente por aluno
+  const pdiRecentePorAluno = new Map<number, string>();
+  for (const p of pdis) {
+    const atual = pdiRecentePorAluno.get(p.alunoId);
+    if (!atual) {
+      pdiRecentePorAluno.set(p.alunoId, p.status);
+    }
+    // pdis já vêm sem ordenação garantida — compara pela data
+  }
+  // Reprocessar com ordenação correta
+  const pdiMaisRecente = new Map<number, { status: string; updatedAt: Date | null }>();
+  for (const p of pdis) {
+    const existente = pdiMaisRecente.get(p.alunoId);
+    const pData = p.updatedAt ? new Date(p.updatedAt) : new Date(0);
+    const existenteData = existente?.updatedAt ? new Date(existente.updatedAt) : new Date(0);
+    if (!existente || pData > existenteData) {
+      pdiMaisRecente.set(p.alunoId, { status: p.status, updatedAt: p.updatedAt });
+    }
+  }
+
+  // 3. Filtrar: manter apenas alunos sem PDI encerrado/congelado
+  // (sem PDI = aluno novo ainda em onboarding = incluir)
+  return todosAlunos.filter((a) => {
+    const pdi = pdiMaisRecente.get(a.id);
+    if (!pdi) return true; // sem PDI = incluir
+    return pdi.status !== "encerrado" && pdi.status !== "congelado";
+  });
+}
+
 export async function getAlunosByConsultor(consultorId: number, programId?: number): Promise<Aluno[]> {
   const db = await getDb();
   if (!db) return [];
