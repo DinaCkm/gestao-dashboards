@@ -544,7 +544,7 @@ function PainelLiberacao({
     onSuccess: (data) => {
       const base = window.location.origin;
       setLinkGerado(`${base}${data.caminhoAcesso}`);
-      toast.success("Curso liberado e link gerado.");
+      toast.success("Curso liberado! O convite com o link foi enviado por e-mail ao aluno.");
       utils.alunosAutonomos.listarAlunosAutonomos.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -769,7 +769,8 @@ function PainelLiberacao({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Envie este link por e-mail ao aluno. Ele preenche a ficha, faz o diagnóstico e
+                O convite com este link já foi enviado automaticamente ao e-mail do aluno. Guarde-o
+                caso queira reenviar por outro canal — ele preenche a ficha, faz o diagnóstico e
                 cai direto no Mural com o curso liberado.
               </p>
             </div>
@@ -795,7 +796,7 @@ function PainelListaAlunos({
     onSuccess: (data) => {
       const base = window.location.origin;
       navigator.clipboard.writeText(`${base}${data.caminhoAcesso}`);
-      toast.success("Novo link gerado e copiado para a área de transferência.");
+      toast.success("Novo link gerado, enviado por e-mail ao aluno e copiado para a área de transferência.");
       utils.alunosAutonomos.listarAlunosAutonomos.invalidate();
     },
     onError: (err) => toast.error(err.message),
