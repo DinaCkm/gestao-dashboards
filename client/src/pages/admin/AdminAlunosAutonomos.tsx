@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,22 @@ function questaoVazia(indice: number): Questao {
 }
 
 export default function AdminAlunosAutonomos() {
+  const [abaAtiva, setAbaAtiva] = useState("diagnosticos");
+  const [alunoPreSelecionado, setAlunoPreSelecionado] = useState<{ id: number; nome: string; email: string } | null>(null);
+  const [cursoPreSelecionado, setCursoPreSelecionado] = useState<{ competenciaId: string; cursoId: string } | null>(null);
+
+  function irLiberarNovoCursoPara(aluno: { id: number; nome: string; email: string }) {
+    setAlunoPreSelecionado(aluno);
+    setAbaAtiva("liberar");
+  }
+
+  // Chamado quando o admin descobre, na aba de liberação, que o curso ainda não
+  // tem diagnóstico — leva para a aba de diagnósticos já com o curso escolhido.
+  function irCriarDiagnosticoPara(competenciaId: string, cursoId: string) {
+    setCursoPreSelecionado({ competenciaId, cursoId });
+    setAbaAtiva("diagnosticos");
+  }
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -52,25 +68,44 @@ export default function AdminAlunosAutonomos() {
           Cadastre o aluno, crie a avaliação diagnóstica do curso, libere o acesso e acompanhe
           a jornada até o Mural.
         </p>
+        <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          <p>
+            <strong>Não existe ordem obrigatória entre as abas.</strong> A avaliação diagnóstica é
+            por <strong>curso</strong> (crie uma vez, serve para todos os alunos daquele curso). O
+            cadastro do aluno é por <strong>pessoa</strong> (feito uma vez só).
+          </p>
+          <p className="mt-1">
+            Para liberar um <strong>2º ou 3º curso</strong> ao mesmo aluno, use o botão{" "}
+            <strong>"Liberar novo curso"</strong> na aba "Todos os alunos" — ele já pula
+            direto para o diagnóstico, sem pedir os dados de novo.
+          </p>
+        </div>
       </div>
 
-      <Tabs defaultValue="diagnosticos">
+      <Tabs value={abaAtiva} onValueChange={setAbaAtiva}>
         <TabsList>
-          <TabsTrigger value="diagnosticos">1. Avaliação diagnóstica</TabsTrigger>
-          <TabsTrigger value="liberar">2. Cadastrar e liberar</TabsTrigger>
-          <TabsTrigger value="lista">3. Alunos autônomos</TabsTrigger>
+          <TabsTrigger value="diagnosticos">Avaliações diagnósticas (por curso)</TabsTrigger>
+          <TabsTrigger value="liberar">Cadastrar aluno e liberar curso</TabsTrigger>
+          <TabsTrigger value="lista">Todos os alunos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="diagnosticos" className="mt-6">
-          <PainelDiagnosticos />
+          <PainelDiagnosticos
+            cursoPreSelecionado={cursoPreSelecionado}
+            onLimparPreSelecao={() => setCursoPreSelecionado(null)}
+          />
         </TabsContent>
 
         <TabsContent value="liberar" className="mt-6">
-          <PainelLiberacao />
+          <PainelLiberacao
+            alunoPreSelecionado={alunoPreSelecionado}
+            onLimparPreSelecao={() => setAlunoPreSelecionado(null)}
+            onCriarDiagnosticoPara={irCriarDiagnosticoPara}
+          />
         </TabsContent>
 
         <TabsContent value="lista" className="mt-6">
-          <PainelListaAlunos />
+          <PainelListaAlunos onLiberarNovoCursoPara={irLiberarNovoCursoPara} />
         </TabsContent>
       </Tabs>
     </div>
@@ -80,15 +115,31 @@ export default function AdminAlunosAutonomos() {
 // ============================================================================
 // 1. Avaliação diagnóstica (10 questões + gabarito) por curso
 // ============================================================================
-function PainelDiagnosticos() {
-  const [competenciaId, setCompetenciaId] = useState<string>("");
-  const [cursoId, setCursoId] = useState<string>("");
+function PainelDiagnosticos({
+  cursoPreSelecionado,
+  onLimparPreSelecao,
+}: {
+  cursoPreSelecionado: { competenciaId: string; cursoId: string } | null;
+  onLimparPreSelecao: () => void;
+}) {
+  const [competenciaId, setCompetenciaId] = useState<string>(cursoPreSelecionado?.competenciaId ?? "");
+  const [cursoId, setCursoId] = useState<string>(cursoPreSelecionado?.cursoId ?? "");
   const [titulo, setTitulo] = useState("");
   const [notaMinima, setNotaMinima] = useState("7");
   const [questoes, setQuestoes] = useState<Questao[]>(
     Array.from({ length: QTD_QUESTOES }, (_, i) => questaoVazia(i))
   );
   const [avaliacaoEditandoId, setAvaliacaoEditandoId] = useState<number | null>(null);
+
+  // Tabs mantém o conteúdo montado ao trocar de aba — sincroniza quando o admin
+  // clica em "Criar diagnóstico deste curso" vindo da aba de liberação.
+  useEffect(() => {
+    if (cursoPreSelecionado) {
+      setCompetenciaId(cursoPreSelecionado.competenciaId);
+      setCursoId(cursoPreSelecionado.cursoId);
+      setAvaliacaoEditandoId(null);
+    }
+  }, [cursoPreSelecionado]);
 
   const utils = trpc.useUtils();
 
@@ -428,10 +479,18 @@ function PainelDiagnosticos() {
 // ============================================================================
 // 2. Cadastrar aluno (nome + email) e liberar curso / gerar link
 // ============================================================================
-function PainelLiberacao() {
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [alunoId, setAlunoId] = useState<number | null>(null);
+function PainelLiberacao({
+  alunoPreSelecionado,
+  onLimparPreSelecao,
+  onCriarDiagnosticoPara,
+}: {
+  alunoPreSelecionado: { id: number; nome: string; email: string } | null;
+  onLimparPreSelecao: () => void;
+  onCriarDiagnosticoPara: (competenciaId: string, cursoId: string) => void;
+}) {
+  const [nome, setNome] = useState(alunoPreSelecionado?.nome ?? "");
+  const [email, setEmail] = useState(alunoPreSelecionado?.email ?? "");
+  const [alunoId, setAlunoId] = useState<number | null>(alunoPreSelecionado?.id ?? null);
 
   const [competenciaId, setCompetenciaId] = useState("");
   const [cursoId, setCursoId] = useState("");
@@ -440,6 +499,17 @@ function PainelLiberacao() {
   const [diasValidadeLink, setDiasValidadeLink] = useState("7");
 
   const [linkGerado, setLinkGerado] = useState<string | null>(null);
+
+  // Tabs mantém o conteúdo montado ao trocar de aba — sincroniza quando o
+  // admin clica em "Liberar novo curso" na Aba 3 enquanto esta já está montada.
+  useEffect(() => {
+    if (alunoPreSelecionado) {
+      setNome(alunoPreSelecionado.nome);
+      setEmail(alunoPreSelecionado.email);
+      setAlunoId(alunoPreSelecionado.id);
+      setLinkGerado(null);
+    }
+  }, [alunoPreSelecionado]);
 
   const utils = trpc.useUtils();
 
@@ -450,9 +520,21 @@ function PainelLiberacao() {
   );
   const mentoresQuery = trpc.alunosAutonomos.listarMentores.useQuery();
 
+  // Verifica, assim que o curso é escolhido, se ele já tem diagnóstico —
+  // para avisar o admin antes dele preencher o resto do formulário.
+  const diagnosticoCursoQuery = trpc.alunosAutonomos.cursoTemDiagnostico.useQuery(
+    { cursoId: Number(cursoId || 0) },
+    { enabled: !!cursoId }
+  );
+  const cursoSemDiagnostico = !!cursoId && diagnosticoCursoQuery.data?.temDiagnostico === false;
+
   const cadastrarMutation = trpc.alunosAutonomos.cadastrarAlunoAutonomo.useMutation({
     onSuccess: (data) => {
-      toast.success(`Aluno "${data.name}" cadastrado.`);
+      if (data.jaExistia) {
+        toast.success(`Aluno "${data.name}" já existia — reaproveitando cadastro para liberar mais um curso.`);
+      } else {
+        toast.success(`Aluno "${data.name}" cadastrado.`);
+      }
       setAlunoId(data.alunoId);
     },
     onError: (err) => toast.error(err.message),
@@ -505,10 +587,12 @@ function PainelLiberacao() {
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>1. Cadastrar aluno</CardTitle>
+          <CardTitle>Cadastrar aluno</CardTitle>
           <CardDescription>
-            Só o que você tem: nome completo e e-mail. O CPF é preenchido pelo próprio aluno
-            na ficha, no primeiro acesso ao link.
+            Nome completo e e-mail. O CPF é preenchido pelo próprio aluno na ficha, no
+            primeiro acesso ao link. <strong>Aluno vai fazer mais de um curso?</strong>{" "}
+            Cadastre de novo com o mesmo nome e e-mail — o sistema reconhece que é o
+            mesmo aluno e você segue direto para liberar o próximo curso, sem duplicar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -533,7 +617,9 @@ function PainelLiberacao() {
           ) : (
             <div className="flex items-center justify-between rounded-md border p-3 text-sm">
               <span>
-                Aluno cadastrado (ID {alunoId}). Continue na etapa 2 →
+                {alunoPreSelecionado
+                  ? <>Liberando novo curso para <strong>{alunoPreSelecionado.nome}</strong> →</>
+                  : <>Aluno cadastrado (ID {alunoId}). Continue na etapa 2 →</>}
               </span>
               <Button
                 variant="ghost"
@@ -543,6 +629,7 @@ function PainelLiberacao() {
                   setNome("");
                   setEmail("");
                   setLinkGerado(null);
+                  onLimparPreSelecao();
                 }}
               >
                 Trocar aluno
@@ -554,7 +641,7 @@ function PainelLiberacao() {
 
       <Card>
         <CardHeader>
-          <CardTitle>2. Liberar curso e gerar link</CardTitle>
+          <CardTitle>Liberar curso e gerar link</CardTitle>
           <CardDescription>
             O curso exige uma avaliação diagnóstica já cadastrada (aba anterior).
           </CardDescription>
@@ -603,6 +690,34 @@ function PainelLiberacao() {
                 ))}
               </SelectContent>
             </Select>
+
+            {cursoSemDiagnostico && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 space-y-2">
+                <p>
+                  Este curso <strong>ainda não tem avaliação diagnóstica</strong>. É obrigatório
+                  criá-la antes de liberar o curso para o aluno.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onCriarDiagnosticoPara(competenciaId, cursoId)}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Criar diagnóstico deste curso agora
+                </Button>
+                <p className="text-xs">
+                  Seus dados aqui ficam salvos — depois de criar, volte nesta aba e continue de
+                  onde parou.
+                </p>
+              </div>
+            )}
+
+            {!!cursoId && diagnosticoCursoQuery.data?.temDiagnostico && (
+              <p className="text-xs text-green-700">
+                ✓ Diagnóstico cadastrado: {diagnosticoCursoQuery.data.titulo}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -639,7 +754,7 @@ function PainelLiberacao() {
             </div>
           </div>
 
-          <Button onClick={handleLiberar} disabled={!alunoId || liberarMutation.isPending}>
+          <Button onClick={handleLiberar} disabled={!alunoId || cursoSemDiagnostico || liberarMutation.isPending}>
             <LinkIcon className="mr-2 h-4 w-4" />
             Liberar curso e gerar link
           </Button>
@@ -668,7 +783,11 @@ function PainelLiberacao() {
 // ============================================================================
 // 3. Lista de alunos autônomos e status da jornada
 // ============================================================================
-function PainelListaAlunos() {
+function PainelListaAlunos({
+  onLiberarNovoCursoPara,
+}: {
+  onLiberarNovoCursoPara: (aluno: { id: number; nome: string; email: string }) => void;
+}) {
   const utils = trpc.useUtils();
   const listaQuery = trpc.alunosAutonomos.listarAlunosAutonomos.useQuery();
 
@@ -694,7 +813,9 @@ function PainelListaAlunos() {
     <Card>
       <CardHeader>
         <CardTitle>Alunos autônomos</CardTitle>
-        <CardDescription>Acompanhe onde cada aluno está na jornada.</CardDescription>
+        <CardDescription>
+          Cada linha é um curso liberado. Um aluno com mais de um curso aparece em várias linhas.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -734,6 +855,14 @@ function PainelListaAlunos() {
                     >
                       <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                       Reenviar link
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onLiberarNovoCursoPara({ id: a.alunoId, nome: a.nome, email: a.email })}
+                    >
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
+                      Liberar novo curso
                     </Button>
                   </TableCell>
                 </TableRow>
