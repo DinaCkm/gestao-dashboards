@@ -117,16 +117,20 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
     return !!(onboardingStatus.hasPdi && !onboardingStatus.onboardingLiberado);
   }, [onboardingStatus]);
 
+  // Aluno Autônomo: jornada própria (cadastro + diagnóstico do curso), nunca passa
+  // pelo onboarding de DISC/mentoria — o item Onboarding não faz sentido para ele
+  const isAlunoAutonomo = onboardingStatus?.tipoPortal === 'aluno_autonomo';
+
   // Filtrar itens de navegação
   const navItems = useMemo(() => {
     if (isCandidatoPS) return PS_NAV_ITEMS;
-    // Veterano com PDI e sem onboarding liberado: ocultar item Onboarding
-    const items = isVeteranSemOnboarding
+    // Veterano com PDI e sem onboarding liberado, ou Aluno Autônomo: ocultar item Onboarding
+    const items = (isVeteranSemOnboarding || isAlunoAutonomo)
       ? ALL_NAV_ITEMS.filter(item => item.path !== '/onboarding')
       : ALL_NAV_ITEMS;
     if (!menuBloqueado) return items;
     return items.filter(item => !item.requiresAceite);
-  }, [menuBloqueado, isCandidatoPS, isVeteranSemOnboarding]);
+  }, [menuBloqueado, isCandidatoPS, isVeteranSemOnboarding, isAlunoAutonomo]);
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
