@@ -6,10 +6,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Maximize, Clock, ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import DOMPurify from "dompurify";
 
 function getNumeroQuery(search: string, chave: string) {
   const params = new URLSearchParams(search);
   return Number(params.get(chave) ?? 0);
+}
+
+/**
+ * Converte qualquer URL do YouTube para o formato embed.
+ * Suporta: watch?v=, youtu.be/, shorts/.
+ * Retorna null se não reconhecer o formato.
+ */
+function youtubeParaEmbed(url?: string | null): string | null {
+  if (!url?.trim()) return null;
+  const u = url.trim();
+  // https://www.youtube.com/watch?v=VIDEO_ID
+  const watchMatch = u.match(/(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+  if (watchMatch) {
+    return `https://www.youtube.com/embed/${watchMatch[1]}?rel=0&modestbranding=1`;
+  }
+  // Já é embed
+  if (u.includes("youtube.com/embed/")) return u;
+  return null;
 }
 
 function adaptarUrlParaEmbed(url?: string | null) {
@@ -55,9 +74,19 @@ export default function AlunoConteudoCurso() {
   }, [atividadeId, atividadesQuery.data]);
 
   const isPdf = atividade?.tipoAtividade === "pdf";
+  const isPagina = atividade?.tipoAtividade === "pagina";
   const urlPdf = isPdf ? (atividade?.urlMidia || atividade?.urlGenially || "") : "";
-  const urlOriginal = !isPdf ? (atividade?.urlGenially || atividade?.urlMidia || "") : "";
-  const urlEmbed = !isPdf ? adaptarUrlParaEmbed(urlOriginal) : "";
+  const urlOriginal = (!isPdf && !isPagina) ? (atividade?.urlGenially || atividade?.urlMidia || "") : "";
+  const urlEmbed = (!isPdf && !isPagina) ? adaptarUrlParaEmbed(urlOriginal) : "";
+
+  // Para o tipo "pagina": HTML sanitizado + vídeo YouTube opcional
+  const htmlConteudo = isPagina
+    ? DOMPurify.sanitize(atividade?.urlGenially ?? "", {
+        ALLOWED_TAGS: ["h1","h2","h3","h4","p","strong","em","ul","ol","li","a","img","br","hr","blockquote","table","thead","tbody","tr","th","td","span","div"],
+        ALLOWED_ATTR: ["href","target","rel","src","alt","width","height","style","class"],
+      })
+    : "";
+  const youtubeEmbedPagina = isPagina ? youtubeParaEmbed(atividade?.descricao) : null;
 
   // Tempo acumulado local (em segundos), iniciado com o valor do banco
   const [tempoAtivoLocal, setTempoAtivoLocal] = useState<number>(0);
@@ -146,7 +175,7 @@ export default function AlunoConteudoCurso() {
   };
 
   // Determina se o conteúdo principal está disponível para exibição
-  const temConteudo = isPdf ? !!urlPdf : !!urlEmbed;
+  const temConteudo = isPdf ? !!urlPdf : isPagina ? !!htmlConteudo : !!urlEmbed;
 
   return (
     <AlunoLayout>
@@ -164,8 +193,8 @@ export default function AlunoConteudoCurso() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
-          {/* Botão tela cheia apenas para conteúdo não-PDF */}
-          {!isPdf && (
+          {/* Botão tela cheia apenas para conteúdo não-PDF e não-pagina */}
+          {!isPdf && !isPagina && (
             <Button variant="outline" onClick={abrirTelaCheia} disabled={!urlEmbed}>
               <Maximize className="mr-2 h-4 w-4" />
               Tela cheia
@@ -249,6 +278,51 @@ export default function AlunoConteudoCurso() {
               <p className="text-sm text-muted-foreground">
                 Esta atividade não possui um conteúdo válido para incorporação.
               </p>
+            </div>
+          ) : isPagina ? (
+            /* ===== PÁGINA DE CONTEÚDO (HTML + YouTube) ===== */
+            <div className="space-y-6">
+              {/* Conteúdo HTML sanitizado */}
+              <div
+                className="prose prose-slate max-w-none rounded-lg border bg-white p-6 md:p-8"
+                style={{
+                  lineHeight: "1.8",
+                  fontSize: "16px",
+                }}
+                dangerouslySetInnerHTML={{ __html: htmlConteudo }}
+              />
+
+              {/* Vídeo YouTube — só renderiza se tiver URL válida */}
+              {youtubeEmbedPagina && (
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                    <span className="text-red-600">▶</span> Vídeo complementar
+                  </h3>
+                  <div className="relative overflow-hidden rounded-lg border bg-black" style={{ paddingBottom: "56.25%" }}>
+                    <iframe
+                      src={youtubeEmbedPagina}
+                      title="Vídeo complementar"
+                      className="absolute inset-0 h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                      allowFullScreen
+                      style={{ border: "none" }}
+                    />
+                    {/* Camadas para impedir pular o vídeo / abrir YouTube */}
+                    <div
+                      className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10"
+                      style={{ height: 72, background: "rgba(0,0,0,0.01)" }}
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+                    <span className="text-lg">⚠️</span>
+                    <p>
+                      <strong>Assista o vídeo dentro do sistema.</strong>{" "}
+                      O tempo de visualização é contabilizado aqui, não no YouTube.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           ) : isPdf ? (
             /* ===== VISUALIZAÇÃO DE PDF EMBEDADO ===== */
