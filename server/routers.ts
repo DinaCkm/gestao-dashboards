@@ -15366,7 +15366,7 @@ Responda APENAS em JSON com o formato especificado.`
           const atividades = await database
             .select()
             .from(atividadesCurso)
-            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .where(and(eq(atividadesCurso.cursoId, input.cursoId), eq(atividadesCurso.isActive, 1)))
             .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
 
           const atividadeIds = atividades.map((a) => a.id);
@@ -15856,7 +15856,7 @@ Responda APENAS em JSON com o formato especificado.`
           const atividades = await database
             .select()
             .from(atividadesCurso)
-            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .where(and(eq(atividadesCurso.cursoId, input.cursoId), eq(atividadesCurso.isActive, 1)))
             .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
 
           const progressos = await database
@@ -15994,7 +15994,8 @@ Responda APENAS em JSON com o formato especificado.`
             .where(
               and(
                 eq(atividadesCurso.id, input.atividadeId),
-                eq(atividadesCurso.cursoId, input.cursoId)
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(atividadesCurso.isActive, 1)
               )
             )
             .limit(1);
@@ -16414,7 +16415,7 @@ Responda APENAS em JSON com o formato especificado.`
             const atividades = await database
               .select()
               .from(atividadesCurso)
-              .where(eq(atividadesCurso.cursoId, input.cursoId))
+              .where(and(eq(atividadesCurso.cursoId, input.cursoId), eq(atividadesCurso.isActive, 1)))
               .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
 
             const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
@@ -16530,7 +16531,8 @@ Responda APENAS em JSON com o formato especificado.`
             .where(
               and(
                 eq(atividadesCurso.id, input.atividadeId),
-                eq(atividadesCurso.cursoId, input.cursoId)
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(atividadesCurso.isActive, 1)
               )
             )
             .limit(1);
@@ -16681,7 +16683,7 @@ Responda APENAS em JSON com o formato especificado.`
           const atividades = await database
             .select()
             .from(atividadesCurso)
-            .where(eq(atividadesCurso.cursoId, input.cursoId))
+            .where(and(eq(atividadesCurso.cursoId, input.cursoId), eq(atividadesCurso.isActive, 1)))
             .orderBy(asc(atividadesCurso.ordem), asc(atividadesCurso.id));
 
           const atividadeIndex = atividades.findIndex((a) => a.id === input.atividadeId);
