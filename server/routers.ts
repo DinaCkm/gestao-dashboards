@@ -15149,7 +15149,7 @@ Responda APENAS em JSON com o formato especificado.`
           z.object({
             id: z.number(),
             titulo: z.string().min(1).optional(),
-            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf"]).optional(),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf", "pagina"]).optional(),
             urlGenially: z.string().optional(),
             urlMidia: z.string().optional(),
             imagemUrl: z.string().optional(),
@@ -17107,7 +17107,7 @@ Responda APENAS em JSON com o formato especificado.`
           z.object({
             id: z.number(),
             titulo: z.string(),
-            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf"]),
+            tipoAtividade: z.enum(["genially", "video", "podcast", "tedtalk", "livro", "intro", "pdf", "pagina"]),
             urlGenially: z.string().optional(),
             urlMidia: z.string().optional(),
             imagemUrl: z.string().optional(),
