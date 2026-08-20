@@ -61,10 +61,10 @@ export default function AdminAlunosAutonomos() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 pt-4">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Alunos Autônomos</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h2 className="text-xl font-bold tracking-tight">Alunos Autônomos</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Cadastre o aluno, crie a avaliação diagnóstica do curso, libere o acesso e acompanhe
           a jornada até o Mural.
         </p>
