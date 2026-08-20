@@ -739,10 +739,12 @@ const submitMetaEvidence = trpc.metas.enviarEvidencia.useMutation({
   const engComp = indicadores.engajamentoComponentes || { presenca: indicadores.participacaoMentorias, atividades: indicadores.atividadesPraticas, notaMentora: indicadores.engajamento };
 
   // Item 1: Bloquear portal completo até mentora fazer assessment
+  // Exceção: Alunos Autônomos têm jornada própria (cadastro + diagnóstico), nunca passam por assessment de mentora
   const hasAssessment = assessments && assessments.length > 0;
   const hasActiveAssessment = assessments && assessments.some((a: any) => a.status === 'ativo');
+  const isAlunoAutonomo = onboardingStatus?.tipoPortal === 'aluno_autonomo';
 
-  if (!hasAssessment) {
+  if (!hasAssessment && !isAlunoAutonomo) {
     return (
       <AlunoLayout>
         <div className="space-y-6">

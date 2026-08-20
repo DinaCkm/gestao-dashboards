@@ -3686,8 +3686,17 @@ export default function OnboardingAluno() {
   const isViewingPreviousStep = !globalReadOnly && !emNovoCiclo && currentStep < progressStep;
   const readOnly = globalReadOnly || isViewingPreviousStep;
   const reassessmentElegivel = !!(progressoData?.reassessmentElegivel);
+  // Aluno Autônomo tem jornada própria (cadastro + diagnóstico do curso) e nunca
+  // deve cair no onboarding de DISC/mentoria, mesmo acessando /onboarding direto pela URL
+  useEffect(() => {
+    if (onboardingStatus?.tipoPortal === 'aluno_autonomo') {
+      setLocation('/mural');
+    }
+  }, [onboardingStatus?.tipoPortal, setLocation]);
+
   // Aguardar carregamento do status de onboarding para evitar flash de conteúdo incorreto
-  if (!onboardingStatus && user) {
+  // (inclui o instante entre detectar aluno_autonomo e o redirecionamento para /mural)
+  if ((!onboardingStatus && user) || onboardingStatus?.tipoPortal === 'aluno_autonomo') {
     return (
       <AlunoLayout>
         <div className="flex items-center justify-center min-h-[400px]">
