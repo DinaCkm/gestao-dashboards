@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
-import { sendEmail, buildBoasVindasAlunoAutonomoEmail } from "../emailService";
+import { sendEmail, buildBoasVindasAlunoAutonomoEmail, buildConviteAlunoAutonomoEmail } from "../emailService";
 import * as db from "../db";
 import {
   alunos,
@@ -485,6 +485,52 @@ export const alunosAutonomosRouter = router({
         criadoPorUserId: (ctx as any)?.user?.id ?? null,
       });
 
+      // Reenvia o link por e-mail ao aluno — é justamente para isso que serve
+      // este botão (aluno perdeu o convite original).
+      (async () => {
+        try {
+          const [alunoInfo] = await database
+            .select({ name: alunos.name, email: alunos.email })
+            .from(alunos)
+            .where(eq(alunos.id, input.alunoId))
+            .limit(1);
+
+          if (!alunoInfo?.email) return;
+
+          let cursoTitulo = "";
+          if (tokenAtual.cursoAtribuidoId) {
+            const [atribuicao] = await database
+              .select({ cursoId: alunoCursoAtribuido.cursoId })
+              .from(alunoCursoAtribuido)
+              .where(eq(alunoCursoAtribuido.id, tokenAtual.cursoAtribuidoId))
+              .limit(1);
+            if (atribuicao) {
+              const [curso] = await database
+                .select({ titulo: cursosCompetencias.titulo })
+                .from(cursosCompetencias)
+                .where(eq(cursosCompetencias.id, atribuicao.cursoId))
+                .limit(1);
+              cursoTitulo = curso?.titulo ?? "";
+            }
+          }
+
+          const emailData = buildConviteAlunoAutonomoEmail({
+            alunoName: alunoInfo.name ?? "",
+            cursoTitulo: cursoTitulo || "seu curso",
+            acessoUrl: `https://ecolider.ecodobem.com/acesso/${token}`,
+            expiraEm,
+          });
+          await sendEmail({
+            to: alunoInfo.email,
+            subject: emailData.subject,
+            html: emailData.html,
+            text: emailData.text,
+          });
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao reenviar link ao aluno:", emailErr);
+        }
+      })();
+
       return {
         success: true,
         token,
@@ -635,40 +681,43 @@ export const alunosAutonomosRouter = router({
         criadoPorUserId: (ctx as any)?.user?.id ?? null,
       });
 
-      // Quando o cadastro é pulado (aluno já conhecido, 2º/3º curso), a etapa de
-      // cadastro nunca dispara — então a notificação de "novo curso liberado"
-      // precisa sair aqui mesmo, e não esperar salvarCadastroPorToken.
-      if (etapaInicial === "avaliacao") {
-        (async () => {
-          const [alunoInfo] = await database
-            .select({ name: alunos.name, email: alunos.email })
-            .from(alunos)
-            .where(eq(alunos.id, input.alunoId))
-            .limit(1);
-          const [curso] = await database
-            .select({ titulo: cursosCompetencias.titulo })
-            .from(cursosCompetencias)
-            .where(eq(cursosCompetencias.id, input.cursoId))
-            .limit(1);
-          const cursoTitulo = curso?.titulo ?? "";
-          const linkAcesso = `https://ecolider.ecodobem.com/acesso/${token}`;
+      // Envia o convite com o link de acesso ao aluno E notifica o admin.
+      // Vale para TODOS os casos: 1º curso (cadastro pendente) e cursos
+      // seguintes (cadastro já feito, vai direto ao diagnóstico).
+      (async () => {
+        const [alunoInfo] = await database
+          .select({ name: alunos.name, email: alunos.email })
+          .from(alunos)
+          .where(eq(alunos.id, input.alunoId))
+          .limit(1);
+        const [curso] = await database
+          .select({ titulo: cursosCompetencias.titulo })
+          .from(cursosCompetencias)
+          .where(eq(cursosCompetencias.id, input.cursoId))
+          .limit(1);
+        const cursoTitulo = curso?.titulo ?? "";
+        const linkAcesso = `https://ecolider.ecodobem.com/acesso/${token}`;
+        const primeiroAcesso = etapaInicial === "cadastro";
 
-          try {
-            await sendEmail({
-              to: ((ctx as any)?.user?.email as string) || "relacionamento@ckmtalents.net",
-              subject: `Novo curso liberado: ${alunoInfo?.name ?? "aluno"}`,
-              html: `
-                <p>Um novo curso foi liberado para o aluno autônomo <strong>${alunoInfo?.name ?? ""}</strong> (${alunoInfo?.email ?? ""}): <strong>${cursoTitulo}</strong>.</p>
-                <p>Como ele já é conhecido da plataforma, o cadastro foi pulado — ele vai direto para o diagnóstico.</p>
-              `,
-              text: `Novo curso liberado para ${alunoInfo?.name ?? ""} (${alunoInfo?.email ?? ""}): ${cursoTitulo}. Cadastro pulado (aluno já conhecido) — segue direto para o diagnóstico.`,
-            });
-          } catch (emailErr) {
-            console.error("[alunosAutonomos] Erro ao notificar admin sobre novo curso:", emailErr);
-          }
-
-          try {
-            if (alunoInfo?.email) {
+        // --- Convite com o link, para o ALUNO --------------------------------
+        try {
+          if (alunoInfo?.email) {
+            if (primeiroAcesso) {
+              const emailData = buildConviteAlunoAutonomoEmail({
+                alunoName: alunoInfo.name ?? "",
+                cursoTitulo: cursoTitulo || "seu curso",
+                acessoUrl: linkAcesso,
+                expiraEm,
+              });
+              await sendEmail({
+                to: alunoInfo.email,
+                subject: emailData.subject,
+                html: emailData.html,
+                text: emailData.text,
+              });
+            } else {
+              // Aluno já conhecido: reaproveita o layout de boas-vindas, mas com
+              // o assunto de "novo curso"
               const emailData = buildBoasVindasAlunoAutonomoEmail({
                 alunoName: alunoInfo.name ?? "",
                 cursoTitulo: cursoTitulo || "seu novo curso",
@@ -681,11 +730,30 @@ export const alunosAutonomosRouter = router({
                 text: emailData.text,
               });
             }
-          } catch (emailErr) {
-            console.error("[alunosAutonomos] Erro ao enviar e-mail de novo curso ao aluno:", emailErr);
           }
-        })();
-      }
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao enviar convite/aviso de curso ao aluno:", emailErr);
+        }
+
+        // --- Aviso para o ADMIN ---------------------------------------------
+        try {
+          await sendEmail({
+            to: ((ctx as any)?.user?.email as string) || "relacionamento@ckmtalents.net",
+            subject: `Curso liberado para ${alunoInfo?.name ?? "aluno"}: ${cursoTitulo}`,
+            html: `
+              <p>O curso <strong>${cursoTitulo}</strong> foi liberado para <strong>${alunoInfo?.name ?? ""}</strong> (${alunoInfo?.email ?? ""}).</p>
+              <p>${primeiroAcesso
+                ? "O convite com o link de acesso foi enviado ao aluno. Ele vai completar o cadastro e depois fazer o diagnóstico."
+                : "Como o aluno já é conhecido da plataforma, o cadastro foi pulado — ele vai direto para o diagnóstico."}</p>
+              <p>Link de acesso: <a href="${linkAcesso}">${linkAcesso}</a></p>
+              <p><a href="https://ecolider.ecodobem.com/admin/alunos-autonomos">Acompanhar no painel de Alunos Autônomos</a></p>
+            `,
+            text: `Curso "${cursoTitulo}" liberado para ${alunoInfo?.name ?? ""} (${alunoInfo?.email ?? ""}).\nLink de acesso: ${linkAcesso}`,
+          });
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao notificar admin sobre curso liberado:", emailErr);
+        }
+      })();
 
       return {
         success: true,
