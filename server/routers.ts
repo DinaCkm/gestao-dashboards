@@ -15145,6 +15145,55 @@ Responda APENAS em JSON com o formato especificado.`
           }
         }),
 
+      uploadAudioAtividade: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            nomeArquivo: z.string().min(1).max(255),
+            tipoMime: z.string().min(1).max(100),
+            dados: z.string().min(1).max(100 * 1024 * 1024), // base64 encoded
+          })
+        )
+        .mutation(async ({ input }) => {
+          const extensao = input.nomeArquivo.split(".").pop()?.toLowerCase() ?? "";
+          const tiposPermitidos = new Set([
+            "audio/mp4",
+            "audio/x-m4a",
+            "audio/mpeg",
+            "audio/mp3",
+          ]);
+          const extensoesPermitidas = new Set(["m4a", "mp3"]);
+
+          if (!tiposPermitidos.has(input.tipoMime) || !extensoesPermitidas.has(extensao)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Apenas arquivos de áudio M4A ou MP3 são permitidos",
+            });
+          }
+
+          try {
+            const buffer = Buffer.from(input.dados, "base64");
+            const limiteBytes = 70 * 1024 * 1024;
+            if (buffer.length > limiteBytes) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "O arquivo de áudio deve ter no máximo 70 MB",
+              });
+            }
+
+            const nomeSeguro = input.nomeArquivo.replace(/[^a-zA-Z0-9._-]/g, "_");
+            const fileKey = `atividades/audio/${Date.now()}-${nomeSeguro}`;
+            const { url, key } = await storagePut(fileKey, buffer, input.tipoMime);
+            return { url, key, success: true };
+          } catch (error: any) {
+            if (error instanceof TRPCError) throw error;
+            console.error("Erro ao fazer upload de áudio:", error);
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Erro ao fazer upload do áudio",
+            });
+          }
+        }),
+
       atualizarAtividade: adminOrAdmin2Procedure
         .input(
           z.object({

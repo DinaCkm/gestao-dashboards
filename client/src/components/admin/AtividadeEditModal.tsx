@@ -76,12 +76,15 @@ export function AtividadeEditModal({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(atividade?.imagemUrl || "");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
 
   const uploadImagemMutation = trpc.competenciasCompTec.admin.uploadImagemAtividade.useMutation();
   const uploadPdfMutation = trpc.competenciasCompTec.admin.uploadPdfAtividade.useMutation();
+  const uploadAudioMutation = trpc.competenciasCompTec.admin.uploadAudioAtividade.useMutation();
   const updateAtividadeMutation = trpc.competenciasCompTec.admin.atualizarAtividade.useMutation();
 
   useEffect(() => {
@@ -90,8 +93,10 @@ export function AtividadeEditModal({
     setImagePreview(atividade?.imagemUrl || "");
     setImageFile(null);
     setPdfFile(null);
+    setAudioFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (pdfInputRef.current) pdfInputRef.current.value = "";
+    if (audioInputRef.current) audioInputRef.current.value = "";
   }, [atividade, open]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,6 +120,25 @@ export function AtividadeEditModal({
       }
       setPdfFile(file);
     }
+  };
+
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const extensao = file.name.split(".").pop()?.toLowerCase();
+    const tiposPermitidos = ["audio/mp4", "audio/x-m4a", "audio/mpeg", "audio/mp3"];
+    if (!extensao || !["m4a", "mp3"].includes(extensao) || (file.type && !tiposPermitidos.includes(file.type))) {
+      toast.error("Selecione um arquivo de áudio M4A ou MP3.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 70 * 1024 * 1024) {
+      toast.error("O arquivo de áudio deve ter no máximo 70 MB.");
+      e.target.value = "";
+      return;
+    }
+    setAudioFile(file);
   };
 
   const convertFileToBase64 = (file: File): Promise<string> => {
@@ -164,6 +188,15 @@ export function AtividadeEditModal({
         });
         urlMidia = pdfResult.url;
       }
+      if (formData.tipoAtividade === "podcast" && audioFile) {
+        const base64Audio = await convertFileToBase64(audioFile);
+        const audioResult = await uploadAudioMutation.mutateAsync({
+          nomeArquivo: audioFile.name,
+          tipoMime: audioFile.type || (audioFile.name.toLowerCase().endsWith(".mp3") ? "audio/mpeg" : "audio/mp4"),
+          dados: base64Audio,
+        });
+        urlMidia = audioResult.url;
+      }
 
       const tempoMinutos = Number(formData.tempoMinimoMinutos || 0);
       const tempoSegundos = tempoMinutos > 0 ? tempoMinutos * 60 : 0;
@@ -172,8 +205,10 @@ export function AtividadeEditModal({
         id: Number(atividade.id),
         titulo: formData.titulo.trim(),
         tipoAtividade: formData.tipoAtividade,
-        urlGenially: formData.tipoAtividade !== "pdf" ? formData.urlGenially.trim() : undefined,
-        urlMidia: formData.tipoAtividade === "pdf" ? urlMidia : undefined,
+        urlGenially: !["pdf", "podcast"].includes(formData.tipoAtividade)
+          ? formData.urlGenially.trim()
+          : undefined,
+        urlMidia: ["pdf", "podcast"].includes(formData.tipoAtividade) ? urlMidia : undefined,
         descricao: formData.descricao.trim(),
         ordem: Number(formData.ordem ?? 0),
         imagemUrl,
@@ -236,8 +271,8 @@ export function AtividadeEditModal({
             </Select>
           </div>
 
-          {/* Campo URL — exibido apenas quando o tipo NÃO é PDF */}
-          {formData.tipoAtividade !== "pdf" && (
+          {/* Campo URL — podcast usa arquivo armazenado na plataforma */}
+          {!["pdf", "podcast"].includes(formData.tipoAtividade) && (
             <div>
               <Label htmlFor="urlGenially">URL Genially / Vídeo</Label>
               <Input
@@ -251,6 +286,35 @@ export function AtividadeEditModal({
                 }
                 placeholder="https://..."
               />
+            </div>
+          )}
+
+          {formData.tipoAtividade === "podcast" && (
+            <div>
+              <Label htmlFor="audioFile">Arquivo do podcast</Label>
+              {(formData.urlMidia || formData.urlGenially) && !audioFile && (
+                <div className="mb-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 p-2 text-sm text-blue-700">
+                  <span>🎧</span>
+                  <span>Áudio atual cadastrado</span>
+                </div>
+              )}
+              <Input
+                ref={audioInputRef}
+                id="audioFile"
+                type="file"
+                accept=".m4a,.mp3,audio/mp4,audio/x-m4a,audio/mpeg"
+                onChange={handleAudioChange}
+                className="mt-1"
+              />
+              {audioFile ? (
+                <p className="mt-1 text-xs text-green-600">
+                  ✓ {audioFile.name} ({(audioFile.size / 1024 / 1024).toFixed(2)} MB) — será substituído ao salvar
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-gray-500">
+                  Deixe em branco para manter o áudio atual. Limite: 70 MB.
+                </p>
+              )}
             </div>
           )}
 
@@ -357,7 +421,9 @@ export function AtividadeEditModal({
               placeholder="Ex: 15 (vazio = sem trava)"
             />
             <p className="mt-1 text-xs text-gray-500">
-              Tempo que o aluno deve permanecer no conteúdo antes de liberar a avaliação. Deixe vazio para sem trava.
+              {formData.tipoAtividade === "podcast"
+                ? "No podcast, este tempo só é contado enquanto o áudio estiver tocando. Deixe vazio para sem trava."
+                : "Tempo que o aluno deve permanecer no conteúdo antes de liberar a avaliação. Deixe vazio para sem trava."}
             </p>
           </div>
           <div>

@@ -50,8 +50,11 @@ export default function AdminAtividades() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
 
   const utils = trpc.useUtils();
 
@@ -73,6 +76,7 @@ export default function AdminAtividades() {
   // Mutations
   const uploadImagemMutation = trpc.competenciasCompTec.admin.uploadImagemAtividade.useMutation();
   const uploadPdfMutation = trpc.competenciasCompTec.admin.uploadPdfAtividade.useMutation();
+  const uploadAudioMutation = trpc.competenciasCompTec.admin.uploadAudioAtividade.useMutation();
 
   const excluirAtividadeMutation = trpc.competenciasCompTec.admin.deleteAtividade.useMutation({
     onSuccess: async () => {
@@ -107,8 +111,10 @@ export default function AdminAtividades() {
       setImagemFile(null);
       setImagemPreview("");
       setPdfFile(null);
+      setAudioFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       if (pdfInputRef.current) pdfInputRef.current.value = "";
+      if (audioInputRef.current) audioInputRef.current.value = "";
       if (cursoId > 0) {
         await utils.competenciasCompTec.admin.listarAtividades.invalidate({ cursoId });
       }
@@ -145,6 +151,25 @@ export default function AdminAtividades() {
     }
   };
 
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const extensao = file.name.split(".").pop()?.toLowerCase();
+    const tiposPermitidos = ["audio/mp4", "audio/x-m4a", "audio/mpeg", "audio/mp3"];
+    if (!extensao || !["m4a", "mp3"].includes(extensao) || (file.type && !tiposPermitidos.includes(file.type))) {
+      toast.error("Selecione um arquivo de áudio M4A ou MP3.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 70 * 1024 * 1024) {
+      toast.error("O arquivo de áudio deve ter no máximo 70 MB.");
+      e.target.value = "";
+      return;
+    }
+    setAudioFile(file);
+  };
+
   const convertFileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -175,6 +200,11 @@ export default function AdminAtividades() {
       return;
     }
 
+    if (formAtividade.tipoAtividade === "podcast" && !audioFile) {
+      toast.error("Selecione um arquivo M4A ou MP3 para esta atividade");
+      return;
+    }
+
     setIsUploadingImage(true);
     try {
       let imagemUrl = formAtividade.imagemUrl;
@@ -201,6 +231,18 @@ export default function AdminAtividades() {
         setIsUploadingPdf(false);
       }
 
+      if (formAtividade.tipoAtividade === "podcast" && audioFile) {
+        setIsUploadingAudio(true);
+        const base64Audio = await convertFileToBase64(audioFile);
+        const audioResult = await uploadAudioMutation.mutateAsync({
+          nomeArquivo: audioFile.name,
+          tipoMime: audioFile.type || (audioFile.name.toLowerCase().endsWith(".mp3") ? "audio/mpeg" : "audio/mp4"),
+          dados: base64Audio,
+        });
+        urlMidia = audioResult.url;
+        setIsUploadingAudio(false);
+      }
+
       const tempoMinutos = Number(formAtividade.tempoMinimoMinutos || 0);
       const tempoSegundos = tempoMinutos > 0 ? tempoMinutos * 60 : 0;
 
@@ -209,7 +251,9 @@ export default function AdminAtividades() {
         titulo: formAtividade.titulo.trim(),
         tipoAtividade: formAtividade.tipoAtividade,
         descricao: formAtividade.descricao.trim(),
-        urlGenially: formAtividade.tipoAtividade !== "pdf" ? formAtividade.urlGenially.trim() : undefined,
+        urlGenially: !["pdf", "podcast"].includes(formAtividade.tipoAtividade)
+          ? formAtividade.urlGenially.trim()
+          : undefined,
         urlMidia,
         imagemUrl,
         ordem: Number(formAtividade.ordem || 0),
@@ -218,10 +262,11 @@ export default function AdminAtividades() {
     } finally {
       setIsUploadingImage(false);
       setIsUploadingPdf(false);
+      setIsUploadingAudio(false);
     }
   }
 
-  const isSubmitting = isUploadingImage || isUploadingPdf || criarAtividadeMutation.isPending;
+  const isSubmitting = isUploadingImage || isUploadingPdf || isUploadingAudio || criarAtividadeMutation.isPending;
 
   return (
     <div className="space-y-6 p-6">
@@ -355,8 +400,8 @@ export default function AdminAtividades() {
                 </Select>
               </div>
 
-              {/* Campo URL — exibido para todos os tipos EXCETO PDF e Página de conteúdo */}
-              {formAtividade.tipoAtividade !== "pdf" && formAtividade.tipoAtividade !== "pagina" && (
+              {/* Campo URL — podcast usa upload de arquivo local */}
+              {!(["pdf", "pagina", "podcast"] as TipoAtividade[]).includes(formAtividade.tipoAtividade) && (
                 <div className="space-y-1">
                   <Label htmlFor="urlGenially" className="text-xs">
                     URL da Genially / Vídeo
@@ -371,6 +416,31 @@ export default function AdminAtividades() {
                     disabled={cursoId <= 0}
                     className="text-sm"
                   />
+                </div>
+              )}
+
+              {formAtividade.tipoAtividade === "podcast" && (
+                <div className="space-y-1">
+                  <Label htmlFor="audioFile" className="text-xs">
+                    Arquivo do podcast <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    ref={audioInputRef}
+                    id="audioFile"
+                    type="file"
+                    accept=".m4a,.mp3,audio/mp4,audio/x-m4a,audio/mpeg"
+                    onChange={handleAudioChange}
+                    disabled={cursoId <= 0}
+                    className="text-sm"
+                  />
+                  {audioFile && (
+                    <p className="text-xs text-green-600">
+                      ✓ {audioFile.name} ({(audioFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">
+                    Formatos aceitos: M4A ou MP3, com até 70 MB. O aluno ouvirá dentro da plataforma.
+                  </p>
                 </div>
               )}
 
@@ -535,12 +605,16 @@ export default function AdminAtividades() {
                   className="text-sm"
                 />
                 <p className="text-[10px] text-muted-foreground">
-                  Tempo que o aluno deve permanecer no conteúdo antes de liberar a avaliação. Deixe vazio para sem trava.
+                  {formAtividade.tipoAtividade === "podcast"
+                    ? "No podcast, este tempo só é contado enquanto o áudio estiver tocando. Deixe vazio para sem trava."
+                    : "Tempo que o aluno deve permanecer no conteúdo antes de liberar a avaliação. Deixe vazio para sem trava."}
                 </p>
               </div>
 
               <Button type="submit" disabled={cursoId <= 0 || isSubmitting} className="w-full text-sm">
-                {isUploadingPdf
+                {isUploadingAudio
+                  ? "Enviando áudio..."
+                  : isUploadingPdf
                   ? "Enviando PDF..."
                   : isUploadingImage
                   ? "Enviando imagem..."

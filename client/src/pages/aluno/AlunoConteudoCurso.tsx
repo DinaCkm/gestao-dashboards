@@ -109,8 +109,10 @@ function formatarTempo(segundos: number): string {
 export default function AlunoConteudoCurso() {
   const [, setLocation] = useLocation();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [iframeCarregando, setIframeCarregando] = useState(true);
   const [iframeIniciado, setIframeIniciado] = useState(false);
+  const [audioTocando, setAudioTocando] = useState(false);
 
   const searchString = useSearch(); // reativo a mudanças de rota
   const search = searchString ? `?${searchString}` : (typeof window !== "undefined" ? window.location.search : "");
@@ -129,9 +131,11 @@ export default function AlunoConteudoCurso() {
 
   const isPdf = atividade?.tipoAtividade === "pdf";
   const isPagina = atividade?.tipoAtividade === "pagina";
+  const isPodcast = atividade?.tipoAtividade === "podcast";
   const urlPdf = isPdf ? (atividade?.urlMidia || atividade?.urlGenially || "") : "";
-  const urlOriginal = (!isPdf && !isPagina) ? (atividade?.urlGenially || atividade?.urlMidia || "") : "";
-  const urlEmbed = (!isPdf && !isPagina) ? adaptarUrlParaEmbed(urlOriginal) : "";
+  const urlAudio = isPodcast ? (atividade?.urlMidia || atividade?.urlGenially || "") : "";
+  const urlOriginal = (!isPdf && !isPagina && !isPodcast) ? (atividade?.urlGenially || atividade?.urlMidia || "") : "";
+  const urlEmbed = (!isPdf && !isPagina && !isPodcast) ? adaptarUrlParaEmbed(urlOriginal) : "";
 
   // Para o tipo "pagina": HTML sanitizado + vídeo YouTube opcional
   const htmlConteudo = isPagina
@@ -148,6 +152,7 @@ export default function AlunoConteudoCurso() {
     if (atividade?.tempoAtivoAcumuladoSegundos != null) {
       setTempoAtivoLocal(Number(atividade.tempoAtivoAcumuladoSegundos));
     }
+    setAudioTocando(false);
   }, [atividade?.id]);
 
   const tempoMinimoExigido = Number(atividade?.tempoMinimoExigidoSegundos ?? 0);
@@ -161,12 +166,13 @@ export default function AlunoConteudoCurso() {
   useEffect(() => {
     if (!cursoAtribuidoId || !atividadeId) return;
     const tick = setInterval(() => {
-      if (document.visibilityState === "visible" && document.hasFocus()) {
+      const podeContabilizar = !isPodcast || audioTocando;
+      if (podeContabilizar && document.visibilityState === "visible" && document.hasFocus()) {
         setTempoAtivoLocal((prev) => prev + 1);
       }
     }, 1000);
     return () => clearInterval(tick);
-  }, [cursoAtribuidoId, atividadeId]);
+  }, [cursoAtribuidoId, atividadeId, isPodcast, audioTocando]);
 
   const heartbeatMutation = trpc.competenciasCompTec.aluno.registrarHeartbeatAtividade.useMutation();
   const pausarSessaoMutation = trpc.competenciasCompTec.aluno.pausarSessaoAtividade.useMutation();
@@ -178,7 +184,8 @@ export default function AlunoConteudoCurso() {
     const HEARTBEAT_INTERVAL_MS = 15000;
 
     const enviarHeartbeat = () => {
-      if (document.visibilityState === "visible" && document.hasFocus()) {
+      const podeContabilizar = !isPodcast || audioTocando;
+      if (podeContabilizar && document.visibilityState === "visible" && document.hasFocus()) {
         heartbeatMutation.mutate({
           cursoAtribuidoId,
           atividadeId,
@@ -198,6 +205,7 @@ export default function AlunoConteudoCurso() {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
+        if (isPodcast) audioRef.current?.pause();
         pausarSessao();
         setTimerPausado(true);
       } else {
@@ -212,7 +220,7 @@ export default function AlunoConteudoCurso() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       pausarSessao();
     };
-  }, [cursoAtribuidoId, atividadeId]);
+  }, [cursoAtribuidoId, atividadeId, isPodcast, audioTocando]);
 
   const voltarParaAtividades = () => {
     setLocation(
@@ -226,7 +234,13 @@ export default function AlunoConteudoCurso() {
   };
 
   // Determina se o conteúdo principal está disponível para exibição
-  const temConteudo = isPdf ? !!urlPdf : isPagina ? !!htmlConteudo : !!urlEmbed;
+  const temConteudo = isPdf
+    ? !!urlPdf
+    : isPagina
+    ? !!htmlConteudo
+    : isPodcast
+    ? !!urlAudio
+    : !!urlEmbed;
 
   return (
     <AlunoLayout>
@@ -244,8 +258,8 @@ export default function AlunoConteudoCurso() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
-          {/* Botão tela cheia apenas para conteúdo não-PDF e não-pagina */}
-          {!isPdf && !isPagina && (
+          {/* Botão tela cheia apenas para conteúdos em iframe */}
+          {!isPdf && !isPagina && !isPodcast && (
             <Button variant="outline" onClick={abrirTelaCheia} disabled={!urlEmbed}>
               <Maximize className="mr-2 h-4 w-4" />
               Tela cheia
@@ -291,6 +305,11 @@ export default function AlunoConteudoCurso() {
               ⏸ Timer pausado — você saiu desta aba. Volte para continuar acumulando tempo.
             </p>
           )}
+          {!tempoCumprido && isPodcast && !audioTocando && !timerPausado && (
+            <p className="text-xs text-amber-700">
+              ⏸ Contagem pausada — clique em reproduzir para continuar ouvindo e contabilizar o tempo.
+            </p>
+          )}
         </div>
       )}
 
@@ -310,6 +329,8 @@ export default function AlunoConteudoCurso() {
           <CardDescription>
             {isPdf
               ? "O documento PDF está exibido diretamente abaixo. Use o botão 'Abrir em nova aba' para visualizar em tela cheia."
+              : isPodcast
+              ? "Ouça o podcast nesta tela. O tempo de estudo só é contabilizado enquanto o áudio estiver tocando."
               : "O conteúdo é exibido internamente por iframe. Se o provedor bloquear a incorporação, use o botão de fallback para abrir em nova aba."}
           </CardDescription>
         </CardHeader>
@@ -329,6 +350,61 @@ export default function AlunoConteudoCurso() {
               <p className="text-sm text-muted-foreground">
                 Esta atividade não possui um conteúdo válido para incorporação.
               </p>
+            </div>
+          ) : isPodcast ? (
+            /* ===== PLAYER INTERNO DE PODCAST ===== */
+            <div className="space-y-5">
+              <div className="overflow-hidden rounded-xl border bg-gradient-to-br from-slate-900 to-slate-700 p-6 text-white shadow-sm">
+                <div className="flex flex-col gap-5 md:flex-row md:items-center">
+                  {atividade.imagemUrl ? (
+                    <img
+                      src={atividade.imagemUrl}
+                      alt="Capa do podcast"
+                      className="h-36 w-full rounded-lg object-cover md:w-64"
+                    />
+                  ) : (
+                    <div className="flex h-36 w-full items-center justify-center rounded-lg bg-white/10 text-5xl md:w-64">
+                      🎧
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">Podcast</p>
+                      <h2 className="mt-1 text-xl font-semibold">{atividade.titulo}</h2>
+                      {atividade.descricao && (
+                        <p className="mt-2 text-sm leading-relaxed text-slate-200">{atividade.descricao}</p>
+                      )}
+                    </div>
+                    <audio
+                      ref={audioRef}
+                      src={urlAudio}
+                      controls
+                      preload="metadata"
+                      controlsList="nodownload noplaybackrate"
+                      className="w-full"
+                      onPlay={() => {
+                        setAudioTocando(true);
+                        setTimerPausado(false);
+                      }}
+                      onPause={() => setAudioTocando(false)}
+                      onEnded={() => {
+                        setAudioTocando(false);
+                        pausarSessaoMutation.mutate({ cursoAtribuidoId, atividadeId });
+                      }}
+                    >
+                      Seu navegador não consegue reproduzir este áudio.
+                    </audio>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                <span className="mt-0.5 text-lg">🎧</span>
+                <p>
+                  <strong>Ouça o podcast dentro da plataforma.</strong>{" "}
+                  A contagem avança somente durante a reprodução e pausa quando o áudio é pausado ou esta aba é fechada.
+                </p>
+              </div>
             </div>
           ) : isPagina ? (
             /* ===== PÁGINA DE CONTEÚDO (HTML + YouTube) ===== */

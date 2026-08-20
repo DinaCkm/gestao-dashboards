@@ -224,6 +224,18 @@ describe("competenciasCompTec.admin", () => {
     }
   });
 
+  it("deve rejeitar upload de podcast com formato diferente de M4A ou MP3", async () => {
+    const caller = appRouter.createCaller(createAdminContext());
+
+    await expect(
+      caller.competenciasCompTec.admin.uploadAudioAtividade({
+        nomeArquivo: "arquivo.pdf",
+        tipoMime: "application/pdf",
+        dados: Buffer.from("conteúdo inválido").toString("base64"),
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("deve aceitar exclusão lógica de atividade", async () => {
     const caller = appRouter.createCaller(createAdminContext());
 
