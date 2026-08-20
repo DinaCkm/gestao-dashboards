@@ -17,7 +17,7 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
 import { AtividadeEditModal } from "@/components/admin/AtividadeEditModal";
 
-type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro" | "pdf";
+type TipoAtividade = "genially" | "video" | "podcast" | "tedtalk" | "livro" | "intro" | "pdf" | "pagina";
 
 const TIPOS_ATIVIDADE: { value: TipoAtividade; label: string }[] = [
   { value: "intro", label: "Introdução" },
@@ -27,6 +27,7 @@ const TIPOS_ATIVIDADE: { value: TipoAtividade; label: string }[] = [
   { value: "livro", label: "Livro" },
   { value: "genially", label: "Genially" },
   { value: "pdf", label: "PDF" },
+  { value: "pagina", label: "Página de conteúdo (texto + vídeo)" },
 ];
 
 export default function AdminAtividades() {
@@ -354,8 +355,8 @@ export default function AdminAtividades() {
                 </Select>
               </div>
 
-              {/* Campo URL — exibido apenas quando o tipo NÃO é PDF */}
-              {formAtividade.tipoAtividade !== "pdf" && (
+              {/* Campo URL — exibido para todos os tipos EXCETO PDF e Página de conteúdo */}
+              {formAtividade.tipoAtividade !== "pdf" && formAtividade.tipoAtividade !== "pagina" && (
                 <div className="space-y-1">
                   <Label htmlFor="urlGenially" className="text-xs">
                     URL da Genially / Vídeo
@@ -373,7 +374,7 @@ export default function AdminAtividades() {
                 </div>
               )}
 
-              {/* Campo de upload de PDF — exibido apenas quando o tipo é PDF */}
+              {/* Campo de upload de PDF */}
               {formAtividade.tipoAtividade === "pdf" && (
                 <div className="space-y-1">
                   <Label htmlFor="pdfFile" className="text-xs">
@@ -396,6 +397,60 @@ export default function AdminAtividades() {
                   <p className="text-[10px] text-muted-foreground">
                     O PDF será armazenado e exibido diretamente na plataforma para os alunos.
                   </p>
+                </div>
+              )}
+
+              {/* Campos para Página de conteúdo (HTML + vídeo YouTube opcional) */}
+              {formAtividade.tipoAtividade === "pagina" && (
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">
+                      Conteúdo da página{" "}
+                      <span className="text-red-500">*</span>
+                    </Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      Escreva o conteúdo em HTML. Suporte a{" "}
+                      <code className="bg-muted px-1 rounded">{"<h2>"}</code>,{" "}
+                      <code className="bg-muted px-1 rounded">{"<p>"}</code>,{" "}
+                      <code className="bg-muted px-1 rounded">{"<strong>"}</code>,{" "}
+                      <code className="bg-muted px-1 rounded">{"<ul><li>"}</code>,{" "}
+                      <code className="bg-muted px-1 rounded">{"<img src=...>"}</code>.
+                      Não use scripts.
+                    </p>
+                    <Textarea
+                      value={formAtividade.urlGenially}
+                      onChange={(e) =>
+                        setFormAtividade((prev) => ({ ...prev, urlGenially: e.target.value }))
+                      }
+                      placeholder={'<h2>Título do conteúdo</h2>\n<p>Parágrafo introdutório...</p>\n<ul><li>Item 1</li><li>Item 2</li></ul>'}
+                      rows={10}
+                      className="font-mono text-xs"
+                      disabled={cursoId <= 0}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">
+                      URL do Vídeo (YouTube){" "}
+                      <span className="text-muted-foreground">(opcional)</span>
+                    </Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      Cole o link normal do YouTube — o sistema converte para embed automaticamente.
+                      O vídeo aparece ao final do conteúdo, dentro do sistema.
+                    </p>
+                    <Input
+                      value={formAtividade.descricao ?? ""}
+                      onChange={(e) =>
+                        setFormAtividade((prev) => ({ ...prev, descricao: e.target.value }))
+                      }
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      disabled={cursoId <= 0}
+                      className="text-sm"
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Formatos aceitos: youtube.com/watch?v=, youtu.be/, youtube.com/shorts/
+                    </p>
+                  </div>
                 </div>
               )}
 
