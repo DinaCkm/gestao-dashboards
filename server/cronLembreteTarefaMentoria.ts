@@ -13,6 +13,7 @@ import {
   emailAlertasLog,
   mentorAppointments,
   appointmentParticipants,
+  assessmentPdi,
 } from '../drizzle/schema';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import { sendEmail, buildLembreteTarefaMentoriaEmail } from './emailService';
@@ -111,6 +112,16 @@ export async function verificarEEnviarLembreteTarefaMentoria(dryRun = false): Pr
   for (const [alunoId, sessao] of porAluno) {
     const aluno = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1).then(r => r[0]);
     if (!aluno || !aluno.email) continue;
+
+    // Não enviar para alunos com ciclo encerrado ou congelado
+    const pdiAtual = await db
+      .select({ status: assessmentPdi.status, updatedAt: assessmentPdi.updatedAt })
+      .from(assessmentPdi)
+      .where(eq(assessmentPdi.alunoId, alunoId))
+      .orderBy(desc(assessmentPdi.updatedAt))
+      .limit(1)
+      .then(r => r[0]);
+    if (pdiAtual && (pdiAtual.status === 'encerrado' || pdiAtual.status === 'congelado')) continue;
 
     const mentor = await db.select().from(consultors).where(eq(consultors.id, sessao.consultorId)).limit(1).then(r => r[0]);
     if (!mentor) continue;

@@ -23,15 +23,15 @@ import {
   consultors,
   mentoringSessions,
   emailAlertasLog,
+  assessmentPdi,
 } from '../drizzle/schema';
-import { eq, and, gte, lte, or, isNull, inArray } from 'drizzle-orm';
+import { eq, and, gte, lte, or, isNull, inArray, desc } from 'drizzle-orm';
 import { sendEmail } from './emailService';
 
 const TIPO_ALERTA_AGENDAMENTO = 'preparacao_sessao_agendamento';
 const TIPO_ALERTA_D1 = 'preparacao_sessao_d1';
 
 const ADMINS_CC = [
-  'financeiro@makiyama.com.br',
   'dina@ckmtalents.net',
   'relacionamento@ckmtalents.net',
 ];
@@ -296,6 +296,16 @@ export async function enviarPreparacaoSessao(
     // Buscar aluno e mentora
     const aluno = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
     if (!aluno[0]?.email) return;
+
+    // Não enviar preparação de sessão a alunos com ciclo encerrado ou congelado
+    const pdiAtual = await db
+      .select({ status: assessmentPdi.status })
+      .from(assessmentPdi)
+      .where(eq(assessmentPdi.alunoId, alunoId))
+      .orderBy(desc(assessmentPdi.updatedAt))
+      .limit(1)
+      .then(r => r[0]);
+    if (pdiAtual && (pdiAtual.status === 'encerrado' || pdiAtual.status === 'congelado')) return;
 
     const mentor = await db.select().from(consultors).where(eq(consultors.id, appt[0].consultorId)).limit(1);
     if (!mentor[0]) return;

@@ -5,7 +5,7 @@
  * Controla duplicatas: só reenvia alerta para a mesma tarefa a cada 7 dias
  */
 import { getDb } from './db';
-import { getAlunos, getConsultors, getPrograms } from './db';
+import { getAlunosAtivos, getConsultors, getPrograms } from './db';
 import { emailAlertasLog, mentoringSessions } from '../drizzle/schema';
 import { eq, and, gte, inArray } from 'drizzle-orm';
 import { sendEmail, buildTarefaEmAbertoEmail } from './emailService';
@@ -52,7 +52,7 @@ export async function verificarEEnviarAlertasTarefasEmAberto(options?: {
   if (!db) return { success: false, totalTarefas: 0, totalAlertas: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, alertas: [] };
 
   // Buscar alunos e mentores
-  const allAlunosRaw = await getAlunos();
+  const allAlunosRaw = await getAlunosAtivos();
   const allConsultores = await getConsultors();
   const allPrograms = await getPrograms();
   const activeProgramIds = new Set(allPrograms.map(p => p.id));

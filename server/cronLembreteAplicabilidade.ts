@@ -6,7 +6,7 @@
  */
 
 import { getDb } from './db';
-import { getAlunos, getConsultors } from './db';
+import { getAlunosAtivos, getConsultors } from './db';
 import { mentorAppointments, appointmentParticipants, mentoringSessions, emailAlertasLog } from '../drizzle/schema';
 import { eq, and, gte, lte, inArray } from 'drizzle-orm';
 import { sendEmail, buildLembreteAplicabilidadeEmail } from './emailService';
@@ -41,7 +41,7 @@ export async function verificarEEnviarLembretesAplicabilidade(options?: {
   const db = await getDb();
   if (!db) return { success: false, totalAgendamentos: 0, totalLembretes: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, lembretes: [] };
 
-  const allAlunos = await getAlunos();
+  const allAlunos = await getAlunosAtivos();
   const allConsultores = await getConsultors();
   const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
   const consultorMap = new Map(allConsultores.map(c => [c.id, c]));

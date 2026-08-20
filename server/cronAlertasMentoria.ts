@@ -6,7 +6,7 @@
  */
 
 import { getDb } from './db';
-import { getAlunos, getConsultors, getPrograms, getAllStudentsSessionProgress } from './db';
+import { getAlunosAtivos, getConsultors, getPrograms, getAllStudentsSessionProgress } from './db';
 import { emailAlertasLog, mentoringSessions, assessmentPdi } from '../drizzle/schema';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import { sendEmail, buildMentoringAlertEmail } from './emailService';
@@ -47,7 +47,7 @@ export async function verificarEEnviarAlertasMentoria(options?: {
   if (!db) return { success: false, totalAlunos: 0, totalAlertas: 0, emailsEnviados: 0, jaEnviadosIgnorados: 0, alertas: [] };
 
   // Get all active alunos and consultores
-  const allAlunosRaw = await getAlunos();
+  const allAlunosRaw = await getAlunosAtivos();
   const allConsultores = await getConsultors();
   const consultorMap = new Map(allConsultores.map(c => [c.id, c]));
 
