@@ -186,7 +186,6 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Calculator, label: "Fórmulas", path: "/formulas" },
       { icon: Library, label: "Biblioteca de Tarefas", path: "/biblioteca-tarefas" },
       { icon: BookOpen, label: "Atribuir Cursos", path: "/admin/atribuir-cursos" },
-      { icon: UserPlus, label: "Alunos Autônomos", path: "/admin/alunos-autonomos" },
       { icon: Monitor, label: "Gerenciar Plataforma de Cursos", path: "/admin/plataforma-aulas" },
       { icon: Library, label: "Biblioteca Pedagógica", path: "/admin/biblioteca-pedagogica" },
       { icon: BookOpen, label: "Biblioteca de Livros", path: "/admin/biblioteca-livros" },
