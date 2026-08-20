@@ -258,11 +258,20 @@ function EtapaAvaliacao({
               <RadioGroup
                 value={respostas[q.id] ?? ""}
                 onValueChange={(v) => setRespostas((prev) => ({ ...prev, [q.id]: v }))}
+                className="space-y-2"
               >
                 {q.opcoes.map((op, oi) => (
-                  <div key={oi} className="flex items-center space-x-2">
-                    <RadioGroupItem value={op} id={`${q.id}-${oi}`} />
-                    <Label htmlFor={`${q.id}-${oi}`} className="font-normal cursor-pointer">
+                  <div
+                    key={oi}
+                    className={`flex items-start space-x-3 rounded-lg border p-3 cursor-pointer transition-colors
+                      ${respostas[q.id] === op
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-background hover:bg-muted/50"
+                      }`}
+                    onClick={() => setRespostas((prev) => ({ ...prev, [q.id]: op }))}
+                  >
+                    <RadioGroupItem value={op} id={`${q.id}-${oi}`} className="mt-0.5 shrink-0" />
+                    <Label htmlFor={`${q.id}-${oi}`} className="font-normal cursor-pointer leading-relaxed">
                       {op}
                     </Label>
                   </div>
@@ -333,17 +342,39 @@ function ResultadoDiagnostico({
               </p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Detalhamento por questão
+              </p>
               {resultado.detalhamento.map((d: any, i: number) => (
-                <div key={d.questaoId} className="flex items-start gap-2 rounded-md border p-3 text-sm">
-                  {d.acertou ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div
+                  key={d.questaoId}
+                  className={`rounded-lg border p-3 text-sm space-y-1 ${
+                    d.acertou ? "border-green-200 bg-green-50" : "border-red-100 bg-red-50"
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    {d.acertou ? (
+                      <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                    )}
+                    <span className="font-medium">
+                      {i + 1}. {d.enunciado}
+                    </span>
+                  </div>
+                  {!d.acertou && d.respostaCorreta && (
+                    <div className="ml-6 space-y-0.5">
+                      <p className="text-red-600 text-xs">
+                        <span className="font-medium">Sua resposta:</span>{" "}
+                        {d.respostaAluno ?? "—"}
+                      </p>
+                      <p className="text-green-700 text-xs">
+                        <span className="font-medium">Resposta correta:</span>{" "}
+                        {d.respostaCorreta}
+                      </p>
+                    </div>
                   )}
-                  <span>
-                    {i + 1}. {d.enunciado}
-                  </span>
                 </div>
               ))}
             </div>
