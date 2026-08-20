@@ -6,7 +6,61 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Maximize, Clock, ExternalLink } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import DOMPurify from "dompurify";
+
+/**
+ * Sanitizador de HTML simples — sem dependências externas.
+ * Permite apenas tags e atributos seguros (sem scripts, eventos, javascript:).
+ * Usa o DOMParser nativo do browser para fazer o parsing seguro.
+ */
+function sanitizarHtml(html: string): string {
+  if (typeof window === "undefined" || !html) return "";
+  const TAGS_PERMITIDAS = new Set([
+    "h1","h2","h3","h4","h5","h6","p","strong","em","b","i","u","s",
+    "ul","ol","li","a","img","br","hr","blockquote","pre","code",
+    "table","thead","tbody","tfoot","tr","th","td","span","div","section",
+  ]);
+  const ATTRS_PERMITIDOS: Record<string, Set<string>> = {
+    a: new Set(["href","target","rel"]),
+    img: new Set(["src","alt","width","height","style"]),
+    td: new Set(["colspan","rowspan"]),
+    th: new Set(["colspan","rowspan"]),
+    "*": new Set(["class","style"]),
+  };
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  function limpaNó(nó: Node): Node | null {
+    if (nó.nodeType === Node.TEXT_NODE) return nó.cloneNode();
+    if (nó.nodeType !== Node.ELEMENT_NODE) return null;
+    const el = nó as Element;
+    const tag = el.tagName.toLowerCase();
+    if (!TAGS_PERMITIDAS.has(tag)) {
+      // Substitui a tag por seus filhos (ex: <script> — joga fora)
+      const frag = document.createDocumentFragment();
+      el.childNodes.forEach((c) => { const limpo = limpaNó(c); if (limpo) frag.appendChild(limpo); });
+      return frag;
+    }
+    const novo = document.createElement(tag);
+    const permitidos = new Set([...(ATTRS_PERMITIDOS[tag] ?? []), ...(ATTRS_PERMITIDOS["*"] ?? [])]);
+    el.getAttributeNames().forEach((attr) => {
+      if (!permitidos.has(attr)) return;
+      const val = el.getAttribute(attr) ?? "";
+      // Bloquear javascript: em href/src
+      if ((attr === "href" || attr === "src") && /^\s*javascript:/i.test(val)) return;
+      novo.setAttribute(attr, val);
+    });
+    // Garantir que links externos abram em nova aba com rel seguro
+    if (tag === "a") {
+      novo.setAttribute("target", "_blank");
+      novo.setAttribute("rel", "noopener noreferrer");
+    }
+    el.childNodes.forEach((c) => { const limpo = limpaNó(c); if (limpo) novo.appendChild(limpo); });
+    return novo;
+  }
+  const resultado = document.createDocumentFragment();
+  doc.body.childNodes.forEach((c) => { const limpo = limpaNó(c); if (limpo) resultado.appendChild(limpo); });
+  const div = document.createElement("div");
+  div.appendChild(resultado);
+  return div.innerHTML;
+}
 
 function getNumeroQuery(search: string, chave: string) {
   const params = new URLSearchParams(search);
@@ -81,10 +135,7 @@ export default function AlunoConteudoCurso() {
 
   // Para o tipo "pagina": HTML sanitizado + vídeo YouTube opcional
   const htmlConteudo = isPagina
-    ? DOMPurify.sanitize(atividade?.urlGenially ?? "", {
-        ALLOWED_TAGS: ["h1","h2","h3","h4","p","strong","em","ul","ol","li","a","img","br","hr","blockquote","table","thead","tbody","tr","th","td","span","div"],
-        ALLOWED_ATTR: ["href","target","rel","src","alt","width","height","style","class"],
-      })
+    ? sanitizarHtml(atividade?.urlGenially ?? "")
     : "";
   const youtubeEmbedPagina = isPagina ? youtubeParaEmbed(atividade?.descricao) : null;
 
