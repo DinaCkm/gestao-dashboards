@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square, RefreshCw, Layers, BookOpen, Shield } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import AdminAlunosAutonomos from "@/pages/admin/AdminAlunosAutonomos";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
@@ -642,6 +643,10 @@ export default function AdminCadastros() {
               <GraduationCap className="h-4 w-4" />
               Alunos
             </TabsTrigger>
+            <TabsTrigger value="alunos-autonomos" className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              Alunos Autônomos
+            </TabsTrigger>
             <TabsTrigger value="empresas" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Empresas
@@ -688,6 +693,11 @@ export default function AdminCadastros() {
               onReverterOnboarding={reverterOnboarding.mutate}
               isRevertendoOnboarding={reverterOnboarding.isPending}
             />
+          </TabsContent>
+
+          {/* Alunos Autônomos Tab */}
+          <TabsContent value="alunos-autonomos">
+            <AdminAlunosAutonomos />
           </TabsContent>
 
           {/* Empresas Tab */}
