@@ -3217,6 +3217,133 @@ export function buildLembreteInternoWebinarEmail(data: {
 
 // ============ EMAIL DE BOAS-VINDAS - ALUNO AUTÔNOMO (cadastro confirmado) ============
 
+// ============ EMAIL DE CONVITE - ALUNO AUTÔNOMO (primeiro acesso) ============
+
+export function buildConviteAlunoAutonomoEmail(data: {
+  alunoName: string;
+  cursoTitulo: string;
+  acessoUrl: string;
+  expiraEm?: Date | null;
+}): { subject: string; html: string; text: string } {
+  const primeiroNome = data.alunoName.split(" ")[0];
+  const subject = `📚 ${primeiroNome}, seu acesso ao curso ${data.cursoTitulo} está liberado`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const validadeTexto = data.expiraEm
+    ? `Este link é válido até ${new Date(data.expiraEm).toLocaleDateString('pt-BR')}.`
+    : '';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0A1E3E 0%, #1a3a6a 50%, #F5991F 100%); padding: 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 16px;" />
+              <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 8px; font-weight: 800;">📚 Seu acesso está pronto!</h1>
+              <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin: 0;">${data.cursoTitulo}</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="color: #0A1E3E; font-size: 18px; font-weight: 700; margin: 0 0 16px;">
+                Olá, ${data.alunoName}! 👋
+              </p>
+
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                Você foi inscrito(a) no curso <strong>${data.cursoTitulo}</strong> na plataforma do
+                Ecossistema do Bem. Clique no botão abaixo para começar — não é preciso senha.
+              </p>
+
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 16px;">
+                <strong>Como funciona:</strong>
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #f0f9ff; border-left: 4px solid #0A1E3E; border-radius: 0 8px 8px 0;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>1. Complete seu cadastro</strong> — leva menos de 2 minutos</p>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #fff7ed; border-left: 4px solid #F5991F; border-radius: 0 8px 8px 0;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>2. Responda o diagnóstico</strong> — 10 questões, sem caráter eliminatório</p>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 0 8px 8px 0;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>3. Comece o curso</strong> — liberado automaticamente no seu Mural</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.acessoUrl}" style="display: inline-block; background: linear-gradient(135deg, #0A1E3E, #F5991F); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 16px; font-weight: 700;">
+                      Acessar Meu Curso →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              ${validadeTexto ? `<p style="color: #92400e; font-size: 13px; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin: 0 0 16px; text-align: center;">⏳ ${validadeTexto}</p>` : ''}
+
+              <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                Se o botão não funcionar, copie e cole este endereço no seu navegador:<br>
+                <span style="color: #0A1E3E; word-break: break-all;">${data.acessoUrl}</span>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #0A1E3E; padding: 24px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="100" style="display: block; margin: 0 auto 8px; opacity: 0.7;" />
+              <p style="color: rgba(255,255,255,0.5); font-size: 11px; line-height: 1.5; margin: 0;">
+                Este é um email automático do ECOSSISTEMA DO BEM.<br>
+                © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `📚 Olá, ${data.alunoName}!
+
+Você foi inscrito(a) no curso "${data.cursoTitulo}" na plataforma do Ecossistema do Bem.
+
+Como funciona:
+1. Complete seu cadastro — leva menos de 2 minutos
+2. Responda o diagnóstico — 10 questões, sem caráter eliminatório
+3. Comece o curso — liberado automaticamente no seu Mural
+
+Acesse por aqui (não é preciso senha): ${data.acessoUrl}
+${validadeTexto ? `\n⏳ ${validadeTexto}` : ''}`;
+
+  return { subject, html, text };
+}
+
 export function buildBoasVindasAlunoAutonomoEmail(data: {
   alunoName: string;
   cursoTitulo: string;
