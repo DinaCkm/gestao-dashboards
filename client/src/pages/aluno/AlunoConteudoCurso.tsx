@@ -358,10 +358,17 @@ export default function AlunoConteudoCurso() {
                       allowFullScreen
                       style={{ border: "none" }}
                     />
-                    {/* Camadas para impedir pular o vídeo / abrir YouTube */}
+                    {/* Mesmas camadas do tipo vídeo normal:
+                        - Camada 1: cobre a barra inferior completa (logo YouTube, botão "Assistir no YouTube", barra de progresso)
+                        - Camada 2: cobre a linha de transição com o botão de abrir no YouTube */}
                     <div
                       className="pointer-events-auto absolute bottom-0 left-0 right-0 z-10"
-                      style={{ height: 72, background: "rgba(0,0,0,0.01)" }}
+                      style={{ height: 80, background: "rgba(0,0,0,0.01)" }}
+                      aria-hidden="true"
+                    />
+                    <div
+                      className="pointer-events-auto absolute left-0 right-0 z-10"
+                      style={{ bottom: 78, height: 12, background: "rgba(0,0,0,0.01)" }}
                       aria-hidden="true"
                     />
                   </div>
