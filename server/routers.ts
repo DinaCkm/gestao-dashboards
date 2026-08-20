@@ -15015,6 +15015,7 @@ Responda APENAS em JSON com o formato especificado.`
               "livro",
               "intro",
               "pdf",
+              "pagina",
             ]),
             urlGenially: z.string().optional(),
             urlMidia: z.string().optional(),
