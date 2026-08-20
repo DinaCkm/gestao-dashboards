@@ -41,9 +41,10 @@ async function startServer() {
 
   const app = express();
   const server = createServer(app);
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // O upload administrativo de podcast aceita até 70 MB. Como o arquivo é
+  // transportado em base64 pelo tRPC, o corpo JSON pode ficar ~33% maior.
+  app.use(express.json({ limit: "100mb" }));
+  app.use(express.urlencoded({ limit: "100mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
 
