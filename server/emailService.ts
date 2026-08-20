@@ -3214,3 +3214,115 @@ export function buildLembreteInternoWebinarEmail(data: {
 
   return { subject, html, text };
 }
+
+// ============ EMAIL DE BOAS-VINDAS - ALUNO AUTÔNOMO (cadastro confirmado) ============
+
+export function buildBoasVindasAlunoAutonomoEmail(data: {
+  alunoName: string;
+  cursoTitulo: string;
+  continuarUrl: string; // link de volta ao token, para retomar direto no diagnóstico
+}): { subject: string; html: string; text: string } {
+  const primeiroNome = data.alunoName.split(" ")[0];
+  const subject = `🎉 Bem-vindo(a), ${primeiroNome}! Seu cadastro foi confirmado`;
+  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+
+          <!-- Header com gradiente -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0A1E3E 0%, #1a3a6a 50%, #F5991F 100%); padding: 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display: block; margin: 0 auto 16px;" />
+              <h1 style="color: #ffffff; font-size: 28px; margin: 0 0 8px; font-weight: 800;">🎉 Bem-vindo(a)!</h1>
+              <p style="color: rgba(255,255,255,0.9); font-size: 16px; margin: 0;">Seu cadastro foi confirmado com sucesso</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px;">
+              <p style="color: #0A1E3E; font-size: 18px; font-weight: 700; margin: 0 0 16px;">
+                Olá, ${data.alunoName}! 🌟
+              </p>
+
+              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 20px;">
+                Seus dados foram confirmados e você já está a um passo de começar o curso <strong>${data.cursoTitulo}</strong>.
+              </p>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #f0f9ff; border-left: 4px solid #0A1E3E; border-radius: 0 8px 8px 0;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>📝 Próximo passo</strong> — Responder uma avaliação diagnóstica rápida (10 questões)</p>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #fff7ed; border-left: 4px solid #F5991F; border-radius: 0 8px 8px 0;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>📊 Sem pegadinha</strong> — Este diagnóstico não é eliminatório, é só para vermos seu ponto de partida</p>
+                  </td>
+                </tr>
+                <tr><td style="height: 8px;"></td></tr>
+                <tr>
+                  <td style="padding: 12px 16px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 0 8px 8px 0;">
+                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>🚀 Depois disso</strong> — Seu curso é liberado automaticamente no Mural</p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
+                <tr>
+                  <td align="center">
+                    <a href="${data.continuarUrl}" style="display: inline-block; background: linear-gradient(135deg, #0A1E3E, #F5991F); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 16px; font-weight: 700;">
+                      Continuar para o Diagnóstico →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="color: #6b7280; font-size: 13px; line-height: 1.6; margin: 0; text-align: center; font-style: italic;">
+                "O primeiro passo é sempre o que exige mais coragem." — Provérbio popular
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #0A1E3E; padding: 24px 40px; text-align: center;">
+              <img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="100" style="display: block; margin: 0 auto 8px; opacity: 0.7;" />
+              <p style="color: rgba(255,255,255,0.5); font-size: 11px; line-height: 1.5; margin: 0;">
+                Este é um email automático do ECOSSISTEMA DO BEM.<br>
+                © ${new Date().getFullYear()} CKM Talents — Todos os direitos reservados.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const text = `🎉 Bem-vindo(a), ${data.alunoName}!
+
+Seu cadastro foi confirmado com sucesso. Você já está a um passo de começar o curso "${data.cursoTitulo}".
+
+Próximo passo: responder uma avaliação diagnóstica rápida (10 questões).
+Este diagnóstico não é eliminatório — é só para sabermos seu ponto de partida.
+Depois disso, seu curso é liberado automaticamente no Mural.
+
+Continue por aqui: ${data.continuarUrl}`;
+
+  return { subject, html, text };
+}
