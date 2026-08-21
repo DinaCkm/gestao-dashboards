@@ -2100,6 +2100,46 @@ const submitMetaEvidence = trpc.metas.enviarEvidencia.useMutation({
                   </Card>
                 ))}
               </div>
+            ) : isAlunoAutonomo && cursosAtribuidosAoAluno.length > 0 ? (
+              // Aluno Autônomo: mostra os cursos atribuídos diretamente, sem PDI/trilha
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Seus cursos liberados:</p>
+                {cursosAtribuidosAoAluno.map((c: any) => (
+                  <Card key={c.cursoAtribuidoId} className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => setLocation(`/aluno/competencias-comp-tec/detalhe?cursoId=${c.cursoId}&cursoAtribuidoId=${c.cursoAtribuidoId}`)}>
+                    <CardContent className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        {c.imagemUrl ? (
+                          <img src={c.imagemUrl} alt={c.titulo} className="h-14 w-20 rounded-lg object-cover shrink-0" />
+                        ) : (
+                          <div className="h-14 w-20 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                            <BookOpen className="h-6 w-6 text-muted-foreground opacity-50" />
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-sm">{c.titulo}</p>
+                          {c.competenciaNome && (
+                            <p className="text-xs text-muted-foreground">{c.competenciaNome}</p>
+                          )}
+                          {c.dataPrazo && (
+                            <p className="text-xs text-muted-foreground">
+                              Prazo: {new Date(c.dataPrazo).toLocaleDateString("pt-BR")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <Badge variant={c.status === "concluido" ? "default" : "secondary"} className="text-xs capitalize">
+                          {c.status === "nao_iniciado" ? "Não iniciado" : c.status === "em_progresso" ? "Em andamento" : c.status === "concluido" ? "Concluído" : c.status}
+                        </Badge>
+                        {c.progressoPercent != null && (
+                          <p className="text-xs text-muted-foreground mt-1">{c.progressoPercent}% concluído</p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             ) : (
               <Card className="bg-white border border-gray-200 shadow-sm">
                 <CardContent className="py-12">
