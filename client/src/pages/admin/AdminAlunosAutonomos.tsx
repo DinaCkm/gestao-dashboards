@@ -141,56 +141,81 @@ function PainelDiagnosticos({
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
         const wb = XLSX.read(data, { type: "array" });
-        const ws = wb.Sheets["Diagnóstico"];
-        if (!ws) throw new Error("Aba 'Diagnóstico' não encontrada. Certifique-se de usar o modelo correto.");
 
-        // Linhas 3 e 4: título e nota mínima
-        const tituloCell = ws["C3"];
-        const notaCell   = ws["C4"];
-        const tituloLido = tituloCell?.v ? String(tituloCell.v).trim() : "";
-        const notaLida   = notaCell?.v   ? String(notaCell.v).trim()   : "7";
+        // Aceita a aba "Diagnóstico" (modelo gerado pelo sistema) OU
+        // a primeira aba disponível (ex: "Folha1", planilha do usuário)
+        const nomeDiagnostico = wb.SheetNames.includes("Diagnóstico")
+          ? "Diagnóstico"
+          : wb.SheetNames[0];
+        const ws = wb.Sheets[nomeDiagnostico];
+        if (!ws) throw new Error("Planilha vazia ou sem abas.");
 
-        // Linhas 6 a 15: questões (máximo 10)
+        // Converte para array de arrays para inspecionar a estrutura
+        const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+        // Detecta automaticamente se linha 1 é cabeçalho (contém textos de cabeçalho)
+        // ou se já é a primeira questão (linha 1 começa com número)
+        let primeiraLinhaDados = 1; // padrão: pula o cabeçalho (linha 0)
+        const primeiraLinha = rows[0] ?? [];
+        // Se a célula A da linha 0 parece ser um número = sem cabeçalho
+        if (typeof primeiraLinha[0] === "number") primeiraLinhaDados = 0;
+
+        // Para o modelo do sistema: título está em C3 e nota em C4 (linha 2 e 3 do array base-0)
+        // Para a planilha do usuário: usa valores padrão
+        const tituloCelula = wb.SheetNames.includes("Diagnóstico")
+          ? String(ws["C3"]?.v ?? "").trim()
+          : "";
+        const notaCelula = wb.SheetNames.includes("Diagnóstico")
+          ? String(ws["C4"]?.v ?? "7").trim()
+          : "7";
+
+        // Lê as questões a partir de primeiraLinhaDados
         const questoesLidas: Questao[] = [];
-        for (let row = 6; row <= 15; row++) {
-          const enunciado   = String(ws[`B${row}`]?.v ?? "").trim();
-          const altA        = String(ws[`C${row}`]?.v ?? "").trim();
-          const altB        = String(ws[`D${row}`]?.v ?? "").trim();
-          const altC        = String(ws[`E${row}`]?.v ?? "").trim();
-          const altD        = String(ws[`F${row}`]?.v ?? "").trim();
-          const altE        = String(ws[`G${row}`]?.v ?? "").trim();
-          const gabLetra    = String(ws[`H${row}`]?.v ?? "").trim().toUpperCase();
-
+        for (let i = primeiraLinhaDados; i < rows.length && questoesLidas.length < QTD_QUESTOES; i++) {
+          const row = rows[i];
+          const enunciado = String(row[1] ?? "").trim();
           if (!enunciado) continue; // linha em branco — pula
+
+          const altA = String(row[2] ?? "").trim();
+          const altB = String(row[3] ?? "").trim();
+          const altC = String(row[4] ?? "").trim();
+          const altD = String(row[5] ?? "").trim();
+          const altE = String(row[6] ?? "").trim();
+          const gabLetra = String(row[7] ?? "").trim().toUpperCase();
 
           const mapaOpcoes: Record<string, string> = { A: altA, B: altB, C: altC, D: altD, E: altE };
           const opcoes = [altA, altB, altC, altD, altE].filter(Boolean);
           const respostaCorreta = mapaOpcoes[gabLetra] ?? "";
 
           if (!respostaCorreta) {
-            throw new Error(`Questão ${row - 5}: gabarito '${gabLetra}' inválido ou alternativa vazia.`);
+            throw new Error(
+              `Questão ${questoesLidas.length + 1}: gabarito "${gabLetra}" inválido ou alternativa correspondente vazia. Verifique a coluna H.`
+            );
           }
 
           questoesLidas.push({
             id: `q${questoesLidas.length + 1}`,
             enunciado,
-            opcoes: opcoes.length >= 4 ? opcoes : [...opcoes, ...Array(4 - opcoes.length).fill("")],
+            opcoes: opcoes.length >= 2
+              ? [...opcoes, ...Array(Math.max(0, 4 - opcoes.length)).fill("")]
+              : [...opcoes, "", "", ""],
             respostaCorreta,
           });
         }
 
         if (questoesLidas.length !== QTD_QUESTOES) {
-          throw new Error(`A planilha deve ter exatamente ${QTD_QUESTOES} questões preenchidas. Encontradas: ${questoesLidas.length}.`);
+          throw new Error(
+            `A planilha deve ter exatamente ${QTD_QUESTOES} questões preenchidas. Encontradas: ${questoesLidas.length}.`
+          );
         }
 
-        // Preenche o formulário
-        if (tituloLido) setTitulo(tituloLido);
-        if (notaLida)   setNotaMinima(notaLida);
+        if (tituloCelula) setTitulo(tituloCelula);
+        if (notaCelula)   setNotaMinima(notaCelula);
         setQuestoes(questoesLidas);
         setAvaliacaoEditandoId(null);
-        toast.success(`${questoesLidas.length} questões importadas com sucesso. Revise e clique em Criar.`);
+        toast.success(`${questoesLidas.length} questões importadas. Selecione o curso e clique em Criar.`);
       } catch (err: any) {
-        toast.error(err.message ?? "Erro ao ler a planilha.");
+        toast.error(err.message ?? "Erro ao ler a planilha. Verifique se é um arquivo .xlsx válido.");
       } finally {
         setImportando(false);
       }
