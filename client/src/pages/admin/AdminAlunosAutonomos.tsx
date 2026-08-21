@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Copy, Link as LinkIcon, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Download, Link as LinkIcon, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const QTD_QUESTOES = 10;
 
@@ -130,6 +131,117 @@ function PainelDiagnosticos({
     Array.from({ length: QTD_QUESTOES }, (_, i) => questaoVazia(i))
   );
   const [avaliacaoEditandoId, setAvaliacaoEditandoId] = useState<number | null>(null);
+  const [importando, setImportando] = useState(false);
+
+  // Lê a planilha modelo e preenche o formulário automaticamente
+  function importarPlanilha(file: File) {
+    setImportando(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets["Diagnóstico"];
+        if (!ws) throw new Error("Aba 'Diagnóstico' não encontrada. Certifique-se de usar o modelo correto.");
+
+        // Linhas 3 e 4: título e nota mínima
+        const tituloCell = ws["C3"];
+        const notaCell   = ws["C4"];
+        const tituloLido = tituloCell?.v ? String(tituloCell.v).trim() : "";
+        const notaLida   = notaCell?.v   ? String(notaCell.v).trim()   : "7";
+
+        // Linhas 6 a 15: questões (máximo 10)
+        const questoesLidas: Questao[] = [];
+        for (let row = 6; row <= 15; row++) {
+          const enunciado   = String(ws[`B${row}`]?.v ?? "").trim();
+          const altA        = String(ws[`C${row}`]?.v ?? "").trim();
+          const altB        = String(ws[`D${row}`]?.v ?? "").trim();
+          const altC        = String(ws[`E${row}`]?.v ?? "").trim();
+          const altD        = String(ws[`F${row}`]?.v ?? "").trim();
+          const altE        = String(ws[`G${row}`]?.v ?? "").trim();
+          const gabLetra    = String(ws[`H${row}`]?.v ?? "").trim().toUpperCase();
+
+          if (!enunciado) continue; // linha em branco — pula
+
+          const mapaOpcoes: Record<string, string> = { A: altA, B: altB, C: altC, D: altD, E: altE };
+          const opcoes = [altA, altB, altC, altD, altE].filter(Boolean);
+          const respostaCorreta = mapaOpcoes[gabLetra] ?? "";
+
+          if (!respostaCorreta) {
+            throw new Error(`Questão ${row - 5}: gabarito '${gabLetra}' inválido ou alternativa vazia.`);
+          }
+
+          questoesLidas.push({
+            id: `q${questoesLidas.length + 1}`,
+            enunciado,
+            opcoes: opcoes.length >= 4 ? opcoes : [...opcoes, ...Array(4 - opcoes.length).fill("")],
+            respostaCorreta,
+          });
+        }
+
+        if (questoesLidas.length !== QTD_QUESTOES) {
+          throw new Error(`A planilha deve ter exatamente ${QTD_QUESTOES} questões preenchidas. Encontradas: ${questoesLidas.length}.`);
+        }
+
+        // Preenche o formulário
+        if (tituloLido) setTitulo(tituloLido);
+        if (notaLida)   setNotaMinima(notaLida);
+        setQuestoes(questoesLidas);
+        setAvaliacaoEditandoId(null);
+        toast.success(`${questoesLidas.length} questões importadas com sucesso. Revise e clique em Criar.`);
+      } catch (err: any) {
+        toast.error(err.message ?? "Erro ao ler a planilha.");
+      } finally {
+        setImportando(false);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Gera e faz download da planilha modelo diretamente no navegador
+  function baixarModelo() {
+    const wb = XLSX.utils.book_new();
+    // Aba Diagnóstico
+    const wsData = [
+      ["#", "Enunciado da questão *", "Alternativa A *", "Alternativa B *", "Alternativa C", "Alternativa D", "Alternativa E", "Gabarito (A/B/C/D/E) *", "Observações"],
+      ["Título da avaliação:", "Diagnóstico inicial — [Nome do Curso]", "", "", "", "", "", "", ""],
+      ["Nota mínima (0-10):", 7, "", "", "", "", "", "", ""],
+      [],
+      [1, "Escreva o enunciado da questão 1 aqui.", "Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D", "", "B", ""],
+      [2, "Escreva o enunciado da questão 2 aqui.", "Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D", "", "A", ""],
+      [3, "", "", "", "", "", "", "", ""],
+      [4, "", "", "", "", "", "", "", ""],
+      [5, "", "", "", "", "", "", "", ""],
+      [6, "", "", "", "", "", "", "", ""],
+      [7, "", "", "", "", "", "", "", ""],
+      [8, "", "", "", "", "", "", "", ""],
+      [9, "", "", "", "", "", "", "", ""],
+      [10, "", "", "", "", "", "", "", ""],
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws["!cols"] = [{ wch: 4 }, { wch: 55 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 14 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, ws, "Diagnóstico");
+
+    // Aba Instruções
+    const wsInst = XLSX.utils.aoa_to_sheet([
+      ["COMO PREENCHER"],
+      [""],
+      ["1. Preencha UMA linha por questão — sempre 10 questões (linhas 5 a 14)."],
+      ["2. Colunas A, B, C e H são obrigatórias (número, enunciado, alternativas A e B, gabarito)."],
+      ["3. Gabarito: use apenas a letra A, B, C, D ou E — sem espaços."],
+      ["4. Título (célula B1) e Nota mínima (célula B2): edite conforme o seu curso."],
+      ["5. Salve como .xlsx e faça upload na aba 'Avaliações diagnósticas'."],
+      [""],
+      ["ERROS COMUNS"],
+      ["✗  Gabarito com letra que não tem alternativa preenchida"],
+      ["✗  Menos ou mais de 10 questões preenchidas"],
+      ["✗  Arquivo salvo em formato diferente de .xlsx"],
+    ]);
+    XLSX.utils.book_append_sheet(wb, wsInst, "Instruções");
+
+    XLSX.writeFile(wb, "modelo_diagnostico_alunos_autonomos.xlsx");
+    toast.success("Planilha modelo baixada.");
+  }
 
   // Tabs mantém o conteúdo montado ao trocar de aba — sincroniza quando o admin
   // clica em "Criar diagnóstico deste curso" vindo da aba de liberação.
@@ -340,11 +452,45 @@ function PainelDiagnosticos({
 
       <Card>
         <CardHeader>
-          <CardTitle>{avaliacaoEditandoId ? "Editar avaliação diagnóstica" : "Nova avaliação diagnóstica"}</CardTitle>
-          <CardDescription>
-            Sempre exatamente {QTD_QUESTOES} questões, com gabarito. Estas 10 questões são
-            aplicadas ao aluno antes de ele acessar o curso.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>{avaliacaoEditandoId ? "Editar avaliação diagnóstica" : "Nova avaliação diagnóstica"}</CardTitle>
+              <CardDescription>
+                Sempre exatamente {QTD_QUESTOES} questões, com gabarito. Estas 10 questões são
+                aplicadas ao aluno antes de ele acessar o curso.
+              </CardDescription>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button variant="outline" size="sm" onClick={baixarModelo}>
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                Baixar modelo
+              </Button>
+              <Label htmlFor="upload-planilha" className="cursor-pointer">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={importando}
+                  asChild
+                >
+                  <span>
+                    <Upload className="mr-1.5 h-3.5 w-3.5" />
+                    {importando ? "Importando..." : "Importar via planilha"}
+                  </span>
+                </Button>
+              </Label>
+              <input
+                id="upload-planilha"
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) importarPlanilha(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
