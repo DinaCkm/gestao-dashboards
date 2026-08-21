@@ -196,6 +196,11 @@ export default function AdminAvaliacoes() {
     { enabled: !!cursoSelecionado }
   );
 
+  const avaliacoesInativasQuery = trpc.competenciasCompTec.admin.listarAvaliacoesInativasCurso.useQuery(
+    { cursoId: Number(cursoSelecionado || 0) },
+    { enabled: !!cursoSelecionado }
+  );
+
   // Queries do destino (painel de mover)
   const cursosMoverQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
     { competenciaId: moverCompetencia },
@@ -210,6 +215,9 @@ export default function AdminAvaliacoes() {
   async function invalidarListaAtual() {
     if (cursoSelecionado) {
       await utils.competenciasCompTec.admin.listarAvaliacoesCurso.invalidate({
+        cursoId: Number(cursoSelecionado),
+      });
+      await utils.competenciasCompTec.admin.listarAvaliacoesInativasCurso.invalidate({
         cursoId: Number(cursoSelecionado),
       });
       await utils.competenciasCompTec.admin.listarAtividades.invalidate({
@@ -245,6 +253,12 @@ export default function AdminAvaliacoes() {
     },
   });
 
+  const reativarAvaliacaoMutation = trpc.competenciasCompTec.admin.reativarAvaliacao.useMutation({
+    onSuccess: async () => {
+      await invalidarListaAtual();
+    },
+  });
+
   const cursos = useMemo(
     () => (cursosQuery.data ?? []).map(normalizarCurso).filter((x) => x.id > 0),
     [cursosQuery.data]
@@ -258,6 +272,11 @@ export default function AdminAvaliacoes() {
   const avaliacoes = useMemo(
     () => (avaliacoesQuery.data ?? []).map(normalizarAvaliacao).filter((x) => x.id > 0),
     [avaliacoesQuery.data]
+  );
+
+  const avaliacoesInativas = useMemo(
+    () => (avaliacoesInativasQuery.data ?? []).map(normalizarAvaliacao).filter((x) => x.id > 0),
+    [avaliacoesInativasQuery.data]
   );
 
   const cursosMover = useMemo(
@@ -926,6 +945,50 @@ export default function AdminAvaliacoes() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Avaliações desvinculadas (inativas) — permite reativar */}
+            {cursoSelecionado && avaliacoesInativas.length > 0 && (
+              <div className="space-y-3">
+                <div className="border-t pt-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground">
+                    Avaliações desvinculadas ({avaliacoesInativas.length})
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Estão inativas e não aparecem para os alunos. Reative para voltar a valer na atividade.
+                  </p>
+                </div>
+                {avaliacoesInativas.map((avaliacao) => (
+                  <div key={avaliacao.id} className="rounded-lg border border-dashed p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold">{avaliacao.titulo}</h3>
+                      <span className="rounded-full bg-muted px-2 py-1 text-xs">
+                        {avaliacao.questoes.length} questões
+                      </span>
+                      <span className="rounded-full bg-amber-100 px-2 py-1 text-xs text-amber-800">
+                        Desvinculada
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        Atividade: {avaliacao.atividadeId}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="ml-auto"
+                        onClick={() =>
+                          reativarAvaliacaoMutation.mutateAsync({ avaliacaoId: avaliacao.id })
+                        }
+                        disabled={reativarAvaliacaoMutation.isPending}
+                      >
+                        {reativarAvaliacaoMutation.isPending ? "Reativando..." : "Reativar"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {reativarAvaliacaoMutation.error && (
+                  <p className="text-sm text-red-600">{reativarAvaliacaoMutation.error.message}</p>
+                )}
               </div>
             )}
 
