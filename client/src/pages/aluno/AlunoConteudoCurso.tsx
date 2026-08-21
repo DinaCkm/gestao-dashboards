@@ -135,6 +135,11 @@ export default function AlunoConteudoCurso() {
   const isPodcast = atividade?.tipoAtividade === "podcast";
   const urlPdf = isPdf ? (atividade?.urlMidia || atividade?.urlGenially || "") : "";
   const urlAudio = isPodcast ? (atividade?.urlMidia || atividade?.urlGenially || "") : "";
+  // Codifica a URL para exibição: se o nome do arquivo tiver espaços ou acentos,
+  // o navegador não carrega o PDF/áudio dentro da página sem esta codificação.
+  // encodeURI é seguro para URLs já codificadas (não altera "%").
+  const urlPdfEmbed = urlPdf ? encodeURI(urlPdf) : "";
+  const urlAudioEmbed = urlAudio ? encodeURI(urlAudio) : "";
   const urlOriginal = (!isPdf && !isPagina && !isPodcast) ? (atividade?.urlGenially || atividade?.urlMidia || "") : "";
   const urlEmbed = (!isPdf && !isPagina && !isPodcast) ? adaptarUrlParaEmbed(urlOriginal) : "";
 
@@ -316,7 +321,7 @@ export default function AlunoConteudoCurso() {
           {/* Botão abrir PDF em nova aba */}
           {isPdf && urlPdf && (
             <Button variant="outline" asChild>
-              <a href={urlPdf} target="_blank" rel="noopener noreferrer">
+              <a href={urlPdfEmbed} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Abrir em nova aba
               </a>
@@ -427,7 +432,7 @@ export default function AlunoConteudoCurso() {
                     </div>
                     <audio
                       ref={audioRef}
-                      src={urlAudio}
+                      src={urlAudioEmbed}
                       controls
                       preload="metadata"
                       controlsList="nodownload noplaybackrate"
@@ -510,7 +515,7 @@ export default function AlunoConteudoCurso() {
               <div className="overflow-hidden rounded-lg border bg-gray-50">
                 <iframe
                   key={urlPdf}
-                  src={urlPdf}
+                  src={urlPdfEmbed}
                   title={atividade.titulo}
                   className="h-[80vh] w-full"
                   style={{ border: "none" }}
