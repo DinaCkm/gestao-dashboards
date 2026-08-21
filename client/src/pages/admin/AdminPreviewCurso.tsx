@@ -41,6 +41,8 @@ export default function AdminPreviewCurso() {
     const isPdf = atividadeAberta.tipoAtividade === 'pdf';
     const isPagina = atividadeAberta.tipoAtividade === 'pagina';
     const url = atividadeAberta.urlGenially || atividadeAberta.urlMidia || "";
+    // PDF: codifica a URL para exibir corretamente nomes com espaço/acento dentro do iframe.
+    const urlEmbed = isPdf && url ? encodeURI(url) : url;
 
     // Para tipo pagina: url contém o HTML do conteúdo
     function youtubeParaEmbed(u?: string | null): string | null {
@@ -61,7 +63,7 @@ export default function AdminPreviewCurso() {
           <span>Modo Preview — Administrador | Atividade: {atividadeAberta.titulo}</span>
           {isPdf && url && (
             <a
-              href={url}
+              href={urlEmbed}
               target="_blank"
               rel="noopener noreferrer"
               className="ml-2 flex items-center gap-1 rounded border border-white px-2 py-1 text-xs hover:bg-amber-600"
@@ -143,21 +145,65 @@ export default function AdminPreviewCurso() {
             </div>
           </div>
         ) : url ? (
-          isPdf ? (
-            <iframe
-              src={url}
-              className="flex-1 w-full border-0"
-              title={atividadeAberta.titulo}
-              style={{ minHeight: '80vh' }}
-            />
-          ) : (
-            <iframe
-              src={url}
-              className="flex-1 w-full border-0"
-              title={atividadeAberta.titulo}
-              allowFullScreen
-            />
-          )
+          <div className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
+            <div className="mx-auto max-w-5xl space-y-6">
+              {isPdf ? (
+                <div className="overflow-hidden rounded-lg border bg-white">
+                  <iframe
+                    src={urlEmbed}
+                    className="w-full border-0"
+                    title={atividadeAberta.titulo}
+                    style={{ height: '78vh' }}
+                  />
+                </div>
+              ) : (
+                <div className="relative overflow-hidden rounded-lg border bg-black" style={{ height: '75vh' }}>
+                  <iframe
+                    src={url}
+                    className="absolute inset-0 h-full w-full border-0"
+                    title={atividadeAberta.titulo}
+                    allowFullScreen
+                  />
+                </div>
+              )}
+
+              {/* Card de conclusão/avaliação — mesmo do aluno, mostrado também em PDF e vídeo */}
+              <Card className="overflow-hidden border-2 border-[#5B3A7D]/20 shadow-md">
+                <div className="h-1.5 bg-gradient-to-r from-[#5B3A7D] via-[#1E3A5F] to-[#F5A623]" />
+                <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-[#5B3A7D]/10 p-2 text-[#5B3A7D]">
+                      <ClipboardCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1E3A5F]">Concluiu esta aula?</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {atividadeAberta.temAvaliacao
+                          ? "Na visão do aluno, a avaliação será acessada aqui, sem sair desta tela."
+                          : "Na visão do aluno, este botão registra a conclusão e libera a próxima atividade."}
+                      </p>
+                      {atividadeAberta.tempoMinimoExigidoSegundos > 0 && (
+                        <p className="mt-2 flex items-center gap-1 text-xs font-medium text-amber-700">
+                          <Clock className="h-3.5 w-3.5" />
+                          Liberação após {Math.ceil(atividadeAberta.tempoMinimoExigidoSegundos / 60)} minuto(s) de estudo.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button disabled className="bg-[#5B3A7D] md:min-w-72">
+                    <ClipboardCheck className="mr-2 h-4 w-4" />
+                    {atividadeAberta.temAvaliacao
+                      ? "Concluir conteúdo e fazer avaliação"
+                      : "Concluir e continuar"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <p className="pb-2 text-center text-xs text-muted-foreground">
+                Botão desabilitado somente nesta pré-visualização administrativa. O progresso não é gravado.
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-1 items-center justify-center text-muted-foreground">
             <div className="text-center">
