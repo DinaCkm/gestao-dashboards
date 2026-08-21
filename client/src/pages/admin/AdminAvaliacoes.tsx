@@ -128,6 +128,31 @@ function normalizarAvaliacao(item: any) {
   };
 }
 
+// Converte as questões salvas no banco (enunciado/opcoes/respostaCorreta em texto)
+// para o formato editável do formulário (pergunta/alternativas/letra da resposta).
+function questoesArmazenadasParaForm(questoes: any[]): QuestaoForm[] {
+  if (!Array.isArray(questoes) || questoes.length === 0) {
+    return Array.from({ length: 10 }, () => novaQuestao());
+  }
+  return questoes.map((q) => {
+    const opcoes = Array.isArray(q?.opcoes) ? q.opcoes : [];
+    const alternativaA = String(opcoes[0] ?? "");
+    const alternativaB = String(opcoes[1] ?? "");
+    const alternativaC = String(opcoes[2] ?? "");
+    const alternativaD = String(opcoes[3] ?? "");
+    const idxCorreta = opcoes.findIndex((o: any) => String(o) === String(q?.respostaCorreta));
+    const letra = ["A", "B", "C", "D"][idxCorreta] ?? "A";
+    return {
+      pergunta: String(q?.enunciado ?? ""),
+      alternativaA,
+      alternativaB,
+      alternativaC,
+      alternativaD,
+      respostaCorreta: letra,
+    };
+  });
+}
+
 export default function AdminAvaliacoes() {
   const [, setLocation] = useLocation();
   const [competenciaId, setCompetenciaId] = useState<number>(0);
@@ -139,6 +164,15 @@ export default function AdminAvaliacoes() {
   const [questoes, setQuestoes] = useState<QuestaoForm[]>(
     Array.from({ length: 10 }, () => novaQuestao())
   );
+
+  // Edição de avaliação existente (reaproveita o formulário da esquerda)
+  const [avaliacaoEditandoId, setAvaliacaoEditandoId] = useState<number | null>(null);
+
+  // Painel de "mover" aberto para uma avaliação específica
+  const [movendoId, setMovendoId] = useState<number | null>(null);
+  const [moverCompetencia, setMoverCompetencia] = useState<number>(0);
+  const [moverCurso, setMoverCurso] = useState<string>("");
+  const [moverAtividade, setMoverAtividade] = useState<string>("");
 
   const inputArquivoRef = useRef<HTMLInputElement | null>(null);
   const [nomeArquivoImportado, setNomeArquivoImportado] = useState("");
@@ -162,24 +196,54 @@ export default function AdminAvaliacoes() {
     { enabled: !!cursoSelecionado }
   );
 
+  // Queries do destino (painel de mover)
+  const cursosMoverQuery = trpc.competenciasCompTec.admin.listarCursosPorCompetencia.useQuery(
+    { competenciaId: moverCompetencia },
+    { enabled: moverCompetencia > 0 }
+  );
+
+  const atividadesMoverQuery = trpc.competenciasCompTec.admin.listarAtividades.useQuery(
+    { cursoId: Number(moverCurso || 0) },
+    { enabled: !!moverCurso }
+  );
+
+  async function invalidarListaAtual() {
+    if (cursoSelecionado) {
+      await utils.competenciasCompTec.admin.listarAvaliacoesCurso.invalidate({
+        cursoId: Number(cursoSelecionado),
+      });
+      await utils.competenciasCompTec.admin.listarAtividades.invalidate({
+        cursoId: Number(cursoSelecionado),
+      });
+    }
+  }
+
   const criarAvaliacaoMutation = trpc.competenciasCompTec.admin.criarAvaliacao.useMutation({
     onSuccess: async () => {
       limparFormulario();
-      if (cursoSelecionado) {
-        await utils.competenciasCompTec.admin.listarAvaliacoesCurso.invalidate({
-          cursoId: Number(cursoSelecionado),
-        });
-      }
+      await invalidarListaAtual();
     },
   });
 
-  const competenciasUnicas = useMemo(() => {
-    const lista = (competenciasQuery.data ?? [])
-      .map((item: any) => item?.competencia ?? item?.nome)
-      .filter(Boolean);
+  const atualizarAvaliacaoMutation = trpc.competenciasCompTec.admin.atualizarAvaliacao.useMutation({
+    onSuccess: async () => {
+      limparFormulario();
+      await invalidarListaAtual();
+    },
+  });
 
-    return Array.from(new Set(lista));
-  }, [competenciasQuery.data]);
+  const moverAvaliacaoMutation = trpc.competenciasCompTec.admin.moverAvaliacao.useMutation({
+    onSuccess: async () => {
+      fecharMover();
+      await invalidarListaAtual();
+    },
+  });
+
+  const desvincularAvaliacaoMutation = trpc.competenciasCompTec.admin.desvincularAvaliacao.useMutation({
+    onSuccess: async () => {
+      await invalidarListaAtual();
+    },
+  });
 
   const cursos = useMemo(
     () => (cursosQuery.data ?? []).map(normalizarCurso).filter((x) => x.id > 0),
@@ -196,11 +260,71 @@ export default function AdminAvaliacoes() {
     [avaliacoesQuery.data]
   );
 
+  const cursosMover = useMemo(
+    () => (cursosMoverQuery.data ?? []).map(normalizarCurso).filter((x) => x.id > 0),
+    [cursosMoverQuery.data]
+  );
+
+  const atividadesMover = useMemo(
+    () => (atividadesMoverQuery.data ?? []).map(normalizarAtividade).filter((x) => x.id > 0),
+    [atividadesMoverQuery.data]
+  );
+
+  const editando = avaliacaoEditandoId !== null;
+  const salvando = criarAvaliacaoMutation.isPending || atualizarAvaliacaoMutation.isPending;
+
   function limparFormulario() {
     setTitulo("");
     setNotaMinima("8");
     setAtividadeSelecionada("");
+    setAvaliacaoEditandoId(null);
     setQuestoes(Array.from({ length: 10 }, () => novaQuestao()));
+    setNomeArquivoImportado("");
+  }
+
+  function iniciarEdicao(avaliacao: ReturnType<typeof normalizarAvaliacao>) {
+    // Competência e curso já estão selecionados (necessários para listar as avaliações),
+    // então basta fixar a atividade e carregar os dados da avaliação.
+    setMovendoId(null);
+    setAvaliacaoEditandoId(avaliacao.id);
+    setAtividadeSelecionada(String(avaliacao.atividadeId));
+    setTitulo(avaliacao.titulo);
+    setNotaMinima(String(avaliacao.notaMinima));
+    setQuestoes(questoesArmazenadasParaForm(avaliacao.questoes));
+    setNomeArquivoImportado("");
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  function abrirMover(avaliacao: ReturnType<typeof normalizarAvaliacao>) {
+    setAvaliacaoEditandoId(null);
+    setMovendoId(avaliacao.id);
+    // Pré-seleciona a competência e o curso atuais (caso mais comum: mover dentro do mesmo curso)
+    setMoverCompetencia(competenciaId);
+    setMoverCurso(cursoSelecionado);
+    setMoverAtividade("");
+  }
+
+  function fecharMover() {
+    setMovendoId(null);
+    setMoverAtividade("");
+  }
+
+  async function confirmarMover() {
+    if (!movendoId || !moverAtividade) return;
+    await moverAvaliacaoMutation.mutateAsync({
+      avaliacaoId: movendoId,
+      atividadeDestinoId: Number(moverAtividade),
+    });
+  }
+
+  async function handleDesvincular(avaliacao: ReturnType<typeof normalizarAvaliacao>) {
+    const ok = window.confirm(
+      `Desvincular a avaliação "${avaliacao.titulo}"?\n\nA atividade deixará de exigir avaliação. As questões ficam guardadas e a ação pode ser refeita depois.`
+    );
+    if (!ok) return;
+    await desvincularAvaliacaoMutation.mutateAsync({ avaliacaoId: avaliacao.id });
   }
 
   function atualizarQuestao(
@@ -280,7 +404,7 @@ export default function AdminAvaliacoes() {
     XLSX.writeFile(workbook, "modelo_avaliacao_questoes.xlsx");
   }
 
-  async function handleCriarAvaliacao(e: React.FormEvent) {
+  async function handleSalvarAvaliacao(e: React.FormEvent) {
     e.preventDefault();
 
     if (!atividadeSelecionada) return;
@@ -308,12 +432,21 @@ export default function AdminAvaliacoes() {
       };
     });
 
-    await criarAvaliacaoMutation.mutateAsync({
-      atividadeId: Number(atividadeSelecionada),
-      titulo,
-      questoes: payloadQuestoes,
-      notaMinima: Number(notaMinima || 8),
-    });
+    if (editando && avaliacaoEditandoId) {
+      await atualizarAvaliacaoMutation.mutateAsync({
+        avaliacaoId: avaliacaoEditandoId,
+        titulo,
+        questoes: payloadQuestoes,
+        notaMinima: Number(notaMinima || 8),
+      });
+    } else {
+      await criarAvaliacaoMutation.mutateAsync({
+        atividadeId: Number(atividadeSelecionada),
+        titulo,
+        questoes: payloadQuestoes,
+        notaMinima: Number(notaMinima || 8),
+      });
+    }
   }
 
   return (
@@ -328,13 +461,25 @@ export default function AdminAvaliacoes() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Nova avaliação</CardTitle>
+            <CardTitle>{editando ? "Editar avaliação" : "Nova avaliação"}</CardTitle>
             <CardDescription>
-              Selecione competência, curso e atividade antes de cadastrar.
+              {editando
+                ? "Ajuste o título, a nota mínima e as questões. A atividade vinculada não muda aqui — use o botão “Mover” para trocar de atividade."
+                : "Selecione competência, curso e atividade antes de cadastrar."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCriarAvaliacao} className="space-y-4">
+            {editando && (
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                <span>
+                  Editando a avaliação <strong>{titulo || "(sem título)"}</strong>.
+                </span>
+                <Button type="button" variant="outline" size="sm" onClick={limparFormulario}>
+                  Cancelar edição
+                </Button>
+              </div>
+            )}
+            <form onSubmit={handleSalvarAvaliacao} className="space-y-4">
               <div className="space-y-2">
                 <Label>Competência</Label>
                 <Select
@@ -344,6 +489,7 @@ export default function AdminAvaliacoes() {
                     setCursoSelecionado("");
                     setAtividadeSelecionada("");
                   }}
+                  disabled={editando}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecione" />
@@ -368,7 +514,7 @@ export default function AdminAvaliacoes() {
                     setCursoSelecionado(novoCurso);
                     setAtividadeSelecionada("");
                   }}
-                  disabled={competenciaId === 0}
+                  disabled={competenciaId === 0 || editando}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o curso" />
@@ -391,7 +537,7 @@ export default function AdminAvaliacoes() {
                   onValueChange={(value) =>
                     setAtividadeSelecionada(value === "__none__" ? "" : value)
                   }
-                  disabled={!cursoSelecionado}
+                  disabled={!cursoSelecionado || editando}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a atividade" />
@@ -572,19 +718,23 @@ export default function AdminAvaliacoes() {
               <div className="flex flex-wrap gap-3">
                 <Button
                   type="submit"
-                  disabled={!atividadeSelecionada || criarAvaliacaoMutation.isPending}
+                  disabled={!atividadeSelecionada || salvando}
                 >
-                  {criarAvaliacaoMutation.isPending ? "Salvando..." : "Criar avaliação"}
+                  {salvando
+                    ? "Salvando..."
+                    : editando
+                    ? "Salvar alterações"
+                    : "Criar avaliação"}
                 </Button>
 
                 <Button type="button" variant="outline" onClick={limparFormulario}>
-                  Limpar
+                  {editando ? "Cancelar" : "Limpar"}
                 </Button>
               </div>
 
-              {criarAvaliacaoMutation.error && (
+              {(criarAvaliacaoMutation.error || atualizarAvaliacaoMutation.error) && (
                 <p className="text-sm text-red-600">
-                  {criarAvaliacaoMutation.error.message}
+                  {criarAvaliacaoMutation.error?.message || atualizarAvaliacaoMutation.error?.message}
                 </p>
               )}
             </form>
@@ -595,7 +745,7 @@ export default function AdminAvaliacoes() {
           <CardHeader>
             <CardTitle>Avaliações cadastradas</CardTitle>
             <CardDescription>
-              Visualize as avaliações vinculadas ao curso selecionado.
+              Visualize, edite, mova ou desvincule as avaliações do curso selecionado.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -615,7 +765,7 @@ export default function AdminAvaliacoes() {
               <div className="space-y-3">
                 {avaliacoes.map((avaliacao) => (
                   <div key={avaliacao.id} className="rounded-lg border p-4">
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-semibold">{avaliacao.titulo}</h3>
                         <span className="rounded-full bg-muted px-2 py-1 text-xs">
@@ -627,9 +777,44 @@ export default function AdminAvaliacoes() {
                         <span className="rounded-full bg-muted px-2 py-1 text-xs">
                           {avaliacao.isActive === 1 ? "Ativa" : "Inativa"}
                         </span>
+                      </div>
+
+                      <p className="text-sm text-muted-foreground">
+                        Atividade vinculada: {avaliacao.atividadeId}
+                      </p>
+
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           type="button"
                           variant="outline"
+                          size="sm"
+                          onClick={() => iniciarEdicao(avaliacao)}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            movendoId === avaliacao.id ? fecharMover() : abrirMover(avaliacao)
+                          }
+                        >
+                          {movendoId === avaliacao.id ? "Fechar" : "Mover"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleDesvincular(avaliacao)}
+                          disabled={desvincularAvaliacaoMutation.isPending}
+                        >
+                          Desvincular
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
                           size="sm"
                           className="ml-auto"
                           onClick={() => setLocation(`/admin/avaliacoes/preview?avaliacaoId=${avaliacao.id}`)}
@@ -638,9 +823,106 @@ export default function AdminAvaliacoes() {
                         </Button>
                       </div>
 
-                      <p className="text-sm text-muted-foreground">
-                        Atividade vinculada: {avaliacao.atividadeId}
-                      </p>
+                      {movendoId === avaliacao.id && (
+                        <div className="space-y-3 rounded-md border bg-muted/40 p-3">
+                          <p className="text-sm font-medium">
+                            Mover esta avaliação para outra atividade
+                          </p>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs">Competência de destino</Label>
+                            <Select
+                              value={String(moverCompetencia)}
+                              onValueChange={(value) => {
+                                setMoverCompetencia(Number(value));
+                                setMoverCurso("");
+                                setMoverAtividade("");
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="0">Selecione</SelectItem>
+                                {(competenciasQuery.data ?? []).map((comp: any) => (
+                                  <SelectItem key={comp.id} value={String(comp.id)}>
+                                    {comp?.competencia ?? comp?.nome ?? `Competência ${comp.id}`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs">Curso de destino</Label>
+                            <Select
+                              value={moverCurso || "__none__"}
+                              onValueChange={(value) => {
+                                setMoverCurso(value === "__none__" ? "" : value);
+                                setMoverAtividade("");
+                              }}
+                              disabled={moverCompetencia === 0}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o curso" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">Selecione</SelectItem>
+                                {cursosMover.map((curso) => (
+                                  <SelectItem key={curso.id} value={String(curso.id)}>
+                                    {curso.titulo}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs">Atividade de destino</Label>
+                            <Select
+                              value={moverAtividade || "__none__"}
+                              onValueChange={(value) =>
+                                setMoverAtividade(value === "__none__" ? "" : value)
+                              }
+                              disabled={!moverCurso}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a atividade" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">Selecione</SelectItem>
+                                {atividadesMover
+                                  .filter((a) => a.id !== avaliacao.atividadeId)
+                                  .map((atividade) => (
+                                    <SelectItem key={atividade.id} value={String(atividade.id)}>
+                                      {atividade.titulo}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={confirmarMover}
+                              disabled={!moverAtividade || moverAvaliacaoMutation.isPending}
+                            >
+                              {moverAvaliacaoMutation.isPending ? "Movendo..." : "Confirmar movimentação"}
+                            </Button>
+                            <Button type="button" variant="outline" size="sm" onClick={fecharMover}>
+                              Cancelar
+                            </Button>
+                          </div>
+
+                          {moverAvaliacaoMutation.error && (
+                            <p className="text-sm text-red-600">
+                              {moverAvaliacaoMutation.error.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -649,6 +931,9 @@ export default function AdminAvaliacoes() {
 
             {avaliacoesQuery.error && (
               <p className="text-sm text-red-600">{avaliacoesQuery.error.message}</p>
+            )}
+            {desvincularAvaliacaoMutation.error && (
+              <p className="text-sm text-red-600">{desvincularAvaliacaoMutation.error.message}</p>
             )}
           </CardContent>
         </Card>
