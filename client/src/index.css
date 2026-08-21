@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -185,6 +186,134 @@
 }
 
 @layer utilities {
+  /* Leitura de aulas em HTML: hierarquia editorial consistente, mesmo quando
+     o conteúdo foi colado no cadastro sem classes utilitárias. */
+  .conteudo-aula {
+    color: #24364b;
+    font-size: 1.0625rem;
+    line-height: 1.85;
+  }
+
+  .conteudo-aula h1,
+  .conteudo-aula h2,
+  .conteudo-aula h3,
+  .conteudo-aula h4 {
+    color: #5b3a7d;
+    font-weight: 750;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .conteudo-aula h1 {
+    margin: 0 0 1.5rem;
+    font-size: clamp(1.9rem, 4vw, 2.65rem);
+    padding-bottom: 1rem;
+    border-bottom: 3px solid #f5a623;
+  }
+
+  .conteudo-aula h2 {
+    margin: 2.25rem 0 1rem;
+    font-size: clamp(1.45rem, 3vw, 1.9rem);
+    padding-left: 0.85rem;
+    border-left: 4px solid #f5a623;
+  }
+
+  .conteudo-aula h3 {
+    margin: 1.75rem 0 0.75rem;
+    font-size: 1.3rem;
+  }
+
+  .conteudo-aula h4 {
+    margin: 1.35rem 0 0.6rem;
+    font-size: 1.1rem;
+  }
+
+  .conteudo-aula p {
+    margin: 0.8rem 0;
+  }
+
+  .conteudo-aula strong {
+    color: #102a43;
+    font-weight: 750;
+  }
+
+  .conteudo-aula ul,
+  .conteudo-aula ol {
+    margin: 1rem 0 1.25rem;
+    padding-left: 1.6rem;
+  }
+
+  .conteudo-aula ul {
+    list-style: disc;
+  }
+
+  .conteudo-aula ol {
+    list-style: decimal;
+  }
+
+  .conteudo-aula li {
+    margin: 0.5rem 0;
+    padding-left: 0.3rem;
+  }
+
+  .conteudo-aula li::marker {
+    color: #f5a623;
+    font-weight: 700;
+  }
+
+  .conteudo-aula blockquote {
+    margin: 1.75rem 0;
+    border-left: 4px solid #5b3a7d;
+    border-radius: 0 0.75rem 0.75rem 0;
+    background: #f6f1fa;
+    padding: 1rem 1.25rem;
+    color: #4b365e;
+    font-style: italic;
+  }
+
+  .conteudo-aula a {
+    color: #245b8a;
+    font-weight: 650;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .conteudo-aula img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.75rem auto;
+    border-radius: 0.85rem;
+    box-shadow: 0 10px 30px rgb(30 58 95 / 0.12);
+  }
+
+  .conteudo-aula table {
+    width: 100%;
+    margin: 1.5rem 0;
+    border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 0 1px #dce4ec;
+  }
+
+  .conteudo-aula th,
+  .conteudo-aula td {
+    border: 1px solid #dce4ec;
+    padding: 0.75rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .conteudo-aula th {
+    background: #1e3a5f;
+    color: white;
+    font-weight: 700;
+  }
+
+  .conteudo-aula tr:nth-child(even) td {
+    background: #f7f9fb;
+  }
+
   /* B.E.M. gradient backgrounds */
   .gradient-bg {
     background: linear-gradient(

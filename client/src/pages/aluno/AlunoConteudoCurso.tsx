@@ -4,8 +4,9 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Maximize, Clock, ExternalLink } from "lucide-react";
+import { ArrowLeft, Maximize, Clock, ExternalLink, CheckCircle, ClipboardCheck, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 /**
  * Sanitizador de HTML simples — sem dependências externas.
@@ -141,7 +142,11 @@ export default function AlunoConteudoCurso() {
   const htmlConteudo = isPagina
     ? sanitizarHtml(atividade?.urlGenially ?? "")
     : "";
-  const youtubeEmbedPagina = isPagina ? youtubeParaEmbed(atividade?.descricao) : null;
+  // urlMidia é o campo atual do vídeo; descricao permanece como fallback para
+  // páginas cadastradas antes da separação dos dois campos.
+  const youtubeEmbedPagina = isPagina
+    ? youtubeParaEmbed(atividade?.urlMidia || atividade?.descricao)
+    : null;
 
   // Tempo acumulado local (em segundos), iniciado com o valor do banco
   const [tempoAtivoLocal, setTempoAtivoLocal] = useState<number>(0);
@@ -161,6 +166,49 @@ export default function AlunoConteudoCurso() {
     ? Math.min(100, Math.round((tempoAtivoLocal / tempoMinimoExigido) * 100))
     : 100;
   const tempoCumprido = tempoMinimoExigido <= 0 || tempoAtivoLocal >= tempoMinimoExigido;
+
+  const concluirAtividadeMutation = trpc.competenciasCompTec.aluno.concluirAtividade.useMutation();
+
+  const irParaAvaliacao = (item: any = atividade) => {
+    if (!item?.avaliacaoId) {
+      toast.error("Esta atividade ainda não possui avaliação vinculada.");
+      return;
+    }
+    setLocation(
+      `/aluno/competencias-comp-tec/avaliacao?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}&atividadeId=${item.id}&avaliacaoId=${item.avaliacaoId}`
+    );
+  };
+
+  const concluirESeguir = async () => {
+    if (!atividade) return;
+
+    // Se o conteúdo já foi concluído, não registra uma segunda conclusão.
+    if (atividade.status === "concluida" && atividade.temAvaliacao) {
+      irParaAvaliacao(atividade);
+      return;
+    }
+
+    try {
+      await concluirAtividadeMutation.mutateAsync({
+        cursoId,
+        cursoAtribuidoId,
+        atividadeId,
+      });
+
+      const resultado = await atividadesQuery.refetch();
+      const atividadeAtualizada = (resultado.data ?? []).find((item: any) => item.id === atividadeId);
+
+      if (atividadeAtualizada?.temAvaliacao) {
+        irParaAvaliacao(atividadeAtualizada);
+        return;
+      }
+
+      toast.success("Atividade concluída. A próxima etapa foi liberada.");
+      voltarParaAtividades();
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível concluir a atividade.");
+    }
+  };
 
   // Contador local de 1 em 1 segundo (apenas visual)
   useEffect(() => {
@@ -331,6 +379,8 @@ export default function AlunoConteudoCurso() {
               ? "O documento PDF está exibido diretamente abaixo. Use o botão 'Abrir em nova aba' para visualizar em tela cheia."
               : isPodcast
               ? "Ouça o podcast nesta tela. O tempo de estudo só é contabilizado enquanto o áudio estiver tocando."
+              : isPagina
+              ? "Leia o conteúdo e assista ao vídeo nesta mesma tela. Ao final, siga diretamente para a avaliação."
               : "O conteúdo é exibido internamente por iframe. Se o provedor bloquear a incorporação, use o botão de fallback para abrir em nova aba."}
           </CardDescription>
         </CardHeader>
@@ -411,11 +461,7 @@ export default function AlunoConteudoCurso() {
             <div className="space-y-6">
               {/* Conteúdo HTML sanitizado */}
               <div
-                className="prose prose-slate max-w-none rounded-lg border bg-white p-6 md:p-8"
-                style={{
-                  lineHeight: "1.8",
-                  fontSize: "16px",
-                }}
+                className="conteudo-aula prose prose-slate max-w-none rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-10"
                 dangerouslySetInnerHTML={{ __html: htmlConteudo }}
               />
 
@@ -571,6 +617,72 @@ export default function AlunoConteudoCurso() {
           )}
         </CardContent>
       </Card>
+
+      {/* A conclusão faz parte da própria aula. O aluno não precisa sair desta
+          tela nem procurar a avaliação na lista de atividades. */}
+      {atividade && temConteudo && (
+        <Card className="overflow-hidden border-2 border-[#5B3A7D]/20 shadow-md">
+          <div className="h-1.5 bg-gradient-to-r from-[#5B3A7D] via-[#1E3A5F] to-[#F5A623]" />
+          <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 rounded-full bg-[#5B3A7D]/10 p-2 text-[#5B3A7D]">
+                {atividade.status === "aprovada" ? (
+                  <CheckCircle className="h-5 w-5" />
+                ) : (
+                  <ClipboardCheck className="h-5 w-5" />
+                )}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-[#1E3A5F]">
+                  {atividade.status === "aprovada" ? "Atividade concluída" : "Concluiu esta aula?"}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {atividade.status === "aprovada"
+                    ? "Seu progresso já foi registrado."
+                    : atividade.temAvaliacao
+                    ? "Registre a conclusão do conteúdo e faça a avaliação sem sair desta jornada."
+                    : "Registre a conclusão para liberar automaticamente a próxima atividade."}
+                </p>
+                {!tempoCumprido && (
+                  <p className="mt-2 text-xs font-medium text-amber-700">
+                    O botão será liberado após o cumprimento do tempo mínimo de estudo.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {atividade.status === "aprovada" ? (
+              <Button variant="outline" onClick={voltarParaAtividades} className="md:min-w-52">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar às atividades
+              </Button>
+            ) : (
+              <Button
+                onClick={concluirESeguir}
+                disabled={!tempoCumprido || concluirAtividadeMutation.isPending}
+                className="bg-[#5B3A7D] hover:bg-[#4a2f66] md:min-w-72"
+              >
+                {concluirAtividadeMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Registrando conclusão...
+                  </>
+                ) : atividade.temAvaliacao ? (
+                  <>
+                    <ClipboardCheck className="mr-2 h-4 w-4" />
+                    Concluir conteúdo e fazer avaliação
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Concluir e continuar
+                  </>
+                )}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
     </AlunoLayout>
   );

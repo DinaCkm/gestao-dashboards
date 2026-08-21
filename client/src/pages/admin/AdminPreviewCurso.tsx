@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Play, BookOpen, Eye, FileText } from "lucide-react";
+import { ArrowLeft, Play, BookOpen, Eye, FileText, ClipboardCheck, Clock } from "lucide-react";
 
 function getNumeroQuery(search: string, chave: string) {
   const params = new URLSearchParams(search);
@@ -21,8 +21,10 @@ export default function AdminPreviewCurso() {
     titulo: string;
     urlGenially: string | null;
     urlMidia: string | null;
-    descricao: string | null;
     tipoAtividade: string | null;
+    descricao: string | null;
+    temAvaliacao: boolean;
+    tempoMinimoExigidoSegundos: number;
   }>(null);
 
   const previewQuery = trpc.competenciasCompTec.admin.previewCurso.useQuery(
@@ -48,7 +50,9 @@ export default function AdminPreviewCurso() {
       if (u.includes("youtube.com/embed/")) return u;
       return null;
     }
-    const youtubeEmbed = isPagina ? youtubeParaEmbed(atividadeAberta.descricao) : null;
+    const youtubeEmbed = isPagina
+      ? youtubeParaEmbed(atividadeAberta.urlMidia || atividadeAberta.descricao)
+      : null;
     return (
       <div className="flex h-screen flex-col">
         {/* Banner de preview */}
@@ -79,13 +83,13 @@ export default function AdminPreviewCurso() {
 
         {isPagina ? (
           <div className="flex-1 overflow-y-auto p-6 md:p-10 bg-gray-50">
-            <div
-              className="prose prose-slate max-w-3xl mx-auto rounded-lg border bg-white p-8"
-              style={{ lineHeight: "1.8", fontSize: "16px" }}
-              dangerouslySetInnerHTML={{ __html: url }}
-            />
-            {youtubeEmbed && (
-              <div className="max-w-3xl mx-auto mt-6 space-y-2">
+            <div className="mx-auto max-w-4xl space-y-7">
+              <div
+                className="conteudo-aula prose prose-slate max-w-none rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-10"
+                dangerouslySetInnerHTML={{ __html: url }}
+              />
+              {youtubeEmbed && (
+              <div className="space-y-3">
                 <h3 className="text-base font-semibold flex items-center gap-2">
                   <span className="text-red-600">▶</span> Vídeo complementar
                 </h3>
@@ -100,7 +104,43 @@ export default function AdminPreviewCurso() {
                   />
                 </div>
               </div>
-            )}
+              )}
+
+              <Card className="overflow-hidden border-2 border-[#5B3A7D]/20 shadow-md">
+                <div className="h-1.5 bg-gradient-to-r from-[#5B3A7D] via-[#1E3A5F] to-[#F5A623]" />
+                <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-[#5B3A7D]/10 p-2 text-[#5B3A7D]">
+                      <ClipboardCheck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-semibold text-[#1E3A5F]">Concluiu esta aula?</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {atividadeAberta.temAvaliacao
+                          ? "Na visão do aluno, a avaliação será acessada aqui, sem sair desta tela."
+                          : "Na visão do aluno, este botão registra a conclusão e libera a próxima atividade."}
+                      </p>
+                      {atividadeAberta.tempoMinimoExigidoSegundos > 0 && (
+                        <p className="mt-2 flex items-center gap-1 text-xs font-medium text-amber-700">
+                          <Clock className="h-3.5 w-3.5" />
+                          Liberação após {Math.ceil(atividadeAberta.tempoMinimoExigidoSegundos / 60)} minuto(s) de estudo.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button disabled className="bg-[#5B3A7D] md:min-w-72">
+                    <ClipboardCheck className="mr-2 h-4 w-4" />
+                    {atividadeAberta.temAvaliacao
+                      ? "Concluir conteúdo e fazer avaliação"
+                      : "Concluir e continuar"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <p className="pb-4 text-center text-xs text-muted-foreground">
+                Botão desabilitado somente nesta pré-visualização administrativa. O progresso não é gravado.
+              </p>
+            </div>
           </div>
         ) : url ? (
           isPdf ? (
@@ -223,8 +263,10 @@ export default function AdminPreviewCurso() {
                               titulo: atividade.titulo,
                               urlGenially: atividade.urlGenially,
                               urlMidia: atividade.urlMidia,
-                              descricao: atividade.descricao ?? null,
                               tipoAtividade: atividade.tipoAtividade ?? null,
+                              descricao: atividade.descricao ?? null,
+                              temAvaliacao: !!atividade.temAvaliacao,
+                              tempoMinimoExigidoSegundos: Number(atividade.tempoMinimoExigidoSegundos ?? 0),
                             })
                           }
                           className="w-full"

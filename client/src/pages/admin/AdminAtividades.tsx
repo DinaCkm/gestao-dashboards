@@ -41,6 +41,7 @@ export default function AdminAtividades() {
     tipoAtividade: "video" as TipoAtividade,
     descricao: "",
     urlGenially: "",
+    urlMidia: "",
     imagemUrl: "",
     ordem: "0",
     tempoMinimoMinutos: "",
@@ -104,6 +105,7 @@ export default function AdminAtividades() {
         tipoAtividade: "video",
         descricao: "",
         urlGenially: "",
+        urlMidia: "",
         imagemUrl: "",
         ordem: "0",
         tempoMinimoMinutos: "",
@@ -218,7 +220,10 @@ export default function AdminAtividades() {
         imagemUrl = uploadResult.url;
       }
 
-      let urlMidia: string | undefined = undefined;
+      let urlMidia: string | undefined =
+        formAtividade.tipoAtividade === "pagina"
+          ? formAtividade.urlMidia.trim() || undefined
+          : undefined;
       if (formAtividade.tipoAtividade === "pdf" && pdfFile) {
         setIsUploadingPdf(true);
         const base64Pdf = await convertFileToBase64(pdfFile);
@@ -509,9 +514,9 @@ export default function AdminAtividades() {
                       O vídeo aparece ao final do conteúdo, dentro do sistema.
                     </p>
                     <Input
-                      value={formAtividade.descricao ?? ""}
+                      value={formAtividade.urlMidia}
                       onChange={(e) =>
-                        setFormAtividade((prev) => ({ ...prev, descricao: e.target.value }))
+                        setFormAtividade((prev) => ({ ...prev, urlMidia: e.target.value }))
                       }
                       placeholder="https://www.youtube.com/watch?v=..."
                       disabled={cursoId <= 0}
