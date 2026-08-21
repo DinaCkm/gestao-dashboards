@@ -15496,6 +15496,83 @@ Responda APENAS em JSON com o formato especificado.`
             )
             .orderBy(desc(avaliacoesAtividade.createdAt));
         }),
+
+      // Lista avaliações DESVINCULADAS (inativas) das atividades de um curso, para permitir reativação.
+      listarAvaliacoesInativasCurso: adminOrAdmin2Procedure
+        .input(z.object({ cursoId: z.number() }))
+        .query(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) return [];
+          return await database
+            .select({
+              avaliacao: avaliacoesAtividade,
+              atividade: atividadesCurso,
+            })
+            .from(avaliacoesAtividade)
+            .innerJoin(atividadesCurso, eq(avaliacoesAtividade.atividadeId, atividadesCurso.id))
+            .where(
+              and(
+                eq(atividadesCurso.cursoId, input.cursoId),
+                eq(avaliacoesAtividade.isActive, 0)
+              )
+            )
+            .orderBy(desc(avaliacoesAtividade.updatedAt));
+        }),
+
+      // Reativa uma avaliação previamente desvinculada (isActive volta para 1).
+      reativarAvaliacao: adminOrAdmin2Procedure
+        .input(z.object({ avaliacaoId: z.number().int().min(1) }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId))
+            .limit(1);
+
+          if (!avaliacao) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada." });
+          }
+
+          if (avaliacao.isActive === 1) {
+            return { success: true, avaliacaoId: input.avaliacaoId };
+          }
+
+          // A atividade atual não pode já ter outra avaliação ativa
+          if (avaliacao.atividadeId != null) {
+            const [existente] = await database
+              .select()
+              .from(avaliacoesAtividade)
+              .where(
+                and(
+                  eq(avaliacoesAtividade.atividadeId, avaliacao.atividadeId),
+                  eq(avaliacoesAtividade.isActive, 1),
+                  ne(avaliacoesAtividade.id, input.avaliacaoId)
+                )
+              )
+              .limit(1);
+
+            if (existente) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message:
+                  "A atividade desta avaliação já possui outra avaliação ativa. Desvincule a outra antes de reativar esta, ou mova esta para outra atividade.",
+              });
+            }
+          }
+
+          await database
+            .update(avaliacoesAtividade)
+            .set({ isActive: 1 })
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId));
+
+          return { success: true, avaliacaoId: input.avaliacaoId };
+        }),
+
       // Sincroniza retroativamente student_performance para todos os cursos já concluídos pela plataforma
       syncPlatformPerformance: adminOrAdmin2Procedure
         .mutation(async () => {
