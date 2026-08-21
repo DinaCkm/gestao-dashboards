@@ -111,17 +111,14 @@ type ProgressoTempoConfig = {
 };
 
 function calcularTempoMinimoExigidoSegundos(atividade: AtividadeTempoConfig): number {
+  // Fonte única da verdade: o "Tempo mínimo obrigatório" definido pelo admin.
+  // Se estiver vazio/zero, NÃO há trava de tempo (conforme o texto de ajuda do cadastro).
+  // Removido o cálculo automático por tempo estimado × percentual, que criava travas
+  // invisíveis que o admin não conseguia controlar nem zerar.
   if (atividade.tempoMinimoObrigatorioSegundos && atividade.tempoMinimoObrigatorioSegundos > 0) {
     return atividade.tempoMinimoObrigatorioSegundos;
   }
-
-  const tempoEstimadoMinutos = Number(atividade.tempoEstimadoMinutos ?? 0);
-  const percentualMinimoLiberacao = Number(atividade.percentualMinimoLiberacao ?? 60);
-
-  if (tempoEstimadoMinutos <= 0) return 0;
-
-  const calculado = Math.round((tempoEstimadoMinutos * 60 * percentualMinimoLiberacao) / 100);
-  return Math.max(0, calculado);
+  return 0;
 }
 
 function normalizarSegundosHeartbeat(segundos: number | null | undefined): number {
@@ -134,10 +131,10 @@ function montarResumoTempo(
   atividade: AtividadeTempoConfig,
   progresso?: ProgressoTempoConfig | null
 ) {
-  const tempoMinimoExigidoSegundos =
-    Number(progresso?.tempoMinimoExigidoSegundos ?? 0) > 0
-      ? Number(progresso?.tempoMinimoExigidoSegundos ?? 0)
-      : calcularTempoMinimoExigidoSegundos(atividade);
+  // Sempre usa a configuração ATUAL da atividade como fonte da verdade, em vez de um
+  // valor "congelado" no progresso do aluno. Assim, se o admin muda (ou zera) o tempo
+  // mínimo, passa a valer na hora — inclusive para alunos que já haviam aberto a atividade.
+  const tempoMinimoExigidoSegundos = calcularTempoMinimoExigidoSegundos(atividade);
 
   const tempoAtivoAcumuladoSegundos = Number(progresso?.tempoAtivoAcumuladoSegundos ?? 0);
   const tempoRestanteSegundos = Math.max(0, tempoMinimoExigidoSegundos - tempoAtivoAcumuladoSegundos);
