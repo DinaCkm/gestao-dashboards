@@ -273,7 +273,7 @@ export default function AdminPreviewCurso() {
                           size="sm"
                         >
                           <Play className="mr-2 h-4 w-4" />
-                          Fazer o curso
+                          Acessar
                         </Button>
                       </div>
                     </div>
