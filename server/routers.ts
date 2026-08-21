@@ -15277,6 +15277,176 @@ Responda APENAS em JSON com o formato especificado.`
           return { success: true, id: result[0]?.insertId ?? null };
         }),
 
+      // Move uma avaliação existente de uma atividade para outra, sem recriar as questões.
+      moverAvaliacao: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            avaliacaoId: z.number().int().min(1),
+            atividadeDestinoId: z.number().int().min(1),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId))
+            .limit(1);
+
+          if (!avaliacao) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada." });
+          }
+
+          if (avaliacao.tipo === "diagnostico_inicial") {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Avaliações de diagnóstico do curso não podem ser movidas para uma atividade.",
+            });
+          }
+
+          if (Number(avaliacao.atividadeId) === input.atividadeDestinoId) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "A avaliação já está vinculada a esta atividade.",
+            });
+          }
+
+          const [atividadeDestino] = await database
+            .select()
+            .from(atividadesCurso)
+            .where(eq(atividadesCurso.id, input.atividadeDestinoId))
+            .limit(1);
+
+          if (!atividadeDestino) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Atividade de destino não encontrada." });
+          }
+
+          // A atividade de destino não pode já ter uma avaliação ativa
+          const [existente] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(
+              and(
+                eq(avaliacoesAtividade.atividadeId, input.atividadeDestinoId),
+                eq(avaliacoesAtividade.isActive, 1)
+              )
+            )
+            .limit(1);
+
+          if (existente) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message:
+                "A atividade de destino já possui uma avaliação. Desvincule a avaliação de lá antes de mover outra para essa atividade.",
+            });
+          }
+
+          await database
+            .update(avaliacoesAtividade)
+            .set({ atividadeId: input.atividadeDestinoId })
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId));
+
+          return {
+            success: true,
+            avaliacaoId: input.avaliacaoId,
+            de: Number(avaliacao.atividadeId),
+            para: input.atividadeDestinoId,
+          };
+        }),
+
+      // Desvincula (desativa) uma avaliação: a atividade deixa de ter avaliação, mas as questões são preservadas.
+      desvincularAvaliacao: adminOrAdmin2Procedure
+        .input(z.object({ avaliacaoId: z.number().int().min(1) }))
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId))
+            .limit(1);
+
+          if (!avaliacao) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada." });
+          }
+
+          await database
+            .update(avaliacoesAtividade)
+            .set({ isActive: 0 })
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId));
+
+          return { success: true, avaliacaoId: input.avaliacaoId };
+        }),
+
+      // Atualiza uma avaliação existente (título, nota mínima e questões) sem trocar de atividade.
+      atualizarAvaliacao: adminOrAdmin2Procedure
+        .input(
+          z.object({
+            avaliacaoId: z.number().int().min(1),
+            titulo: z.string().min(1),
+            questoes: z.array(
+              z.object({
+                id: z.string(),
+                enunciado: z.string().min(1),
+                opcoes: z.array(z.string()).min(2),
+                respostaCorreta: z.string().min(1),
+              })
+            ),
+            notaMinima: z.number().min(0).max(10).optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const database = await db.getDb();
+          if (!database) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+          }
+
+          const qtdValidas = [10, 20, 30];
+          if (!qtdValidas.includes(input.questoes.length)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Avaliação deve ter 10, 20 ou 30 questões. Recebido: ${input.questoes.length}`,
+            });
+          }
+
+          for (const q of input.questoes) {
+            if (!q.opcoes.includes(q.respostaCorreta)) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: `Questão "${q.id}": resposta correta não está nas opções`,
+              });
+            }
+          }
+
+          const [avaliacao] = await database
+            .select()
+            .from(avaliacoesAtividade)
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId))
+            .limit(1);
+
+          if (!avaliacao) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada." });
+          }
+
+          await database
+            .update(avaliacoesAtividade)
+            .set({
+              titulo: input.titulo,
+              questoes: JSON.stringify(input.questoes),
+              notaMinima: input.notaMinima ?? 8,
+            })
+            .where(eq(avaliacoesAtividade.id, input.avaliacaoId));
+
+          return { success: true, avaliacaoId: input.avaliacaoId };
+        }),
+
       previewAvaliacao: adminOrAdmin2Procedure
         .input(z.object({ avaliacaoId: z.number().int().min(1) }))
         .query(async ({ input }) => {
