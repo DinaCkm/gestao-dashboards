@@ -340,7 +340,7 @@ export default function AlunoAtividade() {
                             className="w-full"
                             size="sm"
                           >
-                            {iniciarAtividadeMutation.isPending ? "Abrindo conteúdo..." : "Fazer o curso"}
+                            {iniciarAtividadeMutation.isPending ? "Abrindo conteúdo..." : "Acessar"}
                           </Button>
                         ) : (
                           <Button disabled className="w-full" size="sm">
