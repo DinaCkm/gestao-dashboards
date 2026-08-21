@@ -21,6 +21,7 @@ export default function AdminPreviewCurso() {
     titulo: string;
     urlGenially: string | null;
     urlMidia: string | null;
+    descricao: string | null;
     tipoAtividade: string | null;
   }>(null);
 
@@ -47,7 +48,7 @@ export default function AdminPreviewCurso() {
       if (u.includes("youtube.com/embed/")) return u;
       return null;
     }
-    const youtubeEmbed = isPagina ? youtubeParaEmbed(atividadeAberta.urlMidia) : null;
+    const youtubeEmbed = isPagina ? youtubeParaEmbed(atividadeAberta.descricao) : null;
     return (
       <div className="flex h-screen flex-col">
         {/* Banner de preview */}
@@ -222,6 +223,7 @@ export default function AdminPreviewCurso() {
                               titulo: atividade.titulo,
                               urlGenially: atividade.urlGenially,
                               urlMidia: atividade.urlMidia,
+                              descricao: atividade.descricao ?? null,
                               tipoAtividade: atividade.tipoAtividade ?? null,
                             })
                           }
