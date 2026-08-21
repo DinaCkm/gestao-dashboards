@@ -366,12 +366,6 @@ function PainelDiagnosticos({
   function validarAntesDeEnviar(): string | null {
     if (!cursoId) return "Selecione o curso.";
     if (!titulo.trim()) return "Informe o título da avaliação.";
-
-    const notaNormalizada = notaMinima.trim().replace(",", ".");
-    const notaNumerica = Number(notaNormalizada);
-    if (!notaNormalizada || !Number.isFinite(notaNumerica) || notaNumerica < 0 || notaNumerica > 10) {
-      return "Informe uma nota mínima válida entre 0 e 10. Exemplo: 7 ou 7,5.";
-    }
     for (let i = 0; i < questoes.length; i++) {
       const q = questoes[i];
       if (!q.enunciado.trim()) return `Questão ${i + 1}: preencha o enunciado.`;
@@ -389,7 +383,6 @@ function PainelDiagnosticos({
       toast.error(erro);
       return;
     }
-    const notaMinimaNumerica = Number(notaMinima.trim().replace(",", "."));
     const questoesLimpa = questoes.map((q) => ({
       ...q,
       opcoes: q.opcoes.filter((o) => o.trim().length > 0),
@@ -400,14 +393,14 @@ function PainelDiagnosticos({
         avaliacaoId: avaliacaoEditandoId,
         titulo,
         questoes: questoesLimpa,
-        notaMinima: notaMinimaNumerica,
+        notaMinima: Number(notaMinima),
       });
     } else {
       criarMutation.mutate({
         cursoId: Number(cursoId),
         titulo,
         questoes: questoesLimpa,
-        notaMinima: notaMinimaNumerica,
+        notaMinima: Number(notaMinima),
       });
     }
   }
@@ -525,8 +518,8 @@ function PainelDiagnosticos({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(140px,0.65fr)]">
-            <div className="min-w-0 space-y-2">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
               <Label className="text-xs">Competência</Label>
               <Select
                 value={competenciaId || "__none__"}
@@ -536,8 +529,8 @@ function PainelDiagnosticos({
                 }}
                 disabled={!!avaliacaoEditandoId}
               >
-                <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                  <SelectValue className="min-w-0 truncate" placeholder="Selecione" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Selecione</SelectItem>
@@ -550,15 +543,15 @@ function PainelDiagnosticos({
               </Select>
             </div>
 
-            <div className="min-w-0 space-y-2">
+            <div className="space-y-2">
               <Label className="text-xs">Curso</Label>
               <Select
                 value={cursoId || "__none__"}
                 onValueChange={(v) => setCursoId(v === "__none__" ? "" : v)}
                 disabled={!competenciaId || !!avaliacaoEditandoId}
               >
-                <SelectTrigger className="w-full min-w-0 overflow-hidden">
-                  <SelectValue className="min-w-0 truncate" placeholder="Selecione" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Selecione</SelectItem>
@@ -571,14 +564,13 @@ function PainelDiagnosticos({
               </Select>
             </div>
 
-            <div className="min-w-0 space-y-2">
+            <div className="space-y-2">
               <Label className="text-xs">Nota mínima (0–10)</Label>
               <Input
                 type="number"
                 min={0}
                 max={10}
                 step={0.5}
-                className="relative z-10 w-full bg-background"
                 value={notaMinima}
                 onChange={(e) => setNotaMinima(e.target.value)}
               />
@@ -1017,8 +1009,12 @@ function PainelListaAlunos({
                 </TableCell>
               </TableRow>
             ) : (
-              (listaQuery.data ?? []).map((a: any) => (
-                <TableRow key={a.alunoId}>
+              [...(listaQuery.data ?? [])]
+                .sort((a: any, b: any) =>
+                  String(a.nome ?? "").localeCompare(String(b.nome ?? ""), "pt-BR", { sensitivity: "base" })
+                )
+                .map((a: any) => (
+                <TableRow key={`${a.alunoId}-${a.cursoId ?? a.cursoTitulo ?? ""}`}>
                   <TableCell className="font-medium">{a.nome}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{a.email}</TableCell>
                   <TableCell className="text-sm">{a.cursoTitulo ?? "—"}</TableCell>
