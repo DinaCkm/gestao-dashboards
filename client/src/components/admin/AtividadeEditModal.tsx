@@ -27,7 +27,8 @@ type TipoAtividade =
   | "tedtalk"
   | "livro"
   | "intro"
-  | "pdf";
+  | "pdf"
+  | "pagina";
 
 interface AtividadeEditModalProps {
   open: boolean;
@@ -52,14 +53,20 @@ function getInitialFormData(atividade: any): FormDataType {
   // Converter segundos para minutos ao carregar
   const tempoSegundos = Number(atividade?.tempoMinimoObrigatorioSegundos ?? 0);
   const tempoMinutos = tempoSegundos > 0 ? Math.round(tempoSegundos / 60) : 0;
+  const tipoAtividade = (atividade?.tipoAtividade || "genially") as TipoAtividade;
+  const descricaoAtual = atividade?.descricao || "";
+  const videoLegadoNaDescricao =
+    tipoAtividade === "pagina" &&
+    !atividade?.urlMidia &&
+    /(?:youtube\.com|youtu\.be)/i.test(descricaoAtual);
 
   return {
     titulo: atividade?.titulo || "",
-    tipoAtividade: (atividade?.tipoAtividade || "genially") as TipoAtividade,
+    tipoAtividade,
     urlGenially: atividade?.urlGenially || "",
-    urlMidia: atividade?.urlMidia || "",
+    urlMidia: atividade?.urlMidia || (videoLegadoNaDescricao ? descricaoAtual : ""),
     imagemUrl: atividade?.imagemUrl || "",
-    descricao: atividade?.descricao || "",
+    descricao: videoLegadoNaDescricao ? "" : descricaoAtual,
     ordem: Number(atividade?.ordem ?? 0),
     isActive: Number(atividade?.isActive ?? 1),
     tempoMinimoMinutos: tempoMinutos > 0 ? String(tempoMinutos) : "",
@@ -173,7 +180,7 @@ export function AtividadeEditModal({
         titulo: formData.titulo.trim(),
         tipoAtividade: formData.tipoAtividade,
         urlGenially: formData.tipoAtividade !== "pdf" ? formData.urlGenially.trim() : undefined,
-        urlMidia: formData.tipoAtividade === "pdf" ? urlMidia : undefined,
+        urlMidia: ["pdf", "pagina"].includes(formData.tipoAtividade) ? urlMidia : undefined,
         descricao: formData.descricao.trim(),
         ordem: Number(formData.ordem ?? 0),
         imagemUrl,
@@ -232,12 +239,13 @@ export function AtividadeEditModal({
                 <SelectItem value="livro">Livro</SelectItem>
                 <SelectItem value="intro">Introdução</SelectItem>
                 <SelectItem value="pdf">PDF</SelectItem>
+                <SelectItem value="pagina">Página de conteúdo (texto + vídeo)</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Campo URL — exibido apenas quando o tipo NÃO é PDF e NÃO é pagina */}
-          {formData.tipoAtividade !== "pdf" && formData.tipoAtividade !== "pagina" && (
+          {/* Campo URL — páginas possuem campos próprios abaixo */}
+          {!["pdf", "pagina"].includes(formData.tipoAtividade) && (
             <div>
               <Label htmlFor="urlGenially">URL Genially / Vídeo</Label>
               <Input
@@ -254,40 +262,38 @@ export function AtividadeEditModal({
             </div>
           )}
 
-          {/* Campos para Página de conteúdo — editor HTML + YouTube */}
           {formData.tipoAtividade === "pagina" && (
-            <div className="space-y-3">
+            <div className="space-y-4 rounded-lg border border-purple-200 bg-purple-50/40 p-4">
               <div>
-                <Label htmlFor="urlGenially">Conteúdo da página (HTML)</Label>
+                <Label htmlFor="conteudoPagina">Conteúdo da página (HTML)</Label>
                 <Textarea
-                  id="urlGenially"
+                  id="conteudoPagina"
                   value={formData.urlGenially}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, urlGenially: e.target.value }))
                   }
-                  rows={8}
-                  className="font-mono text-xs mt-1"
-                  placeholder="<h2>Título</h2><p>Conteúdo...</p>"
+                  rows={12}
+                  className="mt-1 font-mono text-xs"
+                  placeholder={'<h2>Título da aula</h2>\n<p>Conteúdo...</p>'}
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Use títulos, parágrafos e listas. A plataforma aplica automaticamente o padrão visual da aula.
+                </p>
               </div>
               <div>
-                <Label htmlFor="youtubeUrl">URL do Vídeo (YouTube) — opcional</Label>
+                <Label htmlFor="videoPagina">Vídeo complementar do YouTube</Label>
                 <Input
-                  id="youtubeUrl"
-                  value={formData.descricao}
+                  id="videoPagina"
+                  value={formData.urlMidia}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, descricao: e.target.value }))
+                    setFormData((prev) => ({ ...prev, urlMidia: e.target.value }))
                   }
-                  placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..."
                   className="mt-1"
+                  placeholder="https://www.youtube.com/watch?v=..."
                 />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Cole o link normal do YouTube. O sistema converte automaticamente.
-                </p>
               </div>
             </div>
           )}
-
           {/* Campo PDF — exibido apenas quando o tipo é PDF */}
           {formData.tipoAtividade === "pdf" && (
             <div>
