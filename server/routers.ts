@@ -4328,6 +4328,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             performanceGeral: snapshotInd7,
           } : ind;
 
+          // Status operacional no ranking. Reset é HISTÓRICO de um ciclo anterior — não um
+          // carimbo permanente do aluno. Se há PDI ativo ou ciclo em andamento, o aluno é
+          // "em_andamento" mesmo que já tenha sido resetado antes.
+          const temHistoricoReset = !!resetInfo;
+          const temCicloEmAndamento =
+            Array.isArray((ind as any).ciclosEmAndamento) && (ind as any).ciclosEmAndamento.length > 0;
+          const turmaEstaCongelada = (turma as any)?.dataCongelamento != null;
+          let statusRanking: 'em_andamento' | 'congelado' | 'resetado' = 'em_andamento';
+          if (temPdiAtivo || temCicloEmAndamento) {
+            statusRanking = 'em_andamento';
+          } else if (pdisCongelados.length > 0 || turmaEstaCongelada) {
+            statusRanking = 'congelado';
+          } else if (temHistoricoReset) {
+            statusRanking = 'resetado';
+          }
+
           return {
             ...indFinal,
             alunoDbId: alunoDb?.id || 0,
@@ -4342,7 +4358,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             competenciasComNota: competencias.filter(c => c.nota !== null).length,
             pdisCongelados,
             temPdiCongelado: pdisCongelados.length > 0,
-            foiResetado: !!resetInfo,
+            temHistoricoReset,
+            foiResetado: statusRanking === 'resetado',
+            statusRanking,
             usandoSnapshotHistorico: usarSnapshot,
             resetDataCiclo: resetInfo ? resetInfo.numeroCicloArquivado : null,
             resetCriadoEm: resetInfo ? resetInfo.criadoEm : null,
@@ -4353,14 +4371,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
         // Diagnóstico de status por aluno (temporário) — só quando programId (ranking)
         if (input.programId) {
-          const congeladasNomes = new Set(
-            (turmasList as any[]).filter(t => t.dataCongelamento).map(t => t.name)
-          );
           const stat = {
             total: alunosEnriquecidos.length,
-            emAndamento: alunosEnriquecidos.filter((a: any) => !a.foiResetado && !congeladasNomes.has(a.turmaNome)).length,
-            resetados: alunosEnriquecidos.filter((a: any) => a.foiResetado).length,
-            congelados: alunosEnriquecidos.filter((a: any) => congeladasNomes.has(a.turmaNome)).length,
+            emAndamento: alunosEnriquecidos.filter((a: any) => a.statusRanking === 'em_andamento').length,
+            resetados: alunosEnriquecidos.filter((a: any) => a.statusRanking === 'resetado').length,
+            congelados: alunosEnriquecidos.filter((a: any) => a.statusRanking === 'congelado').length,
+            comHistoricoReset: alunosEnriquecidos.filter((a: any) => a.temHistoricoReset).length,
             semTurma: alunosEnriquecidos.filter((a: any) => !a.turmaNome || a.turmaNome === 'Não definida').length,
           };
           const porTurmaNome: Record<string, number> = {};
