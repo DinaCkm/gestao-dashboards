@@ -138,8 +138,19 @@ export default function AlunoConteudoCurso() {
   // Codifica a URL para exibição: se o nome do arquivo tiver espaços ou acentos,
   // o navegador não carrega o PDF/áudio dentro da página sem esta codificação.
   // encodeURI é seguro para URLs já codificadas (não altera "%").
-  const urlPdfEmbed = urlPdf ? encodeURI(urlPdf) : "";
-  const urlAudioEmbed = urlAudio ? encodeURI(urlAudio) : "";
+  // Codifica a URL apenas se ela AINDA não estiver codificada. Evita o bug de dupla
+  // codificação (%20 -> %2520), que quebrava o áudio/PDF cujo link já vinha codificado
+  // do servidor. PDF vinha "cru" (espaços) e precisa codificar; áudio já vinha codificado.
+  const encodeUrlOnce = (url: string): string => {
+    if (!url) return "";
+    try {
+      return decodeURI(url) !== url ? url : encodeURI(url);
+    } catch {
+      return url;
+    }
+  };
+  const urlPdfEmbed = encodeUrlOnce(urlPdf);
+  const urlAudioEmbed = encodeUrlOnce(urlAudio);
   const urlOriginal = (!isPdf && !isPagina && !isPodcast) ? (atividade?.urlGenially || atividade?.urlMidia || "") : "";
   const urlEmbed = (!isPdf && !isPagina && !isPodcast) ? adaptarUrlParaEmbed(urlOriginal) : "";
 
