@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Mail, Download, Snowflake } from "lucide-react";
+import { Mail, Download, Snowflake, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 type RankingAluno = {
@@ -55,6 +55,7 @@ export default function RankingGeralEngajamento() {
   const { user } = useAuth();
   const [pessoaFiltro, setPessoaFiltro] = useState("");
   const [turmaFiltro, setTurmaFiltro] = useState("todas");
+  const [situacaoFiltro, setSituacaoFiltro] = useState("todas");
   const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<number | null>(null);
 
   const isAdmin = user?.role === "admin" || user?.role === "admin2";
@@ -179,6 +180,11 @@ export default function RankingGeralEngajamento() {
         ind5: Number(aluno?.consolidado?.ind5_engajamento ?? 0),
         ind7: Number(aluno?.consolidado?.ind7_engajamentoFinal ?? 0),
         email: aluno?.email || null,
+        // Situação (reset) — campos já vêm de indicadores.porEmpresa
+        foiResetado: !!aluno?.foiResetado,
+        resetData: aluno?.resetCriadoEm ?? null,
+        resetCiclo: aluno?.resetDataCiclo ?? null,
+        resetAdmin: aluno?.resetAdminNome ?? null,
       };
     });
   }, [data?.alunos, turmaNames]);
@@ -191,8 +197,16 @@ export default function RankingGeralEngajamento() {
         return aluno.nomeAluno.toLowerCase().includes(pessoa);
       })
       .filter(aluno => turmaFiltro === "todas" || aluno.turmaNome === turmaFiltro)
+      .filter(aluno => {
+        if (situacaoFiltro === "todas") return true;
+        const congelado = congelamentoMap.has(aluno.turmaNome);
+        if (situacaoFiltro === "congelados") return congelado;
+        if (situacaoFiltro === "resetados") return aluno.foiResetado;
+        if (situacaoFiltro === "ativos") return !congelado && !aluno.foiResetado;
+        return true;
+      })
       .map((aluno, index) => ({ ...aluno, posicao: index + 1 }));
-  }, [rankingBase, pessoaFiltro, turmaFiltro]);
+  }, [rankingBase, pessoaFiltro, turmaFiltro, situacaoFiltro, congelamentoMap]);
 
   const enviarLembrete = trpc.indicadores.enviarLembreteEngajamento.useMutation(
     {
@@ -306,7 +320,7 @@ export default function RankingGeralEngajamento() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
                 <label className="mb-2 block text-sm font-medium">Pessoa</label>
                 <Input
@@ -328,6 +342,20 @@ export default function RankingGeralEngajamento() {
                         {codigo}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium">Situação</label>
+                <Select value={situacaoFiltro} onValueChange={setSituacaoFiltro}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as situações" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as situações</SelectItem>
+                    <SelectItem value="ativos">Ativos (sem reset/congelamento)</SelectItem>
+                    <SelectItem value="congelados">Congelados</SelectItem>
+                    <SelectItem value="resetados">Resetados</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -408,6 +436,15 @@ export default function RankingGeralEngajamento() {
                                 >
                                   <Snowflake className="h-3 w-3" />
                                   {congelamentoMap.get(aluno.turmaNome)}
+                                </span>
+                              )}
+                              {aluno.foiResetado && (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
+                                  title={`Ciclo resetado${aluno.resetCiclo != null ? ` (ciclo ${aluno.resetCiclo})` : ""}${aluno.resetAdmin ? ` por ${aluno.resetAdmin}` : ""}${aluno.resetData ? ` em ${formatarDataCongelamento(aluno.resetData)}` : ""}`}
+                                >
+                                  <RotateCcw className="h-3 w-3" />
+                                  Resetado{aluno.resetData ? ` ${formatarDataCongelamento(aluno.resetData)}` : ""}
                                 </span>
                               )}
                             </div>
