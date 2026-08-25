@@ -4251,10 +4251,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             const tnome = turmaMap.get(Number(b.turma))?.name || String(b.turma || 'Sem turma');
             porTurmaLog[tnome] = (porTurmaLog[tnome] || 0) + 1;
           }
+          const turmasDoProgramaNomes = turmasList
+            .filter((t: any) => t.programId === pid)
+            .map((t: any) => t.name);
+          const pdisNoPrograma = (allAssessmentPdis as any[]).filter(
+            (p: any) => p.turmaId != null && turmaIdsDoPrograma.has(p.turmaId)
+          ).length;
           console.log(
-            '[Ranking porEmpresa] programId=%s empresa="%s" baseAlunos=%d comIndicadores=%d porTurma=%o',
-            pid, input.empresa, baseAlunos.length,
-            baseAlunos.filter(b => !b.semDados).length, porTurmaLog
+            '[Ranking porEmpresa v2-pdi] programId=%s empresa="%s" turmasDoPrograma=%o pdisNoPrograma=%d baseAlunos=%d porTurma=%o',
+            pid, input.empresa, turmasDoProgramaNomes, pdisNoPrograma, baseAlunos.length, porTurmaLog
           );
         }
 
@@ -4345,7 +4350,28 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
             resetInd7Snapshot: resetInfo ? resetInfo.ind7Snapshot : null,
           };
         });
-        
+
+        // Diagnóstico de status por aluno (temporário) — só quando programId (ranking)
+        if (input.programId) {
+          const congeladasNomes = new Set(
+            (turmasList as any[]).filter(t => t.dataCongelamento).map(t => t.name)
+          );
+          const stat = {
+            total: alunosEnriquecidos.length,
+            emAndamento: alunosEnriquecidos.filter((a: any) => !a.foiResetado && !congeladasNomes.has(a.turmaNome)).length,
+            resetados: alunosEnriquecidos.filter((a: any) => a.foiResetado).length,
+            congelados: alunosEnriquecidos.filter((a: any) => congeladasNomes.has(a.turmaNome)).length,
+            semTurma: alunosEnriquecidos.filter((a: any) => !a.turmaNome || a.turmaNome === 'Não definida').length,
+          };
+          const porTurmaNome: Record<string, number> = {};
+          for (const a of alunosEnriquecidos as any[]) {
+            const k = a.turmaNome || 'Sem turma';
+            porTurmaNome[k] = (porTurmaNome[k] || 0) + 1;
+          }
+          console.log('[Ranking status v2-pdi] programId=%s empresa="%s" stat=%o porTurmaNome=%o',
+            input.programId, input.empresa, stat, porTurmaNome);
+        }
+
         return {
           ...dashboard,
           alunos: alunosEnriquecidos,
