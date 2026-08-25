@@ -4011,7 +4011,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     
     // Dashboard por Empresa
     porEmpresa: managerProcedure
-      .input(z.object({ empresa: z.string() }))
+      .input(z.object({ empresa: z.string(), programId: z.number().optional() }))
       .query(async ({ input }) => {
         const mentoringSessions = await db.getAllMentoringSessions();
         const eventParticipations = await db.getAllEventParticipationWithDate();
@@ -4196,7 +4196,57 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           mediaInd7: calcMedia(historicosValidos, 'snapshotEngajamento'),
         } : null;
         
-        const alunosEnriquecidos = dashboard.alunos.map(ind => {
+        // === RANKING (isolado): quando programId é informado, a base parte dos alunos
+        // ATIVOS do PROGRAMA (por vínculo de programa OU por turma do programa) e anexa
+        // os indicadores REAIS já calculados. Não altera visaoEmpresa/porTurma nem as
+        // médias dos demais painéis (que continuam usando dashboard.alunos por nome).
+        let baseAlunos: any[] = dashboard.alunos;
+        if (input.programId) {
+          const pid = input.programId;
+          const turmaIdsDoPrograma = new Set(
+            turmasList.filter((t: any) => t.programId === pid).map((t: any) => t.id)
+          );
+          const indicadorPorId = new Map(indicadores.map((i: any) => [i.idUsuario, i]));
+          const alunosDoPrograma = alunosList.filter((a: any) =>
+            (a.isActive === 1 || a.isActive == null) &&
+            (a.programId === pid || (a.turmaId != null && turmaIdsDoPrograma.has(a.turmaId)))
+          );
+          baseAlunos = alunosDoPrograma.map((a: any) => {
+            const idUsuario = a.externalId || String(a.id);
+            const ind = indicadorPorId.get(idUsuario);
+            if (ind) return ind;
+            // Aluno matriculado sem lançamentos: aparece como "sem dados" (0%)
+            return {
+              idUsuario,
+              nomeAluno: a.name,
+              empresa: input.empresa,
+              turma: String(a.turmaId || ''),
+              consolidado: {
+                ind1_webinars: 0, ind2_avaliacoes: 0, ind3_competencias: 0,
+                ind4_tarefas: 0, ind5_engajamento: 0, ind6_aplicabilidade: 0,
+                ind7_engajamentoFinal: 0,
+              },
+              ciclosEmAndamento: [],
+              ciclosFinalizados: [],
+              notaFinal: 0,
+              semDados: true,
+            };
+          });
+
+          // Log de diagnóstico temporário (visível nos logs do Railway)
+          const porTurmaLog: Record<string, number> = {};
+          for (const b of baseAlunos) {
+            const tnome = turmaMap.get(Number(b.turma))?.name || String(b.turma || 'Sem turma');
+            porTurmaLog[tnome] = (porTurmaLog[tnome] || 0) + 1;
+          }
+          console.log(
+            '[Ranking porEmpresa] programId=%s empresa="%s" baseAlunos=%d comIndicadores=%d porTurma=%o',
+            pid, input.empresa, baseAlunos.length,
+            baseAlunos.filter(b => !b.semDados).length, porTurmaLog
+          );
+        }
+
+        const alunosEnriquecidos = baseAlunos.map(ind => {
           const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
           const turma = alunoDb?.turmaId ? turmaMap.get(alunoDb.turmaId) : null;
           const mentor = alunoDb?.consultorId ? consultorMap.get(alunoDb.consultorId) : null;
