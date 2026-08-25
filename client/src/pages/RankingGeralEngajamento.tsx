@@ -42,6 +42,8 @@ type RankingAluno = {
   resetAdminNome?: string | null;
   isCongelado?: boolean;
   dataCongelamento?: string | null;
+  statusRanking?: "em_andamento" | "congelado" | "resetado";
+  temHistoricoReset?: boolean;
 };
 
 const LOGO_URL =
@@ -175,6 +177,9 @@ export default function RankingGeralEngajamento() {
       const turmaId = String(aluno?.turma || "");
       const turmaNome = extrairCodigoTurma(turmaNames.get(turmaId)) || "Sem turma";
       const dataCongelamento = congelamentoMap.get(turmaNome) || null;
+      const statusRanking: RankingAluno["statusRanking"] =
+        (aluno?.statusRanking as RankingAluno["statusRanking"]) ??
+        (aluno?.foiResetado ? "resetado" : (dataCongelamento ? "congelado" : "em_andamento"));
       return {
         posicao: index + 1,
         idUsuario: String(aluno?.idUsuario || ""),
@@ -189,11 +194,13 @@ export default function RankingGeralEngajamento() {
         ind7: Number(aluno?.consolidado?.ind7_engajamentoFinal ?? 0),
         email: aluno?.email || null,
         // Situação — reset vem de indicadores.porEmpresa; congelamento vem da turma
-        foiResetado: Boolean(aluno?.foiResetado || aluno?.resetCriadoEm),
+        statusRanking,
+        temHistoricoReset: Boolean(aluno?.temHistoricoReset || aluno?.resetCriadoEm),
+        foiResetado: statusRanking === "resetado",
         resetCriadoEm: aluno?.resetCriadoEm ?? null,
         resetDataCiclo: aluno?.resetDataCiclo ?? null,
         resetAdminNome: aluno?.resetAdminNome ?? null,
-        isCongelado: Boolean(dataCongelamento),
+        isCongelado: statusRanking === "congelado",
         dataCongelamento,
       };
     });
@@ -209,9 +216,9 @@ export default function RankingGeralEngajamento() {
       .filter(aluno => turmaFiltro === "todas" || aluno.turmaNome === turmaFiltro)
       .filter(aluno => {
         if (situacaoFiltro === "todas") return true;
-        if (situacaoFiltro === "em_andamento") return !aluno.foiResetado && !aluno.isCongelado;
-        if (situacaoFiltro === "congelados") return !!aluno.isCongelado;
-        if (situacaoFiltro === "resetados") return !!aluno.foiResetado;
+        if (situacaoFiltro === "em_andamento") return aluno.statusRanking === "em_andamento";
+        if (situacaoFiltro === "congelados") return aluno.statusRanking === "congelado";
+        if (situacaoFiltro === "resetados") return aluno.statusRanking === "resetado";
         return true;
       })
       .map((aluno, index) => ({ ...aluno, posicao: index + 1 }));
@@ -439,13 +446,13 @@ export default function RankingGeralEngajamento() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <span>{aluno.turmaNome}</span>
-                              {congelamentoMap.has(aluno.turmaNome) && (
+                              {aluno.isCongelado && (
                                 <span
                                   className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700"
-                                  title={`Resultado congelado em ${congelamentoMap.get(aluno.turmaNome)}`}
+                                  title={`Resultado congelado${aluno.dataCongelamento ? ` em ${aluno.dataCongelamento}` : ""}`}
                                 >
                                   <Snowflake className="h-3 w-3" />
-                                  {congelamentoMap.get(aluno.turmaNome)}
+                                  {aluno.dataCongelamento || "Congelado"}
                                 </span>
                               )}
                               {aluno.foiResetado && (
