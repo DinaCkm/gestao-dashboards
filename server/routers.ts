@@ -4197,30 +4197,42 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         } : null;
         
         // === RANKING (isolado): quando programId é informado, a base parte dos alunos
-        // ATIVOS do PROGRAMA (por vínculo de programa OU por turma do programa) e anexa
-        // os indicadores REAIS já calculados. Não altera visaoEmpresa/porTurma nem as
-        // médias dos demais painéis (que continuam usando dashboard.alunos por nome).
+        // do PROGRAMA — por vínculo de programa, por turma do programa OU por PDI
+        // (assessment_pdi.turmaId) numa turma do programa — e anexa os indicadores REAIS.
+        // O vínculo aluno↔turma das turmas mais novas é feito pelo PDI, não por aluno.turmaId.
+        // Isolado: não altera visaoEmpresa/porTurma nem médias dos demais painéis.
         let baseAlunos: any[] = dashboard.alunos;
+        const turmaNoProgramaPorAluno = new Map<number, number>();
         if (input.programId) {
           const pid = input.programId;
           const turmaIdsDoPrograma = new Set(
             turmasList.filter((t: any) => t.programId === pid).map((t: any) => t.id)
           );
+          // Turma do aluno DENTRO do programa, obtida pelo PDI (prioriza o PDI 'ativo')
+          for (const pdi of (allAssessmentPdis as any[])) {
+            if (pdi.turmaId == null || !turmaIdsDoPrograma.has(pdi.turmaId)) continue;
+            if (!turmaNoProgramaPorAluno.has(pdi.alunoId) || pdi.status === 'ativo') {
+              turmaNoProgramaPorAluno.set(pdi.alunoId, pdi.turmaId);
+            }
+          }
           const indicadorPorId = new Map(indicadores.map((i: any) => [i.idUsuario, i]));
           const alunosDoPrograma = alunosList.filter((a: any) =>
             (a.isActive === 1 || a.isActive == null) &&
-            (a.programId === pid || (a.turmaId != null && turmaIdsDoPrograma.has(a.turmaId)))
+            (a.programId === pid
+              || (a.turmaId != null && turmaIdsDoPrograma.has(a.turmaId))
+              || turmaNoProgramaPorAluno.has(a.id))
           );
           baseAlunos = alunosDoPrograma.map((a: any) => {
             const idUsuario = a.externalId || String(a.id);
+            const turmaDoPrograma = turmaNoProgramaPorAluno.get(a.id) ?? a.turmaId;
             const ind = indicadorPorId.get(idUsuario);
-            if (ind) return ind;
+            if (ind) return { ...ind, turma: String(turmaDoPrograma || ind.turma || '') };
             // Aluno matriculado sem lançamentos: aparece como "sem dados" (0%)
             return {
               idUsuario,
               nomeAluno: a.name,
               empresa: input.empresa,
-              turma: String(a.turmaId || ''),
+              turma: String(turmaDoPrograma || ''),
               consolidado: {
                 ind1_webinars: 0, ind2_avaliacoes: 0, ind3_competencias: 0,
                 ind4_tarefas: 0, ind5_engajamento: 0, ind6_aplicabilidade: 0,
@@ -4248,7 +4260,8 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
         const alunosEnriquecidos = baseAlunos.map(ind => {
           const alunoDb = alunosList.find(a => (a.externalId || String(a.id)) === ind.idUsuario);
-          const turma = alunoDb?.turmaId ? turmaMap.get(alunoDb.turmaId) : null;
+          const turmaIdExibir = (input.programId && alunoDb ? turmaNoProgramaPorAluno.get(alunoDb.id) : undefined) ?? alunoDb?.turmaId;
+          const turma = turmaIdExibir ? turmaMap.get(turmaIdExibir) : null;
           const mentor = alunoDb?.consultorId ? consultorMap.get(alunoDb.consultorId) : null;
           
           // Extrair trilha do nome da turma
