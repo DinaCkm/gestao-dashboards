@@ -36,6 +36,12 @@ type RankingAluno = {
   ind5: number;
   ind7: number;
   email: string | null;
+  foiResetado?: boolean;
+  resetCriadoEm?: string | null;
+  resetDataCiclo?: string | number | null;
+  resetAdminNome?: string | null;
+  isCongelado?: boolean;
+  dataCongelamento?: string | null;
 };
 
 const LOGO_URL =
@@ -95,7 +101,7 @@ export default function RankingGeralEngajamento() {
   );
 
   const { data, isLoading, error } = trpc.indicadores.porEmpresa.useQuery(
-    { empresa: empresaNome || "" },
+    { empresa: empresaNome || "", programId: programIdEfetivo || undefined },
     { enabled: !!empresaNome }
   );
 
@@ -165,14 +171,16 @@ export default function RankingGeralEngajamento() {
       );
     });
 
-    return sorted.map((aluno: any, index) => {
+    return sorted.map((aluno: any, index): RankingAluno => {
       const turmaId = String(aluno?.turma || "");
+      const turmaNome = extrairCodigoTurma(turmaNames.get(turmaId)) || "Sem turma";
+      const dataCongelamento = congelamentoMap.get(turmaNome) || null;
       return {
         posicao: index + 1,
         idUsuario: String(aluno?.idUsuario || ""),
         nomeAluno: String(aluno?.nomeAluno || "Sem nome"),
         turmaId,
-        turmaNome: extrairCodigoTurma(turmaNames.get(turmaId)) || "Sem turma",
+        turmaNome,
         ind1: Number(aluno?.consolidado?.ind1_webinars ?? 0),
         ind2: Number(aluno?.consolidado?.ind2_avaliacoes ?? 0),
         ind3: Number(aluno?.consolidado?.ind3_competencias ?? 0),
@@ -180,14 +188,16 @@ export default function RankingGeralEngajamento() {
         ind5: Number(aluno?.consolidado?.ind5_engajamento ?? 0),
         ind7: Number(aluno?.consolidado?.ind7_engajamentoFinal ?? 0),
         email: aluno?.email || null,
-        // Situação (reset) — campos já vêm de indicadores.porEmpresa
-        foiResetado: !!aluno?.foiResetado,
-        resetData: aluno?.resetCriadoEm ?? null,
-        resetCiclo: aluno?.resetDataCiclo ?? null,
-        resetAdmin: aluno?.resetAdminNome ?? null,
+        // Situação — reset vem de indicadores.porEmpresa; congelamento vem da turma
+        foiResetado: Boolean(aluno?.foiResetado || aluno?.resetCriadoEm),
+        resetCriadoEm: aluno?.resetCriadoEm ?? null,
+        resetDataCiclo: aluno?.resetDataCiclo ?? null,
+        resetAdminNome: aluno?.resetAdminNome ?? null,
+        isCongelado: Boolean(dataCongelamento),
+        dataCongelamento,
       };
     });
-  }, [data?.alunos, turmaNames]);
+  }, [data?.alunos, turmaNames, congelamentoMap]);
 
   const rankingFiltrado = useMemo(() => {
     const pessoa = pessoaFiltro.trim().toLowerCase();
@@ -199,14 +209,13 @@ export default function RankingGeralEngajamento() {
       .filter(aluno => turmaFiltro === "todas" || aluno.turmaNome === turmaFiltro)
       .filter(aluno => {
         if (situacaoFiltro === "todas") return true;
-        const congelado = congelamentoMap.has(aluno.turmaNome);
-        if (situacaoFiltro === "congelados") return congelado;
-        if (situacaoFiltro === "resetados") return aluno.foiResetado;
-        if (situacaoFiltro === "ativos") return !congelado && !aluno.foiResetado;
+        if (situacaoFiltro === "em_andamento") return !aluno.foiResetado && !aluno.isCongelado;
+        if (situacaoFiltro === "congelados") return !!aluno.isCongelado;
+        if (situacaoFiltro === "resetados") return !!aluno.foiResetado;
         return true;
       })
       .map((aluno, index) => ({ ...aluno, posicao: index + 1 }));
-  }, [rankingBase, pessoaFiltro, turmaFiltro, situacaoFiltro, congelamentoMap]);
+  }, [rankingBase, pessoaFiltro, turmaFiltro, situacaoFiltro]);
 
   const enviarLembrete = trpc.indicadores.enviarLembreteEngajamento.useMutation(
     {
@@ -353,7 +362,7 @@ export default function RankingGeralEngajamento() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas as situações</SelectItem>
-                    <SelectItem value="ativos">Ativos (sem reset/congelamento)</SelectItem>
+                    <SelectItem value="em_andamento">Em andamento</SelectItem>
                     <SelectItem value="congelados">Congelados</SelectItem>
                     <SelectItem value="resetados">Resetados</SelectItem>
                   </SelectContent>
@@ -441,10 +450,18 @@ export default function RankingGeralEngajamento() {
                               {aluno.foiResetado && (
                                 <span
                                   className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
-                                  title={`Ciclo resetado${aluno.resetCiclo != null ? ` (ciclo ${aluno.resetCiclo})` : ""}${aluno.resetAdmin ? ` por ${aluno.resetAdmin}` : ""}${aluno.resetData ? ` em ${formatarDataCongelamento(aluno.resetData)}` : ""}`}
+                                  title={`Ciclo resetado${aluno.resetDataCiclo != null ? ` (ciclo ${aluno.resetDataCiclo})` : ""}${aluno.resetAdminNome ? ` por ${aluno.resetAdminNome}` : ""}${aluno.resetCriadoEm ? ` em ${formatarDataCongelamento(aluno.resetCriadoEm)}` : ""}`}
                                 >
                                   <RotateCcw className="h-3 w-3" />
-                                  Resetado{aluno.resetData ? ` ${formatarDataCongelamento(aluno.resetData)}` : ""}
+                                  Resetado{aluno.resetCriadoEm ? ` ${formatarDataCongelamento(aluno.resetCriadoEm)}` : ""}
+                                </span>
+                              )}
+                              {!aluno.isCongelado && !aluno.foiResetado && (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700"
+                                  title="Ciclo em andamento — sem reset nem congelamento"
+                                >
+                                  Em andamento
                                 </span>
                               )}
                             </div>
