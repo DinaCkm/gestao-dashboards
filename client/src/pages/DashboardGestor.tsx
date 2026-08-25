@@ -35,37 +35,42 @@ export default function DashboardGestor() {
   const [selectedAlunoId, setSelectedAlunoId] = useState<string>("todos");
   const [competenciasOpen, setCompetenciasOpen] = useState(false);
 
-  // Get the empresa name from the user's programId
+  // Admin pode escolher qual empresa visualizar (gestor vê só a própria)
+  const isAdmin = user?.role === "admin" || user?.role === "admin2";
+  const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<number | null>(null);
+  const programIdEfetivo = isAdmin ? empresaSelecionadaId : (user?.programId || null);
+
+  // Get the empresa name from the effective programId
   const { data: empresas } = trpc.indicadores.empresas.useQuery();
   const empresaNome = useMemo(() => {
-    if (!empresas || !user?.programId) return null;
-    const empresa = empresas.find(e => e.id === user.programId);
+    if (!empresas || !programIdEfetivo) return null;
+    const empresa = empresas.find(e => e.id === programIdEfetivo);
     return empresa?.nome || null;
-  }, [empresas, user?.programId]);
+  }, [empresas, programIdEfetivo]);
 
   // Get turmas for this program
   const { data: turmas } = trpc.turmas.list.useQuery(
-    { programId: user?.programId || 0 },
-    { enabled: !!user?.programId }
+    { programId: programIdEfetivo || 0 },
+    { enabled: !!programIdEfetivo }
   );
 
   // Get empresa data
   const { data, isLoading, error } = trpc.indicadores.porEmpresa.useQuery(
-    { empresa: empresaNome || '' },
+    { empresa: empresaNome || '', programId: programIdEfetivo || undefined },
     { enabled: !!empresaNome }
   );
 
   // Get alunos for this program
   const { data: alunosList } = trpc.alunos.list.useQuery(
-    { programId: user?.programId || 0 },
-    { enabled: !!user?.programId }
+    { programId: programIdEfetivo || 0 },
+    { enabled: !!programIdEfetivo }
   );
 
   // Competências dos PDIs ativos da empresa
   const { data: competenciasPorEmpresa = [], isLoading: loadingCompetencias } =
     trpc.competencias.porEmpresaMacrociclo.useQuery(
-      { programId: user?.programId || 0 },
-      { enabled: !!user?.programId }
+      { programId: programIdEfetivo || 0 },
+      { enabled: !!programIdEfetivo }
     );
 
   // Turma names map
@@ -312,7 +317,43 @@ export default function DashboardGestor() {
 
   const META_EXCELENCIA = 9.0;
 
-  if (!user?.programId) {
+  // Admin ainda não escolheu empresa → mostra seletor (não a mensagem de erro)
+  if (isAdmin && !programIdEfetivo) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Card className="max-w-md w-full">
+            <CardContent className="p-8 text-center">
+              <Building2 className="h-12 w-12 mx-auto text-primary mb-4" />
+              <h2 className="text-xl font-bold mb-2">Visão do Gestor</h2>
+              <p className="text-muted-foreground mb-6">
+                Selecione uma empresa para visualizar o dashboard do gestor com o
+                posicionamento da equipe no ciclo atual.
+              </p>
+              <Select
+                value={empresaSelecionadaId ? String(empresaSelecionadaId) : ""}
+                onValueChange={(v) => setEmpresaSelecionadaId(Number(v))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(empresas || []).map((e) => (
+                    <SelectItem key={e.id} value={String(e.id)}>
+                      {e.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Gestor sem empresa vinculada
+  if (!programIdEfetivo) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-[60vh]">
@@ -321,7 +362,7 @@ export default function DashboardGestor() {
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h2 className="text-xl font-bold mb-2">Empresa Não Vinculada</h2>
               <p className="text-muted-foreground">
-                Sua conta ainda não está vinculada a uma empresa. 
+                Sua conta ainda não está vinculada a uma empresa.
                 Entre em contato com o administrador para configurar seu acesso.
               </p>
             </CardContent>
@@ -373,13 +414,42 @@ export default function DashboardGestor() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Dashboard <span className="text-primary">{empresaNome}</span>
-          </h1>
-          <p className="text-muted-foreground">
-            Acompanhe a performance dos alunos da sua empresa
-          </p>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Dashboard <span className="text-primary">{empresaNome}</span>
+            </h1>
+            <p className="text-muted-foreground">
+              {isAdmin
+                ? "Visão do gestor — posicionamento da equipe no ciclo atual"
+                : "Acompanhe a performance dos alunos da sua empresa"}
+            </p>
+          </div>
+          {isAdmin && (
+            <div className="space-y-1.5 min-w-[240px]">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Building2 className="h-4 w-4" /> Empresa (admin)
+              </label>
+              <Select
+                value={empresaSelecionadaId ? String(empresaSelecionadaId) : ""}
+                onValueChange={(v) => {
+                  setEmpresaSelecionadaId(Number(v));
+                  clearFilters();
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(empresas || []).map((e) => (
+                    <SelectItem key={e.id} value={String(e.id)}>
+                      {e.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Filtros */}
