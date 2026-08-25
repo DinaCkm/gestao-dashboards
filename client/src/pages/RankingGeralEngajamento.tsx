@@ -313,6 +313,7 @@ export default function RankingGeralEngajamento() {
                     setEmpresaSelecionadaId(Number(val));
                     setTurmaFiltro("todas");
                     setPessoaFiltro("");
+                    setSituacaoFiltro("todas");
                   }}
                 >
                   <SelectTrigger>
