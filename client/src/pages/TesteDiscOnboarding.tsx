@@ -279,6 +279,18 @@ function TesteDisc({
   const [showIntro, setShowIntro] = useState(true);
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
+  // Se o vídeo não conseguir carregar (CDN fora do ar / URL expirada), o aluno
+  // NÃO pode ficar preso — este estado libera o início do teste mesmo assim.
+  const [videoError, setVideoError] = useState(false);
+
+  // Libera o teste sem depender do vídeo (erro de carregamento ou "pular")
+  const liberarSemVideo = () => {
+    setVideoError(true);
+    setVideoCompleted(true);
+    if (!alreadyWatched) {
+      try { markVideoWatchedMutation.mutate({ alunoId }); } catch { /* silencioso */ }
+    }
+  };
   // Sequência de vídeos: 0 = vídeo introdutório, 1 = vídeo explicativo da Avaliação de Perfil Comportamental
   // Se hideVideo1, começa direto no vídeo 2
   const [currentVideoIndex, setCurrentVideoIndex] = useState(hideVideo1 ? 1 : 0);
@@ -530,6 +542,16 @@ function TesteDisc({
                           }
                         }
                       }}
+                      onError={() => {
+                        // Vídeo não carregou (CDN fora do ar / URL expirada).
+                        // Não prende o aluno: pula para o próximo vídeo e, se for
+                        // o último, libera o início do teste.
+                        if (currentVideoIndex < VIDEOS.length - 1) {
+                          setCurrentVideoIndex(currentVideoIndex + 1);
+                        } else {
+                          liberarSemVideo();
+                        }
+                      }}
                     >
                       Seu navegador não suporta vídeo.
                     </video>
@@ -600,9 +622,28 @@ function TesteDisc({
 
               {/* Indicador de status do vídeo */}
               {!videoCompleted && !alreadyWatched && showVideoPlayer && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
-                  <Video className="h-4 w-4 shrink-0 animate-pulse" />
-                  Assista o vídeo até o final para habilitar o início do teste
+                <div className="space-y-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
+                    <Video className="h-4 w-4 shrink-0 animate-pulse" />
+                    Assista o vídeo até o final para habilitar o início do teste
+                  </div>
+                  {/* Escape de segurança: se o vídeo não abrir/travar, o aluno
+                      não pode ficar preso — pode pular e iniciar o teste. */}
+                  <button
+                    type="button"
+                    onClick={liberarSemVideo}
+                    className="text-xs text-gray-500 underline hover:text-gray-700"
+                  >
+                    Problemas para ver o vídeo? Pular e iniciar o teste
+                  </button>
+                </div>
+              )}
+
+              {/* Aviso quando o vídeo não pôde ser carregado */}
+              {videoError && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-sm text-amber-700">
+                  <Video className="h-4 w-4 shrink-0" />
+                  Não foi possível carregar o vídeo agora, mas você já pode iniciar o teste normalmente.
                 </div>
               )}
 
