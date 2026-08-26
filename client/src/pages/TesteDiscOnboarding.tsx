@@ -291,24 +291,51 @@ function TesteDisc({
       try { markVideoWatchedMutation.mutate({ alunoId }); } catch { /* silencioso */ }
     }
   };
-  // Sequência de vídeos: 0 = vídeo introdutório, 1 = vídeo explicativo da Avaliação de Perfil Comportamental
-  // Se hideVideo1, começa direto no vídeo 2
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(hideVideo1 ? 1 : 0);
-  const VIDEOS = [
+  // O vídeo do teste DISC agora vem do painel "Vídeos de Onboarding"
+  // (gerenciável pelo admin). Chave 'disc_intro' no fluxo normal e
+  // 'disc_proc_seletivo' no processo seletivo. Se o admin ainda não cadastrou,
+  // cai na sequência antiga como fallback.
+  const chaveVideoDisc = hideVideo1 ? "disc_proc_seletivo" : "disc_intro";
+  const { data: discVideoManaged } = trpc.onboardingVideos.obterPorChave.useQuery({
+    chave: chaveVideoDisc,
+  });
+
+  // Converte link do YouTube (watch / youtu.be / embed) em URL de embed; senão null.
+  const getYouTubeEmbedUrl = (url: string): string | null => {
+    if (!url) return null;
+    const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]+)/);
+    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+  };
+
+  // Fallback: sequência antiga (usada só enquanto não houver vídeo no painel)
+  const VIDEOS_FALLBACK = [
     {
       src: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663427002956/CvjchevMsVnMzcTy.mp4",
       label: "Vídeo 1 de 2 — Apresentação",
     },
     {
-      // Processo Seletivo usa vídeo específico (desmitificando os testes)
-      // Fluxo normal usa o vídeo explicativo do DISC
       src: hideVideo1
         ? "https://files.manuscdn.com/user_upload_by_module/session_file/310519663427002956/PTWiqzpIYbgvTLqp.mp4"
         : "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/video-disc-explicativo_c13df132.mp4",
       label: hideVideo1 ? "Prepare-se para o teste" : "Vídeo 2 de 2 — Entenda a Avaliação de Perfil Comportamental",
     },
   ];
+
+  // Se houver vídeo cadastrado no painel, usa só ele (1 vídeo). Senão, fallback.
+  const VIDEOS = discVideoManaged?.videoUrl
+    ? [{ src: discVideoManaged.videoUrl, label: discVideoManaged.titulo || "Vídeo explicativo" }]
+    : VIDEOS_FALLBACK;
+
+  // Sequência: começa no vídeo 2 no processo seletivo (fluxo antigo). Com vídeo
+  // gerenciado (1 só), o índice é sempre 0 (garantido por safeVideoIndex).
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(hideVideo1 ? 1 : 0);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Índice seguro (evita estourar quando a lista cai para 1 vídeo gerenciado)
+  const safeVideoIndex = Math.min(currentVideoIndex, VIDEOS.length - 1);
+  const currentVideo = VIDEOS[safeVideoIndex];
+  const currentEmbedUrl = getYouTubeEmbedUrl(currentVideo?.src || "");
+  const isYouTubeVideo = !!currentEmbedUrl;
 
   // Se o aluno já assistiu antes, marcar videoCompleted como true
   useEffect(() => {
@@ -498,67 +525,81 @@ function TesteDisc({
               {/* Vídeo Player - sequência de 2 vídeos */}
               {showVideoPlayer ? (
                 <div className="space-y-3">
-                  {/* Indicador de progresso dos vídeos */}
-                  {!videoCompleted && !hideVideo1 && (
+                  {/* Indicador de progresso dos vídeos (só quando há mais de 1) */}
+                  {!videoCompleted && !hideVideo1 && VIDEOS.length > 1 && (
                     <div className="flex items-center gap-2 flex-wrap">
                       {VIDEOS.map((v, idx) => (
                         <div key={idx} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                          idx === currentVideoIndex
+                          idx === safeVideoIndex
                             ? "bg-primary/10 text-primary border border-primary/30"
-                            : idx < currentVideoIndex
+                            : idx < safeVideoIndex
                             ? "bg-green-100 text-green-700"
                             : "bg-gray-100 text-gray-400"
                         }`}>
-                          {idx < currentVideoIndex ? <CheckCircle2 className="h-3 w-3" /> : <span className="w-3 text-center">{idx + 1}</span>}
+                          {idx < safeVideoIndex ? <CheckCircle2 className="h-3 w-3" /> : <span className="w-3 text-center">{idx + 1}</span>}
                           <span>{v.label}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   <div className="rounded-xl overflow-hidden shadow-md border border-gray-200 relative">
-                    <video
-                      key={currentVideoIndex}
-                      ref={currentVideoIndex === VIDEOS.length - 1 ? videoRef : undefined}
-                      controls
-                      autoPlay
-                      className="w-full aspect-video bg-black"
-                      src={VIDEOS[currentVideoIndex].src}
-                      onEnded={() => {
-                        if (currentVideoIndex < VIDEOS.length - 1) {
-                          setCurrentVideoIndex(currentVideoIndex + 1);
-                        } else {
-                          setVideoCompleted(true);
-                          if (!alreadyWatched) {
-                            markVideoWatchedMutation.mutate({ alunoId });
+                    {currentEmbedUrl ? (
+                      // Vídeo do YouTube (embed). Não dá para detectar o fim de
+                      // forma simples, então o início do teste é liberado pelo
+                      // botão abaixo (isYouTubeVideo).
+                      <iframe
+                        key={`yt-${safeVideoIndex}`}
+                        src={currentEmbedUrl}
+                        className="w-full aspect-video bg-black"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title={currentVideo?.label || "Vídeo"}
+                      />
+                    ) : (
+                      <video
+                        key={safeVideoIndex}
+                        ref={safeVideoIndex === VIDEOS.length - 1 ? videoRef : undefined}
+                        controls
+                        autoPlay
+                        className="w-full aspect-video bg-black"
+                        src={currentVideo?.src}
+                        onEnded={() => {
+                          if (safeVideoIndex < VIDEOS.length - 1) {
+                            setCurrentVideoIndex(safeVideoIndex + 1);
+                          } else {
+                            setVideoCompleted(true);
+                            if (!alreadyWatched) {
+                              markVideoWatchedMutation.mutate({ alunoId });
+                            }
                           }
-                        }
-                      }}
-                      onTimeUpdate={(e) => {
-                        const video = e.currentTarget;
-                        if (currentVideoIndex === VIDEOS.length - 1 && video.duration > 0 && video.currentTime / video.duration >= 0.9) {
-                          setVideoCompleted(true);
-                          if (!alreadyWatched) {
-                            markVideoWatchedMutation.mutate({ alunoId });
+                        }}
+                        onTimeUpdate={(e) => {
+                          const video = e.currentTarget;
+                          if (safeVideoIndex === VIDEOS.length - 1 && video.duration > 0 && video.currentTime / video.duration >= 0.9) {
+                            setVideoCompleted(true);
+                            if (!alreadyWatched) {
+                              markVideoWatchedMutation.mutate({ alunoId });
+                            }
                           }
-                        }
-                      }}
-                      onError={() => {
-                        // Vídeo não carregou (CDN fora do ar / URL expirada).
-                        // Não prende o aluno: pula para o próximo vídeo e, se for
-                        // o último, libera o início do teste.
-                        if (currentVideoIndex < VIDEOS.length - 1) {
-                          setCurrentVideoIndex(currentVideoIndex + 1);
-                        } else {
-                          liberarSemVideo();
-                        }
-                      }}
-                    >
-                      Seu navegador não suporta vídeo.
-                    </video>
-                    {currentVideoIndex < VIDEOS.length - 1 && (
+                        }}
+                        onError={() => {
+                          // Vídeo não carregou (CDN fora do ar / URL expirada).
+                          // Não prende o aluno: pula para o próximo e, se for o
+                          // último, libera o início do teste.
+                          if (safeVideoIndex < VIDEOS.length - 1) {
+                            setCurrentVideoIndex(safeVideoIndex + 1);
+                          } else {
+                            liberarSemVideo();
+                          }
+                        }}
+                      >
+                        Seu navegador não suporta vídeo.
+                      </video>
+                    )}
+                    {!isYouTubeVideo && safeVideoIndex < VIDEOS.length - 1 && (
                       <div className="absolute bottom-3 right-3">
                         <button
-                          onClick={() => setCurrentVideoIndex(currentVideoIndex + 1)}
+                          onClick={() => setCurrentVideoIndex(safeVideoIndex + 1)}
                           className="bg-primary text-white px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 shadow-lg hover:bg-primary/90 transition-colors"
                         >
                           Próximo vídeo
@@ -625,17 +666,21 @@ function TesteDisc({
                 <div className="space-y-2">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center gap-2 text-sm text-blue-700">
                     <Video className="h-4 w-4 shrink-0 animate-pulse" />
-                    Assista o vídeo até o final para habilitar o início do teste
+                    {isYouTubeVideo
+                      ? "Assista ao vídeo acima e depois clique em iniciar o teste"
+                      : "Assista o vídeo até o final para habilitar o início do teste"}
                   </div>
                   {/* Escape de segurança: se o vídeo não abrir/travar, o aluno
                       não pode ficar preso — pode pular e iniciar o teste. */}
-                  <button
-                    type="button"
-                    onClick={liberarSemVideo}
-                    className="text-xs text-gray-500 underline hover:text-gray-700"
-                  >
-                    Problemas para ver o vídeo? Pular e iniciar o teste
-                  </button>
+                  {!isYouTubeVideo && (
+                    <button
+                      type="button"
+                      onClick={liberarSemVideo}
+                      className="text-xs text-gray-500 underline hover:text-gray-700"
+                    >
+                      Problemas para ver o vídeo? Pular e iniciar o teste
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -666,15 +711,23 @@ function TesteDisc({
               <div className="flex flex-col gap-3">
                 {/* Botão Iniciar (sempre disponível se já assistiu OU se completou agora) */}
                 <Button
-                  onClick={() => { setShowIntro(false); setTimerAtivo(true); }}
-                  disabled={!videoCompleted}
+                  onClick={() => {
+                    // Vídeo do YouTube não sinaliza o fim — ao iniciar, registra
+                    // que assistiu para não travar em acessos futuros.
+                    if (isYouTubeVideo && !alreadyWatched && !videoCompleted) {
+                      try { markVideoWatchedMutation.mutate({ alunoId }); } catch { /* silencioso */ }
+                    }
+                    setShowIntro(false);
+                    setTimerAtivo(true);
+                  }}
+                  disabled={!(videoCompleted || (showVideoPlayer && isYouTubeVideo))}
                   className={`w-full py-6 text-lg font-bold shadow-lg transition-all duration-300 ${
-                    videoCompleted
+                    (videoCompleted || (showVideoPlayer && isYouTubeVideo))
                       ? 'bg-gradient-to-r from-[#0A1E3E] to-[#2D5A87] hover:from-[#0A1E3E]/90 hover:to-[#2D5A87]/90 text-white hover:shadow-xl'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {(alreadyWatched || videoCompleted) ? (
+                  {(alreadyWatched || videoCompleted || (showVideoPlayer && isYouTubeVideo)) ? (
                     <>
                       <ArrowRight className="h-5 w-5 mr-2" />
                       Iniciar a Avaliação de Perfil Comportamental
