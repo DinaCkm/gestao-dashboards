@@ -35,6 +35,9 @@ const CHAVES_PADRAO = [
   { value: "webinars", label: "Webinars" },
   { value: "tarefas", label: "Tarefas" },
   { value: "metas", label: "Metas" },
+  // Vídeos da tela do teste DISC (Avaliação de Perfil Comportamental)
+  { value: "disc_intro", label: "Teste DISC — Vídeo explicativo" },
+  { value: "disc_proc_seletivo", label: "Teste DISC — Processo Seletivo" },
 ];
 
 type VideoForm = {
