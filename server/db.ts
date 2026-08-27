@@ -2131,11 +2131,16 @@ export async function getAllAlunosForAdmin() {
     programName: programs.name,
     mentorName: consultors.name,
     turmaName: turmas.name,
+    // Origem do aluno: como ele entrou no sistema
+    tipoPortal: alunos.tipoPortal, // 'desenvolvimento' | 'processo_seletivo' | 'aluno_autonomo' | 'assessment'
+    processoSeletivoId: alunos.processoSeletivoId,
+    processoSeletivoNome: schema.processosSeletivos.nome, // qual processo seletivo (quando aplicável)
   })
     .from(alunos)
     .leftJoin(programs, eq(alunos.programId, programs.id))
     .leftJoin(consultors, eq(alunos.consultorId, consultors.id))
     .leftJoin(turmas, eq(alunos.turmaId, turmas.id))
+    .leftJoin(schema.processosSeletivos, eq(alunos.processoSeletivoId, schema.processosSeletivos.id))
     .orderBy(alunos.name);
 
   // Verificar quais alunos têm PDI (assessment_pdi)
