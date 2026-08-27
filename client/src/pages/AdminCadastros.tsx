@@ -774,6 +774,43 @@ export default function AdminCadastros() {
   );
 }
 
+// ============ ORIGEM DO ALUNO ============
+// Deriva a origem (como o aluno entrou no sistema) a partir do tipoPortal.
+// Valores possíveis de tipoPortal: 'desenvolvimento' | 'processo_seletivo' | 'aluno_autonomo' | 'assessment'
+type OrigemKey = 'desenvolvimento' | 'processo_seletivo' | 'aluno_autonomo' | 'assessment';
+
+function getOrigemInfo(aluno: any): { key: OrigemKey; label: string; detalhe?: string; className: string } {
+  const tp = (aluno?.tipoPortal || 'desenvolvimento') as OrigemKey;
+  switch (tp) {
+    case 'processo_seletivo':
+      return {
+        key: 'processo_seletivo',
+        label: 'Proc. Seletivo',
+        detalhe: aluno?.processoSeletivoNome || undefined,
+        className: 'text-purple-700 border-purple-300 bg-purple-50',
+      };
+    case 'aluno_autonomo':
+      return {
+        key: 'aluno_autonomo',
+        label: 'Autônomo',
+        className: 'text-amber-700 border-amber-300 bg-amber-50',
+      };
+    case 'assessment':
+      return {
+        key: 'assessment',
+        label: 'DISC360',
+        className: 'text-teal-700 border-teal-300 bg-teal-50',
+      };
+    case 'desenvolvimento':
+    default:
+      return {
+        key: 'desenvolvimento',
+        label: 'Desenvolvimento',
+        className: 'text-blue-700 border-blue-300 bg-blue-50',
+      };
+  }
+}
+
 // ============ ALUNOS TAB ============
 function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa, onReverterOnboarding, isRevertendoOnboarding, onCreateAlunoSuccess }: {
   alunos: any[];
@@ -983,6 +1020,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
   const [filterEmpresa, setFilterEmpresa] = useState("all");
   const [filterMentor, setFilterMentor] = useState("all");
   const [filterStatus, setFilterStatus] = useState("active");
+  const [filterOrigem, setFilterOrigem] = useState("all");
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   // Extrair lista única de mentores dos alunos
@@ -1014,10 +1052,12 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
           (filterMentor === "sem_mentor" ? !a.mentorName : a.mentorName === filterMentor);
         const matchesStatus = filterStatus === "all" ||
           (filterStatus === "active" ? a.isActive === 1 : a.isActive !== 1);
-        return matchesSearch && matchesEmpresa && matchesMentor && matchesStatus;
+        const matchesOrigem = filterOrigem === "all" ||
+          getOrigemInfo(a).key === filterOrigem;
+        return matchesSearch && matchesEmpresa && matchesMentor && matchesStatus && matchesOrigem;
       })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || "", 'pt-BR'));
-  }, [alunos, searchTerm, filterEmpresa, filterMentor, filterStatus]);
+  }, [alunos, searchTerm, filterEmpresa, filterMentor, filterStatus, filterOrigem]);
 
   // Create form (Convite Onboarding - sem mentor)
   const [onboardOpen, setOnboardOpen] = useState(false);
@@ -1507,6 +1547,13 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                 <option value="inactive">Inativos</option>
                 <option value="all">Todos</option>
               </select>
+              <select value={filterOrigem} onChange={(e) => setFilterOrigem(e.target.value)} className="flex h-9 min-w-[170px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                <option value="all">Todas as Origens</option>
+                <option value="desenvolvimento">Desenvolvimento</option>
+                <option value="processo_seletivo">Processo Seletivo</option>
+                <option value="aluno_autonomo">Aluno Autônomo</option>
+                <option value="assessment">DISC360</option>
+              </select>
             </div>
 
             {/* Filtered count indicator */}
@@ -1612,6 +1659,21 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="font-medium text-sm">{aluno.name}</span>
+                        {(() => {
+                          const origem = getOrigemInfo(aluno);
+                          return (
+                            <Badge
+                              variant="outline"
+                              className={`ml-2 text-[10px] px-1.5 py-0 ${origem.className}`}
+                              title={origem.detalhe ? `${origem.label}: ${origem.detalhe}` : `Origem: ${origem.label}`}
+                            >
+                              {origem.label}
+                              {origem.detalhe && (
+                                <span className="ml-1 font-normal opacity-80">· {origem.detalhe}</span>
+                              )}
+                            </Badge>
+                          );
+                        })()}
                         {resetsPorAlunoMap.has(aluno.id) && (
                           <Badge variant="outline" className="ml-2 text-[10px] text-orange-700 border-orange-400 bg-orange-50 px-1.5 py-0">
                             <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
