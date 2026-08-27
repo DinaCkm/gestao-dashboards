@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Maximize, Clock, ExternalLink, CheckCircle, ClipboardCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Maximize, Clock, ExternalLink, CheckCircle, ClipboardCheck, Loader2, Linkedin } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
@@ -696,6 +696,27 @@ export default function AlunoConteudoCurso() {
                 )}
               </Button>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Compartilhar conquista no LinkedIn - aparece quando a atividade foi concluída.
+          Reaproveita o mesmo padrão do compartilhamento de webinar (EvolucaoV2/Performance). */}
+      {atividade && atividade.status === "aprovada" && (
+        <Card className="overflow-hidden border border-[#0A66C2]/20 bg-[#0A66C2]/[0.03] shadow-sm">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium text-gray-700">Concluiu esta atividade?</span> Compartilhe sua conquista com a sua rede e <span className="font-medium text-[#0A66C2]">aumente seu indicador de empregabilidade</span>!
+            </p>
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://ecolider.ecodobem.com")}&title=${encodeURIComponent(`Concluí mais uma etapa da minha jornada de desenvolvimento como líder: ${atividade.titulo} 🎯\n\n#ecolider #desenvolvimento #ckmtalents @dinamakiyama`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex shrink-0 items-center justify-center gap-1.5 text-sm font-medium text-white bg-[#0A66C2] hover:bg-[#004182] px-4 py-2 rounded-lg transition-colors shadow-sm"
+            >
+              <Linkedin className="h-4 w-4" />
+              Poste sua conquista no LinkedIn
+            </a>
           </CardContent>
         </Card>
       )}
