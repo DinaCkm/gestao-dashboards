@@ -102,6 +102,7 @@ import AlunoAtividade from "./pages/aluno/AlunoAtividade";
 import AlunoConteudoCurso from "./pages/aluno/AlunoConteudoCurso";
 import AlunoAvaliacao from "./pages/aluno/AlunoAvaliacao";
 import AlunoResultadoAvaliacao from "./pages/aluno/AlunoResultadoAvaliacao";
+import AlunoDiagnostico from "./pages/aluno/AlunoDiagnostico";
 import AlunoReflexaoFinal from "./pages/aluno/AlunoReflexaoFinal";
 import MeuProgresso from "./pages/aluno/MeuProgresso";
 import RelatorioFinalImpressao from "./pages/aluno/RelatorioFinalImpressao";
@@ -226,6 +227,7 @@ function Router() {
       <Route path={"/admin/atribuir-cursos"} component={MentorAtribuirCurso} />
       <Route path={"/mentor/competencias-comp-tec/progresso"} component={MentorProgressoAlunos} />
 
+      <Route path={"/aluno/diagnostico"} component={AlunoDiagnostico} />
       <Route path={"/aluno/competencias-comp-tec/detalhe"} component={AlunoDetalheCurso} />
       <Route path={"/aluno/competencias-comp-tec/atividade"} component={AlunoAtividade} />
       <Route path={"/aluno/competencias-comp-tec/conteudo"} component={AlunoConteudoCurso} />
