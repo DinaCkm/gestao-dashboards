@@ -16186,6 +16186,16 @@ Responda APENAS em JSON com o formato especificado.`
             throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
           }
 
+          // TRAVA: enquanto o diagnóstico da competência não for concluído, o
+          // conteúdo do curso fica bloqueado. O aluno precisa fazer o diagnóstico
+          // primeiro (botão "Fazer diagnóstico" na área dele).
+          if (atribuicao.status === "aguardando_avaliacao") {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Faça o diagnóstico deste curso antes de acessar o conteúdo.",
+            });
+          }
+
           // Buscar nome da competência vinculada ao curso atribuído
           let nomeCompetencia: string | null = null;
           if (atribuicao.competenciaId) {
