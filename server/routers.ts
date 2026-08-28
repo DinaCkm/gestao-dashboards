@@ -16049,13 +16049,10 @@ Responda APENAS em JSON com o formato especificado.`
     .from(alunoCursoAtribuido)
     .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
     .leftJoin(competencias, eq(alunoCursoAtribuido.competenciaId, competencias.id))
-    .where(
-      and(
-        eq(alunoCursoAtribuido.alunoId, aluno.id),
-        // Curso trancado aguardando o diagnóstico (fluxo Alunos Autônomos) não aparece ainda
-        ne(alunoCursoAtribuido.status, "aguardando_avaliacao")
-      )
-    )
+    // Mostra TODOS os cursos do aluno, inclusive os que ainda aguardam o
+    // diagnóstico (aguardando_avaliacao) — assim o aluno autônomo vê o próximo
+    // curso na própria área e faz o diagnóstico ali, sem precisar de outro link.
+    .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
     .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
 }),
 
@@ -16075,12 +16072,9 @@ Responda APENAS em JSON com o formato especificado.`
           .from(alunoCursoAtribuido)
           .leftJoin(cursosCompetencias, eq(alunoCursoAtribuido.cursoId, cursosCompetencias.id))
           .leftJoin(competencias, eq(cursosCompetencias.competenciaId, competencias.id))
-          .where(
-            and(
-              eq(alunoCursoAtribuido.alunoId, aluno.id),
-              ne(alunoCursoAtribuido.status, "aguardando_avaliacao")
-            )
-          )
+          // Inclui também os cursos aguardando diagnóstico — o aluno vê o curso na
+          // área e faz o diagnóstico ali mesmo (sem novo link).
+          .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
           .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
 
         // Remover duplicatas
