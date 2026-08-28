@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, isNotNull } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
@@ -612,7 +612,28 @@ export const alunosAutonomosRouter = router({
         .set({ tipoPortal: "aluno_autonomo" })
         .where(eq(alunos.id, input.alunoId));
 
-      // 3. Cria (ou reaproveita) a atribuição do curso, trancada
+      // O diagnóstico é POR COMPETÊNCIA, não por curso: todos os cursos de uma
+      // mesma competência usam a mesma avaliação. Então, se a aluna JÁ concluiu o
+      // diagnóstico dessa competência (em outro curso), o novo curso nasce já
+      // liberado — sem refazer o teste. Reaproveitamos a nota diagnóstica dela.
+      const [diagAnteriorNaCompetencia] = await database
+        .select({
+          notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+        })
+        .from(alunoCursoAtribuido)
+        .where(
+          and(
+            eq(alunoCursoAtribuido.alunoId, input.alunoId),
+            eq(alunoCursoAtribuido.competenciaId, input.competenciaId),
+            isNotNull(alunoCursoAtribuido.diagnosticoConcluidoEm)
+          )
+        )
+        .orderBy(desc(alunoCursoAtribuido.diagnosticoConcluidoEm))
+        .limit(1);
+      const jaDiagnosticadoNaCompetencia = !!diagAnteriorNaCompetencia;
+
+      // 3. Cria (ou reaproveita) a atribuição do curso
       const [atribuicaoExistente] = await database
         .select({ id: alunoCursoAtribuido.id, status: alunoCursoAtribuido.status })
         .from(alunoCursoAtribuido)
@@ -628,14 +649,22 @@ export const alunosAutonomosRouter = router({
 
       if (atribuicaoExistente) {
         cursoAtribuidoId = atribuicaoExistente.id;
+        const patch: Record<string, any> = {
+          competenciaId: input.competenciaId,
+          mentorId: input.mentorId,
+          dataPrazo: new Date(input.dataPrazo),
+          avaliacaoDiagnosticaId: diagnostico.id,
+        };
+        // Se ainda estava trancado aguardando o diagnóstico mas a competência já
+        // foi diagnosticada, destrava agora e herda a nota.
+        if (jaDiagnosticadoNaCompetencia && atribuicaoExistente.status === "aguardando_avaliacao") {
+          patch.status = "nao_iniciado";
+          patch.notaDiagnostica = diagAnteriorNaCompetencia.notaDiagnostica ?? null;
+          patch.diagnosticoConcluidoEm = diagAnteriorNaCompetencia.diagnosticoConcluidoEm ?? new Date();
+        }
         await database
           .update(alunoCursoAtribuido)
-          .set({
-            competenciaId: input.competenciaId,
-            mentorId: input.mentorId,
-            dataPrazo: new Date(input.dataPrazo),
-            avaliacaoDiagnosticaId: diagnostico.id,
-          })
+          .set(patch)
           .where(eq(alunoCursoAtribuido.id, cursoAtribuidoId));
       } else {
         const resultado = await database.insert(alunoCursoAtribuido).values({
@@ -644,8 +673,15 @@ export const alunosAutonomosRouter = router({
           competenciaId: input.competenciaId,
           mentorId: input.mentorId,
           dataPrazo: new Date(input.dataPrazo),
-          status: "aguardando_avaliacao",
+          // Já diagnosticado nessa competência → nasce liberado; senão, aguarda o diagnóstico.
+          status: jaDiagnosticadoNaCompetencia ? "nao_iniciado" : "aguardando_avaliacao",
           avaliacaoDiagnosticaId: diagnostico.id,
+          notaDiagnostica: jaDiagnosticadoNaCompetencia
+            ? diagAnteriorNaCompetencia.notaDiagnostica ?? null
+            : null,
+          diagnosticoConcluidoEm: jaDiagnosticadoNaCompetencia
+            ? diagAnteriorNaCompetencia.diagnosticoConcluidoEm ?? new Date()
+            : null,
         });
         cursoAtribuidoId = Number((resultado as any)[0]?.insertId ?? 0);
       }
@@ -716,16 +752,17 @@ export const alunosAutonomosRouter = router({
                 text: emailData.text,
               });
             } else {
-              // Aluno já conhecido: reaproveita o layout de boas-vindas, mas com
-              // o assunto de "novo curso"
+              // Aluno que JÁ tem acesso: NÃO enviamos link de diagnóstico (ele
+              // apenas confundiria). O curso e o diagnóstico já aparecem na área
+              // dele — o e-mail só o convida a entrar e acessar.
               const emailData = buildBoasVindasAlunoAutonomoEmail({
                 alunoName: alunoInfo.name ?? "",
                 cursoTitulo: cursoTitulo || "seu novo curso",
-                continuarUrl: linkAcesso,
+                continuarUrl: "https://ecolider.ecodobem.com/",
               });
               await sendEmail({
                 to: alunoInfo.email,
-                subject: `📚 Novo curso liberado: ${cursoTitulo || "confira agora"}`,
+                subject: `📚 Novo curso disponível na sua área: ${cursoTitulo || "confira agora"}`,
                 html: emailData.html,
                 text: emailData.text,
               });
@@ -1229,6 +1266,179 @@ export const alunosAutonomosRouter = router({
         nivel,
         detalhamento,
         proximaEtapa: "liberado" as const,
+      };
+    }),
+
+  // ==========================================================================
+  // DIAGNÓSTICO DENTRO DA ÁREA LOGADA (sem token)
+  // Para o aluno autônomo que JÁ tem acesso e recebeu um novo curso: ele vê o
+  // curso na própria área e faz o diagnóstico ali, sem precisar de outro link.
+  // Espelha obterDiagnosticoPorToken / responderDiagnosticoPorToken, mas usa a
+  // sessão logada (ctx.user.alunoId) e a atribuição do curso (cursoAtribuidoId).
+  // ==========================================================================
+
+  /** Carrega o diagnóstico de um curso atribuído ao próprio aluno logado. */
+  obterDiagnosticoDoCurso: protectedProcedure
+    .input(z.object({ cursoAtribuidoId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+
+      const [atribuicao] = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          alunoId: alunoCursoAtribuido.alunoId,
+          cursoId: alunoCursoAtribuido.cursoId,
+          status: alunoCursoAtribuido.status,
+          avaliacaoDiagnosticaId: alunoCursoAtribuido.avaliacaoDiagnosticaId,
+          cursoTitulo: cursosCompetencias.titulo,
+        })
+        .from(alunoCursoAtribuido)
+        .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+        .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+        .limit(1);
+
+      if (!atribuicao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
+      }
+
+      // O aluno só enxerga o próprio curso; admin enxerga qualquer um
+      const userAlunoId = (ctx as any)?.user?.alunoId;
+      if (!isAdmin(ctx) && userAlunoId && userAlunoId !== atribuicao.alunoId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado." });
+      }
+
+      if (!atribuicao.avaliacaoDiagnosticaId) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Nenhuma avaliação diagnóstica vinculada a este curso.",
+        });
+      }
+
+      const [avaliacao] = await database
+        .select()
+        .from(avaliacoesAtividade)
+        .where(eq(avaliacoesAtividade.id, atribuicao.avaliacaoDiagnosticaId))
+        .limit(1);
+
+      if (!avaliacao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não encontrada." });
+      }
+
+      return {
+        avaliacaoId: avaliacao.id,
+        titulo: avaliacao.titulo,
+        cursoTitulo: atribuicao.cursoTitulo ?? "",
+        // Se já concluiu o diagnóstico (curso destravado), o front redireciona.
+        jaConcluido: atribuicao.status !== "aguardando_avaliacao",
+        questoes: sanitizarQuestoesParaAluno(parseQuestoes(avaliacao.questoes)),
+      };
+    }),
+
+  /** Corrige o diagnóstico do aluno logado, grava a tentativa e DESTRAVA o curso. */
+  responderDiagnosticoDoCurso: protectedProcedure
+    .input(
+      z.object({
+        cursoAtribuidoId: z.number().int().positive(),
+        respostas: z.array(
+          z.object({
+            questaoId: z.string().min(1),
+            resposta: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+
+      const [atribuicao] = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          alunoId: alunoCursoAtribuido.alunoId,
+          cursoId: alunoCursoAtribuido.cursoId,
+          status: alunoCursoAtribuido.status,
+          avaliacaoDiagnosticaId: alunoCursoAtribuido.avaliacaoDiagnosticaId,
+        })
+        .from(alunoCursoAtribuido)
+        .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+        .limit(1);
+
+      if (!atribuicao?.avaliacaoDiagnosticaId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não vinculada." });
+      }
+
+      // Só o dono do curso (ou admin) responde
+      const userAlunoId = (ctx as any)?.user?.alunoId;
+      if (!isAdmin(ctx) && userAlunoId && userAlunoId !== atribuicao.alunoId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado." });
+      }
+
+      const [avaliacao] = await database
+        .select()
+        .from(avaliacoesAtividade)
+        .where(eq(avaliacoesAtividade.id, atribuicao.avaliacaoDiagnosticaId))
+        .limit(1);
+
+      if (!avaliacao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não encontrada." });
+      }
+
+      const questoes = parseQuestoes(avaliacao.questoes);
+      const mapaRespostas = new Map(input.respostas.map((r) => [r.questaoId, r.resposta]));
+
+      const detalhamento = questoes.map((q, i) => {
+        const questaoId = String(q?.id ?? i + 1);
+        const respostaAluno = mapaRespostas.get(questaoId) ?? "";
+        const acertou = respostaAluno === String(q?.respostaCorreta ?? "");
+        return {
+          questaoId,
+          enunciado: String(q?.enunciado ?? ""),
+          respostaAluno,
+          respostaCorreta: String(q?.respostaCorreta ?? ""),
+          acertou,
+        };
+      });
+
+      const acertos = detalhamento.filter((d) => d.acertou).length;
+      const total = questoes.length || QTD_QUESTOES_DIAGNOSTICO;
+      const percentual = Number(((acertos / total) * 100).toFixed(2));
+      const nota010 = Number(((acertos / total) * 10).toFixed(1));
+
+      await database.insert(tentativasAvaliacao).values({
+        alunoId: atribuicao.alunoId,
+        atividadeId: null,
+        cursoId: atribuicao.cursoId,
+        tipo: "diagnostico_inicial",
+        avaliacaoId: avaliacao.id,
+        questoesSelecionadas: JSON.stringify(questoes.map((q, i) => String(q?.id ?? i + 1))),
+        respostasAluno: JSON.stringify(input.respostas),
+        nota: String(nota010),
+        aprovado: 0,
+      });
+
+      // DESTRAVA o curso e registra a nota diagnóstica
+      await database
+        .update(alunoCursoAtribuido)
+        .set({
+          status: "nao_iniciado",
+          notaDiagnostica: String(percentual),
+          diagnosticoConcluidoEm: new Date(),
+        })
+        .where(eq(alunoCursoAtribuido.id, atribuicao.id));
+
+      let nivel: "primeiros_passos" | "inicial" | "em_desenvolvimento" | "adequado" | "excelente";
+      if (acertos >= 9) nivel = "excelente";
+      else if (acertos >= 7) nivel = "adequado";
+      else if (acertos >= 5) nivel = "em_desenvolvimento";
+      else if (acertos >= 3) nivel = "inicial";
+      else nivel = "primeiros_passos";
+
+      return {
+        success: true,
+        acertos,
+        total,
+        percentual,
+        nivel,
+        detalhamento,
       };
     }),
 
