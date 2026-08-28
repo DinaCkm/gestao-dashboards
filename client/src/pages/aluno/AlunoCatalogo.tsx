@@ -26,6 +26,7 @@ function normalizarCurso(item: any) {
 }
 
 const STATUS_LABELS: Record<string, string> = {
+  aguardando_avaliacao: "Diagnóstico pendente",
   nao_iniciado: "Não iniciado",
   em_progresso: "Em progresso",
   concluido: "Concluído",
@@ -127,7 +128,13 @@ export default function AlunoCatalogo() {
               <Badge variant="outline" className={badgeClass}>
                 {badgeLabel}
               </Badge>
-              <span className="rounded-full bg-muted px-2 py-1 text-xs">
+              <span
+                className={`rounded-full px-2 py-1 text-xs ${
+                  curso.status === "aguardando_avaliacao"
+                    ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
+                    : "bg-muted"
+                }`}
+              >
                 {STATUS_LABELS[curso.status] ?? curso.status}
               </span>
               {curso.notaFinal !== null && curso.notaFinal !== undefined && (
@@ -154,15 +161,26 @@ export default function AlunoCatalogo() {
             ) : null}
           </div>
 
-          <Button
-            onClick={() =>
-              setLocation(
-                `/aluno/competencias-comp-tec/detalhe?cursoId=${curso.cursoId}&cursoAtribuidoId=${curso.cursoAtribuidoId}`
-              )
-            }
-          >
-            Ver detalhes
-          </Button>
+          {curso.status === "aguardando_avaliacao" ? (
+            <Button
+              className="bg-amber-600 hover:bg-amber-700"
+              onClick={() =>
+                setLocation(`/aluno/diagnostico?cursoAtribuidoId=${curso.cursoAtribuidoId}`)
+              }
+            >
+              Fazer diagnóstico
+            </Button>
+          ) : (
+            <Button
+              onClick={() =>
+                setLocation(
+                  `/aluno/competencias-comp-tec/detalhe?cursoId=${curso.cursoId}&cursoAtribuidoId=${curso.cursoAtribuidoId}`
+                )
+              }
+            >
+              Ver detalhes
+            </Button>
+          )}
         </div>
       </div>
     );
