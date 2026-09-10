@@ -25,14 +25,15 @@ import {
 // ALUNOS AUTÔNOMOS
 //
 // Fluxo do administrador:
-//   1. Cria a avaliação diagnóstica do CURSO (exatamente 10 questões + gabarito)
-//   2. Libera o curso para um aluno -> gera o link de acesso com token
+// 1. Cria a avaliação diagnóstica do CURSO (entre 2 e 10 questões + gabarito)
+// 2. Libera o curso para um aluno -> gera o link de acesso com token
 //
 // Fluxo do aluno (via link, sem senha):
-//   cadastro -> avaliação diagnóstica -> mural com o curso liberado -> performance
+// cadastro -> avaliação diagnóstica -> mural com o curso liberado -> performance
 // ============================================================================
 
-const QTD_QUESTOES_DIAGNOSTICO = 10;
+const MIN_QUESTOES_DIAGNOSTICO = 2;
+const MAX_QUESTOES_DIAGNOSTICO = 10;
 
 const questaoSchema = z.object({
   id: z.string().min(1),
@@ -106,6 +107,22 @@ function cpfValido(cpfBruto: string): boolean {
   };
 
   return calcDigito(9) === Number(cpf[9]) && calcDigito(10) === Number(cpf[10]);
+}
+
+/**
+ * Determina o nível de profundidade do conhecimento com base no percentual de acertos.
+ * Usado tanto pelo diagnóstico via token quanto pelo diagnóstico dentro da área logada.
+ */
+function calcularNivel(
+  acertos: number,
+  total: number
+): "primeiros_passos" | "inicial" | "em_desenvolvimento" | "adequado" | "excelente" {
+  const pct = total > 0 ? (acertos / total) * 100 : 0;
+  if (pct >= 90) return "excelente";
+  if (pct >= 70) return "adequado";
+  if (pct >= 50) return "em_desenvolvimento";
+  if (pct >= 30) return "inicial";
+  return "primeiros_passos";
 }
 
 export const alunosAutonomosRouter = router({
@@ -220,7 +237,7 @@ export const alunosAutonomosRouter = router({
       };
     }),
 
-  /** Cria a avaliação diagnóstica de um curso — exatamente 10 questões. */
+  /** Cria a avaliação diagnóstica de um curso — entre 2 e 10 questões. */
   criarDiagnostico: protectedProcedure
     .input(
       z.object({
@@ -234,10 +251,13 @@ export const alunosAutonomosRouter = router({
       requireAdmin(ctx);
       const database = await requireDatabase();
 
-      if (input.questoes.length !== QTD_QUESTOES_DIAGNOSTICO) {
+      if (
+        input.questoes.length < MIN_QUESTOES_DIAGNOSTICO ||
+        input.questoes.length > MAX_QUESTOES_DIAGNOSTICO
+      ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `A avaliação diagnóstica deve ter exatamente ${QTD_QUESTOES_DIAGNOSTICO} questões. Recebido: ${input.questoes.length}.`,
+          message: `A avaliação diagnóstica deve ter entre ${MIN_QUESTOES_DIAGNOSTICO} e ${MAX_QUESTOES_DIAGNOSTICO} questões. Recebido: ${input.questoes.length}.`,
         });
       }
 
@@ -305,10 +325,13 @@ export const alunosAutonomosRouter = router({
       if (input.notaMinima !== undefined) updates.notaMinima = String(input.notaMinima);
 
       if (input.questoes !== undefined) {
-        if (input.questoes.length !== QTD_QUESTOES_DIAGNOSTICO) {
+        if (
+          input.questoes.length < MIN_QUESTOES_DIAGNOSTICO ||
+          input.questoes.length > MAX_QUESTOES_DIAGNOSTICO
+        ) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `A avaliação diagnóstica deve ter exatamente ${QTD_QUESTOES_DIAGNOSTICO} questões.`,
+            message: `A avaliação diagnóstica deve ter entre ${MIN_QUESTOES_DIAGNOSTICO} e ${MAX_QUESTOES_DIAGNOSTICO} questões.`,
           });
         }
         for (const q of input.questoes) {
@@ -395,10 +418,12 @@ export const alunosAutonomosRouter = router({
         .limit(1);
 
       if (existente) {
-        // Se já é aluno autônomo, reaproveita o cadastro — é assim que o mesmo
-        // aluno recebe um 2º, 3º curso: cadastra de novo com o mesmo e-mail e
-        // segue direto para liberar o próximo curso, sem duplicar o aluno.
-        if (existente.tipoPortal === "aluno_autonomo") {
+        // Reaproveita o cadastro se for aluno autônomo (2º, 3º curso) ou aluno
+        // DISC360 (assessment) — ambos já têm cadastro completo e canLogin=1,
+        // então o token nascerá na etapa 'avaliacao', pulando o preenchimento
+        // da ficha. O tipoPortal é atualizado para 'aluno_autonomo' pelo
+        // liberarCursoParaAluno, e o aluno passa a aparecer no painel autônomo.
+        if (existente.tipoPortal === "aluno_autonomo" || existente.tipoPortal === "assessment") {
           return {
             success: true,
             alunoId: existente.id,
@@ -410,7 +435,7 @@ export const alunosAutonomosRouter = router({
         // E-mail pertence a um aluno de outro tipo de portal — não mistura os fluxos
         throw new TRPCError({
           code: "CONFLICT",
-          message: `Já existe um aluno cadastrado com este e-mail (${existente.name}), mas em outro tipo de portal. Não é possível reaproveitar.`,
+          message: `Já existe um aluno cadastrado com este e-mail (${existente.name}), mas em outro tipo de portal (${existente.tipoPortal}). Não é possível reaproveitar.`,
         });
       }
 
@@ -602,7 +627,7 @@ export const alunosAutonomosRouter = router({
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "Este curso ainda não tem avaliação diagnóstica cadastrada. Crie a avaliação de 10 questões antes de liberar o curso ao aluno.",
+            "Este curso ainda não tem avaliação diagnóstica cadastrada. Crie a avaliação antes de liberar o curso ao aluno.",
         });
       }
 
@@ -779,9 +804,11 @@ export const alunosAutonomosRouter = router({
             subject: `Curso liberado para ${alunoInfo?.name ?? "aluno"}: ${cursoTitulo}`,
             html: `
               <p>O curso <strong>${cursoTitulo}</strong> foi liberado para <strong>${alunoInfo?.name ?? ""}</strong> (${alunoInfo?.email ?? ""}).</p>
-              <p>${primeiroAcesso
-                ? "O convite com o link de acesso foi enviado ao aluno. Ele vai completar o cadastro e depois fazer o diagnóstico."
-                : "Como o aluno já é conhecido da plataforma, o cadastro foi pulado — ele vai direto para o diagnóstico."}</p>
+              <p>${
+                primeiroAcesso
+                  ? "O convite com o link de acesso foi enviado ao aluno. Ele vai completar o cadastro e depois fazer o diagnóstico."
+                  : "Como o aluno já é conhecido da plataforma, o cadastro foi pulado — ele vai direto para o diagnóstico."
+              }</p>
               <p>Link de acesso: <a href="${linkAcesso}">${linkAcesso}</a></p>
               <p><a href="https://ecolider.ecodobem.com/admin/alunos-autonomos">Acompanhar no painel de Alunos Autônomos</a></p>
             `,
@@ -1022,8 +1049,6 @@ export const alunosAutonomosRouter = router({
         .where(eq(alunoAcessoToken.id, acesso.id));
 
       // Notifica o admin que liberou o curso E envia boas-vindas ao aluno.
-      // Cada envio é isolado em seu próprio try/catch — não bloqueiam a resposta
-      // ao aluno nem um afeta o outro se falhar.
       (async () => {
         const [alunoAtualizado] = await database
           .select({ name: alunos.name, email: alunos.email })
@@ -1097,7 +1122,7 @@ export const alunosAutonomosRouter = router({
       return { success: true, proximaEtapa: "avaliacao" as const };
     }),
 
-  /** Etapa 2 — devolve as 10 questões do diagnóstico SEM o gabarito. */
+  /** Etapa 2 — devolve as questões do diagnóstico SEM o gabarito. */
   obterDiagnosticoPorToken: publicProcedure
     .input(z.object({ token: z.string().min(10).max(64) }))
     .query(async ({ input }) => {
@@ -1142,7 +1167,6 @@ export const alunosAutonomosRouter = router({
       return {
         avaliacaoId: avaliacao.id,
         titulo: avaliacao.titulo,
-        // Diagnóstico aplica as 10 questões — sem sorteio
         questoes: sanitizarQuestoesParaAluno(parseQuestoes(avaliacao.questoes)),
       };
     }),
@@ -1218,9 +1242,9 @@ export const alunosAutonomosRouter = router({
       });
 
       const acertos = detalhamento.filter((d) => d.acertou).length;
-      const total = questoes.length || QTD_QUESTOES_DIAGNOSTICO;
-      const percentual = Number(((acertos / total) * 100).toFixed(2)); // escala 0-100
-      const nota010 = Number(((acertos / total) * 10).toFixed(1)); // escala 0-10
+      const total = questoes.length;
+      const percentual = total > 0 ? Number(((acertos / total) * 100).toFixed(2)) : 0;
+      const nota010 = total > 0 ? Number(((acertos / total) * 10).toFixed(1)) : 0;
 
       // Grava a tentativa reaproveitando a tabela existente
       await database.insert(tentativasAvaliacao).values({
@@ -1250,13 +1274,8 @@ export const alunosAutonomosRouter = router({
         .set({ etapaAtual: "liberado" })
         .where(eq(alunoAcessoToken.id, acesso.id));
 
-      // Faixa de profundidade do conhecimento prévio — régua oficial (baseada em acertos de 10)
-      let nivel: "primeiros_passos" | "inicial" | "em_desenvolvimento" | "adequado" | "excelente";
-      if (acertos >= 9) nivel = "excelente";
-      else if (acertos >= 7) nivel = "adequado";
-      else if (acertos >= 5) nivel = "em_desenvolvimento";
-      else if (acertos >= 3) nivel = "inicial";
-      else nivel = "primeiros_passos";
+      // Nível baseado em percentual de acertos — independe do total de questões
+      const nivel = calcularNivel(acertos, total);
 
       return {
         success: true,
@@ -1399,9 +1418,9 @@ export const alunosAutonomosRouter = router({
       });
 
       const acertos = detalhamento.filter((d) => d.acertou).length;
-      const total = questoes.length || QTD_QUESTOES_DIAGNOSTICO;
-      const percentual = Number(((acertos / total) * 100).toFixed(2));
-      const nota010 = Number(((acertos / total) * 10).toFixed(1));
+      const total = questoes.length;
+      const percentual = total > 0 ? Number(((acertos / total) * 100).toFixed(2)) : 0;
+      const nota010 = total > 0 ? Number(((acertos / total) * 10).toFixed(1)) : 0;
 
       await database.insert(tentativasAvaliacao).values({
         alunoId: atribuicao.alunoId,
@@ -1425,12 +1444,8 @@ export const alunosAutonomosRouter = router({
         })
         .where(eq(alunoCursoAtribuido.id, atribuicao.id));
 
-      let nivel: "primeiros_passos" | "inicial" | "em_desenvolvimento" | "adequado" | "excelente";
-      if (acertos >= 9) nivel = "excelente";
-      else if (acertos >= 7) nivel = "adequado";
-      else if (acertos >= 5) nivel = "em_desenvolvimento";
-      else if (acertos >= 3) nivel = "inicial";
-      else nivel = "primeiros_passos";
+      // Nível baseado em percentual de acertos — independe do total de questões
+      const nivel = calcularNivel(acertos, total);
 
       return {
         success: true,
@@ -1513,9 +1528,6 @@ export const alunosAutonomosRouter = router({
 
   /**
    * Evolução do aluno no curso.
-   * IMPORTANTE: a média das avaliações dos conteúdos NÃO é recalculada aqui —
-   * reaproveita a mesma regra já existente em syncStudentPerformanceFromPlatform:
-   * média das notaFinal das atividades que possuem avaliação (divisor = qtd com nota).
    */
   evolucaoNoCurso: protectedProcedure
     .input(z.object({ cursoAtribuidoId: z.number().int().positive() }))
@@ -1557,7 +1569,7 @@ export const alunosAutonomosRouter = router({
         cursoId: atribuicao.cursoId,
         cursoTitulo: atribuicao.cursoTitulo ?? "Curso",
         status: atribuicao.status,
-        // Ponto de partida — sondagem de 10 questões, antes do curso (escala 0-100)
+        // Ponto de partida — sondagem, antes do curso (escala 0-100)
         conhecimentoPrevio,
         conhecimentoPrevioEm: atribuicao.diagnosticoConcluidoEm,
       };
