@@ -3613,6 +3613,7 @@ export default function OnboardingAluno() {
   const [selectedMentora, setSelectedMentora] = useState<Mentora | null>(null);
   const { data: dashData } = trpc.indicadores.meuDashboard.useQuery();
 
+  const utils = trpc.useUtils();
   const alunoId = dashData?.found ? dashData.aluno?.id || 0 : 0;
   const { data: progressoData } = trpc.onboarding.progresso.useQuery(
     { alunoId },
@@ -3713,9 +3714,11 @@ export default function OnboardingAluno() {
     // para contas assessment-only (ver Bloco D, pendente: tela de conclusao dedicada).
     if (isAssessmentOnly && !assessmentTemDevolutiva && currentStep === 2) {
       toast.success("Assessment concluído! Obrigado por participar.");
-      // Redirecionar para o Mural — tipoPortal já foi atualizado para 'aluno_autonomo'
-      // pelo liberarCursoParaAluno, então needsOnboarding retorna false e o menu fica visível
-      setLocation("/mural");
+      // Invalidar o cache do onboardingStatus e aguardar o refetch antes de redirecionar.
+      // Sem isso, o AlunoLayout ainda lê o cache antigo (assessment) e manda de volta para /onboarding.
+      utils.aluno.onboardingStatus.invalidate().then(() => {
+        setLocation("/mural");
+      });
       return;
     }
     // Assessment com devolutiva: encerra após o 1º Encontro (não avança para Sua Jornada/PDI/Aceite)
