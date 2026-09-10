@@ -1,0 +1,4179 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { formatDateSafe } from "@/lib/dateUtils";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useLocation, useSearch } from "wouter";
+import DashboardLayout from "@/components/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectContentNoPortal, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/lib/trpc";
+import { Loader2, Plus, Building2, Users, Users2, UserCheck, KeyRound, Pencil, CheckCircle, AlertCircle, Power, GraduationCap, Search, X, Crown, ArrowLeftRight, UserPlus, Trash2, DollarSign, CalendarDays, Download, ChevronDown, ChevronRight, Mail, Hash, User, Calendar, RotateCcw, Camera, ImageIcon, CheckSquare, Square, RefreshCw, Layers, BookOpen, Shield } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import AdminAlunosAutonomos from "@/pages/admin/AdminAlunosAutonomos";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+
+function formatCpf(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function displayCpf(cpf: string | null): string {
+  if (!cpf) return "-";
+  const digits = cpf.replace(/\D/g, '');
+  if (digits.length !== 11) return cpf;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Administrador",
+  manager: "Gestor de Empresa",
+  mentor: "Mentor",
+  user: "Aluno",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  admin: "bg-red-600",
+  manager: "bg-blue-600",
+  mentor: "bg-purple-600",
+  user: "bg-green-600",
+};
+
+// Helper to determine display role (mentor vs manager vs gerente)
+function getDisplayRole(user: any): string {
+  if (user.role === 'manager' && user.consultorRole === 'mentor') return 'mentor';
+  if (user.role === 'manager' && user.consultorRole === 'gerente') return 'gerente';
+  if (user.role === 'manager') return 'gerente';
+  return user.role;
+}
+
+// Calcula a janela de reset com base no FIM do nível
+// A janela abre no dia do fim do nível e fecha 60 dias depois
+function calcularProximoReset(nivelFim: string | null, _contratoInicio: string | null): { label: string; diasRestantes: number | null } | null {
+  if (!nivelFim) return null;
+  const fim = new Date(nivelFim);
+  if (isNaN(fim.getTime())) return null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const fechamentoJanela = new Date(fim);
+  fechamentoJanela.setDate(fechamentoJanela.getDate() + 30);
+  // Janela aberta: entre o fim do nível e 30 dias depois
+  if (hoje >= fim && hoje <= fechamentoJanela) {
+    const diasRestantes = Math.ceil((fechamentoJanela.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    return { label: `Janela de reset aberta (${diasRestantes}d restantes)`, diasRestantes: 0 };
+  }
+  // Janela futura: antes do fim do nível
+  if (hoje < fim) {
+    const diff = Math.ceil((fim.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    return { label: `Reset disponível em ${fim.toLocaleDateString('pt-BR')}`, diasRestantes: diff };
+  }
+  // Janela expirada (mais de 30 dias após o fim do nível)
+  return null;
+}
+
+// Componente para exibir níveis e macrociclos do aluno no card expandido
+function AlunoNiveisEMacrociclos({ alunoId }: { alunoId: number }) {
+  const { data: niveis = [], isLoading: loadingNiveis } = trpc.contratoNiveis.historico.useQuery({ alunoId });
+  const { data: macrociclos = [], isLoading: loadingMacros } = trpc.assessment.porAluno.useQuery(
+    { alunoId, contratoNivelId: null },
+    { enabled: !!alunoId }
+  );
+
+  const nivelRomano: Record<string, string> = { I: '1', II: '2', III: '3', IV: '4', V: '5' };
+
+  const statusBadge: Record<string, { label: string; color: string }> = {
+    planejado: { label: 'Planejado', color: 'text-gray-400' },
+    em_andamento: { label: 'Em andamento', color: 'text-blue-600 font-semibold' },
+    fechamento: { label: 'Fechamento', color: 'text-amber-600' },
+    ajustes: { label: 'Ajustes', color: 'text-orange-600' },
+    encerrado: { label: 'Encerrado', color: 'text-red-500' },
+    certificado: { label: 'Certificado', color: 'text-green-600' },
+  };
+
+  const macroStatusBadge: Record<string, { label: string; color: string }> = {
+    ativo: { label: 'Ativo', color: 'text-blue-600 font-semibold' },
+    congelado: { label: 'Congelado', color: 'text-gray-400' },
+    concluido: { label: 'Concluído', color: 'text-green-600' },
+  };
+
+  if (loadingNiveis && loadingMacros) {
+    return (
+      <div className="mt-3 pt-3 border-t">
+        <p className="text-xs text-muted-foreground">Carregando níveis e macrociclos...</p>
+      </div>
+    );
+  }
+
+  if (niveis.length === 0 && macrociclos.length === 0) return null;
+
+  // Deduplicar níveis pelo id
+  const niveisUnicos = Array.from(new Map(niveis.map((n: any) => [n.id, n])).values());
+
+  return (
+    <div className="mt-3 pt-3 border-t border-purple-200">
+      {/* Níveis do Contrato */}
+      {niveisUnicos.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-purple-700 mb-1.5 flex items-center gap-1">
+            <Layers className="h-3.5 w-3.5" /> Períodos de Nível
+          </p>
+          <div className="space-y-1">
+            {niveisUnicos.map((nivel: any) => {
+              const s = statusBadge[nivel.status] || { label: nivel.status, color: 'text-gray-500' };
+              // Usar nivelInicio/nivelFim (datas específicas do nível) com fallback para datas do contrato
+              const dataInicio = nivel.nivelInicio || nivel.dataInicio;
+              const dataFim = nivel.nivelFim || nivel.dataFim;
+              const isAtivo = nivel.status === 'em_andamento';
+              // Mostrar janela de reset para níveis em andamento OU encerrados recentemente
+              const podeReset = nivel.status === 'em_andamento' || nivel.status === 'encerrado' || nivel.status === 'fechamento';
+              const proximoReset = podeReset ? calcularProximoReset(nivel.nivelFim || nivel.dataFim, nivel.dataInicio) : null;
+              return (
+                <div key={nivel.id} className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs ${isAtivo ? 'bg-blue-50 rounded px-2 py-1' : 'px-2 py-0.5'}`}>
+                  <span className="font-semibold text-purple-800 min-w-[52px]">Nível {nivelRomano[nivel.nivel] ?? nivel.nivel}</span>
+                  <span className="text-muted-foreground">
+                    {dataInicio ? formatDateSafe(dataInicio) : '?'}
+                    <span className="mx-1 text-gray-300">····</span>
+                    {dataFim ? formatDateSafe(dataFim) : '?'}
+                  </span>
+                  <span className={`text-[10px] ${s.color}`}>{s.label}</span>
+                  {proximoReset && (
+                    <span className={`text-[10px] ml-1 ${proximoReset.diasRestantes === 0 ? 'text-green-600 font-semibold' : 'text-amber-600'}`}>
+                      {proximoReset.diasRestantes === 0
+                        ? `✓ Janela de reset aberta (${proximoReset.label.match(/\d+d/)?.[0] ?? ''} restantes)`
+                        : `⏱ ${proximoReset.label}`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Macrociclos */}
+      {macrociclos.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-indigo-700 mb-1.5 flex items-center gap-1">
+            <BookOpen className="h-3.5 w-3.5" /> Macrociclos (PDIs)
+          </p>
+          <div className="space-y-1">
+            {macrociclos.map((macro: any) => {
+              const s = macroStatusBadge[macro.status] || { label: macro.status, color: 'text-gray-500' };
+              return (
+                <div key={macro.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs px-2 py-0.5">
+                  <span className="font-medium min-w-[52px]">{macro.trilhaNome || macro.trilhaId || '-'}</span>
+                  <span className="text-muted-foreground">
+                    {macro.macroInicio ? formatDateSafe(macro.macroInicio) : '?'}
+                    <span className="mx-1 text-gray-300">····</span>
+                    {macro.macroTermino ? formatDateSafe(macro.macroTermino) : '?'}
+                  </span>
+                  <span className={`text-[10px] ${s.color}`}>{s.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AdminCadastros() {
+  const { user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+  const searchString = useSearch();
+  const tabFromUrl = new URLSearchParams(searchString).get("tab");
+  const validTabs = ["acesso", "empresas", "mentores", "gerentes", "gerentes-empresa", "administradores"];
+  const initialTab = tabFromUrl && validTabs.includes(tabFromUrl) ? tabFromUrl : "acesso";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Sincronizar tab quando URL muda
+  useEffect(() => {
+    if (tabFromUrl && validTabs.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  // ALL hooks must be called before any early return (React rules of hooks)
+  // Queries
+  const { data: empresas, refetch: refetchEmpresas, isLoading: loadingEmpresas } = trpc.admin.listEmpresas.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: mentores, refetch: refetchMentores, isLoading: loadingMentores } = trpc.admin.listMentores.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: gerentes, refetch: refetchGerentes, isLoading: loadingGerentes } = trpc.admin.listGerentes.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: accessUsers, refetch: refetchAccessUsers, isLoading: loadingAccessUsers } = trpc.admin.listAccessUsers.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: allAlunos, refetch: refetchAllAlunos, isLoading: loadingAllAlunos } = trpc.admin.listAlunos.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: adminUsers, refetch: refetchAdminUsers, isLoading: loadingAdminUsers } = trpc.admin.listAdmins.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: alunosSemArquivamento, refetch: refetchSemArquivamento } = trpc.admin.listarAlunosSemArquivamento.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: niveisSemArquivamento, refetch: refetchNiveisSemArquivamento } = trpc.admin.listarNiveisSemArquivamento.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+
+
+  // Mutations
+  const createEmpresa = trpc.admin.createEmpresa.useMutation({
+    onSuccess: () => {
+      toast.success("Empresa criada com sucesso!");
+      refetchEmpresas();
+    },
+    onError: (err) => toast.error(`Erro ao criar empresa: ${err.message}`),
+  });
+
+  const createMentor = trpc.admin.createMentor.useMutation({
+    onSuccess: () => {
+      toast.success("Mentor criado com sucesso!");
+      refetchMentores();
+    },
+    onError: (err) => toast.error(`Erro ao criar mentor: ${err.message}`),
+  });
+
+  const createGerente = trpc.admin.createGerente.useMutation({
+    onSuccess: () => {
+      toast.success("Gerente criado com sucesso!");
+      refetchGerentes();
+    },
+    onError: (err) => toast.error(`Erro ao criar gerente: ${err.message}`),
+  });
+
+  const updateAcessoMentor = trpc.admin.updateAcessoMentor.useMutation({
+    onSuccess: () => {
+      toast.success("Acesso do mentor atualizado!");
+      refetchMentores();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar acesso: ${err.message}`),
+  });
+
+  const updateAcessoGerente = trpc.admin.updateAcessoGerente.useMutation({
+    onSuccess: () => {
+      toast.success("Acesso do gerente atualizado!");
+      refetchGerentes();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar acesso: ${err.message}`),
+  });
+
+  const createAccessUser = trpc.admin.createAccessUser.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Usuário criado com sucesso!");
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao criar usuário");
+      }
+    },
+    onError: (err) => toast.error(`Erro ao criar usuário: ${err.message}`),
+  });
+
+  const createAdminUser = trpc.admin.createAdmin.useMutation({
+    onSuccess: () => {
+      toast.success('Administrador criado com sucesso!');
+      refetchAdminUsers();
+    },
+    onError: (err) => toast.error(`Erro ao criar administrador: ${err.message}`),
+  });
+
+  const toggleAdminStatus = trpc.admin.toggleAdminStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.isActive ? 'Administrador habilitado!' : 'Administrador inabilitado!');
+      refetchAdminUsers();
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const setAdminPermissions = trpc.admin.setPermissions.useMutation({
+    onSuccess: () => toast.success('Permissões salvas com sucesso!'),
+    onError: (err) => toast.error(`Erro ao salvar permissões: ${err.message}`),
+  });
+
+  const toggleAccessUserStatus = trpc.admin.toggleAccessUserStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Status do usuário atualizado!");
+      refetchAccessUsers();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar status: ${err.message}`),
+  });
+
+  const updateAccessUser = trpc.admin.updateAccessUser.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Usuário atualizado com sucesso!");
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao atualizar usuário");
+      }
+    },
+    onError: (err) => toast.error(`Erro ao atualizar usuário: ${err.message}`),
+  });
+
+  const updateEmpresa = trpc.admin.updateEmpresa.useMutation({
+    onSuccess: () => {
+      toast.success("Empresa atualizada com sucesso!");
+      refetchEmpresas();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar empresa: ${err.message}`),
+  });
+
+  const toggleEmpresaStatus = trpc.admin.toggleEmpresaStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Status da empresa atualizado!");
+      refetchEmpresas();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar status: ${err.message}`),
+  });
+
+  const editMentor = trpc.admin.editMentor.useMutation({
+    onSuccess: () => {
+      toast.success("Mentor atualizado com sucesso!");
+      refetchMentores();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar mentor: ${err.message}`),
+  });
+
+  const toggleMentorStatus = trpc.admin.toggleMentorStatus.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.isActive ? "Mentor ativado com sucesso!" : "Mentor inativado com sucesso!");
+      refetchMentores();
+    },
+    onError: (err) => toast.error(`Erro ao alterar status: ${err.message}`),
+  });
+
+  const editGerente = trpc.admin.editGerente.useMutation({
+    onSuccess: () => {
+      toast.success("Gerente atualizado com sucesso!");
+      refetchGerentes();
+    },
+    onError: (err) => toast.error(`Erro ao atualizar gerente: ${err.message}`),
+  });
+
+  // Queries para Cadastro Direto
+  const { data: mentoresList } = trpc.mentor.list.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+  const { data: turmasList } = trpc.turmas.list.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+
+  // Queries para Gerentes de Empresa (Visão Dupla)
+  const { data: gerentesEmpresa, refetch: refetchGerentesEmpresa, isLoading: loadingGerentesEmpresa } = trpc.admin.listGerentesEmpresa.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+
+  const promoteToGerente = trpc.admin.promoteToGerente.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Aluno promovido a gerente!");
+        refetchGerentesEmpresa();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao promover aluno");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const createGerentePuro = trpc.admin.createGerentePuro.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Gerente puro criado!");
+        refetchGerentesEmpresa();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao criar gerente");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const removeGerente = trpc.admin.removeGerente.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Papel de gerente removido!");
+        refetchGerentesEmpresa();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao remover gerente");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  // Queries e mutations para Diretores/Área (EcoDISC 360 - visão restrita por diretoria)
+  const { data: diretoresList, refetch: refetchDiretores, isLoading: loadingDiretores } = trpc.admin.listDiretores.useQuery(undefined, { enabled: !loading && !!user && user.role === 'admin' });
+
+  const createDiretorPuro = trpc.admin.createDiretorPuro.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Diretor criado!");
+        refetchDiretores();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao criar diretor");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const removeDiretor = trpc.admin.removeDiretor.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Diretor removido!");
+        refetchDiretores();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao remover diretor");
+      }
+    },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const createAluno = trpc.admin.createAluno.useMutation({
+    onSuccess: () => {
+      toast.success("Aluno cadastrado! Ele receberá acesso ao Onboarding para iniciar sua participação no programa.");
+      refetchAllAlunos();
+      refetchAccessUsers();
+    },
+    onError: (err) => toast.error(`Erro ao cadastrar aluno: ${err.message}`),
+  });
+
+
+  const toggleAlunoStatus = trpc.admin.toggleAlunoStatus.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success(data.isActive ? `${data.name} ativado(a) com sucesso!` : `${data.name} inativado(a) com sucesso!`);
+        refetchAllAlunos();
+        refetchAccessUsers();
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao alterar status: ${err.message}`),
+  });
+
+  const liberarOnboarding = trpc.admin.liberarOnboarding.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success("Onboarding liberado para novo ciclo!");
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao liberar onboarding");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao liberar onboarding: ${err.message}`),
+  });
+  const reverterOnboarding = trpc.admin.reverterOnboarding.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success("Onboarding revertido!", { description: "O aluno foi liberado do onboarding e pode acessar o portal normalmente." });
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao reverter onboarding");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao reverter onboarding: ${err.message}`),
+  });
+  const backfillArquivamento = trpc.admin.backfillArquivamento.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`Arquivamento corrigido para ${data.sucesso} aluno(s).${data.erros?.length ? ` ${data.erros.length} com falha.` : ""}`);
+      if (data.erros && data.erros.length > 0) {
+        data.erros.forEach((e: string) => toast.warning(e));
+      }
+      refetchSemArquivamento();
+    },
+    onError: (err: any) => toast.error(`Erro ao corrigir arquivamento: ${err.message}`),
+  });
+  const backfillArquivamentoPorPdi = trpc.admin.backfillArquivamentoPorPdi.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`Arquivamento corrigido para ${data.sucesso} nível(is).${data.erros?.length ? ` ${data.erros.length} com falha.` : ""}`);
+      if (data.erros && data.erros.length > 0) {
+        data.erros.forEach((e: string) => toast.warning(e));
+      }
+      refetchNiveisSemArquivamento();
+    },
+    onError: (err: any) => toast.error(`Erro ao corrigir arquivamento: ${err.message}`),
+  });
+  const liberarOnboardingEmMassa = trpc.admin.liberarOnboardingEmMassa.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success(data.message || `Onboarding liberado para ${data.liberados} aluno(s)!`);
+        if (data.erros && data.erros.length > 0) {
+          data.erros.forEach((e: string) => toast.warning(e));
+        }
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao liberar onboarding em massa");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao liberar onboarding em massa: ${err.message}`),
+  });
+
+  const deleteAluno = trpc.admin.deleteAluno.useMutation({
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast.success("Aluno excluído com sucesso!");
+        refetchAllAlunos();
+        refetchAccessUsers();
+      } else if (data.requiresConfirmation) {
+        // handled in component
+      } else {
+        toast.error(data.message || "Erro ao excluir aluno");
+      }
+    },
+    onError: (err: any) => toast.error(`Erro ao excluir aluno: ${err.message}`),
+  });
+
+  const updateAluno = trpc.admin.updateAluno.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success("Aluno atualizado com sucesso!");
+        refetchAllAlunos();
+      } else {
+        toast.error(data.message || "Erro ao atualizar aluno");
+      }
+    },
+    onError: (err) => toast.error(`Erro ao atualizar aluno: ${err.message}`),
+  });
+
+  // Proteger página: apenas admin pode acessar — redirecionar para página correta do role
+  useEffect(() => {
+    if (loading || !user) return;
+    if (user.role === 'admin') return; // admin pode acessar
+    
+    if (user.role === 'manager') {
+      const userAny = user as any;
+      if (userAny.consultorId) {
+        setLocation('/dashboard/mentor');
+      } else {
+        setLocation('/dashboard/gestor');
+      }
+    } else if (user.role === 'user') {
+      setLocation('/meu-dashboard');
+    } else {
+      setLocation('/');
+    }
+  }, [user, loading, setLocation]);
+
+  // Enquanto carrega ou se não é admin, mostra loading (redirecionamento acontece no useEffect)
+  if (loading || !user || user.role !== 'admin') {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="animate-pulse text-muted-foreground">Redirecionando...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Cadastros</h1>
+          <p className="text-muted-foreground">
+            Gerencie empresas, mentores, gerentes e acesso de usuários
+          </p>
+        </div>
+
+        {alunosSemArquivamento && alunosSemArquivamento.length > 0 && (
+          <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl p-4">
+            <RotateCcw className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold text-amber-900 text-sm">
+                {alunosSemArquivamento.length} aluno(s) com onboarding liberado mas sem o ciclo anterior arquivado
+              </p>
+              <p className="text-amber-700 text-xs mt-0.5">
+                Causado por um bug já corrigido (reset em massa de 08/08). Corrige o arquivamento retroativamente,
+                sem alterar o onboarding já liberado desses alunos.
+              </p>
+              <details className="mt-1.5">
+                <summary className="text-xs text-amber-700 cursor-pointer underline">Ver lista</summary>
+                <ul className="text-xs text-amber-800 mt-1 space-y-0.5">
+                  {alunosSemArquivamento.map((a: any) => (
+                    <li key={a.id}>{a.name}</li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+            {/* Botão de correção em massa temporariamente oculto — descobrimos hoje um
+                bug relacionado (data de conclusão do arquivamento gravada errada) que
+                precisa ser conferido caso a caso antes de rodar em massa de novo. */}
+          </div>
+        )}
+
+        {niveisSemArquivamento && niveisSemArquivamento.length > 0 && (
+          <div className="bg-amber-50 border border-amber-300 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <RotateCcw className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-amber-900 text-sm">
+                  {niveisSemArquivamento.length} nível(is) já encerrado(s) no contrato mas sem nenhum reset formal
+                </p>
+                <p className="text-amber-700 text-xs mt-0.5">
+                  Comum em turmas encerradas por outro caminho (ex.: congelamento de turma) em vez do reset
+                  individual. Corrige o arquivamento retroativamente, sem alterar mais nada. Corrija por
+                  empresa, uma de cada vez, pra conferir com calma antes de seguir pra próxima.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 space-y-2">
+              {Object.entries(
+                niveisSemArquivamento.reduce((acc: Record<string, any[]>, n: any) => {
+                  const key = n.empresaNome || "Sem empresa";
+                  (acc[key] = acc[key] || []).push(n);
+                  return acc;
+                }, {})
+              ).map(([empresa, itens]: [string, any]) => (
+                <details key={empresa} className="bg-white border border-amber-200 rounded-lg">
+                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer text-sm">
+                    <span className="font-medium text-amber-900">{empresa} — {itens.length} nível(is)</span>
+                    {/* Botão de correção em massa temporariamente oculto — descobrimos hoje um
+                        bug relacionado (data de conclusão do arquivamento gravada errada) que
+                        precisa ser conferido caso a caso antes de rodar em massa de novo. */}
+                  </summary>
+                  <ul className="text-xs text-amber-800 px-3 pb-2 space-y-0.5">
+                    {itens.map((n: any) => (
+                      <li key={n.pdiId}>{n.alunoNome} — PDI #{n.pdiId} ({n.macroInicio} a {n.macroTermino})</li>
+                    ))}
+                  </ul>
+                </details>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="acesso" className="flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Alunos
+            </TabsTrigger>
+            <TabsTrigger value="alunos-autonomos" className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              Alunos Autônomos
+            </TabsTrigger>
+            <TabsTrigger value="empresas" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Empresas
+            </TabsTrigger>
+            <TabsTrigger value="mentores" className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              Mentores
+            </TabsTrigger>
+            <TabsTrigger value="gerentes-empresa" className="flex items-center gap-2">
+              <Crown className="h-4 w-4" />
+              Gerentes
+            </TabsTrigger>
+            <TabsTrigger value="diretores" className="flex items-center gap-2">
+              <Layers className="h-4 w-4" />
+              Diretores/Área
+            </TabsTrigger>
+            <TabsTrigger value="administradores" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Admins
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Alunos Tab */}
+          <TabsContent value="acesso">
+            <AlunosTab
+              alunos={allAlunos || []}
+              empresas={empresas || []}
+              mentoresList={mentoresList || []}
+              turmasList={turmasList || []}
+              loading={loadingAllAlunos}
+              onUpdate={updateAluno.mutate}
+              onCreateAluno={createAluno.mutate}
+              isCreatingAluno={createAluno.isPending}
+
+              isUpdating={updateAluno.isPending}
+              onDelete={deleteAluno.mutate}
+              isDeleting={deleteAluno.isPending}
+              onToggleStatus={toggleAlunoStatus.mutate}
+              isTogglingStatus={toggleAlunoStatus.isPending}
+              onLiberarOnboarding={liberarOnboarding.mutate}
+              isLiberandoOnboarding={liberarOnboarding.isPending}
+              onLiberarOnboardingEmMassa={liberarOnboardingEmMassa.mutate}
+              isLiberandoEmMassa={liberarOnboardingEmMassa.isPending}
+              onReverterOnboarding={reverterOnboarding.mutate}
+              isRevertendoOnboarding={reverterOnboarding.isPending}
+            />
+          </TabsContent>
+
+          {/* Alunos Autônomos Tab */}
+          <TabsContent value="alunos-autonomos">
+            <AdminAlunosAutonomos />
+          </TabsContent>
+
+          {/* Empresas Tab */}
+          <TabsContent value="empresas">
+            <EmpresasTab 
+              empresas={empresas || []} 
+              loading={loadingEmpresas}
+              onCreate={createEmpresa.mutate}
+              isCreating={createEmpresa.isPending}
+              onUpdate={updateEmpresa.mutate}
+              onToggleStatus={toggleEmpresaStatus.mutate}
+            />
+          </TabsContent>
+
+          {/* Mentores Tab */}
+          <TabsContent value="mentores">
+            <MentoresTab 
+              mentores={mentores || []} 
+              empresas={empresas || []}
+              loading={loadingMentores}
+              onCreate={createMentor.mutate}
+              onUpdateAcesso={updateAcessoMentor.mutate}
+              isCreating={createMentor.isPending}
+              onEdit={editMentor.mutate}
+              onToggleStatus={(consultorId: number) => toggleMentorStatus.mutate({ consultorId })}
+              isTogglingStatus={toggleMentorStatus.isPending}
+            />
+          </TabsContent>
+
+          {/* Gerentes Tab */}
+          <TabsContent value="gerentes-empresa">
+            <GerentesEmpresaTab
+              gerentesEmpresa={gerentesEmpresa || []}
+              empresas={empresas || []}
+              loading={loadingGerentesEmpresa}
+              onPromote={promoteToGerente.mutate}
+              onCreatePuro={createGerentePuro.mutate}
+              onRemove={removeGerente.mutate}
+              isPromoting={promoteToGerente.isPending}
+              isCreatingPuro={createGerentePuro.isPending}
+              isRemoving={removeGerente.isPending}
+            />
+          </TabsContent>
+
+          {/* Diretores/Área Tab */}
+          <TabsContent value="diretores">
+            <DiretoresTab
+              diretores={diretoresList || []}
+              empresas={empresas || []}
+              loading={loadingDiretores}
+              onCreatePuro={createDiretorPuro.mutate}
+              onRemove={removeDiretor.mutate}
+              isCreatingPuro={createDiretorPuro.isPending}
+              isRemoving={removeDiretor.isPending}
+            />
+          </TabsContent>
+
+          {/* Administradores Tab */}
+          <TabsContent value="administradores">
+            <AdminsTab
+              admins={adminUsers || []}
+              loading={loadingAdminUsers}
+              onCreate={createAdminUser.mutate}
+              isCreating={createAdminUser.isPending}
+              onToggleStatus={(userId: number) => toggleAdminStatus.mutate({ userId })}
+              isTogglingStatus={toggleAdminStatus.isPending}
+              onSetPermissions={(userId: number, permissions: string[]) => setAdminPermissions.mutate({ userId, permissions })}
+              isSavingPermissions={setAdminPermissions.isPending}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+// ============ ORIGEM DO ALUNO ============
+// Deriva a origem (como o aluno entrou no sistema) a partir do tipoPortal.
+// Valores possíveis de tipoPortal: 'desenvolvimento' | 'processo_seletivo' | 'aluno_autonomo' | 'assessment'
+type OrigemKey = 'desenvolvimento' | 'processo_seletivo' | 'aluno_autonomo' | 'assessment';
+
+function getOrigemInfo(aluno: any): { key: OrigemKey; label: string; detalhe?: string; className: string } {
+  const tp = (aluno?.tipoPortal || 'desenvolvimento') as OrigemKey;
+  switch (tp) {
+    case 'processo_seletivo':
+      return {
+        key: 'processo_seletivo',
+        label: 'Proc. Seletivo',
+        detalhe: aluno?.processoSeletivoNome || undefined,
+        className: 'text-purple-700 border-purple-300 bg-purple-50',
+      };
+    case 'aluno_autonomo':
+      return {
+        key: 'aluno_autonomo',
+        label: 'Autônomo',
+        className: 'text-amber-700 border-amber-300 bg-amber-50',
+      };
+    case 'assessment':
+      return {
+        key: 'assessment',
+        label: 'DISC360',
+        className: 'text-teal-700 border-teal-300 bg-teal-50',
+      };
+    case 'desenvolvimento':
+    default:
+      return {
+        key: 'desenvolvimento',
+        label: 'Desenvolvimento',
+        className: 'text-blue-700 border-blue-300 bg-blue-50',
+      };
+  }
+}
+
+// ============ ALUNOS TAB ============
+function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpdate, onCreateAluno, isCreatingAluno, isUpdating, onDelete, isDeleting, onToggleStatus, isTogglingStatus, onLiberarOnboarding, isLiberandoOnboarding, onLiberarOnboardingEmMassa, isLiberandoEmMassa, onReverterOnboarding, isRevertendoOnboarding, onCreateAlunoSuccess }: {
+  alunos: any[];
+  empresas: any[];
+  mentoresList: any[];
+  turmasList: any[];
+  loading: boolean;
+  onUpdate: (data: any) => void;
+  onCreateAluno: (data: any) => void;
+  isCreatingAluno: boolean;
+  isUpdating: boolean;
+  onDelete: (data: any) => void;
+  isDeleting: boolean;
+  onToggleStatus: (data: any) => void;
+  isTogglingStatus: boolean;
+  onLiberarOnboarding: (data: any) => void;
+  isLiberandoOnboarding: boolean;
+  onLiberarOnboardingEmMassa: (data: any) => void;
+  isLiberandoEmMassa: boolean;
+  onReverterOnboarding: (data: any) => void;
+  isRevertendoOnboarding: boolean;
+  onCreateAlunoSuccess?: () => void;
+}) {
+  const [editOpen, setEditOpen] = useState(false);
+  const [editAluno, setEditAluno] = useState<any>(null);
+
+  // Auditoria de resets
+  const { data: auditoriaResets = [] } = trpc.admin.auditoriaResets.useQuery(undefined);
+  const resetsPorAlunoMap = useMemo(() => new Map(auditoriaResets.map((r: any) => [Number(r.alunoId), r])), [auditoriaResets]);
+
+  // Delete state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [deleteDeps, setDeleteDeps] = useState<any>(null);
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'cascade'>('confirm');
+
+  const depsQuery = trpc.admin.getAlunoDependencies.useQuery(
+    { alunoId: deleteTarget?.id ?? 0 },
+    { enabled: !!deleteTarget && deleteOpen }
+  );
+
+  useEffect(() => {
+    if (depsQuery.data) {
+      setDeleteDeps(depsQuery.data);
+      if (depsQuery.data.totalRelated > 0) {
+        setDeleteStep('cascade');
+      }
+    }
+  }, [depsQuery.data]);
+
+  const handleDeleteClick = (aluno: any) => {
+    setDeleteTarget(aluno);
+    setDeleteDeps(null);
+    setDeleteStep('confirm');
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) return;
+    const hasDeps = deleteDeps && deleteDeps.totalRelated > 0;
+    onDelete({ alunoId: deleteTarget.id, confirmCascade: hasDeps });
+    setDeleteOpen(false);
+    setDeleteTarget(null);
+    setDeleteDeps(null);
+  };
+
+  // Export Excel function
+  const [isExporting, setIsExporting] = useState(false);
+  const exportarCompleta = trpc.admin.listAlunosParaExportacaoCompleta.useQuery(undefined, { enabled: false });
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const XLSX = await import('xlsx');
+      const { data: linhasCompletas } = await exportarCompleta.refetch();
+      const idsFiltrados = new Set(filteredAlunos.map((a: any) => a.id));
+      const linhasFiltradas = (linhasCompletas || []).filter((l: any) => idsFiltrados.has(l.alunoId));
+      const data = linhasFiltradas.map((l: any) => ({
+        'Nome': l.alunoNome || '',
+        'Email': l.email || '',
+        'ID Externo': l.externalId || '',
+        'Empresa': l.empresa || '',
+        'Turma': l.turma || '',
+        'Início Contrato': l.contratoInicio ? formatDateSafe(l.contratoInicio) : '',
+        'Fim Contrato': l.contratoFim ? formatDateSafe(l.contratoFim) : '',
+        'Nível': l.nivel || '',
+        'Status do Nível': l.nivelStatus || '',
+        'Nível Início (contrato_niveis)': l.nivelInicio ? formatDateSafe(l.nivelInicio) : '',
+        'Nível Fim (contrato_niveis)': l.nivelFim ? formatDateSafe(l.nivelFim) : '',
+        'PDI Status': l.pdiStatus || '',
+        'Macrociclo Início (PDI)': l.macroInicio ? formatDateSafe(l.macroInicio) : '',
+        'Macrociclo Fim (PDI)': l.macroTermino ? formatDateSafe(l.macroTermino) : '',
+        'Macrociclo Início (histórico)': l.macrocicloDataInicio ? formatDateSafe(l.macrocicloDataInicio) : '',
+        'Macrociclo Fim (histórico)': l.macrocicloDataConclusao ? formatDateSafe(l.macrocicloDataConclusao) : '',
+        'Data do Reset': l.dataDoReset ? formatDateSafe(l.dataDoReset) : '',
+        'Data do Congelamento (turma)': l.turmaDataCongelamento ? formatDateSafe(l.turmaDataCongelamento) : '',
+        '_alunoId': l.alunoId ?? '',
+        '_contratoNivelId': l.contratoNivelId ?? '',
+        '_assessmentPdiId': l.assessmentPdiId ?? '',
+        '_historicoId': l.historicoId ?? '',
+      }));
+      const ws = XLSX.utils.json_to_sheet(data);
+      // Auto-width columns
+      if (data.length > 0) {
+        const colWidths = Object.keys(data[0]).map(key => ({
+          wch: Math.max(key.length, ...data.map((r: any) => (r[key] || '').toString().length)) + 2
+        }));
+        ws['!cols'] = colWidths;
+      }
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Alunos');
+      XLSX.writeFile(wb, `alunos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success(`${data.length} linha(s) exportadas com sucesso!`);
+    } catch (err: any) {
+      toast.error(`Erro ao exportar: ${err.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+
+  // Selection state for mass operations
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [massConfirmOpen, setMassConfirmOpen] = useState(false);
+
+  // Modal de pré-verificação individual de liberar onboarding
+  const [liberarModalOpen, setLiberarModalOpen] = useState(false);
+  const [liberarModalAluno, setLiberarModalAluno] = useState<any>(null);
+  // Nível vigente do aluno selecionado para reset
+  const { data: nivelVigenteReset } = trpc.contratoNiveis.vigente.useQuery(
+    { alunoId: liberarModalAluno?.id ?? 0 },
+    { enabled: !!liberarModalAluno && liberarModalOpen }
+  );
+  const NIVEL_SEQUENCIA: Record<string, string> = { 'I': 'II', 'II': 'III', 'III': 'IV', 'IV': 'V' };
+  const proximoNivelReset = nivelVigenteReset ? (NIVEL_SEQUENCIA[nivelVigenteReset.nivel] ?? null) : null;
+
+  // Validação de janela de reset
+  // Meses permitidos: 3 (opcional), 6, 12, 18, 24 (obrigatórios)
+  // Janela: 30 dias a partir do início do mês correspondente
+  const calcularJanelaReset = (contratoInicio: Date | string | null) => {
+    if (!contratoInicio) return { permitido: true, proxima: null, tipo: null };
+    const inicio = new Date(contratoInicio);
+    const hoje = new Date();
+    const mesesPermitidos = [3, 6, 12, 18, 24];
+    for (const mes of mesesPermitidos) {
+      const inicioJanela = new Date(inicio);
+      inicioJanela.setMonth(inicioJanela.getMonth() + mes);
+      const fimJanela = new Date(inicioJanela);
+      fimJanela.setDate(fimJanela.getDate() + 60);
+      if (hoje >= inicioJanela && hoje <= fimJanela) {
+        return { permitido: true, proxima: null, tipo: mes === 3 ? 'opcional' : 'obrigatorio' };
+      }
+    }
+    // Encontrar próxima janela
+    for (const mes of mesesPermitidos) {
+      const inicioJanela = new Date(inicio);
+      inicioJanela.setMonth(inicioJanela.getMonth() + mes);
+      if (inicioJanela > hoje) {
+        return { permitido: false, proxima: inicioJanela, tipo: mes === 3 ? 'opcional' : 'obrigatorio' };
+      }
+    }
+    return { permitido: false, proxima: null, tipo: null };
+  };
+  const janelaReset = liberarModalAluno
+    ? calcularJanelaReset(liberarModalAluno.contratoInicio)
+    : { permitido: true, proxima: null, tipo: null };
+
+  const handleLiberarClick = (aluno: any) => {
+    setLiberarModalAluno(aluno);
+    setLiberarModalOpen(true);
+  };
+  const handleLiberarConfirm = () => {
+    if (!liberarModalAluno) return;
+    onLiberarOnboarding({ alunoId: liberarModalAluno.id });
+    setLiberarModalOpen(false);
+    setLiberarModalAluno(null);
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const elegiveisIds = filteredAlunos
+      .filter((a: any) => a.hasPdi && a.onboardingLiberado !== 1 && a.isActive === 1)
+      .map((a: any) => a.id);
+    const allSelected = elegiveisIds.length > 0 && elegiveisIds.every((id: number) => selectedIds.has(id));
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(elegiveisIds));
+    }
+  };
+
+  const handleMassLiberar = () => {
+    if (selectedIds.size === 0) return;
+    onLiberarOnboardingEmMassa({ alunoIds: Array.from(selectedIds) });
+    setSelectedIds(new Set());
+    setMassConfirmOpen(false);
+  };
+
+  // Search/filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterEmpresa, setFilterEmpresa] = useState("all");
+  const [filterMentor, setFilterMentor] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("active");
+  const [filterOrigem, setFilterOrigem] = useState("all");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+
+  // Extrair lista única de mentores dos alunos
+  const mentoresUnicos = useMemo(() => {
+    const mentorSet = new Map<string, string>();
+    alunos.forEach((a: any) => {
+      if (a.mentorName) {
+        mentorSet.set(a.mentorName, a.mentorName);
+      }
+    });
+    return Array.from(mentorSet.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [alunos]);
+
+  // Filtered and sorted alunos
+  const filteredAlunos = useMemo(() => {
+    return alunos
+      .filter((a: any) => {
+        const term = searchTerm.toLowerCase().trim();
+        const matchesSearch = !term ||
+          (a.name || "").toLowerCase().includes(term) ||
+          (a.email || "").toLowerCase().includes(term) ||
+          (a.externalId || "").toLowerCase().includes(term) ||
+          (a.programName || "").toLowerCase().includes(term) ||
+          (a.mentorName || "").toLowerCase().includes(term) ||
+          (a.turmaName || "").toLowerCase().includes(term);
+        const matchesEmpresa = filterEmpresa === "all" ||
+          (a.programId && a.programId.toString() === filterEmpresa);
+        const matchesMentor = filterMentor === "all" ||
+          (filterMentor === "sem_mentor" ? !a.mentorName : a.mentorName === filterMentor);
+        const matchesStatus = filterStatus === "all" ||
+          (filterStatus === "active" ? a.isActive === 1 : a.isActive !== 1);
+        const matchesOrigem = filterOrigem === "all" ||
+          getOrigemInfo(a).key === filterOrigem;
+        return matchesSearch && matchesEmpresa && matchesMentor && matchesStatus && matchesOrigem;
+      })
+      .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || "", 'pt-BR'));
+  }, [alunos, searchTerm, filterEmpresa, filterMentor, filterStatus, filterOrigem]);
+
+  // Create form (Convite Onboarding - sem mentor)
+  const [onboardOpen, setOnboardOpen] = useState(false);
+  const [onboardNome, setOnboardNome] = useState("");
+  const [onboardEmail, setOnboardEmail] = useState("");
+  const [onboardId, setOnboardId] = useState("");
+  const [onboardProgramId, setOnboardProgramId] = useState("");
+  const [onboardContratoInicio, setOnboardContratoInicio] = useState("");
+  const [onboardContratoFim, setOnboardContratoFim] = useState("");
+  const [onboardTotalSessoes, setOnboardTotalSessoes] = useState("");
+  const [onboardTipoMentoria, setOnboardTipoMentoria] = useState<'individual' | 'grupo'>('individual');
+  const [onboardPlataformaAulas, setOnboardPlataformaAulas] = useState<'scaffold' | 'sistema_interno'>('sistema_interno');
+
+  const handleOnboardSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const idDigits = onboardId.replace(/\D/g, '');
+    if (idDigits.length === 0) {
+      toast.error("ID do aluno deve ser informado");
+      return;
+    }
+    if (!onboardProgramId) {
+      toast.error("Selecione a empresa vinculada");
+      return;
+    }
+    onCreateAluno(
+      {
+        name: onboardNome,
+        email: onboardEmail,
+        externalId: idDigits,
+        programId: parseInt(onboardProgramId),
+        contratoInicio: onboardContratoInicio || undefined,
+        contratoFim: onboardContratoFim || undefined,
+        totalSessoesContratadas: onboardTotalSessoes ? parseInt(onboardTotalSessoes) : undefined,
+        tipoMentoria: onboardTipoMentoria,
+        plataformaAulas: onboardPlataformaAulas,
+      },
+      {
+        onSuccess: () => {
+          // Fechar modal e limpar campos apenas após confirmação de sucesso
+          setOnboardNome("");
+          setOnboardEmail("");
+          setOnboardId("");
+          setOnboardProgramId("");
+          setOnboardContratoInicio("");
+          setOnboardContratoFim("");
+          setOnboardTotalSessoes("");
+          setOnboardTipoMentoria('individual');
+          setOnboardPlataformaAulas('sistema_interno');
+          setOnboardOpen(false);
+          onCreateAlunoSuccess?.();
+        },
+      }
+    );
+  };
+
+  // Cadastro Direto removido - manter apenas Cadastrar Aluno para Onboarding
+
+  // Edit form
+  const [editNome, setEditNome] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editCpf, setEditCpf] = useState("");
+  const [editExternalId, setEditExternalId] = useState("");
+  const [editProgramId, setEditProgramId] = useState("");
+  const [editConsultorId, setEditConsultorId] = useState("");
+  const [editTurmaId, setEditTurmaId] = useState("");
+  const [editContratoInicio, setEditContratoInicio] = useState("");
+  const [editContratoFim, setEditContratoFim] = useState("");
+  const [editTipoMentoria, setEditTipoMentoria] = useState("individual");
+  const [editTotalSessoes, setEditTotalSessoes] = useState("");
+  const [editTelefone, setEditTelefone] = useState("");
+  const [editDepartmentId, setEditDepartmentId] = useState("");
+  const { data: departamentosEdicao = [] } = trpc.departments.list.useQuery(
+    { programId: editProgramId ? parseInt(editProgramId) : undefined, includeInactive: false },
+    { enabled: !!editProgramId }
+  );
+  const { data: cargosEdicao = [] } = trpc.cargos.list.useQuery(
+    { programId: editProgramId ? parseInt(editProgramId) : undefined, includeInactive: false },
+    { enabled: !!editProgramId }
+  );
+  const departamentoEdicaoSelecionado = departamentosEdicao.find((d: any) => String(d.id) === editDepartmentId);
+  const liderEdicaoNome = departamentoEdicaoSelecionado?.managerId
+    ? (gerentes || []).find((g: any) => g.id === departamentoEdicaoSelecionado.managerId)?.name || null
+    : null;
+  const [editCargo, setEditCargo] = useState("");
+  const [editAreaAtuacao, setEditAreaAtuacao] = useState("");
+  const [editMinicurriculo, setEditMinicurriculo] = useState("");
+  const [editQuemEVoce, setEditQuemEVoce] = useState("");
+  const [editPlataformaAulas, setEditPlataformaAulas] = useState("sistema_interno");
+
+  // Modal de troca de mentora
+  const [trocarMentoraModalOpen, setTrocarMentoraModalOpen] = useState(false);
+  const trocarMentora = trpc.onboarding.trocarMentora.useMutation({
+    onSuccess: () => {
+      toast.success("Mentora trocada com sucesso! E-mails enviados para as mentoras.");
+      setTrocarMentoraModalOpen(false);
+      setEditOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao trocar mentora: ${err.message}`);
+    },
+  });
+
+  const handleTrocarMentora = () => {
+    if (!editAluno || !editConsultorId) return;
+    trocarMentora.mutate({
+      alunoId: editAluno.id,
+      novaMentoraId: parseInt(editConsultorId),
+    });
+  };
+
+  const handleEditOpen = (aluno: any) => {
+    setEditAluno(aluno);
+    setEditNome(aluno.name || "");
+    setEditEmail(aluno.email || "");
+    setEditCpf(aluno.cpf ? formatCpf(aluno.cpf) : "");
+    setEditExternalId(aluno.externalId || "");
+    setEditProgramId(aluno.programId ? aluno.programId.toString() : "");
+    setEditConsultorId(aluno.consultorId ? aluno.consultorId.toString() : "");
+    setEditTurmaId(aluno.turmaId ? aluno.turmaId.toString() : "");
+    // Formatar datas de contrato para input type="date" (YYYY-MM-DD)
+    setEditContratoInicio(aluno.contratoInicio ? new Date(aluno.contratoInicio).toISOString().split('T')[0] : "");
+    setEditContratoFim(aluno.contratoFim ? new Date(aluno.contratoFim).toISOString().split('T')[0] : "");
+    setEditTipoMentoria(aluno.tipoMentoria || "individual");
+    setEditTotalSessoes(aluno.totalSessoesContratadas ? aluno.totalSessoesContratadas.toString() : "");
+    setEditTelefone(aluno.telefone || "");
+    setEditCargo(aluno.cargo || "");
+    setEditAreaAtuacao(aluno.areaAtuacao || "");
+    setEditMinicurriculo(aluno.minicurriculo || "");
+    setEditDepartmentId(aluno.departmentId ? String(aluno.departmentId) : "");
+    setEditQuemEVoce(aluno.quemEVoce || "");
+    setEditPlataformaAulas(aluno.plataformaAulas || "sistema_interno");
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editAluno) return;
+    const cpfDigits = editCpf.replace(/\D/g, '');
+    // CPF validation: must be 11 digits if provided
+    if (cpfDigits && cpfDigits.length !== 11) {
+      toast.error("CPF deve conter exatamente 11 dígitos");
+      return;
+    }
+    onUpdate({
+      alunoId: editAluno.id,
+      name: editNome,
+      email: editEmail,
+      cpf: cpfDigits || null,
+      programId: editProgramId ? parseInt(editProgramId) : null,
+      consultorId: editConsultorId ? parseInt(editConsultorId) : null,
+      turmaId: editTurmaId ? parseInt(editTurmaId) : null,
+      contratoInicio: editContratoInicio || null,
+      contratoFim: editContratoFim || null,
+      tipoMentoria: editTipoMentoria as 'individual' | 'grupo',
+      totalSessoesContratadas: editTotalSessoes ? parseInt(editTotalSessoes) : null,
+      telefone: editTelefone || null,
+      cargo: editCargo || null,
+      areaAtuacao: editAreaAtuacao || null,
+      minicurriculo: editMinicurriculo || null,
+      departmentId: editDepartmentId ? parseInt(editDepartmentId) : null,
+      quemEVoce: editQuemEVoce || null,
+      plataformaAulas: editPlataformaAulas as 'scaffold' | 'sistema_interno',
+    });
+    setEditOpen(false);
+    setEditAluno(null);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Alunos
+          </CardTitle>
+          <CardDescription>
+            Visualização e gerenciamento de todos os alunos cadastrados no sistema.
+          </CardDescription>
+        </div>
+        <div className="flex gap-2">
+
+          {/* Exportar Excel */}
+          <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || filteredAlunos.length === 0}>
+            {isExporting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exportando...</> : <><Download className="h-4 w-4 mr-2" /> Exportar Excel</>}
+          </Button>
+          {/* Editar Plataformas */}
+          <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-50" onClick={() => window.location.href = '/admin/plataforma-aulas'}>
+            <ArrowLeftRight className="h-4 w-4 mr-2" /> Editar Plataformas
+          </Button>
+          {/* Convite Onboarding Dialog */}
+          <Dialog open={onboardOpen} onOpenChange={setOnboardOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50"><UserPlus className="h-4 w-4 mr-2" /> Convite Onboarding</Button>
+            </DialogTrigger>
+            <DialogContent className="z-50 max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
+              <form onSubmit={handleOnboardSubmit}>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-blue-600" />
+                    Cadastrar Aluno para Onboarding
+                  </DialogTitle>
+                  <DialogDescription>
+                    Cadastre o aluno com os dados básicos. Ele receberá acesso ao Onboarding onde poderá iniciar sua participação no programa e escolher o mentor.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-700"><strong>Fluxo:</strong> O aluno fará login com Email + ID, acessará a área de Onboarding e iniciará sua participação no programa. O mentor <strong>não</strong> é vinculado neste momento — será definido posteriormente.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nome Completo *</Label>
+                    <Input value={onboardNome} onChange={(e) => setOnboardNome(e.target.value)} placeholder="Nome completo" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <Input type="email" value={onboardEmail} onChange={(e) => setOnboardEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ID do Aluno *</Label>
+                    <Input value={onboardId} onChange={(e) => setOnboardId(e.target.value.replace(/\D/g, ''))} placeholder="Ex: 667306" required maxLength={10} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Empresa Vinculada *</Label>
+                    <select value={onboardProgramId} onChange={(e) => setOnboardProgramId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" required>
+                      <option value="">Selecione a empresa</option>
+                      {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Plataforma de Aulas</Label>
+                    <select value={onboardPlataformaAulas} onChange={(e) => setOnboardPlataformaAulas(e.target.value as 'scaffold' | 'sistema_interno')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="sistema_interno">Sistema Interno</option>
+                      <option value="scaffold">Plataforma Scaffold</option>
+                    </select>
+                    <p className="text-xs text-muted-foreground">Selecione a plataforma onde o aluno fara suas aulas</p>
+                  </div>
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Dados do Contrato</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Início do Contrato</Label>
+                        <Input type="date" value={onboardContratoInicio} onChange={(e) => setOnboardContratoInicio(e.target.value)} className="text-sm" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Fim do Contrato</Label>
+                        <Input type="date" value={onboardContratoFim} onChange={(e) => setOnboardContratoFim(e.target.value)} className="text-sm" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mt-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Total de Sessões Contratadas</Label>
+                        <Input type="number" min="0" placeholder="Ex: 12" value={onboardTotalSessoes} onChange={(e) => setOnboardTotalSessoes(e.target.value)} className="text-sm" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tipo de Mentoria</Label>
+                        <select value={onboardTipoMentoria} onChange={(e) => setOnboardTipoMentoria(e.target.value as 'individual' | 'grupo')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                          <option value="individual">Individual</option>
+                          <option value="grupo">Em Grupo</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setOnboardOpen(false)}>Cancelar</Button>
+                  <Button type="submit" disabled={isCreatingAluno} className="bg-blue-600 hover:bg-blue-700">
+                    {isCreatingAluno ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cadastrando...</> : "Cadastrar e Enviar Convite"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+        </div>
+
+        {/* Edit Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="z-50 max-w-lg max-h-[85vh] flex flex-col overflow-hidden" onPointerDownOutside={(e) => e.preventDefault()}>
+            <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 min-h-0">
+              <DialogHeader>
+                <DialogTitle>Editar Aluno</DialogTitle>
+                <DialogDescription>Altere os dados do aluno</DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-2">
+                <div className="space-y-2">
+                  <Label>Nome Completo *</Label>
+                  <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email *</Label>
+                  <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>CPF</Label>
+                  <Input 
+                    value={editCpf} 
+                    onChange={(e) => setEditCpf(formatCpf(e.target.value))} 
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                  />
+                  <p className="text-xs text-muted-foreground">Formato: 000.000.000-00 (11 dígitos). Deixe vazio se não houver CPF.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>ID Externo</Label>
+                  <Input value={editExternalId} disabled className="bg-muted" />
+                  <p className="text-xs text-muted-foreground">ID importado da planilha (somente leitura).</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Empresa Vinculada</Label>
+                  <select value={editProgramId} onChange={(e) => setEditProgramId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <option value="">Sem empresa</option>
+                    {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Plataforma de Aulas</Label>
+                  <select value={editPlataformaAulas} onChange={(e) => setEditPlataformaAulas(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <option value="sistema_interno">Sistema Interno</option>
+                    <option value="scaffold">Plataforma Scaffold</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">Selecione onde o aluno fará as aulas: no sistema interno ou na plataforma Scaffold.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Mentor(a) Vinculado(a)</Label>
+                  <div className="flex gap-2 items-center">
+                    <select value={editConsultorId} onChange={(e) => setEditConsultorId(e.target.value)} className="flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                      <option value="">Sem mentor atribuído</option>
+                      {mentoresList.map((m: any) => (<option key={m.id} value={m.id.toString()}>{m.name}</option>))}
+                    </select>
+                    {editConsultorId && editAluno && editConsultorId !== (editAluno.consultorId?.toString() ?? '') && (
+                      <button
+                        type="button"
+                        onClick={() => setTrocarMentoraModalOpen(true)}
+                        className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 transition-colors"
+                      >
+                        <ArrowLeftRight className="h-3.5 w-3.5" />
+                        Trocar Mentora
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Ao trocar a mentora, e-mails serão enviados automaticamente para a mentora nova e a anterior.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Turma</Label>
+                  <select value={editTurmaId} onChange={(e) => setEditTurmaId(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                    <option value="">Sem turma</option>
+                    {turmasList.map((t: any) => (<option key={t.id} value={t.id.toString()}>{t.name}</option>))}
+                  </select>
+                </div>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+                  <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><CalendarDays className="h-3.5 w-3.5" /> Período do Contrato</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Início</Label>
+                      <Input type="date" value={editContratoInicio} onChange={(e) => setEditContratoInicio(e.target.value)} className="text-sm" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Fim</Label>
+                      <Input type="date" value={editContratoFim} onChange={(e) => setEditContratoFim(e.target.value)} className="text-sm" />
+                    </div>
+                  </div>
+                  <div className="border-t border-amber-200 pt-3">
+                    <p className="text-xs text-amber-700 font-semibold flex items-center gap-1 mb-2"><Users2 className="h-3.5 w-3.5" /> Mentorias do Contrato</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Tipo de Mentoria</Label>
+                        <select value={editTipoMentoria} onChange={(e) => setEditTipoMentoria(e.target.value)} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                          <option value="individual">Individual</option>
+                          <option value="grupo">Em Grupo</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Total de Sessões Contratadas</Label>
+                        <Input type="number" min="0" value={editTotalSessoes} onChange={(e) => setEditTotalSessoes(e.target.value)} className="text-sm" placeholder="Ex: 6" />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-amber-600 mt-1">Informe o número total de mentorias previstas no contrato e o tipo (individual ou em grupo).</p>
+                  </div>
+                </div>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+                  <p className="text-xs text-blue-700 font-semibold flex items-center gap-1 mb-2">Dados Complementares (Onboarding do Aluno)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Telefone</Label>
+                      <Input value={editTelefone} onChange={(e) => setEditTelefone(e.target.value)} className="text-sm" placeholder="(11) 99999-9999" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Cargo</Label>
+                      <Select
+                        value={(cargosEdicao as any[]).map((cg: any) => cg.name).includes(editCargo) ? editCargo : (editCargo ? "outro" : "")}
+                        onValueChange={(v) => setEditCargo(v === "outro" ? "" : v)}
+                      >
+                        <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Selecione um cargo" /></SelectTrigger>
+                        <SelectContent>
+                          {(cargosEdicao as any[]).map((cg: any) => (
+                            <SelectItem key={cg.id} value={cg.name}>{cg.name}</SelectItem>
+                          ))}
+                          <SelectItem value="outro">Outro cargo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {!(cargosEdicao as any[]).map((cg: any) => cg.name).includes(editCargo) && (
+                        <Input
+                          className="text-sm mt-2"
+                          value={editCargo}
+                          onChange={(e) => setEditCargo(e.target.value)}
+                          placeholder="Ex: Gerente de Projetos"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Departamento</Label>
+                      <Select value={editDepartmentId} onValueChange={setEditDepartmentId}>
+                        <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Sem departamento" /></SelectTrigger>
+                        <SelectContent>
+                          {departamentosEdicao.map((d: any) => (
+                            <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Líder do departamento</Label>
+                      <p className="text-sm text-muted-foreground pt-2">
+                        {editDepartmentId ? (liderEdicaoNome || "Nenhum líder definido") : "Selecione um departamento"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Área de Atuação</Label>
+                    <Input value={editAreaAtuacao} onChange={(e) => setEditAreaAtuacao(e.target.value)} className="text-sm" placeholder="Ex: Tecnologia da Informação" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Minicurrículo</Label>
+                    <textarea value={editMinicurriculo} onChange={(e) => setEditMinicurriculo(e.target.value)} className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[60px]" placeholder="Breve descrição profissional do aluno" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Quem é Você (Apresentação Pessoal)</Label>
+                    <textarea value={editQuemEVoce} onChange={(e) => setEditQuemEVoce(e.target.value)} className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[60px]" placeholder="Apresentação pessoal do aluno" />
+                  </div>
+                  <p className="text-[10px] text-blue-600">Estes campos são preenchidos pelo aluno durante o onboarding. O admin pode visualizar e editar quando necessário.</p>
+                </div>
+              </div>
+              <DialogFooter className="pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={isUpdating}>
+                  {isUpdating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar Alterações"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <>
+            {/* Search and filter bar */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nome, e-mail, CPF, empresa, mentor ou turma..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-9"
+                />
+                {searchTerm && (
+                  <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <select value={filterEmpresa} onChange={(e) => setFilterEmpresa(e.target.value)} className="flex h-9 min-w-[180px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                <option value="all">Todas as Empresas</option>
+                {empresas.map((emp) => (<option key={emp.id} value={emp.id.toString()}>{emp.name}</option>))}
+              </select>
+              <select value={filterMentor} onChange={(e) => setFilterMentor(e.target.value)} className="flex h-9 min-w-[200px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                <option value="all">Todos os Mentores</option>
+                <option value="sem_mentor">Sem mentor atribuído</option>
+                {mentoresUnicos.map((nome) => (<option key={nome} value={nome}>{nome}</option>))}
+              </select>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="flex h-9 min-w-[120px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+                <option value="all">Todos</option>
+              </select>
+              <select value={filterOrigem} onChange={(e) => setFilterOrigem(e.target.value)} className="flex h-9 min-w-[170px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                <option value="all">Todas as Origens</option>
+                <option value="desenvolvimento">Desenvolvimento</option>
+                <option value="processo_seletivo">Processo Seletivo</option>
+                <option value="aluno_autonomo">Aluno Autônomo</option>
+                <option value="assessment">DISC360</option>
+              </select>
+            </div>
+
+            {/* Filtered count indicator */}
+            <div className="text-sm text-muted-foreground mb-3">
+              Mostrando {filteredAlunos.length} de {alunos.length} alunos (ordem alfabética)
+              {filterMentor !== "all" && filterMentor !== "sem_mentor" && (
+                <span className="ml-1">| Mentor(a): <strong>{filterMentor}</strong></span>
+              )}
+              {filterMentor === "sem_mentor" && (
+                <span className="ml-1">| <strong>Sem mentor atribuído</strong></span>
+              )}
+            </div>
+
+            {/* Summary cards - por empresa */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-sm text-muted-foreground">Total de Alunos</p>
+                <p className="text-2xl font-bold">{alunos.filter(a => a.isActive === 1).length}</p>
+              </div>
+              {empresas.map((emp: any) => {
+                const count = alunos.filter(a => a.programId === emp.id && a.isActive === 1).length;
+                if (count === 0) return null;
+                return (
+                  <div key={emp.id} className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-sm text-muted-foreground">{emp.name}</p>
+                    <p className="text-2xl font-bold">{count}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Selection action bar */}
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <CheckSquare className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">{selectedIds.size} aluno(s) selecionado(s)</span>
+                <div className="flex-1" />
+                <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className="text-muted-foreground">
+                  Limpar seleção
+                </Button>
+                <Button size="sm" onClick={() => setMassConfirmOpen(true)} disabled={isLiberandoEmMassa} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  {isLiberandoEmMassa ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Liberando...</> : <><RotateCcw className="h-4 w-4 mr-2" /> Liberar Onboarding em Massa</>}
+                </Button>
+              </div>
+            )}
+
+            {/* Mass confirmation dialog */}
+            <Dialog open={massConfirmOpen} onOpenChange={setMassConfirmOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2"><RotateCcw className="h-5 w-5 text-blue-600" /> Liberar Onboarding em Massa</DialogTitle>
+                  <DialogDescription>
+                    Você está prestes a liberar o onboarding para <strong>{selectedIds.size} aluno(s)</strong> selecionado(s). Isso permitirá que eles refaçam o onboarding para um novo ciclo.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-2">
+                  <p className="text-sm text-muted-foreground">Alunos que não possuem PDI ou que já tiveram o onboarding liberado serão ignorados automaticamente.</p>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setMassConfirmOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleMassLiberar} disabled={isLiberandoEmMassa} className="bg-blue-600 hover:bg-blue-700">
+                    {isLiberandoEmMassa ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Liberando...</> : "Confirmar Liberação"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Select all header */}
+            <div className="flex items-center gap-2 mb-2 px-4 py-1.5">
+              <Checkbox
+                checked={(() => {
+                  const elegiveisIds = filteredAlunos.filter((a: any) => a.hasPdi && a.onboardingLiberado !== 1 && a.isActive === 1).map((a: any) => a.id);
+                  return elegiveisIds.length > 0 && elegiveisIds.every((id: number) => selectedIds.has(id));
+                })()}
+                onCheckedChange={toggleSelectAll}
+                className="mr-1"
+              />
+              <span className="text-xs text-muted-foreground">Selecionar todos elegíveis para liberação de onboarding</span>
+            </div>
+
+            <div className="space-y-1">
+              {filteredAlunos.map((aluno: any) => {
+                const isExpanded = expandedId === aluno.id;
+                const isElegivel = aluno.hasPdi && aluno.onboardingLiberado !== 1 && aluno.isActive === 1;
+                return (
+                  <div key={aluno.id} className={`border rounded-lg transition-all ${aluno.isActive !== 1 ? 'opacity-50' : ''} ${isExpanded ? 'ring-1 ring-primary/30 shadow-sm' : 'hover:bg-muted/30'} ${selectedIds.has(aluno.id) ? 'ring-1 ring-blue-400 bg-blue-50/50' : ''}`}>
+                    {/* Linha principal compacta - clicável */}
+                    <div
+                      className="flex items-center gap-3 px-4 py-2.5 cursor-pointer select-none"
+                      onClick={() => setExpandedId(isExpanded ? null : aluno.id)}
+                    >
+                      {isElegivel && (
+                        <Checkbox
+                          checked={selectedIds.has(aluno.id)}
+                          onCheckedChange={() => toggleSelect(aluno.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="mr-0"
+                        />
+                      )}
+                      {!isElegivel && <div className="w-4" />}
+                      <div className="text-muted-foreground">
+                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-sm">{aluno.name}</span>
+                        {(() => {
+                          const origem = getOrigemInfo(aluno);
+                          return (
+                            <Badge
+                              variant="outline"
+                              className={`ml-2 text-[10px] px-1.5 py-0 ${origem.className}`}
+                              title={origem.detalhe ? `${origem.label}: ${origem.detalhe}` : `Origem: ${origem.label}`}
+                            >
+                              {origem.label}
+                              {origem.detalhe && (
+                                <span className="ml-1 font-normal opacity-80">· {origem.detalhe}</span>
+                              )}
+                            </Badge>
+                          );
+                        })()}
+                        {resetsPorAlunoMap.has(aluno.id) && (
+                          <Badge variant="outline" className="ml-2 text-[10px] text-orange-700 border-orange-400 bg-orange-50 px-1.5 py-0">
+                            <RefreshCw className="h-2.5 w-2.5 mr-0.5" />
+                            Resetado em {new Date(resetsPorAlunoMap.get(aluno.id)!.criadoEm).toLocaleDateString('pt-BR')}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="hidden sm:block text-xs text-muted-foreground truncate max-w-[200px]">
+                        {aluno.programName || ''}
+                      </div>
+                      <div className="hidden md:block text-xs text-muted-foreground truncate max-w-[160px]">
+                        {aluno.turmaName || ''}
+                      </div>
+                      <div
+                        onClick={(e) => { e.stopPropagation(); onToggleStatus({ alunoId: aluno.id }); }}
+                        className="cursor-pointer"
+                        title={aluno.isActive === 1 ? "Clique para inativar" : "Clique para ativar"}
+                      >
+                        {aluno.isActive === 1 ? (
+                          <Badge variant="default" className="bg-green-600 cursor-pointer text-[10px] px-1.5 py-0.5"><CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Ativo</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="cursor-pointer text-[10px] px-1.5 py-0.5"><AlertCircle className="h-2.5 w-2.5 mr-0.5" /> Inativo</Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Painel expandido com detalhes e ações */}
+                    {isExpanded && (
+                      <div className="border-t px-4 py-3 bg-muted/20">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Email:</span>
+                            <span className="truncate">{aluno.email || <span className="text-muted-foreground italic">não informado</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Hash className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">CPF:</span>
+                            <span className="font-mono">{aluno.cpf ? displayCpf(aluno.cpf) : <span className="text-muted-foreground italic">não informado</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Hash className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">ID Externo:</span>
+                            <span className="font-mono">{aluno.externalId || <span className="text-muted-foreground italic">-</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Empresa:</span>
+                            <span>{aluno.programName || <span className="text-muted-foreground italic">-</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Mentor(a):</span>
+                            <span>{aluno.mentorName || <span className="text-muted-foreground italic">não atribuído</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Turma:</span>
+                            <span>{aluno.turmaName || <span className="text-muted-foreground italic">-</span>}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Contrato:</span>
+                            <span>
+                              {aluno.contratoInicio || aluno.contratoFim ? (
+                                <>
+                                  {aluno.contratoInicio ? formatDateSafe(aluno.contratoInicio) : '?'}
+                                  {' - '}
+                                  {aluno.contratoFim ? formatDateSafe(aluno.contratoFim) : '?'}
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground italic">não definido</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Users2 className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">Mentorias:</span>
+                            <span>
+                              {aluno.totalSessoesContratadas && aluno.totalSessoesContratadas > 0 ? (
+                                <>
+                                  <span className="font-medium">{aluno.totalSessoesContratadas} sessões</span>
+                                  <span className="text-muted-foreground"> ({aluno.tipoMentoria === 'grupo' ? 'Em Grupo' : 'Individual'})</span>
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground italic">não definido</span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Dados de Reset */}
+                        {resetsPorAlunoMap.has(aluno.id) && (() => {
+                          const resetInfo = resetsPorAlunoMap.get(aluno.id)!;
+                          return (
+                            <div className="mt-3 pt-3 border-t border-orange-200">
+                              <div className="flex items-center gap-2 mb-1">
+                                <RefreshCw className="h-3.5 w-3.5 text-orange-600" />
+                                <p className="text-xs font-semibold text-orange-600">Histórico de Reset</p>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1.5 text-sm">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Data do reset:</span>
+                                  <span className="font-medium">{new Date(resetInfo.criadoEm).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Ciclo arquivado:</span>
+                                  <span className="font-medium">{resetInfo.numeroCicloArquivado}</span>
+                                </div>
+                                {resetInfo.ind7Snapshot != null && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">Engajamento final:</span>
+                                    <span className="font-medium">{parseFloat(resetInfo.ind7Snapshot).toFixed(0)}%</span>
+                                  </div>
+                                )}
+                                {resetInfo.adminNome && (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">Executado por:</span>
+                                    <span>{resetInfo.adminNome}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Dados do Onboarding */}
+                        {(aluno.telefone || aluno.cargo || aluno.areaAtuacao || aluno.minicurriculo || aluno.quemEVoce) && (
+                          <div className="mt-3 pt-3 border-t border-blue-200">
+                            <p className="text-xs font-semibold text-blue-600 mb-2">Dados Complementares (Onboarding)</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-1.5 text-sm">
+                              {aluno.telefone && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Telefone:</span>
+                                  <a href={`tel:${aluno.telefone}`} className="hover:underline">{aluno.telefone}</a>
+                                </div>
+                              )}
+                              {aluno.cargo && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Cargo:</span>
+                                  <span>{aluno.cargo}</span>
+                                </div>
+                              )}
+                              {aluno.areaAtuacao && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-muted-foreground">Área:</span>
+                                  <span>{aluno.areaAtuacao}</span>
+                                </div>
+                              )}
+                            </div>
+                            {aluno.minicurriculo && (
+                              <div className="mt-2 text-sm">
+                                <span className="text-muted-foreground">Minicurrículo:</span>
+                                <p className="mt-0.5 text-xs bg-blue-50 rounded p-2 border border-blue-100">{aluno.minicurriculo}</p>
+                              </div>
+                            )}
+                            {aluno.quemEVoce && (
+                              <div className="mt-2 text-sm">
+                                <span className="text-muted-foreground">Quem é Você:</span>
+                                <p className="mt-0.5 text-xs bg-blue-50 rounded p-2 border border-blue-100">{aluno.quemEVoce}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* Níveis do Contrato e Macrociclos */}
+                        <AlunoNiveisEMacrociclos alunoId={aluno.id} />
+
+                        {/* Ações */}
+                        <div className="flex gap-2 mt-3 pt-3 border-t">
+                          <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); handleEditOpen(aluno); }}>
+                            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={aluno.isActive === 1 ? "text-amber-600 hover:bg-amber-600 hover:text-white" : "text-green-600 hover:bg-green-600 hover:text-white"}
+                            onClick={(e) => { e.stopPropagation(); onToggleStatus({ alunoId: aluno.id }); }}
+                            disabled={isTogglingStatus}
+                          >
+                            <Power className="h-3.5 w-3.5 mr-1.5" />
+                            {aluno.isActive === 1 ? "Inativar" : "Ativar"}
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={(e) => { e.stopPropagation(); handleDeleteClick(aluno); }} disabled={isDeleting}>
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
+                          </Button>
+                          {aluno.hasPdi && (
+                            aluno.onboardingLiberado === 1 ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`Reverter onboarding de ${aluno.name}?\n\nIsso irá zerar o flag onboardingLiberado, liberando o aluno para acessar o portal normalmente.`)) {
+                                    onReverterOnboarding({ alunoId: aluno.id });
+                                  }
+                                }}
+                                disabled={isRevertendoOnboarding}
+                                title="Clique para reverter: zera onboardingLiberado e libera acesso ao portal"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                                {isRevertendoOnboarding ? 'Revertendo...' : 'Onboarding Liberado ✕'}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-blue-600 hover:bg-blue-600 hover:text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLiberarClick(aluno);
+                                }}
+                                disabled={isLiberandoOnboarding}
+                                title="Liberar onboarding para novo ciclo (renovação de contrato) — RESETA o onboarding anterior"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                                Liberar Onboarding
+                              </Button>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {filteredAlunos.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  {alunos.length === 0 ? "Nenhum aluno cadastrado." : "Nenhum aluno encontrado com os filtros aplicados."}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={(open) => { if (!open) { setDeleteOpen(false); setDeleteTarget(null); setDeleteDeps(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Excluir Aluno</DialogTitle>
+            <DialogDescription>
+              {deleteTarget && (
+                <span>Tem certeza que deseja excluir <strong>{deleteTarget.name}</strong>?</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {depsQuery.isLoading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Verificando dados relacionados...</span>
+            </div>
+          ) : deleteDeps && deleteDeps.totalRelated > 0 ? (
+            <div className="space-y-3">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Este aluno possui <strong>{deleteDeps.totalRelated}</strong> registros relacionados que serão excluídos permanentemente:
+                </AlertDescription>
+              </Alert>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {deleteDeps.pdis > 0 && <div>PDIs/Assessments: <strong>{deleteDeps.pdis}</strong></div>}
+                {deleteDeps.sessions > 0 && <div>Sessões de mentoria: <strong>{deleteDeps.sessions}</strong></div>}
+                {deleteDeps.participations > 0 && <div>Participações em eventos: <strong>{deleteDeps.participations}</strong></div>}
+                {deleteDeps.performance > 0 && <div>Registros de performance: <strong>{deleteDeps.performance}</strong></div>}
+                {deleteDeps.ciclos > 0 && <div>Ciclos de execução: <strong>{deleteDeps.ciclos}</strong></div>}
+                {deleteDeps.disc > 0 && <div>Resultados da Avaliação de Perfil Comportamental: <strong>{deleteDeps.disc}</strong></div>}
+                {deleteDeps.metas > 0 && <div>Metas: <strong>{deleteDeps.metas}</strong></div>}
+                {deleteDeps.contratos > 0 && <div>Contratos: <strong>{deleteDeps.contratos}</strong></div>}
+              </div>
+              <p className="text-sm text-destructive font-medium">Esta ação é irreversível!</p>
+            </div>
+          ) : deleteDeps ? (
+            <p className="text-sm text-muted-foreground">Este aluno não possui dados relacionados. A exclusão será simples.</p>
+          ) : null}
+           <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteOpen(false); setDeleteTarget(null); setDeleteDeps(null); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={depsQuery.isLoading || isDeleting}>
+              {isDeleting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Excluindo...</> : "Excluir Permanentemente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de pré-verificação: Liberar Onboarding Individual */}
+      <Dialog open={liberarModalOpen} onOpenChange={(open) => { if (!open) { setLiberarModalOpen(false); setLiberarModalAluno(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <RotateCcw className="h-5 w-5" />
+              Liberar Novo Ciclo de Onboarding
+            </DialogTitle>
+            <DialogDescription>
+              Você está prestes a iniciar um novo ciclo para:
+            </DialogDescription>
+          </DialogHeader>
+          {liberarModalAluno && (
+            <div className="space-y-4 py-2">
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <p className="font-semibold text-gray-900">{liberarModalAluno.name}</p>
+                <p className="text-sm text-gray-500">{liberarModalAluno.email}</p>
+                {liberarModalAluno.programName && (
+                  <p className="text-xs text-gray-400 mt-0.5">{liberarModalAluno.programName} {liberarModalAluno.turmaName ? `• ${liberarModalAluno.turmaName}` : ''}</p>
+                )}
+              </div>
+              <div className="space-y-2.5">
+                <p className="text-sm font-semibold text-gray-700">O que acontece ao confirmar:</p>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Ciclo atual arquivado com <strong>snapshot dos 7 indicadores</strong> na página de Evolução</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">PDI e microciclos ativos <strong>congelados</strong> (preservados para histórico)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Aluno redirecionado para o <strong>onboarding</strong> no próximo acesso</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <span className="text-gray-600">Um <strong>novo PDI</strong> deverá ser criado após o onboarding</span>
+                  </div>
+                </div>
+              </div>
+              {/* Aviso de avanço de nível */}
+              {nivelVigenteReset && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 flex items-start gap-2">
+                  <span className="text-indigo-600 font-bold text-sm shrink-0 mt-0.5">📄</span>
+                  <div>
+                    <p className="text-xs font-semibold text-indigo-800">
+                      Nível vigente: <Badge className="ml-1 text-xs px-1.5 py-0 bg-indigo-100 text-indigo-700 border border-indigo-200">{nivelVigenteReset.nivel}</Badge>
+                      {proximoNivelReset && (
+                        <span className="ml-1 text-indigo-600">→ após o reset, avançará para <Badge className="text-xs px-1.5 py-0 bg-emerald-100 text-emerald-700 border border-emerald-200">{proximoNivelReset}</Badge></span>
+                      )}
+                    </p>
+                    <p className="text-xs text-indigo-600 mt-0.5">
+                      O Nível {nivelVigenteReset.nivel} será encerrado e o Nível {proximoNivelReset ?? '—'} será criado automaticamente.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {/* Alerta de janela de reset bloqueada */}
+              {!janelaReset.permitido && (
+                <div className="bg-red-50 border border-red-300 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-red-800">Reset não permitido neste momento</p>
+                      <p className="text-xs text-red-700 mt-0.5">
+                        A mudança de nível só pode ser realizada nas janelas de reset: <strong>mês 3</strong> (opcional), <strong>mês 6</strong>, <strong>mês 12</strong>, <strong>mês 18</strong> ou <strong>mês 24</strong> a partir do início do contrato. Cada janela fica aberta por 30 dias.
+                      </p>
+                      {janelaReset.proxima && (
+                        <p className="text-xs text-red-700 mt-1">
+                          Próxima janela disponível: <strong>{new Date(janelaReset.proxima).toLocaleDateString('pt-BR')}</strong>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {janelaReset.permitido && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs text-amber-800">
+                    <strong>Atenção:</strong> Esta ação é protegida contra duplicação. Se executada duas vezes, o segundo reset será ignorado automaticamente.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setLiberarModalOpen(false); setLiberarModalAluno(null); }}>Cancelar</Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={handleLiberarConfirm}
+              disabled={isLiberandoOnboarding || !janelaReset.permitido}
+            >
+              {isLiberandoOnboarding ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processando...</> : <><RotateCcw className="h-4 w-4 mr-2" /> Confirmar e Liberar</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmação: Trocar Mentora */}
+      <Dialog open={trocarMentoraModalOpen} onOpenChange={(open) => { if (!open) setTrocarMentoraModalOpen(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <ArrowLeftRight className="h-5 w-5" />
+              Confirmar Troca de Mentora
+            </DialogTitle>
+            <DialogDescription>
+              Esta ação atualizará a mentora do aluno em todo o sistema.
+            </DialogDescription>
+          </DialogHeader>
+          {editAluno && (
+            <div className="space-y-4 py-2">
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <p className="font-semibold text-gray-900">{editAluno.name}</p>
+                <p className="text-sm text-gray-500">{editAluno.email}</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-500 w-20 shrink-0">Mentora atual:</span>
+                  <span className="font-medium text-red-700">{mentoresList.find((m: any) => m.id.toString() === (editAluno.consultorId?.toString() ?? ''))?.name || 'Nenhuma'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-500 w-20 shrink-0">Nova mentora:</span>
+                  <span className="font-medium text-green-700">{mentoresList.find((m: any) => m.id.toString() === editConsultorId)?.name || '-'}</span>
+                </div>
+              </div>
+              <div className="space-y-1.5 text-sm">
+                <p className="text-xs font-semibold text-gray-700">O que acontece ao confirmar:</p>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">Mentora atualizada no perfil do aluno e no nível de contrato ativo</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">Nova mentora passa a ver este aluno na sua lista de mentorados</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">E-mail enviado para a nova mentora informando o novo aluno</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  <span className="text-gray-600 text-xs">E-mail enviado para a mentora anterior informando a remoção</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTrocarMentoraModalOpen(false)}>Cancelar</Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={handleTrocarMentora}
+              disabled={trocarMentora.isPending}
+            >
+              {trocarMentora.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Processando...</> : <><ArrowLeftRight className="h-4 w-4 mr-2" /> Confirmar Troca</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+// ============ EMPRESAS TAB ============
+function EmpresasTab({ empresas, loading, onCreate, isCreating, onUpdate, onToggleStatus }: {
+  empresas: any[];
+  loading: boolean;
+  onCreate: (data: any) => void;
+  isCreating: boolean;
+  onUpdate: (data: any) => void;
+  onToggleStatus: (data: any) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editEmpresa, setEditEmpresa] = useState<any>(null);
+  const [nome, setNome] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [editNome, setEditNome] = useState("");
+  const [editCodigo, setEditCodigo] = useState("");
+  const [editDescricao, setEditDescricao] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onCreate({ name: nome, code: codigo, description: descricao });
+    setNome("");
+    setCodigo("");
+    setDescricao("");
+    setOpen(false);
+  };
+
+  const handleEditOpen = (empresa: any) => {
+    setEditEmpresa(empresa);
+    setEditNome(empresa.name || "");
+    setEditCodigo(empresa.code || "");
+    setEditDescricao(empresa.description || "");
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEmpresa) return;
+    onUpdate({ id: editEmpresa.id, name: editNome, code: editCodigo, description: editDescricao });
+    setEditOpen(false);
+    setEditEmpresa(null);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Empresas / Programas</CardTitle>
+          <CardDescription>Gerencie as empresas parceiras do programa</CardDescription>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" /> Nova Empresa</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleSubmit}>
+              <DialogHeader>
+                <DialogTitle>Cadastrar Nova Empresa</DialogTitle>
+                <DialogDescription>Preencha os dados da empresa/programa</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome da Empresa</Label>
+                  <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: SEBRAE ACRE" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="codigo">Código</Label>
+                  <Input id="codigo" value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Ex: SEBRAEACRE" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="descricao">Descrição (opcional)</Label>
+                  <Input id="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Descrição do programa" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {empresas.map((empresa) => (
+                  <TableRow key={empresa.id}>
+                    <TableCell>{empresa.id}</TableCell>
+                    <TableCell className="font-medium">{empresa.name}</TableCell>
+                    <TableCell>{empresa.code}</TableCell>
+                    <TableCell>
+                      <Badge variant={empresa.isActive ? "default" : "secondary"}>
+                        {empresa.isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditOpen(empresa)}>
+                          <Pencil className="h-3 w-3 mr-1" /> Editar
+                        </Button>
+                        <Button
+                          variant={empresa.isActive ? "destructive" : "default"}
+                          size="sm"
+                          onClick={() => onToggleStatus({ id: empresa.id })}
+                        >
+                          <Power className="h-3 w-3 mr-1" />
+                          {empresa.isActive ? "Inativar" : "Ativar"}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {empresas.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Nenhuma empresa cadastrada
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Dialog de Edição */}
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogContent>
+                <form onSubmit={handleEditSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Editar Empresa</DialogTitle>
+                    <DialogDescription>Atualize os dados da empresa</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Nome da Empresa</Label>
+                      <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Código</Label>
+                      <Input value={editCodigo} onChange={(e) => setEditCodigo(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Descrição</Label>
+                      <Input value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Salvar Alterações</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ MENTORES TAB ============
+function MentoresTab({ mentores, empresas, loading, onCreate, onUpdateAcesso, isCreating, onEdit, onToggleStatus, isTogglingStatus }: {
+  mentores: any[];
+  empresas: any[];
+  loading: boolean;
+  onCreate: (data: any) => void;
+  onUpdateAcesso: (data: any) => void;
+  isCreating: boolean;
+  onEdit: (data: any) => void;
+  onToggleStatus: (consultorId: number) => void;
+  isTogglingStatus: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editMentor, setEditMentor] = useState<any>(null);
+  const [searchMentor, setSearchMentor] = useState("");
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [cpfMentor, setCpfMentor] = useState("");
+  const [loginId, setLoginId] = useState("");
+  const [especialidade, setEspecialidade] = useState("");
+  const [valorSessao, setValorSessao] = useState("");
+  const [editNome, setEditNome] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editCpf, setEditCpf] = useState("");
+  const [editEspecialidade, setEditEspecialidade] = useState("");
+  const [editValorSessao, setEditValorSessao] = useState("");
+  const [editMiniCurriculo, setEditMiniCurriculo] = useState("");
+  const [editPhotoUrl, setEditPhotoUrl] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const uploadPhotoMutation = trpc.mentor.uploadPhoto.useMutation({
+    onSuccess: (data) => {
+      setEditPhotoUrl(data.url);
+      toast.success("Foto atualizada com sucesso!");
+      setUploadingPhoto(false);
+    },
+    onError: (err) => {
+      toast.error(`Erro ao enviar foto: ${err.message}`);
+      setUploadingPhoto(false);
+    },
+  });
+  // Precificação flexível
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [pricingMentor, setPricingMentor] = useState<any>(null);
+  const [pricingRules, setPricingRules] = useState<Array<{ sessionFrom: string; sessionTo: string; valor: string; descricao: string }>>([]);
+  const pricingQuery = trpc.admin.getMentorPricing.useQuery(
+    { consultorId: pricingMentor?.id || 0 },
+    { enabled: !!pricingMentor }
+  );
+  const setPricingMutation = trpc.admin.setMentorPricing.useMutation({
+    onSuccess: () => {
+      toast.success("Precificação salva com sucesso!");
+      pricingQuery.refetch();
+      setPricingOpen(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedEmail = email.trim();
+    const cpfDigits = cpfMentor.replace(/\D/g, '');
+    
+    // Validação obrigatória de email
+    if (!trimmedEmail) {
+      toast.error("Email é obrigatório");
+      return;
+    }
+    // Validação de formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast.error("Email inválido. Informe um email válido (ex: nome@empresa.com)");
+      return;
+    }
+    // Validação obrigatória de CPF
+    if (!cpfDigits || cpfDigits.length !== 11) {
+      toast.error("CPF é obrigatório e deve conter 11 dígitos");
+      return;
+    }
+    
+    onCreate({ 
+      name: nome, 
+      email: trimmedEmail, 
+      cpf: cpfDigits,
+      especialidade: especialidade || undefined,
+      loginId: loginId || undefined,
+      valorSessao: valorSessao ? valorSessao : undefined
+    });
+    setNome("");
+    setEmail("");
+    setCpfMentor("");
+    setLoginId("");
+    setEspecialidade("");
+    setOpen(false);
+  };
+
+  const handleToggleAcesso = (mentorId: number, currentLoginId: string | null, email: string) => {
+    if (currentLoginId) {
+      onUpdateAcesso({ consultorId: mentorId, loginId: null, canLogin: false });
+    } else {
+      const newLoginId = `M${mentorId.toString().padStart(4, '0')}`;
+      onUpdateAcesso({ consultorId: mentorId, loginId: newLoginId, canLogin: true });
+    }
+  };
+
+  const handlePricingOpen = (mentor: any) => {
+    setPricingMentor(mentor);
+    setPricingOpen(true);
+  };
+
+  // Sincronizar regras quando dados carregam
+  React.useEffect(() => {
+    if (pricingQuery.data && pricingOpen) {
+      if (pricingQuery.data.length > 0) {
+        setPricingRules(pricingQuery.data.map(r => ({
+          sessionFrom: String(r.sessionFrom),
+          sessionTo: String(r.sessionTo),
+          valor: String(r.valor),
+          descricao: r.descricao || '',
+        })));
+      } else {
+        setPricingRules([{ sessionFrom: '1', sessionTo: '12', valor: pricingMentor?.valorSessao || '0', descricao: '' }]);
+      }
+    }
+  }, [pricingQuery.data, pricingOpen]);
+
+  const addPricingRule = () => {
+    const lastTo = pricingRules.length > 0 ? Number(pricingRules[pricingRules.length - 1].sessionTo) : 0;
+    setPricingRules([...pricingRules, { sessionFrom: String(lastTo + 1), sessionTo: String(lastTo + 4), valor: '', descricao: '' }]);
+  };
+
+  const removePricingRule = (index: number) => {
+    setPricingRules(pricingRules.filter((_, i) => i !== index));
+  };
+
+  const updatePricingRule = (index: number, field: string, value: string) => {
+    const updated = [...pricingRules];
+    (updated[index] as any)[field] = value;
+    setPricingRules(updated);
+  };
+
+  const handlePricingSave = () => {
+    const rules = pricingRules.filter(r => r.valor && r.sessionFrom && r.sessionTo).map(r => ({
+      sessionFrom: Number(r.sessionFrom),
+      sessionTo: Number(r.sessionTo),
+      valor: r.valor,
+      descricao: r.descricao || undefined,
+    }));
+    setPricingMutation.mutate({ consultorId: pricingMentor.id, rules });
+  };
+
+  const handleEditOpen = (mentor: any) => {
+    setEditMentor(mentor);
+    setEditNome(mentor.name || "");
+    setEditEmail(mentor.email || "");
+    setEditCpf(mentor.cpf ? formatCpf(mentor.cpf) : "");
+    setEditEspecialidade(mentor.especialidade || "");
+    setEditValorSessao(mentor.valorSessao || "");
+    setEditMiniCurriculo(mentor.miniCurriculo || "");
+    setEditPhotoUrl(mentor.photoUrl || "");
+    setEditOpen(true);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editMentor) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Selecione um arquivo de imagem (JPG, PNG)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+    setUploadingPhoto(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(',')[1];
+      uploadPhotoMutation.mutate({
+        consultorId: editMentor.id,
+        photoBase64: base64,
+        mimeType: file.type,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editMentor) return;
+    const cpfDigits = editCpf.replace(/\D/g, '');
+    onEdit({ 
+      consultorId: editMentor.id, 
+      name: editNome, 
+      email: editEmail || undefined,
+      cpf: cpfDigits || undefined,
+      especialidade: editEspecialidade || undefined,
+      valorSessao: editValorSessao ? editValorSessao : undefined,
+      miniCurriculo: editMiniCurriculo || undefined,
+    });
+    setEditOpen(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Mentores</CardTitle>
+          <CardDescription>Gerencie os mentores do programa</CardDescription>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" /> Novo Mentor</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleSubmit}>
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Mentor</DialogTitle>
+                <DialogDescription>Preencha os dados do mentor</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome-mentor">Nome Completo</Label>
+                  <Input id="nome-mentor" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do mentor" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email-mentor">Email *</Label>
+                  <Input id="email-mentor" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cpf-mentor">CPF *</Label>
+                  <Input id="cpf-mentor" value={cpfMentor} onChange={(e) => setCpfMentor(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} required />
+                  <p className="text-xs text-muted-foreground">CPF é obrigatório e usado para login do mentor (Email + CPF)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="especialidade-mentor">Especialidade</Label>
+                  <Input id="especialidade-mentor" value={especialidade} onChange={(e) => setEspecialidade(e.target.value)} placeholder="Ex: Gestão, Finanças, Marketing, Liderança" />
+                  <p className="text-xs text-muted-foreground">Área de atuação principal do mentor</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="loginId-mentor">ID de Login (opcional)</Label>
+                  <Input id="loginId-mentor" value={loginId} onChange={(e) => setLoginId(e.target.value)} placeholder="Ex: M0001" />
+                  <p className="text-xs text-muted-foreground">Se não informado, será gerado automaticamente ao ativar o acesso</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="valor-sessao-mentor">Valor por Sessão (R$)</Label>
+                  <Input id="valor-sessao-mentor" type="number" step="0.01" min="0" value={valorSessao} onChange={(e) => setValorSessao(e.target.value)} placeholder="Ex: 150.00" />
+                  <p className="text-xs text-muted-foreground">Valor cobrado por sessão de mentoria individual</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <>
+          {/* Campo de busca */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, email, especialidade ou CPF..."
+              value={searchMentor}
+              onChange={(e) => setSearchMentor(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchMentor && (
+              <button onClick={() => setSearchMentor("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Especialidade</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>CPF</TableHead>
+                <TableHead>ID Login</TableHead>
+                <TableHead>Valor/Sessão</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Acesso</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...mentores]
+                .filter((m) => {
+                  const term = searchMentor.toLowerCase().trim();
+                  if (!term) return true;
+                  return (
+                    (m.name || "").toLowerCase().includes(term) ||
+                    (m.email || "").toLowerCase().includes(term) ||
+                    (m.especialidade || "").toLowerCase().includes(term) ||
+                    (m.cpf || "").includes(term.replace(/\D/g, '')) ||
+                    (m.loginId || "").toLowerCase().includes(term)
+                  );
+                })
+                .sort((a, b) => (b.canLogin ? 1 : 0) - (a.canLogin ? 1 : 0)).map((mentor) => (
+                <TableRow key={mentor.id}>
+                  <TableCell>{mentor.id}</TableCell>
+                  <TableCell className="font-medium">{mentor.name}</TableCell>
+                  <TableCell>{mentor.especialidade || <span className="text-muted-foreground italic">Não informada</span>}</TableCell>
+                  <TableCell>{mentor.email || "-"}</TableCell>
+                  <TableCell className="font-mono text-sm">{mentor.cpf ? displayCpf(mentor.cpf) : "-"}</TableCell>
+                  <TableCell>{mentor.loginId || "-"}</TableCell>
+                  <TableCell className="font-mono">{mentor.valorSessao ? `R$ ${Number(mentor.valorSessao).toFixed(2)}` : <span className="text-muted-foreground italic">-</span>}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onToggleStatus(mentor.id)}
+                      disabled={isTogglingStatus}
+                      className={mentor.isActive ? "text-green-600 hover:text-red-600" : "text-red-600 hover:text-green-600"}
+                      title={mentor.isActive ? "Clique para inativar" : "Clique para ativar"}
+                    >
+                      {mentor.isActive ? (
+                        <Badge variant="default" className="bg-green-600 cursor-pointer"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
+                      ) : (
+                        <Badge variant="destructive" className="cursor-pointer"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
+                      )}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    {mentor.canLogin ? (
+                      <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
+                    ) : (
+                      <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditOpen(mentor)}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" /> Editar
+                      </Button>
+                      <Button 
+                        variant={mentor.canLogin ? "destructive" : "default"} 
+                        size="sm"
+                        onClick={() => handleToggleAcesso(mentor.id, mentor.loginId, mentor.email)}
+                      >
+                        {mentor.canLogin ? "Desativar" : "Ativar Acesso"}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handlePricingOpen(mentor)}
+                        title="Precificação por sessão"
+                      >
+                        <DollarSign className="h-3 w-3 mr-1" /> Preços
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {mentores.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                    {searchMentor ? "Nenhum mentor encontrado com os filtros aplicados." : "Nenhum mentor cadastrado"}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          </>
+        )}
+
+        {/* Dialog de Precificação Flexível */}
+        <Dialog open={pricingOpen} onOpenChange={setPricingOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Precificação por Sessão</DialogTitle>
+              <DialogDescription>
+                Defina valores diferentes por número de sessão para {pricingMentor?.name}.
+                Valor padrão: R$ {pricingMentor?.valorSessao ? Number(pricingMentor.valorSessao).toFixed(2) : '0.00'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
+              {pricingQuery.isLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin" /></div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center text-sm font-medium text-muted-foreground">
+                    <span>Sessão De</span>
+                    <span>Sessão Até</span>
+                    <span>Valor (R$)</span>
+                    <span></span>
+                  </div>
+                  {pricingRules.map((rule, index) => (
+                    <div key={index} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={rule.sessionFrom}
+                        onChange={(e) => updatePricingRule(index, 'sessionFrom', e.target.value)}
+                        placeholder="1"
+                      />
+                      <Input
+                        type="number"
+                        min="1"
+                        value={rule.sessionTo}
+                        onChange={(e) => updatePricingRule(index, 'sessionTo', e.target.value)}
+                        placeholder="12"
+                      />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={rule.valor}
+                        onChange={(e) => updatePricingRule(index, 'valor', e.target.value)}
+                        placeholder="150.00"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removePricingRule(index)}
+                        disabled={pricingRules.length <= 1}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={addPricingRule} className="w-full">
+                    <Plus className="h-4 w-4 mr-2" /> Adicionar Faixa
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Sessões não cobertas por nenhuma faixa usarão o valor padrão (R$ {pricingMentor?.valorSessao ? Number(pricingMentor.valorSessao).toFixed(2) : '0.00'}).
+                    Exemplo: Sessões 1 e 12 = R$ 150, Sessões 2 a 11 = R$ 100.
+                  </p>
+                </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setPricingOpen(false)}>Cancelar</Button>
+              <Button onClick={handlePricingSave} disabled={setPricingMutation.isPending}>
+                {setPricingMutation.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar Precificação"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog de Edição de Mentor */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleEditSubmit}>
+              <DialogHeader>
+                <DialogTitle>Editar Mentor</DialogTitle>
+                <DialogDescription>Atualize os dados do mentor</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                {/* Foto do Mentor */}
+                <div className="space-y-2">
+                  <Label>Foto do Mentor</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-border flex items-center justify-center">
+                      {editPhotoUrl ? (
+                        <img src={editPhotoUrl} alt="Foto do mentor" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="h-8 w-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadingPhoto}
+                        onClick={() => document.getElementById('edit-photo-mentor')?.click()}
+                      >
+                        {uploadingPhoto ? (
+                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                        ) : (
+                          <><Camera className="h-4 w-4 mr-2" /> {editPhotoUrl ? 'Alterar Foto' : 'Adicionar Foto'}</>
+                        )}
+                      </Button>
+                      <input
+                        id="edit-photo-mentor"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handlePhotoUpload}
+                      />
+                      <p className="text-xs text-muted-foreground">JPG, PNG ou WebP. Máx 5MB.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nome-mentor">Nome Completo</Label>
+                  <Input id="edit-nome-mentor" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome do mentor" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email-mentor">Email</Label>
+                  <Input id="edit-email-mentor" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="email@exemplo.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-cpf-mentor">CPF</Label>
+                  <Input id="edit-cpf-mentor" value={editCpf} onChange={(e) => setEditCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-especialidade-mentor">Especialidade</Label>
+                  <Input id="edit-especialidade-mentor" value={editEspecialidade} onChange={(e) => setEditEspecialidade(e.target.value)} placeholder="Ex: Gestão, Finanças, Marketing, Liderança" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-valor-sessao-mentor">Valor por Sessão (R$)</Label>
+                  <Input id="edit-valor-sessao-mentor" type="number" step="0.01" min="0" value={editValorSessao} onChange={(e) => setEditValorSessao(e.target.value)} placeholder="Ex: 150.00" />
+                </div>
+
+                {/* Minicurrículo */}
+                <div className="space-y-2">
+                  <Label htmlFor="edit-minicurriculo-mentor">Minicurrículo</Label>
+                  <Textarea
+                    id="edit-minicurriculo-mentor"
+                    value={editMiniCurriculo}
+                    onChange={(e) => setEditMiniCurriculo(e.target.value)}
+                    placeholder="Breve descrição profissional do mentor, formação, experiência e áreas de atuação..."
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground">Biografia profissional que será exibida no perfil do mentor</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+                <Button type="submit">Salvar Alterações</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ GERENTES TAB ============
+function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, isCreating, onEdit }: {
+  gerentes: any[];
+  empresas: any[];
+  loading: boolean;
+  onCreate: (data: any) => void;
+  onUpdateAcesso: (data: any) => void;
+  isCreating: boolean;
+  onEdit: (data: any) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editGerente, setEditGerente] = useState<any>(null);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [cpfGerente, setCpfGerente] = useState("");
+  const [managedProgramId, setManagedProgramId] = useState("");
+  const [editNome, setEditNome] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editManagedProgramId, setEditManagedProgramId] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!managedProgramId) {
+      toast.error("Selecione a empresa que o gerente irá gerenciar");
+      return;
+    }
+    const cpfDigits = cpfGerente.replace(/\D/g, '');
+    if (cpfDigits.length > 0 && cpfDigits.length !== 11) {
+      toast.error("CPF deve conter 11 dígitos");
+      return;
+    }
+    onCreate({ 
+      name: nome, 
+      email, 
+      cpf: cpfDigits || undefined,
+      managedProgramId: parseInt(managedProgramId)
+    });
+    setNome("");
+    setEmail("");
+    setCpfGerente("");
+    setManagedProgramId("");
+    setOpen(false);
+  };
+
+  const handleEditOpen = (gerente: any) => {
+    setEditGerente(gerente);
+    setEditNome(gerente.name || "");
+    setEditEmail(gerente.email || "");
+    setEditManagedProgramId(gerente.managedProgramId?.toString() || "");
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editGerente) return;
+    onEdit({ 
+      consultorId: editGerente.id, 
+      name: editNome, 
+      email: editEmail,
+      managedProgramId: editManagedProgramId ? parseInt(editManagedProgramId) : undefined,
+    });
+    setEditOpen(false);
+    setEditGerente(null);
+  };
+
+  const handleToggleAcesso = (gerenteId: number, currentLoginId: string | null) => {
+    if (currentLoginId) {
+      onUpdateAcesso({ consultorId: gerenteId, loginId: null, canLogin: false });
+    } else {
+      const newLoginId = `G${gerenteId.toString().padStart(4, '0')}`;
+      onUpdateAcesso({ consultorId: gerenteId, loginId: newLoginId, canLogin: true });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Gerentes de Empresa</CardTitle>
+          <CardDescription>Gerencie os gerentes responsáveis por cada empresa</CardDescription>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" /> Novo Gerente</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleSubmit}>
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Gerente</DialogTitle>
+                <DialogDescription>Preencha os dados do gerente de empresa</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome-gerente">Nome Completo</Label>
+                  <Input id="nome-gerente" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do gerente" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email-gerente">Email</Label>
+                  <Input id="email-gerente" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cpf-gerente">CPF</Label>
+                  <Input id="cpf-gerente" value={cpfGerente} onChange={(e) => setCpfGerente(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                  <p className="text-xs text-muted-foreground">CPF é usado para login do gerente (Email + CPF)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="empresa-gerente">Empresa que Gerencia *</Label>
+                  <Select value={managedProgramId} onValueChange={setManagedProgramId} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a empresa" />
+                    </SelectTrigger>
+                    <SelectContentNoPortal>
+                      {empresas.map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                      ))}
+                    </SelectContentNoPortal>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Acesso</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...gerentes].sort((a, b) => (b.canLogin ? 1 : 0) - (a.canLogin ? 1 : 0)).map((gerente) => (
+                  <TableRow key={gerente.id}>
+                    <TableCell>{gerente.id}</TableCell>
+                    <TableCell className="font-medium">{gerente.name}</TableCell>
+                    <TableCell>{gerente.email || "-"}</TableCell>
+                    <TableCell>{empresas.find(e => e.id === gerente.managedProgramId)?.name || "-"}</TableCell>
+                    <TableCell>
+                      {gerente.canLogin ? (
+                        <Badge variant="default" className="bg-green-600"><CheckCircle className="h-3 w-3 mr-1" /> Ativo</Badge>
+                      ) : (
+                        <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" /> Inativo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditOpen(gerente)}>
+                          <Pencil className="h-3 w-3 mr-1" /> Editar
+                        </Button>
+                        <Button 
+                          variant={gerente.canLogin ? "destructive" : "default"} 
+                          size="sm"
+                          onClick={() => handleToggleAcesso(gerente.id, gerente.loginId)}
+                        >
+                          {gerente.canLogin ? "Desativar" : "Ativar Acesso"}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {gerentes.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Nenhum gerente cadastrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Dialog de Edição */}
+            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+              <DialogContent>
+                <form onSubmit={handleEditSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>Editar Gerente</DialogTitle>
+                    <DialogDescription>Atualize os dados do gerente</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Nome Completo</Label>
+                      <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Empresa que Gerencia</Label>
+                      <Select value={editManagedProgramId} onValueChange={setEditManagedProgramId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContentNoPortal>
+                          {empresas.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                          ))}
+                        </SelectContentNoPortal>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Salvar Alterações</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+// ============ GERENTES DE EMPRESA - VISÃO DUPLA ============
+function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onCreatePuro, onRemove, isPromoting, isCreatingPuro, isRemoving }: {
+  gerentesEmpresa: any[];
+  empresas: any[];
+  loading: boolean;
+  onPromote: (data: { alunoId: number; programId: number }) => void;
+  onCreatePuro: (data: { name: string; email: string; cpf?: string; programId: number }) => void;
+  onRemove: (data: { userId: number }) => void;
+  isPromoting: boolean;
+  isCreatingPuro: boolean;
+  isRemoving: boolean;
+}) {
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [puroOpen, setPuroOpen] = useState(false);
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [searchAluno, setSearchAluno] = useState("");
+  const [selectedAlunoId, setSelectedAlunoId] = useState("");
+  const [searchGerente, setSearchGerente] = useState("");
+
+  // Gerente Puro form
+  const [puroNome, setPuroNome] = useState("");
+  const [puroEmail, setPuroEmail] = useState("");
+  const [puroCpf, setPuroCpf] = useState("");
+  const [puroProgramId, setPuroProgramId] = useState("");
+
+  // Query alunos da empresa selecionada (para promoção)
+  const { data: alunosProgram } = trpc.admin.alunosByProgram.useQuery(
+    { programId: parseInt(selectedProgramId) },
+    { enabled: !!selectedProgramId && promoteOpen }
+  );
+
+  const filteredAlunos = (alunosProgram || []).filter((a: any) =>
+    !searchAluno || a.name.toLowerCase().includes(searchAluno.toLowerCase()) || a.email?.toLowerCase().includes(searchAluno.toLowerCase())
+  );
+
+  const handlePromote = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAlunoId || !selectedProgramId) {
+      toast.error("Selecione a empresa e o aluno");
+      return;
+    }
+    onPromote({ alunoId: parseInt(selectedAlunoId), programId: parseInt(selectedProgramId) });
+    setSelectedAlunoId("");
+    setSearchAluno("");
+    setSelectedProgramId("");
+    setPromoteOpen(false);
+  };
+
+  const handleCreatePuro = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!puroProgramId) {
+      toast.error("Selecione a empresa");
+      return;
+    }
+    const cpfDigits = puroCpf.replace(/\D/g, '');
+    if (cpfDigits.length > 0 && cpfDigits.length !== 11) {
+      toast.error("CPF deve conter 11 dígitos");
+      return;
+    }
+    onCreatePuro({
+      name: puroNome,
+      email: puroEmail,
+      cpf: cpfDigits || undefined,
+      programId: parseInt(puroProgramId),
+    });
+    setPuroNome("");
+    setPuroEmail("");
+    setPuroCpf("");
+    setPuroProgramId("");
+    setPuroOpen(false);
+  };
+
+  const handleRemove = (userId: number, name: string) => {
+    if (window.confirm(`Tem certeza que deseja remover o papel de gerente de "${name}"? O usuário voltará a ser apenas aluno.`)) {
+      onRemove({ userId });
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-500" />
+              Gerentes de Empresa (Visão Dupla)
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Gerencie quem tem visão gerencial da empresa. Gerentes com perfil de aluno podem alternar entre as duas visões.
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            <Dialog open={promoteOpen} onOpenChange={setPromoteOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default" size="sm">
+                  <ArrowLeftRight className="h-4 w-4 mr-2" />
+                  Promover Aluno
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <form onSubmit={handlePromote}>
+                  <DialogHeader>
+                    <DialogTitle>Promover Aluno a Gerente</DialogTitle>
+                    <DialogDescription>
+                      O aluno manterá seu perfil de aluno e ganhará acesso à visão gerencial da empresa.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Empresa *</Label>
+                      <Select value={selectedProgramId} onValueChange={(v) => { setSelectedProgramId(v); setSelectedAlunoId(""); setSearchAluno(""); }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContentNoPortal>
+                          {empresas.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                          ))}
+                        </SelectContentNoPortal>
+                      </Select>
+                    </div>
+                    {selectedProgramId && (
+                      <div className="space-y-2">
+                        <Label>Buscar Aluno *</Label>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            className="pl-9"
+                            placeholder="Digite o nome ou email do aluno..."
+                            value={searchAluno}
+                            onChange={(e) => setSearchAluno(e.target.value)}
+                          />
+                        </div>
+                        <div className="max-h-48 overflow-y-auto border rounded-md">
+                          {filteredAlunos.length === 0 ? (
+                            <p className="text-sm text-muted-foreground p-3 text-center">
+                              {alunosProgram ? "Nenhum aluno encontrado" : "Carregando..."}
+                            </p>
+                          ) : (
+                            filteredAlunos.map((aluno: any) => (
+                              <button
+                                key={aluno.id}
+                                type="button"
+                                onClick={() => setSelectedAlunoId(aluno.id.toString())}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center justify-between ${
+                                  selectedAlunoId === aluno.id.toString() ? "bg-primary/10 text-primary font-medium" : ""
+                                }`}
+                              >
+                                <div>
+                                  <p className="font-medium">{aluno.name}</p>
+                                  <p className="text-xs text-muted-foreground">{aluno.email || "Sem email"}</p>
+                                </div>
+                                {selectedAlunoId === aluno.id.toString() && (
+                                  <CheckCircle className="h-4 w-4 text-primary" />
+                                )}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={isPromoting || !selectedAlunoId}>
+                      {isPromoting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Promovendo...</> : "Promover a Gerente"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={puroOpen} onOpenChange={setPuroOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Gerente Puro
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={handleCreatePuro}>
+                  <DialogHeader>
+                    <DialogTitle>Cadastrar Gerente Puro</DialogTitle>
+                    <DialogDescription>
+                      Este gerente NÃO será aluno do programa. Terá apenas a visão gerencial da empresa.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Nome Completo *</Label>
+                      <Input value={puroNome} onChange={(e) => setPuroNome(e.target.value)} placeholder="Nome do gerente" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email *</Label>
+                      <Input type="email" value={puroEmail} onChange={(e) => setPuroEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>CPF</Label>
+                      <Input value={puroCpf} onChange={(e) => setPuroCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                      <p className="text-xs text-muted-foreground">CPF é usado para login (Email + CPF)</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Empresa que Gerencia *</Label>
+                      <Select value={puroProgramId} onValueChange={setPuroProgramId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContentNoPortal>
+                          {empresas.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                          ))}
+                        </SelectContentNoPortal>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={isCreatingPuro}>
+                      {isCreatingPuro ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando...</> : "Criar Gerente Puro"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <>
+            {/* Info Banner */}
+            <Alert className="mb-4 border-amber-200 bg-amber-50">
+              <Crown className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <strong>Promover Aluno:</strong> O aluno ganha visão gerencial e pode alternar entre Aluno e Gerente.{" "}
+                <strong>Gerente Puro:</strong> Pessoa que NÃO é aluno, só tem visão gerencial.
+              </AlertDescription>
+            </Alert>
+
+            {/* Campo de busca */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, email, CPF, empresa ou mentor..."
+                value={searchGerente}
+                onChange={(e) => setSearchGerente(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchGerente && (
+                <button onClick={() => setSearchGerente("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome Completo</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>CPF</TableHead>
+                  <TableHead>Empresa</TableHead>
+                  <TableHead>Turma</TableHead>
+                  <TableHead>Mentor</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {gerentesEmpresa
+                  .filter((g: any) => {
+                    const term = searchGerente.toLowerCase().trim();
+                    if (!term) return true;
+                    return (
+                      (g.name || "").toLowerCase().includes(term) ||
+                      (g.email || "").toLowerCase().includes(term) ||
+                      (g.cpf || "").includes(term.replace(/\D/g, '')) ||
+                      (g.programName || "").toLowerCase().includes(term) ||
+                      (g.turmaName || "").toLowerCase().includes(term) ||
+                      (g.mentorName || "").toLowerCase().includes(term)
+                    );
+                  })
+                  .map((g: any) => (
+                  <TableRow key={g.id}>
+                    <TableCell className="font-medium">
+                      <div>
+                        <p>{g.name}</p>
+                        {g.alunoId && <p className="text-xs text-muted-foreground">Aluno #{g.alunoId}</p>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{g.email || "-"}</TableCell>
+                    <TableCell className="text-sm font-mono">
+                      {g.cpf ? g.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "-"}
+                    </TableCell>
+                    <TableCell>{g.programName || "-"}</TableCell>
+                    <TableCell className="text-sm">{g.turmaName || "-"}</TableCell>
+                    <TableCell className="text-sm">
+                      {g.mentorName ? (
+                        <div>
+                          <p>{g.mentorName}</p>
+                          {g.mentorId && <p className="text-xs text-muted-foreground">ID: {g.mentorId}</p>}
+                        </div>
+                      ) : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {g.isAlsoStudent ? (
+                        <Badge className="bg-blue-600">
+                          <ArrowLeftRight className="h-3 w-3 mr-1" />
+                          Aluno + Gerente
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          Gerente Puro
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemove(g.id, g.name)}
+                        disabled={isRemoving}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Remover
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {gerentesEmpresa.length === 0 && !searchGerente && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      Nenhum gerente de empresa com visão dupla cadastrado. Use "Promover Aluno" ou "Gerente Puro" para adicionar.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {gerentesEmpresa.length > 0 && searchGerente && gerentesEmpresa.filter((g: any) => {
+                    const term = searchGerente.toLowerCase().trim();
+                    return (
+                      (g.name || "").toLowerCase().includes(term) ||
+                      (g.email || "").toLowerCase().includes(term) ||
+                      (g.cpf || "").includes(term.replace(/\D/g, '')) ||
+                      (g.programName || "").toLowerCase().includes(term) ||
+                      (g.turmaName || "").toLowerCase().includes(term) ||
+                      (g.mentorName || "").toLowerCase().includes(term)
+                    );
+                  }).length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                      Nenhum gerente encontrado com os filtros aplicados.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ ABA DIRETORES/ÁREA (ECODISC 360 - VISÃO RESTRITA POR DIRETORIA) ============
+function DiretoresTab({ diretores, empresas, loading, onCreatePuro, onRemove, isCreatingPuro, isRemoving }: {
+  diretores: any[];
+  empresas: any[];
+  loading: boolean;
+  onCreatePuro: (data: { name: string; email: string; cpf?: string; programId: number; departmentId: number }) => void;
+  onRemove: (data: { consultorId: number }) => void;
+  isCreatingPuro: boolean;
+  isRemoving: boolean;
+}) {
+  const [puroOpen, setPuroOpen] = useState(false);
+  const [searchDiretor, setSearchDiretor] = useState("");
+
+  const [puroNome, setPuroNome] = useState("");
+  const [puroEmail, setPuroEmail] = useState("");
+  const [puroCpf, setPuroCpf] = useState("");
+  const [puroProgramId, setPuroProgramId] = useState("");
+  const [puroDepartmentId, setPuroDepartmentId] = useState("");
+
+  const { data: departamentosDaEmpresa = [] } = trpc.departments.list.useQuery(
+    { programId: parseInt(puroProgramId), includeInactive: false },
+    { enabled: !!puroProgramId && puroOpen }
+  );
+
+  const handleCreatePuro = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!puroProgramId || !puroDepartmentId) {
+      toast.error("Selecione a empresa e a diretoria");
+      return;
+    }
+    const cpfDigits = puroCpf.replace(/\D/g, '');
+    if (cpfDigits.length > 0 && cpfDigits.length !== 11) {
+      toast.error("CPF deve conter 11 dígitos");
+      return;
+    }
+    onCreatePuro({
+      name: puroNome,
+      email: puroEmail,
+      cpf: cpfDigits || undefined,
+      programId: parseInt(puroProgramId),
+      departmentId: parseInt(puroDepartmentId),
+    });
+    setPuroNome("");
+    setPuroEmail("");
+    setPuroCpf("");
+    setPuroProgramId("");
+    setPuroDepartmentId("");
+    setPuroOpen(false);
+  };
+
+  const handleRemove = (consultorId: number, name: string) => {
+    if (window.confirm(`Tem certeza que deseja remover o diretor "${name}"? Ele perderá o acesso ao EcoDISC 360.`)) {
+      onRemove({ consultorId });
+    }
+  };
+
+  const filteredDiretores = diretores.filter((d: any) => {
+    const term = searchDiretor.toLowerCase().trim();
+    if (!term) return true;
+    return (
+      (d.name || "").toLowerCase().includes(term) ||
+      (d.email || "").toLowerCase().includes(term) ||
+      (d.programName || "").toLowerCase().includes(term) ||
+      (d.departmentName || "").toLowerCase().includes(term)
+    );
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-purple-500" />
+              Diretores/Área (Visão Restrita por Diretoria)
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Cada diretor acessa somente o EcoDISC 360 (Aplicações e Perfil) da diretoria vinculada a ele.
+              Para uma pessoa que precisa ver todas as diretorias da empresa (ex: presidência, RH), use a aba "Gerentes".
+            </CardDescription>
+          </div>
+          <Dialog open={puroOpen} onOpenChange={setPuroOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Novo Diretor
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <form onSubmit={handleCreatePuro}>
+                <DialogHeader>
+                  <DialogTitle>Cadastrar Diretor/Área</DialogTitle>
+                  <DialogDescription>
+                    O diretor terá acesso apenas ao EcoDISC 360 da diretoria selecionada abaixo — não vê outras diretorias nem outras empresas.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Nome Completo *</Label>
+                    <Input value={puroNome} onChange={(e) => setPuroNome(e.target.value)} placeholder="Nome do diretor" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email *</Label>
+                    <Input type="email" value={puroEmail} onChange={(e) => setPuroEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>CPF</Label>
+                    <Input value={puroCpf} onChange={(e) => setPuroCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
+                    <p className="text-xs text-muted-foreground">CPF é usado para login (Email + CPF)</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Empresa *</Label>
+                    <Select value={puroProgramId} onValueChange={(v) => { setPuroProgramId(v); setPuroDepartmentId(""); }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a empresa" />
+                      </SelectTrigger>
+                      <SelectContentNoPortal>
+                        {empresas.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                        ))}
+                      </SelectContentNoPortal>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Diretoria que Gerencia *</Label>
+                    <Select value={puroDepartmentId} onValueChange={setPuroDepartmentId} disabled={!puroProgramId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={puroProgramId ? "Selecione a diretoria" : "Selecione a empresa primeiro"} />
+                      </SelectTrigger>
+                      <SelectContentNoPortal>
+                        {(departamentosDaEmpresa as any[]).map((dep) => (
+                          <SelectItem key={dep.id} value={dep.id.toString()}>{dep.name}</SelectItem>
+                        ))}
+                      </SelectContentNoPortal>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Se a diretoria ainda não existe, cadastre-a antes em EcoDISC 360 → Estrutura Organizacional.</p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" disabled={isCreatingPuro}>
+                    {isCreatingPuro ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando...</> : "Criar Diretor"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <>
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nome, email, empresa ou diretoria..."
+                value={searchDiretor}
+                onChange={(e) => setSearchDiretor(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchDiretor && (
+                <button onClick={() => setSearchDiretor("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome Completo</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Empresa</TableHead>
+                    <TableHead>Diretoria</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDiretores.map((d: any) => (
+                    <TableRow key={d.id}>
+                      <TableCell className="font-medium">{d.name}</TableCell>
+                      <TableCell className="text-sm">{d.email || "-"}</TableCell>
+                      <TableCell>{d.programName || "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          <Layers className="h-3 w-3 mr-1" />
+                          {d.departmentName || "-"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRemove(d.id, d.name)}
+                          disabled={isRemoving}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Remover
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredDiretores.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        {diretores.length === 0
+                          ? "Nenhum diretor cadastrado. Use \"Novo Diretor\" para adicionar."
+                          : "Nenhum diretor encontrado com os filtros aplicados."}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ LISTA DE PÁGINAS DO SISTEMA PARA PERMISSÕES ============
+const ADMIN_PAGE_GROUPS = [
+  {
+    group: 'Geral',
+    pages: [
+      { path: '/', label: 'Painel Inicial' },
+    ],
+  },
+  {
+    group: 'Alunos',
+    pages: [
+      { path: '/onboarding-tracking', label: 'Onboarding Tracking' },
+      { path: '/admin/auditoria-resets', label: 'Auditoria de Resets' },
+      { path: '/admin/auditoria-notas-mentoria', label: 'Auditoria Notas Mentoria' },
+      { path: '/painel-revisoes', label: 'Painel de Revisões PDI' },
+      { path: '/assessment', label: 'Assessment / PDI' },
+      { path: '/plano-individual', label: 'Plano Individual' },
+      { path: '/metas', label: 'Metas de Desenvolvimento' },
+      { path: '/atividades-praticas', label: 'Atividades Práticas' },
+      { path: '/admin/certificado-manual', label: 'Emissão Manual de Certificado' },
+      { path: '/admin/configuracao-certificados', label: 'Configuração de Certificados' },
+    ],
+  },
+  {
+    group: 'Mentores',
+    pages: [
+      { path: '/dashboard/mentor', label: 'Dashboard de Mentores' },
+      { path: '/registro-mentoria', label: 'Registro de Mentoria' },
+      { path: '/demonstrativo-mentorias', label: 'Sessões de Mentoria' },
+      { path: '/agendamentos', label: 'Painel de Agendamentos' },
+      { path: '/editar-mentorias', label: 'Editar Mentorias' },
+      { path: '/precificacao-sessoes', label: 'Precificação de Sessões' },
+      { path: '/relatorio-mentorias', label: 'Relatório de Mentorias' },
+    ],
+  },
+  {
+    group: 'Empresas e Resultados',
+    pages: [
+      { path: '/dashboard/visao-geral', label: 'Visão Geral' },
+      { path: '/dashboard/empresa', label: 'Por Empresa' },
+    ],
+  },
+  {
+    group: 'Processos Seletivos',
+    pages: [
+      { path: '/processos-seletivos', label: 'Painel de Processos' },
+      { path: '/processos-seletivos/avaliacao', label: 'Avaliação' },
+      { path: '/processos-seletivos/comunicado', label: 'Comunicado do PS' },
+    ],
+  },
+  {
+    group: 'EcoDISC 360',
+    pages: [
+      { path: '/disc360/estrutura-organizacional', label: 'Estrutura Organizacional' },
+      { path: '/disc360/perfis-empresa', label: 'Perfis de Empresa/Diretoria' },
+      { path: '/disc360/perfis-cargo', label: 'Perfis de Cargo' },
+      { path: '/disc360/aplicacoes', label: 'Aplicações DISC' },
+      { path: '/disc360/resultado-match', label: 'Resultado / Match' },
+    ],
+  },
+  {
+    group: 'Parametrização',
+    pages: [
+      { path: '/cadastros', label: 'Cadastros' },
+      { path: '/turmas', label: 'Turmas' },
+      { path: '/trilhas-competencias', label: 'Trilhas e Competências' },
+      { path: '/competencias-comp-tec', label: 'Cursos_Criação' },
+      { path: '/cursos', label: 'Mini-Cursos' },
+      { path: '/admin/avaliacoes', label: 'Avaliações' },
+      { path: '/atividades-extras', label: 'Atividades Extras' },
+      { path: '/formulas', label: 'Fórmulas' },
+      { path: '/biblioteca-tarefas', label: 'Biblioteca de Tarefas' },
+      { path: '/admin/atribuir-cursos', label: 'Atribuir Cursos' },
+      { path: '/admin/plataforma-aulas', label: 'Gerenciar Plataforma de Cursos' },
+      { path: '/admin/biblioteca-pedagogica', label: 'Biblioteca Pedagógica' },
+      { path: '/admin/biblioteca-livros', label: 'Biblioteca de Livros' },
+    ],
+  },
+  {
+    group: 'Conteúdo e Comunicação',
+    pages: [
+      { path: '/webinars', label: 'Webinars' },
+      { path: '/admin/onboarding-videos', label: 'Vídeos de Onboarding' },
+      { path: '/avisos', label: 'Avisos e Comunicados' },
+      { path: '/mural', label: 'Mural de Cases' },
+    ],
+  },
+  {
+    group: 'Dados e Relatórios',
+    pages: [
+      { path: '/upload', label: 'Upload de Planilhas' },
+      { path: '/relatorios', label: 'Relatórios' },
+    ],
+  },
+  {
+    group: 'Visão do Gestor',
+    pages: [
+      { path: '/boas-vindas-gestor', label: 'Boas-Vindas Gestor' },
+      { path: '/dashboard/ciclos-turmas', label: 'Ciclos & Turmas' },
+      { path: '/dashboard/gestor', label: 'Minha Empresa (Gestor)' },
+      { path: '/dashboard/ranking-geral-engajamento', label: 'Ranking Geral de Engajamento' },
+      { path: '/metas-gestor', label: 'Metas de Desenvolvimento (Gestor)' },
+    ],
+  },
+];
+
+// ============ ADMINS TAB ============
+function AdminsTab({ admins, loading, onCreate, isCreating, onToggleStatus, isTogglingStatus, onSetPermissions, isSavingPermissions }: {
+  admins: any[];
+  loading: boolean;
+  onCreate: (data: any) => void;
+  isCreating: boolean;
+  onToggleStatus: (userId: number) => void;
+  isTogglingStatus: boolean;
+  onSetPermissions: (userId: number, permissions: string[]) => void;
+  isSavingPermissions: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+
+  // Estado do modal de permissões
+  const [permOpen, setPermOpen] = useState(false);
+  const [permAdmin, setPermAdmin] = useState<any>(null);
+  const [selectedPerms, setSelectedPerms] = useState<string[]>([]);
+
+  // Buscar permissões do admin selecionado
+  const { data: currentPerms, isLoading: loadingPerms } = trpc.admin.getPermissions.useQuery(
+    { userId: permAdmin?.id ?? 0 },
+    { enabled: !!permAdmin }
+  );
+
+  // Sincronizar permissões quando carregadas
+  React.useEffect(() => {
+    if (currentPerms !== undefined) {
+      setSelectedPerms(currentPerms);
+    }
+  }, [currentPerms, permAdmin?.id]);
+
+  const openPermModal = (admin: any) => {
+    setPermAdmin(admin);
+    setSelectedPerms([]);
+    setPermOpen(true);
+  };
+
+  const togglePerm = (path: string) => {
+    setSelectedPerms(prev =>
+      prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path]
+    );
+  };
+
+  const toggleGroupPerms = (groupPages: { path: string }[]) => {
+    const groupPaths = groupPages.map(p => p.path);
+    const allSelected = groupPaths.every(p => selectedPerms.includes(p));
+    if (allSelected) {
+      setSelectedPerms(prev => prev.filter(p => !groupPaths.includes(p)));
+    } else {
+      setSelectedPerms(prev => [...new Set([...prev, ...groupPaths])]);
+    }
+  };
+
+  const selectAll = () => {
+    const allPaths = ADMIN_PAGE_GROUPS.flatMap(g => g.pages.map(p => p.path));
+    setSelectedPerms(allPaths);
+  };
+
+  const clearAll = () => setSelectedPerms([]);
+
+  // Estado para copiar permissões de outro admin
+  const [copyFromId, setCopyFromId] = useState<string>('');
+  const { data: copySourcePerms, refetch: fetchCopyPerms } = trpc.admin.getPermissions.useQuery(
+    { userId: Number(copyFromId) },
+    { enabled: false }
+  );
+
+  const handleCopyFrom = async () => {
+    if (!copyFromId) return;
+    const result = await fetchCopyPerms();
+    if (result.data !== undefined) {
+      setSelectedPerms(result.data);
+      toast.success('Permissões copiadas! Clique em Salvar para aplicar.');
+    }
+  };
+
+  const savePermissions = () => {
+    if (!permAdmin) return;
+    onSetPermissions(permAdmin.id, selectedPerms);
+    setPermOpen(false);
+  };
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Estado do modal de editar senha
+  const [editSenhaOpen, setEditSenhaOpen] = useState(false);
+  const [editSenhaAdmin, setEditSenhaAdmin] = useState<any>(null);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [showNovaSenha, setShowNovaSenha] = useState(false);
+
+  const updateAdminPassword = trpc.admin.updateAdminPassword.useMutation({
+    onSuccess: () => {
+      toast.success('Senha alterada com sucesso!');
+      setEditSenhaOpen(false);
+      setNovaSenha("");
+      setEditSenhaAdmin(null);
+    },
+    onError: (err) => toast.error(`Erro ao alterar senha: ${err.message}`),
+  });
+
+  const openEditSenha = (admin: any) => {
+    setEditSenhaAdmin(admin);
+    setNovaSenha("");
+    setShowNovaSenha(false);
+    setEditSenhaOpen(true);
+  };
+
+  const handleSaveSenha = () => {
+    if (!editSenhaAdmin || novaSenha.length < 6) {
+      toast.error('A senha deve ter ao menos 6 caracteres.');
+      return;
+    }
+    updateAdminPassword.mutate({ userId: editSenhaAdmin.id, newPassword: novaSenha });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) {
+      toast.error("A senha deve ter ao menos 6 caracteres.");
+      return;
+    }
+    onCreate({ name: nome, email, username, password });
+    setNome("");
+    setEmail("");
+    setUsername("");
+    setPassword("");
+    setOpen(false);
+  };
+
+  return (
+    <>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-purple-600" />
+            Administradores
+          </CardTitle>
+          <CardDescription>Gerencie os administradores do sistema. Apenas o admin principal pode criar ou inabilitar outros admins.</CardDescription>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" /> Novo Administrador</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <form onSubmit={handleSubmit}>
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Administrador</DialogTitle>
+                <DialogDescription>Preencha os dados de acesso do novo administrador.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-nome">Nome Completo</Label>
+                  <Input id="admin-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do administrador" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email">E-mail</Label>
+                  <Input id="admin-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-username">Username (login)</Label>
+                  <Input id="admin-username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="ex: ana.admin" required minLength={3} />
+                  <p className="text-xs text-muted-foreground">Usado para entrar no sistema junto com a senha.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="admin-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-2 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? "Ocultar" : "Mostrar"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : admins.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">Nenhum administrador cadastrado.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>E-mail</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>CPF</TableHead>
+                  <TableHead>Último acesso</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {admins.map((admin: any) => (
+                  <TableRow key={admin.id}>
+                    <TableCell className="font-medium">{admin.name}</TableCell>
+                    <TableCell>{admin.email}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{admin.openId}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{admin.cpf ? displayCpf(admin.cpf) : '—'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {admin.lastSignedIn ? new Date(admin.lastSignedIn).toLocaleDateString('pt-BR') : '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={admin.isActive ? "default" : "secondary"} className={admin.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                        {admin.isActive ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openPermModal(admin)}
+                          className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                        >
+                          <Shield className="h-4 w-4 mr-1" />
+                          Permissões
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditSenha(admin)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <KeyRound className="h-4 w-4 mr-1" />
+                          Senha
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onToggleStatus(admin.id)}
+                          disabled={isTogglingStatus}
+                          className={admin.isActive ? "text-red-600 hover:text-red-700 hover:bg-red-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}
+                        >
+                          <Power className="h-4 w-4 mr-1" />
+                          {admin.isActive ? "Inabilitar" : "Habilitar"}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    {/* Modal de Permissões */}
+    <Dialog open={permOpen} onOpenChange={setPermOpen}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-purple-600" />
+            Permissões de Páginas
+          </DialogTitle>
+          <DialogDescription>
+            Defina quais páginas <strong>{permAdmin?.name}</strong> pode acessar. Admins sem permissões definidas têm acesso total.
+          </DialogDescription>
+        </DialogHeader>
+
+        {loadingPerms ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            {/* Copiar permissões de outro admin */}
+            {admins.filter((a: any) => a.id !== permAdmin?.id).length > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-sm font-medium text-blue-700 whitespace-nowrap">Copiar de:</span>
+                <Select value={copyFromId} onValueChange={setCopyFromId}>
+                  <SelectTrigger className="flex-1 h-8 text-sm">
+                    <SelectValue placeholder="Selecione um administrador..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {admins.filter((a: any) => a.id !== permAdmin?.id).map((a: any) => (
+                      <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyFrom}
+                  disabled={!copyFromId}
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100 whitespace-nowrap"
+                >
+                  Aplicar Cópia
+                </Button>
+              </div>
+            )}
+            <div className="flex gap-2 mb-2">
+              <Button variant="outline" size="sm" onClick={selectAll}>Selecionar Tudo</Button>
+              <Button variant="outline" size="sm" onClick={clearAll}>Limpar Tudo</Button>
+              <span className="ml-auto text-sm text-muted-foreground self-center">{selectedPerms.length} página(s) selecionada(s)</span>
+            </div>
+            {ADMIN_PAGE_GROUPS.map((group) => {
+              const groupPaths = group.pages.map(p => p.path);
+              const allGroupSelected = groupPaths.every(p => selectedPerms.includes(p));
+              const someGroupSelected = groupPaths.some(p => selectedPerms.includes(p));
+              return (
+                <div key={group.group} className="border rounded-lg p-3">
+                  <div
+                    className="flex items-center gap-2 cursor-pointer mb-2"
+                    onClick={() => toggleGroupPerms(group.pages)}
+                  >
+                    <Checkbox
+                      checked={allGroupSelected}
+                      className={someGroupSelected && !allGroupSelected ? 'opacity-50' : ''}
+                      onCheckedChange={() => toggleGroupPerms(group.pages)}
+                    />
+                    <span className="font-semibold text-sm">{group.group}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">{groupPaths.filter(p => selectedPerms.includes(p)).length}/{groupPaths.length}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 ml-6">
+                    {group.pages.map((page) => (
+                      <div
+                        key={page.path}
+                        className="flex items-center gap-2 cursor-pointer py-1"
+                        onClick={() => togglePerm(page.path)}
+                      >
+                        <Checkbox
+                          checked={selectedPerms.includes(page.path)}
+                          onCheckedChange={() => togglePerm(page.path)}
+                        />
+                        <span className="text-sm">{page.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setPermOpen(false)}>Cancelar</Button>
+          <Button onClick={savePermissions} disabled={isSavingPermissions}>
+            {isSavingPermissions ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar Permissões'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Modal de Editar Senha */}
+    <Dialog open={editSenhaOpen} onOpenChange={setEditSenhaOpen}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Alterar Senha — {editSenhaAdmin?.name}</DialogTitle>
+          <DialogDescription>Digite a nova senha para este administrador.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="nova-senha">Nova Senha</Label>
+            <div className="relative">
+              <Input
+                id="nova-senha"
+                type={showNovaSenha ? "text" : "password"}
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowNovaSenha(v => !v)}
+              >
+                {showNovaSenha ? "Ocultar" : "Mostrar"}
+              </button>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setEditSenhaOpen(false)}>Cancelar</Button>
+          <Button
+            onClick={handleSaveSenha}
+            disabled={updateAdminPassword.isPending || novaSenha.length < 6}
+          >
+            {updateAdminPassword.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : 'Salvar'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
+  );
+}
