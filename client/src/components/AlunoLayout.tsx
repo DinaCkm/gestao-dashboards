@@ -104,8 +104,10 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
       }
       return;
     }
-    // Redirecionar para onboarding se tentar acessar rota bloqueada
-    if (menuBloqueado && BLOCKED_PATHS.some(p => location === p)) {
+    // Redirecionar para onboarding se tentar acessar rota bloqueada.
+    // Aguardar o onboardingStatus carregar antes de redirecionar — evita flash
+    // quando aluno do tipo 'assessment' acabou de concluir e o cache está sendo invalidado.
+    if (menuBloqueado && onboardingStatus && BLOCKED_PATHS.some(p => location === p)) {
       setLocation("/onboarding");
     }
   }, [menuBloqueado, isCandidatoPS, location, setLocation, onboardingStatus]);
