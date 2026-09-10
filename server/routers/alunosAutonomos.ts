@@ -1656,6 +1656,7 @@ export const alunosAutonomosRouter = router({
         submittedAt: mentoringSessions.submittedAt,
         validatedAt: mentoringSessions.validatedAt,
         feedback: mentoringSessions.feedback,
+        mensagemAluno: mentoringSessions.mensagemAluno,
         notaEvolucao: mentoringSessions.notaEvolucao,
         evidenceLink: mentoringSessions.evidenceLink,
         evidenceImageUrl: mentoringSessions.evidenceImageUrl,
