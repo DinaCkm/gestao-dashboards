@@ -18,6 +18,7 @@ import {
   cursosCompetencias,
   mentoringSessions,
   onboardingJornada,
+  practicalActivityComments,
   tentativasAvaliacao,
   users,
 } from "../../drizzle/schema";
@@ -1591,7 +1592,31 @@ export const alunosAutonomosRouter = router({
     const database = await requireDatabase();
 
     // Buscar o aluno pelo contexto
-    const aluno = await db.getAlunoFromCtx(ctx.user as any);
+    let aluno = await db.getAlunoFromCtx(ctx.user as any);
+
+    // Se não achou pelo alunoId/email, tentar pelo externalId (alunos DISC360 que
+    // entraram pelo Outseta — users.alunoId pode estar nulo)
+    if (!aluno && (ctx.user as any)?.openId) {
+      const database2 = await requireDatabase();
+      const [porExternal] = await database2
+        .select()
+        .from(alunos)
+        .where(eq(alunos.externalId, String((ctx.user as any).openId)))
+        .limit(1);
+      if (porExternal) {
+        aluno = porExternal as any;
+        // Vincular automaticamente para próximas requisições
+        try {
+          await database2
+            .update(users)
+            .set({ alunoId: porExternal.id })
+            .where(eq(users.id, (ctx.user as any).id));
+        } catch (e) {
+          console.warn('[performanceAutonoma] Falha ao vincular alunoId:', e);
+        }
+      }
+    }
+
     if (!aluno) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
     }
@@ -1648,12 +1673,32 @@ export const alunosAutonomosRouter = router({
 
     // Separar sessões de tarefas
     const sessoesReais = sessoes;
-    const tarefas = sessoes.filter(s =>
+    const tarefasRaw = sessoes.filter(s =>
       s.taskStatus !== "sem_tarefa" || s.customTaskTitle
     );
 
+    // Buscar comentários do mentor para cada tarefa
+    const sessaoIds = tarefasRaw.map(t => t.id);
+    let comentariosPorSessao: Record<number, any[]> = {};
+    if (sessaoIds.length > 0) {
+      const todosComentarios = await database
+        .select()
+        .from(practicalActivityComments)
+        .where(inArray(practicalActivityComments.sessionId, sessaoIds))
+        .orderBy(practicalActivityComments.createdAt);
+      for (const c of todosComentarios) {
+        if (!comentariosPorSessao[c.sessionId]) comentariosPorSessao[c.sessionId] = [];
+        comentariosPorSessao[c.sessionId].push(c);
+      }
+    }
+
+    const tarefas = tarefasRaw.map(t => ({
+      ...t,
+      comentarios: comentariosPorSessao[t.id] ?? [],
+    }));
+
     return {
-      alunoNome: aluno.name ?? aluno.nomeCompleto ?? "",
+      alunoNome: aluno.name ?? (aluno as any).nomeCompleto ?? "",
       cursos,
       sessoes: sessoesReais,
       tarefas,
