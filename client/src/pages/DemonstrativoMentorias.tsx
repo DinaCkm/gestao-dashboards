@@ -940,7 +940,7 @@ const ORIGEM_PRECO_LABELS: Record<string, string> = {
   zero: "Sem preço",
 };
 
-const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+const LOGO_URL = "/eco_do_bem_logo_horizontal.png";
 
 function RelatorioFinanceiro() {
   const [dateFrom, setDateFrom] = useState("");

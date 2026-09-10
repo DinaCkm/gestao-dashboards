@@ -779,7 +779,7 @@ E-mail: ${email}`;
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                src="/eco_do_bem_logo_horizontal.png"
                 alt="eco do bem"
                 className="h-14 object-contain hidden sm:block"
               />
@@ -1080,7 +1080,7 @@ E-mail: ${email}`;
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-sm ring-1 ring-amber-400/30 overflow-hidden flex-shrink-0">
                           <img
-                            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_evoluir_logo_00dbbab4.png"
+                            src="/eco_do_bem_logo_horizontal.png"
                             alt="ECO_EVOLUIR"
                             className="w-full h-full object-cover"
                           />
@@ -1108,7 +1108,7 @@ E-mail: ${email}`;
                     <div className="flex items-center gap-3">
                       <div className="w-11 h-11 rounded-xl bg-white flex items-center justify-center shadow-sm ring-1 ring-blue-100 overflow-hidden flex-shrink-0 p-1">
                         <img
-                          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png"
+                          src="/eco_do_bem_logo_horizontal.png"
                           alt="eco do bem"
                           className="w-full h-full object-contain"
                         />

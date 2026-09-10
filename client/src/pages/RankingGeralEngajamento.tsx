@@ -47,7 +47,7 @@ type RankingAluno = {
 };
 
 const LOGO_URL =
-  "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png";
+  "/eco_do_bem_logo_horizontal.png";
 
 const toPercent = (value: number) => `${Math.round(Number(value || 0))}%`;
 
