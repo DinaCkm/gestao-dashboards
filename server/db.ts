@@ -9062,9 +9062,27 @@ export async function getAlunoOnboardingStatus(user: {
   // - Aluno NOVO COM aceite: onboarding concluído, portal liberado
   // - onboardingLiberado = 1: admin liberou novo ciclo → NÃO bloqueia o portal,
   //   apenas exibe aviso nas páginas de Assessment e Performance
+  // Verificar se o aluno tem cursos autônomos atribuídos — mesmo que o tipoPortal
+  // ainda seja 'assessment' (caso de aluno DISC que recebeu cursos antes do update),
+  // ele não deve passar pelo onboarding de desenvolvimento.
+  // Verificar se o aluno tem cursos autônomos atribuídos — mesmo que o tipoPortal
+  // seja 'assessment' (aluno DISC360 que recebeu cursos), ele não deve passar pelo
+  // onboarding de desenvolvimento. NÃO alteramos o tipoPortal — ele continua 'assessment'
+  // para aparecer corretamente na aba DISC360 do admin.
+  let temCursoAutonomo = false;
+  try {
+    const [cursoRow] = await db.select({ id: alunoCursoAtribuido.id })
+      .from(alunoCursoAtribuido)
+      .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+      .limit(1);
+    temCursoAutonomo = !!cursoRow;
+  } catch (e) {
+    console.warn('[onboardingStatus] Falha ao verificar cursos autônomos:', e);
+  }
+
   let needsOnboarding = false;
-  if (aluno.tipoPortal === 'processo_seletivo' || aluno.tipoPortal === 'aluno_autonomo') {
-    needsOnboarding = false; // Candidatos PS e Alunos Autônomos têm sua própria jornada, não passam pelo onboarding de desenvolvimento
+  if (aluno.tipoPortal === 'processo_seletivo' || aluno.tipoPortal === 'aluno_autonomo' || temCursoAutonomo) {
+    needsOnboarding = false; // PS, Autônomos e alunos DISC360 com cursos têm sua própria jornada
   } else if (isAlunoNovo && !aceiteRealizado && !onboardingLiberado) {
     needsOnboarding = true; // Aluno novo que ainda não deu aceite no primeiro ciclo
   }
