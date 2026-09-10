@@ -93,7 +93,7 @@ export function buildMentoringAlertEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `Alerta: ${data.diasSemSessao} dias sem sessão de mentoria — ${data.alunoName}`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const ultimaSessaoStr = data.ultimaSessaoDate
     ? new Date(data.ultimaSessaoDate).toLocaleDateString('pt-BR')
     : 'Nenhuma sessão registrada';
@@ -247,7 +247,7 @@ export function buildOnboardingInviteEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `Boas-vindas ao Ecossistema do B.E.M.!`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const organizacao = data.empresaName || 'sua organização';
 
   const html = `
@@ -392,7 +392,7 @@ export function buildWebinarReminderEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `Lembrete: ${data.webinarTitle} - ${data.eventDate} às ${data.eventTime}`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const speakerRow = data.speaker ? `
                       <tr>
@@ -581,7 +581,7 @@ export function buildOnboardingStepEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `${data.alunoName} avançou na trilha do onboarding — Etapa ${data.stepNumber}/${data.totalSteps}: ${data.stepName}`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const stepNames = [
     'Convite Enviado',
@@ -703,7 +703,7 @@ export function buildPdiPublishedInviteEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `Seu Plano de Desenvolvimento está pronto! Acesse e assine o Termo de Compromisso`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `
 <!DOCTYPE html>
@@ -946,7 +946,7 @@ export function buildCycleDeadlineAlertEmail(data: {
   const urgencyLabel = data.diasRestantes <= 7 ? 'URGENTE' : data.diasRestantes <= 15 ? 'ATENÇÃO' : 'AVISO';
   const subject = `${urgencyLabel}: Ciclo de ${data.alunoName} vence em ${data.diasRestantes} dias — ${data.trilhaNome}`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const macroTerminoFormatted = new Date(data.macroTermino + 'T12:00:00').toLocaleDateString('pt-BR');
 
   // Color scheme based on urgency
@@ -1127,7 +1127,7 @@ export function buildAceiteParabensEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `🎉 Parabéns, ${data.alunoName}! Bem-vindo(a) à sua Jornada de Desenvolvimento!`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `
 <!DOCTYPE html>
@@ -1262,7 +1262,7 @@ export function buildAceiteNotificacaoEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `✅ ${data.alunoName} assinou o Termo de Compromisso — Onboarding Concluído!`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `
 <!DOCTYPE html>
@@ -1337,7 +1337,7 @@ export function buildRevisaoAceiteEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `📝 ${data.alunoName} gostaria de rever o Plano de Desenvolvimento — Solicitação de Revisão`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `
 <!DOCTYPE html>
@@ -1626,7 +1626,7 @@ export function buildLembreteEngajamentoEmail(data: {
 }): { subject: string; html: string; text: string } {
   const fmt = (v: number) => `${Math.round(v)}%`;
   const subject = "Performance de Engajamento — Ecossistema do Bem";
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -1753,7 +1753,7 @@ export function buildNovoCaseEmail(data: {
 }): { subject: string; html: string; text: string } {
   const subject = `Novo Case de Sucesso: ${data.caseTitulo}`;
 
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `
 <!DOCTYPE html>
@@ -1874,7 +1874,7 @@ export function buildTarefaEmAbertoEmail(data: {
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
   const subject = `Atenção: Tarefa de ${data.alunoName} está em aberto há ${data.diasEmAberto} dias`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `
 <!DOCTYPE html>
@@ -2038,7 +2038,7 @@ export function buildConfirmacaoAgendamentoEmail(data: {
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
   const subject = `Sessão de mentoria confirmada — ${data.scheduledDate} às ${data.startTime}`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const meetSection = data.meetLink
     ? `<tr><td style="padding:0 40px 20px;"><div style="text-align:center;"><a href="${data.meetLink}" style="display:inline-block;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:700;">Acessar Reunião Google Meet</a><p style="margin:8px 0 0;font-size:11px;color:#6b7280;word-break:break-all;">${data.meetLink}</p></div></td></tr>`
     : '';
@@ -2057,7 +2057,7 @@ export function buildAusenciaWebinarEmail(data: {
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
   const subject = `Voce perdeu o webinar "${data.webinarTitle}" - fique de olho nos proximos`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:40px 20px;"><tr><td align="center"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.08);"><tr><td style="background:#fff;padding:30px 40px;text-align:center;"><img src="${logoUrl}" alt="ECOSSISTEMA DO BEM" width="160" style="display:block;margin:0 auto 12px;"/><p style="color:#6b7280;margin:4px 0 0;font-size:13px;">Programa de Desenvolvimento e Mentoria</p></td></tr><tr><td style="padding:0 40px;"><hr style="border:none;border-top:2px solid #e8a838;margin:0;"/></td></tr><tr><td style="padding:30px 40px 24px;"><div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:16px;text-align:center;margin-bottom:20px;"><p style="margin:0;font-size:16px;font-weight:700;color:#c2410c;">Voce perdeu um webinar</p></div><p style="font-size:15px;color:#374151;margin:0 0 16px;">Ola, <strong>${data.alunoName}</strong>!</p><p style="font-size:15px;color:#374151;margin:0 0 16px;">Notamos que voce nao participou do webinar <strong>"${data.webinarTitle}"</strong> realizado em <strong>${data.eventDate}</strong>.</p><p style="font-size:15px;color:#374151;margin:0 0 20px;">A participacao nos webinares e parte importante da sua jornada de desenvolvimento. Fique de olho na agenda para nao perder os proximos!</p><div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:20px;"><p style="margin:0;font-size:14px;color:#374151;"><strong>Dica:</strong> Acesse a plataforma para ver os proximos webinares agendados e garantir sua participacao.</p></div><div style="text-align:center;margin-top:16px;"><a href="${data.loginUrl}" style="display:inline-block;background:#0A1E3E;color:#fff;text-decoration:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;">Ver Proximos Webinares</a></div></td></tr><tr><td style="padding:16px 40px;border-top:1px solid #e5e7eb;"><p style="margin:0;font-size:11px;color:#9ca3af;text-align:center;">ECOSSISTEMA DO BEM - Programa de Desenvolvimento e Mentoria</p></td></tr></table></td></tr></table></body></html>`;
   const text = `Voce perdeu o webinar "${data.webinarTitle}"\n\nOla, ${data.alunoName}!\n\nNotamos que voce nao participou do webinar "${data.webinarTitle}" realizado em ${data.eventDate}.\n\nFique de olho na agenda para nao perder os proximos!\n\nAcesse a plataforma: ${data.loginUrl}`;
   return { subject, html, text };
@@ -2076,7 +2076,7 @@ export function buildLembreteTarefaMentoriaEmail(data: {
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
   const subject = `Lembrete: tarefa pendente e proxima sessao de mentoria`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const proximaSessaoSection = data.proximaSessaoDate
     ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin-bottom:16px;"><p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#1d4ed8;">Proxima Sessao de Mentoria</p><p style="margin:0;font-size:14px;color:#374151;">Data: <strong>${data.proximaSessaoDate}</strong>${data.proximaSessaoTime ? ` as <strong>${data.proximaSessaoTime}</strong>` : ''}</p><p style="margin:4px 0 0;font-size:14px;color:#374151;">Mentora: <strong>${data.mentorName}</strong></p></div>`
     : '';
@@ -2115,7 +2115,7 @@ export function buildRelatorioMentoriasEmail(data: {
   totalValor: number;
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const tipoRelatorio = data.isFinal ? 'Definitivo' : 'Previa';
   const corBanner = data.isFinal ? '#065f46' : '#92400e';
   const bgBanner = data.isFinal ? '#d1fae5' : '#fef3c7';
@@ -2185,7 +2185,7 @@ export function buildRelatorioMentoriasFinanceiroEmail(data: {
   totalGeralValor: number;
   totalGeralSessoes: number;
 }): { subject: string; html: string; text: string } {
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const tipoRelatorio = data.isFinal ? 'Definitivo' : 'Previa';
   const subject = `[COPIA FINANCEIRO] Relatorio ${tipoRelatorio} de Mentorias - ${data.periodoInicio} a ${data.periodoFim}`;
 
@@ -2289,7 +2289,7 @@ export function buildConviteCanceladoEmail(data: {
   alunoEmail: string;
 }): { subject: string; html: string; text: string } {
   const subject = `Que pena! Seu convite para o ECOSSISTEMA DO BEM sera cancelado`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const contatoEmail = 'relacionamento@ckmtalents.net';
 
   const html = `<!DOCTYPE html>
@@ -2349,7 +2349,7 @@ export function buildAdminAlunoSemAcessoEmail(data: {
   programaNome?: string;
 }): { subject: string; html: string; text: string } {
   const subject = `Aluno sem acesso apos ${data.diasSemAcesso} dias: ${data.alunoName}`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -2548,7 +2548,7 @@ export function buildBoasVindasPSEmail(data: {
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
   const subject = `Sua inscrição foi recebida — Processo Seletivo`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `
 <!DOCTYPE html>
@@ -2826,7 +2826,7 @@ export function buildCongelamentoTurmaEmail(data: {
   acao: 'congelado' | 'descongelado';
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const dataFormatada = (() => {
     const d = new Date(data.dataCongelamento + 'T12:00:00');
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -2932,7 +2932,7 @@ export function buildPsRelatorioEmail(data: {
   }>;
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const subject = `📋 Relatório do Processo Seletivo — ${data.processoNome} (${data.dataEnvio})`;
   const linhas = data.candidatos.map(c => `
     <tr>
@@ -2990,7 +2990,7 @@ export function buildNovoAvisoMuralEmail(data: {
   avisoContent?: string | null;
   loginUrl: string;
 }): { subject: string; html: string; text: string } {
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const primeiroNome = data.alunoName?.split(' ')[0] || data.alunoName;
   const subject = `🎉 Tem novidades no Mural, ${primeiroNome}! Dá uma passadinha por lá`;
   const previewText = `Dá uma passadinha por lá e não deixe de curtir e participar! ❤️`;
@@ -3107,7 +3107,7 @@ export function buildLembreteInternoWebinarEmail(data: {
   riskLevel?: string;
   adminUrl: string;
 }): { subject: string; html: string; text: string } {
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
   const primeiroNome = data.responsibleName?.split(' ')[0] || data.responsibleName || 'Responsável';
   const subject = `[Checklist Webinar] Lembrete: "${data.taskTitle}" — ${data.webinarTitle}`;
 
@@ -3227,7 +3227,7 @@ export function buildConviteAlunoAutonomoEmail(data: {
 }): { subject: string; html: string; text: string } {
   const primeiroNome = data.alunoName.split(" ")[0];
   const subject = `📚 ${primeiroNome}, seu acesso ao curso ${data.cursoTitulo} está liberado`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const validadeTexto = data.expiraEm
     ? `Este link é válido até ${new Date(data.expiraEm).toLocaleDateString('pt-BR')}.`
@@ -3351,7 +3351,7 @@ export function buildBoasVindasAlunoAutonomoEmail(data: {
 }): { subject: string; html: string; text: string } {
   const primeiroNome = data.alunoName.split(" ")[0];
   const subject = `🎉 Bem-vindo(a), ${primeiroNome}! Seu cadastro foi confirmado`;
-  const logoUrl = 'https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/eco_do_bem_logo_d2ee37e3.png';
+  const logoUrl = 'https://ecolider.ecodobem.com/eco_do_bem_logo_horizontal.png';
 
   const html = `
 <!DOCTYPE html>
