@@ -23,10 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Copy, Download, Link as LinkIcon, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
+import { Copy, Download, Link as LinkIcon, Minus, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
 import * as XLSX from "xlsx";
 
-const QTD_QUESTOES = 10;
+const MIN_QUESTOES = 2;
+const MAX_QUESTOES = 10;
 
 type Questao = {
   id: string;
@@ -114,7 +115,7 @@ export default function AdminAlunosAutonomos() {
 }
 
 // ============================================================================
-// 1. Avaliação diagnóstica (10 questões + gabarito) por curso
+// 1. Avaliação diagnóstica (2–10 questões + gabarito) por curso
 // ============================================================================
 function PainelDiagnosticos({
   cursoPreSelecionado,
@@ -127,8 +128,9 @@ function PainelDiagnosticos({
   const [cursoId, setCursoId] = useState<string>(cursoPreSelecionado?.cursoId ?? "");
   const [titulo, setTitulo] = useState("");
   const [notaMinima, setNotaMinima] = useState("7");
+  // Inicia com o mínimo de questões
   const [questoes, setQuestoes] = useState<Questao[]>(
-    Array.from({ length: QTD_QUESTOES }, (_, i) => questaoVazia(i))
+    Array.from({ length: MIN_QUESTOES }, (_, i) => questaoVazia(i))
   );
   const [avaliacaoEditandoId, setAvaliacaoEditandoId] = useState<number | null>(null);
   const [importando, setImportando] = useState(false);
@@ -153,15 +155,12 @@ function PainelDiagnosticos({
         // Converte para array de arrays para inspecionar a estrutura
         const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
-        // Detecta automaticamente se linha 1 é cabeçalho (contém textos de cabeçalho)
-        // ou se já é a primeira questão (linha 1 começa com número)
+        // Detecta automaticamente se linha 1 é cabeçalho
         let primeiraLinhaDados = 1; // padrão: pula o cabeçalho (linha 0)
         const primeiraLinha = rows[0] ?? [];
-        // Se a célula A da linha 0 parece ser um número = sem cabeçalho
         if (typeof primeiraLinha[0] === "number") primeiraLinhaDados = 0;
 
-        // Para o modelo do sistema: título está em C3 e nota em C4 (linha 2 e 3 do array base-0)
-        // Para a planilha do usuário: usa valores padrão
+        // Para o modelo do sistema: título está em C3 e nota em C4
         const tituloCelula = wb.SheetNames.includes("Diagnóstico")
           ? String(ws["C3"]?.v ?? "").trim()
           : "";
@@ -171,7 +170,7 @@ function PainelDiagnosticos({
 
         // Lê as questões a partir de primeiraLinhaDados
         const questoesLidas: Questao[] = [];
-        for (let i = primeiraLinhaDados; i < rows.length && questoesLidas.length < QTD_QUESTOES; i++) {
+        for (let i = primeiraLinhaDados; i < rows.length && questoesLidas.length < MAX_QUESTOES; i++) {
           const row = rows[i];
           const enunciado = String(row[1] ?? "").trim();
           if (!enunciado) continue; // linha em branco — pula
@@ -203,14 +202,19 @@ function PainelDiagnosticos({
           });
         }
 
-        if (questoesLidas.length !== QTD_QUESTOES) {
+        if (questoesLidas.length < MIN_QUESTOES) {
           throw new Error(
-            `A planilha deve ter exatamente ${QTD_QUESTOES} questões preenchidas. Encontradas: ${questoesLidas.length}.`
+            `A planilha deve ter ao menos ${MIN_QUESTOES} questões preenchidas. Encontradas: ${questoesLidas.length}.`
+          );
+        }
+        if (questoesLidas.length > MAX_QUESTOES) {
+          throw new Error(
+            `A planilha não pode ter mais de ${MAX_QUESTOES} questões. Encontradas: ${questoesLidas.length}.`
           );
         }
 
         if (tituloCelula) setTitulo(tituloCelula);
-        if (notaCelula)   setNotaMinima(notaCelula);
+        if (notaCelula) setNotaMinima(notaCelula);
         setQuestoes(questoesLidas);
         setAvaliacaoEditandoId(null);
         toast.success(`${questoesLidas.length} questões importadas. Selecione o curso e clique em Criar.`);
@@ -226,7 +230,7 @@ function PainelDiagnosticos({
   // Gera e faz download da planilha modelo diretamente no navegador
   function baixarModelo() {
     const wb = XLSX.utils.book_new();
-    // Aba Diagnóstico
+    // Aba Diagnóstico — modelo com 2 questões preenchidas (mínimo) e espaço para até 10
     const wsData = [
       ["#", "Enunciado da questão *", "Alternativa A *", "Alternativa B *", "Alternativa C", "Alternativa D", "Alternativa E", "Gabarito (A/B/C/D/E) *", "Observações"],
       ["Título da avaliação:", "Diagnóstico inicial — [Nome do Curso]", "", "", "", "", "", "", ""],
@@ -251,16 +255,16 @@ function PainelDiagnosticos({
     const wsInst = XLSX.utils.aoa_to_sheet([
       ["COMO PREENCHER"],
       [""],
-      ["1. Preencha UMA linha por questão — sempre 10 questões (linhas 5 a 14)."],
+      [`1. Preencha UMA linha por questão — mínimo ${MIN_QUESTOES} e máximo ${MAX_QUESTOES} questões (linhas 5 a 14).`],
       ["2. Colunas A, B, C e H são obrigatórias (número, enunciado, alternativas A e B, gabarito)."],
       ["3. Gabarito: use apenas a letra A, B, C, D ou E — sem espaços."],
       ["4. Título (célula B1) e Nota mínima (célula B2): edite conforme o seu curso."],
       ["5. Salve como .xlsx e faça upload na aba 'Avaliações diagnósticas'."],
       [""],
       ["ERROS COMUNS"],
-      ["✗  Gabarito com letra que não tem alternativa preenchida"],
-      ["✗  Menos ou mais de 10 questões preenchidas"],
-      ["✗  Arquivo salvo em formato diferente de .xlsx"],
+      ["✗ Gabarito com letra que não tem alternativa preenchida"],
+      [`✗ Menos de ${MIN_QUESTOES} ou mais de ${MAX_QUESTOES} questões preenchidas`],
+      ["✗ Arquivo salvo em formato diferente de .xlsx"],
     ]);
     XLSX.utils.book_append_sheet(wb, wsInst, "Instruções");
 
@@ -324,7 +328,7 @@ function PainelDiagnosticos({
   function resetarFormulario() {
     setTitulo("");
     setNotaMinima("7");
-    setQuestoes(Array.from({ length: QTD_QUESTOES }, (_, i) => questaoVazia(i)));
+    setQuestoes(Array.from({ length: MIN_QUESTOES }, (_, i) => questaoVazia(i)));
     setAvaliacaoEditandoId(null);
   }
 
@@ -339,7 +343,8 @@ function PainelDiagnosticos({
     if (dadosEdicao && avaliacaoEditandoId) {
       setTitulo(dadosEdicao.titulo);
       setNotaMinima(String(dadosEdicao.notaMinima));
-      if (dadosEdicao.questoes.length === QTD_QUESTOES) {
+      const qtd = dadosEdicao.questoes.length;
+      if (qtd >= MIN_QUESTOES && qtd <= MAX_QUESTOES) {
         setQuestoes(dadosEdicao.questoes as Questao[]);
       }
     }
@@ -363,9 +368,27 @@ function PainelDiagnosticos({
     );
   }
 
+  function adicionarQuestao() {
+    if (questoes.length >= MAX_QUESTOES) {
+      toast.error(`Limite máximo de ${MAX_QUESTOES} questões atingido.`);
+      return;
+    }
+    setQuestoes((prev) => [...prev, questaoVazia(prev.length)]);
+  }
+
+  function removerUltimaQuestao() {
+    if (questoes.length <= MIN_QUESTOES) {
+      toast.error(`Mínimo de ${MIN_QUESTOES} questões obrigatório.`);
+      return;
+    }
+    setQuestoes((prev) => prev.slice(0, -1));
+  }
+
   function validarAntesDeEnviar(): string | null {
     if (!cursoId) return "Selecione o curso.";
     if (!titulo.trim()) return "Informe o título da avaliação.";
+    if (questoes.length < MIN_QUESTOES) return `Mínimo de ${MIN_QUESTOES} questões necessário.`;
+    if (questoes.length > MAX_QUESTOES) return `Máximo de ${MAX_QUESTOES} questões permitido.`;
     for (let i = 0; i < questoes.length; i++) {
       const q = questoes[i];
       if (!q.enunciado.trim()) return `Questão ${i + 1}: preencha o enunciado.`;
@@ -481,8 +504,8 @@ function PainelDiagnosticos({
             <div>
               <CardTitle>{avaliacaoEditandoId ? "Editar avaliação diagnóstica" : "Nova avaliação diagnóstica"}</CardTitle>
               <CardDescription>
-                Sempre exatamente {QTD_QUESTOES} questões, com gabarito. Estas 10 questões são
-                aplicadas ao aluno antes de ele acessar o curso.
+                Entre {MIN_QUESTOES} e {MAX_QUESTOES} questões, com gabarito. São aplicadas ao
+                aluno antes de acessar o curso.
               </CardDescription>
             </div>
             <div className="flex shrink-0 gap-2">
@@ -587,6 +610,37 @@ function PainelDiagnosticos({
           </div>
 
           <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">
+                Questões{" "}
+                <span className="text-muted-foreground font-normal">
+                  ({questoes.length} de {MIN_QUESTOES}–{MAX_QUESTOES})
+                </span>
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={removerUltimaQuestao}
+                  disabled={questoes.length <= MIN_QUESTOES}
+                >
+                  <Minus className="h-3.5 w-3.5 mr-1" />
+                  Remover última
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={adicionarQuestao}
+                  disabled={questoes.length >= MAX_QUESTOES}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Adicionar questão
+                </Button>
+              </div>
+            </div>
+
             {questoes.map((q, i) => (
               <div key={q.id} className="rounded-lg border p-4 space-y-3">
                 <p className="text-sm font-medium">Questão {i + 1}</p>
@@ -662,6 +716,9 @@ function PainelLiberacao({
   const [nome, setNome] = useState(alunoPreSelecionado?.nome ?? "");
   const [email, setEmail] = useState(alunoPreSelecionado?.email ?? "");
   const [alunoId, setAlunoId] = useState<number | null>(alunoPreSelecionado?.id ?? null);
+  // Guarda o nome exibido no estado "aluno confirmado" — pode ser nome do pré-selecionado
+  // ou o nome que veio do cadastro (inclusive quando jaExistia = true)
+  const [nomeConfirmado, setNomeConfirmado] = useState<string>(alunoPreSelecionado?.nome ?? "");
 
   const [competenciaId, setCompetenciaId] = useState("");
   const [cursoId, setCursoId] = useState("");
@@ -678,6 +735,7 @@ function PainelLiberacao({
       setNome(alunoPreSelecionado.nome);
       setEmail(alunoPreSelecionado.email);
       setAlunoId(alunoPreSelecionado.id);
+      setNomeConfirmado(alunoPreSelecionado.nome);
       setLinkGerado(null);
     }
   }, [alunoPreSelecionado]);
@@ -691,22 +749,27 @@ function PainelLiberacao({
   );
   const mentoresQuery = trpc.alunosAutonomos.listarMentores.useQuery();
 
-  // Verifica, assim que o curso é escolhido, se ele já tem diagnóstico —
-  // para avisar o admin antes dele preencher o resto do formulário.
+  // Verifica, assim que o curso é escolhido, se ele já tem diagnóstico.
+  // IMPORTANTE: só bloqueia o botão de liberação quando a query terminou de
+  // carregar (não durante o loading) — evita bloqueio temporário indevido.
   const diagnosticoCursoQuery = trpc.alunosAutonomos.cursoTemDiagnostico.useQuery(
     { cursoId: Number(cursoId || 0) },
     { enabled: !!cursoId }
   );
-  const cursoSemDiagnostico = !!cursoId && diagnosticoCursoQuery.data?.temDiagnostico === false;
+  const cursoSemDiagnostico =
+    !!cursoId &&
+    !diagnosticoCursoQuery.isLoading &&
+    diagnosticoCursoQuery.data?.temDiagnostico === false;
 
   const cadastrarMutation = trpc.alunosAutonomos.cadastrarAlunoAutonomo.useMutation({
     onSuccess: (data) => {
       if (data.jaExistia) {
-        toast.success(`Aluno "${data.name}" já existia — reaproveitando cadastro para liberar mais um curso.`);
+        toast.success(`Aluno "${data.name}" já está cadastrado — prossiga para liberar o novo curso.`);
       } else {
-        toast.success(`Aluno "${data.name}" cadastrado.`);
+        toast.success(`Aluno "${data.name}" cadastrado com sucesso.`);
       }
       setAlunoId(data.alunoId);
+      setNomeConfirmado(data.name ?? nome);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -783,14 +846,14 @@ function PainelLiberacao({
           {!alunoId ? (
             <Button onClick={handleCadastrar} disabled={cadastrarMutation.isPending}>
               <Plus className="mr-2 h-4 w-4" />
-              Cadastrar aluno
+              {cadastrarMutation.isPending ? "Verificando..." : "Cadastrar aluno"}
             </Button>
           ) : (
             <div className="flex items-center justify-between rounded-md border p-3 text-sm">
               <span>
                 {alunoPreSelecionado
-                  ? <>Liberando novo curso para <strong>{alunoPreSelecionado.nome}</strong> →</>
-                  : <>Aluno cadastrado (ID {alunoId}). Continue na etapa 2 →</>}
+                  ? <>Liberando novo curso para <strong>{nomeConfirmado || alunoPreSelecionado.nome}</strong> →</>
+                  : <>✓ Aluno confirmado: <strong>{nomeConfirmado}</strong>. Continue na etapa 2 →</>}
               </span>
               <Button
                 variant="ghost"
@@ -799,6 +862,7 @@ function PainelLiberacao({
                   setAlunoId(null);
                   setNome("");
                   setEmail("");
+                  setNomeConfirmado("");
                   setLinkGerado(null);
                   onLimparPreSelecao();
                 }}
@@ -884,10 +948,14 @@ function PainelLiberacao({
               </div>
             )}
 
-            {!!cursoId && diagnosticoCursoQuery.data?.temDiagnostico && (
+            {!!cursoId && !diagnosticoCursoQuery.isLoading && diagnosticoCursoQuery.data?.temDiagnostico && (
               <p className="text-xs text-green-700">
                 ✓ Diagnóstico cadastrado: {diagnosticoCursoQuery.data.titulo}
               </p>
+            )}
+
+            {!!cursoId && diagnosticoCursoQuery.isLoading && (
+              <p className="text-xs text-muted-foreground">Verificando diagnóstico...</p>
             )}
           </div>
 
@@ -927,7 +995,7 @@ function PainelLiberacao({
 
           <Button onClick={handleLiberar} disabled={!alunoId || cursoSemDiagnostico || liberarMutation.isPending}>
             <LinkIcon className="mr-2 h-4 w-4" />
-            Liberar curso e gerar link
+            {liberarMutation.isPending ? "Gerando link..." : "Liberar curso e gerar link"}
           </Button>
 
           {linkGerado && (
@@ -1014,35 +1082,35 @@ function PainelListaAlunos({
                   String(a.nome ?? "").localeCompare(String(b.nome ?? ""), "pt-BR", { sensitivity: "base" })
                 )
                 .map((a: any) => (
-                <TableRow key={`${a.alunoId}-${a.cursoId ?? a.cursoTitulo ?? ""}`}>
-                  <TableCell className="font-medium">{a.nome}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{a.email}</TableCell>
-                  <TableCell className="text-sm">{a.cursoTitulo ?? "—"}</TableCell>
-                  <TableCell>{etapaLabel(a.etapaAtual, a.statusCurso)}</TableCell>
-                  <TableCell className="text-sm">
-                    {a.notaDiagnostica != null ? Number(a.notaDiagnostica).toFixed(1) : "—"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => regenerarMutation.mutate({ alunoId: a.alunoId })}
-                      disabled={regenerarMutation.isPending}
-                    >
-                      <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                      Reenviar link
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onLiberarNovoCursoPara({ id: a.alunoId, nome: a.nome, email: a.email })}
-                    >
-                      <Plus className="mr-1.5 h-3.5 w-3.5" />
-                      Liberar novo curso
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
+                  <TableRow key={`${a.alunoId}-${a.cursoId ?? a.cursoTitulo ?? ""}`}>
+                    <TableCell className="font-medium">{a.nome}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{a.email}</TableCell>
+                    <TableCell className="text-sm">{a.cursoTitulo ?? "—"}</TableCell>
+                    <TableCell>{etapaLabel(a.etapaAtual, a.statusCurso)}</TableCell>
+                    <TableCell className="text-sm">
+                      {a.notaDiagnostica != null ? Number(a.notaDiagnostica).toFixed(1) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => regenerarMutation.mutate({ alunoId: a.alunoId })}
+                        disabled={regenerarMutation.isPending}
+                      >
+                        <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                        Reenviar link
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onLiberarNovoCursoPara({ id: a.alunoId, nome: a.nome, email: a.email })}
+                      >
+                        <Plus className="mr-1.5 h-3.5 w-3.5" />
+                        Liberar novo curso
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
             )}
           </TableBody>
         </Table>
