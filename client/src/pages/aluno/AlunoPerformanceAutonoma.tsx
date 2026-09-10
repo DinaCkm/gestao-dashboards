@@ -15,8 +15,17 @@ import {
   AlertCircle,
   Loader2,
   TrendingUp,
+  Send,
+  ShieldCheck,
+  Hourglass,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 // ============================================================
 // Helpers
@@ -42,21 +51,36 @@ function StatusCurso({ status }: { status: string }) {
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.className}`}>{s.label}</span>;
 }
 
-function StatusTarefa({ status }: { status: string | null }) {
+function StatusTarefa({ status, validatedAt }: { status: string | null; validatedAt?: any }) {
   if (!status || status === "sem_tarefa") return null;
+  
+  // "entregue" = aluno enviou mas mentor ainda não validou = pendente de validação
+  if (status === "entregue") {
+    return (
+      <span className="flex items-center gap-1 text-sm font-medium text-amber-600">
+        <Hourglass className="h-4 w-4" />
+        Pendente de validação
+      </span>
+    );
+  }
+  
   const map: Record<string, { label: string; icon: any; className: string }> = {
-    entregue: { label: "Entregue", icon: CheckCircle2, className: "text-green-600" },
     nao_entregue: { label: "Não entregue", icon: XCircle, className: "text-red-500" },
     sem_tarefa: { label: "Sem tarefa", icon: AlertCircle, className: "text-gray-400" },
-    validada: { label: "Validada", icon: CheckCircle2, className: "text-emerald-700" },
+    validada: { label: "Validada", icon: ShieldCheck, className: "text-emerald-700" },
   };
   const s = map[status] ?? { label: status, icon: AlertCircle, className: "text-gray-400" };
   const Icon = s.icon;
   return (
-    <span className={`flex items-center gap-1 text-sm font-medium ${s.className}`}>
-      <Icon className="h-4 w-4" />
-      {s.label}
-    </span>
+    <div className="flex flex-col items-end gap-0.5">
+      <span className={`flex items-center gap-1 text-sm font-medium ${s.className}`}>
+        <Icon className="h-4 w-4" />
+        {s.label}
+      </span>
+      {status === "validada" && validatedAt && (
+        <span className="text-xs text-muted-foreground">{fmtData(validatedAt)}</span>
+      )}
+    </div>
   );
 }
 
@@ -202,11 +226,40 @@ function SecaoEncontros({ sessoes }: { sessoes: any[] }) {
 }
 
 // ============================================================
-// Seção Tarefas
+// Seção Tarefas — com formulário de envio de evidência
 // ============================================================
-function SecaoTarefas({ tarefas }: { tarefas: any[] }) {
+function SecaoTarefas({ tarefas, onEvidenciaEnviada }: { tarefas: any[]; onEvidenciaEnviada: () => void }) {
+  const [tarefaSelecionada, setTarefaSelecionada] = useState<any | null>(null);
+  const [link, setLink] = useState("");
+  const [relato, setRelato] = useState("");
+
   const entregues = tarefas.filter(t => t.taskStatus === "entregue" || t.taskStatus === "validada").length;
   const pendentes = tarefas.filter(t => t.taskStatus === "nao_entregue").length;
+
+  const submitMutation = trpc.mentor.submitEvidence.useMutation({
+    onSuccess: () => {
+      toast.success("Evidência enviada! Aguarde a validação da mentora.");
+      setTarefaSelecionada(null);
+      setLink("");
+      setRelato("");
+      onEvidenciaEnviada();
+    },
+    onError: (err: any) => toast.error(err.message ?? "Erro ao enviar evidência."),
+  });
+
+  function handleEnviar() {
+    if (!tarefaSelecionada) return;
+    if (!link.trim() && !relato.trim()) {
+      toast.error("Preencha o link ou o relato antes de enviar.");
+      return;
+    }
+    submitMutation.mutate({
+      sessionId: tarefaSelecionada.id,
+      submissionType: "atualizacao_projeto",
+      evidenceLink: link.trim() || undefined,
+      relatoAluno: relato.trim() || undefined,
+    });
+  }
 
   return (
     <div className="space-y-4">
@@ -244,42 +297,128 @@ function SecaoTarefas({ tarefas }: { tarefas: any[] }) {
             <Card key={t.id}>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <p className="font-medium text-sm">
-                      {t.customTaskTitle || `Tarefa — Encontro #${t.sessionNumber}`}
-                    </p>
-                    {t.customTaskDescription && (
-                      <p className="text-xs text-muted-foreground">{t.customTaskDescription}</p>
-                    )}
-                    {t.taskDeadline && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Prazo: {fmtData(t.taskDeadline)}
-                      </p>
-                    )}
-                    {t.relatoAluno && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        <span className="font-medium">Relato:</span> {t.relatoAluno}
-                      </p>
-                    )}
-                    {t.evidenceLink && (
-                      <a
-                        href={t.evidenceLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 underline"
-                      >
-                        Ver comprovação
-                      </a>
-                    )}
+                  <p className="font-medium text-sm flex-1">
+                    {t.customTaskTitle || `Tarefa — Encontro #${t.sessionNumber}`}
+                  </p>
+                  <div className="shrink-0">
+                    <StatusTarefa status={t.taskStatus} validatedAt={t.validatedAt} />
                   </div>
-                  <StatusTarefa status={t.taskStatus} />
                 </div>
+
+                {t.customTaskDescription && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{t.customTaskDescription}</p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {t.taskDeadline && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Prazo: {fmtData(t.taskDeadline)}
+                    </span>
+                  )}
+                  {t.evidenceLink && (
+                    <a href={t.evidenceLink} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-blue-600 underline flex items-center gap-1">
+                      Ver comprovação enviada
+                    </a>
+                  )}
+                  {t.relatoAluno && (
+                    <span className="text-xs text-muted-foreground">
+                      <span className="font-medium">Relato:</span> {t.relatoAluno}
+                    </span>
+                  )}
+                </div>
+
+                {/* Comentários do mentor */}
+                {t.comentarios && t.comentarios.length > 0 && (
+                  <div className="space-y-1.5 border-t pt-2 mt-1">
+                    <p className="text-xs font-medium text-muted-foreground">Comentários da mentora:</p>
+                    {t.comentarios.map((c: any) => (
+                      <div key={c.id} className="rounded-md bg-blue-50 border border-blue-100 p-2.5">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-blue-800">{c.authorName}</span>
+                          <span className="text-xs text-muted-foreground">{fmtData(c.createdAt)}</span>
+                        </div>
+                        <p className="text-xs text-blue-900 whitespace-pre-wrap">{c.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Botão enviar evidência — só para tarefas não entregues */}
+                {t.taskStatus === "nao_entregue" && (
+                  <div className="pt-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-[#0A1E3E] border-[#0A1E3E] hover:bg-[#0A1E3E] hover:text-white"
+                      onClick={() => { setTarefaSelecionada(t); setLink(""); setRelato(""); }}
+                    >
+                      <Send className="h-3.5 w-3.5 mr-1.5" />
+                      Enviar comprovação
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Modal de envio de evidência */}
+      <Dialog open={!!tarefaSelecionada} onOpenChange={(open) => { if (!open) setTarefaSelecionada(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-[#0A1E3E]" />
+              Enviar comprovação
+            </DialogTitle>
+            <DialogDescription>
+              {tarefaSelecionada?.customTaskTitle || `Tarefa — Encontro #${tarefaSelecionada?.sessionNumber}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Link da evidência</Label>
+              <Input
+                type="url"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                placeholder="https://drive.google.com/..."
+              />
+              <p className="text-xs text-muted-foreground">Cole um link para o arquivo, vídeo ou documento da comprovação.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Relato do que foi feito</Label>
+              <Textarea
+                value={relato}
+                onChange={(e) => setRelato(e.target.value)}
+                placeholder="Descreva como você realizou a ação e o resultado obtido..."
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setTarefaSelecionada(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleEnviar}
+              disabled={submitMutation.isPending}
+              className="bg-[#0A1E3E] hover:bg-[#2D5A87]"
+            >
+              {submitMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Enviando...</>
+              ) : (
+                <><Send className="h-4 w-4 mr-1" /> Enviar comprovação</>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -306,7 +445,7 @@ function SecaoCertificados() {
 // ============================================================
 export default function AlunoPerformanceAutonoma() {
   const [aba, setAba] = useState("cursos");
-  const { data, isLoading, error } = trpc.alunosAutonomos.performanceAutonoma.useQuery();
+  const { data, isLoading, error, refetch } = trpc.alunosAutonomos.performanceAutonoma.useQuery();
 
   if (isLoading) {
     return (
@@ -494,7 +633,7 @@ export default function AlunoPerformanceAutonoma() {
           </TabsContent>
 
           <TabsContent value="tarefas" className="mt-4">
-            <SecaoTarefas tarefas={tarefas} />
+            <SecaoTarefas tarefas={tarefas} onEvidenciaEnviada={refetch} />
           </TabsContent>
 
           <TabsContent value="certificados" className="mt-4">
