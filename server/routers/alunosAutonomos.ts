@@ -631,11 +631,19 @@ export const alunosAutonomosRouter = router({
         });
       }
 
-      // 2. Marca o aluno como autônomo
-      await database
-        .update(alunos)
-        .set({ tipoPortal: "aluno_autonomo" })
-        .where(eq(alunos.id, input.alunoId));
+      // 2. Marca o aluno como autônomo — mas preserva 'assessment' para não sumir da aba DISC360
+      // O needsOnboarding é controlado pela presença de cursos autônomos no db.ts
+      const [alunoAtual2] = await database
+        .select({ tipoPortal: alunos.tipoPortal })
+        .from(alunos)
+        .where(eq(alunos.id, input.alunoId))
+        .limit(1);
+      if (alunoAtual2?.tipoPortal !== 'assessment') {
+        await database
+          .update(alunos)
+          .set({ tipoPortal: "aluno_autonomo" })
+          .where(eq(alunos.id, input.alunoId));
+      }
 
       // O diagnóstico é POR COMPETÊNCIA, não por curso: todos os cursos de uma
       // mesma competência usam a mesma avaliação. Então, se a aluna JÁ concluiu o
@@ -853,7 +861,7 @@ export const alunosAutonomosRouter = router({
       .from(alunoCursoAtribuido)
       .innerJoin(alunos, eq(alunos.id, alunoCursoAtribuido.alunoId))
       .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
-      .where(eq(alunos.tipoPortal, "aluno_autonomo"))
+      .where(inArray(alunos.tipoPortal, ["aluno_autonomo", "assessment"]))
       .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
 
     if (linhas.length === 0) return [];
