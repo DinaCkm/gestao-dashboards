@@ -3713,6 +3713,9 @@ export default function OnboardingAluno() {
     // para contas assessment-only (ver Bloco D, pendente: tela de conclusao dedicada).
     if (isAssessmentOnly && !assessmentTemDevolutiva && currentStep === 2) {
       toast.success("Assessment concluído! Obrigado por participar.");
+      // Redirecionar para o Mural — tipoPortal já foi atualizado para 'aluno_autonomo'
+      // pelo liberarCursoParaAluno, então needsOnboarding retorna false e o menu fica visível
+      setLocation("/mural");
       return;
     }
     // Assessment com devolutiva: encerra após o 1º Encontro (não avança para Sua Jornada/PDI/Aceite)
