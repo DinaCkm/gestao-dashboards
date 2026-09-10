@@ -14,7 +14,9 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
+  TrendingUp,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 // ============================================================
 // Helpers
@@ -136,9 +138,9 @@ function SecaoCursos({ cursos }: { cursos: any[] }) {
 }
 
 // ============================================================
-// Seção Mentorias
+// Seção Encontros de Feedback
 // ============================================================
-function SecaoMentorias({ sessoes }: { sessoes: any[] }) {
+function SecaoEncontros({ sessoes }: { sessoes: any[] }) {
   const presentes = sessoes.filter(s => s.presence === "presente").length;
 
   return (
@@ -148,13 +150,13 @@ function SecaoMentorias({ sessoes }: { sessoes: any[] }) {
         <Card>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-[#0A1E3E]">{sessoes.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">Total de sessões</p>
+            <p className="text-xs text-muted-foreground mt-1">Total de encontros</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-green-600">{presentes}</p>
-            <p className="text-xs text-muted-foreground mt-1">Presenças</p>
+            <p className="text-xs text-muted-foreground mt-1">Realizados</p>
           </CardContent>
         </Card>
       </div>
@@ -162,7 +164,7 @@ function SecaoMentorias({ sessoes }: { sessoes: any[] }) {
       {sessoes.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            Nenhuma sessão de mentoria registrada.
+            Nenhum encontro de feedback registrado.
           </CardContent>
         </Card>
       ) : (
@@ -171,7 +173,7 @@ function SecaoMentorias({ sessoes }: { sessoes: any[] }) {
             <Card key={s.id}>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">Sessão #{s.sessionNumber}</span>
+                  <span className="font-medium text-sm">Encontro #{s.sessionNumber}</span>
                   <div className="flex items-center gap-2">
                     <span className={`text-xs font-medium ${s.presence === "presente" ? "text-green-600" : "text-red-500"}`}>
                       {s.presence === "presente" ? "✓ Presente" : "✗ Ausente"}
@@ -244,7 +246,7 @@ function SecaoTarefas({ tarefas }: { tarefas: any[] }) {
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <p className="font-medium text-sm">
-                      {t.customTaskTitle || `Tarefa — Sessão #${t.sessionNumber}`}
+                      {t.customTaskTitle || `Tarefa — Encontro #${t.sessionNumber}`}
                     </p>
                     {t.customTaskDescription && (
                       <p className="text-xs text-muted-foreground">{t.customTaskDescription}</p>
@@ -331,6 +333,40 @@ export default function AlunoPerformanceAutonoma() {
   const { cursos, sessoes, tarefas } = data;
   const cursosOk = cursos.filter(c => c.status === "concluido").length;
 
+  // ── Indicadores de Performance ──────────────────────────────────────────
+  // IND.Tarefas: % de tarefas entregues (entregue ou validada) sobre total de tarefas com prazo
+  const tarefasComPrazo = tarefas.filter(t => t.taskStatus !== "sem_tarefa");
+  const tarefasEntregues = tarefasComPrazo.filter(
+    t => t.taskStatus === "entregue" || t.taskStatus === "validada"
+  ).length;
+  const indTarefas = tarefasComPrazo.length > 0
+    ? (tarefasEntregues / tarefasComPrazo.length) * 100
+    : 0;
+
+  // IND.Cursos: % de cursos concluídos sobre total atribuídos (exceto aguardando_avaliacao)
+  const cursosAtivos = cursos.filter(c => c.status !== "aguardando_avaliacao");
+  const indCursos = cursosAtivos.length > 0
+    ? (cursosOk / cursosAtivos.length) * 100
+    : 0;
+
+  // IND.Mentorias (Encontros de Feedback): sessões com presença
+  const sessoesPresentes = sessoes.filter(s => s.presence === "presente").length;
+  // Para % usamos proporção de presença sobre total de sessões registradas
+  const indMentorias = sessoes.length > 0
+    ? (sessoesPresentes / sessoes.length) * 100
+    : 0;
+
+  // Performance Geral: média dos 3 indicadores
+  // Se não há dados de algum indicador, só considera os que têm dados
+  const indicadoresComDados = [
+    cursosAtivos.length > 0 ? indCursos : null,
+    tarefasComPrazo.length > 0 ? indTarefas : null,
+    sessoes.length > 0 ? indMentorias : null,
+  ].filter(v => v !== null) as number[];
+  const performanceGeral = indicadoresComDados.length > 0
+    ? indicadoresComDados.reduce((a, b) => a + b, 0) / indicadoresComDados.length
+    : 0;
+
   return (
     <AlunoLayout>
       <div className="space-y-6 p-2">
@@ -338,24 +374,85 @@ export default function AlunoPerformanceAutonoma() {
         <div className="rounded-xl bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] p-6 text-white">
           <h1 className="text-2xl font-bold">{data.alunoNome || "Aluno"}</h1>
           <p className="text-white/70 text-sm mt-1">Acompanhamento da sua jornada de desenvolvimento</p>
-          <div className="flex flex-wrap gap-4 mt-4">
-            <div className="flex items-center gap-2 text-sm">
-              <BookOpen className="h-4 w-4 text-white/70" />
-              <span>{cursos.length} curso(s) atribuído(s)</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-4 w-4 text-green-400" />
-              <span>{cursosOk} concluído(s)</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4 text-white/70" />
-              <span>{sessoes.length} sessão(ões) de mentoria</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <ClipboardList className="h-4 w-4 text-white/70" />
-              <span>{tarefas.length} tarefa(s)</span>
-            </div>
-          </div>
+        </div>
+
+        {/* Indicadores de Performance */}
+        <div className="grid gap-4 md:grid-cols-4">
+          {/* Tarefas — % entregues no prazo */}
+          <Card className="border-l-4 border-l-blue-500">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                  <ClipboardList className="h-4 w-4" />
+                  Tarefas
+                </div>
+                <span className="text-2xl font-bold text-[#0A1E3E]">
+                  {indTarefas.toFixed(0)}%
+                </span>
+              </div>
+              <Progress value={indTarefas} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {tarefasEntregues} de {tarefas.length} entregue(s) no prazo
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Cursos — % concluídos */}
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                  <BookOpen className="h-4 w-4" />
+                  Cursos
+                </div>
+                <span className="text-2xl font-bold text-[#0A1E3E]">
+                  {indCursos.toFixed(0)}%
+                </span>
+              </div>
+              <Progress value={indCursos} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {cursosOk} de {cursos.length} concluído(s)
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Encontros de Feedback — sessões realizadas */}
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  Encontros de Feedback
+                </div>
+                <span className="text-2xl font-bold text-[#0A1E3E]">
+                  {sessoesPresentes}
+                </span>
+              </div>
+              <Progress value={sessoesPresentes > 0 ? 100 : 0} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {sessoesPresentes} de {sessoes.length} encontro(s) realizado(s)
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Performance Geral */}
+          <Card className="border-l-4 border-l-amber-500 bg-amber-50/50">
+            <CardContent className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                  <TrendingUp className="h-4 w-4" />
+                  Performance Geral
+                </div>
+                <span className="text-2xl font-bold text-amber-700">
+                  {performanceGeral.toFixed(0)}%
+                </span>
+              </div>
+              <Progress value={performanceGeral} className="h-2 [&>div]:bg-amber-500" />
+              <p className="text-xs text-muted-foreground">
+                Média de tarefas + cursos + encontros
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Abas */}
@@ -368,9 +465,9 @@ export default function AlunoPerformanceAutonoma() {
                 <Badge variant="secondary" className="ml-1 text-xs">{cursos.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="mentorias" className="flex items-center gap-1.5">
+            <TabsTrigger value="encontros" className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
-              Mentorias
+              Encontros de Feedback
               {sessoes.length > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs">{sessoes.length}</Badge>
               )}
@@ -392,8 +489,8 @@ export default function AlunoPerformanceAutonoma() {
             <SecaoCursos cursos={cursos} />
           </TabsContent>
 
-          <TabsContent value="mentorias" className="mt-4">
-            <SecaoMentorias sessoes={sessoes} />
+          <TabsContent value="encontros" className="mt-4">
+            <SecaoEncontros sessoes={sessoes} />
           </TabsContent>
 
           <TabsContent value="tarefas" className="mt-4">
