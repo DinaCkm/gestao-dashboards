@@ -237,7 +237,7 @@ function SecaoTarefas({ tarefas, onEvidenciaEnviada }: { tarefas: any[]; onEvide
   const entregues = tarefas.filter(t => t.taskStatus === "entregue" || t.taskStatus === "validada").length;
   const pendentes = tarefas.filter(t => t.taskStatus === "nao_entregue").length;
 
-  const submitMutation = trpc.mentor.submitEvidence.useMutation({
+  const submitMutation = trpc.attendance.submitEvidence.useMutation({
     onSuccess: () => {
       toast.success("Evidência enviada! Aguarde a validação da mentora.");
       setTarefaSelecionada(null);
