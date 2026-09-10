@@ -1113,6 +1113,7 @@ export async function createMentoringSession(data: {
     aplicabilidadeAvaliadaEm: data.aplicabilidadeAvaliadaEm ?? null,
     tipoSessao: tipoSessaoEfetivo,
     appointmentId: data.appointmentId ?? null,
+    cancelada: 0,
   } as any);
   return result[0].insertId;
 }
