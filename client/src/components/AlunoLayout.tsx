@@ -28,6 +28,7 @@ const ALL_NAV_ITEMS = [
   { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass, requiresAceite: true },
   // { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true }, // oculto — acesso via Portal do Aluno > Metas
   { label: "Performance", path: "/performance", icon: TrendingUp, requiresAceite: true },
+  { label: "Performance", path: "/aluno/performance", icon: TrendingUp, requiresAceite: true, apenasAutonomo: true },
   { label: "Meu Progresso e Certificados", path: "/aluno/meu-progresso", icon: Award, requiresAceite: true },
   // { label: "Evolução", path: "/evolucao-v2", icon: Sparkles, requiresAceite: true }, // oculto — Meu Progresso e Certificados já mostra o resultado congelado
   { label: "Tutoriais", path: "/tutoriais", icon: PlayCircle, requiresAceite: false },
@@ -135,10 +136,10 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
       ? ALL_NAV_ITEMS.filter(item => item.path !== '/onboarding')
       : ALL_NAV_ITEMS;
     if (isAlunoAutonomo) {
-      // Autônomo: mostrar "Meus Cursos", esconder "Portal do Aluno"
-      items = items.filter(item => item.path !== '/meu-dashboard');
+      // Autônomo: mostrar "Meus Cursos" e "Performance autônoma", esconder "Portal do Aluno" e "Performance normal"
+      items = items.filter(item => item.path !== '/meu-dashboard' && item.path !== '/performance');
     } else {
-      // Não autônomo: esconder "Meus Cursos"
+      // Não autônomo: esconder itens exclusivos de autônomo
       items = items.filter((item: any) => !item.apenasAutonomo);
     }
     if (!menuBloqueado) return items;
