@@ -136,8 +136,13 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
       ? ALL_NAV_ITEMS.filter(item => item.path !== '/onboarding')
       : ALL_NAV_ITEMS;
     if (isAlunoAutonomo) {
-      // Autônomo: mostrar "Meus Cursos" e "Performance autônoma", esconder "Portal do Aluno" e "Performance normal"
-      items = items.filter(item => item.path !== '/meu-dashboard' && item.path !== '/performance');
+      // Autônomo: mostrar "Meus Cursos" e "Performance autônoma", esconder "Portal do Aluno", "Performance normal" e "Tutoriais"
+      items = items.filter(item =>
+        item.path !== '/meu-dashboard' &&
+        item.path !== '/performance' &&
+        item.path !== '/tutoriais' &&
+        item.path !== '/aluno/meu-progresso'
+      );
     } else {
       // Não autônomo: esconder itens exclusivos de autônomo
       items = items.filter((item: any) => !item.apenasAutonomo);
