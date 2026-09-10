@@ -16,6 +16,7 @@ import {
   competencias,
   consultors,
   cursosCompetencias,
+  mentoringSessions,
   onboardingJornada,
   tentativasAvaliacao,
   users,
@@ -1583,5 +1584,82 @@ export const alunosAutonomosRouter = router({
       };
     }),
 });
+
+  // ==========================================================================
+  // PERFORMANCE DO ALUNO AUTÔNOMO
+  // Retorna cursos, sessões de mentoria, tarefas e certificados
+  // ==========================================================================
+  performanceAutonoma: protectedProcedure.query(async ({ ctx }) => {
+    const database = await requireDatabase();
+
+    // Buscar o aluno pelo contexto
+    const aluno = await db.getAlunoFromCtx(ctx.user as any);
+    if (!aluno) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+    }
+
+    // 1. Cursos atribuídos
+    const cursos = await database
+      .select({
+        id: alunoCursoAtribuido.id,
+        cursoId: alunoCursoAtribuido.cursoId,
+        status: alunoCursoAtribuido.status,
+        notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+        diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+        dataPrazo: alunoCursoAtribuido.dataPrazo,
+        dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
+        cursoTitulo: cursosCompetencias.titulo,
+        competenciaNome: competencias.nome,
+      })
+      .from(alunoCursoAtribuido)
+      .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+      .leftJoin(competencias, eq(competencias.id, cursosCompetencias.competenciaId))
+      .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+      .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+    // 2. Sessões de mentoria (todas, sem filtro de nível)
+    const sessoes = await database
+      .select({
+        id: mentoringSessions.id,
+        sessionNumber: mentoringSessions.sessionNumber,
+        sessionDate: mentoringSessions.sessionDate,
+        presence: mentoringSessions.presence,
+        taskStatus: mentoringSessions.taskStatus,
+        taskMode: mentoringSessions.taskMode,
+        customTaskTitle: mentoringSessions.customTaskTitle,
+        customTaskDescription: mentoringSessions.customTaskDescription,
+        taskDeadline: mentoringSessions.taskDeadline,
+        relatoAluno: mentoringSessions.relatoAluno,
+        submittedAt: mentoringSessions.submittedAt,
+        validatedAt: mentoringSessions.validatedAt,
+        feedback: mentoringSessions.feedback,
+        notaEvolucao: mentoringSessions.notaEvolucao,
+        evidenceLink: mentoringSessions.evidenceLink,
+        evidenceImageUrl: mentoringSessions.evidenceImageUrl,
+        consultorNome: consultors.name,
+      })
+      .from(mentoringSessions)
+      .leftJoin(consultors, eq(consultors.id, mentoringSessions.consultorId))
+      .where(
+        and(
+          eq(mentoringSessions.alunoId, aluno.id),
+          eq(mentoringSessions.cancelada as any, 0)
+        )
+      )
+      .orderBy(desc(mentoringSessions.sessionDate));
+
+    // Separar sessões de tarefas
+    const sessoesReais = sessoes;
+    const tarefas = sessoes.filter(s =>
+      s.taskStatus !== "sem_tarefa" || s.customTaskTitle
+    );
+
+    return {
+      alunoNome: aluno.name ?? aluno.nomeCompleto ?? "",
+      cursos,
+      sessoes: sessoesReais,
+      tarefas,
+    };
+  }),
 
 export default alunosAutonomosRouter;
