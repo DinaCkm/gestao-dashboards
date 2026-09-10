@@ -547,7 +547,9 @@ export default function Performance() {
   // Exceção: Alunos Autônomos têm jornada própria (cadastro + diagnóstico), nunca passam por assessment de mentora
   const hasAssessment = assessments && assessments.length > 0;
   const hasActiveAssessment = assessments && assessments.some((a: any) => a.status === 'ativo');
-  const isAlunoAutonomo = onboardingStatus?.tipoPortal === 'aluno_autonomo';
+  // Considera autônomo: aluno_autonomo OU assessment com needsOnboarding=false (tem cursos autônomos)
+  const isAlunoAutonomo = onboardingStatus?.tipoPortal === 'aluno_autonomo' ||
+    (onboardingStatus?.tipoPortal === 'assessment' && onboardingStatus?.needsOnboarding === false);
 
   if (!hasAssessment && !isAlunoAutonomo) {
     return (
