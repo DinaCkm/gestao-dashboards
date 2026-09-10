@@ -214,8 +214,11 @@ function SecaoEncontros({ sessoes }: { sessoes: any[] }) {
                     Nota de evolução: <strong>{s.notaEvolucao}</strong>
                   </p>
                 )}
-                {s.feedback && (
-                  <p className="text-xs text-muted-foreground italic">"{s.feedback}"</p>
+                {s.mensagemAluno && (
+                  <div className="mt-1 rounded-md bg-blue-50 border border-blue-100 p-2">
+                    <p className="text-xs font-medium text-blue-800 mb-0.5">Feedback da Mentora</p>
+                    <p className="text-xs text-blue-900 italic">"{s.mensagemAluno}"</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -597,7 +600,7 @@ export default function AlunoPerformanceAutonoma() {
 
         {/* Abas */}
         <Tabs value={aba} onValueChange={setAba}>
-          <TabsList>
+          <TabsList className="flex-wrap h-auto gap-1">
             <TabsTrigger value="cursos" className="flex items-center gap-1.5">
               <BookOpen className="h-3.5 w-3.5" />
               Cursos
