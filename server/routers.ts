@@ -14869,6 +14869,29 @@ Responda APENAS em JSON com o formato especificado.`
           .map(r => ({ id: r.id, nome: r.nome }));
       }),
 
+      // Trilhas com competências aninhadas — usado no modal "Criar Ação"
+      listarTrilhasComCompetencias: protectedProcedure.query(async () => {
+        const database = await db.getDb();
+        if (!database) return [];
+
+        // Reusar funções existentes do db
+        const todasTrilhas = await db.getAllTrilhas();
+        const todasCompetencias = await database
+          .select({ id: competencias.id, nome: competencias.nome, trilhaId: competencias.trilhaId })
+          .from(competencias)
+          .where(and(eq(competencias.isActive, 1)))
+          .orderBy(asc(competencias.nome));
+
+        return todasTrilhas
+          .filter((t: any) => t.isActive === 1)
+          .map((t: any) => ({
+            id: t.id,
+            name: t.name,
+            ordem: t.ordem,
+            competencias: todasCompetencias.filter(c => c.trilhaId === t.id),
+          }));
+      }),
+
       listarCursos: protectedProcedure
         .input(z.object({ competenciaId: z.number() }))
         .query(async ({ input }) => {
