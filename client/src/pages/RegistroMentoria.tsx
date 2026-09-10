@@ -141,9 +141,15 @@ export default function RegistroMentoria() {
   );
   const alunos = isAdmin ? adminAlunos : mentorAlunos;
 
-  const { data: sessions = [], refetch: refetchSessions } = trpc.mentor.sessionsByAluno.useQuery(
+  const { data: sessionsRaw = [], refetch: refetchSessions } = trpc.mentor.sessionsByAluno.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
+  );
+  // Excluir ações autônomas (criadas pelo modal "Criar Ação") da listagem de sessões.
+  // Essas ações têm taskMode='livre' e engagementScore=null sem nota de evolução —
+  // elas são gerenciadas via "Atividades Práticas", não aqui.
+  const sessions = sessionsRaw.filter((s: any) =>
+    !(s.taskMode === 'livre' && s.engagementScore == null && s.notaEvolucao == null && s.presence === 'presente' && !s.appointmentId)
   );
   const { data: sessionProgress } = trpc.mentor.sessionProgress.useQuery(
     { alunoId: selectedAlunoId! },
