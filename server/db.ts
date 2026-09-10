@@ -9017,6 +9017,15 @@ export async function getAlunoOnboardingStatus(user: {
       .where(eq(alunos.email, user.email.toLowerCase()))
       .limit(1);
     aluno = found;
+    // Vincular alunoId ao registro users automaticamente para próximas buscas
+    // Isso resolve o caso de alunos que entraram via DISC/SSO sem o vínculo criado
+    if (aluno && !user.alunoId) {
+      try {
+        await db.update(users).set({ alunoId: aluno.id }).where(eq(users.id, user.id));
+      } catch (e) {
+        console.warn('[onboardingStatus] Falha ao vincular alunoId ao user:', e);
+      }
+    }
   }
 
   if (!aluno) {
