@@ -127,6 +127,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: ClipboardCheck, label: "Assessment / PDI", path: "/assessment" },
       { icon: Target, label: "Plano Individual", path: "/plano-individual" },
       { icon: Flag, label: "Metas de Desenvolvimento", path: "/metas" },
+      { icon: ClipboardEdit, label: "Registro de Mentoria", path: "/registro-mentoria" },
       { icon: ClipboardEdit, label: "Atividades Práticas", path: "/atividades-praticas" },
       { icon: Award, label: "Emissão Manual de Certificado", path: "/admin/certificado-manual" },
       { icon: Award, label: "Configuração de Certificados", path: "/admin/configuracao-certificados" },
