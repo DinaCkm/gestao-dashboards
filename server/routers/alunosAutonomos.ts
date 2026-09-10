@@ -1583,8 +1583,6 @@ export const alunosAutonomosRouter = router({
         conhecimentoPrevioEm: atribuicao.diagnosticoConcluidoEm,
       };
     }),
-});
-
   // ==========================================================================
   // PERFORMANCE DO ALUNO AUTÔNOMO
   // Retorna cursos, sessões de mentoria, tarefas e certificados
@@ -1661,5 +1659,8 @@ export const alunosAutonomosRouter = router({
       tarefas,
     };
   }),
+
+});
+
 
 export default alunosAutonomosRouter;
