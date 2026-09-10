@@ -9,7 +9,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle, AlertTriangle, Award } from "lucide-react";
+import { BookOpen, Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle, AlertTriangle, Award } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -24,6 +24,7 @@ const PS_NAV_ITEMS = [
 const ALL_NAV_ITEMS = [
   { label: "Onboarding", path: "/onboarding", icon: ClipboardList, requiresAceite: false },
   { label: "Mural", path: "/mural", icon: Megaphone, requiresAceite: true },
+  { label: "Meus Cursos", path: "/aluno/competencias-comp-tec", icon: BookOpen, requiresAceite: true, apenasAutonomo: true },
   { label: "Portal do Aluno", path: "/meu-dashboard", icon: Compass, requiresAceite: true },
   // { label: "Minhas Metas", path: "/minhas-metas", icon: Flag, requiresAceite: true }, // oculto — acesso via Portal do Aluno > Metas
   { label: "Performance", path: "/performance", icon: TrendingUp, requiresAceite: true },
@@ -121,15 +122,25 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
 
   // Aluno Autônomo: jornada própria (cadastro + diagnóstico do curso), nunca passa
   // pelo onboarding de DISC/mentoria — o item Onboarding não faz sentido para ele
-  const isAlunoAutonomo = onboardingStatus?.tipoPortal === 'aluno_autonomo';
+  // Considera autônomo: aluno_autonomo OU assessment com cursos atribuídos
+  // (assessment com needsOnboarding=false = tem cursos autônomos, detectado pelo db.ts)
+  const isAlunoAutonomo = onboardingStatus?.tipoPortal === 'aluno_autonomo' ||
+    (onboardingStatus?.tipoPortal === 'assessment' && onboardingStatus?.needsOnboarding === false);
 
   // Filtrar itens de navegação
   const navItems = useMemo(() => {
     if (isCandidatoPS) return PS_NAV_ITEMS;
     // Veterano com PDI e sem onboarding liberado, ou Aluno Autônomo: ocultar item Onboarding
-    const items = (isVeteranSemOnboarding || isAlunoAutonomo)
+    let items = (isVeteranSemOnboarding || isAlunoAutonomo)
       ? ALL_NAV_ITEMS.filter(item => item.path !== '/onboarding')
       : ALL_NAV_ITEMS;
+    if (isAlunoAutonomo) {
+      // Autônomo: mostrar "Meus Cursos", esconder "Portal do Aluno"
+      items = items.filter(item => item.path !== '/meu-dashboard');
+    } else {
+      // Não autônomo: esconder "Meus Cursos"
+      items = items.filter((item: any) => !item.apenasAutonomo);
+    }
     if (!menuBloqueado) return items;
     return items.filter(item => !item.requiresAceite);
   }, [menuBloqueado, isCandidatoPS, isVeteranSemOnboarding, isAlunoAutonomo]);
