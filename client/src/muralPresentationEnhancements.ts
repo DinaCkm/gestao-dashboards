@@ -11,7 +11,11 @@ function injectStyles() {
     }
 
     .mural-standard-cta > svg {
-      display: none !important;
+      display: block !important;
+      width: 1rem !important;
+      height: 1rem !important;
+      margin-right: 0.5rem !important;
+      flex-shrink: 0;
     }
 
     .mural-standard-cta::after {
@@ -19,6 +23,7 @@ function injectStyles() {
       font-size: 0.875rem;
       font-weight: 700;
       line-height: 1.25rem;
+      white-space: nowrap;
     }
 
     .mural-cases-heading {
@@ -28,6 +33,7 @@ function injectStyles() {
     }
 
     .mural-cases-info {
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -44,6 +50,7 @@ function injectStyles() {
       letter-spacing: normal;
       cursor: help;
       flex-shrink: 0;
+      z-index: 20;
     }
 
     .mural-cases-info:hover,
@@ -51,6 +58,39 @@ function injectStyles() {
       color: #0A1E3E;
       border-color: #0A1E3E;
       outline: none;
+    }
+
+    .mural-cases-info::after {
+      content: attr(data-mural-tooltip);
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% + 10px);
+      transform: translateX(-50%) translateY(4px);
+      width: min(320px, 75vw);
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #0A1E3E;
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 500;
+      line-height: 1.45;
+      text-align: left;
+      text-transform: none;
+      letter-spacing: normal;
+      white-space: normal;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+      z-index: 9999;
+    }
+
+    .mural-cases-info:hover::after,
+    .mural-cases-info:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
     }
   `;
 
@@ -97,7 +137,7 @@ function enhanceDicaDaSemana() {
 
 function enhanceCasesHeading() {
   const headings = Array.from(document.querySelectorAll("h2")).filter(
-    (element) => element.textContent?.trim() === "Cases de Sucesso da Comunidade"
+    (element) => element.textContent?.trim().startsWith("Cases de Sucesso da Comunidade")
   );
 
   headings.forEach((heading) => {
@@ -107,6 +147,7 @@ function enhanceCasesHeading() {
     const info = document.createElement("span");
     info.className = "mural-cases-info";
     info.textContent = "i";
+    info.dataset.muralTooltip = CASES_INFO_TEXT;
     info.title = CASES_INFO_TEXT;
     info.setAttribute("aria-label", CASES_INFO_TEXT);
     info.setAttribute("role", "img");
