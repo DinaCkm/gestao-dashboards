@@ -9070,22 +9070,34 @@ export async function getAlunoOnboardingStatus(user: {
   // seja 'assessment' (aluno DISC360 que recebeu cursos), ele não deve passar pelo
   // onboarding de desenvolvimento. NÃO alteramos o tipoPortal — ele continua 'assessment'
   // para aparecer corretamente na aba DISC360 do admin.
+  // SEQUÊNCIA CORRETA: aluno faz o DISC primeiro, depois vê os cursos autônomos.
   let temCursoAutonomo = false;
+  let temDiscConcluido = false;
   try {
     const [cursoRow] = await db.select({ id: alunoCursoAtribuido.id })
       .from(alunoCursoAtribuido)
       .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
       .limit(1);
     temCursoAutonomo = !!cursoRow;
+
+    if (temCursoAutonomo && aluno.tipoPortal === 'assessment') {
+      const [discRow] = await db.select({ id: discResultados.id })
+        .from(discResultados)
+        .where(eq(discResultados.alunoId, aluno.id))
+        .limit(1);
+      temDiscConcluido = !!discRow;
+    }
   } catch (e) {
     console.warn('[onboardingStatus] Falha ao verificar cursos autônomos:', e);
   }
 
   let needsOnboarding = false;
-  if (aluno.tipoPortal === 'processo_seletivo' || aluno.tipoPortal === 'aluno_autonomo' || temCursoAutonomo) {
-    needsOnboarding = false; // PS, Autônomos e alunos DISC360 com cursos têm sua própria jornada
+  if (aluno.tipoPortal === 'processo_seletivo' || aluno.tipoPortal === 'aluno_autonomo') {
+    needsOnboarding = false;
+  } else if (temCursoAutonomo && temDiscConcluido) {
+    needsOnboarding = false; // DISC feito + cursos atribuídos → libera tudo
   } else if (isAlunoNovo && !aceiteRealizado && !onboardingLiberado) {
-    needsOnboarding = true; // Aluno novo que ainda não deu aceite no primeiro ciclo
+    needsOnboarding = true;
   }
 
   return {
