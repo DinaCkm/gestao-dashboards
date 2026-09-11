@@ -1557,7 +1557,6 @@ function PainelEvolucaoAluno({
               <CardContent>
                 <div className="space-y-2">
                   {[...data.autoavaliacoes]
-                    .sort((a: any, b: any) => (Number(a.competenciaOrdem ?? 999) - Number(b.competenciaOrdem ?? 999)) || String(a.competenciaNome ?? "").localeCompare(String(b.competenciaNome ?? ""), "pt-BR"))
                     .map((a: any) => (
                       <div key={a.competenciaId} className="flex items-center gap-3">
                         <span className="text-sm flex-1 min-w-0 truncate">{a.competenciaNome ?? `Competência ${a.competenciaId}`}</span>
