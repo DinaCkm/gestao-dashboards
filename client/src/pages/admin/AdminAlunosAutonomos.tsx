@@ -1044,6 +1044,26 @@ function PainelListaAlunos({
 }) {
   const utils = trpc.useUtils();
   const listaQuery = trpc.alunosAutonomos.listarAlunosAutonomos.useQuery();
+  const [filterEmpresa, setFilterEmpresa] = useState("all");
+
+  // Lista única de empresas para o filtro
+  const empresasUnicas = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of listaQuery.data ?? []) {
+      if ((a as any).programaNome) {
+        map.set((a as any).programaNome, (a as any).programaNome);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [listaQuery.data]);
+
+  // Dados filtrados
+  const dadosFiltrados = useMemo(() => {
+    const lista = listaQuery.data ?? [];
+    if (filterEmpresa === "all") return lista;
+    if (filterEmpresa === "sem_empresa") return lista.filter((a: any) => !a.programaNome);
+    return lista.filter((a: any) => a.programaNome === filterEmpresa);
+  }, [listaQuery.data, filterEmpresa]);
 
   const regenerarMutation = trpc.alunosAutonomos.regenerarLinkAcesso.useMutation({
     onSuccess: (data) => {
@@ -1072,11 +1092,32 @@ function PainelListaAlunos({
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 flex items-center gap-3">
+          <Select value={filterEmpresa} onValueChange={setFilterEmpresa}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Filtrar por empresa" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as empresas</SelectItem>
+              <SelectItem value="sem_empresa">Sem empresa</SelectItem>
+              {empresasUnicas.map((e) => (
+                <SelectItem key={e} value={e}>{e}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filterEmpresa !== "all" && (
+            <span className="text-sm text-muted-foreground">
+              {dadosFiltrados.length} resultado(s)
+            </span>
+          )}
+        </div>
+
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>E-mail</TableHead>
+              <TableHead>Empresa</TableHead>
               <TableHead>Curso</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Nota diagnóstica</TableHead>
@@ -1084,14 +1125,14 @@ function PainelListaAlunos({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(listaQuery.data ?? []).length === 0 ? (
+            {dadosFiltrados.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                   Nenhum aluno autônomo cadastrado ainda.
                 </TableCell>
               </TableRow>
             ) : (
-              [...(listaQuery.data ?? [])]
+              [...dadosFiltrados]
                 .sort((a: any, b: any) =>
                   String(a.nome ?? "").localeCompare(String(b.nome ?? ""), "pt-BR", { sensitivity: "base" })
                 )
@@ -1099,6 +1140,7 @@ function PainelListaAlunos({
                   <TableRow key={`${a.alunoId}-${a.cursoId ?? a.cursoTitulo ?? ""}`}>
                     <TableCell className="font-medium">{a.nome}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{a.email}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{(a as any).programaNome ?? <span className="italic text-slate-400">Sem empresa</span>}</TableCell>
                     <TableCell className="text-sm">{a.cursoTitulo ?? "—"}</TableCell>
                     <TableCell>{etapaLabel(a.etapaAtual, a.statusCurso)}</TableCell>
                     <TableCell className="text-sm">
