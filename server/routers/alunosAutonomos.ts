@@ -1878,7 +1878,8 @@ export const alunosAutonomosRouter = router({
       for (const a of autoavaliacoes) {
         if (!autoavaliacaoMap.has(a.competenciaId)) autoavaliacaoMap.set(a.competenciaId, a);
       }
-      const autoavaliacoesUnicas = Array.from(autoavaliacaoMap.values());
+      const autoavaliacoesUnicas = Array.from(autoavaliacaoMap.values())
+        .sort((a, b) => (Number(a.competenciaOrdem ?? 999) - Number(b.competenciaOrdem ?? 999)) || String(a.competenciaNome ?? "").localeCompare(String(b.competenciaNome ?? ""), "pt-BR"));
 
       // 6. Ficha pessoal
       const [fichaAluno] = await database
