@@ -1,4 +1,5 @@
 import "dotenv/config";
+import "../emailLogoContrastRuntime";
 import express from "express";
 import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
