@@ -6,11 +6,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Lock, Play, CheckCircle, Clock, BookOpen, RefreshCw, AlertCircle } from "lucide-react";
+
+const MENSAGEM_ATIVIDADE_BLOQUEADA = "Conclua ou marque a atividade anterior como concluída para acessar.";
 
 function getNumeroQuery(search: string, chave: string) {
   const params = new URLSearchParams(search);
   return Number(params.get(chave) ?? 0);
+}
+
+function BloqueioTooltip({ children }: { children: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="block w-full cursor-help">{children}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs text-center">
+        <p>{MENSAGEM_ATIVIDADE_BLOQUEADA}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export default function AlunoAtividade() {
@@ -109,6 +125,7 @@ export default function AlunoAtividade() {
 
   return (
     <AlunoLayout>
+    <TooltipProvider delayDuration={200}>
     <div className="space-y-6 p-6">
       <div>
         <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Competência</p>
@@ -153,6 +170,7 @@ export default function AlunoAtividade() {
                 const statusInfo = getStatusAtividade(atividade, index);
                 const StatusIcon = statusInfo.icon;
                 const podeIniciarAtividade = podeIniciar(atividade, index);
+                const estaBloqueada = statusInfo.label === "Bloqueada";
 
                 return (
                   <div
@@ -175,11 +193,20 @@ export default function AlunoAtividade() {
                         </div>
                       )}
 
-                      <div className="absolute right-2 top-2">
-                        <Badge className={statusInfo.color}>
-                          <StatusIcon className="mr-1 h-3 w-3" />
-                          {statusInfo.label}
-                        </Badge>
+                      <div className="absolute right-2 top-2 z-10">
+                        {estaBloqueada ? (
+                          <BloqueioTooltip>
+                            <Badge className={`${statusInfo.color} cursor-help`}>
+                              <StatusIcon className="mr-1 h-3 w-3" />
+                              {statusInfo.label}
+                            </Badge>
+                          </BloqueioTooltip>
+                        ) : (
+                          <Badge className={statusInfo.color}>
+                            <StatusIcon className="mr-1 h-3 w-3" />
+                            {statusInfo.label}
+                          </Badge>
+                        )}
                       </div>
 
                       {!podeIniciarAtividade && atividade.status !== "aprovada" && (
@@ -343,10 +370,12 @@ export default function AlunoAtividade() {
                             {iniciarAtividadeMutation.isPending ? "Abrindo conteúdo..." : "Acessar"}
                           </Button>
                         ) : (
-                          <Button disabled className="w-full" size="sm">
-                            <Lock className="mr-2 h-4 w-4" />
-                            Bloqueada
-                          </Button>
+                          <BloqueioTooltip>
+                            <Button disabled className="w-full pointer-events-none" size="sm">
+                              <Lock className="mr-2 h-4 w-4" />
+                              Bloqueada
+                            </Button>
+                          </BloqueioTooltip>
                         )}
                       </div>
                     </div>
@@ -367,6 +396,7 @@ export default function AlunoAtividade() {
         </Button>
       </div>
     </div>
+    </TooltipProvider>
     </AlunoLayout>
   );
 }
