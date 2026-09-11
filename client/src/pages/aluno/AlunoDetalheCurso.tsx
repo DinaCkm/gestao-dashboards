@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -14,11 +14,46 @@ export default function AlunoDetalheCurso() {
 
   const cursoId = Number(params.get("cursoId") ?? 0);
   const cursoAtribuidoId = Number(params.get("cursoAtribuidoId") ?? 0);
+  const [resumoCurso, setResumoCurso] = useState("");
+  const [resumoLoading, setResumoLoading] = useState(false);
 
   const detalheCursoQuery = trpc.competenciasCompTec.aluno.detalheCursoAtribuido.useQuery(
     { cursoId, cursoAtribuidoId },
     { enabled: cursoId > 0 && cursoAtribuidoId > 0 }
   );
+
+  useEffect(() => {
+    if (cursoId <= 0 || cursoAtribuidoId <= 0) {
+      setResumoCurso("");
+      return;
+    }
+
+    let ativo = true;
+    setResumoLoading(true);
+
+    fetch(`/api/aluno/cursos/${cursoId}/resumo?cursoAtribuidoId=${cursoAtribuidoId}`, {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data?.error || "Não foi possível carregar o resumo do curso.");
+        }
+        if (ativo) setResumoCurso(data?.resumo ?? "");
+      })
+      .catch(() => {
+        if (ativo) setResumoCurso("");
+      })
+      .finally(() => {
+        if (ativo) setResumoLoading(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [cursoId, cursoAtribuidoId]);
 
   // Só existe evolução para alunos que passaram pelo diagnóstico inicial
   // (fluxo Alunos Autônomos) — para os demais, conhecimentoPrevio vem null.
@@ -56,7 +91,11 @@ export default function AlunoDetalheCurso() {
       <Card>
         <CardHeader>
           <CardTitle>Informações do curso</CardTitle>
-          <CardDescription>Resumo do curso selecionado.</CardDescription>
+          <CardDescription>
+            {resumoLoading
+              ? "Carregando resumo do curso..."
+              : resumoCurso || "Sem resumo cadastrado."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {detalheCursoQuery.isLoading ? (
@@ -72,7 +111,6 @@ export default function AlunoDetalheCurso() {
                   Competência: <span className="font-medium">{dados.competencia}</span>
                 </p>
                 <h2 className="mt-2 text-xl font-semibold">{dados.titulo}</h2>
-                <p className="mt-2 text-sm text-muted-foreground">{dados.descricao}</p>
               </div>
 
               <div className="flex flex-wrap gap-2">
