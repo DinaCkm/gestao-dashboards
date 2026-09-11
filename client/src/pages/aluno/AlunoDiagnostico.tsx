@@ -24,6 +24,11 @@ export default function AlunoDiagnostico() {
     return Number(params.get("cursoAtribuidoId") || 0);
   }, [searchString]);
 
+  const modoFinal = useMemo(() => {
+    const params = new URLSearchParams(searchString || "");
+    return params.get("modo") === "final";
+  }, [searchString]);
+
   const diagnosticoQuery = trpc.alunosAutonomos.obterDiagnosticoDoCurso.useQuery(
     { cursoAtribuidoId },
     { enabled: cursoAtribuidoId > 0, retry: false }
@@ -37,12 +42,19 @@ export default function AlunoDiagnostico() {
     onError: (err) => toast.error(err.message),
   });
 
-  // Se o diagnóstico já foi concluído, o curso já está liberado — volta ao catálogo.
+  const responderFinalMutation = trpc.alunosAutonomos.responderAvaliacaoFinalCurso.useMutation({
+    onSuccess: (data) => setResultado(data),
+    onError: (err) => toast.error(err.message),
+  });
+
+  const mutationAtiva = modoFinal ? responderFinalMutation : responderMutation;
+
+  // Se o diagnóstico já foi concluído E não é modo final, o curso já está liberado — volta ao catálogo.
   useEffect(() => {
-    if (diagnosticoQuery.data?.jaConcluido && !resultado) {
+    if (diagnosticoQuery.data?.jaConcluido && !resultado && !modoFinal) {
       setLocation(VOLTAR_URL);
     }
-  }, [diagnosticoQuery.data?.jaConcluido, resultado, setLocation]);
+  }, [diagnosticoQuery.data?.jaConcluido, resultado, modoFinal, setLocation]);
 
   if (!cursoAtribuidoId) {
     return (
@@ -104,6 +116,8 @@ export default function AlunoDiagnostico() {
         <ResultadoDiagnostico
           resultado={resultado}
           cursoTitulo={cursoTitulo}
+          modoFinal={modoFinal}
+          notaDiagnosticaAnterior={diagnosticoQuery.data?.notaDiagnostica ?? null}
           onContinuar={() => setLocation(VOLTAR_URL)}
         />
       </AlunoLayout>
@@ -115,7 +129,7 @@ export default function AlunoDiagnostico() {
       toast.error("Responda todas as questões antes de enviar.");
       return;
     }
-    responderMutation.mutate({
+    mutationAtiva.mutate({
       cursoAtribuidoId,
       respostas: Object.entries(respostas).map(([questaoId, resposta]) => ({ questaoId, resposta })),
     });
@@ -128,9 +142,9 @@ export default function AlunoDiagnostico() {
           <Card>
             <CardHeader>
               <CardTitle>Avaliação diagnóstica — {cursoTitulo}</CardTitle>
-              <CardDescription>
-                Responda as {questoes.length} questões abaixo. Isso nos ajuda a entender seu ponto
-                de partida antes de você começar o curso.
+              <CardDescription>{modoFinal
+                  ? "Teste seus conhecimentos após concluir todas as atividades."
+                  : `Responda as ${questoes.length} questões abaixo. Isso nos ajuda a entender seu ponto de partida antes de você começar o curso.`}
               </CardDescription>
               <p className="mt-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
                 Este diagnóstico não tem caráter eliminatório. Ele foi criado para que você
@@ -176,8 +190,8 @@ export default function AlunoDiagnostico() {
             </Card>
           ))}
 
-          <Button className="w-full" size="lg" onClick={handleEnviar} disabled={responderMutation.isPending}>
-            {responderMutation.isPending ? "Enviando..." : "Finalizar avaliação"}
+          <Button className="w-full" size="lg" onClick={handleEnviar} disabled={mutationAtiva.isPending}>
+            {mutationAtiva.isPending ? "Enviando..." : "Finalizar avaliação"}
           </Button>
         </div>
       </div>
@@ -188,10 +202,14 @@ export default function AlunoDiagnostico() {
 function ResultadoDiagnostico({
   resultado,
   cursoTitulo,
+  modoFinal = false,
+  notaDiagnosticaAnterior = null,
   onContinuar,
 }: {
   resultado: any;
   cursoTitulo: string;
+  modoFinal?: boolean;
+  notaDiagnosticaAnterior?: number | null;
   onContinuar: () => void;
 }) {
   const nivelLabel: Record<string, string> = {
@@ -220,7 +238,7 @@ function ResultadoDiagnostico({
         <Card>
           <CardHeader className="text-center">
             <GraduationCap className="mx-auto mb-2 h-10 w-10 text-primary" />
-            <CardTitle>Sua análise de conhecimento prévio</CardTitle>
+            <CardTitle>{modoFinal ? "Resultado da avaliação final" : "Sua análise de conhecimento prévio"}</CardTitle>
             <CardDescription>{cursoTitulo}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -234,6 +252,36 @@ function ResultadoDiagnostico({
                 {nivelDescricao[resultado.nivel]}
               </p>
             </div>
+
+            {modoFinal && notaDiagnosticaAnterior != null && (
+              <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 p-4">
+                <p className="text-center text-sm font-semibold text-emerald-800 mb-3">
+                  📊 Evolução do seu conhecimento
+                </p>
+                <div className="flex items-center justify-center gap-6">
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Antes do curso</p>
+                    <p className="text-2xl font-bold text-slate-600">
+                      {Number(notaDiagnosticaAnterior).toFixed(0)}%
+                    </p>
+                  </div>
+                  <div className="text-2xl text-emerald-600">→</div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Após o curso</p>
+                    <p className="text-2xl font-bold text-emerald-700">
+                      {resultado.percentual.toFixed(0)}%
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">Evolução</p>
+                    <p className={`text-2xl font-bold ${resultado.percentual - Number(notaDiagnosticaAnterior) >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {resultado.percentual - Number(notaDiagnosticaAnterior) >= 0 ? "+" : ""}
+                      {(resultado.percentual - Number(notaDiagnosticaAnterior)).toFixed(0)}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
