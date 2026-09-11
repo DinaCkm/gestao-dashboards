@@ -20,6 +20,7 @@ import {
   mentoringSessions,
   onboardingJornada,
   practicalActivityComments,
+  programs,
   tentativasAvaliacao,
   users,
 } from "../../drizzle/schema";
@@ -855,6 +856,8 @@ export const alunosAutonomosRouter = router({
         alunoId: alunos.id,
         nome: alunos.name,
         email: alunos.email,
+        programaId: alunos.programId,
+        programaNome: programs.name,
         cursoId: alunoCursoAtribuido.cursoId,
         cursoTitulo: cursosCompetencias.titulo,
         statusCurso: alunoCursoAtribuido.status,
@@ -865,6 +868,7 @@ export const alunosAutonomosRouter = router({
       .from(alunoCursoAtribuido)
       .innerJoin(alunos, eq(alunos.id, alunoCursoAtribuido.alunoId))
       .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+      .leftJoin(programs, eq(programs.id, alunos.programId))
       .where(inArray(alunos.tipoPortal, ["aluno_autonomo", "assessment"]))
       .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
 
