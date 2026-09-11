@@ -8,13 +8,14 @@ function injectStyles() {
   style.textContent = `
     .mural-standard-cta {
       font-size: 0 !important;
+      gap: 0 !important;
     }
 
     .mural-standard-cta > svg {
       display: block !important;
       width: 1rem !important;
       height: 1rem !important;
-      margin-right: 0.5rem !important;
+      margin-right: 0.35rem !important;
       flex-shrink: 0;
     }
 
@@ -97,6 +98,36 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
+function normalizeText(value: string | null | undefined) {
+  return (value || "").replace(/\s+/g, " ").trim();
+}
+
+function applyBrandingAdjustments() {
+  const loginTitles = Array.from(document.querySelectorAll<HTMLElement>("h2")).filter((element) =>
+    normalizeText(element.textContent).startsWith("Ecossistema de Desenvolvimento do B.E.M")
+  );
+
+  loginTitles.forEach((element) => {
+    element.style.display = "none";
+  });
+
+  const loginTaglines = Array.from(document.querySelectorAll<HTMLElement>("p")).filter(
+    (element) => normalizeText(element.textContent) === "Líderes Sucessores"
+  );
+
+  loginTaglines.forEach((element) => {
+    element.style.display = "none";
+  });
+
+  const headerLabels = Array.from(document.querySelectorAll<HTMLElement>("header span")).filter(
+    (element) => normalizeText(element.textContent) === "ECOSSISTEMA DO BEM"
+  );
+
+  headerLabels.forEach((element) => {
+    element.textContent = "Ecossistema do B.E.M.";
+  });
+}
+
 function stableLabelFromTitle(title: string) {
   const hash = Array.from(title || "").reduce((total, char) => total + char.charCodeAt(0), 0);
   return hash % 2 === 0 ? "Clique aqui para abrir!" : "Acessar!";
@@ -162,14 +193,19 @@ function applyMuralEnhancements() {
   enhanceCasesHeading();
 }
 
+function applyPresentationEnhancements() {
+  applyBrandingAdjustments();
+  applyMuralEnhancements();
+}
+
 export function initMuralPresentationEnhancements() {
   if (typeof window === "undefined" || typeof document === "undefined") return;
 
   injectStyles();
-  applyMuralEnhancements();
+  applyPresentationEnhancements();
 
   const observer = new MutationObserver(() => {
-    window.requestAnimationFrame(applyMuralEnhancements);
+    window.requestAnimationFrame(applyPresentationEnhancements);
   });
 
   observer.observe(document.body, {
