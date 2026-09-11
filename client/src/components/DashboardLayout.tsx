@@ -180,7 +180,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: Users, label: "Cadastros", path: "/cadastros" },
       { icon: GraduationCap, label: "Turmas", path: "/turmas" },
       { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias" },
-      { icon: BookOpen, label: "Cursos_Criação", path: "/competencias-comp-tec" },
+      { icon: BookOpen, label: "Criação de Cursos", path: "/competencias-comp-tec" },
       { icon: BookOpen, label: "Mini-Cursos", path: "/cursos" },
       { icon: BookOpen, label: "Avaliações", path: "/admin/avaliacoes" },
       { icon: Zap, label: "Atividades Extras", path: "/atividades-extras" },
