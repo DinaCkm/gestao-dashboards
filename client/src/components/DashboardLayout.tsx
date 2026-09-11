@@ -121,6 +121,7 @@ const adminMenuGroups: MenuGroup[] = [
     label: "Alunos",
     items: [
       { icon: Footprints, label: "Onboarding Tracking", path: "/onboarding-tracking" },
+      { icon: UserPlus, label: "Alunos Autônomos", path: "/admin/alunos-autonomos" },
       { icon: History, label: "Auditoria de Resets", path: "/admin/auditoria-resets" },
       { icon: ClipboardList, label: "Auditoria Notas Mentoria", path: "/admin/auditoria-notas-mentoria" },
       { icon: ClipboardEdit, label: "Painel de Revisões PDI", path: "/painel-revisoes" },
