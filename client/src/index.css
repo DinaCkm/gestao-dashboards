@@ -475,3 +475,23 @@
   from { width: 0%; }
   to   { width: 100%; }
 }
+
+/*
+ * Logos adaptados ao contraste do fundo.
+ * Em fundos claros o src original permanece inalterado.
+ * Em fundos escuros, usamos as versões claras enviadas para client/public.
+ */
+.bg-sidebar img[src="/eco_do_bem_logo_horizontal.png"],
+.dark img[src="/eco_do_bem_logo_horizontal.png"],
+[class*="bg-[#0A1E3E]"] img[src="/eco_do_bem_logo_horizontal.png"],
+[class*="from-[#0A1E3E]"] img[src="/eco_do_bem_logo_horizontal.png"] {
+  content: url("/logo_claro_horizontal.png");
+}
+
+/* Telas de cadastro/boas-vindas usam espaços compactos em fundos muito escuros. */
+[style*="#0a1628"] img[src="/eco-do-bem-logo.png"],
+[style*="#080c14"] img[src="/eco-do-bem-logo.png"],
+[style*="#1a0a3c"] img[src="/eco-do-bem-logo.png"] {
+  content: url("/logo_claro_vertical.png");
+  object-fit: contain;
+}
