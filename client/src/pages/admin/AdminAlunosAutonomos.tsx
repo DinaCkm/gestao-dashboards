@@ -1506,10 +1506,21 @@ function PainelEvolucaoAluno({
           {data.disc && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Perfil DISC</CardTitle>
-                <CardDescription className="text-xs">
-                  Ciclo {data.disc.ciclo} · {data.disc.completedAt ? new Date(data.disc.completedAt).toLocaleDateString("pt-BR") : ""}
-                </CardDescription>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-base">Perfil DISC</CardTitle>
+                    <CardDescription className="text-xs">
+                      Ciclo {data.disc.ciclo} · {data.disc.completedAt ? new Date(data.disc.completedAt).toLocaleDateString("pt-BR") : ""}
+                    </CardDescription>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => window.open(`/disc360/relatorio-individual/${alunoSelecionadoId}?nome=${encodeURIComponent(data.alunoNome)}`, "_blank")}
+                  >
+                    Ver relatório completo
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3 mb-4">
@@ -1546,7 +1557,7 @@ function PainelEvolucaoAluno({
               <CardContent>
                 <div className="space-y-2">
                   {[...data.autoavaliacoes]
-                    .sort((a: any, b: any) => String(a.competenciaNome ?? "").localeCompare(String(b.competenciaNome ?? ""), "pt-BR"))
+                    .sort((a: any, b: any) => (Number(a.competenciaOrdem ?? 999) - Number(b.competenciaOrdem ?? 999)) || String(a.competenciaNome ?? "").localeCompare(String(b.competenciaNome ?? ""), "pt-BR"))
                     .map((a: any) => (
                       <div key={a.competenciaId} className="flex items-center gap-3">
                         <span className="text-sm flex-1 min-w-0 truncate">{a.competenciaNome ?? `Competência ${a.competenciaId}`}</span>
