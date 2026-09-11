@@ -1182,10 +1182,14 @@ function PainelEvolucaoAluno({
   function statusCursoBadge(status: string) {
     if (status === "concluido" || status === "aprovado")
       return <Badge className="bg-green-100 text-green-800 border-green-200">Concluído</Badge>;
-    if (status === "em_andamento" || status === "nao_iniciado")
-      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Em andamento</Badge>;
+    if (status === "em_progresso" || status === "em_andamento")
+      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Em progresso</Badge>;
+    if (status === "nao_iniciado")
+      return <Badge className="bg-slate-100 text-slate-700 border-slate-200">Não iniciado</Badge>;
     if (status === "aguardando_avaliacao")
       return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Diagnóstico pendente</Badge>;
+    if (status === "prorrogado")
+      return <Badge className="bg-orange-100 text-orange-800 border-orange-200">Prorrogado</Badge>;
     return <Badge variant="secondary">{status}</Badge>;
   }
 
@@ -1296,7 +1300,8 @@ function PainelEvolucaoAluno({
                       <TableHead>Curso</TableHead>
                       <TableHead>Competência</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Nota diagnóstica</TableHead>
+                      <TableHead>Nota inicial</TableHead>
+                      <TableHead>Nota final</TableHead>
                       <TableHead>Liberado em</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1305,9 +1310,22 @@ function PainelEvolucaoAluno({
                       <TableRow key={c.id}>
                         <TableCell className="font-medium">{c.cursoTitulo ?? "—"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{c.competenciaNome ?? "—"}</TableCell>
-                        <TableCell>{statusCursoBadge(c.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {statusCursoBadge(c.status)}
+                            {c.atividadesTotal > 0 && c.status !== "concluido" && c.status !== "aprovado" && c.status !== "aguardando_avaliacao" && (
+                              <span className="text-xs text-muted-foreground">
+                                {c.atividadesConcluidas}/{c.atividadesTotal} atividades
+                                {" "}({Math.round((c.atividadesConcluidas / c.atividadesTotal) * 100)}%)
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-sm">
-                          {c.notaDiagnostica != null ? Number(c.notaDiagnostica).toFixed(1) : "—"}
+                          {c.notaDiagnostica != null ? `${Number(c.notaDiagnostica).toFixed(0)}%` : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {c.notaFinal != null ? `${Number(c.notaFinal).toFixed(0)}%` : "—"}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {c.dataAtribuicao ? new Date(c.dataAtribuicao).toLocaleDateString("pt-BR") : "—"}
