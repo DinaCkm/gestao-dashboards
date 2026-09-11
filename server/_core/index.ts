@@ -4,6 +4,7 @@ import { createServer } from "http";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { pdfRouter } from "../pdfRoutes";
+import { courseMetadataRouter, ensureCourseMetadataTable } from "../courseMetadataRoutes";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -38,6 +39,7 @@ async function startServer() {
   await ensurePdfAtividadeSupport(); // garante suporte a PDF nas atividades de curso
   await ensureMetaEvidenciaColumns(); // garante colunas de evidência/validação em Metas (Jornada de Superação)
   await ensureDiretorSupport(); // garante papel de Diretor/Área (EcoDISC 360) com visão restrita por diretoria
+  await ensureCourseMetadataTable(); // garante persistência do resumo textual dos cursos
 
   const app = express();
   const server = createServer(app);
@@ -50,6 +52,9 @@ async function startServer() {
 
   // Geracao de PDF server-side via Chromium headless (Puppeteer)
   app.use(pdfRouter);
+
+  // Edição de metadados dos cursos (título, descrição e resumo)
+  app.use(courseMetadataRouter);
 
   // tRPC API
   app.use(
