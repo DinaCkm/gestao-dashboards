@@ -7,6 +7,7 @@ import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
 import { initMuralPresentationEnhancements } from "./muralPresentationEnhancements";
+import { initLoginLogoFix } from "./loginLogoFix";
 import "./index.css";
 import "./loginSophisticated.css";
 
@@ -83,3 +84,4 @@ createRoot(document.getElementById("root")!).render(
 );
 
 initMuralPresentationEnhancements();
+initLoginLogoFix();
