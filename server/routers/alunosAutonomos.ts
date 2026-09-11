@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
-import { and, desc, eq, inArray, isNull, isNotNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, isNotNull, sql } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
@@ -10,6 +10,7 @@ import * as db from "../db";
 import {
   alunos,
   alunoAcessoToken,
+  alunoAtividadeProgresso,
   alunoCursoAtribuido,
   atividadesCurso,
   avaliacoesAtividade,
@@ -654,6 +655,7 @@ export const alunosAutonomosRouter = router({
       const [diagAnteriorNaCompetencia] = await database
         .select({
           notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          notaFinal: alunoCursoAtribuido.notaFinal,
           diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
         })
         .from(alunoCursoAtribuido)
@@ -1552,6 +1554,7 @@ export const alunosAutonomosRouter = router({
           cursoId: alunoCursoAtribuido.cursoId,
           status: alunoCursoAtribuido.status,
           notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          notaFinal: alunoCursoAtribuido.notaFinal,
           diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
           cursoTitulo: cursosCompetencias.titulo,
         })
@@ -1737,6 +1740,7 @@ export const alunosAutonomosRouter = router({
           cursoId: alunoCursoAtribuido.cursoId,
           status: alunoCursoAtribuido.status,
           notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          notaFinal: alunoCursoAtribuido.notaFinal,
           diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
           dataPrazo: alunoCursoAtribuido.dataPrazo,
           dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
@@ -1805,10 +1809,38 @@ export const alunosAutonomosRouter = router({
         comentarios: comentariosPorSessao[t.id] ?? [],
       }));
 
+      // Contagem de atividades por cursoAtribuidoId
+      const cursosIds = cursos.map((c: any) => c.id);
+      let progressoPorCurso: Record<number, { total: number; concluidas: number }> = {};
+      if (cursosIds.length > 0) {
+        const progressoRows = await database
+          .select({
+            cursoAtribuidoId: alunoAtividadeProgresso.cursoAtribuidoId,
+            total: sql<number>`COUNT(*)`.as("total"),
+            concluidas: sql<number>`SUM(CASE WHEN ${alunoAtividadeProgresso.status} IN ('aprovada','concluida') THEN 1 ELSE 0 END)`.as("concluidas"),
+          })
+          .from(alunoAtividadeProgresso)
+          .where(inArray(alunoAtividadeProgresso.cursoAtribuidoId, cursosIds))
+          .groupBy(alunoAtividadeProgresso.cursoAtribuidoId);
+
+        for (const row of progressoRows) {
+          progressoPorCurso[row.cursoAtribuidoId] = {
+            total: Number(row.total),
+            concluidas: Number(row.concluidas),
+          };
+        }
+      }
+
+      const cursosComProgresso = cursos.map((c: any) => ({
+        ...c,
+        atividadesTotal: progressoPorCurso[c.id]?.total ?? 0,
+        atividadesConcluidas: progressoPorCurso[c.id]?.concluidas ?? 0,
+      }));
+
       return {
         alunoNome: (aluno as any).nomeCompleto ?? aluno.name ?? "",
         alunoEmail: aluno.email ?? "",
-        cursos,
+        cursos: cursosComProgresso,
         sessoes: sessoesReais,
         tarefas,
       };
