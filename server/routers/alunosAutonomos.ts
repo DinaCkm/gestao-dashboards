@@ -1817,22 +1817,40 @@ export const alunosAutonomosRouter = router({
 
       // Contagem de atividades por cursoAtribuidoId
       const cursosIds = cursos.map((c: any) => c.id);
+      const cursoIds = cursos.map((c: any) => Number(c.cursoId)).filter(Boolean);
       let progressoPorCurso: Record<number, { total: number; concluidas: number }> = {};
-      if (cursosIds.length > 0) {
-        const progressoRows = await database
+
+      if (cursosIds.length > 0 && cursoIds.length > 0) {
+        // Total real: atividades ativas na tabela atividades_curso (independe do progresso do aluno)
+        const totalRows = await database
+          .select({
+            cursoId: atividadesCurso.cursoId,
+            total: sql<number>`COUNT(*)`.as("total"),
+          })
+          .from(atividadesCurso)
+          .where(and(inArray(atividadesCurso.cursoId, cursoIds), eq(atividadesCurso.isActive, 1)))
+          .groupBy(atividadesCurso.cursoId);
+
+        // Mapa cursoId → total de atividades
+        const totalPorCursoId = new Map(totalRows.map(r => [Number(r.cursoId), Number(r.total)]));
+
+        // Concluídas: apenas as com status aprovada/concluida no progresso do aluno
+        const concluidasRows = await database
           .select({
             cursoAtribuidoId: alunoAtividadeProgresso.cursoAtribuidoId,
-            total: sql<number>`COUNT(*)`.as("total"),
             concluidas: sql<number>`SUM(CASE WHEN ${alunoAtividadeProgresso.status} IN ('aprovada','concluida') THEN 1 ELSE 0 END)`.as("concluidas"),
           })
           .from(alunoAtividadeProgresso)
           .where(inArray(alunoAtividadeProgresso.cursoAtribuidoId, cursosIds))
           .groupBy(alunoAtividadeProgresso.cursoAtribuidoId);
 
-        for (const row of progressoRows) {
-          progressoPorCurso[row.cursoAtribuidoId] = {
-            total: Number(row.total),
-            concluidas: Number(row.concluidas),
+        const concluidasPorAtribuicao = new Map(concluidasRows.map(r => [r.cursoAtribuidoId, Number(r.concluidas)]));
+
+        // Combinar: usar cursoId do curso para pegar total, cursoAtribuidoId para pegar concluídas
+        for (const curso of cursos) {
+          progressoPorCurso[curso.id] = {
+            total: totalPorCursoId.get(Number(curso.cursoId)) ?? 0,
+            concluidas: concluidasPorAtribuicao.get(curso.id) ?? 0,
           };
         }
       }
