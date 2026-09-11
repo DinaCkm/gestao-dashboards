@@ -1708,6 +1708,111 @@ export const alunosAutonomosRouter = router({
     };
   }),
 
+
+  // ==========================================================================
+  // ADMIN — PERFORMANCE/EVOLUÇÃO DE UM ALUNO AUTÔNOMO ESPECÍFICO
+  // Mesma lógica de performanceAutonoma, mas recebe alunoId como input
+  // ==========================================================================
+  performanceAutonomaAdmin: protectedProcedure
+    .input(z.object({ alunoId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      requireAdmin(ctx);
+      const database = await requireDatabase();
+
+      const [aluno] = await database
+        .select()
+        .from(alunos)
+        .where(eq(alunos.id, input.alunoId))
+        .limit(1);
+
+      if (!aluno) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+      }
+
+      // 1. Cursos atribuídos
+      const cursos = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          cursoId: alunoCursoAtribuido.cursoId,
+          status: alunoCursoAtribuido.status,
+          notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+          dataPrazo: alunoCursoAtribuido.dataPrazo,
+          dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
+          cursoTitulo: cursosCompetencias.titulo,
+          competenciaNome: competencias.nome,
+        })
+        .from(alunoCursoAtribuido)
+        .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+        .leftJoin(competencias, eq(competencias.id, cursosCompetencias.competenciaId))
+        .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+        .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+      // 2. Sessões de mentoria
+      const sessoes = await database
+        .select({
+          id: mentoringSessions.id,
+          sessionNumber: mentoringSessions.sessionNumber,
+          sessionDate: mentoringSessions.sessionDate,
+          presence: mentoringSessions.presence,
+          taskStatus: mentoringSessions.taskStatus,
+          taskMode: mentoringSessions.taskMode,
+          customTaskTitle: mentoringSessions.customTaskTitle,
+          customTaskDescription: mentoringSessions.customTaskDescription,
+          taskDeadline: mentoringSessions.taskDeadline,
+          relatoAluno: mentoringSessions.relatoAluno,
+          submittedAt: mentoringSessions.submittedAt,
+          validatedAt: mentoringSessions.validatedAt,
+          feedback: mentoringSessions.feedback,
+          mensagemAluno: mentoringSessions.mensagemAluno,
+          notaEvolucao: mentoringSessions.notaEvolucao,
+          evidenceLink: mentoringSessions.evidenceLink,
+          evidenceImageUrl: mentoringSessions.evidenceImageUrl,
+          consultorNome: consultors.name,
+        })
+        .from(mentoringSessions)
+        .leftJoin(consultors, eq(consultors.id, mentoringSessions.consultorId))
+        .where(
+          and(
+            eq(mentoringSessions.alunoId, aluno.id),
+            eq(mentoringSessions.cancelada as any, 0)
+          )
+        )
+        .orderBy(desc(mentoringSessions.sessionDate));
+
+      const sessoesReais = sessoes.filter(s => s.taskMode !== "livre");
+      const tarefasRaw = sessoes.filter(s =>
+        s.taskMode === "livre" || s.taskStatus !== "sem_tarefa" || s.customTaskTitle
+      );
+
+      const sessaoIds = tarefasRaw.map(t => t.id);
+      let comentariosPorSessao: Record<number, any[]> = {};
+      if (sessaoIds.length > 0) {
+        const todosComentarios = await database
+          .select()
+          .from(practicalActivityComments)
+          .where(inArray(practicalActivityComments.sessionId, sessaoIds))
+          .orderBy(practicalActivityComments.createdAt);
+        for (const c of todosComentarios) {
+          if (!comentariosPorSessao[c.sessionId]) comentariosPorSessao[c.sessionId] = [];
+          comentariosPorSessao[c.sessionId].push(c);
+        }
+      }
+
+      const tarefas = tarefasRaw.map(t => ({
+        ...t,
+        comentarios: comentariosPorSessao[t.id] ?? [],
+      }));
+
+      return {
+        alunoNome: (aluno as any).nomeCompleto ?? aluno.name ?? "",
+        alunoEmail: aluno.email ?? "",
+        cursos,
+        sessoes: sessoesReais,
+        tarefas,
+      };
+    }),
+
 });
 
 
