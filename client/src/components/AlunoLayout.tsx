@@ -170,7 +170,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
             {/* Logo */}
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setLocation(menuBloqueado ? "/onboarding" : "/mural")}>
               <img
-                src="/eco_do_bem_logo_horizontal.png"
+                src="/logo_claro_horizontal.png"
                 alt="B.E.M."
                 className="h-8 object-contain"
               />
@@ -325,7 +325,7 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
       {/* Footer */}
       <footer className="bg-[#0A1E3E] border-t border-[#0A1E3E] py-5 text-center">
         <div className="flex flex-col items-center gap-2">
-          <img src="/eco_do_bem_logo_horizontal.png" alt="B.E.M." className="h-6 opacity-70" />
+          <img src="/logo_claro_horizontal.png" alt="B.E.M." className="h-6 opacity-70" />
           <p className="text-xs text-white/50">
             Ecossistema do BEM &copy; {new Date().getFullYear()} — Programa de Mentoria e Desenvolvimento
           </p>
