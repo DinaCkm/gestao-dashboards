@@ -1672,10 +1672,12 @@ export const alunosAutonomosRouter = router({
       )
       .orderBy(desc(mentoringSessions.sessionDate));
 
-    // Separar sessões de tarefas
-    const sessoesReais = sessoes;
+    // Separar sessões reais de ações autônomas pelo taskMode:
+    // - taskMode = 'livre' → ação autônoma criada pelo modal "Criar Ação" → Tarefas
+    // - taskMode != 'livre' → sessão real de encontro → Encontros de Feedback
+    const sessoesReais = sessoes.filter(s => s.taskMode !== "livre");
     const tarefasRaw = sessoes.filter(s =>
-      s.taskStatus !== "sem_tarefa" || s.customTaskTitle
+      s.taskMode === "livre" || s.taskStatus !== "sem_tarefa" || s.customTaskTitle
     );
 
     // Buscar comentários do mentor para cada tarefa
