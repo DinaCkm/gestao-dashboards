@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -20,7 +21,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Eye, EyeOff, ArrowLeft, Edit2, Trash2, BookOpen, FileText, Video, Headphones, Mic, BookMarked, Play, X } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ArrowLeft, Edit2, Trash2, BookOpen, FileText, Video, Headphones, Mic, BookMarked, Play, X, Pencil } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -50,6 +51,9 @@ export default function CompetenciasCompTec() {
   const [viewCursoId, setViewCursoId] = useState<number | null>(null);
   const [viewCursoOpen, setViewCursoOpen] = useState(false);
   const [confirmarDeleteId, setConfirmarDeleteId] = useState<number | null>(null);
+  // Modal de edição de título do curso
+  const [editandoCurso, setEditandoCurso] = useState<{id: number; titulo: string; competenciaId: number; descricao: string; ordem: number} | null>(null);
+  const [editTitulo, setEditTitulo] = useState("");
 
   // Queries
   const { data: competencias = [] } = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
@@ -77,6 +81,15 @@ export default function CompetenciasCompTec() {
   // Mutations
   const utils = trpc.useUtils();
   
+  const atualizarCursoMutation = trpc.competenciasCompTec.admin.atualizarCurso.useMutation({
+    onSuccess: () => {
+      toast.success("Título do curso atualizado!");
+      setEditandoCurso(null);
+      utils.competenciasCompTec.admin.listarTodosCursos.invalidate();
+    },
+    onError: (err: any) => toast.error(err.message ?? "Erro ao atualizar curso."),
+  });
+
   const criarCursoMutation = trpc.competenciasCompTec.admin.criarCurso.useMutation({
     onSuccess: async () => {
       toast.success('Curso criado com sucesso!');
@@ -378,12 +391,12 @@ export default function CompetenciasCompTec() {
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              setSelectedCompetenciaId(curso.competenciaId);
-                              toast.info('Competência selecionada. Edite o curso na seção acima.');
+                              setEditandoCurso({ id: curso.id, titulo: curso.titulo, competenciaId: curso.competenciaId, descricao: curso.descricao ?? '', ordem: curso.ordem ?? 0 });
+                              setEditTitulo(curso.titulo);
                             }}
-                            title="Editar"
+                            title="Editar título do curso"
                           >
-                            <Edit2 className="h-4 w-4" />
+                            <Pencil className="h-4 w-4 text-blue-600" />
                           </Button>
                           <Button
                             size="sm"
@@ -683,6 +696,51 @@ export default function CompetenciasCompTec() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               Visualizar como Aluno
             </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    {/* Modal de edição de título do curso */}
+      <Dialog open={!!editandoCurso} onOpenChange={(open) => { if (!open) setEditandoCurso(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-[#0A1E3E]" />
+              Editar título do curso
+            </DialogTitle>
+            <DialogDescription>
+              Altere o título do curso. As outras configurações permanecem iguais.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Título do curso *</Label>
+              <Input
+                value={editTitulo}
+                onChange={(e) => setEditTitulo(e.target.value)}
+                placeholder="Digite o novo título..."
+                maxLength={255}
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setEditandoCurso(null)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (!editandoCurso || !editTitulo.trim()) return;
+                atualizarCursoMutation.mutate({
+                  cursoId: editandoCurso.id,
+                  competenciaId: editandoCurso.competenciaId,
+                  titulo: editTitulo.trim(),
+                  descricao: editandoCurso.descricao,
+                  ordem: editandoCurso.ordem,
+                });
+              }}
+              disabled={atualizarCursoMutation.isPending || !editTitulo.trim()}
+              className="bg-[#0A1E3E] hover:bg-[#2D5A87]"
+            >
+              {atualizarCursoMutation.isPending ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Salvando...</> : <><Pencil className="h-4 w-4 mr-1" />Salvar título</>}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
