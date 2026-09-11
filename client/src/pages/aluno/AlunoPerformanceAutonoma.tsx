@@ -198,7 +198,7 @@ function SecaoEncontros({ sessoes }: { sessoes: any[] }) {
             <Card key={s.id}>
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">Encontro #{s.sessionNumber}</span>
+                  <span className="font-medium text-sm">{fmtData(s.sessionDate)}</span>
                   <div className="flex items-center gap-2">
                     <span className={`text-xs font-medium ${s.presence === "presente" ? "text-green-600" : "text-red-500"}`}>
                       {s.presence === "presente" ? "✓ Presente" : "✗ Ausente"}
@@ -633,7 +633,7 @@ export default function AlunoPerformanceAutonoma() {
           </TabsContent>
 
           <TabsContent value="encontros" className="mt-4">
-            <SecaoEncontros sessoes={sessoes} />
+            <SecaoEncontros sessoes={[...sessoes].sort((a, b) => new Date(a.sessionDate).getTime() - new Date(b.sessionDate).getTime())} />
           </TabsContent>
 
           <TabsContent value="tarefas" className="mt-4">
