@@ -90,6 +90,7 @@ courseMetadataRouter.get(
         return res.status(404).json({ error: "Curso não encontrado." });
       }
 
+      res.setHeader("Cache-Control", "no-store");
       return res.json({
         id: curso.id,
         titulo: curso.titulo ?? "",
@@ -99,6 +100,55 @@ courseMetadataRouter.get(
     } catch (error) {
       console.error("[CourseMetadata] Erro ao carregar curso:", error);
       return res.status(500).json({ error: "Não foi possível carregar os dados do curso." });
+    }
+  }
+);
+
+// Retorna os metadados atuais de todos os cursos atribuídos ao aluno autenticado.
+// Esta consulta usa SQL direto porque o schema Drizzle legado de cursos_competencias
+// ainda não declara a coluna descricao, embora ela exista no banco de produção.
+courseMetadataRouter.get(
+  "/api/aluno/cursos/metadata",
+  requireAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).authenticatedUser;
+      const aluno = await getAlunoByUserId(Number(user?.id));
+      if (!aluno) {
+        return res.status(403).json({ error: "Aluno não identificado." });
+      }
+
+      await ensureCourseMetadataTable();
+      const connection = await getRawConnection();
+      if (!connection) {
+        return res.status(503).json({ error: "Banco de dados indisponível." });
+      }
+
+      const [rows] = (await connection.execute(
+        `SELECT
+           a.id AS cursoAtribuidoId,
+           a.cursoId AS cursoId,
+           c.descricao AS descricao,
+           m.resumo AS resumo
+         FROM aluno_curso_atribuido a
+         LEFT JOIN cursos_competencias c ON c.id = a.cursoId
+         LEFT JOIN curso_metadados m ON m.cursoId = a.cursoId
+         WHERE a.alunoId = ?`,
+        [aluno.id]
+      )) as any;
+
+      res.setHeader("Cache-Control", "no-store");
+      return res.json(
+        (Array.isArray(rows) ? rows : []).map((item: any) => ({
+          cursoAtribuidoId: Number(item.cursoAtribuidoId),
+          cursoId: Number(item.cursoId),
+          descricao: item.descricao ?? "",
+          resumo: item.resumo ?? "",
+        }))
+      );
+    } catch (error) {
+      console.error("[CourseMetadata] Erro ao carregar metadados dos cursos do aluno:", error);
+      return res.status(500).json({ error: "Não foi possível carregar os dados dos cursos." });
     }
   }
 );
@@ -148,6 +198,7 @@ courseMetadataRouter.get(
         return res.status(404).json({ error: "Curso não encontrado entre as atribuições do aluno." });
       }
 
+      res.setHeader("Cache-Control", "no-store");
       return res.json({ resumo: resultado.resumo ?? "" });
     } catch (error) {
       console.error("[CourseMetadata] Erro ao carregar resumo para aluno:", error);
