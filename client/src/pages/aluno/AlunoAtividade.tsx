@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Lock, Play, CheckCircle, Clock, BookOpen, RefreshCw, AlertCircle } from "lucide-react";
+import { Lock, Play, CheckCircle, Clock, BookOpen, RefreshCw, AlertCircle , Trophy, PartyPopper} from "lucide-react";
 
 const MENSAGEM_ATIVIDADE_BLOQUEADA = "Conclua ou marque a atividade anterior como concluída para acessar.";
 
@@ -26,6 +26,13 @@ export default function AlunoAtividade() {
     { cursoId, cursoAtribuidoId },
     { enabled: !!cursoId && !!cursoAtribuidoId }
   );
+
+  const todasConcluidas = useMemo(() => {
+    const atividades = atividadesQuery.data ?? [];
+    if (atividades.length === 0) return false;
+    return atividades.every((a: any) => a.status === "aprovada" || a.status === "concluida");
+  }, [atividadesQuery.data]);
+
 
   const abrirConteudo = (atividadeId: number) => {
     setLocation(
@@ -363,6 +370,28 @@ export default function AlunoAtividade() {
           )}
         </CardContent>
       </Card>
+
+      {todasConcluidas && (
+        <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50 p-6 text-center shadow-sm">
+          <div className="flex justify-center mb-3">
+            <PartyPopper className="h-10 w-10 text-emerald-600" />
+          </div>
+          <h3 className="text-lg font-bold text-emerald-800 mb-1">
+            🎉 Você concluiu todas as atividades!
+          </h3>
+          <p className="text-sm text-emerald-700 mb-4">
+            Clique abaixo para fazer a avaliação final e registrar sua evolução de conhecimento.
+          </p>
+          <Button
+            size="lg"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8"
+            onClick={() => setLocation(`/aluno/diagnostico?cursoAtribuidoId=${cursoAtribuidoId}&modo=final`)}
+          >
+            <Trophy className="mr-2 h-5 w-5" />
+            Finalizar curso — Fazer avaliação final
+          </Button>
+        </div>
+      )}
 
       <div className="flex justify-start">
         <Button
