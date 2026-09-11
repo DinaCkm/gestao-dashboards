@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
@@ -36,9 +36,55 @@ const STATUS_LABELS: Record<string, string> = {
 export default function AlunoCatalogo() {
   const [, setLocation] = useLocation();
   const [busca, setBusca] = useState("");
+  const [metadataCursos, setMetadataCursos] = useState<Record<number, { descricao: string; resumo: string }>>({});
 
   // Query 1: cursos atribuídos ao aluno (já existente)
   const meusCursosQuery = trpc.competenciasCompTec.aluno.getCursosAtribuidos.useQuery();
+
+  // Complementa os dados com a descrição real salva no banco.
+  // O schema Drizzle legado não declara a coluna descricao de cursos_competencias.
+  useEffect(() => {
+    if (!meusCursosQuery.data || meusCursosQuery.data.length === 0) {
+      setMetadataCursos({});
+      return;
+    }
+
+    let ativo = true;
+
+    fetch("/api/aluno/cursos/metadata", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => []);
+        if (!response.ok) {
+          throw new Error("Não foi possível carregar os dados atualizados dos cursos.");
+        }
+
+        if (!ativo) return;
+
+        const mapa: Record<number, { descricao: string; resumo: string }> = {};
+        for (const item of Array.isArray(data) ? data : []) {
+          const cursoId = Number(item?.cursoId ?? 0);
+          if (cursoId > 0) {
+            mapa[cursoId] = {
+              descricao: item?.descricao ?? "",
+              resumo: item?.resumo ?? "",
+            };
+          }
+        }
+        setMetadataCursos(mapa);
+      })
+      .catch(() => {
+        if (ativo) setMetadataCursos({});
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [meusCursosQuery.data]);
 
   // Extrair alunoId do primeiro resultado (vem dentro de atribuicao.alunoId)
   const alunoId = useMemo(() => {
@@ -68,6 +114,10 @@ export default function AlunoCatalogo() {
   const { cursosObrigatorios, cursosOpcionais } = useMemo(() => {
     const base = (meusCursosQuery.data ?? [])
       .map(normalizarCurso)
+      .map((curso) => ({
+        ...curso,
+        descricao: metadataCursos[curso.cursoId]?.descricao ?? curso.descricao,
+      }))
       .filter((x) => x.cursoId > 0);
 
     const termo = busca.trim().toLowerCase();
@@ -101,7 +151,7 @@ export default function AlunoCatalogo() {
     }
 
     return { cursosObrigatorios: obrigatorios, cursosOpcionais: opcionais };
-  }, [meusCursosQuery.data, busca, obrigatoriaMap]);
+  }, [meusCursosQuery.data, busca, obrigatoriaMap, metadataCursos]);
 
   const totalCursos = cursosObrigatorios.length + cursosOpcionais.length;
 
