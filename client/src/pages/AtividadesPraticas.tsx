@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import {
   ClipboardCheck, Search, Filter, Eye, Calendar, User, Award,
   CheckCircle2, Clock, XCircle, ExternalLink, MessageSquare,
-  Send, FileText, Image as ImageIcon, AlertTriangle, Minus, Zap
+  Send, FileText, Image as ImageIcon, AlertTriangle, Minus, Zap, Loader2
 } from "lucide-react";
 
 export default function AtividadesPraticas() {
@@ -70,6 +70,14 @@ export default function AtividadesPraticas() {
   );
 
   // Mutations
+  const validateTaskMutation = trpc.mentor.validateTask.useMutation({
+    onSuccess: () => {
+      toast.success("Atividade validada com sucesso!");
+      refetchSubmissions();
+    },
+    onError: (err: any) => toast.error(err.message ?? "Erro ao validar."),
+  });
+
   const criarAcaoMutation = trpc.mentor.createSession.useMutation({
     onSuccess: () => {
       toast.success("Ação criada com sucesso!");
@@ -536,11 +544,23 @@ export default function AtividadesPraticas() {
 
                 {/* Nota: Admin NÃO valida */}
                 {submissionDetail.taskStatus === 'entregue' && submissionDetail.submittedAt && (
-                  <div className="p-3 rounded bg-amber-50 border border-amber-200">
+                  <div className="p-3 rounded bg-amber-50 border border-amber-200 space-y-2">
                     <p className="text-xs text-amber-700 flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
-                      Aguardando validação do mentor. Admin não valida entregas.
+                      Entrega pendente de validação
                     </p>
+                    <Button
+                      size="sm"
+                      onClick={() => validateTaskMutation.mutate({ sessionId: submissionDetail.id })}
+                      disabled={validateTaskMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700 text-white w-full"
+                    >
+                      {validateTaskMutation.isPending ? (
+                        <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Validando...</>
+                      ) : (
+                        <><CheckCircle2 className="h-4 w-4 mr-1" /> Validar entrega</>
+                      )}
+                    </Button>
                   </div>
                 )}
 
