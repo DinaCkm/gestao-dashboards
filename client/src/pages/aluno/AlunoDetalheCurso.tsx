@@ -111,8 +111,6 @@ export default function AlunoDetalheCurso() {
     };
   }, [cursoId, cursoAtribuidoId]);
 
-  // Só existe evolução para alunos que passaram pelo diagnóstico inicial
-  // (fluxo Alunos Autônomos) — para os demais, conhecimentoPrevio vem null.
   const evolucaoQuery = trpc.alunosAutonomos.evolucaoNoCurso.useQuery(
     { cursoAtribuidoId },
     { enabled: cursoAtribuidoId > 0, retry: false }
@@ -222,13 +220,16 @@ export default function AlunoDetalheCurso() {
                       `/aluno/competencias-comp-tec/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
                     )
                   }
+                  className="h-11 bg-[#0A1E3E] px-5 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-[#173963] hover:shadow-lg"
                 >
-                  Ir para atividade
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Ir para as atividades do curso
                 </Button>
 
                 <Button
                   variant="outline"
                   onClick={() => setLocation("/aluno/competencias-comp-tec")}
+                  className="h-11"
                 >
                   Voltar ao catálogo
                 </Button>
