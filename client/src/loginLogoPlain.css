@@ -12,13 +12,20 @@
   box-sizing: content-box !important;
   object-fit: contain !important;
   object-position: center !important;
-  padding: 0 !important;
-  margin: 0 !important;
+  padding: 0 0 24px 0 !important;
+  margin: 0 0 2px 0 !important;
   border: 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22) !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
   overflow: visible !important;
+}
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10::before {
+  margin-top: 22px !important;
 }
 
 @media (max-width: 900px) {
@@ -28,7 +35,7 @@
     > img {
     width: 150px !important;
     height: auto !important;
-    padding: 0 !important;
+    padding: 0 0 20px 0 !important;
   }
 }
 
