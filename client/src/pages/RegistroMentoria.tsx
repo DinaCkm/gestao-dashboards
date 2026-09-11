@@ -99,13 +99,6 @@ export default function RegistroMentoria() {
   // Agendamento vinculado
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
 
-  // Modal de Criar Ação (tarefa autônoma sem sessão)
-  const [showModalAcao, setShowModalAcao] = useState(false);
-  const [acaoTrilhaId, setAcaoTrilhaId] = useState<string>("");
-  const [acaoCompetenciaId, setAcaoCompetenciaId] = useState<string>("");
-  const [acaoTitulo, setAcaoTitulo] = useState("");
-  const [acaoDescricao, setAcaoDescricao] = useState("");
-  const [acaoPrazo, setAcaoPrazo] = useState("");
   // Formulário grupal — dados individuais por participante
   const [groupParticipantsData, setGroupParticipantsData] = useState<Record<number, {
     presence: "presente" | "ausente";
@@ -116,14 +109,6 @@ export default function RegistroMentoria() {
   }>>({}); 
 
   // Queries
-  // Dados para o modal de Criar Ação
-  const { data: trilhasComCompetencias = [] } = trpc.competenciasCompTec.admin.listarTrilhasComCompetencias.useQuery(
-    undefined,
-    { enabled: showModalAcao }
-  );
-  const competenciasDaTrilha = trilhasComCompetencias
-    .find((t: any) => String(t.id) === acaoTrilhaId)?.competencias ?? [];
-
   const { data: allPrograms = [] } = trpc.programs.list.useQuery(undefined, { enabled: isAdmin });
   const { data: mentorPrograms = [] } = trpc.alunos.programsByConsultor.useQuery(
     { consultorId: userConsultorId! },
@@ -150,6 +135,10 @@ export default function RegistroMentoria() {
   // elas são gerenciadas via "Atividades Práticas", não aqui.
   const sessions = sessionsRaw.filter((s: any) =>
     !(s.taskMode === 'livre' && s.engagementScore == null && s.notaEvolucao == null && s.presence === 'presente' && !s.appointmentId)
+  );
+  // Ações autônomas — separadas das sessões, exibidas em seção própria
+  const acoesAutonomas = sessionsRaw.filter((s: any) =>
+    s.taskMode === 'livre' && s.engagementScore == null && s.notaEvolucao == null && s.presence === 'presente' && !s.appointmentId
   );
   const { data: sessionProgress } = trpc.mentor.sessionProgress.useQuery(
     { alunoId: selectedAlunoId! },
@@ -342,44 +331,6 @@ export default function RegistroMentoria() {
     setEditTaskMode(session.taskMode || "sem_tarefa");
     setEditCustomTaskTitle(session.customTaskTitle || "");
     setEditCustomTaskDescription(session.customTaskDescription || "");
-  };
-
-  const handleCriarAcao = () => {
-    if (!selectedAlunoId) { toast.error("Selecione um aluno primeiro."); return; }
-    if (!acaoCompetenciaId) { toast.error("Selecione a competência."); return; }
-    if (!acaoTitulo.trim()) { toast.error("Informe o título da ação."); return; }
-    if (!acaoPrazo) { toast.error("Informe o prazo."); return; }
-
-    const hoje = new Date().toISOString().split("T")[0];
-    createSession.mutate({
-      alunoId: selectedAlunoId,
-      sessionDate: hoje,
-      presence: "presente",
-      taskStatus: "nao_entregue",
-      engagementScore: null,
-      notaEvolucao: null,
-      feedback: undefined,
-      mensagemAluno: undefined,
-      taskId: null,
-      taskDeadline: acaoPrazo,
-      taskMode: "livre",
-      customTaskTitle: acaoTitulo.trim(),
-      customTaskDescription: acaoDescricao.trim() || undefined,
-      notaMentoraAplicabilidade: undefined,
-      tipoSessao: "individual_normal",
-      appointmentId: undefined,
-    }, {
-      onSuccess: () => {
-        toast.success("Ação criada com sucesso!");
-        setShowModalAcao(false);
-        setAcaoTrilhaId("");
-        setAcaoCompetenciaId("");
-        setAcaoTitulo("");
-        setAcaoDescricao("");
-        setAcaoPrazo("");
-      },
-      onError: (err: any) => toast.error(err.message ?? "Erro ao criar ação."),
-    });
   };
 
   const handleSave = () => {
@@ -1057,23 +1008,12 @@ export default function RegistroMentoria() {
                   )}
                 </div>
                 {(isAdmin || userConsultorId) && (
-                  <div className="flex gap-2">
-                    {selectedAlunoId && (
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowModalAcao(true)}
-                        className="border-[#0A1E3E] text-[#0A1E3E] hover:bg-[#0A1E3E] hover:text-white"
-                      >
-                        <Zap className="h-4 w-4 mr-1" /> Criar Ação
-                      </Button>
-                    )}
-                    <Button 
-                      onClick={() => setShowNewSession(!showNewSession)}
-                      className={showNewSession ? "bg-red-500 hover:bg-red-600" : "bg-[#0A1E3E] hover:bg-[#2D5A87]"}
-                    >
-                      {showNewSession ? <><X className="h-4 w-4 mr-1" /> Cancelar</> : <><Plus className="h-4 w-4 mr-1" /> Nova Sessão</>}
-                    </Button>
-                  </div>
+                  <Button 
+                    onClick={() => setShowNewSession(!showNewSession)}
+                    className={showNewSession ? "bg-red-500 hover:bg-red-600" : "bg-[#0A1E3E] hover:bg-[#2D5A87]"}
+                  >
+                    {showNewSession ? <><X className="h-4 w-4 mr-1" /> Cancelar</> : <><Plus className="h-4 w-4 mr-1" /> Nova Sessão</>}
+                  </Button>
                 )}
               </div>
             </CardHeader>
@@ -2126,6 +2066,7 @@ export default function RegistroMentoria() {
           </Card>
         )}
 
+
         {/* Mensagem quando nenhum aluno selecionado */}
         {!selectedAlunoId && (
           <Card>
@@ -2448,109 +2389,7 @@ export default function RegistroMentoria() {
         </Dialog>
       </div>
 
-      {/* Modal — Criar Ação (tarefa autônoma sem sessão) */}
-      <Dialog open={showModalAcao} onOpenChange={setShowModalAcao}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-[#0A1E3E]" />
-              Criar Ação
-            </DialogTitle>
-            <DialogDescription>
-              Crie uma ação de desenvolvimento vinculada a uma competência. O aluno verá na aba Tarefas da Performance e envia a comprovação normalmente.
-            </DialogDescription>
-          </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Trilha</Label>
-              <Select
-                value={acaoTrilhaId || "__none__"}
-                onValueChange={(v) => {
-                  setAcaoTrilhaId(v === "__none__" ? "" : v);
-                  setAcaoCompetenciaId("");
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a trilha" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Selecione</SelectItem>
-                  {trilhasComCompetencias.map((t: any) => (
-                    <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Competência</Label>
-              <Select
-                value={acaoCompetenciaId || "__none__"}
-                onValueChange={(v) => setAcaoCompetenciaId(v === "__none__" ? "" : v)}
-                disabled={!acaoTrilhaId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={acaoTrilhaId ? "Selecione a competência" : "Selecione a trilha primeiro"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Selecione</SelectItem>
-                  {competenciasDaTrilha.map((c: any) => (
-                    <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Título da ação *</Label>
-              <Input
-                value={acaoTitulo}
-                onChange={(e) => setAcaoTitulo(e.target.value)}
-                placeholder="Ex: Aplicar feedback estruturado na próxima reunião de equipe"
-                maxLength={500}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Descrição / Instruções</Label>
-              <Textarea
-                value={acaoDescricao}
-                onChange={(e) => setAcaoDescricao(e.target.value)}
-                placeholder="Descreva o que o aluno precisa fazer e como comprovar..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Prazo de entrega *</Label>
-              <Input
-                type="date"
-                value={acaoPrazo}
-                onChange={(e) => setAcaoPrazo(e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setShowModalAcao(false)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCriarAcao}
-              disabled={createSession.isPending}
-              className="bg-[#0A1E3E] hover:bg-[#2D5A87]"
-            >
-              {createSession.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Criando...</>
-              ) : (
-                <><Zap className="h-4 w-4 mr-1" /> Criar Ação</>
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 }
