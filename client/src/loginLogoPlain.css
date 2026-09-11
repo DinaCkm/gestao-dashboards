@@ -1,0 +1,42 @@
+/* Ajuste exclusivamente visual do logo do login.
+ * Remove o círculo/fundo decorativo para exibir a marca diretamente sobre o painel escuro.
+ */
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10
+  > img {
+  content: normal !important;
+  width: 190px !important;
+  height: auto !important;
+  max-height: none !important;
+  box-sizing: content-box !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 900px) {
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .flex.flex-col.items-center.gap-4.relative.z-10
+    > img {
+    width: 150px !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .flex.flex-col.items-center.gap-4.relative.z-10
+    > img {
+    width: 132px !important;
+  }
+}
