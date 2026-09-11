@@ -1,5 +1,5 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { getRawConnection } from "./db";
+import { getAlunoByUserId, getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
 
 export const courseMetadataRouter = Router();
@@ -25,6 +25,16 @@ export async function ensureCourseMetadataTable() {
   `);
 
   metadataTableEnsured = true;
+}
+
+async function requireAuthenticated(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    (req as any).authenticatedUser = user;
+    return next();
+  } catch {
+    return res.status(401).json({ error: "Não autenticado." });
+  }
 }
 
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -89,6 +99,59 @@ courseMetadataRouter.get(
     } catch (error) {
       console.error("[CourseMetadata] Erro ao carregar curso:", error);
       return res.status(500).json({ error: "Não foi possível carregar os dados do curso." });
+    }
+  }
+);
+
+// Resumo exibido exclusivamente na página de detalhes do curso do aluno.
+// A consulta valida a atribuição para impedir acesso a cursos de outro aluno.
+courseMetadataRouter.get(
+  "/api/aluno/cursos/:cursoId/resumo",
+  requireAuthenticated,
+  async (req: Request, res: Response) => {
+    try {
+      const cursoId = Number(req.params.cursoId);
+      const cursoAtribuidoId = Number(req.query.cursoAtribuidoId);
+
+      if (!Number.isInteger(cursoId) || cursoId <= 0) {
+        return res.status(400).json({ error: "Curso inválido." });
+      }
+      if (!Number.isInteger(cursoAtribuidoId) || cursoAtribuidoId <= 0) {
+        return res.status(400).json({ error: "Atribuição do curso inválida." });
+      }
+
+      const user = (req as any).authenticatedUser;
+      const aluno = await getAlunoByUserId(Number(user?.id));
+      if (!aluno) {
+        return res.status(403).json({ error: "Aluno não identificado." });
+      }
+
+      await ensureCourseMetadataTable();
+      const connection = await getRawConnection();
+      if (!connection) {
+        return res.status(503).json({ error: "Banco de dados indisponível." });
+      }
+
+      const [rows] = (await connection.execute(
+        `SELECT m.resumo
+           FROM aluno_curso_atribuido a
+           LEFT JOIN curso_metadados m ON m.cursoId = a.cursoId
+          WHERE a.id = ?
+            AND a.alunoId = ?
+            AND a.cursoId = ?
+          LIMIT 1`,
+        [cursoAtribuidoId, aluno.id, cursoId]
+      )) as any;
+
+      const resultado = Array.isArray(rows) ? rows[0] : null;
+      if (!resultado) {
+        return res.status(404).json({ error: "Curso não encontrado entre as atribuições do aluno." });
+      }
+
+      return res.json({ resumo: resultado.resumo ?? "" });
+    } catch (error) {
+      console.error("[CourseMetadata] Erro ao carregar resumo para aluno:", error);
+      return res.status(500).json({ error: "Não foi possível carregar o resumo do curso." });
     }
   }
 );
