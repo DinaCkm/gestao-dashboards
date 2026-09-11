@@ -120,32 +120,23 @@ courseMetadataRouter.put(
         return res.status(503).json({ error: "Banco de dados indisponível." });
       }
 
-      await connection.beginTransaction();
-      try {
-        const [result] = (await connection.execute(
-          `UPDATE cursos_competencias
-              SET titulo = ?, descricao = ?, updatedAt = CURRENT_TIMESTAMP
-            WHERE id = ?`,
-          [titulo, descricao, cursoId]
-        )) as any;
+      const [result] = (await connection.execute(
+        `UPDATE cursos_competencias
+            SET titulo = ?, descricao = ?, updatedAt = CURRENT_TIMESTAMP
+          WHERE id = ?`,
+        [titulo, descricao, cursoId]
+      )) as any;
 
-        if (!result || result.affectedRows === 0) {
-          await connection.rollback();
-          return res.status(404).json({ error: "Curso não encontrado." });
-        }
-
-        await connection.execute(
-          `INSERT INTO curso_metadados (cursoId, resumo)
-           VALUES (?, ?)
-           ON DUPLICATE KEY UPDATE resumo = VALUES(resumo), updatedAt = CURRENT_TIMESTAMP`,
-          [cursoId, resumo]
-        );
-
-        await connection.commit();
-      } catch (error) {
-        await connection.rollback();
-        throw error;
+      if (!result || result.affectedRows === 0) {
+        return res.status(404).json({ error: "Curso não encontrado." });
       }
+
+      await connection.execute(
+        `INSERT INTO curso_metadados (cursoId, resumo)
+         VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE resumo = VALUES(resumo), updatedAt = CURRENT_TIMESTAMP`,
+        [cursoId, resumo]
+      );
 
       return res.json({ success: true });
     } catch (error) {
