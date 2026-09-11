@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
+import { initMuralPresentationEnhancements } from "./muralPresentationEnhancements";
 import "./index.css";
 
 // Global error handler for DOM manipulation errors (Recharts/Radix UI)
@@ -79,3 +80,5 @@ createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </trpc.Provider>
 );
+
+initMuralPresentationEnhancements();
