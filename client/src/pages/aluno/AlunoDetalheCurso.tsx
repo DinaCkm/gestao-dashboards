@@ -4,7 +4,63 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp } from "lucide-react";
+import { BookOpen, CalendarDays, CircleDot, TrendingUp } from "lucide-react";
+
+function formatarStatusCurso(status: string) {
+  const mapa: Record<string, { label: string; className: string }> = {
+    aguardando_avaliacao: {
+      label: "Diagnóstico pendente",
+      className: "bg-amber-100 text-amber-800 border-amber-200",
+    },
+    nao_iniciado: {
+      label: "Não iniciado",
+      className: "bg-slate-100 text-slate-700 border-slate-200",
+    },
+    em_progresso: {
+      label: "Em progresso",
+      className: "bg-blue-100 text-blue-800 border-blue-200",
+    },
+    concluido: {
+      label: "Concluído",
+      className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    },
+    prorrogado: {
+      label: "Prorrogado",
+      className: "bg-orange-100 text-orange-800 border-orange-200",
+    },
+  };
+
+  if (mapa[status]) return mapa[status];
+
+  const label = String(status || "")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letra) => letra.toUpperCase());
+
+  return {
+    label: label || "Não informado",
+    className: "bg-slate-100 text-slate-700 border-slate-200",
+  };
+}
+
+function formatarDataPtBr(valor: unknown) {
+  if (!valor) return "Não informado";
+
+  const texto = String(valor);
+  const isoDate = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoDate) {
+    return `${isoDate[3]}/${isoDate[2]}/${isoDate[1]}`;
+  }
+
+  const data = new Date(texto);
+  if (Number.isNaN(data.getTime())) return texto;
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(data);
+}
 
 export default function AlunoDetalheCurso() {
   const [, setLocation] = useLocation();
@@ -78,6 +134,8 @@ export default function AlunoDetalheCurso() {
     };
   }, [detalheCursoQuery.data, cursoId]);
 
+  const statusFormatado = formatarStatusCurso(dados.status);
+
   return (
     <AlunoLayout>
     <div className="space-y-6 p-6">
@@ -105,27 +163,55 @@ export default function AlunoDetalheCurso() {
           ) : detalheCursoQuery.error ? (
             <p className="text-sm text-red-600">{detalheCursoQuery.error.message}</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Competência: <span className="font-medium">{dados.competencia}</span>
+                  Competência: <span className="font-medium text-foreground">{dados.competencia}</span>
                 </p>
-                <h2 className="mt-2 text-xl font-semibold">{dados.titulo}</h2>
+
+                <div className="mt-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white px-4 py-3 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-lg bg-[#0A1E3E]/10 p-2 text-[#0A1E3E]">
+                      <BookOpen className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Curso</p>
+                      <h2 className="mt-0.5 text-xl font-semibold text-[#49306B]">{dados.titulo}</h2>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <span className="rounded-full bg-muted px-3 py-1 text-sm">
-                  Status: {dados.status}
-                </span>
-                {dados.notaFinal !== null && dados.notaFinal !== undefined && (
-                  <span className="rounded-full bg-muted px-3 py-1 text-sm">
-                    Nota final: {String(dados.notaFinal)}
-                  </span>
-                )}
+              <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
+                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                  <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <CircleDot className="h-4 w-4" />
+                    Status
+                  </div>
+                  <div className="mt-2">
+                    <span className={`inline-flex rounded-full border px-3 py-1 text-sm font-medium ${statusFormatado.className}`}>
+                      {statusFormatado.label}
+                    </span>
+                  </div>
+                </div>
+
                 {dados.dataPrazo && (
-                  <span className="rounded-full bg-muted px-3 py-1 text-sm">
-                    Prazo: {String(dados.dataPrazo).slice(0, 10)}
-                  </span>
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <CalendarDays className="h-4 w-4" />
+                      Prazo de conclusão
+                    </div>
+                    <p className="mt-2 text-base font-semibold text-foreground">
+                      {formatarDataPtBr(dados.dataPrazo)}
+                    </p>
+                  </div>
+                )}
+
+                {dados.notaFinal !== null && dados.notaFinal !== undefined && (
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nota final</p>
+                    <p className="mt-2 text-base font-semibold text-foreground">{String(dados.notaFinal)}</p>
+                  </div>
                 )}
               </div>
 
