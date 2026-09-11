@@ -18,6 +18,8 @@ import {
   consultors,
   cursosCompetencias,
   mentoringSessions,
+  discResultados,
+  autopercepcoesCompetencias,
   onboardingJornada,
   practicalActivityComments,
   programs,
@@ -1841,12 +1843,98 @@ export const alunosAutonomosRouter = router({
         atividadesConcluidas: progressoPorCurso[c.id]?.concluidas ?? 0,
       }));
 
+      // 4. DISC — resultado mais recente
+      const [disc] = await database
+        .select({
+          scoreD: discResultados.scoreD,
+          scoreI: discResultados.scoreI,
+          scoreS: discResultados.scoreS,
+          scoreC: discResultados.scoreC,
+          perfilPredominante: discResultados.perfilPredominante,
+          perfilSecundario: discResultados.perfilSecundario,
+          ciclo: discResultados.ciclo,
+          completedAt: discResultados.completedAt,
+        })
+        .from(discResultados)
+        .where(eq(discResultados.alunoId, aluno.id))
+        .orderBy(desc(discResultados.ciclo))
+        .limit(1);
+
+      // 5. Autoavaliação de competências — mais recente por competência
+      const autoavaliacoes = await database
+        .select({
+          competenciaId: autopercepcoesCompetencias.competenciaId,
+          competenciaNome: competencias.nome,
+          nota: autopercepcoesCompetencias.nota,
+          createdAt: autopercepcoesCompetencias.createdAt,
+        })
+        .from(autopercepcoesCompetencias)
+        .leftJoin(competencias, eq(competencias.id, autopercepcoesCompetencias.competenciaId))
+        .where(eq(autopercepcoesCompetencias.alunoId, aluno.id))
+        .orderBy(desc(autopercepcoesCompetencias.createdAt));
+
+      const autoavaliacaoMap = new Map<number, any>();
+      for (const a of autoavaliacoes) {
+        if (!autoavaliacaoMap.has(a.competenciaId)) autoavaliacaoMap.set(a.competenciaId, a);
+      }
+      const autoavaliacoesUnicas = Array.from(autoavaliacaoMap.values());
+
+      // 6. Ficha pessoal
+      const [fichaAluno] = await database
+        .select({
+          cargo: alunos.cargo,
+          areaAtuacao: alunos.areaAtuacao,
+          minicurriculo: alunos.minicurriculo,
+          quemEVoce: alunos.quemEVoce,
+          telefone: alunos.telefone,
+          linkedinUrl: alunos.linkedinUrl,
+          dataNascimento: alunos.dataNascimento,
+          estadoCivil: alunos.estadoCivil,
+          formacaoSuperior: alunos.formacaoSuperior,
+          posGraduacoes: alunos.posGraduacoes,
+          cursosExtracurriculares: alunos.cursosExtracurriculares,
+          experienciasAnteriores: alunos.experienciasAnteriores,
+          expectativaCurtoPrazo: alunos.expectativaCurtoPrazo,
+          expectativaMedioPrazo: alunos.expectativaMedioPrazo,
+          expectativaLongoPrazo: alunos.expectativaLongoPrazo,
+          experienciaLideranca: alunos.experienciaLideranca,
+        })
+        .from(alunos)
+        .where(eq(alunos.id, aluno.id))
+        .limit(1);
+
+      // 7. Onboarding
+      const [jornada] = await database
+        .select({
+          cadastroConfirmado: onboardingJornada.cadastroConfirmado,
+          cadastroConfirmadoEm: onboardingJornada.cadastroConfirmadoEm,
+          aceiteRealizado: onboardingJornada.aceiteRealizado,
+          aceiteRealizadoEm: onboardingJornada.aceiteRealizadoEm,
+        })
+        .from(onboardingJornada)
+        .where(eq(onboardingJornada.alunoId, aluno.id))
+        .limit(1);
+
+      const onboarding = {
+        conviteEnviado: true,
+        cadastroPreenchido: !!(jornada?.cadastroConfirmado),
+        testeRealizado: !!disc,
+        mentoriaRealizada: sessoesReais.length > 0,
+        aceiteOnboarding: !!(jornada?.aceiteRealizado),
+        cadastroConfirmadoEm: jornada?.cadastroConfirmadoEm ?? null,
+        aceiteRealizadoEm: jornada?.aceiteRealizadoEm ?? null,
+      };
+
       return {
         alunoNome: (aluno as any).nomeCompleto ?? aluno.name ?? "",
         alunoEmail: aluno.email ?? "",
         cursos: cursosComProgresso,
         sessoes: sessoesReais,
         tarefas,
+        disc: disc ?? null,
+        autoavaliacoes: autoavaliacoesUnicas,
+        ficha: fichaAluno ?? null,
+        onboarding,
       };
     }),
 
