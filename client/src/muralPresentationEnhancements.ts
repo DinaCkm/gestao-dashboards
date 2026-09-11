@@ -93,6 +93,52 @@ function injectStyles() {
       visibility: visible;
       transform: translateX(-50%) translateY(0);
     }
+
+    /* Sidebar administrativa/gestor: melhora contraste do módulo ativo */
+    [data-sidebar="sidebar"] button.text-primary {
+      color: #ffffff !important;
+      background: rgba(255, 255, 255, 0.11) !important;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    [data-sidebar="sidebar"] button.text-primary:hover {
+      background: rgba(255, 255, 255, 0.16) !important;
+    }
+
+    [data-sidebar="sidebar"] button.text-primary svg,
+    [data-sidebar="sidebar"] button.text-primary span {
+      color: #ffffff !important;
+    }
+
+    /* Marca no topo da sidebar: cabe sem invadir o sino */
+    .sidebar-brand-label-enhanced {
+      color: #ffffff !important;
+      font-size: 0.72rem !important;
+      line-height: 1rem !important;
+      letter-spacing: 0.01em !important;
+      white-space: nowrap !important;
+      max-width: 7.4rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 1;
+    }
+
+    /* Selo de papel do usuário com contraste alto */
+    .sidebar-role-badge-enhanced {
+      background: rgba(255, 255, 255, 0.15) !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255, 255, 255, 0.24) !important;
+      font-weight: 700 !important;
+    }
+
+    /* Notificações da sidebar abrem para dentro da tela */
+    .sidebar-notification-popover-enhanced {
+      right: auto !important;
+      left: 0 !important;
+      width: min(24rem, calc(100vw - 1rem)) !important;
+      max-width: calc(100vw - 1rem) !important;
+      z-index: 9999 !important;
+    }
   `;
 
   document.head.appendChild(style);
@@ -125,6 +171,33 @@ function applyBrandingAdjustments() {
 
   headerLabels.forEach((element) => {
     element.textContent = "Ecossistema do B.E.M.";
+  });
+}
+
+function applySidebarEnhancements() {
+  const sidebarRoots = Array.from(document.querySelectorAll<HTMLElement>('[data-sidebar="sidebar"]'));
+
+  sidebarRoots.forEach((sidebar) => {
+    const brandLabels = Array.from(sidebar.querySelectorAll<HTMLElement>("span")).filter((element) => {
+      const text = normalizeText(element.textContent);
+      return text === "ECOSSISTEMA DO BEM" || text === "Ecossistema do B.E.M.";
+    });
+
+    brandLabels.forEach((element) => {
+      element.textContent = "Ecossistema do B.E.M.";
+      element.classList.add("sidebar-brand-label-enhanced");
+    });
+
+    const roleLabels = new Set(["Admin", "Admin N2", "Gerente", "Mentor", "Aluno"]);
+    Array.from(sidebar.querySelectorAll<HTMLElement>("span")).forEach((element) => {
+      if (roleLabels.has(normalizeText(element.textContent))) {
+        element.classList.add("sidebar-role-badge-enhanced");
+      }
+    });
+
+    Array.from(sidebar.querySelectorAll<HTMLElement>("div.absolute.right-0.top-full")).forEach((element) => {
+      element.classList.add("sidebar-notification-popover-enhanced");
+    });
   });
 }
 
@@ -195,6 +268,7 @@ function applyMuralEnhancements() {
 
 function applyPresentationEnhancements() {
   applyBrandingAdjustments();
+  applySidebarEnhancements();
   applyMuralEnhancements();
 }
 
