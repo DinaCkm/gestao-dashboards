@@ -551,7 +551,7 @@ export default function AtividadesPraticas() {
                     </p>
                     <Button
                       size="sm"
-                      onClick={() => validateTaskMutation.mutate({ sessionId: submissionDetail.id })}
+                      onClick={() => validateTaskMutation.mutate({ sessionId: viewingSubmission! })}
                       disabled={validateTaskMutation.isPending}
                       className="bg-green-600 hover:bg-green-700 text-white w-full"
                     >
