@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -14,7 +15,7 @@ import { toast } from "sonner";
 import {
   ClipboardCheck, Search, Filter, Eye, Calendar, User, Award,
   CheckCircle2, Clock, XCircle, ExternalLink, MessageSquare,
-  Send, FileText, Image as ImageIcon, AlertTriangle, Minus
+  Send, FileText, Image as ImageIcon, AlertTriangle, Minus, Zap
 } from "lucide-react";
 
 export default function AtividadesPraticas() {
@@ -33,8 +34,26 @@ export default function AtividadesPraticas() {
   const [viewingSubmission, setViewingSubmission] = useState<number | null>(null);
   const [commentText, setCommentText] = useState<string>("");
 
+  // Modal de Criar Ação
+  const [showModalAcao, setShowModalAcao] = useState(false);
+  const [acaoAlunoId, setAcaoAlunoId] = useState<number | null>(null);
+  const [acaoAlunoNome, setAcaoAlunoNome] = useState<string>("");
+  const [acaoTrilhaId, setAcaoTrilhaId] = useState<string>("");
+  const [acaoCompetenciaId, setAcaoCompetenciaId] = useState<string>("");
+  const [acaoTitulo, setAcaoTitulo] = useState("");
+  const [acaoDescricao, setAcaoDescricao] = useState("");
+  const [acaoPrazo, setAcaoPrazo] = useState("");
+
   // Queries
   const { data: programs = [] } = trpc.programs.list.useQuery();
+
+  // Queries para o modal Criar Ação
+  const { data: trilhasComCompetencias = [] } = trpc.competenciasCompTec.admin.listarTrilhasComCompetencias.useQuery(
+    undefined,
+    { enabled: showModalAcao }
+  );
+  const competenciasDaTrilha = (trilhasComCompetencias as any[])
+    .find(t => String(t.id) === acaoTrilhaId)?.competencias ?? [];
   const { data: turmas = [] } = trpc.turmas.list.useQuery();
   const { data: submissions = [], refetch: refetchSubmissions } = trpc.practicalActivities.submissions.useQuery({
     consultorId: filterMentor !== "all" ? parseInt(filterMentor) : undefined,
@@ -51,6 +70,43 @@ export default function AtividadesPraticas() {
   );
 
   // Mutations
+  const criarAcaoMutation = trpc.mentor.createSession.useMutation({
+    onSuccess: () => {
+      toast.success("Ação criada com sucesso!");
+      setShowModalAcao(false);
+      setAcaoAlunoId(null);
+      setAcaoAlunoNome("");
+      setAcaoTrilhaId("");
+      setAcaoCompetenciaId("");
+      setAcaoTitulo("");
+      setAcaoDescricao("");
+      setAcaoPrazo("");
+      refetchSubmissions();
+    },
+    onError: (err: any) => toast.error(err.message ?? "Erro ao criar ação."),
+  });
+
+  function handleCriarAcao() {
+    if (!acaoAlunoId) { toast.error("Selecione um aluno."); return; }
+    if (!acaoCompetenciaId) { toast.error("Selecione a competência."); return; }
+    if (!acaoTitulo.trim()) { toast.error("Informe o título da ação."); return; }
+    if (!acaoPrazo) { toast.error("Informe o prazo."); return; }
+    const hoje = new Date().toISOString().split("T")[0];
+    criarAcaoMutation.mutate({
+      alunoId: acaoAlunoId,
+      sessionDate: hoje,
+      presence: "presente",
+      taskStatus: "nao_entregue",
+      engagementScore: null,
+      notaEvolucao: null,
+      taskDeadline: acaoPrazo,
+      taskMode: "livre",
+      customTaskTitle: acaoTitulo.trim(),
+      customTaskDescription: acaoDescricao.trim() || undefined,
+      tipoSessao: "individual_normal",
+    });
+  }
+
   const addComment = trpc.practicalActivities.addComment.useMutation({
     onSuccess: () => {
       toast.success("Comentário adicionado!");
@@ -121,13 +177,19 @@ export default function AtividadesPraticas() {
     <DashboardLayout>
       <div className="space-y-6 p-6">
         {/* Header */}
-        <div>
+        <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <ClipboardCheck className="h-6 w-6 text-[#F5991F]" />
             Atividades Práticas
           </h1>
           <p className="text-sm text-gray-500 mt-1">Governança e auditoria das atividades práticas atribuídas nas mentorias</p>
         </div>
+        <Button
+          onClick={() => setShowModalAcao(true)}
+          className="bg-[#0A1E3E] hover:bg-[#2D5A87]"
+        >
+          <Zap className="h-4 w-4 mr-2" /> Criar Ação
+        </Button>
 
         {/* Contadores */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -529,6 +591,107 @@ export default function AtividadesPraticas() {
           </DialogContent>
         </Dialog>
       </div>
+    {/* Modal Criar Ação */}
+      <Dialog open={showModalAcao} onOpenChange={setShowModalAcao}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-[#0A1E3E]" />
+              Criar Ação
+            </DialogTitle>
+            <DialogDescription>
+              Crie uma ação de desenvolvimento para um aluno. Ela aparecerá aqui em Atividades Práticas e na Performance do aluno.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Busca de aluno */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Aluno *</Label>
+              <Input
+                value={acaoAlunoNome}
+                onChange={e => setAcaoAlunoNome(e.target.value)}
+                placeholder="Nome do aluno..."
+              />
+              {/* Lista de sugestões baseada nas submissions */}
+              {acaoAlunoNome.length >= 2 && !acaoAlunoId && (() => {
+                const sugestoes = Array.from(
+                  new Map(submissions
+                    .filter((s: any) => s.alunoNome?.toLowerCase().includes(acaoAlunoNome.toLowerCase()))
+                    .map((s: any) => [s.alunoId, s])
+                  ).values()
+                ).slice(0, 5);
+                return sugestoes.length > 0 ? (
+                  <div className="border rounded-md shadow-sm mt-1">
+                    {sugestoes.map((s: any) => (
+                      <button key={s.alunoId}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                        onClick={() => { setAcaoAlunoId(s.alunoId); setAcaoAlunoNome(s.alunoNome); }}
+                      >
+                        {s.alunoNome}
+                      </button>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+              {acaoAlunoId && (
+                <div className="flex items-center justify-between text-xs text-green-700 font-medium">
+                  <span>✓ {acaoAlunoNome} selecionado</span>
+                  <button className="text-muted-foreground underline" onClick={() => { setAcaoAlunoId(null); setAcaoAlunoNome(""); }}>Trocar</button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Trilha</Label>
+              <Select value={acaoTrilhaId || "__none__"} onValueChange={v => { setAcaoTrilhaId(v === "__none__" ? "" : v); setAcaoCompetenciaId(""); }}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Selecione</SelectItem>
+                  {(trilhasComCompetencias as any[]).map(t => (
+                    <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Competência</Label>
+              <Select value={acaoCompetenciaId || "__none__"} onValueChange={v => setAcaoCompetenciaId(v === "__none__" ? "" : v)} disabled={!acaoTrilhaId}>
+                <SelectTrigger><SelectValue placeholder={acaoTrilhaId ? "Selecione" : "Selecione a trilha primeiro"} /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Selecione</SelectItem>
+                  {competenciasDaTrilha.map((c: any) => (
+                    <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Título da ação *</Label>
+              <Input value={acaoTitulo} onChange={e => setAcaoTitulo(e.target.value)} placeholder="Ex: Aplicar feedback estruturado na próxima reunião" maxLength={500} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Descrição / Instruções</Label>
+              <Textarea value={acaoDescricao} onChange={e => setAcaoDescricao(e.target.value)} placeholder="Descreva o que o aluno precisa fazer e como comprovar..." rows={3} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Prazo de entrega *</Label>
+              <Input type="date" value={acaoPrazo} onChange={e => setAcaoPrazo(e.target.value)} min={new Date().toISOString().split("T")[0]} />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setShowModalAcao(false)}>Cancelar</Button>
+            <Button onClick={handleCriarAcao} disabled={criarAcaoMutation.isPending} className="bg-[#0A1E3E] hover:bg-[#2D5A87]">
+              {criarAcaoMutation.isPending ? "Criando..." : <><Zap className="h-4 w-4 mr-1" /> Criar Ação</>}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
