@@ -11,6 +11,7 @@ import { initLoginLogoFix } from "./loginLogoFix";
 import "./index.css";
 import "./loginSophisticated.css";
 import "./loginLogoPlain.css";
+import "./alunoAtividadePolish.css";
 
 // Global error handler for DOM manipulation errors (Recharts/Radix UI)
 // These errors are non-critical and can be safely suppressed
