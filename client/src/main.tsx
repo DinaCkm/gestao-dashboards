@@ -8,6 +8,7 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import { initMuralPresentationEnhancements } from "./muralPresentationEnhancements";
 import "./index.css";
+import "./loginSophisticated.css";
 
 // Global error handler for DOM manipulation errors (Recharts/Radix UI)
 // These errors are non-critical and can be safely suppressed
