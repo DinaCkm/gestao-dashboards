@@ -1319,6 +1319,7 @@ export const alunosAutonomosRouter = router({
           cursoId: alunoCursoAtribuido.cursoId,
           status: alunoCursoAtribuido.status,
           avaliacaoDiagnosticaId: alunoCursoAtribuido.avaliacaoDiagnosticaId,
+          notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
           cursoTitulo: cursosCompetencias.titulo,
         })
         .from(alunoCursoAtribuido)
@@ -1357,8 +1358,8 @@ export const alunosAutonomosRouter = router({
         avaliacaoId: avaliacao.id,
         titulo: avaliacao.titulo,
         cursoTitulo: atribuicao.cursoTitulo ?? "",
-        // Se já concluiu o diagnóstico (curso destravado), o front redireciona.
         jaConcluido: atribuicao.status !== "aguardando_avaliacao",
+        notaDiagnostica: atribuicao.notaDiagnostica != null ? Number(atribuicao.notaDiagnostica) : null,
         questoes: sanitizarQuestoesParaAluno(parseQuestoes(avaliacao.questoes)),
       };
     }),
@@ -1810,6 +1811,96 @@ export const alunosAutonomosRouter = router({
         cursos,
         sessoes: sessoesReais,
         tarefas,
+      };
+    }),
+
+
+  // ==========================================================================
+  // AVALIAÇÃO FINAL DO CURSO — mesma prova do diagnóstico, salva notaFinal
+  // ==========================================================================
+  responderAvaliacaoFinalCurso: protectedProcedure
+    .input(
+      z.object({
+        cursoAtribuidoId: z.number().int().positive(),
+        respostas: z.array(
+          z.object({
+            questaoId: z.string().min(1),
+            resposta: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+
+      const userAlunoId = (ctx as any)?.user?.alunoId;
+
+      const [atribuicao] = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          alunoId: alunoCursoAtribuido.alunoId,
+          cursoId: alunoCursoAtribuido.cursoId,
+          status: alunoCursoAtribuido.status,
+          avaliacaoDiagnosticaId: alunoCursoAtribuido.avaliacaoDiagnosticaId,
+          notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+        })
+        .from(alunoCursoAtribuido)
+        .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+        .limit(1);
+
+      if (!atribuicao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
+      }
+
+      if (!isAdmin(ctx) && userAlunoId && userAlunoId !== atribuicao.alunoId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado." });
+      }
+
+      if (!atribuicao.avaliacaoDiagnosticaId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Nenhuma avaliação vinculada a este curso." });
+      }
+
+      const [avaliacao] = await database
+        .select()
+        .from(avaliacoesAtividade)
+        .where(eq(avaliacoesAtividade.id, atribuicao.avaliacaoDiagnosticaId))
+        .limit(1);
+
+      if (!avaliacao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada." });
+      }
+
+      const questoes = parseQuestoes(avaliacao.questoes);
+      let acertos = 0;
+      const detalhamento = questoes.map((q: any) => {
+        const respostaAluno = input.respostas.find((r) => r.questaoId === q.id)?.resposta ?? "";
+        const acertou = respostaAluno === q.respostaCorreta;
+        if (acertou) acertos++;
+        return {
+          questaoId: q.id,
+          enunciado: q.enunciado,
+          acertou,
+          respostaAluno,
+          respostaCorreta: q.respostaCorreta,
+        };
+      });
+
+      const total = questoes.length;
+      const percentual = total > 0 ? (acertos / total) * 100 : 0;
+      const nivel = calcularNivel(acertos, total);
+
+      // Salvar notaFinal no alunoCursoAtribuido
+      await database
+        .update(alunoCursoAtribuido)
+        .set({ notaFinal: String(percentual.toFixed(1)) } as any)
+        .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+
+      return {
+        acertos,
+        total,
+        percentual,
+        nivel,
+        detalhamento,
       };
     }),
 
