@@ -27,6 +27,11 @@ export default function AlunoAtividade() {
     { enabled: !!cursoId && !!cursoAtribuidoId }
   );
 
+  const detalheCursoQuery = trpc.competenciasCompTec.aluno.detalheCursoAtribuido.useQuery(
+    { cursoId, cursoAtribuidoId },
+    { enabled: cursoId > 0 && cursoAtribuidoId > 0 }
+  );
+
   const todasConcluidas = useMemo(() => {
     const atividades = atividadesQuery.data ?? [];
     if (atividades.length === 0) return false;
@@ -82,6 +87,17 @@ export default function AlunoAtividade() {
   }, [atividadesQuery.data]);
 
   const nomeCompetencia = atividades[0]?.nomeCompetencia ?? null;
+  const nomeCurso = detalheCursoQuery.data?.curso?.titulo || `Curso #${cursoId}`;
+
+  const progressoCurso = useMemo(() => {
+    const total = atividades.length;
+    const concluidas = atividades.filter(
+      (atividade: any) => atividade.status === "aprovada" || atividade.status === "concluida"
+    ).length;
+    const percentual = total > 0 ? Math.round((concluidas / total) * 100) : 0;
+
+    return { total, concluidas, percentual };
+  }, [atividades]);
 
   const getStatusAtividade = (atividade: any, index: number) => {
     if (atividade.status === "concluida" || atividade.status === "aprovada") {
@@ -130,6 +146,56 @@ export default function AlunoAtividade() {
           <strong>Biblioteca</strong>, acessível pelo menu <strong>Mural</strong> do aluno.
         </span>
       </div>
+
+      {!atividadesQuery.isLoading && !atividadesQuery.error && atividades.length > 0 && (
+        <div className="overflow-hidden rounded-2xl border border-[#49306B]/15 bg-white shadow-sm">
+          <div className="bg-gradient-to-r from-[#0A1E3E] via-[#17375E] to-[#49306B] px-5 py-4 text-white sm:px-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="rounded-xl bg-white/10 p-2.5 ring-1 ring-white/15">
+                  <BookOpen className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/65">Curso</p>
+                  <h2 className="mt-0.5 text-xl font-semibold tracking-tight">{nomeCurso}</h2>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 self-start rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium ring-1 ring-white/15 sm:self-auto">
+                <CheckCircle className="h-4 w-4 text-emerald-300" />
+                {progressoCurso.concluidas} de {progressoCurso.total} concluídas
+              </div>
+            </div>
+          </div>
+
+          <div className="px-5 py-4 sm:px-6">
+            <div className="mb-2.5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-[#0A1E3E]">Seu progresso no curso</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  A barra é atualizada conforme as atividades são concluídas.
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <span className="text-2xl font-bold text-[#49306B]">{progressoCurso.percentual}%</span>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">concluído</p>
+              </div>
+            </div>
+
+            <div className="h-3 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/80">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#0A1E3E] via-[#49306B] to-[#F5991F] transition-[width] duration-500 ease-out"
+                style={{ width: `${progressoCurso.percentual}%` }}
+                role="progressbar"
+                aria-valuenow={progressoCurso.percentual}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Progresso do curso: ${progressoCurso.percentual}%`}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
