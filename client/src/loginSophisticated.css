@@ -127,8 +127,10 @@
   order: 1;
   width: 205px !important;
   height: 205px !important;
+  box-sizing: border-box;
   object-fit: contain;
-  padding: 24px;
+  object-position: center;
+  padding: 36px 32px 40px;
   border-radius: 9999px;
   background:
     linear-gradient(145deg, rgba(112, 68, 153, 0.9), rgba(37, 164, 181, 0.92));
@@ -208,7 +210,7 @@
     > img {
     width: 145px !important;
     height: 145px !important;
-    padding: 18px;
+    padding: 25px 22px 28px;
   }
 
   .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
