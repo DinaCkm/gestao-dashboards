@@ -128,14 +128,26 @@ export default function Home() {
     },
   ];
 
-  // Se não é admin nem admin2, não renderiza o painel admin
+  // Enquanto o perfil e o destino são resolvidos, exibe apenas uma transição neutra.
+  // Nenhuma regra de autenticação ou redirecionamento é alterada aqui.
   if (!isAdmin) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="animate-pulse text-muted-foreground">Redirecionando...</div>
+      <div className="flex min-h-screen items-center justify-center bg-[#07111F] px-6">
+        <div className="flex flex-col items-center text-center" role="status" aria-live="polite">
+          <img
+            src="/logo_claro_vertical.png"
+            alt="Eco do B.E.M."
+            className="h-auto w-28 object-contain opacity-95"
+          />
+          <div className="mt-8 h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-[#35B8C8]" />
+          <p className="mt-5 text-sm font-medium text-white/85">
+            Preparando seu ambiente...
+          </p>
+          <p className="mt-1 text-xs text-white/45">
+            Aguarde um instante.
+          </p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
