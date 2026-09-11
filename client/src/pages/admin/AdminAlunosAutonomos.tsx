@@ -1468,6 +1468,165 @@ function PainelEvolucaoAluno({
               )}
             </CardContent>
           </Card>
+
+          {/* Onboarding */}
+          {data.onboarding && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Jornada de onboarding</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { label: "Convite enviado", done: data.onboarding.conviteEnviado, date: null },
+                    { label: "Cadastro preenchido", done: data.onboarding.cadastroPreenchido, date: data.onboarding.cadastroConfirmadoEm },
+                    { label: "Teste DISC realizado", done: data.onboarding.testeRealizado, date: null },
+                    { label: "Sessão de mentoria realizada", done: data.onboarding.mentoriaRealizada, date: null },
+                    { label: "Aceite do onboarding", done: data.onboarding.aceiteOnboarding, date: data.onboarding.aceiteRealizadoEm },
+                  ].map((step, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${step.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
+                        {step.done ? "✓" : i + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className={`text-sm ${step.done ? "font-medium" : "text-muted-foreground"}`}>{step.label}</p>
+                        {step.done && step.date && (
+                          <p className="text-xs text-muted-foreground">{new Date(step.date).toLocaleDateString("pt-BR")}</p>
+                        )}
+                      </div>
+                      {!step.done && <Badge variant="secondary" className="text-xs">Pendente</Badge>}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Perfil DISC */}
+          {data.disc && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Perfil DISC</CardTitle>
+                <CardDescription className="text-xs">
+                  Ciclo {data.disc.ciclo} · {data.disc.completedAt ? new Date(data.disc.completedAt).toLocaleDateString("pt-BR") : ""}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className="text-base px-3 py-1 bg-violet-100 text-violet-800 border-violet-200">
+                    {data.disc.perfilPredominante}{data.disc.perfilSecundario ? `/${data.disc.perfilSecundario}` : ""}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">Perfil predominante</span>
+                </div>
+                <div className="grid grid-cols-4 gap-3">
+                  {[
+                    { label: "D", desc: "Dominância", score: data.disc.scoreD, color: "bg-red-100 text-red-800" },
+                    { label: "I", desc: "Influência", score: data.disc.scoreI, color: "bg-yellow-100 text-yellow-800" },
+                    { label: "S", desc: "Estabilidade", score: data.disc.scoreS, color: "bg-green-100 text-green-800" },
+                    { label: "C", desc: "Conformidade", score: data.disc.scoreC, color: "bg-blue-100 text-blue-800" },
+                  ].map((d) => (
+                    <div key={d.label} className="rounded-lg border p-3 text-center">
+                      <Badge className={`${d.color} border-0 text-lg font-bold mb-1`}>{d.label}</Badge>
+                      <p className="text-xs text-muted-foreground">{d.desc}</p>
+                      <p className="text-xl font-bold mt-1">{Number(d.score).toFixed(0)}%</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Autoavaliação de competências */}
+          {data.autoavaliacoes && data.autoavaliacoes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Autoavaliação de competências</CardTitle>
+                <CardDescription className="text-xs">Escala 1–5 preenchida pelo aluno</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[...data.autoavaliacoes]
+                    .sort((a: any, b: any) => String(a.competenciaNome ?? "").localeCompare(String(b.competenciaNome ?? ""), "pt-BR"))
+                    .map((a: any) => (
+                      <div key={a.competenciaId} className="flex items-center gap-3">
+                        <span className="text-sm flex-1 min-w-0 truncate">{a.competenciaNome ?? `Competência ${a.competenciaId}`}</span>
+                        <div className="flex gap-1 shrink-0">
+                          {[1, 2, 3, 4, 5].map((n) => (
+                            <div key={n} className={`h-4 w-4 rounded-sm ${n <= a.nota ? "bg-violet-500" : "bg-slate-200"}`} />
+                          ))}
+                        </div>
+                        <span className="text-sm font-medium w-4 shrink-0">{a.nota}</span>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Ficha pessoal */}
+          {data.ficha && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Ficha pessoal</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                  {data.ficha.cargo && <div><span className="text-muted-foreground">Cargo: </span>{data.ficha.cargo}</div>}
+                  {data.ficha.areaAtuacao && <div><span className="text-muted-foreground">Área: </span>{data.ficha.areaAtuacao}</div>}
+                  {data.ficha.dataNascimento && <div><span className="text-muted-foreground">Nascimento: </span>{new Date(data.ficha.dataNascimento).toLocaleDateString("pt-BR")}</div>}
+                  {data.ficha.estadoCivil && <div><span className="text-muted-foreground">Estado civil: </span>{data.ficha.estadoCivil}</div>}
+                  {data.ficha.linkedinUrl && (
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">LinkedIn: </span>
+                      <a href={data.ficha.linkedinUrl} target="_blank" rel="noreferrer" className="text-blue-600 underline">{data.ficha.linkedinUrl}</a>
+                    </div>
+                  )}
+                </div>
+                {data.ficha.minicurriculo && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Minicurrículo</p>
+                    <p className="text-sm whitespace-pre-line">{data.ficha.minicurriculo}</p>
+                  </div>
+                )}
+                {data.ficha.quemEVoce && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Quem é você</p>
+                    <p className="text-sm whitespace-pre-line">{data.ficha.quemEVoce}</p>
+                  </div>
+                )}
+                {(data.ficha.expectativaCurtoPrazo || data.ficha.expectativaMedioPrazo || data.ficha.expectativaLongoPrazo) && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Expectativas</p>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      {data.ficha.expectativaCurtoPrazo && <div className="rounded-md border p-2"><p className="text-xs text-muted-foreground mb-1">Curto prazo</p><p>{data.ficha.expectativaCurtoPrazo}</p></div>}
+                      {data.ficha.expectativaMedioPrazo && <div className="rounded-md border p-2"><p className="text-xs text-muted-foreground mb-1">Médio prazo</p><p>{data.ficha.expectativaMedioPrazo}</p></div>}
+                      {data.ficha.expectativaLongoPrazo && <div className="rounded-md border p-2"><p className="text-xs text-muted-foreground mb-1">Longo prazo</p><p>{data.ficha.expectativaLongoPrazo}</p></div>}
+                    </div>
+                  </div>
+                )}
+                {Array.isArray(data.ficha.formacaoSuperior) && data.ficha.formacaoSuperior.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Formação superior</p>
+                    <ul className="text-sm space-y-1">
+                      {data.ficha.formacaoSuperior.map((f: any, i: number) => (
+                        <li key={i} className="flex gap-2"><span className="text-muted-foreground">·</span><span>{[f.curso, f.instituicao, f.ano].filter(Boolean).join(" · ")}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {Array.isArray(data.ficha.experienciasAnteriores) && data.ficha.experienciasAnteriores.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Experiências anteriores</p>
+                    <ul className="text-sm space-y-1">
+                      {data.ficha.experienciasAnteriores.map((e: any, i: number) => (
+                        <li key={i} className="flex gap-2"><span className="text-muted-foreground">·</span><span>{[e.cargo, e.empresa, e.periodo].filter(Boolean).join(" · ")}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
     </div>
