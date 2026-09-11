@@ -600,30 +600,42 @@ export default function AlunoPerformanceAutonoma() {
 
         {/* Abas */}
         <Tabs value={aba} onValueChange={setAba}>
-          <TabsList className="flex-wrap h-auto gap-1">
-            <TabsTrigger value="cursos" className="flex items-center gap-1.5">
-              <BookOpen className="h-3.5 w-3.5" />
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-3 bg-transparent p-0">
+            <TabsTrigger
+              value="cursos"
+              className="flex-none shrink-0 items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 shadow-sm"
+            >
+              <BookOpen className="h-4 w-4" />
               Cursos
               {cursos.length > 0 && (
-                <Badge variant="secondary" className="ml-1 text-xs">{cursos.length}</Badge>
+                <Badge variant="secondary" className="ml-1 min-w-6 shrink-0 justify-center px-1.5 text-xs">{cursos.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="encontros" className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
+            <TabsTrigger
+              value="encontros"
+              className="flex-none shrink-0 items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 shadow-sm"
+            >
+              <Users className="h-4 w-4" />
               Encontros de Feedback
               {sessoes.length > 0 && (
-                <Badge variant="secondary" className="ml-1 text-xs">{sessoes.length}</Badge>
+                <Badge variant="secondary" className="ml-1 min-w-6 shrink-0 justify-center px-1.5 text-xs">{sessoes.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="tarefas" className="flex items-center gap-1.5">
-              <ClipboardList className="h-3.5 w-3.5" />
+            <TabsTrigger
+              value="tarefas"
+              className="flex-none shrink-0 items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 shadow-sm"
+            >
+              <ClipboardList className="h-4 w-4" />
               Tarefas
               {tarefas.length > 0 && (
-                <Badge variant="secondary" className="ml-1 text-xs">{tarefas.length}</Badge>
+                <Badge variant="secondary" className="ml-1 min-w-6 shrink-0 justify-center px-1.5 text-xs">{tarefas.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="certificados" className="flex items-center gap-1.5">
-              <Award className="h-3.5 w-3.5" />
+            <TabsTrigger
+              value="certificados"
+              className="flex-none shrink-0 items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 shadow-sm"
+            >
+              <Award className="h-4 w-4" />
               Certificados
             </TabsTrigger>
           </TabsList>
