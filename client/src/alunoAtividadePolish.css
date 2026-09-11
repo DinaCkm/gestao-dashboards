@@ -1,0 +1,53 @@
+/*
+ * Refinamento exclusivamente visual do cabeçalho de progresso em AlunoAtividade.
+ * Não altera cálculo, status, navegação, conclusão ou qualquer regra das atividades.
+ */
+
+/* Faixa superior do painel do curso */
+div[class*="from-[#0A1E3E]"][class*="to-[#49306B]"] {
+  position: relative;
+}
+
+/* Rótulo CURSO */
+div[class*="from-[#0A1E3E]"][class*="to-[#49306B]"] p[class*="uppercase"] {
+  color: rgba(255, 255, 255, 0.72) !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.18em !important;
+}
+
+/* Nome do curso */
+div[class*="from-[#0A1E3E]"][class*="to-[#49306B]"] h2 {
+  margin-top: 0.2rem !important;
+  color: #ffffff !important;
+  font-size: clamp(1.45rem, 2.2vw, 2rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.025em !important;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.24);
+  text-wrap: balance;
+}
+
+/* Ícone do curso */
+div[class*="from-[#0A1E3E]"][class*="to-[#49306B]"] div[class*="rounded-xl"][class*="bg-white/10"] {
+  background: rgba(255, 255, 255, 0.13) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+/* Badge X de Y concluídas */
+div[class*="from-[#0A1E3E]"][class*="to-[#49306B]"] div[class*="rounded-full"][class*="bg-white/10"] {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(10px);
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 640px) {
+  div[class*="from-[#0A1E3E]"][class*="to-[#49306B]"] h2 {
+    font-size: 1.4rem !important;
+  }
+}
