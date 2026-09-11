@@ -1865,6 +1865,7 @@ export const alunosAutonomosRouter = router({
         .select({
           competenciaId: autopercepcoesCompetencias.competenciaId,
           competenciaNome: competencias.nome,
+          competenciaOrdem: competencias.ordem,
           nota: autopercepcoesCompetencias.nota,
           createdAt: autopercepcoesCompetencias.createdAt,
         })
