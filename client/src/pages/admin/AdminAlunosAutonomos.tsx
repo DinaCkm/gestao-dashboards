@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,10 +65,11 @@ export default function AdminAlunosAutonomos() {
   }
 
   return (
-    <div className="space-y-6 pt-4">
+    <DashboardLayout>
+    <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold tracking-tight">Alunos Autônomos</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-3xl font-bold tracking-tight">Alunos Autônomos</h1>
+        <p className="mt-1 text-muted-foreground">
           Cadastre o aluno, crie a avaliação diagnóstica do curso, libere o acesso e acompanhe
           a jornada até o Mural.
         </p>
@@ -120,6 +122,7 @@ export default function AdminAlunosAutonomos() {
         </TabsContent>
       </Tabs>
     </div>
+    </DashboardLayout>
   );
 }
 
