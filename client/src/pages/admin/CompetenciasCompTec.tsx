@@ -21,7 +21,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Eye, EyeOff, ArrowLeft, Edit2, Trash2, BookOpen, FileText, Video, Headphones, Mic, BookMarked, Play, X, Pencil } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ArrowLeft, Trash2, BookOpen, FileText, Video, Headphones, Mic, BookMarked, Play, Pencil } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -43,6 +43,14 @@ const TIPO_ATIVIDADE_MAP: Record<string, { label: string; icon: React.ReactNode;
   pdf: { label: 'PDF', icon: <FileText className="h-4 w-4" />, color: 'bg-orange-100 text-orange-800' },
 };
 
+type CursoEmEdicao = {
+  id: number;
+  titulo: string;
+  competenciaId: number;
+  descricao: string;
+  ordem: number;
+};
+
 export default function CompetenciasCompTec() {
   const [, setLocation] = useLocation();
   const [selectedCompetenciaId, setSelectedCompetenciaId] = useState<number | null>(null);
@@ -51,9 +59,14 @@ export default function CompetenciasCompTec() {
   const [viewCursoId, setViewCursoId] = useState<number | null>(null);
   const [viewCursoOpen, setViewCursoOpen] = useState(false);
   const [confirmarDeleteId, setConfirmarDeleteId] = useState<number | null>(null);
-  // Modal de edição de título do curso
-  const [editandoCurso, setEditandoCurso] = useState<{id: number; titulo: string; competenciaId: number; descricao: string; ordem: number} | null>(null);
-  const [editTitulo, setEditTitulo] = useState("");
+
+  // Um único lápis edita os três dados principais do curso.
+  const [editandoCurso, setEditandoCurso] = useState<CursoEmEdicao | null>(null);
+  const [editTitulo, setEditTitulo] = useState('');
+  const [editDescricao, setEditDescricao] = useState('');
+  const [editResumo, setEditResumo] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
 
   // Queries
   const { data: competencias = [] } = trpc.competenciasCompTec.admin.listarCompetencias.useQuery();
@@ -80,15 +93,6 @@ export default function CompetenciasCompTec() {
 
   // Mutations
   const utils = trpc.useUtils();
-  
-  const atualizarCursoMutation = trpc.competenciasCompTec.admin.atualizarCurso.useMutation({
-    onSuccess: () => {
-      toast.success("Título do curso atualizado!");
-      setEditandoCurso(null);
-      utils.competenciasCompTec.admin.listarTodosCursos.invalidate();
-    },
-    onError: (err: any) => toast.error(err.message ?? "Erro ao atualizar curso."),
-  });
 
   const criarCursoMutation = trpc.competenciasCompTec.admin.criarCurso.useMutation({
     onSuccess: async () => {
@@ -147,6 +151,83 @@ export default function CompetenciasCompTec() {
       titulo: cursoTitulo,
       descricao: cursoDescricao || undefined,
     });
+  };
+
+  const handleAbrirEdicaoCurso = async (curso: any) => {
+    const cursoBase: CursoEmEdicao = {
+      id: curso.id,
+      titulo: curso.titulo ?? '',
+      competenciaId: curso.competenciaId,
+      descricao: curso.descricao ?? '',
+      ordem: curso.ordem ?? 0,
+    };
+
+    setEditandoCurso(cursoBase);
+    setEditTitulo(cursoBase.titulo);
+    setEditDescricao(cursoBase.descricao);
+    setEditResumo('');
+    setEditLoading(true);
+
+    try {
+      const response = await fetch(`/api/admin/cursos/${curso.id}/metadata`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || 'Não foi possível carregar os dados do curso.');
+      }
+
+      setEditTitulo(data.titulo ?? cursoBase.titulo);
+      setEditDescricao(data.descricao ?? cursoBase.descricao);
+      setEditResumo(data.resumo ?? '');
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao carregar os dados para edição.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleSalvarEdicaoCurso = async () => {
+    if (!editandoCurso || !editTitulo.trim()) {
+      toast.error('O título do curso é obrigatório.');
+      return;
+    }
+
+    setEditSaving(true);
+    try {
+      const response = await fetch(`/api/admin/cursos/${editandoCurso.id}/metadata`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          titulo: editTitulo.trim(),
+          resumo: editResumo.trim(),
+          descricao: editDescricao.trim(),
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || 'Não foi possível salvar as alterações do curso.');
+      }
+
+      toast.success('Curso atualizado com sucesso!');
+      setEditandoCurso(null);
+      await utils.competenciasCompTec.admin.listarTodosCursos.invalidate();
+      if (selectedCompetenciaId) {
+        await utils.competenciasCompTec.admin.listarCursos.invalidate({ competenciaId: selectedCompetenciaId });
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Erro ao atualizar curso.');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   // Abrir visualização completa do curso
@@ -329,7 +410,7 @@ export default function CompetenciasCompTec() {
         <CardHeader>
           <CardTitle>Todos os Cursos Criados</CardTitle>
           <CardDescription>
-            Visualize, edite ou inative todos os cursos do sistema. Clique no ícone de olho para ver o curso completo.
+            Visualize, edite ou inative todos os cursos do sistema. O lápis permite editar título, resumo e descrição.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -390,11 +471,8 @@ export default function CompetenciasCompTec() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => {
-                              setEditandoCurso({ id: curso.id, titulo: curso.titulo, competenciaId: curso.competenciaId, descricao: curso.descricao ?? '', ordem: curso.ordem ?? 0 });
-                              setEditTitulo(curso.titulo);
-                            }}
-                            title="Editar título do curso"
+                            onClick={() => void handleAbrirEdicaoCurso(curso)}
+                            title="Editar título, resumo e descrição"
                           >
                             <Pencil className="h-4 w-4 text-blue-600" />
                           </Button>
@@ -699,47 +777,93 @@ export default function CompetenciasCompTec() {
           </div>
         </DialogContent>
       </Dialog>
-    {/* Modal de edição de título do curso */}
-      <Dialog open={!!editandoCurso} onOpenChange={(open) => { if (!open) setEditandoCurso(null); }}>
-        <DialogContent className="max-w-md">
+
+      {/* Modal único de edição do curso */}
+      <Dialog
+        open={!!editandoCurso}
+        onOpenChange={(open) => {
+          if (!open && !editSaving) {
+            setEditandoCurso(null);
+            setEditLoading(false);
+          }
+        }}
+      >
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-[#0A1E3E]" />
-              Editar título do curso
+              Editar curso
             </DialogTitle>
             <DialogDescription>
-              Altere o título do curso. As outras configurações permanecem iguais.
+              Altere o título, o resumo e a descrição do curso no mesmo formulário.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Título do curso *</Label>
-              <Input
-                value={editTitulo}
-                onChange={(e) => setEditTitulo(e.target.value)}
-                placeholder="Digite o novo título..."
-                maxLength={255}
-                autoFocus
-              />
+
+          {editLoading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Carregando dados do curso...
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Título do curso *</Label>
+                <Input
+                  value={editTitulo}
+                  onChange={(e) => setEditTitulo(e.target.value)}
+                  placeholder="Digite o título do curso..."
+                  maxLength={255}
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Resumo</Label>
+                <Textarea
+                  value={editResumo}
+                  onChange={(e) => setEditResumo(e.target.value)}
+                  placeholder="Digite um resumo breve do curso..."
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">Use este campo para uma apresentação curta do conteúdo e objetivo do curso.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm font-medium">Descrição</Label>
+                <Textarea
+                  value={editDescricao}
+                  onChange={(e) => setEditDescricao(e.target.value)}
+                  placeholder="Descreva o curso com mais detalhes..."
+                  rows={5}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setEditandoCurso(null)}>Cancelar</Button>
             <Button
-              onClick={() => {
-                if (!editandoCurso || !editTitulo.trim()) return;
-                atualizarCursoMutation.mutate({
-                  cursoId: editandoCurso.id,
-                  competenciaId: editandoCurso.competenciaId,
-                  titulo: editTitulo.trim(),
-                  descricao: editandoCurso.descricao,
-                  ordem: editandoCurso.ordem,
-                });
-              }}
-              disabled={atualizarCursoMutation.isPending || !editTitulo.trim()}
+              variant="outline"
+              onClick={() => setEditandoCurso(null)}
+              disabled={editSaving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => void handleSalvarEdicaoCurso()}
+              disabled={editLoading || editSaving || !editTitulo.trim()}
               className="bg-[#0A1E3E] hover:bg-[#2D5A87]"
             >
-              {atualizarCursoMutation.isPending ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" />Salvando...</> : <><Pencil className="h-4 w-4 mr-1" />Salvar título</>}
+              {editSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Salvar alterações
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>
