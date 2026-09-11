@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Copy, Download, Link as LinkIcon, Minus, Plus, RefreshCw, Trash2, Upload } from "lucide-react";
+import { BarChart2, CheckCircle2, Clock, AlertCircle, Copy, Download, Link as LinkIcon, Minus, Plus, RefreshCw, Trash2, Upload, Eye, User } from "lucide-react";
 import * as XLSX from "xlsx";
 
 const MIN_QUESTOES = 2;
@@ -46,8 +46,9 @@ function questaoVazia(indice: number): Questao {
 }
 
 export default function AdminAlunosAutonomos() {
-  const [abaAtiva, setAbaAtiva] = useState("diagnosticos");
+  const [abaAtiva, setAbaAtiva] = useState("lista");
   const [alunoPreSelecionado, setAlunoPreSelecionado] = useState<{ id: number; nome: string; email: string } | null>(null);
+  const [alunoEvolucao, setAlunoEvolucao] = useState<{ id: number; nome: string; email: string } | null>(null);
   const [cursoPreSelecionado, setCursoPreSelecionado] = useState<{ competenciaId: string; cursoId: string } | null>(null);
 
   function irLiberarNovoCursoPara(aluno: { id: number; nome: string; email: string }) {
@@ -86,10 +87,22 @@ export default function AdminAlunosAutonomos() {
 
       <Tabs value={abaAtiva} onValueChange={setAbaAtiva}>
         <TabsList>
+          <TabsTrigger value="lista">Todos os alunos</TabsTrigger>
+          <TabsTrigger value="evolucao">Evolução por aluno</TabsTrigger>
           <TabsTrigger value="diagnosticos">Avaliações diagnósticas (por curso)</TabsTrigger>
           <TabsTrigger value="liberar">Cadastrar aluno e liberar curso</TabsTrigger>
-          <TabsTrigger value="lista">Todos os alunos</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="lista" className="mt-6">
+          <PainelListaAlunos
+            onLiberarNovoCursoPara={irLiberarNovoCursoPara}
+            onVerEvolucao={(aluno) => { setAlunoEvolucao(aluno); setAbaAtiva("evolucao"); }}
+          />
+        </TabsContent>
+
+        <TabsContent value="evolucao" className="mt-6">
+          <PainelEvolucaoAluno alunoInicial={alunoEvolucao} />
+        </TabsContent>
 
         <TabsContent value="diagnosticos" className="mt-6">
           <PainelDiagnosticos
@@ -104,10 +117,6 @@ export default function AdminAlunosAutonomos() {
             onLimparPreSelecao={() => setAlunoPreSelecionado(null)}
             onCriarDiagnosticoPara={irCriarDiagnosticoPara}
           />
-        </TabsContent>
-
-        <TabsContent value="lista" className="mt-6">
-          <PainelListaAlunos onLiberarNovoCursoPara={irLiberarNovoCursoPara} />
         </TabsContent>
       </Tabs>
     </div>
@@ -1025,8 +1034,10 @@ function PainelLiberacao({
 // ============================================================================
 function PainelListaAlunos({
   onLiberarNovoCursoPara,
+  onVerEvolucao,
 }: {
   onLiberarNovoCursoPara: (aluno: { id: number; nome: string; email: string }) => void;
+  onVerEvolucao: (aluno: { id: number; nome: string; email: string }) => void;
 }) {
   const utils = trpc.useUtils();
   const listaQuery = trpc.alunosAutonomos.listarAlunosAutonomos.useQuery();
@@ -1103,6 +1114,14 @@ function PainelListaAlunos({
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => onVerEvolucao({ id: a.alunoId, nome: a.nome, email: a.email })}
+                      >
+                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                        Ver evolução
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => onLiberarNovoCursoPara({ id: a.alunoId, nome: a.nome, email: a.email })}
                       >
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -1116,5 +1135,278 @@ function PainelListaAlunos({
         </Table>
       </CardContent>
     </Card>
+  );
+}
+
+// ============================================================================
+// 4. Evolução por aluno — dashboard admin do aluno autônomo
+// ============================================================================
+function PainelEvolucaoAluno({
+  alunoInicial,
+}: {
+  alunoInicial: { id: number; nome: string; email: string } | null;
+}) {
+  const listaQuery = trpc.alunosAutonomos.listarAlunosAutonomos.useQuery();
+
+  // Lista única de alunos (deduplicada por alunoId)
+  const alunosUnicos = Array.from(
+    new Map(
+      (listaQuery.data ?? []).map((a: any) => [
+        a.alunoId,
+        { id: a.alunoId, nome: a.nome, email: a.email },
+      ])
+    ).values()
+  ).sort((a: any, b: any) =>
+    String(a.nome ?? "").localeCompare(String(b.nome ?? ""), "pt-BR", { sensitivity: "base" })
+  );
+
+  const [alunoSelecionadoId, setAlunoSelecionadoId] = useState<string>(
+    alunoInicial ? String(alunoInicial.id) : ""
+  );
+
+  // Sincronizar quando vier de "Ver evolução"
+  useEffect(() => {
+    if (alunoInicial) setAlunoSelecionadoId(String(alunoInicial.id));
+  }, [alunoInicial]);
+
+  const evolucaoQuery = trpc.alunosAutonomos.performanceAutonomaAdmin.useQuery(
+    { alunoId: Number(alunoSelecionadoId) },
+    { enabled: !!alunoSelecionadoId }
+  );
+
+  const data = evolucaoQuery.data;
+
+  function statusCursoBadge(status: string) {
+    if (status === "concluido" || status === "aprovado")
+      return <Badge className="bg-green-100 text-green-800 border-green-200">Concluído</Badge>;
+    if (status === "em_andamento" || status === "nao_iniciado")
+      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Em andamento</Badge>;
+    if (status === "aguardando_avaliacao")
+      return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Diagnóstico pendente</Badge>;
+    return <Badge variant="secondary">{status}</Badge>;
+  }
+
+  function tarefaStatusBadge(status: string) {
+    if (status === "concluida" || status === "validada")
+      return <Badge className="bg-green-100 text-green-800 border-green-200">Concluída</Badge>;
+    if (status === "em_andamento")
+      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Em andamento</Badge>;
+    return <Badge variant="secondary">Pendente</Badge>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Seletor de aluno */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5" />
+            Selecionar aluno
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select value={alunoSelecionadoId} onValueChange={setAlunoSelecionadoId}>
+            <SelectTrigger className="w-full max-w-md">
+              <SelectValue placeholder="Escolha um aluno autônomo..." />
+            </SelectTrigger>
+            <SelectContent>
+              {alunosUnicos.map((a: any) => (
+                <SelectItem key={a.id} value={String(a.id)}>
+                  {a.nome} — {a.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardContent>
+      </Card>
+
+      {/* Conteúdo */}
+      {!alunoSelecionadoId && (
+        <div className="text-center py-12 text-muted-foreground text-sm">
+          Selecione um aluno para ver a evolução.
+        </div>
+      )}
+
+      {alunoSelecionadoId && evolucaoQuery.isLoading && (
+        <div className="text-center py-12 text-muted-foreground text-sm">Carregando...</div>
+      )}
+
+      {data && (
+        <div className="space-y-6">
+          {/* Resumo numérico */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="pt-5">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <BarChart2 className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{data.cursos.length}</p>
+                    <p className="text-xs text-muted-foreground">Cursos liberados</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">
+                      {data.cursos.filter((c: any) => c.status === "concluido" || c.status === "aprovado").length}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Cursos concluídos</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-5">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{data.sessoes.length}</p>
+                    <p className="text-xs text-muted-foreground">Sessões de mentoria</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Cursos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Cursos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.cursos.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum curso liberado.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Curso</TableHead>
+                      <TableHead>Competência</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Nota diagnóstica</TableHead>
+                      <TableHead>Liberado em</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.cursos.map((c: any) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-medium">{c.cursoTitulo ?? "—"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{c.competenciaNome ?? "—"}</TableCell>
+                        <TableCell>{statusCursoBadge(c.status)}</TableCell>
+                        <TableCell className="text-sm">
+                          {c.notaDiagnostica != null ? Number(c.notaDiagnostica).toFixed(1) : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {c.dataAtribuicao ? new Date(c.dataAtribuicao).toLocaleDateString("pt-BR") : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Tarefas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Tarefas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.tarefas.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma tarefa registrada.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tarefa</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Prazo</TableHead>
+                      <TableHead>Entregue em</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.tarefas.map((t: any) => (
+                      <TableRow key={t.id}>
+                        <TableCell className="font-medium">
+                          {t.customTaskTitle || "Tarefa da sessão"}
+                          {t.customTaskDescription && (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{t.customTaskDescription}</p>
+                          )}
+                        </TableCell>
+                        <TableCell>{tarefaStatusBadge(t.taskStatus ?? "")}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {t.taskDeadline ? new Date(t.taskDeadline).toLocaleDateString("pt-BR") : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {t.submittedAt ? new Date(t.submittedAt).toLocaleDateString("pt-BR") : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Sessões de mentoria */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Sessões de mentoria</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.sessoes.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhuma sessão registrada.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sessão</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Mentora</TableHead>
+                      <TableHead>Presença</TableHead>
+                      <TableHead>Nota evolução</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.sessoes.map((s: any) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="text-sm">#{s.sessionNumber ?? "—"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {s.sessionDate ? new Date(s.sessionDate).toLocaleDateString("pt-BR") : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">{s.consultorNome ?? "—"}</TableCell>
+                        <TableCell>
+                          {s.presence === "present" ? (
+                            <Badge className="bg-green-100 text-green-800 border-green-200">Presente</Badge>
+                          ) : s.presence === "absent" ? (
+                            <Badge className="bg-red-100 text-red-800 border-red-200">Ausente</Badge>
+                          ) : (
+                            <Badge variant="secondary">—</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {s.notaEvolucao != null ? Number(s.notaEvolucao).toFixed(1) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }
