@@ -1,0 +1,264 @@
+/*
+ * Redesign exclusivamente visual da tela de login.
+ * IMPORTANTE: nenhuma regra de autenticação, formulário, CPF/ID ou login administrativo
+ * é alterada por este arquivo. O escopo abaixo é limitado à tela que contém o logo do login.
+ */
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."]) {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding: 32px;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(91, 54, 145, 0.22), transparent 31%),
+    radial-gradient(circle at 86% 84%, rgba(27, 151, 162, 0.12), transparent 28%),
+    linear-gradient(135deg, #06101f 0%, #091426 46%, #0c1629 100%) !important;
+}
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])::before,
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(2px);
+}
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])::before {
+  width: 360px;
+  height: 360px;
+  top: -150px;
+  right: -90px;
+  background: radial-gradient(circle, rgba(71, 211, 215, 0.09), rgba(71, 211, 215, 0));
+}
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])::after {
+  width: 420px;
+  height: 420px;
+  left: -170px;
+  bottom: -210px;
+  background: radial-gradient(circle, rgba(117, 75, 171, 0.13), rgba(117, 75, 171, 0));
+}
+
+/* Container principal: apenas reposiciona a identidade e o card que já existem. */
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
+  align-items: stretch !important;
+  gap: 0 !important;
+  width: min(1120px, 100%) !important;
+  max-width: 1120px !important;
+  min-height: 620px;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 28px;
+  background: rgba(15, 23, 42, 0.88);
+  box-shadow:
+    0 32px 90px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+}
+
+/* As antigas formas decorativas deixam de ser necessárias no novo layout. */
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .absolute {
+  display: none !important;
+}
+
+/* Painel de identidade à esquerda. */
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10 {
+  grid-column: 1;
+  position: relative;
+  display: flex !important;
+  min-width: 0;
+  min-height: 620px;
+  align-items: flex-start !important;
+  justify-content: center;
+  gap: 0 !important;
+  padding: 64px 58px;
+  text-align: left !important;
+  background:
+    linear-gradient(140deg, rgba(80, 55, 127, 0.82) 0%, rgba(37, 63, 91, 0.86) 48%, rgba(17, 100, 105, 0.78) 100%),
+    #172139;
+  border-right: 1px solid rgba(94, 234, 212, 0.14);
+}
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10::before {
+  content: "Bem-vindo(a)";
+  order: 3;
+  display: block;
+  margin-top: 34px;
+  color: #ffffff;
+  font-size: clamp(1.85rem, 2.8vw, 2.45rem);
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10::after {
+  content: "Ambiente do Ecossistema do B.E.M. para acompanhar seu desenvolvimento, fortalecer competências e apoiar a evolução profissional.";
+  order: 4;
+  display: block;
+  max-width: 420px;
+  margin-top: 18px;
+  color: rgba(226, 232, 240, 0.88);
+  font-size: 0.98rem;
+  font-weight: 450;
+  line-height: 1.8;
+}
+
+/* Logo claro sobre o painel escuro, sem trocar qualquer lógica do componente. */
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10
+  > img {
+  content: url("/logo_claro_vertical.png");
+  order: 1;
+  width: 205px !important;
+  height: 205px !important;
+  object-fit: contain;
+  padding: 24px;
+  border-radius: 9999px;
+  background:
+    linear-gradient(145deg, rgba(112, 68, 153, 0.9), rgba(37, 164, 181, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 24px 50px rgba(3, 11, 24, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* No login administrativo, mantém o título existente e só o adapta ao novo painel. */
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10:has(h1)::before {
+  display: none;
+}
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10:has(h1)::after {
+  content: "Acesso seguro para administração e gestão da plataforma.";
+}
+
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .flex.flex-col.items-center.gap-4.relative.z-10
+  > h1 {
+  order: 3;
+  margin-top: 34px;
+  background: none !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  font-size: clamp(1.7rem, 2.5vw, 2.25rem) !important;
+  line-height: 1.1;
+  text-align: left !important;
+}
+
+/*
+ * Card de login: não muda campos, toggles, botões, handlers ou conteúdo.
+ * Apenas posiciona o card já existente na coluna da direita.
+ */
+.gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+  > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+  > .gradient-card {
+  grid-column: 2;
+  align-self: center;
+  justify-self: center;
+  width: calc(100% - 72px) !important;
+  max-width: 455px;
+  margin: 36px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 900px) {
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."]) {
+    padding: 20px;
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full {
+    grid-template-columns: 1fr;
+    width: min(620px, 100%) !important;
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .flex.flex-col.items-center.gap-4.relative.z-10 {
+    grid-column: 1;
+    min-height: auto;
+    padding: 42px 42px 38px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(94, 234, 212, 0.14);
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .flex.flex-col.items-center.gap-4.relative.z-10
+    > img {
+    width: 145px !important;
+    height: 145px !important;
+    padding: 18px;
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .flex.flex-col.items-center.gap-4.relative.z-10::before,
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .flex.flex-col.items-center.gap-4.relative.z-10
+    > h1 {
+    margin-top: 24px;
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .gradient-card {
+    grid-column: 1;
+    width: calc(100% - 48px) !important;
+    margin: 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."]) {
+    padding: 0;
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full {
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .flex.flex-col.items-center.gap-4.relative.z-10 {
+    padding: 32px 26px;
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .flex.flex-col.items-center.gap-4.relative.z-10::after {
+    font-size: 0.9rem;
+    line-height: 1.65;
+  }
+
+  .gradient-bg:has(img[alt="B.E.M. - Competências do B.E.M."])
+    > .flex.flex-col.items-center.gap-6.p-8.max-w-lg.w-full
+    > .gradient-card {
+    width: calc(100% - 32px) !important;
+    margin: 16px;
+  }
+}
