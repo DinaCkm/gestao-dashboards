@@ -4,11 +4,13 @@ const TEXTO_TECNICO =
 function removerTextoTecnico() {
   if (!window.location.pathname.startsWith("/aluno/competencias-comp-tec/conteudo")) return;
 
-  document.querySelectorAll<HTMLElement>("p").forEach((elemento) => {
-    if (elemento.textContent?.trim() === TEXTO_TECNICO) {
-      elemento.remove();
-    }
-  });
+  document
+    .querySelectorAll<HTMLElement>('[data-slot="card-description"]')
+    .forEach((elemento) => {
+      if (elemento.textContent?.trim() === TEXTO_TECNICO) {
+        elemento.remove();
+      }
+    });
 }
 
 export function initAlunoConteudoTextCleanup() {
