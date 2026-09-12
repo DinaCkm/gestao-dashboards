@@ -33,6 +33,53 @@ const STATUS_LABELS: Record<string, string> = {
   prorrogado: "Prorrogado",
 };
 
+function IndicadorProgressoCurso({
+  cursoId,
+  cursoAtribuidoId,
+}: {
+  cursoId: number;
+  cursoAtribuidoId: number;
+}) {
+  const atividadesQuery = trpc.competenciasCompTec.aluno.obterAtividadesCurso.useQuery(
+    { cursoId, cursoAtribuidoId },
+    { enabled: cursoId > 0 && cursoAtribuidoId > 0 }
+  );
+
+  const progresso = useMemo(() => {
+    const atividades = atividadesQuery.data ?? [];
+    const total = atividades.length;
+    if (total === 0) return null;
+
+    const concluidas = atividades.filter(
+      (atividade: any) => atividade.status === "aprovada" || atividade.status === "concluida"
+    ).length;
+
+    return {
+      total,
+      concluidas,
+      percentual: Math.round((concluidas / total) * 100),
+    };
+  }, [atividadesQuery.data]);
+
+  if (atividadesQuery.isLoading || atividadesQuery.error || !progresso) return null;
+
+  return (
+    <span
+      className="inline-flex items-center gap-2 rounded-full border border-[#49306B]/15 bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-[#49306B] shadow-sm dark:bg-slate-900/70 dark:text-purple-200"
+      title={`${progresso.concluidas} de ${progresso.total} atividades concluídas`}
+      aria-label={`Progresso do curso: ${progresso.percentual}% concluído`}
+    >
+      <span>{progresso.percentual}% concluído</span>
+      <span className="h-1.5 w-12 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" aria-hidden="true">
+        <span
+          className="block h-full rounded-full bg-gradient-to-r from-[#0A1E3E] via-[#49306B] to-[#F5991F] transition-[width] duration-500 ease-out"
+          style={{ width: `${progresso.percentual}%` }}
+        />
+      </span>
+    </span>
+  );
+}
+
 export default function AlunoCatalogo() {
   const [, setLocation] = useLocation();
   const [busca, setBusca] = useState("");
@@ -187,6 +234,12 @@ export default function AlunoCatalogo() {
               >
                 {STATUS_LABELS[curso.status] ?? curso.status}
               </span>
+              {curso.status === "em_progresso" && (
+                <IndicadorProgressoCurso
+                  cursoId={curso.cursoId}
+                  cursoAtribuidoId={curso.cursoAtribuidoId}
+                />
+              )}
               {curso.notaFinal !== null && curso.notaFinal !== undefined && (
                 <span className="rounded-full bg-muted px-2 py-1 text-xs">
                   Nota final: {String(curso.notaFinal)}
