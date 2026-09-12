@@ -2036,7 +2036,7 @@ export const alunosAutonomosRouter = router({
       // Salvar notaFinal no alunoCursoAtribuido
       await database
         .update(alunoCursoAtribuido)
-        .set({ notaFinal: String(percentual.toFixed(1)) } as any)
+        .set({ notaFinal: String((percentual / 10).toFixed(1)) } as any)
         .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
 
       return {
