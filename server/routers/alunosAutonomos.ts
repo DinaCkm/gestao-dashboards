@@ -134,12 +134,12 @@ function calcularNivel(
 export const alunosAutonomosRouter = router({
   // ==========================================================================
   // ADMIN — AVALIAÇÃO DIAGNÓSTICA DO CURSO
-  // ===========================================================================
+  // ==========================================================================
 
   /** Lista as avaliações diagnósticas já cadastradas (opcionalmente de um curso). */
   // ==========================================================================
   // Dados de apoio para os dropdowns da tela admin (competência -> curso, mentores)
-  // ===========================================================================
+  // ==========================================================================
   listarCompetencias: protectedProcedure.query(async ({ ctx }) => {
     requireAdmin(ctx);
     const database = await requireDatabase();
@@ -267,6 +267,7 @@ export const alunosAutonomosRouter = router({
         });
       }
 
+      // Gabarito precisa existir entre as opções
       for (const q of input.questoes) {
         if (!q.opcoes.includes(q.respostaCorreta)) {
           throw new TRPCError({
@@ -276,6 +277,7 @@ export const alunosAutonomosRouter = router({
         }
       }
 
+      // Impede duplicidade de diagnóstico ativo por curso
       const [existente] = await database
         .select({ id: avaliacoesAtividade.id })
         .from(avaliacoesAtividade)
@@ -291,7 +293,8 @@ export const alunosAutonomosRouter = router({
       if (existente) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "Este curso já possui uma avaliação diagnóstica ativa. Edite a existente ou desative-a antes de criar outra.",
+          message:
+            "Este curso já possui uma avaliação diagnóstica ativa. Edite a existente ou desative-a antes de criar outra.",
         });
       }
 
@@ -308,6 +311,7 @@ export const alunosAutonomosRouter = router({
       return { success: true, id: (resultado as any)[0]?.insertId ?? null };
     }),
 
+  /** Atualiza a avaliação diagnóstica (título, questões, nota mínima). */
   atualizarDiagnostico: protectedProcedure
     .input(
       z.object({
@@ -320,53 +324,1661 @@ export const alunosAutonomosRouter = router({
     .mutation(async ({ ctx, input }) => {
       requireAdmin(ctx);
       const database = await requireDatabase();
+
       const updates: Record<string, unknown> = {};
+
       if (input.titulo !== undefined) updates.titulo = input.titulo;
       if (input.notaMinima !== undefined) updates.notaMinima = String(input.notaMinima);
-      if (input.questoes !== undefined) updates.questoes = JSON.stringify(input.questoes);
-      if (Object.keys(updates).length === 0) return { success: true, alterado: false };
+
+      if (input.questoes !== undefined) {
+        if (
+          input.questoes.length < MIN_QUESTOES_DIAGNOSTICO ||
+          input.questoes.length > MAX_QUESTOES_DIAGNOSTICO
+        ) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `A avaliação diagnóstica deve ter entre ${MIN_QUESTOES_DIAGNOSTICO} e ${MAX_QUESTOES_DIAGNOSTICO} questões.`,
+          });
+        }
+        for (const q of input.questoes) {
+          if (!q.opcoes.includes(q.respostaCorreta)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Questão "${q.id}": a resposta correta não está entre as alternativas.`,
+            });
+          }
+        }
+        updates.questoes = JSON.stringify(input.questoes);
+      }
+
+      if (Object.keys(updates).length === 0) {
+        return { success: true, alterado: false };
+      }
+
       await database
         .update(avaliacoesAtividade)
         .set(updates)
-        .where(and(eq(avaliacoesAtividade.id, input.avaliacaoId), eq(avaliacoesAtividade.tipo, "diagnostico_inicial")));
+        .where(
+          and(
+            eq(avaliacoesAtividade.id, input.avaliacaoId),
+            eq(avaliacoesAtividade.tipo, "diagnostico_inicial")
+          )
+        );
+
       return { success: true, alterado: true };
     }),
 
+  /** Desativa a avaliação diagnóstica (soft delete). */
   desativarDiagnostico: protectedProcedure
     .input(z.object({ avaliacaoId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       requireAdmin(ctx);
       const database = await requireDatabase();
+
       await database
         .update(avaliacoesAtividade)
         .set({ isActive: 0 })
-        .where(and(eq(avaliacoesAtividade.id, input.avaliacaoId), eq(avaliacoesAtividade.tipo, "diagnostico_inicial")));
+        .where(
+          and(
+            eq(avaliacoesAtividade.id, input.avaliacaoId),
+            eq(avaliacoesAtividade.tipo, "diagnostico_inicial")
+          )
+        );
+
       return { success: true };
     }),
 
+  // ==========================================================================
+  // ADMIN — LIBERAÇÃO DO CURSO E GERAÇÃO DO LINK
+  // ==========================================================================
+
+  /**
+   * Libera um curso para um aluno autônomo e gera o link de acesso.
+   * O curso nasce com status 'aguardando_avaliacao' (trancado no Mural)
+   * e só destrava quando o aluno conclui o diagnóstico.
+   */
+  /**
+   * Cadastra um aluno autônomo com o MÍNIMO que o admin possui: nome + email.
+   * CPF fica NULL — quem informa é o próprio aluno na ficha (etapa 1 do link).
+   * canLogin = 0 até a ficha ser confirmada; até lá o único acesso é pelo token.
+   */
+  cadastrarAlunoAutonomo: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(3).max(255),
+        email: z.string().email().max(320),
+        programId: z.number().int().positive().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      requireAdmin(ctx);
+      const database = await requireDatabase();
+
+      const email = input.email.toLowerCase().trim();
+
+      // E-mail é metade da credencial de login (email + CPF) — não pode duplicar
+      const [existente] = await database
+        .select({ id: alunos.id, name: alunos.name, tipoPortal: alunos.tipoPortal })
+        .from(alunos)
+        .where(eq(alunos.email, email))
+        .limit(1);
+
+      if (existente) {
+        // Reaproveita o cadastro se for aluno autônomo (2º, 3º curso) ou aluno
+        // DISC360 (assessment) — ambos já têm cadastro completo e canLogin=1,
+        // então o token nascerá na etapa 'avaliacao', pulando o preenchimento
+        // da ficha. O tipoPortal é atualizado para 'aluno_autonomo' pelo
+        // liberarCursoParaAluno, e o aluno passa a aparecer no painel autônomo.
+        if (existente.tipoPortal === "aluno_autonomo" || existente.tipoPortal === "assessment") {
+          return {
+            success: true,
+            alunoId: existente.id,
+            name: existente.name,
+            email,
+            jaExistia: true as const,
+          };
+        }
+        // E-mail pertence a um aluno de outro tipo de portal — não mistura os fluxos
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `Já existe um aluno cadastrado com este e-mail (${existente.name}), mas em outro tipo de portal (${existente.tipoPortal}). Não é possível reaproveitar.`,
+        });
+      }
+
+      const resultado = await database.insert(alunos).values({
+        name: input.name.trim(),
+        email,
+        cpf: null, // preenchido pelo próprio aluno na ficha
+        tipoPortal: "aluno_autonomo",
+        canLogin: 0, // liberado somente após confirmar a ficha
+        isActive: 1,
+        cadastradoPorAdmin: 1,
+        programId: input.programId ?? null,
+      });
+
+      const alunoId = Number((resultado as any)[0]?.insertId ?? 0);
+      if (!alunoId) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao cadastrar o aluno." });
+      }
+
+      return { success: true, alunoId, name: input.name.trim(), email, jaExistia: false as const };
+    }),
+
+  /**
+   * Regenera o link de acesso do aluno (caso ele tenha perdido o e-mail).
+   * Necessário porque, antes de confirmar a ficha, o aluno ainda não tem CPF
+   * gravado e portanto não consegue entrar pelo login normal.
+   */
+  regenerarLinkAcesso: protectedProcedure
+    .input(
+      z.object({
+        alunoId: z.number().int().positive(),
+        diasValidadeLink: z.number().int().min(1).max(365).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      requireAdmin(ctx);
+      const database = await requireDatabase();
+
+      const [tokenAtual] = await database
+        .select()
+        .from(alunoAcessoToken)
+        .where(eq(alunoAcessoToken.alunoId, input.alunoId))
+        .orderBy(desc(alunoAcessoToken.createdAt))
+        .limit(1);
+
+      if (!tokenAtual) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Este aluno ainda não teve nenhum curso liberado. Libere um curso primeiro.",
+        });
+      }
+
+      const token = gerarToken();
+      const expiraEm = input.diasValidadeLink
+        ? new Date(Date.now() + input.diasValidadeLink * 24 * 60 * 60 * 1000)
+        : null;
+
+      // O mais recente sempre prevalece — desativa os anteriores
+      await database
+        .update(alunoAcessoToken)
+        .set({ isActive: 0 })
+        .where(eq(alunoAcessoToken.alunoId, input.alunoId));
+
+      await database.insert(alunoAcessoToken).values({
+        alunoId: input.alunoId,
+        cursoAtribuidoId: tokenAtual.cursoAtribuidoId,
+        token,
+        // Preserva a etapa em que o aluno parou
+        etapaAtual: tokenAtual.etapaAtual,
+        expiraEm,
+        isActive: 1,
+        criadoPorUserId: (ctx as any)?.user?.id ?? null,
+      });
+
+      // Reenvia o link por e-mail ao aluno — é justamente para isso que serve
+      // este botão (aluno perdeu o convite original).
+      (async () => {
+        try {
+          const [alunoInfo] = await database
+            .select({ name: alunos.name, email: alunos.email })
+            .from(alunos)
+            .where(eq(alunos.id, input.alunoId))
+            .limit(1);
+
+          if (!alunoInfo?.email) return;
+
+          let cursoTitulo = "";
+          if (tokenAtual.cursoAtribuidoId) {
+            const [atribuicao] = await database
+              .select({ cursoId: alunoCursoAtribuido.cursoId })
+              .from(alunoCursoAtribuido)
+              .where(eq(alunoCursoAtribuido.id, tokenAtual.cursoAtribuidoId))
+              .limit(1);
+            if (atribuicao) {
+              const [curso] = await database
+                .select({ titulo: cursosCompetencias.titulo })
+                .from(cursosCompetencias)
+                .where(eq(cursosCompetencias.id, atribuicao.cursoId))
+                .limit(1);
+              cursoTitulo = curso?.titulo ?? "";
+            }
+          }
+
+          const emailData = buildConviteAlunoAutonomoEmail({
+            alunoName: alunoInfo.name ?? "",
+            cursoTitulo: cursoTitulo || "seu curso",
+            acessoUrl: `https://ecolider.ecodobem.com/acesso/${token}`,
+            expiraEm,
+          });
+          await sendEmail({
+            to: alunoInfo.email,
+            subject: emailData.subject,
+            html: emailData.html,
+            text: emailData.text,
+          });
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao reenviar link ao aluno:", emailErr);
+        }
+      })();
+
+      return {
+        success: true,
+        token,
+        caminhoAcesso: `/acesso/${token}`,
+        etapaAtual: tokenAtual.etapaAtual,
+        expiraEm,
+      };
+    }),
+
+  /**
+   * Verifica se um curso já tem avaliação diagnóstica ativa.
+   * Usado pela tela para avisar o admin ANTES de tentar liberar o curso,
+   * evitando que ele preencha tudo e só então descubra que falta o diagnóstico.
+   */
   cursoTemDiagnostico: protectedProcedure
     .input(z.object({ cursoId: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
       requireAdmin(ctx);
       const database = await requireDatabase();
+
       const [diagnostico] = await database
         .select({ id: avaliacoesAtividade.id, titulo: avaliacoesAtividade.titulo })
         .from(avaliacoesAtividade)
-        .where(and(eq(avaliacoesAtividade.cursoId, input.cursoId), eq(avaliacoesAtividade.tipo, "diagnostico_inicial"), eq(avaliacoesAtividade.isActive, 1)))
+        .where(
+          and(
+            eq(avaliacoesAtividade.cursoId, input.cursoId),
+            eq(avaliacoesAtividade.tipo, "diagnostico_inicial"),
+            eq(avaliacoesAtividade.isActive, 1)
+          )
+        )
         .limit(1);
-      return { temDiagnostico: !!diagnostico, avaliacaoId: diagnostico?.id ?? null, titulo: diagnostico?.titulo ?? null };
+
+      return {
+        temDiagnostico: !!diagnostico,
+        avaliacaoId: diagnostico?.id ?? null,
+        titulo: diagnostico?.titulo ?? null,
+      };
     }),
 
-  responderAvaliacaoFinalCurso: protectedProcedure
+  liberarCursoParaAluno: protectedProcedure
+    .input(
+      z.object({
+        alunoId: z.number().int().positive(),
+        cursoId: z.number().int().positive(),
+        competenciaId: z.number().int().positive(),
+        mentorId: z.number().int().positive(),
+        dataPrazo: z.string().min(1), // ISO date
+        diasValidadeLink: z.number().int().min(1).max(365).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      requireAdmin(ctx);
+      const database = await requireDatabase();
+
+      // 1. Curso precisa ter avaliação diagnóstica ativa
+      const [diagnostico] = await database
+        .select({ id: avaliacoesAtividade.id })
+        .from(avaliacoesAtividade)
+        .where(
+          and(
+            eq(avaliacoesAtividade.cursoId, input.cursoId),
+            eq(avaliacoesAtividade.tipo, "diagnostico_inicial"),
+            eq(avaliacoesAtividade.isActive, 1)
+          )
+        )
+        .limit(1);
+
+      if (!diagnostico) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Este curso ainda não tem avaliação diagnóstica cadastrada. Crie a avaliação antes de liberar o curso ao aluno.",
+        });
+      }
+
+      // 2. Marca o aluno como autônomo — mas preserva 'assessment' para não sumir da aba DISC360
+      // O needsOnboarding é controlado pela presença de cursos autônomos no db.ts
+      const [alunoAtual2] = await database
+        .select({ tipoPortal: alunos.tipoPortal })
+        .from(alunos)
+        .where(eq(alunos.id, input.alunoId))
+        .limit(1);
+      if (alunoAtual2?.tipoPortal !== 'assessment') {
+        await database
+          .update(alunos)
+          .set({ tipoPortal: "aluno_autonomo" })
+          .where(eq(alunos.id, input.alunoId));
+      }
+
+      // O diagnóstico é POR COMPETÊNCIA, não por curso: todos os cursos de uma
+      // mesma competência usam a mesma avaliação. Então, se a aluna JÁ concluiu o
+      // diagnóstico dessa competência (em outro curso), o novo curso nasce já
+      // liberado — sem refazer o teste. Reaproveitamos a nota diagnóstica dela.
+      const [diagAnteriorNaCompetencia] = await database
+        .select({
+          notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          notaFinal: alunoCursoAtribuido.notaFinal,
+          diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+        })
+        .from(alunoCursoAtribuido)
+        .where(
+          and(
+            eq(alunoCursoAtribuido.alunoId, input.alunoId),
+            eq(alunoCursoAtribuido.competenciaId, input.competenciaId),
+            isNotNull(alunoCursoAtribuido.diagnosticoConcluidoEm)
+          )
+        )
+        .orderBy(desc(alunoCursoAtribuido.diagnosticoConcluidoEm))
+        .limit(1);
+      const jaDiagnosticadoNaCompetencia = !!diagAnteriorNaCompetencia;
+
+      // 3. Cria (ou reaproveita) a atribuição do curso
+      const [atribuicaoExistente] = await database
+        .select({ id: alunoCursoAtribuido.id, status: alunoCursoAtribuido.status })
+        .from(alunoCursoAtribuido)
+        .where(
+          and(
+            eq(alunoCursoAtribuido.alunoId, input.alunoId),
+            eq(alunoCursoAtribuido.cursoId, input.cursoId)
+          )
+        )
+        .limit(1);
+
+      let cursoAtribuidoId: number;
+
+      if (atribuicaoExistente) {
+        cursoAtribuidoId = atribuicaoExistente.id;
+        const patch: Record<string, any> = {
+          competenciaId: input.competenciaId,
+          mentorId: input.mentorId,
+          dataPrazo: new Date(input.dataPrazo),
+          avaliacaoDiagnosticaId: diagnostico.id,
+        };
+        // Se ainda estava trancado aguardando o diagnóstico mas a competência já
+        // foi diagnosticada, destrava agora e herda a nota.
+        if (jaDiagnosticadoNaCompetencia && atribuicaoExistente.status === "aguardando_avaliacao") {
+          patch.status = "nao_iniciado";
+          patch.notaDiagnostica = diagAnteriorNaCompetencia.notaDiagnostica ?? null;
+          patch.diagnosticoConcluidoEm = diagAnteriorNaCompetencia.diagnosticoConcluidoEm ?? new Date();
+        }
+        await database
+          .update(alunoCursoAtribuido)
+          .set(patch)
+          .where(eq(alunoCursoAtribuido.id, cursoAtribuidoId));
+      } else {
+        const resultado = await database.insert(alunoCursoAtribuido).values({
+          alunoId: input.alunoId,
+          cursoId: input.cursoId,
+          competenciaId: input.competenciaId,
+          mentorId: input.mentorId,
+          dataPrazo: new Date(input.dataPrazo),
+          // Já diagnosticado nessa competência → nasce liberado; senão, aguarda o diagnóstico.
+          status: jaDiagnosticadoNaCompetencia ? "nao_iniciado" : "aguardando_avaliacao",
+          avaliacaoDiagnosticaId: diagnostico.id,
+          notaDiagnostica: jaDiagnosticadoNaCompetencia
+            ? diagAnteriorNaCompetencia.notaDiagnostica ?? null
+            : null,
+          diagnosticoConcluidoEm: jaDiagnosticadoNaCompetencia
+            ? diagAnteriorNaCompetencia.diagnosticoConcluidoEm ?? new Date()
+            : null,
+        });
+        cursoAtribuidoId = Number((resultado as any)[0]?.insertId ?? 0);
+      }
+
+      // 4. Gera o token de acesso
+      const token = gerarToken();
+      const expiraEm = input.diasValidadeLink
+        ? new Date(Date.now() + input.diasValidadeLink * 24 * 60 * 60 * 1000)
+        : null;
+
+      // Se o aluno já preencheu a ficha antes (2º, 3º curso...), pula direto para
+      // a avaliação — não faz sentido pedir CPF de novo de quem já é conhecido.
+      const [alunoAtual] = await database
+        .select({ canLogin: alunos.canLogin })
+        .from(alunos)
+        .where(eq(alunos.id, input.alunoId))
+        .limit(1);
+      const etapaInicial = alunoAtual?.canLogin === 1 ? "avaliacao" : "cadastro";
+
+      // Desativa tokens anteriores do aluno (o mais recente sempre prevalece)
+      await database
+        .update(alunoAcessoToken)
+        .set({ isActive: 0 })
+        .where(eq(alunoAcessoToken.alunoId, input.alunoId));
+
+      await database.insert(alunoAcessoToken).values({
+        alunoId: input.alunoId,
+        cursoAtribuidoId,
+        token,
+        etapaAtual: etapaInicial,
+        expiraEm,
+        isActive: 1,
+        criadoPorUserId: (ctx as any)?.user?.id ?? null,
+      });
+
+      // Envia o convite com o link de acesso ao aluno E notifica o admin.
+      // Vale para TODOS os casos: 1º curso (cadastro pendente) e cursos
+      // seguintes (cadastro já feito, vai direto ao diagnóstico).
+      (async () => {
+        const [alunoInfo] = await database
+          .select({ name: alunos.name, email: alunos.email })
+          .from(alunos)
+          .where(eq(alunos.id, input.alunoId))
+          .limit(1);
+        const [curso] = await database
+          .select({ titulo: cursosCompetencias.titulo })
+          .from(cursosCompetencias)
+          .where(eq(cursosCompetencias.id, input.cursoId))
+          .limit(1);
+        const cursoTitulo = curso?.titulo ?? "";
+        const linkAcesso = `https://ecolider.ecodobem.com/acesso/${token}`;
+        const primeiroAcesso = etapaInicial === "cadastro";
+
+        // --- Convite com o link, para o ALUNO --------------------------------
+        try {
+          if (alunoInfo?.email) {
+            if (primeiroAcesso) {
+              const emailData = buildConviteAlunoAutonomoEmail({
+                alunoName: alunoInfo.name ?? "",
+                cursoTitulo: cursoTitulo || "seu curso",
+                acessoUrl: linkAcesso,
+                expiraEm,
+              });
+              await sendEmail({
+                to: alunoInfo.email,
+                subject: emailData.subject,
+                html: emailData.html,
+                text: emailData.text,
+              });
+            } else {
+              // Aluno que JÁ tem acesso: NÃO enviamos link de diagnóstico (ele
+              // apenas confundiria). O curso e o diagnóstico já aparecem na área
+              // dele — o e-mail só o convida a entrar e acessar.
+              const emailData = buildBoasVindasAlunoAutonomoEmail({
+                alunoName: alunoInfo.name ?? "",
+                cursoTitulo: cursoTitulo || "seu novo curso",
+                continuarUrl: "https://ecolider.ecodobem.com/",
+              });
+              await sendEmail({
+                to: alunoInfo.email,
+                subject: `📚 Novo curso disponível na sua área: ${cursoTitulo || "confira agora"}`,
+                html: emailData.html,
+                text: emailData.text,
+              });
+            }
+          }
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao enviar convite/aviso de curso ao aluno:", emailErr);
+        }
+
+        // --- Aviso para o ADMIN ---------------------------------------------
+        try {
+          await sendEmail({
+            to: ((ctx as any)?.user?.email as string) || "relacionamento@ckmtalents.net",
+            subject: `Curso liberado para ${alunoInfo?.name ?? "aluno"}: ${cursoTitulo}`,
+            html: `
+              <p>O curso <strong>${cursoTitulo}</strong> foi liberado para <strong>${alunoInfo?.name ?? ""}</strong> (${alunoInfo?.email ?? ""}).</p>
+              <p>${
+                primeiroAcesso
+                  ? "O convite com o link de acesso foi enviado ao aluno. Ele vai completar o cadastro e depois fazer o diagnóstico."
+                  : "Como o aluno já é conhecido da plataforma, o cadastro foi pulado — ele vai direto para o diagnóstico."
+              }</p>
+              <p>Link de acesso: <a href="${linkAcesso}">${linkAcesso}</a></p>
+              <p><a href="https://ecolider.ecodobem.com/admin/alunos-autonomos">Acompanhar no painel de Alunos Autônomos</a></p>
+            `,
+            text: `Curso "${cursoTitulo}" liberado para ${alunoInfo?.name ?? ""} (${alunoInfo?.email ?? ""}).\nLink de acesso: ${linkAcesso}`,
+          });
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao notificar admin sobre curso liberado:", emailErr);
+        }
+      })();
+
+      return {
+        success: true,
+        cursoAtribuidoId,
+        token,
+        caminhoAcesso: `/acesso/${token}`,
+        expiraEm,
+      };
+    }),
+
+  /**
+   * Lista os alunos autônomos, com status da jornada — UMA LINHA POR CURSO.
+   * Um mesmo aluno pode ter vários cursos (liberados em momentos diferentes);
+   * todos aparecem, não só o mais recente.
+   */
+  listarAlunosAutonomos: protectedProcedure.query(async ({ ctx }) => {
+    requireAdmin(ctx);
+    const database = await requireDatabase();
+
+    const linhas = await database
+      .select({
+        cursoAtribuidoId: alunoCursoAtribuido.id,
+        alunoId: alunos.id,
+        nome: alunos.name,
+        email: alunos.email,
+        programaId: alunos.programId,
+        programaNome: programs.name,
+        cursoId: alunoCursoAtribuido.cursoId,
+        cursoTitulo: cursosCompetencias.titulo,
+        statusCurso: alunoCursoAtribuido.status,
+        notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+        diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+        dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
+      })
+      .from(alunoCursoAtribuido)
+      .innerJoin(alunos, eq(alunos.id, alunoCursoAtribuido.alunoId))
+      .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+      .leftJoin(programs, eq(programs.id, alunos.programId))
+      .where(inArray(alunos.tipoPortal, ["aluno_autonomo", "assessment"]))
+      .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+    if (linhas.length === 0) return [];
+
+    // O token ativo (só existe 1 por aluno) indica qual curso está "em andamento
+    // na jornada de acesso" (cadastro/avaliação pendente). Cursos antigos sem
+    // token ativo já passaram dessa fase — seu status real vem de statusCurso.
+    const alunoIds = [...new Set(linhas.map((l) => l.alunoId))];
+    const tokensAtivos = await database
+      .select({
+        alunoId: alunoAcessoToken.alunoId,
+        cursoAtribuidoId: alunoAcessoToken.cursoAtribuidoId,
+        etapaAtual: alunoAcessoToken.etapaAtual,
+      })
+      .from(alunoAcessoToken)
+      .where(and(inArray(alunoAcessoToken.alunoId, alunoIds), eq(alunoAcessoToken.isActive, 1)));
+
+    const tokenPorAluno = new Map(tokensAtivos.map((t) => [t.alunoId, t]));
+
+    return linhas.map((linha) => {
+      const tokenAtivo = tokenPorAluno.get(linha.alunoId);
+      // etapaAtual só se aplica à linha do curso ao qual o token ativo está de fato vinculado
+      const etapaAtual =
+        tokenAtivo && tokenAtivo.cursoAtribuidoId === linha.cursoAtribuidoId
+          ? tokenAtivo.etapaAtual
+          : null;
+      return { ...linha, etapaAtual };
+    });
+  }),
+
+  // ==========================================================================
+  // ALUNO — ACESSO PÚBLICO POR TOKEN (sem senha)
+  // ==========================================================================
+
+  /** Resolve o token e informa em que etapa da jornada o aluno está. */
+  obterAcessoPorToken: publicProcedure
+    .input(z.object({ token: z.string().min(10).max(64) }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+
+      const [acesso] = await database
+        .select({
+          id: alunoAcessoToken.id,
+          alunoId: alunoAcessoToken.alunoId,
+          cursoAtribuidoId: alunoAcessoToken.cursoAtribuidoId,
+          etapaAtual: alunoAcessoToken.etapaAtual,
+          expiraEm: alunoAcessoToken.expiraEm,
+          isActive: alunoAcessoToken.isActive,
+          alunoNome: alunos.name,
+          alunoEmail: alunos.email,
+        })
+        .from(alunoAcessoToken)
+        .innerJoin(alunos, eq(alunos.id, alunoAcessoToken.alunoId))
+        .where(eq(alunoAcessoToken.token, input.token))
+        .limit(1);
+
+      if (!acesso || acesso.isActive !== 1) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Link de acesso inválido ou desativado." });
+      }
+      if (acesso.expiraEm && new Date(acesso.expiraEm) < new Date()) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Este link de acesso expirou." });
+      }
+
+      // Registra o acesso
+      await database
+        .update(alunoAcessoToken)
+        .set({
+          ultimoAcessoEm: new Date(),
+          ...(acesso.etapaAtual === "cadastro" ? { usadoPrimeiraVezEm: new Date() } : {}),
+        })
+        .where(eq(alunoAcessoToken.id, acesso.id));
+
+      // Dados do curso liberado
+      let curso: { id: number; titulo: string; status: string } | null = null;
+      if (acesso.cursoAtribuidoId) {
+        const [linha] = await database
+          .select({
+            id: alunoCursoAtribuido.cursoId,
+            status: alunoCursoAtribuido.status,
+            titulo: cursosCompetencias.titulo,
+          })
+          .from(alunoCursoAtribuido)
+          .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+          .where(eq(alunoCursoAtribuido.id, acesso.cursoAtribuidoId))
+          .limit(1);
+        if (linha) {
+          curso = { id: linha.id, titulo: linha.titulo ?? "Curso", status: linha.status };
+        }
+      }
+
+      return {
+        alunoId: acesso.alunoId,
+        alunoNome: acesso.alunoNome,
+        alunoEmail: acesso.alunoEmail,
+        etapaAtual: acesso.etapaAtual,
+        cursoAtribuidoId: acesso.cursoAtribuidoId,
+        curso,
+      };
+    }),
+
+  /** Etapa 1 — aluno confirma/preenche a ficha de cadastro. */
+  salvarCadastroPorToken: publicProcedure
+    .input(
+      z.object({
+        token: z.string().min(10).max(64),
+        // CPF é obrigatório: junto com o e-mail, forma a credencial dos próximos logins
+        cpf: z.string().min(11).max(14),
+        telefone: z.string().max(20).optional(),
+        cargo: z.string().max(255).optional(),
+        areaAtuacao: z.string().max(255).optional(),
+        dataNascimento: z.string().optional(),
+        minicurriculo: z.string().optional(),
+        quemEVoce: z.string().optional(),
+        linkedinUrl: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const database = await requireDatabase();
+
+      const [acesso] = await database
+        .select()
+        .from(alunoAcessoToken)
+        .where(and(eq(alunoAcessoToken.token, input.token), eq(alunoAcessoToken.isActive, 1)))
+        .limit(1);
+
+      if (!acesso) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Link de acesso inválido." });
+      }
+
+      // --- Validação do CPF -------------------------------------------------
+      const cpf = normalizarCpf(input.cpf);
+      if (!cpfValido(cpf)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "CPF inválido. Confira os números digitados.",
+        });
+      }
+
+      // CPF duplicado quebraria o login (email + CPF). Bloqueia com mensagem clara.
+      const [cpfEmUso] = await database
+        .select({ id: alunos.id })
+        .from(alunos)
+        .where(eq(alunos.cpf, cpf))
+        .limit(1);
+
+      if (cpfEmUso && cpfEmUso.id !== acesso.alunoId) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message:
+            "Este CPF já está cadastrado para outro aluno. Entre em contato com o administrador.",
+        });
+      }
+      // ---------------------------------------------------------------------
+
+      const dadosAluno: Record<string, unknown> = {
+        cpf,
+        canLogin: 1, // a partir daqui o aluno já entra por email + CPF
+      };
+      if (input.telefone !== undefined) dadosAluno.telefone = input.telefone;
+      if (input.cargo !== undefined) dadosAluno.cargo = input.cargo;
+      if (input.areaAtuacao !== undefined) dadosAluno.areaAtuacao = input.areaAtuacao;
+      if (input.dataNascimento) dadosAluno.dataNascimento = input.dataNascimento;
+      if (input.minicurriculo !== undefined) dadosAluno.minicurriculo = input.minicurriculo;
+      if (input.quemEVoce !== undefined) dadosAluno.quemEVoce = input.quemEVoce;
+      if (input.linkedinUrl !== undefined) dadosAluno.linkedinUrl = input.linkedinUrl;
+
+      await database.update(alunos).set(dadosAluno).where(eq(alunos.id, acesso.alunoId));
+
+      // Reaproveita onboarding_jornada para registrar a confirmação do cadastro
+      const [jornada] = await database
+        .select({ id: onboardingJornada.id })
+        .from(onboardingJornada)
+        .where(eq(onboardingJornada.alunoId, acesso.alunoId))
+        .limit(1);
+
+      if (jornada) {
+        await database
+          .update(onboardingJornada)
+          .set({ cadastroConfirmado: 1, cadastroConfirmadoEm: new Date() })
+          .where(eq(onboardingJornada.id, jornada.id));
+      } else {
+        await database.insert(onboardingJornada).values({
+          alunoId: acesso.alunoId,
+          cadastroConfirmado: 1,
+          cadastroConfirmadoEm: new Date(),
+        });
+      }
+
+      // Avança a jornada para a avaliação
+      await database
+        .update(alunoAcessoToken)
+        .set({ etapaAtual: "avaliacao" })
+        .where(eq(alunoAcessoToken.id, acesso.id));
+
+      // Notifica o admin que liberou o curso E envia boas-vindas ao aluno.
+      (async () => {
+        const [alunoAtualizado] = await database
+          .select({ name: alunos.name, email: alunos.email })
+          .from(alunos)
+          .where(eq(alunos.id, acesso.alunoId))
+          .limit(1);
+
+        let cursoTitulo = "";
+        if (acesso.cursoAtribuidoId) {
+          const [atribuicao] = await database
+            .select({ cursoId: alunoCursoAtribuido.cursoId })
+            .from(alunoCursoAtribuido)
+            .where(eq(alunoCursoAtribuido.id, acesso.cursoAtribuidoId))
+            .limit(1);
+          if (atribuicao) {
+            const [curso] = await database
+              .select({ titulo: cursosCompetencias.titulo })
+              .from(cursosCompetencias)
+              .where(eq(cursosCompetencias.id, atribuicao.cursoId))
+              .limit(1);
+            cursoTitulo = curso?.titulo ?? "";
+          }
+        }
+
+        // --- E-mail para o admin -------------------------------------------
+        try {
+          let adminEmail = "relacionamento@ckmtalents.net"; // fallback
+          if (acesso.criadoPorUserId) {
+            const [admin] = await database
+              .select({ email: users.email })
+              .from(users)
+              .where(eq(users.id, acesso.criadoPorUserId))
+              .limit(1);
+            if (admin?.email) adminEmail = admin.email;
+          }
+
+          await sendEmail({
+            to: adminEmail,
+            subject: `Aluno Autônomo cadastrado: ${alunoAtualizado?.name ?? "aluno"}`,
+            html: `
+              <p>O aluno autônomo <strong>${alunoAtualizado?.name ?? ""}</strong> (${alunoAtualizado?.email ?? ""}) confirmou o cadastro e vai iniciar a avaliação diagnóstica${cursoTitulo ? ` do curso <strong>${cursoTitulo}</strong>` : ""}.</p>
+              <p>Assim que ele concluir o diagnóstico, o curso será liberado automaticamente no Mural.</p>
+              <p><a href="https://ecolider.ecodobem.com/admin/alunos-autonomos">Acompanhar no painel de Alunos Autônomos</a></p>
+            `,
+            text: `O aluno autônomo ${alunoAtualizado?.name ?? ""} (${alunoAtualizado?.email ?? ""}) confirmou o cadastro${cursoTitulo ? ` do curso ${cursoTitulo}` : ""} e vai iniciar a avaliação diagnóstica.`,
+          });
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao notificar admin sobre cadastro do aluno:", emailErr);
+        }
+
+        // --- E-mail de boas-vindas para o aluno -----------------------------
+        try {
+          if (alunoAtualizado?.email) {
+            const emailData = buildBoasVindasAlunoAutonomoEmail({
+              alunoName: alunoAtualizado.name ?? "",
+              cursoTitulo: cursoTitulo || "seu curso",
+              continuarUrl: `https://ecolider.ecodobem.com/acesso/${input.token}`,
+            });
+            await sendEmail({
+              to: alunoAtualizado.email,
+              subject: emailData.subject,
+              html: emailData.html,
+              text: emailData.text,
+            });
+          }
+        } catch (emailErr) {
+          console.error("[alunosAutonomos] Erro ao enviar boas-vindas ao aluno:", emailErr);
+        }
+      })();
+
+      return { success: true, proximaEtapa: "avaliacao" as const };
+    }),
+
+  /** Etapa 2 — devolve as questões do diagnóstico SEM o gabarito. */
+  obterDiagnosticoPorToken: publicProcedure
+    .input(z.object({ token: z.string().min(10).max(64) }))
+    .query(async ({ input }) => {
+      const database = await requireDatabase();
+
+      const [acesso] = await database
+        .select()
+        .from(alunoAcessoToken)
+        .where(and(eq(alunoAcessoToken.token, input.token), eq(alunoAcessoToken.isActive, 1)))
+        .limit(1);
+
+      if (!acesso || !acesso.cursoAtribuidoId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Link de acesso inválido." });
+      }
+
+      const [atribuicao] = await database
+        .select({
+          cursoId: alunoCursoAtribuido.cursoId,
+          avaliacaoDiagnosticaId: alunoCursoAtribuido.avaliacaoDiagnosticaId,
+        })
+        .from(alunoCursoAtribuido)
+        .where(eq(alunoCursoAtribuido.id, acesso.cursoAtribuidoId))
+        .limit(1);
+
+      if (!atribuicao?.avaliacaoDiagnosticaId) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Nenhuma avaliação diagnóstica vinculada a este curso.",
+        });
+      }
+
+      const [avaliacao] = await database
+        .select()
+        .from(avaliacoesAtividade)
+        .where(eq(avaliacoesAtividade.id, atribuicao.avaliacaoDiagnosticaId))
+        .limit(1);
+
+      if (!avaliacao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não encontrada." });
+      }
+
+      return {
+        avaliacaoId: avaliacao.id,
+        titulo: avaliacao.titulo,
+        questoes: sanitizarQuestoesParaAluno(parseQuestoes(avaliacao.questoes)),
+      };
+    }),
+
+  /**
+   * Etapa 2 — corrige o diagnóstico, grava a tentativa e DESTRAVA o curso.
+   * Devolve a análise de profundidade do conhecimento (questão a questão).
+   */
+  responderDiagnosticoPorToken: publicProcedure
+    .input(
+      z.object({
+        token: z.string().min(10).max(64),
+        respostas: z.array(
+          z.object({
+            questaoId: z.string().min(1),
+            resposta: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const database = await requireDatabase();
+
+      const [acesso] = await database
+        .select()
+        .from(alunoAcessoToken)
+        .where(and(eq(alunoAcessoToken.token, input.token), eq(alunoAcessoToken.isActive, 1)))
+        .limit(1);
+
+      if (!acesso || !acesso.cursoAtribuidoId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Link de acesso inválido." });
+      }
+
+      const [atribuicao] = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          cursoId: alunoCursoAtribuido.cursoId,
+          avaliacaoDiagnosticaId: alunoCursoAtribuido.avaliacaoDiagnosticaId,
+        })
+        .from(alunoCursoAtribuido)
+        .where(eq(alunoCursoAtribuido.id, acesso.cursoAtribuidoId))
+        .limit(1);
+
+      if (!atribuicao?.avaliacaoDiagnosticaId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não vinculada." });
+      }
+
+      const [avaliacao] = await database
+        .select()
+        .from(avaliacoesAtividade)
+        .where(eq(avaliacoesAtividade.id, atribuicao.avaliacaoDiagnosticaId))
+        .limit(1);
+
+      if (!avaliacao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não encontrada." });
+      }
+
+      const questoes = parseQuestoes(avaliacao.questoes);
+      const mapaRespostas = new Map(input.respostas.map((r) => [r.questaoId, r.resposta]));
+
+      // Correção questão a questão — base da "análise de profundidade"
+      const detalhamento = questoes.map((q, i) => {
+        const questaoId = String(q?.id ?? i + 1);
+        const respostaAluno = mapaRespostas.get(questaoId) ?? "";
+        const acertou = respostaAluno === String(q?.respostaCorreta ?? "");
+        return {
+          questaoId,
+          enunciado: String(q?.enunciado ?? ""),
+          respostaAluno,
+          respostaCorreta: String(q?.respostaCorreta ?? ""),
+          acertou,
+        };
+      });
+
+      const acertos = detalhamento.filter((d) => d.acertou).length;
+      const total = questoes.length;
+      const percentual = total > 0 ? Number(((acertos / total) * 100).toFixed(2)) : 0;
+      const nota010 = total > 0 ? Number(((acertos / total) * 10).toFixed(1)) : 0;
+
+      // Grava a tentativa reaproveitando a tabela existente
+      await database.insert(tentativasAvaliacao).values({
+        alunoId: acesso.alunoId,
+        atividadeId: null,
+        cursoId: atribuicao.cursoId,
+        tipo: "diagnostico_inicial",
+        avaliacaoId: avaliacao.id,
+        questoesSelecionadas: JSON.stringify(questoes.map((q, i) => String(q?.id ?? i + 1))),
+        respostasAluno: JSON.stringify(input.respostas),
+        nota: String(nota010),
+        aprovado: 0, // diagnóstico é de sondagem — não reprova ninguém
+      });
+
+      // DESTRAVA o curso e registra a nota diagnóstica
+      await database
+        .update(alunoCursoAtribuido)
+        .set({
+          status: "nao_iniciado",
+          notaDiagnostica: String(percentual),
+          diagnosticoConcluidoEm: new Date(),
+        })
+        .where(eq(alunoCursoAtribuido.id, atribuicao.id));
+
+      await database
+        .update(alunoAcessoToken)
+        .set({ etapaAtual: "liberado" })
+        .where(eq(alunoAcessoToken.id, acesso.id));
+
+      // Nível baseado em percentual de acertos — independe do total de questões
+      const nivel = calcularNivel(acertos, total);
+
+      return {
+        success: true,
+        acertos,
+        total,
+        percentual,
+        nivel,
+        detalhamento,
+        proximaEtapa: "liberado" as const,
+      };
+    }),
+
+  // ==========================================================================
+  // DIAGNÓSTICO DENTRO DA ÁREA LOGADA (sem token)
+  // Para o aluno autônomo que JÁ tem acesso e recebeu um novo curso: ele vê o
+  // curso na própria área e faz o diagnóstico ali, sem precisar de outro link.
+  // Espelha obterDiagnosticoPorToken / responderDiagnosticoPorToken, mas usa a
+  // sessão logada (ctx.user.alunoId) e a atribuição do curso (cursoAtribuidoId).
+  // ==========================================================================
+
+  /** Carrega o diagnóstico de um curso atribuído ao próprio aluno logado. */
+  obterDiagnosticoDoCurso: protectedProcedure
+    .input(z.object({ cursoAtribuidoId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+
+      const [atribuicao] = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          alunoId: alunoCursoAtribuido.alunoId,
+          cursoId: alunoCursoAtribuido.cursoId,
+          status: alunoCursoAtribuido.status,
+          avaliacaoDiagnosticaId: alunoCursoAtribuido.avaliacaoDiagnosticaId,
+          notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          cursoTitulo: cursosCompetencias.titulo,
+        })
+        .from(alunoCursoAtribuido)
+        .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+        .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+        .limit(1);
+
+      if (!atribuicao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
+      }
+
+      // O aluno só enxerga o próprio curso; admin enxerga qualquer um
+      const userAlunoId = (ctx as any)?.user?.alunoId;
+      if (!isAdmin(ctx) && userAlunoId && userAlunoId !== atribuicao.alunoId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado." });
+      }
+
+      if (!atribuicao.avaliacaoDiagnosticaId) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Nenhuma avaliação diagnóstica vinculada a este curso.",
+        });
+      }
+
+      const [avaliacao] = await database
+        .select()
+        .from(avaliacoesAtividade)
+        .where(eq(avaliacoesAtividade.id, atribuicao.avaliacaoDiagnosticaId))
+        .limit(1);
+
+      if (!avaliacao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não encontrada." });
+      }
+
+      return {
+        avaliacaoId: avaliacao.id,
+        titulo: avaliacao.titulo,
+        cursoTitulo: atribuicao.cursoTitulo ?? "",
+        jaConcluido: atribuicao.status !== "aguardando_avaliacao",
+        notaDiagnostica: atribuicao.notaDiagnostica != null ? Number(atribuicao.notaDiagnostica) : null,
+        questoes: sanitizarQuestoesParaAluno(parseQuestoes(avaliacao.questoes)),
+      };
+    }),
+
+  /** Corrige o diagnóstico do aluno logado, grava a tentativa e DESTRAVA o curso. */
+  responderDiagnosticoDoCurso: protectedProcedure
     .input(
       z.object({
         cursoAtribuidoId: z.number().int().positive(),
-        respostas: z.array(z.object({ questaoId: z.string().min(1), resposta: z.string() })),
+        respostas: z.array(
+          z.object({
+            questaoId: z.string().min(1),
+            resposta: z.string(),
+          })
+        ),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const database = await requireDatabase();
+
+      const [atribuicao] = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          alunoId: alunoCursoAtribuido.alunoId,
+          cursoId: alunoCursoAtribuido.cursoId,
+          status: alunoCursoAtribuido.status,
+          avaliacaoDiagnosticaId: alunoCursoAtribuido.avaliacaoDiagnosticaId,
+        })
+        .from(alunoCursoAtribuido)
+        .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+        .limit(1);
+
+      if (!atribuicao?.avaliacaoDiagnosticaId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não vinculada." });
+      }
+
+      // Só o dono do curso (ou admin) responde
       const userAlunoId = (ctx as any)?.user?.alunoId;
+      if (!isAdmin(ctx) && userAlunoId && userAlunoId !== atribuicao.alunoId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado." });
+      }
+
+      const [avaliacao] = await database
+        .select()
+        .from(avaliacoesAtividade)
+        .where(eq(avaliacoesAtividade.id, atribuicao.avaliacaoDiagnosticaId))
+        .limit(1);
+
+      if (!avaliacao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação diagnóstica não encontrada." });
+      }
+
+      const questoes = parseQuestoes(avaliacao.questoes);
+      const mapaRespostas = new Map(input.respostas.map((r) => [r.questaoId, r.resposta]));
+
+      const detalhamento = questoes.map((q, i) => {
+        const questaoId = String(q?.id ?? i + 1);
+        const respostaAluno = mapaRespostas.get(questaoId) ?? "";
+        const acertou = respostaAluno === String(q?.respostaCorreta ?? "");
+        return {
+          questaoId,
+          enunciado: String(q?.enunciado ?? ""),
+          respostaAluno,
+          respostaCorreta: String(q?.respostaCorreta ?? ""),
+          acertou,
+        };
+      });
+
+      const acertos = detalhamento.filter((d) => d.acertou).length;
+      const total = questoes.length;
+      const percentual = total > 0 ? Number(((acertos / total) * 100).toFixed(2)) : 0;
+      const nota010 = total > 0 ? Number(((acertos / total) * 10).toFixed(1)) : 0;
+
+      await database.insert(tentativasAvaliacao).values({
+        alunoId: atribuicao.alunoId,
+        atividadeId: null,
+        cursoId: atribuicao.cursoId,
+        tipo: "diagnostico_inicial",
+        avaliacaoId: avaliacao.id,
+        questoesSelecionadas: JSON.stringify(questoes.map((q, i) => String(q?.id ?? i + 1))),
+        respostasAluno: JSON.stringify(input.respostas),
+        nota: String(nota010),
+        aprovado: 0,
+      });
+
+      // DESTRAVA o curso e registra a nota diagnóstica
+      await database
+        .update(alunoCursoAtribuido)
+        .set({
+          status: "nao_iniciado",
+          notaDiagnostica: String(percentual),
+          diagnosticoConcluidoEm: new Date(),
+        })
+        .where(eq(alunoCursoAtribuido.id, atribuicao.id));
+
+      // Nível baseado em percentual de acertos — independe do total de questões
+      const nivel = calcularNivel(acertos, total);
+
+      return {
+        success: true,
+        acertos,
+        total,
+        percentual,
+        nivel,
+        detalhamento,
+      };
+    }),
+
+  /**
+   * Cria a sessão do aluno automaticamente após ele concluir o diagnóstico,
+   * para cair direto no Mural sem precisar digitar email+CPF de novo.
+   * Só funciona quando etapaAtual = 'liberado' (diagnóstico já concluído).
+   */
+  autoLoginPorToken: publicProcedure
+    .input(z.object({ token: z.string().min(10).max(64) }))
+    .mutation(async ({ input, ctx }) => {
+      const database = await requireDatabase();
+
+      const [acesso] = await database
+        .select()
+        .from(alunoAcessoToken)
+        .where(and(eq(alunoAcessoToken.token, input.token), eq(alunoAcessoToken.isActive, 1)))
+        .limit(1);
+
+      if (!acesso || acesso.etapaAtual !== "liberado") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "O acesso ao mural só é liberado após concluir o diagnóstico.",
+        });
+      }
+
+      const [aluno] = await database
+        .select({ id: alunos.id, name: alunos.name, isActive: alunos.isActive, canLogin: alunos.canLogin })
+        .from(alunos)
+        .where(eq(alunos.id, acesso.alunoId))
+        .limit(1);
+
+      if (!aluno || !aluno.isActive || !aluno.canLogin) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Aluno inativo ou sem permissão de acesso." });
+      }
+
+      const { sdk } = await import("../_core/sdk");
+      const { TWO_HOURS_MS } = await import("@shared/const");
+      const alunoOpenId = `aluno_${aluno.id}`;
+
+      let alunoUser = await sdk.getUserByOpenId(alunoOpenId);
+      if (!alunoUser) {
+        await db.upsertUser({
+          openId: alunoOpenId,
+          name: aluno.name,
+          email: null,
+          role: "user",
+          alunoId: aluno.id,
+          loginMethod: "aluno_autonomo",
+          isActive: 1,
+        } as any);
+        alunoUser = await sdk.getUserByOpenId(alunoOpenId);
+      }
+
+      if (!alunoUser) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Erro ao preparar sessão do aluno." });
+      }
+
+      const token = await sdk.createSessionToken(alunoUser.openId, {
+        name: aluno.name || "",
+        expiresInMs: TWO_HOURS_MS,
+      });
+      const cookieOptions = getSessionCookieOptions((ctx as any).req);
+      (ctx as any).res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: TWO_HOURS_MS });
+
+      return { success: true };
+    }),
+
+  // ==========================================================================
+  // ALUNO — PERFORMANCE (evolução: conhecimento prévio x aproveitamento)
+  // ==========================================================================
+
+  /**
+   * Evolução do aluno no curso.
+   */
+  evolucaoNoCurso: protectedProcedure
+    .input(z.object({ cursoAtribuidoId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+
+      const [atribuicao] = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          alunoId: alunoCursoAtribuido.alunoId,
+          cursoId: alunoCursoAtribuido.cursoId,
+          status: alunoCursoAtribuido.status,
+          notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          notaFinal: alunoCursoAtribuido.notaFinal,
+          diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+          cursoTitulo: cursosCompetencias.titulo,
+        })
+        .from(alunoCursoAtribuido)
+        .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+        .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
+        .limit(1);
+
+      if (!atribuicao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
+      }
+
+      // O aluno só enxerga o próprio curso; admin enxerga qualquer um
+      const userAlunoId = (ctx as any)?.user?.alunoId;
+      if (!isAdmin(ctx) && userAlunoId && userAlunoId !== atribuicao.alunoId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado." });
+      }
+
+      const conhecimentoPrevio =
+        atribuicao.notaDiagnostica !== null && atribuicao.notaDiagnostica !== undefined
+          ? Number(atribuicao.notaDiagnostica)
+          : null;
+
+      return {
+        cursoAtribuidoId: atribuicao.id,
+        cursoId: atribuicao.cursoId,
+        cursoTitulo: atribuicao.cursoTitulo ?? "Curso",
+        status: atribuicao.status,
+        // Ponto de partida — sondagem, antes do curso (escala 0-100)
+        conhecimentoPrevio,
+        conhecimentoPrevioEm: atribuicao.diagnosticoConcluidoEm,
+      };
+    }),
+  // ==========================================================================
+  // PERFORMANCE DO ALUNO AUTÔNOMO
+  // Retorna cursos, sessões de mentoria, tarefas e certificados
+  // ==========================================================================
+  performanceAutonoma: protectedProcedure.query(async ({ ctx }) => {
+    const database = await requireDatabase();
+
+    // Buscar o aluno pelo contexto
+    let aluno = await db.getAlunoFromCtx(ctx.user as any);
+
+    // Se não achou pelo alunoId/email, tentar pelo externalId (alunos DISC360 que
+    // entraram pelo Outseta — users.alunoId pode estar nulo)
+    if (!aluno && (ctx.user as any)?.openId) {
+      const database2 = await requireDatabase();
+      const [porExternal] = await database2
+        .select()
+        .from(alunos)
+        .where(eq(alunos.externalId, String((ctx.user as any).openId)))
+        .limit(1);
+      if (porExternal) {
+        aluno = porExternal as any;
+        // Vincular automaticamente para próximas requisições
+        try {
+          await database2
+            .update(users)
+            .set({ alunoId: porExternal.id })
+            .where(eq(users.id, (ctx.user as any).id));
+        } catch (e) {
+          console.warn('[performanceAutonoma] Falha ao vincular alunoId:', e);
+        }
+      }
+    }
+
+    if (!aluno) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+    }
+
+    // 1. Cursos atribuídos
+    const cursos = await database
+      .select({
+        id: alunoCursoAtribuido.id,
+        cursoId: alunoCursoAtribuido.cursoId,
+        status: alunoCursoAtribuido.status,
+        notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+        diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+        dataPrazo: alunoCursoAtribuido.dataPrazo,
+        dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
+        cursoTitulo: cursosCompetencias.titulo,
+        competenciaNome: competencias.nome,
+      })
+      .from(alunoCursoAtribuido)
+      .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+      .leftJoin(competencias, eq(competencias.id, cursosCompetencias.competenciaId))
+      .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+      .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+    // 2. Sessões de mentoria (todas, sem filtro de nível)
+    const sessoes = await database
+      .select({
+        id: mentoringSessions.id,
+        sessionNumber: mentoringSessions.sessionNumber,
+        sessionDate: mentoringSessions.sessionDate,
+        presence: mentoringSessions.presence,
+        taskStatus: mentoringSessions.taskStatus,
+        taskMode: mentoringSessions.taskMode,
+        customTaskTitle: mentoringSessions.customTaskTitle,
+        customTaskDescription: mentoringSessions.customTaskDescription,
+        taskDeadline: mentoringSessions.taskDeadline,
+        relatoAluno: mentoringSessions.relatoAluno,
+        submittedAt: mentoringSessions.submittedAt,
+        validatedAt: mentoringSessions.validatedAt,
+        feedback: mentoringSessions.feedback,
+        mensagemAluno: mentoringSessions.mensagemAluno,
+        notaEvolucao: mentoringSessions.notaEvolucao,
+        evidenceLink: mentoringSessions.evidenceLink,
+        evidenceImageUrl: mentoringSessions.evidenceImageUrl,
+        consultorNome: consultors.name,
+      })
+      .from(mentoringSessions)
+      .leftJoin(consultors, eq(consultors.id, mentoringSessions.consultorId))
+      .where(
+        and(
+          eq(mentoringSessions.alunoId, aluno.id),
+          eq(mentoringSessions.cancelada as any, 0)
+        )
+      )
+      .orderBy(desc(mentoringSessions.sessionDate));
+
+    // Separar sessões reais de ações autônomas pelo taskMode:
+    // - taskMode = 'livre' → ação autônoma criada pelo modal "Criar Ação" → Tarefas
+    // - taskMode != 'livre' → sessão real de encontro → Encontros de Feedback
+    const sessoesReais = sessoes.filter(s => s.taskMode !== "livre");
+    const tarefasRaw = sessoes.filter(s =>
+      s.taskMode === "livre" || s.taskStatus !== "sem_tarefa" || s.customTaskTitle
+    );
+
+    // Buscar comentários do mentor para cada tarefa
+    const sessaoIds = tarefasRaw.map(t => t.id);
+    let comentariosPorSessao: Record<number, any[]> = {};
+    if (sessaoIds.length > 0) {
+      const todosComentarios = await database
+        .select()
+        .from(practicalActivityComments)
+        .where(inArray(practicalActivityComments.sessionId, sessaoIds))
+        .orderBy(practicalActivityComments.createdAt);
+      for (const c of todosComentarios) {
+        if (!comentariosPorSessao[c.sessionId]) comentariosPorSessao[c.sessionId] = [];
+        comentariosPorSessao[c.sessionId].push(c);
+      }
+    }
+
+    const tarefas = tarefasRaw.map(t => ({
+      ...t,
+      comentarios: comentariosPorSessao[t.id] ?? [],
+    }));
+
+    return {
+      alunoNome: aluno.name ?? (aluno as any).nomeCompleto ?? "",
+      cursos,
+      sessoes: sessoesReais,
+      tarefas,
+    };
+  }),
+
+
+  // ==========================================================================
+  // ADMIN — PERFORMANCE/EVOLUÇÃO DE UM ALUNO AUTÔNOMO ESPECÍFICO
+  // Mesma lógica de performanceAutonoma, mas recebe alunoId como input
+  // ==========================================================================
+  performanceAutonomaAdmin: protectedProcedure
+    .input(z.object({ alunoId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      requireAdmin(ctx);
+      const database = await requireDatabase();
+
+      const [aluno] = await database
+        .select()
+        .from(alunos)
+        .where(eq(alunos.id, input.alunoId))
+        .limit(1);
+
+      if (!aluno) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Aluno não encontrado." });
+      }
+
+      // 1. Cursos atribuídos
+      const cursos = await database
+        .select({
+          id: alunoCursoAtribuido.id,
+          cursoId: alunoCursoAtribuido.cursoId,
+          status: alunoCursoAtribuido.status,
+          notaDiagnostica: alunoCursoAtribuido.notaDiagnostica,
+          notaFinal: alunoCursoAtribuido.notaFinal,
+          diagnosticoConcluidoEm: alunoCursoAtribuido.diagnosticoConcluidoEm,
+          dataPrazo: alunoCursoAtribuido.dataPrazo,
+          dataAtribuicao: alunoCursoAtribuido.dataAtribuicao,
+          cursoTitulo: cursosCompetencias.titulo,
+          competenciaNome: competencias.nome,
+        })
+        .from(alunoCursoAtribuido)
+        .leftJoin(cursosCompetencias, eq(cursosCompetencias.id, alunoCursoAtribuido.cursoId))
+        .leftJoin(competencias, eq(competencias.id, cursosCompetencias.competenciaId))
+        .where(eq(alunoCursoAtribuido.alunoId, aluno.id))
+        .orderBy(desc(alunoCursoAtribuido.dataAtribuicao));
+
+      // 2. Sessões de mentoria
+      const sessoes = await database
+        .select({
+          id: mentoringSessions.id,
+          sessionNumber: mentoringSessions.sessionNumber,
+          sessionDate: mentoringSessions.sessionDate,
+          presence: mentoringSessions.presence,
+          taskStatus: mentoringSessions.taskStatus,
+          taskMode: mentoringSessions.taskMode,
+          customTaskTitle: mentoringSessions.customTaskTitle,
+          customTaskDescription: mentoringSessions.customTaskDescription,
+          taskDeadline: mentoringSessions.taskDeadline,
+          relatoAluno: mentoringSessions.relatoAluno,
+          submittedAt: mentoringSessions.submittedAt,
+          validatedAt: mentoringSessions.validatedAt,
+          feedback: mentoringSessions.feedback,
+          mensagemAluno: mentoringSessions.mensagemAluno,
+          notaEvolucao: mentoringSessions.notaEvolucao,
+          evidenceLink: mentoringSessions.evidenceLink,
+          evidenceImageUrl: mentoringSessions.evidenceImageUrl,
+          consultorNome: consultors.name,
+        })
+        .from(mentoringSessions)
+        .leftJoin(consultors, eq(consultors.id, mentoringSessions.consultorId))
+        .where(
+          and(
+            eq(mentoringSessions.alunoId, aluno.id),
+            eq(mentoringSessions.cancelada as any, 0)
+          )
+        )
+        .orderBy(desc(mentoringSessions.sessionDate));
+
+      const sessoesReais = sessoes.filter(s => s.taskMode !== "livre");
+      const tarefasRaw = sessoes.filter(s =>
+        s.taskMode === "livre" || s.taskStatus !== "sem_tarefa" || s.customTaskTitle
+      );
+
+      const sessaoIds = tarefasRaw.map(t => t.id);
+      let comentariosPorSessao: Record<number, any[]> = {};
+      if (sessaoIds.length > 0) {
+        const todosComentarios = await database
+          .select()
+          .from(practicalActivityComments)
+          .where(inArray(practicalActivityComments.sessionId, sessaoIds))
+          .orderBy(practicalActivityComments.createdAt);
+        for (const c of todosComentarios) {
+          if (!comentariosPorSessao[c.sessionId]) comentariosPorSessao[c.sessionId] = [];
+          comentariosPorSessao[c.sessionId].push(c);
+        }
+      }
+
+      const tarefas = tarefasRaw.map(t => ({
+        ...t,
+        comentarios: comentariosPorSessao[t.id] ?? [],
+      }));
+
+      // Contagem de atividades por cursoAtribuidoId
+      const cursosIds = cursos.map((c: any) => c.id);
+      const cursoIds = cursos.map((c: any) => Number(c.cursoId)).filter(Boolean);
+      let progressoPorCurso: Record<number, { total: number; concluidas: number }> = {};
+
+      if (cursosIds.length > 0 && cursoIds.length > 0) {
+        // Total real: atividades ativas na tabela atividades_curso (independe do progresso do aluno)
+        const totalRows = await database
+          .select({
+            cursoId: atividadesCurso.cursoId,
+            total: sql<number>`COUNT(*)`.as("total"),
+          })
+          .from(atividadesCurso)
+          .where(and(inArray(atividadesCurso.cursoId, cursoIds), eq(atividadesCurso.isActive, 1)))
+          .groupBy(atividadesCurso.cursoId);
+
+        // Mapa cursoId → total de atividades
+        const totalPorCursoId = new Map(totalRows.map(r => [Number(r.cursoId), Number(r.total)]));
+
+        // Concluídas: apenas as com status aprovada/concluida no progresso do aluno
+        const concluidasRows = await database
+          .select({
+            cursoAtribuidoId: alunoAtividadeProgresso.cursoAtribuidoId,
+            concluidas: sql<number>`SUM(CASE WHEN ${alunoAtividadeProgresso.status} IN ('aprovada','concluida') THEN 1 ELSE 0 END)`.as("concluidas"),
+          })
+          .from(alunoAtividadeProgresso)
+          .where(inArray(alunoAtividadeProgresso.cursoAtribuidoId, cursosIds))
+          .groupBy(alunoAtividadeProgresso.cursoAtribuidoId);
+
+        const concluidasPorAtribuicao = new Map(concluidasRows.map(r => [r.cursoAtribuidoId, Number(r.concluidas)]));
+
+        // Combinar: usar cursoId do curso para pegar total, cursoAtribuidoId para pegar concluídas
+        for (const curso of cursos) {
+          progressoPorCurso[curso.id] = {
+            total: totalPorCursoId.get(Number(curso.cursoId)) ?? 0,
+            concluidas: concluidasPorAtribuicao.get(curso.id) ?? 0,
+          };
+        }
+      }
+
+      const cursosComProgresso = cursos.map((c: any) => ({
+        ...c,
+        atividadesTotal: progressoPorCurso[c.id]?.total ?? 0,
+        atividadesConcluidas: progressoPorCurso[c.id]?.concluidas ?? 0,
+      }));
+
+      // 4. DISC — resultado mais recente
+      const [disc] = await database
+        .select({
+          scoreD: discResultados.scoreD,
+          scoreI: discResultados.scoreI,
+          scoreS: discResultados.scoreS,
+          scoreC: discResultados.scoreC,
+          perfilPredominante: discResultados.perfilPredominante,
+          perfilSecundario: discResultados.perfilSecundario,
+          ciclo: discResultados.ciclo,
+          completedAt: discResultados.completedAt,
+        })
+        .from(discResultados)
+        .where(eq(discResultados.alunoId, aluno.id))
+        .orderBy(desc(discResultados.ciclo))
+        .limit(1);
+
+      // 5. Autoavaliação de competências — mais recente por competência
+      const autoavaliacoes = await database
+        .select({
+          competenciaId: autopercepcoesCompetencias.competenciaId,
+          competenciaNome: competencias.nome,
+          competenciaOrdem: competencias.ordem,
+          nota: autopercepcoesCompetencias.nota,
+          createdAt: autopercepcoesCompetencias.createdAt,
+        })
+        .from(autopercepcoesCompetencias)
+        .leftJoin(competencias, eq(competencias.id, autopercepcoesCompetencias.competenciaId))
+        .where(eq(autopercepcoesCompetencias.alunoId, aluno.id))
+        .orderBy(desc(autopercepcoesCompetencias.createdAt));
+
+      const autoavaliacaoMap = new Map<number, any>();
+      for (const a of autoavaliacoes) {
+        if (!autoavaliacaoMap.has(a.competenciaId)) autoavaliacaoMap.set(a.competenciaId, a);
+      }
+      const autoavaliacoesUnicas = Array.from(autoavaliacaoMap.values())
+        .sort((a, b) => (Number(a.competenciaOrdem ?? 999) - Number(b.competenciaOrdem ?? 999)) || String(a.competenciaNome ?? "").localeCompare(String(b.competenciaNome ?? ""), "pt-BR"));
+
+      // 6. Ficha pessoal
+      const [fichaAluno] = await database
+        .select({
+          cargo: alunos.cargo,
+          areaAtuacao: alunos.areaAtuacao,
+          minicurriculo: alunos.minicurriculo,
+          quemEVoce: alunos.quemEVoce,
+          telefone: alunos.telefone,
+          linkedinUrl: alunos.linkedinUrl,
+          dataNascimento: alunos.dataNascimento,
+          estadoCivil: alunos.estadoCivil,
+          formacaoSuperior: alunos.formacaoSuperior,
+          posGraduacoes: alunos.posGraduacoes,
+          cursosExtracurriculares: alunos.cursosExtracurriculares,
+          experienciasAnteriores: alunos.experienciasAnteriores,
+          expectativaCurtoPrazo: alunos.expectativaCurtoPrazo,
+          expectativaMedioPrazo: alunos.expectativaMedioPrazo,
+          expectativaLongoPrazo: alunos.expectativaLongoPrazo,
+          experienciaLideranca: alunos.experienciaLideranca,
+        })
+        .from(alunos)
+        .where(eq(alunos.id, aluno.id))
+        .limit(1);
+
+      // 7. Onboarding
+      const [jornada] = await database
+        .select({
+          cadastroConfirmado: onboardingJornada.cadastroConfirmado,
+          cadastroConfirmadoEm: onboardingJornada.cadastroConfirmadoEm,
+          aceiteRealizado: onboardingJornada.aceiteRealizado,
+          aceiteRealizadoEm: onboardingJornada.aceiteRealizadoEm,
+        })
+        .from(onboardingJornada)
+        .where(eq(onboardingJornada.alunoId, aluno.id))
+        .limit(1);
+
+      const onboarding = {
+        conviteEnviado: true,
+        cadastroPreenchido: !!(jornada?.cadastroConfirmado),
+        testeRealizado: !!disc,
+        mentoriaRealizada: sessoesReais.length > 0,
+        aceiteOnboarding: !!(jornada?.aceiteRealizado),
+        cadastroConfirmadoEm: jornada?.cadastroConfirmadoEm ?? null,
+        aceiteRealizadoEm: jornada?.aceiteRealizadoEm ?? null,
+      };
+
+      return {
+        alunoNome: (aluno as any).nomeCompleto ?? aluno.name ?? "",
+        alunoEmail: aluno.email ?? "",
+        cursos: cursosComProgresso,
+        sessoes: sessoesReais,
+        tarefas,
+        disc: disc ?? null,
+        autoavaliacoes: autoavaliacoesUnicas,
+        ficha: fichaAluno ?? null,
+        onboarding,
+      };
+    }),
+
+
+  // ==========================================================================
+  // AVALIAÇÃO FINAL DO CURSO — mesma prova do diagnóstico, salva notaFinal
+  // ==========================================================================
+  responderAvaliacaoFinalCurso: protectedProcedure
+    .input(
+      z.object({
+        cursoAtribuidoId: z.number().int().positive(),
+        respostas: z.array(
+          z.object({
+            questaoId: z.string().min(1),
+            resposta: z.string(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const database = await requireDatabase();
+
+      const userAlunoId = (ctx as any)?.user?.alunoId;
+
       const [atribuicao] = await database
         .select({
           id: alunoCursoAtribuido.id,
@@ -380,16 +1992,27 @@ export const alunosAutonomosRouter = router({
         .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
         .limit(1);
 
-      if (!atribuicao) throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
-      if (!isAdmin(ctx) && userAlunoId && userAlunoId !== atribuicao.alunoId) throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado." });
-      if (!atribuicao.avaliacaoDiagnosticaId) throw new TRPCError({ code: "NOT_FOUND", message: "Nenhuma avaliação vinculada a este curso." });
+      if (!atribuicao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Curso atribuído não encontrado." });
+      }
+
+      if (!isAdmin(ctx) && userAlunoId && userAlunoId !== atribuicao.alunoId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Acesso negado." });
+      }
+
+      if (!atribuicao.avaliacaoDiagnosticaId) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Nenhuma avaliação vinculada a este curso." });
+      }
 
       const [avaliacao] = await database
         .select()
         .from(avaliacoesAtividade)
         .where(eq(avaliacoesAtividade.id, atribuicao.avaliacaoDiagnosticaId))
         .limit(1);
-      if (!avaliacao) throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada." });
+
+      if (!avaliacao) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Avaliação não encontrada." });
+      }
 
       const questoes = parseQuestoes(avaliacao.questoes);
       let acertos = 0;
@@ -397,21 +2020,35 @@ export const alunosAutonomosRouter = router({
         const respostaAluno = input.respostas.find((r) => r.questaoId === q.id)?.resposta ?? "";
         const acertou = respostaAluno === q.respostaCorreta;
         if (acertou) acertos++;
-        return { questaoId: q.id, enunciado: q.enunciado, acertou, respostaAluno, respostaCorreta: q.respostaCorreta };
+        return {
+          questaoId: q.id,
+          enunciado: q.enunciado,
+          acertou,
+          respostaAluno,
+          respostaCorreta: q.respostaCorreta,
+        };
       });
 
       const total = questoes.length;
       const percentual = total > 0 ? (acertos / total) * 100 : 0;
       const nivel = calcularNivel(acertos, total);
-      const notaFinal010 = percentual / 10;
 
+      // Salvar notaFinal no alunoCursoAtribuido
       await database
         .update(alunoCursoAtribuido)
-        .set({ notaFinal: String(notaFinal010.toFixed(1)) } as any)
+        .set({ notaFinal: String(percentual.toFixed(1)) } as any)
         .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
 
-      return { acertos, total, percentual, nivel, detalhamento };
+      return {
+        acertos,
+        total,
+        percentual,
+        nivel,
+        detalhamento,
+      };
     }),
+
 });
+
 
 export default alunosAutonomosRouter;
