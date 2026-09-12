@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import AlunoLayout from "@/components/AlunoLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, CalendarDays, CircleDot, TrendingUp } from "lucide-react";
+import { AlertTriangle, BookOpen, CalendarDays, CircleDot, TrendingUp } from "lucide-react";
 
 function formatarStatusCurso(status: string) {
   const mapa: Record<string, { label: string; className: string }> = {
@@ -133,6 +133,14 @@ export default function AlunoDetalheCurso() {
   }, [detalheCursoQuery.data, cursoId]);
 
   const statusFormatado = formatarStatusCurso(dados.status);
+  const avaliacaoFinalPendente =
+    dados.status === "concluido" && (dados.notaFinal === null || dados.notaFinal === undefined);
+
+  const irParaAtividades = () => {
+    setLocation(
+      `/aluno/competencias-comp-tec/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
+    );
+  };
 
   return (
     <AlunoLayout>
@@ -213,13 +221,33 @@ export default function AlunoDetalheCurso() {
                 )}
               </div>
 
+              {avaliacaoFinalPendente && (
+                <div className="rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 via-orange-50 to-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-xl bg-amber-100 p-2.5 text-amber-700">
+                        <AlertTriangle className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-amber-900">Avaliação final pendente</p>
+                        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-amber-800">
+                          Você já concluiu as atividades deste curso, mas ainda precisa realizar a avaliação final para concluir esta etapa. Acesse as atividades do curso para fazer a avaliação.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={irParaAtividades}
+                      className="shrink-0 bg-amber-600 font-semibold text-white shadow-sm hover:bg-amber-700"
+                    >
+                      Ir para as atividades
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-3">
                 <Button
-                  onClick={() =>
-                    setLocation(
-                      `/aluno/competencias-comp-tec/atividade?cursoId=${cursoId}&cursoAtribuidoId=${cursoAtribuidoId}`
-                    )
-                  }
+                  onClick={irParaAtividades}
                   className="h-11 bg-[#0A1E3E] px-5 font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-[#173963] hover:shadow-lg"
                 >
                   <BookOpen className="mr-2 h-4 w-4" />
