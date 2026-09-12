@@ -65,17 +65,11 @@ function IndicadorProgressoCurso({
 
   return (
     <span
-      className="inline-flex items-center gap-2 rounded-full border border-[#49306B]/15 bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-[#49306B] shadow-sm dark:bg-slate-900/70 dark:text-purple-200"
+      className="inline-flex items-center rounded-full border border-[#49306B]/15 bg-white/80 px-2.5 py-1 text-[11px] font-semibold text-[#49306B] shadow-sm dark:bg-slate-900/70 dark:text-purple-200"
       title={`${progresso.concluidas} de ${progresso.total} atividades concluídas`}
       aria-label={`Progresso do curso: ${progresso.percentual}% concluído`}
     >
-      <span>{progresso.percentual}% concluído</span>
-      <span className="h-1.5 w-12 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" aria-hidden="true">
-        <span
-          className="block h-full rounded-full bg-gradient-to-r from-[#0A1E3E] via-[#49306B] to-[#F5991F] transition-[width] duration-500 ease-out"
-          style={{ width: `${progresso.percentual}%` }}
-        />
-      </span>
+      {progresso.percentual}% concluído
     </span>
   );
 }
@@ -212,6 +206,9 @@ export default function AlunoCatalogo() {
       : "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900 dark:text-emerald-200";
 
     const badgeLabel = tipo === "obrigatoria" ? "Obrigatória" : "Opcional";
+    const avaliacaoFinalPendente =
+      curso.status === "concluido" &&
+      (curso.notaFinal === null || curso.notaFinal === undefined || String(curso.notaFinal).trim() === "");
 
     return (
       <div
@@ -234,13 +231,18 @@ export default function AlunoCatalogo() {
               >
                 {STATUS_LABELS[curso.status] ?? curso.status}
               </span>
+              {avaliacaoFinalPendente && (
+                <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+                  Avaliação pendente
+                </span>
+              )}
               {curso.status === "em_progresso" && (
                 <IndicadorProgressoCurso
                   cursoId={curso.cursoId}
                   cursoAtribuidoId={curso.cursoAtribuidoId}
                 />
               )}
-              {curso.notaFinal !== null && curso.notaFinal !== undefined && (
+              {curso.notaFinal !== null && curso.notaFinal !== undefined && String(curso.notaFinal).trim() !== "" && (
                 <span className="rounded-full bg-muted px-2 py-1 text-xs">
                   Nota final: {String(curso.notaFinal)}
                 </span>
