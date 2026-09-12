@@ -8,6 +8,7 @@ import App from "./App";
 import { getLoginUrl } from "./const";
 import { initMuralPresentationEnhancements } from "./muralPresentationEnhancements";
 import { initLoginLogoFix } from "./loginLogoFix";
+import { initYoutubeEmbedFix } from "./youtubeEmbedFix";
 import "./index.css";
 import "./loginSophisticated.css";
 import "./loginLogoPlain.css";
@@ -87,3 +88,4 @@ createRoot(document.getElementById("root")!).render(
 
 initMuralPresentationEnhancements();
 initLoginLogoFix();
+initYoutubeEmbedFix();
