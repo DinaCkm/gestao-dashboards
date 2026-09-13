@@ -110,16 +110,17 @@ function injectStyles() {
       color: #ffffff !important;
     }
 
-    /* Marca no topo da sidebar: cabe sem invadir o sino */
+    /* Marca no topo da sidebar: duas linhas, sem corte */
     .sidebar-brand-label-enhanced {
+      display: inline-block;
       color: #ffffff !important;
       font-size: 0.72rem !important;
-      line-height: 1rem !important;
+      line-height: 0.92rem !important;
       letter-spacing: 0.01em !important;
-      white-space: nowrap !important;
+      white-space: normal !important;
       max-width: 7.4rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow: visible;
+      text-overflow: clip;
       flex-shrink: 1;
     }
 
@@ -184,7 +185,12 @@ function applySidebarEnhancements() {
     });
 
     brandLabels.forEach((element) => {
-      element.textContent = "Ecossistema do B.E.M.";
+      element.replaceChildren(
+        document.createTextNode("Ecossistema do"),
+        document.createElement("br"),
+        document.createTextNode("B.E.M.")
+      );
+      element.setAttribute("aria-label", "Ecossistema do B.E.M.");
       element.classList.add("sidebar-brand-label-enhanced");
     });
 
