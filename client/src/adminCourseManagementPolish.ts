@@ -22,10 +22,30 @@ function marcarCard(card: HTMLElement, titulo: string) {
     "Gerenciar Atividades": "admin-course-card-activities",
     "Gerenciar Avaliações": "admin-course-card-evaluations",
     "Todos os Cursos": "admin-course-card-all",
+    "Todos os Cursos Criados": "admin-course-card-all",
   };
 
   const classe = classesPorTitulo[titulo];
   if (classe) card.classList.add(classe);
+}
+
+function marcarModalVisualizacao() {
+  const dialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]'));
+
+  dialogs.forEach((dialog) => {
+    const descricao = normalizeText(dialog.textContent);
+    const temVisualizacaoCompleta = descricao.includes("Visualização completa do curso com atividades e avaliações");
+    if (!temVisualizacaoCompleta) return;
+
+    dialog.classList.add("admin-course-preview-dialog");
+
+    const header = dialog.querySelector<HTMLElement>('[data-slot="dialog-header"]');
+    if (header) header.classList.add("admin-course-preview-header");
+
+    dialog.querySelectorAll<HTMLElement>("table").forEach((table) => {
+      table.classList.add("admin-course-preview-table");
+    });
+  });
 }
 
 function aplicarPolimento() {
@@ -70,6 +90,8 @@ function aplicarPolimento() {
       row.classList.add("admin-course-row");
     }
   });
+
+  marcarModalVisualizacao();
 }
 
 export function initAdminCourseManagementPolish() {
