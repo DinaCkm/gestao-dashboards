@@ -4,7 +4,7 @@
 .admin-course-management-page .admin-course-card-all {
   overflow: hidden;
   border-color: rgba(73, 48, 107, 0.16) !important;
-  border-radius: 1.35rem !important;
+  border-radius: 0.75rem !important;
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.09);
 }
 
@@ -18,7 +18,7 @@
   margin: 0.9rem 0.9rem 0;
   padding: 1.2rem 1.35rem !important;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 1.05rem !important;
+  border-radius: 0.75rem !important;
   background:
     radial-gradient(circle at 92% 14%, rgba(245, 153, 31, 0.24), transparent 26%),
     linear-gradient(125deg, #0a1e3e 0%, #2d315f 48%, #49306b 100%);
@@ -82,13 +82,15 @@
   font-weight: 800;
   letter-spacing: 0.035em;
   text-transform: uppercase;
+  vertical-align: middle !important;
 }
 
 .admin-course-management-page .admin-course-card-all td {
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
-  vertical-align: middle;
-  overflow-wrap: anywhere;
+  vertical-align: middle !important;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .admin-course-management-page .admin-course-card-all tbody tr {
@@ -137,6 +139,12 @@
   white-space: normal;
 }
 
+/* Regra de tabelas da página: conteúdo sempre centralizado verticalmente. */
+.admin-course-management-page table th,
+.admin-course-management-page table td {
+  vertical-align: middle !important;
+}
+
 /* Modal de visualização completa do curso */
 .admin-course-preview-dialog {
   width: min(94vw, 1180px) !important;
@@ -146,7 +154,7 @@
   overflow-x: hidden !important;
   overflow-y: auto !important;
   border: 1px solid rgba(73, 48, 107, 0.16) !important;
-  border-radius: 1.5rem !important;
+  border-radius: 0.75rem !important;
   background: #ffffff !important;
   box-shadow: 0 28px 90px rgba(15, 23, 42, 0.28) !important;
 }
@@ -206,6 +214,11 @@
   padding-right: 1.6rem;
 }
 
+.admin-course-preview-dialog .admin-course-preview-table-wrap {
+  border-radius: 0.375rem !important;
+  overflow: hidden;
+}
+
 .admin-course-preview-dialog .admin-course-preview-table {
   width: 100% !important;
   min-width: 0 !important;
@@ -219,9 +232,9 @@
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   word-break: normal;
-  vertical-align: top;
+  vertical-align: middle !important;
   line-height: 1.38;
 }
 
@@ -236,15 +249,62 @@
   font-size: 0.78rem;
 }
 
-.admin-course-preview-dialog .admin-course-preview-table th:first-child,
-.admin-course-preview-dialog .admin-course-preview-table td:first-child {
-  width: 6%;
+/* Tabela de atividades: a primeira coluna é apenas o número. */
+.admin-course-preview-dialog .admin-course-preview-table-activities th:nth-child(1),
+.admin-course-preview-dialog .admin-course-preview-table-activities td:nth-child(1) {
+  width: 5%;
+}
+
+.admin-course-preview-dialog .admin-course-preview-table-activities th:nth-child(2),
+.admin-course-preview-dialog .admin-course-preview-table-activities td:nth-child(2) {
+  width: 29%;
+}
+
+.admin-course-preview-dialog .admin-course-preview-table-activities th:nth-child(3),
+.admin-course-preview-dialog .admin-course-preview-table-activities td:nth-child(3) {
+  width: 14%;
+}
+
+.admin-course-preview-dialog .admin-course-preview-table-activities th:nth-child(4),
+.admin-course-preview-dialog .admin-course-preview-table-activities td:nth-child(4) {
+  width: 32%;
+}
+
+.admin-course-preview-dialog .admin-course-preview-table-activities th:nth-child(5),
+.admin-course-preview-dialog .admin-course-preview-table-activities td:nth-child(5) {
+  width: 20%;
+}
+
+/* Tabela de avaliações: o título precisa ser a coluna principal. */
+.admin-course-preview-dialog .admin-course-preview-table-evaluations th:nth-child(1),
+.admin-course-preview-dialog .admin-course-preview-table-evaluations td:nth-child(1) {
+  width: 38%;
+}
+
+.admin-course-preview-dialog .admin-course-preview-table-evaluations th:nth-child(2),
+.admin-course-preview-dialog .admin-course-preview-table-evaluations td:nth-child(2) {
+  width: 24%;
+}
+
+.admin-course-preview-dialog .admin-course-preview-table-evaluations th:nth-child(3),
+.admin-course-preview-dialog .admin-course-preview-table-evaluations td:nth-child(3) {
+  width: 12%;
+}
+
+.admin-course-preview-dialog .admin-course-preview-table-evaluations th:nth-child(4),
+.admin-course-preview-dialog .admin-course-preview-table-evaluations td:nth-child(4) {
+  width: 12%;
+}
+
+.admin-course-preview-dialog .admin-course-preview-table-evaluations th:nth-child(5),
+.admin-course-preview-dialog .admin-course-preview-table-evaluations td:nth-child(5) {
+  width: 14%;
 }
 
 .admin-course-preview-dialog .admin-course-preview-table a {
   display: inline-flex;
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .admin-course-preview-dialog > .mt-6 {
@@ -257,7 +317,7 @@
   .admin-course-preview-dialog {
     width: 96vw !important;
     max-width: 96vw !important;
-    border-radius: 1.15rem !important;
+    border-radius: 0.625rem !important;
   }
 
   .admin-course-preview-dialog .admin-course-preview-header {
