@@ -14,6 +14,7 @@ import { initPersonalizedWelcome } from "./personalizedWelcome";
 import { initAdminCourseManagementPolish } from "./adminCourseManagementPolish";
 import { initAdminCourseCatalogFilter } from "./adminCourseCatalogFilter";
 import { initAdminActivitiesPolish } from "./adminActivitiesPolish";
+import { initAdminDashboardsPolish } from "./adminDashboardsPolish";
 import "./index.css";
 import "./loginSophisticated.css";
 import "./loginLogoPlain.css";
@@ -23,6 +24,7 @@ import "./adminCourseCatalogPolish.css";
 import "./adminCourseCatalogFilter.css";
 import "./adminCourseCatalogRefine.css";
 import "./adminActivitiesPolish.css";
+import "./adminDashboardsPolish.css";
 
 // Global error handler for DOM manipulation errors (Recharts/Radix UI)
 // These errors are non-critical and can be safely suppressed
@@ -102,3 +104,4 @@ initPersonalizedWelcome();
 initAdminCourseManagementPolish();
 initAdminCourseCatalogFilter();
 initAdminActivitiesPolish();
+initAdminDashboardsPolish();
