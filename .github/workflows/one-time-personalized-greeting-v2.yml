@@ -1,0 +1,80 @@
+name: one-time-personalized-greeting-v2
+
+on:
+  push:
+    branches:
+      - tmp/saudacao-personalizada-admin-mentor-20260913
+    paths:
+      - .github/workflows/one-time-personalized-greeting-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Apply validated header-only patches
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          home = Path('client/src/pages/Home.tsx')
+          text = home.read_text(encoding='utf-8')
+          pattern = re.compile(r'''<h1 className="text-3xl font-bold tracking-tight">\s*Bem-vindo ao <span className="text-gradient">ECOSSISTEMA DO BEM</span>\s*</h1>''')
+          replacement = '''<h1 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] leading-tight">
+            <span className="bg-gradient-to-r from-[#49306B] via-[#6D4BA6] to-[#F5991F] bg-clip-text text-transparent">
+              {(user?.name?.trim().split(/\\s+/)[0] || "Olá")}, bem-vindo(a) ao Ecossistema do B.E.M.
+            </span>
+          </h1>'''
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f'Home abortado: {count} títulos correspondentes.')
+          home.write_text(text, encoding='utf-8')
+
+          mentor = Path('client/src/pages/DashboardMentor.tsx')
+          text = mentor.read_text(encoding='utf-8')
+          pattern = re.compile(r'''<div>\s*<h1 className="text-3xl font-bold text-foreground">\s*\{isAdmin \? "Dashboard dos Mentores" : "Meu Dashboard"\}\s*</h1>\s*<p className="text-muted-foreground mt-1">\s*\{isAdmin\s*\? "Visualize estatísticas de mentorias por mentor"\s*:\s*`Bem-vindo\(a\), \$\{selectedMentor\?\.name \|\| user\?\.name \|\| 'Mentor'\}`\s*\}\s*</p>\s*</div>''', re.S)
+          replacement = '''<div>
+          {isAdmin ? (
+            <>
+              <h1 className="text-3xl font-bold text-foreground">Dashboard dos Mentores</h1>
+              <p className="text-muted-foreground mt-1">Visualize estatísticas de mentorias por mentor</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-[-0.03em] leading-tight">
+                <span className="bg-gradient-to-r from-[#49306B] via-[#6D4BA6] to-[#F5991F] bg-clip-text text-transparent">
+                  {(user?.name?.trim().split(/\\s+/)[0] || selectedMentor?.name?.trim().split(/\\s+/)[0] || "Mentor")}, bem-vindo(a) ao Ecossistema do B.E.M.
+                </span>
+              </h1>
+              <p className="text-muted-foreground mt-2">Acompanhe seus mentorados, sessões e indicadores em um só lugar.</p>
+            </>
+          )}
+        </div>'''
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit(f'Mentor abortado: {count} headers correspondentes.')
+          mentor.write_text(text, encoding='utf-8')
+          PY
+
+          git diff --check
+          git diff -- client/src/pages/Home.tsx client/src/pages/DashboardMentor.tsx
+
+      - name: Commit validated changes only
+        shell: bash
+        run: |
+          git config user.name "CKM Safe Patch"
+          git config user.email "dina@ckmtalents.net"
+          git add client/src/pages/Home.tsx client/src/pages/DashboardMentor.tsx
+          git commit -m "Personaliza saudação de admin e mentor"
+          git pull --rebase origin main
+          git push origin HEAD:main
