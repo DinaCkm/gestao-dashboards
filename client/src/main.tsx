@@ -13,6 +13,7 @@ import { initAlunoConteudoTextCleanup } from "./alunoConteudoTextCleanup";
 import { initPersonalizedWelcome } from "./personalizedWelcome";
 import { initAdminCourseManagementPolish } from "./adminCourseManagementPolish";
 import { initAdminCourseCatalogFilter } from "./adminCourseCatalogFilter";
+import { initAdminActivitiesPolish } from "./adminActivitiesPolish";
 import "./index.css";
 import "./loginSophisticated.css";
 import "./loginLogoPlain.css";
@@ -20,6 +21,8 @@ import "./alunoAtividadePolish.css";
 import "./adminCourseManagementPolish.css";
 import "./adminCourseCatalogPolish.css";
 import "./adminCourseCatalogFilter.css";
+import "./adminCourseCatalogRefine.css";
+import "./adminActivitiesPolish.css";
 
 // Global error handler for DOM manipulation errors (Recharts/Radix UI)
 // These errors are non-critical and can be safely suppressed
@@ -98,3 +101,4 @@ initAlunoConteudoTextCleanup();
 initPersonalizedWelcome();
 initAdminCourseManagementPolish();
 initAdminCourseCatalogFilter();
+initAdminActivitiesPolish();
