@@ -10,6 +10,22 @@ function normalizeForSearch(value: string | null | undefined) {
     .trim();
 }
 
+function normalizeText(value: string | null | undefined) {
+  return (value || "").replace(/\s+/g, " ").trim();
+}
+
+function findCourseCatalogCard() {
+  const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-slot="card"]'));
+
+  return cards.find((card) => {
+    const title = normalizeText(
+      card.querySelector<HTMLElement>('[data-slot="card-title"]')?.textContent ||
+      card.querySelector<HTMLElement>("h3")?.textContent
+    );
+    return title === "Todos os Cursos Criados";
+  }) || null;
+}
+
 function getCourseRows(card: HTMLElement) {
   const tbody = card.querySelector<HTMLTableSectionElement>("tbody");
   if (!tbody) return [];
@@ -190,8 +206,10 @@ function createFilter(card: HTMLElement) {
 function enhanceCourseCatalogFilter() {
   if (window.location.pathname !== COURSE_PAGE_PATH) return;
 
-  const card = document.querySelector<HTMLElement>(".admin-course-card-all");
+  const card = findCourseCatalogCard();
   if (!card) return;
+
+  card.classList.add("admin-course-card-all");
 
   let filter = card.querySelector<HTMLElement>(`[${FILTER_ATTR}]`);
   if (!filter) {
@@ -222,5 +240,7 @@ export function initAdminCourseCatalogFilter() {
   observer.observe(document.body, {
     childList: true,
     subtree: true,
+    attributes: true,
+    attributeFilter: ["class"],
   });
 }
