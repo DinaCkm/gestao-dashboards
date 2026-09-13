@@ -1,0 +1,107 @@
+/* Ajustes finais de UI do bloco "Todos os Cursos Criados".
+   Apenas apresentação visual; não altera dados, ações ou comportamento. */
+
+.admin-course-management-page .admin-course-card-all > [data-slot="card-header"] {
+  margin: 0 !important;
+  border-radius: 0.75rem 0.75rem 0 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+}
+
+.admin-course-management-page .admin-course-card-all > [data-slot="card-content"] {
+  padding: 1rem 1rem 1.15rem !important;
+}
+
+.admin-course-management-page .admin-course-card-all table {
+  table-layout: fixed !important;
+}
+
+.admin-course-management-page .admin-course-card-all th,
+.admin-course-management-page .admin-course-card-all td {
+  padding-left: 0.55rem !important;
+  padding-right: 0.55rem !important;
+  vertical-align: middle !important;
+}
+
+.admin-course-management-page .admin-course-card-all th:nth-child(1),
+.admin-course-management-page .admin-course-card-all td:nth-child(1) {
+  width: 20% !important;
+}
+
+.admin-course-management-page .admin-course-card-all th:nth-child(2),
+.admin-course-management-page .admin-course-card-all td:nth-child(2) {
+  width: 24% !important;
+}
+
+.admin-course-management-page .admin-course-card-all th:nth-child(3),
+.admin-course-management-page .admin-course-card-all td:nth-child(3) {
+  width: 25% !important;
+}
+
+.admin-course-management-page .admin-course-card-all th:nth-child(4),
+.admin-course-management-page .admin-course-card-all td:nth-child(4) {
+  width: 10% !important;
+}
+
+.admin-course-management-page .admin-course-card-all th:nth-child(5),
+.admin-course-management-page .admin-course-card-all td:nth-child(5) {
+  width: 21% !important;
+}
+
+.admin-course-management-page .admin-course-card-all td:last-child {
+  white-space: nowrap !important;
+  text-align: right;
+}
+
+.admin-course-management-page .admin-course-card-all td:last-child > button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 2rem !important;
+  height: 2rem !important;
+  min-width: 2rem !important;
+  padding: 0 !important;
+  margin: 0 0 0 0.28rem !important;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+  border-radius: 0.55rem !important;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef1f5 100%) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(0);
+  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease, box-shadow 150ms ease !important;
+}
+
+.admin-course-management-page .admin-course-card-all td:last-child > button:hover {
+  background: linear-gradient(180deg, #f3effa 0%, #e8e0f2 100%) !important;
+  border-color: rgba(73, 48, 107, 0.36) !important;
+  box-shadow: 0 5px 12px rgba(73, 48, 107, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  transform: translateY(-1px);
+}
+
+.admin-course-management-page .admin-course-card-all td:last-child > button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(73, 48, 107, 0.12);
+}
+
+.admin-course-management-page .admin-course-card-all tbody tr {
+  transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease !important;
+}
+
+.admin-course-management-page .admin-course-card-all tbody tr:hover {
+  background: linear-gradient(90deg, rgba(73, 48, 107, 0.055), rgba(245, 153, 31, 0.02)) !important;
+  box-shadow: inset 3px 0 0 rgba(73, 48, 107, 0.32);
+}
+
+@media (max-width: 1100px) {
+  .admin-course-management-page .admin-course-card-all th,
+  .admin-course-management-page .admin-course-card-all td {
+    font-size: 0.76rem !important;
+  }
+
+  .admin-course-management-page .admin-course-card-all td:last-child > button {
+    width: 1.85rem !important;
+    height: 1.85rem !important;
+    min-width: 1.85rem !important;
+    margin-left: 0.2rem !important;
+  }
+}
