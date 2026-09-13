@@ -12,12 +12,14 @@ import { initYoutubeEmbedFix } from "./youtubeEmbedFix";
 import { initAlunoConteudoTextCleanup } from "./alunoConteudoTextCleanup";
 import { initPersonalizedWelcome } from "./personalizedWelcome";
 import { initAdminCourseManagementPolish } from "./adminCourseManagementPolish";
+import { initAdminCourseCatalogFilter } from "./adminCourseCatalogFilter";
 import "./index.css";
 import "./loginSophisticated.css";
 import "./loginLogoPlain.css";
 import "./alunoAtividadePolish.css";
 import "./adminCourseManagementPolish.css";
 import "./adminCourseCatalogPolish.css";
+import "./adminCourseCatalogFilter.css";
 
 // Global error handler for DOM manipulation errors (Recharts/Radix UI)
 // These errors are non-critical and can be safely suppressed
@@ -41,10 +43,8 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (typeof window === "undefined") return;
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
-
   if (!isUnauthorized) return;
 
-  // Redirecionar para login quando a sessão expirar
   const loginUrl = getLoginUrl();
   if (!window.location.pathname.startsWith('/login')) {
     console.log("[Auth] Sessão expirada, redirecionando para login...");
@@ -97,3 +97,4 @@ initYoutubeEmbedFix();
 initAlunoConteudoTextCleanup();
 initPersonalizedWelcome();
 initAdminCourseManagementPolish();
+initAdminCourseCatalogFilter();
