@@ -40,6 +40,16 @@ function getRowData(row: HTMLTableRowElement) {
   };
 }
 
+function getDirectChildAncestor(parent: HTMLElement, element: HTMLElement) {
+  let current: HTMLElement | null = element;
+
+  while (current && current.parentElement && current.parentElement !== parent) {
+    current = current.parentElement;
+  }
+
+  return current?.parentElement === parent ? current : null;
+}
+
 function createSearchIcon() {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -141,8 +151,10 @@ function createFilter(card: HTMLElement) {
   const table = card.querySelector<HTMLTableElement>("table");
   if (!cardContent || !table) return null;
 
-  const tableWrapper = table.parentElement;
-  if (!tableWrapper) return null;
+  const tableRegion = getDirectChildAncestor(cardContent, table);
+  if (!tableRegion) return null;
+
+  card.querySelectorAll<HTMLElement>("[data-course-filter-empty]").forEach((element) => element.remove());
 
   const filter = document.createElement("div");
   filter.setAttribute(FILTER_ATTR, "true");
@@ -193,8 +205,8 @@ function createFilter(card: HTMLElement) {
     <span>Tente outro termo ou selecione uma competência diferente.</span>
   `;
 
-  cardContent.insertBefore(filter, tableWrapper);
-  tableWrapper.insertAdjacentElement("afterend", emptyState);
+  cardContent.insertBefore(filter, tableRegion);
+  tableRegion.insertAdjacentElement("afterend", emptyState);
 
   input.addEventListener("input", () => applyFilters(filter, card));
   select.addEventListener("change", () => applyFilters(filter, card));
