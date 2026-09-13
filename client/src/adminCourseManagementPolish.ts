@@ -42,8 +42,19 @@ function marcarModalVisualizacao() {
     const header = dialog.querySelector<HTMLElement>('[data-slot="dialog-header"]');
     if (header) header.classList.add("admin-course-preview-header");
 
-    dialog.querySelectorAll<HTMLElement>("table").forEach((table) => {
+    dialog.querySelectorAll<HTMLTableElement>("table").forEach((table) => {
       table.classList.add("admin-course-preview-table");
+      table.classList.remove("admin-course-preview-table-activities", "admin-course-preview-table-evaluations");
+
+      const cabecalho = normalizeText(table.querySelector("thead")?.textContent);
+      if (cabecalho.includes("Título da Avaliação")) {
+        table.classList.add("admin-course-preview-table-evaluations");
+      } else if (cabecalho.includes("Título") && cabecalho.includes("Tipo")) {
+        table.classList.add("admin-course-preview-table-activities");
+      }
+
+      const wrapper = table.parentElement;
+      if (wrapper) wrapper.classList.add("admin-course-preview-table-wrap");
     });
   });
 }
