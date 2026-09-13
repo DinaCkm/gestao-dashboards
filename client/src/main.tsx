@@ -11,10 +11,12 @@ import { initLoginLogoFix } from "./loginLogoFix";
 import { initYoutubeEmbedFix } from "./youtubeEmbedFix";
 import { initAlunoConteudoTextCleanup } from "./alunoConteudoTextCleanup";
 import { initPersonalizedWelcome } from "./personalizedWelcome";
+import { initAdminCourseManagementPolish } from "./adminCourseManagementPolish";
 import "./index.css";
 import "./loginSophisticated.css";
 import "./loginLogoPlain.css";
 import "./alunoAtividadePolish.css";
+import "./adminCourseManagementPolish.css";
 
 // Global error handler for DOM manipulation errors (Recharts/Radix UI)
 // These errors are non-critical and can be safely suppressed
@@ -93,3 +95,4 @@ initLoginLogoFix();
 initYoutubeEmbedFix();
 initAlunoConteudoTextCleanup();
 initPersonalizedWelcome();
+initAdminCourseManagementPolish();
