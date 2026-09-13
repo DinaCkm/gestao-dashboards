@@ -17,6 +17,7 @@ import "./loginSophisticated.css";
 import "./loginLogoPlain.css";
 import "./alunoAtividadePolish.css";
 import "./adminCourseManagementPolish.css";
+import "./adminCourseCatalogPolish.css";
 
 // Global error handler for DOM manipulation errors (Recharts/Radix UI)
 // These errors are non-critical and can be safely suppressed
