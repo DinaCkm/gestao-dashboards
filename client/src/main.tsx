@@ -10,6 +10,7 @@ import { initMuralPresentationEnhancements } from "./muralPresentationEnhancemen
 import { initLoginLogoFix } from "./loginLogoFix";
 import { initYoutubeEmbedFix } from "./youtubeEmbedFix";
 import { initAlunoConteudoTextCleanup } from "./alunoConteudoTextCleanup";
+import { initPersonalizedWelcome } from "./personalizedWelcome";
 import "./index.css";
 import "./loginSophisticated.css";
 import "./loginLogoPlain.css";
@@ -91,3 +92,4 @@ initMuralPresentationEnhancements();
 initLoginLogoFix();
 initYoutubeEmbedFix();
 initAlunoConteudoTextCleanup();
+initPersonalizedWelcome();
