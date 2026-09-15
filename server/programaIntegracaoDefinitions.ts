@@ -36,7 +36,7 @@ export const PROGRAMA_INTEGRACAO_QUESTION_INDEX: Record<ProgramaIntegracaoFormKe
   bem: {
     bem_gestor: 5, bem_unidade: 6, bem_colaborador: 7, bem_data_inicio: 8, bem_funcao: 9,
     bem_anjo: 10, bem_caracteristicas: 11, bem_conhecimentos_tecnicos: 12,
-    bem_documentos_treinamentos: 13, bem_primeiros_15_dias: 14, bem_primeiros_60_dias: 15,
+    bem_documentos_treinamentos: 13, bem_treinamentos_uc: 14, bem_primeiros_15_dias: 15, bem_primeiros_60_dias: 16,
   },
   pesquisa: {
     pesquisa_unidade: 6, pesquisa_programa: 7, pesquisa_periodo: 8,
