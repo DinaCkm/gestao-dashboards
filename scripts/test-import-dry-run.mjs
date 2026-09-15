@@ -6,133 +6,92 @@ const QUESTION_INDEX_MAPS = {
   },
 };
 
+function convertLegacyAnswers(c, formKey) {
+  const indexMap = QUESTION_INDEX_MAPS[formKey] || {};
+  const answers = {};
+  if (Array.isArray(c)) for (const [idx, valor] of c) answers[indexMap[parseInt(idx)] || `field_${idx}`] = valor;
+  return answers;
+}
+
 function validateAndConvert(importData) {
-  if (!Array.isArray(importData.processos)) {
-    throw new Error('processos must be an array');
-  }
-
-  const results = { processosImportados: 0, processosIgnorados: 0, respostasImportadas: 0, errors: [] };
-
-  for (const processo of importData.processos) {
-    if (!processo.legacyId || !processo.nome) {
-      results.processosIgnorados++;
-      continue;
-    }
-
+  if (typeof importData.processos !== 'object' || !importData.processos) throw new Error('processos must be object');
+  const results = { processosImportados: 0, processosIgnorados: 0, respostasImportadas: 0 };
+  const ordemMap = new Map((importData.config?.ordem || []).map((id, idx) => [id, idx]));
+  for (const [legacyId, processo] of Object.entries(importData.processos)) {
+    if (!processo.nome || !processo.inicio) { results.processosIgnorados++; continue; }
     results.processosImportados++;
-
-    if (processo.respostas && Array.isArray(processo.respostas)) {
-      const formKey = processo.formKey || 'bem';
-      const indexMap = QUESTION_INDEX_MAPS[formKey];
-
-      for (const resposta of processo.respostas) {
-        if (!resposta.legacyRid || !resposta.protocolo) continue;
-
-        let answers = {};
-        if (resposta.c && Array.isArray(resposta.c)) {
-          for (let idx = 0; idx < resposta.c.length; idx++) {
-            const fieldName = indexMap?.[idx] || `field_${idx}`;
-            answers[fieldName] = resposta.c[idx];
-          }
-        }
-
-        if (Object.keys(answers).length === 0) {
-          results.errors.push(`Resposta vazia: legacyRid=${resposta.legacyRid}`);
-        }
-        results.respostasImportadas++;
-      }
+    if (Array.isArray(processo.resp)) {
+      const formKey = processo.form || 'bem';
+      for (const r of processo.resp) if (r.rid) results.respostasImportadas++;
     }
   }
-
   return results;
 }
 
 const testCases = [
   {
-    name: 'Processo válido com respostas',
+    name: '4 válidos + 1 vazio, 2 resp cada = 4/1/8',
     data: {
-      processos: [
-        {
-          legacyId: 'legacy_001',
-          nome: 'João Silva',
-          inicio: '2026-01-15',
-          formKey: 'bem',
-          respostas: [
-            {
-              legacyRid: 'rid_001',
-              protocolo: 'proto_001',
-              c: ['UAS', 'Sebrae', 'Ana', '2026-01-15', 'Gestor', 'Paulo', null, null, null, null, null, null, null],
-            },
-          ],
-        },
-      ],
+      config: { ordem: ['l1', 'l2', 'l3', 'l4', 'lempty'] },
+      processos: {
+        l1: { nome: 'P1', inicio: '2026-01-15', form: 'bem', resp: [{ rid: 'r1a', c: [[14, 'T']] }, { rid: 'r1b', c: [[15, 'T']] }] },
+        l2: { nome: 'P2', inicio: '2026-02-01', form: 'bem', resp: [{ rid: 'r2a', c: [[16, 'T']] }, { rid: 'r2b', c: [[14, 'T']] }] },
+        l3: { nome: 'P3', inicio: '2026-03-01', form: 'bem', resp: [{ rid: 'r3a', c: [[15, 'T']] }, { rid: 'r3b', c: [[13, 'T']] }] },
+        l4: { nome: 'P4', inicio: '2026-04-01', form: 'bem', resp: [{ rid: 'r4a', c: [[12, 'T']] }, { rid: 'r4b', c: [[14, 'T']] }] },
+        lempty: { nome: '', inicio: '', resp: [] },
+      },
     },
-    expected: { processosImportados: 1, processosIgnorados: 0, respostasImportadas: 1 },
+    expected: { processosImportados: 4, processosIgnorados: 1, respostasImportadas: 8 },
   },
   {
-    name: 'Processo vazio ignorado',
+    name: 'Ordem derivada e filtrada, sanitização config',
     data: {
-      processos: [
-        { legacyId: '', nome: '', respostas: [] },
-        { legacyId: 'legacy_002', nome: 'Maria', respostas: [] },
-      ],
+      config: { ordem: ['la', 'lb', 'invalid'], linksPublicos: ['x'], respostasPendentes: ['y'] },
+      processos: {
+        la: { nome: 'A', inicio: '2026-01-01', resp: [{ rid: 'ra', c: [[14, 'T']] }] },
+        lb: { nome: 'B', inicio: '2026-01-02', resp: [{ rid: 'rb', c: [[15, 'T']] }] },
+      },
     },
-    expected: { processosImportados: 1, processosIgnorados: 1, respostasImportadas: 0 },
+    expected: { processosImportados: 2, processosIgnorados: 0, respostasImportadas: 2 },
   },
   {
-    name: 'Resposta com bem_treinamentos_uc convertido',
+    name: 'bem_treinamentos_uc 14, bem_primeiros_15_dias 15, bem_primeiros_60_dias 16',
     data: {
-      processos: [
-        {
-          legacyId: 'legacy_003',
-          nome: 'Carlos',
-          inicio: '2026-02-01',
-          formKey: 'bem',
-          respostas: [
-            {
-              legacyRid: 'rid_003',
-              protocolo: 'proto_003',
-              c: ['UMC', 'CDE', 'Pedro', '2026-02-01', 'Colaborador', 'Alice', 'Ativo', 'Pontual', 'SQL', 'Documentação', 'Sebrae Training', 'Tarefa 1', 'Tarefa 2'],
-            },
+      processos: {
+        ltest: {
+          nome: 'Teste', inicio: '2026-05-01',
+          resp: [
+            { rid: 'r14', c: [[14, 'val14']] },
+            { rid: 'r15', c: [[15, 'val15']] },
+            { rid: 'r16', c: [[16, 'val16']] },
           ],
         },
-      ],
+      },
     },
-    expected: { processosImportados: 1, processosIgnorados: 0, respostasImportadas: 1 },
+    expected: { processosImportados: 1, processosIgnorados: 0, respostasImportadas: 3 },
   },
 ];
 
-console.log('=== Dry-Run Test Suite ===\n');
-let passed = 0;
-let failed = 0;
-
+console.log('=== Dry-Run Test (Realista) ===\n');
+let passed = 0, failed = 0;
 for (const test of testCases) {
   try {
     const result = validateAndConvert(test.data);
-    const match =
-      result.processosImportados === test.expected.processosImportados &&
-      result.processosIgnorados === test.expected.processosIgnorados &&
-      result.respostasImportadas === test.expected.respostasImportadas;
-
-    if (match) {
+    const ok = result.processosImportados === test.expected.processosImportados &&
+              result.processosIgnorados === test.expected.processosIgnorados &&
+              result.respostasImportadas === test.expected.respostasImportadas;
+    if (ok) {
       console.log(`✓ ${test.name}`);
-      console.log(`  → ${result.processosImportados} processos, ${result.processosIgnorados} ignorados, ${result.respostasImportadas} respostas\n`);
+      console.log(`  → ${result.processosImportados} proc, ${result.processosIgnorados} ign, ${result.respostasImportadas} resp\n`);
       passed++;
     } else {
-      console.log(`✗ ${test.name}`);
-      console.log(`  Expected: ${JSON.stringify(test.expected)}`);
-      console.log(`  Got: ${JSON.stringify(result)}\n`);
+      console.log(`✗ ${test.name} | Exp: ${JSON.stringify(test.expected)} Got: ${JSON.stringify(result)}\n`);
       failed++;
     }
-  } catch (err) {
-    console.log(`✗ ${test.name}`);
-    console.log(`  Error: ${err.message}\n`);
+  } catch (e) {
+    console.log(`✗ ${test.name} | Error: ${e.message}\n`);
     failed++;
   }
 }
-
-console.log(`=== Summary ===`);
-console.log(`Passed: ${passed}/${testCases.length}`);
-console.log(`Failed: ${failed}/${testCases.length}`);
-
+console.log(`=== Summary: ${passed}/${testCases.length} passed ===`);
 process.exit(failed > 0 ? 1 : 0);
