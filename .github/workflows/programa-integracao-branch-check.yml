@@ -120,6 +120,9 @@ jobs:
           })().catch(e=>{console.error(e);process.exit(1)})
           NODE
 
+      - name: Smoke test do fluxo publico
+        run: pnpm exec tsx scripts/smoke-programa-integracao.ts
+
       - name: Build igual ao deploy de producao
         run: pnpm build
 
