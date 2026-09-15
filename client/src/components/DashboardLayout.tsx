@@ -178,6 +178,13 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: FileSpreadsheet, label: "Relatórios", path: "/relatorios" },
     ],
   },
+  {
+    icon: Footprints,
+    label: "Processos Integração",
+    items: [
+      { icon: LayoutDashboard, label: "Visão Geral", path: "/processos-integracao" },
+    ],
+  },
 ];
 
 // ============================================================
@@ -530,7 +537,7 @@ function DashboardLayoutContent({
                   </SidebarMenu>
                 </div>
 
-                {/* 7 ÁREAS COLAPSÁVEIS */}
+                {/* ÁREAS COLAPSÁVEIS */}
                 {adminMenuGroups.map((group, groupIdx) => {
                   const isGroupActive = activeGroupIndex === groupIdx;
                   return (
@@ -561,18 +568,16 @@ function DashboardLayoutContent({
                               <SidebarMenuSub>
                                 {group.items.map(item => {
                                   const isActive = isPathActive(item.path);
-                                  // No more placeholders - all items are functional
-                                  const isPlaceholder = false;
+                                  const isPlaceholder = item.path === "/processos-integracao";
                                   return (
                                     <SidebarMenuSubItem key={item.path}>
                                       <SidebarMenuSubButton
                                         isActive={isActive}
                                         onClick={() => {
                                           if (isPlaceholder) {
-                                            // Import toast dynamically
                                             import("sonner").then(({ toast }) => {
-                                              toast.info("Funcionalidade em breve", {
-                                                description: `A gestão de ${item.label} será implementada em breve.`,
+                                              toast.info("Processos Integração", {
+                                                description: "Em construção.",
                                               });
                                             });
                                             return;
