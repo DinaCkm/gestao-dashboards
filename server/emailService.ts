@@ -3267,30 +3267,6 @@ export function buildConviteAlunoAutonomoEmail(data: {
                 Ecossistema do Bem. Clique no botão abaixo para começar — não é preciso senha.
               </p>
 
-              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 16px;">
-                <strong>Como funciona:</strong>
-              </p>
-
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
-                <tr>
-                  <td style="padding: 12px 16px; background-color: #f0f9ff; border-left: 4px solid #0A1E3E; border-radius: 0 8px 8px 0;">
-                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>1. Complete seu cadastro</strong> — leva menos de 2 minutos</p>
-                  </td>
-                </tr>
-                <tr><td style="height: 8px;"></td></tr>
-                <tr>
-                  <td style="padding: 12px 16px; background-color: #fff7ed; border-left: 4px solid #F5991F; border-radius: 0 8px 8px 0;">
-                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>2. Responda o diagnóstico</strong> — 10 questões, sem caráter eliminatório</p>
-                  </td>
-                </tr>
-                <tr><td style="height: 8px;"></td></tr>
-                <tr>
-                  <td style="padding: 12px 16px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 0 8px 8px 0;">
-                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>3. Comece o curso</strong> — liberado automaticamente no seu Mural</p>
-                  </td>
-                </tr>
-              </table>
-
               <!-- CTA -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
                 <tr>
@@ -3332,11 +3308,6 @@ export function buildConviteAlunoAutonomoEmail(data: {
   const text = `📚 Olá, ${data.alunoName}!
 
 Você foi inscrito(a) no curso "${data.cursoTitulo}" na plataforma do Ecossistema do Bem.
-
-Como funciona:
-1. Complete seu cadastro — leva menos de 2 minutos
-2. Responda o diagnóstico — 10 questões, sem caráter eliminatório
-3. Comece o curso — liberado automaticamente no seu Mural
 
 Acesse por aqui (não é preciso senha): ${data.acessoUrl}
 ${validadeTexto ? `\n⏳ ${validadeTexto}` : ''}`;
@@ -3386,26 +3357,6 @@ export function buildBoasVindasAlunoAutonomoEmail(data: {
                 Seus dados foram confirmados e você já está a um passo de começar o curso <strong>${data.cursoTitulo}</strong>.
               </p>
 
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
-                <tr>
-                  <td style="padding: 12px 16px; background-color: #f0f9ff; border-left: 4px solid #0A1E3E; border-radius: 0 8px 8px 0;">
-                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>📝 Próximo passo</strong> — Responder uma avaliação diagnóstica rápida (10 questões)</p>
-                  </td>
-                </tr>
-                <tr><td style="height: 8px;"></td></tr>
-                <tr>
-                  <td style="padding: 12px 16px; background-color: #fff7ed; border-left: 4px solid #F5991F; border-radius: 0 8px 8px 0;">
-                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>📊 Sem pegadinha</strong> — Este diagnóstico não é eliminatório, é só para vermos seu ponto de partida</p>
-                  </td>
-                </tr>
-                <tr><td style="height: 8px;"></td></tr>
-                <tr>
-                  <td style="padding: 12px 16px; background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 0 8px 8px 0;">
-                    <p style="color: #0A1E3E; font-size: 14px; margin: 0;"><strong>🚀 Depois disso</strong> — Seu curso é liberado automaticamente no Mural</p>
-                  </td>
-                </tr>
-              </table>
-
               <!-- CTA Button -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">
                 <tr>
@@ -3444,10 +3395,6 @@ export function buildBoasVindasAlunoAutonomoEmail(data: {
   const text = `🎉 Bem-vindo(a), ${data.alunoName}!
 
 Seu cadastro foi confirmado com sucesso. Você já está a um passo de começar o curso "${data.cursoTitulo}".
-
-Próximo passo: responder uma avaliação diagnóstica rápida (10 questões).
-Este diagnóstico não é eliminatório — é só para sabermos seu ponto de partida.
-Depois disso, seu curso é liberado automaticamente no Mural.
 
 Continue por aqui: ${data.continuarUrl}`;
 
