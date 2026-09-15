@@ -6,6 +6,8 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { pdfRouter } from "../pdfRoutes";
 import { courseMetadataRouter, ensureCourseMetadataTable } from "../courseMetadataRoutes";
+import { programaIntegracaoRouter } from "../programaIntegracaoRoutes";
+import { registerProgramaIntegracaoPages } from "../programaIntegracaoPages";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -56,6 +58,10 @@ async function startServer() {
 
   // Edição de metadados dos cursos (título, descrição e resumo)
   app.use(courseMetadataRouter);
+
+  // Programa de Integracao: APIs e paginas publicas/admin antes do fallback da SPA.
+  app.use(programaIntegracaoRouter);
+  registerProgramaIntegracaoPages(app);
 
   // tRPC API
   app.use(

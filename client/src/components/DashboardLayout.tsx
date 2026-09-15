@@ -728,6 +728,24 @@ function DashboardLayoutContent({
                     </Collapsible>
                   );
                 })}
+
+                {/* PROGRAMA DE INTEGRACAO - acesso exclusivo do administrador completo */}
+                {isFullAdmin && (
+                  <div className="px-2 pt-1 pb-1">
+                    <SidebarMenu className="px-0">
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={() => window.location.assign("/programa-integracao")}
+                          tooltip="Processos Integração"
+                          className="h-10 transition-all font-normal hover:bg-sidebar-accent/50"
+                        >
+                          <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                          <span>Processos Integração</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </div>
+                )}
               </>
             ) : (
               /* MENU PARA MENTOR / GESTOR / ALUNO (flat, sem grupos) */
