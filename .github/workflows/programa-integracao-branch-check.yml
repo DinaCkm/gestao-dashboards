@@ -1,0 +1,72 @@
+name: Programa Integracao - branch check
+
+on:
+  push:
+    branches:
+      - integracao-programa-producao-20260915
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integracao-programa-producao-20260915
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Aplicar patches localizados
+        shell: python
+        run: |
+          from pathlib import Path
+
+          index = Path('server/_core/index.ts')
+          s = index.read_text(encoding='utf-8')
+          imp_anchor = 'import { courseMetadataRouter, ensureCourseMetadataTable } from "../courseMetadataRoutes";\n'
+          imp_new = imp_anchor + 'import { programaIntegracaoRouter } from "../programaIntegracaoRoutes";\nimport { registerProgramaIntegracaoPages } from "../programaIntegracaoPages";\n'
+          if 'programaIntegracaoRouter' not in s:
+              if imp_anchor not in s: raise SystemExit('Anchor de imports do servidor nao encontrado')
+              s = s.replace(imp_anchor, imp_new, 1)
+          route_anchor = '  // tRPC API\n  app.use(\n    "/api/trpc",\n'
+          route_new = '  // Programa de Integracao: APIs e paginas publicas/admin antes do fallback da SPA.\n  app.use(programaIntegracaoRouter);\n  registerProgramaIntegracaoPages(app);\n\n' + route_anchor
+          if 'registerProgramaIntegracaoPages(app);' not in s:
+              if route_anchor not in s: raise SystemExit('Anchor de rotas do servidor nao encontrado')
+              s = s.replace(route_anchor, route_new, 1)
+          index.write_text(s, encoding='utf-8')
+
+          dash = Path('client/src/components/DashboardLayout.tsx')
+          d = dash.read_text(encoding='utf-8')
+          menu_anchor = '''                })}\n              </>\n            ) : (\n'''
+          menu_new = '''                })}\n\n                {/* PROGRAMA DE INTEGRACAO - acesso exclusivo do administrador completo */}\n                {isFullAdmin && (\n                  <div className="px-2 pt-1 pb-1">\n                    <SidebarMenu className="px-0">\n                      <SidebarMenuItem>\n                        <SidebarMenuButton\n                          onClick={() => window.location.assign("/programa-integracao")}\n                          tooltip="Processos Integração"\n                          className="h-10 transition-all font-normal hover:bg-sidebar-accent/50"\n                        >\n                          <ClipboardList className="h-4 w-4 text-muted-foreground" />\n                          <span>Processos Integração</span>\n                        </SidebarMenuButton>\n                      </SidebarMenuItem>\n                    </SidebarMenu>\n                  </div>\n                )}\n              </>\n            ) : (\n'''
+          if 'window.location.assign("/programa-integracao")' not in d:
+              if menu_anchor not in d: raise SystemExit('Anchor do menu administrativo nao encontrado')
+              d = d.replace(menu_anchor, menu_new, 1)
+          dash.write_text(d, encoding='utf-8')
+
+      - name: Instalar dependencias
+        run: corepack enable && pnpm install --no-frozen-lockfile
+
+      - name: TypeScript check
+        run: pnpm check
+
+      - name: Build
+        run: pnpm build
+
+      - name: Commitar somente patches validados
+        run: |
+          if git diff --quiet -- server/_core/index.ts client/src/components/DashboardLayout.tsx; then
+            echo "Patches ja aplicados."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/_core/index.ts client/src/components/DashboardLayout.tsx
+          git commit -m "feat(integracao): conecta modulo ao servidor e menu"
+          git push origin HEAD:integracao-programa-producao-20260915
