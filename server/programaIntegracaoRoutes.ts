@@ -1,4 +1,5 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
+import { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";
 import { getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
 import {
@@ -320,9 +321,27 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
     const config = cfgRows?.[0] ? asJson(cfgRows[0].valor, {}) : {}; const cfg = config?.formConfig?.[formKey] || { active:true, version:1, dupPolicy:"bloquear" };
     if (cfg.active === false) return res.status(409).json({ ok:false, erro:"Este formulário está desativado no momento." });
     const data = req.body || {}; if (!String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome do colaborador.", campo:"nomeColaborador" });
-    if ((formKey === "pesquisa") && !String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe seu nome." });
-    if ((formKey === "pesquisa" || formKey === "aval" || formKey === "pdi") && !Number(data.cycle || 0)) return res.status(400).json({ ok:false, erro:"Informe o período desta resposta.", campo:"cycle" });
+    const catalog = PROGRAMA_INTEGRACAO_CATALOG[req.params.slug];
+    if (!catalog) return res.status(404).json({ ok:false, erro:"Formulário não encontrado." });
+    if (catalog.identity.unidade && !String(data.unidade || "").trim()) return res.status(400).json({ ok:false, erro:"Informe a unidade.", campo:"unidade" });
+    if (catalog.identity.dataInicio && !String(data.dataInicio || "").trim()) return res.status(400).json({ ok:false, erro:"Informe a data de início.", campo:"dataInicio" });
+    if (catalog.identity.respondent && !String(data.respondentName || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome de quem está respondendo.", campo:"respondentName" });
+    if (catalog.identity.cycle && !Number(data.cycle || 0)) return res.status(400).json({ ok:false, erro:"Informe o período desta resposta.", campo:"cycle" });
     if (formKey === "aval" && !["Gestor","Anjo"].includes(String(data.role || ""))) return res.status(400).json({ ok:false, erro:"Informe se a resposta é do Gestor ou do Anjo.", campo:"role" });
+    const answers = data.answers && typeof data.answers === "object" ? data.answers : {};
+    for (const section of catalog.sections) {
+      for (const question of section.questions) {
+        const conditionalGestor = question.code === "aval_reacao_feedback" && String(data.role || "") === "Gestor";
+        const required = question.required !== false || conditionalGestor;
+        const value = answers[question.code];
+        if (required && (value === undefined || value === null || String(value).trim() === "")) {
+          return res.status(400).json({ ok:false, erro:`Preencha: ${question.label}`, campo:question.code });
+        }
+        if (question.type === "scale" && value !== undefined && value !== null && String(value).trim() !== "") {
+          const n = Number(value); if (!Number.isInteger(n) || n < 0 || n > 5) return res.status(400).json({ ok:false, erro:`Valor inválido em: ${question.label}`, campo:question.code });
+        }
+      }
+    }
     const match = await findProcess(connection, data);
     if (match.status === "ok") {
       const processoId = Number(match.processo.dbId), cycle = Number(data.cycle || 0), role = String(data.role || "");
