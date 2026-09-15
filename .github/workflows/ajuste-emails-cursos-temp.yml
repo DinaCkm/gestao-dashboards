@@ -1,0 +1,86 @@
+name: Ajuste controlado dos emails de cursos
+
+on:
+  push:
+    branches:
+      - teste-ajuste-emails-cursos-20260915
+
+permissions:
+  contents: write
+
+jobs:
+  ajustar:
+    if: github.event.head_commit.message == 'chore: executar ajuste controlado dos emails de cursos'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: teste-ajuste-emails-cursos-20260915
+
+      - name: Remover somente os blocos solicitados
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('server/emailService.ts')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          # 1) Convite / liberacao do curso: retirar "Como funciona" + 3 passos.
+          func1_start = text.index('export function buildConviteAlunoAutonomoEmail')
+          func1_end = text.index('export function buildBoasVindasAlunoAutonomoEmail', func1_start)
+          func1 = text[func1_start:func1_end]
+
+          start1 = func1.index('              <p style="color: #4a5568; font-size: 15px; line-height: 1.8; margin: 0 0 16px;">\n                <strong>Como funciona:</strong>')
+          end1 = func1.index('              <!-- CTA -->', start1)
+          func1 = func1[:start1] + func1[end1:]
+
+          plain1 = '''Como funciona:\n1. Complete seu cadastro — leva menos de 2 minutos\n2. Responda o diagnóstico — 10 questões, sem caráter eliminatório\n3. Comece o curso — liberado automaticamente no seu Mural\n\n'''
+          if func1.count(plain1) != 1:
+              raise SystemExit(f'ERRO: bloco texto do convite encontrado {func1.count(plain1)} vez(es), esperado 1')
+          func1 = func1.replace(plain1, '', 1)
+          text = text[:func1_start] + func1 + text[func1_end:]
+
+          # 2) Cadastro confirmado: retirar "Proximo passo / Sem pegadinha / Depois disso".
+          func2_start = text.index('export function buildBoasVindasAlunoAutonomoEmail')
+          func2 = text[func2_start:]
+          intro = 'Seus dados foram confirmados e você já está a um passo de começar o curso'
+          intro_pos = func2.index(intro)
+          start2 = func2.index('              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 24px;">', intro_pos)
+          end2 = func2.index('              <!-- CTA Button -->', start2)
+          func2 = func2[:start2] + func2[end2:]
+
+          plain2 = '''Próximo passo: responder uma avaliação diagnóstica rápida (10 questões).\nEste diagnóstico não é eliminatório — é só para sabermos seu ponto de partida.\nDepois disso, seu curso é liberado automaticamente no Mural.\n\n'''
+          if func2.count(plain2) != 1:
+              raise SystemExit(f'ERRO: bloco texto do cadastro confirmado encontrado {func2.count(plain2)} vez(es), esperado 1')
+          func2 = func2.replace(plain2, '', 1)
+          text = text[:func2_start] + func2
+
+          if text == original:
+              raise SystemExit('ERRO: nenhuma alteracao foi realizada')
+
+          # Garantias finais: os textos solicitados nao podem permanecer.
+          proibidos = [
+              '<strong>Como funciona:</strong>',
+              '<strong>1. Complete seu cadastro</strong> — leva menos de 2 minutos',
+              '<strong>2. Responda o diagnóstico</strong> — 10 questões, sem caráter eliminatório',
+              '<strong>3. Comece o curso</strong> — liberado automaticamente no seu Mural',
+              '<strong>📝 Próximo passo</strong> — Responder uma avaliação diagnóstica rápida (10 questões)',
+              '<strong>📊 Sem pegadinha</strong> — Este diagnóstico não é eliminatório, é só para vermos seu ponto de partida',
+              '<strong>🚀 Depois disso</strong> — Seu curso é liberado automaticamente no Mural',
+          ]
+          for item in proibidos:
+              if item in text:
+                  raise SystemExit(f'ERRO: texto ainda presente: {item}')
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Registrar alteracao na branch de teste
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/emailService.ts
+          git diff --cached --quiet && exit 1
+          git commit -m "ajuste: remove instrucoes diagnostico dos emails de curso"
+          git push origin HEAD:teste-ajuste-emails-cursos-20260915
