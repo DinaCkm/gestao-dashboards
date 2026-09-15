@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   ajustar:
-    if: github.event.head_commit.message == 'chore: executar ajuste controlado dos emails de cursos'
+    if: "${{ github.event.head_commit.message == 'chore: executar ajuste controlado dos emails de cursos v2' }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,7 +19,7 @@ jobs:
           ref: teste-ajuste-emails-cursos-20260915
 
       - name: Remover somente os blocos solicitados
-        shell: python
+        shell: python {0}
         run: |
           from pathlib import Path
 
@@ -27,7 +27,6 @@ jobs:
           text = path.read_text(encoding='utf-8')
           original = text
 
-          # 1) Convite / liberacao do curso: retirar "Como funciona" + 3 passos.
           func1_start = text.index('export function buildConviteAlunoAutonomoEmail')
           func1_end = text.index('export function buildBoasVindasAlunoAutonomoEmail', func1_start)
           func1 = text[func1_start:func1_end]
@@ -42,7 +41,6 @@ jobs:
           func1 = func1.replace(plain1, '', 1)
           text = text[:func1_start] + func1 + text[func1_end:]
 
-          # 2) Cadastro confirmado: retirar "Proximo passo / Sem pegadinha / Depois disso".
           func2_start = text.index('export function buildBoasVindasAlunoAutonomoEmail')
           func2 = text[func2_start:]
           intro = 'Seus dados foram confirmados e você já está a um passo de começar o curso'
@@ -60,7 +58,6 @@ jobs:
           if text == original:
               raise SystemExit('ERRO: nenhuma alteracao foi realizada')
 
-          # Garantias finais: os textos solicitados nao podem permanecer.
           proibidos = [
               '<strong>Como funciona:</strong>',
               '<strong>1. Complete seu cadastro</strong> — leva menos de 2 minutos',
