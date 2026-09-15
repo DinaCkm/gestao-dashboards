@@ -73,7 +73,6 @@ jobs:
 
           routes = Path('server/programaIntegracaoRoutes.ts')
           r = routes.read_text(encoding='utf-8')
-          catalog_import_anchor = 'import {\n  PROGRAMA_INTEGRACAO_ESCALAS,\n'
           if 'PROGRAMA_INTEGRACAO_CATALOG' not in r:
               r = r.replace('import { Router, type NextFunction, type Request, type Response } from "express";\n', 'import { Router, type NextFunction, type Request, type Response } from "express";\nimport { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";\n', 1)
           validation_anchor = '''    const data = req.body || {}; if (!String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome do colaborador.", campo:"nomeColaborador" });\n    if ((formKey === "pesquisa") && !String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe seu nome." });\n    if ((formKey === "pesquisa" || formKey === "aval" || formKey === "pdi") && !Number(data.cycle || 0)) return res.status(400).json({ ok:false, erro:"Informe o período desta resposta.", campo:"cycle" });\n    if (formKey === "aval" && !["Gestor","Anjo"].includes(String(data.role || ""))) return res.status(400).json({ ok:false, erro:"Informe se a resposta é do Gestor ou do Anjo.", campo:"role" });\n'''
@@ -134,4 +133,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add server/_core/index.ts client/src/components/DashboardLayout.tsx server/programaIntegracaoCatalog.ts server/programaIntegracaoRoutes.ts server/programaIntegracaoPages.ts
           git commit -m "feat(integracao): valida campos e conecta modulo ao EcoLider"
+          git fetch origin integracao-programa-producao-20260915
+          git rebase origin/integracao-programa-producao-20260915
           git push origin HEAD:integracao-programa-producao-20260915
