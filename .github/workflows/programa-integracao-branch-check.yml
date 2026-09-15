@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Aplicar patches localizados
+      - name: Aplicar patches localizados e correcoes do modulo
         shell: python
         run: |
           from pathlib import Path
@@ -64,6 +64,33 @@ jobs:
               if menu_anchor not in d: raise SystemExit('Anchor do menu administrativo nao encontrado')
               d = d.replace(menu_anchor, menu_new, 1)
           dash.write_text(d, encoding='utf-8')
+
+          catalog = Path('server/programaIntegracaoCatalog.ts')
+          c = catalog.read_text(encoding='utf-8')
+          c = c.replace('text("aval_reacao_feedback","Qual foi a reação que o novo colaborador teve no feedback? (Somente Gestor)",true,', 'text("aval_reacao_feedback","Qual foi a reação que o novo colaborador teve no feedback? (Somente Gestor)",false,')
+          c = c.replace('cycleOptions:[{value:"2",cycle:2,label:"45º dia"},{value:"4",cycle:4,label:"150º dia / fechamento aplicável"}],', 'cycleOptions:[{value:"2",cycle:2,label:"45º dia"},{value:"60",cycle:4,label:"60º dia (Crossboarding - finalização)"},{value:"150",cycle:4,label:"150º dia (Onboarding - finalização)"}],')
+          catalog.write_text(c, encoding='utf-8')
+
+          routes = Path('server/programaIntegracaoRoutes.ts')
+          r = routes.read_text(encoding='utf-8')
+          catalog_import_anchor = 'import {\n  PROGRAMA_INTEGRACAO_ESCALAS,\n'
+          if 'PROGRAMA_INTEGRACAO_CATALOG' not in r:
+              r = r.replace('import { Router, type NextFunction, type Request, type Response } from "express";\n', 'import { Router, type NextFunction, type Request, type Response } from "express";\nimport { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";\n', 1)
+          validation_anchor = '''    const data = req.body || {}; if (!String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome do colaborador.", campo:"nomeColaborador" });\n    if ((formKey === "pesquisa") && !String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe seu nome." });\n    if ((formKey === "pesquisa" || formKey === "aval" || formKey === "pdi") && !Number(data.cycle || 0)) return res.status(400).json({ ok:false, erro:"Informe o período desta resposta.", campo:"cycle" });\n    if (formKey === "aval" && !["Gestor","Anjo"].includes(String(data.role || ""))) return res.status(400).json({ ok:false, erro:"Informe se a resposta é do Gestor ou do Anjo.", campo:"role" });\n'''
+          validation_new = '''    const data = req.body || {}; if (!String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome do colaborador.", campo:"nomeColaborador" });\n    const catalog = PROGRAMA_INTEGRACAO_CATALOG[req.params.slug];\n    if (!catalog) return res.status(404).json({ ok:false, erro:"Formulário não encontrado." });\n    if (catalog.identity.unidade && !String(data.unidade || "").trim()) return res.status(400).json({ ok:false, erro:"Informe a unidade.", campo:"unidade" });\n    if (catalog.identity.dataInicio && !String(data.dataInicio || "").trim()) return res.status(400).json({ ok:false, erro:"Informe a data de início.", campo:"dataInicio" });\n    if (catalog.identity.respondent && !String(data.respondentName || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome de quem está respondendo.", campo:"respondentName" });\n    if (catalog.identity.cycle && !Number(data.cycle || 0)) return res.status(400).json({ ok:false, erro:"Informe o período desta resposta.", campo:"cycle" });\n    if (formKey === "aval" && !["Gestor","Anjo"].includes(String(data.role || ""))) return res.status(400).json({ ok:false, erro:"Informe se a resposta é do Gestor ou do Anjo.", campo:"role" });\n    const answers = data.answers && typeof data.answers === "object" ? data.answers : {};\n    for (const section of catalog.sections) {\n      for (const question of section.questions) {\n        const conditionalGestor = question.code === "aval_reacao_feedback" && String(data.role || "") === "Gestor";\n        const required = question.required !== false || conditionalGestor;\n        const value = answers[question.code];\n        if (required && (value === undefined || value === null || String(value).trim() === "")) {\n          return res.status(400).json({ ok:false, erro:`Preencha: ${question.label}`, campo:question.code });\n        }\n        if (question.type === "scale" && value !== undefined && value !== null && String(value).trim() !== "") {\n          const n = Number(value); if (!Number.isInteger(n) || n < 0 || n > 5) return res.status(400).json({ ok:false, erro:`Valor inválido em: ${question.label}`, campo:question.code });\n        }\n      }\n    }\n'''
+          if validation_anchor in r:
+              r = r.replace(validation_anchor, validation_new, 1)
+          elif 'const conditionalGestor' not in r:
+              raise SystemExit('Anchor de validacao publica nao encontrado')
+          routes.write_text(r, encoding='utf-8')
+
+          pages = Path('server/programaIntegracaoPages.ts')
+          p = pages.read_text(encoding='utf-8')
+          client_anchor = '''if(q.required!==false&&(!v&&String(v)!=='0')){error='Preencha: '+q.label;break;}'''
+          client_new = '''const conditionalGestor=q.code==='aval_reacao_feedback'&&values.role==='Gestor';if((q.required!==false||conditionalGestor)&&(!v&&String(v)!=='0')){error='Preencha: '+q.label;break;}'''
+          if client_anchor in p:
+              p = p.replace(client_anchor, client_new, 1)
+          pages.write_text(p, encoding='utf-8')
 
       - name: Instalar dependencias
         run: corepack enable && pnpm install --no-frozen-lockfile
@@ -99,12 +126,12 @@ jobs:
 
       - name: Commitar somente patches validados
         run: |
-          if git diff --quiet -- server/_core/index.ts client/src/components/DashboardLayout.tsx; then
+          if git diff --quiet -- server/_core/index.ts client/src/components/DashboardLayout.tsx server/programaIntegracaoCatalog.ts server/programaIntegracaoRoutes.ts server/programaIntegracaoPages.ts; then
             echo "Patches ja aplicados."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add server/_core/index.ts client/src/components/DashboardLayout.tsx
-          git commit -m "feat(integracao): conecta modulo ao servidor e menu"
+          git add server/_core/index.ts client/src/components/DashboardLayout.tsx server/programaIntegracaoCatalog.ts server/programaIntegracaoRoutes.ts server/programaIntegracaoPages.ts
+          git commit -m "feat(integracao): valida campos e conecta modulo ao EcoLider"
           git push origin HEAD:integracao-programa-producao-20260915
