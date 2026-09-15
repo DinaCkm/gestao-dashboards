@@ -1,10 +1,17 @@
 import express from "express";
 import mysql from "mysql2/promise";
-import { programaIntegracaoRouter } from "../server/programaIntegracaoRoutes";
-import { PROGRAMA_INTEGRACAO_CATALOG } from "../server/programaIntegracaoCatalog";
 
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL ausente");
+  process.env.JWT_SECRET ||= "ci-programa-integracao-smoke-secret-nao-producao";
+
+  // Importação dinâmica: o segredo fictício existe apenas neste processo de CI,
+  // antes do carregamento do SDK de autenticação da aplicação.
+  const [{ programaIntegracaoRouter }, { PROGRAMA_INTEGRACAO_CATALOG }] = await Promise.all([
+    import("../server/programaIntegracaoRoutes"),
+    import("../server/programaIntegracaoCatalog"),
+  ]);
+
   const db = await mysql.createConnection(process.env.DATABASE_URL);
   try {
     const estado = { feito: {}, alin: {}, bem: {}, teste: {} };
