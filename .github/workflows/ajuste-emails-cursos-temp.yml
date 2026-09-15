@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   ajustar:
-    if: "${{ github.event.head_commit.message == 'chore: executar ajuste controlado dos emails de cursos v3' }}"
+    if: "${{ github.event.head_commit.message == 'chore: executar ajuste controlado dos emails de cursos v4' }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,51 +27,39 @@ jobs:
           text = path.read_text(encoding='utf-8')
           original = text
 
-          # E-mail 1: convite/liberacao do curso.
-          func1_start = text.index('export function buildConviteAlunoAutonomoEmail')
-          func1_end = text.index('export function buildBoasVindasAlunoAutonomoEmail', func1_start)
-          func1 = text[func1_start:func1_end]
-
           marker1 = '<strong>Como funciona:</strong>'
-          if func1.count(marker1) != 1:
-              raise SystemExit(f'ERRO: marcador Como funciona encontrado {func1.count(marker1)} vez(es), esperado 1')
-          marker1_pos = func1.index(marker1)
-          start1 = func1.rfind('              <p ', 0, marker1_pos)
-          end1 = func1.index('              <!-- CTA -->', marker1_pos)
+          if text.count(marker1) != 1:
+              raise SystemExit(f'ERRO: marcador Como funciona encontrado {text.count(marker1)} vez(es), esperado 1')
+          marker1_pos = text.index(marker1)
+          start1 = text.rfind('              <p ', 0, marker1_pos)
+          end1 = text.index('              <!-- CTA -->', marker1_pos)
           if start1 < 0 or end1 <= start1:
               raise SystemExit('ERRO: limites do bloco HTML do convite nao encontrados com seguranca')
-          func1 = func1[:start1] + func1[end1:]
+          text = text[:start1] + text[end1:]
 
           plain1 = '''Como funciona:\n1. Complete seu cadastro — leva menos de 2 minutos\n2. Responda o diagnóstico — 10 questões, sem caráter eliminatório\n3. Comece o curso — liberado automaticamente no seu Mural\n\n'''
-          if func1.count(plain1) != 1:
-              raise SystemExit(f'ERRO: bloco texto do convite encontrado {func1.count(plain1)} vez(es), esperado 1')
-          func1 = func1.replace(plain1, '', 1)
-          text = text[:func1_start] + func1 + text[func1_end:]
-
-          # E-mail 2: cadastro confirmado.
-          func2_start = text.index('export function buildBoasVindasAlunoAutonomoEmail')
-          func2 = text[func2_start:]
+          if text.count(plain1) != 1:
+              raise SystemExit(f'ERRO: bloco texto do convite encontrado {text.count(plain1)} vez(es), esperado 1')
+          text = text.replace(plain1, '', 1)
 
           marker2 = '<strong>📝 Próximo passo</strong>'
-          if func2.count(marker2) != 1:
-              raise SystemExit(f'ERRO: marcador Proximo passo encontrado {func2.count(marker2)} vez(es), esperado 1')
-          marker2_pos = func2.index(marker2)
-          start2 = func2.rfind('              <table role="presentation"', 0, marker2_pos)
-          end2 = func2.index('              <!-- CTA Button -->', marker2_pos)
+          if text.count(marker2) != 1:
+              raise SystemExit(f'ERRO: marcador Proximo passo encontrado {text.count(marker2)} vez(es), esperado 1')
+          marker2_pos = text.index(marker2)
+          start2 = text.rfind('              <table role="presentation"', 0, marker2_pos)
+          end2 = text.index('              <!-- CTA Button -->', marker2_pos)
           if start2 < 0 or end2 <= start2:
               raise SystemExit('ERRO: limites do bloco HTML do cadastro confirmado nao encontrados com seguranca')
-          func2 = func2[:start2] + func2[end2:]
+          text = text[:start2] + text[end2:]
 
           plain2 = '''Próximo passo: responder uma avaliação diagnóstica rápida (10 questões).\nEste diagnóstico não é eliminatório — é só para sabermos seu ponto de partida.\nDepois disso, seu curso é liberado automaticamente no Mural.\n\n'''
-          if func2.count(plain2) != 1:
-              raise SystemExit(f'ERRO: bloco texto do cadastro confirmado encontrado {func2.count(plain2)} vez(es), esperado 1')
-          func2 = func2.replace(plain2, '', 1)
-          text = text[:func2_start] + func2
+          if text.count(plain2) != 1:
+              raise SystemExit(f'ERRO: bloco texto do cadastro confirmado encontrado {text.count(plain2)} vez(es), esperado 1')
+          text = text.replace(plain2, '', 1)
 
           if text == original:
               raise SystemExit('ERRO: nenhuma alteracao foi realizada')
 
-          # Garantias finais: somente os textos pedidos devem desaparecer.
           proibidos = [
               '<strong>Como funciona:</strong>',
               '<strong>1. Complete seu cadastro</strong> — leva menos de 2 minutos',
@@ -88,7 +76,6 @@ jobs:
               if item in text:
                   raise SystemExit(f'ERRO: texto solicitado ainda presente: {item}')
 
-          # Garantias de preservacao: botoes e funcoes continuam presentes.
           obrigatorios = [
               'export function buildConviteAlunoAutonomoEmail',
               'Acessar Meu Curso →',
