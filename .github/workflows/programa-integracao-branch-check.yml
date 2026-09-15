@@ -12,6 +12,21 @@ permissions:
 jobs:
   patch-and-check:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: railway
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/railway
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,10 +68,33 @@ jobs:
       - name: Instalar dependencias
         run: corepack enable && pnpm install --no-frozen-lockfile
 
-      - name: TypeScript check
-        run: pnpm check
+      - name: Compilar arquivos novos isoladamente
+        run: |
+          pnpm exec esbuild server/programaIntegracaoDefinitions.ts --platform=node --packages=external --bundle --format=esm --outfile=/tmp/pi-definitions.mjs
+          pnpm exec esbuild server/programaIntegracaoCatalog.ts --platform=node --packages=external --bundle --format=esm --outfile=/tmp/pi-catalog.mjs
+          pnpm exec esbuild server/programaIntegracaoPages.ts --platform=node --packages=external --bundle --format=esm --outfile=/tmp/pi-pages.mjs
+          pnpm exec esbuild server/programaIntegracaoRoutes.ts --platform=node --packages=external --bundle --format=esm --outfile=/tmp/pi-routes.mjs
 
-      - name: Build
+      - name: Testar migracao em MySQL descartavel
+        run: node scripts/migrate-programa-integracao.mjs
+
+      - name: Confirmar quatro tabelas vazias no MySQL descartavel
+        run: |
+          node - <<'NODE'
+          const mysql = require('mysql2/promise');
+          (async()=>{
+            const c=await mysql.createConnection(process.env.DATABASE_URL);
+            const names=['programa_integracao_processos','programa_integracao_respostas','programa_integracao_config','programa_integracao_auditoria'];
+            for(const name of names){
+              const [r]=await c.query('SELECT COUNT(*) total FROM `'+name+'`');
+              if(Number(r[0].total)!==0) throw new Error(name+' nao esta vazia');
+              console.log(name+': OK');
+            }
+            await c.end();
+          })().catch(e=>{console.error(e);process.exit(1)})
+          NODE
+
+      - name: Build igual ao deploy de producao
         run: pnpm build
 
       - name: Commitar somente patches validados
