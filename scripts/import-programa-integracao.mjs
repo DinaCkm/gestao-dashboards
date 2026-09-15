@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import { createHash } from 'crypto';
+import { gunzipSync } from 'zlib';
 
 const QUESTION_INDEX_MAPS = {
   bem: {
@@ -51,28 +52,52 @@ function hashDedupeKey(legacyId, form, ciclo, papel, rid) {
   return createHash('sha256').update(key).digest('hex').substring(0, 255);
 }
 
-async function importProgramaIntegracao() {
-  const importB64 = process.env.PROGRAMA_INTEGRACAO_IMPORT_B64;
-  const databaseUrl = process.env.DATABASE_URL;
+function decodeImportData() {
+  const gzipB64 = process.env.PROGRAMA_INTEGRACAO_IMPORT_GZIP_B64;
+  const plainB64 = process.env.PROGRAMA_INTEGRACAO_IMPORT_B64;
 
-  if (!importB64) {
-    console.error('Error: PROGRAMA_INTEGRACAO_IMPORT_B64 environment variable not set');
-    process.exit(1);
+  let importData;
+
+  // Preferência: gzip com descompressão
+  if (gzipB64) {
+    try {
+      const compressed = Buffer.from(gzipB64, 'base64');
+      const jsonStr = gunzipSync(compressed).toString('utf-8');
+      importData = JSON.parse(jsonStr);
+      console.log('✓ Decoded via PROGRAMA_INTEGRACAO_IMPORT_GZIP_B64 + gunzip');
+      return importData;
+    } catch (err) {
+      console.error('Error: Failed to decompress or parse PROGRAMA_INTEGRACAO_IMPORT_GZIP_B64:', err.message);
+      process.exit(1);
+    }
   }
+
+  // Fallback: plain base64
+  if (plainB64) {
+    try {
+      const jsonStr = Buffer.from(plainB64, 'base64').toString('utf-8');
+      importData = JSON.parse(jsonStr);
+      console.log('✓ Decoded via PROGRAMA_INTEGRACAO_IMPORT_B64 (fallback)');
+      return importData;
+    } catch (err) {
+      console.error('Error: Failed to decode or parse PROGRAMA_INTEGRACAO_IMPORT_B64:', err.message);
+      process.exit(1);
+    }
+  }
+
+  console.error('Error: Neither PROGRAMA_INTEGRACAO_IMPORT_GZIP_B64 nor PROGRAMA_INTEGRACAO_IMPORT_B64 set');
+  process.exit(1);
+}
+
+async function importProgramaIntegracao() {
+  const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
     console.error('Error: DATABASE_URL environment variable not set');
     process.exit(1);
   }
 
-  let importData;
-  try {
-    const jsonStr = Buffer.from(importB64, 'base64').toString('utf-8');
-    importData = JSON.parse(jsonStr);
-  } catch (err) {
-    console.error('Error: Failed to decode or parse PROGRAMA_INTEGRACAO_IMPORT_B64:', err.message);
-    process.exit(1);
-  }
+  const importData = decodeImportData();
 
   if (typeof importData.processos !== 'object' || importData.processos === null) {
     console.error('Error: Invalid import data format - processos must be an object');
@@ -90,6 +115,7 @@ async function importProgramaIntegracao() {
     let legacyIds = new Set();
     let legacyRids = new Set();
     let processoIdMap = {};
+    let processoRidsMap = {}; // para validação final: processoId -> [rids esperados]
 
     // Derivar ordem dos processos a partir de importData.config.ordem
     const configOrdem = Array.isArray(importData.config?.ordem) ? importData.config.ordem : [];
@@ -150,7 +176,10 @@ async function importProgramaIntegracao() {
       const processoId = result.insertId ||
         (await connection.query(`SELECT id FROM programa_integracao_processos WHERE legacyId = ?`, [legacyId]))[0][0]?.id;
 
-      if (processoId) processoIdMap[legacyId] = processoId;
+      if (processoId) {
+        processoIdMap[legacyId] = processoId;
+        processoRidsMap[processoId] = [];
+      }
       processosImportados++;
 
       if (Array.isArray(processo.resp)) {
@@ -158,6 +187,10 @@ async function importProgramaIntegracao() {
           if (!resposta.rid) continue;
 
           legacyRids.add(resposta.rid);
+          if (processoId) {
+            processoRidsMap[processoId].push(resposta.rid);
+          }
+
           const formKey = resposta.form || 'bem';
           const ciclo = resposta.ciclo ?? 0;
           const papel = resposta.papel || null;
@@ -165,6 +198,12 @@ async function importProgramaIntegracao() {
           const answers = convertLegacyAnswers(resposta.c || [], formKey);
           const statusResposta = resposta.status || 'valido';
           const submittedAt = parseSubmittedAt(resposta.em);
+
+          // SELECT para validar existência por legacyRid
+          const [existingRows] = await connection.query(
+            `SELECT id, legacyRid, protocolo, dedupeKey FROM programa_integracao_respostas WHERE legacyRid = ? LIMIT 1`,
+            [resposta.rid]
+          );
 
           const respostaValues = [
             processoId || null, resposta.rid, resposta.protocolo || null, dedupeKey, formKey, ciclo, papel,
@@ -176,84 +215,134 @@ async function importProgramaIntegracao() {
             null, resposta.quando || null, resposta.em || null, submittedAt,
           ];
 
-          await connection.query(
-            `INSERT INTO programa_integracao_respostas
-             (processoId, legacyRid, protocolo, dedupeKey, formKey, ciclo, papel, itemId, formVersion,
-              statusVinculo, statusResposta, motivoPendencia, candidatos, nomeColaborador, unidade, dataInicio,
-              emailColaborador, nomeOrig, avaliador, respondentName, respondentEmail, source, media, alertas,
-              answers, colunasOriginais, quandoOriginal, emOriginal, submittedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE answers = VALUES(answers), statusResposta = VALUES(statusResposta), updatedAt = NOW()`,
-            respostaValues
-          );
+          if (existingRows.length > 0) {
+            // UPDATE: apenas esse id com campos históricos, explicitamente statusVinculo='vinculada'
+            const existingId = existingRows[0].id;
+            const updateValues = [
+              processoId || null, dedupeKey, formKey, ciclo, papel,
+              resposta.itid || null, 1, 'vinculada', statusResposta, null, null, resposta.nomeColaborador || null,
+              resposta.unidade || null, resposta.dataInicio ? normalizeDateBR(resposta.dataInicio) : null,
+              resposta.emailColaborador || null, resposta.nomeOrig || null, resposta.avaliador || null,
+              resposta.respondentName || null, resposta.respondentEmail || null, 'importacao',
+              resposta.media || null, JSON.stringify(resposta.alertas || {}), JSON.stringify(answers),
+              null, resposta.quando || null, resposta.em || null, submittedAt,
+              existingId
+            ];
+
+            await connection.query(
+              `UPDATE programa_integracao_respostas SET
+                 processoId = ?, dedupeKey = ?, formKey = ?, ciclo = ?, papel = ?,
+                 itemId = ?, formVersion = ?, statusVinculo = ?, statusResposta = ?, motivoPendencia = ?,
+                 candidatos = ?, nomeColaborador = ?, unidade = ?, dataInicio = ?,
+                 emailColaborador = ?, nomeOrig = ?, avaliador = ?,
+                 respondentName = ?, respondentEmail = ?, source = ?,
+                 media = ?, alertas = ?, answers = ?,
+                 colunasOriginais = ?, quandoOriginal = ?, emOriginal = ?, submittedAt = ?,
+                 updatedAt = NOW()
+               WHERE id = ?`,
+              updateValues
+            );
+          } else {
+            // INSERT: novo registro
+            await connection.query(
+              `INSERT INTO programa_integracao_respostas
+               (processoId, legacyRid, protocolo, dedupeKey, formKey, ciclo, papel, itemId, formVersion,
+                statusVinculo, statusResposta, motivoPendencia, candidatos, nomeColaborador, unidade, dataInicio,
+                emailColaborador, nomeOrig, avaliador, respondentName, respondentEmail, source, media, alertas,
+                answers, colunasOriginais, quandoOriginal, emOriginal, submittedAt)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              respostaValues
+            );
+          }
 
           respostasImportadas++;
         }
       }
     }
 
-    // Config: merge conservador - ler existente, sanitizar import, preservar campos já existentes
+    // Config: APENAS ordem. Nenhum outro campo histórico.
     let existingConfig = {};
     try {
       const [rows] = await connection.query(
         `SELECT valor FROM programa_integracao_config WHERE chave = 'geral'`
       );
       if (rows.length > 0) {
-        existingConfig = JSON.parse(rows[0].valor || '{}');
+        const valor = rows[0].valor;
+        existingConfig = typeof valor === 'string' ? JSON.parse(valor) : (valor || {});
       }
     } catch (e) {
       existingConfig = {};
     }
 
-    if (importData.config && typeof importData.config === 'object') {
-      const cfg = importData.config;
+    // Filtrar ordem aos legacyIds válidos
+    const novaOrdem = Array.isArray(importData.config?.ordem)
+      ? importData.config.ordem.filter(id => legacyIds.has(id))
+      : [];
 
-      // Sanitizar: remover linksPublicos e respostasPendentes
-      const sanitized = { ...cfg };
-      delete sanitized.linksPublicos;
-      delete sanitized.respostasPendentes;
+    // Merge SOMENTE ordem: {...existingConfig, ordem: novaOrdem}
+    const novaConfig = {
+      ...existingConfig,
+      ordem: novaOrdem,
+    };
 
-      // Filtrar ordem aos legacyIds válidos
-      const novaOrdem = Array.isArray(sanitized.ordem) ? sanitized.ordem.filter(id => legacyIds.has(id)) : [];
+    await connection.query(
+      `INSERT INTO programa_integracao_config (chave, valor) VALUES ('geral', ?)
+       ON DUPLICATE KEY UPDATE valor = VALUES(valor), updatedAt = NOW()`,
+      [JSON.stringify(novaConfig)]
+    );
 
-      // Merge conservador: preservar campos existentes, atualizar apenas ordem e campos importados
-      const novaConfig = {
-        ...existingConfig,
-        ...sanitized,
-        ordem: novaOrdem,
-      };
+    // Validação final: verificar relação correta rid -> processo
+    for (const [processoId, expectedRids] of Object.entries(processoRidsMap)) {
+      if (expectedRids.length === 0) continue;
 
-      await connection.query(
-        `INSERT INTO programa_integracao_config (chave, valor) VALUES ('geral', ?)
-         ON DUPLICATE KEY UPDATE valor = VALUES(valor), updatedAt = NOW()`,
-        [JSON.stringify(novaConfig)]
+      const [respCheckRows] = await connection.query(
+        `SELECT legacyRid, statusVinculo FROM programa_integracao_respostas
+         WHERE processoId = ? AND legacyRid IN (${expectedRids.map(() => '?').join(',')})`,
+        [parseInt(processoId), ...expectedRids]
       );
+
+      if (respCheckRows.length !== expectedRids.length) {
+        throw new Error(
+          `Validação resposta-processo falhou: esperados ${expectedRids.length} rids, encontrados ${respCheckRows.length} para processoId ${processoId}`
+        );
+      }
+
+      for (const row of respCheckRows) {
+        if (row.statusVinculo !== 'vinculada') {
+          throw new Error(
+            `Validação statusVinculo falhou: legacyRid ${row.legacyRid} com status ${row.statusVinculo} != 'vinculada'`
+          );
+        }
+      }
     }
 
-    // Validação final
-    const [procCheck] = await connection.query(
-      `SELECT COUNT(*) as count FROM programa_integracao_processos WHERE legacyId IN (${Array.from(legacyIds).map(() => '?').join(',')})`,
-      Array.from(legacyIds)
-    );
+    // Validação final: todos os legacyIds/legacyRids existem
+    if (legacyIds.size > 0) {
+      const [procCheck] = await connection.query(
+        `SELECT COUNT(*) as count FROM programa_integracao_processos WHERE legacyId IN (${Array.from(legacyIds).map(() => '?').join(',')})`,
+        Array.from(legacyIds)
+      );
 
-    const [respCheck] = await connection.query(
-      `SELECT COUNT(*) as count FROM programa_integracao_respostas WHERE legacyRid IN (${Array.from(legacyRids).length > 0 ? Array.from(legacyRids).map(() => '?').join(',') : 'NULL'})`,
-      Array.from(legacyRids).length > 0 ? Array.from(legacyRids) : []
-    );
-
-    const procCount = procCheck[0].count;
-    const respCount = respCheck[0].count;
-
-    if (procCount !== legacyIds.size) {
-      throw new Error(`Validação processos: ${legacyIds.size} esperados, ${procCount} encontrados`);
+      const procCount = procCheck[0].count;
+      if (procCount !== legacyIds.size) {
+        throw new Error(`Validação processos: ${legacyIds.size} esperados, ${procCount} encontrados`);
+      }
     }
 
-    if (legacyRids.size > 0 && respCount !== legacyRids.size) {
-      throw new Error(`Validação respostas: ${legacyRids.size} esperadas, ${respCount} encontradas`);
+    if (legacyRids.size > 0) {
+      const [respCheck] = await connection.query(
+        `SELECT COUNT(*) as count FROM programa_integracao_respostas WHERE legacyRid IN (${Array.from(legacyRids).map(() => '?').join(',')})`,
+        Array.from(legacyRids)
+      );
+
+      const respCount = respCheck[0].count;
+      if (respCount !== legacyRids.size) {
+        throw new Error(`Validação respostas: ${legacyRids.size} esperadas, ${respCount} encontradas`);
+      }
     }
 
     console.log(`Import: ${processosImportados} processos, ${processosIgnorados} ignorados, ${respostasImportadas} respostas`);
-    console.log(`Verify: ${procCount} processos, ${respCount} respostas`);
+    console.log(`Verify: ${legacyIds.size} legacyIds, ${legacyRids.size} legacyRids validados`);
 
     await connection.commit();
   } catch (err) {

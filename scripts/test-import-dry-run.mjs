@@ -1,3 +1,5 @@
+import { gzipSync, gunzipSync } from 'zlib';
+
 const QUESTION_INDEX_MAPS = {
   bem: {
     5: 'bem_gestor', 6: 'bem_unidade', 7: 'bem_colaborador', 8: 'bem_data_inicio', 9: 'bem_funcao',
@@ -28,6 +30,20 @@ function validateAndConvert(importData) {
   return results;
 }
 
+function testGzipRoundtrip() {
+  try {
+    const testData = { test: 'data', value: 123 };
+    const jsonStr = JSON.stringify(testData);
+    const compressed = gzipSync(jsonStr);
+    const decompressed = gunzipSync(compressed).toString('utf-8');
+    const result = JSON.parse(decompressed);
+    return result.test === 'data' && result.value === 123;
+  } catch (e) {
+    console.error('gzip test error:', e.message);
+    return false;
+  }
+}
+
 const testCases = [
   {
     name: '4 válidos + 1 vazio, 2 resp cada = 4/1/8',
@@ -44,9 +60,9 @@ const testCases = [
     expected: { processosImportados: 4, processosIgnorados: 1, respostasImportadas: 8 },
   },
   {
-    name: 'Ordem derivada e filtrada, sanitização config',
+    name: 'Ordem derivada e filtrada, config SOMENTE ordem',
     data: {
-      config: { ordem: ['la', 'lb', 'invalid'], linksPublicos: ['x'], respostasPendentes: ['y'] },
+      config: { ordem: ['la', 'lb', 'invalid'], formConfig: 'drop', linksPublicos: 'drop' },
       processos: {
         la: { nome: 'A', inicio: '2026-01-01', resp: [{ rid: 'ra', c: [[14, 'T']] }] },
         lb: { nome: 'B', inicio: '2026-01-02', resp: [{ rid: 'rb', c: [[15, 'T']] }] },
@@ -74,6 +90,7 @@ const testCases = [
 
 console.log('=== Dry-Run Test (Realista) ===\n');
 let passed = 0, failed = 0;
+
 for (const test of testCases) {
   try {
     const result = validateAndConvert(test.data);
@@ -93,5 +110,21 @@ for (const test of testCases) {
     failed++;
   }
 }
-console.log(`=== Summary: ${passed}/${testCases.length} passed ===`);
+
+// Test gzip roundtrip (real gzipSync + gunzipSync)
+try {
+  const gzipOk = testGzipRoundtrip();
+  if (gzipOk) {
+    console.log(`✓ gzip roundtrip (gzipSync + gunzipSync) OK\n`);
+    passed++;
+  } else {
+    console.log(`✗ gzip roundtrip failed\n`);
+    failed++;
+  }
+} catch (e) {
+  console.log(`✗ gzip roundtrip error: ${e.message}\n`);
+  failed++;
+}
+
+console.log(`=== Summary: ${passed}/${testCases.length + 1} passed ===`);
 process.exit(failed > 0 ? 1 : 0);
