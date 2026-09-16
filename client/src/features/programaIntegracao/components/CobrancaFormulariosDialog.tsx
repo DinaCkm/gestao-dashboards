@@ -206,10 +206,11 @@ export function CobrancaFormulariosDialog({
 interface FinalProps {
   processo: ProcessoIntegracao;
   feriados?: string[];
-  onCobrar: (papel?: PapelCobranca) => void;
+  onVerTodas: () => void;
+  onCobrarPapel: (papel: PapelCobranca) => void;
 }
 
-export function CobrancaFinalPainel({ processo, feriados = [], onCobrar }: FinalProps) {
+export function CobrancaFinalPainel({ processo, feriados = [], onVerTodas, onCobrarPapel }: FinalProps) {
   const resumo = useMemo(() => pendentesCiclo(processo, 4, feriados), [processo, feriados]);
 
   return (
@@ -219,7 +220,7 @@ export function CobrancaFinalPainel({ processo, feriados = [], onCobrar }: Final
         {resumo.total
           ? <Badge variant="destructive">{resumo.total} {resumo.total === 1 ? 'formulário em aberto' : 'formulários em aberto'}</Badge>
           : <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800">todos respondidos</Badge>}
-        <Button type="button" size="sm" variant="ghost" className="ml-auto" onClick={() => onCobrar()}>Ver todas as pendências do processo</Button>
+        <Button type="button" size="sm" variant="ghost" className="ml-auto" onClick={onVerTodas}>Ver todas as pendências do processo</Button>
       </div>
 
       {resumo.total ? (
@@ -237,7 +238,7 @@ export function CobrancaFinalPainel({ processo, feriados = [], onCobrar }: Final
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{lista.length}</Badge>
-                  <Button type="button" size="sm" onClick={() => onCobrar(papel)}>Cobrar por e-mail</Button>
+                  <Button type="button" size="sm" onClick={() => onCobrarPapel(papel)}>Cobrar por e-mail</Button>
                 </div>
               </div>
             );
