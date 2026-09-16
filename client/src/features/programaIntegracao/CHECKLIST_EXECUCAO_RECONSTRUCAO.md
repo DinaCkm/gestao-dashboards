@@ -146,10 +146,10 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Regra de texto longo >= 10 na UI base.
 - [x] Protocolo retornado pelo servidor.
 - [x] Sem criação automática de processo em caso ambíguo.
-- [ ] Consumir ativo/inativo e textos personalizados na página pública.
-- [ ] Validar texto longo/CPF/telefone também no servidor.
-- [ ] Aplicar textos/opções/obrigatoriedade personalizados também na validação do servidor.
-- [ ] Implementar política bloquear/substituir/permitir adicional com preservação histórica.
+- [x] Consumir ativo/inativo e textos personalizados na página pública.
+- [x] Validar texto longo/CPF/telefone também no servidor.
+- [x] Aplicar textos/opções/obrigatoriedade personalizados também na validação do servidor.
+- [x] Implementar política bloquear/substituir/permitir adicional com preservação histórica.
 
 ## 11. Administração dos formulários
 - [x] Estrutura das 6 abas criada.
