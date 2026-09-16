@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
+type StatusGrupo = '' | 'prog' | 'doing' | 'wait' | 'na' | 'wont';
+
 interface PainelSemanaProps {
   processosAtivos: ProcessoIntegracao[];
   feriados?: string[];
@@ -23,6 +25,7 @@ interface PainelSemanaProps {
   onRevisarRespostas?: () => void;
   onConcluirAcao?: (processId: string, itemId: string) => void;
   onConcluirGrupo?: (itemId: string, processIds: string[]) => void;
+  onAplicarStatusGrupo?: (itemId: string, processIds: string[], status: StatusGrupo) => void;
 }
 
 const statusClasses = {
@@ -48,6 +51,7 @@ export function PainelSemana({
   onRevisarRespostas,
   onConcluirAcao,
   onConcluirGrupo,
+  onAplicarStatusGrupo,
 }: PainelSemanaProps) {
   const [filtro, setFiltro] = useState<FiltroPainel>('');
 
@@ -196,16 +200,40 @@ export function PainelSemana({
                       </p>
                     </div>
 
-                    {grupo.pessoas.length > 1 && onConcluirGrupo && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onConcluirGrupo(grupo.itemId, ids)}
-                      >
-                        Marcar as {grupo.pessoas.length} como feitas
-                      </Button>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                      {grupo.pessoas.length > 1 && onConcluirGrupo && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onConcluirGrupo(grupo.itemId, ids)}
+                        >
+                          Marcar as {grupo.pessoas.length} como feitas
+                        </Button>
+                      )}
+
+                      {onAplicarStatusGrupo && (
+                        <select
+                          value="__placeholder__"
+                          onChange={(event) => {
+                            const valor = event.target.value;
+                            if (valor === '__placeholder__') return;
+                            const status: StatusGrupo = valor === '__pendente__' ? '' : valor as StatusGrupo;
+                            onAplicarStatusGrupo(grupo.itemId, ids, status);
+                          }}
+                          className="h-9 max-w-[190px] rounded-md border border-input bg-background px-3 py-1 text-sm"
+                          title="Aplicar a mesma situação a todas as pessoas desta tarefa"
+                        >
+                          <option value="__placeholder__">Aplicar a {grupo.pessoas.length > 1 ? `todas as ${grupo.pessoas.length}` : 'esta'}…</option>
+                          <option value="__pendente__">Pendente</option>
+                          <option value="prog">Programado</option>
+                          <option value="doing">Em andamento</option>
+                          <option value="wait">Aguardando resposta</option>
+                          <option value="na">Não se aplica</option>
+                          <option value="wont">Não será feita</option>
+                        </select>
+                      )}
+                    </div>
                   </div>
                 </div>
 
