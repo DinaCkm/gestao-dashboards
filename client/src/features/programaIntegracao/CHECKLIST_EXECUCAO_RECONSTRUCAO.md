@@ -106,17 +106,21 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 
 ## 8. Registrar respostas
 - [x] Importação por texto colado — motor de leitura portado do `03b-forms.js`.
-- [ ] Importação `.csv` — parser pronto; falta ligar seletor de arquivo à tela.
-- [ ] Importação `.tsv` — parser pronto; falta ligar seletor de arquivo à tela.
-- [ ] Importação `.txt` — parser pronto; falta ligar seletor de arquivo à tela.
+- [x] Importação `.csv` com leitura local e análise sem gravação automática.
+- [x] Importação `.tsv` com leitura local e análise sem gravação automática.
+- [x] Importação `.txt` com leitura local e análise sem gravação automática.
 - [x] Detecção automática de separador.
 - [x] Detecção automática de formulário pelo cabeçalho.
 - [x] Reconstrução de células/linhas quebradas do export do Forms.
 - [x] Fuzzy match da pessoa com os mesmos limites históricos `SIM_MIN` e `SIM_BOA`.
-- [ ] Conferência linha por linha na interface.
-- [ ] Política de duplicidade na importação.
+- [x] Conferência linha por linha na interface antes de qualquer gravação.
+- [x] Seleção/correção manual de pessoa, ciclo e papel na conferência.
+- [x] Identificação visual de resposta duplicada e escolha prévia `substituir / manter as duas / não registrar`.
+- [x] Visualização dos dados completos da linha e dos pontos de atenção antes de registrar.
+- [x] Tela ligada à aba real `Registrar respostas` do Programa de Integração.
+- [ ] Política de duplicidade persistida no backend da importação.
 - [ ] Registro em lote.
-- [ ] Resumo final da importação.
+- [ ] Resumo final da importação após persistência real.
 - [ ] Microimportação dentro da ação.
 
 ## 9. Respostas recebidas
