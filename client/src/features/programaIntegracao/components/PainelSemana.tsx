@@ -62,6 +62,10 @@ export function PainelSemana({
     () => processosAtivos.map((processo) => montarCardProcessoPainel(processo, feriados)),
     [processosAtivos, feriados],
   );
+  const idsProcessosFiltrados = useMemo(
+    () => new Set(acoesFiltradas.map((acao) => acao.pid)),
+    [acoesFiltradas],
+  );
 
   const valorKpi = (filtroKpi: FiltroPainel): number => {
     switch (filtroKpi) {
@@ -77,17 +81,7 @@ export function PainelSemana({
 
   const cardPassaFiltro = (card: ReturnType<typeof montarCardProcessoPainel>): boolean => {
     if (!filtro) return true;
-    const proxima = card.proximaEtapa;
-    if (filtro === 'ckm') return card.pendencias.ckm > 0;
-    if (filtro === 'eles') return card.pendencias.eles > 0;
-    if (!proxima) return false;
-    if (filtro === 'late') return proxima.status.k === 'late';
-    if (filtro === 'hoje') return proxima.status.k === 'act' && proxima.status.dif === 0;
-    if (filtro === 'act') return proxima.status.k === 'act' && proxima.status.dif !== 0;
-    if (filtro === 'wait') return proxima.status.k === 'wait';
-    if (filtro === 'lateckm') return proxima.status.k === 'late' && card.pendencias.ckm > 0;
-    if (filtro === 'lateeles') return proxima.status.k === 'late' && card.pendencias.eles > 0;
-    return true;
+    return idsProcessosFiltrados.has(card.processoId);
   };
 
   return (
