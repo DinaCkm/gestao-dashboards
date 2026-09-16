@@ -21,7 +21,7 @@ export interface EtapaPlano {
   dia: number; // Dia após início (pode ser negativo)
   off?: number; // Offset opcional (ex: -1, -7)
   ajuste?: 'prox' | 'ant'; // 'prox' (próximo) ou 'ant' (anterior)
-  mais?: string; // Descrição adicional (ex: 'mais1')
+  mais?: number; // Descrição adicional numérica (ex: 1)
   itens: ItemPlano[];
 }
 
@@ -30,11 +30,11 @@ export interface EtapaPlano {
 // ============================================================
 
 export const PLANO_ETAPAS: EtapaPlano[] = [
-  // ETAPA 1: PRE (dia -1, off: -1, ajuste: ant)
+  // ETAPA 1: PRE (dia 1, off: -1, ajuste: ant)
   {
     id: 'PRE',
     titulo: 'Antes da Chegada',
-    dia: -1,
+    dia: 1,
     off: -1,
     ajuste: 'ant',
     itens: [
@@ -52,11 +52,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 2: D1 (dia 0, ajuste: nenhum)
+  // ETAPA 2: D1 (dia 1)
   {
     id: 'D1',
     titulo: 'Dia 1',
-    dia: 0,
+    dia: 1,
     itens: [
       { id: 'd1-01', titulo: 'Receber', responsavel: 'Gestor' },
       { id: 'd1-02', titulo: 'Avisar veteranos', responsavel: 'Gestor' },
@@ -64,12 +64,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 3: D2 (dia 1, ajuste: prox)
+  // ETAPA 3: D2 (dia 2)
   {
     id: 'D2',
     titulo: 'Dia 2',
-    dia: 1,
-    ajuste: 'prox',
+    dia: 2,
     itens: [
       { id: 'd1-03', titulo: 'Preparar/enviar Agenda', responsavel: 'CKM' },
       { id: 'd2-01', titulo: 'Acolher dia 2', responsavel: 'Gestor' },
@@ -77,12 +76,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 4: D3 (dia 2, ajuste: prox)
+  // ETAPA 4: D3 (dia 3)
   {
     id: 'D3',
     titulo: 'Dia 3',
-    dia: 2,
-    ajuste: 'prox',
+    dia: 3,
     itens: [
       { id: 'd3-01', titulo: 'Liberar Eco BEM + email primeiros passos', responsavel: 'CKM' },
       { id: 'd3-03', titulo: 'Avaliação de Potencial', responsavel: 'Colaborador' },
@@ -90,33 +88,31 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 5: D4 (dia 3, ajuste: prox)
+  // ETAPA 5: D4 (dia 4)
   {
     id: 'D4',
     titulo: 'Dia 4',
-    dia: 3,
-    ajuste: 'prox',
+    dia: 4,
     itens: [
       { id: 'd3-02', titulo: 'Confirmar acesso', responsavel: 'CKM' },
     ],
   },
 
-  // ETAPA 6: SEM1 (dia 6, ajuste: prox)
+  // ETAPA 6: SEM1 (dia 7)
   {
     id: 'SEM1',
     titulo: 'Fim de Semana 1',
-    dia: 6,
-    ajuste: 'prox',
+    dia: 7,
     itens: [
       { id: 'sem1-01', titulo: 'Solicitar registros primeiros dias', responsavel: 'CKM' },
     ],
   },
 
-  // ETAPA 7: AG1 (dia 14, off: -7, ajuste: ant)
+  // ETAPA 7: AG1 (dia 15, off: -7, ajuste: ant)
   {
     id: 'AG1',
     titulo: 'Agendamento 1',
-    dia: 14,
+    dia: 15,
     off: -7,
     ajuste: 'ant',
     itens: [
@@ -127,12 +123,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 8: D15 (dia 14, ajuste: prox)
+  // ETAPA 8: D15 (dia 15)
   {
     id: 'D15',
     titulo: 'Dia 15',
-    dia: 14,
-    ajuste: 'prox',
+    dia: 15,
     itens: [
       { id: 'd15-01', titulo: '1º Feedback', responsavel: 'Gestor' },
       { id: 'd15-02', titulo: 'Mediar/Registrar', responsavel: 'CKM' },
@@ -140,13 +135,12 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 9: POS1 (dia 14, ajuste: prox, mais: 'mais1')
+  // ETAPA 9: POS1 (dia 15, mais: 1)
   {
     id: 'POS1',
     titulo: 'Pós-Integração 1',
-    dia: 14,
-    ajuste: 'prox',
-    mais: 'mais1',
+    dia: 15,
+    mais: 1,
     itens: [
       { id: 'pos1-01', titulo: 'Ata + Relatório', responsavel: 'CKM' },
       { id: 'pos1-02', titulo: 'Consolidar Potencial', responsavel: 'CKM' },
@@ -161,11 +155,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 10: AG2 (dia 44, off: -7, ajuste: ant)
+  // ETAPA 10: AG2 (dia 45, off: -7, ajuste: ant)
   {
     id: 'AG2',
     titulo: 'Agendamento 2',
-    dia: 44,
+    dia: 45,
     off: -7,
     ajuste: 'ant',
     itens: [
@@ -176,12 +170,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 11: D45 (dia 44, ajuste: prox)
+  // ETAPA 11: D45 (dia 45)
   {
     id: 'D45',
     titulo: 'Dia 45',
-    dia: 44,
-    ajuste: 'prox',
+    dia: 45,
     itens: [
       { id: 'd45-01', titulo: '2º Feedback', responsavel: 'Gestor' },
       { id: 'd45-02', titulo: 'Atividades/Projetos dias 31-140', responsavel: 'Gestor' },
@@ -190,13 +183,12 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 12: POS2 (dia 44, ajuste: prox, mais: 'mais1')
+  // ETAPA 12: POS2 (dia 45, mais: 1)
   {
     id: 'POS2',
     titulo: 'Pós-Integração 2',
-    dia: 44,
-    ajuste: 'prox',
-    mais: 'mais1',
+    dia: 45,
+    mais: 1,
     itens: [
       { id: 'pos2-01', titulo: 'Ata + Relatório', responsavel: 'CKM' },
       { id: 'pos2-02', titulo: 'Relatório acompanhamento PDI/UGP', responsavel: 'CKM' },
@@ -211,23 +203,22 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 13: D60 (dia 59, ajuste: prox)
+  // ETAPA 13: D60 (dia 60)
   {
     id: 'D60',
     titulo: 'Dia 60',
-    dia: 59,
-    ajuste: 'prox',
+    dia: 60,
     itens: [
       { id: 'd60-01', titulo: 'Certificado Anjo', responsavel: 'CKM' },
       { id: 'd60-02', titulo: 'Reconhecer/Agradecer Anjo', responsavel: 'Gestor' },
     ],
   },
 
-  // ETAPA 14: AG3 (dia 74, off: -7, ajuste: ant)
+  // ETAPA 14: AG3 (dia 75, off: -7, ajuste: ant)
   {
     id: 'AG3',
     titulo: 'Agendamento 3',
-    dia: 74,
+    dia: 75,
     off: -7,
     ajuste: 'ant',
     itens: [
@@ -238,12 +229,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 15: D75 (dia 74, ajuste: prox)
+  // ETAPA 15: D75 (dia 75)
   {
     id: 'D75',
     titulo: 'Dia 75',
-    dia: 74,
-    ajuste: 'prox',
+    dia: 75,
     itens: [
       { id: 'd75-01', titulo: '3º Feedback com UGP', responsavel: 'Gestor' },
       { id: 'd75-02', titulo: 'Mediar', responsavel: 'CKM' },
@@ -251,13 +241,12 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 16: POS3 (dia 74, ajuste: prox, mais: 'mais1')
+  // ETAPA 16: POS3 (dia 75, mais: 1)
   {
     id: 'POS3',
     titulo: 'Pós-Integração 3',
-    dia: 74,
-    ajuste: 'prox',
-    mais: 'mais1',
+    dia: 75,
+    mais: 1,
     itens: [
       { id: 'pos3-01', titulo: 'Ata + Relatório', responsavel: 'CKM' },
       { id: 'pos3-02', titulo: 'Email colaborador Pesquisa', responsavel: 'CKM' },
@@ -274,11 +263,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 17: AG4 (dia 149, off: -7, ajuste: ant)
+  // ETAPA 17: AG4 (dia 150, off: -7, ajuste: ant)
   {
     id: 'AG4',
     titulo: 'Agendamento 4',
-    dia: 149,
+    dia: 150,
     off: -7,
     ajuste: 'ant',
     itens: [
@@ -289,12 +278,11 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 18: D150 (dia 149, ajuste: prox)
+  // ETAPA 18: D150 (dia 150)
   {
     id: 'D150',
     titulo: 'Dia 150',
-    dia: 149,
-    ajuste: 'prox',
+    dia: 150,
     itens: [
       { id: 'd150-01', titulo: '4º Feedback/Finalizar PDI', responsavel: 'Gestor' },
       { id: 'd150-02', titulo: 'Mediar', responsavel: 'CKM' },
@@ -302,13 +290,12 @@ export const PLANO_ETAPAS: EtapaPlano[] = [
     ],
   },
 
-  // ETAPA 19: POS4 (dia 150, ajuste: prox, mais: 'mais1')
+  // ETAPA 19: POS4 (dia 150, mais: 1)
   {
     id: 'POS4',
     titulo: 'Fechamento Final',
     dia: 150,
-    ajuste: 'prox',
-    mais: 'mais1',
+    mais: 1,
     itens: [
       { id: 'pos4-01', titulo: 'Ata encerramento + Relatório final', responsavel: 'CKM' },
       { id: 'pos4-02', titulo: 'Acompanhar/Finalizar PDI', responsavel: 'CKM' },
