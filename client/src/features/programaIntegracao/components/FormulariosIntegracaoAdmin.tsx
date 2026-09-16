@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import type { BootstrapState, ProcessoIntegracao, RespostaFormulario } from '../types';
+import { salvarSecaoConfig } from '../api/client';
 import { ROTAS_PUBLICAS_FORMULARIOS } from '../helpers/paridadeHtml';
+import { PendenciasFormularioAdmin } from './PendenciasFormularioAdmin';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export type FormularioAdminSubTab = 'disponiveis' | 'links' | 'pendentes' | 'recebidas' | 'textos' | 'config';
@@ -13,9 +16,11 @@ interface FormulariosIntegracaoAdminProps {
   config: BootstrapState['config'];
   processos: ProcessoIntegracao[];
   initialTab?: FormularioAdminSubTab;
+  onSaved?: () => Promise<void> | void;
 }
 
 type FormKey = 'controle' | 'bem' | 'pesquisa' | 'aval' | 'pdi';
+type DupPolicy = 'bloquear' | 'substituir' | 'adicional';
 
 const FORMULARIOS: Array<{
   key: FormKey;
@@ -25,46 +30,11 @@ const FORMULARIOS: Array<{
   rota: string;
   questoes: number;
 }> = [
-  {
-    key: 'controle',
-    nome: 'Controle do Programa de Integração',
-    descricao: 'Cadastro do novo colaborador, preenchido pela UGP.',
-    papel: 'UGP',
-    rota: ROTAS_PUBLICAS_FORMULARIOS.controle,
-    questoes: 11,
-  },
-  {
-    key: 'bem',
-    nome: 'Bem Acolhido em Nossa Unidade',
-    descricao: 'Preparação da chegada, respondida pelo gestor.',
-    papel: 'Gestor',
-    rota: ROTAS_PUBLICAS_FORMULARIOS.bem,
-    questoes: 12,
-  },
-  {
-    key: 'pesquisa',
-    nome: 'Pesquisa de Integração',
-    descricao: 'Respondida pelo colaborador depois de cada alinhamento.',
-    papel: 'Colaborador',
-    rota: ROTAS_PUBLICAS_FORMULARIOS.pesquisa,
-    questoes: 23,
-  },
-  {
-    key: 'aval',
-    nome: 'Avaliação do Programa de Integração',
-    descricao: 'Respondida pelo gestor e pelo Anjo depois de cada alinhamento.',
-    papel: 'Gestor / Anjo',
-    rota: ROTAS_PUBLICAS_FORMULARIOS.aval,
-    questoes: 42,
-  },
-  {
-    key: 'pdi',
-    nome: 'Acompanhamento do PDI',
-    descricao: 'Registro de acompanhamento do PDI nos ciclos previstos.',
-    papel: 'CKM',
-    rota: ROTAS_PUBLICAS_FORMULARIOS.pdi,
-    questoes: 15,
-  },
+  { key: 'controle', nome: 'Controle do Programa de Integração', descricao: 'Cadastro do novo colaborador, preenchido pela UGP.', papel: 'UGP', rota: ROTAS_PUBLICAS_FORMULARIOS.controle, questoes: 11 },
+  { key: 'bem', nome: 'Bem Acolhido em Nossa Unidade', descricao: 'Preparação da chegada, respondida pelo gestor.', papel: 'Gestor', rota: ROTAS_PUBLICAS_FORMULARIOS.bem, questoes: 12 },
+  { key: 'pesquisa', nome: 'Pesquisa de Integração', descricao: 'Respondida pelo colaborador depois de cada alinhamento.', papel: 'Colaborador', rota: ROTAS_PUBLICAS_FORMULARIOS.pesquisa, questoes: 23 },
+  { key: 'aval', nome: 'Avaliação do Programa de Integração', descricao: 'Respondida pelo gestor e pelo Anjo depois de cada alinhamento.', papel: 'Gestor / Anjo', rota: ROTAS_PUBLICAS_FORMULARIOS.aval, questoes: 42 },
+  { key: 'pdi', nome: 'Acompanhamento do PDI', descricao: 'Registro de acompanhamento do PDI nos ciclos previstos.', papel: 'CKM', rota: ROTAS_PUBLICAS_FORMULARIOS.pdi, questoes: 15 },
 ];
 
 function nomeFormulario(key: string): string {
@@ -95,11 +65,13 @@ export function FormulariosIntegracaoAdmin({
   config,
   processos,
   initialTab = 'disponiveis',
+  onSaved,
 }: FormulariosIntegracaoAdminProps) {
   const [tab, setTab] = useState<FormularioAdminSubTab>(initialTab);
   const [busca, setBusca] = useState('');
   const [formFiltro, setFormFiltro] = useState<FormKey | ''>('');
   const [aberta, setAberta] = useState<string | null>(null);
+  const [salvandoForm, setSalvandoForm] = useState<FormKey | null>(null);
 
   const respostas = useMemo<RespostaComProcesso[]>(() => {
     return processos.flatMap((processo) => (processo.resp || []).map((resposta) => ({
@@ -114,13 +86,8 @@ export function FormulariosIntegracaoAdmin({
     return respostas.filter((item) => {
       if (formFiltro && item.resposta.form !== formFiltro) return false;
       if (!termo) return true;
-      return [
-        item.processoNome,
-        item.resposta.protocolo,
-        item.resposta.avaliador,
-        item.resposta.respondentName,
-        nomeFormulario(item.resposta.form),
-      ].some((valor) => String(valor || '').toLocaleLowerCase('pt-BR').includes(termo));
+      return [item.processoNome, item.resposta.protocolo, item.resposta.avaliador, item.resposta.respondentName, nomeFormulario(item.resposta.form)]
+        .some((valor) => String(valor || '').toLocaleLowerCase('pt-BR').includes(termo));
     });
   }, [respostas, busca, formFiltro]);
 
@@ -130,11 +97,34 @@ export function FormulariosIntegracaoAdmin({
     window.open(rota, '_blank', 'noopener,noreferrer');
   };
 
+  const salvarConfigFormulario = async (formKey: FormKey, patch: Record<string, unknown>) => {
+    const atual = config?.formConfig && typeof config.formConfig === 'object' ? config.formConfig : {};
+    const cfgAtual = atual?.[formKey] && typeof atual[formKey] === 'object' ? atual[formKey] : {};
+    const proximo = {
+      ...atual,
+      [formKey]: {
+        active: cfgAtual.active !== false,
+        version: Number(cfgAtual.version || 1),
+        dupPolicy: cfgAtual.dupPolicy || 'bloquear',
+        ...cfgAtual,
+        ...patch,
+      },
+    };
+    try {
+      setSalvandoForm(formKey);
+      await salvarSecaoConfig('formConfig', proximo);
+      await onSaved?.();
+      toast.success('Configuração do formulário salva.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível salvar a configuração do formulário.');
+    } finally {
+      setSalvandoForm(null);
+    }
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Formulários de Integração</CardTitle>
-      </CardHeader>
+      <CardHeader><CardTitle>Formulários de Integração</CardTitle></CardHeader>
       <CardContent>
         <Tabs value={tab} onValueChange={(value) => setTab(value as FormularioAdminSubTab)}>
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
@@ -147,9 +137,7 @@ export function FormulariosIntegracaoAdmin({
           </TabsList>
 
           <TabsContent value="disponiveis" className="mt-6 space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Os cinco formulários oficiais usam endereços permanentes da plataforma. A versão e a situação abaixo são lidas da configuração atual, sem alterá-la.
-            </p>
+            <p className="text-sm text-muted-foreground">Os cinco formulários oficiais usam endereços permanentes da plataforma. A versão e a situação abaixo vêm da configuração atual.</p>
             <div className="grid gap-4 xl:grid-cols-2">
               {FORMULARIOS.map((form) => {
                 const cfg = config?.formConfig?.[form.key] || {};
@@ -158,19 +146,12 @@ export function FormulariosIntegracaoAdmin({
                   <Card key={form.key} className="shadow-none">
                     <CardContent className="pt-5 space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="font-semibold">{form.nome}</h3>
-                          <p className="mt-1 text-sm text-muted-foreground">{form.descricao}</p>
-                        </div>
-                        <Badge variant="outline" className={ativo ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-slate-50 text-slate-700'}>
-                          {ativo ? 'Ativo' : 'Inativo'}
-                        </Badge>
+                        <div><h3 className="font-semibold">{form.nome}</h3><p className="mt-1 text-sm text-muted-foreground">{form.descricao}</p></div>
+                        <Badge variant="outline" className={ativo ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-slate-300 bg-slate-50 text-slate-700'}>{ativo ? 'Ativo' : 'Inativo'}</Badge>
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        <span>Respondente: <b className="text-foreground">{form.papel}</b></span>
-                        <span>·</span>
-                        <span>Versão <b className="text-foreground">{Number(cfg.version || 1)}</b></span>
-                        <span>·</span>
+                        <span>Respondente: <b className="text-foreground">{form.papel}</b></span><span>·</span>
+                        <span>Versão <b className="text-foreground">{Number(cfg.version || 1)}</b></span><span>·</span>
                         <span><b className="text-foreground">{form.questoes}</b> campos mapeados</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -185,10 +166,7 @@ export function FormulariosIntegracaoAdmin({
           </TabsContent>
 
           <TabsContent value="links" className="mt-6 space-y-4">
-            <div>
-              <h3 className="font-semibold">Links públicos permanentes</h3>
-              <p className="text-sm text-muted-foreground mt-1">O mesmo endereço é reutilizado. Não existe um link diferente por empregado.</p>
-            </div>
+            <div><h3 className="font-semibold">Links públicos permanentes</h3><p className="text-sm text-muted-foreground mt-1">O mesmo endereço é reutilizado. Não existe um link diferente por empregado.</p></div>
             <div className="space-y-3">
               {FORMULARIOS.map((form) => {
                 const url = urlAbsoluta(form.rota);
@@ -197,10 +175,7 @@ export function FormulariosIntegracaoAdmin({
                     <p className="font-medium">{form.nome}</p>
                     <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center">
                       <code className="min-w-0 flex-1 overflow-x-auto rounded bg-muted px-3 py-2 text-xs">{url}</code>
-                      <div className="flex gap-2">
-                        <Button type="button" size="sm" variant="outline" onClick={() => copiar(url)}>Copiar</Button>
-                        <Button type="button" size="sm" variant="outline" onClick={() => abrirFormulario(form.rota)}>Abrir</Button>
-                      </div>
+                      <div className="flex gap-2"><Button type="button" size="sm" variant="outline" onClick={() => copiar(url)}>Copiar</Button><Button type="button" size="sm" variant="outline" onClick={() => abrirFormulario(form.rota)}>Abrir</Button></div>
                     </div>
                   </div>
                 );
@@ -209,63 +184,16 @@ export function FormulariosIntegracaoAdmin({
           </TabsContent>
 
           <TabsContent value="pendentes" className="mt-6 space-y-4">
-            <div>
-              <h3 className="font-semibold">Pendentes de vinculação</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Respostas recebidas que o sistema ainda não conseguiu associar com segurança a um processo. Esta tela apenas consulta a fila atual; nenhuma resposta é descartada ou modificada aqui.
-              </p>
-            </div>
-            {!pendentes.length ? (
-              <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">Nenhuma resposta pendente de vinculação.</div>
-            ) : (
-              <div className="space-y-3">
-                {pendentes.map((item: any, indice: number) => {
-                  const candidatos = Array.isArray(item?.candidatos) ? item.candidatos : [];
-                  return (
-                    <div key={item?.id || item?.protocolo || indice} className="rounded-lg border p-4 space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold">{item?.protocolo || 'Sem protocolo'} · {item?.nomeColaborador || 'Pessoa não identificada'}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {nomeFormulario(item?.formKey)}{item?.cycle ? ` · ciclo ${item.cycle}` : ''}{item?.role ? ` · ${item.role}` : ''}
-                          </p>
-                        </div>
-                        <Badge variant="outline">{item?.motivo || 'revisão necessária'}</Badge>
-                      </div>
-                      <div className="grid gap-2 text-xs md:grid-cols-3">
-                        <div><span className="text-muted-foreground">Unidade</span><div className="font-medium">{item?.unidade || '—'}</div></div>
-                        <div><span className="text-muted-foreground">Data de início</span><div className="font-medium">{item?.dataInicio || '—'}</div></div>
-                        <div><span className="text-muted-foreground">Respondente</span><div className="font-medium">{item?.respondentName || '—'}</div></div>
-                      </div>
-                      {candidatos.length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Candidatos sugeridos pelo sistema</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {candidatos.map((c: any, cidx: number) => (
-                              <Badge key={`${c?.id || cidx}`} variant="outline">{c?.nome || c?.id || 'Candidato'}{c?.pct != null ? ` · ${c.pct}%` : ''}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <div><h3 className="font-semibold">Pendentes de vinculação</h3><p className="text-sm text-muted-foreground mt-1">Respostas que o sistema não associou automaticamente podem ser revisadas, vinculadas a um processo existente ou retiradas da fila sem exclusão física.</p></div>
+            <PendenciasFormularioAdmin pendentes={pendentes} processos={processos} nomeFormulario={nomeFormulario} onSaved={onSaved} />
           </TabsContent>
 
           <TabsContent value="recebidas" className="mt-6 space-y-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h3 className="font-semibold">Respostas recebidas</h3>
-                <p className="text-sm text-muted-foreground mt-1">{respostasFiltradas.length} resposta{respostasFiltradas.length === 1 ? '' : 's'} na seleção atual.</p>
-              </div>
+              <div><h3 className="font-semibold">Respostas recebidas</h3><p className="text-sm text-muted-foreground mt-1">{respostasFiltradas.length} resposta{respostasFiltradas.length === 1 ? '' : 's'} na seleção atual.</p></div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pessoa, protocolo ou avaliador" className="h-9 min-w-[260px] rounded-md border border-input bg-background px-3 text-sm" />
-                <select value={formFiltro} onChange={(e) => setFormFiltro(e.target.value as FormKey | '')} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
-                  <option value="">Todos os formulários</option>
-                  {FORMULARIOS.map((form) => <option key={form.key} value={form.key}>{form.nome}</option>)}
-                </select>
+                <select value={formFiltro} onChange={(e) => setFormFiltro(e.target.value as FormKey | '')} className="h-9 rounded-md border border-input bg-background px-3 text-sm"><option value="">Todos os formulários</option>{FORMULARIOS.map((form) => <option key={form.key} value={form.key}>{form.nome}</option>)}</select>
               </div>
             </div>
             <div className="overflow-x-auto rounded-lg border">
@@ -273,15 +201,11 @@ export function FormulariosIntegracaoAdmin({
                 <thead className="bg-muted/50 text-xs text-muted-foreground"><tr><th className="p-3 text-left">Protocolo</th><th className="p-3 text-left">Colaborador</th><th className="p-3 text-left">Formulário</th><th className="p-3 text-left">Ciclo</th><th className="p-3 text-left">Papel</th><th className="p-3 text-left">Data</th><th className="p-3 text-left">Detalhe</th></tr></thead>
                 <tbody className="divide-y">
                   {respostasFiltradas.map((item) => {
-                    const r = item.resposta;
-                    const chave = `${item.processoId}|${r.rid}`;
-                    const detalhes = Object.entries(r.answers || {});
+                    const r = item.resposta; const chave = `${item.processoId}|${r.rid}`; const detalhes = Object.entries(r.answers || {});
                     return (
                       <React.Fragment key={chave}>
                         <tr><td className="p-3 font-medium">{r.protocolo || '—'}</td><td className="p-3">{item.processoNome || r.nomeOrig || '—'}</td><td className="p-3">{nomeFormulario(r.form)}</td><td className="p-3">{r.ciclo || '—'}</td><td className="p-3">{r.papel || '—'}</td><td className="p-3">{r.em || (r.submittedAt ? r.submittedAt.slice(0, 10) : '—')}</td><td className="p-3"><Button type="button" size="sm" variant="ghost" onClick={() => setAberta(aberta === chave ? null : chave)}>{aberta === chave ? 'Fechar' : 'Ver'}</Button></td></tr>
-                        {aberta === chave && (
-                          <tr><td colSpan={7} className="p-4 bg-muted/20"><div className="grid gap-2 md:grid-cols-2">{detalhes.length ? detalhes.map(([codigo, valor]) => <div key={codigo} className="rounded border bg-background p-3"><p className="text-[11px] font-semibold text-muted-foreground">{codigo}</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{String(valor ?? '')}</p></div>) : <p className="text-sm text-muted-foreground">Não há campos detalhados disponíveis neste registro.</p>}</div></td></tr>
-                        )}
+                        {aberta === chave && <tr><td colSpan={7} className="p-4 bg-muted/20"><div className="grid gap-2 md:grid-cols-2">{detalhes.length ? detalhes.map(([codigo, valor]) => <div key={codigo} className="rounded border bg-background p-3"><p className="text-[11px] font-semibold text-muted-foreground">{codigo}</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{String(valor ?? '')}</p></div>) : <p className="text-sm text-muted-foreground">Não há campos detalhados disponíveis neste registro.</p>}</div></td></tr>}
                       </React.Fragment>
                     );
                   })}
@@ -294,10 +218,8 @@ export function FormulariosIntegracaoAdmin({
           <TabsContent value="textos" className="mt-6 space-y-4">
             <div className="rounded-lg border p-4">
               <h3 className="font-semibold">Perguntas e textos dos formulários</h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                A estrutura oficial já está carregada no catálogo técnico do módulo. A edição ainda permanece protegida nesta reconstrução para não alterar códigos internos, versões ou respostas históricas antes da rotina segura de versionamento estar concluída.
-              </p>
-              <p className="mt-2 text-xs text-muted-foreground">Nenhuma configuração é gravada por esta tela.</p>
+              <p className="mt-2 text-sm text-muted-foreground">A estrutura oficial já está carregada no catálogo técnico do módulo. A edição de textos será feita separadamente para preservar códigos internos e respostas históricas.</p>
+              <p className="mt-2 text-xs text-muted-foreground">A configuração pública já aceita textos personalizados; falta apenas concluir este editor administrativo.</p>
             </div>
           </TabsContent>
 
@@ -305,20 +227,37 @@ export function FormulariosIntegracaoAdmin({
             <div className="grid gap-3 xl:grid-cols-2">
               {FORMULARIOS.map((form) => {
                 const cfg = config?.formConfig?.[form.key] || {};
+                const ativo = cfg.active !== false;
+                const dupPolicy = (['bloquear', 'substituir', 'adicional'].includes(String(cfg.dupPolicy)) ? cfg.dupPolicy : 'bloquear') as DupPolicy;
+                const busy = salvandoForm === form.key;
                 return (
-                  <div key={form.key} className="rounded-lg border p-4">
+                  <div key={form.key} className="rounded-lg border p-4 space-y-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div><p className="font-medium">{form.nome}</p><p className="mt-1 text-xs text-muted-foreground">Política de duplicidade: {cfg.dupPolicy || 'bloquear'}</p></div>
-                      <Badge variant="outline">v{Number(cfg.version || 1)}</Badge>
+                      <div><p className="font-medium">{form.nome}</p><p className="mt-1 text-xs text-muted-foreground">Versão {Number(cfg.version || 1)} · alterações preservam as demais configurações e a fila de pendências.</p></div>
+                      <Badge variant="outline">{ativo ? 'Ativo' : 'Inativo'}</Badge>
                     </div>
-                    <p className="mt-3 text-sm">Situação: <b>{cfg.active === false ? 'Inativo' : 'Ativo'}</b></p>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className="space-y-1 text-xs text-muted-foreground">
+                        <span>Situação</span>
+                        <select className="h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground" disabled={busy} value={ativo ? 'ativo' : 'inativo'} onChange={(event) => salvarConfigFormulario(form.key, { active: event.target.value === 'ativo' })}>
+                          <option value="ativo">Ativo</option><option value="inativo">Inativo</option>
+                        </select>
+                      </label>
+                      <label className="space-y-1 text-xs text-muted-foreground">
+                        <span>Quando já existe resposta do mesmo formulário/ciclo/papel</span>
+                        <select className="h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground" disabled={busy} value={dupPolicy} onChange={(event) => salvarConfigFormulario(form.key, { dupPolicy: event.target.value as DupPolicy })}>
+                          <option value="bloquear">Bloquear e enviar para revisão</option>
+                          <option value="substituir">Substituir, preservando a anterior no histórico</option>
+                          <option value="adicional">Aceitar resposta adicional</option>
+                        </select>
+                      </label>
+                    </div>
+                    {busy && <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />Salvando e relendo a configuração...</div>}
                   </div>
                 );
               })}
             </div>
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              Alterações de versão, ativação e política de duplicidade continuam bloqueadas nesta etapa porque a gravação da configuração global também sincroniza a fila de respostas pendentes. A edição só será liberada por uma operação dedicada e segura, sem risco de descartar pendências.
-            </div>
+            <div className="rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">Estas alterações usam a operação segura de configuração por seção. Elas não utilizam o salvamento global legado e não sincronizam nem descartam a fila de respostas pendentes.</div>
           </TabsContent>
         </Tabs>
       </CardContent>
