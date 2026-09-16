@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { ProcessoIntegracao } from '../types';
 import { detectarRespostasPendentes } from '../helpers/acoesPainelHelpers';
 import { coletarAcoesPainel } from '../helpers/painelAcoes';
-import { agruparAcoesPorTarefa } from '../helpers/painelAgrupamento';
 import {
   calcularKpisPainel,
   filtrarAcoesPainel,
