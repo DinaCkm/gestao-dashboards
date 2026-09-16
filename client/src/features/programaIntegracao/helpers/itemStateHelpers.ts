@@ -143,6 +143,21 @@ function aplicarAutomacoes(
 }
 
 /**
+ * Executa somente as automações históricas sobre uma cópia do processo.
+ * É usado por alterações de alinhamento/mentora para evitar duplicar a mesma
+ * regra de negócio em outros helpers.
+ */
+export function aplicarAutomacoesProcesso(
+  processo: ProcessoIntegracao,
+  hojeRef: string | Date = new Date(),
+): ProcessoIntegracao {
+  const novoFeito = clonarFeito(processo.feito);
+  const novoAlin = clonarAlinhamentos(processo.alin);
+  aplicarAutomacoes(novoFeito, novoAlin, hojeIso(hojeRef));
+  return { ...processo, feito: novoFeito, alin: novoAlin };
+}
+
+/**
  * Espelha a alteração de situação feita por `marcar()` no HTML original.
  * Preserva just/prog/notas e quaisquer outros campos históricos existentes.
  * Depois da alteração, executa as mesmas automações internas da jornada.
