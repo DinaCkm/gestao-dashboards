@@ -11,6 +11,7 @@ import { agruparAcoesPorTarefa as agruparFiltradas } from '../helpers/painelAgru
 import { montarCardProcessoPainel } from '../helpers/painelProcessos';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
 import { gerarRelatorioAndamentoPdf } from '../helpers/relatorioAndamentoPdf';
+import { gerarCheckpointPdf } from '../helpers/checkpointPdf';
 import { formatarData } from '../helpers/dateHelpers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -120,6 +121,14 @@ export function PainelSemana({
     }
   };
 
+  const handleGerarCheckpoint = (processo: ProcessoIntegracao) => {
+    try {
+      gerarCheckpointPdf(processo, feriados);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível gerar o Checkpoint do Processo.');
+    }
+  };
+
   const renderCardProcesso = (card: ReturnType<typeof montarCardProcessoPainel>) => {
     const p = card.processo;
     const proxima = card.proximaEtapa;
@@ -204,6 +213,9 @@ export function PainelSemana({
             </Button>
             <Button type="button" size="sm" variant="outline" onClick={() => handleGerarRelatorio(p)}>
               Relatório
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => handleGerarCheckpoint(p)} title="Checkpoint — versão enxuta e visual">
+              Checkpoint
             </Button>
           </div>
         </CardContent>
