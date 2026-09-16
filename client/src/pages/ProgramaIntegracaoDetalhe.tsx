@@ -13,9 +13,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function ProgramaIntegracaoDetalhe() {
-  const [, params] = useRoute('/programa-integracao/detalhe/:id');
+  const [, params] = useRoute('/programa-integracao/detalhe/:processoId');
   const [, setLocation] = useLocation();
-  const processoId = params?.id ? decodeURIComponent(params.id) : '';
+  const processoId = params?.processoId ? decodeURIComponent(params.processoId) : '';
   const [state, setState] = useState<BootstrapState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
