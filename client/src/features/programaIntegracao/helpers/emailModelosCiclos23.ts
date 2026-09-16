@@ -124,7 +124,9 @@ export const MODELOS_EMAIL_CICLOS_23_INTEGRACAO: Record<string, ModeloEmailInteg
       'apresentar quem é quem, explicar o combinado que ninguém escreve em lugar nenhum. É um cuidado que quase não aparece — mas faz toda a diferença ' +
       'para quem está começando.\n\n' +
       '**Queremos registrar o nosso obrigado.** O seu **Certificado de Participação do Anjo** está sendo preparado e chega até você em breve.\n\n' +
-      'Seguimos acompanhando {{PRIMEIRO_NOME}} até o encerramento do processo.' + ASS,
+      'Seguimos acompanhando {{PRIMEIRO_NOME}} até o encerramento do processo. Se você notar qualquer coisa que mereça atenção — ou se precisar de apoio ' +
+      'no seu papel —, é só nos chamar a qualquer momento.\n\n' +
+      'Obrigado de verdade!' + ASS,
     anexo: '',
   },
 
