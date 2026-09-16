@@ -4,6 +4,13 @@ export type VincularPendentePayload = {
   role?: string;
 };
 
+export type RebuscarPendentePayload = {
+  nomeColaborador: string;
+  unidade?: string;
+  dataInicio?: string;
+  emailColaborador?: string;
+};
+
 async function readError(response: Response, fallback: string) {
   try {
     const body = await response.json();
@@ -11,6 +18,26 @@ async function readError(response: Response, fallback: string) {
   } catch {
     return fallback;
   }
+}
+
+export async function rebuscarRespostaPendente(
+  legacyRid: string,
+  payload: RebuscarPendentePayload,
+): Promise<{ ok: boolean; status: string; candidatos: any[] }> {
+  const response = await fetch(
+    `/api/programa-integracao/respostas-pendentes/${encodeURIComponent(legacyRid)}/rebuscar`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response, `Não foi possível buscar novamente (${response.status}).`));
+  }
+
+  return response.json();
 }
 
 export async function vincularRespostaPendente(
@@ -28,6 +55,24 @@ export async function vincularRespostaPendente(
 
   if (!response.ok) {
     throw new Error(await readError(response, `Não foi possível vincular a resposta (${response.status}).`));
+  }
+
+  return response.json();
+}
+
+export async function criarProcessoDaRespostaPendente(
+  legacyRid: string,
+): Promise<{ ok: boolean; processoId: string; nome: string }> {
+  const response = await fetch(
+    `/api/programa-integracao/respostas-pendentes/${encodeURIComponent(legacyRid)}/criar-processo`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readError(response, `Não foi possível criar o processo (${response.status}).`));
   }
 
   return response.json();
