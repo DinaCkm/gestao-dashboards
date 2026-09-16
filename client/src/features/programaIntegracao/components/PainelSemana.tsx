@@ -159,6 +159,13 @@ export function PainelSemana({
         )}
       </div>
 
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <h3 className="text-lg font-semibold">Ações agrupadas</h3>
+        <p className="text-sm text-muted-foreground">
+          {grupos.length} tarefas · {acoesFiltradas.length} no total
+        </p>
+      </div>
+
       <div className="space-y-4">
         {grupos.length === 0 ? (
           <Card>
