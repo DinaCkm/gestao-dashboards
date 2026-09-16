@@ -159,14 +159,14 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Respostas públicas vinculadas visíveis.
 - [x] Backend dedicado para vincular pendência a processo existente, com transação, auditoria e leitura de volta.
 - [x] Backend dedicado para descartar pendência sem exclusão física, com auditoria e leitura de volta.
-- [ ] Ativar/desativar por endpoint seguro.
+- [x] Ativar/desativar por endpoint seguro, usando persistência isolada de `formConfig`.
 - [ ] Editar perguntas e textos.
 - [ ] Restaurar padrão.
 - [ ] Corrigir pendência e buscar novamente.
-- [ ] Vincular pendência a processo existente pela interface administrativa.
+- [x] Vincular pendência a processo existente pela interface administrativa.
 - [ ] Criar processo permitido com confirmação.
-- [ ] Descartar pendência pela interface administrativa com confirmação.
-- [ ] Configurar política de duplicidade.
+- [x] Descartar pendência pela interface administrativa com confirmação.
+- [x] Configurar política de duplicidade por formulário com persistência segura e preservação histórica.
 
 ## 12. Cobrança de formulários
 - [ ] Detectar vencidos sem resposta por responsável.
