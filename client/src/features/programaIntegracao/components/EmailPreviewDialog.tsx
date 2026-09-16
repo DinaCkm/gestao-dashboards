@@ -21,6 +21,7 @@ interface EmailPreviewDialogProps {
   nomePessoa: string;
   enviado: boolean;
   onAlternarEnviado?: () => Promise<void> | void;
+  onMarcadoEnviado?: () => void;
   onEditarModelo?: () => void;
   onGerarRelatorioEvolucao?: () => void;
 }
@@ -88,6 +89,7 @@ export function EmailPreviewDialog({
   nomePessoa,
   enviado,
   onAlternarEnviado,
+  onMarcadoEnviado,
   onEditarModelo,
   onGerarRelatorioEvolucao,
 }: EmailPreviewDialogProps) {
@@ -117,6 +119,7 @@ export function EmailPreviewDialog({
     if (!onAlternarEnviado) return;
     const eraEnviado = enviado;
     await onAlternarEnviado();
+    if (!eraEnviado) onMarcadoEnviado?.();
     toast.success(
       eraEnviado
         ? 'Marcação removida.'
