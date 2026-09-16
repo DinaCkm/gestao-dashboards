@@ -18,6 +18,7 @@ import {
 import { formatarData } from '../helpers/dateHelpers';
 import { respostaDoItem } from '../helpers/respostaItemHelpers';
 import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
+import { gerarBriefingMentoraPdf, gerarRelatorioMentoraWord } from '../helpers/mentoraDocumentos';
 import { EmailActionButtons } from './EmailActionButtons';
 import { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
 import { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
@@ -184,6 +185,8 @@ export function DetalheProcessoReal({
                         feriados={feriados}
                         config={config}
                         onSalvarProcesso={salvar}
+                        onGerarBriefing={() => gerarBriefingMentoraPdf(processo, etapa.et.al as 1 | 2 | 3 | 4, config, feriados)}
+                        onGerarWord={() => gerarRelatorioMentoraWord(processo, etapa.et.al as 1 | 2 | 3 | 4, config, feriados)}
                       />
                       <AlinhamentoPainelReal
                         processo={processo}
