@@ -17,6 +17,12 @@ export interface PendenciasProcessoPainel {
   eles: number;
 }
 
+export interface SinalProcessoPainel {
+  k: 'late' | 'act' | 'ok' | 'off';
+  i: '!' | '•' | '✓';
+  t: string;
+}
+
 export interface ProximaEtapaPainel {
   titulo: string;
   status: StatusItemPainel;
@@ -29,6 +35,7 @@ export interface CardProcessoPainel {
   progresso: ProgressoProcessoPainel;
   diaAtual: number | null;
   pendencias: PendenciasProcessoPainel;
+  sinal: SinalProcessoPainel;
   proximaEtapa: ProximaEtapaPainel | null;
 }
 
@@ -51,6 +58,10 @@ function diffDias(inicio: string, fim: string): number {
 function estadoSalvo(valor: unknown): string {
   const reg = normalizarRegistroFeito(valor);
   return reg?.s ? String(reg.s) : '';
+}
+
+function plural(n: number, singular: string, pluralTxt: string): string {
+  return `${n} ${n === 1 ? singular : pluralTxt}`;
 }
 
 /** Espelho da função progresso(p) do HTML original, limitado aos IDs reais do plano. */
@@ -104,6 +115,37 @@ export function pendenciasReaisProcesso(
   return { ckm, eles };
 }
 
+/** Espelho da função sinal(p): destaca apenas o que ainda depende da CKM. */
+export function sinalRealProcesso(
+  processo: ProcessoIntegracao,
+  feriados: string[] = [],
+  hojeRef: string | Date = new Date(),
+): SinalProcessoPainel {
+  if (processo.situacao === 'encerrado') {
+    return { k: 'off', i: '✓', t: 'Processo encerrado' };
+  }
+
+  let atrasadas = 0;
+  let agora = 0;
+
+  cronogramaReal(processo, feriados, hojeRef).forEach((etapa) => {
+    etapa.itens.forEach((item) => {
+      if (item.r !== 'CKM') return;
+      const st = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+      if (st.k === 'late') atrasadas++;
+      else if (st.k === 'act') agora++;
+    });
+  });
+
+  if (atrasadas > 0) {
+    return { k: 'late', i: '!', t: plural(atrasadas, 'ação da CKM atrasada', 'ações da CKM atrasadas') };
+  }
+  if (agora > 0) {
+    return { k: 'act', i: '•', t: plural(agora, 'ação da CKM para agora', 'ações da CKM para agora') };
+  }
+  return { k: 'ok', i: '✓', t: 'Nada pendente com a CKM' };
+}
+
 export function proximaEtapaRealProcesso(
   processo: ProcessoIntegracao,
   feriados: string[] = [],
@@ -141,6 +183,7 @@ export function montarCardProcessoPainel(
     progresso: progressoRealProcesso(processo),
     diaAtual: diaAtualReal(processo, hojeRef),
     pendencias: pendenciasReaisProcesso(processo, feriados, hojeRef),
+    sinal: sinalRealProcesso(processo, feriados, hojeRef),
     proximaEtapa: proximaEtapaRealProcesso(processo, feriados, hojeRef),
   };
 }
