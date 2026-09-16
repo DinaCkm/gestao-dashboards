@@ -121,6 +121,7 @@ import AutoRegistro from "./pages/AutoRegistro";
 import PortalCandidatoPS from "./pages/PortalCandidatoPS";
 import WebinarChecklistConfig from "./pages/WebinarChecklistConfig";
 import WebinarTaskResponsavel from "./pages/WebinarTaskResponsavel";
+import ProgramaIntegracao from "./pages/ProgramaIntegracao";
 
 function Router() {
   return (
@@ -192,6 +193,7 @@ function Router() {
       <Route path={"/processos-seletivos/mentora"}><Redirect to="/processos-seletivos/avaliacao" /></Route>
       <Route path={"/processos-seletivos/avaliacao"} component={ProcessosSeletivosAvaliacao} />
       <Route path={"/processos-seletivos/comunicado"} component={ProcessosSeletivosComunicado} />
+      <Route path={"/programa-integracao"} component={ProgramaIntegracao} />
       <Route path={"/disc360"} component={Disc360Dashboard} />
       <Route path={"/disc360/perfis-empresa"} component={PerfilEmpresaDiretoria} />
       <Route path={"/disc360/responder-convite/:token"} component={ResponderConviteCultura} />
@@ -270,3 +272,4 @@ function App() {
 }
 
 export default App;
+

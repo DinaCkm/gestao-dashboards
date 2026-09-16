@@ -24,18 +24,23 @@ export async function fetchBootstrap(): Promise<BootstrapResponse> {
 
 /**
  * Salva um processo (PUT /api/programa-integracao/processos/:legacyId)
- * Atualiza dados e estado (feito, alin, bem, teste)
+ * SEMPRE envia o processo COMPLETO. Nenhuma mutação parcial.
  */
 export async function salvarProcesso(
   legacyId: string,
   processo: ProcessoIntegracao,
   ordem: number = 0
 ): Promise<{ ok: boolean; processoId?: number }> {
+  // Validar que processo não é parcial
+  if (!processo.nome || !processo.cpf) {
+    throw new Error('Processo incompleto: nome e CPF são obrigatórios');
+  }
+  
   const response = await fetch(`${API_BASE}/processos/${encodeURIComponent(legacyId)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      processo,
+      processo, // Sempre processo COMPLETO
       ordem,
     }),
   });
@@ -67,7 +72,7 @@ export async function salvarConfig(
 }
 
 /**
- * Arquivo/remove um processo (PUT -> situacao='removido')
+ * Arquivo/remove um processo (DELETE -> situacao='removido')
  */
 export async function arquivarProcesso(legacyId: string): Promise<{ ok: boolean }> {
   const response = await fetch(`${API_BASE}/processos/${encodeURIComponent(legacyId)}`, {
@@ -84,24 +89,22 @@ export async function arquivarProcesso(legacyId: string): Promise<{ ok: boolean 
 
 /**
  * Atualiza apenas o estado (feito/alin/bem/teste/timeline) de um processo
- * Utiliza PUT /api/programa-integracao/processos/:legacyId
+ * SEMPRE envia o processo COMPLETO via PUT
  */
 export async function atualizarEstadoProcesso(
   legacyId: string,
-  updates: {
-    feito?: Record<string, any>;
-    alin?: Record<string, any>;
-    bem?: Record<string, any>;
-    teste?: Record<string, any>;
-    timeline?: any[];
-    notas?: string;
-  }
+  processoCompleto: ProcessoIntegracao
 ): Promise<{ ok: boolean; processoId?: number }> {
+  // Validar que processo é completo
+  if (!processoCompleto.nome || !processoCompleto.cpf) {
+    throw new Error('Processo incompleto: nome e CPF são obrigatórios');
+  }
+
   const response = await fetch(`${API_BASE}/processos/${encodeURIComponent(legacyId)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      processo: updates,
+      processo: processoCompleto, // Sempre COMPLETO
       ordem: 0,
     }),
   });
@@ -114,25 +117,68 @@ export async function atualizarEstadoProcesso(
 }
 
 /**
- * Exporta agenda como CSV
+ * Gera CSV da agenda no cliente (sem chamar endpoint inexistente)
+ * Converte processos em linhas CSV e retorna um Blob
  */
-export async function exportarAgendaCSV(
-  processoId?: string,
+export function gerarAgendaCSV(
+  processos: ProcessoIntegracao[],
   situacao: 'ativo' | 'encerrado' | 'todos' = 'ativo'
-): Promise<Blob> {
-  const params = new URLSearchParams();
-  if (processoId) params.set('processoId', processoId);
-  params.set('situacao', situacao);
-  
-  const response = await fetch(`${API_BASE}/export/agenda?${params}`, {
-    method: 'GET',
+): Blob {
+  // Filtrar por situação
+  const processosFiltered = processos.filter(p => {
+    if (situacao === 'todos') return true;
+    return p.situacao === situacao;
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to export agenda: ${response.status}`);
-  }
-  
-  return response.blob();
+
+  // Cabeçalho
+  const headers = [
+    'Nome',
+    'CPF',
+    'Email',
+    'Email Corporativo',
+    'Cargo',
+    'Unidade',
+    'Data Início',
+    'Gestor',
+    'Anjo/Responsável',
+    'Situação',
+    'Status PDI',
+    'Observações',
+  ];
+
+  // Linhas
+  const rows = processosFiltered.map(p => [
+    p.nome || '',
+    p.cpf || '',
+    p.email || '',
+    p.emailCorporativo || '',
+    p.cargo || '',
+    p.unidade || '',
+    p.inicio || '',
+    p.gestor || '',
+    p.anjo || '',
+    p.situacao || '',
+    p.statusPdi || '',
+    p.notas || '',
+  ]);
+
+  // Escapar CSV
+  const escapeCSV = (field: string) => {
+    if (!field) return '';
+    if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+      return `"${field.replace(/"/g, '""')}"`;
+    }
+    return field;
+  };
+
+  // Montar CSV
+  const csv = [
+    headers.map(escapeCSV).join(','),
+    ...rows.map(row => row.map(escapeCSV).join(',')),
+  ].join('\n');
+
+  // Retornar como Blob
+  return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 }
 
 /**
