@@ -259,7 +259,7 @@ export default function ProgramaIntegracao() {
           </TabsContent>
 
           <TabsContent value="respostas" className="space-y-6 mt-6">
-            <RespostasRecebidas processos={todosProcesos} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} />
+            <RespostasRecebidas processos={todosProcesos} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} onSaved={recarregarEstado} />
           </TabsContent>
 
           <TabsContent value="formularios" className="space-y-6 mt-6">
