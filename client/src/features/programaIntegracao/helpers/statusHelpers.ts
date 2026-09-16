@@ -38,14 +38,6 @@ function isoDateLocal(data: string | Date): Date {
   return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 }
 
-function dataIso(data: string | Date): string {
-  const d = isoDateLocal(data);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 function diferencaDias(dataBase: string, hoje: string | Date): number {
   const base = isoDateLocal(dataBase).getTime();
   const atual = isoDateLocal(hoje).getTime();
@@ -123,7 +115,7 @@ export function calcularStatusItem(
   if (s === 'na' || s === 'wont') {
     return {
       k: 'off',
-      l: s === 'na' ? 'Não se aplica' : 'Não será realizado',
+      l: s === 'na' ? 'Não se aplica' : 'Não será feita',
     };
   }
 
