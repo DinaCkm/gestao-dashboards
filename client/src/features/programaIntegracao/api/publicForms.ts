@@ -41,10 +41,11 @@ export interface PublicFormMetaResponse {
   formName: string;
   active: boolean;
   version: number;
+  dupPolicy?: 'bloquear' | 'substituir' | 'adicional';
   textos: PublicFormTextOverrides | null;
 }
 
-/** Consulta somente leitura: ativo/inativo, versão e camada de textos configurada. */
+/** Consulta somente leitura: ativo/inativo, versão, política e camada de textos configurada. */
 export async function carregarFormularioPublicoMeta(
   slug: PublicFormSlug,
 ): Promise<PublicFormMetaResponse> {
