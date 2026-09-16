@@ -10,6 +10,7 @@ import {
 import { agruparAcoesPorTarefa as agruparFiltradas } from '../helpers/painelAgrupamento';
 import { montarCardProcessoPainel } from '../helpers/painelProcessos';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
+import { gerarRelatorioAndamentoPdf } from '../helpers/relatorioAndamentoPdf';
 import { formatarData } from '../helpers/dateHelpers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -111,6 +112,14 @@ export function PainelSemana({
     }
   };
 
+  const handleGerarRelatorio = (processo: ProcessoIntegracao) => {
+    try {
+      gerarRelatorioAndamentoPdf(processo, feriados);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível gerar o Relatório de Andamento.');
+    }
+  };
+
   const renderCardProcesso = (card: ReturnType<typeof montarCardProcessoPainel>) => {
     const p = card.processo;
     const proxima = card.proximaEtapa;
@@ -192,6 +201,9 @@ export function PainelSemana({
             </Button>
             <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(p)}>
               Agenda
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => handleGerarRelatorio(p)}>
+              Relatório
             </Button>
           </div>
         </CardContent>
