@@ -254,7 +254,7 @@ export default function ProgramaIntegracao() {
           </TabsContent>
 
           <TabsContent value="registrar" className="space-y-6 mt-6">
-            <RegistrarRespostas processos={todosProcesos} />
+            <RegistrarRespostas processos={todosProcesos} onSaved={recarregarEstado} />
           </TabsContent>
 
           <TabsContent value="respostas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Respostas Recebidas</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Visualização consolidada de todas as respostas</p></CardContent></Card></TabsContent>
