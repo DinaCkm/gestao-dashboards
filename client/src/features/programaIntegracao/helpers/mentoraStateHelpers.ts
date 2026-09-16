@@ -1,7 +1,6 @@
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import { cronogramaReal } from './painelAcoes';
 import { aplicarAutomacoesProcesso } from './itemStateHelpers';
-import { proximoDiaUtil } from './dateHelpers';
 
 export interface HorarioMentora {
   d: string;
@@ -44,6 +43,29 @@ function fmtc(iso?: string): string {
 function primeiro(nome?: string): string {
   const s = String(nome || '').trim();
   return s ? s.split(/\s+/)[0] : '';
+}
+
+function adicionarDia(iso: string, dias: number): string {
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia + dias));
+  return data.toISOString().slice(0, 10);
+}
+
+function diaUtil(iso: string, feriados: string[]): boolean {
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  const semana = new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay();
+  return semana !== 0 && semana !== 6 && !feriados.includes(iso);
+}
+
+/** Equivale a `prox()` do HTML: mantém a data se já for útil e avança somente quando necessário. */
+function proximoUtil(iso: string, feriados: string[]): string {
+  let atual = iso;
+  let tentativas = 0;
+  while (!diaUtil(atual, feriados) && tentativas < 40) {
+    atual = adicionarDia(atual, 1);
+    tentativas++;
+  }
+  return atual;
 }
 
 function clonarAlin(processo: ProcessoIntegracao): ProcessoIntegracao {
@@ -132,10 +154,7 @@ export function datasSugeridasMentora(
   const etapa = cronogramaReal(processo, feriados).find((e) => e.et.al === numero);
   const d1 = etapa?.data || '';
   if (!d1) return { d1: '', d2: '' };
-  const [ano, mes, dia] = d1.split('-').map(Number);
-  const amanha = new Date(Date.UTC(ano, mes - 1, dia + 1));
-  const isoAmanha = `${amanha.getUTCFullYear()}-${String(amanha.getUTCMonth() + 1).padStart(2, '0')}-${String(amanha.getUTCDate()).padStart(2, '0')}`;
-  return { d1, d2: proximoDiaUtil(isoAmanha, feriados) };
+  return { d1, d2: proximoUtil(adicionarDia(d1, 1), feriados) };
 }
 
 export function horariosTextoMentora(processo: ProcessoIntegracao, numero: number): string {
