@@ -264,7 +264,6 @@ export default function RankingGeralEngajamento() {
   const handleExport = async () => {
     const result = await exportarExcel.mutateAsync({
       alunoIdsUsuario: rankingFiltrado.map(row => row.idUsuario),
-      ...(isAdmin && programIdEfetivo ? { programId: programIdEfetivo } : {}),
     });
 
     const bytes = Uint8Array.from(atob(result.base64), c => c.charCodeAt(0));
@@ -570,11 +569,11 @@ export default function RankingGeralEngajamento() {
                     <tr className="bg-green-50">
                       <td className="p-2 text-center font-bold">{previewAluno.posicao}º</td>
                       <td className="p-2 font-medium">{previewAluno.nomeAluno}</td>
-                      <td className="p-2 text-center">{Math.round(previewAluno.ind1Webinars ?? 0)}%</td>
-                      <td className="p-2 text-center">{Math.round(previewAluno.ind2Avaliacoes ?? 0)}%</td>
-                      <td className="p-2 text-center">{Math.round(previewAluno.ind3Competencias ?? 0)}%</td>
-                      <td className="p-2 text-center">{Math.round(previewAluno.ind4Tarefas ?? 0)}%</td>
-                      <td className="p-2 text-center font-bold text-emerald-700">{Math.round(previewAluno.notaFinal ?? 0)}%</td>
+                      <td className="p-2 text-center">{Math.round(previewAluno.ind1 ?? 0)}%</td>
+                      <td className="p-2 text-center">{Math.round(previewAluno.ind2 ?? 0)}%</td>
+                      <td className="p-2 text-center">{Math.round(previewAluno.ind3 ?? 0)}%</td>
+                      <td className="p-2 text-center">{Math.round(previewAluno.ind4 ?? 0)}%</td>
+                      <td className="p-2 text-center font-bold text-emerald-700">{Math.round(previewAluno.ind7 ?? 0)}%</td>
                     </tr>
                   </tbody>
                 </table>
