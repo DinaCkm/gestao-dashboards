@@ -281,6 +281,8 @@ export function PainelSemana({
         ) : grupos.map((grupo) => {
           const classe = statusClasses[grupo.statusPior.k];
           const ids = grupo.pessoas.map((acao) => acao.pid);
+          const abertos = grupo.pessoas.filter((acao) => acao.st.k !== 'ok' && acao.st.k !== 'off');
+          const idsAbertos = abertos.map((acao) => acao.pid);
           return (
             <div key={grupo.itemId} className="border rounded-lg overflow-hidden bg-background">
               <div className={`p-4 border-b ${classe}`}>
@@ -290,7 +292,7 @@ export function PainelSemana({
                   </div><h3 className="font-semibold text-base leading-snug">{grupo.item.t}</h3><p className="text-xs opacity-80 mt-1">{grupo.etapa.t} · {grupo.pessoas.length} pessoa{grupo.pessoas.length === 1 ? '' : 's'}</p></div>
 
                   <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                    {grupo.pessoas.length > 1 && onConcluirGrupo && <Button type="button" size="sm" variant="outline" onClick={() => onConcluirGrupo(grupo.itemId, ids)}>Marcar as {grupo.pessoas.length} como feitas</Button>}
+                    {abertos.length > 1 && onConcluirGrupo && <Button type="button" size="sm" variant="outline" onClick={() => onConcluirGrupo(grupo.itemId, idsAbertos)}>Marcar as {abertos.length} como feitas</Button>}
                     {onAplicarStatusGrupo && <select value="__placeholder__" onChange={(event) => {
                       const valor = event.target.value;
                       if (valor === '__placeholder__') return;
@@ -319,7 +321,15 @@ export function PainelSemana({
                       <div className="p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                           <div className="flex min-w-0 flex-1 items-start gap-3">
-                            {onConcluirAcao && <button type="button" onClick={() => onConcluirAcao(acao.pid, grupo.itemId)} className={`mt-0.5 grid h-[18px] w-[18px] flex-shrink-0 place-items-center rounded-[5px] border text-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${ficha.s === 'ok' ? 'border-emerald-600 bg-emerald-600 text-white' : ficha.s === 'na' || ficha.s === 'wont' ? 'border-border bg-muted text-muted-foreground' : 'border-border bg-background text-transparent hover:border-emerald-600'}`} title={ficha.s === 'ok' ? 'Desmarcar' : ficha.s === 'na' || ficha.s === 'wont' ? 'Reabrir' : 'Marcar como feito'} aria-label={`${ficha.s === 'ok' ? 'Desmarcar' : 'Marcar'} ${grupo.item.t} para ${acao.p.nome}`}>{ficha.s === 'na' || ficha.s === 'wont' ? '–' : '✓'}</button>}
+                            {onConcluirAcao && <button type="button" onClick={() => {
+                              const reabrindo = ficha.s === 'ok' || ficha.s === 'na' || ficha.s === 'wont';
+                              onConcluirAcao(acao.pid, grupo.itemId);
+                              if (!reabrindo) {
+                                setFichaAberta(chave);
+                                setRespostaAberta(null);
+                                toast.success('Marcado como feito hoje. Ajuste a data na ficha se foi outro dia.');
+                              }
+                            }} className={`mt-0.5 grid h-[18px] w-[18px] flex-shrink-0 place-items-center rounded-[5px] border text-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${ficha.s === 'ok' ? 'border-emerald-600 bg-emerald-600 text-white' : ficha.s === 'na' || ficha.s === 'wont' ? 'border-border bg-muted text-muted-foreground' : 'border-border bg-background text-transparent hover:border-emerald-600'}`} title={ficha.s === 'ok' ? 'Desmarcar' : ficha.s === 'na' || ficha.s === 'wont' ? 'Reabrir' : 'Marcar como feito'} aria-label={`${ficha.s === 'ok' ? 'Desmarcar' : 'Marcar'} ${grupo.item.t} para ${acao.p.nome}`}>{ficha.s === 'na' || ficha.s === 'wont' ? '–' : '✓'}</button>}
                             <div className="min-w-0 flex-1">
                               <button type="button" className="text-left min-w-0" onClick={() => onProcessoClick?.(acao.pid)}>
                                 <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full border flex-shrink-0" style={acao.p.cor ? { backgroundColor: acao.p.cor } : undefined} /><span className="font-medium truncate">{acao.p.nome}</span></div>
