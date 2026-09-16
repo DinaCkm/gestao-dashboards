@@ -247,6 +247,7 @@ export default function RankingGeralEngajamento() {
   const handleSendEmail = async (aluno: RankingAluno) => {
     await enviarLembrete.mutateAsync({
       alunoIdUsuario: aluno.idUsuario,
+      ...(isAdmin && programIdEfetivo ? { programId: programIdEfetivo } : {}),
     });
   };
 
