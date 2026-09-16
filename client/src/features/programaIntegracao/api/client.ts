@@ -88,8 +88,9 @@ export async function arquivarProcesso(legacyId: string): Promise<{ ok: boolean 
 }
 
 /**
- * Atualiza apenas o estado (feito/alin/bem/teste/timeline) de um processo
- * SEMPRE envia o processo COMPLETO via PUT
+ * Atualiza apenas o estado (feito/alin/bem/teste/timeline) de um processo.
+ * Antes de gravar, confirma a posição atual no bootstrap para não sobrescrever
+ * a ordem do processo com zero durante uma simples atualização de status.
  */
 export async function atualizarEstadoProcesso(
   legacyId: string,
@@ -100,12 +101,20 @@ export async function atualizarEstadoProcesso(
     throw new Error('Processo incompleto: nome e CPF são obrigatórios');
   }
 
+  const bootstrap = await fetchBootstrap();
+  const ordemAtual = Object.keys(bootstrap.state?.processos || {}).indexOf(legacyId);
+
+  // Falha fechada: se não conseguirmos confirmar a posição atual, não gravamos.
+  if (ordemAtual < 0) {
+    throw new Error('Não foi possível confirmar a ordem atual do processo antes de salvar.');
+  }
+
   const response = await fetch(`${API_BASE}/processos/${encodeURIComponent(legacyId)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       processo: processoCompleto, // Sempre COMPLETO
-      ordem: 0,
+      ordem: ordemAtual,
     }),
   });
   
