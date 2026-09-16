@@ -73,6 +73,13 @@ export default function ProgramaIntegracao() {
     return Object.entries(state.processos).map(([id, p]) => ({ ...p, id }));
   }, [state]);
 
+  const respostasPendentes = useMemo(() => state?.config?.respostasPendentes || [], [state]);
+
+  const handleRevisarRespostas = () => {
+    setActiveTab('formularios');
+    setFormularioSubTab('pendentes');
+  };
+
   const handleExportarCSV = async () => {
     try {
       const blob = gerarAgendaCSV(processosAtivos, 'ativo');
@@ -245,6 +252,8 @@ export default function ProgramaIntegracao() {
           <TabsContent value="painel" className="space-y-6 mt-6">
             <PainelSemana
               processosAtivos={processosAtivos}
+              respostasPendentes={respostasPendentes}
+              onRevisarRespostas={handleRevisarRespostas}
               onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
             />
           </TabsContent>
@@ -358,11 +367,11 @@ export default function ProgramaIntegracao() {
           <TabsContent value="config" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Configurações do Programa</CardTitle>
+                <CardTitle>Configurações</CardTitle>
               </CardHeader>
               <CardContent>
                 <Tabs value={configSubTab} onValueChange={(v) => setConfigSubTab(v as ConfigSubTab)}>
-                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 gap-1">
+                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
                     <TabsTrigger value="emails" className="text-xs md:text-sm">E-mails</TabsTrigger>
                     <TabsTrigger value="mentoras" className="text-xs md:text-sm">Mentoras CKM</TabsTrigger>
                     <TabsTrigger value="cursos" className="text-xs md:text-sm">Cursos obrig.</TabsTrigger>
@@ -372,29 +381,15 @@ export default function ProgramaIntegracao() {
                     <TabsTrigger value="backup" className="text-xs md:text-sm">Backup</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="emails" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Modelos de e-mail automáticos para cada etapa do programa</p>
-                  </TabsContent>
-                  <TabsContent value="mentoras" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Cadastro de mentoras/consultoras CKM responsáveis</p>
-                  </TabsContent>
-                  <TabsContent value="cursos" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Cursos obrigatórios para cada tipo de onboarding</p>
-                  </TabsContent>
-                  <TabsContent value="aviso" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Aviso de privacidade e assinatura digital</p>
-                  </TabsContent>
-                  <TabsContent value="links" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Links úteis: sistemas, documentos, formulários externos</p>
-                  </TabsContent>
-                  <TabsContent value="datas" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Datas importantes, feriados e dias não úteis</p>
-                  </TabsContent>
-                  <TabsContent value="backup" className="mt-6 space-y-4">
-                    <Button variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-2" />
-                      Exportar Backup Completo
-                    </Button>
+                  <TabsContent value="emails" className="mt-6"><p className="text-muted-foreground">Modelos de e-mail por fase do processo</p></TabsContent>
+                  <TabsContent value="mentoras" className="mt-6"><p className="text-muted-foreground">Cadastro de mentoras/consultoras CKM</p></TabsContent>
+                  <TabsContent value="cursos" className="mt-6"><p className="text-muted-foreground">Cursos obrigatórios da integração</p></TabsContent>
+                  <TabsContent value="aviso" className="mt-6"><p className="text-muted-foreground">Aviso padrão e assinatura dos e-mails</p></TabsContent>
+                  <TabsContent value="links" className="mt-6"><p className="text-muted-foreground">Links permanentes e formulários</p></TabsContent>
+                  <TabsContent value="datas" className="mt-6"><p className="text-muted-foreground">Datas especiais e feriados para cálculo de prazos</p></TabsContent>
+                  <TabsContent value="backup" className="mt-6 space-y-3">
+                    <p className="text-muted-foreground">Exportação e restauração de dados do módulo</p>
+                    <Button type="button" variant="outline">Exportar backup</Button>
                   </TabsContent>
                 </Tabs>
               </CardContent>
@@ -405,4 +400,3 @@ export default function ProgramaIntegracao() {
     </DashboardLayout>
   );
 }
-
