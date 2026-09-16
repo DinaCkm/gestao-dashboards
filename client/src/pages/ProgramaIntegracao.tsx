@@ -1,16 +1,24 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
 import DashboardLayout from '@/components/DashboardLayout';
-import { 
-  fetchBootstrap, 
-  salvarProcesso, 
+import {
+  fetchBootstrap,
+  salvarProcesso,
   gerarAgendaCSV,
   ProcessoIntegracao,
   BootstrapState,
   atualizarEstadoProcesso,
 } from '@/features/programaIntegracao';
 import { PainelSemana, AgendaGeral, GerenciarPessoas, Indicadores } from '@/features/programaIntegracao/components';
-import { aplicarStatusAcao, statusAcaoAtual, type StatusAcaoLegado } from '@/features/programaIntegracao/helpers/itemStateHelpers';
+import {
+  adicionarNotaAcao,
+  aplicarCampoFichaAcao,
+  aplicarStatusAcao,
+  removerNotaAcao,
+  statusAcaoAtual,
+  type CampoFichaAcao,
+  type StatusAcaoLegado,
+} from '@/features/programaIntegracao/helpers/itemStateHelpers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -77,6 +85,13 @@ export default function ProgramaIntegracao() {
   const respostasPendentes = useMemo(() => state?.config?.respostasPendentes || [], [state]);
   const feriados = useMemo(() => state?.config?.feriados || [], [state]);
 
+  const recarregarEstado = async () => {
+    const response = await fetchBootstrap();
+    if (response.ok && response.state) setState(response.state);
+  };
+
+  const processoPorId = (processoId: string) => todosProcesos.find((p) => p.id === processoId);
+
   const handleRevisarRespostas = () => {
     setActiveTab('formularios');
     setFormularioSubTab('pendentes');
@@ -94,9 +109,7 @@ export default function ProgramaIntegracao() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Erro ao exportar agenda'
-      );
+      setError(err instanceof Error ? err.message : 'Erro ao exportar agenda');
     }
   };
 
@@ -104,61 +117,89 @@ export default function ProgramaIntegracao() {
     try {
       const legacyId = processo.id || `p${Math.random()}`;
       await salvarProcesso(legacyId, processo);
-      
-      const response = await fetchBootstrap();
-      if (response.ok && response.state) {
-        setState(response.state);
-      }
+      await recarregarEstado();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Erro ao salvar processo'
-      );
+      setError(err instanceof Error ? err.message : 'Erro ao salvar processo');
     }
   };
 
   const handleMarcarConcluido = async (processoId: string, itemId: string) => {
     try {
-      const processo = todosProcesos.find(p => p.id === processoId);
+      const processo = processoPorId(processoId);
       if (!processo) return;
 
       const statusAtual = statusAcaoAtual(processo, itemId);
       const novoStatus: StatusAcaoLegado = statusAtual === 'ok' || statusAtual === 'na' || statusAtual === 'wont'
         ? ''
         : 'ok';
-      const processoAtualizado = aplicarStatusAcao(processo, itemId, novoStatus);
-      await atualizarEstadoProcesso(processoId, processoAtualizado);
-      
-      const response = await fetchBootstrap();
-      if (response.ok && response.state) {
-        setState(response.state);
-      }
+      await atualizarEstadoProcesso(processoId, aplicarStatusAcao(processo, itemId, novoStatus));
+      await recarregarEstado();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Erro ao atualizar situação da ação'
-      );
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar situação da ação');
+    }
+  };
+
+  const handleStatusAcao = async (processoId: string, itemId: string, status: StatusAcaoLegado) => {
+    try {
+      const processo = processoPorId(processoId);
+      if (!processo) return;
+      await atualizarEstadoProcesso(processoId, aplicarStatusAcao(processo, itemId, status));
+      await recarregarEstado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar situação da ação');
+    }
+  };
+
+  const handleCampoFichaAcao = async (
+    processoId: string,
+    itemId: string,
+    campo: CampoFichaAcao,
+    valor: string,
+  ) => {
+    try {
+      const processo = processoPorId(processoId);
+      if (!processo) return;
+      await atualizarEstadoProcesso(processoId, aplicarCampoFichaAcao(processo, itemId, campo, valor));
+      await recarregarEstado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao atualizar a ficha da ação');
+    }
+  };
+
+  const handleAdicionarNotaAcao = async (processoId: string, itemId: string, texto: string) => {
+    try {
+      const processo = processoPorId(processoId);
+      if (!processo || !texto.trim()) return;
+      await atualizarEstadoProcesso(processoId, adicionarNotaAcao(processo, itemId, texto));
+      await recarregarEstado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao registrar observação');
+    }
+  };
+
+  const handleRemoverNotaAcao = async (processoId: string, itemId: string, indice: number) => {
+    try {
+      const processo = processoPorId(processoId);
+      if (!processo) return;
+      await atualizarEstadoProcesso(processoId, removerNotaAcao(processo, itemId, indice));
+      await recarregarEstado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao remover observação');
     }
   };
 
   const handleConcluirGrupo = async (itemId: string, processIds: string[]) => {
     try {
       for (const processId of processIds) {
-        const processo = todosProcesos.find(p => p.id === processId);
+        const processo = processoPorId(processId);
         if (!processo) continue;
-
         if (statusAcaoAtual(processo, itemId) !== 'ok') {
-          const processoAtualizado = aplicarStatusAcao(processo, itemId, 'ok');
-          await atualizarEstadoProcesso(processId, processoAtualizado);
+          await atualizarEstadoProcesso(processId, aplicarStatusAcao(processo, itemId, 'ok'));
         }
       }
-
-      const response = await fetchBootstrap();
-      if (response.ok && response.state) {
-        setState(response.state);
-      }
+      await recarregarEstado();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Erro ao concluir grupo'
-      );
+      setError(err instanceof Error ? err.message : 'Erro ao concluir grupo');
     }
   };
 
@@ -169,21 +210,13 @@ export default function ProgramaIntegracao() {
   ) => {
     try {
       for (const processId of processIds) {
-        const processo = todosProcesos.find(p => p.id === processId);
+        const processo = processoPorId(processId);
         if (!processo) continue;
-
-        const processoAtualizado = aplicarStatusAcao(processo, itemId, status);
-        await atualizarEstadoProcesso(processId, processoAtualizado);
+        await atualizarEstadoProcesso(processId, aplicarStatusAcao(processo, itemId, status));
       }
-
-      const response = await fetchBootstrap();
-      if (response.ok && response.state) {
-        setState(response.state);
-      }
+      await recarregarEstado();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Erro ao aplicar status ao grupo'
-      );
+      setError(err instanceof Error ? err.message : 'Erro ao aplicar status ao grupo');
     }
   };
 
@@ -209,11 +242,7 @@ export default function ProgramaIntegracao() {
                 <p className="text-sm text-muted-foreground mt-1">{error}</p>
               </div>
             </div>
-            <Button
-              onClick={() => window.location.reload()}
-              className="mt-4"
-              variant="outline"
-            >
+            <Button onClick={() => window.location.reload()} className="mt-4" variant="outline">
               Tentar Novamente
             </Button>
           </CardContent>
@@ -233,54 +262,17 @@ export default function ProgramaIntegracao() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              title="Alternar tema"
-            >
+            <Button variant="outline" size="sm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Alternar tema">
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Processos Ativos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{processosAtivos.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Encerrados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{processosEncerrados.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Total</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{todosProcesos.length}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Taxa Conclusão</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {todosProcesos.length > 0
-                  ? Math.round((processosEncerrados.length / todosProcesos.length) * 100)
-                  : 0}%
-              </div>
-            </CardContent>
-          </Card>
+          <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Processos Ativos</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{processosAtivos.length}</div></CardContent></Card>
+          <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Encerrados</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{processosEncerrados.length}</div></CardContent></Card>
+          <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Total</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{todosProcesos.length}</div></CardContent></Card>
+          <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Taxa Conclusão</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{todosProcesos.length > 0 ? Math.round((processosEncerrados.length / todosProcesos.length) * 100) : 0}%</div></CardContent></Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MainTabValue)}>
@@ -305,6 +297,10 @@ export default function ProgramaIntegracao() {
               onRevisarRespostas={handleRevisarRespostas}
               onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
               onConcluirAcao={handleMarcarConcluido}
+              onAlterarStatusAcao={handleStatusAcao}
+              onAlterarCampoAcao={handleCampoFichaAcao}
+              onAdicionarNotaAcao={handleAdicionarNotaAcao}
+              onRemoverNotaAcao={handleRemoverNotaAcao}
               onConcluirGrupo={handleConcluirGrupo}
               onAplicarStatusGrupo={handleAplicarStatusGrupo}
             />
@@ -313,139 +309,46 @@ export default function ProgramaIntegracao() {
           <TabsContent value="agenda" className="space-y-6 mt-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Agenda Geral</h2>
-              <Button onClick={handleExportarCSV} size="sm" variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Exportar CSV
-              </Button>
+              <Button onClick={handleExportarCSV} size="sm" variant="outline"><Download className="w-4 h-4 mr-2" />Exportar CSV</Button>
             </div>
-            <AgendaGeral
-              processos={todosProcesos}
-              onExportarCSV={handleExportarCSV}
-              onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
-            />
+            <AgendaGeral processos={todosProcesos} onExportarCSV={handleExportarCSV} onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }} />
           </TabsContent>
 
-          <TabsContent value="indicadores" className="space-y-6 mt-6">
-            <Indicadores processosAtivos={processosAtivos} />
-          </TabsContent>
+          <TabsContent value="indicadores" className="space-y-6 mt-6"><Indicadores processosAtivos={processosAtivos} /></TabsContent>
 
-          <TabsContent value="registrar" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Registrar Respostas de Formulários</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  Entrada de dados dos 5 formulários: Controle, Bem Acolhido, Pesquisa, Avaliação, PDI
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="registrar" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Registrar Respostas de Formulários</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Entrada de dados dos 5 formulários: Controle, Bem Acolhido, Pesquisa, Avaliação, PDI</p></CardContent></Card></TabsContent>
 
-          <TabsContent value="respostas" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Respostas Recebidas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  Visualização consolidada de todas as respostas
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="respostas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Respostas Recebidas</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Visualização consolidada de todas as respostas</p></CardContent></Card></TabsContent>
 
           <TabsContent value="formularios" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Formulários de Integração</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={formularioSubTab} onValueChange={(v) => setFormularioSubTab(v as FormularioSubTab)}>
-                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
-                    <TabsTrigger value="disponiveis" className="text-xs md:text-sm">Disponíveis</TabsTrigger>
-                    <TabsTrigger value="links" className="text-xs md:text-sm">Links de resposta</TabsTrigger>
-                    <TabsTrigger value="pendentes" className="text-xs md:text-sm">Pendentes</TabsTrigger>
-                    <TabsTrigger value="recebidas" className="text-xs md:text-sm">Recebidas</TabsTrigger>
-                    <TabsTrigger value="editar" className="text-xs md:text-sm">Editar perguntas</TabsTrigger>
-                    <TabsTrigger value="config" className="text-xs md:text-sm">Configuração</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="disponiveis" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Formulários disponíveis: Controle, Bem Acolhido, Pesquisa, Avaliação, PDI</p>
-                  </TabsContent>
-                  <TabsContent value="links" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Links de resposta para cada formulário e processo</p>
-                  </TabsContent>
-                  <TabsContent value="pendentes" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Formulários pendentes de resposta por pessoa/ciclo</p>
-                  </TabsContent>
-                  <TabsContent value="recebidas" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Respostas já submetidas com data e avaliador</p>
-                  </TabsContent>
-                  <TabsContent value="editar" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Edição de perguntas, textos e ordem dos formulários</p>
-                  </TabsContent>
-                  <TabsContent value="config" className="mt-6 space-y-4">
-                    <p className="text-muted-foreground">Configurações de formulários: pesos, escalas, validações</p>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+            <Card><CardHeader><CardTitle>Formulários de Integração</CardTitle></CardHeader><CardContent>
+              <Tabs value={formularioSubTab} onValueChange={(v) => setFormularioSubTab(v as FormularioSubTab)}>
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+                  <TabsTrigger value="disponiveis" className="text-xs md:text-sm">Disponíveis</TabsTrigger><TabsTrigger value="links" className="text-xs md:text-sm">Links de resposta</TabsTrigger><TabsTrigger value="pendentes" className="text-xs md:text-sm">Pendentes</TabsTrigger><TabsTrigger value="recebidas" className="text-xs md:text-sm">Recebidas</TabsTrigger><TabsTrigger value="editar" className="text-xs md:text-sm">Editar perguntas</TabsTrigger><TabsTrigger value="config" className="text-xs md:text-sm">Configuração</TabsTrigger>
+                </TabsList>
+                <TabsContent value="disponiveis" className="mt-6 space-y-4"><p className="text-muted-foreground">Formulários disponíveis: Controle, Bem Acolhido, Pesquisa, Avaliação, PDI</p></TabsContent>
+                <TabsContent value="links" className="mt-6 space-y-4"><p className="text-muted-foreground">Links de resposta para cada formulário e processo</p></TabsContent>
+                <TabsContent value="pendentes" className="mt-6 space-y-4"><p className="text-muted-foreground">Formulários pendentes de resposta por pessoa/ciclo</p></TabsContent>
+                <TabsContent value="recebidas" className="mt-6 space-y-4"><p className="text-muted-foreground">Respostas já submetidas com data e avaliador</p></TabsContent>
+                <TabsContent value="editar" className="mt-6 space-y-4"><p className="text-muted-foreground">Edição de perguntas, textos e ordem dos formulários</p></TabsContent>
+                <TabsContent value="config" className="mt-6 space-y-4"><p className="text-muted-foreground">Configurações de formulários: pesos, escalas, validações</p></TabsContent>
+              </Tabs>
+            </CardContent></Card>
           </TabsContent>
 
-          <TabsContent value="atas" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Atas e Relatórios</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  Seleção de pessoa/alinhamento, geração de atas em PDF/Word
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <TabsContent value="atas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Atas e Relatórios</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Seleção de pessoa/alinhamento, geração de atas em PDF/Word</p></CardContent></Card></TabsContent>
 
-          <TabsContent value="pessoas" className="space-y-6 mt-6">
-            <GerenciarPessoas
-              processos={todosProcesos}
-              onNovaPersona={() => console.log('Nova pessoa')}
-              onEditarPersona={(id) => console.log('Editar:', id)}
-              onVisualizarTimeline={(id) => console.log('Timeline:', id)}
-            />
-          </TabsContent>
+          <TabsContent value="pessoas" className="space-y-6 mt-6"><GerenciarPessoas processos={todosProcesos} onNovaPersona={() => console.log('Nova pessoa')} onEditarPersona={(id) => console.log('Editar:', id)} onVisualizarTimeline={(id) => console.log('Timeline:', id)} /></TabsContent>
 
           <TabsContent value="config" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs value={configSubTab} onValueChange={(v) => setConfigSubTab(v as ConfigSubTab)}>
-                  <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
-                    <TabsTrigger value="emails" className="text-xs md:text-sm">E-mails</TabsTrigger>
-                    <TabsTrigger value="mentoras" className="text-xs md:text-sm">Mentoras CKM</TabsTrigger>
-                    <TabsTrigger value="cursos" className="text-xs md:text-sm">Cursos obrig.</TabsTrigger>
-                    <TabsTrigger value="aviso" className="text-xs md:text-sm">Aviso/Assinatura</TabsTrigger>
-                    <TabsTrigger value="links" className="text-xs md:text-sm">Links</TabsTrigger>
-                    <TabsTrigger value="datas" className="text-xs md:text-sm">Datas/Feriados</TabsTrigger>
-                    <TabsTrigger value="backup" className="text-xs md:text-sm">Backup</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="emails" className="mt-6"><p className="text-muted-foreground">Modelos de e-mail por fase do processo</p></TabsContent>
-                  <TabsContent value="mentoras" className="mt-6"><p className="text-muted-foreground">Cadastro de mentoras/consultoras CKM</p></TabsContent>
-                  <TabsContent value="cursos" className="mt-6"><p className="text-muted-foreground">Cursos obrigatórios da integração</p></TabsContent>
-                  <TabsContent value="aviso" className="mt-6"><p className="text-muted-foreground">Aviso padrão e assinatura dos e-mails</p></TabsContent>
-                  <TabsContent value="links" className="mt-6"><p className="text-muted-foreground">Links permanentes e formulários</p></TabsContent>
-                  <TabsContent value="datas" className="mt-6"><p className="text-muted-foreground">Datas especiais e feriados para cálculo de prazos</p></TabsContent>
-                  <TabsContent value="backup" className="mt-6 space-y-3">
-                    <p className="text-muted-foreground">Exportação e restauração de dados do módulo</p>
-                    <Button type="button" variant="outline">Exportar backup</Button>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
+            <Card><CardHeader><CardTitle>Configurações</CardTitle></CardHeader><CardContent>
+              <Tabs value={configSubTab} onValueChange={(v) => setConfigSubTab(v as ConfigSubTab)}>
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
+                  <TabsTrigger value="emails" className="text-xs md:text-sm">E-mails</TabsTrigger><TabsTrigger value="mentoras" className="text-xs md:text-sm">Mentoras CKM</TabsTrigger><TabsTrigger value="cursos" className="text-xs md:text-sm">Cursos obrig.</TabsTrigger><TabsTrigger value="aviso" className="text-xs md:text-sm">Aviso/Assinatura</TabsTrigger><TabsTrigger value="links" className="text-xs md:text-sm">Links</TabsTrigger><TabsTrigger value="datas" className="text-xs md:text-sm">Datas/Feriados</TabsTrigger><TabsTrigger value="backup" className="text-xs md:text-sm">Backup</TabsTrigger>
+                </TabsList>
+                <TabsContent value="emails" className="mt-6"><p className="text-muted-foreground">Modelos de e-mail por fase do processo</p></TabsContent><TabsContent value="mentoras" className="mt-6"><p className="text-muted-foreground">Cadastro de mentoras/consultoras CKM</p></TabsContent><TabsContent value="cursos" className="mt-6"><p className="text-muted-foreground">Cursos obrigatórios da integração</p></TabsContent><TabsContent value="aviso" className="mt-6"><p className="text-muted-foreground">Aviso padrão e assinatura dos e-mails</p></TabsContent><TabsContent value="links" className="mt-6"><p className="text-muted-foreground">Links permanentes e formulários</p></TabsContent><TabsContent value="datas" className="mt-6"><p className="text-muted-foreground">Datas especiais e feriados para cálculo de prazos</p></TabsContent><TabsContent value="backup" className="mt-6 space-y-3"><p className="text-muted-foreground">Exportação e restauração de dados do módulo</p><Button type="button" variant="outline">Exportar backup</Button></TabsContent>
+              </Tabs>
+            </CardContent></Card>
           </TabsContent>
         </Tabs>
       </div>
