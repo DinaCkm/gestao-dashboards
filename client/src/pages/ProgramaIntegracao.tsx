@@ -10,6 +10,7 @@ import {
   atualizarEstadoProcesso,
 } from '@/features/programaIntegracao';
 import { PainelSemana, AgendaGeral, GerenciarPessoas, Indicadores } from '@/features/programaIntegracao/components';
+import { aplicarStatusAcao, statusAcaoAtual, type StatusAcaoLegado } from '@/features/programaIntegracao/helpers/itemStateHelpers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -114,19 +115,12 @@ export default function ProgramaIntegracao() {
     }
   };
 
-  const handleMarcarConcluido = async (processoId: string, campoFeito: string) => {
+  const handleMarcarConcluido = async (processoId: string, itemId: string) => {
     try {
       const processo = todosProcesos.find(p => p.id === processoId);
       if (!processo) return;
 
-      const processoAtualizado = {
-        ...processo,
-        feito: {
-          ...processo.feito,
-          [campoFeito]: new Date().toISOString(),
-        },
-      };
-
+      const processoAtualizado = aplicarStatusAcao(processo, itemId, 'ok');
       await atualizarEstadoProcesso(processoId, processoAtualizado);
       
       const response = await fetchBootstrap();
@@ -136,6 +130,54 @@ export default function ProgramaIntegracao() {
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Erro ao marcar concluído'
+      );
+    }
+  };
+
+  const handleConcluirGrupo = async (itemId: string, processIds: string[]) => {
+    try {
+      for (const processId of processIds) {
+        const processo = todosProcesos.find(p => p.id === processId);
+        if (!processo) continue;
+
+        if (statusAcaoAtual(processo, itemId) !== 'ok') {
+          const processoAtualizado = aplicarStatusAcao(processo, itemId, 'ok');
+          await atualizarEstadoProcesso(processId, processoAtualizado);
+        }
+      }
+
+      const response = await fetchBootstrap();
+      if (response.ok && response.state) {
+        setState(response.state);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Erro ao concluir grupo'
+      );
+    }
+  };
+
+  const handleAplicarStatusGrupo = async (
+    itemId: string,
+    processIds: string[],
+    status: Exclude<StatusAcaoLegado, 'ok'>
+  ) => {
+    try {
+      for (const processId of processIds) {
+        const processo = todosProcesos.find(p => p.id === processId);
+        if (!processo) continue;
+
+        const processoAtualizado = aplicarStatusAcao(processo, itemId, status);
+        await atualizarEstadoProcesso(processId, processoAtualizado);
+      }
+
+      const response = await fetchBootstrap();
+      if (response.ok && response.state) {
+        setState(response.state);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Erro ao aplicar status ao grupo'
       );
     }
   };
@@ -255,6 +297,9 @@ export default function ProgramaIntegracao() {
               respostasPendentes={respostasPendentes}
               onRevisarRespostas={handleRevisarRespostas}
               onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
+              onConcluirAcao={handleMarcarConcluido}
+              onConcluirGrupo={handleConcluirGrupo}
+              onAplicarStatusGrupo={handleAplicarStatusGrupo}
             />
           </TabsContent>
 
@@ -400,3 +445,4 @@ export default function ProgramaIntegracao() {
     </DashboardLayout>
   );
 }
+
