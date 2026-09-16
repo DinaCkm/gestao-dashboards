@@ -17,6 +17,7 @@ const FECHADO = new Set(['ok', 'na', 'wont']);
 type ProcessoEmail = ProcessoIntegracao & {
   ugp?: string;
   consultora?: string;
+  mentora?: string;
   horarios?: string;
   pendencias?: string;
   consideracoes?: string;
