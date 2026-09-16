@@ -160,8 +160,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Backend dedicado para vincular pendência a processo existente, com transação, auditoria e leitura de volta.
 - [x] Backend dedicado para descartar pendência sem exclusão física, com auditoria e leitura de volta.
 - [x] Ativar/desativar por endpoint seguro, usando persistência isolada de `formConfig`.
-- [ ] Editar perguntas e textos.
-- [ ] Restaurar padrão.
+- [x] Editar perguntas, obrigatoriedade, opções e textos pela seção segura `formTextos`, sem alterar códigos técnicos.
+- [x] Restaurar textos oficiais removendo somente as personalizações do formulário, com confirmação.
 - [ ] Corrigir pendência e buscar novamente.
 - [x] Vincular pendência a processo existente pela interface administrativa.
 - [ ] Criar processo permitido com confirmação.
