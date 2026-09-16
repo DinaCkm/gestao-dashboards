@@ -16,6 +16,14 @@ export const GRUPO_NOME = {
 export const GRUPO_ORDEM = ['pre', 'ini', 'a1', 'a2', 'a3', 'a4', 'fim'] as const;
 export const PAPEL_ORDEM = ['Gestor', 'Anjo', 'Colaborador', 'UGP'] as const;
 
+const LADO: Record<string, 'ckm' | 'eles'> = {
+  CKM: 'ckm',
+  UGP: 'eles',
+  Gestor: 'eles',
+  Anjo: 'eles',
+  Colaborador: 'eles',
+};
+
 type GrupoKey = (typeof GRUPO_ORDEM)[number];
 
 function hojeIso(ref: string | Date = new Date()): string {
@@ -161,14 +169,17 @@ export function calcularIndicadoresProgramaReal(
         }
 
         if (fechado(salvo) || etapa.data > hoje) return;
-        if (item.r === 'CKM') resultado.acoesCkm++;
+        if ((LADO[item.r] || 'ckm') === 'ckm') resultado.acoesCkm++;
         else resultado.acoesEles++;
       });
-
-      if (etapa.et.al && etapa.data <= hoje) resultado.alinPrevistos++;
     });
 
     [1, 2, 3, 4].forEach((n) => {
+      let etapaAlinhamento: ReturnType<typeof cronogramaReal>[number] | null = null;
+      cronogramaReal(processo, feriados, hojeRef).forEach((etapa) => {
+        if (etapa.et.al === n) etapaAlinhamento = etapa;
+      });
+      if (etapaAlinhamento && etapaAlinhamento.data <= hoje) resultado.alinPrevistos++;
       if ((processo.alin as any)?.[n]?.realizado) resultado.alinFeitos++;
     });
 
