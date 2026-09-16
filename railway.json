@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": { "buildCommand": "npm run build" },
   "deploy": {
-    "startCommand": "node scripts/migrate-programa-integracao.mjs && npm start",
+    "startCommand": "node scripts/import-programa-integracao.mjs && npm start",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
