@@ -1,6 +1,12 @@
 import type { ProcessoIntegracao } from '../types';
 
 export type StatusAcaoLegado = '' | 'prog' | 'doing' | 'wait' | 'ok' | 'na' | 'wont';
+export type CampoFichaAcao = 'd' | 'prog' | 'just';
+
+export interface NotaAcao {
+  d: string;
+  t: string;
+}
 
 const MARCO_POR_ALINHAMENTO: Record<number, number> = {
   1: 15,
@@ -17,17 +23,29 @@ function hojeIso(hojeRef: string | Date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+function agoraIso(agoraRef: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(agoraRef.getDate())}/${pad(agoraRef.getMonth() + 1)} ${pad(agoraRef.getHours())}:${pad(agoraRef.getMinutes())}`;
+}
+
 function normalizarFicha(valor: unknown): Record<string, any> {
   if (valor && typeof valor === 'object') {
     const atual = valor as Record<string, any>;
-    return {
+    const notasLegadas = Array.isArray(atual.notas)
+      ? atual.notas.map((nota: any) => ({ ...nota }))
+      : atual.obs
+        ? [{ d: '', t: String(atual.obs) }]
+        : [];
+    const copia = {
       ...atual,
       s: atual.s || '',
       d: atual.d || '',
       prog: atual.prog || '',
       just: atual.just || '',
-      notas: Array.isArray(atual.notas) ? [...atual.notas] : [],
+      notas: notasLegadas,
     };
+    if ('obs' in copia) delete copia.obs;
+    return copia;
   }
 
   if (valor) {
@@ -158,6 +176,89 @@ export function aplicarStatusAcao(
     ...processo,
     feito: novoFeito,
     alin: novoAlin,
+  };
+}
+
+/** Espelho de `marcar(id,itid,null,campo,valor)` do HTML original. */
+export function aplicarCampoFichaAcao(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  campo: CampoFichaAcao,
+  valor: string,
+  hojeRef: string | Date = new Date(),
+): ProcessoIntegracao {
+  const hoje = hojeIso(hojeRef);
+  const novoFeito = clonarFeito(processo.feito);
+  const novoAlin = clonarAlinhamentos(processo.alin);
+  const ficha = fichaDe(novoFeito, itemId);
+
+  ficha[campo] = valor;
+
+  if (campo === 'd' && valor && !ficha.s) {
+    ficha.s = 'ok';
+  }
+
+  if (campo === 'prog') {
+    if (valor && (!ficha.s || ficha.s === 'prog')) ficha.s = 'prog';
+    else if (!valor && ficha.s === 'prog') ficha.s = '';
+  }
+
+  limparFichaVazia(novoFeito, itemId);
+  aplicarAutomacoes(novoFeito, novoAlin, hoje);
+
+  return {
+    ...processo,
+    feito: novoFeito,
+    alin: novoAlin,
+  };
+}
+
+export function adicionarNotaAcao(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  texto: string,
+  agoraRef: Date = new Date(),
+): ProcessoIntegracao {
+  const limpo = texto.trim();
+  if (!limpo) return processo;
+
+  const novoFeito = clonarFeito(processo.feito);
+  const ficha = fichaDe(novoFeito, itemId);
+  ficha.notas = Array.isArray(ficha.notas) ? [...ficha.notas] : [];
+  ficha.notas.push({ d: agoraIso(agoraRef), t: limpo });
+
+  return { ...processo, feito: novoFeito };
+}
+
+export function removerNotaAcao(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  indice: number,
+): ProcessoIntegracao {
+  const novoFeito = clonarFeito(processo.feito);
+  const ficha = fichaDe(novoFeito, itemId);
+  ficha.notas = Array.isArray(ficha.notas) ? [...ficha.notas] : [];
+  if (indice >= 0 && indice < ficha.notas.length) ficha.notas.splice(indice, 1);
+  limparFichaVazia(novoFeito, itemId);
+  return { ...processo, feito: novoFeito };
+}
+
+export function fichaAcaoAtual(processo: ProcessoIntegracao, itemId: string): {
+  s: StatusAcaoLegado;
+  d: string;
+  prog: string;
+  just: string;
+  notas: NotaAcao[];
+} {
+  const ficha = normalizarFicha(processo.feito?.[itemId]);
+  return {
+    s: (ficha.s || '') as StatusAcaoLegado,
+    d: String(ficha.d || ''),
+    prog: String(ficha.prog || ''),
+    just: String(ficha.just || ''),
+    notas: Array.isArray(ficha.notas)
+      ? ficha.notas.map((nota: any) => ({ d: String(nota?.d || ''), t: String(nota?.t || '') }))
+      : [],
   };
 }
 
