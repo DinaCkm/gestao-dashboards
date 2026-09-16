@@ -75,6 +75,7 @@ export default function ProgramaIntegracao() {
   }, [state]);
 
   const respostasPendentes = useMemo(() => state?.config?.respostasPendentes || [], [state]);
+  const feriados = useMemo(() => state?.config?.feriados || [], [state]);
 
   const handleRevisarRespostas = () => {
     setActiveTab('formularios');
@@ -120,7 +121,11 @@ export default function ProgramaIntegracao() {
       const processo = todosProcesos.find(p => p.id === processoId);
       if (!processo) return;
 
-      const processoAtualizado = aplicarStatusAcao(processo, itemId, 'ok');
+      const statusAtual = statusAcaoAtual(processo, itemId);
+      const novoStatus: StatusAcaoLegado = statusAtual === 'ok' || statusAtual === 'na' || statusAtual === 'wont'
+        ? ''
+        : 'ok';
+      const processoAtualizado = aplicarStatusAcao(processo, itemId, novoStatus);
       await atualizarEstadoProcesso(processoId, processoAtualizado);
       
       const response = await fetchBootstrap();
@@ -129,7 +134,7 @@ export default function ProgramaIntegracao() {
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Erro ao marcar concluído'
+        err instanceof Error ? err.message : 'Erro ao atualizar situação da ação'
       );
     }
   };
@@ -294,6 +299,7 @@ export default function ProgramaIntegracao() {
           <TabsContent value="painel" className="space-y-6 mt-6">
             <PainelSemana
               processosAtivos={processosAtivos}
+              feriados={feriados}
               respostasPendentes={respostasPendentes}
               onRevisarRespostas={handleRevisarRespostas}
               onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
@@ -445,4 +451,3 @@ export default function ProgramaIntegracao() {
     </DashboardLayout>
   );
 }
-
