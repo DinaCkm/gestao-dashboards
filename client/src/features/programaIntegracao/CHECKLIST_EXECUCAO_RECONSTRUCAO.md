@@ -162,9 +162,9 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Ativar/desativar por endpoint seguro, usando persistência isolada de `formConfig`.
 - [x] Editar perguntas, obrigatoriedade, opções e textos pela seção segura `formTextos`, sem alterar códigos técnicos.
 - [x] Restaurar textos oficiais removendo somente as personalizações do formulário, com confirmação.
-- [ ] Corrigir pendência e buscar novamente.
+- [x] Corrigir identificação da pendência e recalcular candidatos com o mesmo critério fuzzy do formulário público.
 - [x] Vincular pendência a processo existente pela interface administrativa.
-- [ ] Criar processo permitido com confirmação.
+- [x] Criar processo permitido com confirmação, somente a partir de Controle/Bem Acolhido, em transação e com auditoria.
 - [x] Descartar pendência pela interface administrativa com confirmação.
 - [x] Configurar política de duplicidade por formulário com persistência segura e preservação histórica.
 
