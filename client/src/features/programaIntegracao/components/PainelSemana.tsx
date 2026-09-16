@@ -133,6 +133,11 @@ export function PainelSemana({
     const p = card.processo;
     const proxima = card.proximaEtapa;
     const encerrado = p.situacao === 'encerrado';
+    const hojeTexto = encerrado
+      ? 'encerrado'
+      : card.diaAtual != null && card.diaAtual > 0
+        ? `dia ${card.diaAtual} de 150`
+        : 'não iniciou';
 
     return (
       <Card key={card.processoId} className={encerrado ? 'overflow-hidden opacity-75' : 'overflow-hidden'}>
@@ -176,15 +181,12 @@ export function PainelSemana({
                 title={`${card.progresso.foraEscopo} fora do escopo`}
               />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {card.progresso.concluidas} feitas · {card.progresso.abertas} em aberto
-              {card.progresso.foraEscopo > 0 ? ` · ${card.progresso.foraEscopo} fora` : ''}
-            </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
             <div><span className="text-muted-foreground">Início</span><div className="font-medium mt-1">{p.inicio ? formatarData(p.inicio) : '—'}</div></div>
-            <div><span className="text-muted-foreground">Hoje</span><div className="font-medium mt-1">{encerrado ? 'encerrado' : (card.diaAtual == null ? '—' : `${Math.min(150, Math.max(1, card.diaAtual))}/150`)}</div></div>
+            <div><span className="text-muted-foreground">Hoje</span><div className="font-medium mt-1">{hojeTexto}</div></div>
+            <div><span className="text-muted-foreground">Feito</span><div className="font-medium mt-1">{card.progresso.concluidas}/{card.progresso.total}</div></div>
             <div><span className="text-muted-foreground">CKM</span><div className="font-medium mt-1">{card.pendencias.ckm} em aberto</div></div>
             <div><span className="text-muted-foreground">Eles</span><div className="font-medium mt-1">{card.pendencias.eles} em aberto</div></div>
           </div>
@@ -200,7 +202,7 @@ export function PainelSemana({
                 <Badge variant="outline" className={statusClasses[proxima.status.k]}>{proxima.status.l}</Badge>
               </div>
             ) : (
-              <p className="text-sm font-medium mt-1">Sem etapa pendente</p>
+              <p className="text-sm font-medium mt-1">Todas as etapas concluídas</p>
             )}
           </div>
 
