@@ -15,7 +15,7 @@ import {
 // ============================================================
 // AVATAR DA MENTORA GUIA (compartilhado com OnboardingAluno)
 // ============================================================
-const MENTORA_GUIA_AVATAR = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/mentora-guia-avatar_ad26e4e6.png";
+const MENTORA_GUIA_AVATAR = "https://d2xsxph8kpxj0f.cloudfront.net/310519663192322263/5n7arrGNHjNdoFCMzyGXcY/guia-avatar-mPLDYEsokpgWnmRXLMtkY6.webp";
 
 function MentoraGuiaBannerAssessment() {
   return (
@@ -1346,8 +1346,6 @@ export function RelatorioAutoconhecimento({
       C: "Essas são as competências que merecem mais atenção agora. Olhando pelo seu perfil de Conformidade, é natural que algumas delas exijam mais esforço consciente — principalmente as que pedem mais agilidade ou abertura emocional do que análise pura. Priorize praticar uma de cada vez, ligada a situações reais do seu dia a dia.",
     },
   };
-
-
 
   if (!perfis) {
     return (
