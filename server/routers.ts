@@ -4785,23 +4785,26 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     exportarRankingEngajamentoExcel: managerProcedure
       .input(z.object({
         alunoIdsUsuario: z.array(z.string().min(1)),
+        programId: z.number().int().positive().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const isAdmin = ctx.user.role === 'admin' || ctx.user.role === 'admin2';
         const hasConsultorId = !!(ctx.user as any)?.consultorId;
         const consultorRole = (ctx.user as any)?.consultorRole;
-        const isGestor = ctx.user.role === 'manager' && (
+        const isGestor = isAdmin || (ctx.user.role === 'manager' && (
           consultorRole === 'gerente' ||
           (!hasConsultorId && !(ctx.user as any)?.alunoId) ||
           !!(ctx.user as any)?.alunoId
-        );
-        if (!isGestor || !ctx.user.programId) {
+        ));
+        if (!isGestor) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito ao gestor da empresa.' });
         }
 
+        const programIdEfetivo = isAdmin ? input.programId : ctx.user.programId;
         const programs = await db.getPrograms();
-        const program = programs.find(p => p.id === ctx.user.programId);
+        const program = programs.find(p => p.id === programIdEfetivo);
         if (!program) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Empresa do gestor não encontrada.' });
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Empresa não encontrada.' });
         }
 
         const caller = appRouter.createCaller(ctx);
@@ -4809,7 +4812,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const alunosPorId = new Map<string, any>();
         dashboardEmpresa.alunos.forEach((a: any) => alunosPorId.set(a.idUsuario, a));
 
-        const turmasEmpresa = await db.getTurmas(ctx.user.programId);
+        const turmasEmpresa = await db.getTurmas(programIdEfetivo!);
         const turmaMap = new Map<string, string>();
         const turmaCongelamentoMap = new Map<string, string>(); // turmaId -> dataCongelamento
         turmasEmpresa.forEach(t => {
