@@ -17,9 +17,11 @@ import {
 } from '../helpers/itemStateHelpers';
 import { formatarData } from '../helpers/dateHelpers';
 import { respostaDoItem } from '../helpers/respostaItemHelpers';
+import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { EmailActionButtons } from './EmailActionButtons';
 import { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
 import { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
+import { CobrancaFinalPainel, CobrancaFormulariosDialog } from './CobrancaFormulariosDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -64,12 +66,21 @@ export function DetalheProcessoReal({
 }: DetalheProcessoRealProps) {
   const [filtro, setFiltro] = useState<FiltroDetalheProcesso>('');
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
+  const [cobrancaAberta, setCobrancaAberta] = useState(false);
+  const [cobrancaCiclo, setCobrancaCiclo] = useState<1 | 2 | 3 | 4 | undefined>(undefined);
+  const [cobrancaPapel, setCobrancaPapel] = useState<PapelCobranca | null>(null);
   const resumo = useMemo(() => resumoDetalheProcesso(processo, feriados), [processo, feriados]);
   const dia = useMemo(() => diaAtualDetalhe(processo), [processo]);
   const alinhamentos = useMemo(() => resumosAlinhamentosDetalhe(processo, feriados), [processo, feriados]);
   const etapas = useMemo(() => etapasDetalheProcesso(processo, feriados, filtro), [processo, feriados, filtro]);
 
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
+
+  const abrirCobranca = (papel?: PapelCobranca, ciclo?: 1 | 2 | 3 | 4) => {
+    setCobrancaPapel(papel || null);
+    setCobrancaCiclo(ciclo);
+    setCobrancaAberta(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -88,7 +99,12 @@ export function DetalheProcessoReal({
                 </p>
               </div>
             </div>
-            <Badge variant="outline">{processo.situacao === 'encerrado' ? 'Encerrado' : 'Ativo'}</Badge>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => abrirCobranca()}>
+                Cobrar formulários
+              </Button>
+              <Badge variant="outline">{processo.situacao === 'encerrado' ? 'Encerrado' : 'Ativo'}</Badge>
+            </div>
           </div>
 
           <div>
@@ -179,6 +195,16 @@ export function DetalheProcessoReal({
                     </div>
                   )}
 
+                  {etapa.et.id === 'pos4' && (
+                    <div className="border-b bg-muted/10 p-4">
+                      <CobrancaFinalPainel
+                        processo={processo}
+                        feriados={feriados}
+                        onCobrar={(papel) => abrirCobranca(papel, 4)}
+                      />
+                    </div>
+                  )}
+
                   <div className="divide-y">
                     {itens.map((item) => {
                       const st = calcularStatusItem(processo, item.id, etapa.data);
@@ -254,6 +280,17 @@ export function DetalheProcessoReal({
           );
         })}
       </div>
+
+      <CobrancaFormulariosDialog
+        open={cobrancaAberta}
+        onOpenChange={setCobrancaAberta}
+        processo={processo}
+        config={config}
+        feriados={feriados}
+        ciclo={cobrancaCiclo}
+        initialPapel={cobrancaPapel}
+        onSalvarProcesso={salvar}
+      />
     </div>
   );
 }
