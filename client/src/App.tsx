@@ -123,6 +123,7 @@ import WebinarChecklistConfig from "./pages/WebinarChecklistConfig";
 import WebinarTaskResponsavel from "./pages/WebinarTaskResponsavel";
 import ProgramaIntegracao from "./pages/ProgramaIntegracao";
 import ProgramaIntegracaoDetalhe from "./pages/ProgramaIntegracaoDetalhe";
+import ProgramaIntegracaoFormularioPublico from "./pages/ProgramaIntegracaoFormularioPublico";
 
 function Router() {
   return (
@@ -135,6 +136,7 @@ function Router() {
       <Route path={"/certificados/verificar/:hash"} component={CertificadoPublico} />
       <Route path={"/admin/certificado-manual"} component={EmitirCertificadoManual} />
       <Route path={"/admin/configuracao-certificados"} component={ConfiguracaoCertificados} />
+      <Route path={"/formularios/:slug"} component={ProgramaIntegracaoFormularioPublico} />
       <Route path={"/"} component={Home} />
       <Route path={"/upload"} component={Upload} />
       <Route path={"/admin"}>{() => { window.location.replace("/dashboard/admin"); return null; }}</Route>
