@@ -127,12 +127,14 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Microimportação dentro da ação.
 
 ## 9. Respostas recebidas
-- [ ] Tela consolidada.
-- [ ] Filtros por processo, formulário e ciclo.
-- [ ] Detalhe completo.
+- [x] Tela consolidada.
+- [x] Filtros por processo, formulário e ciclo.
+- [x] Detalhe completo da resposta em visualização.
+- [x] Médias, alertas, fonte, versão, protocolo, avaliador/respondente e data exibidos quando disponíveis.
+- [x] Navegação para o processo relacionado.
 - [ ] Edição de ciclo, papel, avaliador, data e campos.
-- [ ] Recalculo de média e alertas.
-- [ ] Remoção/arquivamento seguro e auditável.
+- [ ] Recalculo de média e alertas após edição.
+- [ ] Remoção/arquivamento seguro e auditável pela própria tela.
 
 ## 10. Formulários públicos
 - [x] Catálogo dos cinco formulários no cliente.
