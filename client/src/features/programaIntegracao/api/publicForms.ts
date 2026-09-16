@@ -26,6 +26,41 @@ export interface PublicFormResponse {
   campo?: string;
 }
 
+export interface PublicFormTextOverrides {
+  intro?: string;
+  outro?: string;
+  labels?: Record<string, string>;
+  obrigatorias?: Record<string, boolean>;
+  escolhas?: Record<string, string>;
+  grupoIntro?: Record<string, string>;
+}
+
+export interface PublicFormMetaResponse {
+  ok: boolean;
+  formKey: string;
+  formName: string;
+  active: boolean;
+  version: number;
+  textos: PublicFormTextOverrides | null;
+}
+
+/** Consulta somente leitura: ativo/inativo, versão e camada de textos configurada. */
+export async function carregarFormularioPublicoMeta(
+  slug: PublicFormSlug,
+): Promise<PublicFormMetaResponse> {
+  const response = await fetch(`/api/public/programa-integracao/forms/${encodeURIComponent(slug)}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(response.status === 404 ? 'Formulário não encontrado.' : 'Não foi possível abrir o formulário.');
+  }
+
+  return response.json();
+}
+
 /**
  * Usa somente o endpoint público já existente no servidor.
  * Não toca na configuração global e não cria processo automaticamente.
