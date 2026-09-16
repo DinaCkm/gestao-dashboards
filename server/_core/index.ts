@@ -8,6 +8,7 @@ import { pdfRouter } from "../pdfRoutes";
 import { courseMetadataRouter, ensureCourseMetadataTable } from "../courseMetadataRoutes";
 import { programaIntegracaoConfigRouter } from "../programaIntegracaoConfigRoutes";
 import { programaIntegracaoImportRouter } from "../programaIntegracaoImportRoutes";
+import { programaIntegracaoPendingRouter } from "../programaIntegracaoPendingRoutes";
 import { programaIntegracaoRouter } from "../programaIntegracaoRoutes";
 import { registerProgramaIntegracaoPages } from "../programaIntegracaoPages";
 import { appRouter } from "../routers";
@@ -60,9 +61,10 @@ async function startServer() {
   app.use(courseMetadataRouter);
 
   // Programa de Integracao: config parcial segura, importacao administrativa,
-  // APIs e paginas antes do fallback da SPA.
+  // revisao de pendencias, APIs e paginas antes do fallback da SPA.
   app.use(programaIntegracaoConfigRouter);
   app.use(programaIntegracaoImportRouter);
+  app.use(programaIntegracaoPendingRouter);
   app.use(programaIntegracaoRouter);
   registerProgramaIntegracaoPages(app);
 
