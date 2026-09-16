@@ -263,7 +263,7 @@ export default function ProgramaIntegracao() {
           </TabsContent>
 
           <TabsContent value="formularios" className="space-y-6 mt-6">
-            <FormulariosIntegracaoAdmin key={formularioSubTab} config={config} processos={todosProcesos} initialTab={formularioSubTab} />
+            <FormulariosIntegracaoAdmin key={formularioSubTab} config={config} processos={todosProcesos} initialTab={formularioSubTab} onSaved={recarregarEstado} />
           </TabsContent>
 
           <TabsContent value="atas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Atas e Relatórios</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Seleção de pessoa/alinhamento, geração de atas em PDF/Word</p></CardContent></Card></TabsContent>
