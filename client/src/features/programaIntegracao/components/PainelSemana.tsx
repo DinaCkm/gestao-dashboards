@@ -38,6 +38,13 @@ const statusClasses = {
   off: 'border-slate-300 bg-slate-50 text-slate-700',
 } as const;
 
+const sinalClasses = {
+  late: 'border-red-300 bg-red-100 text-red-700',
+  act: 'border-amber-300 bg-amber-100 text-amber-700',
+  ok: 'border-emerald-300 bg-emerald-100 text-emerald-700',
+  off: 'border-slate-300 bg-slate-100 text-slate-600',
+} as const;
+
 function textoPendente(item: any): string {
   const nome = item?.nome || item?.nomeOrig || item?.respondentName || item?.dados?.nome || 'Pessoa não identificada';
   const formulario = item?.formulario || item?.form || item?.tipoFormulario || 'Formulário';
@@ -115,9 +122,18 @@ export function PainelSemana({
                 {p.cargo || 'Cargo não informado'}{p.unidade ? ` · ${p.unidade}` : ''}
               </p>
             </div>
-            <Button type="button" size="sm" variant="outline" onClick={() => onProcessoClick?.(card.processoId)}>
-              Abrir
-            </Button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span
+                className={`grid h-7 w-7 place-items-center rounded-full border text-sm font-bold ${sinalClasses[card.sinal.k]}`}
+                title={card.sinal.t}
+                aria-label={card.sinal.t}
+              >
+                {card.sinal.i}
+              </span>
+              <Button type="button" size="sm" variant="outline" onClick={() => onProcessoClick?.(card.processoId)}>
+                Abrir
+              </Button>
+            </div>
           </div>
 
           <div>
