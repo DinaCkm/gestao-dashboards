@@ -93,7 +93,12 @@ export function emailMarkdownParaTexto(corpo: string): string {
   return String(corpo || '').replace(/\*\*/g, '').replace(/^>\s?/gm, '');
 }
 
+/**
+ * Espelha exatamente o alerta de `abrirMailObj` do HTML: o aviso considera
+ * destinatário, cópia, assunto e corpo. O texto informativo de anexos não entra
+ * nessa checagem histórica.
+ */
 export function emailTemDadoFaltante(email: EmailMontadoIntegracao, marcadorVazio: string): boolean {
   if (!marcadorVazio) return false;
-  return [email.para, email.cc, email.assunto, email.corpo, email.anexo].some((valor) => String(valor || '').includes(marcadorVazio));
+  return [email.para, email.cc, email.assunto, email.corpo].some((valor) => String(valor || '').includes(marcadorVazio));
 }
