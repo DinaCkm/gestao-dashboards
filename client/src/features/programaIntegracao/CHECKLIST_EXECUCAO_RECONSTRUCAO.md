@@ -105,15 +105,15 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Cobrança dinâmica por responsável.
 
 ## 8. Registrar respostas
-- [ ] Importação por texto colado.
-- [ ] Importação `.csv`.
-- [ ] Importação `.tsv`.
-- [ ] Importação `.txt`.
-- [ ] Detecção automática de separador.
-- [ ] Detecção automática de formulário.
-- [ ] Reconstrução de células quebradas.
-- [ ] Fuzzy match da pessoa.
-- [ ] Conferência linha por linha.
+- [x] Importação por texto colado — motor de leitura portado do `03b-forms.js`.
+- [ ] Importação `.csv` — parser pronto; falta ligar seletor de arquivo à tela.
+- [ ] Importação `.tsv` — parser pronto; falta ligar seletor de arquivo à tela.
+- [ ] Importação `.txt` — parser pronto; falta ligar seletor de arquivo à tela.
+- [x] Detecção automática de separador.
+- [x] Detecção automática de formulário pelo cabeçalho.
+- [x] Reconstrução de células/linhas quebradas do export do Forms.
+- [x] Fuzzy match da pessoa com os mesmos limites históricos `SIM_MIN` e `SIM_BOA`.
+- [ ] Conferência linha por linha na interface.
 - [ ] Política de duplicidade na importação.
 - [ ] Registro em lote.
 - [ ] Resumo final da importação.
