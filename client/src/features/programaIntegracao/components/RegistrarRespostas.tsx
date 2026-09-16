@@ -8,15 +8,20 @@ import {
   type ImportLine,
   type ImportResult,
 } from '../helpers/registrarRespostasParser';
+import {
+  importarRespostasEmLote,
+  type DuplicateAction,
+  type ImportBatchSummary,
+} from '../api/importResponses';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, CheckCircle2, FileUp, Search, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, FileUp, Loader2, Search, X } from 'lucide-react';
 
 type ProcessoComId = ProcessoIntegracao & { id?: string };
-type DuplicateAction = 'sub' | 'reg' | 'skip';
 
 interface RegistrarRespostasProps {
   processos: ProcessoComId[];
+  onSaved?: () => Promise<void> | void;
 }
 
 const FORM_DESCRIPTION: Record<FormImportKey, string> = {
@@ -57,11 +62,14 @@ function confidence(score: number) {
   return score > 0 ? `${Math.round(score * 100)}% — baixa confiança` : '';
 }
 
-export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
+export function RegistrarRespostas({ processos, onSaved }: RegistrarRespostasProps) {
   const [form, setForm] = useState<FormImportKey>('controle');
   const [text, setText] = useState('');
   const [result, setResult] = useState<ImportResult | null>(null);
   const [fileError, setFileError] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [summary, setSummary] = useState<ImportBatchSummary | null>(null);
   const [targetOverrides, setTargetOverrides] = useState<Record<number, string>>({});
   const [cycleOverrides, setCycleOverrides] = useState<Record<number, number>>({});
   const [roleOverrides, setRoleOverrides] = useState<Record<number, string>>({});
@@ -83,8 +91,6 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
     }));
   }, [result, targetOverrides, cycleOverrides, roleOverrides, includeOverrides]);
 
-  const includedCount = lines.filter((line) => line.include).length;
-
   const resetPreview = () => {
     setResult(null);
     setTargetOverrides({});
@@ -93,6 +99,8 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
     setIncludeOverrides({});
     setDuplicateActions({});
     setOpenDetails({});
+    setSaveError('');
+    setSummary(null);
   };
 
   const analyze = (content = text, initialForm = form) => {
@@ -106,6 +114,8 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
     setIncludeOverrides({});
     setDuplicateActions({});
     setOpenDetails({});
+    setSaveError('');
+    setSummary(null);
   };
 
   const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,10 +140,49 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
   const validacaoLinha = (line: ImportLine) => {
     const def = IMPORT_FORM_DEFINITIONS[result?.form || form];
     const missing: string[] = [];
-    if (!line.targetId) missing.push('pessoa');
+    if (!line.targetId || line.targetId === '__novo') missing.push('pessoa existente');
     if (def.cycleIndex != null && !line.cycle) missing.push('alinhamento');
     if (def.roleIndex != null && !line.role) missing.push('Gestor/Anjo');
     return missing;
+  };
+
+  const includedLines = lines.filter((line) => line.include);
+  const invalidIncluded = includedLines.filter((line) => validacaoLinha(line).length > 0);
+  const includedCount = includedLines.length;
+
+  const saveBatch = async () => {
+    if (!result || !includedCount || invalidIncluded.length) return;
+    setSaving(true);
+    setSaveError('');
+    setSummary(null);
+    try {
+      const payload = includedLines.map((line) => ({
+        targetId: line.targetId,
+        nome: line.nome,
+        cycle: line.cycle,
+        role: line.role,
+        evaluator: line.evaluator,
+        when: line.when,
+        dateIso: line.dateIso,
+        pairs: line.pairs,
+        duplicateAction: duplicateActions[line.index] || 'sub' as DuplicateAction,
+      }));
+      const response = await importarRespostasEmLote(result.form, payload);
+      setSummary(response.resumo);
+      if (onSaved) await onSaved();
+      setResult(null);
+      setText('');
+      setTargetOverrides({});
+      setCycleOverrides({});
+      setRoleOverrides({});
+      setIncludeOverrides({});
+      setDuplicateActions({});
+      setOpenDetails({});
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Não foi possível registrar as respostas. Nenhuma alteração foi confirmada.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -142,22 +191,25 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Registros</p>
         <h2 className="text-2xl font-bold">Registrar respostas de formulários</h2>
         <p className="text-sm text-muted-foreground mt-1 max-w-4xl">
-          Cole as linhas exportadas do Forms ou do Excel. O sistema identifica a pessoa mesmo quando o nome foi escrito de forma diferente, mostra a conferência e só depois a resposta poderá ser gravada no processo.
+          Cole as linhas exportadas do Forms ou do Excel. O sistema identifica a pessoa mesmo quando o nome foi escrito de forma diferente, mostra a conferência e só depois grava o lote confirmado.
         </p>
       </div>
+
+      {summary && (
+        <div className="rounded-md border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/20 p-4 text-sm">
+          <div className="font-semibold">Importação concluída.</div>
+          <div className="mt-1 text-muted-foreground">
+            {summary.registradas} respostas registradas · {summary.substituidas} substituídas · {summary.adicionais} adicionais · {summary.ignoradas} ignoradas · {summary.processosAtualizados} processos atualizados.
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader><CardTitle>1 · Qual formulário</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {FORM_ORDER.map((key) => (
-              <Button
-                key={key}
-                type="button"
-                size="sm"
-                variant={form === key ? 'default' : 'outline'}
-                onClick={() => { setForm(key); resetPreview(); }}
-              >
+              <Button key={key} type="button" size="sm" variant={form === key ? 'default' : 'outline'} onClick={() => { setForm(key); resetPreview(); }}>
                 {IMPORT_FORM_DEFINITIONS[key].name}
               </Button>
             ))}
@@ -184,19 +236,10 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
       <Card>
         <CardHeader><CardTitle>2 · Cole as respostas</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <textarea
-            className="min-h-44 w-full rounded-md border bg-background px-3 py-2 text-sm font-mono"
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="Cole aqui as linhas copiadas da planilha (Ctrl+C no Excel, Ctrl+V aqui). Pode colar com ou sem a linha de cabeçalho."
-          />
+          <textarea className="min-h-44 w-full rounded-md border bg-background px-3 py-2 text-sm font-mono" value={text} onChange={(event) => setText(event.target.value)} placeholder="Cole aqui as linhas copiadas da planilha (Ctrl+C no Excel, Ctrl+V aqui). Pode colar com ou sem a linha de cabeçalho." />
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" onClick={() => analyze()} disabled={!text.trim()}>
-              <Search className="w-4 h-4 mr-2" />Analisar
-            </Button>
-            <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
-              <FileUp className="w-4 h-4 mr-2" />Abrir arquivo (.csv, .tsv, .txt)
-            </Button>
+            <Button type="button" onClick={() => analyze()} disabled={!text.trim()}><Search className="w-4 h-4 mr-2" />Analisar</Button>
+            <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}><FileUp className="w-4 h-4 mr-2" />Abrir arquivo (.csv, .tsv, .txt)</Button>
             <input ref={inputRef} type="file" className="hidden" accept=".csv,.tsv,.txt,text/plain,text/csv" onChange={handleFile} />
             <span className="text-xs text-muted-foreground">Se for .xlsx, abra no Excel, selecione as linhas e cole aqui.</span>
           </div>
@@ -230,11 +273,7 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
                 <div key={line.index} className={`rounded-lg border p-4 space-y-3 ${!line.include ? 'opacity-60' : missing.length ? 'border-destructive/50' : duplicate ? 'border-amber-500/50' : ''}`}>
                   <div className="flex flex-col gap-3 xl:flex-row xl:items-start">
                     <label className="flex items-center gap-2 text-sm font-medium min-w-44">
-                      <input
-                        type="checkbox"
-                        checked={line.include}
-                        onChange={(event) => setIncludeOverrides((prev) => ({ ...prev, [line.index]: event.target.checked }))}
-                      />
+                      <input type="checkbox" checked={line.include} onChange={(event) => setIncludeOverrides((prev) => ({ ...prev, [line.index]: event.target.checked }))} />
                       {line.nome || '(sem nome na linha)'}
                     </label>
                     <div className="flex flex-wrap gap-2 text-xs">
@@ -248,11 +287,7 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
                   </div>
 
                   <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-                    <select
-                      className="h-10 rounded-md border bg-background px-3 text-sm"
-                      value={line.targetId}
-                      onChange={(event) => setTargetOverrides((prev) => ({ ...prev, [line.index]: event.target.value }))}
-                    >
+                    <select className="h-10 rounded-md border bg-background px-3 text-sm" value={line.targetId} onChange={(event) => setTargetOverrides((prev) => ({ ...prev, [line.index]: event.target.value }))}>
                       <option value="">— escolher a pessoa —</option>
                       {IMPORT_FORM_DEFINITIONS[result.form].canCreate && <option value="__novo">＋ criar novo processo para “{line.nome || 'sem nome'}”</option>}
                       {processos.map((p) => {
@@ -295,9 +330,7 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
                   {line.score > 0 && line.targetId && line.targetId !== '__novo' && <p className="text-xs text-muted-foreground">Correspondência do nome: {confidence(line.score)}.</p>}
 
                   <div className="flex justify-end">
-                    <Button type="button" size="sm" variant="ghost" onClick={() => setOpenDetails((prev) => ({ ...prev, [line.index]: !prev[line.index] }))}>
-                      {openDetails[line.index] ? 'Ocultar dados' : 'Ver dados'}
-                    </Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setOpenDetails((prev) => ({ ...prev, [line.index]: !prev[line.index] }))}>{openDetails[line.index] ? 'Ocultar dados' : 'Ver dados'}</Button>
                   </div>
 
                   {openDetails[line.index] && (
@@ -317,18 +350,24 @@ export function RegistrarRespostas({ processos }: RegistrarRespostasProps) {
               );
             })}
 
-            <div className="flex flex-col gap-3 border-t pt-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle2 className="w-4 h-4" />
-                {includedCount} {includedCount === 1 ? 'resposta selecionada' : 'respostas selecionadas'} para conferência.
+            {saveError && <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"><AlertCircle className="w-4 h-4 mt-0.5 text-destructive" />{saveError}</div>}
+
+            <div className="flex flex-col gap-3 border-t pt-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="text-sm text-muted-foreground">
+                <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" />{includedCount} {includedCount === 1 ? 'resposta selecionada' : 'respostas selecionadas'}.</div>
+                {invalidIncluded.length > 0 && <div className="mt-1 text-destructive">Revise {invalidIncluded.length} {invalidIncluded.length === 1 ? 'linha pendente' : 'linhas pendentes'} antes de registrar.</div>}
               </div>
-              <Button type="button" variant="ghost" onClick={() => { resetPreview(); setText(''); }}>
-                <X className="w-4 h-4 mr-2" />Descartar conferência
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="ghost" disabled={saving} onClick={() => { resetPreview(); setText(''); }}><X className="w-4 h-4 mr-2" />Descartar conferência</Button>
+                <Button type="button" disabled={saving || includedCount === 0 || invalidIncluded.length > 0} onClick={saveBatch}>
+                  {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Registrar {includedCount || ''} {includedCount === 1 ? 'resposta' : 'respostas'}
+                </Button>
+              </div>
             </div>
 
             <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-              Nada foi gravado. A gravação em lote será conectada somente ao endpoint específico de respostas, depois da validação de duplicidade e auditoria; esta tela não usa o salvamento global de Configurações.
+              A gravação usa uma operação administrativa específica para respostas. Se qualquer linha falhar, o lote inteiro é revertido. Substituições preservam a resposta anterior no histórico; esta tela não usa o salvamento global de Configurações.
             </div>
           </CardContent>
         </Card>
