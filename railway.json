@@ -1,8 +1,6 @@
 {
   "$schema": "https://railway.com/railway.schema.json",
-  "build": {
-    "buildCommand": "npm run build"
-  },
+  "build": { "buildCommand": "npm run build" },
   "deploy": {
     "startCommand": "node scripts/migrate-programa-integracao.mjs && npm start",
     "healthcheckPath": "/api/health",
