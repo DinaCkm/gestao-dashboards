@@ -118,9 +118,12 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Identificação visual de resposta duplicada e escolha prévia `substituir / manter as duas / não registrar`.
 - [x] Visualização dos dados completos da linha e dos pontos de atenção antes de registrar.
 - [x] Tela ligada à aba real `Registrar respostas` do Programa de Integração.
-- [ ] Política de duplicidade persistida no backend da importação.
-- [ ] Registro em lote.
-- [ ] Resumo final da importação após persistência real.
+- [x] Política de duplicidade persistida no backend da importação, preservando substituída no histórico.
+- [x] Registro em lote transacional, com rollback integral quando qualquer linha falha.
+- [x] Auditoria por resposta importada/substituída sem registrar conteúdo sensível no log.
+- [x] Marcação automática da ação correspondente na timeline após a importação vinculada.
+- [x] Leitura de volta do bootstrap após a gravação do lote.
+- [x] Resumo final da importação após persistência real.
 - [ ] Microimportação dentro da ação.
 
 ## 9. Respostas recebidas
