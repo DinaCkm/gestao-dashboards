@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ProcessoIntegracao } from '../types';
+import type { BootstrapState, ProcessoIntegracao } from '../types';
 import { coletarAcoesPainel } from '../helpers/painelAcoes';
 import {
   calcularKpisPainel,
@@ -29,6 +29,7 @@ import {
   respostaDoItem,
 } from '../helpers/respostaItemHelpers';
 import { formatarData } from '../helpers/dateHelpers';
+import { EmailActionButtons } from './EmailActionButtons';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ interface PainelSemanaProps {
   processosEncerrados?: ProcessoIntegracao[];
   feriados?: string[];
   respostasPendentes?: any[];
+  config: BootstrapState['config'];
   onProcessoClick?: (processId: string) => void;
   onRevisarRespostas?: () => void;
   onConcluirAcao?: (processId: string, itemId: string) => void;
@@ -90,6 +92,7 @@ export function PainelSemana({
   processosEncerrados = [],
   feriados = [],
   respostasPendentes = [],
+  config,
   onProcessoClick,
   onRevisarRespostas,
   onConcluirAcao,
@@ -342,6 +345,23 @@ export function PainelSemana({
 
                           <div className="flex flex-wrap items-center gap-2 md:justify-end">
                             <Badge variant="outline" className={statusClasses[acao.st.k]}>{acao.st.l}</Badge>
+                            {ehEmail && (
+                              <EmailActionButtons
+                                processo={acao.p}
+                                item={grupo.item}
+                                config={config}
+                                feriados={feriados}
+                                onAlternarEnviado={onAlterarStatusAcao ? (processoId, itemId) => {
+                                  const atual = fichaAcaoAtual(acao.p, itemId).s;
+                                  onAlterarStatusAcao(processoId, itemId, atual === 'ok' ? '' : 'ok');
+                                  if (atual !== 'ok') {
+                                    setFichaAberta(chave);
+                                    setRespostaAberta(null);
+                                  }
+                                } : undefined}
+                                onGerarRelatorioEvolucao={handleGerarRelatorioEvolucao}
+                              />
+                            )}
                             {grupo.item.pdf && <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(acao.p)}>Agenda PDF</Button>}
                             {relN && <Button type="button" size="sm" variant={temRelatorioEvolucao ? 'outline' : 'ghost'} onClick={() => handleGerarRelatorioEvolucao(acao.p, relN)} title={temRelatorioEvolucao ? (relN === 5 ? 'Gera o PDF com a evolução completa do 1º ao 4º alinhamento' : 'Gera o PDF de evolução do formulário do gestor para anexar neste e-mail') : 'Ainda não há formulário do gestor registrado para este relatório'}>{relN === 5 ? 'Relatório de evolução (completo)' : 'Relatório de evolução'}</Button>}
                             {resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setRespostaAberta(respostaVisivel ? null : chave); if (!respostaVisivel) setFichaAberta(null); }}>{respostaVisivel ? 'Ocultar resposta' : 'Resposta'}</Button>}
