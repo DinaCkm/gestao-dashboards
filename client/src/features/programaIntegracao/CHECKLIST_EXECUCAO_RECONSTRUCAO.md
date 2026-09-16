@@ -157,13 +157,15 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Links públicos em modo de consulta/cópia.
 - [x] Pendentes visíveis com candidatos sugeridos.
 - [x] Respostas públicas vinculadas visíveis.
+- [x] Backend dedicado para vincular pendência a processo existente, com transação, auditoria e leitura de volta.
+- [x] Backend dedicado para descartar pendência sem exclusão física, com auditoria e leitura de volta.
 - [ ] Ativar/desativar por endpoint seguro.
 - [ ] Editar perguntas e textos.
 - [ ] Restaurar padrão.
 - [ ] Corrigir pendência e buscar novamente.
-- [ ] Vincular pendência a processo existente.
+- [ ] Vincular pendência a processo existente pela interface administrativa.
 - [ ] Criar processo permitido com confirmação.
-- [ ] Descartar pendência com auditoria e confirmação.
+- [ ] Descartar pendência pela interface administrativa com confirmação.
 - [ ] Configurar política de duplicidade.
 
 ## 12. Cobrança de formulários
