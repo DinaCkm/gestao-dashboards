@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import type { ItemPlanoReal } from '../helpers/planoReal';
 import {
@@ -17,6 +18,7 @@ interface EmailActionButtonsProps {
   config: BootstrapState['config'];
   feriados?: string[];
   onAlternarEnviado?: (processId: string, itemId: string) => Promise<void> | void;
+  onAbrirFicha?: () => void;
   onEditarModelo?: (chave: string) => void;
   onGerarRelatorioEvolucao?: (processo: ProcessoIntegracao, relN: number) => void;
 }
@@ -33,6 +35,11 @@ function relatorioDaChave(chave: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
+function hojeBr(): string {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
 /**
  * Espelha `botoesMail(it,id,s)` + `abrirMail(k,id)` do HTML histórico.
  * O componente não envia e-mail: gera a prévia, permite copiar/abrir no cliente
@@ -44,6 +51,7 @@ export function EmailActionButtons({
   config,
   feriados = [],
   onAlternarEnviado,
+  onAbrirFicha,
   onEditarModelo,
   onGerarRelatorioEvolucao,
 }: EmailActionButtonsProps) {
@@ -65,6 +73,18 @@ export function EmailActionButtons({
       )
     : null;
   const relN = chaveAberta ? relatorioDaChave(chaveAberta) : null;
+
+  const alternarEnviadoComFeedback = async () => {
+    if (!onAlternarEnviado) return;
+    const eraEnviado = enviado;
+    await onAlternarEnviado(processoId, item.id);
+    if (!eraEnviado) onAbrirFicha?.();
+    toast.success(
+      eraEnviado
+        ? 'Marcação removida.'
+        : `Enviado em ${hojeBr()}. Ajuste a data se foi outro dia.`,
+    );
+  };
 
   return (
     <>
@@ -89,7 +109,7 @@ export function EmailActionButtons({
           type="button"
           size="sm"
           variant={enviado ? 'outline' : 'ghost'}
-          onClick={() => onAlternarEnviado(processoId, item.id)}
+          onClick={alternarEnviadoComFeedback}
         >
           {enviado ? '✓ enviado' : 'enviado?'}
         </Button>
@@ -104,6 +124,7 @@ export function EmailActionButtons({
         onAlternarEnviado={onAlternarEnviado ? async () => {
           await onAlternarEnviado(processoId, item.id);
         } : undefined}
+        onMarcadoEnviado={onAbrirFicha}
         onEditarModelo={onEditarModelo && chaveAberta ? () => {
           const chave = chaveAberta;
           setChaveAberta(null);
