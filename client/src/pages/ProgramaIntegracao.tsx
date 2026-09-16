@@ -13,6 +13,7 @@ import {
   GerenciarPessoas,
   Indicadores,
   RegistrarRespostas,
+  RespostasRecebidas,
   FormulariosIntegracaoAdmin,
   ConfiguracaoAviso,
   ConfiguracaoDatas,
@@ -257,7 +258,9 @@ export default function ProgramaIntegracao() {
             <RegistrarRespostas processos={todosProcesos} onSaved={recarregarEstado} />
           </TabsContent>
 
-          <TabsContent value="respostas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Respostas Recebidas</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Visualização consolidada de todas as respostas</p></CardContent></Card></TabsContent>
+          <TabsContent value="respostas" className="space-y-6 mt-6">
+            <RespostasRecebidas processos={todosProcesos} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} />
+          </TabsContent>
 
           <TabsContent value="formularios" className="space-y-6 mt-6">
             <FormulariosIntegracaoAdmin key={formularioSubTab} config={config} processos={todosProcesos} initialTab={formularioSubTab} />
