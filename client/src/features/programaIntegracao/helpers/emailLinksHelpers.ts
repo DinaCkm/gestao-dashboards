@@ -15,13 +15,13 @@ export interface DefinicaoLinkIntegracao {
 }
 
 const LINKS_BASE = [
-  { k: 'bemAcolhido', n: 'Bem Acolhido em Nossa Unidade', d: 'Gestor preenche antes da chegada', tok: 'LINK_BEM_ACOLHIDO', formLink: 'bem' as const },
-  { k: 'controle', n: 'Controle do Programa de Integração', d: 'Cadastro inicial da UGP', tok: 'LINK_CONTROLE', formLink: 'controle' as const },
-  { k: 'avalPrograma', n: 'Avaliação do Programa de Integração', d: 'Gestor e Anjo, após cada alinhamento', tok: 'LINK_AVAL_PROGRAMA', formLink: 'aval' as const },
-  { k: 'pesquisa', n: 'Pesquisa de Integração', d: 'Colaborador, após cada alinhamento', tok: 'LINK_PESQUISA', formLink: 'pesquisa' as const },
-  { k: 'pdiRel', n: 'Relatório de Acompanhamento do PDI', d: 'CKM preenche e envia à UGP', tok: 'LINK_PDI_REL', formLink: 'pdi' as const },
-  { k: 'ecolider', n: 'Plataforma Ecolíder', d: 'Avaliação de Potencial, Jornada Compliance e PDI', tok: 'LINK_ECOLIDER', formLink: null },
-  { k: 'suporte', n: 'Contato de suporte da CKM', d: 'E-mail ou telefone para dúvidas de acesso', tok: 'CONTATO_CKM', formLink: null },
+  { k: 'bemAcolhido', n: 'Bem Acolhido em Nossa Unidade', d: 'Gestor preenche antes da chegada', tok: 'LINK_BEM_ACOLHIDO', formLink: 'bem' as const, u: '' },
+  { k: 'controle', n: 'Controle do Programa de Integração', d: 'Cadastro inicial da UGP', tok: 'LINK_CONTROLE', formLink: 'controle' as const, u: '' },
+  { k: 'avalPrograma', n: 'Avaliação do Programa de Integração', d: 'Gestor e Anjo, após cada alinhamento', tok: 'LINK_AVAL_PROGRAMA', formLink: 'aval' as const, u: '' },
+  { k: 'pesquisa', n: 'Pesquisa de Integração', d: 'Colaborador, após cada alinhamento', tok: 'LINK_PESQUISA', formLink: 'pesquisa' as const, u: '' },
+  { k: 'pdiRel', n: 'Relatório de Acompanhamento do PDI', d: 'CKM preenche e envia à UGP', tok: 'LINK_PDI_REL', formLink: 'pdi' as const, u: '' },
+  { k: 'ecolider', n: 'Plataforma do Ecossistema do B.E.M.', d: 'Plataforma do Ecossistema do B.E.M.', tok: 'LINK_ECOLIDER', formLink: null, u: 'https://ecolider.ecodobem.com' },
+  { k: 'suporte', n: 'Contato de suporte da CKM', d: 'E-mail de suporte da CKM (não é um link)', tok: 'CONTATO_CKM', formLink: null, u: 'relacionamento@ckmtalents.net' },
 ] as const;
 
 function origemSemBarra(origin?: string): string {
@@ -53,11 +53,9 @@ export function definicoesLinksIntegracao(
     const override = config[base.k];
     const url = base.formLink
       ? urlFormularioPublico(base.formLink, origin)
-      : typeof override?.u === 'string'
+      : typeof override?.u === 'string' && override.u.trim()
         ? override.u
-        : base.k === 'ecolider' && origin
-          ? origemSemBarra(origin)
-          : '';
+        : base.u;
 
     return {
       k: base.k,
