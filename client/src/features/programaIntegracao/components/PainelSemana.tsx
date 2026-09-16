@@ -19,6 +19,7 @@ type StatusGrupo = '' | 'prog' | 'doing' | 'wait' | 'na' | 'wont';
 
 interface PainelSemanaProps {
   processosAtivos: ProcessoIntegracao[];
+  processosEncerrados?: ProcessoIntegracao[];
   feriados?: string[];
   respostasPendentes?: any[];
   onProcessoClick?: (processId: string) => void;
@@ -45,6 +46,7 @@ function textoPendente(item: any): string {
 
 export function PainelSemana({
   processosAtivos,
+  processosEncerrados = [],
   feriados = [],
   respostasPendentes = [],
   onProcessoClick,
@@ -62,9 +64,13 @@ export function PainelSemana({
   const kpis = useMemo(() => calcularKpisPainel(acoes), [acoes]);
   const acoesFiltradas = useMemo(() => filtrarAcoesPainel(acoes, filtro), [acoes, filtro]);
   const grupos = useMemo(() => agruparFiltradas(acoesFiltradas), [acoesFiltradas]);
-  const cardsProcessos = useMemo(
+  const cardsProcessosAtivos = useMemo(
     () => processosAtivos.map((processo) => montarCardProcessoPainel(processo, feriados)),
     [processosAtivos, feriados],
+  );
+  const cardsProcessosEncerrados = useMemo(
+    () => processosEncerrados.map((processo) => montarCardProcessoPainel(processo, feriados)),
+    [processosEncerrados, feriados],
   );
   const idsProcessosFiltrados = useMemo(
     () => new Set(acoesFiltradas.map((acao) => acao.pid)),
@@ -87,6 +93,83 @@ export function PainelSemana({
     if (!filtro) return true;
     return idsProcessosFiltrados.has(card.processoId);
   };
+
+  const renderCardProcesso = (card: ReturnType<typeof montarCardProcessoPainel>) => {
+    const p = card.processo;
+    const proxima = card.proximaEtapa;
+    const encerrado = p.situacao === 'encerrado';
+
+    return (
+      <Card key={card.processoId} className={encerrado ? 'overflow-hidden opacity-75' : 'overflow-hidden'}>
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-3 h-3 rounded-full border flex-shrink-0"
+                  style={p.cor ? { backgroundColor: p.cor } : undefined}
+                />
+                <h3 className="font-semibold truncate">{p.nome}</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {p.cargo || 'Cargo não informado'}{p.unidade ? ` · ${p.unidade}` : ''}
+              </p>
+            </div>
+            <Button type="button" size="sm" variant="outline" onClick={() => onProcessoClick?.(card.processoId)}>
+              Abrir
+            </Button>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span>Progresso</span>
+              <span>{card.progresso.percentualConcluido}% feito</span>
+            </div>
+            <div className="h-2 rounded-full bg-muted overflow-hidden flex">
+              <div
+                className="h-full bg-primary"
+                style={{ width: `${Math.max(0, Math.min(100, card.progresso.percentualConcluido))}%` }}
+                title={`${card.progresso.concluidas} feitas`}
+              />
+              <div
+                className="h-full bg-muted-foreground/30"
+                style={{ width: `${Math.max(0, Math.min(100, card.progresso.percentualForaEscopo))}%` }}
+                title={`${card.progresso.foraEscopo} fora do escopo`}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {card.progresso.concluidas} feitas · {card.progresso.abertas} em aberto
+              {card.progresso.foraEscopo > 0 ? ` · ${card.progresso.foraEscopo} fora` : ''}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div><span className="text-muted-foreground">Início</span><div className="font-medium mt-1">{p.inicio ? formatarData(p.inicio) : '—'}</div></div>
+            <div><span className="text-muted-foreground">Hoje</span><div className="font-medium mt-1">{encerrado ? 'encerrado' : (card.diaAtual == null ? '—' : `${Math.min(150, Math.max(1, card.diaAtual))}/150`)}</div></div>
+            <div><span className="text-muted-foreground">CKM</span><div className="font-medium mt-1">{card.pendencias.ckm} em aberto</div></div>
+            <div><span className="text-muted-foreground">Eles</span><div className="font-medium mt-1">{card.pendencias.eles} em aberto</div></div>
+          </div>
+
+          <div className="border rounded-md p-3 bg-muted/20">
+            <p className="text-xs text-muted-foreground">Próxima etapa</p>
+            {proxima ? (
+              <div className="mt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <p className="text-sm font-medium">{proxima.titulo}</p>
+                  <p className="text-xs text-muted-foreground">{formatarData(proxima.data)}</p>
+                </div>
+                <Badge variant="outline" className={statusClasses[proxima.status.k]}>{proxima.status.l}</Badge>
+              </div>
+            ) : (
+              <p className="text-sm font-medium mt-1">Sem etapa pendente</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const cardsAtivosVisiveis = cardsProcessosAtivos.filter(cardPassaFiltro);
 
   return (
     <div className="space-y-6">
@@ -285,74 +368,29 @@ export function PainelSemana({
         )}
       </div>
 
-      {cardsProcessos.some(cardPassaFiltro) && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {cardsProcessos.filter(cardPassaFiltro).map((card) => {
-            const p = card.processo;
-            const proxima = card.proximaEtapa;
-            return (
-              <Card key={card.processoId} className="overflow-hidden">
-                <CardContent className="pt-6 space-y-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="w-3 h-3 rounded-full border flex-shrink-0"
-                          style={p.cor ? { backgroundColor: p.cor } : undefined}
-                        />
-                        <h3 className="font-semibold truncate">{p.nome}</h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {p.cargo || 'Cargo não informado'}{p.unidade ? ` · ${p.unidade}` : ''}
-                      </p>
-                    </div>
-                    <Button type="button" size="sm" variant="outline" onClick={() => onProcessoClick?.(card.processoId)}>
-                      Abrir
-                    </Button>
-                  </div>
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          {filtro ? 'Processos desta seleção' : 'Processos ativos'}
+        </h3>
+        {cardsAtivosVisiveis.length > 0 ? (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {cardsAtivosVisiveis.map(renderCardProcesso)}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum processo nessa seleção.
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-                  <div>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span>Progresso</span>
-                      <span>{card.progresso.concluidas}/{card.progresso.total} · {card.progresso.percentualConcluido}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-primary"
-                        style={{ width: `${Math.max(0, Math.min(100, card.progresso.percentualConcluido))}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                    <div><span className="text-muted-foreground">Início</span><div className="font-medium mt-1">{p.inicio ? formatarData(p.inicio) : '—'}</div></div>
-                    <div><span className="text-muted-foreground">Dia atual</span><div className="font-medium mt-1">{card.diaAtual == null ? '—' : `${Math.min(150, Math.max(1, card.diaAtual))}/150`}</div></div>
-                    <div><span className="text-muted-foreground">Pendências CKM</span><div className="font-medium mt-1">{card.pendencias.ckm}</div></div>
-                    <div><span className="text-muted-foreground">Pendências deles</span><div className="font-medium mt-1">{card.pendencias.eles}</div></div>
-                  </div>
-
-                  {card.progresso.foraEscopo > 0 && (
-                    <p className="text-xs text-muted-foreground">{card.progresso.foraEscopo} item(ns) fora do escopo.</p>
-                  )}
-
-                  <div className="border rounded-md p-3 bg-muted/20">
-                    <p className="text-xs text-muted-foreground">Próxima etapa</p>
-                    {proxima ? (
-                      <div className="mt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-medium">{proxima.titulo}</p>
-                          <p className="text-xs text-muted-foreground">{formatarData(proxima.data)}</p>
-                        </div>
-                        <Badge variant="outline" className={statusClasses[proxima.status.k]}>{proxima.status.l}</Badge>
-                      </div>
-                    ) : (
-                      <p className="text-sm font-medium mt-1">Sem etapa pendente</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+      {!filtro && cardsProcessosEncerrados.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Encerrados</h3>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            {cardsProcessosEncerrados.map(renderCardProcesso)}
+          </div>
         </div>
       )}
     </div>
