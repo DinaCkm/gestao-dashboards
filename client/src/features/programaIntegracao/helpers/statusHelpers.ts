@@ -5,6 +5,173 @@
 import { ProcessoIntegracao } from '../types';
 import { listarEtapasOrdenadas, getPlanoCompleto } from './planoHelpers';
 
+export type StatusItemKey = 'ok' | 'off' | 'late' | 'act' | 'wait' | 'ontime';
+
+export interface StatusItemPainel {
+  k: StatusItemKey;
+  l: string;
+  dif?: number;
+  d?: string;
+  extra?: string;
+}
+
+export const PESO_STATUS_ITEM: Record<StatusItemKey, number> = {
+  late: 0,
+  act: 1,
+  wait: 2,
+  ontime: 3,
+  ok: 4,
+  off: 5,
+};
+
+function isoDateLocal(data: string | Date): Date {
+  if (data instanceof Date) {
+    return new Date(data.getFullYear(), data.getMonth(), data.getDate());
+  }
+
+  const match = String(data || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+
+  const parsed = new Date(data);
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+}
+
+function dataIso(data: string | Date): string {
+  const d = isoDateLocal(data);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function diferencaDias(dataBase: string, hoje: string | Date): number {
+  const base = isoDateLocal(dataBase).getTime();
+  const atual = isoDateLocal(hoje).getTime();
+  return Math.round((atual - base) / 86400000);
+}
+
+function pluralDias(n: number): string {
+  return `${n} ${n === 1 ? 'dia' : 'dias'}`;
+}
+
+function formatarDataCurta(data: string): string {
+  const d = isoDateLocal(data);
+  if (Number.isNaN(d.getTime())) return data;
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(d);
+}
+
+/**
+ * Normaliza o formato historico salvo em feito[itemId].
+ * O HTML original aceita registros antigos como boolean, string ou objeto.
+ */
+export function normalizarRegistroFeito(valor: unknown): Record<string, any> | null {
+  if (valor == null || valor === false || valor === '') return null;
+
+  if (valor === true) return { s: 'ok' };
+
+  if (typeof valor === 'string') {
+    const texto = valor.trim();
+    if (!texto) return null;
+
+    if (['ok', 'na', 'wont', 'prog', 'wait'].includes(texto)) {
+      return { s: texto };
+    }
+
+    // Formatos historicos frequentemente guardavam apenas a data/timestamp da conclusao.
+    return { s: 'ok', d: texto };
+  }
+
+  if (typeof valor === 'object') {
+    const obj = valor as Record<string, any>;
+    return { ...obj };
+  }
+
+  return null;
+}
+
+/**
+ * Reproduz o vocabulario e as regras de estado de ITEM do HTML original.
+ * `prevista` deve ser a data calculada do item/etapa no formato YYYY-MM-DD.
+ * `hojeRef` existe para permitir testes deterministas.
+ */
+export function calcularStatusItem(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  prevista: string,
+  hojeRef: string | Date = new Date(),
+): StatusItemPainel {
+  const registro = normalizarRegistroFeito(processo.feito?.[itemId]);
+  const s = registro?.s ? String(registro.s) : '';
+
+  if (s === 'ok') {
+    const conclusao = registro?.d ? String(registro.d).slice(0, 10) : undefined;
+    const atraso = conclusao && prevista ? diferencaDias(prevista, conclusao) : 0;
+    return {
+      k: 'ok',
+      l: 'Feito',
+      d: conclusao,
+      extra: atraso > 0 ? `com ${pluralDias(atraso)} de atraso` : '',
+    };
+  }
+
+  if (s === 'na' || s === 'wont') {
+    return {
+      k: 'off',
+      l: s === 'na' ? 'Não se aplica' : 'Não será realizado',
+    };
+  }
+
+  const dif = prevista ? diferencaDias(prevista, hojeRef) : 0;
+
+  if (s === 'prog') {
+    if (dif > 0) {
+      return {
+        k: 'late',
+        l: `Atrasado ${pluralDias(dif)} (envio programado não saiu)`,
+        dif,
+      };
+    }
+
+    const programado = registro?.prog ? ` p/ ${formatarDataCurta(String(registro.prog))}` : '';
+    return { k: 'wait', l: `Programado${programado}`, dif };
+  }
+
+  if (s === 'wait') {
+    if (dif > 0) {
+      return {
+        k: 'late',
+        l: `Atrasado ${pluralDias(dif)} (aguardando retorno)`,
+        dif,
+      };
+    }
+    return { k: 'wait', l: 'Aguardando retorno', dif };
+  }
+
+  if (dif > 0) {
+    return { k: 'late', l: `Atrasado ${pluralDias(dif)}`, dif };
+  }
+
+  if (dif === 0) {
+    return { k: 'act', l: 'Tomar ação hoje', dif: 0 };
+  }
+
+  if (dif >= -3) {
+    return { k: 'act', l: `Tomar ação — em ${pluralDias(-dif)}`, dif };
+  }
+
+  return { k: 'ontime', l: `No prazo — ${formatarDataCurta(prevista)}`, dif };
+}
+
+export function registroItem(processo: ProcessoIntegracao, itemId: string): Record<string, any> | null {
+  return normalizarRegistroFeito(processo.feito?.[itemId]);
+}
+
 /**
  * Calcula status geral baseado em estado.feito
  */
@@ -184,4 +351,3 @@ export function proximasEtapas(processo: ProcessoIntegracao, limite: number = 3)
   
   return resultado;
 }
-
