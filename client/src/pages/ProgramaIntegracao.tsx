@@ -245,7 +245,7 @@ export default function ProgramaIntegracao() {
           <TabsContent value="painel" className="space-y-6 mt-6">
             <PainelSemana
               processosAtivos={processosAtivos}
-              onProcessoClick={(id) => console.log('Ver detalhe:', id)}
+              onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
             />
           </TabsContent>
 
@@ -260,7 +260,7 @@ export default function ProgramaIntegracao() {
             <AgendaGeral
               processos={todosProcesos}
               onExportarCSV={handleExportarCSV}
-              onProcessoClick={(id) => console.log('Ver detalhe:', id)}
+              onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
             />
           </TabsContent>
 
