@@ -82,13 +82,13 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 ## 6. Mentora
 - [x] Estrutura inicial da preparação da mentora.
 - [ ] Cadastro completo de mentoras.
-- [ ] Seleção e vínculo no processo.
-- [ ] Checklist de prontidão completo.
-- [ ] WhatsApp de disponibilidade.
-- [ ] Horários sugeridos e uso no e-mail do gestor.
-- [ ] WhatsApp de confirmação.
-- [ ] Briefing da Mentora em PDF.
-- [ ] Relatório da Mentora em Word.
+- [x] Seleção e vínculo no processo.
+- [x] Checklist de prontidão completo.
+- [x] WhatsApp de disponibilidade.
+- [x] Horários sugeridos e uso no e-mail do gestor.
+- [x] WhatsApp de confirmação.
+- [x] Briefing da Mentora em PDF.
+- [x] Relatório da Mentora em Word.
 - [ ] Automação final conferida.
 
 ## 7. E-mails
@@ -183,8 +183,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Relatório de Evolução PDF base.
 - [x] Evolução completa prevista na lógica.
 - [ ] Conferir todos os PDFs contra `09-pdf.js`.
-- [ ] Briefing da Mentora PDF.
-- [ ] Relatório da Mentora Word.
+- [x] Briefing da Mentora PDF.
+- [x] Relatório da Mentora Word.
 - [ ] Ata Word.
 - [ ] Relatório UGP Word.
 
