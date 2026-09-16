@@ -35,3 +35,25 @@ export async function atualizarRespostaRecebida(
 
   return response.json();
 }
+
+export async function arquivarRespostaRecebida(
+  legacyRid: string,
+): Promise<{ ok: boolean }> {
+  const response = await fetch(`/api/programa-integracao/respostas/${encodeURIComponent(legacyRid)}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const body = await response.json();
+      detail = body?.error ? `: ${body.error}` : '';
+    } catch {
+      // Mantém o status HTTP quando a resposta não é JSON.
+    }
+    throw new Error(`Não foi possível arquivar a resposta (${response.status})${detail}`);
+  }
+
+  return response.json();
+}
