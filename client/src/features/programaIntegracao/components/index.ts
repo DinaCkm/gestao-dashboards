@@ -8,5 +8,6 @@ export { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
 export { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
 export { FormulariosIntegracaoAdmin } from './FormulariosIntegracaoAdmin';
 export type { FormularioAdminSubTab } from './FormulariosIntegracaoAdmin';
+export { ConfiguracaoAviso, ConfiguracaoDatas } from './ConfiguracaoAvisoDatas';
 export { DetalheProcessoReal } from './DetalheProcessoReal';
 export { default as DetalheProcesso } from './DetalheProcesso';
