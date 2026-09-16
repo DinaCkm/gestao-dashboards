@@ -4,7 +4,6 @@ import DashboardLayout from '@/components/DashboardLayout';
 import {
   fetchBootstrap,
   salvarProcesso,
-  gerarAgendaCSV,
   ProcessoIntegracao,
   BootstrapState,
   atualizarEstadoProcesso,
@@ -22,7 +21,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, Download, Moon, Sun } from 'lucide-react';
+import { AlertCircle, Loader2, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 type MainTabValue = 'painel' | 'agenda' | 'indicadores' | 'registrar' | 'respostas' | 'formularios' | 'atas' | 'pessoas' | 'config';
@@ -63,24 +62,31 @@ export default function ProgramaIntegracao() {
     carregarDados();
   }, []);
 
-  const processosAtivos = useMemo(() => {
-    if (!state?.processos) return [];
-    return Object.entries(state.processos)
-      .filter(([_, p]) => p.situacao === 'ativo')
-      .map(([id, p]) => ({ ...p, id }));
-  }, [state]);
-
-  const processosEncerrados = useMemo(() => {
-    if (!state?.processos) return [];
-    return Object.entries(state.processos)
-      .filter(([_, p]) => p.situacao === 'encerrado')
-      .map(([id, p]) => ({ ...p, id }));
-  }, [state]);
-
   const todosProcesos = useMemo(() => {
     if (!state?.processos) return [];
-    return Object.entries(state.processos).map(([id, p]) => ({ ...p, id }));
+    const registros = Object.entries(state.processos).map(([id, p]) => ({ ...p, id }));
+    const ordem = Array.isArray(state.config?.ordem) ? state.config.ordem : [];
+    if (!ordem.length) return registros;
+    const posicao = new Map(ordem.map((id, index) => [id, index]));
+    return registros.sort((a, b) => {
+      const ia = posicao.get(a.id || '');
+      const ib = posicao.get(b.id || '');
+      if (ia == null && ib == null) return 0;
+      if (ia == null) return 1;
+      if (ib == null) return -1;
+      return ia - ib;
+    });
   }, [state]);
+
+  const processosAtivos = useMemo(
+    () => todosProcesos.filter((p) => p.situacao === 'ativo'),
+    [todosProcesos],
+  );
+
+  const processosEncerrados = useMemo(
+    () => todosProcesos.filter((p) => p.situacao === 'encerrado'),
+    [todosProcesos],
+  );
 
   const respostasPendentes = useMemo(() => state?.config?.respostasPendentes || [], [state]);
   const feriados = useMemo(() => state?.config?.feriados || [], [state]);
@@ -95,22 +101,6 @@ export default function ProgramaIntegracao() {
   const handleRevisarRespostas = () => {
     setActiveTab('formularios');
     setFormularioSubTab('pendentes');
-  };
-
-  const handleExportarCSV = async () => {
-    try {
-      const blob = gerarAgendaCSV(processosAtivos, 'ativo');
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `agenda-integracao-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao exportar agenda');
-    }
   };
 
   const handleSalvarProcesso = async (processo: ProcessoIntegracao) => {
@@ -308,11 +298,15 @@ export default function ProgramaIntegracao() {
           </TabsContent>
 
           <TabsContent value="agenda" className="space-y-6 mt-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Agenda Geral</h2>
-              <Button onClick={handleExportarCSV} size="sm" variant="outline"><Download className="w-4 h-4 mr-2" />Exportar CSV</Button>
-            </div>
-            <AgendaGeral processos={todosProcesos} onExportarCSV={handleExportarCSV} onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }} />
+            <AgendaGeral
+              processos={todosProcesos}
+              feriados={feriados}
+              config={state?.config || { ordem: [], respostasPendentes: [] }}
+              onProcessoClick={(id, itemId) => {
+                setLocation(`/programa-integracao/detalhe/${id}${itemId ? `?item=${encodeURIComponent(itemId)}` : ''}`);
+              }}
+              onAlterarStatusAcao={handleStatusAcao}
+            />
           </TabsContent>
 
           <TabsContent value="indicadores" className="space-y-6 mt-6"><Indicadores processosAtivos={processosAtivos} /></TabsContent>
