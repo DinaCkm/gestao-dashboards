@@ -132,9 +132,9 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Detalhe completo da resposta em visualização.
 - [x] Médias, alertas, fonte, versão, protocolo, avaliador/respondente e data exibidos quando disponíveis.
 - [x] Navegação para o processo relacionado.
-- [ ] Edição de ciclo, papel, avaliador, data e campos.
-- [ ] Recalculo de média e alertas após edição.
-- [ ] Remoção/arquivamento seguro e auditável pela própria tela.
+- [x] Edição de ciclo, papel, avaliador, data e campos, seguindo o editor do `11-respostas.js`.
+- [x] Recalculo de média e alertas após edição.
+- [x] Remoção/arquivamento seguro e auditável pela própria tela, sem exclusão física.
 
 ## 10. Formulários públicos
 - [x] Catálogo dos cinco formulários no cliente.
