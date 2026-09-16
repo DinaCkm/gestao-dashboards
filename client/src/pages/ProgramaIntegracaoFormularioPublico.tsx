@@ -1,9 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRoute } from 'wouter';
 import {
+  carregarFormularioPublicoMeta,
   enviarRespostaFormularioPublico,
+  type PublicFormMetaResponse,
   type PublicFormPayload,
   type PublicFormSlug,
+  type PublicFormTextOverrides,
 } from '@/features/programaIntegracao/api/publicForms';
 import {
   DICAS_ESCALA,
@@ -58,6 +61,52 @@ const VAZIO: DraftPublico = {
   role: '',
   answers: {},
 };
+
+function paragrafos(value: unknown, fallback: string[] | undefined) {
+  if (value == null) return fallback;
+  return String(value).split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+}
+
+function escolhas(value: unknown) {
+  if (value == null || String(value).trim() === '') return null;
+  return String(value).split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+    const pos = line.indexOf('|');
+    return pos > 0
+      ? { value: line.slice(0, pos).trim(), label: line.slice(pos + 1).trim() }
+      : line;
+  });
+}
+
+function aplicarTextosConfigurados(
+  base: PublicFormCatalog,
+  meta: PublicFormMetaResponse | null,
+): PublicFormCatalog {
+  const textos: PublicFormTextOverrides | null = meta?.textos || null;
+  if (!textos) return meta?.formName ? { ...base, name: meta.formName } : base;
+
+  return {
+    ...base,
+    name: meta?.formName || base.name,
+    intro: paragrafos(textos.intro, base.intro) || base.intro,
+    outro: paragrafos(textos.outro, base.outro),
+    sections: base.sections.map((section) => ({
+      ...section,
+      intro: textos.grupoIntro?.[section.title] != null
+        ? String(textos.grupoIntro[section.title])
+        : section.intro,
+      questions: section.questions.map((question) => ({
+        ...question,
+        label: textos.labels?.[question.code] != null
+          ? String(textos.labels[question.code])
+          : question.label,
+        required: textos.obrigatorias?.[question.code] != null
+          ? Boolean(textos.obrigatorias[question.code])
+          : question.required,
+        options: escolhas(textos.escolhas?.[question.code]) || question.options,
+      })),
+    })),
+  };
+}
 
 function valorResposta(draft: DraftPublico, code: string): string | string[] {
   return draft.answers[code] ?? '';
@@ -124,8 +173,12 @@ function validarPergunta(question: PublicQuestion, form: PublicFormCatalog, draf
   if (question.type === 'textarea' && preenchido && String(value).trim().length < 10) {
     return `Escreva pelo menos 10 caracteres em: ${question.label}`;
   }
-  if (question.type === 'cpf' && preenchido && !/^\d{11}$/.test(String(value))) {
+  if (question.type === 'cpf' && preenchido && !/^\d{11}$/.test(String(value).replace(/\D/g, ''))) {
     return 'Informe o CPF com 11 números.';
+  }
+  if (question.type === 'tel' && preenchido) {
+    const digits = String(value).replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 11) return 'Informe o telefone com DDD, usando 10 ou 11 números.';
   }
   if (question.type === 'scale' && preenchido) {
     const n = Number(value);
@@ -148,19 +201,62 @@ function primeiraFalhaPagina(form: PublicFormCatalog, draft: DraftPublico, pagin
 export default function ProgramaIntegracaoFormularioPublico() {
   const [, params] = useRoute('/formularios/:slug');
   const slug = String(params?.slug || '') as PublicFormSlug;
-  const form = SLUGS.has(slug) ? PUBLIC_FORM_CATALOG[slug] : null;
+  const baseForm = SLUGS.has(slug) ? PUBLIC_FORM_CATALOG[slug] : null;
+  const [meta, setMeta] = useState<PublicFormMetaResponse | null>(null);
+  const [metaLoading, setMetaLoading] = useState(Boolean(baseForm));
+  const [metaError, setMetaError] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftPublico>({ ...VAZIO, answers: {} });
   const [pagina, setPagina] = useState(0);
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState<{ protocolo: string; pendente: boolean } | null>(null);
 
+  useEffect(() => {
+    let ativo = true;
+    if (!baseForm) {
+      setMetaLoading(false);
+      setMeta(null);
+      return () => { ativo = false; };
+    }
+
+    setMetaLoading(true);
+    setMetaError(null);
+    carregarFormularioPublicoMeta(slug)
+      .then((resposta) => {
+        if (ativo) setMeta(resposta);
+      })
+      .catch((err) => {
+        if (ativo) setMetaError(err instanceof Error ? err.message : 'Não foi possível abrir o formulário.');
+      })
+      .finally(() => {
+        if (ativo) setMetaLoading(false);
+      });
+
+    return () => { ativo = false; };
+  }, [baseForm, slug]);
+
+  const form = useMemo(
+    () => baseForm ? aplicarTextosConfigurados(baseForm, meta) : null,
+    [baseForm, meta],
+  );
   const totalPaginas = form ? form.sections.length + 1 : 0;
   const section = form && pagina > 0 ? form.sections[pagina - 1] : null;
   const temEscala = useMemo(() => section?.questions.some((q) => q.type === 'scale') || false, [section]);
 
   if (!form) {
     return <div className="min-h-screen bg-muted/30 p-6"><Card className="mx-auto max-w-xl"><CardContent className="py-12 text-center"><h1 className="text-xl font-bold">Formulário não encontrado</h1><p className="mt-2 text-sm text-muted-foreground">Confira o endereço recebido.</p></CardContent></Card></div>;
+  }
+
+  if (metaLoading) {
+    return <div className="min-h-screen bg-muted/30 p-6"><Card className="mx-auto max-w-xl"><CardContent className="flex items-center justify-center gap-3 py-12"><Loader2 className="h-5 w-5 animate-spin" /><span className="text-sm text-muted-foreground">Carregando formulário…</span></CardContent></Card></div>;
+  }
+
+  if (metaError) {
+    return <div className="min-h-screen bg-muted/30 p-6"><Card className="mx-auto max-w-xl"><CardContent className="py-12 text-center"><AlertCircle className="mx-auto h-10 w-10 text-destructive" /><h1 className="mt-4 text-xl font-bold">Não foi possível abrir o formulário</h1><p className="mt-2 text-sm text-muted-foreground">{metaError}</p><Button className="mt-5" variant="outline" onClick={() => window.location.reload()}>Tentar novamente</Button></CardContent></Card></div>;
+  }
+
+  if (meta?.active === false) {
+    return <div className="min-h-screen bg-muted/30 p-6"><Card className="mx-auto max-w-xl"><CardContent className="py-12 text-center"><h1 className="text-xl font-bold">Formulário indisponível</h1><p className="mt-2 text-sm text-muted-foreground">Este formulário está desativado no momento. Consulte a equipe responsável pelo Programa de Integração.</p></CardContent></Card></div>;
   }
 
   const atualizarAnswer = (code: string, value: string | string[]) => {
@@ -231,7 +327,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
     }
 
     const numerico = q.type === 'cpf' || q.type === 'tel';
-    return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<input type={q.type === 'date' ? 'date' : 'text'} inputMode={numerico ? 'numeric' : undefined} maxLength={q.type === 'cpf' ? 11 : undefined} value={String(value)} onChange={(e) => atualizarAnswer(q.code, numerico ? e.target.value.replace(/\D/g, '') : e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>;
+    return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<input type={q.type === 'date' ? 'date' : 'text'} inputMode={numerico ? 'numeric' : undefined} maxLength={q.type === 'cpf' ? 11 : q.type === 'tel' ? 11 : undefined} value={String(value)} onChange={(e) => atualizarAnswer(q.code, numerico ? e.target.value.replace(/\D/g, '') : e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>;
   };
 
   if (sucesso) {
