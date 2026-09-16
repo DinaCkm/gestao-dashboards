@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
 import { ProcessoIntegracao } from '../types';
-import { detectarRespostasPendentes } from '../helpers/acoesPainelHelpers';
 import { coletarAcoesPainel } from '../helpers/painelAcoes';
 import {
   calcularKpisPainel,
@@ -11,7 +10,7 @@ import {
 import { agruparAcoesPorTarefa as agruparFiltradas } from '../helpers/painelAgrupamento';
 import { montarCardProcessoPainel } from '../helpers/painelProcessos';
 import { formatarData } from '../helpers/dateHelpers';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -19,6 +18,7 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 interface PainelSemanaProps {
   processosAtivos: ProcessoIntegracao[];
   feriados?: string[];
+  respostasPendentes?: any[];
   onProcessoClick?: (processId: string) => void;
   onRevisarRespostas?: () => void;
   onConcluirAcao?: (processId: string, itemId: string) => void;
@@ -34,9 +34,16 @@ const statusClasses = {
   off: 'border-slate-300 bg-slate-50 text-slate-700',
 } as const;
 
+function textoPendente(item: any): string {
+  const nome = item?.nome || item?.nomeOrig || item?.respondentName || item?.dados?.nome || 'Pessoa não identificada';
+  const formulario = item?.formulario || item?.form || item?.tipoFormulario || 'Formulário';
+  return `${nome} · ${formulario}`;
+}
+
 export function PainelSemana({
   processosAtivos,
   feriados = [],
+  respostasPendentes = [],
   onProcessoClick,
   onRevisarRespostas,
   onConcluirAcao,
@@ -51,15 +58,9 @@ export function PainelSemana({
   const kpis = useMemo(() => calcularKpisPainel(acoes), [acoes]);
   const acoesFiltradas = useMemo(() => filtrarAcoesPainel(acoes, filtro), [acoes, filtro]);
   const grupos = useMemo(() => agruparFiltradas(acoesFiltradas), [acoesFiltradas]);
-  const respostasPendentes = useMemo(() => detectarRespostasPendentes(processosAtivos), [processosAtivos]);
-  const processosVisiveis = useMemo(() => {
-    if (!filtro) return processosAtivos;
-    const ids = new Set(acoesFiltradas.map((acao) => acao.pid));
-    return processosAtivos.filter((processo) => ids.has(processo.id || processo.nome));
-  }, [processosAtivos, acoesFiltradas, filtro]);
   const cardsProcessos = useMemo(
-    () => processosVisiveis.map((processo) => montarCardProcessoPainel(processo, feriados)),
-    [processosVisiveis, feriados],
+    () => processosAtivos.map((processo) => montarCardProcessoPainel(processo, feriados)),
+    [processosAtivos, feriados],
   );
 
   const valorKpi = (filtroKpi: FiltroPainel): number => {
@@ -74,27 +75,44 @@ export function PainelSemana({
     }
   };
 
+  const cardPassaFiltro = (card: ReturnType<typeof montarCardProcessoPainel>): boolean => {
+    if (!filtro) return true;
+    const proxima = card.proximaEtapa;
+    if (filtro === 'ckm') return card.pendencias.ckm > 0;
+    if (filtro === 'eles') return card.pendencias.eles > 0;
+    if (!proxima) return false;
+    if (filtro === 'late') return proxima.status.k === 'late';
+    if (filtro === 'hoje') return proxima.status.k === 'act' && proxima.status.dif === 0;
+    if (filtro === 'act') return proxima.status.k === 'act' && proxima.status.dif !== 0;
+    if (filtro === 'wait') return proxima.status.k === 'wait';
+    if (filtro === 'lateckm') return proxima.status.k === 'late' && card.pendencias.ckm > 0;
+    if (filtro === 'lateeles') return proxima.status.k === 'late' && card.pendencias.eles > 0;
+    return true;
+  };
+
   return (
     <div className="space-y-6">
       {respostasPendentes.length > 0 && (
         <Card className="border-orange-300 bg-orange-50">
           <CardContent className="pt-6">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 min-w-0">
                 <AlertTriangle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-semibold text-orange-900">
-                    {respostasPendentes.length} Respostas Pendentes de Vinculação
+                    {respostasPendentes.length} {respostasPendentes.length === 1 ? 'resposta pendente de vinculação' : 'respostas pendentes de vinculação'}
                   </h3>
                   <p className="text-sm text-orange-700 mt-1">
-                    {respostasPendentes.slice(0, 3).map(r => `${r.formulario} (${r.processNome})`).join(', ')}
+                    {respostasPendentes.slice(0, 3).map(textoPendente).join(', ')}
                     {respostasPendentes.length > 3 ? ` e mais ${respostasPendentes.length - 3}` : ''}
                   </p>
                 </div>
               </div>
-              <Button size="sm" onClick={onRevisarRespostas} className="bg-orange-600 hover:bg-orange-700">
-                Revisar agora
-              </Button>
+              {onRevisarRespostas && (
+                <Button size="sm" onClick={onRevisarRespostas} className="bg-orange-600 hover:bg-orange-700 flex-shrink-0">
+                  Revisar agora
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -234,78 +252,76 @@ export function PainelSemana({
         )}
       </div>
 
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Processos{filtro ? ' desta seleção' : ' ativos'}</h3>
-        {cardsProcessos.length === 0 ? (
-          <Card><CardContent className="py-8 text-center text-muted-foreground">Nenhum processo nessa seleção.</CardContent></Card>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {cardsProcessos.map((card) => {
-              const p = card.processo;
-              const pr = card.progresso;
-              const pe = card.proximaEtapa;
-              const hojeTexto = p.situacao === 'encerrado'
-                ? 'encerrado'
-                : card.diaAtual && card.diaAtual > 0
-                  ? `dia ${card.diaAtual} de 150`
-                  : 'não iniciou';
-
-              return (
-                <Card key={card.processoId} className={p.situacao === 'encerrado' ? 'opacity-70' : ''}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="w-10 h-10 rounded-full border flex items-center justify-center font-semibold text-sm flex-shrink-0"
-                        style={p.cor ? { backgroundColor: p.cor } : undefined}
-                      >
-                        {(p.nome || '?').split(/\s+/).slice(0, 2).map((x) => x[0]).join('').toUpperCase()}
+      {cardsProcessos.some(cardPassaFiltro) && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          {cardsProcessos.filter(cardPassaFiltro).map((card) => {
+            const p = card.processo;
+            const proxima = card.proximaEtapa;
+            return (
+              <Card key={card.processoId} className="overflow-hidden">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-3 h-3 rounded-full border flex-shrink-0"
+                          style={p.cor ? { backgroundColor: p.cor } : undefined}
+                        />
+                        <h3 className="font-semibold truncate">{p.nome}</h3>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="text-base truncate">{p.nome}</CardTitle>
-                        <p className="text-xs text-muted-foreground mt-1 truncate">
-                          {p.cargo || 'cargo a definir'}{p.unidade ? ` · ${p.unidade}` : ''}
-                        </p>
-                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {p.cargo || 'Cargo não informado'}{p.unidade ? ` · ${p.unidade}` : ''}
+                      </p>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden flex">
-                        <div className="h-full bg-emerald-600" style={{ width: `${pr.percentualConcluido}%` }} />
-                        <div className="h-full bg-slate-400" style={{ width: `${pr.percentualForaEscopo}%` }} />
-                      </div>
-                      <div className="text-[11px] text-muted-foreground mt-1">
-                        {pr.concluidas} concluídas · {pr.abertas} em aberto · {pr.foraEscopo} não serão feitas
-                      </div>
-                    </div>
-
-                    <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm">
-                      <dt className="text-muted-foreground">Início</dt><dd>{p.inicio ? formatarData(p.inicio) : '—'}</dd>
-                      <dt className="text-muted-foreground">Hoje</dt><dd>{hojeTexto}</dd>
-                      <dt className="text-muted-foreground">Feito</dt><dd>{pr.concluidas}/{pr.total}</dd>
-                      <dt className="text-muted-foreground">CKM</dt><dd>{card.pendencias.ckm} em aberto</dd>
-                      <dt className="text-muted-foreground">Eles</dt><dd>{card.pendencias.eles} em aberto</dd>
-                    </dl>
-
-                    {pe ? (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline" className={statusClasses[pe.status.k]}>{pe.status.l}</Badge>
-                        <span className="text-xs text-muted-foreground">{pe.titulo}</span>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Todas as etapas concluídas</p>
-                    )}
-
                     <Button type="button" size="sm" variant="outline" onClick={() => onProcessoClick?.(card.processoId)}>
                       Abrir
                     </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span>Progresso</span>
+                      <span>{card.progresso.concluidas}/{card.progresso.total} · {card.progresso.percentualConcluido}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-primary"
+                        style={{ width: `${Math.max(0, Math.min(100, card.progresso.percentualConcluido))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div><span className="text-muted-foreground">Início</span><div className="font-medium mt-1">{p.inicio ? formatarData(p.inicio) : '—'}</div></div>
+                    <div><span className="text-muted-foreground">Dia atual</span><div className="font-medium mt-1">{card.diaAtual == null ? '—' : `${Math.min(150, Math.max(1, card.diaAtual))}/150`}</div></div>
+                    <div><span className="text-muted-foreground">Pendências CKM</span><div className="font-medium mt-1">{card.pendencias.ckm}</div></div>
+                    <div><span className="text-muted-foreground">Pendências deles</span><div className="font-medium mt-1">{card.pendencias.eles}</div></div>
+                  </div>
+
+                  {card.progresso.foraEscopo > 0 && (
+                    <p className="text-xs text-muted-foreground">{card.progresso.foraEscopo} item(ns) fora do escopo.</p>
+                  )}
+
+                  <div className="border rounded-md p-3 bg-muted/20">
+                    <p className="text-xs text-muted-foreground">Próxima etapa</p>
+                    {proxima ? (
+                      <div className="mt-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium">{proxima.titulo}</p>
+                          <p className="text-xs text-muted-foreground">{formatarData(proxima.data)}</p>
+                        </div>
+                        <Badge variant="outline" className={statusClasses[proxima.status.k]}>{proxima.status.l}</Badge>
+                      </div>
+                    ) : (
+                      <p className="text-sm font-medium mt-1">Sem etapa pendente</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
