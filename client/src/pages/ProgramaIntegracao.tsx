@@ -299,6 +299,7 @@ export default function ProgramaIntegracao() {
           <TabsContent value="painel" className="space-y-6 mt-6">
             <PainelSemana
               processosAtivos={processosAtivos}
+              processosEncerrados={processosEncerrados}
               feriados={feriados}
               respostasPendentes={respostasPendentes}
               onRevisarRespostas={handleRevisarRespostas}
