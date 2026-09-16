@@ -294,6 +294,7 @@ export default function ProgramaIntegracao() {
               processosEncerrados={processosEncerrados}
               feriados={feriados}
               respostasPendentes={respostasPendentes}
+              config={state?.config || { ordem: [], respostasPendentes: [] }}
               onRevisarRespostas={handleRevisarRespostas}
               onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
               onConcluirAcao={handleMarcarConcluido}
