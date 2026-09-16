@@ -17,6 +17,12 @@ import {
   type CampoFichaAcao,
   type StatusAcaoLegado,
 } from '../helpers/itemStateHelpers';
+import {
+  camposResposta,
+  dataResposta,
+  nomeFormularioResposta,
+  respostaDoItem,
+} from '../helpers/respostaItemHelpers';
 import { formatarData } from '../helpers/dateHelpers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -91,6 +97,7 @@ export function PainelSemana({
 }: PainelSemanaProps) {
   const [filtro, setFiltro] = useState<FiltroPainel>('');
   const [fichaAberta, setFichaAberta] = useState<string | null>(null);
+  const [respostaAberta, setRespostaAberta] = useState<string | null>(null);
   const [rascunhosNota, setRascunhosNota] = useState<Record<string, string>>({});
 
   const acoes = useMemo(
@@ -288,10 +295,12 @@ export function PainelSemana({
                   const chave = `${acao.pid}|${grupo.itemId}`;
                   const ficha = fichaAcaoAtual(acao.p, grupo.itemId);
                   const aberta = fichaAberta === chave;
+                  const resposta = respostaDoItem(acao.p, grupo.itemId);
+                  const respostaVisivel = respostaAberta === chave && resposta;
                   const ehEmail = Boolean(grupo.item.mail || (grupo.item.mails && grupo.item.mails.length));
                   const ultimaNota = ficha.notas[ficha.notas.length - 1];
                   return (
-                    <div key={chave} className={aberta ? 'bg-muted/20' : 'bg-background hover:bg-muted/30 transition'}>
+                    <div key={chave} className={aberta || respostaVisivel ? 'bg-muted/20' : 'bg-background hover:bg-muted/30 transition'}>
                       <div className="p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                           <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -309,10 +318,41 @@ export function PainelSemana({
                           <div className="flex flex-wrap items-center gap-2 md:justify-end">
                             <Badge variant="outline" className={statusClasses[acao.st.k]}>{acao.st.l}</Badge>
                             {grupo.item.pdf && <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(acao.p)}>Agenda PDF</Button>}
-                            <Button type="button" size="sm" variant="ghost" onClick={() => setFichaAberta(aberta ? null : chave)}>{ficha.notas.length ? `✎ ${ficha.notas.length}` : '⋯ ficha'}</Button>
+                            {resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setRespostaAberta(respostaVisivel ? null : chave); if (!respostaVisivel) setFichaAberta(null); }}>{respostaVisivel ? 'Ocultar resposta' : 'Resposta'}</Button>}
+                            <Button type="button" size="sm" variant="ghost" onClick={() => { setFichaAberta(aberta ? null : chave); if (!aberta) setRespostaAberta(null); }}>{ficha.notas.length ? `✎ ${ficha.notas.length}` : '⋯ ficha'}</Button>
                           </div>
                         </div>
                       </div>
+
+                      {respostaVisivel && (
+                        <div className="border-t bg-background px-4 py-4 md:pl-11 space-y-3">
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Resposta registrada</p>
+                              <p className="text-sm font-semibold mt-1">{nomeFormularioResposta(resposta)}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {dataResposta(resposta)}
+                                {resposta.ciclo ? ` · ${resposta.ciclo}º alinhamento` : ''}
+                                {resposta.papel ? ` · ${resposta.papel}` : ''}
+                                {resposta.avaliador ? ` · por ${resposta.avaliador}` : ''}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {resposta.media != null && <Badge variant="outline">Média {Number(resposta.media).toFixed(1).replace('.', ',')}</Badge>}
+                              {resposta.alertas?.length > 0 && <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">{resposta.alertas.length} ponto{resposta.alertas.length === 1 ? '' : 's'} de atenção</Badge>}
+                            </div>
+                          </div>
+                          <div className="rounded-md border divide-y max-h-72 overflow-auto">
+                            {camposResposta(resposta).length ? camposResposta(resposta).map((campo, indice) => (
+                              <div key={`${campo.rotulo}-${indice}`} className="grid grid-cols-1 md:grid-cols-[minmax(140px,0.7fr)_minmax(0,1.3fr)] gap-1 md:gap-4 px-3 py-2 text-xs">
+                                <span className="font-medium text-muted-foreground break-words">{campo.rotulo}</span>
+                                <span className="whitespace-pre-wrap break-words">{campo.valor}</span>
+                              </div>
+                            )) : <div className="px-3 py-4 text-sm text-muted-foreground">A resposta está registrada, mas não há campos detalhados disponíveis neste registro.</div>}
+                          </div>
+                          <div className="flex justify-end"><Button type="button" size="sm" variant="ghost" onClick={() => setRespostaAberta(null)}>Ocultar resposta</Button></div>
+                        </div>
+                      )}
 
                       {aberta && (
                         <div className="border-t bg-muted/30 px-4 py-4 md:pl-11 space-y-4">
