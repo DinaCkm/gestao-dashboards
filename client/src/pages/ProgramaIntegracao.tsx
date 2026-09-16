@@ -3,12 +3,18 @@ import { useLocation } from 'wouter';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   fetchBootstrap,
-  salvarProcesso,
   ProcessoIntegracao,
   BootstrapState,
   atualizarEstadoProcesso,
 } from '@/features/programaIntegracao';
-import { PainelSemana, AgendaGeral, GerenciarPessoas, Indicadores } from '@/features/programaIntegracao/components';
+import {
+  PainelSemana,
+  AgendaGeral,
+  GerenciarPessoas,
+  Indicadores,
+  FormulariosIntegracaoAdmin,
+  type FormularioAdminSubTab,
+} from '@/features/programaIntegracao/components';
 import {
   adicionarNotaAcao,
   aplicarCampoFichaAcao,
@@ -25,7 +31,6 @@ import { AlertCircle, Loader2, Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 type MainTabValue = 'painel' | 'agenda' | 'indicadores' | 'registrar' | 'respostas' | 'formularios' | 'atas' | 'pessoas' | 'config';
-type FormularioSubTab = 'disponiveis' | 'links' | 'pendentes' | 'recebidas' | 'editar' | 'config';
 type ConfigSubTab = 'emails' | 'mentoras' | 'cursos' | 'aviso' | 'links' | 'datas' | 'backup';
 
 export default function ProgramaIntegracao() {
@@ -35,7 +40,7 @@ export default function ProgramaIntegracao() {
   const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<BootstrapState | null>(null);
   const [activeTab, setActiveTab] = useState<MainTabValue>('painel');
-  const [formularioSubTab, setFormularioSubTab] = useState<FormularioSubTab>('disponiveis');
+  const [formularioSubTab, setFormularioSubTab] = useState<FormularioAdminSubTab>('disponiveis');
   const [configSubTab, setConfigSubTab] = useState<ConfigSubTab>('emails');
 
   useEffect(() => {
@@ -99,18 +104,8 @@ export default function ProgramaIntegracao() {
   const processoPorId = (processoId: string) => todosProcesos.find((p) => p.id === processoId);
 
   const handleRevisarRespostas = () => {
-    setActiveTab('formularios');
     setFormularioSubTab('pendentes');
-  };
-
-  const handleSalvarProcesso = async (processo: ProcessoIntegracao) => {
-    try {
-      const legacyId = processo.id || `p${Math.random()}`;
-      await salvarProcesso(legacyId, processo);
-      await recarregarEstado();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar processo');
-    }
+    setActiveTab('formularios');
   };
 
   const handleMarcarConcluido = async (processoId: string, itemId: string) => {
@@ -241,6 +236,8 @@ export default function ProgramaIntegracao() {
     );
   }
 
+  const config = state?.config || { ordem: [], respostasPendentes: [] };
+
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
@@ -284,7 +281,7 @@ export default function ProgramaIntegracao() {
               processosEncerrados={processosEncerrados}
               feriados={feriados}
               respostasPendentes={respostasPendentes}
-              config={state?.config || { ordem: [], respostasPendentes: [] }}
+              config={config}
               onRevisarRespostas={handleRevisarRespostas}
               onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
               onConcluirAcao={handleMarcarConcluido}
@@ -301,7 +298,7 @@ export default function ProgramaIntegracao() {
             <AgendaGeral
               processos={todosProcesos}
               feriados={feriados}
-              config={state?.config || { ordem: [], respostasPendentes: [] }}
+              config={config}
               onProcessoClick={(id, itemId) => {
                 setLocation(`/programa-integracao/detalhe/${id}${itemId ? `?item=${encodeURIComponent(itemId)}` : ''}`);
               }}
@@ -316,24 +313,17 @@ export default function ProgramaIntegracao() {
           <TabsContent value="respostas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Respostas Recebidas</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Visualização consolidada de todas as respostas</p></CardContent></Card></TabsContent>
 
           <TabsContent value="formularios" className="space-y-6 mt-6">
-            <Card><CardHeader><CardTitle>Formulários de Integração</CardTitle></CardHeader><CardContent>
-              <Tabs value={formularioSubTab} onValueChange={(v) => setFormularioSubTab(v as FormularioSubTab)}>
-                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
-                  <TabsTrigger value="disponiveis" className="text-xs md:text-sm">Disponíveis</TabsTrigger><TabsTrigger value="links" className="text-xs md:text-sm">Links de resposta</TabsTrigger><TabsTrigger value="pendentes" className="text-xs md:text-sm">Pendentes</TabsTrigger><TabsTrigger value="recebidas" className="text-xs md:text-sm">Recebidas</TabsTrigger><TabsTrigger value="editar" className="text-xs md:text-sm">Editar perguntas</TabsTrigger><TabsTrigger value="config" className="text-xs md:text-sm">Configuração</TabsTrigger>
-                </TabsList>
-                <TabsContent value="disponiveis" className="mt-6 space-y-4"><p className="text-muted-foreground">Formulários disponíveis: Controle, Bem Acolhido, Pesquisa, Avaliação, PDI</p></TabsContent>
-                <TabsContent value="links" className="mt-6 space-y-4"><p className="text-muted-foreground">Links de resposta para cada formulário e processo</p></TabsContent>
-                <TabsContent value="pendentes" className="mt-6 space-y-4"><p className="text-muted-foreground">Formulários pendentes de resposta por pessoa/ciclo</p></TabsContent>
-                <TabsContent value="recebidas" className="mt-6 space-y-4"><p className="text-muted-foreground">Respostas já submetidas com data e avaliador</p></TabsContent>
-                <TabsContent value="editar" className="mt-6 space-y-4"><p className="text-muted-foreground">Edição de perguntas, textos e ordem dos formulários</p></TabsContent>
-                <TabsContent value="config" className="mt-6 space-y-4"><p className="text-muted-foreground">Configurações de formulários: pesos, escalas, validações</p></TabsContent>
-              </Tabs>
-            </CardContent></Card>
+            <FormulariosIntegracaoAdmin
+              key={formularioSubTab}
+              config={config}
+              processos={todosProcesos}
+              initialTab={formularioSubTab}
+            />
           </TabsContent>
 
           <TabsContent value="atas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Atas e Relatórios</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Seleção de pessoa/alinhamento, geração de atas em PDF/Word</p></CardContent></Card></TabsContent>
 
-          <TabsContent value="pessoas" className="space-y-6 mt-6"><GerenciarPessoas processos={todosProcesos} onNovaPersona={() => console.log('Nova pessoa')} onEditarPersona={(id) => console.log('Editar:', id)} onVisualizarTimeline={(id) => console.log('Timeline:', id)} /></TabsContent>
+          <TabsContent value="pessoas" className="space-y-6 mt-6"><GerenciarPessoas processos={todosProcesos} onNovaPersona={() => console.log('Nova pessoa')} onEditarPersona={(id) => console.log('Editar:', id)} onVisualizarTimeline={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} /></TabsContent>
 
           <TabsContent value="config" className="space-y-6 mt-6">
             <Card><CardHeader><CardTitle>Configurações</CardTitle></CardHeader><CardContent>
