@@ -39,6 +39,14 @@ type ImportItem = {
   duplicateAction?: DuplicateAction;
 };
 
+type EditResponseBody = {
+  ciclo?: number;
+  papel?: string;
+  avaliador?: string;
+  quando?: string;
+  pairs?: Array<[number, string]>;
+};
+
 function asJson<T = any>(value: unknown, fallback: T): T {
   if (value == null) return fallback;
   if (typeof value === "object") return value as T;
@@ -298,5 +306,71 @@ programaIntegracaoImportRouter.post("/api/programa-integracao/respostas/importar
     try { await connection.rollback(); } catch (rollbackError) { console.error("[ProgramaIntegracao] rollback importação:", rollbackError); }
     console.error("[ProgramaIntegracao] importar respostas:", error);
     return res.status(500).json({ error: "Nenhuma resposta foi gravada. O lote foi revertido porque ocorreu um erro." });
+  }
+});
+
+programaIntegracaoImportRouter.patch("/api/programa-integracao/respostas/:legacyRid", requireAdmin, async (req, res) => {
+  const connection = await getRawConnection();
+  if (!connection) return res.status(503).json({ error: "Banco de dados indisponível." });
+  const rid = String(req.params.legacyRid || "").trim().slice(0, 100);
+  const body = (req.body || {}) as EditResponseBody;
+  if (!rid) return res.status(400).json({ error: "Resposta inválida." });
+  if (!Array.isArray(body.pairs)) return res.status(400).json({ error: "Campos da resposta inválidos." });
+
+  try {
+    await connection.beginTransaction();
+    const [rows] = (await connection.execute(
+      `SELECT id,processoId,formKey,ciclo,papel,itemId FROM programa_integracao_respostas WHERE legacyRid=? AND statusVinculo='vinculada' LIMIT 1 FOR UPDATE`,
+      [rid],
+    )) as any;
+    const row = rows?.[0];
+    if (!row) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Resposta vinculada não encontrada." });
+    }
+
+    const formKey = String(row.formKey || "") as ProgramaIntegracaoFormKey;
+    if (!FORM_KEYS.has(formKey)) throw new Error("Formulário da resposta é inválido.");
+    const ciclo = Number(body.ciclo ?? row.ciclo ?? 0);
+    if (ciclo < 0 || ciclo > 4) {
+      await connection.rollback();
+      return res.status(400).json({ error: "Momento/alinhamento inválido." });
+    }
+    const papel = String(body.papel ?? row.papel ?? "").trim();
+    if (formKey === "aval" && !["Gestor", "Anjo"].includes(papel)) {
+      await connection.rollback();
+      return res.status(400).json({ error: "Na Avaliação do Programa, informe Gestor ou Anjo." });
+    }
+    const avaliador = String(body.avaliador ?? "").trim();
+    const quando = String(body.quando ?? "").trim().slice(0, 80);
+    const answers = answersFromPairs(formKey, body.pairs);
+    const { media, alertas } = calcMedia(formKey, answers);
+
+    await connection.execute(
+      `UPDATE programa_integracao_respostas SET ciclo=?,papel=?,avaliador=?,answers=?,media=?,alertas=?,quandoOriginal=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
+      [ciclo, papel || null, avaliador || null, JSON.stringify(answers), media, JSON.stringify(alertas), quando || null, row.id],
+    );
+    await audit(
+      connection,
+      req,
+      "resposta_editada",
+      "Resposta vinculada corrigida pelo administrador; média e alertas foram recalculados.",
+      Number(row.processoId || 0) || null,
+      Number(row.id),
+      {
+        formKey,
+        cicloAnterior: Number(row.ciclo || 0),
+        cicloNovo: ciclo,
+        papelAnterior: String(row.papel || ""),
+        papelNovo: papel,
+        itemIdPreservado: String(row.itemId || ""),
+      },
+    );
+    await connection.commit();
+    return res.json({ ok: true, media, alertas });
+  } catch (error) {
+    try { await connection.rollback(); } catch (rollbackError) { console.error("[ProgramaIntegracao] rollback edição resposta:", rollbackError); }
+    console.error("[ProgramaIntegracao] editar resposta:", error);
+    return res.status(500).json({ error: "Não foi possível salvar a resposta. Nenhuma alteração parcial foi mantida." });
   }
 });
