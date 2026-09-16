@@ -4847,6 +4847,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           return {
             'Posição': index + 1,
             'Pessoa': aluno.nomeAluno || 'Sem nome',
+            'E-mail': aluno.email || '',
             'Turma': codigoTurmaAluno || 'Não definida',
             'Status': statusCongelamento,
             'Ind. 1: Webinars': `${Math.round(Number(aluno?.consolidado?.ind1_webinars ?? 0))}%`,
