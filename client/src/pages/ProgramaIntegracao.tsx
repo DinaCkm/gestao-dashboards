@@ -13,6 +13,8 @@ import {
   GerenciarPessoas,
   Indicadores,
   FormulariosIntegracaoAdmin,
+  ConfiguracaoAviso,
+  ConfiguracaoDatas,
   type FormularioAdminSubTab,
 } from '@/features/programaIntegracao/components';
 import {
@@ -338,9 +340,21 @@ export default function ProgramaIntegracao() {
             <Card><CardHeader><CardTitle>Configurações</CardTitle></CardHeader><CardContent>
               <Tabs value={configSubTab} onValueChange={(v) => setConfigSubTab(v as ConfigSubTab)}>
                 <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
-                  <TabsTrigger value="emails" className="text-xs md:text-sm">E-mails</TabsTrigger><TabsTrigger value="mentoras" className="text-xs md:text-sm">Mentoras CKM</TabsTrigger><TabsTrigger value="cursos" className="text-xs md:text-sm">Cursos obrig.</TabsTrigger><TabsTrigger value="aviso" className="text-xs md:text-sm">Aviso/Assinatura</TabsTrigger><TabsTrigger value="links" className="text-xs md:text-sm">Links</TabsTrigger><TabsTrigger value="datas" className="text-xs md:text-sm">Datas/Feriados</TabsTrigger><TabsTrigger value="backup" className="text-xs md:text-sm">Backup</TabsTrigger>
+                  <TabsTrigger value="emails" className="text-xs md:text-sm">Modelos de e-mail</TabsTrigger>
+                  <TabsTrigger value="mentoras" className="text-xs md:text-sm">Mentoras / Consultoras CKM</TabsTrigger>
+                  <TabsTrigger value="cursos" className="text-xs md:text-sm">Cursos obrigatórios</TabsTrigger>
+                  <TabsTrigger value="aviso" className="text-xs md:text-sm">Aviso e assinatura</TabsTrigger>
+                  <TabsTrigger value="links" className="text-xs md:text-sm">Links e formulários</TabsTrigger>
+                  <TabsTrigger value="datas" className="text-xs md:text-sm">Datas e feriados</TabsTrigger>
+                  <TabsTrigger value="backup" className="text-xs md:text-sm">Dados e backup</TabsTrigger>
                 </TabsList>
-                <TabsContent value="emails" className="mt-6"><p className="text-muted-foreground">Modelos de e-mail por fase do processo</p></TabsContent><TabsContent value="mentoras" className="mt-6"><p className="text-muted-foreground">Cadastro de mentoras/consultoras CKM</p></TabsContent><TabsContent value="cursos" className="mt-6"><p className="text-muted-foreground">Cursos obrigatórios da integração</p></TabsContent><TabsContent value="aviso" className="mt-6"><p className="text-muted-foreground">Aviso padrão e assinatura dos e-mails</p></TabsContent><TabsContent value="links" className="mt-6"><p className="text-muted-foreground">Links permanentes e formulários</p></TabsContent><TabsContent value="datas" className="mt-6"><p className="text-muted-foreground">Datas especiais e feriados para cálculo de prazos</p></TabsContent><TabsContent value="backup" className="mt-6 space-y-3"><p className="text-muted-foreground">Exportação e restauração de dados do módulo</p><Button type="button" variant="outline">Exportar backup</Button></TabsContent>
+                <TabsContent value="emails" className="mt-6"><p className="text-muted-foreground">Modelos de e-mail por fase do processo</p></TabsContent>
+                <TabsContent value="mentoras" className="mt-6"><p className="text-muted-foreground">Cadastro de mentoras/consultoras CKM</p></TabsContent>
+                <TabsContent value="cursos" className="mt-6"><p className="text-muted-foreground">Cursos obrigatórios da integração</p></TabsContent>
+                <TabsContent value="aviso" className="mt-6"><ConfiguracaoAviso config={config} onSaved={recarregarEstado} /></TabsContent>
+                <TabsContent value="links" className="mt-6"><p className="text-muted-foreground">Links permanentes e formulários</p></TabsContent>
+                <TabsContent value="datas" className="mt-6"><ConfiguracaoDatas config={config} onSaved={recarregarEstado} /></TabsContent>
+                <TabsContent value="backup" className="mt-6 space-y-3"><p className="text-muted-foreground">Exportação e restauração de dados do módulo</p><Button type="button" variant="outline">Exportar backup</Button></TabsContent>
               </Tabs>
             </CardContent></Card>
           </TabsContent>
