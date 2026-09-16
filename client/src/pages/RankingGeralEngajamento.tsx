@@ -264,6 +264,7 @@ export default function RankingGeralEngajamento() {
   const handleExport = async () => {
     const result = await exportarExcel.mutateAsync({
       alunoIdsUsuario: rankingFiltrado.map(row => row.idUsuario),
+      ...(isAdmin && programIdEfetivo ? { programId: programIdEfetivo } : {}),
     });
 
     const bytes = Uint8Array.from(atob(result.base64), c => c.charCodeAt(0));
