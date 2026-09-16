@@ -9,11 +9,13 @@ import {
 } from '../helpers/painelKpis';
 import { agruparAcoesPorTarefa as agruparFiltradas } from '../helpers/painelAgrupamento';
 import { montarCardProcessoPainel } from '../helpers/painelProcessos';
+import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
 import { formatarData } from '../helpers/dateHelpers';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 type StatusGrupo = '' | 'prog' | 'doing' | 'wait' | 'na' | 'wont';
 
@@ -101,6 +103,14 @@ export function PainelSemana({
     return idsProcessosFiltrados.has(card.processoId);
   };
 
+  const handleGerarAgenda = (processo: ProcessoIntegracao) => {
+    try {
+      gerarAgendaOnboardingPdf(processo, feriados);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível gerar a Agenda de Onboarding.');
+    }
+  };
+
   const renderCardProcesso = (card: ReturnType<typeof montarCardProcessoPainel>) => {
     const p = card.processo;
     const proxima = card.proximaEtapa;
@@ -122,18 +132,13 @@ export function PainelSemana({
                 {p.cargo || 'Cargo não informado'}{p.unidade ? ` · ${p.unidade}` : ''}
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span
-                className={`grid h-7 w-7 place-items-center rounded-full border text-sm font-bold ${sinalClasses[card.sinal.k]}`}
-                title={card.sinal.t}
-                aria-label={card.sinal.t}
-              >
-                {card.sinal.i}
-              </span>
-              <Button type="button" size="sm" variant="outline" onClick={() => onProcessoClick?.(card.processoId)}>
-                Abrir
-              </Button>
-            </div>
+            <span
+              className={`grid h-7 w-7 place-items-center rounded-full border text-sm font-bold flex-shrink-0 ${sinalClasses[card.sinal.k]}`}
+              title={card.sinal.t}
+              aria-label={card.sinal.t}
+            >
+              {card.sinal.i}
+            </span>
           </div>
 
           <div>
@@ -179,6 +184,15 @@ export function PainelSemana({
             ) : (
               <p className="text-sm font-medium mt-1">Sem etapa pendente</p>
             )}
+          </div>
+
+          <div className="flex flex-wrap gap-2 border-t pt-3">
+            <Button type="button" size="sm" variant="ghost" onClick={() => onProcessoClick?.(card.processoId)}>
+              Abrir
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(p)}>
+              Agenda
+            </Button>
           </div>
         </CardContent>
       </Card>
