@@ -306,7 +306,16 @@ export default function ProgramaIntegracao() {
             />
           </TabsContent>
 
-          <TabsContent value="indicadores" className="space-y-6 mt-6"><Indicadores processosAtivos={processosAtivos} /></TabsContent>
+          <TabsContent value="indicadores" className="space-y-6 mt-6">
+            <Indicadores
+              processosAtivos={processosAtivos}
+              processosEncerrados={processosEncerrados}
+              feriados={feriados}
+              onPainelClick={() => setActiveTab('painel')}
+              onRespostasClick={() => setActiveTab('respostas')}
+              onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)}
+            />
+          </TabsContent>
 
           <TabsContent value="registrar" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Registrar Respostas de Formulários</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Entrada de dados dos 5 formulários: Controle, Bem Acolhido, Pesquisa, Avaliação, PDI</p></CardContent></Card></TabsContent>
 
