@@ -1,84 +1,76 @@
 import React, { useMemo, useState } from 'react';
 import { ProcessoIntegracao } from '../types';
+import { detectarRespostasPendentes } from '../helpers/acoesPainelHelpers';
+import { coletarAcoesPainel } from '../helpers/painelAcoes';
+import { agruparAcoesPorTarefa } from '../helpers/painelAgrupamento';
 import {
-  coletarAcoes,
-  agruparAcoesPorTarefa,
-  calcularKPIs,
-  detectarRespostasPendentes,
-  filtrarPorFaixa,
-  filtrarPorResponsavel,
-  filtrarPorStatus,
-  ClassificacaoResponsavel,
-  StatusAcao,
-  KPIsPainel,
-} from '../helpers/acoesPainelHelpers';
+  calcularKpisPainel,
+  filtrarAcoesPainel,
+  KPIS_PAINEL_ORIGINAL,
+  type FiltroPainel,
+} from '../helpers/painelKpis';
+import { agruparAcoesPorTarefa as agruparFiltradas } from '../helpers/painelAgrupamento';
 import { formatarData } from '../helpers/dateHelpers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface PainelSemanaProps {
   processosAtivos: ProcessoIntegracao[];
+  feriados?: string[];
   onProcessoClick?: (processId: string) => void;
   onRevisarRespostas?: () => void;
+  onConcluirAcao?: (processId: string, itemId: string) => void;
+  onConcluirGrupo?: (itemId: string, processIds: string[]) => void;
 }
+
+const statusClasses = {
+  late: 'border-red-300 bg-red-50 text-red-800',
+  act: 'border-amber-300 bg-amber-50 text-amber-800',
+  wait: 'border-blue-300 bg-blue-50 text-blue-800',
+  ontime: 'border-emerald-300 bg-emerald-50 text-emerald-800',
+  ok: 'border-emerald-300 bg-emerald-50 text-emerald-800',
+  off: 'border-slate-300 bg-slate-50 text-slate-700',
+} as const;
 
 export function PainelSemana({
   processosAtivos,
+  feriados = [],
   onProcessoClick,
   onRevisarRespostas,
+  onConcluirAcao,
+  onConcluirGrupo,
 }: PainelSemanaProps) {
-  // Estados de filtro
-  const [filtroResponsavel, setFiltroResponsavel] = useState<ClassificacaoResponsavel | 'todos'>('todos');
-  const [filtroStatus, setFiltroStatus] = useState<StatusAcao | 'todos'>('todos');
+  const [filtro, setFiltro] = useState<FiltroPainel>('');
 
-  // Coletar e processar ações
-  const acoes = useMemo(() => coletarAcoes(processosAtivos), [processosAtivos]);
-  const grupos = useMemo(() => agruparAcoesPorTarefa(acoes), [acoes]);
-  const kpis = useMemo(() => calcularKPIs(acoes), [acoes]);
+  const acoes = useMemo(
+    () => coletarAcoesPainel(processosAtivos, feriados),
+    [processosAtivos, feriados],
+  );
+  const kpis = useMemo(() => calcularKpisPainel(acoes), [acoes]);
+  const acoesFiltradas = useMemo(() => filtrarAcoesPainel(acoes, filtro), [acoes, filtro]);
+  const grupos = useMemo(() => agruparFiltradas(acoesFiltradas), [acoesFiltradas]);
   const respostasPendentes = useMemo(() => detectarRespostasPendentes(processosAtivos), [processosAtivos]);
 
-  // Aplicar filtros
-  const gruposFilti = useMemo(() => {
-    let resultado = [...grupos];
-
-    if (filtroResponsavel !== 'todos') {
-      resultado = resultado.filter(g =>
-        g.responsaveisUnicos.includes(filtroResponsavel as ClassificacaoResponsavel)
-      );
+  const valorKpi = (filtroKpi: FiltroPainel): number => {
+    switch (filtroKpi) {
+      case 'late': return kpis.atrasado;
+      case 'lateckm': return kpis.atrasadoCkm;
+      case 'lateeles': return kpis.atrasadoEles;
+      case 'hoje': return kpis.hoje;
+      case 'act': return kpis.tomarAcao;
+      case 'wait': return kpis.aguardandoRetorno;
+      default: return kpis.noPrazo;
     }
-
-    if (filtroStatus !== 'todos') {
-      resultado = resultado.filter(g => g.status === filtroStatus);
-    }
-
-    return resultado;
-  }, [grupos, filtroResponsavel, filtroStatus]);
-
-  const statusColors: Record<StatusAcao, string> = {
-    atrasado: 'bg-red-100 text-red-800 border-red-300',
-    hoje: 'bg-orange-100 text-orange-800 border-orange-300',
-    tomar_acao: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    aguardando_retorno: 'bg-blue-100 text-blue-800 border-blue-300',
-    no_prazo: 'bg-green-100 text-green-800 border-green-300',
-  };
-
-  const statusLabels: Record<StatusAcao, string> = {
-    atrasado: 'Atrasado',
-    hoje: 'Hoje',
-    tomar_acao: 'Tomar ação',
-    aguardando_retorno: 'Aguardando retorno',
-    no_prazo: 'No prazo',
   };
 
   return (
     <div className="space-y-6">
-      {/* Hero Respostas Pendentes */}
       {respostasPendentes.length > 0 && (
         <Card className="border-orange-300 bg-orange-50">
           <CardContent className="pt-6">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4">
                 <AlertTriangle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
                 <div>
@@ -86,15 +78,12 @@ export function PainelSemana({
                     {respostasPendentes.length} Respostas Pendentes de Vinculação
                   </h3>
                   <p className="text-sm text-orange-700 mt-1">
-                    {respostasPendentes.map(r => `${r.formulario} (${r.processNome})`).join(', ')}
+                    {respostasPendentes.slice(0, 3).map(r => `${r.formulario} (${r.processNome})`).join(', ')}
+                    {respostasPendentes.length > 3 ? ` e mais ${respostasPendentes.length - 3}` : ''}
                   </p>
                 </div>
               </div>
-              <Button
-                size="sm"
-                onClick={onRevisarRespostas}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
+              <Button size="sm" onClick={onRevisarRespostas} className="bg-orange-600 hover:bg-orange-700">
                 Revisar agora
               </Button>
             </div>
@@ -102,130 +91,140 @@ export function PainelSemana({
         </Card>
       )}
 
-      {/* Título */}
       <div>
         <h2 className="text-2xl font-bold">O que fazer agora</h2>
-        <p className="text-muted-foreground mt-2">
-          Janela padrão: próximas duas semanas + atrasados
-        </p>
+        <p className="text-muted-foreground mt-2">Atrasados, esta semana e próxima semana.</p>
       </div>
 
-      {/* KPIs Obrigatórios e Separados */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-          <p className="text-xs text-red-600 font-medium">Atrasado</p>
-          <p className="text-2xl font-bold text-red-700">{kpis.atrasado}</p>
-        </div>
-        <div className="bg-red-100 p-3 rounded-lg border border-red-300">
-          <p className="text-xs text-red-700 font-medium">Atrasado — CKM</p>
-          <p className="text-2xl font-bold text-red-800">{kpis.atrasadoCKM}</p>
-        </div>
-        <div className="bg-red-100 p-3 rounded-lg border border-red-300">
-          <p className="text-xs text-red-700 font-medium">Atrasado — deles</p>
-          <p className="text-2xl font-bold text-red-800">{kpis.atrasadoDeles}</p>
-        </div>
-        <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-          <p className="text-xs text-orange-600 font-medium">Hoje</p>
-          <p className="text-2xl font-bold text-orange-700">{kpis.hoje}</p>
-        </div>
-        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-          <p className="text-xs text-yellow-600 font-medium">Tomar ação</p>
-          <p className="text-2xl font-bold text-yellow-700">{kpis.tomarAcao}</p>
-        </div>
-        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-          <p className="text-xs text-blue-600 font-medium">Aguardando retorno</p>
-          <p className="text-2xl font-bold text-blue-700">{kpis.aguardandoRetorno}</p>
-        </div>
-        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-          <p className="text-xs text-green-600 font-medium">No prazo</p>
-          <p className="text-2xl font-bold text-green-700">{kpis.noPrazo}</p>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+        {KPIS_PAINEL_ORIGINAL.map((item) => {
+          const ativo = filtro === item.filtro;
+          return (
+            <button
+              key={item.titulo}
+              type="button"
+              onClick={() => setFiltro(ativo ? '' : item.filtro)}
+              className={`text-left rounded-lg border p-3 transition ${ativo ? 'ring-2 ring-offset-1 ring-primary' : 'hover:bg-muted/40'}`}
+            >
+              <p className="text-xs font-medium text-muted-foreground">{item.titulo}</p>
+              <p className="text-2xl font-bold mt-1">{valorKpi(item.filtro)}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{item.descricao}</p>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Filtros Adicionais */}
       <div className="flex gap-2 flex-wrap">
-        <div>
-          <select
-            value={filtroResponsavel}
-            onChange={(e) => setFiltroResponsavel(e.target.value as any)}
-            className="px-3 py-2 border rounded-lg text-sm"
-          >
-            <option value="todos">Todos os responsáveis</option>
-            <option value="CKM">Depende da CKM ({kpis.dependeCKM})</option>
-            <option value="eles">Depende deles ({kpis.dependeDeles})</option>
-          </select>
-        </div>
-        <div>
-          <select
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value as any)}
-            className="px-3 py-2 border rounded-lg text-sm"
-          >
-            <option value="todos">Todos os status</option>
-            <option value="atrasado">Atrasado</option>
-            <option value="hoje">Hoje</option>
-            <option value="tomar_acao">Tomar ação</option>
-            <option value="aguardando_retorno">Aguardando retorno</option>
-            <option value="no_prazo">No prazo</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Grupos de Ações */}
-      <div className="space-y-4">
-        {gruposFilti.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <CheckCircle2 className="w-12 h-12 text-green-500 mb-4" />
-              <p className="text-muted-foreground">Nenhuma ação pendente!</p>
-            </CardContent>
-          </Card>
-        ) : (
-          gruposFilti.map(grupo => (
-            <div key={grupo.etapaId} className="border rounded-lg overflow-hidden">
-              {/* Cabeçalho do grupo (tom mais escuro) */}
-              <div className={`${statusColors[grupo.status]} p-4 border-b`}>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{grupo.etapaLabel}</h3>
-                    <p className="text-sm opacity-75 mt-1">
-                      Data: {formatarData(grupo.dataPrevista)} • {grupo.quantidadePessoas} pessoa{grupo.quantidadePessoas !== 1 ? 's' : ''}
-                    </p>
-                    <p className="text-sm opacity-75">
-                      Responsável: {grupo.responsaveisUnicos.join(', ')}
-                    </p>
-                  </div>
-                  <Badge className={`${statusColors[grupo.status]}`}>
-                    {statusLabels[grupo.status]}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Linhas de pessoas (mais claras) */}
-              <div>
-                {grupo.pessoas.map((pessoa, idx) => (
-                  <div
-                    key={`${pessoa.processoId}-${idx}`}
-                    className="p-4 border-b last:border-b-0 bg-muted/20 hover:bg-muted/50 cursor-pointer transition"
-                    onClick={() => onProcessoClick?.(pessoa.processoId)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-medium">{pessoa.nome}</p>
-                        <p className="text-sm text-muted-foreground">{pessoa.cargo}</p>
-                        <p className="text-xs text-muted-foreground mt-1">CPF: {pessoa.cpf}</p>
-                      </div>
-                      <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))
+        <Button
+          type="button"
+          variant={filtro === 'ckm' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFiltro(filtro === 'ckm' ? '' : 'ckm')}
+        >
+          Depende da CKM
+        </Button>
+        <Button
+          type="button"
+          variant={filtro === 'eles' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setFiltro(filtro === 'eles' ? '' : 'eles')}
+        >
+          Depende deles
+        </Button>
+        {filtro && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => setFiltro('')}>
+            Limpar filtro
+          </Button>
         )}
       </div>
 
-      {/* Cards de Processos Relacionados */}
+      <div className="space-y-4">
+        {grupos.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600 mb-3" />
+              <p className="font-medium">Nenhuma ação nessa seleção.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          grupos.map((grupo) => {
+            const classe = statusClasses[grupo.statusPior.k];
+            const ids = grupo.pessoas.map((acao) => acao.pid);
+
+            return (
+              <div key={grupo.itemId} className="border rounded-lg overflow-hidden bg-background">
+                <div className={`p-4 border-b ${classe}`}>
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <Badge variant="outline" className="bg-background/70">{formatarData(grupo.dataMaisAntiga)}</Badge>
+                        <Badge variant="outline" className="bg-background/70">{grupo.statusPior.l}</Badge>
+                        <Badge variant="outline" className="bg-background/70">{grupo.responsavel}</Badge>
+                        {grupo.formulario && <Badge variant="outline" className="bg-background/70">Formulário</Badge>}
+                      </div>
+                      <h3 className="font-semibold text-base leading-snug">{grupo.item.t}</h3>
+                      <p className="text-xs opacity-80 mt-1">
+                        {grupo.etapa.t} · {grupo.pessoas.length} pessoa{grupo.pessoas.length === 1 ? '' : 's'}
+                      </p>
+                    </div>
+
+                    {grupo.pessoas.length > 1 && onConcluirGrupo && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onConcluirGrupo(grupo.itemId, ids)}
+                      >
+                        Marcar as {grupo.pessoas.length} como feitas
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="divide-y">
+                  {grupo.pessoas.map((acao) => (
+                    <div key={`${grupo.itemId}-${acao.pid}`} className="p-4 bg-background hover:bg-muted/30 transition">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <button
+                          type="button"
+                          className="text-left min-w-0 flex-1"
+                          onClick={() => onProcessoClick?.(acao.pid)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border flex-shrink-0"
+                              style={acao.p.cor ? { backgroundColor: acao.p.cor } : undefined}
+                            />
+                            <span className="font-medium truncate">{acao.p.nome}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 ml-4">
+                            {acao.p.cargo || 'Cargo não informado'}{acao.p.unidade ? ` · ${acao.p.unidade}` : ''}
+                          </div>
+                        </button>
+
+                        <div className="flex items-center gap-2 md:justify-end">
+                          <Badge variant="outline" className={statusClasses[acao.st.k]}>{acao.st.l}</Badge>
+                          {onConcluirAcao && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onConcluirAcao(acao.pid, grupo.itemId)}
+                            >
+                              Marcar feita
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
       {processosAtivos.length > 0 && (
         <Card>
           <CardHeader>
@@ -239,13 +238,9 @@ export function PainelSemana({
                   className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition"
                   onClick={() => onProcessoClick?.(processo.id || processo.nome)}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-semibold">{processo.nome}</p>
-                      <p className="text-sm text-muted-foreground">{processo.cargo}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
+                  <p className="font-semibold">{processo.nome}</p>
+                  <p className="text-sm text-muted-foreground">{processo.cargo}</p>
+                  <div className="text-xs text-muted-foreground mt-2">
                     <p>Unidade: {processo.unidade}</p>
                     <p>Anjo: {processo.anjo || 'N/A'}</p>
                   </div>
@@ -258,4 +253,3 @@ export function PainelSemana({
     </div>
   );
 }
-
