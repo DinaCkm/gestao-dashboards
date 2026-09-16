@@ -8,15 +8,21 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Manter produção fora da reconstrução.
 - [x] Criar adaptador inicial de compatibilidade do estado histórico com a API atual.
 - [x] Mapear o risco do `PUT /config` global e proibir seu uso como atalho.
-- [ ] Criar operações específicas e seguras para gravações de configuração.
+- [x] Criar operações específicas e seguras para gravações de configuração.
+- [x] Criar backup da branch antes de iniciar a persistência segura de configuração.
 - [ ] Fechar o mapa completo Original -> EcoLíder por função pública.
 
 ## 1. Estado, persistência e calendário
 - [x] Leitura do bootstrap administrativo atual.
 - [x] Persistência individual de processo sem gravar configuração global.
 - [x] Ordem dos processos preservada pelo bootstrap.
+- [x] Persistência de configuração por seção com lista autorizada, preservando as demais chaves.
+- [x] Bloquear `ordem` e `respostasPendentes` na nova gravação genérica por seção.
+- [x] Validar formato básico de e-mails, mentoras, cursos, plataforma, aviso, links, feriados, configuração e textos dos formulários antes de persistir.
+- [x] Registrar auditoria da alteração de configuração sem gravar o conteúdo da configuração no log.
+- [x] Reler a seção persistida no servidor antes de confirmar sucesso da nova operação de configuração.
 - [ ] Evitar gravação por tecla nos campos editáveis da ficha.
-- [ ] Garantir leitura de volta após cada gravação crítica.
+- [ ] Garantir leitura de volta após cada gravação crítica do módulo, não apenas configuração.
 - [ ] Auditar `03-const.js` item a item contra o plano atual.
 - [ ] Auditar `05-estado.js` integralmente.
 - [ ] Validar datas e recalculo dos quatro alinhamentos.
@@ -172,6 +178,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Relatório UGP Word.
 
 ## 14. Configurações
+- [x] Base segura de persistência por seção disponível para as telas de Configurações.
 - [ ] Modelos de e-mail.
 - [ ] Mentoras / Consultoras CKM.
 - [ ] Cursos obrigatórios.
