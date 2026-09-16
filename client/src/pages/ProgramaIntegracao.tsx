@@ -12,6 +12,7 @@ import {
   AgendaGeral,
   GerenciarPessoas,
   Indicadores,
+  RegistrarRespostas,
   FormulariosIntegracaoAdmin,
   ConfiguracaoAviso,
   ConfiguracaoDatas,
@@ -56,11 +57,7 @@ export default function ProgramaIntegracao() {
           setError('Falha ao carregar dados do Programa de Integração');
         }
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Erro desconhecido ao carregar Programa de Integração'
-        );
+        setError(err instanceof Error ? err.message : 'Erro desconhecido ao carregar Programa de Integração');
       } finally {
         setLoading(false);
       }
@@ -85,16 +82,8 @@ export default function ProgramaIntegracao() {
     });
   }, [state]);
 
-  const processosAtivos = useMemo(
-    () => todosProcesos.filter((p) => p.situacao === 'ativo'),
-    [todosProcesos],
-  );
-
-  const processosEncerrados = useMemo(
-    () => todosProcesos.filter((p) => p.situacao === 'encerrado'),
-    [todosProcesos],
-  );
-
+  const processosAtivos = useMemo(() => todosProcesos.filter((p) => p.situacao === 'ativo'), [todosProcesos]);
+  const processosEncerrados = useMemo(() => todosProcesos.filter((p) => p.situacao === 'encerrado'), [todosProcesos]);
   const respostasPendentes = useMemo(() => state?.config?.respostasPendentes || [], [state]);
   const feriados = useMemo(() => state?.config?.feriados || [], [state]);
 
@@ -114,11 +103,8 @@ export default function ProgramaIntegracao() {
     try {
       const processo = processoPorId(processoId);
       if (!processo) return;
-
       const statusAtual = statusAcaoAtual(processo, itemId);
-      const novoStatus: StatusAcaoLegado = statusAtual === 'ok' || statusAtual === 'na' || statusAtual === 'wont'
-        ? ''
-        : 'ok';
+      const novoStatus: StatusAcaoLegado = statusAtual === 'ok' || statusAtual === 'na' || statusAtual === 'wont' ? '' : 'ok';
       await atualizarEstadoProcesso(processoId, aplicarStatusAcao(processo, itemId, novoStatus));
       await recarregarEstado();
     } catch (err) {
@@ -137,12 +123,7 @@ export default function ProgramaIntegracao() {
     }
   };
 
-  const handleCampoFichaAcao = async (
-    processoId: string,
-    itemId: string,
-    campo: CampoFichaAcao,
-    valor: string,
-  ) => {
+  const handleCampoFichaAcao = async (processoId: string, itemId: string, campo: CampoFichaAcao, valor: string) => {
     try {
       const processo = processoPorId(processoId);
       if (!processo) return;
@@ -190,11 +171,7 @@ export default function ProgramaIntegracao() {
     }
   };
 
-  const handleAplicarStatusGrupo = async (
-    itemId: string,
-    processIds: string[],
-    status: Exclude<StatusAcaoLegado, 'ok'>
-  ) => {
+  const handleAplicarStatusGrupo = async (itemId: string, processIds: string[], status: Exclude<StatusAcaoLegado, 'ok'>) => {
     try {
       for (const processId of processIds) {
         const processo = processoPorId(processId);
@@ -208,13 +185,7 @@ export default function ProgramaIntegracao() {
   };
 
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="w-8 h-8 animate-spin" />
-        </div>
-      </DashboardLayout>
-    );
+    return <DashboardLayout><div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin" /></div></DashboardLayout>;
   }
 
   if (error) {
@@ -224,14 +195,9 @@ export default function ProgramaIntegracao() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <AlertCircle className="w-8 h-8 text-destructive flex-shrink-0" />
-              <div>
-                <h3 className="font-semibold">Erro ao carregar Programa de Integração</h3>
-                <p className="text-sm text-muted-foreground mt-1">{error}</p>
-              </div>
+              <div><h3 className="font-semibold">Erro ao carregar Programa de Integração</h3><p className="text-sm text-muted-foreground mt-1">{error}</p></div>
             </div>
-            <Button onClick={() => window.location.reload()} className="mt-4" variant="outline">
-              Tentar Novamente
-            </Button>
+            <Button onClick={() => window.location.reload()} className="mt-4" variant="outline">Tentar Novamente</Button>
           </CardContent>
         </Card>
       </DashboardLayout>
@@ -246,9 +212,7 @@ export default function ProgramaIntegracao() {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold">Programa de Integração</h1>
-            <p className="text-muted-foreground mt-2">
-              Acompanhamento completo dos processos de integração de novos colaboradores
-            </p>
+            <p className="text-muted-foreground mt-2">Acompanhamento completo dos processos de integração de novos colaboradores</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Alternar tema">
@@ -278,58 +242,25 @@ export default function ProgramaIntegracao() {
           </TabsList>
 
           <TabsContent value="painel" className="space-y-6 mt-6">
-            <PainelSemana
-              processosAtivos={processosAtivos}
-              processosEncerrados={processosEncerrados}
-              feriados={feriados}
-              respostasPendentes={respostasPendentes}
-              config={config}
-              onRevisarRespostas={handleRevisarRespostas}
-              onProcessoClick={(id) => { setLocation(`/programa-integracao/detalhe/${id}`); }}
-              onConcluirAcao={handleMarcarConcluido}
-              onAlterarStatusAcao={handleStatusAcao}
-              onAlterarCampoAcao={handleCampoFichaAcao}
-              onAdicionarNotaAcao={handleAdicionarNotaAcao}
-              onRemoverNotaAcao={handleRemoverNotaAcao}
-              onConcluirGrupo={handleConcluirGrupo}
-              onAplicarStatusGrupo={handleAplicarStatusGrupo}
-            />
+            <PainelSemana processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} respostasPendentes={respostasPendentes} config={config} onRevisarRespostas={handleRevisarRespostas} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} onConcluirAcao={handleMarcarConcluido} onAlterarStatusAcao={handleStatusAcao} onAlterarCampoAcao={handleCampoFichaAcao} onAdicionarNotaAcao={handleAdicionarNotaAcao} onRemoverNotaAcao={handleRemoverNotaAcao} onConcluirGrupo={handleConcluirGrupo} onAplicarStatusGrupo={handleAplicarStatusGrupo} />
           </TabsContent>
 
           <TabsContent value="agenda" className="space-y-6 mt-6">
-            <AgendaGeral
-              processos={todosProcesos}
-              feriados={feriados}
-              config={config}
-              onProcessoClick={(id, itemId) => {
-                setLocation(`/programa-integracao/detalhe/${id}${itemId ? `?item=${encodeURIComponent(itemId)}` : ''}`);
-              }}
-              onAlterarStatusAcao={handleStatusAcao}
-            />
+            <AgendaGeral processos={todosProcesos} feriados={feriados} config={config} onProcessoClick={(id, itemId) => setLocation(`/programa-integracao/detalhe/${id}${itemId ? `?item=${encodeURIComponent(itemId)}` : ''}`)} onAlterarStatusAcao={handleStatusAcao} />
           </TabsContent>
 
           <TabsContent value="indicadores" className="space-y-6 mt-6">
-            <Indicadores
-              processosAtivos={processosAtivos}
-              processosEncerrados={processosEncerrados}
-              feriados={feriados}
-              onPainelClick={() => setActiveTab('painel')}
-              onRespostasClick={() => setActiveTab('respostas')}
-              onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)}
-            />
+            <Indicadores processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} onPainelClick={() => setActiveTab('painel')} onRespostasClick={() => setActiveTab('respostas')} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} />
           </TabsContent>
 
-          <TabsContent value="registrar" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Registrar Respostas de Formulários</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Entrada de dados dos 5 formulários: Controle, Bem Acolhido, Pesquisa, Avaliação, PDI</p></CardContent></Card></TabsContent>
+          <TabsContent value="registrar" className="space-y-6 mt-6">
+            <RegistrarRespostas processos={todosProcesos} />
+          </TabsContent>
 
           <TabsContent value="respostas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Respostas Recebidas</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Visualização consolidada de todas as respostas</p></CardContent></Card></TabsContent>
 
           <TabsContent value="formularios" className="space-y-6 mt-6">
-            <FormulariosIntegracaoAdmin
-              key={formularioSubTab}
-              config={config}
-              processos={todosProcesos}
-              initialTab={formularioSubTab}
-            />
+            <FormulariosIntegracaoAdmin key={formularioSubTab} config={config} processos={todosProcesos} initialTab={formularioSubTab} />
           </TabsContent>
 
           <TabsContent value="atas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Atas e Relatórios</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Seleção de pessoa/alinhamento, geração de atas em PDF/Word</p></CardContent></Card></TabsContent>
