@@ -13,6 +13,11 @@ import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
 import { gerarRelatorioAndamentoPdf } from '../helpers/relatorioAndamentoPdf';
 import { gerarCheckpointPdf } from '../helpers/checkpointPdf';
 import {
+  ciclosRelatorioEvolucao,
+  gerarRelatorioEvolucaoPdf,
+  temDadosRelatorioEvolucao,
+} from '../helpers/relatorioEvolucaoPdf';
+import {
   fichaAcaoAtual,
   type CampoFichaAcao,
   type StatusAcaoLegado,
@@ -161,6 +166,14 @@ export function PainelSemana({
     }
   };
 
+  const handleGerarRelatorioEvolucao = (processo: ProcessoIntegracao, relN: number) => {
+    try {
+      gerarRelatorioEvolucaoPdf(processo, relN);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Não foi possível gerar o Relatório de Evolução.');
+    }
+  };
+
   const registrarNota = async (processoId: string, itemId: string, chave: string) => {
     const texto = (rascunhosNota[chave] || '').trim();
     if (!texto || !onAdicionarNotaAcao) return;
@@ -298,6 +311,8 @@ export function PainelSemana({
                   const resposta = respostaDoItem(acao.p, grupo.itemId);
                   const respostaVisivel = respostaAberta === chave && resposta;
                   const ehEmail = Boolean(grupo.item.mail || (grupo.item.mails && grupo.item.mails.length));
+                  const relN = ciclosRelatorioEvolucao(grupo.itemId);
+                  const temRelatorioEvolucao = relN ? temDadosRelatorioEvolucao(acao.p, relN) : false;
                   const ultimaNota = ficha.notas[ficha.notas.length - 1];
                   return (
                     <div key={chave} className={aberta || respostaVisivel ? 'bg-muted/20' : 'bg-background hover:bg-muted/30 transition'}>
@@ -318,6 +333,7 @@ export function PainelSemana({
                           <div className="flex flex-wrap items-center gap-2 md:justify-end">
                             <Badge variant="outline" className={statusClasses[acao.st.k]}>{acao.st.l}</Badge>
                             {grupo.item.pdf && <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(acao.p)}>Agenda PDF</Button>}
+                            {relN && <Button type="button" size="sm" variant={temRelatorioEvolucao ? 'outline' : 'ghost'} onClick={() => handleGerarRelatorioEvolucao(acao.p, relN)} title={temRelatorioEvolucao ? (relN === 5 ? 'Gera o PDF com a evolução completa do 1º ao 4º alinhamento' : 'Gera o PDF de evolução do formulário do gestor para anexar neste e-mail') : 'Ainda não há formulário do gestor registrado para este relatório'}>{relN === 5 ? 'Relatório de evolução (completo)' : 'Relatório de evolução'}</Button>}
                             {resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setRespostaAberta(respostaVisivel ? null : chave); if (!respostaVisivel) setFichaAberta(null); }}>{respostaVisivel ? 'Ocultar resposta' : 'Resposta'}</Button>}
                             <Button type="button" size="sm" variant="ghost" onClick={() => { setFichaAberta(aberta ? null : chave); if (!aberta) setRespostaAberta(null); }}>{ficha.notas.length ? `✎ ${ficha.notas.length}` : '⋯ ficha'}</Button>
                           </div>
