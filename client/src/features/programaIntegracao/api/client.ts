@@ -6,6 +6,17 @@ import { BootstrapResponse, ProcessoIntegracao, BootstrapState } from '../types'
 
 const API_BASE = '/api/programa-integracao';
 
+export type ProgramaIntegracaoConfigSection =
+  | 'emails'
+  | 'mentoras'
+  | 'cursos'
+  | 'plataformaCursos'
+  | 'aviso'
+  | 'links'
+  | 'feriados'
+  | 'formConfig'
+  | 'formTextos';
+
 /**
  * Fetch bootstrap data (config, processos com estado)
  */
@@ -19,6 +30,38 @@ export async function fetchBootstrap(): Promise<BootstrapResponse> {
     throw new Error(`Failed to fetch bootstrap: ${response.status}`);
   }
   
+  return response.json();
+}
+
+/**
+ * Salva APENAS uma seção autorizada da configuração.
+ *
+ * Esta é a operação preferida para as telas de Configurações. O servidor lê a
+ * configuração atual, altera somente a seção pedida e preserva as demais
+ * chaves. `ordem` e `respostasPendentes` deliberadamente não fazem parte deste
+ * contrato.
+ */
+export async function salvarSecaoConfig<T = unknown>(
+  section: ProgramaIntegracaoConfigSection,
+  value: T,
+): Promise<{ ok: boolean; section: ProgramaIntegracaoConfigSection; value: T }> {
+  const response = await fetch(`${API_BASE}/config-sections/${encodeURIComponent(section)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value }),
+  });
+
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const body = await response.json();
+      detail = body?.error ? `: ${body.error}` : '';
+    } catch {
+      // Mantém a mensagem pelo status quando a resposta não for JSON.
+    }
+    throw new Error(`Failed to save config section ${section}: ${response.status}${detail}`);
+  }
+
   return response.json();
 }
 
@@ -53,7 +96,11 @@ export async function salvarProcesso(
 }
 
 /**
- * Salva config global (PUT /api/programa-integracao/config)
+ * Salva config global (PUT /api/programa-integracao/config).
+ *
+ * LEGADO: não usar para edição comum das telas de Configurações. Esse endpoint
+ * também sincroniza a fila de respostas pendentes e um payload incompleto pode
+ * alterar essa fila. Para novas funções, usar `salvarSecaoConfig`.
  */
 export async function salvarConfig(
   config: Record<string, any>
