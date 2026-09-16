@@ -9,6 +9,7 @@ import {
   type FiltroPainel,
 } from '../helpers/painelKpis';
 import { agruparAcoesPorTarefa as agruparFiltradas } from '../helpers/painelAgrupamento';
+import { montarCardProcessoPainel } from '../helpers/painelProcessos';
 import { formatarData } from '../helpers/dateHelpers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,15 @@ export function PainelSemana({
   const acoesFiltradas = useMemo(() => filtrarAcoesPainel(acoes, filtro), [acoes, filtro]);
   const grupos = useMemo(() => agruparFiltradas(acoesFiltradas), [acoesFiltradas]);
   const respostasPendentes = useMemo(() => detectarRespostasPendentes(processosAtivos), [processosAtivos]);
+  const processosVisiveis = useMemo(() => {
+    if (!filtro) return processosAtivos;
+    const ids = new Set(acoesFiltradas.map((acao) => acao.pid));
+    return processosAtivos.filter((processo) => ids.has(processo.id || processo.nome));
+  }, [processosAtivos, acoesFiltradas, filtro]);
+  const cardsProcessos = useMemo(
+    () => processosVisiveis.map((processo) => montarCardProcessoPainel(processo, feriados)),
+    [processosVisiveis, feriados],
+  );
 
   const valorKpi = (filtroKpi: FiltroPainel): number => {
     switch (filtroKpi) {
@@ -224,31 +234,78 @@ export function PainelSemana({
         )}
       </div>
 
-      {processosAtivos.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Processos Ativos Relacionados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {processosAtivos.slice(0, 6).map(processo => (
-                <div
-                  key={processo.id || processo.nome}
-                  className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition"
-                  onClick={() => onProcessoClick?.(processo.id || processo.nome)}
-                >
-                  <p className="font-semibold">{processo.nome}</p>
-                  <p className="text-sm text-muted-foreground">{processo.cargo}</p>
-                  <div className="text-xs text-muted-foreground mt-2">
-                    <p>Unidade: {processo.unidade}</p>
-                    <p>Anjo: {processo.anjo || 'N/A'}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Processos{filtro ? ' desta seleção' : ' ativos'}</h3>
+        {cardsProcessos.length === 0 ? (
+          <Card><CardContent className="py-8 text-center text-muted-foreground">Nenhum processo nessa seleção.</CardContent></Card>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+            {cardsProcessos.map((card) => {
+              const p = card.processo;
+              const pr = card.progresso;
+              const pe = card.proximaEtapa;
+              const hojeTexto = p.situacao === 'encerrado'
+                ? 'encerrado'
+                : card.diaAtual && card.diaAtual > 0
+                  ? `dia ${card.diaAtual} de 150`
+                  : 'não iniciou';
+
+              return (
+                <Card key={card.processoId} className={p.situacao === 'encerrado' ? 'opacity-70' : ''}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="w-10 h-10 rounded-full border flex items-center justify-center font-semibold text-sm flex-shrink-0"
+                        style={p.cor ? { backgroundColor: p.cor } : undefined}
+                      >
+                        {(p.nome || '?').split(/\s+/).slice(0, 2).map((x) => x[0]).join('').toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle className="text-base truncate">{p.nome}</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
+                          {p.cargo || 'cargo a definir'}{p.unidade ? ` · ${p.unidade}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden flex">
+                        <div className="h-full bg-emerald-600" style={{ width: `${pr.percentualConcluido}%` }} />
+                        <div className="h-full bg-slate-400" style={{ width: `${pr.percentualForaEscopo}%` }} />
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-1">
+                        {pr.concluidas} concluídas · {pr.abertas} em aberto · {pr.foraEscopo} não serão feitas
+                      </div>
+                    </div>
+
+                    <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm">
+                      <dt className="text-muted-foreground">Início</dt><dd>{p.inicio ? formatarData(p.inicio) : '—'}</dd>
+                      <dt className="text-muted-foreground">Hoje</dt><dd>{hojeTexto}</dd>
+                      <dt className="text-muted-foreground">Feito</dt><dd>{pr.concluidas}/{pr.total}</dd>
+                      <dt className="text-muted-foreground">CKM</dt><dd>{card.pendencias.ckm} em aberto</dd>
+                      <dt className="text-muted-foreground">Eles</dt><dd>{card.pendencias.eles} em aberto</dd>
+                    </dl>
+
+                    {pe ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className={statusClasses[pe.status.k]}>{pe.status.l}</Badge>
+                        <span className="text-xs text-muted-foreground">{pe.titulo}</span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Todas as etapas concluídas</p>
+                    )}
+
+                    <Button type="button" size="sm" variant="outline" onClick={() => onProcessoClick?.(card.processoId)}>
+                      Abrir
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
