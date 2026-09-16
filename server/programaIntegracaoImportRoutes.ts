@@ -141,7 +141,6 @@ function validateItem(formKey: ProgramaIntegracaoFormKey, item: ImportItem, inde
 async function markTimelineItem(
   connection: any,
   processoId: number,
-  estadoAtual: unknown,
   itemId: string,
   formKey: ProgramaIntegracaoFormKey,
   cycle: number,
@@ -149,7 +148,11 @@ async function markTimelineItem(
   media: number | null,
 ) {
   if (!itemId) return;
-  const estado = asJson<Record<string, any>>(estadoAtual, {});
+  const [rows] = (await connection.execute(
+    `SELECT estado FROM programa_integracao_processos WHERE id=? LIMIT 1 FOR UPDATE`,
+    [processoId],
+  )) as any;
+  const estado = asJson<Record<string, any>>(rows?.[0]?.estado, {});
   estado.feito = estado.feito || {};
   const ficha = estado.feito[itemId] && typeof estado.feito[itemId] === "object" ? estado.feito[itemId] : {};
   ficha.s = "ok";
@@ -195,7 +198,7 @@ programaIntegracaoImportRouter.post("/api/programa-integracao/respostas/importar
 
       const targetId = String(item.targetId || "").trim();
       const [processRows] = (await connection.execute(
-        `SELECT id,legacyId,nome,estado FROM programa_integracao_processos WHERE legacyId=? AND situacao<>'removido' LIMIT 1 FOR UPDATE`,
+        `SELECT id,legacyId,nome FROM programa_integracao_processos WHERE legacyId=? AND situacao<>'removido' LIMIT 1 FOR UPDATE`,
         [targetId],
       )) as any;
       const processRow = processRows?.[0];
@@ -219,7 +222,7 @@ programaIntegracaoImportRouter.post("/api/programa-integracao/respostas/importar
 
       if (existing && action === "sub") {
         await connection.execute(
-          `UPDATE programa_integracao_respostas SET statusVinculo='substituida',statusResposta='substituida_admin',updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
+          `UPDATE programa_integracao_respostas SET statusVinculo='descartada',statusResposta='substituida_admin',updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
           [existing.id],
         );
         await audit(
@@ -247,7 +250,7 @@ programaIntegracaoImportRouter.post("/api/programa-integracao/respostas/importar
           String(item.nome || processRow.nome || "").trim() || processRow.nome || null,
           evaluator,
           evaluator,
-          "admin_import",
+          "importacao",
           media,
           JSON.stringify(alertas),
           JSON.stringify(answers),
@@ -265,7 +268,7 @@ programaIntegracaoImportRouter.post("/api/programa-integracao/respostas/importar
         [protocolo, legacyRid, dedupeKey, respostaId],
       );
 
-      await markTimelineItem(connection, processoId, processRow.estado, itemId || "", formKey, cycle, role, media);
+      await markTimelineItem(connection, processoId, itemId || "", formKey, cycle, role, media);
       await audit(
         connection,
         req,
