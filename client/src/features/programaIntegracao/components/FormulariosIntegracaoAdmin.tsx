@@ -3,6 +3,7 @@ import type { BootstrapState, ProcessoIntegracao, RespostaFormulario } from '../
 import { salvarSecaoConfig } from '../api/client';
 import { ROTAS_PUBLICAS_FORMULARIOS } from '../helpers/paridadeHtml';
 import { PendenciasFormularioAdmin } from './PendenciasFormularioAdmin';
+import { FormTextosEditor } from './FormTextosEditor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -216,11 +217,7 @@ export function FormulariosIntegracaoAdmin({
           </TabsContent>
 
           <TabsContent value="textos" className="mt-6 space-y-4">
-            <div className="rounded-lg border p-4">
-              <h3 className="font-semibold">Perguntas e textos dos formulários</h3>
-              <p className="mt-2 text-sm text-muted-foreground">A estrutura oficial já está carregada no catálogo técnico do módulo. A edição de textos será feita separadamente para preservar códigos internos e respostas históricas.</p>
-              <p className="mt-2 text-xs text-muted-foreground">A configuração pública já aceita textos personalizados; falta apenas concluir este editor administrativo.</p>
-            </div>
+            <FormTextosEditor config={config} onSaved={onSaved} />
           </TabsContent>
 
           <TabsContent value="config" className="mt-6 space-y-4">
