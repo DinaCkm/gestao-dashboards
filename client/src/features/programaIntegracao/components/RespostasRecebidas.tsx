@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import type { ProcessoIntegracao, RespostaFormulario } from '../types';
-import { atualizarRespostaRecebida } from '../api/respostas';
+import { arquivarRespostaRecebida, atualizarRespostaRecebida } from '../api/respostas';
 import { IMPORT_FORM_DEFINITIONS, type FormImportKey } from '../helpers/registrarRespostasParser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Trash2 } from 'lucide-react';
 
 interface RespostasRecebidasProps {
   processos: Array<ProcessoIntegracao & { id?: string }>;
@@ -55,7 +55,9 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
   const [editando, setEditando] = useState<RespostaComProcesso | null>(null);
   const [edit, setEdit] = useState<EditBuffer | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [arquivandoRid, setArquivandoRid] = useState<string | null>(null);
   const [erroEdicao, setErroEdicao] = useState('');
+  const [erroLista, setErroLista] = useState('');
 
   const respostas = useMemo<RespostaComProcesso[]>(() => {
     const all: RespostaComProcesso[] = [];
@@ -131,6 +133,26 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
     }
   };
 
+  const arquivarResposta = async (resposta: RespostaComProcesso) => {
+    const confirmar = window.confirm(
+      `Remover esta resposta da visão ativa?\n\n${resposta.processoNome} — ${IMPORT_FORM_DEFINITIONS[resposta.form].name}\n\nO registro não será apagado fisicamente: ficará preservado no histórico de auditoria.`,
+    );
+    if (!confirmar) return;
+
+    try {
+      setErroLista('');
+      setArquivandoRid(resposta.rid);
+      await arquivarRespostaRecebida(resposta.rid);
+      if (detalhe?.rid === resposta.rid) setDetalhe(null);
+      if (editando?.rid === resposta.rid) cancelarEdicao();
+      await onSaved?.();
+    } catch (error) {
+      setErroLista(error instanceof Error ? error.message : 'Não foi possível arquivar a resposta.');
+    } finally {
+      setArquivandoRid(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -158,6 +180,8 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
         </CardContent>
       </Card>
 
+      {erroLista && <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"><AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />{erroLista}</div>}
+
       <div className="text-sm text-muted-foreground">{filtradas.length} {filtradas.length === 1 ? 'resposta nesta seleção' : 'respostas nesta seleção'} · {respostas.length} {respostas.length === 1 ? 'resposta no total' : 'respostas no total'}.</div>
 
       {filtradas.length === 0 ? (
@@ -183,6 +207,9 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
                     {!!r.alertas?.length && <span className="rounded-full border px-2 py-1 text-xs">{r.alertas.length} {r.alertas.length === 1 ? 'ponto de atenção' : 'pontos de atenção'}</span>}
                     <Button size="sm" variant="outline" onClick={() => setDetalhe(r)}>Ver</Button>
                     <Button size="sm" onClick={() => abrirEdicao(r)}>Editar</Button>
+                    <Button size="sm" variant="ghost" disabled={arquivandoRid === r.rid} onClick={() => arquivarResposta(r)} title="Remover este registro da visão ativa sem apagar o histórico">
+                      {arquivandoRid === r.rid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </Button>
                     {onProcessoClick && r.processoIdLocal && <Button size="sm" variant="ghost" onClick={() => onProcessoClick(r.processoIdLocal)}>Abrir processo</Button>}
                   </div>
                 </div>
