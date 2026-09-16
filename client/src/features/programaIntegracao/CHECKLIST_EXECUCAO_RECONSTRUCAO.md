@@ -75,7 +75,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Dados do processo editáveis de forma segura.
 - [ ] Bem Acolhido e teste comportamental completos.
 - [ ] Respostas agrupadas por ciclo.
-- [ ] Cobrar formulários.
+- [x] Cobrar formulários.
 - [ ] Mural completo de observações.
 - [ ] Auditoria das 95 ações na ficha individual.
 
@@ -102,7 +102,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Restaurar padrão.
 - [ ] Inserção de tokens clicáveis.
 - [ ] Anexos e tutorial em todos os casos previstos.
-- [ ] Cobrança dinâmica por responsável.
+- [x] Cobrança dinâmica por responsável.
 
 ## 8. Registrar respostas
 - [x] Importação por texto colado — motor de leitura portado do `03b-forms.js`.
@@ -169,12 +169,12 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Configurar política de duplicidade por formulário com persistência segura e preservação histórica.
 
 ## 12. Cobrança de formulários
-- [ ] Detectar vencidos sem resposta por responsável.
-- [ ] Um e-mail por responsável.
-- [ ] Links e datas no e-mail.
-- [ ] Marcar como cobrados.
-- [ ] Observação automática.
-- [ ] Cobrança restrita ao 4º ciclo no fechamento final.
+- [x] Detectar vencidos sem resposta por responsável.
+- [x] Um e-mail por responsável.
+- [x] Links e datas no e-mail.
+- [x] Marcar como cobrados.
+- [x] Observação automática.
+- [x] Cobrança restrita ao 4º ciclo no fechamento final.
 
 ## 13. PDFs e Word
 - [x] Agenda PDF base.
