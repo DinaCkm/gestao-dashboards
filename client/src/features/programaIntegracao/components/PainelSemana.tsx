@@ -241,35 +241,39 @@ export function PainelSemana({
                   {grupo.pessoas.map((acao) => (
                     <div key={`${grupo.itemId}-${acao.pid}`} className="p-4 bg-background hover:bg-muted/30 transition">
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <button
-                          type="button"
-                          className="text-left min-w-0 flex-1"
-                          onClick={() => onProcessoClick?.(acao.pid)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-2.5 h-2.5 rounded-full border flex-shrink-0"
-                              style={acao.p.cor ? { backgroundColor: acao.p.cor } : undefined}
-                            />
-                            <span className="font-medium truncate">{acao.p.nome}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1 ml-4">
-                            {acao.p.cargo || 'Cargo não informado'}{acao.p.unidade ? ` · ${acao.p.unidade}` : ''}
-                          </div>
-                        </button>
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                          {onConcluirAcao && (
+                            <button
+                              type="button"
+                              onClick={() => onConcluirAcao(acao.pid, grupo.itemId)}
+                              className="mt-0.5 grid h-[18px] w-[18px] flex-shrink-0 place-items-center rounded-[5px] border border-border bg-background text-[10px] text-transparent transition hover:border-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              title="Marcar como feito"
+                              aria-label={`Marcar ${grupo.item.t} como feito para ${acao.p.nome}`}
+                            >
+                              ✓
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            className="text-left min-w-0 flex-1"
+                            onClick={() => onProcessoClick?.(acao.pid)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border flex-shrink-0"
+                                style={acao.p.cor ? { backgroundColor: acao.p.cor } : undefined}
+                              />
+                              <span className="font-medium truncate">{acao.p.nome}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 ml-4">
+                              {acao.p.cargo || 'Cargo não informado'}{acao.p.unidade ? ` · ${acao.p.unidade}` : ''}
+                            </div>
+                          </button>
+                        </div>
 
                         <div className="flex items-center gap-2 md:justify-end">
                           <Badge variant="outline" className={statusClasses[acao.st.k]}>{acao.st.l}</Badge>
-                          {onConcluirAcao && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => onConcluirAcao(acao.pid, grupo.itemId)}
-                            >
-                              Marcar feita
-                            </Button>
-                          )}
                         </div>
                       </div>
                     </div>
