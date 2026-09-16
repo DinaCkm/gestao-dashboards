@@ -25,6 +25,20 @@ export interface MentoraVinculada {
   legado?: boolean;
 }
 
+export interface ItemChecklistMentora {
+  chave: string;
+  nivel: 'ok' | 'aviso' | 'bloq';
+  titulo: string;
+  detalhe: string;
+}
+
+export interface ChecklistMentora {
+  itens: ItemChecklistMentora[];
+  bloqueios: number;
+  avisos: number;
+  ok: boolean;
+}
+
 const ORD: Record<number, string> = { 1: '1º', 2: '2º', 3: '3º', 4: '4º' };
 
 function hojeIso(hojeRef: string | Date = new Date()): string {
@@ -103,6 +117,43 @@ function menReg(processo: ProcessoIntegracao, numero: number): Record<string, an
   return men;
 }
 
+export function soDigitosMentora(valor?: string): string {
+  return String(valor || '').replace(/\D+/g, '');
+}
+
+export function telefoneBonitoMentora(valor?: string): string {
+  let d = soDigitosMentora(valor);
+  if (d.length === 13 && d.slice(0, 2) === '55') d = d.slice(2);
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return String(valor || '').trim();
+}
+
+export function linkWhatsAppMentora(tel: string | undefined, texto: string): string {
+  let d = soDigitosMentora(tel);
+  if (!d) return '';
+  if (d.length <= 11) d = `55${d}`;
+  return `https://wa.me/${d}?text=${encodeURIComponent(texto || '')}`;
+}
+
+export function mentorasAtivas(config?: BootstrapState['config']): MentoraVinculada[] {
+  const mentoras = Array.isArray(config?.mentoras) ? config.mentoras : [];
+  return mentoras
+    .filter((m: any) => m && m.ativa !== false)
+    .map((m: any) => ({
+      id: String(m.id || ''),
+      nome: String(m.nome || ''),
+      tel: String(m.tel || ''),
+      email: String(m.email || ''),
+      ativa: true,
+    }))
+    .filter((m: MentoraVinculada) => m.id && m.nome);
+}
+
+export function vincularMentoraProcesso(processo: ProcessoIntegracao, mentorId: string): ProcessoIntegracao {
+  return { ...processo, mentorId };
+}
+
 export function mentoraVinculada(
   processo: ProcessoIntegracao,
   config?: BootstrapState['config'],
@@ -121,9 +172,21 @@ export function mentoraVinculada(
     }
   }
   if (String(processo.consultora || '').trim()) {
+    const legado = String(processo.consultora).trim();
+    const normalizado = legado.toLocaleLowerCase('pt-BR');
+    const encontrada = mentoras.find((m: any) => String(m?.nome || '').trim().toLocaleLowerCase('pt-BR') === normalizado);
+    if (encontrada) {
+      return {
+        id: String(encontrada.id || ''),
+        nome: String(encontrada.nome || ''),
+        tel: String(encontrada.tel || ''),
+        email: String(encontrada.email || ''),
+        ativa: encontrada.ativa !== false,
+      };
+    }
     return {
       id: '',
-      nome: String(processo.consultora).trim(),
+      nome: legado,
       tel: '',
       email: '',
       ativa: true,
@@ -140,7 +203,7 @@ export function estadoMentoraAlinhamento(processo: ProcessoIntegracao, numero: n
     pedidoEm: String(m.pedidoEm || ''),
     confirmEm: String(m.confirmEm || ''),
     briefEm: String(m.briefEm || ''),
-    wordEm: String(m.wordEm || ''),
+    wordEm: String(m.wordEm || m.checklistEm || ''),
     ok: Boolean(m.ok),
     hor: m.hor.map((x: any) => ({ d: String(x?.d || ''), h: String(x?.h || '') })),
   };
@@ -162,6 +225,57 @@ export function horariosTextoMentora(processo: ProcessoIntegracao, numero: numbe
     .filter((x) => x.d || x.h)
     .map((x) => `${x.d ? fmtc(x.d) : 'data a confirmar'}${x.h.trim() ? ` — ${x.h.trim()}` : ''}`)
     .join('\n');
+}
+
+function respostaBemQualidades(processo: ProcessoIntegracao): string {
+  const manual = String(processo.bem?.qualidades || '').trim();
+  if (manual) return manual;
+  const resposta = (processo.resp || []).find((r: any) => r?.form === 'bem');
+  if (!resposta) return '';
+  const par = Array.isArray(resposta.c) ? resposta.c.find((x: any) => Number(x?.[0]) === 11) : null;
+  return String(par?.[1] || '').trim();
+}
+
+export function checarPreparacaoMentora(
+  processo: ProcessoIntegracao,
+  numero: number,
+  config?: BootstrapState['config'],
+  feriados: string[] = [],
+): ChecklistMentora {
+  const itens: ItemChecklistMentora[] = [];
+  const mentora = mentoraVinculada(processo, config);
+  const datas = datasSugeridasMentora(processo, numero, feriados);
+  const alinhamento = processo.alin?.[String(numero)] ?? processo.alin?.[numero] ?? {};
+  const add = (chave: string, nivel: ItemChecklistMentora['nivel'], titulo: string, detalhe: string) => {
+    itens.push({ chave, nivel, titulo, detalhe });
+  };
+
+  add('colaborador', String(processo.nome || '').trim() ? 'ok' : 'bloq', 'Nome do colaborador', String(processo.nome || '').trim() || 'não informado');
+  add('gestor', String(processo.gestor || '').trim() ? 'ok' : 'bloq', 'Nome do gestor', String(processo.gestor || '').trim() || 'não informado');
+  add('mentora', mentora?.nome ? 'ok' : 'bloq', 'Mentora responsável', mentora?.nome ? `${mentora.nome}${mentora.legado ? ' (cadastro antigo, ainda sem vínculo)' : ''}` : 'nenhuma selecionada');
+  add('data', datas.d1 ? 'ok' : 'bloq', 'Data prevista do alinhamento', datas.d1 ? `${fmtc(datas.d1)} · alternativa ${fmtc(datas.d2)}` : 'não calculada');
+
+  if (mentora && !mentora.legado && !soDigitosMentora(mentora.tel)) {
+    add('telefoneMentora', 'aviso', 'WhatsApp da mentora', 'sem telefone no cadastro; a mensagem pode ser copiada, mas não aberta diretamente no WhatsApp');
+  }
+  add('telefoneColaborador', soDigitosMentora(processo.tel) ? 'ok' : 'aviso', 'Telefone do colaborador', soDigitosMentora(processo.tel) ? telefoneBonitoMentora(processo.tel) : 'não informado');
+  add('telefoneGestor', soDigitosMentora(processo.gestorTel) ? 'ok' : 'aviso', 'Telefone do gestor', soDigitosMentora(processo.gestorTel) ? telefoneBonitoMentora(processo.gestorTel) : 'não informado');
+
+  if (numero === 1) {
+    const qualidades = respostaBemQualidades(processo);
+    add('bemAcolhido', qualidades ? 'ok' : 'aviso', 'Bem Acolhido — qualidades esperadas pelo gestor', qualidades ? 'informação registrada' : 'não encontramos a resposta/resumo');
+    const teste = String(processo.teste?.resumo || '').trim();
+    add('teste', teste ? 'ok' : 'aviso', 'Teste comportamental / Avaliação de Potencial', teste ? 'resumo registrado' : 'sem resumo registrado');
+  } else {
+    add('pdi', String(processo.statusPdi || '').trim() ? 'ok' : 'aviso', 'Status do PDI', String(processo.statusPdi || '').trim() || 'não informado');
+    add('pendencias', 'ok', 'Pendências', String(processo.pendencias || '').trim() || 'nenhuma registrada');
+  }
+
+  add('link', String(alinhamento.link || '').trim() ? 'ok' : 'aviso', 'Link da reunião', String(alinhamento.link || '').trim() || 'ainda não definido; o material deve indicar “a confirmar”');
+
+  const bloqueios = itens.filter((x) => x.nivel === 'bloq').length;
+  const avisos = itens.filter((x) => x.nivel === 'aviso').length;
+  return { itens, bloqueios, avisos, ok: bloqueios === 0 && avisos === 0 };
 }
 
 /** Texto literal de `zapDisponibilidade(p,n)` do HTML mais recente. */
@@ -245,6 +359,7 @@ export function marcarWordMentora(
 ): ProcessoIntegracao {
   const copia = clonarAlin(processo);
   menReg(copia, numero).wordEm = hojeIso(hojeRef);
+  menReg(copia, numero).checklistEm = hojeIso(hojeRef);
   return copia;
 }
 
@@ -259,6 +374,17 @@ export function atualizarHorarioMentora(
   const m = menReg(copia, numero);
   while (m.hor.length <= indice) m.hor.push({ d: '', h: '' });
   m.hor[indice] = { ...m.hor[indice], [campo]: valor };
+  return copia;
+}
+
+export function substituirHorariosMentora(
+  processo: ProcessoIntegracao,
+  numero: number,
+  horarios: HorarioMentora[],
+): ProcessoIntegracao {
+  const copia = clonarAlin(processo);
+  const m = menReg(copia, numero);
+  m.hor = (horarios.length ? horarios : [{ d: '', h: '' }]).map((x) => ({ d: String(x.d || ''), h: String(x.h || '') }));
   return copia;
 }
 
