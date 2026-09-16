@@ -24,6 +24,7 @@ const PROTO_PREFIX: Record<ProgramaIntegracaoFormKey, string> = {
 };
 const SIM_BOA = 0.8;
 const SIM_MIN = 0.4;
+const MIN_TEXTO_LIVRE = 10;
 
 function asJson<T = any>(value: unknown, fallback: T): T {
   if (value == null) return fallback;
@@ -252,9 +253,17 @@ programaIntegracaoRouter.get("/api/public/programa-integracao/forms/:slug", asyn
     const connection = await getConnectionOr503(res); if (!connection) return;
     const [rows] = (await connection.execute(`SELECT valor FROM programa_integracao_config WHERE chave='geral' LIMIT 1`)) as any;
     const config = rows?.[0] ? asJson(rows[0].valor, {}) : {};
-    const cfg = config?.formConfig?.[formKey] || { active: true, version: 1 };
+    const cfg = config?.formConfig?.[formKey] || { active: true, version: 1, dupPolicy: "bloquear" };
     res.setHeader("Cache-Control", "no-store");
-    return res.json({ ok: true, formKey, formName: FORM_NAMES[formKey], active: cfg.active !== false, version: Number(cfg.version || 1), textos: config?.formTextos?.[formKey] || null });
+    return res.json({
+      ok: true,
+      formKey,
+      formName: FORM_NAMES[formKey],
+      active: cfg.active !== false,
+      version: Number(cfg.version || 1),
+      dupPolicy: ["bloquear", "substituir", "adicional"].includes(String(cfg.dupPolicy)) ? cfg.dupPolicy : "bloquear",
+      textos: config?.formTextos?.[formKey] || null,
+    });
   } catch (error) { console.error("[ProgramaIntegracao] public form:", error); return res.status(500).json({ error: "Não foi possível abrir o formulário." }); }
 });
 
@@ -270,6 +279,71 @@ function calcMedia(formKey: ProgramaIntegracaoFormKey, answers: Record<string, a
   }
   return { media: qt ? Math.round((soma / qt) * 10) / 10 : null, alertas };
 }
+
+function publicQuestionRules(catalog: any, formKey: ProgramaIntegracaoFormKey, config: any) {
+  const override = config?.formTextos?.[formKey] || {};
+  return (catalog?.sections || []).flatMap((section: any) => (section.questions || []).map((question: any) => {
+    const customRequired = override?.obrigatorias?.[question.code];
+    const customLabel = override?.labels?.[question.code];
+    const customChoices = String(override?.escolhas?.[question.code] || "").split("\n").map((line: string) => line.trim()).filter(Boolean).map((line: string) => {
+      const pos = line.indexOf("|");
+      return pos > 0 ? { value: line.slice(0, pos).trim(), label: line.slice(pos + 1).trim() } : line;
+    });
+    return {
+      ...question,
+      label: customLabel != null ? String(customLabel) : question.label,
+      required: customRequired != null ? Boolean(customRequired) : question.required,
+      options: customChoices.length ? customChoices : question.options,
+    };
+  }));
+}
+
+function valuePresent(value: unknown) {
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== undefined && value !== null && String(value).trim() !== "";
+}
+
+function optionValues(options: any[] | undefined) {
+  return (options || []).map((option: any) => typeof option === "string" ? option : String(option?.value ?? option?.v ?? ""));
+}
+
+function validatePublicAnswers(catalog: any, formKey: ProgramaIntegracaoFormKey, config: any, data: any) {
+  const answers = data.answers && typeof data.answers === "object" ? data.answers : {};
+  const questions = publicQuestionRules(catalog, formKey, config);
+  for (const question of questions) {
+    const conditionalGestor = question.code === "aval_reacao_feedback" && String(data.role || "") === "Gestor";
+    if (question.code === "aval_reacao_feedback" && !conditionalGestor) continue;
+    const required = question.required !== false || conditionalGestor;
+    const value = answers[question.code];
+    if (required && !valuePresent(value)) return { erro: `Preencha: ${question.label}`, campo: question.code };
+    if (!valuePresent(value)) continue;
+
+    if (question.type === "scale") {
+      const n = Number(value);
+      if (!Number.isInteger(n) || n < 0 || n > 5) return { erro: `Valor inválido em: ${question.label}`, campo: question.code };
+    }
+    if (question.type === "cpf" && !/^\d{11}$/.test(String(value).replace(/\D/g, ""))) {
+      return { erro: "Informe o CPF com 11 números.", campo: question.code };
+    }
+    if (question.type === "tel") {
+      const digits = String(value).replace(/\D/g, "");
+      if (digits.length < 10 || digits.length > 11) return { erro: "Informe o telefone com DDD, usando 10 ou 11 números.", campo: question.code };
+    }
+    if (question.type === "textarea" && String(value).trim().length < MIN_TEXTO_LIVRE) {
+      return { erro: `A resposta de "${question.label}" precisa ter pelo menos ${MIN_TEXTO_LIVRE} caracteres.`, campo: question.code };
+    }
+    if (question.type === "select" && Array.isArray(question.options) && question.options.length) {
+      if (!optionValues(question.options).includes(String(value))) return { erro: `Opção inválida em: ${question.label}`, campo: question.code };
+    }
+    if (question.type === "multi" && Array.isArray(question.options) && question.options.length) {
+      const allowed = new Set(optionValues(question.options));
+      const values = Array.isArray(value) ? value : String(value).split(",").map((v) => v.trim()).filter(Boolean);
+      if (values.some((v: string) => !allowed.has(v))) return { erro: `Há uma opção inválida em: ${question.label}`, campo: question.code };
+    }
+  }
+  return null;
+}
+
 async function findProcess(connection: any, data: any) {
   const [rows] = (await connection.execute(`SELECT id,legacyId,nome,email,emailCorporativo,unidade,inicio FROM programa_integracao_processos WHERE situacao<>'removido'`)) as any;
   const nome = String(data.nomeColaborador || "").trim(); if (!nome) return { status: "nenhum", candidatos: [] as any[] };
@@ -289,6 +363,7 @@ async function findProcess(connection: any, data: any) {
   if (top.nameScore >= SIM_MIN && forte && folga) return { status: "ok", processo: top, candidatos: candidatos.slice(0,5) };
   return { status: candidatos.some((c:any) => c.nameScore >= SIM_MIN || c.sinais.length) ? "ambiguo" : "nenhum", candidatos: candidatos.slice(0,5) };
 }
+
 async function insertResponse(connection: any, data: any, formKey: ProgramaIntegracaoFormKey, version: number, match: any, statusVinculo: "vinculada"|"pendente", motivo: string | null) {
   const cycle = Number(data.cycle || 0), role = String(data.role || ""), answers = data.answers && typeof data.answers === "object" ? data.answers : {};
   const itemId = statusVinculo === "vinculada" ? itemIdDoFormulario(formKey, cycle, role) : null;
@@ -314,13 +389,16 @@ async function insertResponse(connection: any, data: any, formKey: ProgramaInteg
 }
 
 programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/responses", async (req, res) => {
+  const connection = await getConnectionOr503(res); if (!connection) return;
+  let transactionStarted = false;
   try {
     const formKey = formKeyDoSlug(req.params.slug); if (!formKey) return res.status(404).json({ ok:false, erro:"Formulário não encontrado." });
-    const connection = await getConnectionOr503(res); if (!connection) return;
     const [cfgRows] = (await connection.execute(`SELECT valor FROM programa_integracao_config WHERE chave='geral' LIMIT 1`)) as any;
-    const config = cfgRows?.[0] ? asJson(cfgRows[0].valor, {}) : {}; const cfg = config?.formConfig?.[formKey] || { active:true, version:1, dupPolicy:"bloquear" };
+    const config = cfgRows?.[0] ? asJson(cfgRows[0].valor, {}) : {};
+    const cfg = config?.formConfig?.[formKey] || { active:true, version:1, dupPolicy:"bloquear" };
     if (cfg.active === false) return res.status(409).json({ ok:false, erro:"Este formulário está desativado no momento." });
-    const data = req.body || {}; if (!String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome do colaborador.", campo:"nomeColaborador" });
+    const data = req.body || {};
+    if (!String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome do colaborador.", campo:"nomeColaborador" });
     const catalog = PROGRAMA_INTEGRACAO_CATALOG[req.params.slug];
     if (!catalog) return res.status(404).json({ ok:false, erro:"Formulário não encontrado." });
     if (catalog.identity.unidade && !String(data.unidade || "").trim()) return res.status(400).json({ ok:false, erro:"Informe a unidade.", campo:"unidade" });
@@ -328,34 +406,52 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
     if (catalog.identity.respondent && !String(data.respondentName || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome de quem está respondendo.", campo:"respondentName" });
     if (catalog.identity.cycle && !Number(data.cycle || 0)) return res.status(400).json({ ok:false, erro:"Informe o período desta resposta.", campo:"cycle" });
     if (formKey === "aval" && !["Gestor","Anjo"].includes(String(data.role || ""))) return res.status(400).json({ ok:false, erro:"Informe se a resposta é do Gestor ou do Anjo.", campo:"role" });
-    const answers = data.answers && typeof data.answers === "object" ? data.answers : {};
-    for (const section of catalog.sections) {
-      for (const question of section.questions) {
-        const conditionalGestor = question.code === "aval_reacao_feedback" && String(data.role || "") === "Gestor";
-        const required = question.required !== false || conditionalGestor;
-        const value = answers[question.code];
-        if (required && (value === undefined || value === null || String(value).trim() === "")) {
-          return res.status(400).json({ ok:false, erro:`Preencha: ${question.label}`, campo:question.code });
-        }
-        if (question.type === "scale" && value !== undefined && value !== null && String(value).trim() !== "") {
-          const n = Number(value); if (!Number.isInteger(n) || n < 0 || n > 5) return res.status(400).json({ ok:false, erro:`Valor inválido em: ${question.label}`, campo:question.code });
-        }
-      }
-    }
+
+    const validationError = validatePublicAnswers(catalog, formKey, config, data);
+    if (validationError) return res.status(400).json({ ok:false, ...validationError });
+
     const match = await findProcess(connection, data);
     if (match.status === "ok") {
       const processoId = Number(match.processo.dbId), cycle = Number(data.cycle || 0), role = String(data.role || "");
-      const [dups] = (await connection.execute(`SELECT id FROM programa_integracao_respostas WHERE processoId=? AND formKey=? AND ciclo=? AND COALESCE(papel,'')=? AND statusVinculo='vinculada' LIMIT 1`, [processoId, formKey, cycle, role])) as any;
-      if (dups?.[0]) {
+      const [dups] = (await connection.execute(
+        `SELECT id FROM programa_integracao_respostas WHERE processoId=? AND formKey=? AND ciclo=? AND COALESCE(papel,'')=? AND statusVinculo='vinculada' ORDER BY id DESC LIMIT 1`,
+        [processoId, formKey, cycle, role],
+      )) as any;
+      const duplicate = dups?.[0] || null;
+      const dupPolicy = ["bloquear", "substituir", "adicional"].includes(String(cfg.dupPolicy)) ? String(cfg.dupPolicy) : "bloquear";
+
+      if (duplicate && dupPolicy === "bloquear") {
         const saved = await insertResponse(connection, data, formKey, Number(cfg.version || 1), { candidatos: match.candidatos }, "pendente", "registro_falhou");
-        return res.json({ ok:true, pendente:true, protocolo:saved.protocolo });
+        return res.json({ ok:true, pendente:true, protocolo:saved.protocolo, motivo:"duplicado" });
+      }
+
+      await connection.beginTransaction();
+      transactionStarted = true;
+      if (duplicate && dupPolicy === "substituir") {
+        await connection.execute(
+          `UPDATE programa_integracao_respostas SET statusVinculo='substituida',statusResposta='substituida_publico',updatedAt=CURRENT_TIMESTAMP WHERE id=? AND statusVinculo='vinculada'`,
+          [duplicate.id],
+        );
       }
       const saved = await insertResponse(connection, data, formKey, Number(cfg.version || 1), match, "vinculada", null);
-      return res.json({ ok:true, pendente:false, protocolo:saved.protocolo, processId:match.processo.id, marcouEtapa:!!saved.itemId });
+      await connection.commit();
+      transactionStarted = false;
+      return res.json({
+        ok:true,
+        pendente:false,
+        protocolo:saved.protocolo,
+        processId:match.processo.id,
+        marcouEtapa:!!saved.itemId,
+        duplicateAction: duplicate ? dupPolicy : null,
+      });
     }
+
     const saved = await insertResponse(connection, data, formKey, Number(cfg.version || 1), match, "pendente", match.status || "ambiguo");
     return res.json({ ok:true, pendente:true, protocolo:saved.protocolo });
   } catch (error) {
+    if (transactionStarted) {
+      try { await connection.rollback(); } catch (rollbackError) { console.error("[ProgramaIntegracao] rollback formulário público:", rollbackError); }
+    }
     console.error("[ProgramaIntegracao] envio público:", error);
     return res.status(500).json({ ok:false, erro:"Não foi possível registrar a resposta. Tente novamente." });
   }
