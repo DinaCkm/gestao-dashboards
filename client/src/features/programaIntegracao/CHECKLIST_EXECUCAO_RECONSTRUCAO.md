@@ -97,7 +97,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Links oficiais dos cinco formulários.
 - [x] Prévia de e-mail existente.
 - [x] Botões de e-mail nas ações principais.
-- [ ] Conferir todos os modelos texto a texto.
+- [x] Conferir todos os modelos texto a texto.
 - [x] Editor completo em Configurações.
 - [x] Restaurar padrão.
 - [x] Inserção de tokens clicáveis.
