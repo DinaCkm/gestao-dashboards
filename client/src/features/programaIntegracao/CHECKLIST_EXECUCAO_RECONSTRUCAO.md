@@ -81,7 +81,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 
 ## 6. Mentora
 - [x] Estrutura inicial da preparação da mentora.
-- [ ] Cadastro completo de mentoras.
+- [x] Cadastro completo de mentoras.
 - [x] Seleção e vínculo no processo.
 - [x] Checklist de prontidão completo.
 - [x] WhatsApp de disponibilidade.
@@ -191,8 +191,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 ## 14. Configurações
 - [x] Base segura de persistência por seção disponível para as telas de Configurações.
 - [ ] Modelos de e-mail.
-- [ ] Mentoras / Consultoras CKM.
-- [ ] Cursos obrigatórios.
+- [x] Mentoras / Consultoras CKM.
+- [x] Cursos obrigatórios.
 - [ ] Aviso e assinatura.
 - [ ] Links e formulários.
 - [ ] Datas e feriados.
