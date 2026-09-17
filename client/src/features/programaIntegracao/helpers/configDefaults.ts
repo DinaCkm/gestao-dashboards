@@ -1,6 +1,19 @@
 export const AVISO_PADRAO_INTEGRACAO =
   '> Este e-mail refere-se ao **Programa de Integração (Onboarding) do Sebrae/TO**, conduzido pela **CKM Talents**. Vale guardar a mensagem para acompanhar as próximas etapas do processo.';
 
+export const CURSOS_PADRAO_INTEGRACAO = [
+  { n: 'Parada Obrigatória – Diversidade & Inclusão', h: 2 },
+  { n: 'Trilha das Competências do Futuro', h: 485 },
+  { n: 'Código de Ética Sistema Sebrae – 2024', h: 5 },
+  { n: 'LGPD', h: 4 },
+  { n: 'Programa de Integridade Corporativa – Compliance', h: 8 },
+  { n: 'Segurança da Informação 2026', h: 2 },
+  { n: 'Conhecendo o Sistema Sebrae – Essencial', h: 8 },
+  { n: 'Conhecendo o Sistema Sebrae – atualizado 2024', h: 16 },
+] as const;
+
+export const PLATAFORMA_CURSOS_PADRAO_INTEGRACAO = 'Meus Cursos — plataforma do Ecossistema do B.E.M.';
+
 export const FER_FIXOS_INTEGRACAO: Record<string, string> = {
   '01-01': 'Confraternização',
   '04-21': 'Tiradentes',
