@@ -30,6 +30,7 @@ import { CobrancaFinalPainel, CobrancaFormulariosDialog } from './CobrancaFormul
 import { BemTesteProcesso } from './BemTesteProcesso';
 import { RespostasProcessoAgrupadas } from './RespostasProcessoAgrupadas';
 import { ObservacoesAcao } from './ObservacoesAcao';
+import { ControlesEspeciaisAcao } from './ControlesEspeciaisAcao';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -432,12 +433,14 @@ export function DetalheProcessoReal({
 
                           <ObservacoesAcao processo={processo} itemId={item.id} onSalvarProcesso={salvar} />
 
-                          {resposta && (
-                            <div className="rounded-md border bg-muted/20 p-3 text-xs">
-                              <b>Resposta registrada</b>{resposta.submittedAt ? ` · ${formatarData(String(resposta.submittedAt).slice(0, 10))}` : ''}
-                              {resposta.media != null ? ` · média ${Number(resposta.media).toFixed(1).replace('.', ',')}` : ''}
-                            </div>
-                          )}
+                          <ControlesEspeciaisAcao
+                            processo={processo}
+                            item={item}
+                            resposta={resposta}
+                            config={config}
+                            feriados={feriados}
+                            onSalvarProcesso={salvar}
+                          />
                         </div>
                       );
                     })}
