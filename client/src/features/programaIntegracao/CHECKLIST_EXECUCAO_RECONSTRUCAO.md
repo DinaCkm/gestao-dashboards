@@ -98,9 +98,9 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Prévia de e-mail existente.
 - [x] Botões de e-mail nas ações principais.
 - [ ] Conferir todos os modelos texto a texto.
-- [ ] Editor completo em Configurações.
-- [ ] Restaurar padrão.
-- [ ] Inserção de tokens clicáveis.
+- [x] Editor completo em Configurações.
+- [x] Restaurar padrão.
+- [x] Inserção de tokens clicáveis.
 - [ ] Anexos e tutorial em todos os casos previstos.
 - [x] Cobrança dinâmica por responsável.
 
@@ -190,7 +190,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 
 ## 14. Configurações
 - [x] Base segura de persistência por seção disponível para as telas de Configurações.
-- [ ] Modelos de e-mail.
+- [x] Modelos de e-mail.
 - [x] Mentoras / Consultoras CKM.
 - [x] Cursos obrigatórios.
 - [x] Aviso e assinatura.
