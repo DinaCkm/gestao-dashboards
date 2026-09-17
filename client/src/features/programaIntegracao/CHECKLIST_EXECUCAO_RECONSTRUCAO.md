@@ -73,8 +73,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Preparação base da mentora.
 - [x] Cabeçalho completo com todos os botões do original.
 - [x] Dados do processo editáveis de forma segura.
-- [ ] Bem Acolhido e teste comportamental completos.
-- [ ] Respostas agrupadas por ciclo.
+- [x] Bem Acolhido e teste comportamental completos.
+- [x] Respostas agrupadas por ciclo.
 - [x] Cobrar formulários.
 - [ ] Mural completo de observações.
 - [ ] Auditoria das 95 ações na ficha individual.
