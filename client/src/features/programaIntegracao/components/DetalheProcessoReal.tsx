@@ -21,6 +21,7 @@ import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { gerarBriefingMentoraPdf, gerarRelatorioMentoraWord } from '../helpers/mentoraDocumentos';
 import { EmailActionButtons } from './EmailActionButtons';
 import { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
+import { AtaRelatorioPainel } from './AtaRelatorioPainel';
 import { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
 import { CobrancaFinalPainel, CobrancaFormulariosDialog } from './CobrancaFormulariosDialog';
 import { Button } from '@/components/ui/button';
@@ -193,6 +194,13 @@ export function DetalheProcessoReal({
                         numero={etapa.et.al as 1 | 2 | 3 | 4}
                         feriados={feriados}
                         config={config}
+                        onSalvarProcesso={salvar}
+                      />
+                      <AtaRelatorioPainel
+                        processo={processo}
+                        numero={etapa.et.al as 1 | 2 | 3 | 4}
+                        config={config}
+                        feriados={feriados}
                         onSalvarProcesso={salvar}
                       />
                     </div>
