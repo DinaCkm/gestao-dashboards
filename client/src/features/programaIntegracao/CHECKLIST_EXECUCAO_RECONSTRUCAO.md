@@ -45,7 +45,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Atalhos de e-mail e processo.
 - [x] Exportação CSV existente.
 - [ ] Conferir todas as linhas extras da mentora com o original.
-- [ ] Consumir deep-link `?item=` na página individual.
+- [x] Consumir deep-link `?item=` na página individual.
 - [ ] Auditoria final linha a linha da Agenda.
 
 ## 4. Indicadores
