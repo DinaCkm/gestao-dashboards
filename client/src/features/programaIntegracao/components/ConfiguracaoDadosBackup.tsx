@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { BootstrapState } from '../types';
+import { fetchBootstrap } from '../api/client';
+import { restaurarBackupProtegido } from '../api/restoreBackup';
 import {
   baixarBackupCompleto,
   baixarPontoLocal,
@@ -18,10 +20,25 @@ interface ConfiguracaoDadosBackupProps {
   state: BootstrapState;
 }
 
+interface BackupValidado {
+  origem: string;
+  state: BootstrapState;
+  quantidade: number;
+  nomes: string[];
+}
+
+function mesmasChavesProcessos(a: BootstrapState, b: BootstrapState): boolean {
+  const aa = Object.keys(a.processos || {}).sort();
+  const bb = Object.keys(b.processos || {}).sort();
+  return JSON.stringify(aa) === JSON.stringify(bb);
+}
+
 export function ConfiguracaoDadosBackup({ state }: ConfiguracaoDadosBackupProps) {
   const [pontos, setPontos] = useState<PontoRestauracaoLocal[]>([]);
   const [nota, setNota] = useState('');
   const [arquivoInfo, setArquivoInfo] = useState<string>('');
+  const [backupValidado, setBackupValidado] = useState<BackupValidado | null>(null);
+  const [restaurando, setRestaurando] = useState(false);
 
   useEffect(() => {
     try {
@@ -61,23 +78,69 @@ export function ConfiguracaoDadosBackup({ state }: ConfiguracaoDadosBackupProps)
     }
   };
 
+  const prepararTexto = (texto: string, origem: string) => {
+    const validacao = validarArquivoBackupTexto(texto);
+    if (!validacao.ok) {
+      setBackupValidado(null);
+      setArquivoInfo(validacao.erro);
+      return;
+    }
+    const nomes = validacao.nomes.slice(0, 6).join(', ');
+    const complemento = validacao.nomes.length > 6 ? ` e mais ${validacao.nomes.length - 6}` : '';
+    setBackupValidado({ origem, state: validacao.state, quantidade: validacao.quantidade, nomes: validacao.nomes });
+    setArquivoInfo(`Backup válido: ${validacao.quantidade} processo(s). ${nomes}${complemento}. Ainda nada foi restaurado.`);
+  };
+
   const conferirArquivo = async (file?: File | null) => {
     if (!file) return;
     try {
-      const texto = await file.text();
-      const validacao = validarArquivoBackupTexto(texto);
-      if (!validacao.ok) {
-        setArquivoInfo(validacao.erro);
-        return;
-      }
-      const nomes = validacao.nomes.slice(0, 6).join(', ');
-      const complemento = validacao.nomes.length > 6 ? ` e mais ${validacao.nomes.length - 6}` : '';
-      setArquivoInfo(
-        `Arquivo válido para conferência: ${validacao.quantidade} processo(s). ${nomes}${complemento}. Nenhum dado foi restaurado ou alterado.`,
-      );
+      prepararTexto(await file.text(), file.name);
     } catch (error) {
       console.error('[ProgramaIntegracao] conferir arquivo backup:', error);
+      setBackupValidado(null);
       setArquivoInfo('Não foi possível ler o arquivo. Nenhum dado foi alterado.');
+    }
+  };
+
+  const prepararPonto = (ponto: PontoRestauracaoLocal) => {
+    prepararTexto(ponto.dados, ponto.nota || ponto.quando || ponto.id);
+  };
+
+  const restaurar = async () => {
+    if (!backupValidado || restaurando) return;
+    const idsAtuais = Object.keys(state.processos || {});
+    const idsDestino = Object.keys(backupValidado.state.processos || {});
+    const mensagem = [
+      `Você vai restaurar: ${backupValidado.origem}.`,
+      `Estado atual: ${idsAtuais.length} processo(s).`,
+      `Backup selecionado: ${idsDestino.length} processo(s).`,
+      'Antes da restauração será criado automaticamente um ponto local do estado atual.',
+      'No banco, a operação será feita em uma única transação: se qualquer etapa falhar, ocorre rollback.',
+      'Processos e respostas fora do snapshot serão arquivados, não apagados fisicamente.',
+    ].join('\n\n');
+    if (!window.confirm(mensagem)) return;
+    const palavra = window.prompt('Para confirmar, digite exatamente RESTAURAR.');
+    if (palavra !== 'RESTAURAR') {
+      window.alert('Restauração cancelada. A palavra de confirmação não foi informada exatamente como solicitado.');
+      return;
+    }
+
+    try {
+      setRestaurando(true);
+      setPontos(criarPontoLocal(state, `Antes de restaurar: ${backupValidado.origem}`, false));
+      const retorno = await restaurarBackupProtegido(backupValidado.state);
+      const leitura = await fetchBootstrap();
+      if (!leitura.ok || !leitura.state) throw new Error('A restauração foi enviada, mas a leitura de confirmação não retornou o estado do módulo.');
+      if (!mesmasChavesProcessos(backupValidado.state, leitura.state)) {
+        throw new Error('A leitura após a restauração não contém o mesmo conjunto de processos do backup. Não foi assumido sucesso.');
+      }
+      window.alert(`Restauração confirmada pelo servidor: ${retorno.resumo.processos} processo(s), ${retorno.resumo.respostas} resposta(s) e ${retorno.resumo.pendentes} pendência(s). A tela será recarregada com o estado confirmado.`);
+      window.location.reload();
+    } catch (error) {
+      console.error('[ProgramaIntegracao] restaurar backup:', error);
+      window.alert(error instanceof Error ? error.message : 'A restauração não pôde ser confirmada. O ponto anterior continua disponível neste navegador.');
+    } finally {
+      setRestaurando(false);
     }
   };
 
@@ -121,6 +184,7 @@ export function ConfiguracaoDadosBackup({ state }: ConfiguracaoDadosBackupProps)
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => baixarPontoLocal(ponto)}>Baixar</Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => prepararPonto(ponto)}>Selecionar para restaurar</Button>
                   <Button type="button" size="sm" variant="ghost" onClick={() => remover(ponto.id)}>Remover</Button>
                 </div>
               </div>
@@ -133,7 +197,7 @@ export function ConfiguracaoDadosBackup({ state }: ConfiguracaoDadosBackupProps)
         <CardHeader><CardTitle>Backup em arquivo</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            O arquivo JSON contém o estado completo do módulo e serve como cópia de segurança. Nesta etapa, a tela permite baixar e conferir um arquivo antes de qualquer restauração.
+            O arquivo JSON contém o estado completo do módulo. Você pode baixar uma cópia ou selecionar um arquivo para validar antes de restaurar.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" onClick={() => baixarBackupCompleto(state)}>Baixar backup JSON</Button>
@@ -147,12 +211,26 @@ export function ConfiguracaoDadosBackup({ state }: ConfiguracaoDadosBackupProps)
         </CardContent>
       </Card>
 
-      <Card className="border-dashed">
+      <Card className={backupValidado ? 'border-amber-400' : 'border-dashed'}>
         <CardHeader><CardTitle>Restauração protegida</CardTitle></CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Restaurar um ponto ou arquivo substitui os dados atuais. Por segurança, essa ação ainda não está habilitada nesta etapa. O próximo passo será criar a restauração com validação, ponto automático anterior, confirmação explícita e leitura de volta após gravar.
-          </p>
+        <CardContent className="space-y-4">
+          {!backupValidado ? (
+            <p className="text-sm text-muted-foreground">Selecione um ponto de restauração acima ou confira um arquivo JSON válido. Nenhuma restauração começa automaticamente.</p>
+          ) : (
+            <>
+              <div className="rounded-md border bg-amber-50 p-4 text-sm text-amber-900">
+                <strong>Selecionado:</strong> {backupValidado.origem}<br />
+                <span>{backupValidado.quantidade} processo(s). A restauração substituirá o estado visível do módulo pelo snapshot selecionado.</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="destructive" onClick={restaurar} disabled={restaurando}>
+                  {restaurando ? 'Restaurando e conferindo…' : 'Restaurar este backup'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => { setBackupValidado(null); setArquivoInfo(''); }} disabled={restaurando}>Cancelar seleção</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Proteções: confirmação em duas etapas, ponto local anterior, transação única no servidor, ausência de exclusão física, auditoria e leitura de confirmação depois da gravação.</p>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
