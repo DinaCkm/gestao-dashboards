@@ -1,3 +1,5 @@
+import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
+
 export type AtualizarRespostaPayload = {
   ciclo: number;
   papel: string;
@@ -16,6 +18,7 @@ export async function atualizarRespostaRecebida(
   legacyRid: string,
   payload: AtualizarRespostaPayload,
 ): Promise<AtualizarRespostaResult> {
+  exigirConexaoParaAlterar();
   const response = await fetch(`/api/programa-integracao/respostas/${encodeURIComponent(legacyRid)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -39,6 +42,7 @@ export async function atualizarRespostaRecebida(
 export async function arquivarRespostaRecebida(
   legacyRid: string,
 ): Promise<{ ok: boolean }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(`/api/programa-integracao/respostas/${encodeURIComponent(legacyRid)}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
