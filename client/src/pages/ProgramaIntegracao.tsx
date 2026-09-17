@@ -19,6 +19,7 @@ import {
   ConfiguracaoDatas,
   ConfiguracaoMentoras,
   ConfiguracaoCursos,
+  ConfiguracaoLinks,
   AtasRelatoriosGeral,
   type FormularioAdminSubTab,
 } from '@/features/programaIntegracao/components';
@@ -301,7 +302,7 @@ export default function ProgramaIntegracao() {
                 <TabsContent value="mentoras" className="mt-6"><ConfiguracaoMentoras config={config} processos={todosProcesos} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="cursos" className="mt-6"><ConfiguracaoCursos config={config} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="aviso" className="mt-6"><ConfiguracaoAviso config={config} onSaved={recarregarEstado} /></TabsContent>
-                <TabsContent value="links" className="mt-6"><p className="text-muted-foreground">Links permanentes e formulários</p></TabsContent>
+                <TabsContent value="links" className="mt-6"><ConfiguracaoLinks config={config} onSaved={recarregarEstado} onGerenciarFormularios={() => { setFormularioSubTab('links'); setActiveTab('formularios'); }} /></TabsContent>
                 <TabsContent value="datas" className="mt-6"><ConfiguracaoDatas config={config} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="backup" className="mt-6 space-y-3"><p className="text-muted-foreground">Exportação e restauração de dados do módulo</p><Button type="button" variant="outline">Exportar backup</Button></TabsContent>
               </Tabs>
