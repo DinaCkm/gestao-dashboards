@@ -7,8 +7,11 @@
  */
 export function formatarData(dataISO: string, locale: string = 'pt-BR'): string {
   try {
-    const date = new Date(dataISO + 'T00:00:00Z');
-    return date.toLocaleDateString(locale, { timeZone: 'America/Sao_Paulo' });
+    const [ano, mes, dia] = String(dataISO || '').slice(0, 10).split('-').map(Number);
+    if (!ano || !mes || !dia) return dataISO;
+    const date = new Date(Date.UTC(ano, mes - 1, dia));
+    if (Number.isNaN(date.getTime())) return dataISO;
+    return date.toLocaleDateString(locale, { timeZone: 'UTC' });
   } catch {
     return dataISO;
   }
