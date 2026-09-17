@@ -28,6 +28,7 @@ import {
   nomeFormularioResposta,
   respostaDoItem,
 } from '../helpers/respostaItemHelpers';
+import { linkIntegracaoPorChave } from '../helpers/emailLinksHelpers';
 import { formatarData } from '../helpers/dateHelpers';
 import { EmailActionButtons } from './EmailActionButtons';
 import { MicroImportacaoAcao } from './MicroImportacaoAcao';
@@ -323,6 +324,13 @@ export function PainelSemana({
                   const ehEmail = Boolean(grupo.item.mail || (grupo.item.mails && grupo.item.mails.length));
                   const relN = ciclosRelatorioEvolucao(grupo.itemId);
                   const temRelatorioEvolucao = relN ? temDadosRelatorioEvolucao(acao.p, relN) : false;
+                  const linkAcao = grupo.item.link
+                    ? linkIntegracaoPorChave(
+                        grupo.item.link,
+                        config?.links,
+                        typeof window !== 'undefined' ? window.location.origin : '',
+                      )
+                    : null;
                   const ultimaNota = ficha.notas[ficha.notas.length - 1];
                   return (
                     <div key={chave} className={aberta || respostaVisivel ? 'bg-muted/20' : 'bg-background hover:bg-muted/30 transition'}>
@@ -350,6 +358,17 @@ export function PainelSemana({
 
                           <div className="flex flex-wrap items-center gap-2 md:justify-end">
                             <Badge variant="outline" className={statusClasses[acao.st.k]}>{acao.st.l}</Badge>
+                            {linkAcao?.u && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                title={linkAcao.n}
+                                onClick={() => window.open(linkAcao.u, '_blank', 'noopener,noreferrer')}
+                              >
+                                Abrir link
+                              </Button>
+                            )}
                             {ehEmail && (
                               <EmailActionButtons
                                 processo={acao.p}
