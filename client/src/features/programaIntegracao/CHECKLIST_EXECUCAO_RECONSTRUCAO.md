@@ -10,7 +10,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Mapear o risco do `PUT /config` global e proibir seu uso como atalho.
 - [x] Criar operações específicas e seguras para gravações de configuração.
 - [x] Criar backup da branch antes de iniciar a persistência segura de configuração.
-- [ ] Fechar o mapa completo Original -> EcoLíder por função pública.
+- [x] Fechar o mapa completo Original -> EcoLíder por função pública.
 
 ## 1. Estado, persistência e calendário
 - [x] Leitura do bootstrap administrativo atual.
@@ -215,7 +215,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Encerrar.
 - [ ] Reabrir.
 - [ ] Remover com proteção e confirmação.
-- [ ] Eliminar `console.log` usados como placeholder.
+- [x] Eliminar `console.log` usados como placeholder.
 
 ## 17. Atas e relatórios
 - [x] Tela de seleção pessoa/alinhamento.
