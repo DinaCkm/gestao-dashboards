@@ -286,7 +286,13 @@ export default function ProgramaIntegracao() {
             <AtasRelatoriosGeral processos={todosProcesos} config={config} onSalvarProcesso={handleSalvarProcessoCompleto} />
           </TabsContent>
 
-          <TabsContent value="pessoas" className="space-y-6 mt-6"><GerenciarPessoas processos={todosProcesos} onNovaPersona={() => console.log('Nova pessoa')} onEditarPersona={(id) => console.log('Editar:', id)} onVisualizarTimeline={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} /></TabsContent>
+          <TabsContent value="pessoas" className="space-y-6 mt-6">
+            <GerenciarPessoas
+              processos={todosProcesos}
+              onAbrirPessoa={(id) => setLocation(`/programa-integracao/detalhe/${id}`)}
+              onSaved={recarregarEstado}
+            />
+          </TabsContent>
 
           <TabsContent value="config" className="space-y-6 mt-6">
             <Card><CardHeader><CardTitle>Configurações</CardTitle></CardHeader><CardContent>
