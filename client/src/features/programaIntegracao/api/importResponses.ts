@@ -1,4 +1,5 @@
 import type { FormImportKey } from '../helpers/registrarRespostasParser';
+import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
 
 const API_BASE = '/api/programa-integracao';
 
@@ -28,6 +29,7 @@ export async function importarRespostasEmLote(
   formKey: FormImportKey,
   items: ImportResponseItemPayload[],
 ): Promise<{ ok: boolean; resumo: ImportBatchSummary }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(`${API_BASE}/respostas/importar-lote`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
