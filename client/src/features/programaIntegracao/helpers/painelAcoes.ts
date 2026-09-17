@@ -52,6 +52,50 @@ function hojeIso(hojeRef: string | Date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * Normaliza datas históricas apenas para cálculo do cronograma.
+ *
+ * O HTML original calcula tudo em YYYY-MM-DD, mas alguns registros antigos de
+ * alinhamento podem ter sido preservados como DD/MM/YYYY. A normalização é
+ * somente em memória: nada é gravado ou alterado no banco.
+ *
+ * Datas realmente inválidas retornam null para que não derrubem o módulo com
+ * RangeError: Invalid time value.
+ */
+function normalizarDataCronograma(valor: unknown): string | null {
+  const texto = String(valor ?? '').trim();
+  if (!texto) return null;
+
+  let ano: number;
+  let mes: number;
+  let dia: number;
+
+  const iso = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) {
+    ano = Number(iso[1]);
+    mes = Number(iso[2]);
+    dia = Number(iso[3]);
+  } else {
+    const br = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!br) return null;
+    dia = Number(br[1]);
+    mes = Number(br[2]);
+    ano = Number(br[3]);
+  }
+
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  if (
+    Number.isNaN(data.getTime()) ||
+    data.getUTCFullYear() !== ano ||
+    data.getUTCMonth() !== mes - 1 ||
+    data.getUTCDate() !== dia
+  ) {
+    return null;
+  }
+
+  return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+
 function util(s: string, feriados: string[]): boolean {
   const w = dow(s);
   return w !== 0 && w !== 6 && !feriados.includes(s);
@@ -79,7 +123,8 @@ function ant(s: string, feriados: string[]): string {
 
 function alinhamentoData(processo: ProcessoIntegracao, numero: number): string | null {
   const reg = processo.alin?.[numero] ?? processo.alin?.[String(numero)];
-  return reg && typeof reg === 'object' && reg.data ? String(reg.data).slice(0, 10) : null;
+  if (!reg || typeof reg !== 'object' || !reg.data) return null;
+  return normalizarDataCronograma(reg.data);
 }
 
 /**
@@ -92,7 +137,7 @@ export function cronogramaReal(
   feriados: string[] = [],
   hojeRef: string | Date = new Date(),
 ): CronogramaEtapaReal[] {
-  const base = processo.inicio || hojeIso(hojeRef);
+  const base = normalizarDataCronograma(processo.inicio) || hojeIso(hojeRef);
   const feriadosEfetivos = feriados.length ? feriados : FERIADOS_PADRAO_INTEGRACAO;
 
   return PLANO_REAL.map((et) => {
