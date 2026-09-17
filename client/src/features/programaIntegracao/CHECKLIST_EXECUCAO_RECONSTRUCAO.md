@@ -204,8 +204,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Ponto automático diário.
 - [x] Backup JSON completo.
 - [ ] Restaurar backup validado.
-- [ ] Proteção equivalente para falha de conexão.
-- [ ] Tela de erro com recuperação segura.
+- [x] Proteção equivalente para falha de conexão.
+- [x] Tela de erro com recuperação segura.
 - [ ] Processo de demonstração completo.
 
 ## 16. Gerenciar pessoas
