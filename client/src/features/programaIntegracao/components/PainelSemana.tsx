@@ -109,6 +109,7 @@ export function PainelSemana({
   const [fichaAberta, setFichaAberta] = useState<string | null>(null);
   const [respostaAberta, setRespostaAberta] = useState<string | null>(null);
   const [rascunhosNota, setRascunhosNota] = useState<Record<string, string>>({});
+  const [salvandoAcao, setSalvandoAcao] = useState<string | null>(null);
 
   const processosTodos = useMemo(
     () => [...processosAtivos, ...processosEncerrados],
@@ -337,15 +338,34 @@ export function PainelSemana({
                       <div className="p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                           <div className="flex min-w-0 flex-1 items-start gap-3">
-                            {onConcluirAcao && <button type="button" onClick={() => {
-                              const reabrindo = ficha.s === 'ok' || ficha.s === 'na' || ficha.s === 'wont';
-                              onConcluirAcao(acao.pid, grupo.itemId);
-                              if (!reabrindo) {
-                                setFichaAberta(chave);
-                                setRespostaAberta(null);
-                                toast.success('Marcado como feito hoje. Ajuste a data na ficha se foi outro dia.');
-                              }
-                            }} className={`mt-0.5 grid h-[18px] w-[18px] flex-shrink-0 place-items-center rounded-[5px] border text-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${ficha.s === 'ok' ? 'border-emerald-600 bg-emerald-600 text-white' : ficha.s === 'na' || ficha.s === 'wont' ? 'border-border bg-muted text-muted-foreground' : 'border-border bg-background text-transparent hover:border-emerald-600'}`} title={ficha.s === 'ok' ? 'Desmarcar' : ficha.s === 'na' || ficha.s === 'wont' ? 'Reabrir' : 'Marcar como feito'} aria-label={`${ficha.s === 'ok' ? 'Desmarcar' : 'Marcar'} ${grupo.item.t} para ${acao.p.nome}`}>{ficha.s === 'na' || ficha.s === 'wont' ? '–' : '✓'}</button>}
+                            {onConcluirAcao && <button
+                              type="button"
+                              disabled={salvandoAcao === chave}
+                              onClick={async () => {
+                                const reabrindo = ficha.s === 'ok' || ficha.s === 'na' || ficha.s === 'wont';
+                                if (salvandoAcao === chave) return;
+                                setSalvandoAcao(chave);
+                                try {
+                                  await onConcluirAcao(acao.pid, grupo.itemId);
+                                  setFichaAberta(null);
+                                  setRespostaAberta(null);
+                                  toast.success(
+                                    reabrindo
+                                      ? 'Marcação removida e conferida no servidor.'
+                                      : 'Ação marcada como feita e conferida no servidor.',
+                                  );
+                                } catch (err) {
+                                  toast.error(err instanceof Error ? err.message : 'Não foi possível confirmar a alteração.');
+                                } finally {
+                                  setSalvandoAcao(null);
+                                }
+                              }}
+                              className={`mt-0.5 grid h-[18px] w-[18px] flex-shrink-0 place-items-center rounded-[5px] border text-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60 ${ficha.s === 'ok' ? 'border-emerald-600 bg-emerald-600 text-white' : ficha.s === 'na' || ficha.s === 'wont' ? 'border-border bg-muted text-muted-foreground' : 'border-border bg-background text-transparent hover:border-emerald-600'}`}
+                              title={salvandoAcao === chave ? 'Salvando e conferindo...' : ficha.s === 'ok' ? 'Desmarcar' : ficha.s === 'na' || ficha.s === 'wont' ? 'Reabrir' : 'Marcar como feito'}
+                              aria-label={`${ficha.s === 'ok' ? 'Desmarcar' : 'Marcar'} ${grupo.item.t} para ${acao.p.nome}`}
+                            >
+                              {salvandoAcao === chave ? '…' : ficha.s === 'na' || ficha.s === 'wont' ? '–' : '✓'}
+                            </button>}
                             <div className="min-w-0 flex-1">
                               <button type="button" className="text-left min-w-0" onClick={() => onProcessoClick?.(acao.pid)}>
                                 <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full border flex-shrink-0" style={acao.p.cor ? { backgroundColor: acao.p.cor } : undefined} /><span className="font-medium truncate">{acao.p.nome}</span></div>
