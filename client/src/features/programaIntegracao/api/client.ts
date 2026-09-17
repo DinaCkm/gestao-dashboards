@@ -3,6 +3,7 @@
 // ============================================================
 
 import { BootstrapResponse, ProcessoIntegracao, BootstrapState } from '../types';
+import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
 
 const API_BASE = '/api/programa-integracao';
 
@@ -95,6 +96,7 @@ export async function salvarSecaoConfig<T = unknown>(
   section: ProgramaIntegracaoConfigSection,
   value: T,
 ): Promise<{ ok: boolean; section: ProgramaIntegracaoConfigSection; value: T }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(`${API_BASE}/config-sections/${encodeURIComponent(section)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -126,6 +128,7 @@ export async function salvarProcesso(
   processo: ProcessoIntegracao,
   ordem: number = 0
 ): Promise<{ ok: boolean; processoId?: number }> {
+  exigirConexaoParaAlterar();
   // Validar que processo não é parcial
   if (!processo.nome || !processo.cpf) {
     throw new Error('Processo incompleto: nome e CPF são obrigatórios');
@@ -159,6 +162,7 @@ export async function salvarProcesso(
 export async function salvarConfig(
   config: Record<string, any>
 ): Promise<{ ok: boolean }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(`${API_BASE}/config`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -177,6 +181,7 @@ export async function salvarConfig(
  * nova leitura que ele não continua visível no bootstrap administrativo.
  */
 export async function arquivarProcesso(legacyId: string): Promise<{ ok: boolean }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(`${API_BASE}/processos/${encodeURIComponent(legacyId)}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
@@ -207,6 +212,7 @@ export async function atualizarEstadoProcesso(
   legacyId: string,
   processoCompleto: ProcessoIntegracao
 ): Promise<{ ok: boolean; processoId?: number }> {
+  exigirConexaoParaAlterar();
   // Validar que processo é completo
   if (!processoCompleto.nome || !processoCompleto.cpf) {
     throw new Error('Processo incompleto: nome e CPF são obrigatórios');
@@ -344,4 +350,3 @@ export function criarNovoProcesso(dados: Partial<ProcessoIntegracao>): ProcessoI
     resp: [],
   };
 }
-
