@@ -121,6 +121,9 @@ import AutoRegistro from "./pages/AutoRegistro";
 import PortalCandidatoPS from "./pages/PortalCandidatoPS";
 import WebinarChecklistConfig from "./pages/WebinarChecklistConfig";
 import WebinarTaskResponsavel from "./pages/WebinarTaskResponsavel";
+import ProgramaIntegracao from "./pages/ProgramaIntegracao";
+import ProgramaIntegracaoDetalhe from "./pages/ProgramaIntegracaoDetalhe";
+import ProgramaIntegracaoFormularioPublico from "./pages/ProgramaIntegracaoFormularioPublico";
 
 function Router() {
   return (
@@ -133,6 +136,7 @@ function Router() {
       <Route path={"/certificados/verificar/:hash"} component={CertificadoPublico} />
       <Route path={"/admin/certificado-manual"} component={EmitirCertificadoManual} />
       <Route path={"/admin/configuracao-certificados"} component={ConfiguracaoCertificados} />
+      <Route path={"/formularios/:slug"} component={ProgramaIntegracaoFormularioPublico} />
       <Route path={"/"} component={Home} />
       <Route path={"/upload"} component={Upload} />
       <Route path={"/admin"}>{() => { window.location.replace("/dashboard/admin"); return null; }}</Route>
@@ -192,6 +196,8 @@ function Router() {
       <Route path={"/processos-seletivos/mentora"}><Redirect to="/processos-seletivos/avaliacao" /></Route>
       <Route path={"/processos-seletivos/avaliacao"} component={ProcessosSeletivosAvaliacao} />
       <Route path={"/processos-seletivos/comunicado"} component={ProcessosSeletivosComunicado} />
+      <Route path={"/programa-integracao/detalhe/:processoId"} component={ProgramaIntegracaoDetalhe} />
+      <Route path={"/programa-integracao"} component={ProgramaIntegracao} />
       <Route path={"/disc360"} component={Disc360Dashboard} />
       <Route path={"/disc360/perfis-empresa"} component={PerfilEmpresaDiretoria} />
       <Route path={"/disc360/responder-convite/:token"} component={ResponderConviteCultura} />

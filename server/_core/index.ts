@@ -6,6 +6,11 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { pdfRouter } from "../pdfRoutes";
 import { courseMetadataRouter, ensureCourseMetadataTable } from "../courseMetadataRoutes";
+import { programaIntegracaoConfigRouter } from "../programaIntegracaoConfigRoutes";
+import { programaIntegracaoImportRouter } from "../programaIntegracaoImportRoutes";
+import { programaIntegracaoPendingRouter } from "../programaIntegracaoPendingRoutes";
+import { programaIntegracaoRestoreRouter } from "../programaIntegracaoRestoreRoutes";
+import { programaIntegracaoPeopleRouter } from "../programaIntegracaoPeopleRoutes";
 import { programaIntegracaoRouter } from "../programaIntegracaoRoutes";
 import { registerProgramaIntegracaoPages } from "../programaIntegracaoPages";
 import { appRouter } from "../routers";
@@ -25,8 +30,6 @@ import { iniciarCronLembreteChecklistWebinar } from "../cronLembreteChecklistWeb
 import { iniciarCronDevolutivaLembreteD1 } from "../cronDevolutivaLembreteD1";
 import { ENV } from "./env";
 import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport, ensureDevolutivasTables, ensureMetaEvidenciaColumns, ensureDiretorSupport } from "../db";
-
-
 
 async function startServer() {
   // Garantir que as tabelas da Biblioteca Pedagógica existam no banco
@@ -59,7 +62,14 @@ async function startServer() {
   // Edição de metadados dos cursos (título, descrição e resumo)
   app.use(courseMetadataRouter);
 
-  // Programa de Integracao: APIs e paginas publicas/admin antes do fallback da SPA.
+  // Programa de Integracao: config parcial segura, importacao administrativa,
+  // revisao de pendencias, restauracao protegida, gerenciamento de pessoas,
+  // APIs e paginas antes do fallback da SPA.
+  app.use(programaIntegracaoConfigRouter);
+  app.use(programaIntegracaoImportRouter);
+  app.use(programaIntegracaoPendingRouter);
+  app.use(programaIntegracaoRestoreRouter);
+  app.use(programaIntegracaoPeopleRouter);
   app.use(programaIntegracaoRouter);
   registerProgramaIntegracaoPages(app);
 

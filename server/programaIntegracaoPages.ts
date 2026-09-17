@@ -1,5 +1,4 @@
-import type { Express, Request, Response } from "express";
-import { sdk } from "./_core/sdk";
+import type { Express } from "express";
 import { PROGRAMA_INTEGRACAO_CATALOG, UNIDADES_INTEGRACAO } from "./programaIntegracaoCatalog";
 
 function safeJson(value: unknown) {
@@ -38,45 +37,16 @@ function publicFormHtml(slug: string) {
   render();</script></body></html>`;
 }
 
-function adminHtml() {
-  const links = Object.values(PROGRAMA_INTEGRACAO_CATALOG).map(f => ({ name:f.name, slug:f.slug, path:`/formularios/${f.slug}` }));
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Processos Integração · EcoLíder</title><style>${baseCss}.adminnav{display:flex;gap:8px;margin-left:auto}.process{cursor:pointer}.process:hover{background:#f7faf9}</style></head><body>
-  <div class="top"><div class="mark">CKM</div><div><b>Processos Integração</b><div class="small muted">Programa de Integração · EcoLíder</div></div><div class="adminnav"><a class="btn" href="/">Voltar ao EcoLíder</a></div></div><main class="wrap" id="app"><div class="card">Carregando...</div></main>
-  <script>const LINKS=${safeJson(links)};let state=null,tab='painel',editId=null,error='';const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  async function api(url,opt){const r=await fetch(url,opt);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||j.erro||'Falha na plataforma');return j}
-  async function load(){try{const j=await api('/api/programa-integracao/bootstrap');state=j.state;render()}catch(e){document.getElementById('app').innerHTML='<div class="msg error">'+esc(e.message)+'</div>'}}
-  function ordem(){return state?.config?.ordem||[]}function processos(){return ordem().map(id=>[id,state.processos[id]]).filter(x=>x[1])}function responses(){return processos().flatMap(([id,p])=>(p.resp||[]).map(r=>({id,p,r}))) }function pend(){return state?.config?.respostasPendentes||[]}
-  function nav(){return '<div class="tabs">'+[['painel','Painel'],['pessoas','Pessoas'],['formularios','Formulários'],['respostas','Respostas'],['pendentes','Pendentes de vinculação'],['config','Configurações']].map(x=>'<button class="tab '+(tab===x[0]?'on':'')+'" data-tab="'+x[0]+'">'+x[1]+(x[0]==='pendentes'&&pend().length?' ('+pend().length+')':'')+'</button>').join('')+'</div>'}
-  function painel(){const ps=processos(),rs=responses();return '<div class="kpis"><div class="kpi"><span class="muted small">Processos</span><b>'+ps.length+'</b></div><div class="kpi"><span class="muted small">Ativos</span><b>'+ps.filter(x=>x[1].situacao!=='encerrado').length+'</b></div><div class="kpi"><span class="muted small">Respostas</span><b>'+rs.length+'</b></div><div class="kpi"><span class="muted small">Pendentes</span><b>'+pend().length+'</b></div></div><div class="card" style="margin-top:16px"><h2>Processos recentes</h2>'+processTable(ps.slice(0,12))+'</div>'}
-  function processTable(ps){return '<div class="tablewrap"><table><thead><tr><th>Colaborador</th><th>Tipo</th><th>Unidade</th><th>Início</th><th>Gestor</th><th>Situação</th></tr></thead><tbody>'+ps.map(([id,p])=>'<tr class="process" data-edit="'+esc(id)+'"><td><b>'+esc(p.nome||'Sem nome')+'</b></td><td>'+esc(p.tipo||'')+'</td><td>'+esc(p.unidade||'')+'</td><td>'+esc(p.inicio||'')+'</td><td>'+esc(p.gestor||'')+'</td><td><span class="badge">'+esc(p.situacao||'ativo')+'</span></td></tr>').join('')+'</tbody></table></div>'}
-  function pessoas(){return '<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h2>Pessoas / Processos</h2><button class="btn primary" id="new">+ Novo processo</button></div>'+processTable(processos())+'</div>'}
-  function formularios(){return '<div class="card"><h2>Links públicos permanentes</h2><p class="muted">O mesmo endereço é reutilizado; não existe um link diferente por empregado.</p>'+LINKS.map(l=>'<div class="field"><label>'+esc(l.name)+'</label><div class="linkbox"><code>'+esc(location.origin+l.path)+'</code><button class="btn" data-copy="'+esc(location.origin+l.path)+'">Copiar</button><a class="btn" target="_blank" href="'+esc(l.path)+'">Abrir</a></div></div>').join('')+'</div>'}
-  function respostas(){const rs=responses();return '<div class="card"><h2>Respostas vinculadas</h2><div class="tablewrap"><table><thead><tr><th>Protocolo</th><th>Colaborador</th><th>Formulário</th><th>Ciclo</th><th>Papel</th><th>Data</th></tr></thead><tbody>'+rs.map(x=>'<tr><td><b>'+esc(x.r.protocolo||'')+'</b></td><td>'+esc(x.p.nome||'')+'</td><td>'+esc(x.r.form||'')+'</td><td>'+esc(x.r.ciclo||'')+'</td><td>'+esc(x.r.papel||'')+'</td><td>'+esc(x.r.em||'')+'</td></tr>').join('')+'</tbody></table></div></div>'}
-  function pendentes(){const a=pend();return '<div class="card"><h2>Pendentes de vinculação</h2><p class="muted">Estas respostas foram recebidas, mas o sistema não teve segurança suficiente para ligá-las automaticamente a um processo.</p>'+(!a.length?'<div class="msg ok">Nenhuma resposta pendente.</div>':a.map(x=>'<div class="card" style="box-shadow:none"><b>'+esc(x.protocolo||'')+' · '+esc(x.nomeColaborador||'Sem nome')+'</b><div class="small muted">'+esc(x.formKey||'')+' · '+esc(x.unidade||'')+' · '+esc(x.dataInicio||'')+'</div><div class="small" style="margin-top:8px">Motivo: '+esc(x.motivo||'revisão necessária')+'</div><button class="btn danger" data-discard="'+esc(x.id)+'" style="margin-top:10px">Descartar da fila preservando histórico</button></div>').join(''))+'</div>'}
-  function config(){return '<div class="card"><h2>Configurações</h2><p class="muted">As configurações detalhadas e textos dos formulários continuam armazenados no módulo. Nesta implantação, alterações de estrutura ficam bloqueadas até a carga histórica ser validada.</p><div class="msg ok">Backup do banco confirmado antes da implantação. Exclusões físicas não são utilizadas neste módulo.</div></div>'}
-  function editor(id){const p=id?state.processos[id]:{tipo:'Onboarding',situacao:'ativo',part:'Presencial',feito:{},alin:{},bem:{},teste:{},resp:[]};return '<div class="modal"><div class="card"><h2>'+(id?'Editar processo':'Novo processo')+'</h2><div class="grid">'+[['nome','Nome'],['email','E-mail pessoal'],['emailCorporativo','E-mail corporativo'],['cargo','Cargo'],['unidade','Área / Unidade'],['inicio','1º dia na unidade'],['gestor','Gestor receptor'],['gestorEmail','E-mail do gestor'],['anjo','Anjo'],['anjoEmail','E-mail do Anjo'],['ugp','Destinatário na UGP']].map(([k,l])=>'<div class="field"><label>'+l+'</label><input '+(k==='inicio'?'type="date" ':'')+'data-pf="'+k+'" value="'+esc(p[k]||'')+'"></div>').join('')+'<div class="field"><label>Tipo</label><select data-pf="tipo"><option '+(p.tipo==='Onboarding'?'selected':'')+'>Onboarding</option><option '+(p.tipo==='Crossboarding'?'selected':'')+'>Crossboarding</option></select></div><div class="field"><label>Situação</label><select data-pf="situacao"><option '+(p.situacao==='ativo'?'selected':'')+'>ativo</option><option '+(p.situacao==='encerrado'?'selected':'')+'>encerrado</option></select></div></div><div class="actions"><button class="btn" id="cancel">Cancelar</button><div>'+(id?'<button class="btn danger" id="archive">Remover da visão</button> ':'')+'<button class="btn primary" id="save">Salvar</button></div></div></div></div>'}
-  async function saveEditor(){const old=editId?state.processos[editId]:{feito:{},alin:{},bem:{},teste:{},resp:[]};const p={...old};document.querySelectorAll('[data-pf]').forEach(el=>p[el.dataset.pf]=el.value);if(!p.nome?.trim()||!p.inicio){alert('Informe nome e data de início.');return}let id=editId;if(!id){id='p'+Date.now().toString(36);state.config.ordem=state.config.ordem||[];state.config.ordem.push(id)}await api('/api/programa-integracao/processos/'+encodeURIComponent(id),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({processo:p,ordem:state.config.ordem.indexOf(id)})});state.processos[id]=p;await api('/api/programa-integracao/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({config:state.config})});editId=null;await load()}
-  async function discard(id){if(!confirm('Descartar esta resposta da fila? Ela continuará preservada no histórico do banco.'))return;state.config.respostasPendentes=pend().filter(x=>x.id!==id);await api('/api/programa-integracao/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({config:state.config})});await load()}
-  function render(){if(!state)return;let body=tab==='painel'?painel():tab==='pessoas'?pessoas():tab==='formularios'?formularios():tab==='respostas'?respostas():tab==='pendentes'?pendentes():config();document.getElementById('app').innerHTML='<h1>Programa de Integração</h1><p class="muted">Onboarding · Crossboarding · acompanhamento do processo</p>'+nav()+body+(editId!==null?editor(editId==='__new'?null:editId):'');document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render()});document.querySelectorAll('[data-edit]').forEach(r=>r.onclick=()=>{editId=r.dataset.edit;render()});document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>navigator.clipboard.writeText(b.dataset.copy));document.querySelectorAll('[data-discard]').forEach(b=>b.onclick=()=>discard(b.dataset.discard));document.getElementById('new')?.addEventListener('click',()=>{editId='__new';render()});document.getElementById('cancel')?.addEventListener('click',()=>{editId=null;render()});document.getElementById('save')?.addEventListener('click',saveEditor);document.getElementById('archive')?.addEventListener('click',async()=>{if(!confirm('Remover este processo da visão? O registro continuará preservado no banco.'))return;await api('/api/programa-integracao/processos/'+encodeURIComponent(editId),{method:'DELETE'});state.config.ordem=state.config.ordem.filter(x=>x!==editId);editId=null;await api('/api/programa-integracao/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({config:state.config})});await load()});}
-  load();</script></body></html>`;
-}
-
+/**
+ * Registra somente as páginas públicas dos formulários.
+ * O painel administrativo `/programa-integracao` pertence à SPA React e precisa
+ * alcançar o fallback do Vite/estático para usar a reconstrução completa atual.
+ */
 export function registerProgramaIntegracaoPages(app: Express) {
   app.get("/formularios/:slug", (req, res) => {
     const html = publicFormHtml(req.params.slug);
     if (!html) return res.status(404).send("Formulário não encontrado.");
     res.setHeader("Cache-Control", "no-store");
     res.type("html").send(html);
-  });
-
-  app.get("/programa-integracao", async (req: Request, res: Response) => {
-    try {
-      const user = await sdk.authenticateRequest(req);
-      if (!user || user.role !== "admin") return res.redirect("/");
-      res.setHeader("Cache-Control", "no-store");
-      return res.type("html").send(adminHtml());
-    } catch {
-      return res.redirect("/");
-    }
   });
 }
