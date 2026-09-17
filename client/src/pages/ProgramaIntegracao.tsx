@@ -34,10 +34,11 @@ import {
   type CampoFichaAcao,
   type StatusAcaoLegado,
 } from '@/features/programaIntegracao/helpers/itemStateHelpers';
+import { navegadorEstaOnline } from '@/features/programaIntegracao/helpers/connectionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, Moon, Sun } from 'lucide-react';
+import { AlertCircle, Loader2, Moon, Sun, WifiOff } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 type MainTabValue = 'painel' | 'agenda' | 'indicadores' | 'registrar' | 'respostas' | 'formularios' | 'atas' | 'pessoas' | 'config';
@@ -48,10 +49,26 @@ export default function ProgramaIntegracao() {
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
+  const [online, setOnline] = useState(navegadorEstaOnline());
   const [state, setState] = useState<BootstrapState | null>(null);
   const [activeTab, setActiveTab] = useState<MainTabValue>('painel');
   const [formularioSubTab, setFormularioSubTab] = useState<FormularioAdminSubTab>('disponiveis');
   const [configSubTab, setConfigSubTab] = useState<ConfigSubTab>('emails');
+
+  useEffect(() => {
+    const ficouOnline = () => setOnline(true);
+    const ficouOffline = () => {
+      setOnline(false);
+      setOperationError('Sem conexão com o servidor. Os dados já carregados continuam visíveis, mas nenhuma alteração será enviada enquanto a conexão não voltar.');
+    };
+    window.addEventListener('online', ficouOnline);
+    window.addEventListener('offline', ficouOffline);
+    return () => {
+      window.removeEventListener('online', ficouOnline);
+      window.removeEventListener('offline', ficouOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -60,10 +77,13 @@ export default function ProgramaIntegracao() {
         const response = await fetchBootstrap();
         if (response.ok && response.state) {
           setState(response.state);
+          setOnline(true);
+          setError(null);
         } else {
           setError('Falha ao carregar dados do Programa de Integração');
         }
       } catch (err) {
+        if (!navegadorEstaOnline()) setOnline(false);
         setError(err instanceof Error ? err.message : 'Erro desconhecido ao carregar Programa de Integração');
       } finally {
         setLoading(false);
@@ -96,7 +116,30 @@ export default function ProgramaIntegracao() {
 
   const recarregarEstado = async () => {
     const response = await fetchBootstrap();
-    if (response.ok && response.state) setState(response.state);
+    if (response.ok && response.state) {
+      setState(response.state);
+      setOnline(true);
+      setOperationError(null);
+    }
+  };
+
+  const tentarReconectar = async () => {
+    try {
+      const response = await fetchBootstrap();
+      if (!response.ok || !response.state) throw new Error('O servidor não confirmou a leitura do Programa de Integração.');
+      setState(response.state);
+      setOnline(true);
+      setOperationError(null);
+    } catch (err) {
+      setOnline(false);
+      setOperationError(err instanceof Error ? err.message : 'Ainda não foi possível reconectar ao servidor.');
+    }
+  };
+
+  const registrarFalhaOperacao = (err: unknown, fallback: string) => {
+    const mensagem = err instanceof Error ? err.message : fallback;
+    if (!navegadorEstaOnline() || mensagem.includes('Sem conexão com o servidor')) setOnline(false);
+    setOperationError(mensagem);
   };
 
   const processoPorId = (processoId: string) => todosProcesos.find((p) => p.id === processoId);
@@ -115,7 +158,7 @@ export default function ProgramaIntegracao() {
       await atualizarEstadoProcesso(processoId, aplicarStatusAcao(processo, itemId, novoStatus));
       await recarregarEstado();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar situação da ação');
+      registrarFalhaOperacao(err, 'Erro ao atualizar situação da ação');
     }
   };
 
@@ -126,7 +169,7 @@ export default function ProgramaIntegracao() {
       await atualizarEstadoProcesso(processoId, aplicarStatusAcao(processo, itemId, status));
       await recarregarEstado();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar situação da ação');
+      registrarFalhaOperacao(err, 'Erro ao atualizar situação da ação');
     }
   };
 
@@ -137,7 +180,7 @@ export default function ProgramaIntegracao() {
       await atualizarEstadoProcesso(processoId, aplicarCampoFichaAcao(processo, itemId, campo, valor));
       await recarregarEstado();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao atualizar a ficha da ação');
+      registrarFalhaOperacao(err, 'Erro ao atualizar a ficha da ação');
     }
   };
 
@@ -148,7 +191,7 @@ export default function ProgramaIntegracao() {
       await atualizarEstadoProcesso(processoId, adicionarNotaAcao(processo, itemId, texto));
       await recarregarEstado();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao registrar observação');
+      registrarFalhaOperacao(err, 'Erro ao registrar observação');
     }
   };
 
@@ -159,7 +202,7 @@ export default function ProgramaIntegracao() {
       await atualizarEstadoProcesso(processoId, removerNotaAcao(processo, itemId, indice));
       await recarregarEstado();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao remover observação');
+      registrarFalhaOperacao(err, 'Erro ao remover observação');
     }
   };
 
@@ -174,7 +217,7 @@ export default function ProgramaIntegracao() {
       }
       await recarregarEstado();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao concluir grupo');
+      registrarFalhaOperacao(err, 'Erro ao concluir grupo');
     }
   };
 
@@ -187,7 +230,7 @@ export default function ProgramaIntegracao() {
       }
       await recarregarEstado();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao aplicar status ao grupo');
+      registrarFalhaOperacao(err, 'Erro ao aplicar status ao grupo');
     }
   };
 
@@ -197,7 +240,7 @@ export default function ProgramaIntegracao() {
       await atualizarEstadoProcesso(processo.id, processo);
       await recarregarEstado();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar ata ou relatório');
+      registrarFalhaOperacao(err, 'Erro ao salvar ata ou relatório');
     }
   };
 
@@ -214,7 +257,10 @@ export default function ProgramaIntegracao() {
               <AlertCircle className="w-8 h-8 text-destructive flex-shrink-0" />
               <div><h3 className="font-semibold">Erro ao carregar Programa de Integração</h3><p className="text-sm text-muted-foreground mt-1">{error}</p></div>
             </div>
-            <Button onClick={() => window.location.reload()} className="mt-4" variant="outline">Tentar Novamente</Button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button onClick={() => window.location.reload()} variant="outline">Recarregar página</Button>
+              <Button onClick={() => void tentarReconectar()} variant="outline">Tentar conectar de novo</Button>
+            </div>
           </CardContent>
         </Card>
       </DashboardLayout>
@@ -237,6 +283,26 @@ export default function ProgramaIntegracao() {
             </Button>
           </div>
         </div>
+
+        {(!online || operationError) && (
+          <Card className="border-amber-400 bg-amber-50">
+            <CardContent className="pt-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex items-start gap-3">
+                  <WifiOff className="mt-0.5 h-6 w-6 flex-shrink-0 text-amber-700" />
+                  <div>
+                    <h3 className="font-semibold text-amber-950">{online ? 'A última operação não pôde ser confirmada' : 'Sem conexão com o servidor'}</h3>
+                    <p className="mt-1 text-sm text-amber-900">
+                      {operationError || 'Os dados já carregados continuam visíveis, mas nenhuma alteração será enviada enquanto a conexão não voltar.'}
+                    </p>
+                    {!online && <p className="mt-2 text-xs text-amber-800">Os dados do servidor não foram apagados. Evite alterar, encerrar, remover ou reordenar processos até reconectar.</p>}
+                  </div>
+                </div>
+                <Button type="button" variant="outline" onClick={() => void tentarReconectar()} className="border-amber-500 bg-white">Tentar conectar de novo</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Processos Ativos</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{processosAtivos.length}</div></CardContent></Card>
