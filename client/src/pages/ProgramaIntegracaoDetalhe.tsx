@@ -87,6 +87,22 @@ export default function ProgramaIntegracaoDetalhe() {
           </div>
         </div>
 
+        {(saving || savedAt) && (
+          <div className={`fixed bottom-5 right-5 z-50 rounded-lg border px-4 py-3 shadow-lg ${
+            saving
+              ? 'border-amber-300 bg-amber-50 text-amber-900'
+              : 'border-emerald-300 bg-emerald-50 text-emerald-900'
+          }`}>
+            <div className="flex items-center gap-2 text-sm font-medium">
+              {saving ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Salvando e conferindo no servidor...</>
+              ) : (
+                <><CheckCircle2 className="h-4 w-4" /> Salvo e conferido no servidor</>
+              )}
+            </div>
+          </div>
+        )}
+
         {error && (
           <Card className="border-destructive bg-destructive/5">
             <CardContent className="flex items-start gap-3 pt-6">
@@ -109,6 +125,7 @@ export default function ProgramaIntegracaoDetalhe() {
             config={config}
             feriados={feriados}
             onSalvarProcesso={salvarProcesso}
+            saving={saving}
           />
         )}
       </div>
