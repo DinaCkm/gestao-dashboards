@@ -41,6 +41,7 @@ interface DetalheProcessoRealProps {
   config: BootstrapState['config'];
   feriados?: string[];
   onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
+  saving?: boolean;
 }
 
 const statusClasses = {
@@ -73,9 +74,13 @@ export function DetalheProcessoReal({
   config,
   feriados = [],
   onSalvarProcesso,
+  saving = false,
 }: DetalheProcessoRealProps) {
   const [filtro, setFiltro] = useState<FiltroDetalheProcesso>('');
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
+  const [statusTemporario, setStatusTemporario] = useState<Record<string, StatusAcaoLegado>>({});
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, 'salvando' | 'salvo' | 'erro'>>({});
+  const timersFeedbackRef = useRef<Record<string, number>>({});
   const [cobrancaAberta, setCobrancaAberta] = useState(false);
   const [cobrancaCiclo, setCobrancaCiclo] = useState<1 | 2 | 3 | 4 | undefined>(undefined);
   const [cobrancaPapel, setCobrancaPapel] = useState<PapelCobranca | null>(null);
@@ -107,7 +112,59 @@ export function DetalheProcessoReal({
     return () => window.cancelAnimationFrame(primeiroFrame);
   }, [etapas, itemDeepLink]);
 
+  useEffect(() => {
+    setStatusTemporario((atual) => {
+      const proximo = { ...atual };
+      let mudou = false;
+      Object.entries(atual).forEach(([itemId, valor]) => {
+        if (fichaAcaoAtual(processo, itemId).s === valor) {
+          delete proximo[itemId];
+          mudou = true;
+        }
+      });
+      return mudou ? proximo : atual;
+    });
+  }, [processo]);
+
+  useEffect(() => () => {
+    Object.values(timersFeedbackRef.current).forEach((timer) => window.clearTimeout(timer));
+  }, []);
+
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
+
+  const limparFeedbackDepois = (itemId: string) => {
+    const anterior = timersFeedbackRef.current[itemId];
+    if (anterior) window.clearTimeout(anterior);
+    timersFeedbackRef.current[itemId] = window.setTimeout(() => {
+      setFeedbackStatus((atual) => {
+        if (!atual[itemId]) return atual;
+        const proximo = { ...atual };
+        delete proximo[itemId];
+        return proximo;
+      });
+      delete timersFeedbackRef.current[itemId];
+    }, 3500);
+  };
+
+  const alterarStatusItem = async (itemId: string, valor: StatusAcaoLegado) => {
+    setStatusTemporario((atual) => ({ ...atual, [itemId]: valor }));
+    setFeedbackStatus((atual) => ({ ...atual, [itemId]: 'salvando' }));
+
+    try {
+      await salvar(aplicarStatusAcao(processo, itemId, valor));
+      setFeedbackStatus((atual) => ({ ...atual, [itemId]: 'salvo' }));
+      limparFeedbackDepois(itemId);
+    } catch (error) {
+      setStatusTemporario((atual) => {
+        const proximo = { ...atual };
+        delete proximo[itemId];
+        return proximo;
+      });
+      setFeedbackStatus((atual) => ({ ...atual, [itemId]: 'erro' }));
+      limparFeedbackDepois(itemId);
+      toast.error(error instanceof Error ? error.message : 'Não foi possível salvar a situação. O valor anterior foi restaurado.');
+    }
+  };
 
   const salvarCampoProcesso = async (campo: keyof ProcessoIntegracao, valor: string) => {
     if (String(processo[campo] ?? '') === valor) return;
@@ -357,6 +414,8 @@ export function DetalheProcessoReal({
                     {itens.map((item) => {
                       const st = calcularStatusItem(processo, item.id, etapa.data);
                       const ficha = fichaAcaoAtual(processo, item.id);
+                      const statusVisual = statusTemporario[item.id] ?? ficha.s;
+                      const feedback = feedbackStatus[item.id];
                       const resposta = respostaDoItem(processo, item.id);
                       const ehEmail = Boolean(item.mail || item.mails?.length);
                       return (
@@ -367,7 +426,9 @@ export function DetalheProcessoReal({
                               <p className="mt-1 text-xs text-muted-foreground">Responsável: {item.r} · previsto para {formatarData(etapa.data)}</p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                              <Badge variant="outline" className={statusClasses[st.k]}>{st.l}</Badge>
+                              <Badge variant="outline" className={feedback === 'salvando' ? 'border-amber-300 bg-amber-50 text-amber-800' : statusClasses[st.k]}>
+                                {feedback === 'salvando' ? 'Salvando alteração...' : st.l}
+                              </Badge>
                               {ehEmail && (
                                 <EmailActionButtons
                                   processo={processo}
@@ -384,12 +445,30 @@ export function DetalheProcessoReal({
                             <label className="space-y-1 text-xs">
                               <span className="font-medium text-muted-foreground">Situação</span>
                               <select
-                                value={ficha.s}
-                                onChange={(e) => salvar(aplicarStatusAcao(processo, item.id, e.target.value as StatusAcaoLegado))}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={statusVisual}
+                                disabled={saving || feedback === 'salvando'}
+                                onChange={(e) => void alterarStatusItem(item.id, e.currentTarget.value as StatusAcaoLegado)}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
                               >
                                 {STATUS_ACAO.map(([valor, label]) => <option key={valor || 'pend'} value={valor}>{label}</option>)}
                               </select>
+                              <span className={`block min-h-4 text-[11px] ${
+                                feedback === 'salvando'
+                                  ? 'font-medium text-amber-700'
+                                  : feedback === 'salvo'
+                                    ? 'font-medium text-emerald-700'
+                                    : feedback === 'erro'
+                                      ? 'font-medium text-destructive'
+                                      : 'text-muted-foreground'
+                              }`}>
+                                {feedback === 'salvando'
+                                  ? 'Salvando e conferindo no servidor...'
+                                  : feedback === 'salvo'
+                                    ? '✓ Salvo no servidor'
+                                    : feedback === 'erro'
+                                      ? 'Não foi salvo — o valor anterior foi restaurado.'
+                                      : 'Salva automaticamente'}
+                              </span>
                             </label>
                             <label className="space-y-1 text-xs">
                               <span className="font-medium text-muted-foreground">Concluída/enviada em</span>
@@ -397,6 +476,7 @@ export function DetalheProcessoReal({
                                 key={`${item.id}-d-${ficha.d}`}
                                 type="date"
                                 defaultValue={ficha.d}
+                                disabled={saving}
                                 onBlur={(e) => {
                                   if (e.currentTarget.value !== ficha.d) void salvar(aplicarCampoFichaAcao(processo, item.id, 'd', e.currentTarget.value));
                                 }}
@@ -410,6 +490,7 @@ export function DetalheProcessoReal({
                                   key={`${item.id}-prog-${ficha.prog}`}
                                   type="date"
                                   defaultValue={ficha.prog}
+                                  disabled={saving}
                                   onBlur={(e) => {
                                     if (e.currentTarget.value !== ficha.prog) void salvar(aplicarCampoFichaAcao(processo, item.id, 'prog', e.currentTarget.value));
                                   }}
@@ -423,6 +504,7 @@ export function DetalheProcessoReal({
                             <input
                               key={`${item.id}-just-${ficha.just}`}
                               defaultValue={ficha.just}
+                              disabled={saving}
                               onBlur={(e) => {
                                 if (e.currentTarget.value !== ficha.just) void salvar(aplicarCampoFichaAcao(processo, item.id, 'just', e.currentTarget.value));
                               }}
