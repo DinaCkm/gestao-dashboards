@@ -10,7 +10,7 @@ import {
 import { DetalheProcessoReal } from '@/features/programaIntegracao/components';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function ProgramaIntegracaoDetalhe() {
   const [, params] = useRoute('/programa-integracao/detalhe/:processoId');
@@ -19,6 +19,7 @@ export default function ProgramaIntegracaoDetalhe() {
   const [state, setState] = useState<BootstrapState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const carregar = async () => {
@@ -56,6 +57,7 @@ export default function ProgramaIntegracaoDetalhe() {
       const response = await fetchBootstrap();
       if (!response.ok || !response.state) throw new Error('O dado foi enviado, mas não foi possível confirmar a leitura depois da gravação.');
       setState(response.state);
+      setSavedAt(Date.now());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao salvar o processo.');
       throw err;
@@ -74,7 +76,15 @@ export default function ProgramaIntegracaoDetalhe() {
             </Button>
             <h1 className="mt-2 text-2xl font-bold">Detalhe do processo de integração</h1>
           </div>
-          {saving && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Salvando e conferindo...</div>}
+          <div className="min-h-5">
+            {saving ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Salvando e conferindo...</div>
+            ) : savedAt ? (
+              <div className="flex items-center gap-2 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Salvo e conferido no servidor</div>
+            ) : (
+              <div className="text-xs text-muted-foreground">Alterações de situação e data são salvas automaticamente.</div>
+            )}
+          </div>
         </div>
 
         {error && (
