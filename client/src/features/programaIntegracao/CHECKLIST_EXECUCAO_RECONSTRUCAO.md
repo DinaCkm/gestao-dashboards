@@ -193,9 +193,9 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Modelos de e-mail.
 - [x] Mentoras / Consultoras CKM.
 - [x] Cursos obrigatórios.
-- [ ] Aviso e assinatura.
-- [ ] Links e formulários.
-- [ ] Datas e feriados.
+- [x] Aviso e assinatura.
+- [x] Links e formulários.
+- [x] Datas e feriados.
 - [ ] Dados e backup.
 
 ## 15. Backup, offline e demonstração
