@@ -27,6 +27,8 @@ import { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
 import { AtaRelatorioPainel } from './AtaRelatorioPainel';
 import { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
 import { CobrancaFinalPainel, CobrancaFormulariosDialog } from './CobrancaFormulariosDialog';
+import { BemTesteProcesso } from './BemTesteProcesso';
+import { RespostasProcessoAgrupadas } from './RespostasProcessoAgrupadas';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -259,6 +261,9 @@ export function DetalheProcessoReal({
           <p className="text-[11px] text-muted-foreground">Campos de texto são gravados apenas quando você sai do campo e somente se o conteúdo realmente mudou. A confirmação de leitura do processo continua sendo feita pelo cliente de persistência.</p>
         </div>
       </details>
+
+      <BemTesteProcesso processo={processo} config={config} onSalvarProcesso={salvar} />
+      <RespostasProcessoAgrupadas processo={processo} />
 
       <div className="grid gap-3 md:grid-cols-4">
         {alinhamentos.map((alinhamento) => (
