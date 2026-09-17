@@ -1,5 +1,6 @@
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
+import { MENTORA_DEMO, montarProcessoDemonstracao } from '../helpers/demoProcesso';
 import { fetchBootstrap } from './client';
 
 async function apiJson<T = any>(url: string, init?: RequestInit): Promise<T> {
@@ -66,6 +67,10 @@ function gerarLegacyId() {
   return `p${Date.now().toString(36)}`;
 }
 
+function gerarLegacyIdDemo() {
+  return `demo${Date.now().toString(36)}`;
+}
+
 async function confirmarProcesso(legacyId: string): Promise<BootstrapState> {
   const bootstrap = await fetchBootstrap();
   if (!bootstrap.ok || !bootstrap.state) {
@@ -98,6 +103,59 @@ export async function criarProcessoSeguro(nome: string, cpf: string, indice: num
   throw ultimaFalha instanceof Error
     ? ultimaFalha
     : new Error('Não foi possível gerar um identificador exclusivo para a nova pessoa.');
+}
+
+export async function criarProcessoDemonstracaoSeguro(feriados: string[] = []) {
+  exigirConexaoParaAlterar();
+  let ultimaFalha: unknown = null;
+
+  for (let tentativa = 0; tentativa < 3; tentativa += 1) {
+    const legacyId = `${gerarLegacyIdDemo()}${tentativa ? tentativa.toString(36) : ''}`;
+    const processo = montarProcessoDemonstracao(
+      legacyId,
+      'm-demo-adriana',
+      MENTORA_DEMO.nome,
+      feriados,
+    );
+    const esperadoRespostas = processo.resp?.length || 0;
+
+    try {
+      const retorno = await apiJson<{ ok: boolean; legacyId: string; respostas: number; mentoraId: string }>(
+        '/api/programa-integracao/processos/demo',
+        {
+          method: 'POST',
+          body: JSON.stringify({ confirmacao: 'CRIAR_DEMO', legacyId, processo }),
+        },
+      );
+      if (retorno.legacyId !== legacyId || retorno.respostas !== esperadoRespostas) {
+        throw new Error('O servidor criou a demonstração, mas o resumo retornado não corresponde ao modelo esperado.');
+      }
+
+      const state = await confirmarProcesso(legacyId);
+      const lido = state.processos[legacyId];
+      if (lido.nome !== processo.nome || lido.situacao !== 'ativo') {
+        throw new Error('A demonstração foi criada, mas os dados principais voltaram diferentes na leitura de confirmação.');
+      }
+      if ((lido.resp || []).length !== esperadoRespostas) {
+        throw new Error(`A demonstração foi criada, mas a confirmação retornou ${(lido.resp || []).length} de ${esperadoRespostas} resposta(s).`);
+      }
+      if (lido.mentorId !== retorno.mentoraId || lido.consultora !== MENTORA_DEMO.nome) {
+        throw new Error('A demonstração foi criada, mas o vínculo da mentora não voltou como esperado.');
+      }
+      if (lido.feito?.['pos4-07']?.s || lido.feito?.['pos4-09']?.s) {
+        throw new Error('A demonstração voltou com as pendências finais marcadas indevidamente.');
+      }
+
+      return { legacyId, processo: { ...lido, id: legacyId }, state, respostas: esperadoRespostas };
+    } catch (error) {
+      ultimaFalha = error;
+      if (!(error instanceof Error) || !error.message.toLowerCase().includes('identificador')) throw error;
+    }
+  }
+
+  throw ultimaFalha instanceof Error
+    ? ultimaFalha
+    : new Error('Não foi possível criar um identificador exclusivo para a demonstração.');
 }
 
 export async function alterarSituacaoProcessoSeguro(legacyId: string, situacao: 'ativo' | 'encerrado') {
