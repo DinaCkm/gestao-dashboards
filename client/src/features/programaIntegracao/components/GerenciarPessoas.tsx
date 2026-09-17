@@ -3,6 +3,7 @@ import { ProcessoIntegracao } from '../types';
 import { arquivarProcesso } from '../api/client';
 import {
   alterarSituacaoProcessoSeguro,
+  criarProcessoDemonstracaoSeguro,
   criarProcessoSeguro,
   reordenarProcessosSeguro,
 } from '../api/peopleClient';
@@ -12,16 +13,17 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, ArrowUp, Loader2, Plus, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, FlaskConical, Loader2, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GerenciarPessoasProps {
   processos: ProcessoIntegracao[];
+  feriados?: string[];
   onAbrirPessoa: (processoId: string) => void;
   onSaved: () => Promise<void> | void;
 }
 
-export function GerenciarPessoas({ processos, onAbrirPessoa, onSaved }: GerenciarPessoasProps) {
+export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSaved }: GerenciarPessoasProps) {
   const [busca, setBusca] = useState('');
   const [filtroSituacao, setFiltroSituacao] = useState<'ativo' | 'encerrado' | 'todos'>('ativo');
   const [criando, setCriando] = useState(false);
@@ -84,6 +86,22 @@ export function GerenciarPessoas({ processos, onAbrirPessoa, onSaved }: Gerencia
       toast.success('Pessoa criada e conferida com sucesso.');
       onAbrirPessoa(criado.legacyId);
     }, 'Não foi possível criar a nova pessoa.');
+  };
+
+  const criarDemo = async () => {
+    const confirmou = window.confirm(
+      'Criar um processo fictício de demonstração?\n\n' +
+      'Será criada Mariana Alves Teixeira (demonstração), com dados inteiramente fictícios, quatro alinhamentos, respostas de exemplo e duas pendências finais deixadas abertas de propósito.\n\n' +
+      'Nada existente será alterado. O processo ficará claramente identificado como demonstração e poderá ser arquivado depois.',
+    );
+    if (!confirmou) return;
+
+    await executar('criar-demo', async () => {
+      const criado = await criarProcessoDemonstracaoSeguro(feriados);
+      await onSaved();
+      toast.success(`Demonstração criada e conferida com ${criado.respostas} resposta(s) fictícia(s).`);
+      onAbrirPessoa(criado.legacyId);
+    }, 'Não foi possível criar o processo de demonstração.');
   };
 
   const mover = async (processoId: string, direcao: -1 | 1) => {
@@ -151,6 +169,10 @@ export function GerenciarPessoas({ processos, onAbrirPessoa, onSaved }: Gerencia
             className="pl-10"
           />
         </div>
+        <Button type="button" variant="outline" onClick={() => void criarDemo()} className="gap-2" disabled={Boolean(operacao)}>
+          {operacao === 'criar-demo' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />}
+          Criar demonstração
+        </Button>
         <Button onClick={() => setCriando((valor) => !valor)} className="gap-2" disabled={Boolean(operacao)}>
           <Plus className="w-4 h-4" />
           Nova Pessoa
