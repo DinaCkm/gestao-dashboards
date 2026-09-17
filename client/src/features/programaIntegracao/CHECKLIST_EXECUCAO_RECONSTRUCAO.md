@@ -241,7 +241,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Teste de todos os PDFs/Word.
 - [ ] Regressão do restante do EcoLíder.
 - [ ] Auditoria visual final.
-- [ ] Auditoria integral do inventário funcional.
+- [x] Auditoria integral do inventário funcional.
 - [ ] Backup pré-publicação e rollback documentado.
 - [ ] Autorização explícita da Dina para produção.
 - [ ] Merge/deploy.
