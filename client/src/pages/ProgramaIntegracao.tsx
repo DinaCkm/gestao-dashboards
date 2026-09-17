@@ -17,6 +17,7 @@ import {
   FormulariosIntegracaoAdmin,
   ConfiguracaoAviso,
   ConfiguracaoDatas,
+  AtasRelatoriosGeral,
   type FormularioAdminSubTab,
 } from '@/features/programaIntegracao/components';
 import {
@@ -185,6 +186,16 @@ export default function ProgramaIntegracao() {
     }
   };
 
+  const handleSalvarProcessoCompleto = async (processo: ProcessoIntegracao) => {
+    try {
+      if (!processo.id) return;
+      await atualizarEstadoProcesso(processo.id, processo);
+      await recarregarEstado();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar ata ou relatório');
+    }
+  };
+
   if (loading) {
     return <DashboardLayout><div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin" /></div></DashboardLayout>;
   }
@@ -266,7 +277,9 @@ export default function ProgramaIntegracao() {
             <FormulariosIntegracaoAdmin key={formularioSubTab} config={config} processos={todosProcesos} initialTab={formularioSubTab} onSaved={recarregarEstado} />
           </TabsContent>
 
-          <TabsContent value="atas" className="space-y-6 mt-6"><Card><CardHeader><CardTitle>Atas e Relatórios</CardTitle></CardHeader><CardContent className="space-y-4"><p className="text-muted-foreground">Seleção de pessoa/alinhamento, geração de atas em PDF/Word</p></CardContent></Card></TabsContent>
+          <TabsContent value="atas" className="space-y-6 mt-6">
+            <AtasRelatoriosGeral processos={todosProcesos} config={config} onSalvarProcesso={handleSalvarProcessoCompleto} />
+          </TabsContent>
 
           <TabsContent value="pessoas" className="space-y-6 mt-6"><GerenciarPessoas processos={todosProcesos} onNovaPersona={() => console.log('Nova pessoa')} onEditarPersona={(id) => console.log('Editar:', id)} onVisualizarTimeline={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} /></TabsContent>
 
