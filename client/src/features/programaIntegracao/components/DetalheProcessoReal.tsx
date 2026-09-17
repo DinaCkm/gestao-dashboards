@@ -19,6 +19,9 @@ import { formatarData } from '../helpers/dateHelpers';
 import { respostaDoItem } from '../helpers/respostaItemHelpers';
 import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { gerarBriefingMentoraPdf, gerarRelatorioMentoraWord } from '../helpers/mentoraDocumentos';
+import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
+import { gerarRelatorioAndamentoPdf } from '../helpers/relatorioAndamentoPdf';
+import { gerarCheckpointPdf } from '../helpers/checkpointPdf';
 import { EmailActionButtons } from './EmailActionButtons';
 import { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
 import { AtaRelatorioPainel } from './AtaRelatorioPainel';
@@ -27,6 +30,7 @@ import { CobrancaFinalPainel, CobrancaFormulariosDialog } from './CobrancaFormul
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { toast } from 'sonner';
 
 interface DetalheProcessoRealProps {
   processo: ProcessoIntegracao;
@@ -101,11 +105,65 @@ export function DetalheProcessoReal({
 
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
 
+  const salvarCampoProcesso = async (campo: keyof ProcessoIntegracao, valor: string) => {
+    if (String(processo[campo] ?? '') === valor) return;
+    await salvar({ ...processo, [campo]: valor } as ProcessoIntegracao);
+  };
+
+  const gerarAgenda = () => {
+    try { gerarAgendaOnboardingPdf(processo, feriados); }
+    catch (error) { toast.error(error instanceof Error ? error.message : 'Não foi possível gerar a Agenda de Onboarding.'); }
+  };
+  const gerarRelatorio = () => {
+    try { gerarRelatorioAndamentoPdf(processo, feriados); }
+    catch (error) { toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Relatório de Andamento.'); }
+  };
+  const gerarCheckpoint = () => {
+    try { gerarCheckpointPdf(processo, feriados); }
+    catch (error) { toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Checkpoint.'); }
+  };
+
   const abrirCobranca = (papel?: PapelCobranca, ciclo?: 1 | 2 | 3 | 4) => {
     setCobrancaPapel(papel || null);
     setCobrancaCiclo(ciclo);
     setCobrancaAberta(true);
   };
+
+  const campoTexto = (
+    campo: keyof ProcessoIntegracao,
+    label: string,
+    type: React.HTMLInputTypeAttribute = 'text',
+    placeholder = '',
+  ) => (
+    <label className="space-y-1 text-xs">
+      <span className="font-medium text-muted-foreground">{label}</span>
+      <input
+        key={`${String(campo)}-${String(processo[campo] ?? '')}`}
+        type={type}
+        defaultValue={String(processo[campo] ?? '')}
+        placeholder={placeholder}
+        onBlur={(e) => void salvarCampoProcesso(campo, e.currentTarget.value)}
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+    </label>
+  );
+
+  const campoLongo = (
+    campo: keyof ProcessoIntegracao,
+    label: string,
+    placeholder = '',
+  ) => (
+    <label className="space-y-1 text-xs">
+      <span className="font-medium text-muted-foreground">{label}</span>
+      <textarea
+        key={`${String(campo)}-${String(processo[campo] ?? '')}`}
+        defaultValue={String(processo[campo] ?? '')}
+        placeholder={placeholder}
+        onBlur={(e) => void salvarCampoProcesso(campo, e.currentTarget.value)}
+        className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      />
+    </label>
+  );
 
   return (
     <div className="space-y-6">
@@ -125,8 +183,11 @@ export function DetalheProcessoReal({
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button type="button" size="sm" onClick={gerarAgenda}>Agenda em PDF</Button>
+              <Button type="button" size="sm" variant="secondary" onClick={gerarRelatorio}>Relatório</Button>
+              <Button type="button" size="sm" variant="outline" onClick={gerarCheckpoint}>Checkpoint</Button>
               <Button type="button" size="sm" variant="outline" onClick={() => abrirCobranca()}>
-                Cobrar formulários
+                {resumo.formulariosVencidos ? `Cobrar formulários (${resumo.formulariosVencidos})` : 'Formulários em dia'}
               </Button>
               <Badge variant="outline">{processo.situacao === 'encerrado' ? 'Encerrado' : 'Ativo'}</Badge>
             </div>
@@ -152,6 +213,52 @@ export function DetalheProcessoReal({
           </div>
         </CardContent>
       </Card>
+
+      <details className="rounded-lg border bg-background">
+        <summary className="cursor-pointer px-4 py-3 font-semibold">
+          Dados do processo <span className="ml-2 text-xs font-normal text-muted-foreground">as datas e os e-mails usados no acompanhamento vêm daqui</span>
+        </summary>
+        <div className="border-t p-4 space-y-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {campoTexto('nome', 'Colaborador', 'text', 'Nome completo')}
+            {campoTexto('email', 'E-mail pessoal', 'email')}
+            {campoTexto('emailCorporativo', 'E-mail corporativo', 'email')}
+            {campoTexto('cargo', 'Cargo')}
+            {campoTexto('unidade', 'Área / Unidade')}
+            {campoTexto('cpf', 'CPF')}
+            {campoTexto('nasc', 'Data de nascimento', 'date')}
+            {campoTexto('tel', 'Telefone')}
+            {campoTexto('part', 'Participação', 'text', 'Presencial')}
+            <label className="space-y-1 text-xs">
+              <span className="font-medium text-muted-foreground">Tipo</span>
+              <select
+                value={processo.tipo || 'Onboarding'}
+                onChange={(e) => void salvarCampoProcesso('tipo', e.currentTarget.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="Onboarding">Onboarding</option>
+                <option value="Crossboarding">Crossboarding</option>
+              </select>
+            </label>
+            {campoTexto('inicio', '1º dia na unidade', 'date')}
+            {campoTexto('gestor', 'Gestor receptor')}
+            {campoTexto('gestorEmail', 'E-mail do gestor', 'email')}
+            {campoTexto('gestorTel', 'Telefone / WhatsApp do gestor')}
+            {campoTexto('anjo', 'Anjo')}
+            {campoTexto('anjoEmail', 'E-mail do Anjo', 'email')}
+            {campoTexto('ugp', 'Destinatário na UGP', 'text', 'nome ou e-mail')}
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {campoLongo('horarios', 'Horários sugeridos (um por linha)', '09h00\n14h00')}
+            {campoLongo('statusPdi', 'Status do PDI (usado só se não houver Acompanhamento do PDI respondido)')}
+            {campoLongo('pendencias', 'Pendências extras (somadas às calculadas)')}
+            {campoLongo('statusCursos', 'Status Jornada Compliance (usado só se não houver Acompanhamento do PDI respondido)')}
+            {campoLongo('consideracoes', 'Considerações da CKM para a UGP')}
+            {campoLongo('notas', 'Anotações internas')}
+          </div>
+          <p className="text-[11px] text-muted-foreground">Campos de texto são gravados apenas quando você sai do campo e somente se o conteúdo realmente mudou. A confirmação de leitura do processo continua sendo feita pelo cliente de persistência.</p>
+        </div>
+      </details>
 
       <div className="grid gap-3 md:grid-cols-4">
         {alinhamentos.map((alinhamento) => (
