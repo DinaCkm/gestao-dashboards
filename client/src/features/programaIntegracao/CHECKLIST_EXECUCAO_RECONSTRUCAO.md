@@ -206,7 +206,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Restaurar backup validado.
 - [x] Proteção equivalente para falha de conexão.
 - [x] Tela de erro com recuperação segura.
-- [ ] Processo de demonstração completo.
+- [x] Processo de demonstração completo.
 
 ## 16. Gerenciar pessoas
 - [ ] Nova pessoa/processo.
