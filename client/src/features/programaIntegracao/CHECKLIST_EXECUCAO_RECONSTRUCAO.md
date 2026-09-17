@@ -215,7 +215,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Encerrar.
 - [ ] Reabrir.
 - [ ] Remover com proteção e confirmação.
-- [x] Eliminar `console.log` usados como placeholder.
+- [ ] Eliminar `console.log` usados como placeholder.
 
 ## 17. Atas e relatórios
 - [x] Tela de seleção pessoa/alinhamento.
@@ -231,7 +231,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 ## 18. Fechamento 100%
 - [ ] Mapear todos os handlers de `10-eventos.js`.
 - [ ] Nenhum botão falso.
-- [ ] Nenhum menu placeholder.
+- [x] Nenhum menu placeholder.
 - [ ] Build TypeScript concluído.
 - [ ] Testes aplicáveis concluídos.
 - [ ] Teste de persistência após recarga.
