@@ -32,9 +32,16 @@ interface IndicadoresProps {
 }
 
 const CORES = ['#6B3E8F', '#1B7A55', '#F9AC20', '#2E6FB7', '#C8363C', '#5B9E3A', '#7A6A5C'];
+const COR_MARCA = '#C8363C';
+const COR_ATENCAO = '#F9AC20';
+const COR_OK = '#1B7A55';
 
 function pct(valor: number | null) {
   return valor == null || Number.isNaN(valor) ? '—' : `${Math.round(valor)}%`;
+}
+
+function hojeFormatado() {
+  return new Intl.DateTimeFormat('pt-BR').format(new Date());
 }
 
 export function Indicadores({
@@ -84,31 +91,37 @@ export function Indicadores({
       titulo: 'Pessoas em onboarding',
       valor: String(dados.ativos),
       apoio: `${dados.encerrados} já encerrados`,
+      cor: COR_OK,
     },
     {
       titulo: 'Formulários em atraso',
       valor: String(dados.atrasados),
       apoio: `${dados.pendentes} vencidos sem resposta`,
+      cor: dados.atrasados ? COR_MARCA : COR_OK,
     },
     {
       titulo: 'Ações da CKM em aberto',
       valor: String(dados.acoesCkm),
       apoio: `${dados.acoesEles} dependem do Sebrae`,
+      cor: dados.acoesCkm ? COR_ATENCAO : COR_OK,
     },
     {
       titulo: 'Alinhamentos realizados',
       valor: `${dados.alinFeitos}/${dados.alinPrevistos}`,
       apoio: 'dos que já venceram',
+      cor: COR_OK,
     },
     {
       titulo: 'Progresso médio',
       valor: pct(mediaProgresso),
       apoio: 'ações concluídas por processo',
+      cor: COR_OK,
     },
     {
       titulo: 'Respostas registradas',
       valor: String(dados.respostas),
       apoio: 'formulários importados',
+      cor: COR_OK,
     },
   ];
 
@@ -119,7 +132,7 @@ export function Indicadores({
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Acompanhar</p>
           <h2 className="text-2xl font-bold">Indicadores do programa</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Leitura consolidada dos processos ativos, formulários, alinhamentos, Jornada Compliance e PDI.
+            Uma leitura rápida de como está o Programa de Integração hoje — {hojeFormatado()}.
           </p>
         </div>
         <div className="flex gap-2">
@@ -130,7 +143,7 @@ export function Indicadores({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.titulo}>
+          <Card key={kpi.titulo} style={{ borderLeftWidth: 3, borderLeftColor: kpi.cor }}>
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-medium text-muted-foreground">{kpi.titulo}</CardTitle>
             </CardHeader>
@@ -146,7 +159,7 @@ export function Indicadores({
         <Card>
           <CardHeader>
             <CardTitle>Pessoas por fase do processo</CardTitle>
-            <CardDescription>{dados.ativos} processos ativos</CardDescription>
+            <CardDescription>{dados.ativos} {dados.ativos === 1 ? 'processo ativo' : 'processos ativos'}</CardDescription>
           </CardHeader>
           <CardContent>
             {dados.ativos ? (
@@ -170,7 +183,7 @@ export function Indicadores({
         <Card>
           <CardHeader>
             <CardTitle>Formulários vencidos por responsável</CardTitle>
-            <CardDescription>{dados.pendentes} pendências</CardDescription>
+            <CardDescription>{dados.pendentes} {dados.pendentes === 1 ? 'pendência' : 'pendências'}</CardDescription>
           </CardHeader>
           <CardContent>
             {dados.pendentes ? (
@@ -186,7 +199,7 @@ export function Indicadores({
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="rounded-md border p-4 text-sm text-muted-foreground">Nenhum formulário vencido em aberto.</div>
+              <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">Nenhum formulário vencido em aberto.</div>
             )}
           </CardContent>
         </Card>
@@ -196,7 +209,7 @@ export function Indicadores({
         <Card>
           <CardHeader>
             <CardTitle>Avaliação do gestor por alinhamento</CardTitle>
-            <CardDescription>Média de 1 a 5 das respostas do gestor</CardDescription>
+            <CardDescription>média de 1 a 5</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -211,7 +224,7 @@ export function Indicadores({
               </BarChart>
             </ResponsiveContainer>
             <p className="text-xs text-muted-foreground mt-2">
-              Média do Formulário de Avaliação do Programa respondido pelo gestor, considerando processos ativos e encerrados.
+              Média das 32 perguntas do Formulário de Avaliação do Programa respondido pelo gestor, considerando todos os processos.
             </p>
           </CardContent>
         </Card>
@@ -219,7 +232,7 @@ export function Indicadores({
         <Card>
           <CardHeader>
             <CardTitle>Jornada Compliance e PDI</CardTitle>
-            <CardDescription>Último Acompanhamento do PDI registrado</CardDescription>
+            <CardDescription>último Acompanhamento do PDI</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -251,7 +264,7 @@ export function Indicadores({
               })}
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              Média entre os processos ativos que já possuem acompanhamento registrado.
+              Média entre os processos ativos que já têm um Relatório de Acompanhamento do PDI registrado ({dados.jornada.length} {dados.jornada.length === 1 ? 'processo' : 'processos'}).
             </p>
           </CardContent>
         </Card>
@@ -260,7 +273,7 @@ export function Indicadores({
       <Card>
         <CardHeader>
           <CardTitle>Processos, um a um</CardTitle>
-          <CardDescription>Ordenados por quantidade de formulários atrasados</CardDescription>
+          <CardDescription>ordenado por pendências</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto p-0">
           <table className="w-full text-sm">
@@ -294,10 +307,22 @@ export function Indicadores({
                     </div>
                     <span className="text-xs text-muted-foreground">{pessoa.pct}%</span>
                   </td>
-                  <td className="p-3 text-center">{pessoa.atraso}</td>
+                  <td className="p-3 text-center">
+                    <span className={pessoa.atraso ? 'inline-flex min-w-6 justify-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700' : 'inline-flex min-w-6 justify-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700'}>
+                      {pessoa.atraso}
+                    </span>
+                  </td>
                   <td className="p-3 text-center font-mono">{pessoa.jornada == null ? '—' : `${pessoa.jornada}%`}</td>
                   <td className="p-3 text-center font-mono">{pessoa.pdi == null ? '—' : `${pessoa.pdi}%`}</td>
-                  <td className="p-3">{pessoa.sinal.t}</td>
+                  <td className="p-3">
+                    <span className={pessoa.sinal.k === 'late'
+                      ? 'inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700'
+                      : pessoa.sinal.k === 'act'
+                        ? 'inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700'
+                        : 'inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700'}>
+                      {pessoa.sinal.t}
+                    </span>
+                  </td>
                 </tr>
               )) : (
                 <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Nenhum processo ativo.</td></tr>
