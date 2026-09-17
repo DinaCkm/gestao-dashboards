@@ -1,3 +1,5 @@
+import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
+
 export type PublicFormSlug =
   | 'controle-integracao'
   | 'bem-acolhido'
@@ -70,6 +72,7 @@ export async function enviarRespostaFormularioPublico(
   slug: PublicFormSlug,
   payload: PublicFormPayload,
 ): Promise<PublicFormResponse> {
+  exigirConexaoParaAlterar();
   const response = await fetch(`/api/public/programa-integracao/forms/${encodeURIComponent(slug)}/responses`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
