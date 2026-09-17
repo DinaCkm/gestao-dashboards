@@ -44,9 +44,9 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Filtros principais.
 - [x] Atalhos de e-mail e processo.
 - [x] Exportação CSV existente.
-- [ ] Conferir todas as linhas extras da mentora com o original.
+- [x] Conferir todas as linhas extras da mentora com o original.
 - [x] Consumir deep-link `?item=` na página individual.
-- [ ] Auditoria final linha a linha da Agenda.
+- [x] Auditoria final linha a linha da Agenda.
 
 ## 4. Indicadores
 - [x] Portar a regra dos 6 KPIs originais.
@@ -89,7 +89,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] WhatsApp de confirmação.
 - [x] Briefing da Mentora em PDF.
 - [x] Relatório da Mentora em Word.
-- [ ] Automação final conferida.
+- [x] Automação final conferida.
 
 ## 7. E-mails
 - [x] 31 modelos históricos consolidados.
