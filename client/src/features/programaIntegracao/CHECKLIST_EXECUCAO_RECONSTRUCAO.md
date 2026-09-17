@@ -22,7 +22,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Registrar auditoria da alteração de configuração sem gravar o conteúdo da configuração no log.
 - [x] Reler a seção persistida no servidor antes de confirmar sucesso da nova operação de configuração.
 - [x] Evitar gravação por tecla nos campos editáveis da ficha.
-- [ ] Garantir leitura de volta após cada gravação crítica do módulo, não apenas configuração.
+- [x] Garantir leitura de volta após cada gravação crítica do módulo, não apenas configuração.
 - [ ] Auditar `03-const.js` item a item contra o plano atual.
 - [ ] Auditar `05-estado.js` integralmente.
 - [ ] Validar datas e recalculo dos quatro alinhamentos.
