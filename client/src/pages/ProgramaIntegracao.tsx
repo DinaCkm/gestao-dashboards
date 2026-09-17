@@ -116,11 +116,12 @@ export default function ProgramaIntegracao() {
 
   const recarregarEstado = async () => {
     const response = await fetchBootstrap();
-    if (response.ok && response.state) {
-      setState(response.state);
-      setOnline(true);
-      setOperationError(null);
+    if (!response.ok || !response.state) {
+      throw new Error('O servidor não confirmou a leitura do Programa de Integração.');
     }
+    setState(response.state);
+    setOnline(true);
+    setOperationError(null);
   };
 
   const tentarReconectar = async () => {
@@ -159,6 +160,7 @@ export default function ProgramaIntegracao() {
       await recarregarEstado();
     } catch (err) {
       registrarFalhaOperacao(err, 'Erro ao atualizar situação da ação');
+      throw err;
     }
   };
 
