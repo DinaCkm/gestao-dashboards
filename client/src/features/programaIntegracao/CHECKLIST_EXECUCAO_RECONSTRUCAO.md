@@ -71,8 +71,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Fichas de ação e status base.
 - [x] Painel base dos alinhamentos.
 - [x] Preparação base da mentora.
-- [ ] Cabeçalho completo com todos os botões do original.
-- [ ] Dados do processo editáveis de forma segura.
+- [x] Cabeçalho completo com todos os botões do original.
+- [x] Dados do processo editáveis de forma segura.
 - [ ] Bem Acolhido e teste comportamental completos.
 - [ ] Respostas agrupadas por ciclo.
 - [x] Cobrar formulários.
