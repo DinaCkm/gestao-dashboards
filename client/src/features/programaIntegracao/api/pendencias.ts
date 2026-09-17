@@ -1,3 +1,5 @@
+import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
+
 export type VincularPendentePayload = {
   processoId: string;
   cycle?: number;
@@ -24,6 +26,7 @@ export async function rebuscarRespostaPendente(
   legacyRid: string,
   payload: RebuscarPendentePayload,
 ): Promise<{ ok: boolean; status: string; candidatos: any[] }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(
     `/api/programa-integracao/respostas-pendentes/${encodeURIComponent(legacyRid)}/rebuscar`,
     {
@@ -44,6 +47,7 @@ export async function vincularRespostaPendente(
   legacyRid: string,
   payload: VincularPendentePayload,
 ): Promise<{ ok: boolean; resposta?: { legacyRid: string; processoId: string; ciclo: number; papel: string; itemId: string } }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(
     `/api/programa-integracao/respostas-pendentes/${encodeURIComponent(legacyRid)}/vincular`,
     {
@@ -63,6 +67,7 @@ export async function vincularRespostaPendente(
 export async function criarProcessoDaRespostaPendente(
   legacyRid: string,
 ): Promise<{ ok: boolean; processoId: string; nome: string }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(
     `/api/programa-integracao/respostas-pendentes/${encodeURIComponent(legacyRid)}/criar-processo`,
     {
@@ -81,6 +86,7 @@ export async function criarProcessoDaRespostaPendente(
 export async function descartarRespostaPendente(
   legacyRid: string,
 ): Promise<{ ok: boolean }> {
+  exigirConexaoParaAlterar();
   const response = await fetch(
     `/api/programa-integracao/respostas-pendentes/${encodeURIComponent(legacyRid)}`,
     {
