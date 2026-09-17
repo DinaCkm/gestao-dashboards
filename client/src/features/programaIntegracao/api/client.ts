@@ -68,6 +68,13 @@ async function confirmarProcessoPersistido(
   confirmarProcessoLido(legacyId, esperado, leitura.state.processos?.[legacyId]);
 }
 
+function sairDoModuloAdministrativoSeNegado(status: number): void {
+  if (status !== 401 && status !== 403) return;
+  if (typeof window === 'undefined') return;
+  if (!window.location.pathname.startsWith('/programa-integracao')) return;
+  window.location.replace('/');
+}
+
 /**
  * Fetch bootstrap data (config, processos com estado)
  */
@@ -78,6 +85,7 @@ export async function fetchBootstrap(): Promise<BootstrapResponse> {
   });
   
   if (!response.ok) {
+    sairDoModuloAdministrativoSeNegado(response.status);
     throw new Error(`Failed to fetch bootstrap: ${response.status}`);
   }
   
