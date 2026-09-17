@@ -279,20 +279,39 @@ export function DetalheProcessoReal({
                             </label>
                             <label className="space-y-1 text-xs">
                               <span className="font-medium text-muted-foreground">Concluída/enviada em</span>
-                              <input type="date" value={ficha.d} onChange={(e) => salvar(aplicarCampoFichaAcao(processo, item.id, 'd', e.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                              <input
+                                key={`${item.id}-d-${ficha.d}`}
+                                type="date"
+                                defaultValue={ficha.d}
+                                onBlur={(e) => {
+                                  if (e.currentTarget.value !== ficha.d) void salvar(aplicarCampoFichaAcao(processo, item.id, 'd', e.currentTarget.value));
+                                }}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              />
                             </label>
                             {ehEmail && (
                               <label className="space-y-1 text-xs">
                                 <span className="font-medium text-muted-foreground">Programar envio</span>
-                                <input type="date" value={ficha.prog} onChange={(e) => salvar(aplicarCampoFichaAcao(processo, item.id, 'prog', e.target.value))} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                                <input
+                                  key={`${item.id}-prog-${ficha.prog}`}
+                                  type="date"
+                                  defaultValue={ficha.prog}
+                                  onBlur={(e) => {
+                                    if (e.currentTarget.value !== ficha.prog) void salvar(aplicarCampoFichaAcao(processo, item.id, 'prog', e.currentTarget.value));
+                                  }}
+                                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                />
                               </label>
                             )}
                           </div>
 
                           {(ficha.s === 'na' || ficha.s === 'wont') && (
                             <input
-                              value={ficha.just}
-                              onChange={(e) => salvar(aplicarCampoFichaAcao(processo, item.id, 'just', e.target.value))}
+                              key={`${item.id}-just-${ficha.just}`}
+                              defaultValue={ficha.just}
+                              onBlur={(e) => {
+                                if (e.currentTarget.value !== ficha.just) void salvar(aplicarCampoFichaAcao(processo, item.id, 'just', e.currentTarget.value));
+                              }}
                               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                               placeholder="justificativa"
                             />
