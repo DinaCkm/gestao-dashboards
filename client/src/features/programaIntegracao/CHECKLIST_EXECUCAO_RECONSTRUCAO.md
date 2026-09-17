@@ -37,7 +37,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] PDFs principais ligados ao Painel.
 - [x] Registrar resposta ausente diretamente da ação.
 - [ ] Tutorial nas ações aplicáveis.
-- [ ] Auditoria final linha a linha do Painel.
+- [x] Auditoria final linha a linha do Painel.
 
 ## 3. Agenda geral
 - [x] Estrutura de Agenda geral reconstruída.
