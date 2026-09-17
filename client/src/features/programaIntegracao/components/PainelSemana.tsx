@@ -48,7 +48,7 @@ interface PainelSemanaProps {
   config: BootstrapState['config'];
   onProcessoClick?: (processId: string) => void;
   onRevisarRespostas?: () => void;
-  onConcluirAcao?: (processId: string, itemId: string) => void;
+  onConcluirAcao?: (processId: string, itemId: string) => Promise<void> | void;
   onAlterarStatusAcao?: (processId: string, itemId: string, status: StatusAcaoLegado) => void;
   onAlterarCampoAcao?: (processId: string, itemId: string, campo: CampoFichaAcao, valor: string) => void;
   onAdicionarNotaAcao?: (processId: string, itemId: string, texto: string) => void;
@@ -366,6 +366,7 @@ export function PainelSemana({
                             >
                               {salvandoAcao === chave ? '…' : ficha.s === 'na' || ficha.s === 'wont' ? '–' : '✓'}
                             </button>}
+                            {salvandoAcao === chave && <span className="mt-0.5 text-[11px] text-muted-foreground whitespace-nowrap">Salvando e conferindo...</span>}
                             <div className="min-w-0 flex-1">
                               <button type="button" className="text-left min-w-0" onClick={() => onProcessoClick?.(acao.pid)}>
                                 <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full border flex-shrink-0" style={acao.p.cor ? { backgroundColor: acao.p.cor } : undefined} /><span className="font-medium truncate">{acao.p.nome}</span></div>
