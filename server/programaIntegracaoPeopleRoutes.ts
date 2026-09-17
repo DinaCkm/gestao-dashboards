@@ -233,17 +233,16 @@ programaIntegracaoPeopleRouter.post(
       config.mentoras = mentoras;
 
       const [ordemRows] = (await connection.execute(
-        `SELECT COALESCE(MAX(ordem),-1) AS maior FROM programa_integracao_processos WHERE situacao<>'removido' FOR UPDATE`,
+        `SELECT ordem FROM programa_integracao_processos WHERE situacao<>'removido' FOR UPDATE`,
       )) as any;
-      const ordem = Number(ordemRows?.[0]?.maior ?? -1) + 1;
+      const maiorOrdem = (ordemRows || []).reduce((maior: number, row: any) => Math.max(maior, Number(row?.ordem ?? -1)), -1);
+      const ordem = maiorOrdem + 1;
       const ordemConfig = Array.isArray(config.ordem) ? config.ordem.filter((id: any) => String(id) !== legacyId) : [];
       ordemConfig.push(legacyId);
       config.ordem = ordemConfig;
 
       const estado = {
         ...p,
-        id: undefined,
-        resp: undefined,
         mentorId: String(mentora.id),
         consultora: String(mentora.nome),
         situacao: "ativo",
@@ -276,15 +275,16 @@ programaIntegracaoPeopleRouter.post(
         const answers = answersDoDemo(formKey, pares);
         const { media, alertas } = calcularMediaAlertasDemo(formKey, pares);
         const rid = `${legacyId}-${formKey}-${String(indiceResposta + 1).padStart(2, "0")}`.slice(0, 100);
-        const protocolo = `DEMO-${legacyId.toUpperCase()}-${String(indiceResposta + 1).padStart(2, "0")}`.slice(0, 80);
+        const protocolo = `DEMO-${legacyId.toUpperCase()}-${String(indiceResposta + 1).padStart(2, "0")}`.slice(0, 40);
+        const dedupeKey = `${legacyId}|${formKey}|${Number(r.ciclo || 0)}|${String(r.papel || "")}|${indiceResposta + 1}`.slice(0, 255);
         await connection.execute(
-          `INSERT INTO programa_integracao_respostas (processoId,formKey,ciclo,papel,respondentName,respondentEmail,answers,media,alertas,quandoOriginal,emOriginal,itemId,legacyRid,source,formVersion,protocolo,status,submittedAt)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
+          `INSERT INTO programa_integracao_respostas (processoId,legacyRid,protocolo,dedupeKey,formKey,ciclo,papel,itemId,formVersion,statusVinculo,statusResposta,nomeOrig,avaliador,respondentName,respondentEmail,source,media,alertas,answers,quandoOriginal,emOriginal,submittedAt)
+           VALUES (?,?,?,?,?,?,?,?,?,'vinculada',?,?,?,?,?,'admin',?,?,?,?,?,CURRENT_TIMESTAMP)`,
           [
-            processoId, formKey, Number(r.ciclo || 0), String(r.papel || ""),
-            String(r.respondentName || p.nome || ""), String(r.respondentEmail || ""),
-            JSON.stringify(answers), media, JSON.stringify(alertas), String(r.quando || ""),
-            String(r.em || ""), String(r.itid || ""), rid, "demo", 1, protocolo, "registrada",
+            processoId, rid, protocolo, dedupeKey, formKey, Number(r.ciclo || 0), String(r.papel || ""),
+            String(r.itid || ""), 1, "valido", String(r.nomeOrig || ""), String(r.avaliador || ""),
+            String(r.respondentName || p.nome || ""), String(r.respondentEmail || ""), media,
+            JSON.stringify(alertas), JSON.stringify(answers), String(r.quando || ""), String(r.em || ""),
           ],
         );
         respostasInseridas += 1;
