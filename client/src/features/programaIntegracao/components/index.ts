@@ -14,6 +14,7 @@ export { ConfiguracaoAviso, ConfiguracaoDatas } from './ConfiguracaoAvisoDatas';
 export { ConfiguracaoMentoras } from './ConfiguracaoMentoras';
 export { ConfiguracaoCursos } from './ConfiguracaoCursos';
 export { ConfiguracaoLinks } from './ConfiguracaoLinks';
+export { ConfiguracaoEmails } from './ConfiguracaoEmails';
 export { AtasRelatoriosGeral } from './AtasRelatoriosGeral';
 export { AtaRelatorioPainel } from './AtaRelatorioPainel';
 export { DetalheProcessoReal } from './DetalheProcessoReal';
