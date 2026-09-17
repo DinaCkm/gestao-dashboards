@@ -77,9 +77,9 @@ export function marcarAtaRelatorioGerados(processo: ProcessoIntegracao, numero: 
   return proximo;
 }
 
-function dadosCabecalho(processo: ProcessoIntegracao, numero: number, config?: BootstrapState['config']) {
+function dadosCabecalho(processo: ProcessoIntegracao, numero: number, config?: BootstrapState['config'], feriados: string[] = []) {
   const a: any = processo.alin?.[String(numero)] ?? processo.alin?.[numero] ?? {};
-  const etapa = cronogramaReal(processo, Array.isArray(config?.feriados) ? config.feriados : []).find((x) => x.et.al === numero);
+  const etapa = cronogramaReal(processo, feriados).find((x) => x.et.al === numero);
   const data = a.realizado || a.data || etapa?.data || '';
   const mentora = mentoraVinculada(processo, config);
   return [
@@ -95,10 +95,10 @@ function dadosCabecalho(processo: ProcessoIntegracao, numero: number, config?: B
   ];
 }
 
-function htmlDocumento(processo: ProcessoIntegracao, numero: number, tipo: 'ata' | 'ugp', config?: BootstrapState['config']) {
+function htmlDocumento(processo: ProcessoIntegracao, numero: number, tipo: 'ata' | 'ugp', config?: BootstrapState['config'], feriados: string[] = []) {
   const c = camposAtaRelatorio(processo, numero);
   const ugp = tipo === 'ugp';
-  const campos = dadosCabecalho(processo, numero, config).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('');
+  const campos = dadosCabecalho(processo, numero, config, feriados).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('');
   const cinco = ugp ? (c.consultora.trim() || c.conclusao.trim() || '[registrar a conclusão e o parecer da consultora]') : (c.conclusao.trim() || '[registrar a conclusão da reunião]');
   return `<!doctype html><html><head><meta charset="utf-8"><style>
   body{font-family:Arial,sans-serif;color:#1a1a1a;font-size:11pt;line-height:1.45;margin:32px} h1{font-size:20pt;margin-bottom:4px} .sub{color:#666;margin-bottom:22px} h2{font-size:13pt;color:#a82d33;border-bottom:1px solid #c8363c;padding-bottom:4px;margin-top:22px} table{width:100%;border-collapse:collapse}td{border:1px solid #d7d1cd;padding:6px;vertical-align:top}td:first-child{width:34%;font-weight:bold;background:#f1edeb}.nota{background:#f7f5f4;border-left:4px solid #c8363c;padding:10px}.assin{margin-top:38px;display:flex;gap:40px}.assin div{flex:1;border-top:1px solid #777;padding-top:5px;text-align:center;font-size:9pt}
@@ -115,9 +115,9 @@ function htmlDocumento(processo: ProcessoIntegracao, numero: number, tipo: 'ata'
   </body></html>`;
 }
 
-export function gerarDocumentoAtaRelatorio(processo: ProcessoIntegracao, numero: 1|2|3|4, tipo: 'ata'|'ugp', config?: BootstrapState['config']): boolean {
+export function gerarDocumentoAtaRelatorio(processo: ProcessoIntegracao, numero: 1|2|3|4, tipo: 'ata'|'ugp', config?: BootstrapState['config'], feriados: string[] = []): boolean {
   if (!processo.nome) return false;
-  const html = htmlDocumento(processo, numero, tipo, config);
+  const html = htmlDocumento(processo, numero, tipo, config, feriados);
   const prefixo = tipo === 'ugp' ? 'Relatorio_UGP_' : 'Ata_';
   baixar(new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' }), `${prefixo}${ORD[numero].replace('º','o')}_Alinhamento_${nomeArquivo(processo.nome)}.doc`);
   return true;
