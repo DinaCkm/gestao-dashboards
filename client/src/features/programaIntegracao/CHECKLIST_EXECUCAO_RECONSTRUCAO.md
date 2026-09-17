@@ -215,7 +215,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Encerrar.
 - [ ] Reabrir.
 - [ ] Remover com proteção e confirmação.
-- [ ] Eliminar `console.log` usados como placeholder.
+- [x] Eliminar `console.log` usados como placeholder.
 
 ## 17. Atas e relatórios
 - [x] Tela de seleção pessoa/alinhamento.
