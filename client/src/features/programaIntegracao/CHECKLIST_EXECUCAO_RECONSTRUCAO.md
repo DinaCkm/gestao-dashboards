@@ -76,7 +76,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Bem Acolhido e teste comportamental completos.
 - [x] Respostas agrupadas por ciclo.
 - [x] Cobrar formulários.
-- [ ] Mural completo de observações.
+- [x] Mural completo de observações.
 - [ ] Auditoria das 95 ações na ficha individual.
 
 ## 6. Mentora
