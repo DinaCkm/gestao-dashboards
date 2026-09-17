@@ -29,6 +29,7 @@ import { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
 import { CobrancaFinalPainel, CobrancaFormulariosDialog } from './CobrancaFormulariosDialog';
 import { BemTesteProcesso } from './BemTesteProcesso';
 import { RespostasProcessoAgrupadas } from './RespostasProcessoAgrupadas';
+import { ObservacoesAcao } from './ObservacoesAcao';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -428,6 +429,8 @@ export function DetalheProcessoReal({
                               placeholder="justificativa"
                             />
                           )}
+
+                          <ObservacoesAcao processo={processo} itemId={item.id} onSalvarProcesso={salvar} />
 
                           {resposta && (
                             <div className="rounded-md border bg-muted/20 p-3 text-xs">
