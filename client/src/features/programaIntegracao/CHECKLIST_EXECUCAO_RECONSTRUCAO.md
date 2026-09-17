@@ -182,7 +182,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Checkpoint PDF base.
 - [x] Relatório de Evolução PDF base.
 - [x] Evolução completa prevista na lógica.
-- [ ] Conferir todos os PDFs contra `09-pdf.js`.
+- [x] Conferir todos os PDFs contra `09-pdf.js`.
 - [x] Briefing da Mentora PDF.
 - [x] Relatório da Mentora Word.
 - [x] Ata Word.
