@@ -229,7 +229,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Gerar os dois e marcar a ação prevista.
 
 ## 18. Fechamento 100%
-- [ ] Mapear todos os handlers de `10-eventos.js`.
+- [x] Mapear todos os handlers de `10-eventos.js`.
 - [ ] Nenhum botão falso.
 - [x] Nenhum menu placeholder.
 - [ ] Build TypeScript concluído.
