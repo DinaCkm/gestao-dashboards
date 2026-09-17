@@ -13,6 +13,8 @@ export interface PontoRestauracaoLocal {
 
 const BK_LS = 'programa-integracao-backups-local';
 const BK_LIMITE = 12;
+const BK_MAX_PROCESSOS = 5000;
+const BK_MAX_CARACTERES = 25_000_000;
 
 function hojeIsoLocal(): string {
   const d = new Date();
@@ -24,6 +26,14 @@ function hojeIsoLocal(): string {
 
 function quandoLocal(): string {
   return new Date().toLocaleString('pt-BR');
+}
+
+function objetoSimples(value: unknown): value is Record<string, any> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function identificadorBackupValido(id: string): boolean {
+  return Boolean(id) && id === id.trim() && id.length <= 100;
 }
 
 export function tamanhoBackup(txt: string): string {
@@ -114,12 +124,39 @@ export function baixarPontoLocal(ponto: PontoRestauracaoLocal): void {
 
 export function validarArquivoBackupTexto(texto: string): { ok: true; state: BootstrapState; quantidade: number; nomes: string[] } | { ok: false; erro: string } {
   try {
+    if (texto.length > BK_MAX_CARACTERES) {
+      return { ok: false, erro: 'O arquivo excede o limite seguro para restauração administrativa.' };
+    }
+
     const state = JSON.parse(texto) as BootstrapState;
-    if (!state || typeof state !== 'object' || !state.config || !state.processos || typeof state.processos !== 'object') {
+    if (!objetoSimples(state) || !objetoSimples(state.config) || !objetoSimples(state.processos)) {
       return { ok: false, erro: 'Esse arquivo não parece um backup do Programa de Integração.' };
     }
+
     const ids = Object.keys(state.processos);
-    const nomes = ids.map((id) => String(state.processos?.[id]?.nome || '(sem nome)'));
+    if (ids.length > BK_MAX_PROCESSOS) {
+      return { ok: false, erro: 'O backup excede o limite de processos permitido.' };
+    }
+
+    const nomes: string[] = [];
+    for (const id of ids) {
+      if (!identificadorBackupValido(id)) {
+        return { ok: false, erro: `O backup contém um identificador de processo inválido: ${id || '(vazio)'}.` };
+      }
+      const processo = state.processos[id];
+      if (!objetoSimples(processo) || !String(processo.nome || '').trim()) {
+        return { ok: false, erro: `O processo ${id} está inválido ou sem nome.` };
+      }
+      if (processo.resp != null && !Array.isArray(processo.resp)) {
+        return { ok: false, erro: `As respostas do processo ${id} estão em formato inválido.` };
+      }
+      nomes.push(String(processo.nome));
+    }
+
+    if (state.config.respostasPendentes != null && !Array.isArray(state.config.respostasPendentes)) {
+      return { ok: false, erro: 'A fila de respostas pendentes do backup está em formato inválido.' };
+    }
+
     return { ok: true, state, quantidade: ids.length, nomes };
   } catch {
     return { ok: false, erro: 'Arquivo JSON inválido ou corrompido.' };
