@@ -185,8 +185,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Conferir todos os PDFs contra `09-pdf.js`.
 - [x] Briefing da Mentora PDF.
 - [x] Relatório da Mentora Word.
-- [ ] Ata Word.
-- [ ] Relatório UGP Word.
+- [x] Ata Word.
+- [x] Relatório UGP Word.
 
 ## 14. Configurações
 - [x] Base segura de persistência por seção disponível para as telas de Configurações.
@@ -218,15 +218,15 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Eliminar `console.log` usados como placeholder.
 
 ## 17. Atas e relatórios
-- [ ] Tela de seleção pessoa/alinhamento.
-- [ ] Percepção do líder.
-- [ ] Percepção do colaborador.
-- [ ] Conclusão da ata.
-- [ ] Percepção da consultora para UGP.
-- [ ] Nota de confidencialidade.
-- [ ] Gerar ata.
-- [ ] Gerar relatório UGP.
-- [ ] Gerar os dois e marcar a ação prevista.
+- [x] Tela de seleção pessoa/alinhamento.
+- [x] Percepção do líder.
+- [x] Percepção do colaborador.
+- [x] Conclusão da ata.
+- [x] Percepção da consultora para UGP.
+- [x] Nota de confidencialidade.
+- [x] Gerar ata.
+- [x] Gerar relatório UGP.
+- [x] Gerar os dois e marcar a ação prevista.
 
 ## 18. Fechamento 100%
 - [ ] Mapear todos os handlers de `10-eventos.js`.
