@@ -18,6 +18,7 @@ import {
   ConfiguracaoAviso,
   ConfiguracaoDatas,
   ConfiguracaoMentoras,
+  ConfiguracaoCursos,
   AtasRelatoriosGeral,
   type FormularioAdminSubTab,
 } from '@/features/programaIntegracao/components';
@@ -298,7 +299,7 @@ export default function ProgramaIntegracao() {
                 </TabsList>
                 <TabsContent value="emails" className="mt-6"><p className="text-muted-foreground">Modelos de e-mail por fase do processo</p></TabsContent>
                 <TabsContent value="mentoras" className="mt-6"><ConfiguracaoMentoras config={config} processos={todosProcesos} onSaved={recarregarEstado} /></TabsContent>
-                <TabsContent value="cursos" className="mt-6"><p className="text-muted-foreground">Cursos obrigatórios da integração</p></TabsContent>
+                <TabsContent value="cursos" className="mt-6"><ConfiguracaoCursos config={config} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="aviso" className="mt-6"><ConfiguracaoAviso config={config} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="links" className="mt-6"><p className="text-muted-foreground">Links permanentes e formulários</p></TabsContent>
                 <TabsContent value="datas" className="mt-6"><ConfiguracaoDatas config={config} onSaved={recarregarEstado} /></TabsContent>
