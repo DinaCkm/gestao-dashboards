@@ -1,6 +1,8 @@
 import type { BootstrapState } from '../types';
+import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
 
 export async function restaurarBackupProtegido(state: BootstrapState): Promise<{ ok: boolean; resumo: { processos: number; respostas: number; pendentes: number } }> {
+  exigirConexaoParaAlterar();
   const response = await fetch('/api/programa-integracao/restore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
