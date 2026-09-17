@@ -77,7 +77,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Respostas agrupadas por ciclo.
 - [x] Cobrar formulários.
 - [x] Mural completo de observações.
-- [ ] Auditoria das 95 ações na ficha individual.
+- [x] Auditoria das 95 ações na ficha individual.
 
 ## 6. Mentora
 - [x] Estrutura inicial da preparação da mentora.
