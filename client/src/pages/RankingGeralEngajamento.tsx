@@ -20,7 +20,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Mail, Download, Snowflake, RotateCcw } from "lucide-react";
+import { Mail, Download, Snowflake, RotateCcw, Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 type RankingAluno = {
@@ -65,6 +73,7 @@ export default function RankingGeralEngajamento() {
   const [turmaFiltro, setTurmaFiltro] = useState("todas");
   const [situacaoFiltro, setSituacaoFiltro] = useState("todas");
   const [empresaSelecionadaId, setEmpresaSelecionadaId] = useState<number | null>(null);
+  const [previewAluno, setPreviewAluno] = useState<RankingAluno | null>(null);
 
   const isAdmin = user?.role === "admin" || user?.role === "admin2";
   const consultorRole = (user as any)?.consultorRole;
@@ -247,12 +256,15 @@ export default function RankingGeralEngajamento() {
   const handleSendEmail = async (aluno: RankingAluno) => {
     await enviarLembrete.mutateAsync({
       alunoIdUsuario: aluno.idUsuario,
+      ...(isAdmin && programIdEfetivo ? { programId: programIdEfetivo } : {}),
     });
+    setPreviewAluno(null);
   };
 
   const handleExport = async () => {
     const result = await exportarExcel.mutateAsync({
       alunoIdsUsuario: rankingFiltrado.map(row => row.idUsuario),
+      ...(isAdmin && programIdEfetivo ? { programId: programIdEfetivo } : {}),
     });
 
     const bytes = Uint8Array.from(atob(result.base64), c => c.charCodeAt(0));
@@ -428,7 +440,7 @@ export default function RankingGeralEngajamento() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleSendEmail(aluno)}
+                                onClick={() => setPreviewAluno(aluno)}
                                 disabled={
                                   enviarLembrete.isPending || !aluno.email
                                 }
@@ -508,6 +520,89 @@ export default function RankingGeralEngajamento() {
           </CardContent>
         </Card>
       </div>
+    {/* Dialog de preview do e-mail */}
+    <Dialog open={!!previewAluno} onOpenChange={(open) => { if (!open) setPreviewAluno(null); }}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Preview do e-mail — {previewAluno?.nomeAluno}
+          </DialogTitle>
+        </DialogHeader>
+
+        {previewAluno && (
+          <div className="space-y-4">
+            {/* Cabeçalho do e-mail */}
+            <div className="rounded-lg border bg-slate-50 p-3 text-sm space-y-1.5">
+              <div className="flex gap-2">
+                <span className="font-medium text-muted-foreground w-16 shrink-0">Para:</span>
+                <span>{previewAluno.email ?? "—"}</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="font-medium text-muted-foreground w-16 shrink-0">Assunto:</span>
+                <span className="font-medium">Performance de Engajamento — Ecossistema do Bem</span>
+              </div>
+            </div>
+
+            {/* Corpo do e-mail */}
+            <div className="rounded-lg border p-4 space-y-4 text-sm">
+              <p className="text-muted-foreground text-xs uppercase tracking-wide font-semibold">Conteúdo do e-mail</p>
+
+              <p>
+                Olá, <strong>{previewAluno.nomeAluno}</strong>! Confira abaixo o resumo da sua performance na plataforma.
+              </p>
+
+              {/* Tabela de indicadores */}
+              <div className="rounded-md border overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
+                      <th className="p-2 text-center">Posição</th>
+                      <th className="p-2 text-left">Pessoa</th>
+                      <th className="p-2 text-center">Ind. 1</th>
+                      <th className="p-2 text-center">Ind. 2</th>
+                      <th className="p-2 text-center">Ind. 3</th>
+                      <th className="p-2 text-center">Ind. 4</th>
+                      <th className="p-2 text-center">Engaj. Final</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-green-50">
+                      <td className="p-2 text-center font-bold">{previewAluno.posicao}º</td>
+                      <td className="p-2 font-medium">{previewAluno.nomeAluno}</td>
+                      <td className="p-2 text-center">{Math.round(previewAluno.ind1 ?? 0)}%</td>
+                      <td className="p-2 text-center">{Math.round(previewAluno.ind2 ?? 0)}%</td>
+                      <td className="p-2 text-center">{Math.round(previewAluno.ind3 ?? 0)}%</td>
+                      <td className="p-2 text-center">{Math.round(previewAluno.ind4 ?? 0)}%</td>
+                      <td className="p-2 text-center font-bold text-emerald-700">{Math.round(previewAluno.ind7 ?? 0)}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-muted-foreground text-xs">
+                Continue assim! Sua dedicação faz toda a diferença na sua jornada de desenvolvimento.
+              </p>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={() => setPreviewAluno(null)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => previewAluno && handleSendEmail(previewAluno)}
+            disabled={enviarLembrete.isPending}
+            className="gap-2"
+          >
+            <Mail className="h-4 w-4" />
+            {enviarLembrete.isPending ? "Enviando..." : "Confirmar e enviar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     </DashboardLayout>
   );
 }
