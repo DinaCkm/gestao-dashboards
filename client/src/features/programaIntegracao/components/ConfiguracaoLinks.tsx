@@ -83,9 +83,6 @@ export function ConfiguracaoLinks({ config, onSaved, onGerenciarFormularios }: C
         n: link.n.trim(),
         ...(link.formLink ? {} : { u: link.u.trim() }),
       };
-      if (link.formLink && Object.prototype.hasOwnProperty.call(atual[link.k], 'u')) {
-        delete atual[link.k].u;
-      }
     }
 
     try {
