@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import {
   diaAtualDetalhe,
@@ -71,10 +71,33 @@ export function DetalheProcessoReal({
   const [cobrancaAberta, setCobrancaAberta] = useState(false);
   const [cobrancaCiclo, setCobrancaCiclo] = useState<1 | 2 | 3 | 4 | undefined>(undefined);
   const [cobrancaPapel, setCobrancaPapel] = useState<PapelCobranca | null>(null);
+  const deepLinkAplicadoRef = useRef(false);
+  const itemDeepLink = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    return new URLSearchParams(window.location.search).get('item') || '';
+  }, []);
   const resumo = useMemo(() => resumoDetalheProcesso(processo, feriados), [processo, feriados]);
   const dia = useMemo(() => diaAtualDetalhe(processo), [processo]);
   const alinhamentos = useMemo(() => resumosAlinhamentosDetalhe(processo, feriados), [processo, feriados]);
   const etapas = useMemo(() => etapasDetalheProcesso(processo, feriados, filtro), [processo, feriados, filtro]);
+
+  useEffect(() => {
+    if (!itemDeepLink || deepLinkAplicadoRef.current) return;
+    const alvo = etapas.find(({ itens }) => itens.some((item) => item.id === itemDeepLink));
+    if (!alvo) return;
+
+    deepLinkAplicadoRef.current = true;
+    setFiltro('');
+    setAbertas((atual) => ({ ...atual, [alvo.etapa.et.id]: true }));
+
+    const primeiroFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById(`integracao-item-${itemDeepLink}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+
+    return () => window.cancelAnimationFrame(primeiroFrame);
+  }, [etapas, itemDeepLink]);
 
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
 
@@ -223,7 +246,7 @@ export function DetalheProcessoReal({
                       const resposta = respostaDoItem(processo, item.id);
                       const ehEmail = Boolean(item.mail || item.mails?.length);
                       return (
-                        <div key={item.id} className="space-y-3 p-4">
+                        <div id={`integracao-item-${item.id}`} key={item.id} className="space-y-3 p-4 scroll-mt-6">
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div className="min-w-0">
                               <p className="font-medium">{item.t}</p>
