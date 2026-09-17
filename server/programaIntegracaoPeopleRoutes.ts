@@ -1,6 +1,11 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
+import {
+  PROGRAMA_INTEGRACAO_ESCALAS,
+  PROGRAMA_INTEGRACAO_QUESTION_INDEX,
+  type ProgramaIntegracaoFormKey,
+} from "./programaIntegracaoDefinitions";
 
 export const programaIntegracaoPeopleRouter = Router();
 
@@ -57,6 +62,49 @@ async function audit(
   } catch (error) {
     console.warn("[ProgramaIntegracaoPessoas] Falha ao registrar auditoria:", error);
   }
+}
+
+function calcularMediaAlertasDemo(formKey: ProgramaIntegracaoFormKey, pares: Array<[number, string]>) {
+  const escala = PROGRAMA_INTEGRACAO_ESCALAS[formKey];
+  if (!escala) return { media: null as number | null, alertas: [] as number[] };
+  const mapa = new Map<number, string>(pares);
+  let soma = 0;
+  let qtd = 0;
+  const alertas: number[] = [];
+  for (let indice = escala.de; indice <= escala.ate; indice += 1) {
+    const bruto = mapa.get(indice);
+    if (bruto == null || bruto === "") continue;
+    const valor = Number(String(bruto).replace(",", "."));
+    if (!Number.isFinite(valor)) continue;
+    const inverso = escala.inverso?.includes(indice) || false;
+    if (valor > 0) {
+      soma += inverso ? 6 - valor : valor;
+      qtd += 1;
+    }
+    if ((inverso && valor >= 4) || (!inverso && valor > 0 && valor <= 2)) alertas.push(indice);
+  }
+  return { media: qtd ? Math.round((soma / qtd) * 10) / 10 : null, alertas };
+}
+
+function respostasDemoValidas(resp: unknown): Array<any> | null {
+  if (!Array.isArray(resp) || resp.length < 1 || resp.length > 100) return null;
+  const forms = new Set<ProgramaIntegracaoFormKey>(["controle", "bem", "pesquisa", "aval", "pdi"]);
+  for (const r of resp) {
+    if (!r || typeof r !== "object" || !forms.has(r.form as ProgramaIntegracaoFormKey) || !Array.isArray(r.c)) return null;
+    if (r.c.length > 100 || r.c.some((par: any) => !Array.isArray(par) || par.length < 2 || !Number.isInteger(Number(par[0])))) return null;
+  }
+  return resp;
+}
+
+function answersDoDemo(formKey: ProgramaIntegracaoFormKey, pares: Array<[number, string]>) {
+  const indiceParaChave = new Map<number, string>();
+  Object.entries(PROGRAMA_INTEGRACAO_QUESTION_INDEX[formKey]).forEach(([chave, indice]) => indiceParaChave.set(indice, chave));
+  const answers: Record<string, string> = {};
+  pares.forEach(([indice, valor]) => {
+    const chave = indiceParaChave.get(Number(indice));
+    if (chave) answers[chave] = String(valor ?? "");
+  });
+  return answers;
 }
 
 programaIntegracaoPeopleRouter.post(
@@ -124,6 +172,150 @@ programaIntegracaoPeopleRouter.post(
       }
       console.error("[ProgramaIntegracaoPessoas] criar processo:", error);
       return res.status(500).json({ error: "Não foi possível criar o processo." });
+    }
+  },
+);
+
+programaIntegracaoPeopleRouter.post(
+  "/api/programa-integracao/processos/demo",
+  requireAdmin,
+  async (req, res) => {
+    const connection = await getConnectionOr503(res);
+    if (!connection) return;
+
+    const legacyId = sanitizeLegacyId(req.body?.legacyId);
+    const p = req.body?.processo;
+    const respostas = respostasDemoValidas(p?.resp);
+    const confirmacao = String(req.body?.confirmacao || "");
+    if (confirmacao !== "CRIAR_DEMO") {
+      return res.status(400).json({ error: "Confirmação do processo de demonstração inválida." });
+    }
+    if (!/^demo[a-z0-9]+$/i.test(legacyId) || !p || typeof p !== "object") {
+      return res.status(400).json({ error: "Dados do processo de demonstração inválidos." });
+    }
+    if (String(p.nome || "").trim() !== "Mariana Alves Teixeira (demonstração)" || !respostas) {
+      return res.status(400).json({ error: "O processo de demonstração não corresponde ao modelo autorizado." });
+    }
+
+    let transactionStarted = false;
+    try {
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      const [existing] = (await connection.execute(
+        `SELECT id FROM programa_integracao_processos WHERE legacyId=? LIMIT 1 FOR UPDATE`,
+        [legacyId],
+      )) as any;
+      if (existing?.[0]) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(409).json({ error: "Este identificador de demonstração já existe. Nada foi alterado." });
+      }
+
+      const userId = Number((req as any).authenticatedUser?.id || 0) || null;
+      const [configRows] = (await connection.execute(
+        `SELECT valor FROM programa_integracao_config WHERE chave='geral' LIMIT 1 FOR UPDATE`,
+      )) as any;
+      const config = configRows?.[0] ? asJson<Record<string, any>>(configRows[0].valor, {}) : {};
+      const mentoras = Array.isArray(config.mentoras) ? [...config.mentoras] : [];
+      let mentora = mentoras.find((m: any) => String(m?.nome || "").trim() === "Adriana Souza (demonstração)");
+      if (!mentora) {
+        mentora = {
+          id: "m-demo-adriana",
+          nome: "Adriana Souza (demonstração)",
+          tel: "63991234567",
+          email: "adriana@exemplo.com",
+          ativa: true,
+          obs: "Cadastro fictício usado somente no processo de demonstração do Programa de Integração.",
+        };
+        mentoras.push(mentora);
+      }
+      config.mentoras = mentoras;
+
+      const [ordemRows] = (await connection.execute(
+        `SELECT COALESCE(MAX(ordem),-1) AS maior FROM programa_integracao_processos WHERE situacao<>'removido' FOR UPDATE`,
+      )) as any;
+      const ordem = Number(ordemRows?.[0]?.maior ?? -1) + 1;
+      const ordemConfig = Array.isArray(config.ordem) ? config.ordem.filter((id: any) => String(id) !== legacyId) : [];
+      ordemConfig.push(legacyId);
+      config.ordem = ordemConfig;
+
+      const estado = {
+        ...p,
+        id: undefined,
+        resp: undefined,
+        mentorId: String(mentora.id),
+        consultora: String(mentora.nome),
+        situacao: "ativo",
+      };
+      delete estado.id;
+      delete estado.resp;
+
+      const values = [
+        legacyId, null, ordem, String(p.nome), String(p.cpf || "000.000.000-00"), p.nasc || null, p.email || null,
+        p.emailCorporativo || null, p.tel || null, p.cargo || null, p.unidade || null,
+        p.tipo || "Onboarding", p.inicio || todayIso(), p.part || "Presencial", "ativo",
+        p.gestor || null, p.gestorEmail || null, p.gestorTel || null, p.anjo || null,
+        p.anjoEmail || null, String(mentora.nome), String(mentora.id), p.ugp || null,
+        p.horarios || null, p.statusPdi || null, p.pendencias || null, p.statusCursos || null,
+        p.consideracoes || null, p.notas || null, p.cor || null, JSON.stringify(estado),
+      ];
+      const [insertProcesso] = (await connection.execute(
+        `INSERT INTO programa_integracao_processos (legacyId,alunoId,ordem,nome,cpf,nasc,email,emailCorporativo,tel,cargo,unidade,tipo,inicio,participacao,situacao,gestor,gestorEmail,gestorTel,anjo,anjoEmail,consultora,mentorLegacyId,ugp,horarios,statusPdi,pendencias,statusCursos,consideracoes,notas,cor,estado)
+         VALUES (${Array(31).fill("?").join(",")})`,
+        values,
+      )) as any;
+      const processoId = Number(insertProcesso?.insertId || 0);
+      if (!processoId) throw new Error("O processo de demonstração não retornou identificador interno.");
+
+      let respostasInseridas = 0;
+      for (let indiceResposta = 0; indiceResposta < respostas.length; indiceResposta += 1) {
+        const r = respostas[indiceResposta];
+        const formKey = r.form as ProgramaIntegracaoFormKey;
+        const pares = r.c.map((par: any) => [Number(par[0]), String(par[1] ?? "")] as [number, string]);
+        const answers = answersDoDemo(formKey, pares);
+        const { media, alertas } = calcularMediaAlertasDemo(formKey, pares);
+        const rid = `${legacyId}-${formKey}-${String(indiceResposta + 1).padStart(2, "0")}`.slice(0, 100);
+        const protocolo = `DEMO-${legacyId.toUpperCase()}-${String(indiceResposta + 1).padStart(2, "0")}`.slice(0, 80);
+        await connection.execute(
+          `INSERT INTO programa_integracao_respostas (processoId,formKey,ciclo,papel,respondentName,respondentEmail,answers,media,alertas,quandoOriginal,emOriginal,itemId,legacyRid,source,formVersion,protocolo,status,submittedAt)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
+          [
+            processoId, formKey, Number(r.ciclo || 0), String(r.papel || ""),
+            String(r.respondentName || p.nome || ""), String(r.respondentEmail || ""),
+            JSON.stringify(answers), media, JSON.stringify(alertas), String(r.quando || ""),
+            String(r.em || ""), String(r.itid || ""), rid, "demo", 1, protocolo, "registrada",
+          ],
+        );
+        respostasInseridas += 1;
+      }
+
+      await connection.execute(
+        `INSERT INTO programa_integracao_config (chave,valor,updatedByUserId) VALUES ('geral',?,?)
+         ON DUPLICATE KEY UPDATE valor=VALUES(valor),updatedByUserId=VALUES(updatedByUserId),updatedAt=CURRENT_TIMESTAMP`,
+        [JSON.stringify(config), userId],
+      );
+      await audit(
+        connection,
+        req,
+        "processo_demo_criado",
+        `Processo fictício ${legacyId} criado para demonstração.`,
+        processoId,
+        { respostas: respostasInseridas, mentoraId: String(mentora.id) },
+      );
+
+      await connection.commit();
+      transactionStarted = false;
+      return res.status(201).json({ ok: true, legacyId, processoId, respostas: respostasInseridas, mentoraId: String(mentora.id) });
+    } catch (error: any) {
+      if (transactionStarted) {
+        try { await connection.rollback(); } catch { /* rollback de melhor esforço */ }
+      }
+      if (error?.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({ error: "Já existe um registro de demonstração com o mesmo identificador. Nada foi sobrescrito." });
+      }
+      console.error("[ProgramaIntegracaoPessoas] criar demo:", error);
+      return res.status(500).json({ error: "Não foi possível criar o processo de demonstração. A transação foi revertida." });
     }
   },
 );
