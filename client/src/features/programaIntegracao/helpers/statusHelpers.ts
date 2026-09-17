@@ -3,7 +3,8 @@
 // ============================================================
 
 import { ProcessoIntegracao } from '../types';
-import { listarEtapasOrdenadas, getPlanoCompleto } from './planoHelpers';
+import { listarEtapasOrdenadas } from './planoHelpers';
+import { PLANO_REAL } from './planoReal';
 
 export type StatusItemKey = 'ok' | 'off' | 'late' | 'act' | 'wait' | 'ontime';
 
@@ -164,41 +165,66 @@ export function registroItem(processo: ProcessoIntegracao, itemId: string): Reco
   return normalizarRegistroFeito(processo.feito?.[itemId]);
 }
 
+function resumoProgressoHistorico(processo: ProcessoIntegracao): {
+  total: number;
+  feitas: number;
+  foraEscopo: number;
+  abertas: number;
+} {
+  let total = 0;
+  let feitas = 0;
+  let foraEscopo = 0;
+
+  PLANO_REAL.forEach((etapa) => {
+    etapa.itens.forEach((item) => {
+      total++;
+      const registro = normalizarRegistroFeito(processo.feito?.[item.id]);
+      const status = registro?.s ? String(registro.s) : '';
+      if (status === 'ok') feitas++;
+      else if (status === 'na' || status === 'wont') foraEscopo++;
+    });
+  });
+
+  return {
+    total,
+    feitas,
+    foraEscopo,
+    abertas: total - feitas - foraEscopo,
+  };
+}
+
 /**
- * Calcula status geral baseado em estado.feito
+ * Calcula status geral usando as 95 ações reais do plano histórico.
  */
 export function calcularStatusGeral(processo: ProcessoIntegracao): 'nao_iniciado' | 'em_progresso' | 'concluido' | 'em_atraso' {
+  const resumo = resumoProgressoHistorico(processo);
   const feito = processo.feito || {};
-  const marcacoes = Object.keys(feito).length;
-  const plano = getPlanoCompleto();
-  
-  if (marcacoes === 0) {
+
+  if (Object.keys(feito).length === 0) {
     return 'nao_iniciado';
   }
-  
-  if (marcacoes >= plano.length) {
+
+  if (resumo.total > 0 && resumo.abertas === 0) {
     return 'concluido';
   }
-  
-  // Verifica se há desvios/atrasos nos dados
+
+  // Mantém a regra já existente para sinalizar desvios/atrasos gerais.
   if (processo.pendencias || (processo.notas && processo.notas.toLowerCase().includes('atraso'))) {
     return 'em_atraso';
   }
-  
+
   return 'em_progresso';
 }
 
 /**
- * Calcula percentual de conclusão (0-100)
+ * Calcula percentual de conclusão (0-100) exatamente como `progresso(p)`
+ * do HTML histórico: somente ações com status `ok` contam como feitas.
+ * `na` e `wont` ficam fora do escopo, mas não entram no percentual de feitas.
  */
 export function calcularProgresso(processo: ProcessoIntegracao): number {
-  const feito = processo.feito || {};
-  const marcacoes = Object.keys(feito).length;
-  const plano = getPlanoCompleto();
-  
-  if (plano.length === 0) return 0;
-  
-  return Math.round((marcacoes / plano.length) * 100);
+  const resumo = resumoProgressoHistorico(processo);
+  if (resumo.total === 0) return 0;
+  return Math.round((resumo.feitas * 100) / resumo.total);
 }
 
 /**
@@ -291,7 +317,7 @@ export function resumoStatusProcessos(processos: ProcessoIntegracao[]): {
   let emProgresso = 0;
   let concluidos = 0;
   let emAtraso = 0;
-  
+
   processos.forEach((processo) => {
     const status = calcularStatusGeral(processo);
     switch (status) {
@@ -309,7 +335,7 @@ export function resumoStatusProcessos(processos: ProcessoIntegracao[]): {
         break;
     }
   });
-  
+
   return {
     total,
     naoIniciados,
@@ -333,13 +359,13 @@ export function temAtrasos(processo: ProcessoIntegracao): boolean {
 export function proximasEtapas(processo: ProcessoIntegracao, limite: number = 3): string[] {
   const feito = processo.feito || {};
   const resultado: string[] = [];
-  
+
   for (const etapa of listarEtapasOrdenadas()) {
     if (!(etapa.id in feito)) {
       resultado.push(etapa.label);
       if (resultado.length >= limite) break;
     }
   }
-  
+
   return resultado;
 }
