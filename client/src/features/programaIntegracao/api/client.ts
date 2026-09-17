@@ -17,6 +17,56 @@ export type ProgramaIntegracaoConfigSection =
   | 'formConfig'
   | 'formTextos';
 
+const CAMPOS_TEXTO_CONFIRMACAO_PROCESSO: Array<keyof ProcessoIntegracao> = [
+  'nome', 'cpf', 'nasc', 'email', 'emailCorporativo', 'tel', 'cargo', 'unidade',
+  'tipo', 'inicio', 'part', 'situacao', 'gestor', 'gestorEmail', 'gestorTel',
+  'anjo', 'anjoEmail', 'consultora', 'mentorId', 'ugp', 'horarios', 'statusPdi',
+  'pendencias', 'statusCursos', 'consideracoes', 'notas', 'cor',
+];
+
+const CAMPOS_ESTADO_CONFIRMACAO_PROCESSO: Array<keyof ProcessoIntegracao> = [
+  'feito', 'alin', 'bem', 'teste',
+];
+
+function textoConfirmacao(valor: unknown): string {
+  return valor == null ? '' : String(valor);
+}
+
+function confirmarProcessoLido(
+  legacyId: string,
+  esperado: ProcessoIntegracao,
+  lido: ProcessoIntegracao | undefined,
+): void {
+  if (!lido) {
+    throw new Error('O servidor respondeu ao salvamento, mas o processo não apareceu na leitura de confirmação.');
+  }
+
+  for (const campo of CAMPOS_TEXTO_CONFIRMACAO_PROCESSO) {
+    if (textoConfirmacao(lido[campo]) !== textoConfirmacao(esperado[campo])) {
+      throw new Error(`O processo ${legacyId} foi salvo, mas o campo ${String(campo)} voltou diferente na conferência.`);
+    }
+  }
+
+  for (const campo of CAMPOS_ESTADO_CONFIRMACAO_PROCESSO) {
+    const atual = JSON.stringify(lido[campo] || {});
+    const previsto = JSON.stringify(esperado[campo] || {});
+    if (atual !== previsto) {
+      throw new Error(`O processo ${legacyId} foi salvo, mas o estado ${String(campo)} voltou diferente na conferência.`);
+    }
+  }
+}
+
+async function confirmarProcessoPersistido(
+  legacyId: string,
+  esperado: ProcessoIntegracao,
+): Promise<void> {
+  const leitura = await fetchBootstrap();
+  if (!leitura.ok || !leitura.state) {
+    throw new Error('O dado foi enviado, mas não foi possível reler o Programa de Integração para confirmar a gravação.');
+  }
+  confirmarProcessoLido(legacyId, esperado, leitura.state.processos?.[legacyId]);
+}
+
 /**
  * Fetch bootstrap data (config, processos com estado)
  */
@@ -68,6 +118,8 @@ export async function salvarSecaoConfig<T = unknown>(
 /**
  * Salva um processo (PUT /api/programa-integracao/processos/:legacyId)
  * SEMPRE envia o processo COMPLETO. Nenhuma mutação parcial.
+ * Depois do PUT, relê o bootstrap e compara os campos críticos antes de
+ * considerar a operação confirmada.
  */
 export async function salvarProcesso(
   legacyId: string,
@@ -91,8 +143,10 @@ export async function salvarProcesso(
   if (!response.ok) {
     throw new Error(`Failed to save processo: ${response.status}`);
   }
-  
-  return response.json();
+
+  const resultado = await response.json();
+  await confirmarProcessoPersistido(legacyId, processo);
+  return resultado;
 }
 
 /**
@@ -119,7 +173,8 @@ export async function salvarConfig(
 }
 
 /**
- * Arquivo/remove um processo (DELETE -> situacao='removido')
+ * Arquiva/remove um processo (DELETE -> situacao='removido') e confirma por
+ * nova leitura que ele não continua visível no bootstrap administrativo.
  */
 export async function arquivarProcesso(legacyId: string): Promise<{ ok: boolean }> {
   const response = await fetch(`${API_BASE}/processos/${encodeURIComponent(legacyId)}`, {
@@ -130,14 +185,23 @@ export async function arquivarProcesso(legacyId: string): Promise<{ ok: boolean 
   if (!response.ok) {
     throw new Error(`Failed to archive processo: ${response.status}`);
   }
-  
-  return response.json();
+
+  const resultado = await response.json();
+  const leitura = await fetchBootstrap();
+  if (!leitura.ok || !leitura.state) {
+    throw new Error('O processo foi enviado para arquivamento, mas não foi possível confirmar a leitura depois da operação.');
+  }
+  if (leitura.state.processos?.[legacyId]) {
+    throw new Error('O servidor respondeu ao arquivamento, mas o processo ainda aparece na leitura de confirmação.');
+  }
+  return resultado;
 }
 
 /**
  * Atualiza apenas o estado (feito/alin/bem/teste/timeline) de um processo.
  * Antes de gravar, confirma a posição atual no bootstrap para não sobrescrever
  * a ordem do processo com zero durante uma simples atualização de status.
+ * Depois de gravar, relê e compara os campos críticos.
  */
 export async function atualizarEstadoProcesso(
   legacyId: string,
@@ -168,8 +232,10 @@ export async function atualizarEstadoProcesso(
   if (!response.ok) {
     throw new Error(`Failed to update estado: ${response.status}`);
   }
-  
-  return response.json();
+
+  const resultado = await response.json();
+  await confirmarProcessoPersistido(legacyId, processoCompleto);
+  return resultado;
 }
 
 /**
