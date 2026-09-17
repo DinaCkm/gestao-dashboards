@@ -21,7 +21,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Validar formato básico de e-mails, mentoras, cursos, plataforma, aviso, links, feriados, configuração e textos dos formulários antes de persistir.
 - [x] Registrar auditoria da alteração de configuração sem gravar o conteúdo da configuração no log.
 - [x] Reler a seção persistida no servidor antes de confirmar sucesso da nova operação de configuração.
-- [ ] Evitar gravação por tecla nos campos editáveis da ficha.
+- [x] Evitar gravação por tecla nos campos editáveis da ficha.
 - [ ] Garantir leitura de volta após cada gravação crítica do módulo, não apenas configuração.
 - [ ] Auditar `03-const.js` item a item contra o plano atual.
 - [ ] Auditar `05-estado.js` integralmente.
