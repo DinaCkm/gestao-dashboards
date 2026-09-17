@@ -35,7 +35,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Cartões dos processos e progresso.
 - [x] Ficha da ação e estados.
 - [x] PDFs principais ligados ao Painel.
-- [ ] Registrar resposta ausente diretamente da ação.
+- [x] Registrar resposta ausente diretamente da ação.
 - [ ] Tutorial nas ações aplicáveis.
 - [ ] Auditoria final linha a linha do Painel.
 
@@ -124,7 +124,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Marcação automática da ação correspondente na timeline após a importação vinculada.
 - [x] Leitura de volta do bootstrap após a gravação do lote.
 - [x] Resumo final da importação após persistência real.
-- [ ] Microimportação dentro da ação.
+- [x] Microimportação dentro da ação.
 
 ## 9. Respostas recebidas
 - [x] Tela consolidada.
