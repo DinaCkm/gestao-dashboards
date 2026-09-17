@@ -2,6 +2,7 @@ import type { ProcessoIntegracao } from '../types';
 import { PLANO_REAL, LADO_RESPONSAVEL, type EtapaPlanoReal, type ItemPlanoReal } from './planoReal';
 import { calcularStatusItem, type StatusItemPainel } from './statusHelpers';
 import type { FaixaPainel } from './painelKpis';
+import { FERIADOS_PADRAO_INTEGRACAO } from './configDefaults';
 
 export interface CronogramaEtapaReal {
   et: EtapaPlanoReal;
@@ -83,7 +84,8 @@ function alinhamentoData(processo: ProcessoIntegracao, numero: number): string |
 
 /**
  * Espelho puro da função cronograma(p) do HTML original.
- * Não grava nada e recebe os feriados já resolvidos pela configuração.
+ * Não grava nada. Assim como `feriados()` do original, uma lista ausente ou
+ * vazia usa os feriados padrão em vez de tratar todos os dias como úteis.
  */
 export function cronogramaReal(
   processo: ProcessoIntegracao,
@@ -91,17 +93,18 @@ export function cronogramaReal(
   hojeRef: string | Date = new Date(),
 ): CronogramaEtapaReal[] {
   const base = processo.inicio || hojeIso(hojeRef);
+  const feriadosEfetivos = feriados.length ? feriados : FERIADOS_PADRAO_INTEGRACAO;
 
   return PLANO_REAL.map((et) => {
     const alvo = add(base, (et.dia - 1) + (et.off || 0));
     let d = alvo;
 
-    if (et.ajuste === 'prox') d = prox(alvo, feriados);
-    else if (et.ajuste === 'ant') d = ant(alvo, feriados);
+    if (et.ajuste === 'prox') d = prox(alvo, feriadosEfetivos);
+    else if (et.ajuste === 'ant') d = ant(alvo, feriadosEfetivos);
 
     if (et.mais) {
       for (let j = 0; j < et.mais; j++) {
-        d = prox(add(d, 1), feriados);
+        d = prox(add(d, 1), feriadosEfetivos);
       }
     }
 
@@ -114,13 +117,13 @@ export function cronogramaReal(
     if (et.mais) {
       const n = ({ pos1: 1, pos2: 2, pos3: 3, pos4: 4 } as Record<string, number>)[et.id];
       const dataAlinhamento = n ? alinhamentoData(processo, n) : null;
-      if (dataAlinhamento) conf = prox(add(dataAlinhamento, 1), feriados);
+      if (dataAlinhamento) conf = prox(add(dataAlinhamento, 1), feriadosEfetivos);
     }
 
     if (et.id.startsWith('ag')) {
       const n = Number(et.id.slice(2));
       const dataAlinhamento = alinhamentoData(processo, n);
-      if (dataAlinhamento) conf = ant(add(dataAlinhamento, -7), feriados);
+      if (dataAlinhamento) conf = ant(add(dataAlinhamento, -7), feriadosEfetivos);
     }
 
     const data = conf || d;
