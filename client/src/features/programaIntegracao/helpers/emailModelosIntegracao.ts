@@ -20,6 +20,46 @@ export const MODELOS_EMAIL_INTEGRACAO: Record<string, ModeloEmailIntegracao> = {
 
 export const CHAVES_EMAIL_INTEGRACAO = [...ORDEM_EMAILS_INTEGRACAO];
 
+/** Tokens literais do array TOKENS do HTML histórico. */
+export const TOKENS_EMAIL_INTEGRACAO = [
+  ['COLABORADOR', 'nome completo do colaborador'],
+  ['PRIMEIRO_NOME', 'primeiro nome'],
+  ['EMAIL_COLABORADOR', 'e-mail do colaborador'],
+  ['CARGO', 'cargo'],
+  ['AREA', 'área/unidade'],
+  ['GESTOR', 'nome do gestor'],
+  ['GESTOR_1', 'primeiro nome do gestor'],
+  ['EMAIL_GESTOR', 'e-mail do gestor'],
+  ['ANJO', 'nome do Anjo'],
+  ['ANJO_1', 'primeiro nome do Anjo'],
+  ['EMAIL_ANJO', 'e-mail do Anjo'],
+  ['UGP', 'responsável na UGP'],
+  ['CONSULTORA', 'consultora da CKM'],
+  ['DATA_INICIO', '1º dia na unidade'],
+  ['DATA_ALIN', 'data do alinhamento deste e-mail'],
+  ['ORDINAL', '1º / 2º / 3º / 4º'],
+  ['MARCO', '15 / 45 / 75 / 150'],
+  ['DATA_ALIN_1', 'data do 1º alinhamento'],
+  ['DATA_ALIN_2', 'data do 2º alinhamento'],
+  ['DATA_ALIN_3', 'data do 3º alinhamento'],
+  ['DATA_ALIN_4', 'data do 4º alinhamento'],
+  ['HORARIOS', 'horários sugeridos'],
+  ['LINK_REUNIAO', 'link da reunião'],
+  ['LINK_ECOLIDER', 'plataforma do Ecossistema do B.E.M.'],
+  ['LINK_BEM_ACOLHIDO', 'form. Bem Acolhido'],
+  ['LINK_CONTROLE', 'form. Controle do Programa'],
+  ['LINK_AVAL_PROGRAMA', 'form. Avaliação do Programa'],
+  ['LINK_PESQUISA', 'form. Pesquisa de Integração'],
+  ['LINK_PDI_REL', 'form. Relatório do PDI'],
+  ['CONTATO_CKM', 'contato de suporte da CKM'],
+  ['STATUS_PDI', 'status do PDI'],
+  ['PENDENCIAS', 'pendências'],
+  ['STATUS_CURSOS', 'status dos cursos'],
+  ['AVISO', 'aviso padrão — entra sozinho no topo'],
+  ['BLOCO_RELATORIO', 'relatório de evolução ou aviso de formulário faltando'],
+  ['BLOCO_CONSIDERACOES', 'considerações da CKM — só entra se você escrever algo'],
+] as const;
+
 /** Retorna o modelo padrão da chave sem alterar qualquer configuração. */
 export function modeloPadraoEmailIntegracao(chave: string): ModeloEmailIntegracao | null {
   return MODELOS_EMAIL_INTEGRACAO[chave] || null;
