@@ -53,6 +53,28 @@ function simNome(a0: unknown, b0: unknown) {
   return Math.max(d, cob * 0.7 + pri * 0.3);
 }
 function todayIso() { return new Date().toISOString().slice(0, 10); }
+function sqlDateToIso(value: unknown): string {
+  if (value == null || value === "") return "";
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return "";
+    const ano = value.getFullYear();
+    const mes = String(value.getMonth() + 1).padStart(2, "0");
+    const dia = String(value.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  const texto = String(value).trim();
+  const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+
+  const data = new Date(texto);
+  if (Number.isNaN(data.getTime())) return "";
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
 function nowBr() {
   const n = new Date();
   return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(n).replace(",", "");
@@ -106,7 +128,7 @@ function pendingToLegacy(row: any) {
   return {
     id: row.legacyRid || `db${row.id}`, protocolo: row.protocolo || "", formKey: row.formKey,
     cycle: Number(row.ciclo || 0), role: row.papel || "", nomeColaborador: row.nomeColaborador || "",
-    unidade: row.unidade || "", dataInicio: row.dataInicio ? String(row.dataInicio).slice(0, 10) : "",
+    unidade: row.unidade || "", dataInicio: sqlDateToIso(row.dataInicio),
     emailColaborador: row.emailColaborador || "", respondentName: row.respondentName || "",
     answers: asJson(row.answers, {}), motivo: row.motivoPendencia || "ambiguo", candidatos: asJson(row.candidatos, []),
     submittedAt: row.submittedAt ? new Date(row.submittedAt).toISOString() : "",
@@ -126,9 +148,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
       const id = row.legacyId || `p${row.id}`;
       const estado = asJson<Record<string, any>>(row.estado, {});
       processos[id] = { ...estado,
-        nome: row.nome || "", cpf: row.cpf || "", nasc: row.nasc ? String(row.nasc).slice(0,10) : "",
+        nome: row.nome || "", cpf: row.cpf || "", nasc: sqlDateToIso(row.nasc),
         email: row.email || "", emailCorporativo: row.emailCorporativo || "", tel: row.tel || "", cargo: row.cargo || "", unidade: row.unidade || "",
-        tipo: row.tipo || "Onboarding", inicio: row.inicio ? String(row.inicio).slice(0,10) : "", part: row.participacao || "Presencial", situacao: row.situacao || "ativo",
+        tipo: row.tipo || "Onboarding", inicio: sqlDateToIso(row.inicio), part: row.participacao || "Presencial", situacao: row.situacao || "ativo",
         gestor: row.gestor || "", gestorEmail: row.gestorEmail || "", gestorTel: row.gestorTel || "", anjo: row.anjo || "", anjoEmail: row.anjoEmail || "",
         consultora: row.consultora || "", mentorId: row.mentorLegacyId || "", ugp: row.ugp || "", horarios: row.horarios || "",
         statusPdi: row.statusPdi || "", pendencias: row.pendencias || "", statusCursos: row.statusCursos || "", consideracoes: row.consideracoes || "", notas: row.notas || "", cor: row.cor || "",
@@ -352,7 +374,7 @@ async function findProcess(connection: any, data: any) {
     const s = Math.max(simNome(nome, p.nome), 0);
     const emailBate = !!(emailQ && ((p.email && normTxt(p.email) === emailQ) || (p.emailCorporativo && normTxt(p.emailCorporativo) === emailQ)));
     const unidBate = !!(unidQ && p.unidade && simNome(unidQ, p.unidade) >= SIM_BOA);
-    const inicio = p.inicio ? String(p.inicio).slice(0,10) : ""; const dataBate = !!(dataQ && inicio === dataQ);
+    const inicio = sqlDateToIso(p.inicio); const dataBate = !!(dataQ && inicio === dataQ);
     const sinais: string[] = []; if (emailBate) sinais.push("e-mail"); if (unidBate) sinais.push("unidade"); if (dataBate) sinais.push("data de início");
     return { dbId: Number(p.id), id: p.legacyId || `p${p.id}`, nome: p.nome, nameScore: s, ajuste: s + (emailBate ? .35 : 0) + (unidBate ? .12 : 0) + (dataBate ? .12 : 0), sinais };
   }).filter((c: any) => c.nameScore > 0 || c.sinais.length).sort((a: any,b: any) => b.ajuste-a.ajuste);
