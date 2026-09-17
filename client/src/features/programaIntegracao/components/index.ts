@@ -12,6 +12,7 @@ export { FormulariosIntegracaoAdmin } from './FormulariosIntegracaoAdmin';
 export type { FormularioAdminSubTab } from './FormulariosIntegracaoAdmin';
 export { ConfiguracaoAviso, ConfiguracaoDatas } from './ConfiguracaoAvisoDatas';
 export { ConfiguracaoMentoras } from './ConfiguracaoMentoras';
+export { ConfiguracaoCursos } from './ConfiguracaoCursos';
 export { AtasRelatoriosGeral } from './AtasRelatoriosGeral';
 export { AtaRelatorioPainel } from './AtaRelatorioPainel';
 export { DetalheProcessoReal } from './DetalheProcessoReal';
