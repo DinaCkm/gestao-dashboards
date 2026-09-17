@@ -1,7 +1,11 @@
 import type { BootstrapState, ProcessoIntegracao } from '../types';
+import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
 import { fetchBootstrap } from './client';
 
 async function apiJson<T = any>(url: string, init?: RequestInit): Promise<T> {
+  const metodo = String(init?.method || 'GET').toUpperCase();
+  if (metodo !== 'GET' && metodo !== 'HEAD') exigirConexaoParaAlterar();
+
   const response = await fetch(url, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
@@ -74,6 +78,7 @@ async function confirmarProcesso(legacyId: string): Promise<BootstrapState> {
 }
 
 export async function criarProcessoSeguro(nome: string, cpf: string, indice: number) {
+  exigirConexaoParaAlterar();
   let ultimaFalha: unknown = null;
   for (let tentativa = 0; tentativa < 3; tentativa += 1) {
     const legacyId = gerarLegacyId() + (tentativa ? tentativa.toString(36) : '');
@@ -96,6 +101,7 @@ export async function criarProcessoSeguro(nome: string, cpf: string, indice: num
 }
 
 export async function alterarSituacaoProcessoSeguro(legacyId: string, situacao: 'ativo' | 'encerrado') {
+  exigirConexaoParaAlterar();
   await apiJson(`/api/programa-integracao/processos/${encodeURIComponent(legacyId)}/situacao`, {
     method: 'PATCH',
     body: JSON.stringify({ situacao }),
@@ -108,6 +114,7 @@ export async function alterarSituacaoProcessoSeguro(legacyId: string, situacao: 
 }
 
 export async function reordenarProcessosSeguro(ordem: string[]) {
+  exigirConexaoParaAlterar();
   await apiJson('/api/programa-integracao/processos/ordem', {
     method: 'PATCH',
     body: JSON.stringify({ ordem }),
