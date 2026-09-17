@@ -199,10 +199,10 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Dados e backup.
 
 ## 15. Backup, offline e demonstração
-- [ ] Pontos de restauração.
-- [ ] Máximo de 12 pontos.
-- [ ] Ponto automático diário.
-- [ ] Backup JSON completo.
+- [x] Pontos de restauração.
+- [x] Máximo de 12 pontos.
+- [x] Ponto automático diário.
+- [x] Backup JSON completo.
 - [ ] Restaurar backup validado.
 - [ ] Proteção equivalente para falha de conexão.
 - [ ] Tela de erro com recuperação segura.
