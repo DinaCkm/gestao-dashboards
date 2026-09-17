@@ -7,6 +7,7 @@ export * from './types';
 
 // API
 export * from './api/client';
+export * from './api/peopleClient';
 
 // Helpers
 export * from './helpers/dateHelpers';
