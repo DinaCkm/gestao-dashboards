@@ -17,6 +17,7 @@ import {
   FormulariosIntegracaoAdmin,
   ConfiguracaoAviso,
   ConfiguracaoDatas,
+  ConfiguracaoMentoras,
   AtasRelatoriosGeral,
   type FormularioAdminSubTab,
 } from '@/features/programaIntegracao/components';
@@ -296,7 +297,7 @@ export default function ProgramaIntegracao() {
                   <TabsTrigger value="backup" className="text-xs md:text-sm">Dados e backup</TabsTrigger>
                 </TabsList>
                 <TabsContent value="emails" className="mt-6"><p className="text-muted-foreground">Modelos de e-mail por fase do processo</p></TabsContent>
-                <TabsContent value="mentoras" className="mt-6"><p className="text-muted-foreground">Cadastro de mentoras/consultoras CKM</p></TabsContent>
+                <TabsContent value="mentoras" className="mt-6"><ConfiguracaoMentoras config={config} processos={todosProcesos} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="cursos" className="mt-6"><p className="text-muted-foreground">Cursos obrigatórios da integração</p></TabsContent>
                 <TabsContent value="aviso" className="mt-6"><ConfiguracaoAviso config={config} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="links" className="mt-6"><p className="text-muted-foreground">Links permanentes e formulários</p></TabsContent>
