@@ -11,6 +11,7 @@ export { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
 export { FormulariosIntegracaoAdmin } from './FormulariosIntegracaoAdmin';
 export type { FormularioAdminSubTab } from './FormulariosIntegracaoAdmin';
 export { ConfiguracaoAviso, ConfiguracaoDatas } from './ConfiguracaoAvisoDatas';
+export { ConfiguracaoMentoras } from './ConfiguracaoMentoras';
 export { AtasRelatoriosGeral } from './AtasRelatoriosGeral';
 export { AtaRelatorioPainel } from './AtaRelatorioPainel';
 export { DetalheProcessoReal } from './DetalheProcessoReal';
