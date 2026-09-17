@@ -154,7 +154,7 @@ export function montarProcessoDemonstracao(
     id: legacyId,
     nome: 'Mariana Alves Teixeira (demonstração)',
     cpf: '000.000.000-00',
-    nasc: '12/04/1994',
+    nasc: '1994-04-12',
     email: 'mariana.demo@exemplo.com',
     emailCorporativo: 'mariana.demo@sebrae-to.com.br',
     tel: '63991110000',
