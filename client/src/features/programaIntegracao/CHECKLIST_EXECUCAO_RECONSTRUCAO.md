@@ -23,8 +23,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Reler a seção persistida no servidor antes de confirmar sucesso da nova operação de configuração.
 - [x] Evitar gravação por tecla nos campos editáveis da ficha.
 - [x] Garantir leitura de volta após cada gravação crítica do módulo, não apenas configuração.
-- [ ] Auditar `03-const.js` item a item contra o plano atual.
-- [ ] Auditar `05-estado.js` integralmente.
+- [x] Auditar `03-const.js` item a item contra o plano atual.
+- [x] Auditar `05-estado.js` integralmente.
 - [x] Validar datas e recalculo dos quatro alinhamentos.
 
 ## 2. Painel da semana
