@@ -196,7 +196,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Aviso e assinatura.
 - [x] Links e formulários.
 - [x] Datas e feriados.
-- [ ] Dados e backup.
+- [x] Dados e backup.
 
 ## 15. Backup, offline e demonstração
 - [x] Pontos de restauração.
