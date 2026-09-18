@@ -168,7 +168,10 @@ export function etapasDetalheProcesso(
       filtro,
     ));
 
-    if (filtro && !itens.length && !etapa.et.al) return acc;
+    // Com filtro ativo, uma etapa sem nenhum item correspondente não deve aparecer.
+    // Antes, etapas de alinhamento eram mantidas mesmo vazias; por isso "Em aberto"
+    // ainda mostrava blocos já concluídos.
+    if (filtro && !itens.length) return acc;
     acc.push({
       etapa,
       estado,
