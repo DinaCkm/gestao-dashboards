@@ -61,9 +61,9 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 
 ## E. Registro de respostas e administração dos formulários
 
-- [ ] **E01** Testar importação por texto colado com dados de demonstração.
+- [x] **E01** Testar importação por texto colado com dados de demonstração. **Validado pela Dina em 18/09/2026: texto colado foi analisado com 1 resposta de demonstração, sem gravação.**
 - [ ] **E02** Testar arquivos `.csv`, `.tsv` e `.txt` sem usar dados reais.
-- [ ] **E03** Testar identificação automática de formulário, fuzzy match, ciclo/papel e conferência antes de registrar.
+- [x] **E03** Testar identificação automática de formulário, fuzzy match, ciclo/papel e conferência antes de registrar. **Validado pela Dina em 18/09/2026: Mariana de demonstração identificada com correspondência fuzzy de 48%, alerta de conferência, duplicidade e ação mapeada.**
 - [ ] **E04** Testar política de duplicidade e transação em lote somente com demonstração.
 - [ ] **E05** Testar microimportação dentro de uma ação.
 - [ ] **E06** Testar **Respostas recebidas**: visualizar, editar e arquivar/remover uma resposta de demonstração.
