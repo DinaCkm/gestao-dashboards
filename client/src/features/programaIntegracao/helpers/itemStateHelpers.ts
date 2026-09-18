@@ -147,6 +147,34 @@ function aplicarAutomacoes(
  * É usado por alterações de alinhamento/mentora para evitar duplicar a mesma
  * regra de negócio em outros helpers.
  */
+/**
+ * Conclui SOMENTE ações explicitamente programadas cuja data já chegou.
+ * É usada na abertura do Programa de Integração para que uma ação programada
+ * não permaneça no Painel depois do dia previsto.
+ *
+ * Não executa nenhuma outra automação histórica.
+ */
+export function aplicarSomenteProgramacoesVencidas(
+  processo: ProcessoIntegracao,
+  hojeRef: string | Date = new Date(),
+): ProcessoIntegracao {
+  const hoje = hojeIso(hojeRef);
+  const novoFeito = clonarFeito(processo.feito);
+  let alterou = false;
+
+  Object.keys(novoFeito).forEach((itemId) => {
+    const ficha = fichaDe(novoFeito, itemId);
+    if (ficha.prog && (!ficha.s || ficha.s === 'prog') && String(ficha.prog).slice(0, 10) <= hoje) {
+      ficha.s = 'ok';
+      ficha.d = String(ficha.prog).slice(0, 10);
+      ficha.prog = '';
+      alterou = true;
+    }
+  });
+
+  return alterou ? { ...processo, feito: novoFeito } : processo;
+}
+
 export function aplicarAutomacoesProcesso(
   processo: ProcessoIntegracao,
   hojeRef: string | Date = new Date(),
