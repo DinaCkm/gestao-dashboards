@@ -1,3 +1,7 @@
+# Fonte histórica funcional mais recente
+
+A referência histórica funcional para o fechamento desta reconstrução é o **`trilha-integracao-codigo-completo_4.html` (HTML v4)**. A contagem confirmada é **19 etapas / 95 ações / 32 modelos de e-mail**.
+
 # Mapa funcional completo — Trilha histórica → EcoLíder
 
 Fonte funcional obrigatória: `trilha-integracao-codigo-completo_3.html`.
@@ -128,7 +132,7 @@ Objetivo deste documento: localizar, por função pública, onde cada comportame
 
 | Função histórica | EcoLíder atual | Situação |
 |---|---|---|
-| Modelos padrão | `emailModelosPadrao.ts` | 31 modelos consolidados; auditoria literal final pendente |
+| Modelos padrão | `emailModelosPadrao.ts` | 32 modelos consolidados no HTML v4, incluindo `m_confirma_acesso`; auditoria literal final pendente |
 | Personalização | `ConfiguracaoEmails.tsx` | reconstruído |
 | Restaurar padrão | Configuração de e-mails | reconstruído |
 | Tokens | `emailValoresHelpers.ts` | reconstruído |
