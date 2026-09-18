@@ -270,6 +270,55 @@ export async function atualizarEstadoProcesso(
   return resultado;
 }
 
+export interface AtualizacaoEstadoLote {
+  legacyId: string;
+  baseFeito: ProcessoIntegracao['feito'];
+  baseAlin: ProcessoIntegracao['alin'];
+  feito: ProcessoIntegracao['feito'];
+  alin: ProcessoIntegracao['alin'];
+}
+
+export async function atualizarEstadosProcessosEmLote(
+  atualizacoes: AtualizacaoEstadoLote[],
+): Promise<{ ok: boolean; atualizados: number }> {
+  exigirConexaoParaAlterar();
+  if (!atualizacoes.length) throw new Error('Nenhuma alteração foi informada para o lote.');
+
+  const response = await fetch(`${API_BASE}/processos/lote-estado`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ atualizacoes }),
+  });
+
+  if (!response.ok) {
+    let mensagem = `Não foi possível atualizar o lote: ${response.status}`;
+    try {
+      const corpo = await response.json();
+      if (corpo?.error) mensagem = String(corpo.error);
+    } catch { /* mantém mensagem segura */ }
+    throw new Error(mensagem);
+  }
+
+  const resultado = await response.json();
+  const leitura = await fetchBootstrap();
+  if (!leitura.ok || !leitura.state) {
+    throw new Error('O lote foi enviado, mas não foi possível reler o Programa de Integração para confirmar a gravação.');
+  }
+
+  for (const atualizacao of atualizacoes) {
+    const lido = leitura.state.processos?.[atualizacao.legacyId];
+    if (!lido) throw new Error(`O processo ${atualizacao.legacyId} não apareceu na conferência após o lote.`);
+    if (
+      jsonConfirmacao(lido.feito) !== jsonConfirmacao(atualizacao.feito) ||
+      jsonConfirmacao(lido.alin) !== jsonConfirmacao(atualizacao.alin)
+    ) {
+      throw new Error(`O processo ${atualizacao.legacyId} voltou diferente na conferência após o lote.`);
+    }
+  }
+
+  return resultado;
+}
+
 /**
  * Gera CSV da agenda no cliente (sem chamar endpoint inexistente)
  * Converte processos em linhas CSV e retorna um Blob

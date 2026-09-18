@@ -6,6 +6,7 @@ import {
   ProcessoIntegracao,
   BootstrapState,
   atualizarEstadoProcesso,
+  atualizarEstadosProcessosEmLote,
 } from '@/features/programaIntegracao';
 import {
   PainelSemana,
@@ -208,15 +209,29 @@ export default function ProgramaIntegracao() {
     }
   };
 
+  const montarLoteStatus = (itemId: string, processIds: string[], status: StatusAcaoLegado) => (
+    processIds.flatMap((processId) => {
+      const processo = processoPorId(processId);
+      if (!processo) return [];
+      const atualizado = aplicarStatusAcao(processo, itemId, status);
+      return [{
+        legacyId: processId,
+        baseFeito: processo.feito || {},
+        baseAlin: processo.alin || {},
+        feito: atualizado.feito || {},
+        alin: atualizado.alin || {},
+      }];
+    })
+  );
+
   const handleConcluirGrupo = async (itemId: string, processIds: string[]) => {
     try {
-      for (const processId of processIds) {
+      const pendentes = processIds.filter((processId) => {
         const processo = processoPorId(processId);
-        if (!processo) continue;
-        if (statusAcaoAtual(processo, itemId) !== 'ok') {
-          await atualizarEstadoProcesso(processId, aplicarStatusAcao(processo, itemId, 'ok'));
-        }
-      }
+        return processo && statusAcaoAtual(processo, itemId) !== 'ok';
+      });
+      if (!pendentes.length) return;
+      await atualizarEstadosProcessosEmLote(montarLoteStatus(itemId, pendentes, 'ok'));
       await recarregarEstado();
     } catch (err) {
       registrarFalhaOperacao(err, 'Erro ao concluir grupo');
@@ -225,11 +240,8 @@ export default function ProgramaIntegracao() {
 
   const handleAplicarStatusGrupo = async (itemId: string, processIds: string[], status: Exclude<StatusAcaoLegado, 'ok'>) => {
     try {
-      for (const processId of processIds) {
-        const processo = processoPorId(processId);
-        if (!processo) continue;
-        await atualizarEstadoProcesso(processId, aplicarStatusAcao(processo, itemId, status));
-      }
+      if (!processIds.length) return;
+      await atualizarEstadosProcessosEmLote(montarLoteStatus(itemId, processIds, status));
       await recarregarEstado();
     } catch (err) {
       registrarFalhaOperacao(err, 'Erro ao aplicar status ao grupo');
