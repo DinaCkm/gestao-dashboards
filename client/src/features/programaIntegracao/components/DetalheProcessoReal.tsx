@@ -432,6 +432,7 @@ export function DetalheProcessoReal({
                         feriados={feriados}
                         config={config}
                         onSalvarProcesso={salvar}
+                        onEditarModeloEmail={onEditarModeloEmail}
                       />
                       <AtaRelatorioPainel
                         processo={processo}
