@@ -52,12 +52,12 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 
 ## D. Painel, Agenda e Indicadores
 
-- [ ] **D01** Testar o seletor em massa do Painel com **somente processos de demonstração**, além do botão em lote já validado.
+- [x] **D01** Testar o seletor em massa do Painel com **somente processos de demonstração**, além do botão em lote já validado. **Confirmado pela Dina em 18/09/2026: duas demonstrações mudaram juntas para “Em andamento”.**
 - [x] **D02** Testar filtros e navegação do **Painel da semana** após todas as alterações. **Confirmado pela Dina em 18/09/2026.**
 - [x] **D03** Testar **Agenda geral**: filtros, atalho para processo e deep-link para a ação. **Confirmado pela Dina em 18/09/2026.**
 - [x] **D04** Testar exportação **CSV** da Agenda geral. **Confirmado pela Dina em 18/09/2026.**
-- [ ] **D05** Fazer conferência visual final de **Indicadores** contra o HTML v4.
-- [ ] **D06** Conferir os 6 KPIs, gráficos, roscas e tabela pessoa a pessoa usando o processo de demonstração.
+- [x] **D05** Fazer conferência visual final de **Indicadores** contra o HTML v4. **Confirmado pela Dina em 18/09/2026; regra de responsabilidade operacional retestada após o PR #97.**
+- [x] **D06** Conferir os 6 KPIs, gráficos, roscas e tabela pessoa a pessoa usando o processo de demonstração. **Confirmado pela Dina em 18/09/2026.**
 
 ## E. Registro de respostas e administração dos formulários
 
