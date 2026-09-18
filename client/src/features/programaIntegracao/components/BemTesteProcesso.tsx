@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { BootstrapState, ProcessoIntegracao, RespostaFormulario } from '../types';
 import { statusAcaoAtual } from '../helpers/itemStateHelpers';
 import { linkIntegracaoPorChave } from '../helpers/emailLinksHelpers';
+import { Button } from '@/components/ui/button';
 
 interface BemTesteProcessoProps {
   processo: ProcessoIntegracao;
@@ -88,20 +89,65 @@ export function BemTesteProcesso({ processo, config, onSalvarProcesso }: BemTest
   const testeStatus = String(teste.status || (teste.resumo ? 'ok' : testeFeitoNaTrilha ? 'ok' : 'pend'));
   const linkPadrao = linkIntegracaoPorChave('ecolider', config.links)?.u || 'https://ecolider.ecodobem.com';
 
-  const salvarBem = async (campo: string, valor: string) => {
-    if (String(processo.bem?.[campo] ?? '') === valor) return;
-    await onSalvarProcesso({
-      ...processo,
-      bem: { ...(processo.bem || {}), [campo]: valor },
+  const [bemDraft, setBemDraft] = useState<Record<string, string>>(() => ({
+    status: String(processo.bem?.status || bem.status),
+    gestor: String(processo.bem?.gestor || ''),
+    data: String(processo.bem?.data || ''),
+    arquivo: String(processo.bem?.arquivo || ''),
+    qualidades: String(processo.bem?.qualidades || ''),
+    atividades: String(processo.bem?.atividades || ''),
+    obs: String(processo.bem?.obs || ''),
+  }));
+  const [testeDraft, setTesteDraft] = useState<Record<string, string>>(() => ({
+    status: String(processo.teste?.status || testeStatus),
+    link: String(processo.teste?.link || ''),
+    resumo: String(processo.teste?.resumo || ''),
+    obs: String(processo.teste?.obs || ''),
+  }));
+  const [statusEdicao, setStatusEdicao] = useState<'idle' | 'dirty' | 'saving' | 'saved' | 'error'>('idle');
+
+  useEffect(() => {
+    if (statusEdicao === 'dirty' || statusEdicao === 'saving') return;
+    setBemDraft({
+      status: String(processo.bem?.status || bem.status),
+      gestor: String(processo.bem?.gestor || ''),
+      data: String(processo.bem?.data || ''),
+      arquivo: String(processo.bem?.arquivo || ''),
+      qualidades: String(processo.bem?.qualidades || ''),
+      atividades: String(processo.bem?.atividades || ''),
+      obs: String(processo.bem?.obs || ''),
     });
+    setTesteDraft({
+      status: String(processo.teste?.status || testeStatus),
+      link: String(processo.teste?.link || ''),
+      resumo: String(processo.teste?.resumo || ''),
+      obs: String(processo.teste?.obs || ''),
+    });
+  }, [processo, bem.status, testeStatus, statusEdicao]);
+
+  const marcarBem = (campo: string, valor: string) => {
+    setBemDraft((atual) => ({ ...atual, [campo]: valor }));
+    setStatusEdicao('dirty');
   };
 
-  const salvarTeste = async (campo: string, valor: string) => {
-    if (String(processo.teste?.[campo] ?? '') === valor) return;
-    await onSalvarProcesso({
-      ...processo,
-      teste: { ...(processo.teste || {}), [campo]: valor },
-    });
+  const marcarTeste = (campo: string, valor: string) => {
+    setTesteDraft((atual) => ({ ...atual, [campo]: valor }));
+    setStatusEdicao('dirty');
+  };
+
+  const salvarAlteracoes = async () => {
+    if (statusEdicao !== 'dirty') return;
+    try {
+      setStatusEdicao('saving');
+      await onSalvarProcesso({
+        ...processo,
+        bem: { ...(processo.bem || {}), ...bemDraft },
+        teste: { ...(processo.teste || {}), ...testeDraft },
+      });
+      setStatusEdicao('saved');
+    } catch {
+      setStatusEdicao('error');
+    }
   };
 
   return (
@@ -119,9 +165,10 @@ export function BemTesteProcesso({ processo, config, onSalvarProcesso }: BemTest
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Bem Acolhido — situação</span>
             <select
-              value={bem.status}
-              onChange={(e) => void salvarBem('status', e.currentTarget.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={bemDraft.status}
+              disabled={statusEdicao === 'saving'}
+              onChange={(e) => marcarBem('status', e.currentTarget.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
             >
               {STATUS_BEM.map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
             </select>
@@ -130,73 +177,37 @@ export function BemTesteProcesso({ processo, config, onSalvarProcesso }: BemTest
 
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Gestor que respondeu</span>
-            <input
-              key={`bem-gestor-${String(processo.bem?.gestor || '')}`}
-              defaultValue={String(processo.bem?.gestor || '')}
-              placeholder={bem.gestor || '—'}
-              onBlur={(e) => void salvarBem('gestor', e.currentTarget.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <input value={bemDraft.gestor} disabled={statusEdicao === 'saving'} placeholder={bem.gestor || '—'} onChange={(e) => marcarBem('gestor', e.currentTarget.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
           </label>
 
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Data da resposta</span>
-            <input
-              key={`bem-data-${String(processo.bem?.data || '')}`}
-              defaultValue={String(processo.bem?.data || '')}
-              placeholder={bem.data || '—'}
-              onBlur={(e) => void salvarBem('data', e.currentTarget.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <input value={bemDraft.data} disabled={statusEdicao === 'saving'} placeholder={bem.data || '—'} onChange={(e) => marcarBem('data', e.currentTarget.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
           </label>
 
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Arquivo / fonte original</span>
-            <input
-              key={`bem-arquivo-${String(processo.bem?.arquivo || '')}`}
-              defaultValue={String(processo.bem?.arquivo || '')}
-              placeholder="link do arquivo, se houver"
-              onBlur={(e) => void salvarBem('arquivo', e.currentTarget.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <input value={bemDraft.arquivo} disabled={statusEdicao === 'saving'} placeholder="link do arquivo, se houver" onChange={(e) => marcarBem('arquivo', e.currentTarget.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
           </label>
         </div>
 
         <div className="grid gap-3 border-t p-4">
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Qualidades / competências consideradas necessárias pelo gestor</span>
-            <textarea
-              key={`bem-qualidades-${String(processo.bem?.qualidades || '')}`}
-              defaultValue={String(processo.bem?.qualidades || '')}
-              placeholder={bem.qualidades ? 'vindo do formulário — escreva aqui só se quiser substituir' : 'ainda não localizado no formulário'}
-              onBlur={(e) => void salvarBem('qualidades', e.currentTarget.value)}
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <textarea value={bemDraft.qualidades} disabled={statusEdicao === 'saving'} placeholder={bem.qualidades ? 'vindo do formulário — escreva aqui só se quiser substituir' : 'ainda não localizado no formulário'} onChange={(e) => marcarBem('qualidades', e.currentTarget.value)} className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
             {bem.qualidades && !bem.manualQualidades && <span className="block text-[11px] text-muted-foreground">Do formulário: {bem.qualidades}</span>}
             <span className="block text-[11px] text-muted-foreground">É este conteúdo que entra no briefing da mentora.</span>
           </label>
 
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Atividades / funções esperadas</span>
-            <textarea
-              key={`bem-atividades-${String(processo.bem?.atividades || '')}`}
-              defaultValue={String(processo.bem?.atividades || '')}
-              placeholder={bem.atividades ? 'vindo do formulário' : 'sem registro — o briefing pede para alinhar na reunião'}
-              onBlur={(e) => void salvarBem('atividades', e.currentTarget.value)}
-              className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <textarea value={bemDraft.atividades} disabled={statusEdicao === 'saving'} placeholder={bem.atividades ? 'vindo do formulário' : 'sem registro — o briefing pede para alinhar na reunião'} onChange={(e) => marcarBem('atividades', e.currentTarget.value)} className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
             {bem.atividades && !String(processo.bem?.atividades || '').trim() && <span className="block whitespace-pre-wrap text-[11px] text-muted-foreground">Do formulário: {bem.atividades}</span>}
           </label>
 
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Outras observações do Bem Acolhido</span>
-            <textarea
-              key={`bem-obs-${String(processo.bem?.obs || '')}`}
-              defaultValue={String(processo.bem?.obs || '')}
-              placeholder={bem.obs || 'documentos, treinamentos e outras informações relevantes'}
-              onBlur={(e) => void salvarBem('obs', e.currentTarget.value)}
-              className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <textarea value={bemDraft.obs} disabled={statusEdicao === 'saving'} placeholder={bem.obs || 'documentos, treinamentos e outras informações relevantes'} onChange={(e) => marcarBem('obs', e.currentTarget.value)} className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
             {bem.obs && !String(processo.bem?.obs || '').trim() && <span className="block whitespace-pre-wrap text-[11px] text-muted-foreground">Do formulário: {bem.obs}</span>}
           </label>
         </div>
@@ -204,47 +215,38 @@ export function BemTesteProcesso({ processo, config, onSalvarProcesso }: BemTest
         <div className="grid gap-3 border-t p-4 md:grid-cols-2">
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Teste comportamental — situação</span>
-            <select
-              value={testeStatus}
-              onChange={(e) => void salvarTeste('status', e.currentTarget.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            >
+            <select value={testeDraft.status} disabled={statusEdicao === 'saving'} onChange={(e) => marcarTeste('status', e.currentTarget.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60">
               {STATUS_TESTE.map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
             </select>
           </label>
 
           <label className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Fonte / link do material</span>
-            <input
-              key={`teste-link-${String(teste.link || '')}`}
-              defaultValue={String(teste.link || '')}
-              placeholder={linkPadrao}
-              onBlur={(e) => void salvarTeste('link', e.currentTarget.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <input value={testeDraft.link} disabled={statusEdicao === 'saving'} placeholder={linkPadrao} onChange={(e) => marcarTeste('link', e.currentTarget.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
           </label>
 
           <label className="space-y-1 text-xs md:col-span-2">
             <span className="font-medium text-muted-foreground">Resultado ou resumo — entra no briefing</span>
-            <textarea
-              key={`teste-resumo-${String(teste.resumo || '')}`}
-              defaultValue={String(teste.resumo || '')}
-              placeholder="resumo do perfil comportamental / Avaliação de Potencial"
-              onBlur={(e) => void salvarTeste('resumo', e.currentTarget.value)}
-              className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <textarea value={testeDraft.resumo} disabled={statusEdicao === 'saving'} placeholder="resumo do perfil comportamental / Avaliação de Potencial" onChange={(e) => marcarTeste('resumo', e.currentTarget.value)} className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
           </label>
 
           <label className="space-y-1 text-xs md:col-span-2">
             <span className="font-medium text-muted-foreground">Observações</span>
-            <textarea
-              key={`teste-obs-${String(teste.obs || '')}`}
-              defaultValue={String(teste.obs || '')}
-              placeholder="opcional"
-              onBlur={(e) => void salvarTeste('obs', e.currentTarget.value)}
-              className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            <textarea value={testeDraft.obs} disabled={statusEdicao === 'saving'} placeholder="opcional" onChange={(e) => marcarTeste('obs', e.currentTarget.value)} className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60" />
           </label>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t p-4 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-sm">
+            {statusEdicao === 'dirty' && <span className="font-medium text-amber-700">Há alterações não salvas.</span>}
+            {statusEdicao === 'saving' && <span className="font-medium text-amber-700">Salvando e conferindo no servidor...</span>}
+            {statusEdicao === 'saved' && <span className="font-medium text-emerald-700">✓ Alterações salvas e conferidas no servidor.</span>}
+            {statusEdicao === 'error' && <span className="font-medium text-destructive">Não foi possível salvar. As alterações permanecem na tela.</span>}
+            {statusEdicao === 'idle' && <span className="text-muted-foreground">Edite os campos e clique em “Salvar alterações”.</span>}
+          </span>
+          <Button type="button" onClick={() => void salvarAlteracoes()} disabled={statusEdicao !== 'dirty'}>
+            {statusEdicao === 'saving' ? 'Salvando...' : 'Salvar alterações'}
+          </Button>
         </div>
       </div>
     </details>
