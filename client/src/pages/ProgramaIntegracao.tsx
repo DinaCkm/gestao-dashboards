@@ -75,7 +75,9 @@ export default function ProgramaIntegracao() {
 
     if (!atualizacoes.length) return bootstrapState;
 
-    await atualizarEstadosProcessosEmLote(atualizacoes);
+    for (let inicio = 0; inicio < atualizacoes.length; inicio += 100) {
+      await atualizarEstadosProcessosEmLote(atualizacoes.slice(inicio, inicio + 100));
+    }
     const leitura = await fetchBootstrap();
     if (!leitura.ok || !leitura.state) {
       throw new Error('As ações programadas foram atualizadas, mas não foi possível confirmar a leitura final.');
