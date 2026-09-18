@@ -46,9 +46,9 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 
 - [ ] **C01** Testar novamente **Dados do processo** com o novo botão `Salvar alterações`, incluindo recarga da página.
 - [x] **C02** Testar **Bem Acolhido e teste comportamental** com rascunho + botão de salvar. **Confirmado pela Dina em 18/09/2026.**
-- [ ] **C03** Testar **Alinhamentos** com rascunho + `Salvar alterações do alinhamento`, confirmando que não grava a cada tecla.
-- [ ] **C04** Confirmar que, havendo rascunho não salvo no alinhamento, ações diretas não sobrescrevem o texto digitado.
-- [ ] **C05** Confirmar persistência após recarga para os dados alterados nos blocos acima.
+- [x] **C03** Testar **Alinhamentos** com rascunho + `Salvar alterações do alinhamento`, confirmando que não grava a cada tecla. **Confirmado pela Dina em 18/09/2026.**
+- [x] **C04** Confirmar que, havendo rascunho não salvo no alinhamento, ações diretas não sobrescrevem o texto digitado. **Confirmado pela Dina em 18/09/2026.**
+- [ ] **C05** Confirmar persistência após recarga para os dados alterados nos blocos acima. **Alinhamento já confirmado; falta Dados do processo.**
 
 ## D. Painel, Agenda e Indicadores
 
