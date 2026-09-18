@@ -53,7 +53,7 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 ## D. Painel, Agenda e Indicadores
 
 - [ ] **D01** Testar o seletor em massa do Painel com **somente processos de demonstração**, além do botão em lote já validado.
-- [ ] **D02** Testar filtros e navegação do **Painel da semana** após todas as alterações.
+- [x] **D02** Testar filtros e navegação do **Painel da semana** após todas as alterações. **Confirmado pela Dina em 18/09/2026.**
 - [ ] **D03** Testar **Agenda geral**: filtros, atalho para processo e deep-link para a ação.
 - [ ] **D04** Testar exportação **CSV** da Agenda geral.
 - [ ] **D05** Fazer conferência visual final de **Indicadores** contra o HTML v4.
