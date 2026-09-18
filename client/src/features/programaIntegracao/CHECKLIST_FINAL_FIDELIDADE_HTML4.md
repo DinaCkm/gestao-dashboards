@@ -17,10 +17,10 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 
 ## A. Reconciliação da fonte e documentação
 
-- [ ] **A01** Formalizar o HTML v4 como fonte histórica funcional mais recente.
-- [ ] **A02** Corrigir a documentação que ainda diz “18 etapas”: o HTML v4 contém **19 etapas / 95 ações**.
-- [ ] **A03** Corrigir a documentação de e-mails: o HTML v4 contém **32 modelos**, incluindo `m_confirma_acesso`.
-- [ ] **A04** Reconciliar definitivamente a divergência entre o checklist antigo de 207 caixas e o contador histórico 208, sem apagar o histórico.
+- [x] **A01** Formalizar o HTML v4 como fonte histórica funcional mais recente. **Formalizado em 18/09/2026 na documentação do Programa de Integração como `trilha-integracao-codigo-completo_4.html`.**
+- [x] **A02** Corrigir a documentação que ainda diz “18 etapas”: o HTML v4 contém **19 etapas / 95 ações**. **Conferido no código atual: 19 etapas e 95 ações; documentação reconciliada em 18/09/2026.**
+- [x] **A03** Corrigir a documentação de e-mails: o HTML v4 contém **32 modelos**, incluindo `m_confirma_acesso`. **Conferido em `emailModelosPadrao.ts`: 32 chaves históricas, incluindo `m_confirma_acesso`; documentação reconciliada em 18/09/2026.**
+- [x] **A04** Reconciliar definitivamente a divergência entre o checklist antigo de 207 caixas e o contador histórico 208, sem apagar o histórico. **Contagem direta do checklist antigo: 207 caixas (183 marcadas / 24 abertas). O número 208 foi preservado apenas como contador histórico, sem inventar um 208º item.**
 
 ## B. Pendências reais de implementação encontradas na nova auditoria
 
