@@ -210,6 +210,107 @@ programaIntegracaoRouter.put("/api/programa-integracao/config", requireAdmin, as
   }
 });
 
+function normalizarJsonParaComparacao(valor: unknown): unknown {
+  if (Array.isArray(valor)) return valor.map(normalizarJsonParaComparacao);
+  if (valor && typeof valor === "object") {
+    return Object.fromEntries(
+      Object.entries(valor as Record<string, unknown>)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([chave, conteudo]) => [chave, normalizarJsonParaComparacao(conteudo)]),
+    );
+  }
+  return valor;
+}
+
+function jsonEquivalente(a: unknown, b: unknown): boolean {
+  return JSON.stringify(normalizarJsonParaComparacao(a ?? {})) === JSON.stringify(normalizarJsonParaComparacao(b ?? {}));
+}
+
+programaIntegracaoRouter.put("/api/programa-integracao/processos/lote-estado", requireAdmin, async (req, res) => {
+  const connection = await getConnectionOr503(res);
+  if (!connection) return;
+
+  const atualizacoes = Array.isArray(req.body?.atualizacoes) ? req.body.atualizacoes : [];
+  if (!atualizacoes.length || atualizacoes.length > 100) {
+    return res.status(400).json({ error: "Lote inválido. Informe de 1 a 100 processos." });
+  }
+
+  const ids = atualizacoes.map((item: any) => sanitizeLegacyId(item?.legacyId));
+  if (ids.some((id: string) => !id) || new Set(ids).size !== ids.length) {
+    return res.status(400).json({ error: "O lote contém identificadores inválidos ou repetidos." });
+  }
+
+  let transactionStarted = false;
+  try {
+    await connection.beginTransaction();
+    transactionStarted = true;
+
+    const placeholders = ids.map(() => "?").join(",");
+    const [rows] = (await connection.execute(
+      `SELECT id,legacyId,estado FROM programa_integracao_processos WHERE legacyId IN (${placeholders}) AND situacao<>'removido' FOR UPDATE`,
+      ids,
+    )) as any;
+
+    if ((rows || []).length !== ids.length) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({ error: "Um dos processos do lote não está mais disponível. Nada foi alterado." });
+    }
+
+    const porId = new Map((rows || []).map((row: any) => [String(row.legacyId), row]));
+
+    for (const atualizacao of atualizacoes) {
+      const legacyId = sanitizeLegacyId(atualizacao?.legacyId);
+      const row: any = porId.get(legacyId);
+      const estadoAtual = asJson<Record<string, any>>(row?.estado, {});
+
+      if (
+        !jsonEquivalente(estadoAtual.feito || {}, atualizacao?.baseFeito || {}) ||
+        !jsonEquivalente(estadoAtual.alin || {}, atualizacao?.baseAlin || {})
+      ) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(409).json({
+          error: `O processo ${legacyId} mudou desde a última leitura. Nada do lote foi alterado; atualize a tela e tente novamente.`,
+        });
+      }
+    }
+
+    for (const atualizacao of atualizacoes) {
+      const legacyId = sanitizeLegacyId(atualizacao?.legacyId);
+      const row: any = porId.get(legacyId);
+      const estadoAtual = asJson<Record<string, any>>(row.estado, {});
+      const proximoEstado = {
+        ...estadoAtual,
+        feito: atualizacao?.feito && typeof atualizacao.feito === "object" ? atualizacao.feito : {},
+        alin: atualizacao?.alin && typeof atualizacao.alin === "object" ? atualizacao.alin : {},
+      };
+
+      await connection.execute(
+        `UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
+        [JSON.stringify(proximoEstado), Number(row.id)],
+      );
+      await audit(
+        connection,
+        req,
+        "estado_lote_atualizado",
+        `Estado do processo ${legacyId} atualizado dentro de lote transacional.`,
+        Number(row.id),
+      );
+    }
+
+    await connection.commit();
+    transactionStarted = false;
+    return res.json({ ok: true, atualizados: ids.length });
+  } catch (error) {
+    if (transactionStarted) {
+      try { await connection.rollback(); } catch { /* rollback de melhor esforço */ }
+    }
+    console.error("[ProgramaIntegracao] salvar lote de estados:", error);
+    return res.status(500).json({ error: "Não foi possível concluir o lote. Nenhum dado deve ser considerado confirmado." });
+  }
+});
+
 programaIntegracaoRouter.put("/api/programa-integracao/processos/:legacyId", requireAdmin, async (req, res) => {
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
