@@ -55,6 +55,7 @@ interface PainelSemanaProps {
   onRemoverNotaAcao?: (processId: string, itemId: string, indice: number) => void;
   onConcluirGrupo?: (itemId: string, processIds: string[]) => Promise<void> | void;
   onAplicarStatusGrupo?: (itemId: string, processIds: string[], status: StatusGrupo) => Promise<void> | void;
+  onEditarModeloEmail?: (chave: string) => void;
 }
 
 const statusClasses = {
@@ -104,6 +105,7 @@ export function PainelSemana({
   onRemoverNotaAcao,
   onConcluirGrupo,
   onAplicarStatusGrupo,
+  onEditarModeloEmail,
 }: PainelSemanaProps) {
   const [filtro, setFiltro] = useState<FiltroPainel>('');
   const [fichaAberta, setFichaAberta] = useState<string | null>(null);
@@ -454,6 +456,7 @@ export function PainelSemana({
                                   }
                                 } : undefined}
                                 onGerarRelatorioEvolucao={handleGerarRelatorioEvolucao}
+                                onEditarModelo={onEditarModeloEmail}
                               />
                             )}
                             {grupo.item.pdf && <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(acao.p)}>Agenda PDF</Button>}

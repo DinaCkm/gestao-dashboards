@@ -42,6 +42,7 @@ interface DetalheProcessoRealProps {
   feriados?: string[];
   onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
   saving?: boolean;
+  onEditarModeloEmail?: (chave: string) => void;
 }
 
 const statusClasses = {
@@ -75,6 +76,7 @@ export function DetalheProcessoReal({
   feriados = [],
   onSalvarProcesso,
   saving = false,
+  onEditarModeloEmail,
 }: DetalheProcessoRealProps) {
   const [filtro, setFiltro] = useState<FiltroDetalheProcesso>('');
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
@@ -430,6 +432,7 @@ export function DetalheProcessoReal({
                         feriados={feriados}
                         config={config}
                         onSalvarProcesso={salvar}
+                        onEditarModeloEmail={onEditarModeloEmail}
                       />
                       <AtaRelatorioPainel
                         processo={processo}
@@ -477,6 +480,7 @@ export function DetalheProcessoReal({
                                   config={config}
                                   feriados={feriados}
                                   onAlternarEnviado={async () => salvar(aplicarStatusAcao(processo, item.id, ficha.s === 'ok' ? '' : 'ok'))}
+                                  onEditarModelo={onEditarModeloEmail}
                                 />
                               )}
                             </div>

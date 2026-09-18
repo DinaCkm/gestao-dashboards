@@ -126,6 +126,7 @@ export default function ProgramaIntegracaoDetalhe() {
             feriados={feriados}
             onSalvarProcesso={salvarProcesso}
             saving={saving}
+            onEditarModeloEmail={(chave) => setLocation(`/programa-integracao?email=${encodeURIComponent(chave)}`)}
           />
         )}
       </div>

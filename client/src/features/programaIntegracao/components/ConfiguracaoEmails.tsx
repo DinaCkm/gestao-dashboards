@@ -18,6 +18,7 @@ interface ConfiguracaoEmailsProps {
   config: Record<string, any>;
   processos: ProcessoIntegracao[];
   onSaved?: () => Promise<void> | void;
+  chaveInicialExterna?: string;
 }
 
 type CampoModelo = 'para' | 'cc' | 'assunto' | 'anexo' | 'corpo';
@@ -38,8 +39,10 @@ function iguais(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-export function ConfiguracaoEmails({ config, processos, onSaved }: ConfiguracaoEmailsProps) {
-  const chaveInicial = CHAVES_EMAIL_INTEGRACAO[0] || '';
+export function ConfiguracaoEmails({ config, processos, onSaved, chaveInicialExterna }: ConfiguracaoEmailsProps) {
+  const chaveInicial = chaveInicialExterna && CHAVES_EMAIL_INTEGRACAO.includes(chaveInicialExterna as any)
+    ? chaveInicialExterna
+    : CHAVES_EMAIL_INTEGRACAO[0] || '';
   const [chave, setChave] = useState(chaveInicial);
   const [draft, setDraft] = useState<DraftModelo>(() => draftDoModelo(chaveInicial, config));
   const [processoId, setProcessoId] = useState(processos[0]?.id || '');
@@ -50,6 +53,12 @@ export function ConfiguracaoEmails({ config, processos, onSaved }: ConfiguracaoE
   const modeloAtual = modeloEmailIntegracao(chave, config.emails || null);
   const modeloPadrao = modeloPadraoEmailIntegracao(chave);
   const modeloEditado = Boolean(config.emails && config.emails[chave]);
+
+  useEffect(() => {
+    if (!chaveInicialExterna || !CHAVES_EMAIL_INTEGRACAO.includes(chaveInicialExterna as any)) return;
+    if (status === 'dirty') return;
+    setChave(chaveInicialExterna);
+  }, [chaveInicialExterna, status]);
 
   useEffect(() => {
     setDraft(draftDoModelo(chave, config));
