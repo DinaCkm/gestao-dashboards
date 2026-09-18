@@ -29,6 +29,7 @@ interface AlinhamentoPainelRealProps {
   feriados?: string[];
   config: BootstrapState['config'];
   onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
+  onEditarModeloEmail?: (chave: string) => void;
 }
 
 const statusClasses = {
@@ -71,6 +72,7 @@ export function AlinhamentoPainelReal({
   feriados = [],
   config,
   onSalvarProcesso,
+  onEditarModeloEmail,
 }: AlinhamentoPainelRealProps) {
   const estado = estadoAlinhamentoAtual(processo, numero);
   const [nota, setNota] = useState('');
@@ -147,6 +149,7 @@ export function AlinhamentoPainelReal({
                   const atual = fichaAcaoAtual(processo, `ag${numero}-01`).s;
                   await salvarDireto(aplicarStatusAcao(processo, `ag${numero}-01`, atual === 'ok' ? '' : 'ok'));
                 }}
+                onEditarModelo={onEditarModeloEmail}
               />
             )}
             <input
