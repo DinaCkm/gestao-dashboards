@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { salvarSecaoConfig } from '../api/client';
 import { definicoesLinksIntegracao } from '../helpers/emailLinksHelpers';
 import { Button } from '@/components/ui/button';
+import {
+  TUTORIAL_PRIMEIRO_ACESSO_NOME,
+  TUTORIAL_PRIMEIRO_ACESSO_URL,
+} from '../helpers/tutorialPrimeiroAcesso';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface LinkDraft {
@@ -162,6 +166,20 @@ export function ConfiguracaoLinks({ config, onSaved, onGerenciarFormularios }: C
               </div>
             );
           })}
+        </div>
+
+        <div className="rounded-lg border bg-muted/20 p-4">
+          <p className="text-sm font-semibold">Arquivos para enviar</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            O Tutorial de Primeiro Acesso é o PDF histórico anexado ao e-mail “Primeiros passos · Plataforma do Ecossistema do B.E.M.”.
+          </p>
+          <div className="mt-3">
+            <Button type="button" size="sm" variant="outline" asChild>
+              <a href={TUTORIAL_PRIMEIRO_ACESSO_URL} download={TUTORIAL_PRIMEIRO_ACESSO_NOME}>
+                Baixar tutorial de primeiro acesso
+              </a>
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 border-t pt-4">

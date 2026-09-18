@@ -4,6 +4,10 @@ import type { ItemPlanoReal } from '../helpers/planoReal';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
 import { linkIntegracaoPorChave } from '../helpers/emailLinksHelpers';
 import {
+  TUTORIAL_PRIMEIRO_ACESSO_NOME,
+  TUTORIAL_PRIMEIRO_ACESSO_URL,
+} from '../helpers/tutorialPrimeiroAcesso';
+import {
   camposResposta,
   dataResposta,
   nomeFormularioResposta,
@@ -50,7 +54,7 @@ export function ControlesEspeciaisAcao({
     [item.link, config.links, origem],
   );
   const temMicroimportacao = Boolean(item.form && !resposta && processoId);
-  const temControles = Boolean(item.pdf === 1 || link?.u || ataNumero || resposta || temMicroimportacao);
+  const temControles = Boolean(item.pdf === 1 || item.tut === 1 || link?.u || ataNumero || resposta || temMicroimportacao);
 
   if (!temControles) return null;
 
@@ -70,6 +74,14 @@ export function ControlesEspeciaisAcao({
         {item.pdf === 1 && (
           <Button type="button" size="sm" variant="outline" onClick={gerarAgenda}>
             Agenda PDF
+          </Button>
+        )}
+
+        {item.tut === 1 && (
+          <Button type="button" size="sm" variant="outline" asChild>
+            <a href={TUTORIAL_PRIMEIRO_ACESSO_URL} download={TUTORIAL_PRIMEIRO_ACESSO_NOME}>
+              Baixar tutorial de primeiro acesso
+            </a>
           </Button>
         )}
 

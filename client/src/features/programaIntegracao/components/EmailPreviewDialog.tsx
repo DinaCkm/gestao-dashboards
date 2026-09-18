@@ -13,6 +13,11 @@ import {
   emailMarkdownParaHtmlRico,
 } from '../helpers/emailMontagemHelpers';
 import { MARCADOR_EMAIL_VAZIO } from '../helpers/emailValoresHelpers';
+import {
+  emailTemTutorial,
+  TUTORIAL_PRIMEIRO_ACESSO_NOME,
+  TUTORIAL_PRIMEIRO_ACESSO_URL,
+} from '../helpers/tutorialPrimeiroAcesso';
 
 interface EmailPreviewDialogProps {
   open: boolean;
@@ -218,6 +223,19 @@ export function EmailPreviewDialog({
             >
               <a href={preview.mailto}>Abrir no e-mail</a>
             </Button>
+            {emailTemTutorial(email.chave) && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                asChild
+                className="border-[#D7D1CD] bg-white text-[#152232] hover:bg-[#F7F5F4]"
+              >
+                <a href={TUTORIAL_PRIMEIRO_ACESSO_URL} download={TUTORIAL_PRIMEIRO_ACESSO_NOME}>
+                  Baixar tutorial de primeiro acesso
+                </a>
+              </Button>
+            )}
             {onGerarRelatorioEvolucao && (
               <Button
                 type="button"
