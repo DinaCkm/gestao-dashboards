@@ -53,7 +53,7 @@ export function agruparAcoesPorTarefa(acoes: AcaoPainelReal[]): GrupoAcaoPainel[
           ordenadas[0].data,
         ),
         lado: primeira.lado,
-        responsavel: primeira.it.r,
+        responsavel: primeira.responsavelAtual,
         formulario: Boolean(primeira.it.form),
       };
     })

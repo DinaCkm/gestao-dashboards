@@ -226,7 +226,7 @@ export function AgendaGeral({
                           {linha.obs && <div className="mt-2 border-l-2 pl-2 text-xs text-muted-foreground">{linha.obs}</div>}
                         </td>
                         <td className="px-3 py-3 align-top">
-                          <Badge variant="outline" className={responsavelClasses[linha.r]}>{linha.r}</Badge>
+                          <Badge variant="outline" className={linha.papeisAtuais.length === 1 ? responsavelClasses[linha.papeisAtuais[0]] : undefined}>{linha.responsavelAtual}</Badge>
                         </td>
                         <td className="px-3 py-3 align-top">
                           <Badge variant="outline" className={statusClasses[linha.st.k]}>{linha.st.l}</Badge>

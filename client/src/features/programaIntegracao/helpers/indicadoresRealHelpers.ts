@@ -2,6 +2,7 @@ import type { ProcessoIntegracao } from '../types';
 import { cronogramaReal } from './painelAcoes';
 import { calcularStatusItem, normalizarRegistroFeito } from './statusHelpers';
 import { progressoRealProcesso, diaAtualReal, sinalRealProcesso } from './painelProcessos';
+import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
 
 export const GRUPO_NOME = {
   pre: 'Pré-chegada',
@@ -16,13 +17,6 @@ export const GRUPO_NOME = {
 export const GRUPO_ORDEM = ['pre', 'ini', 'a1', 'a2', 'a3', 'a4', 'fim'] as const;
 export const PAPEL_ORDEM = ['Gestor', 'Anjo', 'Colaborador', 'UGP'] as const;
 
-const LADO: Record<string, 'ckm' | 'eles'> = {
-  CKM: 'ckm',
-  UGP: 'eles',
-  Gestor: 'eles',
-  Anjo: 'eles',
-  Colaborador: 'eles',
-};
 
 type GrupoKey = (typeof GRUPO_ORDEM)[number];
 
@@ -158,10 +152,14 @@ export function calcularIndicadoresProgramaReal(
     cronogramaReal(processo, feriados, hojeRef).forEach((etapa) => {
       etapa.itens.forEach((item) => {
         const salvo = statusSalvo(processo, item.id);
+        const responsabilidade = responsabilidadeAtual(item, salvo);
         if (item.form && !fechado(salvo) && etapa.data <= hoje) {
           const st = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
           resultado.pendentes++;
-          resultado.porPapel[item.r] = (resultado.porPapel[item.r] || 0) + 1;
+          const papeisPendencia = responsabilidade.papeis.length ? responsabilidade.papeis : [item.r];
+          papeisPendencia.forEach((papel) => {
+            resultado.porPapel[papel] = (resultado.porPapel[papel] || 0) + 1;
+          });
           if (st.k === 'late') {
             resultado.atrasados++;
             atrasosPessoa++;
@@ -169,7 +167,7 @@ export function calcularIndicadoresProgramaReal(
         }
 
         if (fechado(salvo) || etapa.data > hoje) return;
-        if ((LADO[item.r] || 'ckm') === 'ckm') resultado.acoesCkm++;
+        if (responsabilidade.lado === 'ckm') resultado.acoesCkm++;
         else resultado.acoesEles++;
       });
     });
