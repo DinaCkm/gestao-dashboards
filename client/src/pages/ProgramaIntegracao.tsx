@@ -34,6 +34,7 @@ import {
   statusAcaoAtual,
   type CampoFichaAcao,
   type StatusAcaoLegado,
+  aplicarSomenteProgramacoesVencidas,
 } from '@/features/programaIntegracao/helpers/itemStateHelpers';
 import { navegadorEstaOnline } from '@/features/programaIntegracao/helpers/connectionGuard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,6 +58,32 @@ export default function ProgramaIntegracao() {
   const [formularioSubTab, setFormularioSubTab] = useState<FormularioAdminSubTab>('disponiveis');
   const [configSubTab, setConfigSubTab] = useState<ConfigSubTab>('emails');
   const [emailModeloSelecionado, setEmailModeloSelecionado] = useState('');
+
+  const aplicarProgramacoesVencidas = async (bootstrapState: BootstrapState): Promise<BootstrapState> => {
+    const atualizacoes = Object.entries(bootstrapState.processos || {}).flatMap(([legacyId, processo]) => {
+      if (processo.situacao !== 'ativo') return [];
+      const atualizado = aplicarSomenteProgramacoesVencidas(processo);
+      if (atualizado === processo) return [];
+      return [{
+        legacyId,
+        baseFeito: processo.feito || {},
+        baseAlin: processo.alin || {},
+        feito: atualizado.feito || {},
+        alin: atualizado.alin || {},
+      }];
+    });
+
+    if (!atualizacoes.length) return bootstrapState;
+
+    for (let inicio = 0; inicio < atualizacoes.length; inicio += 100) {
+      await atualizarEstadosProcessosEmLote(atualizacoes.slice(inicio, inicio + 100));
+    }
+    const leitura = await fetchBootstrap();
+    if (!leitura.ok || !leitura.state) {
+      throw new Error('As ações programadas foram atualizadas, mas não foi possível confirmar a leitura final.');
+    }
+    return leitura.state;
+  };
 
   useEffect(() => {
     const ficouOnline = () => setOnline(true);
@@ -87,7 +114,8 @@ export default function ProgramaIntegracao() {
         setLoading(true);
         const response = await fetchBootstrap();
         if (response.ok && response.state) {
-          setState(response.state);
+          const estadoAtualizado = await aplicarProgramacoesVencidas(response.state);
+          setState(estadoAtualizado);
           setOnline(true);
           setError(null);
         } else {
@@ -130,7 +158,8 @@ export default function ProgramaIntegracao() {
     if (!response.ok || !response.state) {
       throw new Error('O servidor não confirmou a leitura do Programa de Integração.');
     }
-    setState(response.state);
+    const estadoAtualizado = await aplicarProgramacoesVencidas(response.state);
+    setState(estadoAtualizado);
     setOnline(true);
     setOperationError(null);
   };
