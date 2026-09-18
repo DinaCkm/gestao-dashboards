@@ -137,11 +137,11 @@ Pendências:
 
 ## L. Configurações, backup e recuperação
 
-- [ ] **L01** Conferir as 7 abas de Configurações contra o HTML v4.
+- [x] **L01** Conferir as 7 abas de Configurações contra o HTML v4. **Conferido em 18/09/2026: HTML v4 e EcoLíder atual têm as mesmas 7 abas — Modelos de e-mail; Mentoras / Consultoras CKM; Cursos obrigatórios; Aviso e assinatura; Links e formulários; Datas e feriados; Dados e backup.**
 - [ ] **L02** Testar persistência segura de uma alteração reversível em Configurações e devolver ao valor anterior.
 - [ ] **L03** Baixar e validar **backup JSON completo**.
 - [ ] **L04** Criar, baixar e conferir um **ponto de restauração** sem restaurá-lo.
-- [ ] **L05** Confirmar o limite de 12 pontos e o ponto automático diário por inspeção/estado, sem apagar dados reais.
+- [x] **L05** Confirmar o limite de 12 pontos e o ponto automático diário por inspeção/estado, sem apagar dados reais. **Conferido por inspeção em 18/09/2026: `ConfiguracaoDadosBackup` chama `garantirPontoAutomaticoDoDia`, exibe `LIMITE_PONTOS_RESTAURACAO` e informa manutenção dos 12 pontos mais recentes + 1 ponto automático por dia quando há processos. Nenhuma remoção/restauração foi executada.**
 - [ ] **L06 — PROTEGIDO** Testar **restauração real de backup** somente com nova autorização explícita da Dina e plano de rollback.
 - [ ] **L07 — NÃO EXECUTAR EM PRODUÇÃO** Validar a lógica de **Limpar todas as marcações** sem disparar o reset global sobre pessoas reais.
 - [ ] **L08** Validar proteção de falha de conexão/recuperação sem colocar dados reais em risco.
