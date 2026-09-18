@@ -72,7 +72,7 @@ export function normalizarRegistroFeito(valor: unknown): Record<string, any> | n
     const texto = valor.trim();
     if (!texto) return null;
 
-    if (['ok', 'na', 'wont', 'prog', 'wait'].includes(texto)) {
+    if (['ok', 'na', 'wont', 'prog', 'doing', 'wait'].includes(texto)) {
       return { s: texto };
     }
 
@@ -133,6 +133,10 @@ export function calcularStatusItem(
 
     const programado = registro?.prog ? ` p/ ${formatarDataCurta(String(registro.prog))}` : '';
     return { k: 'wait', l: `Programado${programado}`, dif };
+  }
+
+  if (s === 'doing') {
+    return { k: 'act', l: 'Em andamento', dif };
   }
 
   if (s === 'wait') {
