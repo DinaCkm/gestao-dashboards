@@ -1,0 +1,176 @@
+# Checklist Final — Fidelidade ao HTML v4 e funcionamento do Programa de Integração
+
+Data-base desta revisão: 18/09/2026.
+
+## Fonte de verdade
+
+1. `trilha-integracao-codigo-completo_4.html` — fonte funcional obrigatória mais recente.
+2. Inventário funcional “Trilha de Integração — Inventário de funcionalidades”.
+3. Código atual do módulo `client/src/features/programaIntegracao`.
+4. Regras obrigatórias de segurança e governança do projeto.
+
+Regra de execução: **Primeiro preservar. Depois alterar. Depois testar. Depois confirmar.**
+
+Este checklist substitui o checklist antigo como lista operacional de fechamento. O checklist antigo continua preservado como histórico, mas não deve mais ser usado sozinho para calcular progresso porque contém 207 caixas enquanto o controle conversacional usava 208 e ficou desatualizado diante do HTML v4.
+
+---
+
+## A. Reconciliação da fonte e documentação
+
+- [ ] **A01** Formalizar o HTML v4 como fonte histórica funcional mais recente.
+- [ ] **A02** Corrigir a documentação que ainda diz “18 etapas”: o HTML v4 contém **19 etapas / 95 ações**.
+- [ ] **A03** Corrigir a documentação de e-mails: o HTML v4 contém **32 modelos**, incluindo `m_confirma_acesso`.
+- [ ] **A04** Reconciliar definitivamente a divergência entre o checklist antigo de 207 caixas e o contador histórico 208, sem apagar o histórico.
+
+## B. Pendências reais de implementação encontradas na nova auditoria
+
+### Novo e-mail de confirmação de acesso
+
+- [ ] **B01** Portar fielmente o modelo `m_confirma_acesso` do HTML v4, sem reescrever seu texto.
+- [ ] **B02** Inserir `m_confirma_acesso` na ordem canônica dos modelos, entre `m_primeiros_passos` e `m_primeiros_registros`.
+- [ ] **B03** Ligar a ação `d3-02` ao e-mail `m_confirma_acesso`, preservando `tut:1` e o link `ecolider`.
+- [ ] **B04** Confirmar que o novo modelo aparece no editor de modelos, na prévia e no botão de e-mail da ação correta.
+- [ ] **B05** Conferir texto, destinatário, assunto, tokens e comportamento do novo modelo contra o HTML v4.
+
+### Tutorial de Primeiro Acesso
+
+- [ ] **B06** Incorporar fisicamente ao módulo o PDF histórico **Tutorial - Primeiro Acesso - Plataforma Onboarding.pdf**, sem alterar seu conteúdo.
+- [ ] **B07** Validar integridade do PDF histórico: arquivo correto, 7 páginas e hash registrado na auditoria.
+- [ ] **B08** Disponibilizar o tutorial nas quatro ações históricas: `d3-01`, `d3-04`, `d3-02` e `pos3-12`.
+- [ ] **B09** Disponibilizar o tutorial na prévia do e-mail `m_primeiros_passos`.
+- [ ] **B10** Disponibilizar o tutorial na prévia do e-mail `m_compliance_ugp`, conforme o comportamento histórico de `abrirMailObj`.
+- [ ] **B11** Disponibilizar o tutorial em **Configurações → Links e formulários**.
+- [ ] **B12** Testar o download real do tutorial em todos os pontos previstos e confirmar que o PDF abre corretamente.
+
+## C. Salvamento e persistência — validações finais
+
+- [ ] **C01** Testar novamente **Dados do processo** com o novo botão `Salvar alterações`, incluindo recarga da página.
+- [x] **C02** Testar **Bem Acolhido e teste comportamental** com rascunho + botão de salvar. **Confirmado pela Dina em 18/09/2026.**
+- [ ] **C03** Testar **Alinhamentos** com rascunho + `Salvar alterações do alinhamento`, confirmando que não grava a cada tecla.
+- [ ] **C04** Confirmar que, havendo rascunho não salvo no alinhamento, ações diretas não sobrescrevem o texto digitado.
+- [ ] **C05** Confirmar persistência após recarga para os dados alterados nos blocos acima.
+
+## D. Painel, Agenda e Indicadores
+
+- [ ] **D01** Testar o seletor em massa do Painel com **somente processos de demonstração**, além do botão em lote já validado.
+- [ ] **D02** Testar filtros e navegação do **Painel da semana** após todas as alterações.
+- [ ] **D03** Testar **Agenda geral**: filtros, atalho para processo e deep-link para a ação.
+- [ ] **D04** Testar exportação **CSV** da Agenda geral.
+- [ ] **D05** Fazer conferência visual final de **Indicadores** contra o HTML v4.
+- [ ] **D06** Conferir os 6 KPIs, gráficos, roscas e tabela pessoa a pessoa usando o processo de demonstração.
+
+## E. Registro de respostas e administração dos formulários
+
+- [ ] **E01** Testar importação por texto colado com dados de demonstração.
+- [ ] **E02** Testar arquivos `.csv`, `.tsv` e `.txt` sem usar dados reais.
+- [ ] **E03** Testar identificação automática de formulário, fuzzy match, ciclo/papel e conferência antes de registrar.
+- [ ] **E04** Testar política de duplicidade e transação em lote somente com demonstração.
+- [ ] **E05** Testar microimportação dentro de uma ação.
+- [ ] **E06** Testar **Respostas recebidas**: visualizar, editar e arquivar/remover uma resposta de demonstração.
+- [ ] **E07** Testar as 6 abas administrativas de **Formulários**.
+- [ ] **E08** Testar pendente de vinculação: corrigir identificação e vincular a processo de demonstração.
+- [ ] **E09** Testar criação de processo a partir de Controle/Bem Acolhido somente com dado fictício.
+- [ ] **E10** Testar descarte protegido de pendência fictícia.
+
+## F. Cinco formulários públicos — ponta a ponta
+
+- [ ] **F01** Controle do Programa de Integração: preencher, enviar, obter protocolo e conferir chegada no administrativo.
+- [ ] **F02** Bem Acolhido em Nossa Unidade: preencher, enviar, obter protocolo e conferir vínculo.
+- [ ] **F03** Pesquisa de Integração: preencher, enviar e conferir ciclo correto.
+- [ ] **F04** Avaliação do Programa de Integração: testar como Gestor e conferir registro/cálculos.
+- [ ] **F05** Avaliação do Programa de Integração: testar como Anjo e conferir papel correto.
+- [ ] **F06** Acompanhamento do PDI: preencher, enviar e conferir atualização esperada.
+- [ ] **F07** Validar regras públicas: CPF/telefone numéricos, data, texto longo >= 10, escala 0–5 com zero fora da média.
+- [ ] **F08** Testar resposta ambígua indo para **Pendentes de vinculação**, sem criação automática de pessoa.
+- [ ] **F09** Testar a política de duplicidade dos formulários públicos.
+
+## G. Quatro alinhamentos e subsistema da Mentora
+
+- [ ] **G01** Testar 1º Alinhamento ponta a ponta.
+- [ ] **G02** Testar 2º Alinhamento ponta a ponta.
+- [ ] **G03** Testar 3º Alinhamento ponta a ponta.
+- [ ] **G04** Testar 4º Alinhamento ponta a ponta.
+- [ ] **G05** Testar checklist de prontidão da Mentora.
+- [ ] **G06** Testar WhatsApp de disponibilidade e WhatsApp de confirmação sem enviar para contato real.
+- [ ] **G07** Testar horários sugeridos e uso desses horários no e-mail ao gestor.
+- [ ] **G08** Confirmar que marcar a preparação da Mentora como concluída fecha a ação correspondente.
+
+## H. Cobrança de formulários
+
+- [ ] **H01** Testar agrupamento de formulários vencidos por responsável usando demonstração.
+- [ ] **H02** Conferir o e-mail único por responsável, links e vencimentos.
+- [ ] **H03** Testar `Marcar como cobrados` e a observação automática.
+- [ ] **H04** Testar a cobrança reduzida do 4º ciclo no Fechamento final.
+
+## I. PDFs e Word
+
+- [ ] **I01** Gerar e conferir **Agenda de Onboarding PDF**.
+- [ ] **I02** Gerar e conferir **Relatório de Andamento PDF**.
+- [ ] **I03** Gerar e conferir **Checkpoint do Processo PDF**.
+- [ ] **I04** Gerar e conferir **Relatório de Evolução** antes do 2º, 3º e 4º alinhamentos.
+- [ ] **I05** Gerar e conferir **Relatório de Evolução completo** no Fechamento final.
+- [ ] **I06** Gerar e conferir **Briefing da Mentora PDF**.
+- [ ] **I07** Gerar e conferir **Relatório da Mentora Word**.
+- [ ] **I08** Gerar e conferir **Ata do alinhamento Word**.
+- [ ] **I09** Gerar e conferir **Relatório para UGP Word**.
+- [ ] **I10** Testar “gerar os dois” e confirmar a marcação automática da ação prevista.
+
+## J. E-mails
+
+- [ ] **J01** Reauditar os **32 modelos** do HTML v4 texto a texto após incluir `m_confirma_acesso`.
+- [ ] **J02** Testar prévias com tokens usando somente processo de demonstração.
+- [ ] **J03** Conferir indicação de anexos em todos os modelos que têm anexo histórico.
+- [ ] **J04** Conferir tutorial nos dois diálogos históricos previstos: `m_primeiros_passos` e `m_compliance_ugp`.
+- [ ] **J05** Testar marcar e-mail como enviado e automações relacionadas usando somente demonstração.
+
+## K. Gerenciar pessoas
+
+Evidências já obtidas:
+- [x] **K01** Criar novo processo de demonstração.
+- [x] **K02** Encerrar processo de demonstração.
+- [x] **K03** Reabrir processo de demonstração.
+
+Pendências:
+- [ ] **K04** Retestar **Editar pessoa/processo** com o novo botão explícito de salvar.
+- [ ] **K05** Testar **Reordenar** somente entre processos de demonstração, sem deslocar pessoas reais indevidamente.
+- [ ] **K06** Testar **Remover/arquivar** um processo de demonstração, confirmando preservação do histórico.
+
+## L. Configurações, backup e recuperação
+
+- [ ] **L01** Conferir as 7 abas de Configurações contra o HTML v4.
+- [ ] **L02** Testar persistência segura de uma alteração reversível em Configurações e devolver ao valor anterior.
+- [ ] **L03** Baixar e validar **backup JSON completo**.
+- [ ] **L04** Criar, baixar e conferir um **ponto de restauração** sem restaurá-lo.
+- [ ] **L05** Confirmar o limite de 12 pontos e o ponto automático diário por inspeção/estado, sem apagar dados reais.
+- [ ] **L06 — PROTEGIDO** Testar **restauração real de backup** somente com nova autorização explícita da Dina e plano de rollback.
+- [ ] **L07 — NÃO EXECUTAR EM PRODUÇÃO** Validar a lógica de **Limpar todas as marcações** sem disparar o reset global sobre pessoas reais.
+- [ ] **L08** Validar proteção de falha de conexão/recuperação sem colocar dados reais em risco.
+- [ ] **L09** Validar a tela de recuperação de erro sem provocar falha destrutiva em produção.
+
+## M. Fechamento técnico e regressão
+
+- [ ] **M01** Executar build/TypeScript da versão final.
+- [ ] **M02** Executar testes técnicos aplicáveis.
+- [ ] **M03** Fazer fluxo ponta a ponta completo com processo de demonstração, do início ao fechamento.
+- [ ] **M04** Fazer auditoria visual em desktop.
+- [ ] **M05** Fazer auditoria visual em celular.
+- [ ] **M06** Fazer regressão das áreas do EcoLíder fora do Programa de Integração, **sem alterá-las**, apenas confirmando que continuam funcionando.
+- [ ] **M07** Fazer comparação final do Programa de Integração contra o HTML v4 e o inventário, item por item.
+- [ ] **M08** Atualizar documentação final e marcar somente evidências comprovadas.
+- [ ] **M09** Criar checkpoint/backup imediatamente anterior ao fechamento final e documentar rollback.
+- [ ] **M10** Revisar diff final antes de qualquer merge/deploy de encerramento.
+- [ ] **M11** Obter autorização explícita da Dina quando a etapa envolver produção ou operação protegida.
+- [ ] **M12** Fazer deploy final, conferir Railway e executar teste pós-deploy.
+- [ ] **M13** Registrar aceite final: Programa de Integração fiel ao HTML v4 e funcionando.
+
+---
+
+## Evidências importantes já confirmadas antes deste checklist
+
+- Salvamento individual com leitura de volta foi comprovado em produção.
+- Ação em lote para duas pessoas de demonstração foi comprovada e retornou sucesso.
+- Novo processo de demonstração foi criado pelo fluxo oficial.
+- Encerrar e reabrir processo de demonstração foram comprovados.
+- Bem Acolhido e teste comportamental com botão de salvar foram comprovados pela Dina.
+- Os 19 marcos / 95 ações foram auditados no código reconstruído.
+- As funções principais de Painel, Agenda, Indicadores, formulários, PDFs/Word, Mentora, Configurações e backup já existem; os itens acima são o que ainda precisa ser implementado, retestado ou fechado para 100%.
