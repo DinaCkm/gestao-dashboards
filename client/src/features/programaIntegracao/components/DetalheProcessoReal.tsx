@@ -375,9 +375,11 @@ export function DetalheProcessoReal({
                 <p className="font-semibold">{alinhamento.n}º alinhamento</p>
                 <Badge variant="outline" className={statusClasses[alinhamento.estado.k]}>{alinhamento.estado.l}</Badge>
               </div>
-              <p className="text-xs text-muted-foreground">Marco do {alinhamento.marco}º dia · {alinhamento.data ? formatarData(alinhamento.data) : 'data não definida'}</p>
+              <p className="text-xs text-muted-foreground">Marco do {alinhamento.marco}º dia</p>
+              <p className="text-xs">Data prevista/agendada: <b>{alinhamento.data ? formatarData(alinhamento.data) : 'não definida'}</b>{alinhamento.hora ? ` · ${alinhamento.hora}` : ''}</p>
               <p className="text-xs">Agendamento: <b>{alinhamento.agendamento}</b></p>
-              <p className="text-xs">Reunião: <b>{alinhamento.realizado ? 'realizada' : 'não registrada'}</b></p>
+              <p className="text-xs">Data efetiva da reunião: <b>{alinhamento.dataEfetiva ? formatarData(alinhamento.dataEfetiva) : 'não registrada'}</b></p>
+              {alinhamento.link && <p className="truncate text-xs" title={alinhamento.link}>Link da reunião: <b>{alinhamento.link}</b></p>}
               {alinhamento.relatorios && <p className="text-xs">Relatórios: <b>{alinhamento.relatorios}</b></p>}
             </CardContent>
           </Card>
