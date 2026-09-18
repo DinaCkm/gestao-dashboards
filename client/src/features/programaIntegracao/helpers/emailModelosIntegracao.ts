@@ -7,7 +7,7 @@ import { MODELOS_EMAIL_CICLOS_23_INTEGRACAO } from './emailModelosCiclos23';
 import { MODELOS_EMAIL_ENCERRAMENTO_INTEGRACAO } from './emailModelosEncerramento';
 
 /**
- * Registro único dos 31 modelos históricos do Programa de Integração.
+ * Registro único dos 32 modelos históricos do Programa de Integração.
  * A ordem continua vindo do MAIL_ORDEM original.
  */
 export const MODELOS_EMAIL_INTEGRACAO: Record<string, ModeloEmailIntegracao> = {

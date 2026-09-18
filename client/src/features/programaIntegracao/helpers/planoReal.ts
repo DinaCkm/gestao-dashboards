@@ -69,7 +69,7 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
     {id:'d3-04', tut:1, t:'Colaborador iniciar a Jornada Compliance (liberada ao concluir a Avaliação de Potencial)', r:'Colaborador', link:'ecolider', form:'Jornada Compliance'}
   ]},
   {id:'d4', g:'ini', dia:4, ajuste:'prox', t:'4º dia — o acesso chegou?', s:'Follow-up um dia depois do envio', itens:[
-    {id:'d3-02', tut:1, t:'Confirmar com o colaborador se o e-mail de acesso da plataforma chegou e se ele conseguiu entrar', r:'CKM', link:'ecolider'}
+    {id:'d3-02', tut:1, t:'Confirmar com o colaborador se o e-mail de acesso da plataforma chegou e se ele conseguiu entrar', r:'CKM', link:'ecolider', mail:'m_confirma_acesso'}
   ]},
   {id:'sem1', g:'ini', dia:7, ajuste:'prox', t:'Fim da 1ª semana — registro dos primeiros dias', s:'CKM reúne eventuais registros do início do colaborador', itens:[
     {id:'sem1-01', t:'E-mail ao gestor, ao Anjo e ao colaborador pedindo registros dos primeiros dias (fotos, boas-vindas, materiais), se houver algum, para arquivar no processo', r:'CKM', mail:'m_primeiros_registros'}
