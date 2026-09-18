@@ -80,7 +80,10 @@ export function DetalheProcessoReal({
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
   const [statusTemporario, setStatusTemporario] = useState<Record<string, StatusAcaoLegado>>({});
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, 'salvando' | 'salvo' | 'erro'>>({});
+  const [rascunhoProcesso, setRascunhoProcesso] = useState<ProcessoIntegracao>(processo);
+  const [feedbackCampoProcesso, setFeedbackCampoProcesso] = useState<Record<string, 'salvando' | 'salvo' | 'erro'>>({});
   const timersFeedbackRef = useRef<Record<string, number>>({});
+  const timersCampoProcessoRef = useRef<Record<string, number>>({});
   const [cobrancaAberta, setCobrancaAberta] = useState(false);
   const [cobrancaCiclo, setCobrancaCiclo] = useState<1 | 2 | 3 | 4 | undefined>(undefined);
   const [cobrancaPapel, setCobrancaPapel] = useState<PapelCobranca | null>(null);
@@ -113,6 +116,10 @@ export function DetalheProcessoReal({
   }, [etapas, itemDeepLink]);
 
   useEffect(() => {
+    setRascunhoProcesso(processo);
+  }, [processo]);
+
+  useEffect(() => {
     setStatusTemporario((atual) => {
       const proximo = { ...atual };
       let mudou = false;
@@ -128,6 +135,7 @@ export function DetalheProcessoReal({
 
   useEffect(() => () => {
     Object.values(timersFeedbackRef.current).forEach((timer) => window.clearTimeout(timer));
+    Object.values(timersCampoProcessoRef.current).forEach((timer) => window.clearTimeout(timer));
   }, []);
 
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
@@ -166,9 +174,41 @@ export function DetalheProcessoReal({
     }
   };
 
+  const limparFeedbackCampoDepois = (campo: keyof ProcessoIntegracao) => {
+    const chave = String(campo);
+    const anterior = timersCampoProcessoRef.current[chave];
+    if (anterior) window.clearTimeout(anterior);
+    timersCampoProcessoRef.current[chave] = window.setTimeout(() => {
+      setFeedbackCampoProcesso((atual) => {
+        if (!atual[chave]) return atual;
+        const proximo = { ...atual };
+        delete proximo[chave];
+        return proximo;
+      });
+      delete timersCampoProcessoRef.current[chave];
+    }, 3500);
+  };
+
   const salvarCampoProcesso = async (campo: keyof ProcessoIntegracao, valor: string) => {
-    if (String(processo[campo] ?? '') === valor) return;
-    await salvar({ ...processo, [campo]: valor } as ProcessoIntegracao);
+    const chave = String(campo);
+    if (String(processo[campo] ?? '') === valor) {
+      setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
+      return;
+    }
+
+    setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
+    setFeedbackCampoProcesso((atual) => ({ ...atual, [chave]: 'salvando' }));
+
+    try {
+      await salvar({ ...processo, [campo]: valor } as ProcessoIntegracao);
+      setFeedbackCampoProcesso((atual) => ({ ...atual, [chave]: 'salvo' }));
+      limparFeedbackCampoDepois(campo);
+    } catch (error) {
+      setRascunhoProcesso(processo);
+      setFeedbackCampoProcesso((atual) => ({ ...atual, [chave]: 'erro' }));
+      limparFeedbackCampoDepois(campo);
+      toast.error(error instanceof Error ? error.message : 'Não foi possível salvar a alteração. O valor anterior foi restaurado.');
+    }
   };
 
   const gerarAgenda = () => {
@@ -199,13 +239,31 @@ export function DetalheProcessoReal({
     <label className="space-y-1 text-xs">
       <span className="font-medium text-muted-foreground">{label}</span>
       <input
-        key={`${String(campo)}-${String(processo[campo] ?? '')}`}
         type={type}
-        defaultValue={String(processo[campo] ?? '')}
+        value={String(rascunhoProcesso[campo] ?? '')}
         placeholder={placeholder}
+        disabled={saving}
+        onChange={(e) => setRascunhoProcesso((atual) => ({ ...atual, [campo]: e.currentTarget.value } as ProcessoIntegracao))}
         onBlur={(e) => void salvarCampoProcesso(campo, e.currentTarget.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
       />
+      <span className={`block min-h-4 text-[11px] ${
+        feedbackCampoProcesso[String(campo)] === 'salvando'
+          ? 'font-medium text-amber-700'
+          : feedbackCampoProcesso[String(campo)] === 'salvo'
+            ? 'font-medium text-emerald-700'
+            : feedbackCampoProcesso[String(campo)] === 'erro'
+              ? 'font-medium text-destructive'
+              : 'text-muted-foreground'
+      }`}>
+        {feedbackCampoProcesso[String(campo)] === 'salvando'
+          ? 'Salvando e conferindo no servidor...'
+          : feedbackCampoProcesso[String(campo)] === 'salvo'
+            ? '✓ Salvo no servidor'
+            : feedbackCampoProcesso[String(campo)] === 'erro'
+              ? 'Não foi salvo — o valor anterior foi restaurado.'
+              : 'Salva automaticamente ao sair do campo'}
+      </span>
     </label>
   );
 
@@ -217,12 +275,30 @@ export function DetalheProcessoReal({
     <label className="space-y-1 text-xs">
       <span className="font-medium text-muted-foreground">{label}</span>
       <textarea
-        key={`${String(campo)}-${String(processo[campo] ?? '')}`}
-        defaultValue={String(processo[campo] ?? '')}
+        value={String(rascunhoProcesso[campo] ?? '')}
         placeholder={placeholder}
+        disabled={saving}
+        onChange={(e) => setRascunhoProcesso((atual) => ({ ...atual, [campo]: e.currentTarget.value } as ProcessoIntegracao))}
         onBlur={(e) => void salvarCampoProcesso(campo, e.currentTarget.value)}
-        className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
       />
+      <span className={`block min-h-4 text-[11px] ${
+        feedbackCampoProcesso[String(campo)] === 'salvando'
+          ? 'font-medium text-amber-700'
+          : feedbackCampoProcesso[String(campo)] === 'salvo'
+            ? 'font-medium text-emerald-700'
+            : feedbackCampoProcesso[String(campo)] === 'erro'
+              ? 'font-medium text-destructive'
+              : 'text-muted-foreground'
+      }`}>
+        {feedbackCampoProcesso[String(campo)] === 'salvando'
+          ? 'Salvando e conferindo no servidor...'
+          : feedbackCampoProcesso[String(campo)] === 'salvo'
+            ? '✓ Salvo no servidor'
+            : feedbackCampoProcesso[String(campo)] === 'erro'
+              ? 'Não foi salvo — o valor anterior foi restaurado.'
+              : 'Salva automaticamente ao sair do campo'}
+      </span>
     </label>
   );
 
@@ -233,11 +309,11 @@ export function DetalheProcessoReal({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex min-w-0 items-start gap-3">
               <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full border bg-muted font-semibold">
-                {iniciais(processo.nome)}
+                {iniciais(rascunhoProcesso.nome)}
               </div>
               <div className="min-w-0">
-                <h2 className="text-2xl font-bold truncate">{processo.nome}</h2>
-                <p className="text-sm text-muted-foreground">{processo.cargo || 'Cargo não informado'}{processo.unidade ? ` · ${processo.unidade}` : ''}</p>
+                <h2 className="text-2xl font-bold truncate">{rascunhoProcesso.nome}</h2>
+                <p className="text-sm text-muted-foreground">{rascunhoProcesso.cargo || 'Cargo não informado'}{rascunhoProcesso.unidade ? ` · ${rascunhoProcesso.unidade}` : ''}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Início {processo.inicio ? formatarData(processo.inicio) : '—'} · {dia != null && dia > 0 ? `dia ${dia} de 150` : 'jornada ainda não iniciada'}
                 </p>
@@ -293,9 +369,14 @@ export function DetalheProcessoReal({
             <label className="space-y-1 text-xs">
               <span className="font-medium text-muted-foreground">Tipo</span>
               <select
-                value={processo.tipo || 'Onboarding'}
-                onChange={(e) => void salvarCampoProcesso('tipo', e.currentTarget.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={rascunhoProcesso.tipo || 'Onboarding'}
+                disabled={saving}
+                onChange={(e) => {
+                  const valor = e.currentTarget.value;
+                  setRascunhoProcesso((atual) => ({ ...atual, tipo: valor } as ProcessoIntegracao));
+                  void salvarCampoProcesso('tipo', valor);
+                }}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
               >
                 <option value="Onboarding">Onboarding</option>
                 <option value="Crossboarding">Crossboarding</option>
