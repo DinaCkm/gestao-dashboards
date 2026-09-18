@@ -43,6 +43,9 @@ export interface ResumoAlinhamentoDetalhe {
   n: 1 | 2 | 3 | 4;
   marco: number;
   data: string;
+  hora: string;
+  link: string;
+  dataEfetiva: string;
   etapaId: string;
   estado: EstadoEtapaDetalhe;
   agendamento: 'agendado' | 'aguardando gestor' | 'não agendado' | 'a agendar';
@@ -203,6 +206,9 @@ export function resumosAlinhamentosDetalhe(
       n,
       marco: MARCO[n],
       data: etapa?.data || '',
+      hora: String(a.hora || ''),
+      link: String(a.link || ''),
+      dataEfetiva: String(a.realizado || ''),
       etapaId: `d${MARCO[n]}`,
       estado,
       agendamento,
