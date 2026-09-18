@@ -95,9 +95,10 @@ export function EmailActionButtons({
             key={chave}
             type="button"
             size="sm"
-            variant="default"
+            variant="outline"
             onClick={() => setChaveAberta(chave)}
             title={modelo?.nome || chave}
+            className="border-[#C8363C] bg-[#C8363C] font-semibold text-white hover:border-[#E13E41] hover:bg-[#E13E41] hover:text-white"
           >
             ✉ {mostrarRotulo ? rotuloCurto(chave) : 'Gerar'}
           </Button>
@@ -108,8 +109,11 @@ export function EmailActionButtons({
         <Button
           type="button"
           size="sm"
-          variant={enviado ? 'outline' : 'ghost'}
+          variant="outline"
           onClick={alternarEnviadoComFeedback}
+          className={enviado
+            ? 'border-[#1B7A55] bg-[#E6F3ED] font-semibold text-[#166348] hover:bg-[#E6F3ED]'
+            : 'border-[#D7D1CD] bg-white text-[#152232] hover:bg-[#F7F5F4]'}
         >
           {enviado ? '✓ enviado' : 'enviado?'}
         </Button>
