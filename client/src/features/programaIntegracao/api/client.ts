@@ -33,6 +33,24 @@ function textoConfirmacao(valor: unknown): string {
   return valor == null ? '' : String(valor);
 }
 
+function normalizarJsonConfirmacao(valor: unknown): unknown {
+  if (Array.isArray(valor)) {
+    return valor.map((item) => normalizarJsonConfirmacao(item));
+  }
+  if (valor && typeof valor === 'object') {
+    return Object.fromEntries(
+      Object.entries(valor as Record<string, unknown>)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([chave, conteudo]) => [chave, normalizarJsonConfirmacao(conteudo)]),
+    );
+  }
+  return valor;
+}
+
+function jsonConfirmacao(valor: unknown): string {
+  return JSON.stringify(normalizarJsonConfirmacao(valor ?? {}));
+}
+
 function confirmarProcessoLido(
   legacyId: string,
   esperado: ProcessoIntegracao,
@@ -49,8 +67,8 @@ function confirmarProcessoLido(
   }
 
   for (const campo of CAMPOS_ESTADO_CONFIRMACAO_PROCESSO) {
-    const atual = JSON.stringify(lido[campo] || {});
-    const previsto = JSON.stringify(esperado[campo] || {});
+    const atual = jsonConfirmacao(lido[campo]);
+    const previsto = jsonConfirmacao(esperado[campo]);
     if (atual !== previsto) {
       throw new Error(`O processo ${legacyId} foi salvo, mas o estado ${String(campo)} voltou diferente na conferência.`);
     }
