@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import { PLANO_REAL } from '../helpers/planoReal';
 import { cronogramaReal } from '../helpers/painelAcoes';
@@ -21,6 +21,7 @@ import { formatarData } from '../helpers/dateHelpers';
 import { EmailActionButtons } from './EmailActionButtons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 interface AlinhamentoPainelRealProps {
   processo: ProcessoIntegracao;
@@ -73,21 +74,62 @@ export function AlinhamentoPainelReal({
 }: AlinhamentoPainelRealProps) {
   const estado = estadoAlinhamentoAtual(processo, numero);
   const [nota, setNota] = useState('');
+  const [rascunho, setRascunho] = useState<ProcessoIntegracao>(processo);
+  const [statusEdicao, setStatusEdicao] = useState<'idle' | 'dirty' | 'saving' | 'saved' | 'error'>('idle');
   const agItem = itemAgendamento(numero);
+
+  useEffect(() => {
+    if (statusEdicao === 'dirty' || statusEdicao === 'saving') return;
+    setRascunho(processo);
+  }, [processo, statusEdicao]);
+
+  const estadoRascunho = estadoAlinhamentoAtual(rascunho, numero);
+  const fichaEmail = fichaAcaoAtual(processo, `ag${numero}-01`);
+  const fichaEmailRascunho = fichaAcaoAtual(rascunho, `ag${numero}-01`);
+
   const etapaAg = useMemo(
     () => cronogramaReal(processo, feriados).find((etapa) => etapa.et.id === `ag${numero}`),
     [processo, feriados, numero],
   );
-  const fichaEmail = fichaAcaoAtual(processo, `ag${numero}-01`);
   const statusEmail = etapaAg
     ? calcularStatusItem(processo, `ag${numero}-01`, etapaAg.data)
     : { k: 'ontime', l: 'No prazo', dif: 0 } as const;
 
-  const salvar = async (proximo: ProcessoIntegracao) => {
+  const salvarDireto = async (proximo: ProcessoIntegracao) => {
+    if (statusEdicao === 'dirty' || statusEdicao === 'saving') {
+      toast.warning('Salve primeiro as alterações digitadas neste alinhamento.');
+      return;
+    }
     await onSalvarProcesso(proximo);
   };
 
-  const mudarCampo = (campo: CampoAlinhamento, valor: string) => salvar(aplicarCampoAlinhamento(processo, numero, campo, valor));
+  const alterarRascunho = (proximo: ProcessoIntegracao) => {
+    setRascunho(proximo);
+    setStatusEdicao('dirty');
+  };
+
+  const mudarCampo = (campo: CampoAlinhamento, valor: string) => {
+    alterarRascunho(aplicarCampoAlinhamento(rascunho, numero, campo, valor));
+  };
+
+  const mudarCampoAta = (campo: 'texto' | 'link', valor: string) => {
+    alterarRascunho(aplicarCampoAtaAlinhamento(rascunho, numero, campo, valor));
+  };
+
+  const mudarCampoEmail = (campo: 'd' | 'prog', valor: string) => {
+    alterarRascunho(aplicarCampoFichaAcao(rascunho, `ag${numero}-01`, campo, valor));
+  };
+
+  const salvarAlteracoes = async () => {
+    if (statusEdicao !== 'dirty') return;
+    try {
+      setStatusEdicao('saving');
+      await onSalvarProcesso(rascunho);
+      setStatusEdicao('saved');
+    } catch {
+      setStatusEdicao('error');
+    }
+  };
 
   return (
     <div className="rounded-lg border bg-background px-4 py-1">
@@ -103,15 +145,16 @@ export function AlinhamentoPainelReal({
                 feriados={feriados}
                 onAlternarEnviado={async () => {
                   const atual = fichaAcaoAtual(processo, `ag${numero}-01`).s;
-                  await salvar(aplicarStatusAcao(processo, `ag${numero}-01`, atual === 'ok' ? '' : 'ok'));
+                  await salvarDireto(aplicarStatusAcao(processo, `ag${numero}-01`, atual === 'ok' ? '' : 'ok'));
                 }}
               />
             )}
             <input
               type="date"
-              value={fichaEmail.d}
-              onChange={(e) => salvar(aplicarCampoFichaAcao(processo, `ag${numero}-01`, 'd', e.target.value))}
-              className={`h-8 rounded-md border bg-background px-2 text-xs ${fichaEmail.s === 'ok' && !fichaEmail.d ? 'border-amber-400' : 'border-input'}`}
+              value={fichaEmailRascunho.d}
+              disabled={statusEdicao === 'saving'}
+              onChange={(e) => mudarCampoEmail('d', e.currentTarget.value)}
+              className={`h-8 rounded-md border bg-background px-2 text-xs disabled:opacity-60 ${fichaEmail.s === 'ok' && !fichaEmailRascunho.d ? 'border-amber-400' : 'border-input'}`}
               title="data de envio"
             />
             {fichaEmail.s !== 'ok' && (
@@ -119,9 +162,10 @@ export function AlinhamentoPainelReal({
                 <span className="text-xs text-muted-foreground">ou programar:</span>
                 <input
                   type="date"
-                  value={fichaEmail.prog}
-                  onChange={(e) => salvar(aplicarCampoFichaAcao(processo, `ag${numero}-01`, 'prog', e.target.value))}
-                  className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                  value={fichaEmailRascunho.prog}
+                  disabled={statusEdicao === 'saving'}
+                  onChange={(e) => mudarCampoEmail('prog', e.currentTarget.value)}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-xs disabled:opacity-60"
                   title="programar envio"
                 />
               </>
@@ -143,7 +187,7 @@ export function AlinhamentoPainelReal({
                   type="button"
                   size="sm"
                   variant={estado.agendado === valor ? 'default' : 'outline'}
-                  onClick={() => salvar(aplicarSituacaoAgendamento(processo, numero, valor))}
+                  onClick={() => void salvarDireto(aplicarSituacaoAgendamento(processo, numero, valor))}
                   aria-pressed={estado.agendado === valor}
                 >
                   {label}
@@ -154,30 +198,34 @@ export function AlinhamentoPainelReal({
               <div className="flex flex-wrap gap-2">
                 <input
                   type="date"
-                  value={estado.data}
-                  onChange={(e) => mudarCampo('data', e.target.value)}
-                  className={`h-9 rounded-md border bg-background px-3 text-sm ${estado.data ? 'border-input' : 'border-amber-400'}`}
+                  value={estadoRascunho.data}
+                  disabled={statusEdicao === 'saving'}
+                  onChange={(e) => mudarCampo('data', e.currentTarget.value)}
+                  className={`h-9 rounded-md border bg-background px-3 text-sm disabled:opacity-60 ${estadoRascunho.data ? 'border-input' : 'border-amber-400'}`}
                   title="data confirmada"
                 />
                 <input
-                  value={estado.hora}
-                  onChange={(e) => mudarCampo('hora', e.target.value)}
-                  className="h-9 w-36 rounded-md border border-input bg-background px-3 text-sm"
+                  value={estadoRascunho.hora}
+                  disabled={statusEdicao === 'saving'}
+                  onChange={(e) => mudarCampo('hora', e.currentTarget.value)}
+                  className="h-9 w-36 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
                   placeholder="horário"
                 />
                 <input
-                  value={estado.link}
-                  onChange={(e) => mudarCampo('link', e.target.value)}
-                  className="h-9 min-w-[250px] flex-1 rounded-md border border-input bg-background px-3 text-sm"
+                  value={estadoRascunho.link}
+                  disabled={statusEdicao === 'saving'}
+                  onChange={(e) => mudarCampo('link', e.currentTarget.value)}
+                  className="h-9 min-w-[250px] flex-1 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
                   placeholder="link da reunião"
                 />
               </div>
             )}
             {estado.agendado === 'nao' && (
               <input
-                value={estado.just}
-                onChange={(e) => mudarCampo('just', e.target.value)}
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={estadoRascunho.just}
+                disabled={statusEdicao === 'saving'}
+                onChange={(e) => mudarCampo('just', e.currentTarget.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
                 placeholder="por que ainda não? o que está travando?"
               />
             )}
@@ -194,12 +242,13 @@ export function AlinhamentoPainelReal({
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="date"
-              value={estado.realizado}
-              onChange={(e) => mudarCampo('realizado', e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              value={estadoRascunho.realizado}
+              disabled={statusEdicao === 'saving'}
+              onChange={(e) => mudarCampo('realizado', e.currentTarget.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
             />
-            <span className={estado.realizado ? 'text-xs font-medium text-emerald-700' : 'text-xs text-muted-foreground'}>
-              {estado.realizado ? `realizada em ${formatarData(estado.realizado)}` : 'marque a data quando acontecer'}
+            <span className={estadoRascunho.realizado ? 'text-xs font-medium text-emerald-700' : 'text-xs text-muted-foreground'}>
+              {estadoRascunho.realizado ? `realizada em ${formatarData(estadoRascunho.realizado)}` : 'marque a data quando acontecer'}
             </span>
           </div>
         ),
@@ -215,7 +264,7 @@ export function AlinhamentoPainelReal({
                 type="button"
                 size="sm"
                 variant={estado.relat === valor ? 'default' : 'outline'}
-                onClick={() => salvar(aplicarSituacaoRelatorioMentora(processo, numero, valor))}
+                onClick={() => void salvarDireto(aplicarSituacaoRelatorioMentora(processo, numero, valor))}
                 aria-pressed={estado.relat === valor}
               >
                 {label}
@@ -224,9 +273,10 @@ export function AlinhamentoPainelReal({
             {estado.relat && (
               <input
                 type="date"
-                value={estado.relatData}
-                onChange={(e) => mudarCampo('relatData', e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                value={estadoRascunho.relatData}
+                disabled={statusEdicao === 'saving'}
+                onChange={(e) => mudarCampo('relatData', e.currentTarget.value)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs disabled:opacity-60"
                 title="recebido em"
               />
             )}
@@ -239,9 +289,10 @@ export function AlinhamentoPainelReal({
         label: 'Ata e registros',
         children: (
           <textarea
-            value={estado.ata.texto}
-            onChange={(e) => salvar(aplicarCampoAtaAlinhamento(processo, numero, 'texto', e.target.value))}
-            className="min-h-[76px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={estadoRascunho.ata.texto}
+            disabled={statusEdicao === 'saving'}
+            onChange={(e) => mudarCampoAta('texto', e.currentTarget.value)}
+            className="min-h-[76px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
             placeholder="cole aqui a ata ou um resumo do que foi conversado"
           />
         ),
@@ -252,27 +303,41 @@ export function AlinhamentoPainelReal({
         children: (
           <div className="flex flex-wrap items-center gap-2">
             <input
-              value={estado.ata.link}
-              onChange={(e) => salvar(aplicarCampoAtaAlinhamento(processo, numero, 'link', e.target.value))}
-              className="h-9 min-w-[260px] flex-1 rounded-md border border-input bg-background px-3 text-sm"
+              value={estadoRascunho.ata.link}
+              disabled={statusEdicao === 'saving'}
+              onChange={(e) => mudarCampoAta('link', e.currentTarget.value)}
+              className="h-9 min-w-[260px] flex-1 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
               placeholder="link do Drive / SharePoint"
             />
             <Button
               type="button"
               size="sm"
               variant={estado.ata.drive ? 'default' : 'outline'}
-              onClick={() => salvar(alternarAtaArquivadaAlinhamento(processo, numero))}
+              onClick={() => void salvarDireto(alternarAtaArquivadaAlinhamento(processo, numero))}
             >
               {estado.ata.drive ? '✓ Arquivada no Drive' : 'Marcar como arquivada no Drive'}
             </Button>
-            {estado.ata.link && (
+            {estadoRascunho.ata.link && (
               <Button type="button" size="sm" variant="outline" asChild>
-                <a href={estado.ata.link} target="_blank" rel="noopener noreferrer">Abrir</a>
+                <a href={estadoRascunho.ata.link} target="_blank" rel="noopener noreferrer">Abrir</a>
               </Button>
             )}
           </div>
         ),
       })}
+
+      <div className="flex flex-col gap-3 border-b py-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-sm">
+          {statusEdicao === 'dirty' && <span className="font-medium text-amber-700">Há alterações não salvas neste alinhamento.</span>}
+          {statusEdicao === 'saving' && <span className="font-medium text-amber-700">Salvando e conferindo no servidor...</span>}
+          {statusEdicao === 'saved' && <span className="font-medium text-emerald-700">✓ Alterações do alinhamento salvas e conferidas.</span>}
+          {statusEdicao === 'error' && <span className="font-medium text-destructive">Não foi possível salvar. O rascunho foi mantido.</span>}
+          {statusEdicao === 'idle' && <span className="text-muted-foreground">Campos digitáveis só são gravados ao clicar em “Salvar alterações do alinhamento”.</span>}
+        </span>
+        <Button type="button" onClick={() => void salvarAlteracoes()} disabled={statusEdicao !== 'dirty'}>
+          {statusEdicao === 'saving' ? 'Salvando...' : 'Salvar alterações do alinhamento'}
+        </Button>
+      </div>
 
       {linha({
         label: 'Observações',
@@ -286,7 +351,7 @@ export function AlinhamentoPainelReal({
                   type="button"
                   className="text-muted-foreground hover:text-destructive"
                   aria-label="Remover observação"
-                  onClick={() => salvar(removerNotaAlinhamento(processo, numero, indice))}
+                  onClick={() => void salvarDireto(removerNotaAlinhamento(processo, numero, indice))}
                 >
                   ×
                 </button>
@@ -295,11 +360,15 @@ export function AlinhamentoPainelReal({
             <div className="flex gap-2">
               <input
                 value={nota}
-                onChange={(e) => setNota(e.target.value)}
+                onChange={(e) => setNota(e.currentTarget.value)}
                 onKeyDown={async (e) => {
                   if (e.key !== 'Enter' || !nota.trim()) return;
                   e.preventDefault();
-                  await salvar(adicionarNotaAlinhamento(processo, numero, nota));
+                  if (statusEdicao === 'dirty' || statusEdicao === 'saving') {
+                    toast.warning('Salve primeiro as alterações digitadas neste alinhamento.');
+                    return;
+                  }
+                  await onSalvarProcesso(adicionarNotaAlinhamento(processo, numero, nota));
                   setNota('');
                 }}
                 className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -311,7 +380,11 @@ export function AlinhamentoPainelReal({
                 variant="outline"
                 disabled={!nota.trim()}
                 onClick={async () => {
-                  await salvar(adicionarNotaAlinhamento(processo, numero, nota));
+                  if (statusEdicao === 'dirty' || statusEdicao === 'saving') {
+                    toast.warning('Salve primeiro as alterações digitadas neste alinhamento.');
+                    return;
+                  }
+                  await onSalvarProcesso(adicionarNotaAlinhamento(processo, numero, nota));
                   setNota('');
                 }}
               >
