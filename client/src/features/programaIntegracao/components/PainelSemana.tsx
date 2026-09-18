@@ -53,8 +53,8 @@ interface PainelSemanaProps {
   onAlterarCampoAcao?: (processId: string, itemId: string, campo: CampoFichaAcao, valor: string) => void;
   onAdicionarNotaAcao?: (processId: string, itemId: string, texto: string) => void;
   onRemoverNotaAcao?: (processId: string, itemId: string, indice: number) => void;
-  onConcluirGrupo?: (itemId: string, processIds: string[]) => void;
-  onAplicarStatusGrupo?: (itemId: string, processIds: string[], status: StatusGrupo) => void;
+  onConcluirGrupo?: (itemId: string, processIds: string[]) => Promise<void> | void;
+  onAplicarStatusGrupo?: (itemId: string, processIds: string[], status: StatusGrupo) => Promise<void> | void;
 }
 
 const statusClasses = {
@@ -110,6 +110,28 @@ export function PainelSemana({
   const [respostaAberta, setRespostaAberta] = useState<string | null>(null);
   const [rascunhosNota, setRascunhosNota] = useState<Record<string, string>>({});
   const [salvandoAcao, setSalvandoAcao] = useState<string | null>(null);
+  const [salvandoGrupo, setSalvandoGrupo] = useState<string | null>(null);
+  const [feedbackGrupo, setFeedbackGrupo] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
+
+  const executarGrupo = async (
+    chave: string,
+    quantidade: number,
+    operacao: () => Promise<void> | void,
+    sucesso: string,
+  ) => {
+    if (salvandoGrupo) return;
+    setSalvandoGrupo(chave);
+    setFeedbackGrupo(null);
+    try {
+      await operacao();
+      setFeedbackGrupo({ tipo: 'sucesso', texto: sucesso });
+    } catch (error) {
+      const texto = error instanceof Error ? error.message : 'Não foi possível concluir a alteração em grupo.';
+      setFeedbackGrupo({ tipo: 'erro', texto });
+    } finally {
+      setSalvandoGrupo(null);
+    }
+  };
 
   const processosTodos = useMemo(
     () => [...processosAtivos, ...processosEncerrados],
@@ -285,6 +307,17 @@ export function PainelSemana({
 
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><h3 className="text-lg font-semibold">Ações agrupadas</h3><p className="text-sm text-muted-foreground">{grupos.length} tarefas · {acoesFiltradas.length} no total</p></div>
 
+      {salvandoGrupo && (
+        <div className="fixed bottom-5 right-5 z-50 max-w-[calc(100vw-2rem)] rounded-lg border bg-background px-4 py-3 text-sm font-medium shadow-lg">
+          Salvando e conferindo no servidor...
+        </div>
+      )}
+      {feedbackGrupo && !salvandoGrupo && (
+        <div className={`fixed bottom-5 right-5 z-50 max-w-[calc(100vw-2rem)] rounded-lg border bg-background px-4 py-3 text-sm font-medium shadow-lg ${feedbackGrupo.tipo === 'erro' ? 'text-red-700' : 'text-emerald-700'}`}>
+          {feedbackGrupo.texto}
+        </div>
+      )}
+
       <div className="space-y-4">
         {grupos.length === 0 ? (
           <Card><CardContent className="flex flex-col items-center justify-center py-12"><CheckCircle2 className="w-10 h-10 text-emerald-600 mb-3" /><p className="font-medium">Nenhuma ação nessa seleção.</p></CardContent></Card>
@@ -302,13 +335,29 @@ export function PainelSemana({
                   </div><h3 className="font-semibold text-base leading-snug">{grupo.item.t}</h3><p className="text-xs opacity-80 mt-1">{grupo.etapa.t} · {grupo.pessoas.length} pessoa{grupo.pessoas.length === 1 ? '' : 's'}</p></div>
 
                   <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                    {abertos.length > 1 && onConcluirGrupo && <Button type="button" size="sm" variant="outline" onClick={() => onConcluirGrupo(grupo.itemId, idsAbertos)}>Marcar as {abertos.length} como feitas</Button>}
-                    {onAplicarStatusGrupo && <select value="__placeholder__" onChange={(event) => {
+                    {abertos.length > 1 && onConcluirGrupo && <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={Boolean(salvandoGrupo)}
+                      onClick={() => executarGrupo(
+                        `concluir|${grupo.itemId}`,
+                        abertos.length,
+                        () => onConcluirGrupo(grupo.itemId, idsAbertos),
+                        `${abertos.length} ações marcadas como feitas e conferidas no servidor.`,
+                      )}
+                    >{salvandoGrupo === `concluir|${grupo.itemId}` ? `Salvando e conferindo ${abertos.length} pessoas...` : `Marcar as ${abertos.length} como feitas`}</Button>}
+                    {onAplicarStatusGrupo && <select value="__placeholder__" disabled={Boolean(salvandoGrupo)} onChange={async (event) => {
                       const valor = event.target.value;
                       if (valor === '__placeholder__') return;
                       const status: StatusGrupo = valor === '__pendente__' ? '' : valor as StatusGrupo;
-                      onAplicarStatusGrupo(grupo.itemId, ids, status);
-                    }} className="h-9 max-w-[190px] rounded-md border border-input bg-background px-3 py-1 text-sm" title="Aplicar a mesma situação a todas as pessoas desta tarefa">
+                      await executarGrupo(
+                        `status|${grupo.itemId}`,
+                        ids.length,
+                        () => onAplicarStatusGrupo(grupo.itemId, ids, status),
+                        `Situação aplicada a ${ids.length} pessoas e conferida no servidor.`,
+                      );
+                    }} className="h-9 max-w-[190px] rounded-md border border-input bg-background px-3 py-1 text-sm disabled:opacity-60" title="Aplicar a mesma situação a todas as pessoas desta tarefa">
                       <option value="__placeholder__">Aplicar a {grupo.pessoas.length > 1 ? `todas as ${grupo.pessoas.length}` : 'esta'}…</option><option value="__pendente__">Pendente</option><option value="prog">Programado</option><option value="doing">Em andamento</option><option value="wait">Aguardando resposta</option><option value="na">Não se aplica</option><option value="wont">Não será feita</option>
                     </select>}
                   </div>

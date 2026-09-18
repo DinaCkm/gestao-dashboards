@@ -235,6 +235,7 @@ export default function ProgramaIntegracao() {
       await recarregarEstado();
     } catch (err) {
       registrarFalhaOperacao(err, 'Erro ao concluir grupo');
+      throw err;
     }
   };
 
@@ -245,6 +246,7 @@ export default function ProgramaIntegracao() {
       await recarregarEstado();
     } catch (err) {
       registrarFalhaOperacao(err, 'Erro ao aplicar status ao grupo');
+      throw err;
     }
   };
 
