@@ -1,7 +1,8 @@
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import { cronogramaReal } from './painelAcoes';
-import { LADO_RESPONSAVEL, type ResponsavelIntegracao } from './planoReal';
+import type { ResponsavelIntegracao } from './planoReal';
 import { fichaAcaoAtual, statusAcaoAtual, type StatusAcaoLegado } from './itemStateHelpers';
+import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
 import { calcularStatusItem, type StatusItemPainel } from './statusHelpers';
 
 export type FiltroStatusAgenda = 'aberto' | 'feito' | 'na' | '';
@@ -21,6 +22,8 @@ export interface LinhaAgendaReal {
   etapa: string;
   t: string;
   r: ResponsavelIntegracao;
+  responsavelAtual: string;
+  papeisAtuais: ResponsavelIntegracao[];
   mail: string;
   itid: string;
   s: StatusAcaoLegado;
@@ -96,6 +99,7 @@ export function linhasAgendaReal(
     cronogramaReal(processo, feriados, hojeRef).forEach((e) => {
       e.itens.forEach((it) => {
         const ficha = fichaAcaoAtual(processo, it.id);
+        const responsabilidade = responsabilidadeAtual(it, ficha.s);
         out.push({
           pid,
           pnome: processo.nome || pid,
@@ -105,6 +109,8 @@ export function linhasAgendaReal(
           etapa: e.et.t,
           t: it.t,
           r: it.r,
+          responsavelAtual: responsabilidade.rotulo,
+          papeisAtuais: responsabilidade.papeis,
           mail: it.mail || '',
           itid: it.id,
           s: ficha.s,
@@ -112,7 +118,7 @@ export function linhasAgendaReal(
           fim: ficha.d,
           just: ficha.just,
           obs: ficha.notas.length ? ficha.notas.map((n) => `${n.d}: ${n.t}`).join(' | ') : '',
-          lado: LADO_RESPONSAVEL[it.r] || 'ckm',
+          lado: responsabilidade.lado,
           enc: processo.situacao === 'encerrado',
         });
       });
@@ -149,6 +155,8 @@ export function linhasAgendaReal(
           etapa: `${ORD[n]} alinhamento · mentora${mentora ? ` ${mentora}` : ''}`,
           t: `${titulo} — ${ORD[n]} alinhamento`,
           r: 'CKM',
+          responsavelAtual: 'CKM',
+          papeisAtuais: ['CKM'],
           mail: '',
           itid: `ag${n}-00`,
           s: concluido ? 'ok' : '',
@@ -168,7 +176,7 @@ export function linhasAgendaReal(
 
   const status = filtros.status ?? 'aberto';
   return out.filter((x) => {
-    if (filtros.responsavel && x.r !== filtros.responsavel) return false;
+    if (filtros.responsavel && !x.papeisAtuais.includes(filtros.responsavel)) return false;
     if (filtros.pessoa && x.pid !== filtros.pessoa) return false;
     if (status === 'aberto' && fechado(x.s)) return false;
     if (status === 'feito' && x.s !== 'ok') return false;
@@ -214,8 +222,8 @@ export function gerarAgendaCsvHistorica(linhas: LinhaAgendaReal[]): Blob {
       x.pnome,
       x.etapa,
       x.t,
-      x.r,
-      x.lado === 'ckm' ? 'CKM' : 'Sebrae/gestor/Anjo/colaborador',
+      x.responsavelAtual,
+      x.lado === 'ckm' ? 'CKM' : x.responsavelAtual,
       STATUS_NOME[x.s] || x.s || 'Pendente',
       x.fim ? fmtc(x.fim) : '',
       x.just,
