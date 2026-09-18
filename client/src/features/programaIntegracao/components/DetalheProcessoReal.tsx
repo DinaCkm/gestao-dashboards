@@ -243,8 +243,14 @@ export function DetalheProcessoReal({
         value={String(rascunhoProcesso[campo] ?? '')}
         placeholder={placeholder}
         disabled={saving}
-        onChange={(e) => setRascunhoProcesso((atual) => ({ ...atual, [campo]: e.currentTarget.value } as ProcessoIntegracao))}
-        onBlur={(e) => void salvarCampoProcesso(campo, e.currentTarget.value)}
+        onChange={(e) => {
+          const valor = e.currentTarget.value;
+          setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
+        }}
+        onBlur={(e) => {
+          const valor = e.currentTarget.value;
+          void salvarCampoProcesso(campo, valor);
+        }}
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
       />
       <span className={`block min-h-4 text-[11px] ${
@@ -278,8 +284,14 @@ export function DetalheProcessoReal({
         value={String(rascunhoProcesso[campo] ?? '')}
         placeholder={placeholder}
         disabled={saving}
-        onChange={(e) => setRascunhoProcesso((atual) => ({ ...atual, [campo]: e.currentTarget.value } as ProcessoIntegracao))}
-        onBlur={(e) => void salvarCampoProcesso(campo, e.currentTarget.value)}
+        onChange={(e) => {
+          const valor = e.currentTarget.value;
+          setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
+        }}
+        onBlur={(e) => {
+          const valor = e.currentTarget.value;
+          void salvarCampoProcesso(campo, valor);
+        }}
         className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
       />
       <span className={`block min-h-4 text-[11px] ${
