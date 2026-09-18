@@ -1,6 +1,6 @@
 import type { ProcessoIntegracao } from '../types';
 import { cronogramaReal, type CronogramaEtapaReal } from './painelAcoes';
-import type { ItemPlanoReal } from './planoReal';
+import { LADO_RESPONSAVEL, type ItemPlanoReal } from './planoReal';
 import {
   calcularStatusItem,
   PESO_STATUS_ITEM,
@@ -143,8 +143,8 @@ export function itemPassaFiltroDetalhe(
 ): boolean {
   if (filtro === 'aberto') return status.k !== 'ok' && status.k !== 'off';
   if (filtro === 'feitas') return status.k === 'ok';
-  if (filtro === 'ckm') return item.r === 'CKM' && status.k !== 'ok' && status.k !== 'off';
-  if (filtro === 'eles') return item.r !== 'CKM' && status.k !== 'ok' && status.k !== 'off';
+  if (filtro === 'ckm') return (LADO_RESPONSAVEL[item.r] || 'ckm') === 'ckm' && status.k !== 'ok' && status.k !== 'off';
+  if (filtro === 'eles') return (LADO_RESPONSAVEL[item.r] || 'ckm') === 'eles' && status.k !== 'ok' && status.k !== 'off';
   if (filtro === 'late') return status.k === 'late';
   if (filtro === 'form') return Boolean(item.form);
   return true;
