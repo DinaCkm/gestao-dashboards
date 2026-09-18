@@ -26,21 +26,21 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 
 ### Novo e-mail de confirmação de acesso
 
-- [ ] **B01** Portar fielmente o modelo `m_confirma_acesso` do HTML v4, sem reescrever seu texto.
-- [ ] **B02** Inserir `m_confirma_acesso` na ordem canônica dos modelos, entre `m_primeiros_passos` e `m_primeiros_registros`.
-- [ ] **B03** Ligar a ação `d3-02` ao e-mail `m_confirma_acesso`, preservando `tut:1` e o link `ecolider`.
-- [ ] **B04** Confirmar que o novo modelo aparece no editor de modelos, na prévia e no botão de e-mail da ação correta.
-- [ ] **B05** Conferir texto, destinatário, assunto, tokens e comportamento do novo modelo contra o HTML v4.
+- [x] **B01** Portar fielmente o modelo `m_confirma_acesso` do HTML v4, sem reescrever seu texto.
+- [x] **B02** Inserir `m_confirma_acesso` na ordem canônica dos modelos, entre `m_primeiros_passos` e `m_primeiros_registros`.
+- [x] **B03** Ligar a ação `d3-02` ao e-mail `m_confirma_acesso`, preservando `tut:1` e o link `ecolider`.
+- [x] **B04** Confirmar que o novo modelo aparece no editor de modelos, na prévia e no botão de e-mail da ação correta.
+- [x] **B05** Conferir texto, destinatário, assunto, tokens e comportamento do novo modelo contra o HTML v4. **Prévia validada pela Dina em 18/09/2026.**
 
 ### Tutorial de Primeiro Acesso
 
-- [ ] **B06** Incorporar fisicamente ao módulo o PDF histórico **Tutorial - Primeiro Acesso - Plataforma Onboarding.pdf**, sem alterar seu conteúdo.
-- [ ] **B07** Validar integridade do PDF histórico: arquivo correto, 7 páginas e hash registrado na auditoria.
-- [ ] **B08** Disponibilizar o tutorial nas quatro ações históricas: `d3-01`, `d3-04`, `d3-02` e `pos3-12`.
-- [ ] **B09** Disponibilizar o tutorial na prévia do e-mail `m_primeiros_passos`.
-- [ ] **B10** Disponibilizar o tutorial na prévia do e-mail `m_compliance_ugp`, conforme o comportamento histórico de `abrirMailObj`.
-- [ ] **B11** Disponibilizar o tutorial em **Configurações → Links e formulários**.
-- [ ] **B12** Testar o download real do tutorial em todos os pontos previstos e confirmar que o PDF abre corretamente.
+- [x] **B06** Incorporar fisicamente ao módulo o PDF histórico **Tutorial - Primeiro Acesso - Plataforma Onboarding.pdf**, sem alterar seu conteúdo.
+- [x] **B07** Validar integridade do PDF histórico: arquivo correto, 7 páginas e hash registrado na auditoria.
+- [x] **B08** Disponibilizar o tutorial nas quatro ações históricas: `d3-01`, `d3-04`, `d3-02` e `pos3-12`.
+- [x] **B09** Disponibilizar o tutorial na prévia do e-mail `m_primeiros_passos`.
+- [x] **B10** Disponibilizar o tutorial na prévia do e-mail `m_compliance_ugp`, conforme o comportamento histórico de `abrirMailObj`.
+- [x] **B11** Disponibilizar o tutorial em **Configurações → Links e formulários**.
+- [x] **B12** Testar o download real do tutorial em todos os pontos previstos e confirmar que o PDF abre corretamente. **Confirmado pela Dina em 18/09/2026 após deploy do PR #95.**
 
 ## C. Salvamento e persistência — validações finais
 
@@ -120,7 +120,7 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 - [ ] **J01** Reauditar os **32 modelos** do HTML v4 texto a texto após incluir `m_confirma_acesso`.
 - [ ] **J02** Testar prévias com tokens usando somente processo de demonstração.
 - [ ] **J03** Conferir indicação de anexos em todos os modelos que têm anexo histórico.
-- [ ] **J04** Conferir tutorial nos dois diálogos históricos previstos: `m_primeiros_passos` e `m_compliance_ugp`.
+- [x] **J04** Conferir tutorial nos dois diálogos históricos previstos: `m_primeiros_passos` e `m_compliance_ugp`.
 - [ ] **J05** Testar marcar e-mail como enviado e automações relacionadas usando somente demonstração.
 
 ## K. Gerenciar pessoas
