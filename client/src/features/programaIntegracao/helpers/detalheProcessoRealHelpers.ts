@@ -1,6 +1,6 @@
 import type { ProcessoIntegracao } from '../types';
 import { cronogramaReal, type CronogramaEtapaReal } from './painelAcoes';
-import { LADO_RESPONSAVEL, type ItemPlanoReal } from './planoReal';
+import type { ItemPlanoReal } from './planoReal';
 import {
   calcularStatusItem,
   PESO_STATUS_ITEM,
@@ -9,6 +9,7 @@ import {
 } from './statusHelpers';
 import { fichaAcaoAtual } from './itemStateHelpers';
 import { respostaDoItem } from './respostaItemHelpers';
+import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
 
 export type FiltroDetalheProcesso = '' | 'aberto' | 'feitas' | 'ckm' | 'eles' | 'late' | 'form';
 
@@ -140,13 +141,17 @@ export function itemPassaFiltroDetalhe(
   item: ItemPlanoReal,
   status: StatusItemPainel,
   filtro: FiltroDetalheProcesso,
+  statusSalvo = '',
 ): boolean {
-  if (filtro === 'aberto') return status.k !== 'ok' && status.k !== 'off';
+  const aberto = status.k !== 'ok' && status.k !== 'off';
+  const responsabilidade = responsabilidadeAtual(item, statusSalvo);
+
+  if (filtro === 'aberto') return aberto;
   if (filtro === 'feitas') return status.k === 'ok';
-  if (filtro === 'ckm') return (LADO_RESPONSAVEL[item.r] || 'ckm') === 'ckm' && status.k !== 'ok' && status.k !== 'off';
-  if (filtro === 'eles') return (LADO_RESPONSAVEL[item.r] || 'ckm') === 'eles' && status.k !== 'ok' && status.k !== 'off';
+  if (filtro === 'ckm') return aberto && responsabilidade.lado === 'ckm';
+  if (filtro === 'eles') return aberto && responsabilidade.lado === 'eles';
   if (filtro === 'late') return status.k === 'late';
-  if (filtro === 'form') return Boolean(item.form);
+  if (filtro === 'form') return Boolean(item.form) && aberto;
   return true;
 }
 
@@ -162,11 +167,15 @@ export function etapasDetalheProcesso(
 ): EtapaDetalheProcesso[] {
   return cronogramaReal(processo, feriados, hojeRef).reduce<EtapaDetalheProcesso[]>((acc, etapa) => {
     const estado = estadoEtapaDetalhe(processo, etapa, hojeRef);
-    const itens = etapa.itens.filter((item) => itemPassaFiltroDetalhe(
-      item,
-      calcularStatusItem(processo, item.id, etapa.data, hojeRef),
-      filtro,
-    ));
+    const itens = etapa.itens.filter((item) => {
+      const ficha = fichaAcaoAtual(processo, item.id);
+      return itemPassaFiltroDetalhe(
+        item,
+        calcularStatusItem(processo, item.id, etapa.data, hojeRef),
+        filtro,
+        ficha.s,
+      );
+    });
 
     // Com filtro ativo, uma etapa sem nenhum item correspondente não deve aparecer.
     // Antes, etapas de alinhamento eram mantidas mesmo vazias; por isso "Em aberto"
@@ -245,7 +254,8 @@ export function resumoDetalheProcesso(
       if (st.k === 'ok') feitas++;
       else if (st.k === 'off') foraEscopo++;
       else {
-        if ((LADO_RESPONSAVEL[item.r] || 'ckm') === 'ckm') ckmAbertas++;
+        const responsabilidade = responsabilidadeAtual(item, fichaAcaoAtual(processo, item.id).s);
+        if (responsabilidade.lado === 'ckm') ckmAbertas++;
         else elesAbertas++;
         if (item.form) {
           formulariosAbertos++;
