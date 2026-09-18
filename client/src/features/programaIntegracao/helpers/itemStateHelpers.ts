@@ -143,11 +143,6 @@ function aplicarAutomacoes(
 }
 
 /**
- * Executa somente as automações históricas sobre uma cópia do processo.
- * É usado por alterações de alinhamento/mentora para evitar duplicar a mesma
- * regra de negócio em outros helpers.
- */
-/**
  * Conclui SOMENTE ações explicitamente programadas cuja data já chegou.
  * É usada na abertura do Programa de Integração para que uma ação programada
  * não permaneça no Painel depois do dia previsto.
@@ -175,6 +170,11 @@ export function aplicarSomenteProgramacoesVencidas(
   return alterou ? { ...processo, feito: novoFeito } : processo;
 }
 
+/**
+ * Executa somente as automações históricas sobre uma cópia do processo.
+ * É usado por alterações de alinhamento/mentora para evitar duplicar a mesma
+ * regra de negócio em outros helpers.
+ */
 export function aplicarAutomacoesProcesso(
   processo: ProcessoIntegracao,
   hojeRef: string | Date = new Date(),
