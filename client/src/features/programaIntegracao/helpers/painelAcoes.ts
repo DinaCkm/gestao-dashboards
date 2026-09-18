@@ -1,6 +1,8 @@
 import type { ProcessoIntegracao } from '../types';
-import { PLANO_REAL, LADO_RESPONSAVEL, type EtapaPlanoReal, type ItemPlanoReal } from './planoReal';
+import { PLANO_REAL, type EtapaPlanoReal, type ItemPlanoReal } from './planoReal';
 import { calcularStatusItem, type StatusItemPainel } from './statusHelpers';
+import { fichaAcaoAtual } from './itemStateHelpers';
+import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
 import type { FaixaPainel } from './painelKpis';
 import { FERIADOS_PADRAO_INTEGRACAO } from './configDefaults';
 
@@ -23,6 +25,7 @@ export interface AcaoPainelReal {
   data: string;
   faixa: FaixaPainel;
   lado: 'ckm' | 'eles';
+  responsavelAtual: string;
 }
 
 function D(s: string): Date {
@@ -222,6 +225,9 @@ export function coletarAcoesPainel(
                 ? 'prox'
                 : 'depois';
 
+          const ficha = fichaAcaoAtual(p, it.id);
+          const responsabilidade = responsabilidadeAtual(it, ficha.s);
+
           out.push({
             pid,
             p,
@@ -230,7 +236,8 @@ export function coletarAcoesPainel(
             st,
             data: e.data,
             faixa,
-            lado: LADO_RESPONSAVEL[it.r] || 'ckm',
+            lado: responsabilidade.lado,
+            responsavelAtual: responsabilidade.rotulo,
           });
         });
       });
