@@ -81,9 +81,9 @@ export function DetalheProcessoReal({
   const [statusTemporario, setStatusTemporario] = useState<Record<string, StatusAcaoLegado>>({});
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, 'salvando' | 'salvo' | 'erro'>>({});
   const [rascunhoProcesso, setRascunhoProcesso] = useState<ProcessoIntegracao>(processo);
-  const [feedbackCampoProcesso, setFeedbackCampoProcesso] = useState<Record<string, 'salvando' | 'salvo' | 'erro'>>({});
+  const [dadosAlterados, setDadosAlterados] = useState(false);
+  const [dadosSalvos, setDadosSalvos] = useState(false);
   const timersFeedbackRef = useRef<Record<string, number>>({});
-  const timersCampoProcessoRef = useRef<Record<string, number>>({});
   const [cobrancaAberta, setCobrancaAberta] = useState(false);
   const [cobrancaCiclo, setCobrancaCiclo] = useState<1 | 2 | 3 | 4 | undefined>(undefined);
   const [cobrancaPapel, setCobrancaPapel] = useState<PapelCobranca | null>(null);
@@ -116,8 +116,8 @@ export function DetalheProcessoReal({
   }, [etapas, itemDeepLink]);
 
   useEffect(() => {
-    setRascunhoProcesso(processo);
-  }, [processo]);
+    if (!dadosAlterados) setRascunhoProcesso(processo);
+  }, [processo, dadosAlterados]);
 
   useEffect(() => {
     setStatusTemporario((atual) => {
@@ -135,7 +135,6 @@ export function DetalheProcessoReal({
 
   useEffect(() => () => {
     Object.values(timersFeedbackRef.current).forEach((timer) => window.clearTimeout(timer));
-    Object.values(timersCampoProcessoRef.current).forEach((timer) => window.clearTimeout(timer));
   }, []);
 
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
@@ -174,40 +173,21 @@ export function DetalheProcessoReal({
     }
   };
 
-  const limparFeedbackCampoDepois = (campo: keyof ProcessoIntegracao) => {
-    const chave = String(campo);
-    const anterior = timersCampoProcessoRef.current[chave];
-    if (anterior) window.clearTimeout(anterior);
-    timersCampoProcessoRef.current[chave] = window.setTimeout(() => {
-      setFeedbackCampoProcesso((atual) => {
-        if (!atual[chave]) return atual;
-        const proximo = { ...atual };
-        delete proximo[chave];
-        return proximo;
-      });
-      delete timersCampoProcessoRef.current[chave];
-    }, 3500);
+  const alterarDadoProcesso = (campo: keyof ProcessoIntegracao, valor: string) => {
+    setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
+    setDadosAlterados(true);
+    setDadosSalvos(false);
   };
 
-  const salvarCampoProcesso = async (campo: keyof ProcessoIntegracao, valor: string) => {
-    const chave = String(campo);
-    if (String(processo[campo] ?? '') === valor) {
-      setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
-      return;
-    }
-
-    setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
-    setFeedbackCampoProcesso((atual) => ({ ...atual, [chave]: 'salvando' }));
-
+  const salvarDadosProcesso = async () => {
+    if (!dadosAlterados || saving) return;
     try {
-      await salvar({ ...processo, [campo]: valor } as ProcessoIntegracao);
-      setFeedbackCampoProcesso((atual) => ({ ...atual, [chave]: 'salvo' }));
-      limparFeedbackCampoDepois(campo);
+      await salvar(rascunhoProcesso);
+      setDadosAlterados(false);
+      setDadosSalvos(true);
     } catch (error) {
-      setRascunhoProcesso(processo);
-      setFeedbackCampoProcesso((atual) => ({ ...atual, [chave]: 'erro' }));
-      limparFeedbackCampoDepois(campo);
-      toast.error(error instanceof Error ? error.message : 'Não foi possível salvar a alteração. O valor anterior foi restaurado.');
+      setDadosSalvos(false);
+      toast.error(error instanceof Error ? error.message : 'Não foi possível salvar as alterações. Os dados editados foram mantidos na tela.');
     }
   };
 
@@ -243,33 +223,9 @@ export function DetalheProcessoReal({
         value={String(rascunhoProcesso[campo] ?? '')}
         placeholder={placeholder}
         disabled={saving}
-        onChange={(e) => {
-          const valor = e.currentTarget.value;
-          setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
-        }}
-        onBlur={(e) => {
-          const valor = e.currentTarget.value;
-          void salvarCampoProcesso(campo, valor);
-        }}
+        onChange={(e) => alterarDadoProcesso(campo, e.currentTarget.value)}
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
       />
-      <span className={`block min-h-4 text-[11px] ${
-        feedbackCampoProcesso[String(campo)] === 'salvando'
-          ? 'font-medium text-amber-700'
-          : feedbackCampoProcesso[String(campo)] === 'salvo'
-            ? 'font-medium text-emerald-700'
-            : feedbackCampoProcesso[String(campo)] === 'erro'
-              ? 'font-medium text-destructive'
-              : 'text-muted-foreground'
-      }`}>
-        {feedbackCampoProcesso[String(campo)] === 'salvando'
-          ? 'Salvando e conferindo no servidor...'
-          : feedbackCampoProcesso[String(campo)] === 'salvo'
-            ? '✓ Salvo no servidor'
-            : feedbackCampoProcesso[String(campo)] === 'erro'
-              ? 'Não foi salvo — o valor anterior foi restaurado.'
-              : 'Salva automaticamente ao sair do campo'}
-      </span>
     </label>
   );
 
@@ -284,33 +240,9 @@ export function DetalheProcessoReal({
         value={String(rascunhoProcesso[campo] ?? '')}
         placeholder={placeholder}
         disabled={saving}
-        onChange={(e) => {
-          const valor = e.currentTarget.value;
-          setRascunhoProcesso((atual) => ({ ...atual, [campo]: valor } as ProcessoIntegracao));
-        }}
-        onBlur={(e) => {
-          const valor = e.currentTarget.value;
-          void salvarCampoProcesso(campo, valor);
-        }}
+        onChange={(e) => alterarDadoProcesso(campo, e.currentTarget.value)}
         className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
       />
-      <span className={`block min-h-4 text-[11px] ${
-        feedbackCampoProcesso[String(campo)] === 'salvando'
-          ? 'font-medium text-amber-700'
-          : feedbackCampoProcesso[String(campo)] === 'salvo'
-            ? 'font-medium text-emerald-700'
-            : feedbackCampoProcesso[String(campo)] === 'erro'
-              ? 'font-medium text-destructive'
-              : 'text-muted-foreground'
-      }`}>
-        {feedbackCampoProcesso[String(campo)] === 'salvando'
-          ? 'Salvando e conferindo no servidor...'
-          : feedbackCampoProcesso[String(campo)] === 'salvo'
-            ? '✓ Salvo no servidor'
-            : feedbackCampoProcesso[String(campo)] === 'erro'
-              ? 'Não foi salvo — o valor anterior foi restaurado.'
-              : 'Salva automaticamente ao sair do campo'}
-      </span>
     </label>
   );
 
@@ -383,11 +315,7 @@ export function DetalheProcessoReal({
               <select
                 value={rascunhoProcesso.tipo || 'Onboarding'}
                 disabled={saving}
-                onChange={(e) => {
-                  const valor = e.currentTarget.value;
-                  setRascunhoProcesso((atual) => ({ ...atual, tipo: valor } as ProcessoIntegracao));
-                  void salvarCampoProcesso('tipo', valor);
-                }}
+                onChange={(e) => alterarDadoProcesso('tipo', e.currentTarget.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
               >
                 <option value="Onboarding">Onboarding</option>
@@ -410,7 +338,27 @@ export function DetalheProcessoReal({
             {campoLongo('consideracoes', 'Considerações da CKM para a UGP')}
             {campoLongo('notas', 'Anotações internas')}
           </div>
-          <p className="text-[11px] text-muted-foreground">Campos de texto são gravados apenas quando você sai do campo e somente se o conteúdo realmente mudou. A confirmação de leitura do processo continua sendo feita pelo cliente de persistência.</p>
+          <div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm">
+              {saving ? (
+                <span className="font-medium text-amber-700">Salvando e conferindo as alterações no servidor...</span>
+              ) : dadosAlterados ? (
+                <span className="font-medium text-amber-700">Há alterações não salvas.</span>
+              ) : dadosSalvos ? (
+                <span className="font-medium text-emerald-700">✓ Alterações salvas e conferidas no servidor.</span>
+              ) : (
+                <span className="text-muted-foreground">Edite os dados e clique em “Salvar alterações”.</span>
+              )}
+            </div>
+            <Button
+              type="button"
+              onClick={() => void salvarDadosProcesso()}
+              disabled={saving || !dadosAlterados}
+              className="shrink-0"
+            >
+              {saving ? 'Salvando...' : 'Salvar alterações'}
+            </Button>
+          </div>
         </div>
       </details>
 
