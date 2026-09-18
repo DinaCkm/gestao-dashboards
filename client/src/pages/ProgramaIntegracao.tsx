@@ -56,6 +56,7 @@ export default function ProgramaIntegracao() {
   const [activeTab, setActiveTab] = useState<MainTabValue>('painel');
   const [formularioSubTab, setFormularioSubTab] = useState<FormularioAdminSubTab>('disponiveis');
   const [configSubTab, setConfigSubTab] = useState<ConfigSubTab>('emails');
+  const [emailModeloSelecionado, setEmailModeloSelecionado] = useState('');
 
   useEffect(() => {
     const ficouOnline = () => setOnline(true);
@@ -69,6 +70,15 @@ export default function ProgramaIntegracao() {
       window.removeEventListener('online', ficouOnline);
       window.removeEventListener('offline', ficouOffline);
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const chaveEmail = new URLSearchParams(window.location.search).get('email') || '';
+    if (!chaveEmail) return;
+    setEmailModeloSelecionado(chaveEmail);
+    setConfigSubTab('emails');
+    setActiveTab('config');
   }, []);
 
   useEffect(() => {
@@ -341,7 +351,7 @@ export default function ProgramaIntegracao() {
           </TabsList>
 
           <TabsContent value="painel" className="space-y-6 mt-6">
-            <PainelSemana processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} respostasPendentes={respostasPendentes} config={config} onRevisarRespostas={handleRevisarRespostas} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} onConcluirAcao={handleMarcarConcluido} onAlterarStatusAcao={handleStatusAcao} onAlterarCampoAcao={handleCampoFichaAcao} onAdicionarNotaAcao={handleAdicionarNotaAcao} onRemoverNotaAcao={handleRemoverNotaAcao} onConcluirGrupo={handleConcluirGrupo} onAplicarStatusGrupo={handleAplicarStatusGrupo} />
+            <PainelSemana processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} respostasPendentes={respostasPendentes} config={config} onRevisarRespostas={handleRevisarRespostas} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} onConcluirAcao={handleMarcarConcluido} onAlterarStatusAcao={handleStatusAcao} onAlterarCampoAcao={handleCampoFichaAcao} onAdicionarNotaAcao={handleAdicionarNotaAcao} onRemoverNotaAcao={handleRemoverNotaAcao} onConcluirGrupo={handleConcluirGrupo} onAplicarStatusGrupo={handleAplicarStatusGrupo} onEditarModeloEmail={(chave) => { setEmailModeloSelecionado(chave); setConfigSubTab('emails'); setActiveTab('config'); }} />
           </TabsContent>
 
           <TabsContent value="agenda" className="space-y-6 mt-6">
@@ -388,7 +398,7 @@ export default function ProgramaIntegracao() {
                   <TabsTrigger value="datas" className="text-xs md:text-sm">Datas e feriados</TabsTrigger>
                   <TabsTrigger value="backup" className="text-xs md:text-sm">Dados e backup</TabsTrigger>
                 </TabsList>
-                <TabsContent value="emails" className="mt-6"><ConfiguracaoEmails config={config} processos={todosProcesos} onSaved={recarregarEstado} /></TabsContent>
+                <TabsContent value="emails" className="mt-6"><ConfiguracaoEmails config={config} processos={todosProcesos} onSaved={recarregarEstado} chaveInicialExterna={emailModeloSelecionado} /></TabsContent>
                 <TabsContent value="mentoras" className="mt-6"><ConfiguracaoMentoras config={config} processos={todosProcesos} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="cursos" className="mt-6"><ConfiguracaoCursos config={config} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="aviso" className="mt-6"><ConfiguracaoAviso config={config} onSaved={recarregarEstado} /></TabsContent>
