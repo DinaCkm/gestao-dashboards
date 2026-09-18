@@ -187,6 +187,21 @@ export const MODELOS_EMAIL_PADRAO_INTEGRACAO: Record<string, ModeloEmailIntegrac
     anexo: 'Tutorial de Primeiro Acesso (PDF)',
   },
 
+  m_confirma_acesso: {
+    fase: 'Primeiros dias',
+    nome: 'Confirmar acesso · Plataforma do Ecossistema do B.E.M. · Colaborador',
+    para: '{{EMAIL_COLABORADOR}}',
+    cc: '',
+    assunto: '[Onboarding] {{PRIMEIRO_NOME}}, deu tudo certo para acessar a plataforma?',
+    corpo:
+      'Olá {{PRIMEIRO_NOME}}, tudo bem?\n\n' +
+      'Só passando para confirmar: o e-mail com o seu login e senha da **plataforma do Ecossistema do B.E.M.** chegou certinho, e você já conseguiu entrar?\n{{LINK_ECOLIDER}}\n\n' +
+      '**Se deu tudo certo**, ótimo! Pode seguir com a Avaliação de Potencial — ela é o primeiro passo por lá, como te explicamos no e-mail anterior.\n\n' +
+      '**Se o e-mail não chegou, ou se você tentou entrar e não conseguiu** (por exemplo, senha não reconhecida, ou nenhum e-mail apareceu nem na caixa de spam), é só responder esta mensagem ou falar com a gente por aqui:\n{{CONTATO_CKM}}\n\nLiberamos o acesso de novo na hora.\n\n' +
+      'Qualquer dúvida, também é só chamar.' + ASS,
+    anexo: '',
+  },
+
   m_primeiros_registros: {
     fase: 'Primeiros dias',
     nome: 'Registros dos primeiros dias · Gestor, Anjo e Colaborador',
@@ -206,7 +221,7 @@ export const MODELOS_EMAIL_PADRAO_INTEGRACAO: Record<string, ModeloEmailIntegrac
 
 export const ORDEM_EMAILS_INTEGRACAO = [
   'm_ugp_controle', 'm_gestor_inicio', 'm_cobranca_bem', 'm_anjo_inicio', 'm_anjo_inicio_ugp',
-  'm_agenda', 'm_primeiros_passos', 'm_primeiros_registros',
+  'm_agenda', 'm_primeiros_passos', 'm_confirma_acesso', 'm_primeiros_registros',
   'm_agendamento_1', 'm_agendamento_2', 'm_agendamento_3', 'm_agendamento_4',
   'm_pos1_colab', 'm_pos1_gestor', 'm_pos1_ugp', 'm_pos1_anjo',
   'm_pos2_colab', 'm_pos2_gestor', 'm_pos2_ugp', 'm_pos2_anjo',
