@@ -122,7 +122,7 @@ function labelCicloSelecionado(form: PublicFormCatalog, draft: DraftPublico): st
 
 function respostasComIdentificacao(form: PublicFormCatalog, draft: DraftPublico): Record<string, string | string[]> {
   const answers = { ...draft.answers };
-  const unidade = draft.unidade === 'Outras Regionais' ? draft.outraUnidade.trim() : draft.unidade;
+  const unidade = draft.unidade === 'Outra' ? draft.outraUnidade.trim() : draft.unidade;
   const cicloLabel = labelCicloSelecionado(form, draft);
 
   if (form.key === 'controle') {
@@ -155,7 +155,7 @@ function validarIdentificacao(form: PublicFormCatalog, draft: DraftPublico): str
   if (!draft.nomeColaborador.trim()) return 'Informe o nome do colaborador.';
   if (form.identity.unidade) {
     if (!draft.unidade) return 'Informe a unidade.';
-    if (draft.unidade === 'Outras Regionais' && !draft.outraUnidade.trim()) return 'Informe qual é a outra unidade/regional.';
+    if (draft.unidade === 'Outra' && !draft.outraUnidade.trim()) return 'Informe qual é a outra unidade/regional.';
   }
   if (form.identity.dataInicio && !draft.dataInicio) return 'Informe a data de início.';
   if (form.identity.cycle && !draft.cycleValue) return 'Informe o período desta resposta.';
@@ -277,7 +277,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
       if (falha) { setPagina(p); setErro(falha); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
     }
 
-    const unidade = draft.unidade === 'Outras Regionais' ? draft.outraUnidade.trim() : draft.unidade;
+    const unidade = draft.unidade === 'Outra' ? draft.outraUnidade.trim() : draft.unidade;
     const payload: PublicFormPayload = {
       nomeColaborador: draft.nomeColaborador.trim(),
       unidade: unidade || undefined,
