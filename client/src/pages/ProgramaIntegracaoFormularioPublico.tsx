@@ -241,7 +241,6 @@ export default function ProgramaIntegracaoFormularioPublico() {
   );
   const totalPaginas = form ? form.sections.length + 1 : 0;
   const section = form && pagina > 0 ? form.sections[pagina - 1] : null;
-  const temEscala = useMemo(() => section?.questions.some((q) => q.type === 'scale') || false, [section]);
 
   if (!form) {
     return <div className="min-h-screen bg-muted/30 p-6"><Card className="mx-auto max-w-xl"><CardContent className="py-12 text-center"><h1 className="text-xl font-bold">Formulário não encontrado</h1><p className="mt-2 text-sm text-muted-foreground">Confira o endereço recebido.</p></CardContent></Card></div>;
@@ -331,7 +330,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
   };
 
   if (sucesso) {
-    return <div className="min-h-screen bg-muted/30 p-4 sm:p-8"><Card className="mx-auto max-w-2xl"><CardContent className="py-10 text-center"><CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" /><h1 className="mt-4 text-2xl font-bold">Resposta enviada</h1>{(form.outro || []).map((p, i) => <p key={i} className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{p}</p>)}<div className="mx-auto mt-6 max-w-sm rounded-lg border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Protocolo</p><p className="mt-1 font-mono text-xl font-bold">{sucesso.protocolo}</p></div>{sucesso.pendente && <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground">A resposta foi recebida e ficará aguardando conferência administrativa para ser vinculada ao processo correto. Não é necessário reenviar.</p>}</CardContent></Card></div>;
+    return <div className="min-h-screen bg-muted/30 p-4 sm:p-8"><Card className="mx-auto max-w-2xl"><CardContent className="py-10 text-center"><CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" /><h1 className="mt-4 text-2xl font-bold">Resposta enviada</h1>{(form.outro || []).map((p, i) => <p key={i} className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{p}</p>)}<div className="mx-auto mt-6 max-w-sm rounded-lg border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Protocolo</p><p className="mt-1 font-mono text-xl font-bold">{sucesso.protocolo}</p><p className="mt-2 text-xs text-muted-foreground">Guarde este número — ele identifica sua resposta caso precise consultar depois.</p></div>{sucesso.pendente && <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground">A resposta foi recebida e ficará aguardando conferência administrativa para ser vinculada ao processo correto. Não é necessário reenviar.</p>}</CardContent></Card></div>;
   }
 
   return (
@@ -339,7 +338,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="text-center"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Programa de Integração · Sebrae/TO</p><h1 className="mt-2 text-2xl font-bold sm:text-3xl">{form.name}</h1><p className="mt-2 text-sm text-muted-foreground">{form.description}</p></div>
 
-        <div className="flex gap-1" aria-label={`Etapa ${pagina + 1} de ${totalPaginas}`}>{Array.from({ length: totalPaginas }).map((_, i) => <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= pagina ? 'bg-primary' : 'bg-muted'}`} />)}</div>
+        <div className="flex gap-1" aria-label={`Etapa ${pagina + 1} de ${totalPaginas}`}>{Array.from({ length: totalPaginas }).map((_, i) => <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= pagina ? 'bg-primary' : 'bg-muted'}`} />)}</div><p className="text-center text-xs text-muted-foreground">Página {pagina + 1} de {totalPaginas}</p>
 
         <Card><CardContent className="space-y-6 pt-6">
           {pagina === 0 ? <>
@@ -357,7 +356,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
             </div>
           </> : section && <>
             <div><h2 className="text-xl font-semibold">{section.title || 'Formulário'}</h2>{section.intro && <p className="mt-2 text-sm text-muted-foreground">{section.intro}</p>}</div>
-            {temEscala && <div className="space-y-2 rounded-md border bg-muted/20 p-4"><p className="text-sm font-semibold">Dicas rápidas para responder</p>{DICAS_ESCALA.map((d) => <p key={d} className="text-xs text-muted-foreground">• {d}</p>)}<div className="mt-3 border-t pt-3">{LEGENDA_ESCALA.map((l) => <p key={l} className="text-xs text-muted-foreground">{l}</p>)}</div></div>}
+            {pagina === 1 && (form.key === 'pesquisa' || form.key === 'aval') && <div className="space-y-2 rounded-md border bg-muted/20 p-4"><p className="text-sm font-semibold">Dicas rápidas para responder</p>{DICAS_ESCALA.map((d) => <p key={d} className="text-xs text-muted-foreground">• {d}</p>)}<div className="mt-3 border-t pt-3">{LEGENDA_ESCALA.map((l) => <p key={l} className="text-xs text-muted-foreground">{l}</p>)}</div></div>}
             <div className="space-y-5">{section.questions.map(renderQuestion)}</div>
           </>}
 
