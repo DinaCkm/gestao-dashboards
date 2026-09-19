@@ -22,7 +22,7 @@ const text = (code: string, label: string, required = true, hint?: string): Publ
 
 export const PUBLIC_FORM_CATALOG: Record<PublicFormCatalog['slug'], PublicFormCatalog> = {
   'controle-integracao': {
-    key:'controle', slug:'controle-integracao', name:'Controle do Programa de Integração', description:'Cadastro do novo colaborador, preenchido pela UGP.', targetRole:'UGP',
+    key:'controle', slug:'controle-integracao', name:'Controle do Programa de Integração', description:'Cadastro do novo colaborador, preenchido pela UGP. Registrar aqui já marca o cadastro como preenchido — e completa os dados do processo.', targetRole:'UGP',
     intro:['Olá equipe do Núcleo de Desenvolvimento,','Esse cadastro é pra gente colocar os dados importantes do novo contratado que vão ser usados na Avaliação das Competências.','Só pra dar um toque, é bom preencher isso com no mínimo 7 dias de antecedência, pra dar tempo pro responsável pela avaliação se preparar direitinho.','Unidade de Gestão de Pessoas - UGP'],
     outro:['Gestor(a),','Parabéns por concluir o preenchimento do formulário! Suas respostas serão enviadas para a empresa responsável pela avaliação de perfil.','Agora, para complementar esses dados também será necessário o preenchimento do Formulário Bem Acolhido em nossa unidade, pelo gestor que estará recebendo o novo contratado.','Um abraço!','Núcleo de Desenvolvimento - UGP'],
     identity:{unidade:true,dataInicio:true,email:true,respondent:true},
@@ -50,7 +50,7 @@ export const PUBLIC_FORM_CATALOG: Record<PublicFormCatalog['slug'], PublicFormCa
     ],
   },
   'pesquisa-integracao': {
-    key:'pesquisa', slug:'pesquisa-integracao', name:'Pesquisa de Integração', description:'Respondida pelo colaborador depois de cada alinhamento.', targetRole:'Colaborador',
+    key:'pesquisa', slug:'pesquisa-integracao', name:'Pesquisa de Integração', description:'Respondida pelo colaborador depois de cada alinhamento. O período informado define a qual ciclo a resposta pertence.', targetRole:'Colaborador',
     intro:['Oi, colaborador(a)!','Queremos ouvir sua opinião sobre sua experiência aqui no Sebrae/TO e como tem sido seu processo de integração. Para isso, preparamos esta pesquisa rápida e fácil de responder. Queremos saber o que você pensa sobre diferentes aspectos, desde a cultura da empresa até seu relacionamento com colegas e gestores.','Sua opinião é muito valiosa para nós! Queremos garantir que você se sinta pertencente ao Sebrae/TO, que tenha orgulho do seu trabalho e que possa progredir profissionalmente.','Aproveite essa oportunidade para compartilhar suas percepções e nos ajudar a criar um ambiente cada vez melhor para todos. Não leva mais do que alguns minutinhos para responder. Contamos com sua participação!','Obrigado pela colaboração e estamos ansiosos para receber seu feedback! Unidade de Gestão de Pessoas - UGP · Núcleo de Desenvolvimento'],
     outro:['Você arrasou! Pesquisa concluída!','Valeu por ter reservado um tempinho para responder nossas perguntas. Sua opinião é mega importante para nós. Com suas respostas, vamos melhorar cada vez mais o ambiente por aqui.','Agradecemos pela sua colaboração e por ser parte da nossa equipe. Você faz toda a diferença! Vamos seguir juntos, rumo ao sucesso!','Abraços,','Unidade de Gestão de Pessoas - UGP','Núcleo de Desenvolvimento'],
     identity:{unidade:true,cycle:true},
@@ -64,7 +64,7 @@ export const PUBLIC_FORM_CATALOG: Record<PublicFormCatalog['slug'], PublicFormCa
     ],
   },
   'avaliacao-programa': {
-    key:'aval', slug:'avaliacao-programa', name:'Avaliação do Programa de Integração', description:'Respondida pelo gestor e pelo Anjo depois de cada alinhamento.', targetRole:'Gestor / Anjo',
+    key:'aval', slug:'avaliacao-programa', name:'Avaliação do Programa de Integração', description:'Respondida pelo gestor e pelo Anjo depois de cada alinhamento. É o formulário que libera o relatório de evolução dos e-mails de agendamento.', targetRole:'Gestor / Anjo',
     intro:['Olá Gestor e Anjo!','Gostaríamos de solicitar sua contribuição preenchendo este formulário com o intuito de obter sua percepção sobre o novo colaborador que está atualmente participando do Programa de Integração. Sua avaliação franca e verdadeira sobre o desempenho de cada funcionário é de extrema importância.','Essa percepção será utilizada para alinhar ações e registrar o período de experiência do colaborador em questão no controle interno do Sebrae/TO. Seu feedback será fundamental para uma avaliação abrangente e precisa. Agradecemos antecipadamente pela sua colaboração nesse processo.','Atenciosamente, Unidade de Gestão de Pessoas - UGP · Núcleo de Desenvolvimento.'],
     outro:['Você arrasou! Pesquisa concluída!','Valeu por ter reservado um tempinho para responder nossas perguntas. Sua opinião é mega importante para nós. Com suas respostas, vamos melhorar cada vez mais o ambiente por aqui.','Agradecemos pela sua colaboração e por ser parte da nossa equipe. Você faz toda a diferença! Vamos seguir juntos, rumo ao sucesso!','Abraços,','Unidade de Gestão de Pessoas - UGP','Núcleo de Desenvolvimento'],
     identity:{cycle:true,role:true,respondent:true},
@@ -85,7 +85,7 @@ export const PUBLIC_FORM_CATALOG: Record<PublicFormCatalog['slug'], PublicFormCa
     ],
   },
   'acompanhamento-pdi': {
-    key:'pdi', slug:'acompanhamento-pdi', name:'Acompanhamento do PDI', description:'Preenchido pela CKM e enviado à UGP no 45º e no 150º dia.', targetRole:'CKM',
+    key:'pdi', slug:'acompanhamento-pdi', name:'Acompanhamento do PDI', description:'Preenchido pela CKM e enviado à UGP no 45º e no 150º dia. Atualiza o status do PDI e da Jornada Compliance usados nos e-mails.', targetRole:'CKM',
     intro:['Olá Núcleo de Desenvolvimento,','Este formulário desempenha um papel fundamental na avaliação do progresso dos colaboradores no âmbito do Programa de Integração.'],
     identity:{unidade:true,respondent:true,cycle:true},
     cycleOptions:[{value:'2',cycle:2,label:'45º dia'},{value:'60',cycle:4,label:'60º dia (Crossboarding - finalização)'},{value:'150',cycle:4,label:'150º dia (Onboarding - finalização)'}],
