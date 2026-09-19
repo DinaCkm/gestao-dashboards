@@ -48,7 +48,6 @@ export const PROGRAMA_INTEGRACAO_CATALOG: Record<string, IntegracaoFormCatalog> 
       {title:"Conhecimentos",questions:[
         text("bem_conhecimentos_tecnicos","Liste os conhecimentos técnicos imprescindíveis para uma atuação de 6 meses:",true,"Informe os conhecimentos técnicos que a pessoa precisa aprender ou dominar para exercer a função. Ex.: sistemas, ferramentas, procedimentos ou conhecimentos específicos da área."),
         text("bem_documentos_treinamentos","Liste os documentos, manuais e treinamentos da UC/Sebrae/TO relacionados à unidade que são imprescindíveis para uma atuação adequada nos primeiros 6 meses."),
-        text("bem_treinamentos_uc","Treinamentos UC/Sebrae/TO imprescindíveis:",false,"Informe os treinamentos e capacitações oferecidos pela UC/Sebrae/TO que são essenciais para o desempenho adequado da função."),
       ]},
       {title:"Planejamento de atividades/demandas",questions:[
         text("bem_primeiros_15_dias","Primeiros 15 dias: Descreva as principais tarefas e demandas planejadas para os primeiros 15 dias do recém-contratado, considerando as atividades iniciais necessárias para conhecer a rotina, a equipe, os processos e começar a atuar na função."),
