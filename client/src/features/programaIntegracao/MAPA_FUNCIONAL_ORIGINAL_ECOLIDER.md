@@ -169,10 +169,11 @@ Objetivo deste documento: localizar, por função pública, onde cada comportame
 | Bem Acolhido | `/formularios/bem-acolhido` | reconstruído |
 | Pesquisa de Integração | `/formularios/pesquisa-integracao` | reconstruído |
 | Avaliação do Programa | `/formularios/avaliacao-programa` | reconstruído |
-| Acompanhamento do PDI | `/formularios/acompanhamento-pdi` | reconstruído |
+| Acompanhamento do PDI | `/formularios/acompanhamento-pdi` + `formKeyForItem()` para `pos2-02`/`pos4-02` | reconstruído; vínculo histórico `FORM_DO_ITEM` restaurado |
 | Ativo/inativo | configuração | reconstruído |
 | Textos personalizados | configuração | reconstruído |
-| Obrigatoriedade/opções | configuração | reconstruído |
+| Obrigatoriedade/opções | configuração | reconstruído; códigos/obrigatoriedade reaudtados contra o HTML v4 |
+| Textos oficiais de abertura/encerramento | catálogos cliente/servidor | reconciliados com HTML v4 em 19/09/2026; Bem Acolhido, Pesquisa e Avaliação tiveram textos completos restaurados |
 | Protocolo | backend público | reconstruído |
 | Política de duplicidade | backend público | reconstruído |
 | Resposta ambígua fica pendente | backend público | reconstruído |

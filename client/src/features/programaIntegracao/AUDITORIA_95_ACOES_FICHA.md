@@ -64,9 +64,11 @@ Conclusão: mecanismo funcional presente.
 
 ## 6. Formulários e respostas
 
-As 17 ações com `form` possuem integração com respostas registradas. Quando existe resposta, ela pode ser visualizada na própria ação; quando a resposta prevista ainda não existe e há processo identificado, a microimportação fica disponível.
+O HTML histórico não usa apenas a flag `form` para localizar respostas. Existe também o mapa `FORM_DO_ITEM`, que vincula os slots de resposta públicos às ações correspondentes. Isso é especialmente importante para o Acompanhamento do PDI: `pos2-02` (2º ciclo) e `pos4-02` (4º ciclo) não têm flag `form` no PLANO, mas possuem resposta PDI por `FORM_DO_ITEM`.
 
-Conclusão: mecanismo funcional presente.
+Em 19/09/2026, o equivalente foi centralizado em `formKeyForItem()` e passou a ser usado pela ficha, Painel e microimportação. Assim, resposta já registrada e registro ausente do PDI aparecem nos mesmos pontos previstos pelo histórico. As demais flags `form` do PLANO continuam preservadas como metadado de tarefa, inclusive para ações externas como Avaliação de Potencial/Jornada Compliance.
+
+Conclusão: mecanismo funcional presente e reconciliado com `FORM_DO_ITEM` do HTML v4.
 
 ## 7. Agenda PDF
 
