@@ -80,7 +80,7 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 - [ ] **F04** Avaliação do Programa de Integração: testar como Gestor e conferir registro/cálculos.
 - [ ] **F05** Avaliação do Programa de Integração: testar como Anjo e conferir papel correto.
 - [ ] **F06** Acompanhamento do PDI: preencher, enviar e conferir atualização esperada.
-- [ ] **F07** Validar regras públicas: CPF/telefone numéricos, data, texto longo >= 10, escala 0–5 com zero fora da média.
+- [x] **F07** Validar regras públicas: CPF/telefone numéricos, data, texto longo >= 10, escala 0–5 com zero fora da média. **Validado por inspeção cliente+servidor em 19/09/2026: CPF exige 11 dígitos; telefone exige 10/11 com DDD; texto longo exige >=10 caracteres; datas usam campo `date`; escala aceita somente inteiros 0–5; cálculo de média ignora respostas 0 (`n > 0`).**
 - [ ] **F08** Testar resposta ambígua indo para **Pendentes de vinculação**, sem criação automática de pessoa.
 - [ ] **F09** Testar a política de duplicidade dos formulários públicos.
 
@@ -98,7 +98,7 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 ## H. Cobrança de formulários
 
 - [ ] **H01** Testar agrupamento de formulários vencidos por responsável usando demonstração.
-- [ ] **H02** Conferir o e-mail único por responsável, links e vencimentos.
+- [x] **H02** Conferir o e-mail único por responsável, links e vencimentos. **Conferido por inspeção em 19/09/2026: pendências são agrupadas por Gestor/Anjo/Colaborador/UGP, o e-mail é montado por responsável, inclui o formulário, data prevista, indicação de atraso e link correspondente quando configurado.**
 - [ ] **H03** Testar `Marcar como cobrados` e a observação automática.
 - [ ] **H04** Testar a cobrança reduzida do 4º ciclo no Fechamento final.
 
@@ -144,7 +144,7 @@ Pendências:
 - [x] **L05** Confirmar o limite de 12 pontos e o ponto automático diário por inspeção/estado, sem apagar dados reais. **Conferido por inspeção em 18/09/2026: `ConfiguracaoDadosBackup` chama `garantirPontoAutomaticoDoDia`, exibe `LIMITE_PONTOS_RESTAURACAO` e informa manutenção dos 12 pontos mais recentes + 1 ponto automático por dia quando há processos. Nenhuma remoção/restauração foi executada.**
 - [ ] **L06 — PROTEGIDO** Testar **restauração real de backup** somente com nova autorização explícita da Dina e plano de rollback.
 - [x] **L07 — NÃO EXECUTAR EM PRODUÇÃO** Validar a lógica de **Limpar todas as marcações** sem disparar o reset global sobre pessoas reais. **Validado por inspeção segura em 19/09/2026: a auditoria registra a função histórica `btn-limpar` e confirma que o reset global não foi reproduzido/exposto no módulo atual justamente por ser operação de alto impacto. Nenhum reset foi disparado.**
-- [ ] **L08** Validar proteção de falha de conexão/recuperação sem colocar dados reais em risco.
+- [x] **L08** Validar proteção de falha de conexão/recuperação sem colocar dados reais em risco. **Validado por inspeção em 19/09/2026: mutações passam por `exigirConexaoParaAlterar`; salvamentos, lotes, reordenação e arquivamento exigem releitura/confirmação do servidor e falham fechados quando a confirmação não corresponde. Nenhuma falha destrutiva foi provocada.**
 - [x] **L09** Validar a tela de recuperação de erro sem provocar falha destrutiva em produção. **Validada em ocorrência real não destrutiva durante teste mobile: a tela exibiu “Ocorreu um erro inesperado”, detalhe técnico e opções “Tentar Novamente” / “Recarregar Página”; o defeito de `currentTarget` foi depois corrigido.**
 
 ## M. Fechamento técnico e regressão
