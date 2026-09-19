@@ -32,7 +32,7 @@ const FORMULARIOS: Array<{
   questoes: number;
 }> = [
   { key: 'controle', nome: 'Controle do Programa de Integração', descricao: 'Cadastro do novo colaborador, preenchido pela UGP.', papel: 'UGP', rota: ROTAS_PUBLICAS_FORMULARIOS.controle, questoes: 11 },
-  { key: 'bem', nome: 'Bem Acolhido em Nossa Unidade', descricao: 'Preparação da chegada, respondida pelo gestor.', papel: 'Gestor', rota: ROTAS_PUBLICAS_FORMULARIOS.bem, questoes: 12 },
+  { key: 'bem', nome: 'Bem Acolhido em Nossa Unidade', descricao: 'Preparação da chegada, respondida pelo gestor.', papel: 'Gestor', rota: ROTAS_PUBLICAS_FORMULARIOS.bem, questoes: 11 },
   { key: 'pesquisa', nome: 'Pesquisa de Integração', descricao: 'Respondida pelo colaborador depois de cada alinhamento.', papel: 'Colaborador', rota: ROTAS_PUBLICAS_FORMULARIOS.pesquisa, questoes: 23 },
   { key: 'aval', nome: 'Avaliação do Programa de Integração', descricao: 'Respondida pelo gestor e pelo Anjo depois de cada alinhamento.', papel: 'Gestor / Anjo', rota: ROTAS_PUBLICAS_FORMULARIOS.aval, questoes: 42 },
   { key: 'pdi', nome: 'Acompanhamento do PDI', descricao: 'Registro de acompanhamento do PDI nos ciclos previstos.', papel: 'CKM', rota: ROTAS_PUBLICAS_FORMULARIOS.pdi, questoes: 15 },
