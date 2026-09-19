@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { ProcessoIntegracao } from '../types';
 import {
   IMPORT_FORM_DEFINITIONS,
+  formKeyForItem,
   itemIdForResponse,
   parseImportedResponses,
   type FormImportKey,
@@ -24,25 +25,6 @@ interface MicroImportacaoAcaoProps {
   processos: ProcessoComId[];
   onSaved?: () => Promise<void> | void;
 }
-
-const FORM_POR_ITEM: Record<string, FormImportKey> = {
-  'pre-02': 'controle',
-  'pre-04b': 'bem',
-  'pos1-08': 'pesquisa',
-  'pos2-08': 'pesquisa',
-  'pos3-09': 'pesquisa',
-  'pos4-07': 'pesquisa',
-  'pos1-09': 'aval',
-  'pos2-09': 'aval',
-  'pos3-10': 'aval',
-  'pos4-08': 'aval',
-  'pos1-10': 'aval',
-  'pos2-10': 'aval',
-  'pos3-11': 'aval',
-  'pos4-09': 'aval',
-  'pos2-02': 'pdi',
-  'pos4-02': 'pdi',
-};
 
 const ORD: Record<number, string> = { 1: '1º', 2: '2º', 3: '3º', 4: '4º' };
 
@@ -84,7 +66,7 @@ export function MicroImportacaoAcao({
   processos,
   onSaved,
 }: MicroImportacaoAcaoProps) {
-  const formInicial = FORM_POR_ITEM[itemId];
+  const formInicial = formKeyForItem(itemId);
   const [texto, setTexto] = useState('');
   const [resultado, setResultado] = useState<ReturnType<typeof parseImportedResponses> | null>(null);
   const [duplicidades, setDuplicidades] = useState<Record<number, DuplicateAction | ''>>({});
