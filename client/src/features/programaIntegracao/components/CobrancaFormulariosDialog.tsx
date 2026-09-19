@@ -247,7 +247,7 @@ export function CobrancaFinalPainel({ processo, feriados = [], onVerTodas, onCob
           })}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Pesquisa de Integração, Avaliação do gestor, do Anjo e o Acompanhamento do PDI do 4º alinhamento já constam respondidos.</p>
+        <p className="text-sm text-muted-foreground">Pesquisa de Integração e as Avaliações do gestor e do Anjo do 4º alinhamento já constam respondidas.</p>
       )}
     </div>
   );
