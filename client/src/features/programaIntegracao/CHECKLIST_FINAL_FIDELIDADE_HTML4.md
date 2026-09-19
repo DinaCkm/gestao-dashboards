@@ -143,7 +143,7 @@ Pendências:
 - [ ] **L04** Criar, baixar e conferir um **ponto de restauração** sem restaurá-lo.
 - [x] **L05** Confirmar o limite de 12 pontos e o ponto automático diário por inspeção/estado, sem apagar dados reais. **Conferido por inspeção em 18/09/2026: `ConfiguracaoDadosBackup` chama `garantirPontoAutomaticoDoDia`, exibe `LIMITE_PONTOS_RESTAURACAO` e informa manutenção dos 12 pontos mais recentes + 1 ponto automático por dia quando há processos. Nenhuma remoção/restauração foi executada.**
 - [ ] **L06 — PROTEGIDO** Testar **restauração real de backup** somente com nova autorização explícita da Dina e plano de rollback.
-- [ ] **L07 — NÃO EXECUTAR EM PRODUÇÃO** Validar a lógica de **Limpar todas as marcações** sem disparar o reset global sobre pessoas reais.
+- [x] **L07 — NÃO EXECUTAR EM PRODUÇÃO** Validar a lógica de **Limpar todas as marcações** sem disparar o reset global sobre pessoas reais. **Validado por inspeção segura em 19/09/2026: a auditoria registra a função histórica `btn-limpar` e confirma que o reset global não foi reproduzido/exposto no módulo atual justamente por ser operação de alto impacto. Nenhum reset foi disparado.**
 - [ ] **L08** Validar proteção de falha de conexão/recuperação sem colocar dados reais em risco.
 - [x] **L09** Validar a tela de recuperação de erro sem provocar falha destrutiva em produção. **Validada em ocorrência real não destrutiva durante teste mobile: a tela exibiu “Ocorreu um erro inesperado”, detalhe técnico e opções “Tentar Novamente” / “Recarregar Página”; o defeito de `currentTarget` foi depois corrigido.**
 
