@@ -54,6 +54,24 @@ const ITEM_AVAL_G: Record<number, string> = { 1: 'pos1-09', 2: 'pos2-09', 3: 'po
 const ITEM_AVAL_A: Record<number, string> = { 1: 'pos1-10', 2: 'pos2-10', 3: 'pos3-11', 4: 'pos4-09' };
 const ITEM_PDI: Record<number, string> = { 2: 'pos2-02', 4: 'pos4-02' };
 
+const FORM_POR_ITEM: Record<string, FormImportKey> = {
+  'pre-02': 'controle',
+  'pre-04b': 'bem',
+};
+Object.values(ITEM_PESQUISA).forEach((itemId) => { FORM_POR_ITEM[itemId] = 'pesquisa'; });
+Object.values(ITEM_AVAL_G).forEach((itemId) => { FORM_POR_ITEM[itemId] = 'aval'; });
+Object.values(ITEM_AVAL_A).forEach((itemId) => { FORM_POR_ITEM[itemId] = 'aval'; });
+Object.values(ITEM_PDI).forEach((itemId) => { FORM_POR_ITEM[itemId] = 'pdi'; });
+
+/**
+ * Equivale ao FORM_DO_ITEM do HTML histórico.
+ * Importante: pos2-02 e pos4-02 comprovam o Acompanhamento do PDI mesmo sem
+ * possuírem a flag `form` no PLANO original.
+ */
+export function formKeyForItem(itemId: string): FormImportKey | '' {
+  return FORM_POR_ITEM[itemId] || '';
+}
+
 export const IMPORT_FORM_DEFINITIONS: Record<FormImportKey, FormImportDefinition> = {
   controle: {
     key: 'controle', name: 'Controle do Programa de Integração', personIndex: 5, dateIndex: 2, skip: [0,1,2,3,4], canCreate: true,

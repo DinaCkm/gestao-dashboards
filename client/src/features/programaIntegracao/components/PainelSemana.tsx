@@ -29,6 +29,7 @@ import {
   respostaDoItem,
 } from '../helpers/respostaItemHelpers';
 import { linkIntegracaoPorChave } from '../helpers/emailLinksHelpers';
+import { formKeyForItem } from '../helpers/registrarRespostasParser';
 import { formatarData } from '../helpers/dateHelpers';
 import { EmailActionButtons } from './EmailActionButtons';
 import { MicroImportacaoAcao } from './MicroImportacaoAcao';
@@ -374,6 +375,7 @@ export function PainelSemana({
                   const resposta = respostaDoItem(acao.p, grupo.itemId);
                   const respostaVisivel = respostaAberta === chave && resposta;
                   const ehEmail = Boolean(grupo.item.mail || (grupo.item.mails && grupo.item.mails.length));
+                  const temRespostaFormulario = Boolean(formKeyForItem(grupo.itemId));
                   const relN = ciclosRelatorioEvolucao(grupo.itemId);
                   const temRelatorioEvolucao = relN ? temDadosRelatorioEvolucao(acao.p, relN) : false;
                   const linkAcao = grupo.item.link
@@ -462,7 +464,7 @@ export function PainelSemana({
                             {grupo.item.pdf && <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(acao.p)}>Agenda PDF</Button>}
                             {relN && <Button type="button" size="sm" variant={temRelatorioEvolucao ? 'outline' : 'ghost'} onClick={() => handleGerarRelatorioEvolucao(acao.p, relN)} title={temRelatorioEvolucao ? (relN === 5 ? 'Gera o PDF com a evolução completa do 1º ao 4º alinhamento' : 'Gera o PDF de evolução do formulário do gestor para anexar neste e-mail') : 'Ainda não há formulário do gestor registrado para este relatório'}>{relN === 5 ? 'Relatório de evolução (completo)' : 'Relatório de evolução'}</Button>}
                             {resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setRespostaAberta(respostaVisivel ? null : chave); if (!respostaVisivel) setFichaAberta(null); }}>{respostaVisivel ? 'Ocultar resposta' : 'Resposta'}</Button>}
-                            {grupo.item.form && !resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setFichaAberta(chave); setRespostaAberta(null); }}>Registrar resposta</Button>}
+                            {temRespostaFormulario && !resposta && <Button type="button" size="sm" variant="outline" onClick={() => { setFichaAberta(chave); setRespostaAberta(null); }}>Registrar resposta</Button>}
                             <Button type="button" size="sm" variant="ghost" onClick={() => { setFichaAberta(aberta ? null : chave); if (!aberta) setRespostaAberta(null); }}>{ficha.notas.length ? `✎ ${ficha.notas.length}` : '⋯ ficha'}</Button>
                           </div>
                         </div>
@@ -509,7 +511,7 @@ export function PainelSemana({
 
                           {(ficha.s === 'wont' || ficha.s === 'na') && <label className="block space-y-1 text-xs"><span className="font-medium text-muted-foreground">Justificativa</span><input value={ficha.just} onChange={(e) => onAlterarCampoAcao?.(acao.pid, grupo.itemId, 'just', e.target.value)} placeholder="por que esta ação não será feita?" className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /></label>}
 
-                          {grupo.item.form && !resposta && (
+                          {temRespostaFormulario && !resposta && (
                             <MicroImportacaoAcao
                               processo={{ ...acao.p, id: acao.pid }}
                               processoId={acao.pid}
