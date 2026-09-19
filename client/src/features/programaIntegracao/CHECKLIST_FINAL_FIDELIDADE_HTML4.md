@@ -155,7 +155,7 @@ Pendências:
 - [ ] **M04** Fazer auditoria visual em desktop.
 - [ ] **M05** Fazer auditoria visual em celular.
 - [ ] **M06** Fazer regressão das áreas do EcoLíder fora do Programa de Integração, **sem alterá-las**, apenas confirmando que continuam funcionando.
-- [ ] **M07** Fazer comparação final do Programa de Integração contra o HTML v4 e o inventário, item por item.
+- [x] **M07** Fazer comparação final do Programa de Integração contra o HTML v4 e o inventário, item por item. **Comparação estática consolidada em 19/09/2026 pelas auditorias do inventário, 95 ações, estado/constantes, eventos, Painel, Agenda/Mentora, PDFs, anexos/tutorial e 32 e-mails. O delta do HTML v4 (`m_confirma_acesso` em `d3-02`) e as divergências antigas já resolvidas foram reconciliados; testes operacionais permanecem nos itens próprios.**
 - [ ] **M08** Atualizar documentação final e marcar somente evidências comprovadas.
 - [ ] **M09** Criar checkpoint/backup imediatamente anterior ao fechamento final e documentar rollback.
 - [ ] **M10** Revisar diff final antes de qualquer merge/deploy de encerramento.
