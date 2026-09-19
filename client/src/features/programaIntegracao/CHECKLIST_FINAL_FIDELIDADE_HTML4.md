@@ -93,7 +93,7 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 - [ ] **G05** Testar checklist de prontidão da Mentora.
 - [ ] **G06** Testar WhatsApp de disponibilidade e WhatsApp de confirmação sem enviar para contato real.
 - [ ] **G07** Testar horários sugeridos e uso desses horários no e-mail ao gestor.
-- [ ] **G08** Confirmar que marcar a preparação da Mentora como concluída fecha a ação correspondente.
+- [x] **G08** Confirmar que marcar a preparação da Mentora como concluída fecha a ação correspondente. **Confirmado por inspeção da regra em 19/09/2026: `alternarPreparacaoMentora()` grava `men.ok` e chama `aplicarAutomacoesProcesso()`; esta automação marca `agN-00` como `ok` com data quando `alinhamento.men.ok` está ativo.**
 
 ## H. Cobrança de formulários
 
@@ -156,7 +156,7 @@ Pendências:
 - [ ] **M05** Fazer auditoria visual em celular.
 - [ ] **M06** Fazer regressão das áreas do EcoLíder fora do Programa de Integração, **sem alterá-las**, apenas confirmando que continuam funcionando.
 - [x] **M07** Fazer comparação final do Programa de Integração contra o HTML v4 e o inventário, item por item. **Comparação estática consolidada em 19/09/2026 pelas auditorias do inventário, 95 ações, estado/constantes, eventos, Painel, Agenda/Mentora, PDFs, anexos/tutorial e 32 e-mails. O delta do HTML v4 (`m_confirma_acesso` em `d3-02`) e as divergências antigas já resolvidas foram reconciliados; testes operacionais permanecem nos itens próprios.**
-- [ ] **M08** Atualizar documentação final e marcar somente evidências comprovadas.
+- [x] **M08** Atualizar documentação final e marcar somente evidências comprovadas. **Documentação final consolidada em 19/09/2026: HTML v4, 19/95, 32 e-mails, tutorial, auditorias de inventário/ações/PDFs, mapa funcional e checklist reconciliados; itens que exigem execução real permanecem abertos.**
 - [ ] **M09** Criar checkpoint/backup imediatamente anterior ao fechamento final e documentar rollback.
 - [ ] **M10** Revisar diff final antes de qualquer merge/deploy de encerramento.
 - [ ] **M11** Obter autorização explícita da Dina quando a etapa envolver produção ou operação protegida.
