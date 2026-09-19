@@ -1,6 +1,6 @@
 # Auditoria das 95 ações da ficha individual
 
-Fonte funcional obrigatória: `trilha-integracao-codigo-completo_3.html`.
+Fonte funcional obrigatória para o fechamento: `trilha-integracao-codigo-completo_4.html`.
 
 Objetivo desta auditoria: conferir se as 95 ações históricas continuam representadas na ficha individual do EcoLíder e se cada categoria de controle usada no HTML original possui equivalente funcional na reconstrução atual.
 
@@ -44,13 +44,17 @@ Na reconstrução atual, `DetalheProcessoReal.tsx`, `itemStateHelpers.ts` e `Obs
 
 Conclusão: as 40 ações sem flag especial e o núcleo comum das demais ações estão cobertos pelo componente genérico atual.
 
+### Delta específico do HTML v4
+
+O HTML v4 acrescenta o modelo `m_confirma_acesso` à ação `d3-02`. O `PLANO_REAL` atual preserva `d3-02` com `tut:1`, `link:'ecolider'` e `mail:'m_confirma_acesso'`, sem alterar a contagem de 95 ações.
+
 ## 4. Ações de e-mail
 
 As ações com `mail` ou `mails` são tratadas por `EmailActionButtons.tsx`, que usa as chaves históricas do plano e abre a prévia real pelo motor de modelos de e-mail.
 
 A situação `enviado` é registrada usando a própria ação, preservando a equivalência do histórico.
 
-Conclusão: mecanismo funcional presente. A conferência literal dos 31 textos continua sendo um item separado do checklist.
+Conclusão: mecanismo funcional presente. A conferência literal dos 32 modelos foi atualizada em `AUDITORIA_32_EMAILS.md`.
 
 ## 5. Links
 
@@ -87,9 +91,7 @@ As quatro ações históricas com `tut:1` são:
 
 O PDF original foi localizado dentro do próprio HTML histórico em `TUTORIAL_B64`, extraído e validado separadamente. O arquivo exato possui 7 páginas, 1.167.592 bytes e SHA-256 `0224bc072ca801d96f64a767ed9e369b2c48c017f0a79d38b8824769bb9277fd`.
 
-Neste momento, a lógica `tut` ainda não está conectada ao `ControlesEspeciaisAcao.tsx`. Este é o único desvio funcional identificado por esta auditoria no mecanismo genérico das 95 ações.
-
-A pendência permanece explicitamente controlada pelo item `Tutorial nas ações aplicáveis` do checklist. Não deve ser considerada resolvida até o PDF histórico exato estar disponível no aplicativo e os quatro pontos exibirem o controle funcional.
+O PDF histórico exato está disponível no aplicativo e `ControlesEspeciaisAcao.tsx` usa o mesmo asset nas quatro ações com `tut:1`. O helper `tutorialPrimeiroAcesso.ts` preserva o nome histórico e o SHA-256 validado.
 
 ## 10. Resultado da auditoria
 
@@ -101,6 +103,6 @@ Resultado:
 - 95/95 IDs únicos;
 - controles comuns presentes;
 - e-mails, links, formulários/respostas, Agenda PDF e atas possuem equivalentes funcionais atuais;
-- uma lacuna compartilhada permanece: tutorial nas quatro ações `tut:1`.
+- o tutorial histórico está conectado às quatro ações `tut:1`; nenhuma lacuna estática restante foi identificada no mecanismo genérico das 95 ações.
 
 Esta auditoria não substitui build TypeScript, teste de persistência, teste visual nem o teste ponta a ponta. Esses itens continuam separados no checklist de fechamento.

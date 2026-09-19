@@ -1,6 +1,6 @@
 # Auditoria integral do inventário funcional histórico
 
-Fonte funcional obrigatória: `trilha-integracao-codigo-completo_3.html`.
+Fonte funcional obrigatória para o fechamento: `trilha-integracao-codigo-completo_4.html`.
 
 Documentos de apoio já concluídos:
 
@@ -9,7 +9,7 @@ Documentos de apoio já concluídos:
 - `AUDITORIA_10_EVENTOS.md`
 - `AUDITORIA_AGENDA_MENTORA.md`
 - `AUDITORIA_95_ACOES_FICHA.md`
-- `AUDITORIA_31_EMAILS.md`
+- `AUDITORIA_32_EMAILS.md`
 - `AUDITORIA_FINAL_PAINEL.md`
 - `AUDITORIA_PDFS_09_PDF_PARCIAL.md`
 
@@ -29,7 +29,7 @@ A auditoria consolidada cobre:
 - página individual;
 - quatro alinhamentos;
 - Mentora;
-- 31 modelos de e-mail;
+- 32 modelos de e-mail;
 - formulários e respostas;
 - administração dos formulários;
 - cobrança;
@@ -59,7 +59,7 @@ Possuem equivalente atual conhecido e documentado:
 - página individual e mural;
 - quatro alinhamentos;
 - Mentora;
-- 31 e-mails e tokens;
+- 32 e-mails e tokens;
 - importação e registro de respostas;
 - Respostas recebidas;
 - cinco formulários públicos;
@@ -70,66 +70,19 @@ Possuem equivalente atual conhecido e documentado:
 - configurações de e-mails, mentoras, cursos, aviso, links e datas;
 - infraestrutura segura para Gerenciar Pessoas.
 
-## Pendências funcionais reais encontradas e explicitamente controladas
+## Estado das divergências encontradas na auditoria original
 
-### 1. Tutorial histórico
+As divergências estáticas que apareciam nas primeiras auditorias foram reconciliadas no código atual:
 
-O PDF original foi recuperado do `TUTORIAL_B64` e validado, mas ainda não foi incorporado fisicamente ao bundle/aplicativo.
+- Tutorial histórico: arquivo exato incorporado e ligado às quatro ações, às duas prévias de e-mail e à área de configuração; hash histórico preservado.
+- Atalho de link no Painel: disponível quando a ação possui link.
+- Relatório de Andamento: blocos históricos reconstituídos e reaudtados.
+- Falha de conexão: mutações protegidas por guarda de conexão e leitura de confirmação do servidor.
+- Tela de erro/recuperação: fluxo de recuperação validado sem provocar falha destrutiva.
+- Processo de demonstração: criação segura e validações administrativas já disponíveis.
+- Modelo adicional do HTML v4: `m_confirma_acesso` incorporado em `d3-02`, mantendo 19 etapas / 95 ações e elevando os modelos de e-mail para 32.
 
-Afeta:
-
-- quatro ações `tut:1`;
-- prévia dos e-mails históricos que oferecem o tutorial;
-- área de arquivos/configuração prevista no original.
-
-### 2. Atalho `linkChip` no Painel
-
-O HTML histórico mostra link clicável junto às ações que possuem `link`. O Painel React atual ainda não renderiza esse atalho, embora a página individual e os helpers conheçam os links.
-
-### 3. Relatório de Andamento
-
-A auditoria contra `09-pdf.js` encontrou blocos históricos ainda não integralmente reproduzidos:
-
-- visão geral histórica completa;
-- classificação detalhada dos formulários;
-- tabela completa de alinhamentos e agendamento;
-- panorama de etapas abertas/concluídas;
-- ações `Não serão feitas` com justificativa;
-- atas e relatórios dos alinhamentos com detalhes históricos.
-
-### 4. Restauração real de backup
-
-A infraestrutura protegida existe, mas restauração completa ainda precisa de validação em ambiente com banco e leitura de volta real.
-
-### 5. Falha de conexão / offline
-
-O histórico possuía banner e proteção específica de operações sensíveis quando sem sincronização. A arquitetura atual é server-first e precisa de equivalente seguro, não de cópia cega do mecanismo antigo.
-
-### 6. Tela de erro e recuperação
-
-Existe erro básico com opção de recarregar, mas o conjunto histórico de recuperação segura ainda precisa ser fechado junto da estratégia offline/backup.
-
-### 7. Processo de demonstração
-
-O `criarDemo()` histórico foi mapeado, porém ainda não foi reconstruído integralmente na arquitetura atual.
-
-### 8. Gerenciar Pessoas
-
-As operações estão implementadas com APIs seguras, readback e arquivamento recuperável, mas criação, edição, reordenação, encerramento, reabertura e remoção ainda aguardam teste real de persistência antes de serem consideradas concluídas.
-
-### 9. Build, testes e validações finais
-
-Continuam pendentes como itens próprios:
-
-- TypeScript/build;
-- persistência após recarga;
-- formulários públicos;
-- quatro alinhamentos;
-- PDFs/Word;
-- regressão do restante do EcoLíder;
-- auditoria visual;
-- fluxo ponta a ponta;
-- pós-deploy.
+Permanecem separados no checklist final os testes operacionais que exigem execução real, como formulários públicos, quatro alinhamentos ponta a ponta, geração visual dos documentos, reordenação/arquivamento de demonstrações, backup/restauração protegida e fechamento técnico.
 
 ## Operação histórica destrutiva deliberadamente não recriada às cegas
 
