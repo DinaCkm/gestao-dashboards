@@ -4,7 +4,7 @@ A referência histórica funcional para o fechamento desta reconstrução é o *
 
 # Mapa funcional completo — Trilha histórica → EcoLíder
 
-Fonte funcional obrigatória: `trilha-integracao-codigo-completo_3.html`.
+Fonte funcional obrigatória para o fechamento: `trilha-integracao-codigo-completo_4.html`.
 
 Objetivo deste documento: localizar, por função pública, onde cada comportamento histórico está representado na reconstrução do EcoLíder. Este mapa não transforma item pendente em concluído; ele apenas impede que uma função do original fique sem destino conhecido.
 
@@ -12,15 +12,15 @@ Objetivo deste documento: localizar, por função pública, onde cada comportame
 
 | Função histórica | EcoLíder atual | Situação |
 |---|---|---|
-| Painel da semana | `components/PainelSemana.tsx` | reconstruído; microimportação/tutorial ainda em fechamento |
+| Painel da semana | `components/PainelSemana.tsx` | reconstruído; filtros, links e controles especiais auditados |
 | Agenda geral | `components/AgendaGeral.tsx` + `helpers/agendaRealHelpers.ts` | reconstruído e auditado |
-| Indicadores | `components/Indicadores.tsx` + helpers de indicadores | reconstruído; build e conferência visual final pendentes |
+| Indicadores | `components/Indicadores.tsx` + helpers de indicadores | reconstruído e validado funcionalmente; build/visual final permanecem no fechamento |
 | Registrar respostas | `components/RegistrarRespostas.tsx` + `helpers/registrarRespostasParser.ts` + `api/importResponses.ts` | reconstruído |
 | Respostas recebidas | `components/RespostasRecebidas.tsx` + API dedicada | reconstruído |
 | Formulários | `components/FormulariosIntegracaoAdmin.tsx` + rotas públicas | reconstruído |
 | Atas e relatórios | `components/AtasRelatoriosGeral.tsx` + helpers Word/PDF | reconstruído |
-| Gerenciar pessoas | `components/GerenciarPessoas.tsx` | interface existe; operações de criação/edição/ordem/encerrar/reabrir/remover ainda pendentes |
-| Configurações | componentes `Configuracao*` | reconstruídas por seção; restauração protegida ainda pendente |
+| Gerenciar pessoas | `components/GerenciarPessoas.tsx` | criação demo, edição, encerrar e reabrir já validados; reordenação/arquivamento ainda exigem teste operacional |
+| Configurações | componentes `Configuracao*` | reconstruídas por seção; 7 abas e backup local auditados; restauração real continua protegida |
 | Tema | `ThemeContext` / botão na página principal | existente no EcoLíder |
 
 ## 2. Processos ativos e encerrados
@@ -79,10 +79,10 @@ Objetivo deste documento: localizar, por função pública, onde cada comportame
 | Cartões dos processos | `painelProcessos.ts` | reconstruído |
 | Respostas pendentes no topo | Painel | reconstruído |
 | Visualizar resposta já registrada | Painel | reconstruído |
-| Registrar/importar resposta ausente na ação | microimportação | conexão final pendente |
+| Registrar/importar resposta ausente na ação | `MicroImportacaoAcao.tsx` | conexão real auditada; teste operacional ainda pendente |
 | E-mails por ação | `EmailActionButtons.tsx` | reconstruído |
-| PDFs por ação | helpers PDF | reconstruído; auditoria integral de `09-pdf.js` pendente |
-| Tutorial de primeiro acesso | PDF histórico embutido | portabilidade do arquivo original pendente |
+| PDFs por ação | helpers PDF | reconstruído; auditoria funcional de `09-pdf.js` concluída; geração visual real continua no checklist |
+| Tutorial de primeiro acesso | asset histórico + `tutorialPrimeiroAcesso.ts` | arquivo exato incorporado e ligado aos pontos históricos |
 
 ## 6. Agenda geral
 
@@ -132,7 +132,7 @@ Objetivo deste documento: localizar, por função pública, onde cada comportame
 
 | Função histórica | EcoLíder atual | Situação |
 |---|---|---|
-| Modelos padrão | `emailModelosPadrao.ts` | 32 modelos consolidados no HTML v4, incluindo `m_confirma_acesso`; auditoria literal final pendente |
+| Modelos padrão | `emailModelosPadrao.ts` | 32 modelos consolidados e reaudtados contra o HTML v4, incluindo `m_confirma_acesso` |
 | Personalização | `ConfiguracaoEmails.tsx` | reconstruído |
 | Restaurar padrão | Configuração de e-mails | reconstruído |
 | Tokens | `emailValoresHelpers.ts` | reconstruído |
@@ -141,7 +141,7 @@ Objetivo deste documento: localizar, por função pública, onde cada comportame
 | Mailto/cópia | helpers e diálogo | reconstruído |
 | Marcar enviado | status da ação | reconstruído |
 | Cobrança dinâmica | `cobrancaFormulariosHelpers.ts` | reconstruído |
-| Anexos/tutoriais | ações previstas | conferência final pendente |
+| Anexos/tutoriais | ações previstas | textos históricos preservados; tutorial real conectado aos pontos previstos |
 
 ## 10. Respostas de formulários
 
@@ -216,8 +216,8 @@ As operações de vincular, descartar, criar conscientemente nos formulários pe
 | Relatório da Mentora Word | helper específico | reconstruído |
 | Ata Word | helper específico | reconstruído |
 | Relatório UGP Word | helper específico | reconstruído |
-| Tutorial primeiro acesso PDF | material original embutido no HTML | portabilidade pendente |
-| Conferência integral de `09-pdf.js` | auditoria | pendente |
+| Tutorial primeiro acesso PDF | asset histórico exato | incorporado; integridade/hash histórico preservados |
+| Conferência integral de `09-pdf.js` | `AUDITORIA_PDFS_09_PDF_COMPLETA.md` | concluída funcionalmente; geração visual real permanece separada |
 
 ## 15. Configurações
 
@@ -243,8 +243,8 @@ A restauração real permanece protegida/pendente porque substituição de estad
 | Exportação JSON | backup local | reconstruído |
 | Validar arquivo antes de restaurar | backup local | reconstruído |
 | Restaurar efetivamente | protegido | pendente |
-| Banner/proteção de falha de conexão | recuperação | pendente |
-| Processo de demonstração | demonstração | pendente |
+| Proteção de falha de conexão | `connectionGuard` + readback | validada por inspeção; mutações falham fechadas sem confirmação |
+| Processo de demonstração | rota/admin segura | criação validada e usada nos testes administrativos |
 
 ## 17. Gerenciar pessoas
 
@@ -254,10 +254,10 @@ A restauração real permanece protegida/pendente porque substituição de estad
 | Nova pessoa | callback previsto | implementação final pendente |
 | Editar | callback previsto | implementação final pendente |
 | Timeline | rota de detalhe | reconstruído |
-| Reordenar | persistência específica | pendente |
-| Encerrar | operação final | pendente |
-| Reabrir | operação final | pendente |
-| Remover com confirmação | operação final | pendente |
+| Reordenar | persistência específica | implementado com readback; teste operacional final ainda pendente |
+| Encerrar | operação segura | validado com demonstração |
+| Reabrir | operação segura | validado com demonstração |
+| Remover com confirmação | arquivamento recuperável | implementado; teste operacional final ainda pendente |
 
 ## 18. Estado histórico e persistência
 
