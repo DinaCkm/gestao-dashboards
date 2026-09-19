@@ -92,7 +92,7 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [x] Automação final conferida.
 
 ## 7. E-mails
-- [x] 31 modelos históricos consolidados.
+- [x] 32 modelos históricos consolidados no HTML v4, incluindo `m_confirma_acesso`.
 - [x] Tokens principais reconstruídos.
 - [x] Links oficiais dos cinco formulários.
 - [x] Prévia de e-mail existente.
@@ -246,3 +246,8 @@ Este arquivo é o acompanhamento operacional do Plano Mestre. Um item só recebe
 - [ ] Autorização explícita da Dina para produção.
 - [ ] Merge/deploy.
 - [ ] Teste pós-deploy.
+
+
+## Reconciliação histórica 207/208
+
+O arquivo deste checklist contém **207 caixas verificáveis**. O contador histórico de **208 itens** foi preservado apenas como referência de acompanhamento anterior, sem criação artificial de um 208º item. Para encerramento técnico, a base verificável deste documento é 207 itens; o checklist final HTML v4 é controlado separadamente.

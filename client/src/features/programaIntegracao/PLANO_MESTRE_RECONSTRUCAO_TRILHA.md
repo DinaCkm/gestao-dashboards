@@ -1,3 +1,7 @@
+# Fonte histórica funcional mais recente
+
+Para a validação final desta reconstrução, a fonte funcional histórica de referência é o **`trilha-integracao-codigo-completo_4.html` (HTML v4)**. O v4 contém **19 etapas / 95 ações** e **32 modelos de e-mail**.
+
 # Plano Mestre — Trilha de Integração acoplada ao EcoLíder
 
 ## Objetivo
@@ -174,7 +178,7 @@ Ordem oficial dos blocos:
 
 ### Fase 8 — E-mails
 
-- [ ] conferir os 31 modelos;
+- [ ] conferir os 32 modelos do HTML v4, incluindo `m_confirma_acesso`;
 - [ ] tokens e links oficiais;
 - [ ] Para/CC/Assunto/Corpo/Anexo;
 - [ ] aviso global;
