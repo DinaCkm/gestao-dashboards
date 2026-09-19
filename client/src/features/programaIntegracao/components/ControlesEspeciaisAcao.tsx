@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import type { BootstrapState, ProcessoIntegracao, RespostaFormulario } from '../types';
 import type { ItemPlanoReal } from '../helpers/planoReal';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
+import { formKeyForItem } from '../helpers/registrarRespostasParser';
 import { linkIntegracaoPorChave } from '../helpers/emailLinksHelpers';
 import {
   TUTORIAL_PRIMEIRO_ACESSO_NOME,
@@ -53,7 +54,8 @@ export function ControlesEspeciaisAcao({
     () => item.link ? linkIntegracaoPorChave(item.link, config.links, origem) : null,
     [item.link, config.links, origem],
   );
-  const temMicroimportacao = Boolean(item.form && !resposta && processoId);
+  const temRespostaFormulario = Boolean(formKeyForItem(item.id));
+  const temMicroimportacao = Boolean(temRespostaFormulario && !resposta && processoId);
   const temControles = Boolean(item.pdf === 1 || item.tut === 1 || link?.u || ataNumero || resposta || temMicroimportacao);
 
   if (!temControles) return null;
