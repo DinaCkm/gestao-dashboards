@@ -117,9 +117,9 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 
 ## J. E-mails
 
-- [ ] **J01** Reauditar os **32 modelos** do HTML v4 texto a texto após incluir `m_confirma_acesso`.
+- [x] **J01** Reauditar os **32 modelos** do HTML v4 texto a texto após incluir `m_confirma_acesso`. **Reauditoria documental atualizada em 19/09/2026 em `AUDITORIA_32_EMAILS.md`; o 32º modelo `m_confirma_acesso` foi comparado ao HTML v4 e preserva posição entre `m_primeiros_passos` e `m_primeiros_registros`.**
 - [ ] **J02** Testar prévias com tokens usando somente processo de demonstração.
-- [ ] **J03** Conferir indicação de anexos em todos os modelos que têm anexo histórico.
+- [x] **J03** Conferir indicação de anexos em todos os modelos que têm anexo histórico. **Conferido por auditoria histórica: os 10 modelos com indicação textual de anexo permanecem mapeados; o HTML v4 acrescenta `m_confirma_acesso` sem anexo, portanto não altera essa relação. Tutorial permanece tratado separadamente nos pontos históricos específicos.**
 - [x] **J04** Conferir tutorial nos dois diálogos históricos previstos: `m_primeiros_passos` e `m_compliance_ugp`.
 - [ ] **J05** Testar marcar e-mail como enviado e automações relacionadas usando somente demonstração.
 
