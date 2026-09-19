@@ -14,7 +14,7 @@ export type PublicFormCatalog = {
   sections: PublicSection[];
 };
 
-export const UNIDADES_INTEGRACAO = ['UAS','UMC','UGE','URI','UAC','UAR','UTIC','UCI','AUD','UGOC','UGP','CDE','RBP','RMN','RVA','RME','RNO','RPJ','RSG','RSU','RSE','URC','Regional Norte','Regional Bico do Papagaio','Outras Regionais'];
+export const UNIDADES_INTEGRACAO = ['UAS','UMC','UGE','URI','UAC','UAR','UTIC','UCI','AUD','UGOC','UGP','CDE','RBP','RMN','RVA','RME','RNO','RPJ','RSG','RSU','RSE','URC','Regional Norte','Regional Bico do Papagaio','Outras Regionais','Outra'];
 export const QUALIDADES_BEM = ['Animado','Atencioso','Ativo','Audaz','Autêntico','Autoconfiante','Autoritário','Calado','Calmo','Carismático','Cativante','Competitivo','Compreensivo','Convincente','Corajoso','Cortês','Criativo','Decidido','Desconfiado','Destemido','Diplomático','Direto','Disciplinado','Dócil','Egoísta','Empreendedor','Encantador','Enérgico','Entusiasta','Envergonhado','Envolvente','Esclarecido','Espontâneo','Extrovertido','Firme','Flexível','Formal','Generoso','Gentil','Humilde','Impaciente','Influente','Irreverente','Leal','Livre','Meticuloso','Original','Ousado','Paciente','Pacífico','Passivo','Perfeccionista','Persistente','Persuasivo','Preocupado','Proativo','Prudente','Querido','Realista','Receoso','Respeitoso','Retraído','Satisfeito','Saudável','Sensato','Sensível','Sério','Simpático','Simples','Sociável','Sossegado','Suave','Teimoso','Tímido','Tolerante','Tradicional','Versátil'];
 
 const scale = (code: string, label: string): PublicQuestion => ({ code, label, type: 'scale', required: true });
