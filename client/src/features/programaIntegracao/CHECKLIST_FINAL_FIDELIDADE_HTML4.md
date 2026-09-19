@@ -118,10 +118,10 @@ Este checklist substitui o checklist antigo como lista operacional de fechamento
 ## J. E-mails
 
 - [x] **J01** Reauditar os **32 modelos** do HTML v4 texto a texto após incluir `m_confirma_acesso`. **Reauditoria documental atualizada em 19/09/2026 em `AUDITORIA_32_EMAILS.md`; o 32º modelo `m_confirma_acesso` foi comparado ao HTML v4 e preserva posição entre `m_primeiros_passos` e `m_primeiros_registros`.**
-- [ ] **J02** Testar prévias com tokens usando somente processo de demonstração.
+- [x] **J02** Testar prévias com tokens usando somente processo de demonstração. **Validado pela Dina em produção com processos de demonstração: prévias abriram com destinatário, assunto e tokens resolvidos, incluindo confirmação de acesso e agendamento do 1º alinhamento.**
 - [x] **J03** Conferir indicação de anexos em todos os modelos que têm anexo histórico. **Conferido por auditoria histórica: os 10 modelos com indicação textual de anexo permanecem mapeados; o HTML v4 acrescenta `m_confirma_acesso` sem anexo, portanto não altera essa relação. Tutorial permanece tratado separadamente nos pontos históricos específicos.**
 - [x] **J04** Conferir tutorial nos dois diálogos históricos previstos: `m_primeiros_passos` e `m_compliance_ugp`.
-- [ ] **J05** Testar marcar e-mail como enviado e automações relacionadas usando somente demonstração.
+- [x] **J05** Testar marcar e-mail como enviado e automações relacionadas usando somente demonstração. **Validado pela Dina durante os testes dos botões de e-mail no Painel/Timeline: geração, marcação de enviado e atualização do estado funcionaram em demonstração.**
 
 ## K. Gerenciar pessoas
 
@@ -131,7 +131,7 @@ Evidências já obtidas:
 - [x] **K03** Reabrir processo de demonstração.
 
 Pendências:
-- [ ] **K04** Retestar **Editar pessoa/processo** com o novo botão explícito de salvar.
+- [x] **K04** Retestar **Editar pessoa/processo** com o novo botão explícito de salvar. **Validado pela Dina: alteração de nome/dados exibiu salvamento explícito, confirmação “Salvo e conferido no servidor” e persistiu após recarga.**
 - [ ] **K05** Testar **Reordenar** somente entre processos de demonstração, sem deslocar pessoas reais indevidamente.
 - [ ] **K06** Testar **Remover/arquivar** um processo de demonstração, confirmando preservação do histórico.
 
@@ -145,7 +145,7 @@ Pendências:
 - [ ] **L06 — PROTEGIDO** Testar **restauração real de backup** somente com nova autorização explícita da Dina e plano de rollback.
 - [ ] **L07 — NÃO EXECUTAR EM PRODUÇÃO** Validar a lógica de **Limpar todas as marcações** sem disparar o reset global sobre pessoas reais.
 - [ ] **L08** Validar proteção de falha de conexão/recuperação sem colocar dados reais em risco.
-- [ ] **L09** Validar a tela de recuperação de erro sem provocar falha destrutiva em produção.
+- [x] **L09** Validar a tela de recuperação de erro sem provocar falha destrutiva em produção. **Validada em ocorrência real não destrutiva durante teste mobile: a tela exibiu “Ocorreu um erro inesperado”, detalhe técnico e opções “Tentar Novamente” / “Recarregar Página”; o defeito de `currentTarget` foi depois corrigido.**
 
 ## M. Fechamento técnico e regressão
 
