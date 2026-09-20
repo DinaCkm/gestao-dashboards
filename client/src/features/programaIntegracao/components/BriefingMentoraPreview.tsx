@@ -78,7 +78,7 @@ export function BriefingMentoraPreview({
           </div>
 
           {sec('Como vai ser a conversa', <>
-            <p className="rounded-lg border-l-4 border-[#C8363C] bg-[#F7F5F4] p-3 text-sm font-semibold">
+            <p className="rounded-lg border-l-4 border-[#6B3E8F] bg-[#F7F8FC] p-3 text-sm font-semibold">
               Estrutura preferida — 10 min a sós com o gestor · 10 min com os dois juntos · 10 min a sós com o colaborador para encerrar.
             </p>
             <p className="text-sm">Você conduz a conversa, orienta as duas partes e depois repassa o que observou para a CKM. Quem dá o feedback é o gestor: você organiza o momento, escuta e registra. Você não monta o PDI e não revisa evidências uma a uma.</p>
