@@ -338,6 +338,9 @@ export function gerarBriefingMentoraPdf(
   linha(`CKM Talents: ${suporte(config)}`);
 
   sec('O QUE VOCÊ PRECISA SABER ANTES');
+  const ecoStatus = dadosEcoLiderDoProcesso(processo);
+  linha('Ações do PDI', 9, true);
+  linha(ecoStatus.pdi?.statusTexto || 'Ainda sem tarefas registradas no PDI.');
   if (numero === 1) {
     linha('Qualidades e competências que o gestor considera importantes', 9, true);
     const qs = qualidadesBem(processo);
@@ -354,7 +357,6 @@ export function gerarBriefingMentoraPdf(
     }
     linha('Ponto obrigatório desta primeira conversa: pergunte ao gestor quais atividades o colaborador irá efetivamente desempenhar e anote. É com base nelas que a CKM monta o PDI de acordo com as atribuições reais da função — você não precisa elaborar o plano, só levantar a informação.', 9, true);
   } else {
-    linha('Status do PDI', 9, true); linha(textoStatusPdi(processo));
     linha('Pendências', 9, true); linha(String(processo.pendencias || '').trim() || 'Nenhuma pendência registrada.');
     const evolucao = resumoEvolucaoMentora(processo, numero);
     if (evolucao) {
