@@ -21,7 +21,7 @@ import { arquivarRespostaRecebida } from '../api/respostas';
 import { buscarPerfilEcoLider, buscarStatusEcoLider, type EcoLiderAndamento } from '../api/ecoLider';
 import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { gerarBriefingMentoraPdf, gerarRelatorioMentoraWord } from '../helpers/mentoraDocumentos';
-import { alternarPreparacaoMentora } from '../helpers/mentoraStateHelpers';
+import { alternarPreparacaoMentora, estadoMentoraAlinhamento } from '../helpers/mentoraStateHelpers';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
 import { gerarRelatorioAndamentoPdf } from '../helpers/relatorioAndamentoPdf';
 import { gerarCheckpointPdf } from '../helpers/checkpointPdf';
@@ -238,7 +238,9 @@ export function DetalheProcessoReal({
       setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvando' }));
       try {
         const proximo = numeroMentora
-          ? (atual === 'ok' ? processo : alternarPreparacaoMentora(processo, numeroMentora))
+          ? (estadoMentoraAlinhamento(processo, numeroMentora).ok
+              ? aplicarStatusAcao(processo, itemId, 'ok')
+              : alternarPreparacaoMentora(processo, numeroMentora))
           : aplicarStatusAcao(processo, itemId, 'ok');
         await salvar(proximo);
         setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvo' }));
@@ -261,7 +263,9 @@ export function DetalheProcessoReal({
     setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvando' }));
     try {
       const proximo = numeroMentora
-        ? alternarPreparacaoMentora(processo, numeroMentora)
+        ? (estadoMentoraAlinhamento(processo, numeroMentora).ok
+            ? alternarPreparacaoMentora(processo, numeroMentora)
+            : aplicarStatusAcao(processo, itemId, anterior))
         : aplicarStatusAcao(processo, itemId, anterior);
       await salvar(proximo);
       delete statusAnteriorCheckboxRef.current[itemId];
@@ -275,13 +279,14 @@ export function DetalheProcessoReal({
     }
   };
 
-  const fecharPainelMentora = () => {
+  const fecharPainelMentora = (): boolean => {
     if (painelMentoraDirty) {
       const confirmar = window.confirm('Há alterações ainda não salvas neste painel. Fechar mesmo assim?');
-      if (!confirmar) return;
+      if (!confirmar) return false;
     }
     setPainelMentora(null);
     setPainelMentoraDirty(false);
+    return true;
   };
 
   const excluirRespostaDaTimeline = async (resposta: any) => {
@@ -829,7 +834,7 @@ export function DetalheProcessoReal({
                   processos={processos}
                   onAbrirCadastroMentoras={onAbrirCadastroMentoras}
                   onAbrirBemTeste={() => {
-                    fecharPainelMentora();
+                    if (!fecharPainelMentora()) return;
                     window.setTimeout(() => document.getElementById('integracao-bem-teste')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
                   }}
                   onSalvarProcesso={salvar}
