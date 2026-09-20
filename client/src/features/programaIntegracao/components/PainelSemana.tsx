@@ -284,7 +284,7 @@ export function PainelSemana({
   const cardsAtivosVisiveis = cardsProcessosAtivos.filter(cardPassaFiltro);
 
   return (
-    <div className="space-y-6">
+    <div className="pi-painel space-y-5">
       {respostasPendentes.length > 0 && (
         <Card className="border-orange-300 bg-orange-50"><CardContent className="pt-6"><div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4 min-w-0"><AlertTriangle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" /><div className="min-w-0">
@@ -297,10 +297,10 @@ export function PainelSemana({
 
       <div><h2 className="text-2xl font-bold">O que fazer agora</h2><p className="text-muted-foreground mt-2">Atrasados, esta semana e próxima semana.</p></div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
+      <div className="pi-kpis grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
         {KPIS_PAINEL_ORIGINAL.map((item) => {
           const ativo = filtro === item.filtro;
-          return <button key={item.titulo} type="button" onClick={() => setFiltro(ativo ? '' : item.filtro)} className={`text-left rounded-lg border p-3 transition ${ativo ? 'ring-2 ring-offset-1 ring-primary' : 'hover:bg-muted/40'}`}>
+          return <button key={item.titulo} type="button" onClick={() => setFiltro(ativo ? '' : item.filtro)} className={`pi-kpi text-left rounded-lg border p-3 transition ${ativo ? 'ring-2 ring-offset-1 ring-primary' : 'hover:bg-muted/40'}`}>
             <p className="text-xs font-medium text-muted-foreground">{item.titulo}</p><p className="text-2xl font-bold mt-1">{valorKpi(item.filtro)}</p><p className="text-[11px] text-muted-foreground mt-1">{item.descricao}</p>
           </button>;
         })}
@@ -334,8 +334,8 @@ export function PainelSemana({
           const abertos = grupo.pessoas.filter((acao) => acao.st.k !== 'ok' && acao.st.k !== 'off');
           const idsAbertos = abertos.map((acao) => acao.pid);
           return (
-            <div key={grupo.itemId} className="border rounded-lg overflow-hidden bg-background">
-              <div className={`p-4 border-b ${classe}`}>
+            <div key={grupo.itemId} className="pi-action-group border rounded-lg overflow-hidden bg-background">
+              <div className={`pi-action-head p-4 border-b ${classe}`}>
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 mb-1">
                     <Badge variant="outline" className="bg-background/70">{formatarData(grupo.dataMaisAntiga)}</Badge><Badge variant="outline" className="bg-background/70">{grupo.statusPior.l}</Badge><Badge variant="outline" className="bg-background/70">{grupo.responsavel}</Badge>{grupo.formulario && <Badge variant="outline" className="bg-background/70">Formulário</Badge>}
@@ -391,7 +391,7 @@ export function PainelSemana({
                     : null;
                   const ultimaNota = ficha.notas[ficha.notas.length - 1];
                   return (
-                    <div key={chave} className={aberta || respostaVisivel ? 'bg-muted/20' : 'bg-background hover:bg-muted/30 transition'}>
+                    <div key={chave} className={`${aberta || respostaVisivel ? 'pi-person-row pi-person-row-open' : 'pi-person-row'} ${aberta || respostaVisivel ? 'bg-muted/20' : 'bg-background hover:bg-muted/30 transition'}`}>
                       <div className="p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                           <div className="flex min-w-0 flex-1 items-start gap-3">
