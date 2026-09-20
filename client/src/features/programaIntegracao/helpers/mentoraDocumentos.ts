@@ -134,6 +134,45 @@ function textoStatusPdi(processo: ProcessoIntegracao): string {
   return String(processo.statusPdi || '').trim() || 'não informado — confirme na conversa.';
 }
 
+type GrupoAutoEco = { nota: 5 | 4 | 3 | 2 | 1; label: string; competencias: string[] };
+
+function dadosEcoLiderDoProcesso(processo: ProcessoIntegracao) {
+  const perfil = (processo.teste as any)?.ecoPerfil || null;
+  const disc = perfil?.disc || null;
+  const gruposBrutos = perfil?.grupos || {};
+  const defs: Array<[5|4|3|2|1,string]> = [
+    [5, 'Excelente (5 de 5)'],
+    [4, 'Bom (4 de 5)'],
+    [3, 'Regular (3 de 5)'],
+    [2, 'Ruim (2 de 5)'],
+    [1, 'Péssimo (1 de 5)'],
+  ];
+  const grupos: GrupoAutoEco[] = defs
+    .map(([nota, label]) => ({
+      nota,
+      label,
+      competencias: Array.isArray(gruposBrutos[String(nota)]) ? gruposBrutos[String(nota)].map((x: any) => String(x)).filter(Boolean) : [],
+    }))
+    .filter((g) => g.competencias.length > 0);
+
+  const discTexto = disc
+    ? [
+        `Perfil ${String(disc.perfilPredominante || '—')}${disc.perfilSecundario ? '/' + String(disc.perfilSecundario) : ''}`,
+        `D ${Number(disc.scoreD || 0).toFixed(0)}%`,
+        `I ${Number(disc.scoreI || 0).toFixed(0)}%`,
+        `S ${Number(disc.scoreS || 0).toFixed(0)}%`,
+        `C ${Number(disc.scoreC || 0).toFixed(0)}%`,
+      ].join(' · ')
+    : '';
+
+  return {
+    alunoNome: String((processo.teste as any)?.ecoAlunoNome || perfil?.aluno?.nome || ''),
+    disc,
+    discTexto,
+    grupos,
+  };
+}
+
 
 function mediaGeralRespostaGestor(resposta: any): number | null {
   const valores: number[] = [];
@@ -169,6 +208,9 @@ export interface ConteudoBriefingMentora {
   linkRegistrado: boolean;
   qualidades: string[];
   testeResumo: string;
+  ecoAlunoNome: string;
+  ecoDiscTexto: string;
+  ecoAutoavaliacao: GrupoAutoEco[];
   statusPdi: string;
   pendencias: string;
   evolucao: string;
@@ -216,6 +258,9 @@ export function conteudoBriefingMentora(
     linkRegistrado: Boolean(String(a.link || '').trim()),
     qualidades: qualidadesBem(processo),
     testeResumo: String(processo.teste?.resumo || '').trim(),
+    ecoAlunoNome: dadosEcoLiderDoProcesso(processo).alunoNome,
+    ecoDiscTexto: dadosEcoLiderDoProcesso(processo).discTexto,
+    ecoAutoavaliacao: dadosEcoLiderDoProcesso(processo).grupos,
     statusPdi: textoStatusPdi(processo),
     pendencias: String(processo.pendencias || '').trim() || 'Nenhuma pendência registrada.',
     evolucao: resumoEvolucaoMentora(processo, numero),
@@ -291,8 +336,16 @@ export function gerarBriefingMentoraPdf(
     linha('Qualidades e competências que o gestor considera importantes', 9, true);
     const qs = qualidadesBem(processo);
     if (qs.length) bullets(qs); else linha('Não localizamos essa resposta no formulário Bem Acolhido — levante o ponto na conversa a sós com o gestor.');
-    linha('Perfil do colaborador — avaliação comportamental', 9, true);
-    linha(String(processo.teste?.resumo || '').trim() || 'Resultado ainda não registrado. Conduza a conversa a partir das percepções do gestor.');
+    const eco = dadosEcoLiderDoProcesso(processo);
+    linha('Perfil DISC', 9, true);
+    linha(eco.discTexto || String(processo.teste?.resumo || '').trim() || 'Resultado ainda não registrado. Conduza a conversa a partir das percepções do gestor.');
+    if (eco.grupos.length) {
+      linha('Autoavaliação de competências', 9, true);
+      eco.grupos.forEach((grupo) => {
+        linha(`Classificou como ${grupo.label}:`, 8.8, true);
+        linha(grupo.competencias.join(', '), 8.7);
+      });
+    }
     linha('Ponto obrigatório desta primeira conversa: pergunte ao gestor quais atividades o colaborador irá efetivamente desempenhar e anote. É com base nelas que a CKM monta o PDI de acordo com as atribuições reais da função — você não precisa elaborar o plano, só levantar a informação.', 9, true);
   } else {
     linha('Status do PDI', 9, true); linha(textoStatusPdi(processo));
@@ -338,7 +391,10 @@ export function gerarBriefingMentoraPdf(
     doc.text(`Briefing da Mentora · ${processo.nome || ''} · ${ORD[numero]} alinhamento`, margem, 287);
     doc.text(`${i}/${paginas}`, 194, 287, { align: 'right' });
   }
-  doc.save(`Briefing_Mentora_${numero}o_Alinhamento_${nomeArquivo(processo.nome)}.pdf`);
+  baixarBlob(
+    doc.output('blob'),
+    `Briefing_Mentora_${numero}o_Alinhamento_${nomeArquivo(processo.nome)}.pdf`,
+  );
   return true;
 }
 
@@ -371,8 +427,14 @@ export function gerarRelatorioMentoraWord(
   const caixa = (linhas = 4) => `<table style="width:100%;border-collapse:collapse;margin:6px 0 12px"><tr><td style="border:1px solid #c9c4c0;background:#f7f5f4;height:${Math.max(42, linhas * 18)}px">&nbsp;</td></tr></table>`;
   const qs = q.map((x, i) => `<div style="margin:14px 0"><p><b>${i + 1}. ${escHtml(x.txt)}</b></p>${x.sim ? '<p>☐ Sim &nbsp;&nbsp; ☐ Não &nbsp;&nbsp; ☐ Parcialmente</p>' : ''}${x.quatro ? '<p>1. ________________________________</p><p>2. ________________________________</p><p>3. ________________________________</p><p>4. ________________________________</p>' : caixa(x.linhas)}</div>`).join('');
   const qsBem = qualidadesBem(processo);
+  const ecoWord = dadosEcoLiderDoProcesso(processo);
+  const ecoAutoHtml = ecoWord.grupos.map((grupo) =>
+    `<p><b>Classificou como ${escHtml(grupo.label)}:</b> ${escHtml(grupo.competencias.join(', '))}</p>`
+  ).join('');
   const parte1Extra = numero === 1
-    ? `${qsBem.length ? `<p><b>O que o gestor registrou no formulário Bem Acolhido</b></p><ul>${qsBem.map((x) => `<li>${escHtml(x)}</li>`).join('')}</ul>` : ''}${processo.teste?.resumo ? `<p><b>Perfil do colaborador (avaliação comportamental)</b></p><p>${escHtml(String(processo.teste.resumo))}</p>` : ''}`
+    ? `${qsBem.length ? `<p><b>O que o gestor registrou no formulário Bem Acolhido</b></p><ul>${qsBem.map((x) => `<li>${escHtml(x)}</li>`).join('')}</ul>` : ''}
+       <p><b>Perfil DISC</b></p><p>${escHtml(ecoWord.discTexto || String(processo.teste?.resumo || '').trim() || 'não registrado')}</p>
+       ${ecoAutoHtml ? `<p><b>Autoavaliação de competências</b></p>${ecoAutoHtml}` : ''}`
     : `<p><b>Situação atual do processo</b></p><p>Status do PDI: ${escHtml(textoStatusPdi(processo))}</p><p>Pendências: ${escHtml(String(processo.pendencias || '').trim() || 'nenhuma registrada')}</p>`;
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
