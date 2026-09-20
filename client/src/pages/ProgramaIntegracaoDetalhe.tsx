@@ -46,6 +46,10 @@ export default function ProgramaIntegracaoDetalhe() {
     return encontrado ? { ...encontrado, id: processoId } : null;
   }, [state, processoId]);
 
+  const todosProcessos = useMemo<ProcessoIntegracao[]>(() =>
+    Object.entries(state?.processos || {}).map(([id, p]) => ({ ...p, id })),
+  [state]);
+
   const feriados = state?.config?.feriados || [];
   const config = state?.config || { ordem: [], respostasPendentes: [] };
 
@@ -127,6 +131,8 @@ export default function ProgramaIntegracaoDetalhe() {
             feriados={feriados}
             onSalvarProcesso={salvarProcesso}
             onRespostaExcluida={carregar}
+            processos={todosProcessos}
+            onAbrirCadastroMentoras={() => setLocation('/programa-integracao?tab=config&config=mentoras')}
             saving={saving}
             onEditarModeloEmail={(chave) => setLocation(`/programa-integracao?email=${encodeURIComponent(chave)}`)}
           />
