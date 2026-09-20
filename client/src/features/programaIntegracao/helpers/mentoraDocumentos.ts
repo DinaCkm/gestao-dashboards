@@ -131,7 +131,9 @@ function escHtml(s: string): string {
 }
 
 function textoStatusPdi(processo: ProcessoIntegracao): string {
-  return String(processo.statusPdi || '').trim() || 'não informado — confirme na conversa.';
+  const eco = (processo.teste as any)?.ecoPerfil?.pdi;
+  if (eco?.statusTexto) return String(eco.statusTexto);
+  return 'Ainda sem tarefas registradas no PDI.';
 }
 
 type GrupoAutoEco = { nota: 5 | 4 | 3 | 2 | 1; label: string; competencias: string[] };
@@ -170,6 +172,8 @@ function dadosEcoLiderDoProcesso(processo: ProcessoIntegracao) {
     disc,
     discTexto,
     grupos,
+    pdi: perfil?.pdi || null,
+    jornadaCompliance: perfil?.jornadaCompliance || null,
   };
 }
 
@@ -211,6 +215,7 @@ export interface ConteudoBriefingMentora {
   ecoAlunoNome: string;
   ecoDiscTexto: string;
   ecoAutoavaliacao: GrupoAutoEco[];
+  acoesPdi: string;
   statusPdi: string;
   pendencias: string;
   evolucao: string;
@@ -261,6 +266,7 @@ export function conteudoBriefingMentora(
     ecoAlunoNome: dadosEcoLiderDoProcesso(processo).alunoNome,
     ecoDiscTexto: dadosEcoLiderDoProcesso(processo).discTexto,
     ecoAutoavaliacao: dadosEcoLiderDoProcesso(processo).grupos,
+    acoesPdi: dadosEcoLiderDoProcesso(processo).pdi?.statusTexto || 'Ainda sem tarefas registradas no PDI.',
     statusPdi: textoStatusPdi(processo),
     pendencias: String(processo.pendencias || '').trim() || 'Nenhuma pendência registrada.',
     evolucao: resumoEvolucaoMentora(processo, numero),
