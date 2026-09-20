@@ -26,6 +26,7 @@ interface ControlesEspeciaisAcaoProps {
   config: BootstrapState['config'];
   feriados?: string[];
   onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
+  onExcluirResposta?: (resposta: RespostaFormulario) => Promise<void> | void;
 }
 
 function numeroAtaValido(valor: number | undefined): 1 | 2 | 3 | 4 | null {
@@ -44,6 +45,7 @@ export function ControlesEspeciaisAcao({
   config,
   feriados = [],
   onSalvarProcesso,
+  onExcluirResposta,
 }: ControlesEspeciaisAcaoProps) {
   const [mostrarResposta, setMostrarResposta] = useState(false);
   const [mostrarAta, setMostrarAta] = useState(false);
@@ -126,6 +128,11 @@ export function ControlesEspeciaisAcao({
                 <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">
                   {resposta.alertas.length} ponto{resposta.alertas.length === 1 ? '' : 's'} de atenção
                 </Badge>
+              )}
+              {onExcluirResposta && (
+                <Button type="button" size="sm" variant="outline" onClick={() => onExcluirResposta(resposta)}>
+                  Excluir resposta
+                </Button>
               )}
             </div>
           </div>
