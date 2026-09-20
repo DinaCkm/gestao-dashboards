@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   fetchBootstrap,
@@ -49,6 +49,7 @@ type ConfigSubTab = 'emails' | 'mentoras' | 'cursos' | 'aviso' | 'links' | 'data
 
 export default function ProgramaIntegracao() {
   const [location, setLocation] = useLocation();
+  const searchString = useSearch();
   const { theme, toggleTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,8 +102,7 @@ export default function ProgramaIntegracao() {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(searchString || '');
     const chaveEmail = params.get('email') || '';
     const tabUrl = params.get('tab') as MainTabValue | null;
     const configUrl = params.get('config') as ConfigSubTab | null;
@@ -119,7 +119,7 @@ export default function ProgramaIntegracao() {
       setConfigSubTab('emails');
       setActiveTab('config');
     }
-  }, [location]);
+  }, [location, searchString]);
 
   useEffect(() => {
     const carregarDados = async () => {
