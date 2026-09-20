@@ -61,3 +61,77 @@ export async function arquivarRespostaRecebida(
 
   return response.json();
 }
+
+
+export type RespostaExcluida = {
+  rid: string;
+  protocolo: string;
+  form: 'controle' | 'bem' | 'pesquisa' | 'aval' | 'pdi';
+  ciclo: number;
+  papel: string;
+  quando: string;
+  em: string;
+  itid: string;
+  nomeOrig: string;
+  avaliador: string;
+  c: Array<[number, string]>;
+  media: number | null;
+  alertas: number[];
+  source: string;
+  status: string;
+  formVersion: number;
+  processId: string;
+  respondentName: string;
+  respondentEmail: string;
+  submittedAt: string;
+  answers: Record<string, any>;
+  processoIdLocal: string;
+  processoNome: string;
+  processoSituacao: string;
+  excluidaEm: string;
+};
+
+export async function listarRespostasExcluidas(): Promise<RespostaExcluida[]> {
+  const response = await fetch('/api/programa-integracao/respostas-excluidas', {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const body = await response.json();
+      detail = body?.error ? `: ${body.error}` : '';
+    } catch {
+      // Mantém o status HTTP quando a resposta não é JSON.
+    }
+    throw new Error(`Não foi possível carregar as respostas excluídas (${response.status})${detail}`);
+  }
+
+  const body = await response.json();
+  return Array.isArray(body?.respostas) ? body.respostas : [];
+}
+
+export async function restaurarRespostaRecebida(
+  legacyRid: string,
+): Promise<{ ok: boolean; itemId?: string; itemMarcadoComoFeito?: boolean; outraRespostaAtiva?: boolean }> {
+  exigirConexaoParaAlterar();
+  const response = await fetch(`/api/programa-integracao/respostas/${encodeURIComponent(legacyRid)}/restaurar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const body = await response.json();
+      detail = body?.error ? `: ${body.error}` : '';
+    } catch {
+      // Mantém o status HTTP quando a resposta não é JSON.
+    }
+    throw new Error(`Não foi possível restaurar a resposta (${response.status})${detail}`);
+  }
+
+  return response.json();
+}
