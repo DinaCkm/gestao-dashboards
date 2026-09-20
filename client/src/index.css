@@ -214,14 +214,14 @@
     margin: 0 0 1.5rem;
     font-size: clamp(1.9rem, 4vw, 2.65rem);
     padding-bottom: 1rem;
-    border-bottom: 3px solid #f5a623;
+    border-bottom: 3px solid #7c5cbf;
   }
 
   .conteudo-aula h2 {
     margin: 2.25rem 0 1rem;
     font-size: clamp(1.45rem, 3vw, 1.9rem);
     padding-left: 0.85rem;
-    border-left: 4px solid #f5a623;
+    border-left: 4px solid #7c5cbf;
   }
 
   .conteudo-aula h3 {
@@ -263,7 +263,7 @@
   }
 
   .conteudo-aula li::marker {
-    color: #f5a623;
+    color: #7c5cbf;
     font-weight: 700;
   }
 
@@ -318,6 +318,39 @@
 
   .conteudo-aula tr:nth-child(even) td {
     background: #f7f9fb;
+  }
+
+  .dark .conteudo-aula {
+    color: var(--foreground);
+  }
+  .dark .conteudo-aula h1,
+  .dark .conteudo-aula h2,
+  .dark .conteudo-aula h3,
+  .dark .conteudo-aula h4 {
+    color: color-mix(in oklab, var(--primary) 88%, white 12%);
+  }
+  .dark .conteudo-aula strong {
+    color: var(--foreground);
+  }
+  .dark .conteudo-aula blockquote {
+    background: color-mix(in oklab, var(--card) 82%, var(--primary) 18%);
+    color: var(--foreground);
+  }
+  .dark .conteudo-aula th {
+    background: color-mix(in oklab, var(--card) 65%, var(--primary) 35%);
+  }
+  .dark .conteudo-aula th,
+  .dark .conteudo-aula td {
+    border-color: var(--border);
+  }
+  .dark .conteudo-aula tr:nth-child(even) td {
+    background: color-mix(in oklab, var(--card) 88%, var(--muted) 12%);
+  }
+  .dark ::-webkit-scrollbar-track {
+    background: var(--muted);
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--primary) 62%, var(--muted));
   }
 
   /* Fundo principal: neutro frio com lilás muito sutil; sem bege/amarelado. */
