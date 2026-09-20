@@ -269,13 +269,21 @@ export function DetalheProcessoReal({
     try { gerarAgendaOnboardingPdf(processo, feriados); }
     catch (error) { toast.error(error instanceof Error ? error.message : 'Não foi possível gerar a Agenda de Onboarding.'); }
   };
-  const gerarRelatorio = () => {
-    try { gerarRelatorioAndamentoPdf(processo, feriados); }
-    catch (error) { toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Relatório de Andamento.'); }
+  const gerarRelatorio = async () => {
+    try {
+      const processoAtual = await processoComEcoAtual();
+      gerarRelatorioAndamentoPdf(processoAtual, feriados);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Relatório de Andamento.');
+    }
   };
-  const gerarCheckpoint = () => {
-    try { gerarCheckpointPdf(processo, feriados); }
-    catch (error) { toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Checkpoint.'); }
+  const gerarCheckpoint = async () => {
+    try {
+      const processoAtual = await processoComEcoAtual();
+      gerarCheckpointPdf(processoAtual, feriados);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Checkpoint.');
+    }
   };
 
   const abrirCobranca = (papel?: PapelCobranca, ciclo?: 1 | 2 | 3 | 4) => {
@@ -339,8 +347,8 @@ export function DetalheProcessoReal({
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               <Button type="button" size="sm" onClick={gerarAgenda}>Agenda em PDF</Button>
-              <Button type="button" size="sm" variant="secondary" onClick={gerarRelatorio}>Relatório</Button>
-              <Button type="button" size="sm" variant="outline" onClick={gerarCheckpoint}>Checkpoint</Button>
+              <Button type="button" size="sm" variant="secondary" onClick={() => void gerarRelatorio()}>Relatório</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => void gerarCheckpoint()}>Checkpoint</Button>
               <Button type="button" size="sm" variant="outline" onClick={() => abrirCobranca()}>
                 {resumo.formulariosVencidos ? `Cobrar formulários (${resumo.formulariosVencidos})` : 'Formulários em dia'}
               </Button>

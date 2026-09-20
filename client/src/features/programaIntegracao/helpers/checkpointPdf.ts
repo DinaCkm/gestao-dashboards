@@ -105,8 +105,21 @@ export function checkpointDadosReal(
   });
 
   const pdi = ultimoPDI(processo);
-  const pctPdi = pctResp(pdi, 14) ?? numFromTxt(processo.statusPdi);
-  const pctJor = pctResp(pdi, 17) ?? numFromTxt(processo.statusCursos);
+  const ecoPerfil = (processo.teste as any)?.ecoPerfil || null;
+  const pctPdiEco = ecoPerfil?.pdi?.percentual;
+  const pctJorEco = ecoPerfil?.jornadaCompliance?.percentual;
+  const temEcoPdi = Boolean(ecoPerfil?.pdi);
+  const temEcoJornada = Boolean(ecoPerfil?.jornadaCompliance);
+  const pctPdi = temEcoPdi
+    ? (pctPdiEco != null && Number.isFinite(Number(pctPdiEco))
+      ? Math.max(0, Math.min(100, Number(pctPdiEco)))
+      : null)
+    : (pctResp(pdi, 14) ?? numFromTxt(processo.statusPdi));
+  const pctJor = temEcoJornada
+    ? (pctJorEco != null && Number.isFinite(Number(pctJorEco))
+      ? Math.max(0, Math.min(100, Number(pctJorEco)))
+      : null)
+    : (pctResp(pdi, 17) ?? numFromTxt(processo.statusCursos));
   const alinFeitos = [1, 2, 3, 4].filter((n) => Boolean(alinhamento(processo, n).realizado)).length;
 
   return { byRole, pctPdi, pctJor, alinFeitos };
@@ -236,8 +249,36 @@ export function gerarCheckpointPdf(
 
   const cw = (largura - 8) / 3;
   const y0 = y;
-  kpi(doc, 18, y0, cw, 'Jornada Compliance', d.pctJor == null ? '—' : `${d.pctJor}%`, d.pctJor == null ? 'ainda sem registro' : 'concluída até aqui', corPct(d.pctJor));
-  kpi(doc, 18 + cw + 4, y0, cw, 'Atividades do PDI', d.pctPdi == null ? '—' : `${d.pctPdi}%`, d.pctPdi == null ? 'ainda sem registro' : 'executadas até aqui', corPct(d.pctPdi));
+  const ecoPdi = (processo.teste as any)?.ecoPerfil?.pdi || null;
+  const ecoCompliance = (processo.teste as any)?.ecoPerfil?.jornadaCompliance || null;
+  kpi(
+    doc,
+    18,
+    y0,
+    cw,
+    'Jornada Compliance',
+    d.pctJor == null ? '—' : `${d.pctJor}%`,
+    d.pctJor == null
+      ? (ecoCompliance ? 'ainda sem atividades registradas' : 'ainda sem registro')
+      : ecoCompliance?.total
+        ? `${ecoCompliance.concluidas} de ${ecoCompliance.total} atividades`
+        : 'concluída até aqui',
+    corPct(d.pctJor),
+  );
+  kpi(
+    doc,
+    18 + cw + 4,
+    y0,
+    cw,
+    'Atividades do PDI',
+    d.pctPdi == null ? '—' : `${d.pctPdi}%`,
+    ecoPdi?.total
+      ? `${ecoPdi.concluidas} de ${ecoPdi.total} tarefas`
+      : d.pctPdi == null
+        ? 'ainda sem tarefas registradas'
+        : 'executadas até aqui',
+    corPct(d.pctPdi),
+  );
   kpi(doc, 18 + 2 * (cw + 4), y0, cw, 'Alinhamentos realizados', `${d.alinFeitos} de 4`, d.alinFeitos === 4 ? 'programa concluído' : 'ao longo dos 150 dias', d.alinFeitos === 4 ? [27, 122, 85] : [120, 126, 136]);
   y = y0 + 28;
 

@@ -42,6 +42,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { buscarPerfilEcoLider } from '../api/ecoLider';
 
 type StatusGrupo = '' | 'prog' | 'doing' | 'wait' | 'na' | 'wont';
 
@@ -189,17 +190,35 @@ export function PainelSemana({
     }
   };
 
-  const handleGerarRelatorio = (processo: ProcessoIntegracao) => {
+  const processoComEcoAtual = async (processo: ProcessoIntegracao): Promise<ProcessoIntegracao> => {
+    const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0);
+    if (!alunoId) return processo;
+    const retorno = await buscarPerfilEcoLider(processo.nome, alunoId, processo.email);
+    if (!retorno.perfil) return processo;
+    return {
+      ...processo,
+      teste: {
+        ...(processo.teste || {}),
+        ecoAlunoId: retorno.perfil.aluno.id,
+        ecoAlunoNome: retorno.perfil.aluno.nome,
+        ecoAlunoEmail: retorno.perfil.aluno.email,
+        ecoVinculoModo: (processo.teste as any)?.ecoVinculoModo || 'manual',
+        ecoPerfil: retorno.perfil,
+      },
+    };
+  };
+
+  const handleGerarRelatorio = async (processo: ProcessoIntegracao) => {
     try {
-      gerarRelatorioAndamentoPdf(processo, feriados);
+      gerarRelatorioAndamentoPdf(await processoComEcoAtual(processo), feriados);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Não foi possível gerar o Relatório de Andamento.');
     }
   };
 
-  const handleGerarCheckpoint = (processo: ProcessoIntegracao) => {
+  const handleGerarCheckpoint = async (processo: ProcessoIntegracao) => {
     try {
-      gerarCheckpointPdf(processo, feriados);
+      gerarCheckpointPdf(await processoComEcoAtual(processo), feriados);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Não foi possível gerar o Checkpoint do Processo.');
     }
@@ -273,8 +292,8 @@ export function PainelSemana({
           <div className="flex flex-wrap gap-2 border-t pt-3">
             <Button type="button" size="sm" variant="ghost" onClick={() => onProcessoClick?.(card.processoId)}>Abrir</Button>
             <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(p)}>Agenda</Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => handleGerarRelatorio(p)}>Relatório</Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => handleGerarCheckpoint(p)} title="Checkpoint — versão enxuta e visual">Checkpoint</Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => void handleGerarRelatorio(p)}>Relatório</Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => void handleGerarCheckpoint(p)} title="Checkpoint — versão enxuta e visual">Checkpoint</Button>
           </div>
         </CardContent>
       </Card>

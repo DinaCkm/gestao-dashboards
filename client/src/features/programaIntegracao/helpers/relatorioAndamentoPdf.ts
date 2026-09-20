@@ -271,8 +271,34 @@ export function gerarRelatorioAndamentoPdf(
   y = section(doc, y, 'Visão geral');
   const cardW = (182 - 8) / 3;
   const yKpi = y;
-  kpi(doc, 14, yKpi, cardW, 'Jornada Compliance', checkpoint.pctJor == null ? '—' : `${checkpoint.pctJor}%`, checkpoint.pctJor == null ? 'ainda sem registro' : 'concluída até aqui');
-  kpi(doc, 14 + cardW + 4, yKpi, cardW, 'Atividades do PDI', checkpoint.pctPdi == null ? '—' : `${checkpoint.pctPdi}%`, checkpoint.pctPdi == null ? 'ainda sem registro' : 'executadas até aqui');
+  const ecoPdi = (processo.teste as any)?.ecoPerfil?.pdi || null;
+  const ecoCompliance = (processo.teste as any)?.ecoPerfil?.jornadaCompliance || null;
+  kpi(
+    doc,
+    14,
+    yKpi,
+    cardW,
+    'Jornada Compliance',
+    checkpoint.pctJor == null ? '—' : `${checkpoint.pctJor}%`,
+    checkpoint.pctJor == null
+      ? (ecoCompliance ? 'ainda sem atividades registradas' : 'ainda sem registro')
+      : ecoCompliance?.total
+        ? `${ecoCompliance.concluidas} de ${ecoCompliance.total} atividades`
+        : 'concluída até aqui',
+  );
+  kpi(
+    doc,
+    14 + cardW + 4,
+    yKpi,
+    cardW,
+    'Atividades do PDI',
+    checkpoint.pctPdi == null ? '—' : `${checkpoint.pctPdi}%`,
+    ecoPdi?.total
+      ? `${ecoPdi.concluidas} de ${ecoPdi.total} tarefas`
+      : checkpoint.pctPdi == null
+        ? 'ainda sem tarefas registradas'
+        : 'executadas até aqui',
+  );
   kpi(doc, 14 + 2 * (cardW + 4), yKpi, cardW, 'Alinhamentos realizados', `${checkpoint.alinFeitos} de 4`, checkpoint.alinFeitos === 4 ? 'programa concluído' : 'ao longo dos 150 dias');
   y += 25;
 
