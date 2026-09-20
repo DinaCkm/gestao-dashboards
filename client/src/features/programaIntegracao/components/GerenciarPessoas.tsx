@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ProcessoIntegracao } from '../types';
 import { arquivarProcesso } from '../api/client';
 import {
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowDown, ArrowUp, CheckCircle2, CircleAlert, Clock3, FlaskConical, Loader2, Plus, Search, Sun } from 'lucide-react';
 import { toast } from 'sonner';
+import { buscarStatusEcoLider, type EcoLiderAndamento } from '../api/ecoLider';
 
 interface GerenciarPessoasProps {
   processos: ProcessoIntegracao[];
@@ -31,6 +32,8 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
   const [novoNome, setNovoNome] = useState('');
   const [novoCpf, setNovoCpf] = useState('');
   const [operacao, setOperacao] = useState<string | null>(null);
+  const [statusEco, setStatusEco] = useState<Record<string, EcoLiderAndamento>>({});
+  const [statusEcoCarregando, setStatusEcoCarregando] = useState(false);
 
   const pessoasFiltradas = useMemo(() => {
     let resultado = [...processos];
@@ -57,6 +60,24 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
     () => processos.map((processo) => processo.id).filter((id): id is string => Boolean(id)),
     [processos],
   );
+
+  useEffect(() => {
+    let cancelado = false;
+    const alunoIds = processos
+      .map((p) => Number((p.teste as any)?.ecoAlunoId || 0))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    if (!alunoIds.length) {
+      setStatusEco({});
+      return;
+    }
+    setStatusEcoCarregando(true);
+    buscarStatusEcoLider(alunoIds)
+      .then((mapa) => { if (!cancelado) setStatusEco(mapa); })
+      .catch(() => { if (!cancelado) setStatusEco({}); })
+      .finally(() => { if (!cancelado) setStatusEcoCarregando(false); });
+    return () => { cancelado = true; };
+  }, [processos]);
+
 
   const executar = async (chave: string, acao: () => Promise<void>, mensagemErro: string) => {
     if (operacao) return;
@@ -259,6 +280,9 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                   ? 'border-amber-300 bg-amber-50 text-amber-700'
                   : 'border-emerald-300 bg-emerald-50 text-emerald-700';
             const emOperacao = operacao?.endsWith(chavePessoa) || operacao === chavePessoa;
+            const ecoAlunoId = Number((pessoa.teste as any)?.ecoAlunoId || 0);
+            const andamentoEco = ecoAlunoId ? statusEco[String(ecoAlunoId)] : null;
+
 
             return (
               <Card key={chavePessoa} className="hover:shadow-md transition">
@@ -290,6 +314,53 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                       <span className="font-medium">{progresso}%</span>
                     </div>
                     <Progress value={progresso} />
+                  </div>
+
+                  <div className="space-y-3 rounded-md border bg-muted/10 p-3">
+                    <div>
+                      <div className="mb-1 flex justify-between text-xs">
+                        <span className="font-medium">Jornada Compliance</span>
+                        <span className="text-muted-foreground">
+                          {andamentoEco?.jornadaCompliance.percentual != null ? `${andamentoEco.jornadaCompliance.percentual}%` : '—'}
+                        </span>
+                      </div>
+                      {andamentoEco?.jornadaCompliance.percentual != null ? (
+                        <>
+                          <Progress value={andamentoEco.jornadaCompliance.percentual} />
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            {andamentoEco.jornadaCompliance.concluidas} de {andamentoEco.jornadaCompliance.total} atividades concluídas
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground">
+                          {ecoAlunoId
+                            ? (statusEcoCarregando ? 'Consultando ECO Líderes...' : 'Ainda sem atividades registradas na Jornada Compliance.')
+                            : 'Aluno ainda não vinculado ao ECO Líderes.'}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <div className="mb-1 flex justify-between text-xs">
+                        <span className="font-medium">Ações do PDI</span>
+                        <span className="text-muted-foreground">
+                          {andamentoEco?.pdi.percentual != null ? `${andamentoEco.pdi.percentual}%` : '—'}
+                        </span>
+                      </div>
+                      {andamentoEco?.pdi.total ? (
+                        <>
+                          <Progress value={andamentoEco.pdi.percentual ?? 0} />
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            {andamentoEco.pdi.concluidas} de {andamentoEco.pdi.total} tarefas concluídas
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground">
+                          {ecoAlunoId
+                            ? (statusEcoCarregando ? 'Consultando ECO Líderes...' : 'Ainda sem tarefas registradas no PDI.')
+                            : 'Aluno ainda não vinculado ao ECO Líderes.'}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="text-xs text-muted-foreground space-y-1">
