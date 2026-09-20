@@ -171,6 +171,63 @@ export function MentoraPreparacaoPainel({
     toast.success('Dados da preparação salvos e conferidos.');
   };
 
+  const vincularEcoManual = async (alunoId: string) => {
+    if (!alunoId) return;
+    try {
+      setEcoStatus('carregando');
+      setEcoErro('');
+      const retorno = await buscarPerfilEcoLider(processo.nome, Number(alunoId));
+      if (!retorno.perfil?.aluno) throw new Error('Aluno do ECO Líderes não encontrado.');
+      setEcoPerfil(retorno.perfil);
+      setEcoAlunos(retorno.alunos || []);
+      setEcoSelecionado(String(retorno.perfil.aluno.id));
+      setEcoStatus('manual');
+      await salvar({
+        ...processo,
+        teste: {
+          ...(processo.teste || {}),
+          ecoAlunoId: retorno.perfil.aluno.id,
+          ecoAlunoNome: retorno.perfil.aluno.nome,
+          ecoAlunoEmail: retorno.perfil.aluno.email,
+          ecoVinculoModo: 'manual',
+          ecoPerfil: retorno.perfil,
+        },
+      });
+      toast.success('Aluno do Onboarding vinculado ao ECO Líderes.');
+    } catch (error) {
+      setEcoStatus('erro');
+      setEcoErro(error instanceof Error ? error.message : 'Não foi possível vincular o aluno.');
+    }
+  };
+
+  const atualizarEco = async () => {
+    try {
+      setEcoStatus('carregando');
+      setEcoErro('');
+      const retorno = await buscarPerfilEcoLider(processo.nome, Number((processo.teste as any)?.ecoAlunoId || 0) || undefined);
+      setEcoAlunos(retorno.alunos || []);
+      setEcoPerfil(retorno.perfil || null);
+      setEcoStatus(retorno.match.status);
+      if (retorno.perfil?.aluno) {
+        setEcoSelecionado(String(retorno.perfil.aluno.id));
+        await salvar({
+          ...processo,
+          teste: {
+            ...(processo.teste || {}),
+            ecoAlunoId: retorno.perfil.aluno.id,
+            ecoAlunoNome: retorno.perfil.aluno.nome,
+            ecoAlunoEmail: retorno.perfil.aluno.email,
+            ecoVinculoModo: retorno.match.status,
+            ecoPerfil: retorno.perfil,
+          },
+        });
+        toast.success('Dados do ECO Líderes atualizados.');
+      }
+    } catch (error) {
+      setEcoStatus('erro');
+      setEcoErro(error instanceof Error ? error.message : 'Não foi possível atualizar os dados do ECO Líderes.');
+    }
+  };
   const mensagemTemPendencia = (texto: string) =>
     texto.includes('PREENCHA AQUI') || texto.includes('(data a') || texto.includes('(link a') || texto.includes('(horário a');
 
