@@ -62,82 +62,88 @@
 }
 
 :root {
-  /* B.E.M. Brand Colors - Navy Blue (#1E3A5F) and Orange (#F5A623) */
-  --radius: 0.625rem;
-  /* Light theme with B.E.M. brand colors */
-  --background: oklch(0.98 0.005 220);
-  --foreground: oklch(0.25 0.04 240);
-  --card: oklch(1.0 0 0);
-  --card-foreground: oklch(0.25 0.04 240);
-  --popover: oklch(1.0 0 0);
-  --popover-foreground: oklch(0.25 0.04 240);
-  /* Primary: Navy Blue #1E3A5F */
-  --primary: oklch(0.35 0.08 240);
-  --primary-foreground: oklch(0.99 0.005 85);
-  /* Secondary: Orange #F5A623 */
-  --secondary: oklch(0.75 0.16 70);
-  --secondary-foreground: oklch(0.20 0.04 240);
-  --muted: oklch(0.95 0.01 220);
-  --muted-foreground: oklch(0.50 0.02 240);
-  /* Accent: Orange */
-  --accent: oklch(0.75 0.16 70);
-  --accent-foreground: oklch(0.20 0.04 240);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.99 0.005 85);
-  --border: oklch(0.90 0.01 220);
-  --input: oklch(0.95 0.01 220);
-  --ring: oklch(0.35 0.08 240);
-  /* Chart colors based on B.E.M. palette */
-  --chart-1: oklch(0.35 0.08 240);
-  --chart-2: oklch(0.75 0.16 70);
-  --chart-3: oklch(0.55 0.10 200);
-  --chart-4: oklch(0.65 0.12 80);
-  --chart-5: oklch(0.45 0.06 240);
-  /* Sidebar with Purple theme (#5B3A7D) */
+  --radius: 0.75rem;
+
+  /* Claro: neutro frio/lilás muito suave, sem fundo bege/amarelado. */
+  --background: oklch(0.985 0.004 285);
+  --foreground: oklch(0.24 0.035 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.035 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.035 285);
+
+  /* Identidade Eco do B.E.M.: roxo + violeta + azul-arroxeado. */
+  --primary: oklch(0.43 0.14 305);
+  --primary-foreground: oklch(0.99 0.002 285);
+  --secondary: oklch(0.93 0.035 292);
+  --secondary-foreground: oklch(0.31 0.08 305);
+  --muted: oklch(0.965 0.009 285);
+  --muted-foreground: oklch(0.50 0.035 285);
+  --accent: oklch(0.935 0.035 270);
+  --accent-foreground: oklch(0.31 0.09 285);
+
+  /* Atenção/erro sem vermelho forte: violeta profundo, ainda acessível. */
+  --destructive: oklch(0.48 0.15 320);
+  --destructive-foreground: oklch(0.99 0.002 285);
+
+  --border: oklch(0.89 0.018 285);
+  --input: oklch(0.93 0.015 285);
+  --ring: oklch(0.50 0.14 292);
+
+  --chart-1: oklch(0.43 0.14 305);
+  --chart-2: oklch(0.55 0.13 265);
+  --chart-3: oklch(0.62 0.12 230);
+  --chart-4: oklch(0.68 0.12 285);
+  --chart-5: oklch(0.50 0.10 330);
+
   --sidebar: oklch(0.22 0.09 305);
-  --sidebar-foreground: oklch(0.95 0.005 220);
-  --sidebar-primary: oklch(0.72 0.10 195);
-  --sidebar-primary-foreground: oklch(0.15 0.08 305);
-  --sidebar-accent: oklch(0.28 0.09 305);
-  --sidebar-accent-foreground: oklch(0.95 0.005 220);
-  --sidebar-border: oklch(0.30 0.07 305);
-  --sidebar-ring: oklch(0.72 0.10 195);
+  --sidebar-foreground: oklch(0.96 0.008 285);
+  --sidebar-primary: oklch(0.72 0.10 280);
+  --sidebar-primary-foreground: oklch(0.16 0.06 305);
+  --sidebar-accent: oklch(0.29 0.085 305);
+  --sidebar-accent-foreground: oklch(0.98 0.004 285);
+  --sidebar-border: oklch(0.33 0.065 305);
+  --sidebar-ring: oklch(0.72 0.10 280);
 }
 
 .dark {
-  --background: oklch(0.15 0.03 240);
-  --foreground: oklch(0.98 0.005 220);
-  --card: oklch(0.20 0.04 240);
-  --card-foreground: oklch(0.98 0.005 220);
-  --popover: oklch(0.22 0.04 240);
-  --popover-foreground: oklch(0.98 0.005 220);
-  --primary: oklch(0.75 0.16 70);
-  --primary-foreground: oklch(0.20 0.04 240);
-  --secondary: oklch(0.35 0.08 240);
-  --secondary-foreground: oklch(0.98 0.005 220);
-  --muted: oklch(0.25 0.03 240);
-  --muted-foreground: oklch(0.65 0.02 220);
-  --accent: oklch(0.75 0.16 70);
-  --accent-foreground: oklch(0.20 0.04 240);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.98 0.005 220);
-  --border: oklch(0.30 0.04 240);
-  --input: oklch(0.25 0.03 240);
-  --ring: oklch(0.75 0.16 70);
-  --chart-1: oklch(0.75 0.16 70);
-  --chart-2: oklch(0.45 0.08 240);
-  --chart-3: oklch(0.60 0.12 160);
-  --chart-4: oklch(0.70 0.15 55);
-  --chart-5: oklch(0.50 0.10 210);
-  /* Sidebar with Purple theme (#5B3A7D) */
-  --sidebar: oklch(0.20 0.09 305);
-  --sidebar-foreground: oklch(0.95 0.005 220);
-  --sidebar-primary: oklch(0.72 0.10 195);
-  --sidebar-primary-foreground: oklch(0.15 0.08 305);
-  --sidebar-accent: oklch(0.26 0.09 305);
-  --sidebar-accent-foreground: oklch(0.95 0.005 220);
-  --sidebar-border: oklch(0.28 0.07 305);
-  --sidebar-ring: oklch(0.72 0.10 195);
+  --background: oklch(0.145 0.025 285);
+  --foreground: oklch(0.96 0.008 285);
+  --card: oklch(0.19 0.03 285);
+  --card-foreground: oklch(0.96 0.008 285);
+  --popover: oklch(0.205 0.032 285);
+  --popover-foreground: oklch(0.96 0.008 285);
+
+  --primary: oklch(0.73 0.13 295);
+  --primary-foreground: oklch(0.17 0.04 295);
+  --secondary: oklch(0.27 0.06 295);
+  --secondary-foreground: oklch(0.95 0.008 285);
+  --muted: oklch(0.245 0.035 285);
+  --muted-foreground: oklch(0.70 0.025 285);
+  --accent: oklch(0.29 0.07 275);
+  --accent-foreground: oklch(0.96 0.008 285);
+
+  --destructive: oklch(0.65 0.14 320);
+  --destructive-foreground: oklch(0.98 0.004 285);
+
+  --border: oklch(0.31 0.04 285);
+  --input: oklch(0.26 0.035 285);
+  --ring: oklch(0.70 0.12 292);
+
+  --chart-1: oklch(0.73 0.13 295);
+  --chart-2: oklch(0.67 0.12 255);
+  --chart-3: oklch(0.70 0.11 225);
+  --chart-4: oklch(0.70 0.12 320);
+  --chart-5: oklch(0.62 0.10 275);
+
+  --sidebar: oklch(0.17 0.07 305);
+  --sidebar-foreground: oklch(0.96 0.008 285);
+  --sidebar-primary: oklch(0.73 0.13 295);
+  --sidebar-primary-foreground: oklch(0.17 0.04 295);
+  --sidebar-accent: oklch(0.25 0.075 305);
+  --sidebar-accent-foreground: oklch(0.98 0.004 285);
+  --sidebar-border: oklch(0.29 0.055 305);
+  --sidebar-ring: oklch(0.73 0.13 295);
 }
 
 @layer base {
@@ -150,7 +156,7 @@
   /* Global title colors: roxo (#5B3A7D) for all page headings */
   main h1,
   main h2 {
-    color: #5B3A7D;
+    color: color-mix(in oklab, var(--primary) 88%, var(--foreground));
   }
   /* Exclude elements that already have inline styles or special classes */
   main h1 .text-gradient,
@@ -314,14 +320,16 @@
     background: #f7f9fb;
   }
 
-  /* B.E.M. gradient backgrounds */
+  /* Fundo principal: neutro frio com lilás muito sutil; sem bege/amarelado. */
   .gradient-bg {
-    background: linear-gradient(
-      135deg,
-      oklch(0.98 0.01 220) 0%,
-      oklch(0.96 0.015 240) 50%,
-      oklch(0.94 0.02 220) 100%
-    );
+    background:
+      radial-gradient(circle at 12% 0%, color-mix(in oklab, var(--primary) 6%, transparent), transparent 34%),
+      linear-gradient(145deg, var(--background) 0%, color-mix(in oklab, var(--background) 94%, #ece9f8 6%) 100%);
+  }
+  .dark .gradient-bg {
+    background:
+      radial-gradient(circle at 12% 0%, color-mix(in oklab, var(--primary) 10%, transparent), transparent 36%),
+      linear-gradient(145deg, var(--background) 0%, color-mix(in oklab, var(--background) 92%, #25203b 8%) 100%);
   }
 
   .gradient-card {
@@ -410,6 +418,79 @@
     transform: translateY(-1px);
   }
 }
+
+
+  /* Remapeamento visual de utilitários vermelhos legados para violeta/azul.
+     Mantém a semântica de alerta sem usar vermelho forte. */
+  .text-red-400,.text-red-500,.text-red-600,.text-red-700,.text-red-800,.text-red-900 { color: oklch(0.48 0.15 320) !important; }
+  .dark .text-red-400,.dark .text-red-500,.dark .text-red-600,.dark .text-red-700,.dark .text-red-800,.dark .text-red-900 { color: oklch(0.76 0.10 315) !important; }
+  .bg-red-50,.bg-red-100 { background-color: oklch(0.96 0.025 315) !important; }
+  .bg-red-200,.bg-red-300 { background-color: oklch(0.91 0.05 315) !important; }
+  .bg-red-500,.bg-red-600,.bg-red-700 { background-color: oklch(0.48 0.15 320) !important; }
+  .dark .bg-red-50,.dark .bg-red-100,.dark .bg-red-200,.dark .bg-red-300 { background-color: oklch(0.27 0.06 315) !important; }
+  .dark .bg-red-500,.dark .bg-red-600,.dark .bg-red-700 { background-color: oklch(0.56 0.13 320) !important; }
+  .border-red-200,.border-red-300,.border-red-400,.border-red-500,.border-red-600 { border-color: oklch(0.72 0.08 315) !important; }
+  .ring-red-200,.ring-red-300,.ring-red-400,.ring-red-500,.ring-red-600 { --tw-ring-color: oklch(0.64 0.11 315) !important; }
+
+  /* Hierarquia visual para sections nativas expansíveis.
+     Nível 1 = details; Nível 2 = conteúdo; Nível 3 = campos/subitens. */
+  main details {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 2px);
+    background: var(--card);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 7%, transparent);
+    transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+  }
+  main details > summary {
+    display: flex;
+    min-height: 46px;
+    align-items: center;
+    gap: .65rem;
+    padding: .75rem 1rem;
+    background: color-mix(in oklab, var(--card) 88%, var(--muted) 12%);
+    color: var(--foreground);
+    font-weight: 650;
+    cursor: pointer;
+    list-style: none;
+    transition: background-color .18s ease, color .18s ease;
+  }
+  main details > summary::-webkit-details-marker { display: none; }
+  main details > summary::before {
+    content: "›";
+    display: inline-grid;
+    width: 1.25rem;
+    height: 1.25rem;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: .4rem;
+    color: var(--primary);
+    font-size: 1.2rem;
+    line-height: 1;
+    transform: rotate(0deg);
+    transition: transform .18s ease, background-color .18s ease;
+  }
+  main details > summary:hover,
+  main details > summary:focus-visible {
+    background: color-mix(in oklab, var(--accent) 74%, var(--card) 26%);
+    outline: none;
+  }
+  main details[open] {
+    border-color: color-mix(in oklab, var(--primary) 48%, var(--border));
+    box-shadow: 0 7px 22px color-mix(in oklab, var(--primary) 10%, transparent);
+  }
+  main details[open] > summary {
+    border-bottom: 1px solid color-mix(in oklab, var(--primary) 24%, var(--border));
+    background: color-mix(in oklab, var(--primary) 9%, var(--card));
+    color: color-mix(in oklab, var(--primary) 78%, var(--foreground));
+  }
+  main details[open] > summary::before {
+    transform: rotate(90deg);
+    background: color-mix(in oklab, var(--primary) 12%, transparent);
+  }
+  main details[open] > :not(summary) {
+    background: color-mix(in oklab, var(--card) 96%, var(--muted) 4%);
+  }
 
 @layer components {
   /**
