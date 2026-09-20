@@ -81,7 +81,7 @@ import {
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import CustomLogin from "./CustomLogin";
@@ -369,6 +369,7 @@ function DashboardLayoutContent({
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
+  const searchString = useSearch();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
@@ -438,8 +439,7 @@ function DashboardLayoutContent({
   // Para admin, determinar qual grupo está ativo (para abrir automaticamente)
   const activeGroupIndex = useMemo(() => {
     if (!isAdmin) return -1;
-    const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
-    const currentParams = new URLSearchParams(currentSearch);
+    const currentParams = new URLSearchParams(searchString || '');
     const currentTab = currentParams.get("tab");
     const locationBase = location.split("?")[0];
     
@@ -464,7 +464,7 @@ function DashboardLayoutContent({
         return location.startsWith(itemBase + "/");
       })
     );
-  }, [location, isAdmin]);
+  }, [location, searchString, isAdmin]);
 
   // Para não-admin, filtrar itens do menu
   const filteredOtherItems = useMemo(() => {
@@ -510,7 +510,7 @@ function DashboardLayoutContent({
       if (found) return found.label;
     }
     return "Menu";
-  }, [location, isAdmin, filteredOtherItems]);
+  }, [location, searchString, isAdmin, filteredOtherItems]);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -568,8 +568,7 @@ function DashboardLayoutContent({
       const itemTab = itemParams.get("tab");
       if (itemTab) {
         // Verificar se estamos na mesma base path E com o mesmo tab
-        const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
-        const currentParams = new URLSearchParams(currentSearch);
+        const currentParams = new URLSearchParams(searchString || '');
         const currentTab = currentParams.get("tab");
         return locationBase === itemBase && currentTab === itemTab;
       }
@@ -744,8 +743,7 @@ function DashboardLayoutContent({
                 {/* PROGRAMA DE INTEGRACAO - acesso exclusivo do administrador completo */}
                 {isFullAdmin && (() => {
                   const integrationActive = location.split("?")[0].startsWith("/programa-integracao");
-                  const search = typeof window !== "undefined" ? window.location.search : "";
-                  const tabAtual = new URLSearchParams(search).get("tab") || "painel";
+                  const tabAtual = new URLSearchParams(searchString || "").get("tab") || "painel";
                   return (
                     <Collapsible defaultOpen={integrationActive} className="group/integracao">
                       <SidebarGroup className="py-0.5 px-2">
