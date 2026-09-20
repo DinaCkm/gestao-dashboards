@@ -17,10 +17,12 @@ import {
   removerHorarioMentora,
   substituirHorariosMentora,
   telefoneBonitoMentora,
+  sugerirTelefoneGestorMentora,
   usarHorariosMentoraNoGestor,
   vincularMentoraProcesso,
   type HorarioMentora,
 } from '../helpers/mentoraStateHelpers';
+import { BriefingMentoraPreview } from './BriefingMentoraPreview';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -33,6 +35,8 @@ interface MentoraPreparacaoPainelProps {
   onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
   onGerarBriefing: () => Promise<boolean | void> | boolean | void;
   onGerarWord: () => Promise<boolean | void> | boolean | void;
+  processos?: ProcessoIntegracao[];
+  onAbrirCadastroMentoras?: () => void;
 }
 
 async function copiarTexto(texto: string, sucesso: string) {
@@ -57,20 +61,42 @@ export function MentoraPreparacaoPainel({
   onSalvarProcesso,
   onGerarBriefing,
   onGerarWord,
+  processos = [],
+  onAbrirCadastroMentoras,
 }: MentoraPreparacaoPainelProps) {
   const mentora = mentoraVinculada(processo, config);
   const opcoesMentora = useMemo(() => mentorasAtivas(config), [config]);
   const estado = estadoMentoraAlinhamento(processo, numero);
   const checklist = checarPreparacaoMentora(processo, numero, config, feriados);
   const [mostrarChecklist, setMostrarChecklist] = useState(false);
+  const [mostrarBriefing, setMostrarBriefing] = useState(false);
+  const [mensagemAberta, setMensagemAberta] = useState<'disp' | 'conf' | null>(null);
+  const [dadosDirty, setDadosDirty] = useState(false);
+  const [dadosDraft, setDadosDraft] = useState(() => ({
+    tel: String(processo.tel || ''),
+    gestorTel: String(processo.gestorTel || ''),
+    statusPdi: String(processo.statusPdi || ''),
+    bemQualidades: String(processo.bem?.qualidades || ''),
+    testeResumo: String(processo.teste?.resumo || ''),
+  }));
   const [horariosEditados, setHorariosEditados] = useState<HorarioMentora[]>(() => cloneHorarios(estado.hor));
   const [editandoHorarios, setEditandoHorarios] = useState(false);
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
 
   useEffect(() => {
     if (!editandoHorarios) setHorariosEditados(cloneHorarios(estado.hor));
-  }, [processo, numero, editandoHorarios]);
+    if (!dadosDirty) {
+      setDadosDraft({
+        tel: String(processo.tel || ''),
+        gestorTel: String(processo.gestorTel || ''),
+        statusPdi: String(processo.statusPdi || ''),
+        bemQualidades: String(processo.bem?.qualidades || ''),
+        testeResumo: String(processo.teste?.resumo || ''),
+      });
+    }
+  }, [processo, numero, editandoHorarios, dadosDirty]);
 
+  const sugestaoGestor = sugerirTelefoneGestorMentora(processo, processos);
   const disponibilidade = mensagemDisponibilidadeMentora(processo, numero, config, feriados);
   const confirmacao = mensagemConfirmacaoMentora(processo, numero, config);
   const linkDisponibilidade = linkWhatsAppMentora(mentora?.tel, disponibilidade);
@@ -81,6 +107,28 @@ export function MentoraPreparacaoPainel({
     : checklist.avisos
       ? `${checklist.avisos} aviso${checklist.avisos === 1 ? '' : 's'}`
       : 'Tudo pronto';
+
+  const alterarDado = (campo: keyof typeof dadosDraft, valor: string) => {
+    setDadosDraft((atual) => ({ ...atual, [campo]: valor }));
+    setDadosDirty(true);
+  };
+
+  const salvarDadosPreparacao = async () => {
+    const proximo: ProcessoIntegracao = {
+      ...processo,
+      tel: dadosDraft.tel,
+      gestorTel: dadosDraft.gestorTel,
+      statusPdi: dadosDraft.statusPdi,
+      bem: { ...(processo.bem || {}), qualidades: dadosDraft.bemQualidades },
+      teste: { ...(processo.teste || {}), resumo: dadosDraft.testeResumo },
+    };
+    await salvar(proximo);
+    setDadosDirty(false);
+    toast.success('Dados da preparação salvos e conferidos.');
+  };
+
+  const mensagemTemPendencia = (texto: string) =>
+    texto.includes('PREENCHA AQUI') || texto.includes('(data a') || texto.includes('(link a') || texto.includes('(horário a');
 
   const salvarHorarios = async () => {
     await salvar(substituirHorariosMentora(processo, numero, horariosEditados));
@@ -126,8 +174,11 @@ export function MentoraPreparacaoPainel({
               {[mentora.email, mentora.tel ? telefoneBonitoMentora(mentora.tel) : ''].filter(Boolean).join(' · ') || 'Contato não informado'}
             </p>
           )}
-          {!opcoesMentora.length && (
-            <p className="mt-2 text-xs text-amber-700">Ainda não há mentoras ativas cadastradas nas configurações.</p>
+          {(!opcoesMentora.length || (mentora && !mentora.tel)) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <p className="text-xs text-amber-700">{!opcoesMentora.length ? 'Ainda não há mentoras ativas cadastradas nas configurações.' : 'Complete o telefone da mentora para abrir o WhatsApp diretamente.'}</p>
+              {onAbrirCadastroMentoras && <Button type="button" size="sm" variant="ghost" onClick={onAbrirCadastroMentoras}>Abrir cadastro de mentoras</Button>}
+            </div>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -148,17 +199,48 @@ export function MentoraPreparacaoPainel({
           <div className="border-b px-3 py-2 text-sm font-medium">Conferência dos dados para a mentora</div>
           <div className="divide-y">
             {checklist.itens.map((item) => (
-              <div key={item.chave} className="flex gap-3 px-3 py-2 text-sm">
+              <div key={item.chave} className="flex gap-3 px-3 py-3 text-sm">
                 <span className={item.nivel === 'ok' ? 'text-emerald-700' : item.nivel === 'bloq' ? 'text-red-700' : 'text-amber-700'}>
                   {item.nivel === 'ok' ? '✓' : item.nivel === 'bloq' ? '×' : '!'}
                 </span>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-medium">{item.titulo}</p>
                   <p className="text-xs text-muted-foreground">{item.detalhe}</p>
+                  {item.nivel !== 'ok' && item.campo === 'tel' && (
+                    <input value={dadosDraft.tel} onChange={(e) => alterarDado('tel', e.target.value)} placeholder="(63) 90000-0000" className="mt-2 h-9 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm" />
+                  )}
+                  {item.nivel !== 'ok' && item.campo === 'gestorTel' && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <input value={dadosDraft.gestorTel} onChange={(e) => alterarDado('gestorTel', e.target.value)} placeholder="(63) 90000-0000" className="h-9 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm" />
+                      {sugestaoGestor && sugestaoGestor.de !== 'cadastro atual' && (
+                        <Button type="button" size="sm" variant="outline" onClick={() => alterarDado('gestorTel', sugestaoGestor.tel)}>
+                          Usar {telefoneBonitoMentora(sugestaoGestor.tel)}
+                        </Button>
+                      )}
+                      {sugestaoGestor && sugestaoGestor.de !== 'cadastro atual' && <span className="text-[11px] text-muted-foreground">encontrado em {sugestaoGestor.de}</span>}
+                    </div>
+                  )}
+                  {item.nivel !== 'ok' && item.campo === 'bem' && (
+                    <textarea value={dadosDraft.bemQualidades} onChange={(e) => alterarDado('bemQualidades', e.target.value)} placeholder="qualidades e competências que o gestor considera necessárias" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                  )}
+                  {item.nivel !== 'ok' && item.campo === 'teste' && (
+                    <textarea value={dadosDraft.testeResumo} onChange={(e) => alterarDado('testeResumo', e.target.value)} placeholder="resumo do teste comportamental / Avaliação de Potencial" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                  )}
+                  {item.nivel !== 'ok' && item.campo === 'statusPdi' && (
+                    <textarea value={dadosDraft.statusPdi} onChange={(e) => alterarDado('statusPdi', e.target.value)} placeholder="como está o PDI neste momento" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                  )}
+                  {item.nivel !== 'ok' && item.campo === 'mentora' && onAbrirCadastroMentoras && (
+                    <Button type="button" size="sm" variant="outline" className="mt-2" onClick={onAbrirCadastroMentoras}>Completar cadastro da mentora</Button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
+          {dadosDirty && (
+            <div className="flex justify-end border-t px-3 py-3">
+              <Button type="button" size="sm" onClick={() => void salvarDadosPreparacao()}>Salvar dados da preparação</Button>
+            </div>
+          )}
           <div className="border-t px-3 py-2 text-xs text-muted-foreground">
             {checklist.bloqueios
               ? 'Dados obrigatórios faltando: o Briefing PDF fica bloqueado até a correção.'
@@ -175,6 +257,7 @@ export function MentoraPreparacaoPainel({
           {estado.pedidoEm && <span className="text-xs text-muted-foreground">registrado em {estado.pedidoEm}</span>}
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => setMensagemAberta('disp')}>Ver mensagem</Button>
           <Button type="button" size="sm" variant="outline" onClick={() => copiarTexto(disponibilidade, 'Mensagem de disponibilidade copiada.')}>Copiar mensagem</Button>
           {linkDisponibilidade && (
             <Button type="button" size="sm" variant="outline" onClick={() => window.open(linkDisponibilidade, '_blank', 'noopener,noreferrer')}>Abrir WhatsApp</Button>
@@ -235,6 +318,7 @@ export function MentoraPreparacaoPainel({
           <Button type="button" size="sm" variant={estado.briefEm ? 'secondary' : 'default'} disabled={Boolean(checklist.bloqueios)} onClick={gerarBriefing}>
             {estado.briefEm ? `Briefing PDF · ${estado.briefEm}` : 'Gerar Briefing PDF'}
           </Button>
+          <Button type="button" size="sm" variant="outline" onClick={() => setMostrarBriefing(true)}>Ver prévia completa</Button>
           <Button type="button" size="sm" variant={estado.wordEm ? 'secondary' : 'outline'} onClick={gerarWord}>
             {estado.wordEm ? `Relatório Word · ${estado.wordEm}` : 'Gerar Relatório Word'}
           </Button>
@@ -247,6 +331,7 @@ export function MentoraPreparacaoPainel({
           {estado.confirmEm && <span className="text-xs text-muted-foreground">registrado em {estado.confirmEm}</span>}
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => setMensagemAberta('conf')}>Ver mensagem</Button>
           <Button type="button" size="sm" variant="outline" onClick={() => copiarTexto(confirmacao, 'Mensagem de confirmação copiada.')}>Copiar confirmação</Button>
           {linkConfirmacao && (
             <Button type="button" size="sm" variant="outline" onClick={() => window.open(linkConfirmacao, '_blank', 'noopener,noreferrer')}>Abrir WhatsApp</Button>
@@ -263,6 +348,45 @@ export function MentoraPreparacaoPainel({
           {estado.ok ? 'Reabrir preparação' : 'Concluir preparação da mentora'}
         </Button>
       </div>
+
+      {mensagemAberta && (
+        <div className="fixed inset-0 z-[85] grid place-items-center overflow-y-auto bg-black/50 p-4">
+          <div className="w-full max-w-2xl overflow-hidden rounded-xl border bg-background shadow-2xl">
+            <div className="flex items-start justify-between gap-3 border-b p-4">
+              <div>
+                <h4 className="font-semibold">WhatsApp — {mensagemAberta === 'conf' ? 'confirmação da reunião' : 'disponibilidade da mentora'}</h4>
+                <p className="mt-1 text-xs text-muted-foreground">{mentora?.nome || 'mentora sem cadastro'} · {numero}º alinhamento · {processo.nome}</p>
+              </div>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setMensagemAberta(null)}>Fechar</Button>
+            </div>
+            {mensagemTemPendencia(mensagemAberta === 'conf' ? confirmacao : disponibilidade) && (
+              <div className="border-b border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Ainda há informação a confirmar na mensagem. Complete antes de enviar.</div>
+            )}
+            <pre className="max-h-[55vh] overflow-auto whitespace-pre-wrap p-5 text-sm font-sans">{mensagemAberta === 'conf' ? confirmacao : disponibilidade}</pre>
+            <div className="flex flex-wrap justify-end gap-2 border-t p-4">
+              <Button type="button" onClick={() => copiarTexto(mensagemAberta === 'conf' ? confirmacao : disponibilidade, 'Mensagem copiada.')}>Copiar mensagem</Button>
+              {(mensagemAberta === 'conf' ? linkConfirmacao : linkDisponibilidade) && (
+                <Button type="button" variant="secondary" onClick={() => window.open(mensagemAberta === 'conf' ? linkConfirmacao : linkDisponibilidade, '_blank', 'noopener,noreferrer')}>Abrir no WhatsApp</Button>
+              )}
+              <Button type="button" variant="outline" onClick={() => void salvar(mensagemAberta === 'conf' ? marcarConfirmacaoMentora(processo, numero) : marcarPedidoDisponibilidadeMentora(processo, numero))}>Marcar como enviada</Button>
+              {mensagemAberta === 'disp' && <Button type="button" variant="outline" disabled={Boolean(checklist.bloqueios)} onClick={() => void gerarBriefing()}>Gerar briefing para anexar</Button>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mostrarBriefing && (
+        <BriefingMentoraPreview
+          processo={processo}
+          numero={numero}
+          config={config}
+          feriados={feriados}
+          onClose={() => setMostrarBriefing(false)}
+          onGerarPdf={() => void gerarBriefing()}
+          onGerarWord={() => void gerarWord()}
+          onConferir={() => { setMostrarBriefing(false); setMostrarChecklist(true); }}
+        />
+      )}
     </div>
   );
 }
