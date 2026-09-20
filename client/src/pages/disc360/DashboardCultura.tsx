@@ -22,7 +22,7 @@ type Dimensao = "D" | "I" | "S" | "C";
 const DIMENSOES: Dimensao[] = ["D", "I", "S", "C"];
 
 const EIXO_INFO: Record<Dimensao, { label: string; color: string }> = {
-  D: { label: "Dominância / Determinação", color: "#DC2626" },
+  D: { label: "Dominância / Determinação", color: "#7C3AED" },
   I: { label: "Influência / Comunicação", color: "#F59E0B" },
   S: { label: "Estabilidade / Cooperação", color: "#16A34A" },
   C: { label: "Conformidade / Cautela", color: "#2563EB" },
