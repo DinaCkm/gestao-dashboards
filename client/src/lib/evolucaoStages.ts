@@ -95,7 +95,7 @@ export function getEvolucaoColor(nota: number): string {
   if (nota >= 7) return '#3b82f6'; // blue-500
   if (nota >= 5) return '#f59e0b'; // amber-500
   if (nota >= 3) return '#f97316'; // orange-500
-  return '#7c3aed'; // violet-600
+  return '#ef4444'; // red-500
 }
 
 /**
