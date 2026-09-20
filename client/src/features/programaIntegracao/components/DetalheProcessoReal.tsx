@@ -398,10 +398,10 @@ export function DetalheProcessoReal({
         {etapas.map(({ etapa, estado, itens, abertaPorPadrao }) => {
           const aberta = abertas[etapa.et.id] ?? abertaPorPadrao;
           return (
-            <div key={etapa.et.id} className="overflow-hidden rounded-lg border bg-background">
+            <div key={etapa.et.id} className="pi-stage overflow-hidden rounded-lg border bg-background">
               <button
                 type="button"
-                className="flex w-full items-start justify-between gap-3 p-4 text-left hover:bg-muted/30"
+                className="pi-stage-head flex w-full items-start justify-between gap-3 p-4 text-left hover:bg-muted/30"
                 onClick={() => setAbertas((atual) => ({ ...atual, [etapa.et.id]: !aberta }))}
               >
                 <div>
@@ -456,7 +456,7 @@ export function DetalheProcessoReal({
                     </div>
                   )}
 
-                  <div className="divide-y">
+                  <div className="pi-stage-items divide-y">
                     {itens.map((item) => {
                       const st = calcularStatusItem(processo, item.id, etapa.data);
                       const ficha = fichaAcaoAtual(processo, item.id);
@@ -465,7 +465,7 @@ export function DetalheProcessoReal({
                       const resposta = respostaDoItem(processo, item.id);
                       const ehEmail = Boolean(item.mail || item.mails?.length);
                       return (
-                        <div id={`integracao-item-${item.id}`} key={item.id} className="space-y-3 p-4 scroll-mt-6">
+                        <div id={`integracao-item-${item.id}`} key={item.id} className="pi-stage-item space-y-3 p-4 scroll-mt-6">
                           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                             <div className="min-w-0">
                               <p className="font-medium">{item.t}</p>
