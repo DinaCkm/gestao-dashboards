@@ -201,6 +201,7 @@ export default function ProgramaIntegracao() {
   const handleRevisarRespostas = () => {
     setFormularioSubTab('pendentes');
     setActiveTab('formularios');
+    setLocation('/programa-integracao?tab=formularios');
   };
 
   const handleMarcarConcluido = async (processoId: string, itemId: string) => {
@@ -401,7 +402,7 @@ export default function ProgramaIntegracao() {
           </TabsList>
 
           <TabsContent value="painel" className="space-y-6 mt-6">
-            <PainelSemana processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} respostasPendentes={respostasPendentes} config={config} onRevisarRespostas={handleRevisarRespostas} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} onConcluirAcao={handleMarcarConcluido} onAlterarStatusAcao={handleStatusAcao} onAlterarCampoAcao={handleCampoFichaAcao} onAdicionarNotaAcao={handleAdicionarNotaAcao} onRemoverNotaAcao={handleRemoverNotaAcao} onConcluirGrupo={handleConcluirGrupo} onAplicarStatusGrupo={handleAplicarStatusGrupo} onEditarModeloEmail={(chave) => { setEmailModeloSelecionado(chave); setConfigSubTab('emails'); setActiveTab('config'); }} />
+            <PainelSemana processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} respostasPendentes={respostasPendentes} config={config} onRevisarRespostas={handleRevisarRespostas} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} onConcluirAcao={handleMarcarConcluido} onAlterarStatusAcao={handleStatusAcao} onAlterarCampoAcao={handleCampoFichaAcao} onAdicionarNotaAcao={handleAdicionarNotaAcao} onRemoverNotaAcao={handleRemoverNotaAcao} onConcluirGrupo={handleConcluirGrupo} onAplicarStatusGrupo={handleAplicarStatusGrupo} onEditarModeloEmail={(chave) => { setEmailModeloSelecionado(chave); setConfigSubTab('emails'); setActiveTab('config'); setLocation(`/programa-integracao?tab=config&config=emails&email=${encodeURIComponent(chave)}`); }} />
           </TabsContent>
 
           <TabsContent value="agenda" className="space-y-6 mt-6">
@@ -409,7 +410,7 @@ export default function ProgramaIntegracao() {
           </TabsContent>
 
           <TabsContent value="indicadores" className="space-y-6 mt-6">
-            <Indicadores processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} config={config} onPainelClick={() => setActiveTab('painel')} onRespostasClick={() => setActiveTab('respostas')} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} />
+            <Indicadores processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} config={config} onPainelClick={() => { setActiveTab('painel'); setLocation('/programa-integracao?tab=painel'); }} onRespostasClick={() => { setActiveTab('respostas'); setLocation('/programa-integracao?tab=respostas'); }} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} />
           </TabsContent>
 
           <TabsContent value="registrar" className="space-y-6 mt-6">
@@ -453,7 +454,7 @@ export default function ProgramaIntegracao() {
                 <TabsContent value="mentoras" className="mt-6"><ConfiguracaoMentoras config={config} processos={todosProcesos} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="cursos" className="mt-6"><ConfiguracaoCursos config={config} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="aviso" className="mt-6"><ConfiguracaoAviso config={config} onSaved={recarregarEstado} /></TabsContent>
-                <TabsContent value="links" className="mt-6"><ConfiguracaoLinks config={config} onSaved={recarregarEstado} onGerenciarFormularios={() => { setFormularioSubTab('links'); setActiveTab('formularios'); }} /></TabsContent>
+                <TabsContent value="links" className="mt-6"><ConfiguracaoLinks config={config} onSaved={recarregarEstado} onGerenciarFormularios={() => { setFormularioSubTab('links'); setActiveTab('formularios'); setLocation('/programa-integracao?tab=formularios'); }} /></TabsContent>
                 <TabsContent value="datas" className="mt-6"><ConfiguracaoDatas config={config} onSaved={recarregarEstado} /></TabsContent>
                 <TabsContent value="backup" className="mt-6"><ConfiguracaoDadosBackup state={state!} /></TabsContent>
               </Tabs>
