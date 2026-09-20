@@ -517,8 +517,8 @@
   color:#fff;
 }
 .programa-integracao-public-v4 .pi-scale-button[data-score="0"][aria-pressed="true"] { background:var(--pi-ink-3); }
-.programa-integracao-public-v4 .pi-scale-button[data-score="1"][aria-pressed="true"] { background:#C8363C; }
-.programa-integracao-public-v4 .pi-scale-button[data-score="2"][aria-pressed="true"] { background:#E1703E; }
+.programa-integracao-public-v4 .pi-scale-button[data-score="1"][aria-pressed="true"] { background:#6B3E8F; }
+.programa-integracao-public-v4 .pi-scale-button[data-score="2"][aria-pressed="true"] { background:#5267A8; }
 .programa-integracao-public-v4 .pi-scale-button[data-score="3"][aria-pressed="true"] { background:var(--pi-amber); }
 .programa-integracao-public-v4 .pi-scale-button[data-score="4"][aria-pressed="true"] { background:#7FB342; }
 .programa-integracao-public-v4 .pi-scale-button[data-score="5"][aria-pressed="true"] { background:var(--pi-ok); }
