@@ -584,8 +584,7 @@ function DashboardLayoutContent({
       g.items.some(i => i.path.startsWith(itemBase + "?"))
     );
     if (hasQueryItems && !itemQuery) {
-      const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
-      const currentParams = new URLSearchParams(currentSearch);
+      const currentParams = new URLSearchParams(searchString || '');
       const currentTab = currentParams.get("tab");
       // Se estamos em /cadastros sem tab, é a lista de alunos
       return (locationBase === itemBase && !currentTab) || (locationBase === itemBase && currentTab === "acesso");
@@ -670,7 +669,7 @@ function DashboardLayoutContent({
                   if (visibleItems.length === 0) return null;
                   return (
                     <Collapsible
-                      key={group.label}
+                      key={`${group.label}-${isGroupActive ? 'active' : 'idle'}`}
                       defaultOpen={isGroupActive}
                       className="group/collapsible"
                     >
@@ -749,7 +748,7 @@ function DashboardLayoutContent({
                   const integrationActive = location.split("?")[0].startsWith("/programa-integracao");
                   const tabAtual = new URLSearchParams(searchString || "").get("tab") || "painel";
                   return (
-                    <Collapsible defaultOpen={integrationActive} className="group/integracao">
+                    <Collapsible key={`integracao-${integrationActive ? 'active' : 'idle'}`} defaultOpen={integrationActive} className="group/integracao">
                       <SidebarGroup className="py-0.5 px-2">
                         <SidebarMenu className="px-0">
                           <SidebarMenuItem>
@@ -794,7 +793,7 @@ function DashboardLayoutContent({
               /* MENU PARA MENTOR / GESTOR / ALUNO (flat, sem grupos) */
               <SidebarMenu className="px-2 py-1 pb-2">
                 {filteredOtherItems.map(item => {
-                  const isActive = location === item.path;
+                  const isActive = isPathActive(item.path);
                   return (
                     <SidebarMenuItem key={`${item.path}-${item.label}`}>
                       <SidebarMenuButton
