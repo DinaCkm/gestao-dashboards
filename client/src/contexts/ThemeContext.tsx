@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme?: () => void;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
   switchable: boolean;
 }
 
@@ -16,40 +17,66 @@ interface ThemeProviderProps {
   switchable?: boolean;
 }
 
+const THEME_STORAGE_KEY = "theme";
+
+function storedTheme(defaultTheme: Theme): Theme {
+  if (typeof window === "undefined") return defaultTheme;
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return stored === "dark" || stored === "light" ? stored : defaultTheme;
+  } catch {
+    return defaultTheme;
+  }
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = "light",
   switchable = false,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
-    }
-    return defaultTheme;
-  });
+  const [theme, setThemeState] = useState<Theme>(() =>
+    switchable ? storedTheme(defaultTheme) : defaultTheme
+  );
+
+  const setTheme = useCallback((nextTheme: Theme) => {
+    if (!switchable) return;
+    setThemeState(nextTheme);
+  }, [switchable]);
+
+  const toggleTheme = useCallback(() => {
+    if (!switchable) return;
+    setThemeState(prev => (prev === "light" ? "dark" : "light"));
+  }, [switchable]);
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    root.classList.toggle("dark", theme === "dark");
+    root.dataset.theme = theme;
+    root.style.colorScheme = theme;
 
     if (switchable) {
-      localStorage.setItem("theme", theme);
+      try {
+        window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+      } catch {
+        // Preferência continua válida na sessão mesmo se o storage estiver indisponível.
+      }
     }
   }, [theme, switchable]);
 
-  const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
+  useEffect(() => {
+    if (!switchable) return;
+    const syncAcrossTabs = (event: StorageEvent) => {
+      if (event.key !== THEME_STORAGE_KEY) return;
+      if (event.newValue === "light" || event.newValue === "dark") {
+        setThemeState(event.newValue);
       }
-    : undefined;
+    };
+    window.addEventListener("storage", syncAcrossTabs);
+    return () => window.removeEventListener("storage", syncAcrossTabs);
+  }, [switchable]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, switchable }}>
       {children}
     </ThemeContext.Provider>
   );
