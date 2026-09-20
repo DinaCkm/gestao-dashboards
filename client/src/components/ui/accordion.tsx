@@ -17,10 +17,7 @@ function AccordionItem({
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
-      className={cn(
-        "group/accordion-item mb-2 overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-200 last:mb-0 data-[state=open]:border-primary/35 data-[state=open]:shadow-md",
-        className
-      )}
+      className={cn("border-b last:border-b-0", className)}
       {...props}
     />
   );
@@ -36,7 +33,7 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between gap-4 rounded-xl px-4 py-3.5 text-left text-sm font-semibold transition-all outline-none hover:bg-accent/55 focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 data-[state=open]:rounded-b-none data-[state=open]:bg-primary/8 data-[state=open]:text-primary [&[data-state=open]>svg]:rotate-180",
+          "focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
           className
         )}
         {...props}
@@ -56,10 +53,10 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden border-t border-border/70 bg-muted/20 text-sm"
+      className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm"
       {...props}
     >
-      <div className={cn("m-3 ml-5 rounded-lg border-l-2 border-primary/25 bg-card/70 px-4 py-3", className)}>{children}</div>
+      <div className={cn("pt-0 pb-4", className)}>{children}</div>
     </AccordionPrimitive.Content>
   );
 }
