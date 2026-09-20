@@ -175,6 +175,146 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
   }
 });
 
+
+const PARTICULAS_NOME_ECO = new Set(["de", "da", "do", "das", "dos", "e"]);
+
+function nomeCanonicoEco(value: unknown): string {
+  return normTxt(value)
+    .split(" ")
+    .filter((token) => token && !PARTICULAS_NOME_ECO.has(token))
+    .join(" ");
+}
+
+function tokensNomeEco(value: unknown): string[] {
+  return nomeCanonicoEco(value).split(" ").filter(Boolean);
+}
+
+function escolherCorrespondenciaEcoSegura(nomeProcesso: string, alunosEco: any[]) {
+  const canon = nomeCanonicoEco(nomeProcesso);
+  if (!canon) return { status: "nao_encontrado" as const, aluno: null, score: 0, motivo: "nome_vazio" };
+
+  const exatos = alunosEco.filter((a) => nomeCanonicoEco(a.nome) === canon);
+  if (exatos.length === 1) {
+    return { status: "automatico_seguro" as const, aluno: exatos[0], score: 1, motivo: "nome_canonico_exato" };
+  }
+  if (exatos.length > 1) {
+    return { status: "ambiguo" as const, aluno: null, score: 1, motivo: "mais_de_um_nome_equivalente" };
+  }
+
+  const tokens = tokensNomeEco(nomeProcesso);
+  const primeiro = tokens[0] || "";
+  const ultimo = tokens[tokens.length - 1] || "";
+  const pontuados = alunosEco
+    .map((a) => {
+      const t = tokensNomeEco(a.nome);
+      const score = simNome(nomeProcesso, a.nome);
+      const extremosIguais = Boolean(primeiro && ultimo && t[0] === primeiro && t[t.length - 1] === ultimo);
+      return { aluno: a, score, extremosIguais };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const top = pontuados[0];
+  const segundo = pontuados[1];
+  if (!top || top.score < 0.78) {
+    return { status: "nao_encontrado" as const, aluno: null, score: top?.score || 0, motivo: "sem_nome_proximo" };
+  }
+
+  const margem = top.score - (segundo?.score || 0);
+  if (top.score >= 0.93 && top.extremosIguais && margem >= 0.08) {
+    return { status: "automatico_seguro" as const, aluno: top.aluno, score: top.score, motivo: "similaridade_alta_com_margem" };
+  }
+
+  return { status: "ambiguo" as const, aluno: null, score: top.score, motivo: "requer_selecao_manual" };
+}
+
+async function perfilEcoLiderAluno(connection: any, alunoId: number) {
+  const [discRows] = (await connection.execute(
+    `SELECT scoreD,scoreI,scoreS,scoreC,perfilPredominante,perfilSecundario,ciclo,completedAt
+     FROM disc_resultados
+     WHERE alunoId=?
+     ORDER BY ciclo DESC, completedAt DESC, id DESC
+     LIMIT 1`,
+    [alunoId],
+  )) as any;
+  const disc = discRows?.[0] || null;
+
+  const [autoRows] = (await connection.execute(
+    `SELECT ap.competenciaId,c.nome AS competenciaNome,c.ordem AS competenciaOrdem,ap.nota,ap.createdAt
+     FROM autopercepcoes_competencias ap
+     LEFT JOIN competencias c ON c.id=ap.competenciaId
+     WHERE ap.alunoId=?
+     ORDER BY ap.createdAt DESC, ap.id DESC`,
+    [alunoId],
+  )) as any;
+
+  const porCompetencia = new Map<number, any>();
+  for (const row of autoRows || []) {
+    const id = Number(row.competenciaId || 0);
+    if (id && !porCompetencia.has(id)) porCompetencia.set(id, row);
+  }
+  const autoavaliacoes = Array.from(porCompetencia.values()).sort((a: any, b: any) =>
+    (Number(a.competenciaOrdem ?? 999) - Number(b.competenciaOrdem ?? 999)) ||
+    String(a.competenciaNome || "").localeCompare(String(b.competenciaNome || ""), "pt-BR"),
+  );
+
+  const grupos: Record<string, string[]> = { "5": [], "4": [], "3": [], "2": [], "1": [] };
+  for (const item of autoavaliacoes as any[]) {
+    const nota = Math.round(Number(item.nota || 0));
+    if (nota >= 1 && nota <= 5) {
+      grupos[String(nota)].push(String(item.competenciaNome || `Competência ${item.competenciaId}`));
+    }
+  }
+
+  return { disc, autoavaliacoes, grupos };
+}
+
+/**
+ * Ponte SOMENTE LEITURA entre Programa de Integração e ECO Líderes.
+ * Não altera cadastro, DISC ou autoavaliações do aluno.
+ */
+programaIntegracaoRouter.get("/api/programa-integracao/eco-lider/perfil", requireAdmin, async (req, res) => {
+  try {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    const nome = String(req.query.nome || "").trim();
+    const alunoIdManual = Number(req.query.alunoId || 0) || 0;
+
+    const [rows] = (await connection.execute(
+      `SELECT DISTINCT a.id,a.name AS nome,a.email
+       FROM alunos a
+       INNER JOIN aluno_curso_atribuido aca ON aca.alunoId=a.id
+       WHERE a.isActive=1
+         AND a.tipoPortal IN ('aluno_autonomo','assessment')
+       ORDER BY a.name ASC,a.id ASC`,
+    )) as any;
+
+    const alunos = (rows || []).map((row: any) => ({
+      id: Number(row.id),
+      nome: String(row.nome || ""),
+      email: String(row.email || ""),
+    }));
+
+    let match: any;
+    if (alunoIdManual) {
+      const manual = alunos.find((a: any) => a.id === alunoIdManual) || null;
+      match = manual
+        ? { status: "manual", aluno: manual, score: 1, motivo: "vinculo_salvo_no_programa" }
+        : { status: "nao_encontrado", aluno: null, score: 0, motivo: "vinculo_manual_nao_existe_mais" };
+    } else {
+      match = escolherCorrespondenciaEcoSegura(nome, alunos);
+    }
+
+    const perfil = match.aluno
+      ? { aluno: match.aluno, ...(await perfilEcoLiderAluno(connection, Number(match.aluno.id))) }
+      : null;
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ ok: true, match, alunos, perfil });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] ECO Líderes perfil:", error);
+    return res.status(500).json({ error: "Não foi possível consultar o Perfil DISC e a Autoavaliação no ECO Líderes." });
+  }
+});
+
 programaIntegracaoRouter.put("/api/programa-integracao/config", requireAdmin, async (req, res) => {
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
