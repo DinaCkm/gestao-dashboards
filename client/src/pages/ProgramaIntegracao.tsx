@@ -409,7 +409,7 @@ export default function ProgramaIntegracao() {
           </TabsContent>
 
           <TabsContent value="indicadores" className="space-y-6 mt-6">
-            <Indicadores processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} onPainelClick={() => setActiveTab('painel')} onRespostasClick={() => setActiveTab('respostas')} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} />
+            <Indicadores processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} config={config} onPainelClick={() => setActiveTab('painel')} onRespostasClick={() => setActiveTab('respostas')} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} />
           </TabsContent>
 
           <TabsContent value="registrar" className="space-y-6 mt-6">

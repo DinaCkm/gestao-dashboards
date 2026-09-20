@@ -1,7 +1,7 @@
 import type { LadoIntegracao } from './planoReal';
 import type { StatusItemPainel } from './statusHelpers';
 
-export type FiltroPainel = '' | 'late' | 'lateckm' | 'lateeles' | 'hoje' | 'act' | 'wait' | 'ckm' | 'eles';
+export type FiltroPainel = '' | 'late' | 'lateckm' | 'lateeles' | 'hoje' | 'act' | 'wait' | 'ontime' | 'ckm' | 'eles';
 export type FaixaPainel = 'atras' | 'esta' | 'prox' | 'depois';
 
 export interface AcaoPainelBase {
@@ -79,6 +79,7 @@ export function filtrarAcoesPainel<T extends AcaoPainelBase>(acoes: T[], filtro:
     if (filtro === 'hoje') return acao.st.k === 'act' && acao.st.dif === 0;
     if (filtro === 'act') return acao.st.k === 'act' && acao.st.dif !== 0;
     if (filtro === 'wait') return acao.st.k === 'wait';
+    if (filtro === 'ontime') return acao.st.k === 'ontime';
     if (filtro === 'ckm') return acao.lado === 'ckm' && acao.st.k !== 'ontime';
     if (filtro === 'eles') return acao.lado === 'eles' && acao.st.k !== 'ontime';
     return acao.faixa !== 'depois';
@@ -92,6 +93,7 @@ export const ROTULOS_FILTRO_PAINEL: Record<Exclude<FiltroPainel, ''>, string> = 
   hoje: 'Só as tarefas de hoje',
   act: 'Só o que vence nos próximos dias',
   wait: 'Só o que está aguardando retorno — de qualquer um: CKM, UGP, gestor, Anjo ou colaborador',
+  ontime: 'Só as ações abertas que ainda estão no prazo e sem urgência',
   ckm: 'Só o que depende da CKM',
   eles: 'Só o que depende deles',
 };
@@ -103,5 +105,5 @@ export const KPIS_PAINEL_ORIGINAL = [
   { filtro: 'hoje' as const, titulo: 'Hoje', descricao: 'tarefas do dia, para fazer agora' },
   { filtro: 'act' as const, titulo: 'Tomar ação', descricao: 'vence em até 3 dias' },
   { filtro: 'wait' as const, titulo: 'Aguardando retorno', descricao: 'de qualquer um — CKM, UGP, gestor, Anjo ou colaborador' },
-  { filtro: '' as const, titulo: 'No prazo', descricao: 'sem urgência' },
+  { filtro: 'ontime' as const, titulo: 'No prazo', descricao: 'sem urgência' },
 ];

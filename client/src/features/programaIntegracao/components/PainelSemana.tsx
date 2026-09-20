@@ -65,20 +65,54 @@ interface PainelSemanaProps {
 }
 
 const statusClasses = {
-  late: 'border-red-300 bg-red-50 text-red-800',
-  act: 'border-amber-300 bg-amber-50 text-amber-800',
-  wait: 'border-blue-300 bg-blue-50 text-blue-800',
-  ontime: 'border-emerald-300 bg-emerald-50 text-emerald-800',
-  ok: 'border-emerald-300 bg-emerald-50 text-emerald-800',
-  off: 'border-slate-300 bg-slate-50 text-slate-700',
+  late: 'border-purple-400 bg-purple-100 text-purple-950 dark:border-purple-700 dark:bg-purple-950/50 dark:text-purple-100',
+  act: 'border-violet-400 bg-violet-100 text-violet-950 dark:border-violet-700 dark:bg-violet-950/50 dark:text-violet-100',
+  wait: 'border-blue-400 bg-blue-100 text-blue-950 dark:border-blue-700 dark:bg-blue-950/50 dark:text-blue-100',
+  ontime: 'border-teal-400 bg-teal-100 text-teal-950 dark:border-teal-700 dark:bg-teal-950/50 dark:text-teal-100',
+  ok: 'border-emerald-400 bg-emerald-100 text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-100',
+  off: 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200',
 } as const;
 
 const sinalClasses = {
-  late: 'border-red-300 bg-red-100 text-red-700',
-  act: 'border-amber-300 bg-amber-100 text-amber-700',
-  ok: 'border-emerald-300 bg-emerald-100 text-emerald-700',
-  off: 'border-slate-300 bg-slate-100 text-slate-600',
+  late: 'border-purple-500 bg-purple-100 text-purple-900 dark:border-purple-700 dark:bg-purple-950/60 dark:text-purple-100',
+  act: 'border-violet-500 bg-violet-100 text-violet-900 dark:border-violet-700 dark:bg-violet-950/60 dark:text-violet-100',
+  ok: 'border-teal-500 bg-teal-100 text-teal-900 dark:border-teal-700 dark:bg-teal-950/60 dark:text-teal-100',
+  off: 'border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-300',
 } as const;
+
+const kpiPriorityClasses: Record<FiltroPainel, string> = {
+  late: 'border-fuchsia-950/35 bg-fuchsia-950/[0.08] hover:bg-fuchsia-950/[0.13] dark:border-fuchsia-700/60 dark:bg-fuchsia-950/35',
+  lateckm: 'border-purple-500/45 bg-purple-500/[0.08] hover:bg-purple-500/[0.13] dark:border-purple-700 dark:bg-purple-950/35',
+  lateeles: 'border-indigo-500/45 bg-indigo-500/[0.08] hover:bg-indigo-500/[0.13] dark:border-indigo-700 dark:bg-indigo-950/35',
+  hoje: 'border-amber-500/55 bg-amber-400/[0.12] hover:bg-amber-400/[0.18] dark:border-amber-700 dark:bg-amber-950/35',
+  act: 'border-violet-500/45 bg-violet-500/[0.08] hover:bg-violet-500/[0.13] dark:border-violet-700 dark:bg-violet-950/35',
+  wait: 'border-blue-500/45 bg-blue-500/[0.08] hover:bg-blue-500/[0.13] dark:border-blue-700 dark:bg-blue-950/35',
+  ontime: 'border-teal-500/45 bg-teal-500/[0.08] hover:bg-teal-500/[0.13] dark:border-teal-700 dark:bg-teal-950/35',
+  ckm: 'border-purple-400/40 bg-purple-500/[0.06] hover:bg-purple-500/[0.11]',
+  eles: 'border-indigo-400/40 bg-indigo-500/[0.06] hover:bg-indigo-500/[0.11]',
+  '': 'border-teal-500/45 bg-teal-500/[0.08] hover:bg-teal-500/[0.13] dark:border-teal-700 dark:bg-teal-950/35',
+};
+
+function classeStatusPainel(status: { k: string; dif?: number }, lado?: 'ckm' | 'eles') {
+  if (status.k === 'late') {
+    return lado === 'eles'
+      ? 'border-indigo-400 bg-indigo-100 text-indigo-950 dark:border-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-100'
+      : 'border-purple-400 bg-purple-100 text-purple-950 dark:border-purple-700 dark:bg-purple-950/50 dark:text-purple-100';
+  }
+  if (status.k === 'act' && status.dif === 0) {
+    return 'border-amber-400 bg-amber-100 text-amber-950 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-100';
+  }
+  if (status.k === 'act') {
+    return 'border-violet-400 bg-violet-100 text-violet-950 dark:border-violet-700 dark:bg-violet-950/50 dark:text-violet-100';
+  }
+  if (status.k === 'wait') {
+    return 'border-blue-400 bg-blue-100 text-blue-950 dark:border-blue-700 dark:bg-blue-950/50 dark:text-blue-100';
+  }
+  if (status.k === 'ontime' || status.k === 'ok') {
+    return 'border-teal-400 bg-teal-100 text-teal-950 dark:border-teal-700 dark:bg-teal-950/50 dark:text-teal-100';
+  }
+  return 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200';
+}
 
 const STATUS_ACAO: Array<[StatusAcaoLegado, string]> = [
   ['', 'Pendente'],
@@ -173,7 +207,8 @@ export function PainelSemana({
       case 'hoje': return kpis.hoje;
       case 'act': return kpis.tomarAcao;
       case 'wait': return kpis.aguardandoRetorno;
-      default: return kpis.noPrazo;
+      case 'ontime': return kpis.noPrazo;
+      default: return acoes.length;
     }
   };
 
@@ -305,12 +340,12 @@ export function PainelSemana({
   return (
     <div className="pi-painel space-y-5">
       {respostasPendentes.length > 0 && (
-        <Card className="border-orange-300 bg-orange-50"><CardContent className="pt-6"><div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4 min-w-0"><AlertTriangle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" /><div className="min-w-0">
-            <h3 className="font-semibold text-orange-900">{respostasPendentes.length} {respostasPendentes.length === 1 ? 'resposta pendente de vinculação' : 'respostas pendentes de vinculação'}</h3>
-            <p className="text-sm text-orange-700 mt-1">{respostasPendentes.slice(0, 3).map(textoPendente).join(', ')}{respostasPendentes.length > 3 ? ` e mais ${respostasPendentes.length - 3}` : ''}</p>
+        <Card className="border-violet-300 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/30"><CardContent className="pt-6"><div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4 min-w-0"><AlertTriangle className="w-6 h-6 text-violet-700 dark:text-violet-300 flex-shrink-0 mt-1" /><div className="min-w-0">
+            <h3 className="font-semibold text-violet-950 dark:text-violet-100">{respostasPendentes.length} {respostasPendentes.length === 1 ? 'resposta pendente de vinculação' : 'respostas pendentes de vinculação'}</h3>
+            <p className="text-sm text-violet-800 dark:text-violet-200 mt-1">{respostasPendentes.slice(0, 3).map(textoPendente).join(', ')}{respostasPendentes.length > 3 ? ` e mais ${respostasPendentes.length - 3}` : ''}</p>
           </div></div>
-          {onRevisarRespostas && <Button size="sm" onClick={onRevisarRespostas} className="bg-orange-600 hover:bg-orange-700 flex-shrink-0">Revisar agora</Button>}
+          {onRevisarRespostas && <Button size="sm" onClick={onRevisarRespostas} className="bg-violet-700 hover:bg-violet-800 flex-shrink-0">Revisar agora</Button>}
         </div></CardContent></Card>
       )}
 
@@ -319,7 +354,13 @@ export function PainelSemana({
       <div className="pi-kpis grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7">
         {KPIS_PAINEL_ORIGINAL.map((item) => {
           const ativo = filtro === item.filtro;
-          return <button key={item.titulo} type="button" onClick={() => setFiltro(ativo ? '' : item.filtro)} className={`pi-kpi text-left rounded-lg border p-3 transition ${ativo ? 'ring-2 ring-offset-1 ring-primary' : 'hover:bg-muted/40'}`}>
+          return <button
+            key={item.titulo}
+            type="button"
+            onClick={() => setFiltro(ativo ? '' : item.filtro)}
+            aria-pressed={ativo}
+            className={`pi-kpi text-left rounded-xl border p-3 transition-colors ${kpiPriorityClasses[item.filtro]} ${ativo ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}`}
+          >
             <p className="text-xs font-medium text-muted-foreground">{item.titulo}</p><p className="text-2xl font-bold mt-1">{valorKpi(item.filtro)}</p><p className="text-[11px] text-muted-foreground mt-1">{item.descricao}</p>
           </button>;
         })}
@@ -339,7 +380,7 @@ export function PainelSemana({
         </div>
       )}
       {feedbackGrupo && !salvandoGrupo && (
-        <div className={`fixed bottom-5 right-5 z-50 max-w-[calc(100vw-2rem)] rounded-lg border bg-background px-4 py-3 text-sm font-medium shadow-lg ${feedbackGrupo.tipo === 'erro' ? 'text-red-700' : 'text-emerald-700'}`}>
+        <div className={`fixed bottom-5 right-5 z-50 max-w-[calc(100vw-2rem)] rounded-lg border bg-background px-4 py-3 text-sm font-medium shadow-lg ${feedbackGrupo.tipo === 'erro' ? 'text-violet-800 dark:text-violet-200' : 'text-emerald-700 dark:text-emerald-300'}`}>
           {feedbackGrupo.texto}
         </div>
       )}
@@ -348,7 +389,7 @@ export function PainelSemana({
         {grupos.length === 0 ? (
           <Card><CardContent className="flex flex-col items-center justify-center py-12"><CheckCircle2 className="w-10 h-10 text-emerald-600 mb-3" /><p className="font-medium">Nenhuma ação nessa seleção.</p></CardContent></Card>
         ) : grupos.map((grupo) => {
-          const classe = statusClasses[grupo.statusPior.k];
+          const classe = classeStatusPainel(grupo.statusPior, grupo.lado);
           const ids = grupo.pessoas.map((acao) => acao.pid);
           const abertos = grupo.pessoas.filter((acao) => acao.st.k !== 'ok' && acao.st.k !== 'off');
           const idsAbertos = abertos.map((acao) => acao.pid);
@@ -454,7 +495,7 @@ export function PainelSemana({
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                            <Badge variant="outline" className={statusClasses[acao.st.k]}>{acao.st.l}</Badge>
+                            <Badge variant="outline" className={classeStatusPainel(acao.st, acao.lado)}>{acao.st.l}</Badge>
                             {linkAcao?.u && (
                               <Button
                                 type="button"
