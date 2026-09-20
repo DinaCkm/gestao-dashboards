@@ -18,6 +18,7 @@ import {
 import { formatarData } from '../helpers/dateHelpers';
 import { respostaDoItem } from '../helpers/respostaItemHelpers';
 import { arquivarRespostaRecebida } from '../api/respostas';
+import { buscarPerfilEcoLider, buscarStatusEcoLider, type EcoLiderAndamento } from '../api/ecoLider';
 import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { gerarBriefingMentoraPdf, gerarRelatorioMentoraWord } from '../helpers/mentoraDocumentos';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
@@ -97,6 +98,8 @@ export function DetalheProcessoReal({
   const [cobrancaCiclo, setCobrancaCiclo] = useState<1 | 2 | 3 | 4 | undefined>(undefined);
   const [cobrancaPapel, setCobrancaPapel] = useState<PapelCobranca | null>(null);
   const [excluindoRespostaRid, setExcluindoRespostaRid] = useState<string | null>(null);
+  const [ecoAndamento, setEcoAndamento] = useState<EcoLiderAndamento | null>(null);
+  const [ecoAndamentoCarregando, setEcoAndamentoCarregando] = useState(false);
   const deepLinkAplicadoRef = useRef(false);
   const itemDeepLink = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -128,6 +131,30 @@ export function DetalheProcessoReal({
   useEffect(() => {
     if (!dadosAlterados) setRascunhoProcesso(processo);
   }, [processo, dadosAlterados]);
+
+  useEffect(() => {
+    let cancelado = false;
+    const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0);
+    if (!alunoId) {
+      setEcoAndamento(null);
+      return;
+    }
+    setEcoAndamentoCarregando(true);
+    buscarStatusEcoLider([alunoId])
+      .then((mapa) => {
+        if (cancelado) return;
+        setEcoAndamento(mapa[String(alunoId)] || null);
+      })
+      .catch((error) => {
+        if (cancelado) return;
+        setEcoAndamento(null);
+      })
+      .finally(() => {
+        if (!cancelado) setEcoAndamentoCarregando(false);
+      });
+    return () => { cancelado = true; };
+  }, [processo.id, (processo.teste as any)?.ecoAlunoId]);
+
 
   useEffect(() => {
     setStatusTemporario((atual) => {
@@ -218,6 +245,24 @@ export function DetalheProcessoReal({
       setDadosSalvos(false);
       toast.error(error instanceof Error ? error.message : 'Não foi possível salvar as alterações. Os dados editados foram mantidos na tela.');
     }
+  };
+
+  const processoComEcoAtual = async (): Promise<ProcessoIntegracao> => {
+    const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0);
+    if (!alunoId) return processo;
+    const retorno = await buscarPerfilEcoLider(processo.nome, alunoId);
+    if (!retorno.perfil) return processo;
+    return {
+      ...processo,
+      teste: {
+        ...(processo.teste || {}),
+        ecoAlunoId: retorno.perfil.aluno.id,
+        ecoAlunoNome: retorno.perfil.aluno.nome,
+        ecoAlunoEmail: retorno.perfil.aluno.email,
+        ecoVinculoModo: (processo.teste as any)?.ecoVinculoModo || 'manual',
+        ecoPerfil: retorno.perfil,
+      },
+    };
   };
 
   const gerarAgenda = () => {
@@ -361,9 +406,30 @@ export function DetalheProcessoReal({
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {campoLongo('horarios', 'Horários sugeridos (um por linha)', '09h00\n14h00')}
-            {campoLongo('statusPdi', 'Status do PDI (usado só se não houver Acompanhamento do PDI respondido)')}
+            <div className="space-y-1 text-xs">
+              <span className="font-medium text-muted-foreground">Status do PDI</span>
+              <div className="min-h-24 rounded-md border border-input bg-muted/20 px-3 py-2 text-sm">
+                {ecoAndamentoCarregando
+                  ? 'Consultando ECO Líderes...'
+                  : ecoAndamento?.pdi.statusTexto
+                    || (Number((processo.teste as any)?.ecoAlunoId || 0)
+                      ? 'Andamento do PDI indisponível no momento.'
+                      : 'Vincule este aluno ao ECO Líderes em Preparação da mentora.')}
+              </div>
+            </div>
             {campoLongo('pendencias', 'Pendências extras (somadas às calculadas)')}
-            {campoLongo('statusCursos', 'Status Jornada Compliance (usado só se não houver Acompanhamento do PDI respondido)')}
+            <div className="space-y-1 text-xs">
+              <span className="font-medium text-muted-foreground">Jornada Compliance</span>
+              <div className="min-h-24 rounded-md border border-input bg-muted/20 px-3 py-2 text-sm">
+                {ecoAndamentoCarregando
+                  ? 'Consultando ECO Líderes...'
+                  : ecoAndamento?.jornadaCompliance.statusTexto
+                    || (Number((processo.teste as any)?.ecoAlunoId || 0)
+                      ? 'Andamento da Jornada Compliance indisponível no momento.'
+                      : 'Vincule este aluno ao ECO Líderes em Preparação da mentora.')}
+
+              </div>
+            </div>
             {campoLongo('consideracoes', 'Considerações da CKM para a UGP')}
             {campoLongo('notas', 'Anotações internas')}
           </div>
@@ -605,8 +671,8 @@ export function DetalheProcessoReal({
                                   onAbrirCadastroMentoras={onAbrirCadastroMentoras}
                                   onAbrirBemTeste={() => document.getElementById('integracao-bem-teste')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                                   onSalvarProcesso={salvar}
-                                  onGerarBriefing={() => gerarBriefingMentoraPdf(processo, numeroMentora, config, feriados)}
-                                  onGerarWord={() => gerarRelatorioMentoraWord(processo, numeroMentora, config, feriados)}
+                                  onGerarBriefing={async () => gerarBriefingMentoraPdf(await processoComEcoAtual(), numeroMentora, config, feriados)}
+                                  onGerarWord={async () => gerarRelatorioMentoraWord(await processoComEcoAtual(), numeroMentora, config, feriados)}
                                 />
                               </div>
                             );

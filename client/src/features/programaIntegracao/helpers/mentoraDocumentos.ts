@@ -131,7 +131,9 @@ function escHtml(s: string): string {
 }
 
 function textoStatusPdi(processo: ProcessoIntegracao): string {
-  return String(processo.statusPdi || '').trim() || 'não informado — confirme na conversa.';
+  const eco = (processo.teste as any)?.ecoPerfil?.pdi;
+  if (eco?.statusTexto) return String(eco.statusTexto);
+  return 'Ainda sem tarefas registradas no PDI.';
 }
 
 type GrupoAutoEco = { nota: 5 | 4 | 3 | 2 | 1; label: string; competencias: string[] };
@@ -170,6 +172,8 @@ function dadosEcoLiderDoProcesso(processo: ProcessoIntegracao) {
     disc,
     discTexto,
     grupos,
+    pdi: perfil?.pdi || null,
+    jornadaCompliance: perfil?.jornadaCompliance || null,
   };
 }
 
@@ -211,6 +215,7 @@ export interface ConteudoBriefingMentora {
   ecoAlunoNome: string;
   ecoDiscTexto: string;
   ecoAutoavaliacao: GrupoAutoEco[];
+  acoesPdi: string;
   statusPdi: string;
   pendencias: string;
   evolucao: string;
@@ -261,6 +266,7 @@ export function conteudoBriefingMentora(
     ecoAlunoNome: dadosEcoLiderDoProcesso(processo).alunoNome,
     ecoDiscTexto: dadosEcoLiderDoProcesso(processo).discTexto,
     ecoAutoavaliacao: dadosEcoLiderDoProcesso(processo).grupos,
+    acoesPdi: dadosEcoLiderDoProcesso(processo).pdi?.statusTexto || 'Ainda sem tarefas registradas no PDI.',
     statusPdi: textoStatusPdi(processo),
     pendencias: String(processo.pendencias || '').trim() || 'Nenhuma pendência registrada.',
     evolucao: resumoEvolucaoMentora(processo, numero),
@@ -332,6 +338,9 @@ export function gerarBriefingMentoraPdf(
   linha(`CKM Talents: ${suporte(config)}`);
 
   sec('O QUE VOCÊ PRECISA SABER ANTES');
+  const ecoStatus = dadosEcoLiderDoProcesso(processo);
+  linha('Ações do PDI', 9, true);
+  linha(ecoStatus.pdi?.statusTexto || 'Ainda sem tarefas registradas no PDI.');
   if (numero === 1) {
     linha('Qualidades e competências que o gestor considera importantes', 9, true);
     const qs = qualidadesBem(processo);
@@ -348,7 +357,6 @@ export function gerarBriefingMentoraPdf(
     }
     linha('Ponto obrigatório desta primeira conversa: pergunte ao gestor quais atividades o colaborador irá efetivamente desempenhar e anote. É com base nelas que a CKM monta o PDI de acordo com as atribuições reais da função — você não precisa elaborar o plano, só levantar a informação.', 9, true);
   } else {
-    linha('Status do PDI', 9, true); linha(textoStatusPdi(processo));
     linha('Pendências', 9, true); linha(String(processo.pendencias || '').trim() || 'Nenhuma pendência registrada.');
     const evolucao = resumoEvolucaoMentora(processo, numero);
     if (evolucao) {
@@ -435,7 +443,7 @@ export function gerarRelatorioMentoraWord(
     ? `${qsBem.length ? `<p><b>O que o gestor registrou no formulário Bem Acolhido</b></p><ul>${qsBem.map((x) => `<li>${escHtml(x)}</li>`).join('')}</ul>` : ''}
        <p><b>Perfil DISC</b></p><p>${escHtml(ecoWord.discTexto || String(processo.teste?.resumo || '').trim() || 'não registrado')}</p>
        ${ecoAutoHtml ? `<p><b>Autoavaliação de competências</b></p>${ecoAutoHtml}` : ''}`
-    : `<p><b>Situação atual do processo</b></p><p>Status do PDI: ${escHtml(textoStatusPdi(processo))}</p><p>Pendências: ${escHtml(String(processo.pendencias || '').trim() || 'nenhuma registrada')}</p>`;
+    : `<p><b>Situação atual do processo</b></p><p>Pendências: ${escHtml(String(processo.pendencias || '').trim() || 'nenhuma registrada')}</p>`;
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
     body{font-family:Arial,sans-serif;color:#1a1a1a;font-size:11pt;line-height:1.4;margin:28px} h1{font-size:20pt;text-align:center;margin-bottom:4px} h2{font-size:14pt;color:#a82d33;border-bottom:1px solid #c8363c;padding-bottom:4px;margin-top:24px} h3{font-size:12pt;margin-top:18px} table.ficha{width:100%;border-collapse:collapse;margin:16px 0} table.ficha td{border:1px solid #d7d1cd;padding:6px;vertical-align:top} table.ficha td:first-child{width:34%;font-weight:bold;background:#f1edeb}.nota{background:#f7f5f4;border-left:4px solid #c8363c;padding:10px;margin:12px 0}.dest{background:#f7f5f4;padding:10px;font-weight:bold}.assin{margin-top:30px;border-top:1px solid #ddd;padding-top:12px;color:#666}
@@ -457,6 +465,7 @@ export function gerarRelatorioMentoraWord(
   <p><i>Nada aqui precisa ser preenchido. É o seu roteiro.</i></p>
   <p>Seu papel é conduzir a conversa, orientar as duas partes e depois repassar o que observou para a CKM. Quem dá o feedback é o gestor: você organiza o momento, escuta e registra. Você não monta o PDI e não revisa as evidências uma a uma.</p>
   <div class="dest">Estrutura preferida — cerca de 30 minutos, nesta ordem: 10 min a sós com o gestor · 10 min com os dois juntos · 10 min a sós com o colaborador para encerrar.</div>
+  <p><b>Ações do PDI</b></p><p>${escHtml(ecoWord.pdi?.statusTexto || 'Ainda sem tarefas registradas no PDI.')}</p>
   ${parte1Extra}
   ${numero > 1 && resumoEvolucaoMentora(processo, numero) ? `<p><b>Evolução registrada nos formulários do gestor</b></p><p>${escHtml(resumoEvolucaoMentora(processo, numero))}</p>` : ''}
   <h3>1 · A sós com o gestor — 10 minutos</h3>

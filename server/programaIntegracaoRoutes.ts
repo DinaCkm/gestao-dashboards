@@ -227,6 +227,98 @@ function escolherCorrespondenciaEcoSegura(nomeProcesso: string, alunosEco: any[]
   return { status: "ambiguo" as const, aluno: null, score: top.score, motivo: "requer_selecao_manual" };
 }
 
+async function statusEcoLiderAlunos(connection: any, alunoIds: number[]) {
+  const ids = [...new Set(alunoIds.filter((id) => Number.isInteger(id) && id > 0))];
+  const saida: Record<string, any> = {};
+  for (const alunoId of ids) {
+    saida[String(alunoId)] = {
+      pdi: { total: 0, concluidas: 0, percentual: null, statusTexto: "Ainda sem tarefas registradas no PDI." },
+      jornadaCompliance: { total: 0, concluidas: 0, percentual: null, statusTexto: "Jornada Compliance: ainda sem atividades registradas." },
+    };
+  }
+  if (!ids.length) return saida;
+
+  const placeholders = ids.map(() => "?").join(",");
+  const [tarefasRows] = (await connection.execute(
+    `SELECT
+       alunoId,
+       COUNT(*) AS total,
+       SUM(CASE WHEN taskStatus IN ('validada','concluida') THEN 1 ELSE 0 END) AS concluidas
+     FROM mentoring_sessions
+     WHERE alunoId IN (${placeholders})
+       AND COALESCE(cancelada,0)=0
+       AND (
+         taskMode='livre'
+         OR taskStatus IS NULL
+         OR taskStatus<>'sem_tarefa'
+         OR (customTaskTitle IS NOT NULL AND TRIM(customTaskTitle)<>'')
+       )
+     GROUP BY alunoId`,
+    ids,
+  )) as any;
+
+  for (const row of tarefasRows || []) {
+    const alunoId = Number(row.alunoId || 0);
+    const total = Number(row.total || 0);
+    const concluidas = Number(row.concluidas || 0);
+    if (!saida[String(alunoId)]) continue;
+    saida[String(alunoId)].pdi = {
+      total,
+      concluidas,
+      percentual: total > 0 ? Math.round((concluidas / total) * 100) : null,
+      statusTexto: total > 0
+        ? `${concluidas} de ${total} tarefas concluídas`
+        : "Ainda sem tarefas registradas no PDI.",
+    };
+  }
+
+  const [complianceRows] = (await connection.execute(
+    `SELECT
+       aca.alunoId,
+       COUNT(DISTINCT CONCAT(aca.id, ':', ac.id)) AS total,
+       COUNT(DISTINCT CASE
+         WHEN aap.status IN ('aprovada','concluida') THEN CONCAT(aca.id, ':', ac.id)
+         ELSE NULL
+       END) AS concluidas
+     FROM aluno_curso_atribuido aca
+     INNER JOIN atividades_curso ac
+       ON ac.cursoId=aca.cursoId AND ac.isActive=1
+     LEFT JOIN aluno_atividade_progresso aap
+       ON aap.alunoId=aca.alunoId
+      AND aap.cursoAtribuidoId=aca.id
+      AND aap.atividadeId=ac.id
+     WHERE aca.alunoId IN (${placeholders})
+     GROUP BY aca.alunoId`,
+    ids,
+  )) as any;
+
+  for (const row of complianceRows || []) {
+    const alunoId = Number(row.alunoId || 0);
+    const total = Number(row.total || 0);
+    const concluidas = Number(row.concluidas || 0);
+    if (!saida[String(alunoId)]) continue;
+    const percentual = total > 0 ? Math.round((concluidas / total) * 100) : null;
+    saida[String(alunoId)].jornadaCompliance = {
+      total,
+      concluidas,
+      percentual,
+      statusTexto: percentual != null
+        ? `Jornada Compliance: ${percentual}%`
+        : "Jornada Compliance: ainda sem atividades registradas.",
+    };
+  }
+
+  return saida;
+}
+
+async function statusEcoLiderAluno(connection: any, alunoId: number) {
+  const mapa = await statusEcoLiderAlunos(connection, [alunoId]);
+  return mapa[String(alunoId)] || {
+    pdi: { total: 0, concluidas: 0, percentual: null, statusTexto: "Ainda sem tarefas registradas no PDI." },
+    jornadaCompliance: { total: 0, concluidas: 0, percentual: null, statusTexto: "Jornada Compliance: ainda sem atividades registradas." },
+  };
+}
+
 async function perfilEcoLiderAluno(connection: any, alunoId: number) {
   const [discRows] = (await connection.execute(
     `SELECT scoreD,scoreI,scoreS,scoreC,perfilPredominante,perfilSecundario,ciclo,completedAt
@@ -265,7 +357,8 @@ async function perfilEcoLiderAluno(connection: any, alunoId: number) {
     }
   }
 
-  return { disc, autoavaliacoes, grupos };
+  const status = await statusEcoLiderAluno(connection, alunoId);
+  return { disc, autoavaliacoes, grupos, ...status };
 }
 
 /**
@@ -312,6 +405,23 @@ programaIntegracaoRouter.get("/api/programa-integracao/eco-lider/perfil", requir
   } catch (error) {
     console.error("[ProgramaIntegracao] ECO Líderes perfil:", error);
     return res.status(500).json({ error: "Não foi possível consultar o Perfil DISC e a Autoavaliação no ECO Líderes." });
+  }
+});
+
+programaIntegracaoRouter.get("/api/programa-integracao/eco-lider/status", requireAdmin, async (req, res) => {
+  try {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    const ids = String(req.query.alunoIds || "")
+      .split(",")
+      .map((x) => Number(x.trim()))
+      .filter((x) => Number.isInteger(x) && x > 0);
+    const unicos = [...new Set(ids)].slice(0, 200);
+    const status = await statusEcoLiderAlunos(connection, unicos);
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ ok: true, status });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] ECO Líderes status:", error);
+    return res.status(500).json({ error: "Não foi possível consultar o andamento atual do ECO Líderes." });
   }
 });
 
