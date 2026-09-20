@@ -42,6 +42,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2, Moon, Sun, WifiOff } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import '@/features/programaIntegracao/programaIntegracaoV4.css';
 
 type MainTabValue = 'painel' | 'agenda' | 'indicadores' | 'registrar' | 'respostas' | 'formularios' | 'atas' | 'pessoas' | 'config';
 type ConfigSubTab = 'emails' | 'mentoras' | 'cursos' | 'aviso' | 'links' | 'datas' | 'backup';
@@ -326,11 +327,15 @@ export default function ProgramaIntegracao() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold">Programa de Integração</h1>
-            <p className="text-muted-foreground mt-2">Acompanhamento completo dos processos de integração de novos colaboradores</p>
+      <div className="programa-integracao-v4 p-4 md:p-6 space-y-5">
+        <div className="pi-module-head">
+          <div className="pi-brandlock">
+            <div className="pi-mark">CKM</div>
+            <div>
+              <div className="pi-kicker">CKM Talents · Sebrae/TO</div>
+              <h1>Trilha de Integração</h1>
+              <p>Acompanhamento completo dos processos de integração de novos colaboradores</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title="Alternar tema">
@@ -359,7 +364,7 @@ export default function ProgramaIntegracao() {
           </Card>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="pi-summary-grid grid grid-cols-2 md:grid-cols-4">
           <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Processos Ativos</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{processosAtivos.length}</div></CardContent></Card>
           <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Encerrados</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{processosEncerrados.length}</div></CardContent></Card>
           <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Total</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{todosProcesos.length}</div></CardContent></Card>
