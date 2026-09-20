@@ -48,7 +48,7 @@ type MainTabValue = 'painel' | 'agenda' | 'indicadores' | 'registrar' | 'respost
 type ConfigSubTab = 'emails' | 'mentoras' | 'cursos' | 'aviso' | 'links' | 'datas' | 'backup';
 
 export default function ProgramaIntegracao() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +113,7 @@ export default function ProgramaIntegracao() {
       setConfigSubTab('emails');
       setActiveTab('config');
     }
-  }, []);
+  }, [location]);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -380,12 +380,7 @@ export default function ProgramaIntegracao() {
         <Tabs value={activeTab} onValueChange={(v) => {
           const proxima = v as MainTabValue;
           setActiveTab(proxima);
-          if (typeof window !== 'undefined') {
-            const params = new URLSearchParams(window.location.search);
-            params.set('tab', proxima);
-            params.delete('email');
-            window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
-          }
+          setLocation(`/programa-integracao?tab=${proxima}`);
         }}>
           <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9 overflow-x-auto">
             <TabsTrigger value="painel" className="text-xs md:text-sm">Painel da semana</TabsTrigger>
