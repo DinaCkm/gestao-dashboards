@@ -172,10 +172,14 @@ export function MentoraPreparacaoPainel({
       proximo = substituirHorariosMentora(proximo, numero, horariosEditados);
     }
 
-    await salvar(proximo);
-    setDadosDirty(false);
-    setEditandoHorarios(false);
-    toast.success('Alterações da preparação salvas e conferidas.');
+    try {
+      await salvar(proximo);
+      setDadosDirty(false);
+      setEditandoHorarios(false);
+      toast.success('Alterações da preparação salvas e conferidas.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível salvar as alterações da preparação.');
+    }
   };
 
   const gerarBriefing = async () => {
