@@ -95,7 +95,7 @@ Conferido em `EmailActionButtons.tsx`, `EmailPreviewDialog.tsx` e `ConfiguracaoE
 - editar modelo abre o editor real;
 - salvar/restaurar modelos usa persistência de configuração e conferência de retorno.
 
-O download do tutorial **ainda não existe** e permanece como item separado do checklist. Sua ausência não foi mascarada por botão fictício.
+O download do tutorial histórico existe e usa o PDF validado. Ele está disponível nos pontos previstos de e-mail/configuração/ficha e, no fechamento atual, também nas quatro ações históricas do Painel.
 
 ## Formulários e respostas
 
@@ -146,12 +146,12 @@ Arquivos antigos ainda presentes no diretório não foram usados para declarar a
 
 Em especial, `DetalheProcesso.tsx` não é a ficha usada pela rota atual; a rota usa `DetalheProcessoReal`.
 
-## Pendência conhecida que NÃO é botão falso
+## Tutorial histórico
 
-O tutorial histórico em PDF continua pendente porque o arquivo binário original exato ainda não foi transportado de forma íntegra para o repositório. Não foi criado botão de mentira nem arquivo substituto. As quatro ações históricas com `tut:1` permanecem explicitamente sem esse controle até existir transporte binário seguro.
+O PDF histórico exato foi incorporado, validado por nome/hash/páginas e conectado aos pontos previstos. As quatro ações `tut:1` também possuem acesso no Painel atual.
 
 ## Conclusão
 
 Na interface ativa auditada, os botões e controles visíveis possuem operação real ou são exibidos/desabilitados de acordo com a disponibilidade da operação. Não foi localizado botão placeholder ou botão de fachada.
 
-O item “Nenhum botão falso” pode ser encerrado como auditoria funcional de código. Build, teste visual, persistência, E2E e tutorial permanecem separados e ainda precisam de suas próprias validações.
+O item “Nenhum botão falso” permanece encerrado como auditoria funcional de código. Build, teste visual, persistência e E2E continuam separados; o tutorial já possui implementação real.
