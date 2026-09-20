@@ -70,8 +70,8 @@ const ROTEIRO_COLAB: Record<number, string[]> = {
   ],
 };
 
-const ORIENTA_ECO = 'Explique que a Jornada Compliance e os cursos institucionais obrigatórios fazem parte do período de integração. Eles ficam em Meus Cursos, na plataforma do Ecossistema do B.E.M. Oriente a pessoa a fazer aos poucos, ao longo do período, para não acumular tudo no fim.';
-const ORIENTA_FORM = 'Avise gestor e colaborador de que a CKM envia os formulários deste alinhamento logo depois da reunião, junto com a ata — normalmente em até 2 dias. Reforce que o preenchimento é obrigatório e leva poucos minutos: é o que fecha o ciclo do alinhamento dentro do programa.';
+export const ORIENTA_ECO_MENTORA = 'Na plataforma do Ecossistema do B.E.M. — o mesmo site onde o colaborador fez a avaliação comportamental — está a Jornada Compliance. Os cursos institucionais obrigatórios ficam em Meus Cursos, na mesma plataforma. Oriente o colaborador a acessar Meus Cursos, e deixe claro que esses cursos são obrigatórios. Vale reforçar com o gestor também, que acompanha o desenvolvimento.';
+export const ORIENTA_FORM_MENTORA = 'Avise gestor e colaborador de que a CKM envia os formulários deste alinhamento logo depois da reunião, junto com a ata — normalmente em até 2 dias. Reforce que o preenchimento é obrigatório e leva poucos minutos: é o que fecha o ciclo do alinhamento dentro do programa.';
 
 function dataBr(iso?: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
@@ -132,6 +132,102 @@ function escHtml(s: string): string {
 
 function textoStatusPdi(processo: ProcessoIntegracao): string {
   return String(processo.statusPdi || '').trim() || 'não informado — confirme na conversa.';
+}
+
+
+function mediaGeralRespostaGestor(resposta: any): number | null {
+  const valores: number[] = [];
+  for (const par of Array.isArray(resposta?.c) ? resposta.c : []) {
+    const indice = Number(par?.[0]);
+    if (indice < 6 || indice > 37) continue;
+    const n = Number(String(par?.[1] ?? '').replace(',', '.').trim());
+    if (Number.isFinite(n) && n >= 1 && n <= 5) valores.push(n);
+  }
+  if (!valores.length) return null;
+  return valores.reduce((s, n) => s + n, 0) / valores.length;
+}
+
+export function resumoEvolucaoMentora(processo: ProcessoIntegracao, numero: number): string {
+  const partes: string[] = [];
+  for (let ciclo = 1; ciclo < numero; ciclo++) {
+    const resposta = [...(processo.resp || [])].reverse().find((r: any) =>
+      r?.form === 'aval' && r?.papel === 'Gestor' && Number(r?.ciclo || 0) === ciclo
+    );
+    if (!resposta) continue;
+    const media = mediaGeralRespostaGestor(resposta);
+    partes.push(`${ORD[ciclo]} feedback: média geral ${media == null ? '—' : media.toFixed(2).replace('.', ',')} (escala 1 a 5)`);
+  }
+  return partes.length ? partes.join(' · ') + '.' : '';
+}
+
+export interface ConteudoBriefingMentora {
+  tituloAlinhamento: string;
+  mentoraNome: string;
+  dataPrevista: string;
+  dataAlternativa: string;
+  confirmada: string;
+  linkRegistrado: boolean;
+  qualidades: string[];
+  testeResumo: string;
+  statusPdi: string;
+  pendencias: string;
+  evolucao: string;
+  roteiroGestor: string[];
+  roteiroConjunto: string[];
+  roteiroColaborador: string[];
+  orientaEco: string;
+  orientaForm: string;
+  totalHorasCursos: number;
+  depois: string[];
+  suporte: string;
+}
+
+export function conteudoBriefingMentora(
+  processo: ProcessoIntegracao,
+  numero: 1 | 2 | 3 | 4,
+  config: BootstrapState['config'],
+  feriados: string[] = [],
+): ConteudoBriefingMentora {
+  const mentora = mentoraVinculada(processo, config);
+  const datas = datasSugeridasMentora(processo, numero, feriados);
+  const a = alinhamento(processo, numero);
+  const roteiroConjunto = [
+    `Explique que é um espaço seguro, feito para apoiar o desenvolvimento${numero === 4 ? ' e reconhecer a evolução' : ''}.`,
+    `Ajude o gestor com perguntas leves: “quer começar falando dos pontos fortes que você tem observado?” e “qual ponto priorizar ${numero === 4 ? 'daqui pra frente' : 'agora'}?”`,
+    'Fique neutra, escute com atenção e não faça avaliação direta.',
+  ];
+  if (numero >= 2 && numero <= 3) roteiroConjunto.push('Verifique com o colaborador se está conseguindo tocar o PDI, se tem dificuldades e se está enviando as evidências.');
+  roteiroConjunto.push(numero === 4 ? 'Retome o caminho percorrido nos 150 dias e os próximos passos.' : 'Feche com um breve resumo do que foi conversado.');
+
+  const depois = [
+    'Preencha a Parte 2 do arquivo em Word que enviamos junto com este briefing — é o registro do alinhamento.',
+    'Envie à CKM o relatório unificado: percepção do gestor, percepção do colaborador e o seu parecer como consultora.',
+  ];
+  if (numero === 1) depois.push('Encaminhe também as quatro competências comportamentais que você identificou como foco — é a partir delas que a CKM monta o PDI.');
+  if (numero === 4) depois.push('Registre a evolução observada ao longo dos 150 dias e os pontos de desenvolvimento para a continuidade.');
+  depois.push('De preferência em até 2 dias depois da reunião: é o prazo em que enviamos a ata e os formulários aos envolvidos.');
+
+  return {
+    tituloAlinhamento: numero === 4 ? '4º e último alinhamento — encerramento' : `${ORD[numero]} alinhamento · ${MARCO[numero]}º dia`,
+    mentoraNome: mentora?.nome || 'a definir',
+    dataPrevista: datas.d1 ? dataBr(datas.d1) : '—',
+    dataAlternativa: datas.d2 ? dataBr(datas.d2) : '—',
+    confirmada: `${a.data ? dataBr(a.data) : 'a confirmar'}${String(a.hora || '').trim() ? ` às ${a.hora}` : ''}`,
+    linkRegistrado: Boolean(String(a.link || '').trim()),
+    qualidades: qualidadesBem(processo),
+    testeResumo: String(processo.teste?.resumo || '').trim(),
+    statusPdi: textoStatusPdi(processo),
+    pendencias: String(processo.pendencias || '').trim() || 'Nenhuma pendência registrada.',
+    evolucao: resumoEvolucaoMentora(processo, numero),
+    roteiroGestor: ROTEIRO_GESTOR[numero] || [],
+    roteiroConjunto,
+    roteiroColaborador: ROTEIRO_COLAB[numero] || [],
+    orientaEco: ORIENTA_ECO_MENTORA,
+    orientaForm: ORIENTA_FORM_MENTORA,
+    totalHorasCursos: totalCursos(config),
+    depois,
+    suporte: suporte(config),
+  };
 }
 
 export function gerarBriefingMentoraPdf(
@@ -201,6 +297,11 @@ export function gerarBriefingMentoraPdf(
   } else {
     linha('Status do PDI', 9, true); linha(textoStatusPdi(processo));
     linha('Pendências', 9, true); linha(String(processo.pendencias || '').trim() || 'Nenhuma pendência registrada.');
+    const evolucao = resumoEvolucaoMentora(processo, numero);
+    if (evolucao) {
+      linha('Evolução registrada nos formulários do gestor', 9, true);
+      linha(evolucao);
+    }
   }
 
   sec('ROTEIRO DA CONVERSA');
@@ -217,9 +318,9 @@ export function gerarBriefingMentoraPdf(
   linha('3 · A sós com o colaborador — 10 minutos, para encerrar', 9, true); bullets(ROTEIRO_COLAB[numero]);
 
   sec('NÃO DEIXE DE ORIENTAR');
-  linha('1 · Jornada Compliance e cursos obrigatórios', 9, true); linha(ORIENTA_ECO, 9, true);
+  linha('1 · Jornada Compliance e cursos obrigatórios', 9, true); linha(ORIENTA_ECO_MENTORA, 9, true);
   if (numero === 1) linha(`Só para o seu contexto: a carga total dos cursos institucionais é de ${totalCursos(config) || '—'}h. Você não precisa listar nem mostrar os cursos — basta orientar onde encontrá-los. O volume alto é o motivo de o PDI ser enxuto.`);
-  linha('2 · Formulários do alinhamento', 9, true); linha(ORIENTA_FORM, 9, true);
+  linha('2 · Formulários do alinhamento', 9, true); linha(ORIENTA_FORM_MENTORA, 9, true);
 
   sec('DEPOIS DA REUNIÃO');
   const fim = [
@@ -295,10 +396,17 @@ export function gerarRelatorioMentoraWord(
   <p>Seu papel é conduzir a conversa, orientar as duas partes e depois repassar o que observou para a CKM. Quem dá o feedback é o gestor: você organiza o momento, escuta e registra. Você não monta o PDI e não revisa as evidências uma a uma.</p>
   <div class="dest">Estrutura preferida — cerca de 30 minutos, nesta ordem: 10 min a sós com o gestor · 10 min com os dois juntos · 10 min a sós com o colaborador para encerrar.</div>
   ${parte1Extra}
+  ${numero > 1 && resumoEvolucaoMentora(processo, numero) ? `<p><b>Evolução registrada nos formulários do gestor</b></p><p>${escHtml(resumoEvolucaoMentora(processo, numero))}</p>` : ''}
+  <h3>1 · A sós com o gestor — 10 minutos</h3>
+  <ul>${(ROTEIRO_GESTOR[numero] || []).map((x) => `<li>${escHtml(x)}</li>`).join('')}</ul>
+  <h3>2 · Com o gestor e o colaborador juntos — 10 minutos</h3>
+  <ul>${conteudoBriefingMentora(processo, numero, config, feriados).roteiroConjunto.map((x) => `<li>${escHtml(x)}</li>`).join('')}</ul>
+  <h3>3 · A sós com o colaborador — 10 minutos, para encerrar</h3>
+  <ul>${(ROTEIRO_COLAB[numero] || []).map((x) => `<li>${escHtml(x)}</li>`).join('')}</ul>
   <h3>Orientações que você precisa dar — não deixe de falar</h3>
-  <p><b>1) Jornada Compliance e cursos obrigatórios</b></p><div class="dest">${escHtml(ORIENTA_ECO)}</div>
+  <p><b>1) Jornada Compliance e cursos obrigatórios</b></p><div class="dest">${escHtml(ORIENTA_ECO_MENTORA)}</div>
   ${numero === 1 ? `<p>Para o seu contexto: são ${totalCursos(config) || '—'}h no total, em Meus Cursos — plataforma do Ecossistema do B.E.M. O volume é alto, então as ações do PDI devem ser pensadas de forma equilibrada, sem sobrecarregar o período de adaptação.</p>` : ''}
-  <p><b>2) Formulários do alinhamento</b></p><div class="dest">${escHtml(ORIENTA_FORM)}</div>
+  <p><b>2) Formulários do alinhamento</b></p><div class="dest">${escHtml(ORIENTA_FORM_MENTORA)}</div>
   <h2>PARTE 2 · O que você preenche depois da reunião</h2>
   <div class="nota">Esta parte é preenchida por você, consultora, logo após o encontro — é o registro que a CKM usa para gerar a ata, acompanhar o processo e ${numero === 1 ? 'montar o PDI do colaborador.' : 'atualizar o acompanhamento do PDI.'} Escreva nos quadros cinzas; pode aumentar o espaço se precisar.</div>
   ${qs}
