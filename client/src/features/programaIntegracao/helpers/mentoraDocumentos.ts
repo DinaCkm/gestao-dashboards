@@ -309,7 +309,7 @@ export function gerarBriefingMentoraPdf(
     doc.text(partes, margem, y);
     y += partes.length * espaco + 1.5;
   };
-  const sec = (titulo: string) => { novaPagina(10); y += 2; doc.setDrawColor(200, 54, 60); doc.line(margem, y, 210 - margem, y); y += 5; linha(titulo, 10, true, 4.8); };
+  const sec = (titulo: string) => { novaPagina(10); y += 2; doc.setDrawColor(107, 62, 143); doc.line(margem, y, 210 - margem, y); y += 5; linha(titulo, 10, true, 4.8); };
   const bullets = (itens: string[], nums = false) => itens.forEach((item, i) => linha(`${nums ? `${i + 1}.` : '•'} ${item}`, 8.7, false, 4.3));
 
   doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.text('Briefing da Mentora', margem, y); y += 7;
