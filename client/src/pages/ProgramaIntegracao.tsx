@@ -105,9 +105,15 @@ export default function ProgramaIntegracao() {
     const params = new URLSearchParams(window.location.search);
     const chaveEmail = params.get('email') || '';
     const tabUrl = params.get('tab') as MainTabValue | null;
+    const configUrl = params.get('config') as ConfigSubTab | null;
     const tabsValidas: MainTabValue[] = ['painel','agenda','indicadores','registrar','respostas','formularios','atas','pessoas','config'];
+    const configsValidas: ConfigSubTab[] = ['emails','mentoras','cursos','aviso','links','datas','backup'];
 
     if (tabUrl && tabsValidas.includes(tabUrl)) setActiveTab(tabUrl);
+    if (configUrl && configsValidas.includes(configUrl)) {
+      setActiveTab('config');
+      setConfigSubTab(configUrl);
+    }
     if (chaveEmail) {
       setEmailModeloSelecionado(chaveEmail);
       setConfigSubTab('emails');
