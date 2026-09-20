@@ -92,6 +92,42 @@ export function MentoraPreparacaoPainel({
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
 
   useEffect(() => {
+    let cancelado = false;
+    async function carregarEco() {
+      try {
+        setEcoStatus('carregando');
+        setEcoErro('');
+        const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0) || undefined;
+        const retorno = await buscarPerfilEcoLider(processo.nome, alunoId);
+        if (cancelado) return;
+        setEcoAlunos(retorno.alunos || []);
+        setEcoPerfil(retorno.perfil || null);
+        setEcoStatus(retorno.match.status);
+        setEcoSelecionado(retorno.match.aluno ? String(retorno.match.aluno.id) : '');
+
+        if (!alunoId && retorno.match.status === 'automatico_seguro' && retorno.perfil?.aluno) {
+          await salvar({
+            ...processo,
+            teste: {
+              ...(processo.teste || {}),
+              ecoAlunoId: retorno.perfil.aluno.id,
+              ecoAlunoNome: retorno.perfil.aluno.nome,
+              ecoAlunoEmail: retorno.perfil.aluno.email,
+              ecoVinculoModo: 'automatico_seguro',
+              ecoPerfil: retorno.perfil,
+            },
+          });
+        }
+      } catch (error) {
+        if (cancelado) return;
+        setEcoStatus('erro');
+        setEcoErro(error instanceof Error ? error.message : 'Não foi possível consultar o ECO Líderes.');
+      }
+    }
+    void carregarEco();
+    return () => { cancelado = true; };
+  }, [processo.id, processo.nome, (processo.teste as any)?.ecoAlunoId]);
+  useEffect(() => {
     if (!editandoHorarios) setHorariosEditados(cloneHorarios(estado.hor));
     if (!dadosDirty) {
       setDadosDraft({
