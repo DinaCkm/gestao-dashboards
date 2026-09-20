@@ -99,7 +99,6 @@ export function DetalheProcessoReal({
   const [cobrancaPapel, setCobrancaPapel] = useState<PapelCobranca | null>(null);
   const [excluindoRespostaRid, setExcluindoRespostaRid] = useState<string | null>(null);
   const [ecoAndamento, setEcoAndamento] = useState<EcoLiderAndamento | null>(null);
-  const [ecoAndamentoErro, setEcoAndamentoErro] = useState('');
   const [ecoAndamentoCarregando, setEcoAndamentoCarregando] = useState(false);
   const deepLinkAplicadoRef = useRef(false);
   const itemDeepLink = useMemo(() => {
@@ -138,11 +137,9 @@ export function DetalheProcessoReal({
     const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0);
     if (!alunoId) {
       setEcoAndamento(null);
-      setEcoAndamentoErro('');
       return;
     }
     setEcoAndamentoCarregando(true);
-    setEcoAndamentoErro('');
     buscarStatusEcoLider([alunoId])
       .then((mapa) => {
         if (cancelado) return;
@@ -151,7 +148,6 @@ export function DetalheProcessoReal({
       .catch((error) => {
         if (cancelado) return;
         setEcoAndamento(null);
-        setEcoAndamentoErro(error instanceof Error ? error.message : 'Não foi possível consultar o ECO Líderes.');
       })
       .finally(() => {
         if (!cancelado) setEcoAndamentoCarregando(false);
