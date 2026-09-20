@@ -3,7 +3,7 @@ import type { EcoLiderAndamento } from '../api/ecoLider';
 import { coletarAcoesPainel, cronogramaReal, type AcaoPainelReal } from './painelAcoes';
 import { calcularKpisPainel } from './painelKpis';
 import { progressoRealProcesso } from './painelProcessos';
-import { normalizarRegistroFeito } from './statusHelpers';
+import { calcularStatusItem, normalizarRegistroFeito } from './statusHelpers';
 
 export type StatusPrioritarioIndicadores =
   | 'atrasado_ckm'
@@ -222,10 +222,9 @@ export function calcularIndicadoresAvancados(
   });
 
   const idsAtrasados = new Set(acoes.filter((a) => a.st.k === 'late').map((a) => a.pid));
-  const idsComPendencia = new Set(acoes.map((a) => a.pid));
-  const idsAtencao = new Set(
-    acoes.filter((a) => a.st.k === 'late' || a.st.k === 'act' || a.st.k === 'wait').map((a) => a.pid),
-  );
+  const acoesAtencao = acoes.filter((a) => a.st.k === 'late' || a.st.k === 'act' || a.st.k === 'wait');
+  const idsComPendencia = new Set(acoesAtencao.map((a) => a.pid));
+  const idsAtencao = new Set(acoesAtencao.map((a) => a.pid));
   const atrasosDias = acoes
     .filter((a) => a.st.k === 'late' && Number(a.st.dif) > 0)
     .map((a) => Number(a.st.dif));
@@ -298,8 +297,8 @@ export function calcularIndicadoresAvancados(
 
         if (item.form && !fechado(status)) {
           formulariosAbertos++;
-          const acao = calcularStatusDaAcao(processo, item.id, etapa.data, hojeRef);
-          if (acao === 'late') formulariosAtrasados++;
+          const acao = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+          if (acao.k === 'late') formulariosAtrasados++;
         }
 
         if (!fechado(status)) etapaTodaFechada = false;
@@ -435,12 +434,3 @@ export function calcularIndicadoresAvancados(
   };
 }
 
-function calcularStatusDaAcao(
-  processo: ProcessoIntegracao,
-  itemId: string,
-  prevista: string,
-  hojeRef: string | Date,
-): string {
-  const acao = coletarAcoesPainel([processo], [], hojeRef).find((a) => a.it.id === itemId && a.data === prevista);
-  return acao?.st.k || '';
-}
