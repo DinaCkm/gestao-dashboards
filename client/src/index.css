@@ -525,6 +525,45 @@
     background: color-mix(in oklab, var(--card) 96%, var(--muted) 4%);
   }
 
+  /* Mesmo padrão para Collapsible usados no conteúdo das páginas.
+     O menu lateral fica fora de main e não é afetado. */
+  main [data-slot="collapsible"]:has(> [data-slot="collapsible-trigger"]) {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 2px);
+    background: var(--card);
+    box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 7%, transparent);
+    transition: border-color .18s ease, box-shadow .18s ease;
+  }
+  main [data-slot="collapsible"] > [data-slot="collapsible-trigger"] {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 0;
+    background: color-mix(in oklab, var(--card) 88%, var(--muted) 12%);
+    transition: background-color .18s ease, color .18s ease;
+  }
+  main [data-slot="collapsible"] > [data-slot="collapsible-trigger"]:hover,
+  main [data-slot="collapsible"] > [data-slot="collapsible-trigger"]:focus-visible {
+    background: color-mix(in oklab, var(--accent) 72%, var(--card) 28%);
+  }
+  main [data-slot="collapsible"][data-state="open"] {
+    border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+    box-shadow: 0 7px 22px color-mix(in oklab, var(--primary) 9%, transparent);
+  }
+  main [data-slot="collapsible"][data-state="open"] > [data-slot="collapsible-trigger"] {
+    border-bottom: 1px solid color-mix(in oklab, var(--primary) 24%, var(--border));
+    background: color-mix(in oklab, var(--primary) 9%, var(--card));
+    color: color-mix(in oklab, var(--primary) 80%, var(--foreground));
+  }
+  main [data-slot="collapsible"] > [data-slot="collapsible-content"] {
+    margin: .65rem;
+    margin-left: 1rem;
+    border-left: 2px solid color-mix(in oklab, var(--primary) 28%, var(--border));
+    border-radius: .5rem;
+    background: color-mix(in oklab, var(--card) 94%, var(--muted) 6%);
+    padding: .75rem 1rem;
+  }
+
 @layer components {
   /**
    * Custom container utility that centers content and adds responsive padding.
