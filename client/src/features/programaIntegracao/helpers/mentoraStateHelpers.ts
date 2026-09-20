@@ -30,6 +30,12 @@ export interface ItemChecklistMentora {
   nivel: 'ok' | 'aviso' | 'bloq';
   titulo: string;
   detalhe: string;
+  campo?: 'tel' | 'gestorTel' | 'bem' | 'teste' | 'statusPdi' | 'mentora';
+}
+
+export interface SugestaoTelefoneGestor {
+  tel: string;
+  de: string;
 }
 
 export interface ChecklistMentora {
@@ -236,6 +242,60 @@ function respostaBemQualidades(processo: ProcessoIntegracao): string {
   return String(par?.[1] || '').trim();
 }
 
+function normMentoraTexto(valor: unknown): string {
+  return String(valor || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function telefoneEmRespostaGestor(processo: ProcessoIntegracao): SugestaoTelefoneGestor | null {
+  for (const resposta of processo.resp || []) {
+    const answers = (resposta as any)?.answers;
+    if (!answers || typeof answers !== 'object') continue;
+    for (const [chave, valor] of Object.entries(answers)) {
+      const k = normMentoraTexto(chave);
+      if (!/(tel|telefone|whatsapp|celular)/.test(k)) continue;
+      if (!/(gestor|lider|responsavel)/.test(k)) continue;
+      const tel = soDigitosMentora(String(valor || ''));
+      if (tel.length >= 10) return { tel, de: 'resposta de formulário deste processo' };
+    }
+  }
+  return null;
+}
+
+/** Sugestão somente leitura; nada é salvo sem clique explícito. */
+export function sugerirTelefoneGestorMentora(
+  processo: ProcessoIntegracao,
+  processos: ProcessoIntegracao[] = [],
+): SugestaoTelefoneGestor | null {
+  if (soDigitosMentora(processo.gestorTel)) {
+    return { tel: soDigitosMentora(processo.gestorTel), de: 'cadastro atual' };
+  }
+  const resposta = telefoneEmRespostaGestor(processo);
+  if (resposta) return resposta;
+  const gestor = normMentoraTexto(processo.gestor);
+  if (!gestor) return null;
+  const outro = processos.find((p) =>
+    p !== processo &&
+    normMentoraTexto(p.gestor) === gestor &&
+    soDigitosMentora(p.gestorTel).length >= 10
+  );
+  return outro
+    ? { tel: soDigitosMentora(outro.gestorTel), de: 'outro processo de ' + (outro.gestor || 'mesmo gestor') }
+    : null;
+}
+
+function cursosComCargaInvalida(config?: BootstrapState['config']): number {
+  const cursos = Array.isArray(config?.cursos) ? config.cursos : [];
+  return cursos.filter((curso: any) => {
+    const bruto = String(curso?.h ?? '').trim().replace(',', '.');
+    if (!bruto) return true;
+    const n = Number(bruto);
+    return !Number.isFinite(n) || n < 0;
+  }).length;
+}
 export function checarPreparacaoMentora(
   processo: ProcessoIntegracao,
   numero: number,
@@ -246,8 +306,8 @@ export function checarPreparacaoMentora(
   const mentora = mentoraVinculada(processo, config);
   const datas = datasSugeridasMentora(processo, numero, feriados);
   const alinhamento = processo.alin?.[String(numero)] ?? processo.alin?.[numero] ?? {};
-  const add = (chave: string, nivel: ItemChecklistMentora['nivel'], titulo: string, detalhe: string) => {
-    itens.push({ chave, nivel, titulo, detalhe });
+  const add = (chave: string, nivel: ItemChecklistMentora['nivel'], titulo: string, detalhe: string, campo?: ItemChecklistMentora['campo']) => {
+    itens.push({ chave, nivel, titulo, detalhe, campo });
   };
 
   add('colaborador', String(processo.nome || '').trim() ? 'ok' : 'bloq', 'Nome do colaborador', String(processo.nome || '').trim() || 'não informado');
@@ -256,22 +316,24 @@ export function checarPreparacaoMentora(
   add('data', datas.d1 ? 'ok' : 'bloq', 'Data prevista do alinhamento', datas.d1 ? `${fmtc(datas.d1)} · alternativa ${fmtc(datas.d2)}` : 'não calculada');
 
   if (mentora && !mentora.legado && !soDigitosMentora(mentora.tel)) {
-    add('telefoneMentora', 'aviso', 'WhatsApp da mentora', 'sem telefone no cadastro; a mensagem pode ser copiada, mas não aberta diretamente no WhatsApp');
+    add('telefoneMentora', 'aviso', 'WhatsApp da mentora', 'sem telefone no cadastro — dá para copiar a mensagem, mas não abrir a conversa', 'mentora');
   }
-  add('telefoneColaborador', soDigitosMentora(processo.tel) ? 'ok' : 'aviso', 'Telefone do colaborador', soDigitosMentora(processo.tel) ? telefoneBonitoMentora(processo.tel) : 'não informado');
-  add('telefoneGestor', soDigitosMentora(processo.gestorTel) ? 'ok' : 'aviso', 'Telefone do gestor', soDigitosMentora(processo.gestorTel) ? telefoneBonitoMentora(processo.gestorTel) : 'não informado');
+  add('telefoneColaborador', soDigitosMentora(processo.tel) ? 'ok' : 'aviso', 'Telefone do colaborador', soDigitosMentora(processo.tel) ? telefoneBonitoMentora(processo.tel) : 'não informado', 'tel');
+  add('telefoneGestor', soDigitosMentora(processo.gestorTel) ? 'ok' : 'aviso', 'Telefone do gestor', soDigitosMentora(processo.gestorTel) ? telefoneBonitoMentora(processo.gestorTel) : 'não informado', 'gestorTel');
 
   if (numero === 1) {
     const qualidades = respostaBemQualidades(processo);
-    add('bemAcolhido', qualidades ? 'ok' : 'aviso', 'Bem Acolhido — qualidades esperadas pelo gestor', qualidades ? 'informação registrada' : 'não encontramos a resposta/resumo');
+    add('bemAcolhido', qualidades ? 'ok' : 'aviso', 'Bem Acolhido — qualidades esperadas pelo gestor', qualidades ? (String(processo.bem?.qualidades || '').trim() ? 'preenchido à mão' : 'vindo da resposta do formulário') : 'não encontramos a resposta', 'bem');
     const teste = String(processo.teste?.resumo || '').trim();
-    add('teste', teste ? 'ok' : 'aviso', 'Teste comportamental / Avaliação de Potencial', teste ? 'resumo registrado' : 'sem resumo registrado');
+    add('teste', teste ? 'ok' : 'aviso', 'Teste comportamental / Avaliação de Potencial', teste ? 'resumo registrado' : 'sem resultado registrado', 'teste');
+    const cursosInvalidos = cursosComCargaInvalida(config);
+    if (cursosInvalidos) add('cursos', 'aviso', 'Cursos obrigatórios', cursosInvalidos + ' curso(s) sem carga horária válida nas configurações');
   } else {
-    add('pdi', String(processo.statusPdi || '').trim() ? 'ok' : 'aviso', 'Status do PDI', String(processo.statusPdi || '').trim() || 'não informado');
+    add('pdi', String(processo.statusPdi || '').trim() ? 'ok' : 'aviso', 'Status do PDI', String(processo.statusPdi || '').trim() || 'não informado', 'statusPdi');
     add('pendencias', 'ok', 'Pendências', String(processo.pendencias || '').trim() || 'nenhuma registrada');
   }
 
-  add('link', String(alinhamento.link || '').trim() ? 'ok' : 'aviso', 'Link da reunião', String(alinhamento.link || '').trim() || 'ainda não definido; o material deve indicar “a confirmar”');
+  add('link', String(alinhamento.link || '').trim() ? 'ok' : 'aviso', 'Link da reunião', String(alinhamento.link || '').trim() || 'ainda não definido — o briefing sai como “a confirmar”');
 
   const bloqueios = itens.filter((x) => x.nivel === 'bloq').length;
   const avisos = itens.filter((x) => x.nivel === 'aviso').length;
