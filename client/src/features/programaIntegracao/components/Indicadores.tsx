@@ -262,6 +262,85 @@ export function Indicadores({
     </div>
   );
 
+  const renderDonutPrincipal = (
+    titulo: string,
+    percentual: number | null,
+    subtitulo: string,
+    complemento: string,
+  ) => {
+    const valor = percentual == null ? 0 : Math.max(0, Math.min(100, percentual));
+    const dadosDonut = [
+      { name: 'Concluído', value: valor, fill: COR_MARCA },
+      { name: 'Restante', value: percentual == null ? 100 : 100 - valor, fill: '#E5E7EB' },
+    ];
+    return (
+      <Card className="overflow-hidden border-primary/20 shadow-sm">
+        <CardHeader className="pb-0 text-center">
+          <CardTitle className="text-lg">{titulo}</CardTitle>
+          <CardDescription>{percentual == null ? 'Ainda sem base suficiente para cálculo' : `${valor}% concluído`}</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="relative mx-auto h-[250px] max-w-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={dadosDonut}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={72}
+                  outerRadius={100}
+                  startAngle={90}
+                  endAngle={-270}
+                  strokeWidth={0}
+                >
+                  {dadosDonut.map((item) => <Cell key={item.name} fill={item.fill} />)}
+                </Pie>
+                <Tooltip formatter={(value: number) => `${Math.round(Number(value || 0))}%`} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute inset-0 grid place-items-center">
+              <div className="text-center">
+                <div className="text-4xl font-bold tracking-tight">{percentual == null ? '—' : `${valor}%`}</div>
+                <div className="mt-1 text-xs font-medium text-muted-foreground">concluído</div>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1 text-center">
+            <div className="text-sm font-semibold">{subtitulo}</div>
+            <div className="text-xs text-muted-foreground">{complemento}</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderBarraProgresso = (
+    titulo: string,
+    percentual: number | null,
+    linhaPrincipal: string,
+    linhaSecundaria: string,
+    cor = 'bg-violet-600',
+  ) => {
+    const valor = percentual == null ? 0 : Math.max(0, Math.min(100, percentual));
+    return (
+      <Card className="border-primary/15">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">{titulo}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <span className="text-3xl font-bold">{percentual == null ? '—' : `${valor}%`}</span>
+            <span className="text-right text-sm font-semibold">{linhaPrincipal}</span>
+          </div>
+          <div className="h-4 overflow-hidden rounded-full bg-muted">
+            <div className={`h-full rounded-full transition-all ${cor}`} style={{ width: `${valor}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">{linhaSecundaria}</p>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderSelect = (
     label: string,
     valor: string,
@@ -337,6 +416,110 @@ export function Indicadores({
         <Card><CardContent className="py-14 text-center text-sm text-muted-foreground">Nenhuma pessoa corresponde aos filtros selecionados.</CardContent></Card>
       ) : (
         <>
+          <section className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Indicadores principais</p>
+              <h3 className="text-xl font-bold">Progresso das pessoas ativas</h3>
+              <p className="text-sm text-muted-foreground">Leitura prioritária do RH, calculada somente com pessoas ativas na seleção atual.</p>
+            </div>
+
+            {ecoErro && (
+              <div className="rounded-lg border border-violet-300 bg-violet-50 p-3 text-xs text-violet-900 dark:border-violet-800 dark:bg-violet-950/30 dark:text-violet-100">
+                {ecoErro}
+              </div>
+            )}
+
+            <div className="grid gap-5 lg:grid-cols-2">
+              {renderDonutPrincipal(
+                'Jornada Compliance — ECO Líderes',
+                dados.principais.compliance.percentual,
+                `${dados.principais.ativos} pessoas ativas`,
+                ecoCarregando
+                  ? 'Atualizando dados do ECO Líderes...'
+                  : `${dados.principais.compliance.pessoasComAtividades} com atividades · ${dados.principais.compliance.pessoasSemAtividades} vinculadas sem atividades · ${dados.principais.ecoSemVinculoAtivos} sem vínculo ECO`,
+              )}
+              {renderDonutPrincipal(
+                'Ações do PDI',
+                dados.principais.pdi.percentual,
+                `${dados.principais.pdi.pessoasComTarefas} pessoas com tarefas no PDI`,
+                ecoCarregando
+                  ? 'Atualizando dados do ECO Líderes...'
+                  : `${dados.principais.pdi.pessoasSemTarefas} vinculadas ainda sem tarefas registradas · ${dados.principais.ecoSemVinculoAtivos} sem vínculo ECO`,
+              )}
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold">Acompanhamento operacional</h3>
+              <p className="text-sm text-muted-foreground">Pendências de formulários e realização dos alinhamentos previstos até hoje.</p>
+            </div>
+
+            <div className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
+              <Card className="border-primary/15">
+                <CardHeader>
+                  <CardTitle>Formulários Pós-Alinhamento pendentes</CardTitle>
+                  <CardDescription>Somente formulários cujo prazo já chegou e ainda não possuem resposta registrada.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-5 flex items-baseline gap-2">
+                    <span className="text-4xl font-bold">{dados.principais.formulariosPos.totalPendentes}</span>
+                    <span className="text-sm font-semibold text-muted-foreground">formulários pendentes</span>
+                  </div>
+                  {(() => {
+                    const linhas = [
+                      { nome: 'Gestor', valor: dados.principais.formulariosPos.gestor, cor: 'bg-purple-700' },
+                      { nome: 'Anjo', valor: dados.principais.formulariosPos.anjo, cor: 'bg-violet-500' },
+                      { nome: 'Colaborador', valor: dados.principais.formulariosPos.colaborador, cor: 'bg-blue-600' },
+                    ];
+                    const maximo = Math.max(1, ...linhas.map((x) => x.valor));
+                    return (
+                      <div className="space-y-4">
+                        {linhas.map((linha) => (
+                          <div key={linha.nome}>
+                            <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                              <span className="font-semibold">{linha.nome}</span>
+                              <span className="font-bold">{linha.valor}</span>
+                            </div>
+                            <div className="h-5 overflow-hidden rounded-md bg-muted">
+                              <div className={`h-full rounded-md ${linha.cor}`} style={{ width: `${linha.valor ? Math.max(8, (linha.valor / maximo) * 100) : 0}%` }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-5">
+                {renderBarraProgresso(
+                  'Formulários respondidos',
+                  dados.principais.formularios.percentual,
+                  `${dados.principais.formularios.respondidos} de ${dados.principais.formularios.esperados} respondidos`,
+                  `${dados.principais.formularios.pendentes} ainda pendentes entre os formulários já previstos até hoje`,
+                  'bg-violet-600',
+                )}
+                {renderBarraProgresso(
+                  'Alinhamentos realizados',
+                  dados.principais.alinhamentos.percentual,
+                  `${dados.principais.alinhamentos.realizados} de ${dados.principais.alinhamentos.previstos} realizados`,
+                  `${dados.principais.alinhamentos.pendentes} ainda pendentes`,
+                  'bg-indigo-600',
+                )}
+              </div>
+            </div>
+          </section>
+
+          <details className="group rounded-xl border bg-card shadow-sm">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 font-semibold hover:bg-muted/30">
+              <span>
+                Indicadores adicionais / Ver mais
+                <span className="ml-2 text-xs font-normal text-muted-foreground">prazos, gargalos, etapas e visão pessoa a pessoa</span>
+              </span>
+              <span className="text-sm text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="space-y-6 border-t px-4 py-5 md:px-5">
           <section className="space-y-3">
             <div>
               <h3 className="text-base font-semibold">Visão geral</h3>
@@ -633,6 +816,8 @@ export function Indicadores({
               </table>
             </CardContent>
           </Card>
+            </div>
+          </details>
         </>
       )}
     </div>
