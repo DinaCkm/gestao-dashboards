@@ -3254,14 +3254,14 @@ function EtapaAceite({ onComplete, alunoId, readOnly = false }: { onComplete: ()
         angle: 60,
         spread: 55,
         origin: { x: 0, y: 0.7 },
-        colors: ['#0A1E3E', '#F5991F', '#10b981', '#8b5cf6', '#7c3aed'],
+        colors: ['#0A1E3E', '#F5991F', '#10b981', '#8b5cf6', '#ef4444'],
       });
       confetti({
         particleCount: 4,
         angle: 120,
         spread: 55,
         origin: { x: 1, y: 0.7 },
-        colors: ['#0A1E3E', '#F5991F', '#10b981', '#8b5cf6', '#7c3aed'],
+        colors: ['#0A1E3E', '#F5991F', '#10b981', '#8b5cf6', '#ef4444'],
       });
       if (Date.now() < end) requestAnimationFrame(frame);
     };

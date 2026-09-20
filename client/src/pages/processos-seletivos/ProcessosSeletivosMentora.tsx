@@ -25,7 +25,7 @@ import {
 
 // ── Constantes DISC ──────────────────────────────────────────────────────────
 const DISC_CORES: Record<string, string> = {
-  D: "#7C3AED",
+  D: "#EF4444",
   I: "#F59E0B",
   S: "#10B981",
   C: "#3B82F6",
@@ -161,7 +161,7 @@ function ProcessosMentoraContent() {
     });
     return [
       { nome: "Aprovado", valor: contagem.aprovado, cor: "#10B981" },
-      { nome: "Reprovado", valor: contagem.reprovado, cor: "#7C3AED" },
+      { nome: "Reprovado", valor: contagem.reprovado, cor: "#EF4444" },
       { nome: "Em Análise", valor: contagem.em_analise, cor: "#3B82F6" },
       { nome: "Pendente", valor: contagem.pendente, cor: "#94A3B8" },
     ].filter((d) => d.valor > 0);

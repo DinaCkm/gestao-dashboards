@@ -1463,8 +1463,8 @@ const submitMetaEvidence = trpc.metas.enviarEvidencia.useMutation({
                     <path d="M23 36c0-4.97 4.03-9 9-9s9 4.03 9 9" fill="#6EE7B7"/>
                     <line x1="32" y1="44" x2="32" y2="52" stroke="#10B981" strokeWidth="2"/>
                     <line x1="20" y1="52" x2="44" y2="52" stroke="#10B981" strokeWidth="2" strokeLinecap="round"/>
-                    <circle cx="52" cy="14" r="6" fill="#C4B5FD"/>
-                    <circle cx="52" cy="14" r="3" fill="#7C3AED"/>
+                    <circle cx="52" cy="14" r="6" fill="#FCA5A5"/>
+                    <circle cx="52" cy="14" r="3" fill="#EF4444"/>
                   </svg>
                 </div>
                 <span className="text-xs font-semibold leading-tight">Eventos</span>
