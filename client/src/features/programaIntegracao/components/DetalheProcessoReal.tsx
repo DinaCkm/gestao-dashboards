@@ -431,11 +431,7 @@ export function DetalheProcessoReal({
                     || (Number((processo.teste as any)?.ecoAlunoId || 0)
                       ? 'Andamento da Jornada Compliance indisponível no momento.'
                       : 'Vincule este aluno ao ECO Líderes em Preparação da mentora.')}
-                {ecoAndamento?.jornadaCompliance.total ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {ecoAndamento.jornadaCompliance.concluidas} de {ecoAndamento.jornadaCompliance.total} atividades concluídas.
-                  </p>
-                ) : null}
+
               </div>
             </div>
             {campoLongo('consideracoes', 'Considerações da CKM para a UGP')}
