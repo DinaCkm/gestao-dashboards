@@ -147,7 +147,7 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
       });
 
     return () => { cancelado = true; };
-  }, [processos, onSaved]);
+  }, [processos]);
 
   const vincularEcoManual = async (processo: ProcessoIntegracao, alunoId: number) => {
     if (!processo.id || !alunoId || vinculandoEco) return;
@@ -569,7 +569,8 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
       </div>
 
       <p className="text-xs text-muted-foreground">
-        ${resolvendoEco ? 'Conferindo vínculos com o ECO Líderes... · ' : ''}Encerrar mantém todo o histórico e tira a pessoa da lista de ativos. Remover apenas arquiva o processo e o retira da visão administrativa; nenhum registro é apagado fisicamente.
+        {resolvendoEco ? 'Conferindo vínculos com o ECO Líderes... · ' : ''}
+        Encerrar mantém todo o histórico e tira a pessoa da lista de ativos. Remover apenas arquiva o processo e o retira da visão administrativa; nenhum registro é apagado fisicamente.
       </p>
     </div>
   );
