@@ -39,6 +39,9 @@ interface MentoraPreparacaoPainelProps {
   processos?: ProcessoIntegracao[];
   onAbrirCadastroMentoras?: () => void;
   onAbrirBemTeste?: () => void;
+  modoJanela?: boolean;
+  onClose?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 async function copiarTexto(texto: string, sucesso: string) {
@@ -66,6 +69,9 @@ export function MentoraPreparacaoPainel({
   processos = [],
   onAbrirCadastroMentoras,
   onAbrirBemTeste,
+  modoJanela = false,
+  onClose,
+  onDirtyChange,
 }: MentoraPreparacaoPainelProps) {
   const mentora = mentoraVinculada(processo, config);
   const opcoesMentora = useMemo(() => mentorasAtivas(config), [config]);
@@ -85,6 +91,10 @@ export function MentoraPreparacaoPainel({
   const [horariosEditados, setHorariosEditados] = useState<HorarioMentora[]>(() => cloneHorarios(estado.hor));
   const [editandoHorarios, setEditandoHorarios] = useState(false);
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
+
+  useEffect(() => {
+    onDirtyChange?.(dadosDirty || editandoHorarios);
+  }, [dadosDirty, editandoHorarios, onDirtyChange]);
 
   useEffect(() => {
     if (!editandoHorarios) setHorariosEditados(cloneHorarios(estado.hor));
@@ -139,6 +149,35 @@ export function MentoraPreparacaoPainel({
     toast.success('Horários da mentora salvos.');
   };
 
+  const salvarTudoPendente = async () => {
+    if (!dadosDirty && !editandoHorarios) {
+      toast.info('Não há alterações pendentes para salvar.');
+      return;
+    }
+
+    let proximo = processo;
+
+    if (dadosDirty) {
+      proximo = {
+        ...proximo,
+        tel: dadosDraft.tel,
+        gestorTel: dadosDraft.gestorTel,
+        statusPdi: dadosDraft.statusPdi,
+        bem: { ...(proximo.bem || {}), qualidades: dadosDraft.bemQualidades },
+        teste: { ...(proximo.teste || {}), resumo: dadosDraft.testeResumo },
+      };
+    }
+
+    if (editandoHorarios) {
+      proximo = substituirHorariosMentora(proximo, numero, horariosEditados);
+    }
+
+    await salvar(proximo);
+    setDadosDirty(false);
+    setEditandoHorarios(false);
+    toast.success('Alterações da preparação salvas e conferidas.');
+  };
+
   const gerarBriefing = async () => {
     if (checklist.bloqueios) {
       setMostrarChecklist(true);
@@ -184,7 +223,7 @@ export function MentoraPreparacaoPainel({
   };
 
   return (
-    <div className="space-y-4 rounded-md border bg-muted/20 p-4">
+    <div className={modoJanela ? "space-y-4" : "space-y-4 rounded-md border bg-muted/20 p-4"}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-[240px] flex-1">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preparação da mentora</p>
@@ -388,6 +427,30 @@ export function MentoraPreparacaoPainel({
           {estado.ok ? 'Reabrir preparação' : 'Concluir preparação da mentora'}
         </Button>
       </div>
+
+      {modoJanela && (
+        <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t bg-background/95 py-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            {dadosDirty || editandoHorarios
+              ? 'Há alterações locais ainda não salvas.'
+              : 'Todas as alterações locais estão salvas.'}
+          </p>
+          <div className="flex flex-wrap justify-end gap-2">
+            {onClose && (
+              <Button type="button" variant="outline" onClick={onClose}>
+                Fechar painel
+              </Button>
+            )}
+            <Button
+              type="button"
+              onClick={() => void salvarTudoPendente()}
+              disabled={!dadosDirty && !editandoHorarios}
+            >
+              Salvar alterações
+            </Button>
+          </div>
+        </div>
+      )}
 
       {mensagemAberta && (
         <div className="fixed inset-0 z-[85] grid place-items-center overflow-y-auto bg-black/50 p-4">
