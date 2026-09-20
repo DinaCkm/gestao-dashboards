@@ -101,6 +101,9 @@ export interface IndicadoresAvancados {
   pessoasDentroPrazo: number;
   pessoasComPendencia: number;
   pessoasAtencaoAgora: number;
+  pessoasAguardandoRetorno: number;
+  ecoVinculados: number;
+  ecoSemVinculo: number;
   progressoMedio: number | null;
   pctDentroPrazo: number;
   pctComPendencia: number;
@@ -225,6 +228,7 @@ export function calcularIndicadoresAvancados(
   const acoesAtencao = acoes.filter((a) => a.st.k === 'late' || a.st.k === 'act' || a.st.k === 'wait');
   const idsComPendencia = new Set(acoesAtencao.map((a) => a.pid));
   const idsAtencao = new Set(acoesAtencao.map((a) => a.pid));
+  const idsAguardando = new Set(acoes.filter((a) => a.st.k === 'wait').map((a) => a.pid));
   const atrasosDias = acoes
     .filter((a) => a.st.k === 'late' && Number(a.st.dif) > 0)
     .map((a) => Number(a.st.dif));
@@ -335,9 +339,11 @@ export function calcularIndicadoresAvancados(
 
   const pdiRegistros: Array<{ total: number; percentual: number | null }> = [];
   const complianceRegistros: Array<{ total: number; percentual: number | null }> = [];
+  let ecoVinculados = 0;
   todos.forEach((p) => {
     const eco = ecoDoProcesso(p, ecoStatus);
     if (!eco) return;
+    ecoVinculados++;
     pdiRegistros.push({ total: Number(eco.pdi?.total || 0), percentual: eco.pdi?.percentual ?? null });
     complianceRegistros.push({ total: Number(eco.jornadaCompliance?.total || 0), percentual: eco.jornadaCompliance?.percentual ?? null });
   });
@@ -374,6 +380,9 @@ export function calcularIndicadoresAvancados(
     pessoasDentroPrazo: Math.max(0, processosAtivos.length - idsAtrasados.size),
     pessoasComPendencia: idsComPendencia.size,
     pessoasAtencaoAgora: idsAtencao.size,
+    pessoasAguardandoRetorno: idsAguardando.size,
+    ecoVinculados,
+    ecoSemVinculo: Math.max(0, todos.length - ecoVinculados),
     progressoMedio: arred(media(progressoTodos)),
     pctDentroPrazo: processosAtivos.length ? Math.round(((processosAtivos.length - idsAtrasados.size) * 100) / processosAtivos.length) : 100,
     pctComPendencia: processosAtivos.length ? Math.round((idsComPendencia.size * 100) / processosAtivos.length) : 0,
