@@ -17,6 +17,7 @@ import {
 } from '../helpers/itemStateHelpers';
 import { formatarData } from '../helpers/dateHelpers';
 import { respostaDoItem } from '../helpers/respostaItemHelpers';
+import { arquivarRespostaRecebida } from '../api/respostas';
 import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { gerarBriefingMentoraPdf, gerarRelatorioMentoraWord } from '../helpers/mentoraDocumentos';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
@@ -43,6 +44,7 @@ interface DetalheProcessoRealProps {
   onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
   saving?: boolean;
   onEditarModeloEmail?: (chave: string) => void;
+  onRespostaExcluida?: () => Promise<void> | void;
 }
 
 const statusClasses = {
@@ -77,6 +79,7 @@ export function DetalheProcessoReal({
   onSalvarProcesso,
   saving = false,
   onEditarModeloEmail,
+  onRespostaExcluida,
 }: DetalheProcessoRealProps) {
   const [filtro, setFiltro] = useState<FiltroDetalheProcesso>('');
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
@@ -89,6 +92,7 @@ export function DetalheProcessoReal({
   const [cobrancaAberta, setCobrancaAberta] = useState(false);
   const [cobrancaCiclo, setCobrancaCiclo] = useState<1 | 2 | 3 | 4 | undefined>(undefined);
   const [cobrancaPapel, setCobrancaPapel] = useState<PapelCobranca | null>(null);
+  const [excluindoRespostaRid, setExcluindoRespostaRid] = useState<string | null>(null);
   const deepLinkAplicadoRef = useRef(false);
   const itemDeepLink = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -172,6 +176,25 @@ export function DetalheProcessoReal({
       setFeedbackStatus((atual) => ({ ...atual, [itemId]: 'erro' }));
       limparFeedbackDepois(itemId);
       toast.error(error instanceof Error ? error.message : 'Não foi possível salvar a situação. O valor anterior foi restaurado.');
+    }
+  };
+
+  const excluirRespostaDaTimeline = async (resposta: any) => {
+    if (!resposta?.rid || excluindoRespostaRid) return;
+    const confirmar = window.confirm(
+      'Excluir esta resposta?\n\nEla sairá da Timeline e a ação correspondente voltará para pendente. O registro será preservado em Respostas recebidas > Excluídas e poderá ser restaurado.',
+    );
+    if (!confirmar) return;
+
+    try {
+      setExcluindoRespostaRid(String(resposta.rid));
+      await arquivarRespostaRecebida(String(resposta.rid));
+      toast.success('Resposta excluída e jornada atualizada. Ela pode ser restaurada em Respostas recebidas > Excluídas.');
+      await onRespostaExcluida?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível excluir a resposta.');
+    } finally {
+      setExcluindoRespostaRid(null);
     }
   };
 
@@ -569,6 +592,7 @@ export function DetalheProcessoReal({
                             config={config}
                             feriados={feriados}
                             onSalvarProcesso={salvar}
+                            onExcluirResposta={excluindoRespostaRid ? undefined : excluirRespostaDaTimeline}
                           />
                         </div>
                       );

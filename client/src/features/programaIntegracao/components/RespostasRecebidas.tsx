@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { ProcessoIntegracao, RespostaFormulario } from '../types';
-import { arquivarRespostaRecebida, atualizarRespostaRecebida } from '../api/respostas';
+import { arquivarRespostaRecebida, atualizarRespostaRecebida, listarRespostasExcluidas, restaurarRespostaRecebida, type RespostaExcluida } from '../api/respostas';
 import { IMPORT_FORM_DEFINITIONS, type FormImportKey } from '../helpers/registrarRespostasParser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, Trash2 } from 'lucide-react';
+import { AlertCircle, Loader2, RotateCcw, Trash2 } from 'lucide-react';
 
 interface RespostasRecebidasProps {
   processos: Array<ProcessoIntegracao & { id?: string }>;
@@ -48,6 +48,7 @@ function initialEdit(resposta: RespostaComProcesso): EditBuffer {
 }
 
 export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: RespostasRecebidasProps) {
+  const [visao, setVisao] = useState<'ativas' | 'excluidas'>('ativas');
   const [processoFiltro, setProcessoFiltro] = useState('todos');
   const [formFiltro, setFormFiltro] = useState<'todos' | FormImportKey>('todos');
   const [cicloFiltro, setCicloFiltro] = useState('todos');
@@ -56,6 +57,9 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
   const [edit, setEdit] = useState<EditBuffer | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [arquivandoRid, setArquivandoRid] = useState<string | null>(null);
+  const [restaurandoRid, setRestaurandoRid] = useState<string | null>(null);
+  const [excluidas, setExcluidas] = useState<RespostaExcluida[]>([]);
+  const [carregandoExcluidas, setCarregandoExcluidas] = useState(false);
   const [erroEdicao, setErroEdicao] = useState('');
   const [erroLista, setErroLista] = useState('');
 
@@ -79,12 +83,30 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
     });
   }, [processos]);
 
-  const filtradas = useMemo(() => respostas.filter((r) => {
+  const carregarExcluidas = async () => {
+    try {
+      setCarregandoExcluidas(true);
+      setErroLista('');
+      setExcluidas(await listarRespostasExcluidas());
+    } catch (error) {
+      setErroLista(error instanceof Error ? error.message : 'Não foi possível carregar as respostas excluídas.');
+    } finally {
+      setCarregandoExcluidas(false);
+    }
+  };
+
+  useEffect(() => {
+    if (visao === 'excluidas') void carregarExcluidas();
+  }, [visao]);
+
+  const listaAtual = visao === 'ativas' ? respostas : excluidas;
+
+  const filtradas = useMemo(() => listaAtual.filter((r) => {
     if (processoFiltro !== 'todos' && r.processoIdLocal !== processoFiltro) return false;
     if (formFiltro !== 'todos' && r.form !== formFiltro) return false;
     if (cicloFiltro !== 'todos' && Number(r.ciclo || 0) !== Number(cicloFiltro)) return false;
     return true;
-  }), [respostas, processoFiltro, formFiltro, cicloFiltro]);
+  }), [listaAtual, processoFiltro, formFiltro, cicloFiltro]);
 
   const abrirEdicao = (resposta: RespostaComProcesso) => {
     setErroEdicao('');
@@ -146,10 +168,31 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
       if (detalhe?.rid === resposta.rid) setDetalhe(null);
       if (editando?.rid === resposta.rid) cancelarEdicao();
       await onSaved?.();
+      await carregarExcluidas();
     } catch (error) {
       setErroLista(error instanceof Error ? error.message : 'Não foi possível arquivar a resposta.');
     } finally {
       setArquivandoRid(null);
+    }
+  };
+
+  const restaurarResposta = async (resposta: RespostaExcluida) => {
+    const confirmar = window.confirm(
+      `Restaurar esta resposta?\n\n${resposta.processoNome} — ${IMPORT_FORM_DEFINITIONS[resposta.form].name}${resposta.ciclo ? ` · ${resposta.ciclo}º alinhamento` : ''}${resposta.papel ? ` · ${resposta.papel}` : ''}\n\nEla voltará para a Timeline e para os cálculos do processo como resposta ativa.`,
+    );
+    if (!confirmar) return;
+
+    try {
+      setErroLista('');
+      setRestaurandoRid(resposta.rid);
+      await restaurarRespostaRecebida(resposta.rid);
+      if (detalhe?.rid === resposta.rid) setDetalhe(null);
+      await onSaved?.();
+      await carregarExcluidas();
+    } catch (error) {
+      setErroLista(error instanceof Error ? error.message : 'Não foi possível restaurar a resposta.');
+    } finally {
+      setRestaurandoRid(null);
     }
   };
 
@@ -158,7 +201,12 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Registros</p>
         <h2 className="text-2xl font-bold">Respostas recebidas</h2>
-        <p className="text-sm text-muted-foreground mt-1">Tudo o que já foi importado dos formulários, por pessoa e por momento. Dá para abrir, conferir e corrigir qualquer campo.</p>
+        <p className="text-sm text-muted-foreground mt-1">Tudo o que já foi importado dos formulários, por pessoa e por momento. Respostas excluídas ficam preservadas e podem ser restauradas.</p>
+      </div>
+
+      <div className="inline-flex rounded-lg border bg-background p-1">
+        <Button type="button" size="sm" variant={visao === 'ativas' ? 'default' : 'ghost'} onClick={() => setVisao('ativas')}>Ativas ({respostas.length})</Button>
+        <Button type="button" size="sm" variant={visao === 'excluidas' ? 'default' : 'ghost'} onClick={() => setVisao('excluidas')}>Excluídas ({excluidas.length})</Button>
       </div>
 
       <Card>
@@ -182,10 +230,12 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
 
       {erroLista && <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"><AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />{erroLista}</div>}
 
-      <div className="text-sm text-muted-foreground">{filtradas.length} {filtradas.length === 1 ? 'resposta nesta seleção' : 'respostas nesta seleção'} · {respostas.length} {respostas.length === 1 ? 'resposta no total' : 'respostas no total'}.</div>
+      <div className="text-sm text-muted-foreground">{filtradas.length} {filtradas.length === 1 ? 'resposta nesta seleção' : 'respostas nesta seleção'} · {listaAtual.length} {listaAtual.length === 1 ? 'resposta nesta área' : 'respostas nesta área'}.</div>
 
-      {filtradas.length === 0 ? (
-        <Card><CardContent className="py-10 text-center text-muted-foreground">Nenhuma resposta nesta seleção. Use Registrar respostas para importar o que veio do Forms.</CardContent></Card>
+      {visao === 'excluidas' && carregandoExcluidas ? (
+        <Card><CardContent className="py-10 text-center text-muted-foreground"><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />Carregando respostas excluídas…</CardContent></Card>
+      ) : filtradas.length === 0 ? (
+        <Card><CardContent className="py-10 text-center text-muted-foreground">{visao === 'ativas' ? 'Nenhuma resposta nesta seleção. Use Registrar respostas para importar o que veio do Forms.' : 'Nenhuma resposta excluída nesta seleção.'}</CardContent></Card>
       ) : (
         <div className="space-y-3">
           {filtradas.map((r) => (
@@ -206,10 +256,21 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
                     {r.media != null && <span className="rounded-full border px-2 py-1 text-xs">média {Number(r.media).toFixed(1).replace('.', ',')}</span>}
                     {!!r.alertas?.length && <span className="rounded-full border px-2 py-1 text-xs">{r.alertas.length} {r.alertas.length === 1 ? 'ponto de atenção' : 'pontos de atenção'}</span>}
                     <Button size="sm" variant="outline" onClick={() => setDetalhe(r)}>Ver</Button>
-                    <Button size="sm" onClick={() => abrirEdicao(r)}>Editar</Button>
-                    <Button size="sm" variant="ghost" disabled={arquivandoRid === r.rid} onClick={() => arquivarResposta(r)} title="Remover este registro da visão ativa sem apagar o histórico">
-                      {arquivandoRid === r.rid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                    </Button>
+                    {visao === 'ativas' ? <>
+                      <Button size="sm" onClick={() => abrirEdicao(r)}>Editar</Button>
+                      <Button size="sm" variant="outline" disabled={arquivandoRid === r.rid} onClick={() => arquivarResposta(r)} title="Excluir a resposta da visão ativa e devolver a ação correspondente para pendente, preservando o histórico">
+                        {arquivandoRid === r.rid ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4" />}
+                        Excluir resposta
+                      </Button>
+                    </> : <>
+                      <span className="rounded-full border bg-muted/30 px-2 py-1 text-xs text-muted-foreground">
+                        excluída em {formatDate((r as RespostaExcluida).excluidaEm)}
+                      </span>
+                      <Button size="sm" disabled={restaurandoRid === r.rid} onClick={() => restaurarResposta(r as RespostaExcluida)}>
+                        {restaurandoRid === r.rid ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-1 h-4 w-4" />}
+                        Restaurar
+                      </Button>
+                    </>}
                     {onProcessoClick && r.processoIdLocal && <Button size="sm" variant="ghost" onClick={() => onProcessoClick(r.processoIdLocal)}>Abrir processo</Button>}
                   </div>
                 </div>

@@ -358,16 +358,329 @@ programaIntegracaoRouter.delete("/api/programa-integracao/processos/:legacyId", 
   } catch (error) { console.error("[ProgramaIntegracao] arquivar processo:", error); return res.status(500).json({ error: "Não foi possível remover o processo." }); }
 });
 
-programaIntegracaoRouter.delete("/api/programa-integracao/respostas/:legacyRid", requireAdmin, async (req, res) => {
+function notaAutomaticaDeResposta(nota: any): boolean {
+  const texto = String(nota?.t || "").trim();
+  return /^Resposta (registrada|importada|restaurada) — /i.test(texto);
+}
+
+function limparItemParaPendente(estadoOriginal: unknown, itemId: string) {
+  const estado = asJson<Record<string, any>>(estadoOriginal, {});
+  estado.feito = estado.feito && typeof estado.feito === "object" ? { ...estado.feito } : {};
+  if (!itemId) return estado;
+
+  const atual = estado.feito[itemId] && typeof estado.feito[itemId] === "object"
+    ? { ...estado.feito[itemId] }
+    : {};
+  const notas = Array.isArray(atual.notas)
+    ? atual.notas.filter((nota: any) => !notaAutomaticaDeResposta(nota))
+    : [];
+
+  const proxima = {
+    ...atual,
+    s: "",
+    d: "",
+    prog: "",
+    just: "",
+    notas,
+  };
+  const vazia = !proxima.s && !proxima.d && !proxima.prog && !proxima.just && notas.length === 0;
+  if (vazia) delete estado.feito[itemId];
+  else estado.feito[itemId] = proxima;
+  return estado;
+}
+
+function marcarItemComoRespondido(
+  estadoOriginal: unknown,
+  itemId: string,
+  descricao: string,
+  dataPreferida?: string,
+) {
+  const estado = asJson<Record<string, any>>(estadoOriginal, {});
+  estado.feito = estado.feito && typeof estado.feito === "object" ? { ...estado.feito } : {};
+  if (!itemId) return estado;
+
+  const atual = estado.feito[itemId] && typeof estado.feito[itemId] === "object"
+    ? { ...estado.feito[itemId] }
+    : {};
+  const notas = Array.isArray(atual.notas) ? [...atual.notas] : [];
+  notas.push({ d: nowBr(), t: descricao });
+  estado.feito[itemId] = {
+    ...atual,
+    s: "ok",
+    d: String(dataPreferida || atual.d || todayIso()).slice(0, 10),
+    prog: "",
+    just: "",
+    notas,
+  };
+  return estado;
+}
+
+async function existeOutraRespostaAtiva(
+  connection: any,
+  respostaId: number,
+  processoId: number,
+  itemId: string,
+  formKey: string,
+  ciclo: number,
+  papel: string,
+) {
+  const [rows] = (await connection.execute(
+    `SELECT id
+       FROM programa_integracao_respostas
+       WHERE processoId=?
+         AND id<>?
+         AND statusVinculo='vinculada'
+         AND (
+           (itemId IS NOT NULL AND itemId=?)
+           OR (formKey=? AND ciclo=? AND COALESCE(papel,'')=?)
+         )
+       LIMIT 1
+       FOR UPDATE`,
+    [processoId, respostaId, itemId || null, formKey, ciclo, papel || ""],
+  )) as any;
+  return Boolean(rows?.[0]?.id);
+}
+
+programaIntegracaoRouter.get("/api/programa-integracao/respostas-excluidas", requireAdmin, async (req, res) => {
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
+    const [rows] = (await connection.execute(
+      `SELECT r.*, p.legacyId AS processoLegacyId, p.nome AS processoNome, p.situacao AS processoSituacao
+       FROM programa_integracao_respostas r
+       LEFT JOIN programa_integracao_processos p ON p.id=r.processoId
+       WHERE r.statusVinculo='descartada' AND r.statusResposta='removida_admin'
+       ORDER BY r.updatedAt DESC, r.id DESC`,
+    )) as any;
+
+    const respostas = (rows || []).map((row: any) => ({
+      ...responseToLegacy(row),
+      processoIdLocal: row.processoLegacyId || "",
+      processoNome: row.processoNome || row.nomeOrig || row.nomeColaborador || "Sem nome",
+      processoSituacao: row.processoSituacao || "",
+      excluidaEm: row.updatedAt ? new Date(row.updatedAt).toISOString() : "",
+    }));
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ ok: true, respostas });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] listar respostas excluídas:", error);
+    return res.status(500).json({ error: "Não foi possível carregar as respostas excluídas." });
+  }
+});
+
+programaIntegracaoRouter.delete("/api/programa-integracao/respostas/:legacyRid", requireAdmin, async (req, res) => {
+  const connection = await getConnectionOr503(res); if (!connection) return;
+  let transactionStarted = false;
+  try {
     const rid = sanitizeLegacyId(req.params.legacyRid);
-    const [rows] = (await connection.execute(`SELECT id,processoId FROM programa_integracao_respostas WHERE legacyRid=? LIMIT 1`, [rid])) as any;
-    if (!rows?.[0]) return res.json({ ok: true });
-    await connection.execute(`UPDATE programa_integracao_respostas SET statusVinculo='descartada',statusResposta='removida_admin',updatedAt=CURRENT_TIMESTAMP WHERE id=?`, [rows[0].id]);
-    await audit(connection, req, "resposta_arquivada", `Resposta ${rid} removida da visão sem exclusão física.`, rows[0].processoId, rows[0].id);
-    return res.json({ ok: true });
-  } catch (error) { console.error("[ProgramaIntegracao] arquivar resposta:", error); return res.status(500).json({ error: "Não foi possível remover a resposta." }); }
+    if (!rid) return res.status(400).json({ error: "Resposta inválida." });
+
+    await connection.beginTransaction();
+    transactionStarted = true;
+
+    const [rows] = (await connection.execute(
+      `SELECT id,processoId,formKey,ciclo,papel,itemId,statusVinculo,statusResposta
+       FROM programa_integracao_respostas
+       WHERE legacyRid=?
+       LIMIT 1
+       FOR UPDATE`,
+      [rid],
+    )) as any;
+    const resposta = rows?.[0];
+    if (!resposta) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(404).json({ error: "Resposta não encontrada." });
+    }
+    if (resposta.statusVinculo !== "vinculada") {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({ error: "Esta resposta não está ativa. Atualize a tela antes de tentar novamente." });
+    }
+
+    const processoId = Number(resposta.processoId || 0);
+    const formKey = String(resposta.formKey || "");
+    const ciclo = Number(resposta.ciclo || 0);
+    const papel = String(resposta.papel || "");
+    const itemId = String(resposta.itemId || itemIdDoFormulario(formKey as ProgramaIntegracaoFormKey, ciclo, papel) || "");
+
+    const [processRows] = processoId
+      ? (await connection.execute(
+          `SELECT id,legacyId,estado FROM programa_integracao_processos WHERE id=? LIMIT 1 FOR UPDATE`,
+          [processoId],
+        )) as any
+      : [[]] as any;
+    const processo = processRows?.[0] || null;
+    const estadoAntes = processo ? asJson<Record<string, any>>(processo.estado, {}) : {};
+    const fichaAntes = itemId && estadoAntes?.feito?.[itemId] && typeof estadoAntes.feito[itemId] === "object"
+      ? estadoAntes.feito[itemId]
+      : null;
+
+    const outraRespostaAtiva = processoId
+      ? await existeOutraRespostaAtiva(connection, Number(resposta.id), processoId, itemId, formKey, ciclo, papel)
+      : false;
+
+    await connection.execute(
+      `UPDATE programa_integracao_respostas
+       SET statusVinculo='descartada',statusResposta='removida_admin',updatedAt=CURRENT_TIMESTAMP
+       WHERE id=?`,
+      [resposta.id],
+    );
+
+    let itemVoltouPendente = false;
+    if (processo && itemId && !outraRespostaAtiva) {
+      const proximoEstado = limparItemParaPendente(estadoAntes, itemId);
+      await connection.execute(
+        `UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
+        [JSON.stringify(proximoEstado), processoId],
+      );
+      itemVoltouPendente = true;
+    }
+
+    await audit(
+      connection,
+      req,
+      "resposta_arquivada",
+      `Resposta ${rid} excluída da visão ativa sem exclusão física.`,
+      processoId || null,
+      Number(resposta.id),
+      {
+        formKey,
+        ciclo,
+        papel,
+        itemId,
+        outraRespostaAtiva,
+        itemVoltouPendente,
+        fichaAntes,
+      },
+    );
+
+    await connection.commit();
+    transactionStarted = false;
+    return res.json({ ok: true, itemId, itemVoltouPendente, outraRespostaAtiva });
+  } catch (error) {
+    if (transactionStarted) {
+      try { await connection.rollback(); } catch { /* rollback de melhor esforço */ }
+    }
+    console.error("[ProgramaIntegracao] arquivar resposta:", error);
+    return res.status(500).json({ error: "Não foi possível excluir a resposta. Nenhuma alteração parcial foi mantida." });
+  }
+});
+
+programaIntegracaoRouter.post("/api/programa-integracao/respostas/:legacyRid/restaurar", requireAdmin, async (req, res) => {
+  const connection = await getConnectionOr503(res); if (!connection) return;
+  let transactionStarted = false;
+  try {
+    const rid = sanitizeLegacyId(req.params.legacyRid);
+    if (!rid) return res.status(400).json({ error: "Resposta inválida." });
+
+    await connection.beginTransaction();
+    transactionStarted = true;
+
+    const [rows] = (await connection.execute(
+      `SELECT id,processoId,formKey,ciclo,papel,itemId,statusVinculo,statusResposta,submittedAt
+       FROM programa_integracao_respostas
+       WHERE legacyRid=?
+       LIMIT 1
+       FOR UPDATE`,
+      [rid],
+    )) as any;
+    const resposta = rows?.[0];
+    if (!resposta) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(404).json({ error: "Resposta excluída não encontrada." });
+    }
+    if (resposta.statusVinculo !== "descartada" || resposta.statusResposta !== "removida_admin") {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({ error: "Esta resposta não está na área de excluídas ou já foi restaurada." });
+    }
+
+    const processoId = Number(resposta.processoId || 0);
+    if (!processoId) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({ error: "A resposta não possui processo vinculado e não pode ser restaurada automaticamente." });
+    }
+
+    const [processRows] = (await connection.execute(
+      `SELECT id,legacyId,nome,situacao,estado
+       FROM programa_integracao_processos
+       WHERE id=?
+       LIMIT 1
+       FOR UPDATE`,
+      [processoId],
+    )) as any;
+    const processo = processRows?.[0];
+    if (!processo || processo.situacao === "removido") {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({ error: "O processo relacionado não está ativo. Reative o processo antes de restaurar a resposta." });
+    }
+
+    const formKey = String(resposta.formKey || "");
+    const ciclo = Number(resposta.ciclo || 0);
+    const papel = String(resposta.papel || "");
+    const itemId = String(resposta.itemId || itemIdDoFormulario(formKey as ProgramaIntegracaoFormKey, ciclo, papel) || "");
+    const outraRespostaAtiva = await existeOutraRespostaAtiva(
+      connection,
+      Number(resposta.id),
+      processoId,
+      itemId,
+      formKey,
+      ciclo,
+      papel,
+    );
+
+    await connection.execute(
+      `UPDATE programa_integracao_respostas
+       SET statusVinculo='vinculada',statusResposta='restaurada_admin',updatedAt=CURRENT_TIMESTAMP
+       WHERE id=?`,
+      [resposta.id],
+    );
+
+    let itemMarcadoComoFeito = false;
+    if (itemId && !outraRespostaAtiva) {
+      const [audRows] = (await connection.execute(
+        `SELECT metadata
+         FROM programa_integracao_auditoria
+         WHERE respostaId=? AND acao='resposta_arquivada'
+         ORDER BY id DESC
+         LIMIT 1`,
+        [resposta.id],
+      )) as any;
+      const metadata = asJson<Record<string, any>>(audRows?.[0]?.metadata, {});
+      const fichaAntes = metadata?.fichaAntes && typeof metadata.fichaAntes === "object" ? metadata.fichaAntes : {};
+      const dataAnterior = String(fichaAntes?.d || "").slice(0, 10);
+      const descricao = `Resposta restaurada — ${FORM_NAMES[formKey as ProgramaIntegracaoFormKey] || formKey}${ciclo ? ` · ${ciclo}º ciclo` : ""}${papel ? ` · ${papel}` : ""}.`;
+      const proximoEstado = marcarItemComoRespondido(processo.estado, itemId, descricao, dataAnterior || undefined);
+      await connection.execute(
+        `UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
+        [JSON.stringify(proximoEstado), processoId],
+      );
+      itemMarcadoComoFeito = true;
+    }
+
+    await audit(
+      connection,
+      req,
+      "resposta_restaurada",
+      `Resposta ${rid} restaurada para a visão ativa.`,
+      processoId,
+      Number(resposta.id),
+      { formKey, ciclo, papel, itemId, outraRespostaAtiva, itemMarcadoComoFeito },
+    );
+
+    await connection.commit();
+    transactionStarted = false;
+    return res.json({ ok: true, itemId, itemMarcadoComoFeito, outraRespostaAtiva });
+  } catch (error) {
+    if (transactionStarted) {
+      try { await connection.rollback(); } catch { /* rollback de melhor esforço */ }
+    }
+    console.error("[ProgramaIntegracao] restaurar resposta:", error);
+    return res.status(500).json({ error: "Não foi possível restaurar a resposta. Nenhuma alteração parcial foi mantida." });
+  }
 });
 
 programaIntegracaoRouter.get("/api/public/programa-integracao/forms/:slug", async (req, res) => {
