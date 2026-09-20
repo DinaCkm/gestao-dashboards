@@ -241,7 +241,7 @@ export function Indicadores({
   const kpisAcompanhamento = [
     { titulo: 'Formulários respondidos', valor: dados.respostasRegistradas, apoio: 'respostas registradas nos processos', cor: COR_TEAL },
     { titulo: 'Formulários em aberto', valor: dados.formulariosAbertos, apoio: `${dados.formulariosAtrasados} já atrasados`, cor: COR_VIOLETA },
-    { titulo: 'Alinhamentos realizados', valor: `${dados.alinhamentosFeitos}/${dados.alinhamentosPrevistos}`, apoio: 'entre os alinhamentos já previstos até hoje', cor: COR_AZUL },
+    { titulo: 'Alinhamentos realizados', valor: `${dados.alinhamentosFeitos}/${dados.alinhamentosPrevistos}`, apoio: `${Math.max(0, dados.alinhamentosPrevistos - dados.alinhamentosFeitos)} acompanhamento(s) previsto(s) ainda não realizado(s)`, cor: COR_AZUL },
     { titulo: 'Ações concluídas no prazo', valor: dados.concluidosNoPrazo, apoio: `${dados.concluidosComAtraso} concluídas depois do prazo`, cor: COR_TEAL },
     { titulo: 'Vínculos ECO Líderes', valor: dados.ecoVinculados, apoio: `${dados.ecoSemVinculo} pessoas filtradas ainda sem vínculo`, cor: COR_MARCA },
   ];
