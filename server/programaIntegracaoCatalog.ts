@@ -1,6 +1,6 @@
 export type IntegracaoQuestionType = "text" | "textarea" | "date" | "cpf" | "tel" | "select" | "scale" | "multi";
 export type IntegracaoQuestion = { code: string; label: string; type: IntegracaoQuestionType; required?: boolean; options?: Array<string | { value: string; label: string }>; hint?: string };
-export type IntegracaoSection = { title: string; intro?: string; questions: IntegracaoQuestion[] };
+export type IntegracaoSection = { title: string; publicTitle?: string; intro?: string; questions: IntegracaoQuestion[] };
 export type IntegracaoFormCatalog = {
   key: "controle" | "bem" | "pesquisa" | "aval" | "pdi";
   slug: string; name: string; description: string; targetRole: string;
@@ -10,7 +10,7 @@ export type IntegracaoFormCatalog = {
   sections: IntegracaoSection[];
 };
 
-export const UNIDADES_INTEGRACAO = ["UAS","UMC","UGE","URI","UAC","UAR","UTIC","UCI","AUD","UGOC","UGP","CDE","RBP","RMN","RVA","RME","RNO","RPJ","RSG","RSU","RSE","URC","Regional Norte","Regional Bico do Papagaio","Outras Regionais"];
+export const UNIDADES_INTEGRACAO = ["UAS","UMC","UGE","URI","UAC","UAR","UTIC","UCI","AUD","UGOC","UGP","CDE","RBP","RMN","RVA","RME","RNO","RPJ","RSG","RSU","RSE","URC","Regional Norte","Regional Bico do Papagaio","Outras Regionais","Outra"];
 export const QUALIDADES_BEM = ["Animado","Atencioso","Ativo","Audaz","Autêntico","Autoconfiante","Autoritário","Calado","Calmo","Carismático","Cativante","Competitivo","Compreensivo","Convincente","Corajoso","Cortês","Criativo","Decidido","Desconfiado","Destemido","Diplomático","Direto","Disciplinado","Dócil","Egoísta","Empreendedor","Encantador","Enérgico","Entusiasta","Envergonhado","Envolvente","Esclarecido","Espontâneo","Extrovertido","Firme","Flexível","Formal","Generoso","Gentil","Humilde","Impaciente","Influente","Irreverente","Leal","Livre","Meticuloso","Original","Ousado","Paciente","Pacífico","Passivo","Perfeccionista","Persistente","Persuasivo","Preocupado","Proativo","Prudente","Querido","Realista","Receoso","Respeitoso","Retraído","Satisfeito","Saudável","Sensato","Sensível","Sério","Simpático","Simples","Sociável","Sossegado","Suave","Teimoso","Tímido","Tolerante","Tradicional","Versátil"];
 const scale = (code:string,label:string):IntegracaoQuestion => ({code,label,type:"scale",required:true});
 const text = (code:string,label:string,required=true,hint?:string):IntegracaoQuestion => ({code,label,type:label.length>70?"textarea":"text",required,hint});
@@ -23,13 +23,13 @@ export const PROGRAMA_INTEGRACAO_CATALOG: Record<string, IntegracaoFormCatalog> 
     outro:["Gestor(a),","Parabéns por concluir o preenchimento do formulário! Suas respostas serão enviadas para a empresa responsável pela avaliação de perfil.","Agora, para complementar esses dados também será necessário o preenchimento do Formulário Bem Acolhido em nossa unidade, pelo gestor que estará recebendo o novo contratado.","Um abraço!","Núcleo de Desenvolvimento - UGP"],
     identity:{unidade:true,dataInicio:true,email:true,respondent:true},
     sections:[
-      {title:"Dados complementares",questions:[
+      {title:"Dados complementares",publicTitle:"",questions:[
         {code:"controle_cpf",label:"Número do CPF do colaborador:",type:"cpf",required:true},
         {code:"controle_nascimento",label:"Data de Nascimento do colaborador:",type:"date",required:false},
         {code:"controle_telefone",label:"Número de telefone do Novo Colaborador (WhatsApp):",type:"tel",required:false,hint:"Somente números, com DDD (ex.: 63999998888)."},
-        {code:"controle_denominacao",label:"Qual a denominação do novo contratado dentro do Programa de Integração?",type:"select",required:false,options:["Onboarding","Crossboarding","Estagiário"]},
       ]},
       {title:"Dados principais",questions:[
+        {code:"controle_denominacao",label:"Qual a denominação do novo contratado dentro do Programa de Integração?",type:"select",required:false,options:["Onboarding","Crossboarding","Estagiário"]},
         text("controle_funcao","Função do novo colaborador:",true,"Descreva brevemente a função (cargo) do colaborador."),
         text("controle_gestor","Nome do Gestor Responsável:"),
       ]},
@@ -66,7 +66,7 @@ export const PROGRAMA_INTEGRACAO_CATALOG: Record<string, IntegracaoFormCatalog> 
       {value:"60",cycle:4,label:"60º dia (Somente para participantes do Crossboarding)"},{value:"75",cycle:3,label:"75º dia"},{value:"150",cycle:4,label:"150º dia"},
     ],
     sections:[
-      {title:"Programa",questions:[{code:"pesquisa_programa",label:"Qual o seu programa?",type:"select",required:true,options:[{value:"Onboarding",label:"Onboarding - (Recém-Contratado do Sebrae/TO)"},"Crossboarding"]}]},
+      {title:"Programa",publicTitle:"",questions:[{code:"pesquisa_programa",label:"Qual o seu programa?",type:"select",required:true,options:[{value:"Onboarding",label:"Onboarding - (Recém-Contratado do Sebrae/TO)"},"Crossboarding"]}]},
       {title:"Cultura e pertencimento",questions:[
         scale("pesquisa_cultura_valores","A cultura do Sebrae/TO está alinhada aos meus valores."),scale("pesquisa_pertencimento","Me sinto pertencente à empresa."),scale("pesquisa_dia_a_dia","O dia a dia de trabalho é agradável para mim."),scale("pesquisa_orgulho","Trabalhar aqui é motivo de orgulho para mim."),scale("pesquisa_importancia_atividades","Entendo a importância das minhas atividades para os objetivos do Sebrae."),
       ]},
@@ -94,7 +94,7 @@ export const PROGRAMA_INTEGRACAO_CATALOG: Record<string, IntegracaoFormCatalog> 
         {code:"aval_produtividade_conceito",label:"PRODUTIVIDADE (conceito)",type:"select",required:true,hint:"Considerar o volume de trabalho executado em função do tempo gasto.",options:["100% - Consegue atingir altos índices de produtividade.","75% - Adequada produtividade para o período.","50% - Produtividade baixa, entretanto se esforça para melhorar.","25% - Produtividade insuficiente. Apresenta interesse, mas tem encontrado dificuldades nas ações.","0% - Produtividade insuficiente. Não se esforça para melhorar."]},
         {code:"aval_conceito_geral",label:"CONCEITO GERAL",type:"select",required:true,hint:"Considerar o período de trabalho e o tempo ainda no Programa de Integração.",options:["100% - EXCELENTE - É uma excelente aquisição para o SEBRAE/TO.","75% - MUITO BOM - Possui ótimas perspectivas para o futuro.","50% - SATISFATÓRIO - Tem algumas possibilidades, com o desenvolvimento de algumas competências.","25% - ADEQUADO - Precisa de um trabalho de desenvolvimento e acompanhamento.","0% - INADEQUADO - Poucas possibilidades futuras."]},
       ]},
-      {title:"Devolutiva",questions:[text("aval_potencialidades","Quais comportamentos/competências de potencialidade que o novo colaborador apresenta?"),text("aval_menos_favoraveis","Quais comportamentos/competências menos favoráveis que o novo colaborador está apresentando?"),text("aval_orientacoes_desenvolvimento","Quais orientações foram dadas ao novo colaborador para desenvolvimento?"),text("aval_reacao_feedback","Qual foi a reação que o novo colaborador teve no feedback? (Somente Gestor)",false,"Esta pergunta se aplica apenas quando quem está respondendo é o Gestor.")]},
+      {title:"Devolutiva",questions:[text("aval_potencialidades","Quais comportamentos/competências de potencialidade que o novo colaborador apresenta?"),text("aval_menos_favoraveis","Quais comportamentos/competências menos favoráveis que o novo colaborador está apresentando?"),text("aval_orientacoes_desenvolvimento","Quais orientações foram dadas ao novo colaborador para desenvolvimento?"),text("aval_reacao_feedback","Qual foi a reação que o novo colaborador teve no feedback? (Somente Gestor)",true,"Esta pergunta se aplica apenas quando quem está respondendo é o Gestor.")]},
     ],
   },
   "acompanhamento-pdi": {
