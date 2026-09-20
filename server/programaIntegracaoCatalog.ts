@@ -119,3 +119,20 @@ export const PROGRAMA_INTEGRACAO_CATALOG: Record<string, IntegracaoFormCatalog> 
     ],
   },
 };
+
+export const DICAS_ESCALA = [
+  "Leia cada pergunta com calma, sem pressa.",
+  "Seja sincero(a) e diga o que realmente pensa.",
+  "Se uma afirmação não fizer muito sentido para você, você pode marcar que não tem opinião sobre.",
+  "Lembre-se, é tudo confidencial, então fique à vontade para se expressar.",
+  "Se bater alguma dúvida, é só nos chamar!",
+];
+
+export const LEGENDA_ESCALA = [
+  "1 - Discordo totalmente",
+  "2 - Discordo",
+  "3 - Não concordo nem discordo",
+  "4 - Concordo",
+  "5 - Concordo totalmente",
+  "0 - Ainda não tenho opinião sobre",
+];
