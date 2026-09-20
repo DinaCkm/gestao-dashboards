@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ProcessoIntegracao } from '../types';
-import { arquivarProcesso } from '../api/client';
+import { arquivarProcesso, atualizarEstadoProcesso } from '../api/client';
 import {
   alterarSituacaoProcessoSeguro,
   criarProcessoDemonstracaoSeguro,
@@ -16,7 +16,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowDown, ArrowUp, CheckCircle2, CircleAlert, Clock3, FlaskConical, Loader2, Plus, Search, Sun } from 'lucide-react';
 import { toast } from 'sonner';
-import { buscarStatusEcoLider, type EcoLiderAndamento } from '../api/ecoLider';
+import {
+  buscarPerfilEcoLider,
+  buscarStatusEcoLider,
+  resolverVinculosEcoLider,
+  type EcoLiderAluno,
+  type EcoLiderAndamento,
+  type EcoLiderResolucaoItem,
+} from '../api/ecoLider';
 
 interface GerenciarPessoasProps {
   processos: ProcessoIntegracao[];
@@ -34,6 +41,11 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
   const [operacao, setOperacao] = useState<string | null>(null);
   const [statusEco, setStatusEco] = useState<Record<string, EcoLiderAndamento>>({});
   const [statusEcoCarregando, setStatusEcoCarregando] = useState(false);
+  const [alunosEco, setAlunosEco] = useState<EcoLiderAluno[]>([]);
+  const [resolucaoEco, setResolucaoEco] = useState<Record<string, EcoLiderResolucaoItem>>({});
+  const [resolvendoEco, setResolvendoEco] = useState(false);
+  const [vinculoManualAberto, setVinculoManualAberto] = useState<string | null>(null);
+  const [vinculandoEco, setVinculandoEco] = useState<string | null>(null);
 
   const pessoasFiltradas = useMemo(() => {
     let resultado = [...processos];
@@ -77,6 +89,93 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
       .finally(() => { if (!cancelado) setStatusEcoCarregando(false); });
     return () => { cancelado = true; };
   }, [processos]);
+
+  useEffect(() => {
+    let cancelado = false;
+    const semVinculo = processos.filter((p) => p.id && !Number((p.teste as any)?.ecoAlunoId || 0));
+    if (!semVinculo.length) {
+      setResolucaoEco({});
+      return;
+    }
+
+    setResolvendoEco(true);
+    resolverVinculosEcoLider(semVinculo.map((p) => ({
+      id: String(p.id),
+      nome: p.nome,
+      email: p.email || '',
+    })))
+      .then(async (retorno) => {
+        if (cancelado) return;
+        setAlunosEco(retorno.alunos || []);
+        setResolucaoEco(retorno.resultados || {});
+
+        let vinculouAutomatico = false;
+        for (const processo of semVinculo) {
+          if (cancelado || !processo.id) return;
+          const resolucao = retorno.resultados?.[String(processo.id)];
+          if (resolucao?.match.status !== 'automatico_seguro' || !resolucao.perfil?.aluno) continue;
+          try {
+            const ecoPerfil = resolucao.perfil;
+            await atualizarEstadoProcesso(processo.id, {
+              ...processo,
+              teste: {
+                ...(processo.teste || {}),
+                ecoAlunoId: ecoPerfil.aluno.id,
+                ecoAlunoNome: ecoPerfil.aluno.nome,
+                ecoAlunoEmail: ecoPerfil.aluno.email,
+                ecoVinculoModo: 'automatico_seguro',
+                ecoPerfil,
+              },
+            });
+            vinculouAutomatico = true;
+          } catch (error) {
+            console.error('[ProgramaIntegração] falha ao salvar vínculo ECO automático:', processo.id, error);
+          }
+        }
+
+        if (!cancelado && vinculouAutomatico) {
+          await onSaved();
+        }
+      })
+      .catch((error) => {
+        if (!cancelado) {
+          console.error('[ProgramaIntegração] falha ao resolver vínculos ECO:', error);
+        }
+      })
+      .finally(() => {
+        if (!cancelado) setResolvendoEco(false);
+      });
+
+    return () => { cancelado = true; };
+  }, [processos, onSaved]);
+
+  const vincularEcoManual = async (processo: ProcessoIntegracao, alunoId: number) => {
+    if (!processo.id || !alunoId || vinculandoEco) return;
+    try {
+      setVinculandoEco(processo.id);
+      const retorno = await buscarPerfilEcoLider(processo.nome, alunoId, processo.email);
+      if (!retorno.perfil?.aluno) throw new Error('Aluno do ECO Líderes não encontrado.');
+      const ecoPerfil = retorno.perfil;
+      await atualizarEstadoProcesso(processo.id, {
+        ...processo,
+        teste: {
+          ...(processo.teste || {}),
+          ecoAlunoId: ecoPerfil.aluno.id,
+          ecoAlunoNome: ecoPerfil.aluno.nome,
+          ecoAlunoEmail: ecoPerfil.aluno.email,
+          ecoVinculoModo: 'manual',
+          ecoPerfil,
+        },
+      });
+      setVinculoManualAberto(null);
+      toast.success(`Vínculo ECO Líderes confirmado para ${ecoPerfil.aluno.nome}.`);
+      await onSaved();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível salvar o vínculo com o ECO Líderes.');
+    } finally {
+      setVinculandoEco(null);
+    }
+  };
 
 
   const executar = async (chave: string, acao: () => Promise<void>, mensagemErro: string) => {
@@ -282,6 +381,11 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
             const emOperacao = operacao?.endsWith(chavePessoa) || operacao === chavePessoa;
             const ecoAlunoId = Number((pessoa.teste as any)?.ecoAlunoId || 0);
             const andamentoEco = ecoAlunoId ? statusEco[String(ecoAlunoId)] : null;
+            const resolucaoPessoa = pessoa.id ? resolucaoEco[String(pessoa.id)] : null;
+            const precisaVinculoEco = !ecoAlunoId && Boolean(
+              resolucaoPessoa && (resolucaoPessoa.match.status === 'ambiguo' || resolucaoPessoa.match.status === 'nao_encontrado')
+            );
+            const manualAberto = Boolean(pessoa.id && vinculoManualAberto === pessoa.id);
 
 
             return (
@@ -293,6 +397,19 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                       <CardDescription className="text-xs mt-1">{pessoa.cargo || 'Cargo não informado'}</CardDescription>
                     </div>
                     <div className="flex flex-col items-end gap-1">
+                      {precisaVinculoEco && pessoa.id && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-1.5 text-[10px] font-normal text-muted-foreground"
+                          onClick={() => setVinculoManualAberto((atual) => atual === pessoa.id ? null : pessoa.id!)}
+                          disabled={Boolean(vinculandoEco)}
+                          title="Selecionar manualmente o aluno correspondente no ECO Líderes"
+                        >
+                          Vincular ECO Líderes
+                        </Button>
+                      )}
                       <div
                         className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold ${sinalClasses}`}
                         title={sinal.detalhe}
@@ -308,6 +425,32 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                 </CardHeader>
 
                 <CardContent className="space-y-3">
+                  {manualAberto && (
+                    <div className="rounded-md border border-amber-200 bg-amber-50 p-2">
+                      <p className="mb-2 text-[11px] text-amber-900">
+                        Selecione o aluno correspondente em Alunos Autônomos → Evolução por aluno.
+                      </p>
+                      <select
+                        defaultValue=""
+                        disabled={vinculandoEco === pessoa.id}
+                        onChange={(e) => {
+                          const id = Number(e.currentTarget.value || 0);
+                          if (id) void vincularEcoManual(pessoa, id);
+                        }}
+                        className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                        aria-label={`Vincular ${pessoa.nome} ao ECO Líderes`}
+                      >
+                        <option value="">— selecionar aluno —</option>
+                        {alunosEco.map((aluno) => (
+                          <option key={aluno.id} value={aluno.id}>
+                            {aluno.nome}{aluno.email ? ` · ${aluno.email}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      {vinculandoEco === pessoa.id && <p className="mt-1 text-[11px] text-muted-foreground">Salvando e conferindo o vínculo...</p>}
+                    </div>
+                  )}
+
                   <div>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-muted-foreground">Progresso</span>
@@ -426,7 +569,7 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Encerrar mantém todo o histórico e tira a pessoa da lista de ativos. Remover apenas arquiva o processo e o retira da visão administrativa; nenhum registro é apagado fisicamente.
+        ${resolvendoEco ? 'Conferindo vínculos com o ECO Líderes... · ' : ''}Encerrar mantém todo o histórico e tira a pessoa da lista de ativos. Remover apenas arquiva o processo e o retira da visão administrativa; nenhum registro é apagado fisicamente.
       </p>
     </div>
   );
