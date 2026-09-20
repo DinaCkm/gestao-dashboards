@@ -23,7 +23,7 @@ import {
   type HorarioMentora,
 } from '../helpers/mentoraStateHelpers';
 import { BriefingMentoraPreview } from './BriefingMentoraPreview';
-import { buscarPerfilEcoLider, type EcoLiderPerfil, type EcoLiderAluno } from '../api/ecoLider';
+import { EcoLiderPerfilVinculo } from './EcoLiderPerfilVinculo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -84,49 +84,8 @@ export function MentoraPreparacaoPainel({
   }));
   const [horariosEditados, setHorariosEditados] = useState<HorarioMentora[]>(() => cloneHorarios(estado.hor));
   const [editandoHorarios, setEditandoHorarios] = useState(false);
-  const [ecoPerfil, setEcoPerfil] = useState<EcoLiderPerfil | null>(() => (processo.teste as any)?.ecoPerfil || null);
-  const [ecoAlunos, setEcoAlunos] = useState<EcoLiderAluno[]>([]);
-  const [ecoStatus, setEcoStatus] = useState<'idle'|'carregando'|'automatico_seguro'|'manual'|'ambiguo'|'nao_encontrado'|'erro'>('idle');
-  const [ecoErro, setEcoErro] = useState('');
-  const [ecoSelecionado, setEcoSelecionado] = useState(String((processo.teste as any)?.ecoAlunoId || ''));
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
 
-  useEffect(() => {
-    let cancelado = false;
-    async function carregarEco() {
-      try {
-        setEcoStatus('carregando');
-        setEcoErro('');
-        const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0) || undefined;
-        const retorno = await buscarPerfilEcoLider(processo.nome, alunoId);
-        if (cancelado) return;
-        setEcoAlunos(retorno.alunos || []);
-        setEcoPerfil(retorno.perfil || null);
-        setEcoStatus(retorno.match.status);
-        setEcoSelecionado(retorno.match.aluno ? String(retorno.match.aluno.id) : '');
-
-        if (!alunoId && retorno.match.status === 'automatico_seguro' && retorno.perfil?.aluno) {
-          await salvar({
-            ...processo,
-            teste: {
-              ...(processo.teste || {}),
-              ecoAlunoId: retorno.perfil.aluno.id,
-              ecoAlunoNome: retorno.perfil.aluno.nome,
-              ecoAlunoEmail: retorno.perfil.aluno.email,
-              ecoVinculoModo: 'automatico_seguro',
-              ecoPerfil: retorno.perfil,
-            },
-          });
-        }
-      } catch (error) {
-        if (cancelado) return;
-        setEcoStatus('erro');
-        setEcoErro(error instanceof Error ? error.message : 'Não foi possível consultar o ECO Líderes.');
-      }
-    }
-    void carregarEco();
-    return () => { cancelado = true; };
-  }, [processo.id, processo.nome, (processo.teste as any)?.ecoAlunoId]);
   useEffect(() => {
     if (!editandoHorarios) setHorariosEditados(cloneHorarios(estado.hor));
     if (!dadosDirty) {
@@ -171,63 +130,6 @@ export function MentoraPreparacaoPainel({
     toast.success('Dados da preparação salvos e conferidos.');
   };
 
-  const vincularEcoManual = async (alunoId: string) => {
-    if (!alunoId) return;
-    try {
-      setEcoStatus('carregando');
-      setEcoErro('');
-      const retorno = await buscarPerfilEcoLider(processo.nome, Number(alunoId));
-      if (!retorno.perfil?.aluno) throw new Error('Aluno do ECO Líderes não encontrado.');
-      setEcoPerfil(retorno.perfil);
-      setEcoAlunos(retorno.alunos || []);
-      setEcoSelecionado(String(retorno.perfil.aluno.id));
-      setEcoStatus('manual');
-      await salvar({
-        ...processo,
-        teste: {
-          ...(processo.teste || {}),
-          ecoAlunoId: retorno.perfil.aluno.id,
-          ecoAlunoNome: retorno.perfil.aluno.nome,
-          ecoAlunoEmail: retorno.perfil.aluno.email,
-          ecoVinculoModo: 'manual',
-          ecoPerfil: retorno.perfil,
-        },
-      });
-      toast.success('Aluno do Onboarding vinculado ao ECO Líderes.');
-    } catch (error) {
-      setEcoStatus('erro');
-      setEcoErro(error instanceof Error ? error.message : 'Não foi possível vincular o aluno.');
-    }
-  };
-
-  const atualizarEco = async () => {
-    try {
-      setEcoStatus('carregando');
-      setEcoErro('');
-      const retorno = await buscarPerfilEcoLider(processo.nome, Number((processo.teste as any)?.ecoAlunoId || 0) || undefined);
-      setEcoAlunos(retorno.alunos || []);
-      setEcoPerfil(retorno.perfil || null);
-      setEcoStatus(retorno.match.status);
-      if (retorno.perfil?.aluno) {
-        setEcoSelecionado(String(retorno.perfil.aluno.id));
-        await salvar({
-          ...processo,
-          teste: {
-            ...(processo.teste || {}),
-            ecoAlunoId: retorno.perfil.aluno.id,
-            ecoAlunoNome: retorno.perfil.aluno.nome,
-            ecoAlunoEmail: retorno.perfil.aluno.email,
-            ecoVinculoModo: retorno.match.status,
-            ecoPerfil: retorno.perfil,
-          },
-        });
-        toast.success('Dados do ECO Líderes atualizados.');
-      }
-    } catch (error) {
-      setEcoStatus('erro');
-      setEcoErro(error instanceof Error ? error.message : 'Não foi possível atualizar os dados do ECO Líderes.');
-    }
-  };
   const mensagemTemPendencia = (texto: string) =>
     texto.includes('PREENCHA AQUI') || texto.includes('(data a') || texto.includes('(link a') || texto.includes('(horário a');
 
@@ -327,8 +229,13 @@ export function MentoraPreparacaoPainel({
                       {onAbrirBemTeste && <Button type="button" size="sm" variant="outline" onClick={onAbrirBemTeste}>Abrir Bem Acolhido e teste</Button>}
                     </div>
                   )}
-                  {item.nivel !== 'ok' && item.campo === 'teste' && (
-                    <textarea value={dadosDraft.testeResumo} onChange={(e) => alterarDado('testeResumo', e.target.value)} placeholder="resumo do teste comportamental / Avaliação de Potencial" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                  {item.campo === 'teste' && (
+                    <EcoLiderPerfilVinculo
+                      processo={processo}
+                      onSalvarProcesso={salvar}
+                      resumoManual={dadosDraft.testeResumo}
+                      onResumoManualChange={(valor) => alterarDado('testeResumo', valor)}
+                    />
                   )}
                   {item.nivel !== 'ok' && item.campo === 'statusPdi' && (
                     <textarea value={dadosDraft.statusPdi} onChange={(e) => alterarDado('statusPdi', e.target.value)} placeholder="como está o PDI neste momento" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
