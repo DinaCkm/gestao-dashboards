@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 type DiscDimensao = "D" | "I" | "S" | "C";
 
 const DISC_CORES: Record<DiscDimensao, string> = {
-  D: "#DC2626", I: "#F59E0B", S: "#16A34A", C: "#2563EB",
+  D: "#7C3AED", I: "#F59E0B", S: "#16A34A", C: "#2563EB",
 };
 const DISC_NOMES: Record<DiscDimensao, string> = {
   D: "Dominância", I: "Influência", S: "Estabilidade", C: "Conformidade",
