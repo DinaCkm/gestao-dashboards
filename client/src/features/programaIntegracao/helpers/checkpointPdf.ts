@@ -108,11 +108,17 @@ export function checkpointDadosReal(
   const ecoPerfil = (processo.teste as any)?.ecoPerfil || null;
   const pctPdiEco = ecoPerfil?.pdi?.percentual;
   const pctJorEco = ecoPerfil?.jornadaCompliance?.percentual;
-  const pctPdi = Number.isFinite(Number(pctPdiEco))
-    ? Math.max(0, Math.min(100, Number(pctPdiEco)))
+  const temEcoPdi = Boolean(ecoPerfil?.pdi);
+  const temEcoJornada = Boolean(ecoPerfil?.jornadaCompliance);
+  const pctPdi = temEcoPdi
+    ? (pctPdiEco != null && Number.isFinite(Number(pctPdiEco))
+      ? Math.max(0, Math.min(100, Number(pctPdiEco)))
+      : null)
     : (pctResp(pdi, 14) ?? numFromTxt(processo.statusPdi));
-  const pctJor = Number.isFinite(Number(pctJorEco))
-    ? Math.max(0, Math.min(100, Number(pctJorEco)))
+  const pctJor = temEcoJornada
+    ? (pctJorEco != null && Number.isFinite(Number(pctJorEco))
+      ? Math.max(0, Math.min(100, Number(pctJorEco)))
+      : null)
     : (pctResp(pdi, 17) ?? numFromTxt(processo.statusCursos));
   const alinFeitos = [1, 2, 3, 4].filter((n) => Boolean(alinhamento(processo, n).realizado)).length;
 
@@ -253,7 +259,7 @@ export function gerarCheckpointPdf(
     'Jornada Compliance',
     d.pctJor == null ? '—' : `${d.pctJor}%`,
     d.pctJor == null
-      ? 'ainda sem registro'
+      ? (ecoCompliance ? 'ainda sem atividades registradas' : 'ainda sem registro')
       : ecoCompliance?.total
         ? `${ecoCompliance.concluidas} de ${ecoCompliance.total} atividades`
         : 'concluída até aqui',
