@@ -87,6 +87,7 @@ const kpiPriorityClasses: Record<FiltroPainel, string> = {
   hoje: 'border-amber-500/55 bg-amber-400/[0.12] hover:bg-amber-400/[0.18] dark:border-amber-700 dark:bg-amber-950/35',
   act: 'border-violet-500/45 bg-violet-500/[0.08] hover:bg-violet-500/[0.13] dark:border-violet-700 dark:bg-violet-950/35',
   wait: 'border-blue-500/45 bg-blue-500/[0.08] hover:bg-blue-500/[0.13] dark:border-blue-700 dark:bg-blue-950/35',
+  ontime: 'border-teal-500/45 bg-teal-500/[0.08] hover:bg-teal-500/[0.13] dark:border-teal-700 dark:bg-teal-950/35',
   ckm: 'border-purple-400/40 bg-purple-500/[0.06] hover:bg-purple-500/[0.11]',
   eles: 'border-indigo-400/40 bg-indigo-500/[0.06] hover:bg-indigo-500/[0.11]',
   '': 'border-teal-500/45 bg-teal-500/[0.08] hover:bg-teal-500/[0.13] dark:border-teal-700 dark:bg-teal-950/35',
@@ -206,7 +207,8 @@ export function PainelSemana({
       case 'hoje': return kpis.hoje;
       case 'act': return kpis.tomarAcao;
       case 'wait': return kpis.aguardandoRetorno;
-      default: return kpis.noPrazo;
+      case 'ontime': return kpis.noPrazo;
+      default: return acoes.length;
     }
   };
 
