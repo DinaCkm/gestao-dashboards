@@ -319,7 +319,7 @@
 }
 .programa-integracao-v4 .pi-action-head [data-slot="badge"] {
   border-color:var(--pi-line);
-  background:rgba(255,255,255,.7) !important;
+  background:color-mix(in srgb, var(--pi-surface) 82%, transparent) !important;
   color:var(--pi-ink-2) !important;
 }
 .programa-integracao-v4 .pi-person-row {
@@ -440,6 +440,81 @@
   border-color:var(--pi-line);
 }
 
+/* Profundidade visual do módulo: página -> seção -> card -> detalhe. */
+.programa-integracao-v4 [data-slot="card"] {
+  transition:border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+.programa-integracao-v4 [data-slot="card"]:has(button:hover),
+.programa-integracao-v4 [data-slot="card"]:has(a:hover) {
+  border-color:color-mix(in srgb, var(--pi-brand) 18%, var(--pi-line));
+  box-shadow:var(--pi-shadow-2);
+}
+.programa-integracao-v4 [data-slot="card"] [data-slot="card"] {
+  border-color:var(--pi-line);
+  background:var(--pi-surface-2);
+  box-shadow:none;
+}
+.programa-integracao-v4 [data-slot="card"] [data-slot="card"] [data-slot="card"] {
+  background:var(--pi-sunk);
+}
+.programa-integracao-v4 .bg-muted\/20,
+.programa-integracao-v4 .bg-muted\/30,
+.programa-integracao-v4 .bg-muted\/40 {
+  background-color:color-mix(in srgb, var(--pi-sunk) 78%, var(--pi-surface)) !important;
+}
+.programa-integracao-v4 .pi-person-row,
+.programa-integracao-v4 tbody tr,
+.programa-integracao-v4 .pi-stage-item {
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.programa-integracao-v4 .pi-stage-item:hover,
+.programa-integracao-v4 .pi-person-row:hover {
+  border-color:color-mix(in srgb, var(--pi-brand) 18%, var(--pi-line));
+  background:color-mix(in srgb, var(--pi-brand-soft) 28%, var(--pi-surface));
+}
+.programa-integracao-v4 input,
+.programa-integracao-v4 select,
+.programa-integracao-v4 textarea {
+  background:var(--pi-surface);
+  transition:border-color .15s ease,box-shadow .15s ease,background-color .15s ease;
+}
+.programa-integracao-v4 input:hover,
+.programa-integracao-v4 select:hover,
+.programa-integracao-v4 textarea:hover {
+  border-color:color-mix(in srgb, var(--pi-brand) 22%, var(--pi-line-2));
+}
+.programa-integracao-v4 tbody tr:nth-child(even) td {
+  background:color-mix(in srgb, var(--pi-paper) 78%, var(--pi-surface-2));
+}
+.programa-integracao-v4 tbody tr:hover td {
+  background:color-mix(in srgb, var(--pi-brand-soft) 24%, var(--pi-surface-2));
+}
+.programa-integracao-v4 .pi-action-group {
+  background:var(--pi-surface);
+}
+.programa-integracao-v4 .pi-action-group + .pi-action-group {
+  margin-top:2px;
+}
+.programa-integracao-v4 .pi-stage-items {
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--pi-line) 65%, transparent);
+}
+
+/* Modais abertos dentro do Programa de Integração. */
+body:has(.programa-integracao-v4) [data-slot="dialog-content"] {
+  border-color:var(--pi-line, var(--border));
+  background:var(--pi-surface, var(--background));
+  box-shadow:0 24px 70px -26px rgba(30,25,55,.42);
+}
+body:has(.programa-integracao-v4) [data-slot="dialog-header"] {
+  background:color-mix(in srgb, var(--pi-surface-2, var(--muted)) 88%, var(--pi-brand-soft, transparent));
+}
+body:has(.programa-integracao-v4) [data-slot="popover-content"],
+body:has(.programa-integracao-v4) [data-slot="select-content"] {
+  border-color:var(--pi-line, var(--border));
+  background:var(--pi-surface, var(--popover));
+  box-shadow:var(--pi-shadow-2);
+}
+
 .programa-integracao-public-v4 {
   min-height:100vh;
   background:var(--pi-paper);
@@ -536,36 +611,11 @@
   .programa-integracao-public-v4 [data-slot="card-content"] { padding:20px 16px; }
 }
 
-.dark .programa-integracao-v4 {
-  --pi-paper:#0F1720;
-  --pi-surface:#18222E;
-  --pi-surface-2:#1E2937;
-  --pi-sunk:#131C26;
-  --pi-ink:#E9EEF4;
-  --pi-ink-2:#A6B2C0;
-  --pi-ink-3:#78859A;
-  --pi-line:#293747;
-  --pi-line-2:#3B4A5D;
-  --pi-accent:#E9EEF4;
-  --pi-accent-soft:#22303F;
-  --pi-accent-ink:#D6E2EF;
-  --pi-brand:#F2666A;
-  --pi-brand-2:#F58185;
-  --pi-brand-soft:#36191B;
-  --pi-brand-ink:#F79A9D;
-  --pi-coral:#F0906E;
-  --pi-coral-soft:#371E15;
-  --pi-amber:#F9AC20;
-  --pi-amber-soft:#352809;
-  --pi-ok:#5FC495;
-  --pi-ok-soft:#143224;
-  --pi-info:#6FA8D8;
-  --pi-info-soft:#16283A;
-  --pi-hoje:#B79BEA;
-  --pi-hoje-soft:#251C3A;
-  --pi-shadow:0 1px 2px rgba(0,0,0,.45),0 6px 18px -10px rgba(0,0,0,.7);
-  --pi-shadow-2:0 2px 6px rgba(0,0,0,.5),0 16px 34px -16px rgba(0,0,0,.8);
-}
 .dark .programa-integracao-v4 .pi-stage:nth-child(n) .pi-stage-head {
   background:var(--pi-surface-2);
+}
+
+.dark .programa-integracao-v4 .pi-action-head [data-slot="badge"] {
+  background:color-mix(in srgb, var(--pi-surface) 86%, transparent) !important;
+  color:var(--pi-ink-2) !important;
 }
