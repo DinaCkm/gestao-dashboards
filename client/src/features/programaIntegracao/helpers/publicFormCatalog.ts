@@ -1,6 +1,6 @@
 export type PublicQuestionType = 'text' | 'textarea' | 'date' | 'cpf' | 'tel' | 'select' | 'scale' | 'multi';
 export type PublicQuestion = { code: string; label: string; type: PublicQuestionType; required?: boolean; options?: Array<string | { value: string; label: string }>; hint?: string };
-export type PublicSection = { title: string; intro?: string; questions: PublicQuestion[] };
+export type PublicSection = { title: string; publicTitle?: string; intro?: string; questions: PublicQuestion[] };
 export type PublicFormCatalog = {
   key: 'controle' | 'bem' | 'pesquisa' | 'aval' | 'pdi';
   slug: 'controle-integracao' | 'bem-acolhido' | 'pesquisa-integracao' | 'avaliacao-programa' | 'acompanhamento-pdi';
@@ -27,13 +27,12 @@ export const PUBLIC_FORM_CATALOG: Record<PublicFormCatalog['slug'], PublicFormCa
     outro:['Gestor(a),','Parabéns por concluir o preenchimento do formulário! Suas respostas serão enviadas para a empresa responsável pela avaliação de perfil.','Agora, para complementar esses dados também será necessário o preenchimento do Formulário Bem Acolhido em nossa unidade, pelo gestor que estará recebendo o novo contratado.','Um abraço!','Núcleo de Desenvolvimento - UGP'],
     identity:{unidade:true,dataInicio:true,email:true,respondent:true},
     sections:[
-      {title:'Dados complementares',questions:[
+      {title:'Dados complementares',publicTitle:'',questions:[
         {code:'controle_cpf',label:'Número do CPF do colaborador:',type:'cpf',required:true},
         {code:'controle_nascimento',label:'Data de Nascimento do colaborador:',type:'date',required:false},
         {code:'controle_telefone',label:'Número de telefone do Novo Colaborador (WhatsApp):',type:'tel',required:false,hint:'Somente números, com DDD (ex.: 63999998888).'},
-        {code:'controle_denominacao',label:'Qual a denominação do novo contratado dentro do Programa de Integração?',type:'select',required:false,options:['Onboarding','Crossboarding','Estagiário']},
       ]},
-      {title:'Dados principais',questions:[text('controle_funcao','Função do novo colaborador:',true,'Descreva brevemente a função (cargo) do colaborador.'),text('controle_gestor','Nome do Gestor Responsável:')]},
+      {title:'Dados principais',questions:[{code:'controle_denominacao',label:'Qual a denominação do novo contratado dentro do Programa de Integração?',type:'select',required:false,options:['Onboarding','Crossboarding','Estagiário']},text('controle_funcao','Função do novo colaborador:',true,'Descreva brevemente a função (cargo) do colaborador.'),text('controle_gestor','Nome do Gestor Responsável:')]},
       {title:'Descrição da função',questions:[text('controle_descricao_funcao','De acordo com a contratação realizada, qual a descrição da função do novo contratado?')]},
     ],
   },
@@ -56,7 +55,7 @@ export const PUBLIC_FORM_CATALOG: Record<PublicFormCatalog['slug'], PublicFormCa
     identity:{unidade:true,cycle:true},
     cycleOptions:[{value:'15',cycle:1,label:'15º dia (Minha primeira resposta)'},{value:'45',cycle:2,label:'45º dia'},{value:'60',cycle:4,label:'60º dia (Somente para participantes do Crossboarding)'},{value:'75',cycle:3,label:'75º dia'},{value:'150',cycle:4,label:'150º dia'}],
     sections:[
-      {title:'Programa',questions:[{code:'pesquisa_programa',label:'Qual o seu programa?',type:'select',required:true,options:[{value:'Onboarding',label:'Onboarding - (Recém-Contratado do Sebrae/TO)'},'Crossboarding']}]},
+      {title:'Programa',publicTitle:'',questions:[{code:'pesquisa_programa',label:'Qual o seu programa?',type:'select',required:true,options:[{value:'Onboarding',label:'Onboarding - (Recém-Contratado do Sebrae/TO)'},'Crossboarding']}]},
       {title:'Cultura e pertencimento',questions:[scale('pesquisa_cultura_valores','A cultura do Sebrae/TO está alinhada aos meus valores.'),scale('pesquisa_pertencimento','Me sinto pertencente à empresa.'),scale('pesquisa_dia_a_dia','O dia a dia de trabalho é agradável para mim.'),scale('pesquisa_orgulho','Trabalhar aqui é motivo de orgulho para mim.'),scale('pesquisa_importancia_atividades','Entendo a importância das minhas atividades para os objetivos do Sebrae.')]},
       {title:'Anjo e colegas',questions:[scale('pesquisa_anjo_ajuda','O "Anjo" tem ajudado muito no meu progresso profissional.'),scale('pesquisa_conforto_colegas','Me sinto confortável com os meus colegas de trabalho.'),scale('pesquisa_confianca_colegas','Confio nos meus colegas de trabalho.'),scale('pesquisa_ajuda_colegas','Os meus colegas de trabalho me ajudam quando há necessidade.'),scale('pesquisa_lacos_amizade','Criei laços de amizade aqui no Sebrae/TO.')]},
       {title:'Gestão',questions:[scale('pesquisa_gestor_clareza','O meu gestor é claro nas funções que delega.'),scale('pesquisa_comunicacao_transparente','A comunicação entre gestor e funcionários é transparente.'),scale('pesquisa_gestor_incentivo','Acredito que o meu gestor me incentiva a aprender cada dia mais.')]},
@@ -81,7 +80,7 @@ export const PUBLIC_FORM_CATALOG: Record<PublicFormCatalog['slug'], PublicFormCa
         {code:'aval_produtividade_conceito',label:'PRODUTIVIDADE (conceito)',type:'select',required:true,hint:'Considerar o volume de trabalho executado em função do tempo gasto.',options:['100% - Consegue atingir altos índices de produtividade.','75% - Adequada produtividade para o período.','50% - Produtividade baixa, entretanto se esforça para melhorar.','25% - Produtividade insuficiente. Apresenta interesse, mas tem encontrado dificuldades nas ações.','0% - Produtividade insuficiente. Não se esforça para melhorar.']},
         {code:'aval_conceito_geral',label:'CONCEITO GERAL',type:'select',required:true,hint:'Considerar o período de trabalho e o tempo ainda no Programa de Integração.',options:['100% - EXCELENTE - É uma excelente aquisição para o SEBRAE/TO.','75% - MUITO BOM - Possui ótimas perspectivas para o futuro.','50% - SATISFATÓRIO - Tem algumas possibilidades, com o desenvolvimento de algumas competências.','25% - ADEQUADO - Precisa de um trabalho de desenvolvimento e acompanhamento.','0% - INADEQUADO - Poucas possibilidades futuras.']},
       ]},
-      {title:'Devolutiva',questions:[text('aval_potencialidades','Quais comportamentos/competências de potencialidade que o novo colaborador apresenta?'),text('aval_menos_favoraveis','Quais comportamentos/competências menos favoráveis que o novo colaborador está apresentando?'),text('aval_orientacoes_desenvolvimento','Quais orientações foram dadas ao novo colaborador para desenvolvimento?'),text('aval_reacao_feedback','Qual foi a reação que o novo colaborador teve no feedback? (Somente Gestor)',false,'Esta pergunta se aplica apenas quando quem está respondendo é o Gestor.')]},
+      {title:'Devolutiva',questions:[text('aval_potencialidades','Quais comportamentos/competências de potencialidade que o novo colaborador apresenta?'),text('aval_menos_favoraveis','Quais comportamentos/competências menos favoráveis que o novo colaborador está apresentando?'),text('aval_orientacoes_desenvolvimento','Quais orientações foram dadas ao novo colaborador para desenvolvimento?'),text('aval_reacao_feedback','Qual foi a reação que o novo colaborador teve no feedback? (Somente Gestor)',true,'Esta pergunta se aplica apenas quando quem está respondendo é o Gestor.')]},
     ],
   },
   'acompanhamento-pdi': {
