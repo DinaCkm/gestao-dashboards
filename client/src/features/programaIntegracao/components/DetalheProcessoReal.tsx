@@ -21,6 +21,7 @@ import { arquivarRespostaRecebida } from '../api/respostas';
 import { buscarPerfilEcoLider, buscarStatusEcoLider, type EcoLiderAndamento } from '../api/ecoLider';
 import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { gerarBriefingMentoraPdf, gerarRelatorioMentoraWord } from '../helpers/mentoraDocumentos';
+import { alternarPreparacaoMentora, estadoMentoraAlinhamento } from '../helpers/mentoraStateHelpers';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
 import { gerarRelatorioAndamentoPdf } from '../helpers/relatorioAndamentoPdf';
 import { gerarCheckpointPdf } from '../helpers/checkpointPdf';
@@ -36,6 +37,15 @@ import { ControlesEspeciaisAcao } from './ControlesEspeciaisAcao';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ChevronDown, PanelRightOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DetalheProcessoRealProps {
@@ -88,7 +98,11 @@ export function DetalheProcessoReal({
 }: DetalheProcessoRealProps) {
   const [filtro, setFiltro] = useState<FiltroDetalheProcesso>('');
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
+  const [detalhesAbertos, setDetalhesAbertos] = useState<Record<string, boolean>>({});
   const [statusTemporario, setStatusTemporario] = useState<Record<string, StatusAcaoLegado>>({});
+  const statusAnteriorCheckboxRef = useRef<Record<string, { status: StatusAcaoLegado; data: string }>>({});
+  const [painelMentora, setPainelMentora] = useState<{ itemId: string; numero: 1 | 2 | 3 | 4 } | null>(null);
+  const [painelMentoraDirty, setPainelMentoraDirty] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, 'salvando' | 'salvo' | 'erro'>>({});
   const [rascunhoProcesso, setRascunhoProcesso] = useState<ProcessoIntegracao>(processo);
   const [dadosAlterados, setDadosAlterados] = useState(false);
@@ -118,6 +132,7 @@ export function DetalheProcessoReal({
     deepLinkAplicadoRef.current = true;
     setFiltro('');
     setAbertas((atual) => ({ ...atual, [alvo.etapa.et.id]: true }));
+    setDetalhesAbertos((atual) => ({ ...atual, [itemDeepLink]: true }));
 
     const primeiroFrame = window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
@@ -208,6 +223,83 @@ export function DetalheProcessoReal({
       limparFeedbackDepois(itemId);
       toast.error(error instanceof Error ? error.message : 'Não foi possível salvar a situação. O valor anterior foi restaurado.');
     }
+  };
+
+  const alternarConclusaoCheckbox = async (
+    itemId: string,
+    concluido: boolean,
+  ) => {
+    const atual = statusTemporario[itemId] ?? fichaAcaoAtual(processo, itemId).s;
+    const numeroMentora = Number(itemId.match(/^ag([1-4])-00$/)?.[1]) as 1 | 2 | 3 | 4 | 0;
+
+    if (concluido) {
+      if (atual !== 'ok') {
+        statusAnteriorCheckboxRef.current[itemId] = {
+          status: atual,
+          data: fichaAcaoAtual(processo, itemId).d,
+        };
+      }
+      setStatusTemporario((estadoAtual) => ({ ...estadoAtual, [itemId]: 'ok' }));
+      setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvando' }));
+      try {
+        const proximo = numeroMentora
+          ? (estadoMentoraAlinhamento(processo, numeroMentora).ok
+              ? aplicarStatusAcao(processo, itemId, 'ok')
+              : alternarPreparacaoMentora(processo, numeroMentora))
+          : aplicarStatusAcao(processo, itemId, 'ok');
+        await salvar(proximo);
+        setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvo' }));
+        limparFeedbackDepois(itemId);
+      } catch (error) {
+        setStatusTemporario((estadoAtual) => {
+          const proximo = { ...estadoAtual };
+          delete proximo[itemId];
+          return proximo;
+        });
+        setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'erro' }));
+        limparFeedbackDepois(itemId);
+        toast.error(error instanceof Error ? error.message : 'Não foi possível concluir esta ação.');
+      }
+      return;
+    }
+
+    const anterior = statusAnteriorCheckboxRef.current[itemId] ?? { status: '' as StatusAcaoLegado, data: '' };
+    setStatusTemporario((estadoAtual) => ({ ...estadoAtual, [itemId]: anterior.status }));
+    setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvando' }));
+    try {
+      let proximo = numeroMentora
+        ? (estadoMentoraAlinhamento(processo, numeroMentora).ok
+            ? alternarPreparacaoMentora(processo, numeroMentora)
+            : aplicarStatusAcao(processo, itemId, anterior.status))
+        : aplicarStatusAcao(processo, itemId, anterior.status);
+
+      if (numeroMentora && anterior.status) {
+        proximo = aplicarStatusAcao(proximo, itemId, anterior.status);
+      }
+      if (fichaAcaoAtual(proximo, itemId).d !== anterior.data) {
+        proximo = aplicarCampoFichaAcao(proximo, itemId, 'd', anterior.data);
+      }
+
+      await salvar(proximo);
+      delete statusAnteriorCheckboxRef.current[itemId];
+      setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvo' }));
+      limparFeedbackDepois(itemId);
+    } catch (error) {
+      setStatusTemporario((estadoAtual) => ({ ...estadoAtual, [itemId]: 'ok' }));
+      setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'erro' }));
+      limparFeedbackDepois(itemId);
+      toast.error(error instanceof Error ? error.message : 'Não foi possível reabrir esta ação.');
+    }
+  };
+
+  const fecharPainelMentora = (): boolean => {
+    if (painelMentoraDirty) {
+      const confirmar = window.confirm('Há alterações ainda não salvas neste painel. Fechar mesmo assim?');
+      if (!confirmar) return false;
+    }
+    setPainelMentora(null);
+    setPainelMentoraDirty(false);
+    return true;
   };
 
   const excluirRespostaDaTimeline = async (resposta: any) => {
@@ -558,133 +650,165 @@ export function DetalheProcessoReal({
                       const feedback = feedbackStatus[item.id];
                       const resposta = respostaDoItem(processo, item.id);
                       const ehEmail = Boolean(item.mail || item.mails?.length);
+                      const concluido = statusVisual === 'ok';
+                      const detalhesAbertosItem = Boolean(detalhesAbertos[item.id]);
+                      const numeroMentora = Number(item.id.match(/^ag([1-4])-00$/)?.[1]) as 1 | 2 | 3 | 4 | 0;
+
                       return (
-                        <div id={`integracao-item-${item.id}`} key={item.id} className="pi-stage-item space-y-3 p-4 scroll-mt-6">
-                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                            <div className="min-w-0">
-                              <p className="font-medium">{item.t}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">Responsável: {item.r} · previsto para {formatarData(etapa.data)}</p>
+                        <div
+                          id={`integracao-item-${item.id}`}
+                          key={item.id}
+                          className={`pi-stage-item scroll-mt-6 overflow-hidden rounded-lg border transition-colors ${concluido ? 'border-emerald-300/80 bg-emerald-50/40 dark:border-emerald-700/60 dark:bg-emerald-950/15' : 'border-border bg-card'}`}
+                        >
+                          <div className="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <Checkbox
+                                checked={concluido}
+                                disabled={saving || feedback === 'salvando'}
+                                onCheckedChange={(checked) => void alternarConclusaoCheckbox(item.id, checked === true)}
+                                aria-label={concluido ? `Reabrir ${item.t}` : `Concluir ${item.t}`}
+                                className="mt-0.5"
+                              />
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className={`font-semibold ${concluido ? 'text-emerald-800 line-through decoration-emerald-500/50 dark:text-emerald-200' : ''}`}>
+                                    {item.t}
+                                  </p>
+                                  <Badge variant="outline" className={concluido ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200' : feedback === 'salvando' ? 'border-violet-300 bg-violet-50 text-violet-800' : statusClasses[st.k]}>
+                                    {feedback === 'salvando' ? 'Salvando...' : concluido ? 'Feito' : st.l}
+                                  </Badge>
+                                </div>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Responsável: {item.r} · previsto para {formatarData(etapa.data)}
+                                  {ficha.d ? ` · concluído em ${formatarData(ficha.d)}` : ''}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Badge variant="outline" className={feedback === 'salvando' ? 'border-amber-300 bg-amber-50 text-amber-800' : statusClasses[st.k]}>
-                                {feedback === 'salvando' ? 'Salvando alteração...' : st.l}
-                              </Badge>
-                              {ehEmail && (
-                                <EmailActionButtons
-                                  processo={processo}
-                                  item={item}
-                                  config={config}
-                                  feriados={feriados}
-                                  onAlternarEnviado={async () => salvar(aplicarStatusAcao(processo, item.id, ficha.s === 'ok' ? '' : 'ok'))}
-                                  onEditarModelo={onEditarModeloEmail}
-                                />
-                              )}
+
+                            <div className="flex flex-wrap items-center gap-2 pl-7 lg:pl-0">
+                              {numeroMentora ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setPainelMentoraDirty(false);
+                                    setPainelMentora({ itemId: item.id, numero: numeroMentora });
+                                  }}
+                                >
+                                  <PanelRightOpen className="h-4 w-4" />
+                                  Abrir preparação da mentora
+                                </Button>
+                              ) : null}
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={detalhesAbertosItem ? 'secondary' : 'ghost'}
+                                aria-expanded={detalhesAbertosItem}
+                                onClick={() => setDetalhesAbertos((atual) => ({ ...atual, [item.id]: !detalhesAbertosItem }))}
+                              >
+                                Detalhes
+                                <ChevronDown className={`h-4 w-4 transition-transform ${detalhesAbertosItem ? 'rotate-180' : ''}`} />
+                              </Button>
                             </div>
                           </div>
 
-                          <div className="grid gap-2 md:grid-cols-3">
-                            <label className="space-y-1 text-xs">
-                              <span className="font-medium text-muted-foreground">Situação</span>
-                              <select
-                                value={statusVisual}
-                                disabled={saving || feedback === 'salvando'}
-                                onChange={(e) => void alterarStatusItem(item.id, e.currentTarget.value as StatusAcaoLegado)}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
-                              >
-                                {STATUS_ACAO.map(([valor, label]) => <option key={valor || 'pend'} value={valor}>{label}</option>)}
-                              </select>
-                              <span className={`block min-h-4 text-[11px] ${
-                                feedback === 'salvando'
-                                  ? 'font-medium text-amber-700'
-                                  : feedback === 'salvo'
-                                    ? 'font-medium text-emerald-700'
-                                    : feedback === 'erro'
-                                      ? 'font-medium text-destructive'
-                                      : 'text-muted-foreground'
-                              }`}>
-                                {feedback === 'salvando'
-                                  ? 'Salvando e conferindo no servidor...'
-                                  : feedback === 'salvo'
-                                    ? '✓ Salvo no servidor'
-                                    : feedback === 'erro'
-                                      ? 'Não foi salvo — o valor anterior foi restaurado.'
-                                      : 'Salva automaticamente'}
-                              </span>
-                            </label>
-                            <label className="space-y-1 text-xs">
-                              <span className="font-medium text-muted-foreground">Concluída/enviada em</span>
-                              <input
-                                key={`${item.id}-d-${ficha.d}`}
-                                type="date"
-                                defaultValue={ficha.d}
-                                disabled={saving}
-                                onBlur={(e) => {
-                                  if (e.currentTarget.value !== ficha.d) void salvar(aplicarCampoFichaAcao(processo, item.id, 'd', e.currentTarget.value));
-                                }}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                              />
-                            </label>
-                            {ehEmail && (
-                              <label className="space-y-1 text-xs">
-                                <span className="font-medium text-muted-foreground">Programar envio</span>
+                          {detalhesAbertosItem && (
+                            <div className="border-t bg-muted/20 px-4 py-4">
+                              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Detalhes da execução</p>
+                                  <p className="mt-1 text-xs text-muted-foreground">Datas, situação, observações e ações complementares deste item.</p>
+                                </div>
+                                {feedback === 'salvo' && <span className="text-xs font-medium text-emerald-700">✓ Salvo no servidor</span>}
+                                {feedback === 'erro' && <span className="text-xs font-medium text-destructive">Não foi salvo — valor anterior restaurado.</span>}
+                              </div>
+
+                              <div className="grid gap-3 md:grid-cols-3">
+                                <label className="space-y-1 text-xs">
+                                  <span className="font-medium text-muted-foreground">Situação</span>
+                                  <select
+                                    value={statusVisual}
+                                    disabled={saving || feedback === 'salvando'}
+                                    onChange={(e) => void alterarStatusItem(item.id, e.currentTarget.value as StatusAcaoLegado)}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
+                                  >
+                                    {STATUS_ACAO.map(([valor, label]) => <option key={valor || 'pend'} value={valor}>{label}</option>)}
+                                  </select>
+                                </label>
+                                <label className="space-y-1 text-xs">
+                                  <span className="font-medium text-muted-foreground">Concluída/enviada em</span>
+                                  <input
+                                    key={`${item.id}-d-${ficha.d}`}
+                                    type="date"
+                                    defaultValue={ficha.d}
+                                    disabled={saving}
+                                    onBlur={(e) => {
+                                      if (e.currentTarget.value !== ficha.d) void salvar(aplicarCampoFichaAcao(processo, item.id, 'd', e.currentTarget.value));
+                                    }}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                  />
+                                </label>
+                                {ehEmail && (
+                                  <label className="space-y-1 text-xs">
+                                    <span className="font-medium text-muted-foreground">Programar envio</span>
+                                    <input
+                                      key={`${item.id}-prog-${ficha.prog}`}
+                                      type="date"
+                                      defaultValue={ficha.prog}
+                                      disabled={saving}
+                                      onBlur={(e) => {
+                                        if (e.currentTarget.value !== ficha.prog) void salvar(aplicarCampoFichaAcao(processo, item.id, 'prog', e.currentTarget.value));
+                                      }}
+                                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    />
+                                  </label>
+                                )}
+                              </div>
+
+                              {(ficha.s === 'na' || ficha.s === 'wont') && (
                                 <input
-                                  key={`${item.id}-prog-${ficha.prog}`}
-                                  type="date"
-                                  defaultValue={ficha.prog}
+                                  key={`${item.id}-just-${ficha.just}`}
+                                  defaultValue={ficha.just}
                                   disabled={saving}
                                   onBlur={(e) => {
-                                    if (e.currentTarget.value !== ficha.prog) void salvar(aplicarCampoFichaAcao(processo, item.id, 'prog', e.currentTarget.value));
+                                    if (e.currentTarget.value !== ficha.just) void salvar(aplicarCampoFichaAcao(processo, item.id, 'just', e.currentTarget.value));
                                   }}
-                                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                  className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                  placeholder="justificativa"
                                 />
-                              </label>
-                            )}
-                          </div>
+                              )}
 
-                          {(ficha.s === 'na' || ficha.s === 'wont') && (
-                            <input
-                              key={`${item.id}-just-${ficha.just}`}
-                              defaultValue={ficha.just}
-                              disabled={saving}
-                              onBlur={(e) => {
-                                if (e.currentTarget.value !== ficha.just) void salvar(aplicarCampoFichaAcao(processo, item.id, 'just', e.currentTarget.value));
-                              }}
-                              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                              placeholder="justificativa"
-                            />
-                          )}
+                              <div className="mt-4">
+                                <ObservacoesAcao processo={processo} itemId={item.id} onSalvarProcesso={salvar} />
+                              </div>
 
-                          <ObservacoesAcao processo={processo} itemId={item.id} onSalvarProcesso={salvar} />
+                              {ehEmail && (
+                                <div className="mt-4 border-t pt-4">
+                                  <EmailActionButtons
+                                    processo={processo}
+                                    item={item}
+                                    config={config}
+                                    feriados={feriados}
+                                    onAlternarEnviado={async () => salvar(aplicarStatusAcao(processo, item.id, ficha.s === 'ok' ? '' : 'ok'))}
+                                    onEditarModelo={onEditarModeloEmail}
+                                  />
+                                </div>
+                              )}
 
-                          <ControlesEspeciaisAcao
-                            processo={processo}
-                            item={item}
-                            resposta={resposta}
-                            config={config}
-                            feriados={feriados}
-                            onSalvarProcesso={salvar}
-                            onExcluirResposta={excluindoRespostaRid ? undefined : excluirRespostaDaTimeline}
-                          />
-
-                          {/^(ag[1-4]-00)$/.test(item.id) && (() => {
-                            const numeroMentora = Number(item.id.match(/^ag([1-4])-00$/)?.[1]) as 1 | 2 | 3 | 4;
-                            return (
-                              <div className="border-t pt-4">
-                                <MentoraPreparacaoPainel
+                              <div className="mt-4">
+                                <ControlesEspeciaisAcao
                                   processo={processo}
-                                  numero={numeroMentora}
-                                  feriados={feriados}
+                                  item={item}
+                                  resposta={resposta}
                                   config={config}
-                                  processos={processos}
-                                  onAbrirCadastroMentoras={onAbrirCadastroMentoras}
-                                  onAbrirBemTeste={() => document.getElementById('integracao-bem-teste')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                                  feriados={feriados}
                                   onSalvarProcesso={salvar}
-                                  onGerarBriefing={async () => gerarBriefingMentoraPdf(await processoComEcoAtual(), numeroMentora, config, feriados)}
-                                  onGerarWord={async () => gerarRelatorioMentoraWord(await processoComEcoAtual(), numeroMentora, config, feriados)}
+                                  onExcluirResposta={excluindoRespostaRid ? undefined : excluirRespostaDaTimeline}
                                 />
                               </div>
-                            );
-                          })()}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -695,6 +819,49 @@ export function DetalheProcessoReal({
           );
         })}
       </div>
+
+      <Dialog
+        open={Boolean(painelMentora)}
+        onOpenChange={(open) => {
+          if (!open) fecharPainelMentora();
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="max-h-[92vh] w-[min(1180px,calc(100vw-2rem))] max-w-none overflow-hidden p-0"
+        >
+          {painelMentora && (
+            <>
+              <DialogHeader className="border-b bg-muted/30 px-6 py-4 pr-14">
+                <DialogTitle>Preparação da mentora · {painelMentora.numero}º alinhamento</DialogTitle>
+                <DialogDescription>
+                  {processo.nome} · painel específico da ação, sem sair da visualização individual.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[calc(92vh-90px)] overflow-y-auto px-6 py-5">
+                <MentoraPreparacaoPainel
+                  processo={processo}
+                  numero={painelMentora.numero}
+                  feriados={feriados}
+                  config={config}
+                  processos={processos}
+                  onAbrirCadastroMentoras={onAbrirCadastroMentoras}
+                  onAbrirBemTeste={() => {
+                    if (!fecharPainelMentora()) return;
+                    window.setTimeout(() => document.getElementById('integracao-bem-teste')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0);
+                  }}
+                  onSalvarProcesso={salvar}
+                  onGerarBriefing={async () => gerarBriefingMentoraPdf(await processoComEcoAtual(), painelMentora.numero, config, feriados)}
+                  onGerarWord={async () => gerarRelatorioMentoraWord(await processoComEcoAtual(), painelMentora.numero, config, feriados)}
+                  modoJanela
+                  onClose={fecharPainelMentora}
+                  onDirtyChange={setPainelMentoraDirty}
+                />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <CobrancaFormulariosDialog
         open={cobrancaAberta}
