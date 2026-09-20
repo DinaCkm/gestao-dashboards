@@ -189,7 +189,18 @@ function tokensNomeEco(value: unknown): string[] {
   return nomeCanonicoEco(value).split(" ").filter(Boolean);
 }
 
-function escolherCorrespondenciaEcoSegura(nomeProcesso: string, alunosEco: any[]) {
+function escolherCorrespondenciaEcoSegura(nomeProcesso: string, emailProcesso: string, alunosEco: any[]) {
+  const email = String(emailProcesso || "").trim().toLowerCase();
+  if (email) {
+    const porEmail = alunosEco.filter((a) => String(a.email || "").trim().toLowerCase() === email);
+    if (porEmail.length === 1) {
+      return { status: "automatico_seguro" as const, aluno: porEmail[0], score: 1, motivo: "email_exato" };
+    }
+    if (porEmail.length > 1) {
+      return { status: "ambiguo" as const, aluno: null, score: 1, motivo: "email_duplicado" };
+    }
+  }
+
   const canon = nomeCanonicoEco(nomeProcesso);
   if (!canon) return { status: "nao_encontrado" as const, aluno: null, score: 0, motivo: "nome_vazio" };
 
@@ -204,27 +215,59 @@ function escolherCorrespondenciaEcoSegura(nomeProcesso: string, alunosEco: any[]
   const tokens = tokensNomeEco(nomeProcesso);
   const primeiro = tokens[0] || "";
   const ultimo = tokens[tokens.length - 1] || "";
+  const conjuntoProcesso = new Set(tokens);
   const pontuados = alunosEco
     .map((a) => {
       const t = tokensNomeEco(a.nome);
       const score = simNome(nomeProcesso, a.nome);
+      const conjuntoAluno = new Set(t);
+      const menor = tokens.length <= t.length ? tokens : t;
+      const maior = tokens.length <= t.length ? conjuntoAluno : conjuntoProcesso;
+      const menorContido = menor.length >= 2 && menor.every((token) => maior.has(token));
+      const primeiroSimilar = Boolean(primeiro && t[0] && simNome(primeiro, t[0]) >= 0.86);
+      const ultimoIgual = Boolean(ultimo && t[t.length - 1] === ultimo);
       const extremosIguais = Boolean(primeiro && ultimo && t[0] === primeiro && t[t.length - 1] === ultimo);
-      return { aluno: a, score, extremosIguais };
+      return { aluno: a, score, menorContido, primeiroSimilar, ultimoIgual, extremosIguais };
     })
     .sort((a, b) => b.score - a.score);
 
   const top = pontuados[0];
   const segundo = pontuados[1];
-  if (!top || top.score < 0.78) {
+  if (!top || top.score < 0.76) {
     return { status: "nao_encontrado" as const, aluno: null, score: top?.score || 0, motivo: "sem_nome_proximo" };
   }
 
   const margem = top.score - (segundo?.score || 0);
-  if (top.score >= 0.93 && top.extremosIguais && margem >= 0.08) {
+  const candidatosContidos = pontuados.filter((x) => x.menorContido && x.score >= 0.82);
+  if (candidatosContidos.length === 1 && candidatosContidos[0].aluno.id === top.aluno.id && margem >= 0.06) {
+    return { status: "automatico_seguro" as const, aluno: top.aluno, score: top.score, motivo: "nome_contido_unico" };
+  }
+
+  if (top.score >= 0.90 && top.extremosIguais && margem >= 0.06) {
     return { status: "automatico_seguro" as const, aluno: top.aluno, score: top.score, motivo: "similaridade_alta_com_margem" };
   }
 
+  if (top.score >= 0.88 && top.primeiroSimilar && top.ultimoIgual && margem >= 0.08) {
+    return { status: "automatico_seguro" as const, aluno: top.aluno, score: top.score, motivo: "variacao_grafia_com_sobrenome_seguro" };
+  }
+
   return { status: "ambiguo" as const, aluno: null, score: top.score, motivo: "requer_selecao_manual" };
+}
+
+async function listarAlunosEcoLiderDisponiveis(connection: any) {
+  const [rows] = (await connection.execute(
+    `SELECT DISTINCT a.id,a.name AS nome,a.email
+     FROM alunos a
+     INNER JOIN aluno_curso_atribuido aca ON aca.alunoId=a.id
+     WHERE a.tipoPortal IN ('aluno_autonomo','assessment')
+     ORDER BY a.name ASC,a.id ASC`,
+  )) as any;
+
+  return (rows || []).map((row: any) => ({
+    id: Number(row.id),
+    nome: String(row.nome || ""),
+    email: String(row.email || ""),
+  }));
 }
 
 async function statusEcoLiderAlunos(connection: any, alunoIds: number[]) {
@@ -369,22 +412,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/eco-lider/perfil", requir
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
     const nome = String(req.query.nome || "").trim();
+    const email = String(req.query.email || "").trim();
     const alunoIdManual = Number(req.query.alunoId || 0) || 0;
-
-    const [rows] = (await connection.execute(
-      `SELECT DISTINCT a.id,a.name AS nome,a.email
-       FROM alunos a
-       INNER JOIN aluno_curso_atribuido aca ON aca.alunoId=a.id
-       WHERE a.isActive=1
-         AND a.tipoPortal IN ('aluno_autonomo','assessment')
-       ORDER BY a.name ASC,a.id ASC`,
-    )) as any;
-
-    const alunos = (rows || []).map((row: any) => ({
-      id: Number(row.id),
-      nome: String(row.nome || ""),
-      email: String(row.email || ""),
-    }));
+    const alunos = await listarAlunosEcoLiderDisponiveis(connection);
 
     let match: any;
     if (alunoIdManual) {
@@ -393,7 +423,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/eco-lider/perfil", requir
         ? { status: "manual", aluno: manual, score: 1, motivo: "vinculo_salvo_no_programa" }
         : { status: "nao_encontrado", aluno: null, score: 0, motivo: "vinculo_manual_nao_existe_mais" };
     } else {
-      match = escolherCorrespondenciaEcoSegura(nome, alunos);
+      match = escolherCorrespondenciaEcoSegura(nome, email, alunos);
     }
 
     const perfil = match.aluno
@@ -405,6 +435,36 @@ programaIntegracaoRouter.get("/api/programa-integracao/eco-lider/perfil", requir
   } catch (error) {
     console.error("[ProgramaIntegracao] ECO Líderes perfil:", error);
     return res.status(500).json({ error: "Não foi possível consultar o Perfil DISC e a Autoavaliação no ECO Líderes." });
+  }
+});
+
+programaIntegracaoRouter.post("/api/programa-integracao/eco-lider/resolver-vinculos", requireAdmin, async (req, res) => {
+  try {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    const itens = Array.isArray(req.body?.processos) ? req.body.processos.slice(0, 200) : [];
+    const alunos = await listarAlunosEcoLiderDisponiveis(connection);
+    const resultados: Record<string, any> = {};
+
+    for (const item of itens) {
+      const id = String(item?.id || "").trim();
+      if (!id) continue;
+      const nome = String(item?.nome || "").trim();
+      const email = String(item?.email || "").trim();
+      const match = escolherCorrespondenciaEcoSegura(nome, email, alunos);
+      resultados[id] = { match, perfil: null };
+      if (match.status === "automatico_seguro" && match.aluno?.id) {
+        resultados[id].perfil = {
+          aluno: match.aluno,
+          ...(await perfilEcoLiderAluno(connection, Number(match.aluno.id))),
+        };
+      }
+    }
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ ok: true, alunos, resultados });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] ECO Líderes resolver vínculos:", error);
+    return res.status(500).json({ error: "Não foi possível localizar os alunos correspondentes no ECO Líderes." });
   }
 });
 

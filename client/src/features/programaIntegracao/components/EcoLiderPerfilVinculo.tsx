@@ -44,7 +44,7 @@ export function EcoLiderPerfilVinculo({
         setStatus('carregando');
         setErro('');
         const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0) || undefined;
-        const retorno = await buscarPerfilEcoLider(processo.nome, alunoId);
+        const retorno = await buscarPerfilEcoLider(processo.nome, alunoId, processo.email);
         if (cancelado) return;
         setAlunos(retorno.alunos || []);
         setPerfil(retorno.perfil || null);
@@ -73,7 +73,7 @@ export function EcoLiderPerfilVinculo({
     try {
       setStatus('carregando');
       setErro('');
-      const retorno = await buscarPerfilEcoLider(processo.nome, Number(alunoId));
+      const retorno = await buscarPerfilEcoLider(processo.nome, Number(alunoId), processo.email);
       if (!retorno.perfil?.aluno) throw new Error('Aluno do ECO Líderes não encontrado.');
       setPerfil(retorno.perfil);
       setAlunos(retorno.alunos || []);
@@ -94,6 +94,7 @@ export function EcoLiderPerfilVinculo({
       const retorno = await buscarPerfilEcoLider(
         processo.nome,
         Number((processo.teste as any)?.ecoAlunoId || 0) || undefined,
+        processo.email,
       );
       setAlunos(retorno.alunos || []);
       setPerfil(retorno.perfil || null);
