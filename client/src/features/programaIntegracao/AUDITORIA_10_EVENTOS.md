@@ -4,7 +4,7 @@
 
 Este documento fecha o **mapeamento funcional** dos eventos do HTML histórico para a arquitetura atual do Programa de Integração no EcoLíder.
 
-A fonte funcional obrigatória é o bloco `10-eventos.js` do HTML histórico `trilha-integracao-codigo-completo_3.html`, incluindo os despachantes `cliqueGeral`, `mudaGeral`, `digitaGeral`, o `keydown` de observações, `cliqueId` e o controle de tema.
+A fonte funcional obrigatória é o bloco `10-eventos.js` do HTML histórico `trilha-integracao-codigo-completo_4.html`, incluindo os despachantes `cliqueGeral`, `mudaGeral`, `digitaGeral`, o `keydown` de observações, `cliqueId` e o controle de tema.
 
 > Regra de paridade: a reconstrução **não precisa preservar os nomes `data-*` nem o modelo de delegação de eventos do HTML antigo**. Ela precisa preservar a função, o comportamento e a persistência correspondentes. No React atual, os eventos foram distribuídos em componentes especializados e APIs seguras.
 
@@ -39,9 +39,9 @@ A fonte funcional obrigatória é o bloco `10-eventos.js` do HTML histórico `tr
 | Backup | `data-bkbaixar`, `data-bkdel`, `data-bkrest`, `data-bkfile` | `ConfiguracaoDadosBackup`, `backupLocalHelpers`, restauração transacional | Mapeado; teste real de restauração continua pendente |
 | Configuração geral | `data-cfg`, `data-aviso`, `data-lk`, `data-lf`, `data-holdel` | telas de Configurações com persistência por seção | Mapeado |
 | Filtros/UI | `data-filtro`, `data-filtro2`, `data-ui` | estados React de filtros e `ThemeContext` | Mapeado |
-| Tutorial | `data-*` indireto via `it.tut` e `btn-tutorial` | `tut` permanece no `PLANO_REAL`; PDF original recuperado do Base64 histórico | **Mapeado, implementação do acesso ainda pendente** |
-| Demonstração | `btn-demo` / `criarDemo()` | ainda não há processo de demonstração equivalente completo | **Mapeado como lacuna; permanece pendente em Backup/offline/demonstração** |
-| Proteção offline | guarda histórica antes de `data-del` e estado de sincronização | arquitetura atual usa servidor como fonte, mas ainda falta bloqueio/aviso equivalente quando a conexão cai | **Mapeado como lacuna; permanece pendente** |
+| Tutorial | `data-*` indireto via `it.tut` e `btn-tutorial` | PDF histórico exato + `tutorialPrimeiroAcesso.ts`; acesso ligado à ficha, e-mails, Configurações e Painel | **Mapeado e implementado** |
+| Demonstração | `btn-demo` / `criarDemo()` | criação transacional de processo fictício completo em `GerenciarPessoas`/API administrativa | **Mapeado e implementado; já usado em validações** |
+| Proteção offline | guarda histórica antes de `data-del` e estado de sincronização | `connectionGuard`, bloqueio de mutações, banner de conexão e tentativa de reconexão | **Mapeado e implementado; validação segura já registrada** |
 | Limpeza total | `btn-limpar` | original limpava `feito` e `alin` de todos os processos após confirmação | **Mapeado como lacuna; não será recriado sem desenho seguro e autorização adequada** |
 | CSV da Agenda | `btn-csv` / `csv()` | exportação CSV já existente na Agenda Geral | Mapeado |
 | Recarregar | `btn-recarregar` | recarga do navegador / recuperação de carregamento | Mapeado; tela de recuperação segura ainda é item separado |
@@ -53,7 +53,7 @@ Todos os 21 IDs históricos foram classificados:
 | ID original | Função | Destino / situação atual |
 |---|---|---|
 | `btn-bk-add` | salvar ponto de restauração | `ConfiguracaoDadosBackup` |
-| `btn-demo` | criar processo fictício completo | lacuna conhecida: processo de demonstração |
+| `btn-demo` | criar processo fictício completo | `GerenciarPessoas` + rota administrativa transacional de demonstração |
 | `btn-men-add` | nova mentora | `ConfiguracaoMentoras` |
 | `btn-curso-add` | adicionar curso | `ConfiguracaoCursos` |
 | `btn-curso-reset` | restaurar cursos padrão | `ConfiguracaoCursos` |
@@ -66,7 +66,7 @@ Todos os 21 IDs históricos foram classificados:
 | `btn-backup2` | baixar backup | `ConfiguracaoDadosBackup` |
 | `btn-backup3` | baixar backup | `ConfiguracaoDadosBackup` |
 | `btn-recarregar` | recarregar | navegador/recuperação |
-| `btn-tutorial` | baixar tutorial de primeiro acesso | fonte PDF original recuperada; ligação ainda pendente |
+| `btn-tutorial` | baixar tutorial de primeiro acesso | PDF histórico exato ligado aos pontos previstos, incluindo o Painel |
 | `btn-bkimport` | escolher backup para restaurar | `ConfiguracaoDadosBackup` |
 | `btn-avisoreset` | restaurar aviso padrão | `ConfiguracaoAviso` |
 | `btn-holadd` | adicionar feriado | `ConfiguracaoDatas` |
@@ -101,11 +101,11 @@ O comportamento histórico de registrar observação com **Enter** existe tanto 
 1. **Remover pessoa:** o HTML standalone removia de modo destrutivo; o EcoLíder arquiva (`situacao='removido'`) e preserva histórico.
 2. **Restauração de backup:** o HTML substituía o estado após confirmação simples; o EcoLíder usa validação, dupla confirmação, ponto anterior, transação, rollback, arquivamento e leitura posterior.
 3. **Persistência de configuração:** eventos antigos chamavam `salvarConfig()` globalmente; o EcoLíder usa endpoints por seção para evitar sobrescrever chaves não relacionadas.
-4. **Falha de conexão:** o original bloqueava remoção quando não sincronizado. O equivalente atual foi identificado como lacuna e continua explicitamente pendente.
+4. **Falha de conexão:** o original bloqueava remoção quando não sincronizado. O equivalente atual usa guarda de conexão, falha fechada, readback, banner e tentativa de reconexão.
 5. **Limpeza total:** o botão histórico que apagava todas as marcações não foi reproduzido automaticamente porque é uma operação de alto impacto. O mapeamento registra a existência da função para que ela só seja redesenhada com proteção adequada.
 
 ## Conclusão
 
 O requisito **“Mapear todos os handlers de `10-eventos.js`”** está atendido: os despachantes, 164 atributos `data-*`, 21 IDs e suas famílias funcionais foram inventariados e associados à arquitetura atual ou a uma lacuna explícita.
 
-Este fechamento **não declara que as lacunas estão implementadas**. Continuam abertas, em itens próprios, a implementação/validação de tutorial, processo de demonstração, proteção equivalente para falha de conexão, recuperação segura, limpeza global se for mantida, testes, build e auditorias finais.
+Este fechamento registra que tutorial, demonstração, proteção de conexão e recuperação segura já possuem implementação atual. Continuam separados como validação operacional os testes finais, build, auditorias visuais e a limpeza global histórica, que permanece deliberadamente não recriada por segurança.

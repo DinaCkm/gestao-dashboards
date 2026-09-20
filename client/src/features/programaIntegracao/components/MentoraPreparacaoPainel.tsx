@@ -31,8 +31,8 @@ interface MentoraPreparacaoPainelProps {
   feriados?: string[];
   config: BootstrapState['config'];
   onSalvarProcesso: (processo: ProcessoIntegracao) => Promise<void> | void;
-  onGerarBriefing?: () => Promise<boolean | void> | boolean | void;
-  onGerarWord?: () => Promise<boolean | void> | boolean | void;
+  onGerarBriefing: () => Promise<boolean | void> | boolean | void;
+  onGerarWord: () => Promise<boolean | void> | boolean | void;
 }
 
 async function copiarTexto(texto: string, sucesso: string) {
@@ -94,19 +94,11 @@ export function MentoraPreparacaoPainel({
       toast.error('Há dados obrigatórios faltando. Confira antes de gerar o briefing.');
       return;
     }
-    if (!onGerarBriefing) {
-      toast.info('O gerador do Briefing PDF ainda será conectado neste bloco.');
-      return;
-    }
     const gerado = await onGerarBriefing();
     if (gerado !== false) await salvar(marcarBriefingMentora(processo, numero));
   };
 
   const gerarWord = async () => {
-    if (!onGerarWord) {
-      toast.info('O gerador do Relatório Word ainda será conectado neste bloco.');
-      return;
-    }
     const gerado = await onGerarWord();
     if (gerado !== false) await salvar(marcarWordMentora(processo, numero));
   };

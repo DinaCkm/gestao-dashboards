@@ -64,7 +64,7 @@ Objetivo deste documento: localizar, por função pública, onde cada comportame
 | Automação de programado vencido | `aplicarAutomacoesProcesso()` | reconstruído |
 | Leitura de volta após gravação | `api/client.ts` | reconstruído |
 | Evitar gravação por tecla na ficha individual | `DetalheProcessoReal.tsx` | reconstruído |
-| Microimportação de resposta na própria ação | `MicroImportacaoAcao.tsx` | componente criado; conexão final à ficha ainda pendente |
+| Microimportação de resposta na própria ação | `MicroImportacaoAcao.tsx` | conectado à ficha e ao Painel; teste operacional final permanece separado |
 
 ## 5. Painel da semana
 
@@ -82,7 +82,7 @@ Objetivo deste documento: localizar, por função pública, onde cada comportame
 | Registrar/importar resposta ausente na ação | `MicroImportacaoAcao.tsx` | conexão real auditada; teste operacional ainda pendente |
 | E-mails por ação | `EmailActionButtons.tsx` | reconstruído |
 | PDFs por ação | helpers PDF | reconstruído; auditoria funcional de `09-pdf.js` concluída; geração visual real continua no checklist |
-| Tutorial de primeiro acesso | asset histórico + `tutorialPrimeiroAcesso.ts` | arquivo exato incorporado e ligado aos pontos históricos |
+| Tutorial de primeiro acesso | asset histórico + `tutorialPrimeiroAcesso.ts` | arquivo exato incorporado; ligado à ficha, e-mails, Configurações e às quatro ações históricas no Painel |
 
 ## 6. Agenda geral
 
@@ -252,8 +252,8 @@ A restauração real permanece protegida/pendente porque substituição de estad
 | Função histórica | EcoLíder atual | Situação |
 |---|---|---|
 | Buscar/filtrar | `GerenciarPessoas.tsx` | reconstruído |
-| Nova pessoa | callback previsto | implementação final pendente |
-| Editar | callback previsto | implementação final pendente |
+| Nova pessoa | `GerenciarPessoas.tsx` + `peopleClient.ts` | implementação segura concluída com criação e readback |
+| Editar | rota de detalhe + salvamento explícito | implementação concluída e persistência já validada |
 | Timeline | rota de detalhe | reconstruído |
 | Reordenar | persistência específica | implementado com readback; teste operacional final ainda pendente |
 | Encerrar | operação segura | validado com demonstração |

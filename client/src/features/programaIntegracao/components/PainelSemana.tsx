@@ -31,6 +31,10 @@ import {
 import { linkIntegracaoPorChave } from '../helpers/emailLinksHelpers';
 import { formKeyForItem } from '../helpers/registrarRespostasParser';
 import { formatarData } from '../helpers/dateHelpers';
+import {
+  TUTORIAL_PRIMEIRO_ACESSO_NOME,
+  TUTORIAL_PRIMEIRO_ACESSO_URL,
+} from '../helpers/tutorialPrimeiroAcesso';
 import { EmailActionButtons } from './EmailActionButtons';
 import { MicroImportacaoAcao } from './MicroImportacaoAcao';
 import { Card, CardContent } from '@/components/ui/card';
@@ -441,6 +445,17 @@ export function PainelSemana({
                                 onClick={() => window.open(linkAcao.u, '_blank', 'noopener,noreferrer')}
                               >
                                 Abrir link
+                              </Button>
+                            )}
+                            {grupo.item.tut && (
+                              <Button type="button" size="sm" variant="outline" asChild>
+                                <a
+                                  href={TUTORIAL_PRIMEIRO_ACESSO_URL}
+                                  download={TUTORIAL_PRIMEIRO_ACESSO_NOME}
+                                  title={TUTORIAL_PRIMEIRO_ACESSO_NOME}
+                                >
+                                  Baixar tutorial
+                                </a>
                               </Button>
                             )}
                             {ehEmail && (

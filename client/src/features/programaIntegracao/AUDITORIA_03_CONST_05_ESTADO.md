@@ -43,8 +43,8 @@ Verificar se as constantes, regras de estado e cálculos do sistema original per
 
 ### CORES
 - Original: paleta usada na criação de processo legado.
-- Atual: a nova criação/edição de pessoas ainda está pendente no checklist; o campo `cor` é preservado pelo tipo/processo e pela persistência.
-- Resultado: funcionalidade dependente do bloco `Gerenciar pessoas`; não considerada perda do 03-const enquanto esse bloco estiver pendente.
+- Atual: criação e edição de pessoas estão implementadas no bloco `Gerenciar pessoas`; o campo `cor` é preservado pelo tipo/processo e pela persistência.
+- Resultado: equivalente com persistência atual.
 
 ### LADO
 - Original: CKM=`ckm`; UGP/Gestor/Anjo/Colaborador=`eles`.
@@ -70,8 +70,8 @@ Verificar se as constantes, regras de estado e cálculos do sistema original per
 
 ### novoProcesso / P / ordem / ativos / encerrados
 - Original: inicializa defaults e organiza processos.
-- Atual: bootstrap preserva ordem; ativos/encerrados são derivados na página principal; helper de novo processo existe, mas a UI completa de criar/editar/reordenar/encerrar/reabrir ainda está no bloco pendente `Gerenciar pessoas`.
-- Resultado: parcialmente coberto por arquitetura atual; UI pendente explicitamente rastreada.
+- Atual: bootstrap preserva ordem; ativos/encerrados são derivados na página principal; criar, editar, reordenar, encerrar, reabrir e arquivar possuem UI/API reais com readback.
+- Resultado: funcionalidade reconstruída; reordenação/arquivamento permanecem apenas como teste operacional final.
 
 ### reg / fichaDe / stItem / fechado / limpar
 - Original: normaliza estado antigo, cria ficha da ação, preserva notas e elimina ficha totalmente vazia.
@@ -100,8 +100,8 @@ Verificar se as constantes, regras de estado e cálculos do sistema original per
 
 ### sincronização / bannerSinc / erroDb
 - Original: quando offline, mantém cópia local e mostra aviso explícito para não apagar/remover dados; oferece reconectar e baixar backup local.
-- Atual: cliente falha fechado e possui backup local, porém a experiência completa de banner/reconexão offline ainda está pendente no checklist `Proteção equivalente para falha de conexão` e `Tela de erro com recuperação segura`.
-- Resultado: lacuna real conhecida, não encerrada por esta auditoria.
+- Atual: cliente falha fechado, possui backup local, banner explícito de conexão, bloqueio de mutações e tentativa de reconexão; a tela de recuperação também foi validada em ocorrência não destrutiva.
+- Resultado: equivalente em finalidade com adaptação à arquitetura servidor/readback.
 
 ### cronograma / alinData / dataEtapa
 - Original: cálculo por dia da jornada, ajustes de dias úteis, data confirmada do alinhamento, pós-alinhamento e agendamento 7 dias antes.
@@ -138,5 +138,5 @@ Verificar se as constantes, regras de estado e cálculos do sistema original per
 - `03-const.js`: auditado integralmente quanto às estruturas funcionais que ele define.
 - `05-estado.js`: auditado integralmente quanto às funções e comportamentos públicos desse bloco.
 - Correção necessária encontrada: fallback de feriados padrão quando a lista configurada está vazia — corrigido.
-- Lacunas identificadas já permanecem em itens próprios do checklist, principalmente offline/recuperação e Gerenciar pessoas.
+- As antigas lacunas de offline/recuperação e Gerenciar pessoas foram implementadas posteriormente; os testes operacionais finais permanecem em itens próprios do checklist.
 - Nenhuma outra alteração funcional foi feita nesta auditoria.

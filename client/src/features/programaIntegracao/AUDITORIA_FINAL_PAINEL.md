@@ -1,6 +1,6 @@
 # Auditoria final linha a linha - Painel da semana
 
-Fonte funcional obrigatória: `trilha-integracao-codigo-completo_3.html`, especialmente `coletar()`, `viewPainel()`, `grupoHtml()`, `pessoaLinha()`, `kpiBtn()` e `pcard()`.
+Fonte funcional obrigatória: `trilha-integracao-codigo-completo_4.html`, especialmente `coletar()`, `viewPainel()`, `grupoHtml()`, `pessoaLinha()`, `kpiBtn()` e `pcard()`.
 
 Implementação atual auditada: `components/PainelSemana.tsx` e helpers do Painel.
 
@@ -120,7 +120,7 @@ Atual:
 - microimportação é oferecida quando um formulário esperado ainda não possui resposta;
 - ficha mantém situação, datas, justificativa e observações.
 
-Resultado: equivalente ou ampliado, exceto pelas lacunas explicitadas abaixo.
+Resultado: equivalente ou ampliado. As diferenças históricas identificadas abaixo já foram corrigidas no código atual.
 
 ## 8. Ficha da ação
 
@@ -173,7 +173,7 @@ Resultado: equivalente.
 
 O HTML histórico inclui o botão do tutorial nas ações marcadas com `tut:1`.
 
-O Painel atual ainda não renderiza esse controle.
+O Painel atual renderiza o download do PDF histórico nas ações marcadas com `tut:1`.
 
 Ações afetadas:
 
@@ -182,15 +182,15 @@ Ações afetadas:
 - `d3-02`
 - `pos3-12`
 
-Esta lacuna já é controlada pelo item separado `Tutorial nas ações aplicáveis`.
+Correção concluída na branch de fechamento: o mesmo asset histórico usado na ficha/e-mails/configurações também está disponível no Painel.
 
 ### 11.2 Atalho clicável de `link`
 
 Em `grupoHtml()` e `trowItem()`, o HTML histórico usa `linkChip(it.link)` para exibir um atalho clicável nas ações que possuem `link`.
 
-O Painel React atual mostra o badge de `Formulário`, mas não renderiza o equivalente de `linkChip` no cabeçalho/linha da tarefa.
+O Painel React atual resolve `item.link` por `linkIntegracaoPorChave()` e exibe o botão `Abrir link` na linha da pessoa quando há destino configurado.
 
-Isto não invalida os dados nem a persistência e a página individual já possui tratamento dos links, mas é uma perda de paridade funcional do Painel que deverá ser restaurada antes do fechamento integral do inventário funcional.
+Assim, o atalho funcional equivalente ao `linkChip` histórico já está preservado no Painel atual.
 
 ## Resultado da auditoria
 
@@ -211,9 +211,9 @@ Confirmado como preservado:
 - processos encerrados;
 - PDFs e e-mails já ligados ao Painel.
 
-Diferenças encontradas e não escondidas:
+Diferenças encontradas originalmente e posteriormente corrigidas:
 
-1. tutorial nas quatro ações `tut:1`;
-2. atalho `linkChip` nas ações que possuem `link`.
+1. tutorial nas quatro ações `tut:1` — corrigido;
+2. atalho funcional equivalente ao `linkChip` — já presente por `Abrir link`.
 
-A conclusão desta auditoria significa que a comparação foi realizada integralmente; não significa que as duas lacunas encontradas estejam corrigidas. A validação visual e os testes finais continuam separados no checklist.
+A comparação funcional do Painel não mantém lacuna estática conhecida nesses dois pontos. A validação visual e os testes finais continuam separados no checklist.
