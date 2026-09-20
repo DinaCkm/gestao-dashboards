@@ -90,7 +90,9 @@ export function BriefingMentoraPreview({
             <div className="grid gap-1 p-3 md:grid-cols-[180px_1fr]"><b>CKM Talents</b><span>{b.suporte}</span></div>
           </div>)}
 
-          {sec('O que você precisa saber antes', numero === 1 ? <>
+          {sec('O que você precisa saber antes', <>
+            <div><p className="text-sm font-semibold">Ações do PDI</p><p className="text-sm">{b.acoesPdi}</p></div>
+            {numero === 1 ? <>
             <div>
               <p className="mb-2 text-sm font-semibold">Qualidades e competências que o gestor considera importantes</p>
               {b.qualidades.length ? <div className="flex flex-wrap gap-2">{b.qualidades.map((x) => <span key={x} className="rounded-full border bg-muted/30 px-2.5 py-1 text-xs">{x}</span>)}</div> : <p className="text-sm text-muted-foreground">Não localizamos essa resposta no formulário Bem Acolhido — levante o ponto na conversa a sós com o gestor.</p>}
@@ -111,9 +113,9 @@ export function BriefingMentoraPreview({
             </div>
             <p className="rounded-lg bg-muted/30 p-3 text-sm font-semibold">Ponto obrigatório desta primeira conversa: pergunte ao gestor quais atividades o colaborador irá efetivamente desempenhar e anote. É com base nelas que a CKM monta o PDI de acordo com as atribuições reais da função — você não precisa elaborar o plano, só levantar a informação.</p>
           </> : <>
-            <div><p className="text-sm font-semibold">Status do PDI</p><p className="text-sm">{b.statusPdi}</p></div>
             <div><p className="text-sm font-semibold">Pendências</p><p className="text-sm">{b.pendencias}</p></div>
             {b.evolucao && <div><p className="text-sm font-semibold">Evolução registrada nos formulários do gestor</p><p className="text-sm">{b.evolucao}</p></div>}
+          </>}
           </>)}
 
           {sec('Roteiro da conversa', <div className="space-y-4">
