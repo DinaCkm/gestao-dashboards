@@ -281,7 +281,7 @@ export function gerarRelatorioAndamentoPdf(
     'Jornada Compliance',
     checkpoint.pctJor == null ? '—' : `${checkpoint.pctJor}%`,
     checkpoint.pctJor == null
-      ? 'ainda sem registro'
+      ? (ecoCompliance ? 'ainda sem atividades registradas' : 'ainda sem registro')
       : ecoCompliance?.total
         ? `${ecoCompliance.concluidas} de ${ecoCompliance.total} atividades`
         : 'concluída até aqui',
