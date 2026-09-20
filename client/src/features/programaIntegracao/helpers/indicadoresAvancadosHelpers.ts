@@ -4,6 +4,8 @@ import { coletarAcoesPainel, cronogramaReal, type AcaoPainelReal } from './paine
 import { calcularKpisPainel } from './painelKpis';
 import { progressoRealProcesso } from './painelProcessos';
 import { calcularStatusItem, normalizarRegistroFeito } from './statusHelpers';
+import { formKeyForItem } from './registrarRespostasParser';
+import { respostaDoItem } from './respostaItemHelpers';
 
 export type StatusPrioritarioIndicadores =
   | 'atrasado_ckm'
@@ -155,6 +157,44 @@ export interface IndicadoresAvancados {
     andamento: number;
     concluidos100: number;
     faixas: Array<{ name: string; value: number }>;
+  };
+
+  principais: {
+    ativos: number;
+    ecoVinculadosAtivos: number;
+    ecoSemVinculoAtivos: number;
+    pdi: {
+      totalTarefas: number;
+      concluidas: number;
+      percentual: number | null;
+      pessoasComTarefas: number;
+      pessoasSemTarefas: number;
+    };
+    compliance: {
+      totalAtividades: number;
+      concluidas: number;
+      percentual: number | null;
+      pessoasComAtividades: number;
+      pessoasSemAtividades: number;
+    };
+    formulariosPos: {
+      totalPendentes: number;
+      gestor: number;
+      anjo: number;
+      colaborador: number;
+    };
+    formularios: {
+      esperados: number;
+      respondidos: number;
+      pendentes: number;
+      percentual: number | null;
+    };
+    alinhamentos: {
+      previstos: number;
+      realizados: number;
+      pendentes: number;
+      percentual: number | null;
+    };
   };
 
   pessoas: Array<{
@@ -353,6 +393,86 @@ export function calcularIndicadoresAvancados(
   const pdiPct = pdiComTarefas.map((r) => Number(r.percentual || 0));
   const compPct = complianceComAtividades.map((r) => Number(r.percentual || 0));
 
+  let ecoVinculadosAtivos = 0;
+  let pdiTotalTarefasAtivos = 0;
+  let pdiConcluidasAtivos = 0;
+  let pdiPessoasComTarefasAtivos = 0;
+  let pdiPessoasSemTarefasAtivos = 0;
+  let complianceTotalAtividadesAtivos = 0;
+  let complianceConcluidasAtivos = 0;
+  let compliancePessoasComAtividadesAtivos = 0;
+  let compliancePessoasSemAtividadesAtivos = 0;
+
+  processosAtivos.forEach((processo) => {
+    const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0);
+    if (alunoId <= 0) return;
+    ecoVinculadosAtivos++;
+    const eco = ecoStatus[String(alunoId)] || null;
+    if (!eco) return;
+
+    const pdiTotal = Number(eco.pdi?.total || 0);
+    const pdiConcluidas = Number(eco.pdi?.concluidas || 0);
+    if (pdiTotal > 0) {
+      pdiPessoasComTarefasAtivos++;
+      pdiTotalTarefasAtivos += pdiTotal;
+      pdiConcluidasAtivos += Math.min(pdiConcluidas, pdiTotal);
+    } else {
+      pdiPessoasSemTarefasAtivos++;
+    }
+
+    const complianceTotal = Number(eco.jornadaCompliance?.total || 0);
+    const complianceConcluidas = Number(eco.jornadaCompliance?.concluidas || 0);
+    if (complianceTotal > 0) {
+      compliancePessoasComAtividadesAtivos++;
+      complianceTotalAtividadesAtivos += complianceTotal;
+      complianceConcluidasAtivos += Math.min(complianceConcluidas, complianceTotal);
+    } else {
+      compliancePessoasSemAtividadesAtivos++;
+    }
+  });
+
+  let formulariosEsperadosAtivos = 0;
+  let formulariosRespondidosAtivos = 0;
+  let formulariosPosGestor = 0;
+  let formulariosPosAnjo = 0;
+  let formulariosPosColaborador = 0;
+  let alinhamentosPrevistosAtivos = 0;
+  let alinhamentosRealizadosAtivos = 0;
+  const etapasPosAlinhamento = new Set(['pos1', 'pos2', 'pos3', 'pos4']);
+
+  processosAtivos.forEach((processo) => {
+    const cronograma = cronogramaReal(processo, feriados, hojeRef);
+
+    cronograma.forEach((etapa) => {
+      etapa.itens.forEach((item) => {
+        if (!formKeyForItem(item.id)) return;
+        if (etapa.data > hoje) return;
+
+        const status = statusSalvo(processo, item.id);
+        if (status === 'na' || status === 'wont') return;
+
+        formulariosEsperadosAtivos++;
+        const respondido = Boolean(respostaDoItem(processo, item.id));
+        if (respondido) {
+          formulariosRespondidosAtivos++;
+          return;
+        }
+
+        if (!etapasPosAlinhamento.has(etapa.et.id)) return;
+        if (item.r === 'Gestor') formulariosPosGestor++;
+        else if (item.r === 'Anjo') formulariosPosAnjo++;
+        else if (item.r === 'Colaborador') formulariosPosColaborador++;
+      });
+    });
+
+    [1, 2, 3, 4].forEach((n) => {
+      const etapa = cronograma.find((e) => e.et.al === n);
+      if (!etapa || etapa.data > hoje) return;
+      alinhamentosPrevistosAtivos++;
+      if ((processo.alin as any)?.[n]?.realizado) alinhamentosRealizadosAtivos++;
+    });
+  });
+
   const progressoTodos = todos.map((p) => progressoRealProcesso(p).percentualConcluido);
   const pessoas = todos.map((p) => {
     const id = p.id || p.nome;
@@ -437,6 +557,48 @@ export function calcularIndicadoresAvancados(
       andamento: complianceComAtividades.filter((r) => Number(r.percentual || 0) > 0 && Number(r.percentual || 0) < 100).length,
       concluidos100: complianceComAtividades.filter((r) => Number(r.percentual || 0) >= 100).length,
       faixas: faixasPercentuais(complianceRegistros, 'Sem atividades'),
+    },
+
+    principais: {
+      ativos: processosAtivos.length,
+      ecoVinculadosAtivos,
+      ecoSemVinculoAtivos: Math.max(0, processosAtivos.length - ecoVinculadosAtivos),
+      pdi: {
+        totalTarefas: pdiTotalTarefasAtivos,
+        concluidas: pdiConcluidasAtivos,
+        percentual: pdiTotalTarefasAtivos > 0 ? Math.round((pdiConcluidasAtivos * 100) / pdiTotalTarefasAtivos) : null,
+        pessoasComTarefas: pdiPessoasComTarefasAtivos,
+        pessoasSemTarefas: pdiPessoasSemTarefasAtivos,
+      },
+      compliance: {
+        totalAtividades: complianceTotalAtividadesAtivos,
+        concluidas: complianceConcluidasAtivos,
+        percentual: complianceTotalAtividadesAtivos > 0 ? Math.round((complianceConcluidasAtivos * 100) / complianceTotalAtividadesAtivos) : null,
+        pessoasComAtividades: compliancePessoasComAtividadesAtivos,
+        pessoasSemAtividades: compliancePessoasSemAtividadesAtivos,
+      },
+      formulariosPos: {
+        totalPendentes: formulariosPosGestor + formulariosPosAnjo + formulariosPosColaborador,
+        gestor: formulariosPosGestor,
+        anjo: formulariosPosAnjo,
+        colaborador: formulariosPosColaborador,
+      },
+      formularios: {
+        esperados: formulariosEsperadosAtivos,
+        respondidos: formulariosRespondidosAtivos,
+        pendentes: Math.max(0, formulariosEsperadosAtivos - formulariosRespondidosAtivos),
+        percentual: formulariosEsperadosAtivos > 0
+          ? Math.round((formulariosRespondidosAtivos * 100) / formulariosEsperadosAtivos)
+          : null,
+      },
+      alinhamentos: {
+        previstos: alinhamentosPrevistosAtivos,
+        realizados: alinhamentosRealizadosAtivos,
+        pendentes: Math.max(0, alinhamentosPrevistosAtivos - alinhamentosRealizadosAtivos),
+        percentual: alinhamentosPrevistosAtivos > 0
+          ? Math.round((alinhamentosRealizadosAtivos * 100) / alinhamentosPrevistosAtivos)
+          : null,
+      },
     },
 
     pessoas,
