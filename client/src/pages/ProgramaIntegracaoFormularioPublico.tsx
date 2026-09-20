@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import '@/features/programaIntegracao/programaIntegracaoV4.css';
 
 const SLUGS = new Set<PublicFormSlug>([
   'controle-integracao',
@@ -309,7 +310,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
     const label = <span>{q.label}{(q.required !== false || (q.code === 'aval_reacao_feedback' && draft.role === 'Gestor')) && <span className="text-destructive"> *</span>}</span>;
 
     if (q.type === 'scale') {
-      return <div key={q.code} className="space-y-2"><p className="text-sm font-medium">{label}</p><div className="grid grid-cols-3 gap-2 sm:grid-cols-6">{[0,1,2,3,4,5].map((n) => <button key={n} type="button" aria-pressed={String(value) === String(n)} onClick={() => atualizarAnswer(q.code, String(n))} className={`rounded-md border p-2 text-center transition ${String(value) === String(n) ? 'border-primary bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}><span className="block font-mono text-base font-bold">{n}</span><span className="block text-[10px] leading-tight">{SCALE_LABELS[n]}</span></button>)}</div></div>;
+      return <div key={q.code} className="space-y-2"><p className="text-sm font-medium">{label}</p><div className="grid grid-cols-3 gap-2 sm:grid-cols-6">{[0,1,2,3,4,5].map((n) => <button key={n} type="button" data-score={n} aria-pressed={String(value) === String(n)} onClick={() => atualizarAnswer(q.code, String(n))} className={`pi-scale-button rounded-md border p-2 text-center transition ${String(value) === String(n) ? 'border-primary bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}><span className="block font-mono text-base font-bold">{n}</span><span className="block text-[10px] leading-tight">{SCALE_LABELS[n]}</span></button>)}</div></div>;
     }
 
     if (q.type === 'multi') {
@@ -330,15 +331,16 @@ export default function ProgramaIntegracaoFormularioPublico() {
   };
 
   if (sucesso) {
-    return <div className="min-h-screen bg-muted/30 p-4 sm:p-8"><Card className="mx-auto max-w-2xl"><CardContent className="py-10 text-center"><CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" /><h1 className="mt-4 text-2xl font-bold">Resposta enviada</h1>{(form.outro || []).map((p, i) => <p key={i} className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{p}</p>)}<div className="mx-auto mt-6 max-w-sm rounded-lg border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Protocolo</p><p className="mt-1 font-mono text-xl font-bold">{sucesso.protocolo}</p><p className="mt-2 text-xs text-muted-foreground">Guarde este número — ele identifica sua resposta caso precise consultar depois.</p></div>{sucesso.pendente && <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground">A resposta foi recebida e ficará aguardando conferência administrativa para ser vinculada ao processo correto. Não é necessário reenviar.</p>}</CardContent></Card></div>;
+    return <div className="programa-integracao-public-v4 min-h-screen p-4 sm:p-8"><Card className="mx-auto max-w-2xl"><CardContent className="py-10 text-center"><CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" /><h1 className="mt-4 text-2xl font-bold">Resposta enviada</h1>{(form.outro || []).map((p, i) => <p key={i} className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">{p}</p>)}<div className="mx-auto mt-6 max-w-sm rounded-lg border bg-muted/30 p-4"><p className="text-xs uppercase tracking-wide text-muted-foreground">Protocolo</p><p className="mt-1 font-mono text-xl font-bold">{sucesso.protocolo}</p><p className="mt-2 text-xs text-muted-foreground">Guarde este número — ele identifica sua resposta caso precise consultar depois.</p></div>{sucesso.pendente && <p className="mx-auto mt-4 max-w-lg text-sm text-muted-foreground">A resposta foi recebida e ficará aguardando conferência administrativa para ser vinculada ao processo correto. Não é necessário reenviar.</p>}</CardContent></Card></div>;
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 px-4 py-6 sm:py-10">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <div className="text-center"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Programa de Integração · Sebrae/TO</p><h1 className="mt-2 text-2xl font-bold sm:text-3xl">{form.name}</h1><p className="mt-2 text-sm text-muted-foreground">{form.description}</p></div>
+    <div className="programa-integracao-public-v4 min-h-screen">
+      <div className="pi-public-wrap space-y-4">
+        <div className="pi-public-top"><div className="pi-public-mark">CKM</div><div><b>Programa de Integração · Sebrae/TO</b><div className="text-[10px] text-muted-foreground">Formulário oficial hospedado no EcoLíder</div></div></div>
+        <div><h1 className="text-[19px] font-bold">{form.name}</h1><p className="mt-1 text-[12.8px] text-muted-foreground">{form.description}</p></div>
 
-        <div className="flex gap-1" aria-label={`Etapa ${pagina + 1} de ${totalPaginas}`}>{Array.from({ length: totalPaginas }).map((_, i) => <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= pagina ? 'bg-primary' : 'bg-muted'}`} />)}</div><p className="text-center text-xs text-muted-foreground">Página {pagina + 1} de {totalPaginas}</p>
+        <div className="flex gap-1" aria-label={`Etapa ${pagina + 1} de ${totalPaginas}`}>{Array.from({ length: totalPaginas }).map((_, i) => <div key={i} className={`pi-public-step flex-1 ${i <= pagina ? 'pi-public-step-on' : ''}`} />)}</div><p className="text-center text-xs text-muted-foreground">Página {pagina + 1} de {totalPaginas}</p>
 
         <Card><CardContent className="space-y-6 pt-6">
           {pagina === 0 ? <>

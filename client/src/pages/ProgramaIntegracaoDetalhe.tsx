@@ -11,6 +11,7 @@ import { DetalheProcessoReal } from '@/features/programaIntegracao/components';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
+import '@/features/programaIntegracao/programaIntegracaoV4.css';
 
 export default function ProgramaIntegracaoDetalhe() {
   const [, params] = useRoute('/programa-integracao/detalhe/:processoId');
@@ -68,7 +69,7 @@ export default function ProgramaIntegracaoDetalhe() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5 p-6">
+      <div className="programa-integracao-v4 space-y-5 p-4 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <Button type="button" variant="ghost" size="sm" onClick={() => setLocation('/programa-integracao')}>
