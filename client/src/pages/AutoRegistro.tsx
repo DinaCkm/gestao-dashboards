@@ -387,7 +387,7 @@ export default function AutoRegistro() {
                     )}
 
                     {cpfErro && (
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", background: "#f5f3ff", border: "1px solid #c4b5fd", borderRadius: "10px", padding: "12px 14px", marginBottom: "20px", color: "#6d28d9", fontSize: "14px", lineHeight: "1.4" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "10px", padding: "12px 14px", marginBottom: "20px", color: "#dc2626", fontSize: "14px", lineHeight: "1.4" }}>
                         <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
                         <span>{cpfErro}</span>
                       </div>
@@ -472,7 +472,7 @@ export default function AutoRegistro() {
                 )}
 
                 {error && (
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", background: "#f5f3ff", border: "1px solid #c4b5fd", borderRadius: "10px", padding: "12px 14px", marginBottom: "20px", color: "#6d28d9", fontSize: "14px", lineHeight: "1.4" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "10px", padding: "12px 14px", marginBottom: "20px", color: "#dc2626", fontSize: "14px", lineHeight: "1.4" }}>
                     <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "1px" }} />
                     <span>{error}</span>
                   </div>
