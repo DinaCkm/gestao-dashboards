@@ -37,6 +37,7 @@ interface MentoraPreparacaoPainelProps {
   onGerarWord: () => Promise<boolean | void> | boolean | void;
   processos?: ProcessoIntegracao[];
   onAbrirCadastroMentoras?: () => void;
+  onAbrirBemTeste?: () => void;
 }
 
 async function copiarTexto(texto: string, sucesso: string) {
@@ -63,6 +64,7 @@ export function MentoraPreparacaoPainel({
   onGerarWord,
   processos = [],
   onAbrirCadastroMentoras,
+  onAbrirBemTeste,
 }: MentoraPreparacaoPainelProps) {
   const mentora = mentoraVinculada(processo, config);
   const opcoesMentora = useMemo(() => mentorasAtivas(config), [config]);
@@ -221,7 +223,10 @@ export function MentoraPreparacaoPainel({
                     </div>
                   )}
                   {item.nivel !== 'ok' && item.campo === 'bem' && (
-                    <textarea value={dadosDraft.bemQualidades} onChange={(e) => alterarDado('bemQualidades', e.target.value)} placeholder="qualidades e competências que o gestor considera necessárias" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                    <div className="mt-2 space-y-2">
+                      <textarea value={dadosDraft.bemQualidades} onChange={(e) => alterarDado('bemQualidades', e.target.value)} placeholder="qualidades e competências que o gestor considera necessárias" className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                      {onAbrirBemTeste && <Button type="button" size="sm" variant="outline" onClick={onAbrirBemTeste}>Abrir Bem Acolhido e teste</Button>}
+                    </div>
                   )}
                   {item.nivel !== 'ok' && item.campo === 'teste' && (
                     <textarea value={dadosDraft.testeResumo} onChange={(e) => alterarDado('testeResumo', e.target.value)} placeholder="resumo do teste comportamental / Avaliação de Potencial" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
