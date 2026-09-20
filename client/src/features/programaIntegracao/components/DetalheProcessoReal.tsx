@@ -100,7 +100,7 @@ export function DetalheProcessoReal({
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
   const [detalhesAbertos, setDetalhesAbertos] = useState<Record<string, boolean>>({});
   const [statusTemporario, setStatusTemporario] = useState<Record<string, StatusAcaoLegado>>({});
-  const statusAnteriorCheckboxRef = useRef<Record<string, StatusAcaoLegado>>({});
+  const statusAnteriorCheckboxRef = useRef<Record<string, { status: StatusAcaoLegado; data: string }>>({});
   const [painelMentora, setPainelMentora] = useState<{ itemId: string; numero: 1 | 2 | 3 | 4 } | null>(null);
   const [painelMentoraDirty, setPainelMentoraDirty] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState<Record<string, 'salvando' | 'salvo' | 'erro'>>({});
@@ -233,7 +233,12 @@ export function DetalheProcessoReal({
     const numeroMentora = Number(itemId.match(/^ag([1-4])-00$/)?.[1]) as 1 | 2 | 3 | 4 | 0;
 
     if (concluido) {
-      if (atual !== 'ok') statusAnteriorCheckboxRef.current[itemId] = atual;
+      if (atual !== 'ok') {
+        statusAnteriorCheckboxRef.current[itemId] = {
+          status: atual,
+          data: fichaAcaoAtual(processo, itemId).d,
+        };
+      }
       setStatusTemporario((estadoAtual) => ({ ...estadoAtual, [itemId]: 'ok' }));
       setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvando' }));
       try {
@@ -258,15 +263,23 @@ export function DetalheProcessoReal({
       return;
     }
 
-    const anterior = statusAnteriorCheckboxRef.current[itemId] ?? '';
-    setStatusTemporario((estadoAtual) => ({ ...estadoAtual, [itemId]: anterior }));
+    const anterior = statusAnteriorCheckboxRef.current[itemId] ?? { status: '' as StatusAcaoLegado, data: '' };
+    setStatusTemporario((estadoAtual) => ({ ...estadoAtual, [itemId]: anterior.status }));
     setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvando' }));
     try {
-      const proximo = numeroMentora
+      let proximo = numeroMentora
         ? (estadoMentoraAlinhamento(processo, numeroMentora).ok
             ? alternarPreparacaoMentora(processo, numeroMentora)
-            : aplicarStatusAcao(processo, itemId, anterior))
-        : aplicarStatusAcao(processo, itemId, anterior);
+            : aplicarStatusAcao(processo, itemId, anterior.status))
+        : aplicarStatusAcao(processo, itemId, anterior.status);
+
+      if (numeroMentora && anterior.status) {
+        proximo = aplicarStatusAcao(proximo, itemId, anterior.status);
+      }
+      if (fichaAcaoAtual(proximo, itemId).d !== anterior.data) {
+        proximo = aplicarCampoFichaAcao(proximo, itemId, 'd', anterior.data);
+      }
+
       await salvar(proximo);
       delete statusAnteriorCheckboxRef.current[itemId];
       setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvo' }));
