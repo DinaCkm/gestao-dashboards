@@ -45,6 +45,8 @@ interface DetalheProcessoRealProps {
   saving?: boolean;
   onEditarModeloEmail?: (chave: string) => void;
   onRespostaExcluida?: () => Promise<void> | void;
+  processos?: ProcessoIntegracao[];
+  onAbrirCadastroMentoras?: () => void;
 }
 
 const statusClasses = {
@@ -80,6 +82,8 @@ export function DetalheProcessoReal({
   saving = false,
   onEditarModeloEmail,
   onRespostaExcluida,
+  processos = [],
+  onAbrirCadastroMentoras,
 }: DetalheProcessoRealProps) {
   const [filtro, setFiltro] = useState<FiltroDetalheProcesso>('');
   const [abertas, setAbertas] = useState<Record<string, boolean>>({});
@@ -387,7 +391,9 @@ export function DetalheProcessoReal({
         </div>
       </details>
 
-      <BemTesteProcesso processo={processo} config={config} onSalvarProcesso={salvar} />
+      <div id="integracao-bem-teste" className="scroll-mt-6">
+        <BemTesteProcesso processo={processo} config={config} onSalvarProcesso={salvar} />
+      </div>
       <RespostasProcessoAgrupadas processo={processo} />
 
       <div className="grid gap-3 md:grid-cols-4">
@@ -447,6 +453,9 @@ export function DetalheProcessoReal({
                         numero={etapa.et.al as 1 | 2 | 3 | 4}
                         feriados={feriados}
                         config={config}
+                        processos={processos}
+                        onAbrirCadastroMentoras={onAbrirCadastroMentoras}
+                        onAbrirBemTeste={() => document.getElementById('integracao-bem-teste')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                         onSalvarProcesso={salvar}
                         onGerarBriefing={() => gerarBriefingMentoraPdf(processo, etapa.et.al as 1 | 2 | 3 | 4, config, feriados)}
                         onGerarWord={() => gerarRelatorioMentoraWord(processo, etapa.et.al as 1 | 2 | 3 | 4, config, feriados)}
