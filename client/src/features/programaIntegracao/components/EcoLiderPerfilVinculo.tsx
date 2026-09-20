@@ -97,10 +97,12 @@ export function EcoLiderPerfilVinculo({
       );
       setAlunos(retorno.alunos || []);
       setPerfil(retorno.perfil || null);
-      setStatus(retorno.match.status);
+      const modoSalvo = String((processo.teste as any)?.ecoVinculoModo || '');
+      const modoEfetivo = modoSalvo === 'automatico_seguro' ? 'automatico_seguro' : retorno.match.status;
+      setStatus(modoEfetivo as typeof status);
       if (retorno.perfil?.aluno) {
         setSelecionado(String(retorno.perfil.aluno.id));
-        await persistirPerfil(retorno.perfil, retorno.match.status);
+        await persistirPerfil(retorno.perfil, modoEfetivo);
         toast.success('Dados do ECO Líderes atualizados.');
       }
     } catch (error) {
