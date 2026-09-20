@@ -41,7 +41,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2, Moon, Sun, WifiOff } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
 import '@/features/programaIntegracao/programaIntegracaoV4.css';
 
 type MainTabValue = 'painel' | 'agenda' | 'indicadores' | 'registrar' | 'respostas' | 'formularios' | 'atas' | 'pessoas' | 'config';
@@ -50,7 +49,20 @@ type ConfigSubTab = 'emails' | 'mentoras' | 'cursos' | 'aviso' | 'links' | 'data
 export default function ProgramaIntegracao() {
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
-  const { theme, toggleTheme } = useTheme();
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      return window.localStorage.getItem('programa-integracao-theme') === 'dark' ? 'dark' : 'light';
+    } catch {
+      return 'light';
+    }
+  });
+  const toggleTheme = () => {
+    setTheme((atual) => {
+      const proximo = atual === 'dark' ? 'light' : 'dark';
+      try { window.localStorage.setItem('programa-integracao-theme', proximo); } catch {}
+      return proximo;
+    });
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
@@ -339,7 +351,8 @@ export default function ProgramaIntegracao() {
 
   return (
     <DashboardLayout>
-      <div className="programa-integracao-v4 p-4 md:p-6 space-y-5">
+      <div className={theme === 'dark' ? 'dark' : ''}>
+        <div className="programa-integracao-v4 p-4 md:p-6 space-y-5">
         <div className="pi-module-head">
           <div className="pi-brandlock">
             <div className="pi-mark">CKM</div>
@@ -460,6 +473,7 @@ export default function ProgramaIntegracao() {
             </CardContent></Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </DashboardLayout>
   );
