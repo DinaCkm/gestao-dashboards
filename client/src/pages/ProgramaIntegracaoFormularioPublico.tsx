@@ -326,7 +326,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
     }
 
     const numerico = q.type === 'cpf' || q.type === 'tel';
-    return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<input type={q.type === 'date' ? 'date' : 'text'} inputMode={numerico ? 'numeric' : undefined} maxLength={q.type === 'cpf' ? 11 : q.type === 'tel' ? 11 : undefined} value={String(value)} onChange={(e) => atualizarAnswer(q.code, numerico ? e.target.value.replace(/\D/g, '') : e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>;
+    return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<input type={q.type === 'date' ? 'date' : 'text'} inputMode={numerico ? 'numeric' : undefined} maxLength={q.type === 'cpf' ? 11 : q.type === 'tel' ? 11 : undefined} placeholder={q.type === 'cpf' ? 'somente números' : q.type === 'tel' ? '63999998888' : undefined} value={String(value)} onChange={(e) => atualizarAnswer(q.code, numerico ? e.target.value.replace(/\D/g, '') : e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>;
   };
 
   if (sucesso) {
@@ -355,7 +355,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
               {form.identity.respondent && <div className="space-y-2 sm:col-span-2"><p className="text-sm font-semibold">Sobre quem está respondendo</p><label className="block space-y-1"><span className="text-sm font-medium">Seu nome completo <span className="text-destructive">*</span></span><input value={draft.respondentName} onChange={(e) => setDraft((d) => ({ ...d, respondentName: e.target.value }))} placeholder="nome e sobrenome, como no cadastro" className="w-full rounded-md border border-input bg-background px-3 py-2" /><span className="block text-xs text-muted-foreground">Escreva o nome completo — ou ao menos primeiro e último nome — para não haver dúvida de quem é.</span></label></div>}
             </div>
           </> : section && <>
-            <div><h2 className="text-xl font-semibold">{section.title || 'Formulário'}</h2>{section.intro && <div className="mt-2 space-y-2">{section.intro.split(/\n{2,}/).map((p, i) => <p key={i} className="text-sm text-muted-foreground">{p}</p>)}</div>}</div>
+            <div><h2 className="text-xl font-semibold">{section.publicTitle === '' ? 'Formulário' : (section.publicTitle || section.title || 'Formulário')}</h2>{section.intro && <div className="mt-2 space-y-2">{section.intro.split(/\n{2,}/).map((p, i) => <p key={i} className="text-sm text-muted-foreground">{p}</p>)}</div>}</div>
             {pagina === 1 && (form.key === 'pesquisa' || form.key === 'aval') && <div className="space-y-2 rounded-md border bg-muted/20 p-4"><p className="text-sm font-semibold">Dicas rápidas para responder</p>{DICAS_ESCALA.map((d) => <p key={d} className="text-xs text-muted-foreground">• {d}</p>)}<div className="mt-3 border-t pt-3">{LEGENDA_ESCALA.map((l) => <p key={l} className="text-xs text-muted-foreground">{l}</p>)}</div></div>}
             <div className="space-y-5">{section.questions.map(renderQuestion)}</div>
           </>}
