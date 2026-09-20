@@ -46,6 +46,7 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
   const [resolvendoEco, setResolvendoEco] = useState(false);
   const [vinculoManualAberto, setVinculoManualAberto] = useState<string | null>(null);
   const [vinculandoEco, setVinculandoEco] = useState<string | null>(null);
+  const [carregandoListaEco, setCarregandoListaEco] = useState<string | null>(null);
 
   const pessoasFiltradas = useMemo(() => {
     let resultado = [...processos];
@@ -148,6 +149,25 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
 
     return () => { cancelado = true; };
   }, [processos]);
+
+  const alternarSeletorEco = async (processo: ProcessoIntegracao) => {
+    if (!processo.id) return;
+    if (vinculoManualAberto === processo.id) {
+      setVinculoManualAberto(null);
+      return;
+    }
+
+    setVinculoManualAberto(processo.id);
+    try {
+      setCarregandoListaEco(processo.id);
+      const retorno = await buscarPerfilEcoLider(processo.nome, undefined, processo.email);
+      setAlunosEco(retorno.alunos || []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível carregar os alunos do ECO Líderes.');
+    } finally {
+      setCarregandoListaEco(null);
+    }
+  };
 
   const vincularEcoManual = async (processo: ProcessoIntegracao, alunoId: number) => {
     if (!processo.id || !alunoId || vinculandoEco) return;
@@ -385,6 +405,9 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
             const precisaVinculoEco = !ecoAlunoId && Boolean(
               resolucaoPessoa && (resolucaoPessoa.match.status === 'ambiguo' || resolucaoPessoa.match.status === 'nao_encontrado')
             );
+            const ecoVinculoModo = String((pessoa.teste as any)?.ecoVinculoModo || '');
+            const vinculoManualExistente = ecoAlunoId > 0 && ecoVinculoModo === 'manual';
+            const mostrarBotaoVinculoEco = precisaVinculoEco || vinculoManualExistente;
             const manualAberto = Boolean(pessoa.id && vinculoManualAberto === pessoa.id);
 
 
@@ -397,17 +420,23 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                       <CardDescription className="text-xs mt-1">{pessoa.cargo || 'Cargo não informado'}</CardDescription>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      {precisaVinculoEco && pessoa.id && (
+                      {mostrarBotaoVinculoEco && pessoa.id && (
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="h-6 px-1.5 text-[10px] font-normal text-muted-foreground"
-                          onClick={() => setVinculoManualAberto((atual) => atual === pessoa.id ? null : pessoa.id!)}
+                          className={`h-7 rounded-lg border px-2.5 text-[10px] font-medium shadow-sm transition-colors ${
+                            manualAberto
+                              ? 'border-slate-400 bg-slate-300 text-slate-900 hover:bg-slate-300'
+                              : 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
+                          }`}
+                          onClick={() => void alternarSeletorEco(pessoa)}
                           disabled={Boolean(vinculandoEco)}
-                          title="Selecionar manualmente o aluno correspondente no ECO Líderes"
+                          title={vinculoManualExistente
+                            ? 'Alterar o aluno do ECO Líderes vinculado manualmente'
+                            : 'Selecionar manualmente o aluno correspondente no ECO Líderes'}
                         >
-                          Vincular ECO Líderes
+                          {vinculoManualExistente ? 'Alterar vínculo ECO Líderes' : 'Vincular ECO Líderes'}
                         </Button>
                       )}
                       <div
@@ -426,18 +455,26 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
 
                 <CardContent className="space-y-3">
                   {manualAberto && (
-                    <div className="rounded-md border border-amber-200 bg-amber-50 p-2">
-                      <p className="mb-2 text-[11px] text-amber-900">
-                        Selecione o aluno correspondente em Alunos Autônomos → Evolução por aluno.
+                    <div className={`rounded-lg border p-2.5 ${
+                      vinculoManualExistente
+                        ? 'border-slate-300 bg-slate-50'
+                        : 'border-amber-200 bg-amber-50'
+                    }`}>
+                      <p className={`mb-2 text-[11px] ${
+                        vinculoManualExistente ? 'text-slate-700' : 'text-amber-900'
+                      }`}>
+                        {vinculoManualExistente
+                          ? 'Vínculo atual salvo manualmente. Selecione outro aluno para alterar.'
+                          : 'Selecione o aluno correspondente em Alunos Autônomos → Evolução por aluno.'}
                       </p>
                       <select
-                        defaultValue=""
-                        disabled={vinculandoEco === pessoa.id}
+                        defaultValue={vinculoManualExistente ? String(ecoAlunoId) : ''}
+                        disabled={vinculandoEco === pessoa.id || carregandoListaEco === pessoa.id}
                         onChange={(e) => {
                           const id = Number(e.currentTarget.value || 0);
-                          if (id) void vincularEcoManual(pessoa, id);
+                          if (id && id !== ecoAlunoId) void vincularEcoManual(pessoa, id);
                         }}
-                        className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"
+                        className="h-9 w-full rounded-lg border border-slate-300 bg-background px-2.5 text-xs"
                         aria-label={`Vincular ${pessoa.nome} ao ECO Líderes`}
                       >
                         <option value="">— selecionar aluno —</option>
@@ -447,7 +484,12 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                           </option>
                         ))}
                       </select>
-                      {vinculandoEco === pessoa.id && <p className="mt-1 text-[11px] text-muted-foreground">Salvando e conferindo o vínculo...</p>}
+                      {carregandoListaEco === pessoa.id && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">Carregando alunos do ECO Líderes...</p>
+                      )}
+                      {vinculandoEco === pessoa.id && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">Salvando e conferindo o novo vínculo...</p>
+                      )}
                     </div>
                   )}
 
