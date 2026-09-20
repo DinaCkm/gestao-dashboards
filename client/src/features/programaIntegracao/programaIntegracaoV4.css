@@ -292,7 +292,7 @@
 .programa-integracao-v4 .pi-kpi:hover {
   background:var(--pi-surface-2);
   border-color:var(--pi-line-2);
-  box-shadow:var(--pi-shadow-2);
+  box-shadow:var(--pi-shadow-2, 0 14px 32px -18px rgba(30,25,55,.35));
 }
 .programa-integracao-v4 .pi-kpi[aria-pressed="true"] {
   outline:2px solid var(--pi-ink);
