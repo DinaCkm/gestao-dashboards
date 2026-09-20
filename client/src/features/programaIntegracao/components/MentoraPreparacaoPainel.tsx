@@ -23,6 +23,7 @@ import {
   type HorarioMentora,
 } from '../helpers/mentoraStateHelpers';
 import { BriefingMentoraPreview } from './BriefingMentoraPreview';
+import { EcoLiderPerfilVinculo } from './EcoLiderPerfilVinculo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -141,16 +142,45 @@ export function MentoraPreparacaoPainel({
   const gerarBriefing = async () => {
     if (checklist.bloqueios) {
       setMostrarChecklist(true);
-      toast.error('Há dados obrigatórios faltando. Confira antes de gerar o briefing.');
-      return;
+      toast.error('O Briefing PDF não foi gerado: há dados obrigatórios faltando. Abra Verificar dados.');
+      return false;
     }
-    const gerado = await onGerarBriefing();
-    if (gerado !== false) await salvar(marcarBriefingMentora(processo, numero));
+    try {
+      const gerado = await onGerarBriefing();
+      if (gerado === false) {
+        setMostrarChecklist(true);
+        toast.error('O Briefing PDF não foi gerado. Confira os dados obrigatórios.');
+        return false;
+      }
+      await salvar(marcarBriefingMentora(processo, numero));
+      toast.success('Briefing PDF gerado.');
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Briefing PDF.');
+      return false;
+    }
   };
 
   const gerarWord = async () => {
-    const gerado = await onGerarWord();
-    if (gerado !== false) await salvar(marcarWordMentora(processo, numero));
+    if (checklist.bloqueios) {
+      setMostrarChecklist(true);
+      toast.error('O Relatório Word não foi gerado: há dados obrigatórios faltando. Abra Verificar dados.');
+      return false;
+    }
+    try {
+      const gerado = await onGerarWord();
+      if (gerado === false) {
+        setMostrarChecklist(true);
+        toast.error('O Relatório Word não foi gerado. Confira os dados obrigatórios.');
+        return false;
+      }
+      await salvar(marcarWordMentora(processo, numero));
+      toast.success('Relatório Word gerado.');
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Relatório Word.');
+      return false;
+    }
   };
 
   return (
@@ -228,8 +258,13 @@ export function MentoraPreparacaoPainel({
                       {onAbrirBemTeste && <Button type="button" size="sm" variant="outline" onClick={onAbrirBemTeste}>Abrir Bem Acolhido e teste</Button>}
                     </div>
                   )}
-                  {item.nivel !== 'ok' && item.campo === 'teste' && (
-                    <textarea value={dadosDraft.testeResumo} onChange={(e) => alterarDado('testeResumo', e.target.value)} placeholder="resumo do teste comportamental / Avaliação de Potencial" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                  {item.campo === 'teste' && (
+                    <EcoLiderPerfilVinculo
+                      processo={processo}
+                      onSalvarProcesso={salvar}
+                      resumoManual={dadosDraft.testeResumo}
+                      onResumoManualChange={(valor) => alterarDado('testeResumo', valor)}
+                    />
                   )}
                   {item.nivel !== 'ok' && item.campo === 'statusPdi' && (
                     <textarea value={dadosDraft.statusPdi} onChange={(e) => alterarDado('statusPdi', e.target.value)} placeholder="como está o PDI neste momento" className="mt-2 min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
@@ -320,11 +355,11 @@ export function MentoraPreparacaoPainel({
       <div className="space-y-2 border-t pt-3">
         <p className="text-sm font-medium">3. Materiais da mentora</p>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant={estado.briefEm ? 'secondary' : 'default'} disabled={Boolean(checklist.bloqueios)} onClick={gerarBriefing}>
+          <Button type="button" size="sm" variant={estado.briefEm ? 'secondary' : 'default'} onClick={() => void gerarBriefing()}>
             {estado.briefEm ? `Briefing PDF · ${estado.briefEm}` : 'Gerar Briefing PDF'}
           </Button>
           <Button type="button" size="sm" variant="outline" onClick={() => setMostrarBriefing(true)}>Ver prévia completa</Button>
-          <Button type="button" size="sm" variant={estado.wordEm ? 'secondary' : 'outline'} onClick={gerarWord}>
+          <Button type="button" size="sm" variant={estado.wordEm ? 'secondary' : 'outline'} onClick={() => void gerarWord()}>
             {estado.wordEm ? `Relatório Word · ${estado.wordEm}` : 'Gerar Relatório Word'}
           </Button>
         </div>

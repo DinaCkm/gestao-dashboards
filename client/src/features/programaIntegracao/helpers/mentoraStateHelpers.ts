@@ -325,7 +325,18 @@ export function checarPreparacaoMentora(
     const qualidades = respostaBemQualidades(processo);
     add('bemAcolhido', qualidades ? 'ok' : 'aviso', 'Bem Acolhido — qualidades esperadas pelo gestor', qualidades ? (String(processo.bem?.qualidades || '').trim() ? 'preenchido à mão' : 'vindo da resposta do formulário') : 'não encontramos a resposta', 'bem');
     const teste = String(processo.teste?.resumo || '').trim();
-    add('teste', teste ? 'ok' : 'aviso', 'Teste comportamental / Avaliação de Potencial', teste ? 'resumo registrado' : 'sem resultado registrado', 'teste');
+    const ecoAlunoId = Number((processo.teste as any)?.ecoAlunoId || 0);
+    const ecoDisc = (processo.teste as any)?.ecoPerfil?.disc || (processo.teste as any)?.ecoDisc;
+    const temEco = ecoAlunoId > 0 && Boolean(ecoDisc);
+    add(
+      'teste',
+      teste || temEco ? 'ok' : 'aviso',
+      'Teste comportamental / Avaliação de Potencial',
+      temEco
+        ? `ECO Líderes vinculado · ${String((processo.teste as any)?.ecoAlunoNome || 'aluno correspondente')}`
+        : teste ? 'resumo registrado' : 'sem resultado registrado',
+      'teste',
+    );
     const cursosInvalidos = cursosComCargaInvalida(config);
     if (cursosInvalidos) add('cursos', 'aviso', 'Cursos obrigatórios', cursosInvalidos + ' curso(s) sem carga horária válida nas configurações');
   } else {

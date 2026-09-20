@@ -95,9 +95,19 @@ export function BriefingMentoraPreview({
               <p className="mb-2 text-sm font-semibold">Qualidades e competências que o gestor considera importantes</p>
               {b.qualidades.length ? <div className="flex flex-wrap gap-2">{b.qualidades.map((x) => <span key={x} className="rounded-full border bg-muted/30 px-2.5 py-1 text-xs">{x}</span>)}</div> : <p className="text-sm text-muted-foreground">Não localizamos essa resposta no formulário Bem Acolhido — levante o ponto na conversa a sós com o gestor.</p>}
             </div>
-            <div>
-              <p className="mb-1 text-sm font-semibold">Perfil do colaborador — avaliação comportamental</p>
-              <p className="text-sm">{b.testeResumo || 'Resultado ainda não registrado. Conduza a conversa a partir das percepções do gestor.'}</p>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold">Perfil DISC</p>
+              <p className="text-sm">{b.ecoDiscTexto || b.testeResumo || 'Resultado ainda não registrado. Conduza a conversa a partir das percepções do gestor.'}</p>
+              {b.ecoAutoavaliacao.length > 0 && (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-semibold">Autoavaliação de competências</p>
+                  {b.ecoAutoavaliacao.map((grupo) => (
+                    <p key={grupo.nota} className="text-sm">
+                      <b>Classificou como {grupo.label}:</b> {grupo.competencias.join(', ')}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
             <p className="rounded-lg bg-muted/30 p-3 text-sm font-semibold">Ponto obrigatório desta primeira conversa: pergunte ao gestor quais atividades o colaborador irá efetivamente desempenhar e anote. É com base nelas que a CKM monta o PDI de acordo com as atribuições reais da função — você não precisa elaborar o plano, só levantar a informação.</p>
           </> : <>
@@ -122,7 +132,7 @@ export function BriefingMentoraPreview({
         </div>
 
         <footer className="flex flex-wrap justify-end gap-2 border-t bg-muted/10 p-4">
-          <Button type="button" onClick={onGerarPdf} disabled={check.bloqueios > 0}>Gerar Briefing PDF</Button>
+          <Button type="button" onClick={onGerarPdf}>Gerar Briefing PDF</Button>
           <Button type="button" variant="secondary" onClick={onGerarWord}>Relatório em Word</Button>
           <Button type="button" variant="outline" onClick={onConferir}>Conferir dados</Button>
           <Button type="button" variant="ghost" onClick={onClose}>Fechar</Button>
