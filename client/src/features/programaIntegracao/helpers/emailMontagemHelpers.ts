@@ -142,7 +142,7 @@ export function emailMarkdownParaHtmlRico(corpo: string): string {
   const blocos = String(corpo || '').split('\n\n').map((bloco) => {
     const inline = (texto: string) => inlineHtml(texto, false);
     if (/^>\s?/.test(bloco)) {
-      return '<div style="font-size:12.5px;color:#5B6675;border-left:3px solid #C8363C;padding:8px 12px;background:#FAF7F7;margin:0 0 16px">' +
+      return '<div style="font-size:12.5px;color:#5B6675;border-left:3px solid #6B3E8F;padding:8px 12px;background:#F7F8FC;margin:0 0 16px">' +
         inline(bloco.replace(/^>\s?/gm, '')) + '</div>';
     }
     if (bloco.trim() === '---') {
