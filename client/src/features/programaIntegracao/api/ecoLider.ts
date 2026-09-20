@@ -58,9 +58,11 @@ export interface EcoLiderPerfilResponse {
 export async function buscarPerfilEcoLider(
   nome: string,
   alunoId?: number | null,
+  email?: string,
 ): Promise<EcoLiderPerfilResponse> {
   const params = new URLSearchParams();
   params.set('nome', nome || '');
+  if (email) params.set('email', email);
   if (alunoId) params.set('alunoId', String(alunoId));
 
   const response = await fetch(`/api/programa-integracao/eco-lider/perfil?${params.toString()}`, {
@@ -106,4 +108,37 @@ export async function buscarStatusEcoLider(
   }
   const body = await response.json();
   return body?.status || {};
+}
+
+
+export interface EcoLiderResolucaoItem {
+  match: EcoLiderPerfilResponse['match'];
+  perfil: EcoLiderPerfil | null;
+}
+
+export interface EcoLiderResolucaoResponse {
+  ok: boolean;
+  alunos: EcoLiderAluno[];
+  resultados: Record<string, EcoLiderResolucaoItem>;
+}
+
+export async function resolverVinculosEcoLider(
+  processos: Array<{ id: string; nome: string; email?: string }>,
+): Promise<EcoLiderResolucaoResponse> {
+  const response = await fetch('/api/programa-integracao/eco-lider/resolver-vinculos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ processos }),
+  });
+  if (!response.ok) {
+    let detail = '';
+    try {
+      const body = await response.json();
+      detail = body?.error ? `: ${body.error}` : '';
+    } catch {
+      // mantém o status HTTP
+    }
+    throw new Error(`Não foi possível localizar vínculos do ECO Líderes (${response.status})${detail}`);
+  }
+  return response.json();
 }
