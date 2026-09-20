@@ -23,6 +23,7 @@ import {
   type HorarioMentora,
 } from '../helpers/mentoraStateHelpers';
 import { BriefingMentoraPreview } from './BriefingMentoraPreview';
+import { buscarPerfilEcoLider, type EcoLiderPerfil, type EcoLiderAluno } from '../api/ecoLider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -83,6 +84,11 @@ export function MentoraPreparacaoPainel({
   }));
   const [horariosEditados, setHorariosEditados] = useState<HorarioMentora[]>(() => cloneHorarios(estado.hor));
   const [editandoHorarios, setEditandoHorarios] = useState(false);
+  const [ecoPerfil, setEcoPerfil] = useState<EcoLiderPerfil | null>(() => (processo.teste as any)?.ecoPerfil || null);
+  const [ecoAlunos, setEcoAlunos] = useState<EcoLiderAluno[]>([]);
+  const [ecoStatus, setEcoStatus] = useState<'idle'|'carregando'|'automatico_seguro'|'manual'|'ambiguo'|'nao_encontrado'|'erro'>('idle');
+  const [ecoErro, setEcoErro] = useState('');
+  const [ecoSelecionado, setEcoSelecionado] = useState(String((processo.teste as any)?.ecoAlunoId || ''));
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
 
   useEffect(() => {
