@@ -259,8 +259,7 @@ async function listarAlunosEcoLiderDisponiveis(connection: any) {
     `SELECT DISTINCT a.id,a.name AS nome,a.email
      FROM alunos a
      INNER JOIN aluno_curso_atribuido aca ON aca.alunoId=a.id
-     WHERE a.isActive=1
-       AND a.tipoPortal IN ('aluno_autonomo','assessment')
+     WHERE a.tipoPortal IN ('aluno_autonomo','assessment')
      ORDER BY a.name ASC,a.id ASC`,
   )) as any;
 
