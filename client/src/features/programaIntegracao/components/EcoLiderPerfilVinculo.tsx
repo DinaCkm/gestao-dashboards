@@ -48,7 +48,11 @@ export function EcoLiderPerfilVinculo({
         if (cancelado) return;
         setAlunos(retorno.alunos || []);
         setPerfil(retorno.perfil || null);
-        setStatus(retorno.match.status);
+        const modoSalvo = String((processo.teste as any)?.ecoVinculoModo || '');
+        const statusEfetivo = alunoId && modoSalvo === 'automatico_seguro'
+          ? 'automatico_seguro'
+          : retorno.match.status;
+        setStatus(statusEfetivo as typeof status);
         setSelecionado(retorno.match.aluno ? String(retorno.match.aluno.id) : '');
 
         if (!alunoId && retorno.match.status === 'automatico_seguro' && retorno.perfil?.aluno) {
