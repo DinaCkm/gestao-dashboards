@@ -266,7 +266,7 @@ async function statusEcoLiderAluno(connection: any, alunoId: number) {
      LEFT JOIN aluno_atividade_progresso aap
        ON aap.alunoId=aca.alunoId
       AND aap.cursoAtribuidoId=aca.id
-      AND aap.atividadeId=ac.atividadeId
+      AND aap.atividadeId=ac.id
      WHERE aca.alunoId=?`,
     [alunoId],
   )) as any;
