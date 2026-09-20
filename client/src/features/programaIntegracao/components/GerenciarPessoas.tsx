@@ -8,12 +8,13 @@ import {
   reordenarProcessosSeguro,
 } from '../api/peopleClient';
 import { calcularStatusGeral, calcularProgresso, getLabelStatus } from '../helpers/statusHelpers';
+import { statusVisualPessoaIntegracao } from '../helpers/statusPessoaHelpers';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowDown, ArrowUp, FlaskConical, Loader2, Plus, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, CheckCircle2, CircleAlert, Clock3, FlaskConical, Loader2, Plus, Search, Sun } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GerenciarPessoasProps {
@@ -241,7 +242,22 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
           pessoasFiltradas.map((pessoa, indice) => {
             const status = calcularStatusGeral(pessoa);
             const progresso = calcularProgresso(pessoa);
+            const sinal = statusVisualPessoaIntegracao(pessoa, feriados);
             const chavePessoa = pessoa.id || pessoa.nome;
+            const SinalIcon = sinal.sinal === 'vermelho'
+              ? CircleAlert
+              : sinal.sinal === 'azul'
+                ? Clock3
+                : sinal.sinal === 'amarelo'
+                  ? Sun
+                  : CheckCircle2;
+            const sinalClasses = sinal.sinal === 'vermelho'
+              ? 'border-red-300 bg-red-50 text-red-700'
+              : sinal.sinal === 'azul'
+                ? 'border-blue-300 bg-blue-50 text-blue-700'
+                : sinal.sinal === 'amarelo'
+                  ? 'border-amber-300 bg-amber-50 text-amber-700'
+                  : 'border-emerald-300 bg-emerald-50 text-emerald-700';
             const emOperacao = operacao?.endsWith(chavePessoa) || operacao === chavePessoa;
 
             return (
@@ -252,9 +268,18 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                       <CardTitle className="text-base truncate">{pessoa.nome}</CardTitle>
                       <CardDescription className="text-xs mt-1">{pessoa.cargo || 'Cargo não informado'}</CardDescription>
                     </div>
-                    <Badge variant={status === 'concluido' ? 'default' : 'secondary'}>
-                      {getLabelStatus(status)}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <div
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold ${sinalClasses}`}
+                        title={sinal.detalhe}
+                      >
+                        <SinalIcon className="h-3.5 w-3.5" />
+                        <span>{sinal.label}</span>
+                      </div>
+                      <Badge variant={status === 'concluido' ? 'default' : 'secondary'}>
+                        {getLabelStatus(status)}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
 

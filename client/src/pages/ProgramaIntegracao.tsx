@@ -48,7 +48,7 @@ type MainTabValue = 'painel' | 'agenda' | 'indicadores' | 'registrar' | 'respost
 type ConfigSubTab = 'emails' | 'mentoras' | 'cursos' | 'aviso' | 'links' | 'datas' | 'backup';
 
 export default function ProgramaIntegracao() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,12 +102,18 @@ export default function ProgramaIntegracao() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const chaveEmail = new URLSearchParams(window.location.search).get('email') || '';
-    if (!chaveEmail) return;
-    setEmailModeloSelecionado(chaveEmail);
-    setConfigSubTab('emails');
-    setActiveTab('config');
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    const chaveEmail = params.get('email') || '';
+    const tabUrl = params.get('tab') as MainTabValue | null;
+    const tabsValidas: MainTabValue[] = ['painel','agenda','indicadores','registrar','respostas','formularios','atas','pessoas','config'];
+
+    if (tabUrl && tabsValidas.includes(tabUrl)) setActiveTab(tabUrl);
+    if (chaveEmail) {
+      setEmailModeloSelecionado(chaveEmail);
+      setConfigSubTab('emails');
+      setActiveTab('config');
+    }
+  }, [location]);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -371,7 +377,11 @@ export default function ProgramaIntegracao() {
           <Card><CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Taxa Conclusão</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{todosProcesos.length > 0 ? Math.round((processosEncerrados.length / todosProcesos.length) * 100) : 0}%</div></CardContent></Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MainTabValue)}>
+        <Tabs value={activeTab} onValueChange={(v) => {
+          const proxima = v as MainTabValue;
+          setActiveTab(proxima);
+          setLocation(`/programa-integracao?tab=${proxima}`);
+        }}>
           <TabsList className="grid w-full grid-cols-3 lg:grid-cols-9 overflow-x-auto">
             <TabsTrigger value="painel" className="text-xs md:text-sm">Painel da semana</TabsTrigger>
             <TabsTrigger value="agenda" className="text-xs md:text-sm">Agenda geral</TabsTrigger>
@@ -415,6 +425,7 @@ export default function ProgramaIntegracao() {
           <TabsContent value="pessoas" className="space-y-6 mt-6">
             <GerenciarPessoas
               processos={todosProcesos}
+              feriados={feriados}
               onAbrirPessoa={(id) => setLocation(`/programa-integracao/detalhe/${id}`)}
               onSaved={recarregarEstado}
             />

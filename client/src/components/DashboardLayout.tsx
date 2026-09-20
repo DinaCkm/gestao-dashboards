@@ -227,6 +227,18 @@ const adminMenuGroups: MenuGroup[] = [
   },
 ];
 
+const programaIntegracaoSubmenu: SubMenuItem[] = [
+  { icon: ClipboardList, label: "Painel da Semana", path: "/programa-integracao?tab=painel" },
+  { icon: CalendarDays, label: "Agenda Geral", path: "/programa-integracao?tab=agenda" },
+  { icon: BarChart3, label: "Indicadores", path: "/programa-integracao?tab=indicadores" },
+  { icon: ClipboardEdit, label: "Registrar Respostas", path: "/programa-integracao?tab=registrar" },
+  { icon: FileText, label: "Respostas Recebidas", path: "/programa-integracao?tab=respostas" },
+  { icon: ClipboardCheck, label: "Formulários", path: "/programa-integracao?tab=formularios" },
+  { icon: FileSpreadsheet, label: "Atas e Relatórios", path: "/programa-integracao?tab=atas" },
+  { icon: Users, label: "Pessoas", path: "/programa-integracao?tab=pessoas" },
+  { icon: Settings, label: "Configurações", path: "/programa-integracao?tab=config" },
+];
+
 // ============================================================
 // MENUS PARA OUTROS PERFIS (mentor, gestor, aluno)
 // ============================================================
@@ -730,22 +742,51 @@ function DashboardLayoutContent({
                 })}
 
                 {/* PROGRAMA DE INTEGRACAO - acesso exclusivo do administrador completo */}
-                {isFullAdmin && (
-                  <div className="px-2 pt-1 pb-1">
-                    <SidebarMenu className="px-0">
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          onClick={() => setLocation("/programa-integracao")}
-                          tooltip="Programa de Integração"
-                          className="h-10 transition-all font-normal hover:bg-sidebar-accent/50"
-                        >
-                          <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                          <span>Programa de Integração</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </div>
-                )}
+                {isFullAdmin && (() => {
+                  const integrationActive = location.split("?")[0].startsWith("/programa-integracao");
+                  const search = typeof window !== "undefined" ? window.location.search : "";
+                  const tabAtual = new URLSearchParams(search).get("tab") || "painel";
+                  return (
+                    <Collapsible defaultOpen={integrationActive} className="group/integracao">
+                      <SidebarGroup className="py-0.5 px-2">
+                        <SidebarMenu className="px-0">
+                          <SidebarMenuItem>
+                            <CollapsibleTrigger asChild>
+                              <SidebarMenuButton
+                                tooltip="Programa de Integração"
+                                className={`h-10 transition-all font-normal ${integrationActive ? "text-primary font-medium" : "hover:bg-sidebar-accent/50"}`}
+                              >
+                                <ClipboardList className={`h-4 w-4 ${integrationActive ? "text-primary" : "text-muted-foreground"}`} />
+                                <span className="flex-1 text-left">Programa de Integração</span>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]/integracao:rotate-90" />
+                              </SidebarMenuButton>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <SidebarMenuSub>
+                                {programaIntegracaoSubmenu.map((item) => {
+                                  const tabItem = new URLSearchParams(item.path.split("?")[1] || "").get("tab") || "painel";
+                                  const isActive = integrationActive && tabAtual === tabItem;
+                                  return (
+                                    <SidebarMenuSubItem key={item.path}>
+                                      <SidebarMenuSubButton
+                                        isActive={isActive}
+                                        onClick={() => setLocation(item.path)}
+                                        className={`cursor-pointer h-8 ${isActive ? "bg-primary/10 text-primary font-medium" : ""}`}
+                                      >
+                                        <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                                        <span>{item.label}</span>
+                                      </SidebarMenuSubButton>
+                                    </SidebarMenuSubItem>
+                                  );
+                                })}
+                              </SidebarMenuSub>
+                            </CollapsibleContent>
+                          </SidebarMenuItem>
+                        </SidebarMenu>
+                      </SidebarGroup>
+                    </Collapsible>
+                  );
+                })()}
               </>
             ) : (
               /* MENU PARA MENTOR / GESTOR / ALUNO (flat, sem grupos) */
