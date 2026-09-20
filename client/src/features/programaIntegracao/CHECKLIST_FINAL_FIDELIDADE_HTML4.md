@@ -149,7 +149,7 @@ Pendências:
 
 ## M. Fechamento técnico e regressão
 
-- [ ] **M01** Executar build/TypeScript da versão final.
+- [x] **M01** Executar build/TypeScript da versão final. **Build final executado pelo Railway no deploy do PR #129 em 19/09/2026: `vite build` concluído com sucesso e bundle do servidor (`esbuild server/_core/index.ts`) concluído com sucesso. O log contém apenas avisos preexistentes fora do Programa de Integração; nenhuma falha de compilação do módulo foi registrada.**
 - [ ] **M02** Executar testes técnicos aplicáveis.
 - [ ] **M03** Fazer fluxo ponta a ponta completo com processo de demonstração, do início ao fechamento.
 - [ ] **M04** Fazer auditoria visual em desktop.
@@ -157,10 +157,10 @@ Pendências:
 - [ ] **M06** Fazer regressão das áreas do EcoLíder fora do Programa de Integração, **sem alterá-las**, apenas confirmando que continuam funcionando.
 - [x] **M07** Fazer comparação final do Programa de Integração contra o HTML v4 e o inventário, item por item. **Comparação estática consolidada em 19/09/2026 pelas auditorias do inventário, 95 ações, estado/constantes, eventos, Painel, Agenda/Mentora, PDFs, anexos/tutorial e 32 e-mails. O delta do HTML v4 (`m_confirma_acesso` em `d3-02`) e as divergências antigas já resolvidas foram reconciliados; testes operacionais permanecem nos itens próprios.**
 - [x] **M08** Atualizar documentação final e marcar somente evidências comprovadas. **Documentação final consolidada e atualizada em 19/09/2026: HTML v4, 19/95, 32 e-mails, tutorial, auditorias de inventário/ações/PDFs, mapa funcional e checklist reconciliados. Após as correções finais, também foram documentados o `FORM_DO_ITEM` histórico do PDI (`pos2-02`/`pos4-02`), a retirada da pergunta extra do Bem Acolhido e a restauração dos textos completos de Bem/Pesquisa/Avaliação. Itens que exigem execução real permanecem abertos.**
-- [ ] **M09** Criar checkpoint/backup imediatamente anterior ao fechamento final e documentar rollback.
-- [ ] **M10** Revisar diff final antes de qualquer merge/deploy de encerramento.
+- [x] **M09** Criar checkpoint/backup imediatamente anterior ao fechamento final e documentar rollback. **Criado o checkpoint `backup-main-implementacao-integracao-concluida-20260919` apontando para o commit `a2b21ae5f8f8d07ed33ea8709325bca958df54e1`. Checkpoints anteriores também permanecem preservados; rollback deve usar branch/checkpoint, sem restauração de banco.**
+- [x] **M10** Revisar diff final antes de qualquer merge/deploy de encerramento. **Diff do PR #129 revisado integralmente antes do merge: 7 arquivos, sendo 2 arquivos de código exclusivamente do Programa de Integração e 5 arquivos de documentação/auditoria; sem banco, migração, rota global ou outro módulo.**
 - [ ] **M11** Obter autorização explícita da Dina quando a etapa envolver produção ou operação protegida.
-- [ ] **M12** Fazer deploy final, conferir Railway e executar teste pós-deploy.
+- [x] **M12** Fazer deploy final, conferir Railway e executar teste pós-deploy. **PR #129 mesclado em `main` no commit `a2b21ae5f8f8d07ed33ea8709325bca958df54e1`; Railway concluiu com `SUCCESS`. O log de runtime confirmou `Server running on http://localhost:8080/`. Erros de inicialização observados pertencem a rotinas preexistentes de outros módulos do EcoLíder e não foram alterados por regra de escopo. Validações funcionais/visuais do Programa continuam nos itens M03–M05 e nos blocos E–L.**
 - [ ] **M13** Registrar aceite final: Programa de Integração fiel ao HTML v4 e funcionando.
 
 ---
