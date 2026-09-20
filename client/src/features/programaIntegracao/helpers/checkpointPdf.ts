@@ -130,7 +130,7 @@ function corPct(v: number | null): [number, number, number] {
   if (v >= 90) return [27, 122, 85];
   if (v >= 60) return [93, 150, 110];
   if (v >= 30) return [249, 172, 32];
-  return [200, 54, 60];
+  return [107, 62, 143];
 }
 
 function addFooter(doc: jsPDF, processo: ProcessoIntegracao, emissao: string) {
@@ -210,9 +210,9 @@ export function gerarCheckpointPdf(
   const d = checkpointDadosReal(processo, feriados);
   const papeis: PapelCheckpoint[] = ['Gestor', 'Anjo', 'Colaborador'];
   const corPapel: Record<PapelCheckpoint, [number, number, number]> = {
-    Gestor: [236, 112, 78],
+    Gestor: [82, 103, 168],
     Anjo: [249, 172, 32],
-    Colaborador: [225, 62, 65],
+    Colaborador: [124, 92, 191],
   };
   const ord: Record<number, string> = { 1: '1º', 2: '2º', 3: '3º', 4: '4º' };
   const largura = 174;
@@ -228,7 +228,7 @@ export function gerarCheckpointPdf(
   doc.text(`Checkpoint em ${dataBr(emissao)} · ${processo.tipo || 'Onboarding'}`, 18, y);
   y += 8;
 
-  doc.setDrawColor(200, 54, 60);
+  doc.setDrawColor(107, 62, 143);
   doc.setLineWidth(0.8);
   doc.line(18, y, 192, y);
   y += 7;
@@ -370,7 +370,7 @@ export function gerarCheckpointPdf(
         doc.setTextColor(120, 126, 136);
         doc.text(dataBr(x.data), 18, y);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...(x.st.k === 'late' ? [200, 54, 60] : x.st.k === 'wait' ? [236, 112, 78] : [249, 172, 32]));
+        doc.setTextColor(...(x.st.k === 'late' ? [107, 62, 143] : x.st.k === 'wait' ? [82, 103, 168] : [249, 172, 32]));
         doc.text(statusTxt, 38, y);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8.4);
