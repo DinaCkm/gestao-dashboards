@@ -166,7 +166,7 @@ function adicionarCabecalho(doc: jsPDF, processo: ProcessoIntegracao) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.text('CKM Talents · Consultoria de integração · Parceira do Sebrae/TO', 14, 24);
-  doc.setDrawColor(200, 54, 60);
+  doc.setDrawColor(107, 62, 143);
   doc.setLineWidth(0.8);
   doc.line(14, 27, 196, 27);
 

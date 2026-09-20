@@ -153,7 +153,7 @@ export function EmailPreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[min(92dvh,860px)] w-[calc(100vw-1rem)] max-w-4xl flex-col overflow-hidden border border-[#D7D1CD] bg-white p-0 text-[#152232] shadow-2xl sm:w-full">
-        <DialogHeader className="shrink-0 border-b border-[#E9E4E1] bg-[#FBF9F8] px-4 py-3 pr-12 sm:px-5 sm:py-4">
+        <DialogHeader className="shrink-0 border-b border-[#E3E5EE] bg-[#F8F8FC] px-4 py-3 pr-12 sm:px-5 sm:py-4">
           <DialogTitle className="text-sm font-bold leading-snug text-[#152232] sm:text-base">
             {email.assunto}
           </DialogTitle>
@@ -169,7 +169,7 @@ export function EmailPreviewDialog({
         )}
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white">
-          <dl className="grid grid-cols-1 gap-x-4 gap-y-2 border-b border-[#E9E4E1] bg-[#F7F5F4] px-4 py-3 text-sm sm:grid-cols-[72px_minmax(0,1fr)] sm:px-5">
+          <dl className="grid grid-cols-1 gap-x-4 gap-y-2 border-b border-[#E3E5EE] bg-[#F7F5F4] px-4 py-3 text-sm sm:grid-cols-[72px_minmax(0,1fr)] sm:px-5">
             <dt className="text-[10px] font-bold uppercase tracking-wide text-[#98A0AB]">Para</dt>
             <dd className="m-0 break-words text-[#152232]"><DestacarVazio texto={email.para} /></dd>
             {email.cc && (
@@ -189,19 +189,19 @@ export function EmailPreviewDialog({
           </dl>
 
           <div
-            className="email-preview-body px-4 py-5 text-[13px] leading-7 text-[#152232] sm:px-5 sm:text-sm [&_p]:mb-3 [&_.email-aviso]:rounded-r-md [&_.email-aviso]:border-l-[3px] [&_.email-aviso]:border-[#C8363C] [&_.email-aviso]:bg-[#FBF9F8] [&_.email-aviso]:px-3 [&_.email-aviso]:py-2 [&_.email-item]:mb-1 [&_.email-item]:pl-3 [&_.email-regra]:my-4 [&_.email-regra]:border-[#E9E4E1] [&_mark]:rounded-sm [&_mark]:bg-amber-100 [&_mark]:px-1 [&_mark]:font-semibold [&_mark]:text-amber-900"
+            className="email-preview-body px-4 py-5 text-[13px] leading-7 text-[#152232] sm:px-5 sm:text-sm [&_p]:mb-3 [&_.email-aviso]:rounded-r-md [&_.email-aviso]:border-l-[3px] [&_.email-aviso]:border-[#6B3E8F] [&_.email-aviso]:bg-[#F8F8FC] [&_.email-aviso]:px-3 [&_.email-aviso]:py-2 [&_.email-item]:mb-1 [&_.email-item]:pl-3 [&_.email-regra]:my-4 [&_.email-regra]:border-[#E3E5EE] [&_mark]:rounded-sm [&_mark]:bg-amber-100 [&_mark]:px-1 [&_mark]:font-semibold [&_mark]:text-amber-900"
             dangerouslySetInnerHTML={{ __html: corpoHtml }}
           />
         </div>
 
-        <div className="shrink-0 border-t border-[#D7D1CD] bg-[#FBF9F8] px-3 py-3 sm:px-5">
+        <div className="shrink-0 border-t border-[#D7D1CD] bg-[#F8F8FC] px-3 py-3 sm:px-5">
           <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={handleCopiarRico}
-              className="border-[#C8363C] bg-[#C8363C] font-semibold text-white hover:border-[#E13E41] hover:bg-[#E13E41] hover:text-white"
+              className="border-[#6B3E8F] bg-[#6B3E8F] font-semibold text-white hover:border-[#7A52A2] hover:bg-[#7A52A2] hover:text-white"
             >
               {copiado === 'rico' ? '✓ Copiado com formatação' : 'Copiar com formatação'}
             </Button>

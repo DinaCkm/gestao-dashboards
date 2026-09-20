@@ -309,7 +309,7 @@ export function gerarBriefingMentoraPdf(
     doc.text(partes, margem, y);
     y += partes.length * espaco + 1.5;
   };
-  const sec = (titulo: string) => { novaPagina(10); y += 2; doc.setDrawColor(200, 54, 60); doc.line(margem, y, 210 - margem, y); y += 5; linha(titulo, 10, true, 4.8); };
+  const sec = (titulo: string) => { novaPagina(10); y += 2; doc.setDrawColor(107, 62, 143); doc.line(margem, y, 210 - margem, y); y += 5; linha(titulo, 10, true, 4.8); };
   const bullets = (itens: string[], nums = false) => itens.forEach((item, i) => linha(`${nums ? `${i + 1}.` : '•'} ${item}`, 8.7, false, 4.3));
 
   doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.text('Briefing da Mentora', margem, y); y += 7;
@@ -432,7 +432,7 @@ export function gerarRelatorioMentoraWord(
   if (numero === 4) q.push({ txt: 'Como você avalia a evolução do colaborador ao longo dos 150 dias e o que ainda pode ser desenvolvido no futuro?', linhas: 8 });
   q.push({ txt: 'Algo mais que a CKM precisa saber? (combinados, pontos de atenção, algo que você prefira não escrever na ata)', linhas: 6 });
 
-  const caixa = (linhas = 4) => `<table style="width:100%;border-collapse:collapse;margin:6px 0 12px"><tr><td style="border:1px solid #c9c4c0;background:#f7f5f4;height:${Math.max(42, linhas * 18)}px">&nbsp;</td></tr></table>`;
+  const caixa = (linhas = 4) => `<table style="width:100%;border-collapse:collapse;margin:6px 0 12px"><tr><td style="border:1px solid #c9c4c0;background:#f7f8fc;height:${Math.max(42, linhas * 18)}px">&nbsp;</td></tr></table>`;
   const qs = q.map((x, i) => `<div style="margin:14px 0"><p><b>${i + 1}. ${escHtml(x.txt)}</b></p>${x.sim ? '<p>☐ Sim &nbsp;&nbsp; ☐ Não &nbsp;&nbsp; ☐ Parcialmente</p>' : ''}${x.quatro ? '<p>1. ________________________________</p><p>2. ________________________________</p><p>3. ________________________________</p><p>4. ________________________________</p>' : caixa(x.linhas)}</div>`).join('');
   const qsBem = qualidadesBem(processo);
   const ecoWord = dadosEcoLiderDoProcesso(processo);
@@ -446,7 +446,7 @@ export function gerarRelatorioMentoraWord(
     : `<p><b>Situação atual do processo</b></p><p>Pendências: ${escHtml(String(processo.pendencias || '').trim() || 'nenhuma registrada')}</p>`;
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
-    body{font-family:Arial,sans-serif;color:#1a1a1a;font-size:11pt;line-height:1.4;margin:28px} h1{font-size:20pt;text-align:center;margin-bottom:4px} h2{font-size:14pt;color:#a82d33;border-bottom:1px solid #c8363c;padding-bottom:4px;margin-top:24px} h3{font-size:12pt;margin-top:18px} table.ficha{width:100%;border-collapse:collapse;margin:16px 0} table.ficha td{border:1px solid #d7d1cd;padding:6px;vertical-align:top} table.ficha td:first-child{width:34%;font-weight:bold;background:#f1edeb}.nota{background:#f7f5f4;border-left:4px solid #c8363c;padding:10px;margin:12px 0}.dest{background:#f7f5f4;padding:10px;font-weight:bold}.assin{margin-top:30px;border-top:1px solid #ddd;padding-top:12px;color:#666}
+    body{font-family:Arial,sans-serif;color:#1a1a1a;font-size:11pt;line-height:1.4;margin:28px} h1{font-size:20pt;text-align:center;margin-bottom:4px} h2{font-size:14pt;color:#5b3a7d;border-bottom:1px solid #6b3e8f;padding-bottom:4px;margin-top:24px} h3{font-size:12pt;margin-top:18px} table.ficha{width:100%;border-collapse:collapse;margin:16px 0} table.ficha td{border:1px solid #d4d8e5;padding:6px;vertical-align:top} table.ficha td:first-child{width:34%;font-weight:bold;background:#eff1f7}.nota{background:#f7f8fc;border-left:4px solid #6b3e8f;padding:10px;margin:12px 0}.dest{background:#f7f8fc;padding:10px;font-weight:bold}.assin{margin-top:30px;border-top:1px solid #ddd;padding-top:12px;color:#666}
   </style></head><body>
   <h1>Relatório do Alinhamento — Programa de Integração Sebrae/TO</h1>
   <p style="text-align:center">${numero === 4 ? '4º e último alinhamento — Encerramento' : `${ORD[numero]} Alinhamento · ${MARCO[numero]}º dia`} · ${escHtml(processo.nome || 'Colaborador')}</p>

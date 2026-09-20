@@ -124,7 +124,7 @@ function section(doc: jsPDF, y: number, titulo: string, subtitulo?: string): num
   y = ensureSpace(doc, y, 12);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
-  doc.setTextColor(168, 45, 51);
+  doc.setTextColor(91, 58, 125);
   doc.text(titulo.toUpperCase(), 16, y);
   if (subtitulo) {
     doc.setFont('helvetica', 'normal');
@@ -132,7 +132,7 @@ function section(doc: jsPDF, y: number, titulo: string, subtitulo?: string): num
     doc.setTextColor(110, 110, 110);
     doc.text(subtitulo, 194, y, { align: 'right' });
   }
-  doc.setDrawColor(200, 54, 60);
+  doc.setDrawColor(107, 62, 143);
   doc.setLineWidth(0.3);
   doc.line(16, y + 2, 194, y + 2);
   return y + 8;

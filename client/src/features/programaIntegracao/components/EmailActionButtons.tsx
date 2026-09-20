@@ -98,7 +98,7 @@ export function EmailActionButtons({
             variant="outline"
             onClick={() => setChaveAberta(chave)}
             title={modelo?.nome || chave}
-            className="border-[#C8363C] bg-[#C8363C] font-semibold text-white hover:border-[#E13E41] hover:bg-[#E13E41] hover:text-white"
+            className="border-[#6B3E8F] bg-[#6B3E8F] font-semibold text-white hover:border-[#7A52A2] hover:bg-[#7A52A2] hover:text-white"
           >
             ✉ {mostrarRotulo ? rotuloCurto(chave) : 'Gerar'}
           </Button>

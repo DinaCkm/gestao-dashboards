@@ -1295,7 +1295,7 @@ export function RelatorioAutoconhecimento({
   const contribuicoesGeral = contribuicoesData?.filter((c: any) => c.tipo === "geral") || [];
 
   const dimensaoCores: Record<DiscDimensao, string> = {
-    D: "#DC2626", I: "#F59E0B", S: "#16A34A", C: "#2563EB"
+    D: "#7C3AED", I: "#F59E0B", S: "#16A34A", C: "#2563EB"
   };
 
   const notaLabels: Record<number, string> = {

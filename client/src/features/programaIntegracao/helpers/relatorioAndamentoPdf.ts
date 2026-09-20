@@ -140,7 +140,7 @@ function addHeader(doc: jsPDF, processo: ProcessoIntegracao, emissao: string): n
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   doc.text(`Emitido em ${dataBr(emissao)}`, 14, 24);
-  doc.setDrawColor(200, 54, 60);
+  doc.setDrawColor(107, 62, 143);
   doc.setLineWidth(0.8);
   doc.line(14, 27, 196, 27);
 
@@ -169,11 +169,11 @@ function ensureSpace(doc: jsPDF, y: number, needed: number): number {
 
 function section(doc: jsPDF, y: number, titulo: string): number {
   y = ensureSpace(doc, y, 12);
-  doc.setTextColor(168, 45, 51);
+  doc.setTextColor(91, 58, 125);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8.4);
   doc.text(titulo.toUpperCase(), 14, y);
-  doc.setDrawColor(200, 54, 60);
+  doc.setDrawColor(107, 62, 143);
   doc.setLineWidth(0.3);
   doc.line(14, y + 2, 196, y + 2);
   return y + 7;
@@ -318,7 +318,7 @@ export function gerarRelatorioAndamentoPdf(
     doc.setFillColor(238, 234, 232);
     doc.roundedRect(42, y, 132, 5.2, 2.6, 2.6, 'F');
     if (c.valor) {
-      doc.setFillColor(200, 54, 60);
+      doc.setFillColor(107, 62, 143);
       doc.roundedRect(42, y, Math.max(5.2, 132 * c.valor / maxPend), 5.2, 2.6, 2.6, 'F');
     }
     doc.text(String(c.valor), 180, y + 3.8);
@@ -356,7 +356,7 @@ export function gerarRelatorioAndamentoPdf(
     y = ensureSpace(doc, y, 10);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.setTextColor(papel === 'CKM' ? 168 : 180, papel === 'CKM' ? 45 : 80, papel === 'CKM' ? 51 : 47);
+    doc.setTextColor(papel === 'CKM' ? 91 : 82, papel === 'CKM' ? 58 : 103, papel === 'CKM' ? 125 : 168);
     doc.text(`${papel.toUpperCase()} (${lista.length})`, 14, y);
     y += 4.5;
     lista.forEach((item) => {

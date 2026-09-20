@@ -78,15 +78,18 @@ import {
   Mail,
   ClipboardList,
   Award,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import CustomLogin from "./CustomLogin";
 import RoleSwitcher from "@/components/RoleSwitcher";
 import NotificationBell from "@/components/NotificationBell";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // ============================================================
 // TIPOS
@@ -368,7 +371,9 @@ function DashboardLayoutContent({
   setSidebarWidth,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [location, setLocation] = useLocation();
+  const searchString = useSearch();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
@@ -438,8 +443,7 @@ function DashboardLayoutContent({
   // Para admin, determinar qual grupo está ativo (para abrir automaticamente)
   const activeGroupIndex = useMemo(() => {
     if (!isAdmin) return -1;
-    const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
-    const currentParams = new URLSearchParams(currentSearch);
+    const currentParams = new URLSearchParams(searchString || '');
     const currentTab = currentParams.get("tab");
     const locationBase = location.split("?")[0];
     
@@ -464,7 +468,7 @@ function DashboardLayoutContent({
         return location.startsWith(itemBase + "/");
       })
     );
-  }, [location, isAdmin]);
+  }, [location, searchString, isAdmin]);
 
   // Para não-admin, filtrar itens do menu
   const filteredOtherItems = useMemo(() => {
@@ -510,7 +514,7 @@ function DashboardLayoutContent({
       if (found) return found.label;
     }
     return "Menu";
-  }, [location, isAdmin, filteredOtherItems]);
+  }, [location, searchString, isAdmin, filteredOtherItems]);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -550,8 +554,8 @@ function DashboardLayoutContent({
   const getRoleBadge = (role: string, cRole: string | null | undefined) => {
     if (role === 'admin') return { label: "Admin", className: "bg-primary/20 text-primary" };
     if (role === 'admin2') return { label: "Admin N2", className: "bg-blue-100 text-blue-700" };
-    if (role === 'manager' && cRole === 'mentor') return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
-    if (role === 'manager') return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
+    if (role === 'manager' && cRole === 'mentor') return { label: "Mentor", className: "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-200" };
+    if (role === 'manager') return { label: "Gerente", className: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-200" };
     return { label: "Aluno", className: "bg-green-100 text-green-700" };
   };
 
@@ -568,8 +572,7 @@ function DashboardLayoutContent({
       const itemTab = itemParams.get("tab");
       if (itemTab) {
         // Verificar se estamos na mesma base path E com o mesmo tab
-        const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
-        const currentParams = new URLSearchParams(currentSearch);
+        const currentParams = new URLSearchParams(searchString || '');
         const currentTab = currentParams.get("tab");
         return locationBase === itemBase && currentTab === itemTab;
       }
@@ -581,8 +584,7 @@ function DashboardLayoutContent({
       g.items.some(i => i.path.startsWith(itemBase + "?"))
     );
     if (hasQueryItems && !itemQuery) {
-      const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
-      const currentParams = new URLSearchParams(currentSearch);
+      const currentParams = new URLSearchParams(searchString || '');
       const currentTab = currentParams.get("tab");
       // Se estamos em /cadastros sem tab, é a lista de alunos
       return (locationBase === itemBase && !currentTab) || (locationBase === itemBase && currentTab === "acesso");
@@ -667,7 +669,7 @@ function DashboardLayoutContent({
                   if (visibleItems.length === 0) return null;
                   return (
                     <Collapsible
-                      key={group.label}
+                      key={`${group.label}-${isGroupActive ? 'active' : 'idle'}`}
                       defaultOpen={isGroupActive}
                       className="group/collapsible"
                     >
@@ -721,7 +723,7 @@ function DashboardLayoutContent({
                                         <item.icon className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                                         <span>{item.label}</span>
                                         {item.path === '/painel-revisoes' && revisoesBadgeCount > 0 && (
-                                          <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
+                                          <span className="ml-auto text-[10px] bg-violet-600 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
                                             {revisoesBadgeCount}
                                           </span>
                                         )}
@@ -744,10 +746,9 @@ function DashboardLayoutContent({
                 {/* PROGRAMA DE INTEGRACAO - acesso exclusivo do administrador completo */}
                 {isFullAdmin && (() => {
                   const integrationActive = location.split("?")[0].startsWith("/programa-integracao");
-                  const search = typeof window !== "undefined" ? window.location.search : "";
-                  const tabAtual = new URLSearchParams(search).get("tab") || "painel";
+                  const tabAtual = new URLSearchParams(searchString || "").get("tab") || "painel";
                   return (
-                    <Collapsible defaultOpen={integrationActive} className="group/integracao">
+                    <Collapsible key={`integracao-${integrationActive ? 'active' : 'idle'}`} defaultOpen={integrationActive} className="group/integracao">
                       <SidebarGroup className="py-0.5 px-2">
                         <SidebarMenu className="px-0">
                           <SidebarMenuItem>
@@ -792,7 +793,7 @@ function DashboardLayoutContent({
               /* MENU PARA MENTOR / GESTOR / ALUNO (flat, sem grupos) */
               <SidebarMenu className="px-2 py-1 pb-2">
                 {filteredOtherItems.map(item => {
-                  const isActive = location === item.path;
+                  const isActive = isPathActive(item.path);
                   return (
                     <SidebarMenuItem key={`${item.path}-${item.label}`}>
                       <SidebarMenuButton
@@ -809,7 +810,7 @@ function DashboardLayoutContent({
                         />
                         <span className={isActive ? "text-foreground font-medium" : ""}>{item.label}</span>
                         {item.path === '/painel-revisoes' && revisoesBadgeCount > 0 && (
-                          <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
+                          <span className="ml-auto text-[10px] bg-violet-600 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
                             {revisoesBadgeCount}
                           </span>
                         )}
@@ -828,7 +829,20 @@ function DashboardLayoutContent({
             <div className="mb-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
               <div className="flex items-center gap-2 justify-between">
                 <RoleSwitcher />
-                <NotificationBell />
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleTheme}
+                    className="h-8 w-8 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    title={theme === "dark" ? "Usar modo claro" : "Usar modo escuro"}
+                    aria-label={theme === "dark" ? "Usar modo claro" : "Usar modo escuro"}
+                  >
+                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </Button>
+                  <NotificationBell />
+                </div>
               </div>
             </div>
             <DropdownMenu>
@@ -910,6 +924,17 @@ function DashboardLayoutContent({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="h-9 w-9 rounded-lg"
+                title={theme === "dark" ? "Usar modo claro" : "Usar modo escuro"}
+                aria-label={theme === "dark" ? "Usar modo claro" : "Usar modo escuro"}
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
               <NotificationBell />
               <RoleSwitcher />
             </div>

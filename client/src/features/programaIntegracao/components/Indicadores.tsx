@@ -31,9 +31,9 @@ interface IndicadoresProps {
   onProcessoClick?: (id: string) => void;
 }
 
-const CORES = ['#6B3E8F', '#1B7A55', '#F9AC20', '#2E6FB7', '#C8363C', '#5B9E3A', '#7A6A5C'];
-const COR_MARCA = '#C8363C';
-const COR_ATENCAO = '#F9AC20';
+const CORES = ['#6B3E8F', '#1B7A55', '#6A74B9', '#2E6FB7', '#6B3E8F', '#5B9E3A', '#7A6A5C'];
+const COR_MARCA = '#6B3E8F';
+const COR_ATENCAO = '#6A74B9';
 const COR_OK = '#1B7A55';
 
 function pct(valor: number | null) {

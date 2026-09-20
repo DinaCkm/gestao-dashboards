@@ -22,7 +22,7 @@ function hojeIso() {
 }
 
 function novaCor(indice: number) {
-  const cores = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626', '#9333ea', '#0f766e'];
+  const cores = ['#2563eb', '#7c3aed', '#0891b2', '#059669', '#d97706', '#6b3e8f', '#9333ea', '#0f766e'];
   return cores[Math.abs(indice) % cores.length];
 }
 
