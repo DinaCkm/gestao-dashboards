@@ -448,18 +448,6 @@ export function DetalheProcessoReal({
                 <div className="border-t">
                   {etapa.et.al && (
                     <div className="space-y-3 border-b bg-muted/10 p-4">
-                      <MentoraPreparacaoPainel
-                        processo={processo}
-                        numero={etapa.et.al as 1 | 2 | 3 | 4}
-                        feriados={feriados}
-                        config={config}
-                        processos={processos}
-                        onAbrirCadastroMentoras={onAbrirCadastroMentoras}
-                        onAbrirBemTeste={() => document.getElementById('integracao-bem-teste')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                        onSalvarProcesso={salvar}
-                        onGerarBriefing={() => gerarBriefingMentoraPdf(processo, etapa.et.al as 1 | 2 | 3 | 4, config, feriados)}
-                        onGerarWord={() => gerarRelatorioMentoraWord(processo, etapa.et.al as 1 | 2 | 3 | 4, config, feriados)}
-                      />
                       <AlinhamentoPainelReal
                         processo={processo}
                         numero={etapa.et.al as 1 | 2 | 3 | 4}
@@ -603,6 +591,26 @@ export function DetalheProcessoReal({
                             onSalvarProcesso={salvar}
                             onExcluirResposta={excluindoRespostaRid ? undefined : excluirRespostaDaTimeline}
                           />
+
+                          {/^(ag[1-4]-00)$/.test(item.id) && (() => {
+                            const numeroMentora = Number(item.id.match(/^ag([1-4])-00$/)?.[1]) as 1 | 2 | 3 | 4;
+                            return (
+                              <div className="border-t pt-4">
+                                <MentoraPreparacaoPainel
+                                  processo={processo}
+                                  numero={numeroMentora}
+                                  feriados={feriados}
+                                  config={config}
+                                  processos={processos}
+                                  onAbrirCadastroMentoras={onAbrirCadastroMentoras}
+                                  onAbrirBemTeste={() => document.getElementById('integracao-bem-teste')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                                  onSalvarProcesso={salvar}
+                                  onGerarBriefing={() => gerarBriefingMentoraPdf(processo, numeroMentora, config, feriados)}
+                                  onGerarWord={() => gerarRelatorioMentoraWord(processo, numeroMentora, config, feriados)}
+                                />
+                              </div>
+                            );
+                          })()}
                         </div>
                       );
                     })}
