@@ -9654,6 +9654,7 @@ export async function createGerentePuro(data: {
   email: string;
   cpf: string;
   programId: number;
+  permissions?: string[];
 }): Promise<{ success: boolean; message?: string; userId?: number; consultorId?: number }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
@@ -9726,6 +9727,15 @@ export async function createGerentePuro(data: {
     );
     const userId = Number(userResult.insertId);
     if (!userId) throw new Error("Não foi possível criar o usuário de login do gerente.");
+
+    if (Array.isArray(data.permissions) && data.permissions.length) {
+      await raw.execute(
+        `INSERT INTO admin_page_permissions (userId,permissions)
+         VALUES (?,?)
+         ON DUPLICATE KEY UPDATE permissions=VALUES(permissions),updatedAt=CURRENT_TIMESTAMP`,
+        [userId, JSON.stringify(data.permissions)],
+      );
+    }
 
     await raw.commit();
     return {
