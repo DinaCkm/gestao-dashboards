@@ -8684,11 +8684,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         permissions: z.array(z.string()).optional(),
       }))
       .mutation(async ({ input }) => {
-        const { permissions = [], ...dados } = input;
-        const result = await db.createGerentePuro(dados);
-        if (!result.success || !result.userId) return result;
-        await db.setAdminPermissions(result.userId, permissions);
-        return result;
+        return await db.createGerentePuro(input);
       }),
 
     // Remover papel de gerente
