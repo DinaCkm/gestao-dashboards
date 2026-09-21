@@ -1,5 +1,5 @@
 import type { ProcessoIntegracao } from '../types';
-import { cronogramaReal } from './painelAcoes';
+import { cronogramaReal, dataPrevistaItemCronograma } from './painelAcoes';
 import { calcularStatusItem, normalizarRegistroFeito } from './statusHelpers';
 import { progressoRealProcesso, diaAtualReal, sinalRealProcesso } from './painelProcessos';
 import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
@@ -153,8 +153,9 @@ export function calcularIndicadoresProgramaReal(
       etapa.itens.forEach((item) => {
         const salvo = statusSalvo(processo, item.id);
         const responsabilidade = responsabilidadeAtual(item, salvo);
-        if (item.form && !fechado(salvo) && etapa.data <= hoje) {
-          const st = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+        const dataItem = dataPrevistaItemCronograma(etapa, item);
+        if (item.form && !fechado(salvo) && dataItem <= hoje) {
+          const st = calcularStatusItem(processo, item.id, dataItem, hojeRef);
           resultado.pendentes++;
           const papeisPendencia = responsabilidade.papeis.length ? responsabilidade.papeis : [item.r];
           papeisPendencia.forEach((papel) => {
@@ -166,7 +167,7 @@ export function calcularIndicadoresProgramaReal(
           }
         }
 
-        if (fechado(salvo) || etapa.data > hoje) return;
+        if (fechado(salvo) || dataItem > hoje) return;
         if (responsabilidade.lado === 'ckm') resultado.acoesCkm++;
         else resultado.acoesEles++;
       });

@@ -1,5 +1,5 @@
 import type { ProcessoIntegracao } from '../types';
-import { cronogramaReal } from './painelAcoes';
+import { cronogramaReal, dataPrevistaItemCronograma } from './painelAcoes';
 import { calcularStatusItem } from './statusHelpers';
 import { fichaAcaoAtual } from './itemStateHelpers';
 import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
@@ -49,7 +49,8 @@ export function statusVisualPessoaIntegracao(
 
   cronogramaReal(processo, feriados, hojeRef).forEach((etapa) => {
     etapa.itens.forEach((item) => {
-      const status = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+      const dataItem = dataPrevistaItemCronograma(etapa, item);
+      const status = calcularStatusItem(processo, item.id, dataItem, hojeRef);
       const ficha = fichaAcaoAtual(processo, item.id);
       const responsabilidade = responsabilidadeAtual(item, ficha.s);
 
@@ -58,7 +59,7 @@ export function statusVisualPessoaIntegracao(
         else atrasosExternos++;
       }
 
-      if (etapa.data === hoje) {
+      if (dataItem === hoje) {
         const resolvidaHoje =
           status.k === 'ok' ||
           status.k === 'off' ||

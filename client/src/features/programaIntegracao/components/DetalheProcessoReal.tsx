@@ -9,7 +9,7 @@ import {
   type FiltroDetalheProcesso,
 } from '../helpers/detalheProcessoRealHelpers';
 import { calcularStatusItem } from '../helpers/statusHelpers';
-import { cronogramaReal } from '../helpers/painelAcoes';
+import { cronogramaReal, dataPrevistaItemCronograma } from '../helpers/painelAcoes';
 import {
   aplicarCampoFichaAcao,
   aplicarStatusAcao,
@@ -708,7 +708,8 @@ export function DetalheProcessoReal({
 
                   <div className="pi-stage-items divide-y">
                     {itens.map((item) => {
-                      const st = calcularStatusItem(processo, item.id, etapa.data);
+                      const dataItem = dataPrevistaItemCronograma(etapa, item);
+                      const st = calcularStatusItem(processo, item.id, dataItem);
                       const ficha = fichaAcaoAtual(processo, item.id);
                       const statusVisual = statusTemporario[item.id] ?? ficha.s;
                       const feedback = feedbackStatus[item.id];
@@ -743,7 +744,7 @@ export function DetalheProcessoReal({
                                   </Badge>
                                 </div>
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                  Responsável: {item.r} · previsto para {formatarData(etapa.data)}
+                                  Responsável: {item.r} · previsto para {formatarData(dataItem)}
                                   {ficha.d ? ` · concluído em ${formatarData(ficha.d)}` : ''}
                                 </p>
                               </div>

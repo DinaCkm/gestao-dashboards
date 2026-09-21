@@ -1,6 +1,6 @@
 import type { ProcessoIntegracao } from '../types';
 import { IDS_ITENS_PLANO_REAL, TOTAL_ITENS_PLANO_REAL } from './planoReal';
-import { cronogramaReal } from './painelAcoes';
+import { cronogramaReal, dataPrevistaItemCronograma } from './painelAcoes';
 import { calcularStatusItem, normalizarRegistroFeito, PESO_STATUS_ITEM, type StatusItemPainel } from './statusHelpers';
 
 export interface ProgressoProcessoPainel {
@@ -105,7 +105,7 @@ export function pendenciasReaisProcesso(
 
   cronogramaReal(processo, feriados, hojeRef).forEach((etapa) => {
     etapa.itens.forEach((item) => {
-      const st = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+      const st = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef);
       if (st.k === 'ok' || st.k === 'off') return;
       if (item.r === 'CKM') ckm++;
       else eles++;
@@ -131,7 +131,7 @@ export function sinalRealProcesso(
   cronogramaReal(processo, feriados, hojeRef).forEach((etapa) => {
     etapa.itens.forEach((item) => {
       if (item.r !== 'CKM') return;
-      const st = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+      const st = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef);
       if (st.k === 'late') atrasadas++;
       else if (st.k === 'act') agora++;
     });
@@ -158,7 +158,7 @@ export function proximaEtapaRealProcesso(
     let abertas = 0;
 
     etapa.itens.forEach((item) => {
-      const st = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+      const st = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef);
       if (st.k === 'ok' || st.k === 'off') return;
       abertas++;
       if (!pior || PESO_STATUS_ITEM[st.k] < PESO_STATUS_ITEM[pior.k]) pior = st;

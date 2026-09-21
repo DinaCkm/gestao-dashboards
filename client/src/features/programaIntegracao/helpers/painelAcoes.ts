@@ -5,6 +5,7 @@ import { fichaAcaoAtual } from './itemStateHelpers';
 import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
 import type { FaixaPainel } from './painelKpis';
 import { FERIADOS_PADRAO_INTEGRACAO } from './configDefaults';
+import { formKeyForItem } from './registrarRespostasParser';
 
 export interface CronogramaEtapaReal {
   et: EtapaPlanoReal;
@@ -14,6 +15,7 @@ export interface CronogramaEtapaReal {
   ajustado: boolean;
   confirmado: boolean;
   itens: ItemPlanoReal[];
+  datasItens?: Record<string, string>;
 }
 
 export interface AcaoPainelReal {
@@ -130,6 +132,35 @@ function alinhamentoData(processo: ProcessoIntegracao, numero: number): string |
   return normalizarDataCronograma(reg.data);
 }
 
+function alinhamentoRealizado(processo: ProcessoIntegracao, numero: number): string | null {
+  const reg = processo.alin?.[numero] ?? processo.alin?.[String(numero)];
+  if (!reg || typeof reg !== 'object' || !reg.realizado) return null;
+  return normalizarDataCronograma(reg.realizado);
+}
+
+function referenciaFormularioPos(
+  processo: ProcessoIntegracao,
+  numero: number,
+  etapaAlinhamento?: CronogramaEtapaReal,
+): string | null {
+  return alinhamentoRealizado(processo, numero)
+    || alinhamentoData(processo, numero)
+    || etapaAlinhamento?.data
+    || null;
+}
+
+function formularioPosComPrazoDoAlinhamento(item: ItemPlanoReal): boolean {
+  return Boolean(formKeyForItem(item.id))
+    && (item.r === 'Gestor' || item.r === 'Anjo' || item.r === 'Colaborador');
+}
+
+export function dataPrevistaItemCronograma(
+  etapa: CronogramaEtapaReal,
+  item: ItemPlanoReal,
+): string {
+  return etapa.datasItens?.[item.id] || etapa.data;
+}
+
 /**
  * Espelho puro da função cronograma(p) do HTML original.
  * Não grava nada. Assim como `feriados()` do original, uma lista ausente ou
@@ -150,7 +181,7 @@ export function cronogramaReal(
     ? PLANO_REAL.findIndex((etapa) => etapa.al === numeroAncora)
     : -1;
 
-  return PLANO_REAL.map((et, etapaIndex) => {
+  const etapas = PLANO_REAL.map((et, etapaIndex) => {
     const alvoOriginal = add(base, (et.dia - 1) + (et.off || 0));
     const deveRecalcular = indiceAncora >= 0 && etapaIndex > indiceAncora && Number.isFinite(offsetAgenda) && offsetAgenda !== 0;
     const alvo = deveRecalcular ? add(alvoOriginal, offsetAgenda) : alvoOriginal;
@@ -195,7 +226,33 @@ export function cronogramaReal(
       confirmado: Boolean(conf),
       itens: et.itens,
     };
-  }).sort((a, b) => a.data.localeCompare(b.data));
+  });
+
+  const posPorNumero: Record<number, string> = { 1: 'pos1', 2: 'pos2', 3: 'pos3', 4: 'pos4' };
+
+  [1, 2, 3, 4].forEach((numero) => {
+    const etapaPos = etapas.find((etapa) => etapa.et.id === posPorNumero[numero]);
+    const etapaAlinhamento = etapas.find((etapa) => etapa.et.al === numero);
+    if (!etapaPos) return;
+
+    const referencia = referenciaFormularioPos(processo, numero, etapaAlinhamento);
+    if (!referencia) return;
+
+    const prazo = add(referencia, 2);
+    const datasItens: Record<string, string> = {};
+
+    etapaPos.itens.forEach((item) => {
+      if (formularioPosComPrazoDoAlinhamento(item)) {
+        datasItens[item.id] = prazo;
+      }
+    });
+
+    if (Object.keys(datasItens).length) {
+      etapaPos.datasItens = datasItens;
+    }
+  });
+
+  return etapas.sort((a, b) => a.data.localeCompare(b.data));
 }
 
 /** Igual ao fimSemana(n) do HTML original. */
@@ -224,14 +281,15 @@ export function coletarAcoesPainel(
       const pid = p.id || p.nome;
       cronogramaReal(p, feriados, hojeRef).forEach((e) => {
         e.itens.forEach((it) => {
-          const st = calcularStatusItem(p, it.id, e.data, hojeRef);
+          const dataItem = dataPrevistaItemCronograma(e, it);
+          const st = calcularStatusItem(p, it.id, dataItem, hojeRef);
           if (st.k === 'ok' || st.k === 'off') return;
 
           const faixa: FaixaPainel = st.k === 'late'
             ? 'atras'
-            : e.data <= fimEsta
+            : dataItem <= fimEsta
               ? 'esta'
-              : e.data <= fimProx
+              : dataItem <= fimProx
                 ? 'prox'
                 : 'depois';
 
@@ -244,7 +302,7 @@ export function coletarAcoesPainel(
             e,
             it,
             st,
-            data: e.data,
+            data: dataItem,
             faixa,
             lado: responsabilidade.lado,
             responsavelAtual: responsabilidade.rotulo,

@@ -1,5 +1,5 @@
 import type { BootstrapState, ProcessoIntegracao } from '../types';
-import { cronogramaReal } from './painelAcoes';
+import { cronogramaReal, dataPrevistaItemCronograma } from './painelAcoes';
 import type { ResponsavelIntegracao } from './planoReal';
 import { fichaAcaoAtual, statusAcaoAtual, type StatusAcaoLegado } from './itemStateHelpers';
 import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
@@ -103,11 +103,12 @@ export function linhasAgendaReal(
       e.itens.forEach((it) => {
         const ficha = fichaAcaoAtual(processo, it.id);
         const responsabilidade = responsabilidadeAtual(it, ficha.s);
+        const dataItem = dataPrevistaItemCronograma(e, it);
         out.push({
           pid,
           pnome: processo.nome || pid,
           cor: processo.cor || '',
-          data: e.data,
+          data: dataItem,
           dia: e.dia,
           etapa: e.et.t,
           t: it.t,
@@ -117,7 +118,7 @@ export function linhasAgendaReal(
           mail: it.mail || '',
           itid: it.id,
           s: ficha.s,
-          st: calcularStatusItem(processo, it.id, e.data, hojeRef),
+          st: calcularStatusItem(processo, it.id, dataItem, hojeRef),
           fim: ficha.d,
           just: ficha.just,
           obs: ficha.notas.length ? ficha.notas.map((n) => `${n.d}: ${n.t}`).join(' | ') : '',
