@@ -148,6 +148,13 @@ export function calcularStatusItem(
   }
 
   if (s === 'wait') {
+    if (dif > 0) {
+      return {
+        k: 'late',
+        l: `Atrasado ${pluralDias(dif)} (aguardando retorno)`,
+        dif,
+      };
+    }
     return { k: 'wait', l: 'Aguardando retorno', dif };
   }
 
