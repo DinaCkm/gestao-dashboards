@@ -135,6 +135,9 @@ function statusAcaoDisponiveis(itemId: string, atual?: StatusAcaoLegado): Array<
   if (solicitarGestor || atual === 'wait_gestor' || dependenteAgendamento) {
     extras.push(['wait_gestor', 'Aguardando retorno do gestor']);
   }
+  if (atual === 'blocked') {
+    extras.push(['blocked', 'Aguardando etapa anterior']);
+  }
 
   const especiais = new Set(extras.map(([valor]) => valor));
   return [...base.filter(([valor]) => !especiais.has(valor)), ...extras];
