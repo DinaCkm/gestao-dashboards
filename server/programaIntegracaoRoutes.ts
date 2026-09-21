@@ -296,15 +296,59 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const nomeGerente = normTxt(user.name || "");
     const emailGerente = String(user.email || "").trim().toLowerCase();
 
+    // Regra multiempresa: gerente sempre precisa estar vinculado a uma empresa.
+    // managedProgramId vem do registro de consultor; programId é o vínculo direto do usuário.
+    const empresaId = Number(user.managedProgramId ?? user.programId ?? 0) || 0;
+    if (user.role === "manager" && !empresaId) {
+      return res.status(403).json({ error: "Este gerente não possui empresa vinculada." });
+    }
+
     const [processRows] = (await connection.execute(
-      `SELECT id,legacyId,nome,email,cargo,unidade,inicio,situacao,gestor,gestorEmail,anjo,estado
+      `SELECT id,legacyId,alunoId,nome,email,cpf,cargo,unidade,inicio,situacao,gestor,gestorEmail,anjo,estado
        FROM programa_integracao_processos
        WHERE situacao='ativo' AND tipo='Onboarding'
        ORDER BY ordem,id`,
     )) as any;
 
+    // A empresa é resolvida usando o cadastro ECO Líderes (alunos.programId),
+    // sem confiar apenas no nome do gestor e sem abrir dados globais para UGP/RH.
+    const alunosEmpresa = user.role === "admin"
+      ? []
+      : await listarAlunosAtivosDaEmpresa(connection, empresaId);
+    const alunosEmpresaPorId = new Map(alunosEmpresa.map((a: any) => [Number(a.id), a]));
+
+    function resolverAlunoDaEmpresa(row: any): any | null {
+      if (user.role === "admin") return { id: Number(row.alunoId || 0) || null };
+
+      const alunoIdDireto = Number(row.alunoId || 0);
+      if (alunoIdDireto && alunosEmpresaPorId.has(alunoIdDireto)) {
+        return alunosEmpresaPorId.get(alunoIdDireto) || null;
+      }
+
+      const estado = asJson<Record<string, any>>(row.estado, {});
+      const ecoAlunoId = Number(estado?.teste?.ecoAlunoId || 0);
+      if (ecoAlunoId && alunosEmpresaPorId.has(ecoAlunoId)) {
+        return alunosEmpresaPorId.get(ecoAlunoId) || null;
+      }
+
+      const match = escolherCorrespondenciaEcoSegura(
+        String(row.nome || ""),
+        String(row.email || ""),
+        alunosEmpresa,
+      );
+      return match.status === "automatico_seguro" ? match.aluno : null;
+    }
+
+    const alunoEmpresaPorProcesso = new Map<number, any>();
     const permitidos = (processRows || []).filter((row: any) => {
-      if (scopeAll || user.role === "admin") return true;
+      if (user.role === "admin") return true;
+
+      const alunoEmpresa = resolverAlunoDaEmpresa(row);
+      if (!alunoEmpresa) return false; // fail closed: sem vínculo seguro com a empresa, não exibe.
+      alunoEmpresaPorProcesso.set(Number(row.id), alunoEmpresa);
+
+      if (scopeAll) return true; // UGP/RH: todos, porém somente da própria empresa.
+
       const gestorNome = normTxt(row.gestor || "");
       const gestorEmail = String(row.gestorEmail || "").trim().toLowerCase();
       return Boolean(
@@ -314,7 +358,12 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     });
 
     if (!permitidos.length) {
-      return res.json({ ok: true, scope: scopeAll ? "all" : "gestor", colaboradores: [] });
+      return res.json({
+        ok: true,
+        scope: scopeAll ? "all" : "gestor",
+        empresaId: user.role === "admin" ? null : empresaId,
+        colaboradores: [],
+      });
     }
 
     const ids = permitidos.map((r: any) => Number(r.id));
@@ -339,19 +388,30 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     }
 
     const alunosEco = await listarAlunosEcoLiderDisponiveis(connection);
+    const alunosEcoPermitidos = user.role === "admin"
+      ? alunosEco
+      : alunosEco.filter((a: any) => Number(a.programId || 0) === empresaId);
     const ecoIds: number[] = [];
     const alunoEcoPorProcesso = new Map<number, number>();
 
     for (const row of permitidos) {
-      const estado = asJson<Record<string, any>>(row.estado, {});
-      let ecoId = Number(estado?.teste?.ecoAlunoId || 0);
-      if (!ecoId) {
-        const match = escolherCorrespondenciaEcoSegura(String(row.nome || ""), String(row.email || ""), alunosEco);
-        if (match.status === "automatico_seguro" && match.aluno?.id) ecoId = Number(match.aluno.id);
+      const pid = Number(row.id);
+      const alunoEmpresa = alunoEmpresaPorProcesso.get(pid);
+      let ecoId = Number(alunoEmpresa?.id || 0);
+
+      if (!ecoId && user.role === "admin") {
+        const estado = asJson<Record<string, any>>(row.estado, {});
+        ecoId = Number(estado?.teste?.ecoAlunoId || row.alunoId || 0);
+        if (!ecoId) {
+          const match = escolherCorrespondenciaEcoSegura(String(row.nome || ""), String(row.email || ""), alunosEcoPermitidos);
+          if (match.status === "automatico_seguro" && match.aluno?.id) ecoId = Number(match.aluno.id);
+        }
       }
-      if (ecoId > 0) {
+
+      // Status de PDI/Compliance só consulta IDs que também pertencem ao escopo da empresa.
+      if (ecoId > 0 && (user.role === "admin" || alunosEcoPermitidos.some((a: any) => Number(a.id) === ecoId))) {
         ecoIds.push(ecoId);
-        alunoEcoPorProcesso.set(Number(row.id), ecoId);
+        alunoEcoPorProcesso.set(pid, ecoId);
       }
     }
     const ecoStatus = await statusEcoLiderAlunos(connection, ecoIds);
@@ -421,6 +481,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     return res.json({
       ok: true,
       scope: scopeAll ? "all" : "gestor",
+      empresaId: user.role === "admin" ? null : empresaId,
       atualizadoEm: new Date().toISOString(),
       colaboradores,
     });
@@ -510,10 +571,11 @@ function escolherCorrespondenciaEcoSegura(nomeProcesso: string, emailProcesso: s
 
 async function listarAlunosEcoLiderDisponiveis(connection: any) {
   const [rows] = (await connection.execute(
-    `SELECT DISTINCT a.id,a.name AS nome,a.email
+    `SELECT DISTINCT a.id,a.name AS nome,a.email,a.programId
      FROM alunos a
      INNER JOIN aluno_curso_atribuido aca ON aca.alunoId=a.id
      WHERE a.tipoPortal IN ('aluno_autonomo','assessment')
+       AND COALESCE(a.isActive,1)=1
      ORDER BY a.name ASC,a.id ASC`,
   )) as any;
 
@@ -521,6 +583,26 @@ async function listarAlunosEcoLiderDisponiveis(connection: any) {
     id: Number(row.id),
     nome: String(row.nome || ""),
     email: String(row.email || ""),
+    programId: Number(row.programId || 0) || null,
+  }));
+}
+
+async function listarAlunosAtivosDaEmpresa(connection: any, programId: number) {
+  const [rows] = (await connection.execute(
+    `SELECT id,name AS nome,email,cpf,programId
+     FROM alunos
+     WHERE COALESCE(isActive,1)=1
+       AND programId=?
+     ORDER BY name ASC,id ASC`,
+    [programId],
+  )) as any;
+
+  return (rows || []).map((row: any) => ({
+    id: Number(row.id),
+    nome: String(row.nome || ""),
+    email: String(row.email || ""),
+    cpf: String(row.cpf || ""),
+    programId: Number(row.programId || 0) || null,
   }));
 }
 
