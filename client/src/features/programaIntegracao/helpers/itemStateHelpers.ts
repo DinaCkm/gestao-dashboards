@@ -206,6 +206,18 @@ function sincronizarDependenciasAgendamento(
 
   const statusSolicitar = statusNoFeito(feito, solicitar);
   if (statusSolicitar === 'wait_gestor') {
+    if (statusNoFeito(feito, confirmar) === 'ok') {
+      const fichaSolicitar = fichaDe(feito, solicitar);
+      fichaSolicitar.s = 'ok';
+      fichaSolicitar.d = fichaSolicitar.d || hoje;
+      delete fichaSolicitar.bloqueioAuto;
+      delete fichaSolicitar.bloqueioPor;
+      delete fichaSolicitar.bloqueioOrigem;
+      liberarBloqueioAutomatico(feito, convite, 'gestor');
+      liberarBloqueioEtapa(feito, convite);
+      return;
+    }
+
     [confirmar, convite].forEach((id) => {
       liberarBloqueioEtapa(feito, id);
       marcarBloqueioAutomatico(feito, id, 'wait_gestor', 'gestor');
@@ -232,11 +244,6 @@ function sincronizarDependenciasAgendamento(
 
   liberarBloqueioEtapa(feito, convite, confirmar);
 
-  const fichaSolicitar = fichaDe(feito, solicitar);
-  if (fichaSolicitar.s === 'wait_gestor') {
-    fichaSolicitar.s = 'ok';
-    fichaSolicitar.d = fichaSolicitar.d || hoje;
-  }
 }
 
 /**
