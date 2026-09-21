@@ -41,6 +41,8 @@ const STATUS_NOME: Record<StatusAcaoLegado, string> = {
   prog: 'Programado',
   doing: 'Em andamento',
   wait: 'Aguardando resposta',
+  wait_mentora: 'Aguardando retorno da mentora',
+  wait_gestor: 'Aguardando retorno do gestor',
   ok: 'Concluída',
   na: 'Não se aplica',
   wont: 'Não será feita',
