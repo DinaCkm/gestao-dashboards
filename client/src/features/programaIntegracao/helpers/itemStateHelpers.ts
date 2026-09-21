@@ -200,6 +200,8 @@ function aplicarAutomacoes(
   });
 
   [1, 2, 3, 4].forEach((numero) => {
+    sincronizarDependenciasAgendamento(feito, numero, hoje);
+
     const alinhamento = alin[String(numero)] ?? alin[numero];
     if (!alinhamento || typeof alinhamento !== 'object') return;
 
@@ -229,7 +231,6 @@ function aplicarAutomacoes(
       }
     }
 
-    sincronizarDependenciasAgendamento(feito, numero, hoje);
   });
 }
 
