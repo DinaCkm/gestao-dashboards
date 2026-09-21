@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";
 import { getRawConnection } from "./db";
+import mysql from "mysql2/promise";
 import { sdk } from "./_core/sdk";
 import {
   PROGRAMA_INTEGRACAO_ESCALAS,
@@ -89,10 +90,44 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
     next();
   } catch { return res.status(401).json({ error: "Sessão inválida ou expirada." }); }
 }
+let programaIntegracaoFallbackConnection: mysql.Connection | null = null;
+
+async function conexaoProgramaIntegracaoSaudavel(connection: any): Promise<boolean> {
+  if (!connection) return false;
+  try {
+    await connection.execute("SELECT 1");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function getConnectionOr503(res: Response) {
   const connection = await getRawConnection();
-  if (!connection) { res.status(503).json({ error: "Banco de dados indisponível." }); return null; }
-  return connection;
+  if (await conexaoProgramaIntegracaoSaudavel(connection)) return connection;
+
+  if (programaIntegracaoFallbackConnection) {
+    if (await conexaoProgramaIntegracaoSaudavel(programaIntegracaoFallbackConnection)) {
+      return programaIntegracaoFallbackConnection;
+    }
+    try { await programaIntegracaoFallbackConnection.end(); } catch {}
+    programaIntegracaoFallbackConnection = null;
+  }
+
+  try {
+    if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL ausente");
+    programaIntegracaoFallbackConnection = await mysql.createConnection(process.env.DATABASE_URL);
+    if (await conexaoProgramaIntegracaoSaudavel(programaIntegracaoFallbackConnection)) {
+      console.warn("[ProgramaIntegracao] Conexão SQL bruta global indisponível; usando conexão própria de contingência do módulo.");
+      return programaIntegracaoFallbackConnection;
+    }
+  } catch (error) {
+    console.error("[ProgramaIntegracao] Falha ao restabelecer conexão SQL do módulo:", error);
+    programaIntegracaoFallbackConnection = null;
+  }
+
+  res.status(503).json({ error: "Banco de dados indisponível para o Programa de Integração." });
+  return null;
 }
 async function audit(connection: any, req: Request | null, acao: string, detalhe: string, processoId?: number | null, respostaId?: number | null, metadata?: any) {
   try {
