@@ -1,6 +1,6 @@
 import type { ProcessoIntegracao } from '../types';
 
-export type StatusAcaoLegado = '' | 'prog' | 'doing' | 'wait' | 'ok' | 'na' | 'wont';
+export type StatusAcaoLegado = '' | 'prog' | 'doing' | 'wait' | 'wait_mentora' | 'wait_gestor' | 'ok' | 'na' | 'wont';
 export type CampoFichaAcao = 'd' | 'prog' | 'just';
 
 export interface NotaAcao {
@@ -88,8 +88,97 @@ function statusNoFeito(feito: Record<string, any>, itemId: string): StatusAcaoLe
 function limparFichaVazia(feito: Record<string, any>, itemId: string): void {
   const ficha = feito[itemId];
   if (!ficha) return;
-  const vazia = !ficha.s && !ficha.d && !ficha.prog && !ficha.just && (!ficha.notas || ficha.notas.length === 0);
+  const semBloqueio = !ficha.bloqueioAuto && !ficha.bloqueioPor;
+  const vazia = !ficha.s && !ficha.d && !ficha.prog && !ficha.just && (!ficha.notas || ficha.notas.length === 0) && semBloqueio;
   if (vazia) delete feito[itemId];
+}
+
+type BloqueioAgendamento = 'mentora' | 'gestor';
+
+function statusTerminal(status: StatusAcaoLegado): boolean {
+  return status === 'ok' || status === 'na' || status === 'wont';
+}
+
+function marcarBloqueioAutomatico(
+  feito: Record<string, any>,
+  itemId: string,
+  status: 'wait_mentora' | 'wait_gestor',
+  bloqueioPor: BloqueioAgendamento,
+): void {
+  const atual = statusNoFeito(feito, itemId);
+  if (statusTerminal(atual)) return;
+  const ficha = fichaDe(feito, itemId);
+  ficha.s = status;
+  ficha.bloqueioAuto = true;
+  ficha.bloqueioPor = bloqueioPor;
+  ficha.d = '';
+  ficha.prog = '';
+}
+
+function liberarBloqueioAutomatico(
+  feito: Record<string, any>,
+  itemId: string,
+  bloqueioPor: BloqueioAgendamento,
+): void {
+  if (!feito[itemId]) return;
+  const ficha = fichaDe(feito, itemId);
+  if (!ficha.bloqueioAuto || ficha.bloqueioPor !== bloqueioPor) return;
+  if (
+    (bloqueioPor === 'mentora' && ficha.s === 'wait_mentora') ||
+    (bloqueioPor === 'gestor' && ficha.s === 'wait_gestor')
+  ) {
+    ficha.s = '';
+  }
+  delete ficha.bloqueioAuto;
+  delete ficha.bloqueioPor;
+  limparFichaVazia(feito, itemId);
+}
+
+/**
+ * Sequência operacional dos quatro agendamentos:
+ * preparar mentora -> solicitar gestor -> confirmação do gestor -> convite.
+ * Bloqueios automáticos nunca sobrescrevem ações já encerradas.
+ */
+function sincronizarDependenciasAgendamento(
+  feito: Record<string, any>,
+  numero: number,
+  hoje: string,
+): void {
+  const preparar = `ag${numero}-00`;
+  const solicitar = `ag${numero}-01`;
+  const confirmar = `ag${numero}-02`;
+  const convite = `ag${numero}-03`;
+
+  const statusPreparar = statusNoFeito(feito, preparar);
+
+  if (statusPreparar === 'wait_mentora') {
+    [solicitar, confirmar, convite].forEach((id) =>
+      marcarBloqueioAutomatico(feito, id, 'wait_mentora', 'mentora'));
+    return;
+  }
+
+  [solicitar, confirmar, convite].forEach((id) =>
+    liberarBloqueioAutomatico(feito, id, 'mentora'));
+
+  const statusSolicitar = statusNoFeito(feito, solicitar);
+  if (statusSolicitar === 'wait_gestor') {
+    [confirmar, convite].forEach((id) =>
+      marcarBloqueioAutomatico(feito, id, 'wait_gestor', 'gestor'));
+  } else {
+    [confirmar, convite].forEach((id) =>
+      liberarBloqueioAutomatico(feito, id, 'gestor'));
+  }
+
+  if (statusNoFeito(feito, confirmar) === 'ok') {
+    const fichaSolicitar = fichaDe(feito, solicitar);
+    if (fichaSolicitar.s === 'wait_gestor') {
+      fichaSolicitar.s = 'ok';
+      fichaSolicitar.d = fichaSolicitar.d || hoje;
+      delete fichaSolicitar.bloqueioAuto;
+      delete fichaSolicitar.bloqueioPor;
+    }
+    liberarBloqueioAutomatico(feito, convite, 'gestor');
+  }
 }
 
 /**
@@ -139,6 +228,8 @@ function aplicarAutomacoes(
         ficha.d = alinhamento.realizado;
       }
     }
+
+    sincronizarDependenciasAgendamento(feito, numero, hoje);
   });
 }
 
