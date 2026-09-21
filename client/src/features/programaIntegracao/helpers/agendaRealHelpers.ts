@@ -43,6 +43,7 @@ const STATUS_NOME: Record<StatusAcaoLegado, string> = {
   wait: 'Aguardando resposta',
   wait_mentora: 'Aguardando retorno da mentora',
   wait_gestor: 'Aguardando retorno do gestor',
+  blocked: 'Aguardando etapa anterior',
   ok: 'Concluída',
   na: 'Não se aplica',
   wont: 'Não será feita',
