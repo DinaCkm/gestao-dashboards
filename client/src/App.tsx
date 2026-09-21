@@ -124,6 +124,7 @@ import WebinarTaskResponsavel from "./pages/WebinarTaskResponsavel";
 import ProgramaIntegracao from "./pages/ProgramaIntegracao";
 import ProgramaIntegracaoDetalhe from "./pages/ProgramaIntegracaoDetalhe";
 import ProgramaIntegracaoFormularioPublico from "./pages/ProgramaIntegracaoFormularioPublico";
+import AcompanharIntegracaoGestor from "./pages/AcompanharIntegracaoGestor";
 
 function Router() {
   return (
@@ -198,6 +199,7 @@ function Router() {
       <Route path={"/processos-seletivos/comunicado"} component={ProcessosSeletivosComunicado} />
       <Route path={"/programa-integracao/detalhe/:processoId"} component={ProgramaIntegracaoDetalhe} />
       <Route path={"/programa-integracao"} component={ProgramaIntegracao} />
+      <Route path={"/gestor/integracao"} component={AcompanharIntegracaoGestor} />
       <Route path={"/disc360"} component={Disc360Dashboard} />
       <Route path={"/disc360/perfis-empresa"} component={PerfilEmpresaDiretoria} />
       <Route path={"/disc360/responder-convite/:token"} component={ResponderConviteCultura} />

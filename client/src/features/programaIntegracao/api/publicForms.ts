@@ -47,6 +47,23 @@ export interface PublicFormMetaResponse {
   textos: PublicFormTextOverrides | null;
 }
 
+export interface PublicFormActiveOptions {
+  ok: boolean;
+  colaboradores: string[];
+  gestores: string[];
+  anjos: string[];
+}
+
+export async function carregarOpcoesAtivasFormulario(): Promise<PublicFormActiveOptions> {
+  const response = await fetch('/api/public/programa-integracao/opcoes-ativas', {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('Não foi possível carregar os nomes ativos do Onboarding.');
+  return response.json();
+}
+
 /** Consulta somente leitura: ativo/inativo, versão, política e camada de textos configurada. */
 export async function carregarFormularioPublicoMeta(
   slug: PublicFormSlug,

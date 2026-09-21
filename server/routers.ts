@@ -8624,6 +8624,32 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return await db.toggleAccessUserStatus(input.userId);
       }),
 
+    // Permissões do próprio gerente logado.
+    // Reutiliza admin_page_permissions por userId sem conceder privilégios administrativos.
+    getManagerPermissions: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'manager') return [];
+      return await db.getAdminPermissions(ctx.user.id);
+    }),
+
+    // Admin configura quais itens da Visão do Gestor um gerente poderá acessar.
+    getManagerPermissionsByUser: adminOrAdmin2Procedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getAdminPermissions(input.userId);
+      }),
+
+    setManagerPermissions: adminOrAdmin2Procedure
+      .input(z.object({
+        userId: z.number(),
+        permissions: z.array(z.string()),
+      }))
+      .mutation(async ({ input }) => {
+        const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
+        if (!gerente) throw new TRPCError({ code: 'NOT_FOUND', message: 'Gerente não encontrado.' });
+        await db.setAdminPermissions(input.userId, input.permissions);
+        return { success: true };
+      }),
+
     // ============ GERENTES DE EMPRESA (VISÃO DUPLA) ============
     
     // Listar gerentes de empresa com info completa
@@ -8653,8 +8679,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .input(z.object({
         name: z.string().min(1),
         email: z.string().email(),
-        cpf: z.string().optional(),
+        cpf: z.string().min(11, 'CPF é obrigatório para o login do Gerente Puro'),
         programId: z.number(),
+        permissions: z.array(z.string()).optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createGerentePuro(input);

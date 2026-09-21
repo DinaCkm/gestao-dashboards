@@ -1344,7 +1344,7 @@ function AlunosTab({ alunos, empresas, mentoresList, turmasList, loading, onUpda
                   <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>CPF</Label>
+                  <Label>CPF *</Label>
                   <Input 
                     value={editCpf} 
                     onChange={(e) => setEditCpf(formatCpf(e.target.value))} 
@@ -3067,7 +3067,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   empresas: any[];
   loading: boolean;
   onPromote: (data: { alunoId: number; programId: number }) => void;
-  onCreatePuro: (data: { name: string; email: string; cpf?: string; programId: number }) => void;
+  onCreatePuro: (data: { name: string; email: string; cpf: string; programId: number; permissions?: string[] }) => void;
   onRemove: (data: { userId: number }) => void;
   isPromoting: boolean;
   isCreatingPuro: boolean;
@@ -3085,12 +3085,55 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   const [puroEmail, setPuroEmail] = useState("");
   const [puroCpf, setPuroCpf] = useState("");
   const [puroProgramId, setPuroProgramId] = useState("");
+  const [puroPermissions, setPuroPermissions] = useState<string[]>(["/gestor/integracao"]);
+  const [puroIntegracaoEscopo, setPuroIntegracaoEscopo] = useState<"gestor" | "all">("gestor");
+  const [permissaoOpenId, setPermissaoOpenId] = useState<number | null>(null);
+  const [editPermissions, setEditPermissions] = useState<string[]>([]);
+  const [editEscopo, setEditEscopo] = useState<"gestor" | "all">("gestor");
+
+  const MANAGER_MENU_OPTIONS = [
+    { path: "/boas-vindas-gestor", label: "Boas-Vindas" },
+    { path: "/dashboard/ciclos-turmas", label: "Ciclos & Turmas" },
+    { path: "/dashboard/gestor", label: "Minha Empresa" },
+    { path: "/dashboard/ranking-geral-engajamento", label: "Ranking Geral de Engajamento" },
+    { path: "/demonstrativo-mentorias", label: "Sessões de Mentoria" },
+    { path: "/metas-gestor", label: "Metas de Desenvolvimento" },
+    { path: "/performance", label: "Performance dos Alunos" },
+    { path: "/relatorios", label: "Relatórios" },
+    { path: "/processos-seletivos/avaliacao", label: "Avaliação PS" },
+    { path: "/disc360/aplicacoes", label: "Aplicações DISC" },
+    { path: "/disc360/perfis-empresa", label: "Perfis de Empresa/Diretoria" },
+    { path: "/disc360/estrutura-organizacional", label: "Estrutura Organizacional" },
+    { path: "/disc360/perfis-cargo", label: "Perfis de Cargo" },
+    { path: "/disc360/resultado-match", label: "Resultado / Match" },
+    { path: "/gestor/integracao", label: "Acompanhar Integração" },
+  ];
 
   // Query alunos da empresa selecionada (para promoção)
   const { data: alunosProgram } = trpc.admin.alunosByProgram.useQuery(
     { programId: parseInt(selectedProgramId) },
     { enabled: !!selectedProgramId && promoteOpen }
   );
+
+  const { data: permissoesGerente, refetch: refetchPermissoesGerente } = trpc.admin.getManagerPermissionsByUser.useQuery(
+    { userId: permissaoOpenId || 0 },
+    { enabled: !!permissaoOpenId }
+  );
+
+  useEffect(() => {
+    if (!permissaoOpenId || !Array.isArray(permissoesGerente)) return;
+    setEditPermissions(permissoesGerente.filter((p: string) => !p.startsWith("scope:")));
+    setEditEscopo(permissoesGerente.includes("scope:integracao:all") ? "all" : "gestor");
+  }, [permissaoOpenId, permissoesGerente]);
+
+  const salvarPermissoesGerente = trpc.admin.setManagerPermissions.useMutation({
+    onSuccess: async () => {
+      toast.success("Permissões do gerente atualizadas.");
+      await refetchPermissoesGerente();
+      setPermissaoOpenId(null);
+    },
+    onError: (err) => toast.error(`Erro ao salvar permissões: ${err.message}`),
+  });
 
   const filteredAlunos = (alunosProgram || []).filter((a: any) =>
     !searchAluno || a.name.toLowerCase().includes(searchAluno.toLowerCase()) || a.email?.toLowerCase().includes(searchAluno.toLowerCase())
@@ -3116,20 +3159,33 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
       return;
     }
     const cpfDigits = puroCpf.replace(/\D/g, '');
-    if (cpfDigits.length > 0 && cpfDigits.length !== 11) {
-      toast.error("CPF deve conter 11 dígitos");
+    if (cpfDigits.length !== 11) {
+      toast.error("CPF é obrigatório e deve conter 11 dígitos para o login do Gerente Puro");
       return;
     }
+    if (puroPermissions.length === 0) {
+      toast.error("Selecione pelo menos uma área do menu para o Gerente Puro.");
+      return;
+    }
+    const permissions = [
+      ...puroPermissions,
+      ...(puroPermissions.includes("/gestor/integracao") && puroIntegracaoEscopo === "all"
+        ? ["scope:integracao:all"]
+        : []),
+    ];
     onCreatePuro({
       name: puroNome,
       email: puroEmail,
-      cpf: cpfDigits || undefined,
+      cpf: cpfDigits,
       programId: parseInt(puroProgramId),
+      permissions,
     });
     setPuroNome("");
     setPuroEmail("");
     setPuroCpf("");
     setPuroProgramId("");
+    setPuroPermissions(["/gestor/integracao"]);
+    setPuroIntegracaoEscopo("gestor");
     setPuroOpen(false);
   };
 
@@ -3259,7 +3315,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                     <div className="space-y-2">
                       <Label>CPF</Label>
                       <Input value={puroCpf} onChange={(e) => setPuroCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
-                      <p className="text-xs text-muted-foreground">CPF é usado para login (Email + CPF)</p>
+                      <p className="text-xs text-muted-foreground">Obrigatório para o login do Gerente Puro (Email + CPF).</p>
                     </div>
                     <div className="space-y-2">
                       <Label>Empresa que Gerencia *</Label>
@@ -3273,6 +3329,41 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                           ))}
                         </SelectContentNoPortal>
                       </Select>
+                    </div>
+                    <div className="space-y-3 rounded-lg border p-3">
+                      <div>
+                        <Label>Áreas liberadas no menu do Gerente</Label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Marque somente o que esta pessoa poderá acessar.
+                        </p>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {MANAGER_MENU_OPTIONS.map((item) => (
+                          <label key={item.path} className="flex items-center gap-2 text-sm">
+                            <Checkbox
+                              checked={puroPermissions.includes(item.path)}
+                              onCheckedChange={(checked) => {
+                                setPuroPermissions((atual) => checked
+                                  ? [...new Set([...atual, item.path])]
+                                  : atual.filter((p) => p !== item.path));
+                              }}
+                            />
+                            <span>{item.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {puroPermissions.includes("/gestor/integracao") && (
+                        <div className="space-y-2 border-t pt-3">
+                          <Label>Escopo de Acompanhar Integração</Label>
+                          <Select value={puroIntegracaoEscopo} onValueChange={(v) => setPuroIntegracaoEscopo(v as "gestor" | "all")}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContentNoPortal>
+                              <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
+                              <SelectItem value="all">UGP/RH — todos os colaboradores ativos</SelectItem>
+                            </SelectContentNoPortal>
+                          </Select>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <DialogFooter>
@@ -3380,15 +3471,25 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleRemove(g.id, g.name)}
-                        disabled={isRemoving}
-                      >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Remover
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPermissaoOpenId(g.id)}
+                        >
+                          <Shield className="h-3 w-3 mr-1" />
+                          Permissões
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRemove(g.id, g.name)}
+                          disabled={isRemoving}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Remover
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -3422,6 +3523,64 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
           </>
         )}
       </CardContent>
+
+      <Dialog open={!!permissaoOpenId} onOpenChange={(open) => !open && setPermissaoOpenId(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Permissões do Gerente</DialogTitle>
+            <DialogDescription>
+              Defina exatamente quais áreas aparecerão no menu deste gerente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 sm:grid-cols-2 py-2">
+            {MANAGER_MENU_OPTIONS.map((item) => (
+              <label key={item.path} className="flex items-center gap-2 rounded-md border p-2 text-sm">
+                <Checkbox
+                  checked={editPermissions.includes(item.path)}
+                  onCheckedChange={(checked) => setEditPermissions((atual) => checked
+                    ? [...new Set([...atual, item.path])]
+                    : atual.filter((p) => p !== item.path))}
+                />
+                <span>{item.label}</span>
+              </label>
+            ))}
+          </div>
+          {editPermissions.includes("/gestor/integracao") && (
+            <div className="space-y-2">
+              <Label>Escopo de Acompanhar Integração</Label>
+              <Select value={editEscopo} onValueChange={(v) => setEditEscopo(v as "gestor" | "all")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContentNoPortal>
+                  <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
+                  <SelectItem value="all">UGP/RH — todos os colaboradores ativos</SelectItem>
+                </SelectContentNoPortal>
+              </Select>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              disabled={!permissaoOpenId || salvarPermissoesGerente.isPending}
+              onClick={() => {
+                if (!permissaoOpenId) return;
+                if (editPermissions.length === 0) {
+                  toast.error("Selecione pelo menos uma área do menu para este gerente.");
+                  return;
+                }
+                const permissions = [
+                  ...editPermissions,
+                  ...(editPermissions.includes("/gestor/integracao") && editEscopo === "all"
+                    ? ["scope:integracao:all"]
+                    : []),
+                ];
+                salvarPermissoesGerente.mutate({ userId: permissaoOpenId, permissions });
+              }}
+            >
+              {salvarPermissoesGerente.isPending ? "Salvando..." : "Salvar permissões"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

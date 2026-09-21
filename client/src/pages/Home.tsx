@@ -28,6 +28,10 @@ export default function Home() {
     enabled: !loading && !!user && (user.role === "user" || (user.role === "manager" && !!(user as any).alunoId)),
   });
 
+  const { data: managerPerms } = trpc.admin.getManagerPermissions.useQuery(undefined, {
+    enabled: !loading && !!user && user.role === 'manager' && (user as any)?.consultorRole === 'gerente',
+  });
+
   // Redirect based on role
   useEffect(() => {
     if (loading) return;
@@ -42,8 +46,9 @@ export default function Home() {
         // É um mentor puro → vai para dashboard do mentor
         setLocation("/dashboard/mentor");
       } else if (userAny.consultorId && !userAny.alunoId && userAny.consultorRole === "gerente") {
-        // É um gestor puro (criado via createGerentePuro) → vai para página de boas-vindas
-        setLocation("/boas-vindas-gestor");
+        // Gerente Puro com checklist: entra na primeira área liberada.
+        const liberadas = Array.isArray(managerPerms) ? managerPerms.filter((p: string) => p.startsWith('/')) : [];
+        setLocation(liberadas[0] || "/boas-vindas-gestor");
       } else if (userAny.alunoId) {
         // É gerente + aluno (visão dupla) → modo padrão é ALUNO
         // Verificar se tem activeRole salvo no sessionStorage
@@ -85,7 +90,7 @@ export default function Home() {
       return;
     }
     // admin stays on Home
-  }, [user, loading, setLocation, onboardingStatus]);
+  }, [user, loading, setLocation, onboardingStatus, managerPerms]);
 
   const isAdmin = user?.role === "admin" || user?.role === "admin2";
 

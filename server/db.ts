@@ -9652,14 +9652,19 @@ export async function promoteAlunoToGerente(alunoId: number, programId: number):
 export async function createGerentePuro(data: {
   name: string;
   email: string;
-  cpf?: string;
+  cpf: string;
   programId: number;
-}): Promise<{ success: boolean; message?: string }> {
+  permissions?: string[];
+}): Promise<{ success: boolean; message?: string; userId?: number; consultorId?: number }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
 
-  // Verificar se já existe um gerente ativo com o mesmo email
   const normalizedEmail = data.email.toLowerCase().trim();
+  const normalizedCpf = data.cpf.replace(/\D/g, '');
+  if (normalizedCpf.length !== 11) {
+    return { success: false, message: "CPF deve conter 11 dígitos para permitir o login do Gerente Puro." };
+  }
+
   const [existingGerente] = await db.select()
     .from(consultors)
     .where(and(
@@ -9668,53 +9673,94 @@ export async function createGerentePuro(data: {
       eq(consultors.isActive, 1)
     ))
     .limit(1);
-  
-  if (existingGerente) {
-    return { success: false, message: `Já existe um gerente cadastrado com o email ${normalizedEmail}. Verifique a lista de gerentes.` };
-  }
 
-  // Verificar CPF duplicado antecipadamente
-  if (data.cpf) {
-    const normalizedCpf = data.cpf.replace(/\D/g, '');
-    const [existingCpfUser] = await db.select().from(users).where(and(eq(users.cpf, normalizedCpf), eq(users.isActive, 1))).limit(1);
-    if (existingCpfUser) {
-      return { success: false, message: "Este CPF já está cadastrado no sistema." };
+  if (existingGerente) {
+    const [userExistente] = await db.select().from(users)
+      .where(eq(users.consultorId, existingGerente.id))
+      .limit(1);
+    if (userExistente) {
+      return {
+        success: false,
+        message: `Já existe um gerente cadastrado com o email ${normalizedEmail}.`,
+        userId: userExistente.id,
+        consultorId: existingGerente.id,
+      };
     }
   }
 
-  // Criar registro na tabela consultors
-  const [consultorResult] = await db.insert(consultors).values({
-    name: data.name,
-    email: data.email.toLowerCase(),
-    cpf: data.cpf?.replace(/\D/g, '') || null,
-    role: 'gerente' as const,
-    managedProgramId: data.programId,
-    canLogin: data.cpf ? 1 : 0,
-    isActive: 1,
-  });
-
-  const consultorId = consultorResult.insertId;
-
-  // Criar registro na tabela users para login
-  if (data.cpf) {
-    const normalizedCpf = data.cpf.replace(/\D/g, '');
-    const openId = `gerente_puro_${consultorId}`;
-
-    await db.insert(users).values({
-      openId,
-      name: data.name,
-      email: data.email.toLowerCase(),
-      cpf: normalizedCpf,
-      role: 'manager' as const,
-      loginMethod: 'email_cpf',
-      isActive: 1,
-      consultorId: Number(consultorId),
-      programId: data.programId,
-      lastSignedIn: new Date(),
-    });
+  const [existingCpfUser] = await db.select().from(users)
+    .where(and(eq(users.cpf, normalizedCpf), eq(users.isActive, 1)))
+    .limit(1);
+  if (existingCpfUser) {
+    return { success: false, message: "Este CPF já está cadastrado no sistema." };
   }
 
-  return { success: true, message: `Gerente ${data.name} criado com sucesso.` };
+  const [existingEmailUser] = await db.select().from(users)
+    .where(and(eq(users.email, normalizedEmail), eq(users.isActive, 1)))
+    .limit(1);
+  if (existingEmailUser) {
+    return { success: false, message: "Este e-mail já está vinculado a um usuário ativo. Revise o cadastro antes de criar o Gerente Puro." };
+  }
+
+  if (!process.env.DATABASE_URL) return { success: false, message: "Banco de dados não disponível" };
+  let raw: mysql.Connection | null = null;
+
+  try {
+    raw = await mysql.createConnection(process.env.DATABASE_URL);
+    await raw.beginTransaction();
+
+    let consultorId = Number(existingGerente?.id || 0);
+    if (consultorId) {
+      await raw.execute(
+        `UPDATE consultors
+         SET name=?,email=?,cpf=?,role='gerente',managedProgramId=?,canLogin=1,isActive=1,updatedAt=NOW()
+         WHERE id=?`,
+        [data.name.trim(), normalizedEmail, normalizedCpf, data.programId, consultorId],
+      );
+    } else {
+      const [consultorResult]: any = await raw.execute(
+        `INSERT INTO consultors
+         (name,email,cpf,role,managedProgramId,canLogin,isActive,createdAt,updatedAt)
+         VALUES (?,?,?,'gerente',?,1,1,NOW(),NOW())`,
+        [data.name.trim(), normalizedEmail, normalizedCpf, data.programId],
+      );
+      consultorId = Number(consultorResult.insertId);
+    }
+    if (!consultorId) throw new Error("Não foi possível criar ou recuperar o vínculo de gerente.");
+
+    const openId = `gerente_puro_${consultorId}`;
+    const [userResult]: any = await raw.execute(
+      `INSERT INTO users
+       (openId,name,email,cpf,role,loginMethod,isActive,consultorId,programId,lastSignedIn,createdAt,updatedAt)
+       VALUES (?,?,?,?, 'manager','email_cpf',1,?,?,NOW(),NOW(),NOW())`,
+      [openId, data.name.trim(), normalizedEmail, normalizedCpf, consultorId, data.programId],
+    );
+    const userId = Number(userResult.insertId);
+    if (!userId) throw new Error("Não foi possível criar o usuário de login do gerente.");
+
+    if (Array.isArray(data.permissions) && data.permissions.length) {
+      await raw.execute(
+        `INSERT INTO admin_page_permissions (userId,permissions)
+         VALUES (?,?)
+         ON DUPLICATE KEY UPDATE permissions=VALUES(permissions),updatedAt=CURRENT_TIMESTAMP`,
+        [userId, JSON.stringify(data.permissions)],
+      );
+    }
+
+    await raw.commit();
+    return {
+      success: true,
+      message: `Gerente ${data.name} criado com sucesso.`,
+      userId,
+      consultorId,
+    };
+  } catch (error: any) {
+    try { if (raw) await raw.rollback(); } catch {}
+    console.error("[createGerentePuro] Falha transacional:", error);
+    return { success: false, message: error?.message || "Não foi possível criar o Gerente Puro." };
+  } finally {
+    try { if (raw) await raw.end(); } catch {}
+  }
 }
 
 /**

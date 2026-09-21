@@ -90,6 +90,43 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
     next();
   } catch { return res.status(401).json({ error: "Sessão inválida ou expirada." }); }
 }
+
+async function requireAcompanharIntegracao(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    if (!user) return res.status(401).json({ error: "Sessão inválida ou expirada." });
+    if (user.role === "admin") {
+      (req as any).authenticatedUser = user;
+      (req as any).integracaoScopeAll = true;
+      return next();
+    }
+    if (user.role !== "manager") {
+      return res.status(403).json({ error: "Acesso restrito ao Gestor/UGP." });
+    }
+
+    const connection = await getConnectionOr503(res);
+    if (!connection) return;
+    const [rows] = (await connection.execute(
+      "SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1",
+      [Number((user as any).id || 0)],
+    )) as any;
+    let permissions: string[] = [];
+    try {
+      const raw = rows?.[0]?.permissions;
+      permissions = Array.isArray(raw) ? raw : JSON.parse(String(raw || "[]"));
+    } catch { permissions = []; }
+
+    if (!permissions.includes("/gestor/integracao")) {
+      return res.status(403).json({ error: "Acompanhar Integração não está liberado para este gerente." });
+    }
+
+    (req as any).authenticatedUser = user;
+    (req as any).integracaoScopeAll = permissions.includes("scope:integracao:all");
+    next();
+  } catch {
+    return res.status(401).json({ error: "Sessão inválida ou expirada." });
+  }
+}
 let programaIntegracaoFallbackConnection: mysql.Connection | null = null;
 
 async function conexaoProgramaIntegracaoSaudavel(connection: any): Promise<boolean> {
@@ -171,6 +208,45 @@ function pendingToLegacy(row: any) {
   };
 }
 
+
+function diasEntreIso(inicio: string, fim: string): number {
+  const a = new Date(`${inicio}T12:00:00`);
+  const b = new Date(`${fim}T12:00:00`);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 0;
+  return Math.floor((b.getTime() - a.getTime()) / 86400000);
+}
+
+function addDiasIso(iso: string, dias: number): string {
+  const data = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(data.getTime())) return "";
+  data.setDate(data.getDate() + dias);
+  return data.toISOString().slice(0, 10);
+}
+
+function respostaCompacta(row: any) {
+  const answers = asJson<Record<string, any>>(row.answers, {});
+  const qmap = PROGRAMA_INTEGRACAO_QUESTION_INDEX[row.formKey as ProgramaIntegracaoFormKey] || {};
+  const c: Array<[number, string]> = [];
+  Object.entries(answers).forEach(([code, value]) => {
+    const idx = qmap[code];
+    if (idx != null && value != null && String(value).trim() !== "") c.push([idx, String(value)]);
+  });
+  return {
+    form: row.formKey,
+    ciclo: Number(row.ciclo || 0),
+    papel: row.papel || "",
+    c,
+  };
+}
+
+function temRespostaCiclo(respostas: any[], form: string, papel: string, ciclo: number): boolean {
+  return respostas.some((r) =>
+    r.form === form &&
+    Number(r.ciclo || 0) === ciclo &&
+    String(r.papel || "") === papel
+  );
+}
+
 programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin, async (req, res) => {
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
@@ -210,6 +286,210 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
   }
 });
 
+
+
+programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", requireAcompanharIntegracao, async (req, res) => {
+  try {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    const user = (req as any).authenticatedUser || {};
+    const scopeAll = Boolean((req as any).integracaoScopeAll);
+    const nomeGerente = normTxt(user.name || "");
+    const emailGerente = String(user.email || "").trim().toLowerCase();
+
+    // Regra multiempresa: gerente sempre precisa estar vinculado a uma empresa.
+    // managedProgramId vem do registro de consultor; programId é o vínculo direto do usuário.
+    const empresaId = Number(user.managedProgramId ?? user.programId ?? 0) || 0;
+    if (user.role === "manager" && !empresaId) {
+      return res.status(403).json({ error: "Este gerente não possui empresa vinculada." });
+    }
+
+    const [processRows] = (await connection.execute(
+      `SELECT id,legacyId,alunoId,nome,email,cpf,cargo,unidade,inicio,situacao,gestor,gestorEmail,anjo,estado
+       FROM programa_integracao_processos
+       WHERE situacao='ativo' AND tipo='Onboarding'
+       ORDER BY ordem,id`,
+    )) as any;
+
+    // A empresa é resolvida usando o cadastro ECO Líderes (alunos.programId),
+    // sem confiar apenas no nome do gestor e sem abrir dados globais para UGP/RH.
+    const alunosEmpresa = user.role === "admin"
+      ? []
+      : await listarAlunosAtivosDaEmpresa(connection, empresaId);
+    const alunosEmpresaPorId = new Map(alunosEmpresa.map((a: any) => [Number(a.id), a]));
+
+    function resolverAlunoDaEmpresa(row: any): any | null {
+      if (user.role === "admin") return { id: Number(row.alunoId || 0) || null };
+
+      const alunoIdDireto = Number(row.alunoId || 0);
+      if (alunoIdDireto && alunosEmpresaPorId.has(alunoIdDireto)) {
+        return alunosEmpresaPorId.get(alunoIdDireto) || null;
+      }
+
+      const estado = asJson<Record<string, any>>(row.estado, {});
+      const ecoAlunoId = Number(estado?.teste?.ecoAlunoId || 0);
+      if (ecoAlunoId && alunosEmpresaPorId.has(ecoAlunoId)) {
+        return alunosEmpresaPorId.get(ecoAlunoId) || null;
+      }
+
+      const match = escolherCorrespondenciaEcoSegura(
+        String(row.nome || ""),
+        String(row.email || ""),
+        alunosEmpresa,
+      );
+      return match.status === "automatico_seguro" ? match.aluno : null;
+    }
+
+    const alunoEmpresaPorProcesso = new Map<number, any>();
+    const permitidos = (processRows || []).filter((row: any) => {
+      if (user.role === "admin") return true;
+
+      const alunoEmpresa = resolverAlunoDaEmpresa(row);
+      if (!alunoEmpresa) return false; // fail closed: sem vínculo seguro com a empresa, não exibe.
+      alunoEmpresaPorProcesso.set(Number(row.id), alunoEmpresa);
+
+      if (scopeAll) return true; // UGP/RH: todos, porém somente da própria empresa.
+
+      const gestorNome = normTxt(row.gestor || "");
+      const gestorEmail = String(row.gestorEmail || "").trim().toLowerCase();
+      return Boolean(
+        (emailGerente && gestorEmail && emailGerente === gestorEmail) ||
+        (nomeGerente && gestorNome && nomeGerente === gestorNome)
+      );
+    });
+
+    if (!permitidos.length) {
+      return res.json({
+        ok: true,
+        scope: scopeAll ? "all" : "gestor",
+        empresaId: user.role === "admin" ? null : empresaId,
+        colaboradores: [],
+      });
+    }
+
+    const ids = permitidos.map((r: any) => Number(r.id));
+    const placeholders = ids.map(() => "?").join(",");
+    const [responseRows] = (await connection.execute(
+      `SELECT r.*, p.legacyId AS processoLegacyId
+       FROM programa_integracao_respostas r
+       INNER JOIN programa_integracao_processos p ON p.id=r.processoId
+       WHERE r.processoId IN (${placeholders})
+         AND r.statusVinculo='vinculada'
+         AND r.statusResposta<>'excluida'
+       ORDER BY r.processoId,r.ciclo,r.id`,
+      ids,
+    )) as any;
+
+    const respostasPorProcesso = new Map<number, any[]>();
+    for (const row of responseRows || []) {
+      const pid = Number(row.processoId);
+      const arr = respostasPorProcesso.get(pid) || [];
+      arr.push(respostaCompacta(row));
+      respostasPorProcesso.set(pid, arr);
+    }
+
+    const alunosEco = await listarAlunosEcoLiderDisponiveis(connection);
+    const alunosEcoPermitidos = user.role === "admin"
+      ? alunosEco
+      : alunosEco.filter((a: any) => Number(a.programId || 0) === empresaId);
+    const ecoIds: number[] = [];
+    const alunoEcoPorProcesso = new Map<number, number>();
+
+    for (const row of permitidos) {
+      const pid = Number(row.id);
+      const alunoEmpresa = alunoEmpresaPorProcesso.get(pid);
+      let ecoId = Number(alunoEmpresa?.id || 0);
+
+      if (!ecoId && user.role === "admin") {
+        const estado = asJson<Record<string, any>>(row.estado, {});
+        ecoId = Number(estado?.teste?.ecoAlunoId || row.alunoId || 0);
+        if (!ecoId) {
+          const match = escolherCorrespondenciaEcoSegura(String(row.nome || ""), String(row.email || ""), alunosEcoPermitidos);
+          if (match.status === "automatico_seguro" && match.aluno?.id) ecoId = Number(match.aluno.id);
+        }
+      }
+
+      // Status de PDI/Compliance só consulta IDs que também pertencem ao escopo da empresa.
+      if (ecoId > 0 && (user.role === "admin" || alunosEcoPermitidos.some((a: any) => Number(a.id) === ecoId))) {
+        ecoIds.push(ecoId);
+        alunoEcoPorProcesso.set(pid, ecoId);
+      }
+    }
+    const ecoStatus = await statusEcoLiderAlunos(connection, ecoIds);
+    const hoje = todayIso();
+
+    const colaboradores = permitidos.map((row: any) => {
+      const estado = asJson<Record<string, any>>(row.estado, {});
+      const respostas = respostasPorProcesso.get(Number(row.id)) || [];
+      const alin = estado.alin || {};
+      const alinhamentosFeitos = [1,2,3,4].filter((n) => {
+        const a = alin[String(n)] ?? alin[n];
+        return Boolean(a?.realizado);
+      }).length;
+
+      const formulariosPendentes: any[] = [];
+      [1,2,3,4].forEach((ciclo) => {
+        const a = alin[String(ciclo)] ?? alin[ciclo] ?? {};
+        const referencia = String(a.realizado || a.data || "").slice(0,10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(referencia)) return;
+        const prazo = addDiasIso(referencia, 2);
+        const esperados = [
+          { papel: "Gestor", form: "aval", formulario: "Avaliação do Programa de Integração" },
+          { papel: "Anjo", form: "aval", formulario: "Avaliação do Programa de Integração" },
+          { papel: "Colaborador", form: "pesquisa", formulario: "Pesquisa de Integração" },
+        ];
+        esperados.forEach((item) => {
+          if (!temRespostaCiclo(respostas, item.form, item.papel, ciclo)) {
+            formulariosPendentes.push({
+              ciclo,
+              papel: item.papel,
+              formulario: item.formulario,
+              prazo,
+              atrasado: Boolean(prazo && prazo < hoje),
+            });
+          }
+        });
+      });
+
+      const ecoId = alunoEcoPorProcesso.get(Number(row.id));
+      const andamento = ecoId ? ecoStatus[String(ecoId)] : null;
+      const inicio = sqlDateToIso(row.inicio);
+      const diaRaw = inicio ? diasEntreIso(inicio, hoje) + 1 : 0;
+      const dia = Math.max(0, Math.min(150, diaRaw));
+
+      return {
+        id: row.legacyId || `p${row.id}`,
+        nome: row.nome || "",
+        cargo: row.cargo || "",
+        unidade: row.unidade || "",
+        inicio,
+        dia,
+        totalDias: 150,
+        gestor: row.gestor || "",
+        anjo: row.anjo || "",
+        alinhamentosFeitos,
+        alinhamentosTotal: 4,
+        jornadaCompliance: andamento?.jornadaCompliance || { total: 0, concluidas: 0, percentual: null },
+        pdi: andamento?.pdi || { total: 0, concluidas: 0, percentual: null },
+        respostas: respostas.filter((r) =>
+          (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo"))
+        ),
+        formulariosPendentes,
+      };
+    });
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({
+      ok: true,
+      scope: scopeAll ? "all" : "gestor",
+      empresaId: user.role === "admin" ? null : empresaId,
+      atualizadoEm: new Date().toISOString(),
+      colaboradores,
+    });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] acompanhamento gestor:", error);
+    return res.status(500).json({ error: "Não foi possível carregar o acompanhamento da Integração." });
+  }
+});
 
 const PARTICULAS_NOME_ECO = new Set(["de", "da", "do", "das", "dos", "e"]);
 
@@ -291,10 +571,11 @@ function escolherCorrespondenciaEcoSegura(nomeProcesso: string, emailProcesso: s
 
 async function listarAlunosEcoLiderDisponiveis(connection: any) {
   const [rows] = (await connection.execute(
-    `SELECT DISTINCT a.id,a.name AS nome,a.email
+    `SELECT DISTINCT a.id,a.name AS nome,a.email,a.programId
      FROM alunos a
      INNER JOIN aluno_curso_atribuido aca ON aca.alunoId=a.id
      WHERE a.tipoPortal IN ('aluno_autonomo','assessment')
+       AND COALESCE(a.isActive,1)=1
      ORDER BY a.name ASC,a.id ASC`,
   )) as any;
 
@@ -302,6 +583,26 @@ async function listarAlunosEcoLiderDisponiveis(connection: any) {
     id: Number(row.id),
     nome: String(row.nome || ""),
     email: String(row.email || ""),
+    programId: Number(row.programId || 0) || null,
+  }));
+}
+
+async function listarAlunosAtivosDaEmpresa(connection: any, programId: number) {
+  const [rows] = (await connection.execute(
+    `SELECT id,name AS nome,email,cpf,programId
+     FROM alunos
+     WHERE COALESCE(isActive,1)=1
+       AND programId=?
+     ORDER BY name ASC,id ASC`,
+    [programId],
+  )) as any;
+
+  return (rows || []).map((row: any) => ({
+    id: Number(row.id),
+    nome: String(row.nome || ""),
+    email: String(row.email || ""),
+    cpf: String(row.cpf || ""),
+    programId: Number(row.programId || 0) || null,
   }));
 }
 
@@ -1025,6 +1326,32 @@ programaIntegracaoRouter.post("/api/programa-integracao/respostas/:legacyRid/res
     }
     console.error("[ProgramaIntegracao] restaurar resposta:", error);
     return res.status(500).json({ error: "Não foi possível restaurar a resposta. Nenhuma alteração parcial foi mantida." });
+  }
+});
+
+programaIntegracaoRouter.get("/api/public/programa-integracao/opcoes-ativas", async (_req, res) => {
+  try {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    const [rows] = (await connection.execute(
+      `SELECT nome,gestor,anjo
+       FROM programa_integracao_processos
+       WHERE situacao='ativo' AND tipo='Onboarding'
+       ORDER BY nome`
+    )) as any;
+
+    const unicos = (valores: string[]) =>
+      [...new Set(valores.map((v) => String(v || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+    const colaboradores = unicos((rows || []).map((r: any) => r.nome));
+    const gestores = unicos((rows || []).map((r: any) => r.gestor));
+    const anjos = unicos((rows || []).map((r: any) => r.anjo));
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ ok: true, colaboradores, gestores, anjos });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] opções públicas ativas:", error);
+    return res.status(500).json({ error: "Não foi possível carregar as opções ativas do Onboarding." });
   }
 });
 

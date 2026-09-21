@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRoute } from 'wouter';
 import {
   carregarFormularioPublicoMeta,
+  carregarOpcoesAtivasFormulario,
   enviarRespostaFormularioPublico,
   type PublicFormMetaResponse,
   type PublicFormPayload,
@@ -211,6 +212,25 @@ export default function ProgramaIntegracaoFormularioPublico() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState<{ protocolo: string; pendente: boolean } | null>(null);
+  const [opcoesAtivas, setOpcoesAtivas] = useState<{ colaboradores: string[]; gestores: string[]; anjos: string[] }>({
+    colaboradores: [], gestores: [], anjos: [],
+  });
+
+  useEffect(() => {
+    let ativo = true;
+    carregarOpcoesAtivasFormulario()
+      .then((r) => {
+        if (ativo) setOpcoesAtivas({
+          colaboradores: r.colaboradores || [],
+          gestores: r.gestores || [],
+          anjos: r.anjos || [],
+        });
+      })
+      .catch(() => {
+        if (ativo) setOpcoesAtivas({ colaboradores: [], gestores: [], anjos: [] });
+      });
+    return () => { ativo = false; };
+  }, []);
 
   useEffect(() => {
     let ativo = true;
@@ -322,6 +342,11 @@ export default function ProgramaIntegracaoFormularioPublico() {
       return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<select value={String(value)} onChange={(e) => atualizarAnswer(q.code, e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Selecione…</option>{(q.options || []).map((opt) => { const o = optionValueLabel(opt); return <option key={o.value} value={o.value}>{o.label}</option>; })}</select></label>;
     }
 
+    if (q.code === 'bem_anjo') {
+      const lista = opcoesAtivas.anjos;
+      return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<select value={String(value)} onChange={(e) => atualizarAnswer(q.code, e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Selecione…</option>{lista.map((nome) => <option key={nome} value={nome}>{nome}</option>)}</select></label>;
+    }
+
     if (q.type === 'textarea') {
       return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<textarea value={String(value)} onChange={(e) => atualizarAnswer(q.code, e.target.value)} className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2" /><span className="block text-[11px] text-muted-foreground">Mínimo de 10 caracteres quando houver resposta.</span></label>;
     }
@@ -347,14 +372,14 @@ export default function ProgramaIntegracaoFormularioPublico() {
             <div className="space-y-2 rounded-md border bg-muted/20 p-4">{form.intro.map((p, i) => <p key={i} className="text-sm">{p}</p>)}</div>
             <div><h2 className="text-lg font-semibold">Sobre quem esta resposta é</h2><p className="text-sm text-muted-foreground">Preencha uma única vez. Estes dados ajudam a localizar o processo correto sem criar cadastros duplicados.</p></div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="space-y-1 sm:col-span-2"><span className="text-sm font-medium">Nome completo do colaborador <span className="text-destructive">*</span></span><input value={draft.nomeColaborador} onChange={(e) => setDraft((d) => ({ ...d, nomeColaborador: e.target.value }))} placeholder="nome e sobrenome, como no cadastro" className="w-full rounded-md border border-input bg-background px-3 py-2" /><span className="block text-xs text-muted-foreground">Escreva o nome completo — ou ao menos primeiro e último nome — igual está no cadastro do colaborador.</span></label>
+              <label className="space-y-1 sm:col-span-2"><span className="text-sm font-medium">Nome completo do colaborador <span className="text-destructive">*</span></span>{form.key === 'controle' ? <input value={draft.nomeColaborador} onChange={(e) => setDraft((d) => ({ ...d, nomeColaborador: e.target.value }))} placeholder="Nome completo do novo colaborador" className="w-full rounded-md border border-input bg-background px-3 py-2" /> : <select value={draft.nomeColaborador} onChange={(e) => setDraft((d) => ({ ...d, nomeColaborador: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Selecione…</option>{opcoesAtivas.colaboradores.map((nome) => <option key={nome} value={nome}>{nome}</option>)}</select>}<span className="block text-xs text-muted-foreground">{form.key === 'controle' ? 'Este formulário inicia o cadastro; por isso o nome pode ser informado livremente.' : 'A lista mostra somente colaboradores ativos no Onboarding.'}</span></label>
               {form.identity.unidade && <label className="space-y-1"><span className="text-sm font-medium">Unidade <span className="text-destructive">*</span></span><select value={draft.unidade} onChange={(e) => setDraft((d) => ({ ...d, unidade: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Selecione…</option>{UNIDADES_INTEGRACAO.map((u) => <option key={u} value={u}>{u}</option>)}</select></label>}
               {form.identity.unidade && draft.unidade === 'Outra' && <label className="space-y-1"><span className="text-sm font-medium">Qual unidade/regional? <span className="text-destructive">*</span></span><input value={draft.outraUnidade} onChange={(e) => setDraft((d) => ({ ...d, outraUnidade: e.target.value }))} placeholder="Digite o nome da unidade" className="w-full rounded-md border border-input bg-background px-3 py-2" /><span className="block text-xs text-muted-foreground">Escreva o nome da unidade ou regional.</span></label>}
               {form.identity.dataInicio && <label className="space-y-1"><span className="text-sm font-medium">Data de início do colaborador <span className="text-destructive">*</span></span><input type="date" value={draft.dataInicio} onChange={(e) => setDraft((d) => ({ ...d, dataInicio: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2" /></label>}
               {form.identity.email && <label className="space-y-1"><span className="text-sm font-medium">{form.key === 'controle' ? 'E-mail Pessoal do Novo Colaborador' : 'E-mail do colaborador (se souber)'}</span><input type="email" value={draft.emailColaborador} onChange={(e) => setDraft((d) => ({ ...d, emailColaborador: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2" />{form.key === 'controle' && <span className="block text-xs text-muted-foreground">Este e-mail não pode ser um e-mail do Sebrae/TO — use o e-mail pessoal do colaborador.</span>}</label>}
               {form.identity.cycle && <label className="space-y-1"><span className="text-sm font-medium">{form.key === 'pesquisa' ? 'Essa pesquisa refere-se a qual período de participação no programa?' : form.key === 'aval' ? 'Essa pesquisa refere-se a qual feedback no programa?' : 'A que período (alinhamento) esta resposta se refere?'} <span className="text-destructive">*</span></span><select value={draft.cycleValue} onChange={(e) => setDraft((d) => ({ ...d, cycleValue: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">— escolha —</option>{(form.cycleOptions || []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></label>}
               {form.identity.role && <label className="space-y-1"><span className="text-sm font-medium">Você está respondendo como <span className="text-destructive">*</span></span><select value={draft.role} onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">— escolha —</option><option value="Gestor">Gestor</option><option value="Anjo">Anjo</option></select></label>}
-              {form.identity.respondent && <div className="space-y-2 sm:col-span-2"><p className="text-sm font-semibold">Sobre quem está respondendo</p><label className="block space-y-1"><span className="text-sm font-medium">Seu nome completo <span className="text-destructive">*</span></span><input value={draft.respondentName} onChange={(e) => setDraft((d) => ({ ...d, respondentName: e.target.value }))} placeholder="nome e sobrenome, como no cadastro" className="w-full rounded-md border border-input bg-background px-3 py-2" /><span className="block text-xs text-muted-foreground">Escreva o nome completo — ou ao menos primeiro e último nome — para não haver dúvida de quem é.</span></label></div>}
+              {form.identity.respondent && <div className="space-y-2 sm:col-span-2"><p className="text-sm font-semibold">Sobre quem está respondendo</p><label className="block space-y-1"><span className="text-sm font-medium">Seu nome completo <span className="text-destructive">*</span></span>{(form.key === 'bem' || form.key === 'aval') ? <select value={draft.respondentName} onChange={(e) => setDraft((d) => ({ ...d, respondentName: e.target.value }))} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Selecione…</option>{(form.key === 'bem' ? opcoesAtivas.gestores : draft.role === 'Anjo' ? opcoesAtivas.anjos : draft.role === 'Gestor' ? opcoesAtivas.gestores : []).map((nome) => <option key={nome} value={nome}>{nome}</option>)}</select> : <input value={draft.respondentName} onChange={(e) => setDraft((d) => ({ ...d, respondentName: e.target.value }))} placeholder="nome e sobrenome, como no cadastro" className="w-full rounded-md border border-input bg-background px-3 py-2" />}</label></div>}
             </div>
           </> : section && <>
             <div><h2 className="text-xl font-semibold">{section.publicTitle === '' ? 'Formulário' : (section.publicTitle || section.title || 'Formulário')}</h2>{section.intro && <div className="mt-2 space-y-2">{section.intro.split(/\n{2,}/).map((p, i) => <p key={i} className="text-sm text-muted-foreground">{p}</p>)}</div>}</div>
