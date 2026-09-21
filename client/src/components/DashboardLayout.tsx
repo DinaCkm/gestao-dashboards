@@ -487,10 +487,13 @@ function DashboardLayoutContent({
           return consultorRole === 'mentor';
         }
         if (item.requireConsultorRole === 'gerente') {
-          // Gestor puro (consultorRole=gerente) OU gestor sem consultorId OU manager+aluno (gerente que também é aluno)
-          return consultorRole === 'gerente' || 
-                 (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId) ||
-                 (userRole === 'manager' && (user as any)?.alunoId);
+          // Gestor puro (consultorRole=gerente) OU gestor sem consultorId OU manager+aluno.
+          // Não retornar true aqui: o item ainda precisa passar pelo checklist de permissões.
+          const ehGerenteDoMenu =
+            consultorRole === 'gerente' ||
+            (!hasConsultorId && userRole === 'manager' && !(user as any)?.alunoId) ||
+            (userRole === 'manager' && Boolean((user as any)?.alunoId));
+          if (!ehGerenteDoMenu) return false;
         }
         if (item.requireConsultorRole === 'diretor') {
           return consultorRole === 'diretor';
