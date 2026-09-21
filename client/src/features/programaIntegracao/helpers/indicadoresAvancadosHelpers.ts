@@ -341,7 +341,7 @@ export function calcularIndicadoresAvancados(
 
         if (item.form && !fechado(status)) {
           formulariosAbertos++;
-          const acao = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+          const acao = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef);
           if (acao.k === 'late') formulariosAtrasados++;
         }
 
