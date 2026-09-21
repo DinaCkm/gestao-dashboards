@@ -62,7 +62,7 @@ export function formulariosPendentes(
       if (!it.form) return;
       if (fechado(statusAcaoAtual(processo, it.id))) return;
       const dataItem = dataPrevistaItemCronograma(etapa, it);
-      if (dataItem > hoje) return;
+      if (dataItem >= hoje) return;
       out.push({
         it,
         data: dataItem,
