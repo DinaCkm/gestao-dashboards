@@ -9838,7 +9838,9 @@ export async function getGerentesEmpresa(): Promise<any[]> {
     })
     .map(u => {
       const aluno = u.alunoId ? alunoMap.get(u.alunoId) : null;
-      const program = u.programId ? programMap.get(u.programId) : null;
+      const consultorDoGerente = u.consultorId ? consultorMap.get(u.consultorId) : null;
+      const programIdEfetivo = u.programId ?? consultorDoGerente?.managedProgramId ?? null;
+      const program = programIdEfetivo ? programMap.get(programIdEfetivo) : null;
       const turma = aluno?.turmaId ? turmaMap.get(aluno.turmaId) : null;
       const mentorId = u.alunoId ? alunoMentorMap.get(u.alunoId) : null;
       const mentor = mentorId ? consultorMap.get(mentorId) : null;
@@ -9848,7 +9850,7 @@ export async function getGerentesEmpresa(): Promise<any[]> {
         email: aluno?.email || u.email,
         cpf: aluno?.cpf || u.cpf,
         role: u.role,
-        programId: u.programId,
+        programId: programIdEfetivo,
         programName: program?.name || null,
         alunoId: u.alunoId,
         alunoName: aluno?.name || null,
@@ -15187,6 +15189,74 @@ export async function setAdminPermissions(userId: number, permissions: string[])
      VALUES (${userId}, '${permsJson}')
      ON DUPLICATE KEY UPDATE permissions = '${permsJson}', updatedAt = CURRENT_TIMESTAMP`
   ));
+}
+
+/**
+ * Configuração do Gerente Especial sem criar novo papel ou nova tabela.
+ * Atualiza empresa do usuário + consultor e a lista de áreas na mesma transação.
+ */
+export async function configurarGerenteEspecial(data: {
+  userId: number;
+  programId: number;
+  especial: boolean;
+  permissions: string[];
+}): Promise<{ success: boolean; message?: string }> {
+  if (!process.env.DATABASE_URL) return { success: false, message: "Banco de dados não disponível" };
+  let raw: mysql.Connection | null = null;
+
+  try {
+    raw = await mysql.createConnection(process.env.DATABASE_URL);
+    await raw.beginTransaction();
+
+    const [userRows]: any = await raw.execute(
+      `SELECT id,role,consultorId FROM users WHERE id=? AND isActive=1 LIMIT 1 FOR UPDATE`,
+      [data.userId],
+    );
+    const user = userRows?.[0];
+    if (!user || user.role !== 'manager') {
+      await raw.rollback();
+      return { success: false, message: "Gerente não encontrado ou inativo." };
+    }
+
+    await raw.execute(
+      `UPDATE users SET programId=?,updatedAt=NOW() WHERE id=?`,
+      [data.programId, data.userId],
+    );
+
+    if (user.consultorId) {
+      await raw.execute(
+        `UPDATE consultors
+         SET managedProgramId=?,updatedAt=NOW()
+         WHERE id=? AND role='gerente'`,
+        [data.programId, Number(user.consultorId)],
+      );
+    }
+
+    const permissions = data.especial
+      ? [...new Set(["scope:manager:special", ...data.permissions.filter(Boolean)])]
+      : [];
+
+    await raw.execute(
+      `INSERT INTO admin_page_permissions (userId,permissions)
+       VALUES (?,?)
+       ON DUPLICATE KEY UPDATE permissions=VALUES(permissions),updatedAt=CURRENT_TIMESTAMP`,
+      [data.userId, JSON.stringify(permissions)],
+    );
+
+    await raw.commit();
+    return {
+      success: true,
+      message: data.especial
+        ? "Gerente Especial configurado com sucesso."
+        : "Gerente voltou ao acesso padrão da empresa.",
+    };
+  } catch (error: any) {
+    try { if (raw) await raw.rollback(); } catch {}
+    console.error("[configurarGerenteEspecial] Falha transacional:", error);
+    return { success: false, message: error?.message || "Não foi possível atualizar o gerente." };
+  } finally {
+    try { if (raw) await raw.end(); } catch {}
+  }
 }
 
 // ============ MIGRATION: GOOGLE CALENDAR INTEGRATION ============
