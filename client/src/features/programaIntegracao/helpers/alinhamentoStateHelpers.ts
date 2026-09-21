@@ -1,5 +1,7 @@
 import type { ProcessoIntegracao } from '../types';
 import { aplicarAutomacoesProcesso } from './itemStateHelpers';
+import { cronogramaReal } from './painelAcoes';
+import { FERIADOS_PADRAO_INTEGRACAO } from './configDefaults';
 
 export type SituacaoAgendamento = '' | 'sim' | 'aguardando' | 'nao';
 export type SituacaoRelatorioMentora = '' | 'ok' | 'parcial' | 'pend';
@@ -17,6 +19,38 @@ function hojeIso(hojeRef: string | Date = new Date()): string {
 function agoraIso(agoraRef: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${pad(agoraRef.getDate())}/${pad(agoraRef.getMonth() + 1)} ${pad(agoraRef.getHours())}:${pad(agoraRef.getMinutes())}`;
+}
+
+function dataIsoValida(valor: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+  const [ano, mes, dia] = valor.split('-').map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  return data.getUTCFullYear() === ano && data.getUTCMonth() === mes - 1 && data.getUTCDate() === dia;
+}
+
+function adicionarDiasIso(iso: string, dias: number): string {
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia + dias));
+  return data.toISOString().slice(0, 10);
+}
+
+function diferencaDiasIso(origem: string, destino: string): number {
+  const [ao, mo, do_] = origem.split('-').map(Number);
+  const [ad, md, dd] = destino.split('-').map(Number);
+  const a = Date.UTC(ao, mo - 1, do_);
+  const b = Date.UTC(ad, md - 1, dd);
+  return Math.round((b - a) / 86400000);
+}
+
+function proximoDiaUtil(iso: string, feriados: string[]): string {
+  let atual = iso;
+  for (let i = 0; i < 40; i++) {
+    const [ano, mes, dia] = atual.split('-').map(Number);
+    const semana = new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay();
+    if (semana !== 0 && semana !== 6 && !feriados.includes(atual)) return atual;
+    atual = adicionarDiasIso(atual, 1);
+  }
+  return atual;
 }
 
 function clonarAlinhamentosComFilhos(alin: Record<string, any> | undefined): Record<string, any> {
@@ -79,6 +113,71 @@ export function aplicarCampoAlinhamento(
 ): ProcessoIntegracao {
   const [copia, alin] = processoComAlinhamentos(processo);
   registroAlinhamento(alin, numero)[campo] = valor;
+  return aplicarAutomacoesProcesso(copia, hojeRef);
+}
+
+/**
+ * Registra a data real do alinhamento sem alterar a agenda futura.
+ * A data prevista/confirmada permanece preservada em alin[n].data.
+ */
+export function registrarRealizacaoAlinhamento(
+  processo: ProcessoIntegracao,
+  numero: number,
+  dataReal: string,
+  hojeRef: string | Date = new Date(),
+): ProcessoIntegracao {
+  if (dataReal && !dataIsoValida(dataReal)) return processo;
+  const [copia, alin] = processoComAlinhamentos(processo);
+  registroAlinhamento(alin, numero).realizado = dataReal;
+  return aplicarAutomacoesProcesso(copia, hojeRef);
+}
+
+/**
+ * Registra a data real e desloca somente o que ainda é futuro.
+ * O deslocamento é cumulativo: um novo recálculo parte da agenda já vigente.
+ */
+export function registrarRealizacaoERecalcularAgenda(
+  processo: ProcessoIntegracao,
+  numero: number,
+  dataReal: string,
+  feriados: string[] = [],
+  hojeRef: string | Date = new Date(),
+): ProcessoIntegracao {
+  if (!dataIsoValida(dataReal)) return processo;
+
+  const cronogramaAntes = cronogramaReal(processo, feriados, hojeRef);
+  const etapaAtual = cronogramaAntes.find((etapa) => etapa.et.al === numero);
+  const previstaAntes = etapaAtual?.data || '';
+  if (!previstaAntes || !dataIsoValida(previstaAntes)) {
+    return registrarRealizacaoAlinhamento(processo, numero, dataReal, hojeRef);
+  }
+
+  const deslocamentoNovo = diferencaDiasIso(previstaAntes, dataReal);
+  const deslocamentoAnterior = Number((processo.teste as any)?.agendaRecalculo?.offsetDias || 0);
+  const offsetDias = deslocamentoAnterior + deslocamentoNovo;
+  const feriadosEfetivos = feriados.length ? feriados : FERIADOS_PADRAO_INTEGRACAO;
+
+  const [copia, alin] = processoComAlinhamentos(processo);
+  registroAlinhamento(alin, numero).realizado = dataReal;
+
+  for (let futuro = numero + 1; futuro <= 4; futuro++) {
+    const registro = alin[String(futuro)] ?? alin[futuro];
+    if (!registro || typeof registro !== 'object' || !registro.data || !dataIsoValida(String(registro.data))) continue;
+    registro.data = proximoDiaUtil(adicionarDiasIso(String(registro.data), deslocamentoNovo), feriadosEfetivos);
+  }
+
+  copia.teste = {
+    ...(copia.teste || {}),
+    agendaRecalculo: {
+      numero,
+      realizado: dataReal,
+      previstaAntes,
+      deslocamentoNovo,
+      offsetDias,
+      recalculadoEm: hojeIso(hojeRef),
+    },
+  };
+
   return aplicarAutomacoesProcesso(copia, hojeRef);
 }
 
