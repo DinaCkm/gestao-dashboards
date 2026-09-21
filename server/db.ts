@@ -9701,10 +9701,11 @@ export async function createGerentePuro(data: {
     return { success: false, message: "Este e-mail já está vinculado a um usuário ativo. Revise o cadastro antes de criar o Gerente Puro." };
   }
 
-  const raw = await getRawConnection();
-  if (!raw) return { success: false, message: "Banco de dados não disponível" };
+  if (!process.env.DATABASE_URL) return { success: false, message: "Banco de dados não disponível" };
+  let raw: mysql.Connection | null = null;
 
   try {
+    raw = await mysql.createConnection(process.env.DATABASE_URL);
     await raw.beginTransaction();
 
     const [consultorResult]: any = await raw.execute(
@@ -9734,9 +9735,11 @@ export async function createGerentePuro(data: {
       consultorId,
     };
   } catch (error: any) {
-    try { await raw.rollback(); } catch {}
+    try { if (raw) await raw.rollback(); } catch {}
     console.error("[createGerentePuro] Falha transacional:", error);
     return { success: false, message: error?.message || "Não foi possível criar o Gerente Puro." };
+  } finally {
+    try { if (raw) await raw.end(); } catch {}
   }
 }
 
