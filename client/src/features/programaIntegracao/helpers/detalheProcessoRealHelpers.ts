@@ -250,7 +250,8 @@ export function resumoDetalheProcesso(
   cronogramaReal(processo, feriados, hojeRef).forEach((etapa) => {
     etapa.itens.forEach((item) => {
       total++;
-      const st = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef);
+      const dataItem = dataPrevistaItemCronograma(etapa, item);
+      const st = calcularStatusItem(processo, item.id, dataItem, hojeRef);
       if (st.k === 'ok') feitas++;
       else if (st.k === 'off') foraEscopo++;
       else {
