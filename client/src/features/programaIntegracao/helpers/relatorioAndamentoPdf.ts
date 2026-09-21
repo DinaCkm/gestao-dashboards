@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import type { ProcessoIntegracao } from '../types';
-import { cronogramaReal, type CronogramaEtapaReal } from './painelAcoes';
+import { cronogramaReal, dataPrevistaItemCronograma, type CronogramaEtapaReal } from './painelAcoes';
 import { progressoRealProcesso, diaAtualReal } from './painelProcessos';
 import {
   calcularStatusItem,
@@ -68,9 +68,10 @@ function pendenciasReais(processo: ProcessoIntegracao, feriados: string[] = []):
   const out: PendenciaRelatorio[] = [];
   cronogramaReal(processo, feriados).forEach((etapa) => {
     etapa.itens.forEach((item) => {
-      const status = calcularStatusItem(processo, item.id, etapa.data);
+      const dataItem = dataPrevistaItemCronograma(etapa, item);
+      const status = calcularStatusItem(processo, item.id, dataItem);
       if (!ehPendenciaReal(status)) return;
-      out.push({ titulo: item.t, responsavel: item.r || 'CKM', data: etapa.data, status });
+      out.push({ titulo: item.t, responsavel: item.r || 'CKM', data: dataItem, status });
     });
   });
   return out;
@@ -87,7 +88,7 @@ function statusEtapa(processo: ProcessoIntegracao, etapa: CronogramaEtapaReal): 
   let fim: string | null = null;
 
   etapa.itens.forEach((item) => {
-    const status = calcularStatusItem(processo, item.id, etapa.data);
+    const status = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item));
     if (status.k === 'ok') {
       ok += 1;
       if (status.d && (!fim || status.d > fim)) fim = status.d;
@@ -107,11 +108,12 @@ function formulariosReais(processo: ProcessoIntegracao, cronograma: CronogramaEt
   cronograma.forEach((etapa) => {
     etapa.itens.forEach((item) => {
       if (!item.form || !item.link || !FORM_LINKS.has(item.link)) return;
+      const dataItem = dataPrevistaItemCronograma(etapa, item);
       out.push({
         nome: item.form,
         responsavel: item.r,
-        data: etapa.data,
-        status: calcularStatusItem(processo, item.id, etapa.data),
+        data: dataItem,
+        status: calcularStatusItem(processo, item.id, dataItem),
       });
     });
   });
