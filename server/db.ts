@@ -9709,14 +9709,24 @@ export async function createGerentePuro(data: {
     raw = await mysql.createConnection(process.env.DATABASE_URL);
     await raw.beginTransaction();
 
-    const [consultorResult]: any = await raw.execute(
-      `INSERT INTO consultors
-       (name,email,cpf,role,managedProgramId,canLogin,isActive,createdAt,updatedAt)
-       VALUES (?,?,?,'gerente',?,1,1,NOW(),NOW())`,
-      [data.name.trim(), normalizedEmail, normalizedCpf, data.programId],
-    );
-    const consultorId = Number(consultorResult.insertId);
-    if (!consultorId) throw new Error("Não foi possível criar o vínculo de gerente.");
+    let consultorId = Number(existingGerente?.id || 0);
+    if (consultorId) {
+      await raw.execute(
+        `UPDATE consultors
+         SET name=?,email=?,cpf=?,role='gerente',managedProgramId=?,canLogin=1,isActive=1,updatedAt=NOW()
+         WHERE id=?`,
+        [data.name.trim(), normalizedEmail, normalizedCpf, data.programId, consultorId],
+      );
+    } else {
+      const [consultorResult]: any = await raw.execute(
+        `INSERT INTO consultors
+         (name,email,cpf,role,managedProgramId,canLogin,isActive,createdAt,updatedAt)
+         VALUES (?,?,?,'gerente',?,1,1,NOW(),NOW())`,
+        [data.name.trim(), normalizedEmail, normalizedCpf, data.programId],
+      );
+      consultorId = Number(consultorResult.insertId);
+    }
+    if (!consultorId) throw new Error("Não foi possível criar ou recuperar o vínculo de gerente.");
 
     const openId = `gerente_puro_${consultorId}`;
     const [userResult]: any = await raw.execute(
