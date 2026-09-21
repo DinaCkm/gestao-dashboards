@@ -5,6 +5,7 @@ import {
   alterarSituacaoProcessoSeguro,
   criarProcessoDemonstracaoSeguro,
   criarProcessoSeguro,
+  criarProcessoTesteVazioSeguro,
   reordenarProcessosSeguro,
 } from '../api/peopleClient';
 import { calcularStatusGeral, calcularProgresso, getLabelStatus } from '../helpers/statusHelpers';
@@ -38,6 +39,18 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
   const [criando, setCriando] = useState(false);
   const [novoNome, setNovoNome] = useState('');
   const [novoCpf, setNovoCpf] = useState('');
+  const [testeAberto, setTesteAberto] = useState(false);
+  const [testeNome, setTesteNome] = useState('Teste Formulários - Dina');
+  const [testeCpf, setTesteCpf] = useState('000.000.000-00');
+  const [testeEmail, setTesteEmail] = useState('teste.formularios@exemplo.invalid');
+  const [testeCargo, setTesteCargo] = useState('Usuário de Teste');
+  const [testeUnidade, setTesteUnidade] = useState('TESTE');
+  const [testeInicio, setTesteInicio] = useState(() => new Date().toISOString().slice(0, 10));
+  const [testeGestor, setTesteGestor] = useState('Dina Makiyama');
+  const [testeGestorEmail, setTesteGestorEmail] = useState('');
+  const [testeAnjo, setTesteAnjo] = useState('');
+  const [testeAnjoEmail, setTesteAnjoEmail] = useState('');
+  const [testeMentora, setTesteMentora] = useState('');
   const [operacao, setOperacao] = useState<string | null>(null);
   const [statusEco, setStatusEco] = useState<Record<string, EcoLiderAndamento>>({});
   const [statusEcoCarregando, setStatusEcoCarregando] = useState(false);
@@ -229,20 +242,54 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
     }, 'Não foi possível criar a nova pessoa.');
   };
 
-  const criarDemo = async () => {
+  const criarTesteVazio = async () => {
+    if (!testeNome.trim() || !testeCpf.trim()) {
+      toast.error('Informe pelo menos nome e CPF para criar o teste vazio.');
+      return;
+    }
+
     const confirmou = window.confirm(
-      'Criar um processo fictício de demonstração?\n\n' +
-      'Será criada Mariana Alves Teixeira (demonstração), com dados inteiramente fictícios, quatro alinhamentos, respostas de exemplo e duas pendências finais deixadas abertas de propósito.\n\n' +
-      'Nada existente será alterado. O processo ficará claramente identificado como demonstração e poderá ser arquivado depois.',
+      'Criar este processo fictício de teste com TODOS os formulários vazios?\n\n' +
+      'Nenhuma resposta será preenchida automaticamente. Você poderá testar o fluxo real dos formulários a partir desse processo.',
     );
     if (!confirmou) return;
 
-    await executar('criar-demo', async () => {
+    await executar('criar-teste-vazio', async () => {
+      const criado = await criarProcessoTesteVazioSeguro({
+        nome: testeNome,
+        cpf: testeCpf,
+        email: testeEmail,
+        cargo: testeCargo,
+        unidade: testeUnidade,
+        inicio: testeInicio,
+        gestor: testeGestor,
+        gestorEmail: testeGestorEmail,
+        anjo: testeAnjo,
+        anjoEmail: testeAnjoEmail,
+        consultora: testeMentora,
+        consideracoes: 'REGISTRO FICTÍCIO PARA TESTE DE FORMULÁRIOS',
+      }, idsGlobais.length);
+
+      await onSaved();
+      setTesteAberto(false);
+      toast.success('Teste vazio criado e conferido com 0 respostas de formulário.');
+      onAbrirPessoa(criado.legacyId);
+    }, 'Não foi possível criar o processo de teste vazio.');
+  };
+
+  const criarDemoCompleta = async () => {
+    const confirmou = window.confirm(
+      'Criar a demonstração completa antiga?\n\n' +
+      'Ela inclui Mariana Alves Teixeira (demonstração), alinhamentos e respostas fictícias já preenchidas.',
+    );
+    if (!confirmou) return;
+
+    await executar('criar-demo-completa', async () => {
       const criado = await criarProcessoDemonstracaoSeguro(feriados);
       await onSaved();
-      toast.success(`Demonstração criada e conferida com ${criado.respostas} resposta(s) fictícia(s).`);
+      toast.success(`Demonstração completa criada com ${criado.respostas} resposta(s) fictícia(s).`);
       onAbrirPessoa(criado.legacyId);
-    }, 'Não foi possível criar o processo de demonstração.');
+    }, 'Não foi possível criar a demonstração completa.');
   };
 
   const mover = async (processoId: string, direcao: -1 | 1) => {
@@ -310,15 +357,101 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
             className="pl-10"
           />
         </div>
-        <Button type="button" variant="outline" onClick={() => void criarDemo()} className="gap-2" disabled={Boolean(operacao)}>
-          {operacao === 'criar-demo' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />}
-          Criar demonstração
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setTesteAberto((valor) => !valor)}
+          className="gap-2"
+          disabled={Boolean(operacao)}
+        >
+          <FlaskConical className="h-4 w-4" />
+          Criar teste
         </Button>
         <Button onClick={() => setCriando((valor) => !valor)} className="gap-2" disabled={Boolean(operacao)}>
           <Plus className="w-4 h-4" />
           Nova Pessoa
         </Button>
       </div>
+
+      {testeAberto && (
+        <Card className="border-violet-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Criar processo fictício de teste</CardTitle>
+            <CardDescription>
+              O modo padrão abaixo cria uma pessoa com todos os formulários vazios. Nenhuma resposta ou ação será marcada automaticamente.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+              <strong>Modo selecionado:</strong> Teste de formulários — vazio
+              <div className="mt-1 text-xs text-muted-foreground">
+                Após criar, o sistema confere que existem 0 respostas e 0 ações concluídas.
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">Nome</span>
+                <Input value={testeNome} onChange={(e) => setTesteNome(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">CPF fictício</span>
+                <Input value={testeCpf} onChange={(e) => setTesteCpf(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">E-mail fictício</span>
+                <Input value={testeEmail} onChange={(e) => setTesteEmail(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">Cargo</span>
+                <Input value={testeCargo} onChange={(e) => setTesteCargo(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">Unidade</span>
+                <Input value={testeUnidade} onChange={(e) => setTesteUnidade(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">Data de início</span>
+                <Input type="date" value={testeInicio} onChange={(e) => setTesteInicio(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">Gestor(a)</span>
+                <Input value={testeGestor} onChange={(e) => setTesteGestor(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">E-mail do gestor(a)</span>
+                <Input value={testeGestorEmail} onChange={(e) => setTesteGestorEmail(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">Anjo</span>
+                <Input value={testeAnjo} onChange={(e) => setTesteAnjo(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">E-mail do anjo</span>
+                <Input value={testeAnjoEmail} onChange={(e) => setTesteAnjoEmail(e.target.value)} />
+              </label>
+              <label className="space-y-1 text-xs">
+                <span className="font-medium text-muted-foreground">Mentora</span>
+                <Input value={testeMentora} onChange={(e) => setTesteMentora(e.target.value)} placeholder="Opcional" />
+              </label>
+            </div>
+
+            <div className="flex flex-wrap gap-2 border-t pt-4">
+              <Button type="button" onClick={() => void criarTesteVazio()} disabled={Boolean(operacao)}>
+                {operacao === 'criar-teste-vazio' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Criar com formulários vazios
+              </Button>
+              <Button type="button" variant="outline" onClick={() => void criarDemoCompleta()} disabled={Boolean(operacao)}>
+                {operacao === 'criar-demo-completa' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Criar demonstração completa antiga
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setTesteAberto(false)} disabled={Boolean(operacao)}>
+                Fechar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {criando && (
         <Card>
