@@ -313,32 +313,53 @@ export function gerarRelatorioEvolucaoPdf(processo: ProcessoIntegracao, relN: nu
   y += 30;
 
   y = section(doc, y, 'Médias por pilar', 'evolução entre os momentos');
-  const colMomento = 36;
-  const colPilar = (178 - colMomento) / PILARES.length;
+  const xPilar = 16;
+  const xMomentos = 92;
+  const larguraMomento = 18;
+  const xVar = xMomentos + momentos.length * larguraMomento;
   doc.setFillColor(240, 237, 235);
   doc.rect(16, y, 178, 7, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.6);
   doc.setTextColor(70, 80, 90);
-  doc.text('Momento', 18, y + 4.5);
-  PILARES.forEach((p, i) => doc.text(p.chave, 16 + colMomento + i * colPilar + 1.5, y + 4.5));
-  y += 7;
-  momentos.forEach((momento) => {
-    y = ensureSpace(doc, y, 7);
-    doc.setDrawColor(225, 225, 225);
-    doc.rect(16, y, 178, 7, 'S');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.3);
-    doc.setTextColor(21, 34, 50);
-    doc.text(`${ORD[momento.ciclo]} feedback`, 18, y + 4.6);
-    PILARES.forEach((p, i) => {
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(70, 80, 90);
-      doc.text(fmtNumero(momento.pilares[p.chave]), 16 + colMomento + i * colPilar + 1.5, y + 4.6);
-    });
-    y += 7;
+  doc.text('PILAR', xPilar + 2, y + 4.5);
+  momentos.forEach((momento, i) => {
+    doc.text(ORD[momento.ciclo], xMomentos + i * larguraMomento + 4, y + 4.5);
   });
-  y += 6;
+  doc.text('VAR.', xVar + 3, y + 4.5);
+  y += 7;
+
+  PILARES.forEach((pilar) => {
+    y = ensureSpace(doc, y, 8);
+    doc.setDrawColor(225, 225, 225);
+    doc.rect(16, y, 178, 8, 'S');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.1);
+    doc.setTextColor(40, 50, 62);
+    doc.text(pilar.nome, xPilar + 2, y + 5.2);
+
+    momentos.forEach((momento, i) => {
+      doc.text(fmtNumero(momento.pilares[pilar.chave]), xMomentos + i * larguraMomento + 3, y + 5.2);
+    });
+
+    const valorInicial = primeiroMomento.pilares[pilar.chave];
+    const valorFinal = ultimoMomento.pilares[pilar.chave];
+    const delta = valorInicial != null && valorFinal != null ? valorFinal - valorInicial : null;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(delta != null && delta >= 0 ? 27 : 160, delta != null && delta >= 0 ? 122 : 75, delta != null && delta >= 0 ? 85 : 75);
+    doc.text(delta == null ? '—' : `${delta >= 0 ? '+' : ''}${fmtNumero(delta)}`, xVar + 3, y + 5.2);
+    y += 8;
+  });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(120, 126, 136);
+  doc.text(
+    'Média simples das notas de cada bloco: Adaptação (6 itens) · Ética (3) · Segurança (3) · Postura (6) · Equipe (6) · Qualidade (8).',
+    16,
+    y + 4,
+  );
+  y += 10;
 
   y = section(doc, y, 'Indicadores gerais informados pelo gestor');
   const colunasIndicadores = [44, 44, 44, 46];
