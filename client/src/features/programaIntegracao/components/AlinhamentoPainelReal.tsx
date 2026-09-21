@@ -12,6 +12,8 @@ import {
   aplicarSituacaoRelatorioMentora,
   estadoAlinhamentoAtual,
   removerNotaAlinhamento,
+  registrarRealizacaoAlinhamento,
+  registrarRealizacaoERecalcularAgenda,
   type CampoAlinhamento,
   type SituacaoAgendamento,
   type SituacaoRelatorioMentora,
@@ -126,7 +128,26 @@ export function AlinhamentoPainelReal({
     if (statusEdicao !== 'dirty') return;
     try {
       setStatusEdicao('saving');
-      await onSalvarProcesso(rascunho);
+      let proximo = rascunho;
+      const realizadoAnterior = estado.realizado;
+      const realizadoNovo = estadoRascunho.realizado;
+
+      if (realizadoNovo && realizadoNovo !== realizadoAnterior) {
+        const previstaAtual = cronogramaReal(processo, feriados).find((etapa) => etapa.et.al === numero)?.data || '';
+        if (previstaAtual && realizadoNovo !== previstaAtual) {
+          const recalcular = window.confirm(
+            `O ${numero}º alinhamento estava previsto para ${formatarData(previstaAtual)} e foi realizado em ${formatarData(realizadoNovo)}.\n\nDeseja recalcular a agenda futura com base na data real deste alinhamento?\n\nOK = Recalcular agenda futura\nCancelar = Manter agenda atual`
+          );
+          proximo = recalcular
+            ? registrarRealizacaoERecalcularAgenda(rascunho, numero, realizadoNovo, feriados)
+            : registrarRealizacaoAlinhamento(rascunho, numero, realizadoNovo);
+        } else {
+          proximo = registrarRealizacaoAlinhamento(rascunho, numero, realizadoNovo);
+        }
+      }
+
+      await onSalvarProcesso(proximo);
+      setRascunho(proximo);
       setStatusEdicao('saved');
     } catch {
       setStatusEdicao('error');
