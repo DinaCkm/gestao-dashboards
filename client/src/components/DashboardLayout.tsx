@@ -288,6 +288,7 @@ const otherMenuItems: MenuItemExtended[] = [
   { icon: Layers, label: "Estrutura Organizacional", path: "/disc360/estrutura-organizacional", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: BriefcaseBusiness, label: "Perfis de Cargo", path: "/disc360/perfis-cargo", roles: ["manager"], requireConsultorRole: 'gerente' },
   { icon: Target, label: "Resultado / Match", path: "/disc360/resultado-match", roles: ["manager"], requireConsultorRole: 'gerente' },
+  { icon: ClipboardList, label: "Acompanhar Integração", path: "/gestor/integracao", roles: ["manager"], requireConsultorRole: 'gerente' },
   // === ECODISC 360 (Diretor = vê apenas a sua diretoria) ===
   { icon: ClipboardCheck, label: "DISC da Minha Diretoria", path: "/disc360/aplicacoes", roles: ["manager"], requireConsultorRole: 'diretor' },
   { icon: Building2, label: "Perfil da Minha Diretoria", path: "/disc360/perfis-empresa", roles: ["manager"], requireConsultorRole: 'diretor' },
@@ -425,6 +426,15 @@ function DashboardLayoutContent({
   };
   const hasConsultorId = !!(user as any)?.consultorId;
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
+
+  const { data: managerPagePerms } = trpc.admin.getManagerPermissions.useQuery(undefined, {
+    enabled: user?.role === 'manager' && consultorRole === 'gerente',
+  });
+  const hasManagerRestrictions =
+    user?.role === 'manager' &&
+    consultorRole === 'gerente' &&
+    Array.isArray(managerPagePerms) &&
+    managerPagePerms.some((p: string) => !p.startsWith('scope:'));
   const isGerente = consultorRole === 'gerente' || (!hasConsultorId && user?.role === 'manager' && !(user as any)?.alunoId);
 
   // Badge de revisões pendentes para admin e mentor
@@ -489,9 +499,23 @@ function DashboardLayoutContent({
       // Legacy fallback
       if (item.requireConsultorId && !hasConsultorId) return false;
       if (item.hideIfConsultorId && hasConsultorId) return false;
+
+      if (hasManagerRestrictions && userRole === 'manager' && consultorRole === 'gerente') {
+        return managerPagePerms!.includes(item.path);
+      }
       return true;
     });
-  }, [user?.role, hasConsultorId, consultorRole]);
+  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, managerPagePerms]);
+
+  useEffect(() => {
+    if (!hasManagerRestrictions || user?.role !== 'manager' || consultorRole !== 'gerente') return;
+    const base = location.split('?')[0];
+    const liberadas = (managerPagePerms || []).filter((p: string) => p.startsWith('/'));
+    const permitido = liberadas.some((p: string) => base === p || base.startsWith(p + '/'));
+    if (!permitido && liberadas.length) {
+      setLocation(liberadas[0]);
+    }
+  }, [hasManagerRestrictions, managerPagePerms, user?.role, consultorRole, location, setLocation]);
 
   // Encontrar label ativo para mobile header
   const activeLabel = useMemo(() => {
