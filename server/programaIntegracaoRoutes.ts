@@ -1247,6 +1247,32 @@ programaIntegracaoRouter.post("/api/programa-integracao/respostas/:legacyRid/res
   }
 });
 
+programaIntegracaoRouter.get("/api/public/programa-integracao/opcoes-ativas", async (_req, res) => {
+  try {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    const [rows] = (await connection.execute(
+      `SELECT nome,gestor,anjo
+       FROM programa_integracao_processos
+       WHERE situacao='ativo' AND tipo='Onboarding'
+       ORDER BY nome`
+    )) as any;
+
+    const unicos = (valores: string[]) =>
+      [...new Set(valores.map((v) => String(v || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+    const colaboradores = unicos((rows || []).map((r: any) => r.nome));
+    const gestores = unicos((rows || []).map((r: any) => r.gestor));
+    const anjos = unicos((rows || []).map((r: any) => r.anjo));
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ ok: true, colaboradores, gestores, anjos });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] opções públicas ativas:", error);
+    return res.status(500).json({ error: "Não foi possível carregar as opções ativas do Onboarding." });
+  }
+});
+
 programaIntegracaoRouter.get("/api/public/programa-integracao/forms/:slug", async (req, res) => {
   try {
     const formKey = formKeyDoSlug(req.params.slug); if (!formKey) return res.status(404).json({ error: "Formulário não encontrado." });
