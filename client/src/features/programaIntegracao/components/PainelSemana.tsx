@@ -114,15 +114,31 @@ function classeStatusPainel(status: { k: string; dif?: number }, lado?: 'ckm' | 
   return 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200';
 }
 
-const STATUS_ACAO: Array<[StatusAcaoLegado, string]> = [
-  ['', 'Pendente'],
-  ['prog', 'Programado'],
-  ['doing', 'Em andamento'],
-  ['wait', 'Aguardando resposta'],
-  ['ok', 'Feito'],
-  ['na', 'Não se aplica'],
-  ['wont', 'Não será feita'],
-];
+function statusAcaoDisponiveis(itemId: string, atual?: StatusAcaoLegado): Array<[StatusAcaoLegado, string]> {
+  const base: Array<[StatusAcaoLegado, string]> = [
+    ['', 'Pendente'],
+    ['prog', 'Programado'],
+    ['doing', 'Em andamento'],
+    ['wait', 'Aguardando resposta'],
+    ['ok', 'Feito'],
+    ['na', 'Não se aplica'],
+    ['wont', 'Não será feita'],
+  ];
+  const prepararMentora = /^ag[1-4]-00$/.test(itemId);
+  const solicitarGestor = /^ag[1-4]-01$/.test(itemId);
+  const dependenteAgendamento = /^ag[1-4]-0[23]$/.test(itemId);
+
+  const extras: Array<[StatusAcaoLegado, string]> = [];
+  if (prepararMentora || atual === 'wait_mentora' || dependenteAgendamento) {
+    extras.push(['wait_mentora', 'Aguardando retorno da mentora']);
+  }
+  if (solicitarGestor || atual === 'wait_gestor' || dependenteAgendamento) {
+    extras.push(['wait_gestor', 'Aguardando retorno do gestor']);
+  }
+
+  const especiais = new Set(extras.map(([valor]) => valor));
+  return [...base.filter(([valor]) => !especiais.has(valor)), ...extras];
+}
 
 function textoPendente(item: any): string {
   const nome = item?.nome || item?.nomeOrig || item?.respondentName || item?.dados?.nome || 'Pessoa não identificada';
@@ -579,7 +595,7 @@ export function PainelSemana({
                         <div className="border-t bg-muted/30 px-4 py-4 md:pl-11 space-y-4">
                           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Ficha da ação</p>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <label className="space-y-1 text-xs"><span className="font-medium text-muted-foreground">Situação</span><select value={ficha.s} onChange={(e) => onAlterarStatusAcao?.(acao.pid, grupo.itemId, e.target.value as StatusAcaoLegado)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">{STATUS_ACAO.map(([valor, label]) => <option key={valor || 'pendente'} value={valor}>{label}</option>)}</select></label>
+                            <label className="space-y-1 text-xs"><span className="font-medium text-muted-foreground">Situação</span><select value={ficha.s} onChange={(e) => onAlterarStatusAcao?.(acao.pid, grupo.itemId, e.target.value as StatusAcaoLegado)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">{statusAcaoDisponiveis(grupo.itemId, ficha.s).map(([valor, label]) => <option key={valor || 'pendente'} value={valor}>{label}</option>)}</select></label>
                             <label className="space-y-1 text-xs"><span className="font-medium text-muted-foreground">{ehEmail ? 'Enviado em' : 'Concluída em'}</span><input type="date" value={ficha.d} onChange={(e) => onAlterarCampoAcao?.(acao.pid, grupo.itemId, 'd', e.target.value)} className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${ficha.s === 'ok' && !ficha.d ? 'border-amber-400' : 'border-input'}`} /></label>
                             {ehEmail && <label className="space-y-1 text-xs"><span className="font-medium text-muted-foreground">Programar envio para</span><input type="date" value={ficha.prog} onChange={(e) => onAlterarCampoAcao?.(acao.pid, grupo.itemId, 'prog', e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /><span className="block text-[11px] text-muted-foreground">Na data marcada vira “feito” sozinho.</span></label>}
                           </div>
