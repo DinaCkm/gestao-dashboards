@@ -72,7 +72,7 @@ export function normalizarRegistroFeito(valor: unknown): Record<string, any> | n
     const texto = valor.trim();
     if (!texto) return null;
 
-    if (['ok', 'na', 'wont', 'prog', 'doing', 'wait'].includes(texto)) {
+    if (['ok', 'na', 'wont', 'prog', 'doing', 'wait', 'wait_mentora', 'wait_gestor'].includes(texto)) {
       return { s: texto };
     }
 
@@ -139,14 +139,15 @@ export function calcularStatusItem(
     return { k: 'act', l: 'Em andamento', dif };
   }
 
+  if (s === 'wait_mentora') {
+    return { k: 'wait', l: 'Aguardando retorno da mentora', dif };
+  }
+
+  if (s === 'wait_gestor') {
+    return { k: 'wait', l: 'Aguardando retorno do gestor', dif };
+  }
+
   if (s === 'wait') {
-    if (dif > 0) {
-      return {
-        k: 'late',
-        l: `Atrasado ${pluralDias(dif)} (aguardando retorno)`,
-        dif,
-      };
-    }
     return { k: 'wait', l: 'Aguardando retorno', dif };
   }
 
