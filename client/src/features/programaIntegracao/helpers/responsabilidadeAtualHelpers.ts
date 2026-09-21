@@ -55,6 +55,37 @@ export function responsabilidadeAtual(
   status: StatusAcaoLegado | string,
 ): ResponsabilidadeAtual {
   const original = item.r;
+
+  if (status === 'wait_mentora') {
+    return {
+      papeis: [],
+      rotulo: 'Mentora',
+      lado: 'eles',
+      transferida: true,
+      indeterminada: false,
+    };
+  }
+
+  if (status === 'wait_gestor') {
+    return {
+      papeis: ['Gestor'],
+      rotulo: 'Gestor',
+      lado: 'eles',
+      transferida: true,
+      indeterminada: false,
+    };
+  }
+
+  if (status === 'blocked') {
+    return {
+      papeis: [],
+      rotulo: 'Dependência anterior',
+      lado: 'ckm',
+      transferida: true,
+      indeterminada: true,
+    };
+  }
+
   if (status !== 'wait' || original !== 'CKM') {
     return {
       papeis: [original],

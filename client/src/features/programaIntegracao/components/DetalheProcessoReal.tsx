@@ -9,6 +9,7 @@ import {
   type FiltroDetalheProcesso,
 } from '../helpers/detalheProcessoRealHelpers';
 import { calcularStatusItem } from '../helpers/statusHelpers';
+import { cronogramaReal } from '../helpers/painelAcoes';
 import {
   aplicarCampoFichaAcao,
   aplicarStatusAcao,
@@ -22,6 +23,7 @@ import { buscarPerfilEcoLider, buscarStatusEcoLider, type EcoLiderAndamento } fr
 import type { PapelCobranca } from '../helpers/cobrancaFormulariosHelpers';
 import { gerarBriefingMentoraPdf, gerarRelatorioMentoraWord } from '../helpers/mentoraDocumentos';
 import { alternarPreparacaoMentora, estadoMentoraAlinhamento } from '../helpers/mentoraStateHelpers';
+import { registrarRealizacaoAlinhamento, registrarRealizacaoERecalcularAgenda } from '../helpers/alinhamentoStateHelpers';
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
 import { gerarRelatorioAndamentoPdf } from '../helpers/relatorioAndamentoPdf';
 import { gerarCheckpointPdf } from '../helpers/checkpointPdf';
@@ -69,15 +71,34 @@ const statusClasses = {
   off: 'border-slate-300 bg-slate-50 text-slate-700',
 } as const;
 
-const STATUS_ACAO: Array<[StatusAcaoLegado, string]> = [
-  ['', 'Pendente'],
-  ['prog', 'Programado'],
-  ['doing', 'Em andamento'],
-  ['wait', 'Aguardando resposta'],
-  ['ok', 'Feito'],
-  ['na', 'Não se aplica'],
-  ['wont', 'Não será feita'],
-];
+function statusAcaoDisponiveis(itemId: string, atual?: StatusAcaoLegado): Array<[StatusAcaoLegado, string]> {
+  const base: Array<[StatusAcaoLegado, string]> = [
+    ['', 'Pendente'],
+    ['prog', 'Programado'],
+    ['doing', 'Em andamento'],
+    ['wait', 'Aguardando resposta'],
+    ['ok', 'Feito'],
+    ['na', 'Não se aplica'],
+    ['wont', 'Não será feita'],
+  ];
+  const prepararMentora = /^ag[1-4]-00$/.test(itemId);
+  const solicitarGestor = /^ag[1-4]-01$/.test(itemId);
+  const dependenteAgendamento = /^ag[1-4]-0[23]$/.test(itemId);
+
+  const extras: Array<[StatusAcaoLegado, string]> = [];
+  if (prepararMentora || atual === 'wait_mentora' || dependenteAgendamento) {
+    extras.push(['wait_mentora', 'Aguardando retorno da mentora']);
+  }
+  if (solicitarGestor || atual === 'wait_gestor' || dependenteAgendamento) {
+    extras.push(['wait_gestor', 'Aguardando retorno do gestor']);
+  }
+  if (atual === 'blocked') {
+    extras.push(['blocked', 'Aguardando etapa anterior']);
+  }
+
+  const especiais = new Set(extras.map(([valor]) => valor));
+  return [...base.filter(([valor]) => !especiais.has(valor)), ...extras];
+}
 
 function iniciais(nome: string): string {
   const partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
@@ -231,6 +252,49 @@ export function DetalheProcessoReal({
   ) => {
     const atual = statusTemporario[itemId] ?? fichaAcaoAtual(processo, itemId).s;
     const numeroMentora = Number(itemId.match(/^ag([1-4])-00$/)?.[1]) as 1 | 2 | 3 | 4 | 0;
+    const numeroAlinhamento = ({ 'd15-01': 1, 'd45-01': 2, 'd75-01': 3, 'd150-01': 4 } as Record<string, 1 | 2 | 3 | 4>)[itemId];
+
+    if (concluido && numeroAlinhamento) {
+      const hoje = new Date();
+      const hojeIso = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+      const dataReal = window.prompt(
+        `Informe a data real em que o ${numeroAlinhamento}º alinhamento aconteceu (AAAA-MM-DD):`,
+        hojeIso,
+      );
+      if (dataReal == null) return;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dataReal)) {
+        toast.error('Informe a data no formato AAAA-MM-DD.');
+        return;
+      }
+
+      const prevista = cronogramaReal(processo, feriados).find((etapa) => etapa.et.al === numeroAlinhamento)?.data || '';
+      const recalcular = prevista && dataReal !== prevista
+        ? window.confirm(
+            `O ${numeroAlinhamento}º alinhamento estava previsto para ${formatarData(prevista)} e foi realizado em ${formatarData(dataReal)}.\n\nDeseja recalcular a agenda futura?\n\nOK = Recalcular agenda futura\nCancelar = Manter agenda atual`
+          )
+        : false;
+
+      setStatusTemporario((estadoAtual) => ({ ...estadoAtual, [itemId]: 'ok' }));
+      setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvando' }));
+      try {
+        const proximo = recalcular
+          ? registrarRealizacaoERecalcularAgenda(processo, numeroAlinhamento, dataReal, feriados)
+          : registrarRealizacaoAlinhamento(processo, numeroAlinhamento, dataReal);
+        await salvar(proximo);
+        setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'salvo' }));
+        limparFeedbackDepois(itemId);
+      } catch (error) {
+        setStatusTemporario((estadoAtual) => {
+          const proximo = { ...estadoAtual };
+          delete proximo[itemId];
+          return proximo;
+        });
+        setFeedbackStatus((estadoAtual) => ({ ...estadoAtual, [itemId]: 'erro' }));
+        limparFeedbackDepois(itemId);
+        toast.error(error instanceof Error ? error.message : 'Não foi possível registrar a realização do alinhamento.');
+      }
+      return;
+    }
 
     if (concluido) {
       if (atual !== 'ok') {
@@ -733,7 +797,7 @@ export function DetalheProcessoReal({
                                     onChange={(e) => void alterarStatusItem(item.id, e.currentTarget.value as StatusAcaoLegado)}
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
                                   >
-                                    {STATUS_ACAO.map(([valor, label]) => <option key={valor || 'pend'} value={valor}>{label}</option>)}
+                                    {statusAcaoDisponiveis(item.id, statusVisual).map(([valor, label]) => <option key={valor || 'pend'} value={valor}>{label}</option>)}
                                   </select>
                                 </label>
                                 <label className="space-y-1 text-xs">

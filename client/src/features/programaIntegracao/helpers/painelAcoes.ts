@@ -143,8 +143,17 @@ export function cronogramaReal(
   const base = normalizarDataCronograma(processo.inicio) || hojeIso(hojeRef);
   const feriadosEfetivos = feriados.length ? feriados : FERIADOS_PADRAO_INTEGRACAO;
 
-  return PLANO_REAL.map((et) => {
-    const alvo = add(base, (et.dia - 1) + (et.off || 0));
+  const recalculo = (processo.teste as any)?.agendaRecalculo;
+  const numeroAncora = Number(recalculo?.numero || 0);
+  const offsetAgenda = Number(recalculo?.offsetDias || 0);
+  const indiceAncora = numeroAncora
+    ? PLANO_REAL.findIndex((etapa) => etapa.al === numeroAncora)
+    : -1;
+
+  return PLANO_REAL.map((et, etapaIndex) => {
+    const alvoOriginal = add(base, (et.dia - 1) + (et.off || 0));
+    const deveRecalcular = indiceAncora >= 0 && etapaIndex > indiceAncora && Number.isFinite(offsetAgenda) && offsetAgenda !== 0;
+    const alvo = deveRecalcular ? add(alvoOriginal, offsetAgenda) : alvoOriginal;
     let d = alvo;
 
     if (et.ajuste === 'prox') d = prox(alvo, feriadosEfetivos);
@@ -164,7 +173,8 @@ export function cronogramaReal(
 
     if (et.mais) {
       const n = ({ pos1: 1, pos2: 2, pos3: 3, pos4: 4 } as Record<string, number>)[et.id];
-      const dataAlinhamento = n ? alinhamentoData(processo, n) : null;
+      const realizadoAncora = n === numeroAncora ? normalizarDataCronograma(recalculo?.realizado) : null;
+      const dataAlinhamento = realizadoAncora || (n ? alinhamentoData(processo, n) : null);
       if (dataAlinhamento) conf = prox(add(dataAlinhamento, 1), feriadosEfetivos);
     }
 
