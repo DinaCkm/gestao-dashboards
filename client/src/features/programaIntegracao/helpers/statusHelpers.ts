@@ -72,7 +72,7 @@ export function normalizarRegistroFeito(valor: unknown): Record<string, any> | n
     const texto = valor.trim();
     if (!texto) return null;
 
-    if (['ok', 'na', 'wont', 'prog', 'doing', 'wait', 'wait_mentora', 'wait_gestor'].includes(texto)) {
+    if (['ok', 'na', 'wont', 'prog', 'doing', 'wait', 'wait_mentora', 'wait_gestor', 'blocked'].includes(texto)) {
       return { s: texto };
     }
 
@@ -145,6 +145,10 @@ export function calcularStatusItem(
 
   if (s === 'wait_gestor') {
     return { k: 'wait', l: 'Aguardando retorno do gestor', dif };
+  }
+
+  if (s === 'blocked') {
+    return { k: 'wait', l: 'Aguardando etapa anterior', dif };
   }
 
   if (s === 'wait') {
