@@ -15,6 +15,7 @@ import { gerarCheckpointPdf } from '../helpers/checkpointPdf';
 import {
   ciclosRelatorioEvolucao,
   gerarRelatorioEvolucaoPdf,
+  relatorioEvolucaoMaisCompleto,
   temDadosRelatorioEvolucao,
 } from '../helpers/relatorioEvolucaoPdf';
 import {
@@ -316,6 +317,7 @@ export function PainelSemana({
   const renderCardProcesso = (card: ReturnType<typeof montarCardProcessoPainel>) => {
     const p = card.processo;
     const proxima = card.proximaEtapa;
+    const relatorioEvolucaoCard = relatorioEvolucaoMaisCompleto(p);
     const encerrado = p.situacao === 'encerrado';
     const hojeTexto = encerrado
       ? 'encerrado'
@@ -367,6 +369,16 @@ export function PainelSemana({
             <Button type="button" size="sm" variant="ghost" onClick={() => onProcessoClick?.(card.processoId)}>Abrir</Button>
             <Button type="button" size="sm" variant="outline" onClick={() => handleGerarAgenda(p)}>Agenda</Button>
             <Button type="button" size="sm" variant="outline" onClick={() => void handleGerarRelatorio(p)}>Relatório</Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!relatorioEvolucaoCard}
+              title={relatorioEvolucaoCard ? 'Evolução com base nos formulários do gestor' : 'Disponível após o primeiro formulário do gestor'}
+              onClick={() => relatorioEvolucaoCard && handleGerarRelatorioEvolucao(p, relatorioEvolucaoCard)}
+            >
+              Relatório de Evolução
+            </Button>
             <Button type="button" size="sm" variant="outline" onClick={() => void handleGerarCheckpoint(p)} title="Checkpoint — versão enxuta e visual">Checkpoint</Button>
           </div>
         </CardContent>

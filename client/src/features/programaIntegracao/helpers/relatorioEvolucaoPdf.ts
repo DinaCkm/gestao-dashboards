@@ -26,6 +26,17 @@ interface MomentoEvolucao {
   pilares: Record<string, number | null>;
   notas: string[];
   faltam: number;
+  indicadores: {
+    desenvolvimento: string;
+    produtividade: string;
+    conceitoGeral: string;
+  };
+  qualitativos: {
+    potenciais: string;
+    menosFavoraveis: string;
+    orientacoes: string;
+    reacao: string;
+  };
 }
 
 function numero(valor: unknown): number | null {
@@ -54,7 +65,7 @@ function respostasGestor(processo: ProcessoIntegracao, ciclos: number[]): Array<
   return out;
 }
 
-function medias(resposta: RespostaFormulario): Omit<MomentoEvolucao, 'ciclo' | 'resposta'> {
+function medias(resposta: RespostaFormulario): Pick<MomentoEvolucao, 'geral' | 'pilares' | 'notas' | 'faltam'> {
   const pilares: Record<string, number | null> = {};
   let somaGeral = 0;
   let qtdGeral = 0;
@@ -89,6 +100,45 @@ function medias(resposta: RespostaFormulario): Omit<MomentoEvolucao, 'ciclo' | '
 
 function fmtNumero(valor: number | null): string {
   return valor == null ? '—' : (Math.round(valor * 100) / 100).toFixed(2).replace('.', ',');
+}
+
+function textoCampo(resposta: RespostaFormulario, indice: number): string {
+  return String(valorEm(resposta, indice) || '').trim() || '—';
+}
+
+function conceitoPercentual(resposta: RespostaFormulario, indice: number): string {
+  const bruto = textoCampo(resposta, indice);
+  if (bruto === '—') return bruto;
+  const percentual = bruto.match(/(^|\s)(100|75|50|25|0)%/);
+  return percentual ? `${percentual[2]}%` : bruto;
+}
+
+function dadosComplementares(resposta: RespostaFormulario) {
+  return {
+    indicadores: {
+      desenvolvimento: conceitoPercentual(resposta, 38),
+      produtividade: conceitoPercentual(resposta, 39),
+      conceitoGeral: conceitoPercentual(resposta, 40),
+    },
+    qualitativos: {
+      potenciais: textoCampo(resposta, 41),
+      menosFavoraveis: textoCampo(resposta, 42),
+      orientacoes: textoCampo(resposta, 43),
+      reacao: textoCampo(resposta, 44),
+    },
+  };
+}
+
+function menorPilar(momento: MomentoEvolucao): { nome: string; valor: number } | null {
+  const valores = PILARES
+    .map((pilar) => ({ nome: pilar.nome, valor: momento.pilares[pilar.chave] }))
+    .filter((item): item is { nome: string; valor: number } => item.valor != null && Number.isFinite(item.valor));
+  if (!valores.length) return null;
+  return valores.sort((a, b) => a.valor - b.valor)[0];
+}
+
+function dataHojeBr(): string {
+  return new Date().toLocaleDateString('pt-BR');
 }
 
 function nomeArquivo(nome: string): string {
@@ -149,6 +199,14 @@ export function temDadosRelatorioEvolucao(processo: ProcessoIntegracao, relN: nu
   return respostasGestor(processo, CICLOS_REL[relN] || [1]).length > 0;
 }
 
+export function relatorioEvolucaoMaisCompleto(processo: ProcessoIntegracao): number | null {
+  if (respostasGestor(processo, [4]).length) return 5;
+  if (respostasGestor(processo, [3]).length) return 4;
+  if (respostasGestor(processo, [2]).length) return 3;
+  if (respostasGestor(processo, [1]).length) return 2;
+  return null;
+}
+
 /**
  * Reconstrução funcional do Relatório de Evolução do HTML original.
  * Usa apenas as respostas já registradas do gestor e não grava nenhum dado.
@@ -164,6 +222,7 @@ export function gerarRelatorioEvolucaoPdf(processo: ProcessoIntegracao, relN: nu
     ciclo,
     resposta,
     ...medias(resposta),
+    ...dadosComplementares(resposta),
   }));
   const faltando = ciclos.filter((c) => !momentos.some((m) => m.ciclo === c));
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -196,6 +255,8 @@ export function gerarRelatorioEvolucaoPdf(processo: ProcessoIntegracao, relN: nu
     `Cargo: ${processo.cargo || '—'} · Área: ${processo.unidade || '—'}`,
     `Gestor / avaliador: ${avaliador}`,
     `Momentos considerados: ${momentos.map((m) => `${ORD[m.ciclo]} feedback`).join(', ')}`,
+    `Momento: ${momentos.length > 1 ? `evolução do ${ORD[momentos[0].ciclo]} ao ${ORD[momentos[momentos.length - 1].ciclo]} feedback` : `${ORD[momentos[0].ciclo]} feedback`}`,
+    `Emitido em: ${dataHojeBr()} · Itens por momento: 32 perguntas`,
   ].forEach((linha) => { doc.text(linha, 16, y); y += 4.2; });
   if (faltando.length) {
     doc.setTextColor(142, 96, 8);
@@ -204,54 +265,165 @@ export function gerarRelatorioEvolucaoPdf(processo: ProcessoIntegracao, relN: nu
   }
   y += 3;
 
-  y = section(doc, y, 'Médias por pilar', 'escala de 1 a 5');
-  const colMomento = 36;
-  const colPilar = (178 - colMomento) / PILARES.length;
+  const primeiroMomento = momentos[0];
+  const ultimoMomento = momentos[momentos.length - 1];
+  const menor = menorPilar(ultimoMomento);
+  const deltaGeral = primeiroMomento.geral != null && ultimoMomento.geral != null
+    ? ultimoMomento.geral - primeiroMomento.geral
+    : null;
+
+  y = section(doc, y, 'Panorama', 'escala de 1 a 5');
+  const panoramaCards = [
+    {
+      titulo: `MÉDIA GERAL · ${ORD[ultimoMomento.ciclo]} FEEDBACK`,
+      valor: fmtNumero(ultimoMomento.geral),
+      detalhe: ultimoMomento.faltam ? `${32 - ultimoMomento.faltam} de 32 itens respondidos` : '32 itens respondidos',
+    },
+    {
+      titulo: `VARIAÇÃO DESDE O ${ORD[primeiroMomento.ciclo]}`,
+      valor: deltaGeral == null ? '—' : `${deltaGeral >= 0 ? '+' : ''}${fmtNumero(deltaGeral)}`,
+      detalhe: primeiroMomento.geral != null && ultimoMomento.geral != null
+        ? `de ${fmtNumero(primeiroMomento.geral)} para ${fmtNumero(ultimoMomento.geral)}`
+        : 'sem base suficiente para comparação',
+    },
+    {
+      titulo: 'PILAR COM MENOR MÉDIA',
+      valor: menor ? fmtNumero(menor.valor) : '—',
+      detalhe: menor?.nome || 'sem dados',
+    },
+  ];
+  panoramaCards.forEach((card, i) => {
+    const x = 16 + i * 60;
+    doc.setFillColor(250, 248, 247);
+    doc.setDrawColor(228, 223, 220);
+    doc.roundedRect(x, y, 56, 23, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.4);
+    doc.setTextColor(110, 110, 110);
+    doc.text(card.titulo, x + 4, y + 5);
+    doc.setFontSize(14);
+    doc.setTextColor(27, 122, 85);
+    doc.text(card.valor, x + 4, y + 12.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(120, 126, 136);
+    const detalheLinhas = doc.splitTextToSize(card.detalhe, 48);
+    doc.text(detalheLinhas, x + 4, y + 17.5);
+  });
+  y += 30;
+
+  y = section(doc, y, 'Médias por pilar', 'evolução entre os momentos');
+  const xPilar = 16;
+  const xMomentos = 92;
+  const larguraMomento = 18;
+  const xVar = xMomentos + momentos.length * larguraMomento;
   doc.setFillColor(240, 237, 235);
   doc.rect(16, y, 178, 7, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.6);
   doc.setTextColor(70, 80, 90);
-  doc.text('Momento', 18, y + 4.5);
-  PILARES.forEach((p, i) => doc.text(p.chave, 16 + colMomento + i * colPilar + 1.5, y + 4.5));
+  doc.text('PILAR', xPilar + 2, y + 4.5);
+  momentos.forEach((momento, i) => {
+    doc.text(ORD[momento.ciclo], xMomentos + i * larguraMomento + 4, y + 4.5);
+  });
+  doc.text('VAR.', xVar + 3, y + 4.5);
+  y += 7;
+
+  PILARES.forEach((pilar) => {
+    y = ensureSpace(doc, y, 8);
+    doc.setDrawColor(225, 225, 225);
+    doc.rect(16, y, 178, 8, 'S');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.1);
+    doc.setTextColor(40, 50, 62);
+    doc.text(pilar.nome, xPilar + 2, y + 5.2);
+
+    momentos.forEach((momento, i) => {
+      doc.text(fmtNumero(momento.pilares[pilar.chave]), xMomentos + i * larguraMomento + 3, y + 5.2);
+    });
+
+    const valorInicial = primeiroMomento.pilares[pilar.chave];
+    const valorFinal = ultimoMomento.pilares[pilar.chave];
+    const delta = valorInicial != null && valorFinal != null ? valorFinal - valorInicial : null;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(delta != null && delta >= 0 ? 27 : 160, delta != null && delta >= 0 ? 122 : 75, delta != null && delta >= 0 ? 85 : 75);
+    doc.text(delta == null ? '—' : `${delta >= 0 ? '+' : ''}${fmtNumero(delta)}`, xVar + 3, y + 5.2);
+    y += 8;
+  });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.4);
+  doc.setTextColor(120, 126, 136);
+  doc.text(
+    'Média simples das notas de cada bloco: Adaptação (6 itens) · Ética (3) · Segurança (3) · Postura (6) · Equipe (6) · Qualidade (8).',
+    16,
+    y + 4,
+  );
+  y += 10;
+
+  y = section(doc, y, 'Indicadores gerais informados pelo gestor');
+  const colunasIndicadores = [44, 44, 44, 46];
+  const xIndicadores = [16, 60, 104, 148];
+  const cabecalhosIndicadores = ['Momento', 'Desenvolvimento', 'Produtividade', 'Conceito geral'];
+  doc.setFillColor(240, 237, 235);
+  doc.rect(16, y, 178, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.7);
+  doc.setTextColor(70, 80, 90);
+  cabecalhosIndicadores.forEach((cabecalho, i) => doc.text(cabecalho, xIndicadores[i] + 2, y + 4.5));
   y += 7;
   momentos.forEach((momento) => {
     y = ensureSpace(doc, y, 7);
     doc.setDrawColor(225, 225, 225);
     doc.rect(16, y, 178, 7, 'S');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.3);
-    doc.setTextColor(21, 34, 50);
-    doc.text(`${ORD[momento.ciclo]} feedback`, 18, y + 4.6);
-    PILARES.forEach((p, i) => {
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(70, 80, 90);
-      doc.text(fmtNumero(momento.pilares[p.chave]), 16 + colMomento + i * colPilar + 1.5, y + 4.6);
-    });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.setTextColor(40, 50, 62);
+    const valores = [
+      `${ORD[momento.ciclo]} feedback`,
+      momento.indicadores.desenvolvimento,
+      momento.indicadores.produtividade,
+      momento.indicadores.conceitoGeral,
+    ];
+    valores.forEach((valor, i) => doc.text(String(valor || '—'), xIndicadores[i] + 2, y + 4.6));
     y += 7;
   });
   y += 6;
 
-  y = section(doc, y, 'Média geral', 'sem arredondamento na origem');
-  const boxW = Math.min(54, (178 - 8) / Math.max(1, momentos.length));
-  momentos.forEach((momento, i) => {
-    const x = 16 + i * (boxW + 4);
-    doc.setFillColor(250, 248, 247);
-    doc.setDrawColor(228, 223, 220);
-    doc.roundedRect(x, y, boxW, 19, 2, 2, 'FD');
+  y = section(doc, y, 'Registros qualitativos', 'transcrição literal do formulário');
+  momentos.forEach((momento) => {
+    const campos = [
+      ['POTENCIAIS OBSERVADOS', momento.qualitativos.potenciais],
+      ['PONTOS MENOS FAVORÁVEIS', momento.qualitativos.menosFavoraveis],
+      ['ORIENTAÇÕES DADAS', momento.qualitativos.orientacoes],
+      ['REAÇÃO NO FEEDBACK', momento.qualitativos.reacao],
+    ] as const;
+
+    y = ensureSpace(doc, y, 10);
+    doc.setFillColor(248, 244, 246);
+    doc.roundedRect(16, y, 178, 7, 1.5, 1.5, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(110, 110, 110);
-    doc.text(`${ORD[momento.ciclo]} FEEDBACK`, x + 4, y + 5);
-    doc.setFontSize(14);
-    doc.setTextColor(27, 122, 85);
-    doc.text(fmtNumero(momento.geral), x + 4, y + 12);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
-    doc.setTextColor(120, 126, 136);
-    doc.text(momento.faltam ? `${momento.faltam} item(ns) sem nota` : '32 itens avaliados', x + 4, y + 16.4);
+    doc.setFontSize(7.4);
+    doc.setTextColor(166, 52, 73);
+    doc.text(`${ORD[momento.ciclo]} FEEDBACK`, 18, y + 4.7);
+    y += 9;
+
+    campos.forEach(([label, valor]) => {
+      const linhas = doc.splitTextToSize(valor || '—', 172);
+      y = ensureSpace(doc, y, 7 + linhas.length * 3.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.4);
+      doc.setTextColor(105, 112, 120);
+      doc.text(label, 18, y);
+      y += 3.4;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(35, 45, 56);
+      doc.text(linhas, 18, y);
+      y += linhas.length * 3.6 + 3;
+    });
+    y += 2;
   });
-  y += 27;
 
   y = section(doc, y, 'Notas originais', 'na ordem das perguntas, sem arredondamento');
   momentos.forEach((momento) => {
@@ -290,7 +462,14 @@ export function gerarRelatorioEvolucaoPdf(processo: ProcessoIntegracao, relN: nu
       textos.push(`${pilar.nome}: ${fmtNumero(a)} → ${fmtNumero(b)}.`);
     }
   });
+  const indicadoresDescricao = momentos.map((momento) =>
+    `${ORD[momento.ciclo]} feedback: ${momento.indicadores.desenvolvimento} em desenvolvimento, ${momento.indicadores.produtividade} em produtividade e ${momento.indicadores.conceitoGeral} no conceito geral`
+  ).join('; ');
+  if (indicadoresDescricao) {
+    textos.push(`Nos indicadores informados pelo gestor, os registros são — ${indicadoresDescricao}.`);
+  }
   if (faltando.length) textos.push('Há ciclos esperados ainda sem resposta do gestor; por isso a leitura considera somente os registros disponíveis.');
+  textos.push('A leitura acima é descritiva: apresenta o que os números e os textos do formulário registram sobre a adaptação do colaborador, sem juízo de valor sobre as etapas seguintes.');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.4);

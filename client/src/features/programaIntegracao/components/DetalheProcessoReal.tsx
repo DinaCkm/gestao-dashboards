@@ -27,6 +27,7 @@ import { registrarRealizacaoAlinhamento, registrarRealizacaoERecalcularAgenda } 
 import { gerarAgendaOnboardingPdf } from '../helpers/agendaPdf';
 import { gerarRelatorioAndamentoPdf } from '../helpers/relatorioAndamentoPdf';
 import { gerarCheckpointPdf } from '../helpers/checkpointPdf';
+import { gerarRelatorioEvolucaoPdf, relatorioEvolucaoMaisCompleto } from '../helpers/relatorioEvolucaoPdf';
 import { EmailActionButtons } from './EmailActionButtons';
 import { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
 import { AtaRelatorioPainel } from './AtaRelatorioPainel';
@@ -442,6 +443,20 @@ export function DetalheProcessoReal({
     }
   };
 
+  const relatorioEvolucaoDisponivel = relatorioEvolucaoMaisCompleto(processo);
+
+  const gerarEvolucao = () => {
+    if (!relatorioEvolucaoDisponivel) {
+      toast.error('Ainda não existe resposta do gestor suficiente para gerar o Relatório de Evolução.');
+      return;
+    }
+    try {
+      gerarRelatorioEvolucaoPdf(processo, relatorioEvolucaoDisponivel);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível gerar o Relatório de Evolução.');
+    }
+  };
+
   const abrirCobranca = (papel?: PapelCobranca, ciclo?: 1 | 2 | 3 | 4) => {
     setCobrancaPapel(papel || null);
     setCobrancaCiclo(ciclo);
@@ -504,6 +519,18 @@ export function DetalheProcessoReal({
             <div className="flex flex-wrap items-center justify-end gap-2">
               <Button type="button" size="sm" onClick={gerarAgenda}>Agenda em PDF</Button>
               <Button type="button" size="sm" variant="secondary" onClick={() => void gerarRelatorio()}>Relatório</Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={gerarEvolucao}
+                disabled={!relatorioEvolucaoDisponivel}
+                title={relatorioEvolucaoDisponivel
+                  ? 'Gerar evolução com base nos formulários do gestor já preenchidos'
+                  : 'Disponível após o primeiro formulário do gestor'}
+              >
+                Relatório de Evolução
+              </Button>
               <Button type="button" size="sm" variant="outline" onClick={() => void gerarCheckpoint()}>Checkpoint</Button>
               <Button type="button" size="sm" variant="outline" onClick={() => abrirCobranca()}>
                 {resumo.formulariosVencidos ? `Cobrar formulários (${resumo.formulariosVencidos})` : 'Formulários em dia'}
