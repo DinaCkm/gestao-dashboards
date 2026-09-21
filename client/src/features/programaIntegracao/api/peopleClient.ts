@@ -105,6 +105,81 @@ export async function criarProcessoSeguro(nome: string, cpf: string, indice: num
     : new Error('Não foi possível gerar um identificador exclusivo para a nova pessoa.');
 }
 
+export interface DadosProcessoTesteVazio {
+  nome: string;
+  cpf: string;
+  email?: string;
+  cargo?: string;
+  unidade?: string;
+  inicio?: string;
+  gestor?: string;
+  gestorEmail?: string;
+  anjo?: string;
+  anjoEmail?: string;
+  consultora?: string;
+  consideracoes?: string;
+}
+
+export async function criarProcessoTesteVazioSeguro(
+  dados: DadosProcessoTesteVazio,
+  indice: number,
+) {
+  exigirConexaoParaAlterar();
+  const nome = String(dados.nome || '').trim();
+  const cpf = String(dados.cpf || '').trim();
+  if (!nome || !cpf) throw new Error('Informe nome e CPF para criar o teste.');
+
+  let ultimaFalha: unknown = null;
+  for (let tentativa = 0; tentativa < 3; tentativa += 1) {
+    const legacyId = gerarLegacyId() + (tentativa ? tentativa.toString(36) : '');
+    const processo: ProcessoIntegracao = {
+      ...novoProcessoVazio(nome, cpf, indice),
+      email: String(dados.email || '').trim(),
+      cargo: String(dados.cargo || '').trim(),
+      unidade: String(dados.unidade || '').trim(),
+      inicio: String(dados.inicio || hojeIso()).slice(0, 10),
+      gestor: String(dados.gestor || '').trim(),
+      gestorEmail: String(dados.gestorEmail || '').trim(),
+      anjo: String(dados.anjo || '').trim(),
+      anjoEmail: String(dados.anjoEmail || '').trim(),
+      consultora: String(dados.consultora || '').trim(),
+      consideracoes: String(
+        dados.consideracoes || 'REGISTRO FICTÍCIO PARA TESTE DE FORMULÁRIOS',
+      ).trim(),
+      notas: 'Criado pelo modo de teste vazio. Nenhum formulário foi preenchido automaticamente.',
+      feito: {},
+      alin: {},
+      bem: {},
+      teste: { ...(novoProcessoVazio(nome, cpf, indice).teste || {}), modoTesteFormularioVazio: true },
+      resp: [],
+    };
+
+    try {
+      await apiJson('/api/programa-integracao/processos', {
+        method: 'POST',
+        body: JSON.stringify({ legacyId, ordem: indice, processo }),
+      });
+      const state = await confirmarProcesso(legacyId);
+      const lido = state.processos[legacyId];
+      if (!lido) throw new Error('O teste foi criado, mas não voltou na confirmação.');
+      if ((lido.resp || []).length !== 0) {
+        throw new Error('O teste voltou com respostas de formulário, quando deveria estar vazio.');
+      }
+      if (Object.keys(lido.feito || {}).length !== 0) {
+        throw new Error('O teste voltou com ações marcadas, quando deveria iniciar vazio.');
+      }
+      return { legacyId, processo: { ...lido, id: legacyId }, state, respostas: 0 };
+    } catch (error) {
+      ultimaFalha = error;
+      if (!(error instanceof Error) || !error.message.toLowerCase().includes('identificador já existe')) throw error;
+    }
+  }
+
+  throw ultimaFalha instanceof Error
+    ? ultimaFalha
+    : new Error('Não foi possível gerar um identificador exclusivo para o teste vazio.');
+}
+
 export async function criarProcessoDemonstracaoSeguro(feriados: string[] = []) {
   exigirConexaoParaAlterar();
   let ultimaFalha: unknown = null;
