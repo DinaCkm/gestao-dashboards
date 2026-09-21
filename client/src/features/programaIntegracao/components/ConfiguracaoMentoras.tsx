@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { ProcessoIntegracao } from '../types';
 import { salvarSecaoConfig } from '../api/client';
 import { linkWhatsAppMentora, telefoneBonitoMentora } from '../helpers/mentoraStateHelpers';
@@ -48,12 +48,26 @@ export function ConfiguracaoMentoras({ config, processos, onSaved }: Configuraca
   const [mentoras, setMentoras] = useState<MentoraConfig[]>(servidor);
   const [status, setStatus] = useState<'idle' | 'dirty' | 'saving' | 'saved' | 'error'>('idle');
   const [erro, setErro] = useState('');
+  const timerSalvarRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revisaoRef = useRef(0);
+  const persistidaRef = useRef(0);
+  const iniciouRef = useRef(false);
+  const filaSalvarRef = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    setMentoras(servidor);
-    setStatus('idle');
-    setErro('');
+    if (!iniciouRef.current) {
+      iniciouRef.current = true;
+      setMentoras(servidor);
+      return;
+    }
+    if (revisaoRef.current === persistidaRef.current) {
+      setMentoras(servidor);
+    }
   }, [servidor]);
+
+  useEffect(() => () => {
+    if (timerSalvarRef.current) clearTimeout(timerSalvarRef.current);
+  }, []);
 
   const usos = useMemo(() => {
     const mapa: Record<string, number> = {};
@@ -76,22 +90,77 @@ export function ConfiguracaoMentoras({ config, processos, onSaved }: Configuraca
     [processos],
   );
 
-  const marcarAlterado = (next: MentoraConfig[]) => {
+  const payloadMentoras = (lista: MentoraConfig[]) => lista.map((m) => ({
+    id: m.id,
+    nome: m.nome.trim(),
+    tel: m.tel.trim(),
+    email: m.email.trim(),
+    ativa: m.ativa,
+    obs: m.obs.trim(),
+  }));
+
+  const persistir = async (lista: MentoraConfig[], revisao: number) => {
+    const emailInvalido = lista.find((m) => !emailValido(m.email));
+    if (emailInvalido) {
+      if (revisao === revisaoRef.current) {
+        setErro(`O e-mail de ${emailInvalido.nome || 'uma mentora'} não parece válido.`);
+        setStatus('error');
+      }
+      return;
+    }
+
+    const payload = payloadMentoras(lista);
+
+    try {
+      if (revisao === revisaoRef.current) {
+        setStatus('saving');
+        setErro('');
+      }
+      const result = await salvarSecaoConfig<MentoraConfig[]>('mentoras', payload);
+      const volta = Array.isArray(result.value) ? result.value.map(normalizarMentora) : [];
+      if (JSON.stringify(volta) !== JSON.stringify(payload)) {
+        throw new Error('A lista salva não voltou igual à lista enviada.');
+      }
+
+      persistidaRef.current = Math.max(persistidaRef.current, revisao);
+      if (revisao === revisaoRef.current) {
+        setMentoras(volta);
+        setStatus('saved');
+        setErro('');
+        await onSaved?.();
+      }
+    } catch (error) {
+      console.error('[ProgramaIntegracao] mentoras:', error);
+      if (revisao === revisaoRef.current) {
+        setErro(error instanceof Error ? error.message : 'Não foi possível salvar as mentoras.');
+        setStatus('error');
+      }
+    }
+  };
+
+  const marcarAlterado = (next: MentoraConfig[], imediato = false) => {
+    revisaoRef.current += 1;
+    const revisao = revisaoRef.current;
     setMentoras(next);
     setStatus('dirty');
     setErro('');
+
+    if (timerSalvarRef.current) clearTimeout(timerSalvarRef.current);
+    timerSalvarRef.current = setTimeout(() => {
+      filaSalvarRef.current = filaSalvarRef.current.then(() => persistir(next, revisao));
+    }, imediato ? 0 : 600);
   };
 
   const atualizar = (indice: number, campo: keyof MentoraConfig, valor: string | boolean) => {
     const next = mentoras.map((mentora, i) => i === indice ? { ...mentora, [campo]: valor } : mentora);
-    marcarAlterado(next);
+    marcarAlterado(next, campo === 'ativa');
   };
 
   const adicionar = () => {
     marcarAlterado([
       ...mentoras,
       { id: criarIdMentora(), nome: '', tel: '', email: '', ativa: true, obs: '' },
-    ]);
+    ], true);
   };
 
   const remover = (indice: number) => {
@@ -102,48 +171,7 @@ export function ConfiguracaoMentoras({ config, processos, onSaved }: Configuraca
       ? `Remover ${mentora.nome || 'esta mentora'} do cadastro? ${quantidade} processo(s) vinculado(s) ficará(ão) sem mentora selecionada.`
       : `Remover ${mentora.nome || 'esta mentora'} do cadastro?`;
     if (!window.confirm(mensagem)) return;
-    marcarAlterado(mentoras.filter((_, i) => i !== indice));
-  };
-
-  const salvar = async () => {
-    const semNome = mentoras.find((m) => !m.nome.trim());
-    if (semNome) {
-      setErro('Preencha o nome de todas as mentoras antes de salvar.');
-      setStatus('error');
-      return;
-    }
-    const emailInvalido = mentoras.find((m) => !emailValido(m.email));
-    if (emailInvalido) {
-      setErro(`O e-mail de ${emailInvalido.nome} não parece válido.`);
-      setStatus('error');
-      return;
-    }
-
-    const payload = mentoras.map((m) => ({
-      id: m.id,
-      nome: m.nome.trim(),
-      tel: m.tel.trim(),
-      email: m.email.trim(),
-      ativa: m.ativa,
-      obs: m.obs.trim(),
-    }));
-
-    try {
-      setStatus('saving');
-      setErro('');
-      const result = await salvarSecaoConfig<MentoraConfig[]>('mentoras', payload);
-      const volta = Array.isArray(result.value) ? result.value.map(normalizarMentora) : [];
-      if (JSON.stringify(volta) !== JSON.stringify(payload)) {
-        throw new Error('A lista salva não voltou igual à lista enviada.');
-      }
-      setMentoras(volta);
-      setStatus('saved');
-      await onSaved?.();
-    } catch (error) {
-      console.error('[ProgramaIntegracao] mentoras:', error);
-      setErro(error instanceof Error ? error.message : 'Não foi possível salvar as mentoras.');
-      setStatus('error');
-    }
+    marcarAlterado(mentoras.filter((_, i) => i !== indice), true);
   };
 
   return (
@@ -244,14 +272,13 @@ export function ConfiguracaoMentoras({ config, processos, onSaved }: Configuraca
           </div>
 
           <div className="flex flex-wrap items-center gap-3 border-t pt-4">
-            <Button type="button" onClick={adicionar} disabled={status === 'saving'}>+ Nova mentora</Button>
-            <Button type="button" variant="outline" onClick={salvar} disabled={status !== 'dirty'}>
-              {status === 'saving' ? 'Salvando…' : 'Salvar alterações'}
-            </Button>
+            <Button type="button" onClick={adicionar}>+ Nova mentora</Button>
             <span className="text-xs text-muted-foreground">
-              {status === 'dirty' && 'Há alterações ainda não salvas.'}
-              {status === 'saved' && 'Lista salva e conferida no servidor.'}
-              {status === 'error' && (erro || 'Não foi possível salvar.')}
+              {status === 'idle' && 'As alterações são salvas automaticamente.'}
+              {status === 'dirty' && 'Aguardando salvamento automático…'}
+              {status === 'saving' && 'Salvando automaticamente…'}
+              {status === 'saved' && 'Salvo automaticamente e conferido no servidor.'}
+              {status === 'error' && (erro || 'Não foi possível salvar automaticamente.')}
             </span>
           </div>
         </CardContent>
