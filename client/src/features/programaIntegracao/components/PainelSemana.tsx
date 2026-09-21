@@ -44,7 +44,7 @@ import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { buscarPerfilEcoLider } from '../api/ecoLider';
 
-type StatusGrupo = '' | 'prog' | 'doing' | 'wait' | 'na' | 'wont';
+type StatusGrupo = '' | 'prog' | 'doing' | 'wait' | 'wait_mentora' | 'wait_gestor' | 'na' | 'wont';
 
 interface PainelSemanaProps {
   processosAtivos: ProcessoIntegracao[];
@@ -141,6 +141,26 @@ function statusAcaoDisponiveis(itemId: string, atual?: StatusAcaoLegado): Array<
 
   const especiais = new Set(extras.map(([valor]) => valor));
   return [...base.filter(([valor]) => !especiais.has(valor)), ...extras];
+}
+
+function statusGrupoDisponiveis(itemId: string): Array<[StatusGrupo | '__pendente__', string]> {
+  const opcoes: Array<[StatusGrupo | '__pendente__', string]> = [
+    ['__pendente__', 'Pendente'],
+    ['prog', 'Programado'],
+    ['doing', 'Em andamento'],
+    ['wait', 'Aguardando resposta'],
+  ];
+
+  if (/^ag[1-4]-00$/.test(itemId)) {
+    opcoes.push(['wait_mentora', 'Aguardando retorno da mentora']);
+  }
+
+  if (/^ag[1-4]-01$/.test(itemId)) {
+    opcoes.push(['wait_gestor', 'Aguardando retorno do gestor']);
+  }
+
+  opcoes.push(['na', 'Não se aplica'], ['wont', 'Não será feita']);
+  return opcoes;
 }
 
 function textoPendente(item: any): string {
@@ -444,7 +464,10 @@ export function PainelSemana({
                         `Situação aplicada a ${ids.length} pessoas e conferida no servidor.`,
                       );
                     }} className="h-9 max-w-[190px] rounded-md border border-input bg-background px-3 py-1 text-sm disabled:opacity-60" title="Aplicar a mesma situação a todas as pessoas desta tarefa">
-                      <option value="__placeholder__">Aplicar a {grupo.pessoas.length > 1 ? `todas as ${grupo.pessoas.length}` : 'esta'}…</option><option value="__pendente__">Pendente</option><option value="prog">Programado</option><option value="doing">Em andamento</option><option value="wait">Aguardando resposta</option><option value="na">Não se aplica</option><option value="wont">Não será feita</option>
+                      <option value="__placeholder__">Aplicar a {grupo.pessoas.length > 1 ? `todas as ${grupo.pessoas.length}` : 'esta'}…</option>
+                      {statusGrupoDisponiveis(grupo.itemId).map(([valor, label]) => (
+                        <option key={valor} value={valor}>{label}</option>
+                      ))}
                     </select>}
                   </div>
                 </div>

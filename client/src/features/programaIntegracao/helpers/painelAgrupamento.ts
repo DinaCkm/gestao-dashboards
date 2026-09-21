@@ -20,6 +20,16 @@ function piorStatus(acoes: AcaoPainelReal[]): StatusItemPainel {
     .sort((a, b) => PESO_STATUS_ITEM[a.k] - PESO_STATUS_ITEM[b.k])[0];
 }
 
+function ordemDependenciaAgendamento(itemId: string): { ciclo: number; ordem: number } | null {
+  const match = itemId.match(/^ag([1-4])-(00|01|02|03)$/);
+  if (!match) return null;
+
+  return {
+    ciclo: Number(match[1]),
+    ordem: Number(match[2]),
+  };
+}
+
 /**
  * Agrupa exatamente por tarefa/itemId: a mesma tarefa de várias pessoas aparece uma única vez.
  * O grupo herda o pior status entre as pessoas e a data prevista mais antiga.
@@ -58,6 +68,16 @@ export function agruparAcoesPorTarefa(acoes: AcaoPainelReal[]): GrupoAcaoPainel[
       };
     })
     .sort((a, b) => {
+      const depA = ordemDependenciaAgendamento(a.itemId);
+      const depB = ordemDependenciaAgendamento(b.itemId);
+
+      // Dentro do mesmo alinhamento, a sequência operacional prevalece sobre
+      // o peso visual do status: mentora -> gestor -> confirmação -> convite.
+      if (depA && depB && depA.ciclo === depB.ciclo) {
+        const porSequencia = depA.ordem - depB.ordem;
+        if (porSequencia !== 0) return porSequencia;
+      }
+
       const porStatus = PESO_STATUS_ITEM[a.statusPior.k] - PESO_STATUS_ITEM[b.statusPior.k];
       if (porStatus !== 0) return porStatus;
 
