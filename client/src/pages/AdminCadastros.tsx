@@ -3163,6 +3163,10 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
       toast.error("CPF é obrigatório e deve conter 11 dígitos para o login do Gerente Puro");
       return;
     }
+    if (puroPermissions.length === 0) {
+      toast.error("Selecione pelo menos uma área do menu para o Gerente Puro.");
+      return;
+    }
     const permissions = [
       ...puroPermissions,
       ...(puroPermissions.includes("/gestor/integracao") && puroIntegracaoEscopo === "all"
@@ -3559,6 +3563,10 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
               disabled={!permissaoOpenId || salvarPermissoesGerente.isPending}
               onClick={() => {
                 if (!permissaoOpenId) return;
+                if (editPermissions.length === 0) {
+                  toast.error("Selecione pelo menos uma área do menu para este gerente.");
+                  return;
+                }
                 const permissions = [
                   ...editPermissions,
                   ...(editPermissions.includes("/gestor/integracao") && editEscopo === "all"
