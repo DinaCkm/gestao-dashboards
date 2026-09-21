@@ -76,6 +76,16 @@ export function responsabilidadeAtual(
     };
   }
 
+  if (status === 'blocked') {
+    return {
+      papeis: [],
+      rotulo: 'Dependência anterior',
+      lado: 'ckm',
+      transferida: true,
+      indeterminada: true,
+    };
+  }
+
   if (status !== 'wait' || original !== 'CKM') {
     return {
       papeis: [original],
