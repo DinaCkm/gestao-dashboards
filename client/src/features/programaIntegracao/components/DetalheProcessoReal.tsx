@@ -69,15 +69,31 @@ const statusClasses = {
   off: 'border-slate-300 bg-slate-50 text-slate-700',
 } as const;
 
-const STATUS_ACAO: Array<[StatusAcaoLegado, string]> = [
-  ['', 'Pendente'],
-  ['prog', 'Programado'],
-  ['doing', 'Em andamento'],
-  ['wait', 'Aguardando resposta'],
-  ['ok', 'Feito'],
-  ['na', 'Não se aplica'],
-  ['wont', 'Não será feita'],
-];
+function statusAcaoDisponiveis(itemId: string, atual?: StatusAcaoLegado): Array<[StatusAcaoLegado, string]> {
+  const base: Array<[StatusAcaoLegado, string]> = [
+    ['', 'Pendente'],
+    ['prog', 'Programado'],
+    ['doing', 'Em andamento'],
+    ['wait', 'Aguardando resposta'],
+    ['ok', 'Feito'],
+    ['na', 'Não se aplica'],
+    ['wont', 'Não será feita'],
+  ];
+  const prepararMentora = /^ag[1-4]-00$/.test(itemId);
+  const solicitarGestor = /^ag[1-4]-01$/.test(itemId);
+  const dependenteAgendamento = /^ag[1-4]-0[23]$/.test(itemId);
+
+  const extras: Array<[StatusAcaoLegado, string]> = [];
+  if (prepararMentora || atual === 'wait_mentora' || dependenteAgendamento) {
+    extras.push(['wait_mentora', 'Aguardando retorno da mentora']);
+  }
+  if (solicitarGestor || atual === 'wait_gestor' || dependenteAgendamento) {
+    extras.push(['wait_gestor', 'Aguardando retorno do gestor']);
+  }
+
+  const especiais = new Set(extras.map(([valor]) => valor));
+  return [...base.filter(([valor]) => !especiais.has(valor)), ...extras];
+}
 
 function iniciais(nome: string): string {
   const partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
@@ -733,7 +749,7 @@ export function DetalheProcessoReal({
                                     onChange={(e) => void alterarStatusItem(item.id, e.currentTarget.value as StatusAcaoLegado)}
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
                                   >
-                                    {STATUS_ACAO.map(([valor, label]) => <option key={valor || 'pend'} value={valor}>{label}</option>)}
+                                    {statusAcaoDisponiveis(item.id, statusVisual).map(([valor, label]) => <option key={valor || 'pend'} value={valor}>{label}</option>)}
                                   </select>
                                 </label>
                                 <label className="space-y-1 text-xs">
