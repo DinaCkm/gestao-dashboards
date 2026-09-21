@@ -1,6 +1,6 @@
 import type { ProcessoIntegracao } from '../types';
 import type { EcoLiderAndamento } from '../api/ecoLider';
-import { coletarAcoesPainel, cronogramaReal, type AcaoPainelReal } from './painelAcoes';
+import { coletarAcoesPainel, cronogramaReal, dataPrevistaItemCronograma, type AcaoPainelReal } from './painelAcoes';
 import { calcularKpisPainel } from './painelKpis';
 import { progressoRealProcesso } from './painelProcessos';
 import { calcularStatusItem, normalizarRegistroFeito } from './statusHelpers';
@@ -348,7 +348,7 @@ export function calcularIndicadoresAvancados(
         if (!fechado(status)) etapaTodaFechada = false;
 
         if (status === 'ok' && dataFim) {
-          const atraso = diffDias(etapa.data, dataFim);
+          const atraso = diffDias(dataPrevistaItemCronograma(etapa, item), dataFim);
           if (atraso > 0) {
             concluidosComAtraso++;
             metrica.comAtraso++;
@@ -446,7 +446,8 @@ export function calcularIndicadoresAvancados(
     cronograma.forEach((etapa) => {
       etapa.itens.forEach((item) => {
         if (!formKeyForItem(item.id)) return;
-        if (etapa.data > hoje) return;
+        const dataItem = dataPrevistaItemCronograma(etapa, item);
+        if (dataItem > hoje) return;
 
         const status = statusSalvo(processo, item.id);
         if (status === 'na' || status === 'wont') return;
