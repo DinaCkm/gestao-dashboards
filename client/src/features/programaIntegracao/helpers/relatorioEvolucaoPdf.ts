@@ -26,6 +26,17 @@ interface MomentoEvolucao {
   pilares: Record<string, number | null>;
   notas: string[];
   faltam: number;
+  indicadores: {
+    desenvolvimento: string;
+    produtividade: string;
+    conceitoGeral: string;
+  };
+  qualitativos: {
+    potenciais: string;
+    menosFavoraveis: string;
+    orientacoes: string;
+    reacao: string;
+  };
 }
 
 function numero(valor: unknown): number | null {
@@ -54,7 +65,7 @@ function respostasGestor(processo: ProcessoIntegracao, ciclos: number[]): Array<
   return out;
 }
 
-function medias(resposta: RespostaFormulario): Omit<MomentoEvolucao, 'ciclo' | 'resposta'> {
+function medias(resposta: RespostaFormulario): Pick<MomentoEvolucao, 'geral' | 'pilares' | 'notas' | 'faltam'> {
   const pilares: Record<string, number | null> = {};
   let somaGeral = 0;
   let qtdGeral = 0;
@@ -89,6 +100,45 @@ function medias(resposta: RespostaFormulario): Omit<MomentoEvolucao, 'ciclo' | '
 
 function fmtNumero(valor: number | null): string {
   return valor == null ? '—' : (Math.round(valor * 100) / 100).toFixed(2).replace('.', ',');
+}
+
+function textoCampo(resposta: RespostaFormulario, indice: number): string {
+  return String(valorEm(resposta, indice) || '').trim() || '—';
+}
+
+function conceitoPercentual(resposta: RespostaFormulario, indice: number): string {
+  const bruto = textoCampo(resposta, indice);
+  if (bruto === '—') return bruto;
+  const percentual = bruto.match(/(^|\s)(100|75|50|25|0)%/);
+  return percentual ? `${percentual[2]}%` : bruto;
+}
+
+function dadosComplementares(resposta: RespostaFormulario) {
+  return {
+    indicadores: {
+      desenvolvimento: conceitoPercentual(resposta, 38),
+      produtividade: conceitoPercentual(resposta, 39),
+      conceitoGeral: conceitoPercentual(resposta, 40),
+    },
+    qualitativos: {
+      potenciais: textoCampo(resposta, 41),
+      menosFavoraveis: textoCampo(resposta, 42),
+      orientacoes: textoCampo(resposta, 43),
+      reacao: textoCampo(resposta, 44),
+    },
+  };
+}
+
+function menorPilar(momento: MomentoEvolucao): { nome: string; valor: number } | null {
+  const valores = PILARES
+    .map((pilar) => ({ nome: pilar.nome, valor: momento.pilares[pilar.chave] }))
+    .filter((item): item is { nome: string; valor: number } => item.valor != null && Number.isFinite(item.valor));
+  if (!valores.length) return null;
+  return valores.sort((a, b) => a.valor - b.valor)[0];
+}
+
+function dataHojeBr(): string {
+  return new Date().toLocaleDateString('pt-BR');
 }
 
 function nomeArquivo(nome: string): string {
@@ -149,6 +199,14 @@ export function temDadosRelatorioEvolucao(processo: ProcessoIntegracao, relN: nu
   return respostasGestor(processo, CICLOS_REL[relN] || [1]).length > 0;
 }
 
+export function relatorioEvolucaoMaisCompleto(processo: ProcessoIntegracao): number | null {
+  if (respostasGestor(processo, [4]).length) return 5;
+  if (respostasGestor(processo, [3]).length) return 4;
+  if (respostasGestor(processo, [2]).length) return 3;
+  if (respostasGestor(processo, [1]).length) return 2;
+  return null;
+}
+
 /**
  * Reconstrução funcional do Relatório de Evolução do HTML original.
  * Usa apenas as respostas já registradas do gestor e não grava nenhum dado.
@@ -164,6 +222,7 @@ export function gerarRelatorioEvolucaoPdf(processo: ProcessoIntegracao, relN: nu
     ciclo,
     resposta,
     ...medias(resposta),
+    ...dadosComplementares(resposta),
   }));
   const faltando = ciclos.filter((c) => !momentos.some((m) => m.ciclo === c));
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
