@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import type { ProcessoIntegracao, RespostaFormulario } from '../types';
-import { cronogramaReal } from './painelAcoes';
+import { cronogramaReal, dataPrevistaItemCronograma } from './painelAcoes';
 import { diaAtualReal } from './painelProcessos';
 import { calcularStatusItem, PESO_STATUS_ITEM, type StatusItemPainel } from './statusHelpers';
 
@@ -92,13 +92,14 @@ export function checkpointDadosReal(
     etapa.itens.forEach((item) => {
       if (!item.form || !ehFormularioRegistravel(item.link)) return;
       if (!(item.r in byRole)) return;
-      const st = calcularStatusItem(processo, item.id, etapa.data);
+      const dataItem = dataPrevistaItemCronograma(etapa, item);
+      const st = calcularStatusItem(processo, item.id, dataItem);
       if (!ehPendenciaReal(st)) return;
       const match = /^pos([1-4])/.exec(etapa.et.id);
       byRole[item.r as PapelCheckpoint].push({
         form: item.form,
         ciclo: match ? Number(match[1]) : null,
-        data: etapa.data,
+        data: dataItem,
         st,
       });
     });
