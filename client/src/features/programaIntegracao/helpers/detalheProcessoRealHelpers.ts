@@ -1,5 +1,5 @@
 import type { ProcessoIntegracao } from '../types';
-import { cronogramaReal, type CronogramaEtapaReal } from './painelAcoes';
+import { cronogramaReal, dataPrevistaItemCronograma, type CronogramaEtapaReal } from './painelAcoes';
 import type { ItemPlanoReal } from './planoReal';
 import {
   calcularStatusItem,
@@ -101,7 +101,7 @@ export function estadoEtapaDetalhe(
 
   etapa.itens.forEach((item) => {
     total++;
-    const st = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+    const st = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef);
     if (st.k === 'ok') {
       ok++;
       const data = fichaAcaoAtual(processo, item.id).d;
@@ -171,7 +171,7 @@ export function etapasDetalheProcesso(
       const ficha = fichaAcaoAtual(processo, item.id);
       return itemPassaFiltroDetalhe(
         item,
-        calcularStatusItem(processo, item.id, etapa.data, hojeRef),
+        calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef),
         filtro,
         ficha.s,
       );
@@ -250,7 +250,7 @@ export function resumoDetalheProcesso(
   cronogramaReal(processo, feriados, hojeRef).forEach((etapa) => {
     etapa.itens.forEach((item) => {
       total++;
-      const st = calcularStatusItem(processo, item.id, etapa.data, hojeRef);
+      const st = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef);
       if (st.k === 'ok') feitas++;
       else if (st.k === 'off') foraEscopo++;
       else {
@@ -259,7 +259,7 @@ export function resumoDetalheProcesso(
         else elesAbertas++;
         if (item.form) {
           formulariosAbertos++;
-          if (etapa.data < hoje && !respostaDoItem(processo, item.id)) formulariosVencidos++;
+          if (dataItem < hoje && !respostaDoItem(processo, item.id)) formulariosVencidos++;
         }
       }
     });
