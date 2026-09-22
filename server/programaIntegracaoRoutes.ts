@@ -116,8 +116,11 @@ async function requireAcompanharIntegracao(req: Request, res: Response, next: Ne
       permissions = Array.isArray(raw) ? raw : JSON.parse(String(raw || "[]"));
     } catch { permissions = []; }
 
+    if (!permissions.includes("scope:manager:special")) {
+      return res.status(403).json({ error: "Acompanhar Integração está disponível somente para Gerente Especial autorizado." });
+    }
     if (!permissions.includes("/gestor/integracao")) {
-      return res.status(403).json({ error: "Acompanhar Integração não está liberado para este gerente." });
+      return res.status(403).json({ error: "Acompanhar Integração não está liberado para este Gerente Especial." });
     }
 
     (req as any).authenticatedUser = user;

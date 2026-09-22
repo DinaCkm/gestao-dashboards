@@ -8650,6 +8650,22 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         return { success: true };
       }),
 
+    configureSpecialManager: adminOrAdmin2Procedure
+      .input(z.object({
+        userId: z.number(),
+        programId: z.number(),
+        especial: z.boolean(),
+        permissions: z.array(z.string()),
+      }))
+      .mutation(async ({ input }) => {
+        const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
+        if (!gerente) throw new TRPCError({ code: 'NOT_FOUND', message: 'Gerente não encontrado.' });
+        if (input.especial && input.permissions.length === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Selecione pelo menos uma área para o Gerente Especial.' });
+        }
+        return await db.configurarGerenteEspecial(input);
+      }),
+
     // ============ GERENTES DE EMPRESA (VISÃO DUPLA) ============
     
     // Listar gerentes de empresa com info completa
@@ -8681,10 +8697,23 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         email: z.string().email(),
         cpf: z.string().min(11, 'CPF é obrigatório para o login do Gerente Puro'),
         programId: z.number(),
+        especial: z.boolean().optional().default(false),
         permissions: z.array(z.string()).optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.createGerentePuro(input);
+        if (input.especial && (!input.permissions || input.permissions.length === 0)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Selecione pelo menos uma área para o Gerente Especial.' });
+        }
+        const permissions = input.especial
+          ? [...new Set(["scope:manager:special", ...(input.permissions || [])])]
+          : [];
+        return await db.createGerentePuro({
+          name: input.name,
+          email: input.email,
+          cpf: input.cpf,
+          programId: input.programId,
+          permissions,
+        });
       }),
 
     // Remover papel de gerente

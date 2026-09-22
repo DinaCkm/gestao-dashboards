@@ -29,7 +29,8 @@ export default function Home() {
   });
 
   const { data: managerPerms } = trpc.admin.getManagerPermissions.useQuery(undefined, {
-    enabled: !loading && !!user && user.role === 'manager' && (user as any)?.consultorRole === 'gerente',
+    enabled: !loading && !!user && user.role === 'manager' &&
+      (user as any)?.consultorRole !== 'mentor' && (user as any)?.consultorRole !== 'diretor',
   });
 
   // Redirect based on role
@@ -47,7 +48,8 @@ export default function Home() {
         setLocation("/dashboard/mentor");
       } else if (userAny.consultorId && !userAny.alunoId && userAny.consultorRole === "gerente") {
         // Gerente Puro com checklist: entra na primeira área liberada.
-        const liberadas = Array.isArray(managerPerms) ? managerPerms.filter((p: string) => p.startsWith('/')) : [];
+        const especial = Array.isArray(managerPerms) && managerPerms.includes('scope:manager:special');
+        const liberadas = especial ? managerPerms.filter((p: string) => p.startsWith('/')) : [];
         setLocation(liberadas[0] || "/boas-vindas-gestor");
       } else if (userAny.alunoId) {
         // É gerente + aluno (visão dupla) → modo padrão é ALUNO

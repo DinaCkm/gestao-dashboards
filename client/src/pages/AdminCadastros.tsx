@@ -3067,7 +3067,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   empresas: any[];
   loading: boolean;
   onPromote: (data: { alunoId: number; programId: number }) => void;
-  onCreatePuro: (data: { name: string; email: string; cpf: string; programId: number; permissions?: string[] }) => void;
+  onCreatePuro: (data: { name: string; email: string; cpf: string; programId: number; especial?: boolean; permissions?: string[] }) => void;
   onRemove: (data: { userId: number }) => void;
   isPromoting: boolean;
   isCreatingPuro: boolean;
@@ -3085,9 +3085,12 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   const [puroEmail, setPuroEmail] = useState("");
   const [puroCpf, setPuroCpf] = useState("");
   const [puroProgramId, setPuroProgramId] = useState("");
+  const [puroEspecial, setPuroEspecial] = useState(false);
   const [puroPermissions, setPuroPermissions] = useState<string[]>(["/gestor/integracao"]);
   const [puroIntegracaoEscopo, setPuroIntegracaoEscopo] = useState<"gestor" | "all">("gestor");
   const [permissaoOpenId, setPermissaoOpenId] = useState<number | null>(null);
+  const [editEspecial, setEditEspecial] = useState(false);
+  const [editProgramId, setEditProgramId] = useState("");
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
   const [editEscopo, setEditEscopo] = useState<"gestor" | "all">("gestor");
 
@@ -3122,17 +3125,24 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
 
   useEffect(() => {
     if (!permissaoOpenId || !Array.isArray(permissoesGerente)) return;
-    setEditPermissions(permissoesGerente.filter((p: string) => !p.startsWith("scope:")));
+    const gerenteSelecionado = gerentesEmpresa.find((g: any) => Number(g.id) === permissaoOpenId);
+    setEditEspecial(permissoesGerente.includes("scope:manager:special"));
+    setEditProgramId(gerenteSelecionado?.programId ? String(gerenteSelecionado.programId) : "");
+    setEditPermissions(permissoesGerente.filter((p: string) => p.startsWith("/")));
     setEditEscopo(permissoesGerente.includes("scope:integracao:all") ? "all" : "gestor");
-  }, [permissaoOpenId, permissoesGerente]);
+  }, [permissaoOpenId, permissoesGerente, gerentesEmpresa]);
 
-  const salvarPermissoesGerente = trpc.admin.setManagerPermissions.useMutation({
-    onSuccess: async () => {
-      toast.success("Permissões do gerente atualizadas.");
-      await refetchPermissoesGerente();
-      setPermissaoOpenId(null);
+  const salvarConfiguracaoGerente = trpc.admin.configureSpecialManager.useMutation({
+    onSuccess: async (data) => {
+      if (data.success) {
+        toast.success(data.message || "Configuração do gerente atualizada.");
+        await refetchPermissoesGerente();
+        setPermissaoOpenId(null);
+      } else {
+        toast.error(data.message || "Não foi possível atualizar o gerente.");
+      }
     },
-    onError: (err) => toast.error(`Erro ao salvar permissões: ${err.message}`),
+    onError: (err) => toast.error(`Erro ao salvar configuração: ${err.message}`),
   });
 
   const filteredAlunos = (alunosProgram || []).filter((a: any) =>
@@ -3163,27 +3173,29 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
       toast.error("CPF é obrigatório e deve conter 11 dígitos para o login do Gerente Puro");
       return;
     }
-    if (puroPermissions.length === 0) {
-      toast.error("Selecione pelo menos uma área do menu para o Gerente Puro.");
+    if (puroEspecial && puroPermissions.length === 0) {
+      toast.error("Selecione pelo menos uma área para o Gerente Especial.");
       return;
     }
-    const permissions = [
+    const permissions = puroEspecial ? [
       ...puroPermissions,
       ...(puroPermissions.includes("/gestor/integracao") && puroIntegracaoEscopo === "all"
         ? ["scope:integracao:all"]
         : []),
-    ];
+    ] : [];
     onCreatePuro({
       name: puroNome,
       email: puroEmail,
       cpf: cpfDigits,
       programId: parseInt(puroProgramId),
+      especial: puroEspecial,
       permissions,
     });
     setPuroNome("");
     setPuroEmail("");
     setPuroCpf("");
     setPuroProgramId("");
+    setPuroEspecial(false);
     setPuroPermissions(["/gestor/integracao"]);
     setPuroIntegracaoEscopo("gestor");
     setPuroOpen(false);
@@ -3330,41 +3342,58 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                         </SelectContentNoPortal>
                       </Select>
                     </div>
-                    <div className="space-y-3 rounded-lg border p-3">
-                      <div>
-                        <Label>Áreas liberadas no menu do Gerente</Label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Marque somente o que esta pessoa poderá acessar.
-                        </p>
-                      </div>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {MANAGER_MENU_OPTIONS.map((item) => (
-                          <label key={item.path} className="flex items-center gap-2 text-sm">
-                            <Checkbox
-                              checked={puroPermissions.includes(item.path)}
-                              onCheckedChange={(checked) => {
-                                setPuroPermissions((atual) => checked
-                                  ? [...new Set([...atual, item.path])]
-                                  : atual.filter((p) => p !== item.path));
-                              }}
-                            />
-                            <span>{item.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                      {puroPermissions.includes("/gestor/integracao") && (
-                        <div className="space-y-2 border-t pt-3">
-                          <Label>Escopo de Acompanhar Integração</Label>
-                          <Select value={puroIntegracaoEscopo} onValueChange={(v) => setPuroIntegracaoEscopo(v as "gestor" | "all")}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContentNoPortal>
-                              <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
-                              <SelectItem value="all">UGP/RH — todos os colaboradores ativos</SelectItem>
-                            </SelectContentNoPortal>
-                          </Select>
-                        </div>
-                      )}
+                    <div className="rounded-lg border p-3">
+                      <label className="flex items-start gap-3">
+                        <Checkbox
+                          checked={puroEspecial}
+                          onCheckedChange={(checked) => setPuroEspecial(Boolean(checked))}
+                        />
+                        <span>
+                          <span className="block text-sm font-semibold">Gerente Especial</span>
+                          <span className="block text-xs text-muted-foreground mt-1">
+                            Marque somente quando este gerente precisar de um menu personalizado. O acesso continuará restrito à empresa selecionada acima.
+                          </span>
+                        </span>
+                      </label>
                     </div>
+
+                    {puroEspecial && (
+                      <div className="space-y-3 rounded-lg border p-3">
+                        <div>
+                          <Label>Áreas/telas liberadas</Label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            O Gerente Especial verá somente o que estiver marcado.
+                          </p>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {MANAGER_MENU_OPTIONS.map((item) => (
+                            <label key={item.path} className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={puroPermissions.includes(item.path)}
+                                onCheckedChange={(checked) => {
+                                  setPuroPermissions((atual) => checked
+                                    ? [...new Set([...atual, item.path])]
+                                    : atual.filter((p) => p !== item.path));
+                                }}
+                              />
+                              <span>{item.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {puroPermissions.includes("/gestor/integracao") && (
+                          <div className="space-y-2 border-t pt-3">
+                            <Label>Escopo dentro da empresa</Label>
+                            <Select value={puroIntegracaoEscopo} onValueChange={(v) => setPuroIntegracaoEscopo(v as "gestor" | "all")}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContentNoPortal>
+                                <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
+                                <SelectItem value="all">Todos os colaboradores ativos da empresa</SelectItem>
+                              </SelectContentNoPortal>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button type="submit" disabled={isCreatingPuro}>
@@ -3458,17 +3487,25 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       ) : "-"}
                     </TableCell>
                     <TableCell>
-                      {g.isAlsoStudent ? (
-                        <Badge className="bg-blue-600">
-                          <ArrowLeftRight className="h-3 w-3 mr-1" />
-                          Aluno + Gerente
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          <Building2 className="h-3 w-3 mr-1" />
-                          Gerente Puro
-                        </Badge>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {g.isAlsoStudent ? (
+                          <Badge className="bg-blue-600">
+                            <ArrowLeftRight className="h-3 w-3 mr-1" />
+                            Aluno + Gerente
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            <Building2 className="h-3 w-3 mr-1" />
+                            Gerente Puro
+                          </Badge>
+                        )}
+                        {g.isSpecialManager && (
+                          <Badge className="bg-violet-600">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Especial
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
@@ -3478,7 +3515,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                           onClick={() => setPermissaoOpenId(g.id)}
                         >
                           <Shield className="h-3 w-3 mr-1" />
-                          Permissões
+                          Configurar
                         </Button>
                         <Button
                           variant="destructive"
@@ -3527,56 +3564,96 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
       <Dialog open={!!permissaoOpenId} onOpenChange={(open) => !open && setPermissaoOpenId(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Permissões do Gerente</DialogTitle>
+            <DialogTitle>Configurar acesso do Gerente</DialogTitle>
             <DialogDescription>
-              Defina exatamente quais áreas aparecerão no menu deste gerente.
+              O gerente comum mantém a visão padrão da própria empresa. Marque Gerente Especial apenas quando precisar personalizar o menu.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2 sm:grid-cols-2 py-2">
-            {MANAGER_MENU_OPTIONS.map((item) => (
-              <label key={item.path} className="flex items-center gap-2 rounded-md border p-2 text-sm">
-                <Checkbox
-                  checked={editPermissions.includes(item.path)}
-                  onCheckedChange={(checked) => setEditPermissions((atual) => checked
-                    ? [...new Set([...atual, item.path])]
-                    : atual.filter((p) => p !== item.path))}
-                />
-                <span>{item.label}</span>
-              </label>
-            ))}
+
+          <div className="space-y-2">
+            <Label>Empresa *</Label>
+            <Select value={editProgramId} onValueChange={setEditProgramId}>
+              <SelectTrigger><SelectValue placeholder="Selecione a empresa" /></SelectTrigger>
+              <SelectContentNoPortal>
+                {empresas.map((emp) => (
+                  <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                ))}
+              </SelectContentNoPortal>
+            </Select>
           </div>
-          {editPermissions.includes("/gestor/integracao") && (
-            <div className="space-y-2">
-              <Label>Escopo de Acompanhar Integração</Label>
-              <Select value={editEscopo} onValueChange={(v) => setEditEscopo(v as "gestor" | "all")}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContentNoPortal>
-                  <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
-                  <SelectItem value="all">UGP/RH — todos os colaboradores ativos</SelectItem>
-                </SelectContentNoPortal>
-              </Select>
-            </div>
+
+          <label className="flex items-start gap-3 rounded-lg border p-3">
+            <Checkbox
+              checked={editEspecial}
+              onCheckedChange={(checked) => setEditEspecial(Boolean(checked))}
+            />
+            <span>
+              <span className="block text-sm font-semibold">Gerente Especial</span>
+              <span className="block text-xs text-muted-foreground mt-1">
+                Quando marcado, este gerente verá somente as áreas selecionadas abaixo, sempre dentro da empresa escolhida.
+              </span>
+            </span>
+          </label>
+
+          {editEspecial && (
+            <>
+              <div className="grid gap-2 sm:grid-cols-2 py-2">
+                {MANAGER_MENU_OPTIONS.map((item) => (
+                  <label key={item.path} className="flex items-center gap-2 rounded-md border p-2 text-sm">
+                    <Checkbox
+                      checked={editPermissions.includes(item.path)}
+                      onCheckedChange={(checked) => setEditPermissions((atual) => checked
+                        ? [...new Set([...atual, item.path])]
+                        : atual.filter((p) => p !== item.path))}
+                    />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
+              </div>
+              {editPermissions.includes("/gestor/integracao") && (
+                <div className="space-y-2">
+                  <Label>Escopo de Acompanhar Integração</Label>
+                  <Select value={editEscopo} onValueChange={(v) => setEditEscopo(v as "gestor" | "all")}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContentNoPortal>
+                      <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
+                      <SelectItem value="all">Todos os colaboradores ativos da empresa</SelectItem>
+                    </SelectContentNoPortal>
+                  </Select>
+                </div>
+              )}
+            </>
           )}
+
           <DialogFooter>
             <Button
               type="button"
-              disabled={!permissaoOpenId || salvarPermissoesGerente.isPending}
+              disabled={!permissaoOpenId || salvarConfiguracaoGerente.isPending}
               onClick={() => {
                 if (!permissaoOpenId) return;
-                if (editPermissions.length === 0) {
-                  toast.error("Selecione pelo menos uma área do menu para este gerente.");
+                if (!editProgramId) {
+                  toast.error("Selecione a empresa deste gerente.");
                   return;
                 }
-                const permissions = [
+                if (editEspecial && editPermissions.length === 0) {
+                  toast.error("Selecione pelo menos uma área para o Gerente Especial.");
+                  return;
+                }
+                const permissions = editEspecial ? [
                   ...editPermissions,
                   ...(editPermissions.includes("/gestor/integracao") && editEscopo === "all"
                     ? ["scope:integracao:all"]
                     : []),
-                ];
-                salvarPermissoesGerente.mutate({ userId: permissaoOpenId, permissions });
+                ] : [];
+                salvarConfiguracaoGerente.mutate({
+                  userId: permissaoOpenId,
+                  programId: parseInt(editProgramId),
+                  especial: editEspecial,
+                  permissions,
+                });
               }}
             >
-              {salvarPermissoesGerente.isPending ? "Salvando..." : "Salvar permissões"}
+              {salvarConfiguracaoGerente.isPending ? "Salvando..." : "Salvar configuração"}
             </Button>
           </DialogFooter>
         </DialogContent>

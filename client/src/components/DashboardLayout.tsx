@@ -428,13 +428,15 @@ function DashboardLayoutContent({
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
 
   const { data: managerPagePerms } = trpc.admin.getManagerPermissions.useQuery(undefined, {
-    enabled: user?.role === 'manager' && consultorRole === 'gerente',
+    enabled: user?.role === 'manager' && consultorRole !== 'mentor' && consultorRole !== 'diretor',
   });
-  const hasManagerRestrictions =
+  const isSpecialManager =
     user?.role === 'manager' &&
-    consultorRole === 'gerente' &&
     Array.isArray(managerPagePerms) &&
-    managerPagePerms.some((p: string) => !p.startsWith('scope:'));
+    managerPagePerms.includes('scope:manager:special');
+  const hasManagerRestrictions =
+    isSpecialManager &&
+    managerPagePerms.some((p: string) => p.startsWith('/'));
   const isGerente = consultorRole === 'gerente' || (!hasConsultorId && user?.role === 'manager' && !(user as any)?.alunoId);
 
   // Badge de revisões pendentes para admin e mentor
@@ -503,15 +505,20 @@ function DashboardLayoutContent({
       if (item.requireConsultorId && !hasConsultorId) return false;
       if (item.hideIfConsultorId && hasConsultorId) return false;
 
-      if (hasManagerRestrictions && userRole === 'manager' && consultorRole === 'gerente') {
+      // Acompanhar Integração é uma área especial: não aparece no gerente comum.
+      if (item.path === '/gestor/integracao') {
+        return Boolean(isSpecialManager && managerPagePerms?.includes('/gestor/integracao'));
+      }
+
+      if (hasManagerRestrictions && userRole === 'manager') {
         return managerPagePerms!.includes(item.path);
       }
       return true;
     });
-  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, managerPagePerms]);
+  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms]);
 
   useEffect(() => {
-    if (!hasManagerRestrictions || user?.role !== 'manager' || consultorRole !== 'gerente') return;
+    if (!hasManagerRestrictions || user?.role !== 'manager') return;
     const base = location.split('?')[0];
     const liberadas = (managerPagePerms || []).filter((p: string) => p.startsWith('/'));
     const permitido = liberadas.some((p: string) => base === p || base.startsWith(p + '/'));
