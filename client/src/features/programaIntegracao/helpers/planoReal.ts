@@ -75,10 +75,10 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
     {id:'sem1-01', t:'E-mail ao gestor, ao Anjo e ao colaborador pedindo registros dos primeiros dias (fotos, boas-vindas, materiais), se houver algum, para arquivar no processo', r:'CKM', mail:'m_primeiros_registros'}
   ]},
   {id:'ag1', g:'a1', dia:15, off:-7, ajuste:'ant', t:'Agendamento do 1º Alinhamento', s:'7 dias antes do 15º dia', itens:[
-    {id:'ag1-00', t:'Preparar a mentora: disponibilidade, briefing e confirmação da reunião', r:'CKM'},
+    {id:'ag1-00', t:'Preparar a mentora: disponibilidade, briefing e orientações', r:'CKM'},
     {id:'ag1-01', t:'Solicitar ao gestor os horários disponíveis para o 1º Alinhamento', r:'CKM', mail:'m_agendamento_1'},
     {id:'ag1-02', t:'Gestor confirmar o horário', r:'Gestor'},
-    {id:'ag1-03', t:'Enviar o convite com o link da reunião', r:'CKM'}
+    {id:'ag1-03', t:'Gerar Link do Meet e Enviar o Convite', r:'CKM', mail:'m_confirmacao_agendamento_1'}
   ]},
   {id:'d15', g:'a1', dia:15, ajuste:'prox', al:1, t:'15º dia — 1º Alinhamento', s:'Expectativas, percepções iniciais e base do PDI', itens:[
     {id:'d15-01', t:'Realização do 1º Feedback (Alinhamento) com gestor e colaborador', r:'Gestor'},
