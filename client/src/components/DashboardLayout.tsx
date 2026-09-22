@@ -78,6 +78,7 @@ import {
   Mail,
   ClipboardList,
   Award,
+  Loader2,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
