@@ -2481,15 +2481,16 @@ export async function deleteUploadedFile(id: number) {
  * 2. Se o aluno NÃO tem CPF → login com Email + ID do aluno (externalId)
  * 3. Alunos SEBRAE TO com CPF usam EXCLUSIVAMENTE CPF (participam do Projeto Evoluir)
  * 
- * Mentores/Gerentes: login com Email + CPF (tabela consultors)
+ * Mentores/Gerentes: login com Email + CPF ou Email + ID (tabela consultors)
  * Admin: login separado via adminLogin
  */
 export async function authenticateByEmailCpf(email: string, credential: string): Promise<{ success: boolean; user?: any; message?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
   
-  // Normalizar credencial (remover pontos e traços)
-  const normalizedCredential = credential.replace(/[.\-]/g, '');
+  // Normalizar credencial. Para CPF removemos máscara; para ID preservamos o valor digitado.
+  const rawCredential = credential.trim();
+  const normalizedCredential = rawCredential.replace(/[.\-]/g, '');
   const normalizedEmail = email.toLowerCase().trim();
   
   // ===== 1. Tentar login em users (admin/manager já cadastrados) =====
@@ -2578,12 +2579,16 @@ export async function authenticateByEmailCpf(email: string, credential: string):
     return await createOrUpdateAlunoSession(db, alunoById, normalizedCredential);
   }
   
-  // ===== 4. Tentar login de CONSULTOR (mentor/gerente) por CPF =====
+  // ===== 4. Tentar login de CONSULTOR (mentor/gerente) por CPF OU ID =====
   const [consultor] = await db.select()
     .from(consultors)
     .where(and(
       eq(consultors.email, normalizedEmail),
-      eq(consultors.cpf, normalizedCredential),
+      or(
+        eq(consultors.cpf, normalizedCredential),
+        eq(consultors.loginId, rawCredential),
+        eq(consultors.loginId, normalizedCredential)
+      ),
       eq(consultors.isActive, 1),
       eq(consultors.canLogin, 1)
     ))
@@ -2591,62 +2596,69 @@ export async function authenticateByEmailCpf(email: string, credential: string):
   
   if (consultor) {
     const role = 'manager' as const;
-    const openId = `consultor_${consultor.id}`;
-    
-    const [existingUser] = await db.select()
+
+    // Gerente Puro já possui user próprio (gerente_puro_ID). Sempre reaproveitar
+    // o vínculo por consultorId para não criar um segundo usuário ao entrar por ID.
+    const [linkedUser] = await db.select()
       .from(users)
-      .where(eq(users.openId, openId))
+      .where(eq(users.consultorId, consultor.id))
       .limit(1);
-    
-    if (existingUser) {
+
+    if (linkedUser) {
+      if (linkedUser.isActive === 0) {
+        return { success: false, message: "Sua conta está inativa. Entre em contato com o administrador." };
+      }
+
       await db.update(users)
         .set({ lastSignedIn: new Date() })
-        .where(eq(users.id, existingUser.id));
+        .where(eq(users.id, linkedUser.id));
       
       return {
         success: true,
         user: {
-          id: existingUser.id,
-          openId: existingUser.openId,
-          name: existingUser.name,
-          email: existingUser.email,
-          role: existingUser.role,
-          programId: existingUser.programId,
-          consultorId: consultor.id
-        }
-      };
-    } else {
-      await db.insert(users).values({
-        openId,
-        name: consultor.name,
-        email: consultor.email!.toLowerCase(),
-        cpf: normalizedCredential,
-        role,
-        loginMethod: 'email_cpf',
-        isActive: 1,
-        consultorId: consultor.id,
-        programId: consultor.managedProgramId ?? null,
-        lastSignedIn: new Date(),
-      });
-      
-      const [newUser] = await db.select()
-        .from(users)
-        .where(eq(users.openId, openId))
-        .limit(1);
-      
-      return {
-        success: true,
-        user: {
-          id: newUser?.id,
-          openId,
-          name: consultor.name,
-          email: consultor.email,
-          role,
-          programId: consultor.managedProgramId,
+          id: linkedUser.id,
+          openId: linkedUser.openId,
+          name: linkedUser.name,
+          email: linkedUser.email,
+          role: linkedUser.role,
+          programId: linkedUser.programId,
           consultorId: consultor.id
         }
       };
     }
+
+    // Compatibilidade com consultores antigos que ainda não possuem user vinculado.
+    const openId = `consultor_${consultor.id}`;
+    await db.insert(users).values({
+      openId,
+      name: consultor.name,
+      email: consultor.email!.toLowerCase(),
+      cpf: consultor.cpf || null,
+      role,
+      loginMethod: consultor.cpf ? 'email_cpf' : 'email_id',
+      isActive: 1,
+      consultorId: consultor.id,
+      programId: consultor.managedProgramId ?? null,
+      lastSignedIn: new Date(),
+    });
+    
+    const [newUser] = await db.select()
+      .from(users)
+      .where(eq(users.openId, openId))
+      .limit(1);
+    
+    return {
+      success: true,
+      user: {
+        id: newUser?.id,
+        openId,
+        name: consultor.name,
+        email: consultor.email,
+        role,
+        programId: consultor.managedProgramId,
+        consultorId: consultor.id
+      }
+    };
   }
   
   return { success: false, message: "Email ou CPF/ID incorretos, ou usuário inativo. Verifique suas credenciais." };
@@ -9655,7 +9667,7 @@ export async function createGerentePuro(data: {
   cpf: string;
   programId: number;
   permissions?: string[];
-}): Promise<{ success: boolean; message?: string; userId?: number; consultorId?: number }> {
+}): Promise<{ success: boolean; message?: string; userId?: number; consultorId?: number; loginId?: string }> {
   const db = await getDb();
   if (!db) return { success: false, message: "Banco de dados não disponível" };
 
@@ -9728,6 +9740,14 @@ export async function createGerentePuro(data: {
     }
     if (!consultorId) throw new Error("Não foi possível criar ou recuperar o vínculo de gerente.");
 
+    // O ID de login utiliza a estrutura histórica já existente em consultors.loginId.
+    // Para novos Gerentes Puros, gerar um identificador estável e fácil de reconhecer.
+    const loginId = String(existingGerente?.loginId || `G${consultorId}`).trim().toUpperCase();
+    await raw.execute(
+      `UPDATE consultors SET loginId=?,canLogin=1,updatedAt=NOW() WHERE id=?`,
+      [loginId, consultorId],
+    );
+
     const openId = `gerente_puro_${consultorId}`;
     const [userResult]: any = await raw.execute(
       `INSERT INTO users
@@ -9750,14 +9770,123 @@ export async function createGerentePuro(data: {
     await raw.commit();
     return {
       success: true,
-      message: `Gerente ${data.name} criado com sucesso.`,
+      message: `Gerente ${data.name} criado com sucesso. ID de login: ${loginId}.`,
       userId,
       consultorId,
+      loginId,
     };
   } catch (error: any) {
     try { if (raw) await raw.rollback(); } catch {}
     console.error("[createGerentePuro] Falha transacional:", error);
     return { success: false, message: error?.message || "Não foi possível criar o Gerente Puro." };
+  } finally {
+    try { if (raw) await raw.end(); } catch {}
+  }
+}
+
+/**
+ * Editar dados cadastrais de um Gerente Puro/Especial.
+ * Proteção: Aluno + Gerente não pode ser alterado por este fluxo.
+ * Atualiza users e consultors na mesma transação para impedir divergência.
+ */
+export async function updateGerentePuro(data: {
+  userId: number;
+  name: string;
+  email: string;
+  cpf: string;
+  loginId: string;
+  programId: number;
+}): Promise<{ success: boolean; message?: string }> {
+  if (!process.env.DATABASE_URL) return { success: false, message: "Banco de dados não disponível" };
+
+  const normalizedName = data.name.trim();
+  const normalizedEmail = data.email.toLowerCase().trim();
+  const normalizedCpf = data.cpf.replace(/\D/g, '');
+  const normalizedLoginId = data.loginId.trim().toUpperCase();
+
+  if (!normalizedName) return { success: false, message: "Informe o nome do gerente." };
+  if (normalizedCpf.length !== 11) return { success: false, message: "CPF deve conter exatamente 11 dígitos." };
+  if (!normalizedLoginId) return { success: false, message: "Informe o ID de login do gerente." };
+
+  let raw: mysql.Connection | null = null;
+  try {
+    raw = await mysql.createConnection(process.env.DATABASE_URL);
+    await raw.beginTransaction();
+
+    const [userRows]: any = await raw.execute(
+      `SELECT id,alunoId,consultorId FROM users WHERE id=? AND role='manager' LIMIT 1`,
+      [data.userId],
+    );
+    const userAtual = userRows?.[0];
+    if (!userAtual) throw new Error("Gerente não encontrado.");
+    if (userAtual.alunoId) {
+      throw new Error("Este cadastro é Aluno + Gerente. Os dados pessoais devem ser editados somente pela área de Alunos.");
+    }
+
+    const consultorId = Number(userAtual.consultorId || 0);
+    if (!consultorId) {
+      throw new Error("Este gerente é um cadastro legado sem vínculo de consultor. A edição cadastral protegida não pode ser feita por esta tela.");
+    }
+
+    const [consultorRows]: any = await raw.execute(
+      `SELECT id,role FROM consultors WHERE id=? LIMIT 1`,
+      [consultorId],
+    );
+    const consultorAtual = consultorRows?.[0];
+    if (!consultorAtual || consultorAtual.role !== 'gerente') {
+      throw new Error("O vínculo de gerente não foi encontrado ou é incompatível.");
+    }
+
+    const [emailUserRows]: any = await raw.execute(
+      `SELECT id FROM users WHERE LOWER(TRIM(email))=? AND id<>? AND isActive=1 LIMIT 1`,
+      [normalizedEmail, data.userId],
+    );
+    if (emailUserRows?.length) throw new Error("Este e-mail já está cadastrado para outro usuário ativo.");
+
+    const [emailConsultorRows]: any = await raw.execute(
+      `SELECT id FROM consultors WHERE LOWER(TRIM(email))=? AND id<>? AND isActive=1 LIMIT 1`,
+      [normalizedEmail, consultorId],
+    );
+    if (emailConsultorRows?.length) throw new Error("Este e-mail já está cadastrado para outro consultor ativo.");
+
+    const [cpfUserRows]: any = await raw.execute(
+      `SELECT id FROM users WHERE REPLACE(REPLACE(cpf,'.',''),'-','')=? AND id<>? AND isActive=1 LIMIT 1`,
+      [normalizedCpf, data.userId],
+    );
+    if (cpfUserRows?.length) throw new Error("Este CPF já está cadastrado para outro usuário ativo.");
+
+    const [cpfConsultorRows]: any = await raw.execute(
+      `SELECT id FROM consultors WHERE REPLACE(REPLACE(cpf,'.',''),'-','')=? AND id<>? AND isActive=1 LIMIT 1`,
+      [normalizedCpf, consultorId],
+    );
+    if (cpfConsultorRows?.length) throw new Error("Este CPF já está cadastrado para outro consultor ativo.");
+
+    const [loginRows]: any = await raw.execute(
+      `SELECT id FROM consultors WHERE UPPER(TRIM(loginId))=? AND id<>? LIMIT 1`,
+      [normalizedLoginId, consultorId],
+    );
+    if (loginRows?.length) throw new Error("Este ID de login já está sendo utilizado por outro gerente/mentor.");
+
+    await raw.execute(
+      `UPDATE consultors
+       SET name=?,email=?,cpf=?,loginId=?,managedProgramId=?,canLogin=1,updatedAt=NOW()
+       WHERE id=?`,
+      [normalizedName, normalizedEmail, normalizedCpf, normalizedLoginId, data.programId, consultorId],
+    );
+
+    await raw.execute(
+      `UPDATE users
+       SET name=?,email=?,cpf=?,programId=?,updatedAt=NOW()
+       WHERE id=?`,
+      [normalizedName, normalizedEmail, normalizedCpf, data.programId, data.userId],
+    );
+
+    await raw.commit();
+    return { success: true, message: `Cadastro de ${normalizedName} atualizado com sucesso.` };
+  } catch (error: any) {
+    try { if (raw) await raw.rollback(); } catch {}
+    console.error("[updateGerentePuro] Falha transacional:", error);
+    return { success: false, message: error?.message || "Não foi possível atualizar o Gerente Puro." };
   } finally {
     try { if (raw) await raw.end(); } catch {}
   }
@@ -9871,6 +10000,7 @@ export async function getGerentesEmpresa(): Promise<any[]> {
         isAlsoStudent: !!u.alunoId,
         isSpecialManager: specialManagerIds.has(Number(u.id)),
         consultorId: u.consultorId,
+        loginId: consultorDoGerente?.loginId || null,
         turmaId: aluno?.turmaId || null,
         turmaName: turma?.name || null,
         mentorId: mentorId || null,

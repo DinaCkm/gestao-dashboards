@@ -382,6 +382,19 @@ export default function AdminCadastros() {
     onError: (err) => toast.error(`Erro: ${err.message}`),
   });
 
+  const updateGerentePuro = trpc.admin.updateGerentePuro.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message || "Cadastro do gerente atualizado!");
+        refetchGerentesEmpresa();
+        refetchAccessUsers();
+      } else {
+        toast.error(data.message || "Erro ao atualizar gerente");
+      }
+    },
+    onError: (err) => toast.error(`Erro ao atualizar gerente: ${err.message}`),
+  });
+
   const removeGerente = trpc.admin.removeGerente.useMutation({
     onSuccess: (data) => {
       if (data.success) {
@@ -727,10 +740,12 @@ export default function AdminCadastros() {
               empresas={empresas || []}
               loading={loadingGerentesEmpresa}
               onPromote={promoteToGerente.mutate}
-              onCreatePuro={createGerentePuro.mutate}
+              onCreatePuro={createGerentePuro.mutateAsync}
+              onUpdatePuro={updateGerentePuro.mutateAsync}
               onRemove={removeGerente.mutate}
               isPromoting={promoteToGerente.isPending}
               isCreatingPuro={createGerentePuro.isPending}
+              isUpdatingPuro={updateGerentePuro.isPending}
               isRemoving={removeGerente.isPending}
             />
           </TabsContent>
@@ -3062,15 +3077,17 @@ function GerentesTab({ gerentes, empresas, loading, onCreate, onUpdateAcesso, is
 
 
 // ============ GERENTES DE EMPRESA - VISÃO DUPLA ============
-function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onCreatePuro, onRemove, isPromoting, isCreatingPuro, isRemoving }: {
+function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onCreatePuro, onUpdatePuro, onRemove, isPromoting, isCreatingPuro, isUpdatingPuro, isRemoving }: {
   gerentesEmpresa: any[];
   empresas: any[];
   loading: boolean;
   onPromote: (data: { alunoId: number; programId: number }) => void;
-  onCreatePuro: (data: { name: string; email: string; cpf: string; programId: number; especial?: boolean; permissions?: string[] }) => void;
+  onCreatePuro: (data: { name: string; email: string; cpf: string; programId: number; especial?: boolean; permissions?: string[] }) => Promise<any>;
+  onUpdatePuro: (data: { userId: number; name: string; email: string; cpf: string; loginId: string; programId: number }) => Promise<any>;
   onRemove: (data: { userId: number }) => void;
   isPromoting: boolean;
   isCreatingPuro: boolean;
+  isUpdatingPuro: boolean;
   isRemoving: boolean;
 }) {
   const [promoteOpen, setPromoteOpen] = useState(false);
@@ -3088,6 +3105,16 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   const [puroEspecial, setPuroEspecial] = useState(false);
   const [puroPermissions, setPuroPermissions] = useState<string[]>(["/gestor/integracao"]);
   const [puroIntegracaoEscopo, setPuroIntegracaoEscopo] = useState<"gestor" | "all">("gestor");
+
+  // Edição cadastral somente de Gerente Puro/Especial. Aluno + Gerente fica protegido.
+  const [cadastroEditOpen, setCadastroEditOpen] = useState(false);
+  const [cadastroEditGerente, setCadastroEditGerente] = useState<any>(null);
+  const [cadastroEditNome, setCadastroEditNome] = useState("");
+  const [cadastroEditEmail, setCadastroEditEmail] = useState("");
+  const [cadastroEditCpf, setCadastroEditCpf] = useState("");
+  const [cadastroEditLoginId, setCadastroEditLoginId] = useState("");
+  const [cadastroEditProgramId, setCadastroEditProgramId] = useState("");
+
   const [permissaoOpenId, setPermissaoOpenId] = useState<number | null>(null);
   const [editEspecial, setEditEspecial] = useState(false);
   const [editProgramId, setEditProgramId] = useState("");
@@ -3162,10 +3189,15 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
     setPromoteOpen(false);
   };
 
-  const handleCreatePuro = (e: React.FormEvent) => {
+  const handleCreatePuro = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!puroProgramId) {
       toast.error("Selecione a empresa");
+      return;
+    }
+    const emailNormalizado = puroEmail.trim().toLowerCase();
+    if (!emailNormalizado) {
+      toast.error("Informe o e-mail do gerente.");
       return;
     }
     const cpfDigits = puroCpf.replace(/\D/g, '');
@@ -3183,22 +3215,97 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
         ? ["scope:integracao:all"]
         : []),
     ] : [];
-    onCreatePuro({
-      name: puroNome,
-      email: puroEmail,
-      cpf: cpfDigits,
-      programId: parseInt(puroProgramId),
-      especial: puroEspecial,
-      permissions,
-    });
-    setPuroNome("");
-    setPuroEmail("");
-    setPuroCpf("");
-    setPuroProgramId("");
-    setPuroEspecial(false);
-    setPuroPermissions(["/gestor/integracao"]);
-    setPuroIntegracaoEscopo("gestor");
-    setPuroOpen(false);
+
+    try {
+      const result = await onCreatePuro({
+        name: puroNome.trim(),
+        email: emailNormalizado,
+        cpf: cpfDigits,
+        programId: parseInt(puroProgramId),
+        especial: puroEspecial,
+        permissions,
+      });
+      if (!result?.success) return;
+
+      setPuroNome("");
+      setPuroEmail("");
+      setPuroCpf("");
+      setPuroProgramId("");
+      setPuroEspecial(false);
+      setPuroPermissions(["/gestor/integracao"]);
+      setPuroIntegracaoEscopo("gestor");
+      setPuroOpen(false);
+    } catch {
+      // A mutation exibe o erro. Mantemos o formulário aberto e preenchido.
+    }
+  };
+
+  const handleCadastroEditOpen = (gerente: any) => {
+    if (gerente.isAlsoStudent) {
+      toast.info("Este é um perfil Aluno + Gerente. Edite e-mail, CPF e identificação somente pela área de Alunos.");
+      return;
+    }
+    if (!gerente.consultorId) {
+      toast.warning("Este é um cadastro legado sem vínculo técnico de Gerente Puro. A edição protegida não está disponível para ele.");
+      return;
+    }
+    setCadastroEditGerente(gerente);
+    setCadastroEditNome(gerente.name || "");
+    setCadastroEditEmail(gerente.email || "");
+    setCadastroEditCpf(gerente.cpf ? formatCpf(gerente.cpf) : "");
+    setCadastroEditLoginId(gerente.loginId || `G${gerente.consultorId}`);
+    setCadastroEditProgramId(gerente.programId ? String(gerente.programId) : "");
+    setCadastroEditOpen(true);
+  };
+
+  const handleCadastroEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cadastroEditGerente) return;
+    if (cadastroEditGerente.isAlsoStudent) {
+      toast.error("Aluno + Gerente deve ser editado somente pela área de Alunos.");
+      return;
+    }
+    if (!cadastroEditProgramId) {
+      toast.error("Selecione a empresa deste gerente.");
+      return;
+    }
+
+    const emailNormalizado = cadastroEditEmail.trim().toLowerCase();
+    const cpfDigits = cadastroEditCpf.replace(/\D/g, '');
+    const loginIdNormalizado = cadastroEditLoginId.trim().toUpperCase();
+
+    if (!cadastroEditNome.trim()) {
+      toast.error("Informe o nome do gerente.");
+      return;
+    }
+    if (!emailNormalizado) {
+      toast.error("Informe o e-mail do gerente.");
+      return;
+    }
+    if (cpfDigits.length !== 11) {
+      toast.error("CPF deve conter exatamente 11 dígitos.");
+      return;
+    }
+    if (!loginIdNormalizado || !/^[A-Z0-9_-]+$/.test(loginIdNormalizado)) {
+      toast.error("O ID pode conter apenas letras, números, hífen e sublinhado.");
+      return;
+    }
+
+    try {
+      const result = await onUpdatePuro({
+        userId: Number(cadastroEditGerente.id),
+        name: cadastroEditNome.trim(),
+        email: emailNormalizado,
+        cpf: cpfDigits,
+        loginId: loginIdNormalizado,
+        programId: parseInt(cadastroEditProgramId),
+      });
+      if (!result?.success) return;
+      setCadastroEditOpen(false);
+      setCadastroEditGerente(null);
+    } catch {
+      // Mantém a janela aberta e os dados preenchidos em caso de erro.
+    }
   };
 
   const handleRemove = (userId: number, name: string) => {
@@ -3327,7 +3434,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                     <div className="space-y-2">
                       <Label>CPF</Label>
                       <Input value={puroCpf} onChange={(e) => setPuroCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} />
-                      <p className="text-xs text-muted-foreground">Obrigatório para o login do Gerente Puro (Email + CPF).</p>
+                      <p className="text-xs text-muted-foreground">O gerente poderá entrar com E-mail + CPF ou E-mail + ID.</p>
                     </div>
                     <div className="space-y-2">
                       <Label>Empresa que Gerencia *</Label>
@@ -3341,6 +3448,9 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                           ))}
                         </SelectContentNoPortal>
                       </Select>
+                    </div>
+                    <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+                      O sistema criará automaticamente um ID de login no padrão G + número do gerente. Depois você poderá alterá-lo em <strong>Editar Cadastro</strong>.
                     </div>
                     <div className="rounded-lg border p-3">
                       <label className="flex items-start gap-3">
@@ -3424,7 +3534,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome, email, CPF, empresa ou mentor..."
+                placeholder="Buscar por nome, email, CPF, ID, empresa ou mentor..."
                 value={searchGerente}
                 onChange={(e) => setSearchGerente(e.target.value)}
                 className="pl-9 pr-9"
@@ -3443,6 +3553,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                   <TableHead>Nome Completo</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>CPF</TableHead>
+                  <TableHead>ID Login</TableHead>
                   <TableHead>Empresa</TableHead>
                   <TableHead>Turma</TableHead>
                   <TableHead>Mentor</TableHead>
@@ -3459,6 +3570,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       (g.name || "").toLowerCase().includes(term) ||
                       (g.email || "").toLowerCase().includes(term) ||
                       (g.cpf || "").includes(term.replace(/\D/g, '')) ||
+                      (g.loginId || "").toLowerCase().includes(term) ||
                       (g.programName || "").toLowerCase().includes(term) ||
                       (g.turmaName || "").toLowerCase().includes(term) ||
                       (g.mentorName || "").toLowerCase().includes(term)
@@ -3476,6 +3588,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                     <TableCell className="text-sm font-mono">
                       {g.cpf ? g.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "-"}
                     </TableCell>
+                    <TableCell className="text-sm font-mono">{g.loginId || "-"}</TableCell>
                     <TableCell>{g.programName || "-"}</TableCell>
                     <TableCell className="text-sm">{g.turmaName || "-"}</TableCell>
                     <TableCell className="text-sm">
@@ -3509,6 +3622,16 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
+                        {!g.isAlsoStudent && g.consultorId && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCadastroEditOpen(g)}
+                          >
+                            <Pencil className="h-3 w-3 mr-1" />
+                            Editar Cadastro
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
@@ -3532,7 +3655,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                 ))}
                 {gerentesEmpresa.length === 0 && !searchGerente && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                       Nenhum gerente de empresa com visão dupla cadastrado. Use "Promover Aluno" ou "Gerente Puro" para adicionar.
                     </TableCell>
                   </TableRow>
@@ -3543,13 +3666,14 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       (g.name || "").toLowerCase().includes(term) ||
                       (g.email || "").toLowerCase().includes(term) ||
                       (g.cpf || "").includes(term.replace(/\D/g, '')) ||
+                      (g.loginId || "").toLowerCase().includes(term) ||
                       (g.programName || "").toLowerCase().includes(term) ||
                       (g.turmaName || "").toLowerCase().includes(term) ||
                       (g.mentorName || "").toLowerCase().includes(term)
                     );
                   }).length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                       Nenhum gerente encontrado com os filtros aplicados.
                     </TableCell>
                   </TableRow>
@@ -3560,6 +3684,79 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
           </>
         )}
       </CardContent>
+
+      <Dialog open={cadastroEditOpen} onOpenChange={(open) => {
+        setCadastroEditOpen(open);
+        if (!open) setCadastroEditGerente(null);
+      }}>
+        <DialogContent className="max-w-lg">
+          <form onSubmit={handleCadastroEditSubmit}>
+            <DialogHeader>
+              <DialogTitle>Editar Cadastro do Gerente</DialogTitle>
+              <DialogDescription>
+                Disponível somente para Gerente Puro/Especial. Aluno + Gerente continua sendo editado exclusivamente na área de Alunos.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Nome Completo *</Label>
+                <Input value={cadastroEditNome} onChange={(e) => setCadastroEditNome(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail *</Label>
+                <Input type="email" value={cadastroEditEmail} onChange={(e) => setCadastroEditEmail(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label>CPF *</Label>
+                <Input
+                  value={cadastroEditCpf}
+                  onChange={(e) => setCadastroEditCpf(formatCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>ID de Login *</Label>
+                <Input
+                  value={cadastroEditLoginId}
+                  onChange={(e) => setCadastroEditLoginId(e.target.value.toUpperCase())}
+                  placeholder="Ex.: G180004"
+                  maxLength={50}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  O gerente pode entrar usando E-mail + CPF ou E-mail + este ID.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Empresa que Gerencia *</Label>
+                <Select value={cadastroEditProgramId} onValueChange={setCadastroEditProgramId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a empresa" /></SelectTrigger>
+                  <SelectContentNoPortal>
+                    {empresas.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                    ))}
+                  </SelectContentNoPortal>
+                </Select>
+              </div>
+              <Alert className="border-blue-200 bg-blue-50">
+                <AlertDescription className="text-blue-800 text-xs">
+                  Ao salvar, nome, e-mail, CPF e empresa são atualizados juntos no cadastro de acesso e no vínculo de gerente. Se qualquer validação falhar, nada é alterado.
+                </AlertDescription>
+              </Alert>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCadastroEditOpen(false)} disabled={isUpdatingPuro}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isUpdatingPuro}>
+                {isUpdatingPuro ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</> : "Salvar Cadastro"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!permissaoOpenId} onOpenChange={(open) => !open && setPermissaoOpenId(null)}>
         <DialogContent className="max-w-2xl">

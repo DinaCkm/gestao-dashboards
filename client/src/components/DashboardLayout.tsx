@@ -78,6 +78,7 @@ import {
   Mail,
   ClipboardList,
   Award,
+  Loader2,
 } from "lucide-react";
 import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -427,9 +428,14 @@ function DashboardLayoutContent({
   const hasConsultorId = !!(user as any)?.consultorId;
   const consultorRole = (user as any)?.consultorRole as string | null | undefined;
 
-  const { data: managerPagePerms } = trpc.admin.getManagerPermissions.useQuery(undefined, {
-    enabled: user?.role === 'manager' && consultorRole !== 'mentor' && consultorRole !== 'diretor',
+  const managerPermissionsEnabled =
+    user?.role === 'manager' && consultorRole !== 'mentor' && consultorRole !== 'diretor';
+  const { data: managerPagePerms, isLoading: managerPermissionsLoading } = trpc.admin.getManagerPermissions.useQuery(undefined, {
+    enabled: managerPermissionsEnabled,
   });
+  // Fail-closed: enquanto ainda não sabemos se o gerente é Especial, não exibir
+  // o menu padrão nem o conteúdo da rota. Isso elimina o "flash" de itens não autorizados.
+  const waitingManagerPermissions = Boolean(managerPermissionsEnabled && managerPermissionsLoading);
   const isSpecialManager =
     user?.role === 'manager' &&
     Array.isArray(managerPagePerms) &&
@@ -481,6 +487,7 @@ function DashboardLayoutContent({
   // Para não-admin, filtrar itens do menu
   const filteredOtherItems = useMemo(() => {
     const userRole = user?.role || "user";
+    if (waitingManagerPermissions && userRole === 'manager') return [];
     return otherMenuItems.filter(item => {
       if (!item.roles.includes(userRole as "admin" | "manager" | "user")) return false;
       // Nova lógica: usar consultorRole para distinguir mentor de gestor
@@ -515,7 +522,7 @@ function DashboardLayoutContent({
       }
       return true;
     });
-  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms]);
+  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms, waitingManagerPermissions]);
 
   useEffect(() => {
     if (!hasManagerRestrictions || user?.role !== 'manager') return;
@@ -825,7 +832,12 @@ function DashboardLayoutContent({
             ) : (
               /* MENU PARA MENTOR / GESTOR / ALUNO (flat, sem grupos) */
               <SidebarMenu className="px-2 py-1 pb-2">
-                {filteredOtherItems.map(item => {
+                {waitingManagerPermissions && user?.role === 'manager' ? (
+                  <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Carregando acessos...</span>
+                  </div>
+                ) : filteredOtherItems.map(item => {
                   const isActive = location === item.path;
                   return (
                     <SidebarMenuItem key={`${item.path}-${item.label}`}>
@@ -951,7 +963,12 @@ function DashboardLayoutContent({
         )}
         <main className="flex-1 p-4 md:p-6">
           {/* Proteção de rota por permissões do admin */}
-          {isAdmin && hasPageRestrictions && !canAccessPage(location) ? (
+          {waitingManagerPermissions && user?.role === 'manager' ? (
+            <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Carregando seus acessos...</span>
+            </div>
+          ) : isAdmin && hasPageRestrictions && !canAccessPage(location) ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-4">
               <div className="text-6xl">🔒</div>
               <h2 className="text-2xl font-bold text-gray-800">Acesso Restrito</h2>
