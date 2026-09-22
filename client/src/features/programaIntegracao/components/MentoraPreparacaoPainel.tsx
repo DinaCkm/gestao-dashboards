@@ -408,25 +408,31 @@ export function MentoraPreparacaoPainel({
         </div>
       </div>
 
-      <div className="space-y-2 border-t pt-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-medium">4. Confirmar com a mentora</p>
-          {estado.confirmEm && <span className="text-xs text-muted-foreground">registrado em {estado.confirmEm}</span>}
+      {numero !== 1 ? (
+              <div className="space-y-2 border-t pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm font-medium">4. Confirmar com a mentora</p>
+                  {estado.confirmEm && <span className="text-xs text-muted-foreground">registrado em {estado.confirmEm}</span>}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setMensagemAberta('conf')}>Ver mensagem</Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => copiarTexto(confirmacao, 'Mensagem de confirmação copiada.')}>Copiar confirmação</Button>
+                  {linkConfirmacao && (
+                    <Button type="button" size="sm" variant="outline" onClick={() => window.open(linkConfirmacao, '_blank', 'noopener,noreferrer')}>Abrir WhatsApp</Button>
+                  )}
+                  <Button type="button" size="sm" variant={estado.confirmEm ? 'secondary' : 'default'} onClick={() => salvar(marcarConfirmacaoMentora(processo, numero))}>
+                    {estado.confirmEm ? 'Registrar novamente' : 'Marcar confirmação enviada'}
+                  </Button>
+                </div>
+              </div>
+      ) : (
+        <div className="rounded-md border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">
+          A preparação da mentora termina aqui. A confirmação do agendamento, com data, horário e link da reunião, será registrada na etapa “Gerar Link do Meet e Enviar o Convite”.
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={() => setMensagemAberta('conf')}>Ver mensagem</Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => copiarTexto(confirmacao, 'Mensagem de confirmação copiada.')}>Copiar confirmação</Button>
-          {linkConfirmacao && (
-            <Button type="button" size="sm" variant="outline" onClick={() => window.open(linkConfirmacao, '_blank', 'noopener,noreferrer')}>Abrir WhatsApp</Button>
-          )}
-          <Button type="button" size="sm" variant={estado.confirmEm ? 'secondary' : 'default'} onClick={() => salvar(marcarConfirmacaoMentora(processo, numero))}>
-            {estado.confirmEm ? 'Registrar novamente' : 'Marcar confirmação enviada'}
-          </Button>
-        </div>
-      </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-        <p className="text-xs text-muted-foreground">Ao concluir a preparação, a ação ag{numero}-00 é fechada pelas mesmas automações históricas já portadas.</p>
+        <p className="text-xs text-muted-foreground">{numero === 1 ? 'Concluir aqui encerra somente a preparação da mentora. O agendamento da reunião será concluído na etapa Gerar Link do Meet e Enviar o Convite.' : `Ao concluir a preparação, a ação ag${numero}-00 é fechada pelas mesmas automações históricas já portadas.`}</p>
         <Button type="button" size="sm" variant={estado.ok ? 'outline' : 'default'} onClick={() => salvar(alternarPreparacaoMentora(processo, numero))}>
           {estado.ok ? 'Reabrir preparação' : 'Concluir preparação da mentora'}
         </Button>
