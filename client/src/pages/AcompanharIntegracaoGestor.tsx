@@ -33,6 +33,7 @@ import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/
 
 interface Pendencia {
   ciclo: number;
+  etapa?: string;
   formKey?: string;
   cycleValue?: string;
   papel: string;
@@ -144,15 +145,21 @@ function linkPreencherFormulario(colaborador: ColaboradorAcompanhamento, pendenc
     ? 'avaliacao-programa'
     : pendencia.formKey === 'pesquisa'
       ? 'pesquisa-integracao'
-      : null;
+      : pendencia.formKey === 'bem'
+        ? 'bem-acolhido'
+        : null;
   if (!slug) return null;
 
   const params = new URLSearchParams();
   params.set('nome', colaborador.nome);
   if (colaborador.unidade) params.set('unidade', colaborador.unidade);
-  params.set('ciclo', pendencia.cycleValue || String(pendencia.ciclo));
+  if (pendencia.formKey !== 'bem') {
+    params.set('ciclo', pendencia.cycleValue || String(pendencia.ciclo));
+  }
 
-  if (pendencia.formKey === 'aval') {
+  if (pendencia.formKey === 'bem') {
+    if (colaborador.gestor) params.set('respondente', colaborador.gestor);
+  } else if (pendencia.formKey === 'aval') {
     params.set('papel', pendencia.papel);
     const respondente = pendencia.papel === 'Gestor'
       ? colaborador.gestor
@@ -933,7 +940,7 @@ export default function AcompanharIntegracaoGestor() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg"><ClipboardList className="h-5 w-5 text-indigo-600" />Formulários pendentes</CardTitle>
-                    <CardDescription>Somente pendências de Gestor, Anjo e Colaborador.</CardDescription>
+                    <CardDescription>Pendências de formulários que já foram efetivamente solicitados ao Gestor, Anjo ou Colaborador.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {!colaborador.formulariosPendentes.length ? (
@@ -942,14 +949,14 @@ export default function AcompanharIntegracaoGestor() {
                       <div className="overflow-x-auto rounded-lg border">
                         <table className="w-full min-w-[650px] text-sm">
                           <thead className="bg-muted/50">
-                            <tr><th className="px-3 py-2 text-left">Responsável</th><th className="px-3 py-2 text-left">Formulário</th><th className="px-3 py-2 text-center">Alinhamento Nº</th><th className="px-3 py-2 text-center">Prazo</th><th className="px-3 py-2 text-center">Situação</th><th className="px-3 py-2 text-center">Ação</th></tr>
+                            <tr><th className="px-3 py-2 text-left">Responsável</th><th className="px-3 py-2 text-left">Formulário</th><th className="px-3 py-2 text-center">Etapa / Alinhamento</th><th className="px-3 py-2 text-center">Prazo</th><th className="px-3 py-2 text-center">Situação</th><th className="px-3 py-2 text-center">Ação</th></tr>
                           </thead>
                           <tbody>
                             {colaborador.formulariosPendentes.map((p, i) => (
                               <tr key={`${p.papel}-${p.ciclo}-${i}`} className="border-t">
                                 <td className="px-3 py-2 font-medium">{p.papel}</td>
                                 <td className="px-3 py-2">{p.formulario}</td>
-                                <td className="px-3 py-2 text-center">{p.ciclo}º</td>
+                                <td className="px-3 py-2 text-center">{p.ciclo === 0 ? (p.etapa || 'Pré-integração') : `${p.ciclo}º alinhamento`}</td>
                                 <td className="px-3 py-2 text-center">{dataBr(p.prazo)}</td>
                                 <td className="px-3 py-2 text-center"><Badge variant={p.atrasado ? 'destructive' : 'secondary'}>{p.atrasado ? 'Atrasado' : 'Pendente'}</Badge></td>
                                 <td className="px-3 py-2 text-center">
