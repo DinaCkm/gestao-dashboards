@@ -28,6 +28,8 @@ import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/
 
 interface Pendencia {
   ciclo: number;
+  formKey?: string;
+  cycleValue?: string;
   papel: string;
   formulario: string;
   prazo: string;
@@ -83,6 +85,32 @@ function dataBr(iso: string) {
   if (!iso) return '—';
   const d = new Date(`${iso.slice(0,10)}T12:00:00`);
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+}
+
+function linkPreencherFormulario(colaborador: ColaboradorAcompanhamento, pendencia: Pendencia): string | null {
+  const slug = pendencia.formKey === 'aval'
+    ? 'avaliacao-programa'
+    : pendencia.formKey === 'pesquisa'
+      ? 'pesquisa-integracao'
+      : null;
+  if (!slug) return null;
+
+  const params = new URLSearchParams();
+  params.set('nome', colaborador.nome);
+  if (colaborador.unidade) params.set('unidade', colaborador.unidade);
+  params.set('ciclo', pendencia.cycleValue || String(pendencia.ciclo));
+
+  if (pendencia.formKey === 'aval') {
+    params.set('papel', pendencia.papel);
+    const respondente = pendencia.papel === 'Gestor'
+      ? colaborador.gestor
+      : pendencia.papel === 'Anjo'
+        ? colaborador.anjo
+        : '';
+    if (respondente) params.set('respondente', respondente);
+  }
+
+  return `/formularios/${slug}?${params.toString()}`;
 }
 
 function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] {
@@ -342,23 +370,21 @@ export default function AcompanharIntegracaoGestor() {
 
             {colaborador ? (
               <div className="space-y-6">
-                <Card className="overflow-hidden border-violet-200/70">
-                  <CardContent className="p-0">
-                    <div className="bg-gradient-to-r from-violet-950 via-violet-800 to-indigo-700 p-6 text-white">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div>
-                          <h2 className="text-2xl font-bold">{colaborador.nome}</h2>
-                          <p className="mt-1 text-sm text-white/75">{colaborador.cargo || 'Cargo não informado'} · {colaborador.unidade || 'Unidade/Regional não informada'}</p>
-                          <p className="mt-2 text-xs text-white/60">Início: {dataBr(colaborador.inicio)}</p>
-                        </div>
-                        <Button
-                          variant="secondary"
-                          className="gap-2"
-                          onClick={() => gerarAcompanhamentoIntegracaoPdf(colaborador)}
-                        >
-                          <Download className="h-4 w-4" /> Exportar relatório completo PDF
-                        </Button>
+                <Card className="overflow-hidden rounded-xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] shadow-md">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <h2 className="text-2xl font-bold !text-white drop-shadow-sm">{colaborador.nome}</h2>
+                        <p className="mt-1 text-sm !text-white/90">{colaborador.cargo || 'Cargo não informado'} · {colaborador.unidade || 'Unidade/Regional não informada'}</p>
+                        <p className="mt-2 text-xs !text-white/80">Início: {dataBr(colaborador.inicio)}</p>
                       </div>
+                      <Button
+                        variant="secondary"
+                        className="gap-2 border-0 bg-amber-400 text-black hover:bg-amber-300"
+                        onClick={() => gerarAcompanhamentoIntegracaoPdf(colaborador)}
+                      >
+                        <Download className="h-4 w-4" /> Exportar relatório completo PDF
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -397,7 +423,7 @@ export default function AcompanharIntegracaoGestor() {
                       <div className="overflow-x-auto rounded-lg border">
                         <table className="w-full min-w-[650px] text-sm">
                           <thead className="bg-muted/50">
-                            <tr><th className="px-3 py-2 text-left">Responsável</th><th className="px-3 py-2 text-left">Formulário</th><th className="px-3 py-2 text-center">Ciclo</th><th className="px-3 py-2 text-center">Prazo</th><th className="px-3 py-2 text-center">Situação</th></tr>
+                            <tr><th className="px-3 py-2 text-left">Responsável</th><th className="px-3 py-2 text-left">Formulário</th><th className="px-3 py-2 text-center">Alinhamento Nº</th><th className="px-3 py-2 text-center">Prazo</th><th className="px-3 py-2 text-center">Situação</th><th className="px-3 py-2 text-center">Ação</th></tr>
                           </thead>
                           <tbody>
                             {colaborador.formulariosPendentes.map((p, i) => (
@@ -407,6 +433,19 @@ export default function AcompanharIntegracaoGestor() {
                                 <td className="px-3 py-2 text-center">{p.ciclo}º</td>
                                 <td className="px-3 py-2 text-center">{dataBr(p.prazo)}</td>
                                 <td className="px-3 py-2 text-center"><Badge variant={p.atrasado ? 'destructive' : 'secondary'}>{p.atrasado ? 'Atrasado' : 'Pendente'}</Badge></td>
+                                <td className="px-3 py-2 text-center">
+                                  {linkPreencherFormulario(colaborador, p) ? (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => window.open(linkPreencherFormulario(colaborador, p)!, '_blank', 'noopener,noreferrer')}
+                                    >
+                                      Preencher
+                                    </Button>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
