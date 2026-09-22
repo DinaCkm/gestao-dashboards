@@ -84,3 +84,85 @@ export function percentualNumero(valor: string): number | null {
   const match = String(valor || '').match(/(100|75|50|25|0)%/);
   return match ? Number(match[1]) : null;
 }
+
+export const DIMENSOES_PESQUISA_INTEGRACAO = [
+  {
+    chave: 'culturaPertencimento',
+    nome: 'Cultura e pertencimento',
+    indices: [9, 10, 11, 12, 13],
+  },
+  {
+    chave: 'anjoColegas',
+    nome: 'Percepção do Anjo e colegas',
+    indices: [14, 15, 16, 17, 18],
+  },
+  {
+    chave: 'gestao',
+    nome: 'Percepção da Gestão',
+    indices: [19, 20, 21],
+  },
+  {
+    chave: 'trabalhoDesenvolvimento',
+    nome: 'Percepção do Trabalho e desenvolvimento',
+    indices: [22, 23, 24, 25, 26, 27, 28],
+  },
+] as const;
+
+export interface MomentoPesquisaIntegracao {
+  ciclo: number;
+  label: string;
+  respondido: boolean;
+  dimensoes: Record<string, number | null>;
+}
+
+/**
+ * Evolução da Pesquisa de Integração respondida pelo próprio colaborador.
+ * Mantém a regra histórica do Programa de Integração:
+ * - nota 0 ("Sem opinião") não entra na média;
+ * - a questão de sobrecarga (índice 23) é inversa: 1 vira 5, 2 vira 4 etc.
+ */
+export function evolucaoPesquisaIntegracao(
+  respostas: RespostaAcompanhamento[],
+): MomentoPesquisaIntegracao[] {
+  return [1, 2, 3, 4].map((ciclo) => {
+    const resposta = respostas
+      .filter((r) => r.form === 'pesquisa' && Number(r.ciclo) === ciclo)
+      .slice(-1)[0];
+
+    const dimensoes: Record<string, number | null> = Object.fromEntries(
+      DIMENSOES_PESQUISA_INTEGRACAO.map((d) => [d.chave, null]),
+    );
+
+    if (!resposta) {
+      return {
+        ciclo,
+        label: `${ciclo}º`,
+        respondido: false,
+        dimensoes,
+      };
+    }
+
+    for (const dimensao of DIMENSOES_PESQUISA_INTEGRACAO) {
+      let soma = 0;
+      let qtd = 0;
+
+      for (const indice of dimensao.indices) {
+        const original = numero(valorEm(resposta, indice));
+        if (original == null || original <= 0 || original > 5) continue;
+
+        const ajustado = indice === 23 ? 6 - original : original;
+        soma += ajustado;
+        qtd++;
+      }
+
+      dimensoes[dimensao.chave] = qtd ? soma / qtd : null;
+    }
+
+    return {
+      ciclo,
+      label: `${ciclo}º`,
+      respondido: true,
+      dimensoes,
+    };
+  });
+}
