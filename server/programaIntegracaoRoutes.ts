@@ -246,7 +246,13 @@ function temRespostaCiclo(respostas: any[], form: string, papel: string, ciclo: 
   return respostas.some((r) =>
     r.form === form &&
     Number(r.ciclo || 0) === ciclo &&
-    String(r.papel || "") === papel
+    (
+      // A Pesquisa de Integração é do colaborador, mas historicamente/publicamente
+      // é salva sem papel. Por isso a existência da resposta deve ser validada
+      // pelo formulário + alinhamento, sem exigir "Colaborador" em papel.
+      form === "pesquisa" ||
+      String(r.papel || "") === papel
+    )
   );
 }
 
