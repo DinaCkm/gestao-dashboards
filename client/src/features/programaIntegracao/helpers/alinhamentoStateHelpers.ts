@@ -1,5 +1,5 @@
 import type { ProcessoIntegracao } from '../types';
-import { aplicarAutomacoesProcesso, aplicarStatusAcao } from './itemStateHelpers';
+import { aplicarAutomacoesProcesso } from './itemStateHelpers';
 import { cronogramaReal } from './painelAcoes';
 import { FERIADOS_PADRAO_INTEGRACAO } from './configDefaults';
 
@@ -118,12 +118,7 @@ export function registrarAgendamentoPrimeiroAlinhamento(
   registro.agendado = 'aguardando';
   registro.just = '';
 
-  return aplicarStatusAcao(
-    aplicarAutomacoesProcesso(copia, hojeRef),
-    'ag1-03',
-    'ok',
-    hojeRef,
-  );
+  return aplicarAutomacoesProcesso(copia, hojeRef);
 }
 
 /** Espelha o clique dos botões Sim/Aguardando/Não de `alinPainel`. */
