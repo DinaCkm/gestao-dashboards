@@ -313,50 +313,6 @@ async function perfisAssessmentAlunos(connection: any, alunoIds: number[]) {
   return saida;
 }
 
-function combinarExpectativaComPerfil(expectativa: any, autoClusters: any[]) {
-  const autoPorKey = new Map((autoClusters || []).map((item: any) => [item.key, item]));
-  const clusters = (expectativa?.clusters || []).map((item: any) => ({
-    ...item,
-    perfilColaborador: autoPorKey.get(item.key)?.percentual ?? null,
-  }));
-
-  if (!expectativa?.descritoresReconhecidos) {
-    return { ...expectativa, clusters, compatibilidade: null };
-  }
-
-  const priorizados = clusters.filter((item: any) => Number(item.prioridade || 0) > 0);
-  const faltantes = priorizados.filter((item: any) => {
-    const perfil = item.perfilColaborador == null ? null : Number(item.perfilColaborador);
-    return perfil == null || !Number.isFinite(perfil);
-  });
-
-  // A fórmula definida usa todos os pesos priorizados pelo gestor. Não removemos
-  // silenciosamente um cluster sem autoavaliação, pois isso inflaria artificialmente
-  // a compatibilidade. Se falta um resultado necessário, aguardamos dados completos.
-  if (faltantes.length) {
-    return {
-      ...expectativa,
-      clusters,
-      compatibilidade: null,
-      motivo: "A autoavaliação ainda não possui informações suficientes em todos os clusters priorizados pelo gestor para calcular a compatibilidade.",
-    };
-  }
-
-  const somaPesos = priorizados.reduce((soma: number, item: any) => soma + Number(item.prioridade || 0), 0);
-  const somaPonderada = priorizados.reduce(
-    (soma: number, item: any) => soma + Number(item.perfilColaborador) * Number(item.prioridade || 0),
-    0,
-  );
-
-  return {
-    ...expectativa,
-    clusters,
-    compatibilidade: somaPesos > 0 ? somaPonderada / somaPesos : null,
-    motivo: somaPesos > 0
-      ? null
-      : "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
-  };
-}
 function bigr(s: string) { const out: string[] = []; for (let i = 0; i < s.length - 1; i++) out.push(s.slice(i, i + 2)); return out; }
 function dice(a: string, b: string) {
   if (!a || !b) return 0; if (a === b) return 1; if (a.length < 2 || b.length < 2) return 0;
