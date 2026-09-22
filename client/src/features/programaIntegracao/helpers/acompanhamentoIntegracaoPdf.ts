@@ -14,7 +14,7 @@ export interface ColaboradorAcompanhamentoPdf {
   acessouEcoLider?: boolean | null;
   assessmentPotencialConcluido?: boolean | null;
   respostas: RespostaAcompanhamento[];
-  formulariosPendentes: Array<{ ciclo: number; papel: string; formulario: string; prazo: string; atrasado: boolean }>;
+  formulariosPendentes: Array<{ ciclo: number; etapa?: string; papel: string; formulario: string; prazo: string; atrasado: boolean }>;
 }
 
 const fmt = (n: number | null | undefined) => n == null ? '—' : `${Math.round(n)}%`;
@@ -205,7 +205,8 @@ export function gerarAcompanhamentoIntegracaoPdf(colaborador: ColaboradorAcompan
       doc.setFontSize(7.2);
       doc.setTextColor(p.atrasado?150:55,p.atrasado?65:65,p.atrasado?65:75);
       const prazo = p.prazo ? new Date(`${p.prazo}T12:00:00`).toLocaleDateString('pt-BR') : '—';
-      doc.text(`${p.papel} · ${p.formulario} · Alinhamento ${p.ciclo} · prazo ${prazo}${p.atrasado?' · ATRASADO':''}`,18,y);
+      const etapa = p.ciclo === 0 ? (p.etapa || 'Pré-integração') : `Alinhamento ${p.ciclo}`;
+      doc.text(`${p.papel} · ${p.formulario} · ${etapa} · prazo ${prazo}${p.atrasado?' · ATRASADO':''}`,18,y);
       y += 5;
     });
   }
