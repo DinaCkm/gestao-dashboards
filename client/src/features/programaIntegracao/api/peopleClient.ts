@@ -118,6 +118,8 @@ export interface DadosProcessoTesteVazio {
   anjoEmail?: string;
   consultora?: string;
   consideracoes?: string;
+  empresaProgramId?: number;
+  empresaProgramNome?: string;
 }
 
 export async function criarProcessoTesteVazioSeguro(
@@ -150,7 +152,12 @@ export async function criarProcessoTesteVazioSeguro(
       feito: {},
       alin: {},
       bem: {},
-      teste: { ...(novoProcessoVazio(nome, cpf, indice).teste || {}), modoTesteFormularioVazio: true },
+      teste: {
+        ...(novoProcessoVazio(nome, cpf, indice).teste || {}),
+        modoTesteFormularioVazio: true,
+        empresaProgramId: Number(dados.empresaProgramId || 0) || null,
+        empresaProgramNome: String(dados.empresaProgramNome || '').trim() || null,
+      },
       resp: [],
     };
 
@@ -180,7 +187,11 @@ export async function criarProcessoTesteVazioSeguro(
     : new Error('Não foi possível gerar um identificador exclusivo para o teste vazio.');
 }
 
-export async function criarProcessoDemonstracaoSeguro(feriados: string[] = []) {
+export async function criarProcessoDemonstracaoSeguro(
+  feriados: string[] = [],
+  empresaProgramId?: number,
+  empresaProgramNome?: string,
+) {
   exigirConexaoParaAlterar();
   let ultimaFalha: unknown = null;
 
@@ -192,6 +203,11 @@ export async function criarProcessoDemonstracaoSeguro(feriados: string[] = []) {
       MENTORA_DEMO.nome,
       feriados,
     );
+    processo.teste = {
+      ...(processo.teste || {}),
+      empresaProgramId: Number(empresaProgramId || 0) || null,
+      empresaProgramNome: String(empresaProgramNome || '').trim() || null,
+    };
     const esperadoRespostas = processo.resp?.length || 0;
 
     try {
