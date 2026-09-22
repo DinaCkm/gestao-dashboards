@@ -1,4 +1,5 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
+import { INTEGRACAO_CLUSTERS } from "@shared/integracaoAssessment";
 import { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";
 import { getRawConnection } from "./db";
 import mysql from "mysql2/promise";
@@ -35,6 +36,208 @@ function asJson<T = any>(value: unknown, fallback: T): T {
 function normTxt(value: unknown) {
   return String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function listaTextoMulti(valor: unknown): string[] {
+  if (Array.isArray(valor)) {
+    return valor.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  const texto = String(valor || "").trim();
+  if (!texto) return [];
+  return texto.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function calcularExpectativaGestorBem(row: any | null) {
+  if (!row) {
+    return {
+      temRespostaBem: false,
+      descritoresReconhecidos: 0,
+      compatibilidade: null,
+      motivo: "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
+      clusters: [],
+    };
+  }
+
+  const answers = asJson<Record<string, any>>(row.answers, {});
+  const selecionadosOriginais = listaTextoMulti(answers.bem_caracteristicas);
+  const selecionados = new Set(selecionadosOriginais.map(normTxt));
+
+  const clustersBase = INTEGRACAO_CLUSTERS.map((cluster) => {
+    const escolhidos = cluster.descritoresGestor.filter((item) => selecionados.has(normTxt(item)));
+    const total = cluster.descritoresGestor.length;
+    const indice = total > 0 ? (escolhidos.length / total) * 100 : 0;
+    return {
+      key: cluster.key,
+      nome: cluster.nome,
+      selecionados: escolhidos,
+      quantidadeSelecionada: escolhidos.length,
+      totalDescritores: total,
+      indice,
+    };
+  });
+
+  const reconhecidos = clustersBase.reduce((soma, item) => soma + item.quantidadeSelecionada, 0);
+  if (!reconhecidos) {
+    return {
+      temRespostaBem: true,
+      descritoresReconhecidos: 0,
+      compatibilidade: null,
+      motivo: selecionadosOriginais.length
+        ? "A resposta existente utiliza descritores anteriores do Formulário BEM Acolhido e não pode ser comparada com a nova matriz sem reclassificação."
+        : "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
+      clusters: clustersBase.map((item) => ({ ...item, prioridade: 0, nivel: "Não priorizada" })),
+    };
+  }
+
+  const maiorIndice = Math.max(...clustersBase.map((item) => item.indice));
+  const clusters = clustersBase.map((item) => {
+    const prioridade = maiorIndice > 0 ? (item.indice / maiorIndice) * 100 : 0;
+    const nivel = prioridade <= 0
+      ? "Não priorizada"
+      : prioridade >= 75
+        ? "Alta prioridade"
+        : prioridade >= 40
+          ? "Média prioridade"
+          : "Baixa prioridade";
+    return { ...item, prioridade, nivel };
+  });
+
+  return {
+    temRespostaBem: true,
+    descritoresReconhecidos: reconhecidos,
+    compatibilidade: null,
+    motivo: null,
+    clusters,
+  };
+}
+
+async function perfisAssessmentAlunos(connection: any, alunoIds: number[]) {
+  const ids = [...new Set(alunoIds.filter((id) => Number.isInteger(id) && id > 0))];
+  const saida: Record<string, any> = {};
+  for (const id of ids) {
+    saida[String(id)] = { disc: null, autoavaliacaoClusters: [] };
+  }
+  if (!ids.length) return saida;
+
+  const placeholders = ids.map(() => "?").join(",");
+  const [discRows] = (await connection.execute(
+    `SELECT id,alunoId,scoreD,scoreI,scoreS,scoreC,perfilPredominante,perfilSecundario,ciclo,completedAt
+     FROM disc_resultados
+     WHERE alunoId IN (${placeholders})
+     ORDER BY alunoId ASC,ciclo DESC,completedAt DESC,id DESC`,
+    ids,
+  )) as any;
+
+  const discVisto = new Set<number>();
+  for (const row of discRows || []) {
+    const alunoId = Number(row.alunoId || 0);
+    if (!alunoId || discVisto.has(alunoId) || !saida[String(alunoId)]) continue;
+    discVisto.add(alunoId);
+    saida[String(alunoId)].disc = {
+      scoreD: Number(row.scoreD),
+      scoreI: Number(row.scoreI),
+      scoreS: Number(row.scoreS),
+      scoreC: Number(row.scoreC),
+      perfilPredominante: row.perfilPredominante || null,
+      perfilSecundario: row.perfilSecundario || null,
+      ciclo: Number(row.ciclo || 0),
+      completedAt: row.completedAt ? new Date(row.completedAt).toISOString() : null,
+    };
+  }
+
+  const [autoRows] = (await connection.execute(
+    `SELECT ap.id,ap.alunoId,ap.competenciaId,c.nome AS competenciaNome,ap.nota,ap.createdAt
+     FROM autopercepcoes_competencias ap
+     LEFT JOIN competencias c ON c.id=ap.competenciaId
+     WHERE ap.alunoId IN (${placeholders})
+     ORDER BY ap.alunoId ASC,ap.createdAt DESC,ap.id DESC`,
+    ids,
+  )) as any;
+
+  const ultimas = new Map<string, any>();
+  for (const row of autoRows || []) {
+    const alunoId = Number(row.alunoId || 0);
+    const competenciaId = Number(row.competenciaId || 0);
+    const chave = `${alunoId}:${competenciaId}`;
+    if (alunoId && competenciaId && !ultimas.has(chave)) ultimas.set(chave, row);
+  }
+
+  const porAluno = new Map<number, any[]>();
+  for (const row of ultimas.values()) {
+    const alunoId = Number(row.alunoId || 0);
+    const lista = porAluno.get(alunoId) || [];
+    lista.push(row);
+    porAluno.set(alunoId, lista);
+  }
+
+  for (const alunoId of ids) {
+    const auto = porAluno.get(alunoId) || [];
+    saida[String(alunoId)].autoavaliacaoClusters = INTEGRACAO_CLUSTERS.map((cluster) => {
+      const nomesEsperados = new Set(cluster.competencias.map(normTxt));
+      const encontrados = auto.filter((item) => nomesEsperados.has(normTxt(item.competenciaNome)));
+      const notas = encontrados
+        .map((item) => Number(item.nota))
+        .filter((nota) => Number.isFinite(nota) && nota >= 1 && nota <= 5);
+      const media = notas.length ? notas.reduce((soma, nota) => soma + nota, 0) / notas.length : null;
+      return {
+        key: cluster.key,
+        nome: cluster.nome,
+        competencias: cluster.competencias,
+        competenciasEncontradas: encontrados.map((item) => String(item.competenciaNome || "")),
+        totalCompetencias: cluster.competencias.length,
+        totalAvaliadas: notas.length,
+        media,
+        percentual: media == null ? null : (media / 5) * 100,
+      };
+    });
+  }
+
+  return saida;
+}
+
+function combinarExpectativaComPerfil(expectativa: any, autoClusters: any[]) {
+  const autoPorKey = new Map((autoClusters || []).map((item: any) => [item.key, item]));
+  const clusters = (expectativa?.clusters || []).map((item: any) => ({
+    ...item,
+    perfilColaborador: autoPorKey.get(item.key)?.percentual ?? null,
+  }));
+
+  if (!expectativa?.descritoresReconhecidos) {
+    return { ...expectativa, clusters, compatibilidade: null };
+  }
+
+  const priorizados = clusters.filter((item: any) => Number(item.prioridade || 0) > 0);
+  const faltantes = priorizados.filter((item: any) => {
+    const perfil = item.perfilColaborador == null ? null : Number(item.perfilColaborador);
+    return perfil == null || !Number.isFinite(perfil);
+  });
+
+  // A fórmula definida usa todos os pesos priorizados pelo gestor. Não removemos
+  // silenciosamente um cluster sem autoavaliação, pois isso inflaria artificialmente
+  // a compatibilidade. Se falta um resultado necessário, aguardamos dados completos.
+  if (faltantes.length) {
+    return {
+      ...expectativa,
+      clusters,
+      compatibilidade: null,
+      motivo: "A autoavaliação ainda não possui informações suficientes em todos os clusters priorizados pelo gestor para calcular a compatibilidade.",
+    };
+  }
+
+  const somaPesos = priorizados.reduce((soma: number, item: any) => soma + Number(item.prioridade || 0), 0);
+  const somaPonderada = priorizados.reduce(
+    (soma: number, item: any) => soma + Number(item.perfilColaborador) * Number(item.prioridade || 0),
+    0,
+  );
+
+  return {
+    ...expectativa,
+    clusters,
+    compatibilidade: somaPesos > 0 ? somaPonderada / somaPesos : null,
+    motivo: somaPesos > 0
+      ? null
+      : "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
+  };
 }
 function bigr(s: string) { const out: string[] = []; for (let i = 0; i < s.length - 1; i++) out.push(s.slice(i, i + 2)); return out; }
 function dice(a: string, b: string) {
@@ -440,11 +643,16 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     )) as any;
 
     const respostasPorProcesso = new Map<number, any[]>();
+    const respostasRawPorProcesso = new Map<number, any[]>();
     for (const row of responseRows || []) {
       const pid = Number(row.processoId);
       const arr = respostasPorProcesso.get(pid) || [];
       arr.push(respostaCompacta(row));
       respostasPorProcesso.set(pid, arr);
+
+      const rawArr = respostasRawPorProcesso.get(pid) || [];
+      rawArr.push(row);
+      respostasRawPorProcesso.set(pid, rawArr);
     }
 
     const alunosEco = await listarAlunosEcoLiderDisponiveis(connection);
@@ -475,6 +683,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       }
     }
     const ecoStatus = await statusEcoLiderAlunos(connection, ecoIds);
+    const perfisAssessment = await perfisAssessmentAlunos(connection, ecoIds);
     const hoje = todayIso();
 
     const colaboradores = permitidos.map((row: any) => {
@@ -517,6 +726,15 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       const ecoId = alunoEcoPorProcesso.get(Number(row.id));
       const andamento = ecoId ? ecoStatus[String(ecoId)] : null;
+      const perfilAssessment = ecoId ? perfisAssessment[String(ecoId)] : null;
+      const rawRespostas = respostasRawPorProcesso.get(Number(row.id)) || [];
+      const ultimaRespostaBem = rawRespostas
+        .filter((item: any) => item.formKey === "bem")
+        .slice(-1)[0] || null;
+      const expectativaGestor = combinarExpectativaComPerfil(
+        calcularExpectativaGestorBem(ultimaRespostaBem),
+        perfilAssessment?.autoavaliacaoClusters || [],
+      );
       const inicio = sqlDateToIso(row.inicio);
       const diaRaw = inicio ? diasEntreIso(inicio, hoje) + 1 : 0;
       const dia = Math.max(0, Math.min(150, diaRaw));
@@ -539,6 +757,12 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         ultimaEntradaEcoLider: andamento?.ultimaEntradaEcoLider || null,
         assessmentPotencialConcluido: andamento?.assessmentPotencialConcluido ?? null,
         assessmentPotencialConcluidoEm: andamento?.assessmentPotencialConcluidoEm || null,
+        perfilAssessment: {
+          alunoEcoId: ecoId || null,
+          disc: perfilAssessment?.disc || null,
+          autoavaliacaoClusters: perfilAssessment?.autoavaliacaoClusters || [],
+          expectativaGestor,
+        },
         respostas: respostas.filter((r) =>
           (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo")) ||
           r.form === "pesquisa"
