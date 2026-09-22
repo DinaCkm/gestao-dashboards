@@ -270,7 +270,7 @@ function aplicarAutomacoes(
     const alinhamento = alin[String(numero)] ?? alin[numero];
     if (!alinhamento || typeof alinhamento !== 'object') return;
 
-    if (statusNoFeito(feito, `ag${numero}-01`) === 'ok' && !alinhamento.agendado) {
+    if (numero !== 1 && statusNoFeito(feito, `ag${numero}-01`) === 'ok' && !alinhamento.agendado) {
       alinhamento.agendado = 'aguardando';
     }
 
