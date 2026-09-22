@@ -206,16 +206,29 @@ function combinarExpectativaComPerfil(expectativa: any, autoClusters: any[]) {
     return { ...expectativa, clusters, compatibilidade: null };
   }
 
-  let somaPesos = 0;
-  let somaPonderada = 0;
-  for (const item of clusters) {
-    const peso = Number(item.prioridade || 0);
+  const priorizados = clusters.filter((item: any) => Number(item.prioridade || 0) > 0);
+  const faltantes = priorizados.filter((item: any) => {
     const perfil = item.perfilColaborador == null ? null : Number(item.perfilColaborador);
-    if (peso > 0 && perfil != null && Number.isFinite(perfil)) {
-      somaPesos += peso;
-      somaPonderada += perfil * peso;
-    }
+    return perfil == null || !Number.isFinite(perfil);
+  });
+
+  // A fórmula definida usa todos os pesos priorizados pelo gestor. Não removemos
+  // silenciosamente um cluster sem autoavaliação, pois isso inflaria artificialmente
+  // a compatibilidade. Se falta um resultado necessário, aguardamos dados completos.
+  if (faltantes.length) {
+    return {
+      ...expectativa,
+      clusters,
+      compatibilidade: null,
+      motivo: "A autoavaliação ainda não possui informações suficientes em todos os clusters priorizados pelo gestor para calcular a compatibilidade.",
+    };
   }
+
+  const somaPesos = priorizados.reduce((soma: number, item: any) => soma + Number(item.prioridade || 0), 0);
+  const somaPonderada = priorizados.reduce(
+    (soma: number, item: any) => soma + Number(item.perfilColaborador) * Number(item.prioridade || 0),
+    0,
+  );
 
   return {
     ...expectativa,
