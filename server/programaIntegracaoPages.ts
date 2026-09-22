@@ -273,8 +273,37 @@ function publicFormHtml(slug: string) {
     document.getElementById('next')?.addEventListener('click',()=>{sync();if(validateCurrent()){page=Math.min(pages.length-1,page+1);error='';errorField='';saveDraft();render();scrollTo({top:0,behavior:'smooth'});}else{render();focusError();}});
     document.getElementById('send')?.addEventListener('click',submit);
     document.querySelectorAll('input,select,textarea').forEach(el=>{
-      el.addEventListener('change',()=>{sync();error='';errorField='';if(el.dataset.meta==='unidade'||el.dataset.meta==='role'){if(el.dataset.meta==='role')values.respondentName='';render();}});
-      el.addEventListener('input',()=>{sync();});
+      el.addEventListener('change',()=>{
+        sync();error='';errorField='';
+        const code=el.dataset.code||'';
+        const conditionalMap={
+          pdi_relatou_dificuldade:'pdi_qual_acao_motivo',
+          pdi_houve_readequacao:'pdi_qual_alteracao',
+          pdi_realinhamento_postura:'pdi_qual_realinhamento',
+        };
+        if(code&&conditionalMap[code]){
+          if(!isYes(values.answers[code]))delete values.answers[conditionalMap[code]];
+          saveDraft();render();return;
+        }
+        if(el.dataset.meta==='unidade'||el.dataset.meta==='role'){
+          if(el.dataset.meta==='role')values.respondentName='';
+          render();
+        }
+      });
+      el.addEventListener('input',()=>{
+        sync();
+        const wrap=el.closest('.field');
+        if(wrap){
+          const has=String(el.value||'').trim()!=='';
+          wrap.classList.toggle('filled',has);
+          wrap.classList.remove('has-error');
+          wrap.querySelector('.field-error')?.remove();
+        }
+        if(el.tagName==='TEXTAREA'){
+          const counter=el.parentElement?.querySelector('.char-count');
+          if(counter)counter.textContent=String(el.value.length)+' caracteres';
+        }
+      });
     });
   }
 
