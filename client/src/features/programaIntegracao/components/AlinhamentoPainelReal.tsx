@@ -156,53 +156,101 @@ export function AlinhamentoPainelReal({
 
   return (
     <div className="rounded-lg border bg-background px-4 py-1">
-      {linha({
-        label: 'E-mail de agendamento',
-        children: (
-          <div className="flex flex-wrap items-center gap-2">
-            {agItem && (
-              <EmailActionButtons
-                processo={processo}
-                item={agItem}
-                config={config}
-                feriados={feriados}
-                onAlternarEnviado={async () => {
-                  const atual = fichaAcaoAtual(processo, `ag${numero}-01`).s;
-                  await salvarDireto(aplicarStatusAcao(processo, `ag${numero}-01`, atual === 'ok' ? '' : 'ok'));
-                }}
-                onEditarModelo={onEditarModeloEmail}
-              />
-            )}
-            <input
-              type="date"
-              value={fichaEmailRascunho.d}
-              disabled={statusEdicao === 'saving'}
-              onChange={(e) => mudarCampoEmail('d', e.currentTarget.value)}
-              className={`h-8 rounded-md border bg-background px-2 text-xs disabled:opacity-60 ${fichaEmail.s === 'ok' && !fichaEmailRascunho.d ? 'border-amber-400' : 'border-input'}`}
-              title="data de envio"
-            />
-            {fichaEmail.s !== 'ok' && (
-              <>
-                <span className="text-xs text-muted-foreground">ou programar:</span>
-                <input
-                  type="date"
-                  value={fichaEmailRascunho.prog}
-                  disabled={statusEdicao === 'saving'}
-                  onChange={(e) => mudarCampoEmail('prog', e.currentTarget.value)}
-                  className="h-8 rounded-md border border-input bg-background px-2 text-xs disabled:opacity-60"
-                  title="programar envio"
-                />
-              </>
-            )}
-            <Badge variant="outline" className={statusClasses[statusEmail.k]}>{statusEmail.l}</Badge>
-            {etapaAg && <span className="text-xs text-muted-foreground">previsto {formatarData(etapaAg.data)}</span>}
-          </div>
-        ),
-      })}
+      {numero !== 1 && linha({
+                label: 'E-mail de agendamento',
+                children: (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {agItem && (
+                      <EmailActionButtons
+                        processo={processo}
+                        item={agItem}
+                        config={config}
+                        feriados={feriados}
+                        onAlternarEnviado={async () => {
+                          const atual = fichaAcaoAtual(processo, `ag${numero}-01`).s;
+                          await salvarDireto(aplicarStatusAcao(processo, `ag${numero}-01`, atual === 'ok' ? '' : 'ok'));
+                        }}
+                        onEditarModelo={onEditarModeloEmail}
+                      />
+                    )}
+                    <input
+                      type="date"
+                      value={fichaEmailRascunho.d}
+                      disabled={statusEdicao === 'saving'}
+                      onChange={(e) => mudarCampoEmail('d', e.currentTarget.value)}
+                      className={`h-8 rounded-md border bg-background px-2 text-xs disabled:opacity-60 ${fichaEmail.s === 'ok' && !fichaEmailRascunho.d ? 'border-amber-400' : 'border-input'}`}
+                      title="data de envio"
+                    />
+                    {fichaEmail.s !== 'ok' && (
+                      <>
+                        <span className="text-xs text-muted-foreground">ou programar:</span>
+                        <input
+                          type="date"
+                          value={fichaEmailRascunho.prog}
+                          disabled={statusEdicao === 'saving'}
+                          onChange={(e) => mudarCampoEmail('prog', e.currentTarget.value)}
+                          className="h-8 rounded-md border border-input bg-background px-2 text-xs disabled:opacity-60"
+                          title="programar envio"
+                        />
+                      </>
+                    )}
+                    <Badge variant="outline" className={statusClasses[statusEmail.k]}>{statusEmail.l}</Badge>
+                    {etapaAg && <span className="text-xs text-muted-foreground">previsto {formatarData(etapaAg.data)}</span>}
+                  </div>
+                ),
+              })}
 
       {linha({
         label: 'Já foi agendado?',
-        children: (
+        children: numero === 1 ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge
+                variant="outline"
+                className={estado.agendado === 'aguardando'
+                  ? 'border-blue-300 bg-blue-50 text-blue-800'
+                  : 'border-slate-300 bg-slate-50 text-slate-700'}
+              >
+                {estado.agendado === 'aguardando' ? 'Aguardando' : 'Ainda não agendado'}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                Atualizado automaticamente pela etapa “Gerar Link do Meet e Enviar o Convite”.
+              </span>
+            </div>
+            {(estado.data || estado.hora || estado.link) ? (
+              <div className="grid gap-2 rounded-md border bg-muted/20 p-3 sm:grid-cols-3">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase text-muted-foreground">Data agendada</div>
+                  <div className="mt-1 text-sm font-medium">{estado.data ? formatarData(estado.data) : '—'}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] font-semibold uppercase text-muted-foreground">Horário</div>
+                  <div className="mt-1 text-sm font-medium">{estado.hora || '—'}</div>
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-semibold uppercase text-muted-foreground">Link da reunião</div>
+                  {estado.link ? (
+                    <a
+                      href={estado.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1 block truncate text-sm font-medium text-violet-700 underline"
+                      title={estado.link}
+                    >
+                      {estado.link}
+                    </a>
+                  ) : (
+                    <div className="mt-1 text-sm font-medium">—</div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Preencha data, horário e link na etapa de agendamento para que as informações apareçam aqui.
+              </p>
+            )}
+          </div>
+        ) : (
           <div className="space-y-2">
             <div className="flex flex-wrap gap-1">
               {SITUACOES_AGENDAMENTO.map(([valor, label]) => (

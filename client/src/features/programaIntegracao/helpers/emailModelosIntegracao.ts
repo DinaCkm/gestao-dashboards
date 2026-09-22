@@ -37,6 +37,7 @@ export const TOKENS_EMAIL_INTEGRACAO = [
   ['CONSULTORA', 'consultora da CKM'],
   ['DATA_INICIO', '1º dia na unidade'],
   ['DATA_ALIN', 'data do alinhamento deste e-mail'],
+  ['HORA_ALIN', 'horário confirmado do alinhamento'],
   ['ORDINAL', '1º / 2º / 3º / 4º'],
   ['MARCO', '15 / 45 / 75 / 150'],
   ['DATA_ALIN_1', 'data do 1º alinhamento'],

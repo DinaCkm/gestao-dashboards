@@ -32,6 +32,7 @@ import { EmailActionButtons } from './EmailActionButtons';
 import { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
 import { AtaRelatorioPainel } from './AtaRelatorioPainel';
 import { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
+import { AgendamentoPrimeiroAlinhamentoPainel } from './AgendamentoPrimeiroAlinhamentoPainel';
 import { CobrancaFinalPainel, CobrancaFormulariosDialog } from './CobrancaFormulariosDialog';
 import { BemTesteProcesso } from './BemTesteProcesso';
 import { RespostasProcessoAgrupadas } from './RespostasProcessoAgrupadas';
@@ -869,6 +870,15 @@ export function DetalheProcessoReal({
                                   className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                   placeholder="justificativa"
                                 />
+                              )}
+
+                              {item.id === 'ag1-03' && (
+                                <div className="mt-4">
+                                  <AgendamentoPrimeiroAlinhamentoPainel
+                                    processo={processo}
+                                    onSalvarProcesso={salvar}
+                                  />
+                                </div>
                               )}
 
                               <div className="mt-4">

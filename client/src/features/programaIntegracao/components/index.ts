@@ -7,6 +7,7 @@ export { RespostasRecebidas } from './RespostasRecebidas';
 export { EmailPreviewDialog } from './EmailPreviewDialog';
 export { EmailActionButtons } from './EmailActionButtons';
 export { AlinhamentoPainelReal } from './AlinhamentoPainelReal';
+export { AgendamentoPrimeiroAlinhamentoPainel } from './AgendamentoPrimeiroAlinhamentoPainel';
 export { MentoraPreparacaoPainel } from './MentoraPreparacaoPainel';
 export { FormulariosIntegracaoAdmin } from './FormulariosIntegracaoAdmin';
 export type { FormularioAdminSubTab } from './FormulariosIntegracaoAdmin';

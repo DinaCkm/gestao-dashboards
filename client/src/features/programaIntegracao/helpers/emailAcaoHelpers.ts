@@ -11,6 +11,7 @@ export function chavesEmailDaAcao(item: ItemPlanoReal): string[] {
  * Os demais modelos não recebem número de alinhamento por esta regra.
  */
 export function alinhamentoDoModeloEmail(chave: string): number | undefined {
+  if (chave === 'm_confirmacao_agendamento_1') return 1;
   const m = /^m_agendamento_([1-4])$/.exec(chave || '');
   return m ? Number(m[1]) : undefined;
 }
@@ -40,6 +41,7 @@ export function rotuloFallbackEmail(chave: string): string {
     m_primeiros_passos: 'Primeiros passos',
     m_primeiros_registros: 'Primeiros registros',
     m_agendamento_1: '1º alinhamento',
+    m_confirmacao_agendamento_1: 'Confirmação 1º alinhamento',
     m_agendamento_2: '2º alinhamento',
     m_agendamento_3: '3º alinhamento',
     m_agendamento_4: '4º alinhamento',

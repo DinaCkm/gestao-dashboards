@@ -89,6 +89,38 @@ function processoComAlinhamentos(processo: ProcessoIntegracao): [ProcessoIntegra
   return [{ ...processo, alin }, alin];
 }
 
+export interface DadosAgendamentoPrimeiroAlinhamento {
+  data: string;
+  hora: string;
+  link: string;
+}
+
+/**
+ * Centraliza o agendamento efetivo do 1º alinhamento na ação ag1-03.
+ * Os mesmos campos de alin[1] continuam sendo a fonte única usada no marco
+ * do 15º dia, agenda, timeline e e-mails; não cria estado paralelo.
+ */
+export function registrarAgendamentoPrimeiroAlinhamento(
+  processo: ProcessoIntegracao,
+  dados: DadosAgendamentoPrimeiroAlinhamento,
+  hojeRef: string | Date = new Date(),
+): ProcessoIntegracao {
+  const data = String(dados.data || '').trim();
+  const hora = String(dados.hora || '').trim();
+  const link = String(dados.link || '').trim();
+  if (!dataIsoValida(data) || !hora || !link) return processo;
+
+  const [copia, alin] = processoComAlinhamentos(processo);
+  const registro = registroAlinhamento(alin, 1);
+  registro.data = data;
+  registro.hora = hora;
+  registro.link = link;
+  registro.agendado = 'aguardando';
+  registro.just = '';
+
+  return aplicarAutomacoesProcesso(copia, hojeRef);
+}
+
 /** Espelha o clique dos botões Sim/Aguardando/Não de `alinPainel`. */
 export function aplicarSituacaoAgendamento(
   processo: ProcessoIntegracao,
