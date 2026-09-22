@@ -365,12 +365,20 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     function resolverAlunoDaEmpresa(row: any): any | null {
       if (user.role === "admin") return { id: Number(row.alunoId || 0) || null };
 
+      const estado = asJson<Record<string, any>>(row.estado, {});
+      const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
+      if (scopeAll && empresaTesteId > 0 && empresaTesteId === empresaId) {
+        // Processos fictícios/demonstração podem não ter aluno real na EcoLíder.
+        // Para a visão UGP/RH, aceitar somente quando a empresa do teste estiver
+        // explicitamente vinculada e coincidir com a empresa do usuário.
+        return { id: null, programId: empresaId, demoEmpresa: true };
+      }
+
       const alunoIdDireto = Number(row.alunoId || 0);
       if (alunoIdDireto && alunosEmpresaPorId.has(alunoIdDireto)) {
         return alunosEmpresaPorId.get(alunoIdDireto) || null;
       }
 
-      const estado = asJson<Record<string, any>>(row.estado, {});
       const ecoAlunoId = Number(estado?.teste?.ecoAlunoId || 0);
       if (ecoAlunoId && alunosEmpresaPorId.has(ecoAlunoId)) {
         return alunosEmpresaPorId.get(ecoAlunoId) || null;
