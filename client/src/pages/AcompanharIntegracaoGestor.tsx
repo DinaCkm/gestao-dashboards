@@ -326,9 +326,12 @@ export default function AcompanharIntegracaoGestor() {
                     >
                       <div className="font-semibold">{c.nome}</div>
                       <div className="mt-1 text-xs text-muted-foreground">{c.cargo || 'Cargo não informado'} · {c.unidade || 'Unidade não informada'}</div>
-                      <div className="mt-2 flex gap-2 text-xs">
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
                         <span>Dia {c.dia}/{c.totalDias}</span>
                         {!!c.formulariosPendentes.length && <span className="font-semibold text-amber-700">{c.formulariosPendentes.length} pendência(s)</span>}
+                        {alertasDoColaborador(c).length > 0 && (
+                          <span className="font-semibold text-red-700">{alertasDoColaborador(c).length} alerta(s)</span>
+                        )}
                       </div>
                     </button>
                   ))}
