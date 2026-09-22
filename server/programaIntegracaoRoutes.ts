@@ -250,6 +250,13 @@ function temRespostaCiclo(respostas: any[], form: string, papel: string, ciclo: 
   );
 }
 
+function chaveGerenteAcompanhamento(nome: unknown, email: unknown): string {
+  const emailNormalizado = String(email || "").trim().toLowerCase();
+  if (emailNormalizado) return `email:${emailNormalizado}`;
+  const nomeNormalizado = normTxt(nome);
+  return nomeNormalizado ? `nome:${nomeNormalizado}` : "";
+}
+
 programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin, async (req, res) => {
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
@@ -313,6 +320,35 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
        ORDER BY ordem,id`,
     )) as any;
 
+    // No Admin, permitir alternar entre a visão UGP/RH (todos) e a visão exata
+    // de cada gerente, usando os vínculos já existentes nos processos ativos.
+    const gestoresMap = new Map<string, { key: string; nome: string; email: string; colaboradores: number }>();
+    for (const row of processRows || []) {
+      const key = chaveGerenteAcompanhamento(row.gestor, row.gestorEmail);
+      if (!key) continue;
+      const atual = gestoresMap.get(key);
+      if (atual) {
+        atual.colaboradores += 1;
+      } else {
+        gestoresMap.set(key, {
+          key,
+          nome: String(row.gestor || "").trim() || "Gerente sem nome",
+          email: String(row.gestorEmail || "").trim().toLowerCase(),
+          colaboradores: 1,
+        });
+      }
+    }
+    const gestoresDisponiveis = Array.from(gestoresMap.values()).sort((a, b) =>
+      a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }),
+    );
+    const gestorViewKey = user.role === "admin" ? String(req.query.gestor || "").trim() : "";
+    const gestorSelecionado = user.role === "admin" && gestorViewKey && gestorViewKey !== "all"
+      ? gestoresMap.get(gestorViewKey) || null
+      : null;
+    if (user.role === "admin" && gestorViewKey && gestorViewKey !== "all" && !gestorSelecionado) {
+      return res.status(400).json({ error: "O gerente selecionado não foi encontrado entre os processos ativos." });
+    }
+
     // A empresa é resolvida usando o cadastro ECO Líderes (alunos.programId),
     // sem confiar apenas no nome do gestor e sem abrir dados globais para UGP/RH.
     const alunosEmpresa = user.role === "admin"
@@ -344,7 +380,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
     const alunoEmpresaPorProcesso = new Map<number, any>();
     const permitidos = (processRows || []).filter((row: any) => {
-      if (user.role === "admin") return true;
+      if (user.role === "admin") {
+        if (!gestorSelecionado) return true;
+        return chaveGerenteAcompanhamento(row.gestor, row.gestorEmail) === gestorSelecionado.key;
+      }
 
       const alunoEmpresa = resolverAlunoDaEmpresa(row);
       if (!alunoEmpresa) return false; // fail closed: sem vínculo seguro com a empresa, não exibe.
@@ -363,8 +402,12 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     if (!permitidos.length) {
       return res.json({
         ok: true,
-        scope: scopeAll ? "all" : "gestor",
+        scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : (scopeAll ? "all" : "gestor"),
+        adminView: user.role === "admin",
+        gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
+        gestorSelecionado,
         empresaId: user.role === "admin" ? null : empresaId,
+        atualizadoEm: new Date().toISOString(),
         colaboradores: [],
       });
     }
@@ -473,6 +516,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         alinhamentosTotal: 4,
         jornadaCompliance: andamento?.jornadaCompliance || { total: 0, concluidas: 0, percentual: null },
         pdi: andamento?.pdi || { total: 0, concluidas: 0, percentual: null },
+        acessouEcoLider: andamento?.acessouEcoLider ?? null,
+        ultimaEntradaEcoLider: andamento?.ultimaEntradaEcoLider || null,
+        assessmentPotencialConcluido: andamento?.assessmentPotencialConcluido ?? null,
+        assessmentPotencialConcluidoEm: andamento?.assessmentPotencialConcluidoEm || null,
         respostas: respostas.filter((r) =>
           (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo"))
         ),
@@ -483,7 +530,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      scope: scopeAll ? "all" : "gestor",
+      scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : (scopeAll ? "all" : "gestor"),
+      adminView: user.role === "admin",
+      gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
+      gestorSelecionado,
       empresaId: user.role === "admin" ? null : empresaId,
       atualizadoEm: new Date().toISOString(),
       colaboradores,
@@ -616,11 +666,65 @@ async function statusEcoLiderAlunos(connection: any, alunoIds: number[]) {
     saida[String(alunoId)] = {
       pdi: { total: 0, concluidas: 0, percentual: null, statusTexto: "Ainda sem tarefas registradas no PDI." },
       jornadaCompliance: { total: 0, concluidas: 0, percentual: null, statusTexto: "Jornada Compliance: ainda sem atividades registradas." },
+      acessouEcoLider: false,
+      ultimaEntradaEcoLider: null,
+      assessmentPotencialConcluido: false,
+      assessmentPotencialConcluidoEm: null,
     };
   }
   if (!ids.length) return saida;
 
   const placeholders = ids.map(() => "?").join(",");
+
+  // "Entrou na EcoLíder" precisa ser evidência de autenticação, não apenas cadastro.
+  // O openId aluno_ID só nasce no primeiro login do aluno. Para usuários criados
+  // previamente pelo Admin, aceitamos também lastSignedIn posterior a createdAt.
+  const [acessoRows] = (await connection.execute(
+    `SELECT alunoId,openId,createdAt,lastSignedIn
+     FROM users
+     WHERE alunoId IN (${placeholders})
+       AND COALESCE(isActive,1)=1`,
+    ids,
+  )) as any;
+
+  for (const row of acessoRows || []) {
+    const alunoId = Number(row.alunoId || 0);
+    const status = saida[String(alunoId)];
+    if (!status) continue;
+    const openId = String(row.openId || "");
+    const createdAt = row.createdAt ? new Date(row.createdAt).getTime() : 0;
+    const lastSignedIn = row.lastSignedIn ? new Date(row.lastSignedIn).getTime() : 0;
+    const criadoNoPrimeiroLogin = openId === `aluno_${alunoId}`;
+    const houveLoginPosterior = Boolean(createdAt && lastSignedIn && lastSignedIn > createdAt + 1000);
+    if (criadoNoPrimeiroLogin || houveLoginPosterior) {
+      status.acessouEcoLider = true;
+      if (lastSignedIn) {
+        const atual = status.ultimaEntradaEcoLider ? new Date(status.ultimaEntradaEcoLider).getTime() : 0;
+        if (lastSignedIn > atual) status.ultimaEntradaEcoLider = new Date(lastSignedIn).toISOString();
+      }
+    }
+  }
+
+  // A tabela interna mantém a nomenclatura histórica, mas a interface exibe
+  // exclusivamente "Assessment/Avaliação de Potencial", conforme regra do produto.
+  const [assessmentRows] = (await connection.execute(
+    `SELECT alunoId,MAX(completedAt) AS completedAt
+     FROM disc_resultados
+     WHERE alunoId IN (${placeholders})
+     GROUP BY alunoId`,
+    ids,
+  )) as any;
+
+  for (const row of assessmentRows || []) {
+    const alunoId = Number(row.alunoId || 0);
+    const status = saida[String(alunoId)];
+    if (!status) continue;
+    status.assessmentPotencialConcluido = true;
+    status.assessmentPotencialConcluidoEm = row.completedAt
+      ? new Date(row.completedAt).toISOString()
+      : null;
+  }
+
   const [tarefasRows] = (await connection.execute(
     `SELECT
        alunoId,
@@ -698,6 +802,10 @@ async function statusEcoLiderAluno(connection: any, alunoId: number) {
   return mapa[String(alunoId)] || {
     pdi: { total: 0, concluidas: 0, percentual: null, statusTexto: "Ainda sem tarefas registradas no PDI." },
     jornadaCompliance: { total: 0, concluidas: 0, percentual: null, statusTexto: "Jornada Compliance: ainda sem atividades registradas." },
+    acessouEcoLider: false,
+    ultimaEntradaEcoLider: null,
+    assessmentPotencialConcluido: false,
+    assessmentPotencialConcluidoEm: null,
   };
 }
 

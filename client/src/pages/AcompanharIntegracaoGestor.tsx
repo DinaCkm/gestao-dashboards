@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
-import { BarChart3, ClipboardList, Download, Loader2, Search, UserCheck, Users } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertTriangle, BarChart3, ClipboardList, Download, Loader2, Search, UserCheck, Users } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -32,6 +34,13 @@ interface Pendencia {
   atrasado: boolean;
 }
 
+interface GestorDisponivel {
+  key: string;
+  nome: string;
+  email: string;
+  colaboradores: number;
+}
+
 interface ColaboradorAcompanhamento {
   id: string;
   nome: string;
@@ -46,6 +55,10 @@ interface ColaboradorAcompanhamento {
   alinhamentosTotal: number;
   jornadaCompliance: { total: number; concluidas: number; percentual: number | null };
   pdi: { total: number; concluidas: number; percentual: number | null };
+  acessouEcoLider: boolean | null;
+  ultimaEntradaEcoLider: string | null;
+  assessmentPotencialConcluido: boolean | null;
+  assessmentPotencialConcluidoEm: string | null;
   respostas: RespostaAcompanhamento[];
   formulariosPendentes: Pendencia[];
 }
@@ -53,6 +66,9 @@ interface ColaboradorAcompanhamento {
 interface AcompanhamentoResponse {
   ok: boolean;
   scope: 'all' | 'gestor';
+  adminView?: boolean;
+  gestoresDisponiveis?: GestorDisponivel[];
+  gestorSelecionado?: GestorDisponivel | null;
   atualizadoEm: string;
   colaboradores: ColaboradorAcompanhamento[];
 }
@@ -67,6 +83,23 @@ function dataBr(iso: string) {
   if (!iso) return '—';
   const d = new Date(`${iso.slice(0,10)}T12:00:00`);
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+}
+
+function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] {
+  const alertas: string[] = [];
+  if (colaborador.acessouEcoLider === false) {
+    alertas.push('Esse colaborador ainda não entrou na EcoLíder.');
+  }
+  if (colaborador.assessmentPotencialConcluido === false) {
+    alertas.push('Esse colaborador ainda não realizou o Assessment/Avaliação de Potencial.');
+  }
+  if (colaborador.jornadaCompliance.total > 0 && colaborador.jornadaCompliance.concluidas === 0) {
+    alertas.push('Esse colaborador não iniciou a Jornada Compliance.');
+  }
+  if (colaborador.pdi.total > 0 && colaborador.pdi.concluidas === 0) {
+    alertas.push('Esse colaborador ainda não realizou nenhuma das tarefas registradas no PDI.');
+  }
+  return alertas;
 }
 
 function EvolucaoBloco({ titulo, respostas, papel }: {
@@ -175,18 +208,25 @@ export default function AcompanharIntegracaoGestor() {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [selecionadoId, setSelecionadoId] = useState('');
+  const [gestorView, setGestorView] = useState('all');
 
-  const carregar = async () => {
+  const carregar = async (gestor = gestorView) => {
     setLoading(true);
     setErro('');
     try {
-      const res = await fetch('/api/programa-integracao/gestor/acompanhamento', {
+      const params = new URLSearchParams();
+      if (gestor && gestor !== 'all') params.set('gestor', gestor);
+      const url = `/api/programa-integracao/gestor/acompanhamento${params.toString() ? `?${params.toString()}` : ''}`;
+      const res = await fetch(url, {
         credentials: 'include',
         headers: { Accept: 'application/json' },
       });
       const json = await res.json();
       if (!res.ok || !json?.ok) throw new Error(json?.error || 'Não foi possível carregar o acompanhamento.');
       setDados(json);
+      if (json?.adminView) {
+        setGestorView(json?.gestorSelecionado?.key || 'all');
+      }
       setSelecionadoId((atual) => atual && json.colaboradores.some((c: any) => c.id === atual)
         ? atual
         : json.colaboradores[0]?.id || '');
@@ -210,21 +250,53 @@ export default function AcompanharIntegracaoGestor() {
   }, [dados, busca]);
 
   const colaborador = (dados?.colaboradores || []).find((c) => c.id === selecionadoId) || filtrados[0] || null;
+  const alertasColaborador = colaborador ? alertasDoColaborador(colaborador) : [];
+
+  const trocarVisaoGerente = (value: string) => {
+    setGestorView(value);
+    setBusca('');
+    setSelecionadoId('');
+    void carregar(value);
+  };
 
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-[1500px] space-y-6 p-1">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="text-sm font-semibold uppercase tracking-wider text-violet-600">Visão do Gestor</div>
+            <div className="text-sm font-semibold uppercase tracking-wider text-violet-600">
+              {dados?.adminView ? 'Visão Administrativa' : 'Visão do Gestor'}
+            </div>
             <h1 className="text-3xl font-bold tracking-tight">Acompanhar Integração</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Acompanhamento executivo e evolução dos colaboradores ativos no Programa de Integração.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {dados?.scope === 'all' && <Badge variant="secondary">Visão UGP/RH</Badge>}
-            <Button variant="outline" onClick={() => void carregar()} disabled={loading}>Atualizar</Button>
+          <div className="flex flex-wrap items-end gap-2">
+            {dados?.adminView && (
+              <div className="min-w-[290px] space-y-1">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Visualizar como</div>
+                <Select value={gestorView} onValueChange={trocarVisaoGerente} disabled={loading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a visão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">UGP/RH — todos os colaboradores</SelectItem>
+                    {(dados.gestoresDisponiveis || []).map((g) => (
+                      <SelectItem key={g.key} value={g.key}>
+                        {g.nome} — {g.colaboradores} colaborador(es)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {dados?.scope === 'all' ? (
+              <Badge variant="secondary">Visão UGP/RH</Badge>
+            ) : dados?.gestorSelecionado ? (
+              <Badge variant="secondary">Visão do gerente: {dados.gestorSelecionado.nome}</Badge>
+            ) : null}
+            <Button variant="outline" onClick={() => void carregar(gestorView)} disabled={loading}>Atualizar</Button>
           </div>
         </div>
 
@@ -254,9 +326,12 @@ export default function AcompanharIntegracaoGestor() {
                     >
                       <div className="font-semibold">{c.nome}</div>
                       <div className="mt-1 text-xs text-muted-foreground">{c.cargo || 'Cargo não informado'} · {c.unidade || 'Unidade não informada'}</div>
-                      <div className="mt-2 flex gap-2 text-xs">
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
                         <span>Dia {c.dia}/{c.totalDias}</span>
                         {!!c.formulariosPendentes.length && <span className="font-semibold text-amber-700">{c.formulariosPendentes.length} pendência(s)</span>}
+                        {alertasDoColaborador(c).length > 0 && (
+                          <span className="font-semibold text-red-700">{alertasDoColaborador(c).length} alerta(s)</span>
+                        )}
                       </div>
                     </button>
                   ))}
@@ -287,6 +362,18 @@ export default function AcompanharIntegracaoGestor() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {alertasColaborador.length > 0 && (
+                  <div className="space-y-2">
+                    {alertasColaborador.map((mensagem) => (
+                      <Alert key={mensagem} className="border-amber-300 bg-amber-50 text-amber-950">
+                        <AlertTriangle className="h-4 w-4 text-amber-700" />
+                        <AlertTitle className="font-bold">Atenção</AlertTitle>
+                        <AlertDescription>{mensagem}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                )}
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Dia do Onboarding</div><div className="mt-2 text-3xl font-bold">{colaborador.dia}<span className="text-base text-muted-foreground">/{colaborador.totalDias}</span></div><Progress className="mt-3" value={(colaborador.dia/colaborador.totalDias)*100} /></CardContent></Card>

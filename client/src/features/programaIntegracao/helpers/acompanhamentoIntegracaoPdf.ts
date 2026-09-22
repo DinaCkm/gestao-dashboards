@@ -11,6 +11,8 @@ export interface ColaboradorAcompanhamentoPdf {
   alinhamentosTotal: number;
   jornadaCompliance: { percentual: number | null; total?: number; concluidas?: number };
   pdi: { percentual: number | null; total?: number; concluidas?: number };
+  acessouEcoLider?: boolean | null;
+  assessmentPotencialConcluido?: boolean | null;
   respostas: RespostaAcompanhamento[];
   formulariosPendentes: Array<{ ciclo: number; papel: string; formulario: string; prazo: string; atrasado: boolean }>;
 }
@@ -53,6 +55,23 @@ function kpi(doc: jsPDF, x: number, y: number, w: number, titulo: string, valor:
   doc.setFontSize(6.2);
   doc.setTextColor(120, 120, 130);
   doc.text(detalhe, x + 4, y + 18);
+}
+
+function alertasColaborador(colaborador: ColaboradorAcompanhamentoPdf): string[] {
+  const alertas: string[] = [];
+  if (colaborador.acessouEcoLider === false) {
+    alertas.push('Esse colaborador ainda não entrou na EcoLíder.');
+  }
+  if (colaborador.assessmentPotencialConcluido === false) {
+    alertas.push('Esse colaborador ainda não realizou o Assessment/Avaliação de Potencial.');
+  }
+  if ((colaborador.jornadaCompliance.total || 0) > 0 && (colaborador.jornadaCompliance.concluidas || 0) === 0) {
+    alertas.push('Esse colaborador não iniciou a Jornada Compliance.');
+  }
+  if ((colaborador.pdi.total || 0) > 0 && (colaborador.pdi.concluidas || 0) === 0) {
+    alertas.push('Esse colaborador ainda não realizou nenhuma das tarefas registradas no PDI.');
+  }
+  return alertas;
 }
 
 function evolucao(doc: jsPDF, y: number, titulo: string, respostas: RespostaAcompanhamento[], papel: 'Gestor' | 'Anjo') {
@@ -156,6 +175,21 @@ export function gerarAcompanhamentoIntegracaoPdf(colaborador: ColaboradorAcompan
   kpi(doc,105,y,w,'Tarefas do PDI',fmt(colaborador.pdi.percentual),`${colaborador.pdi.concluidas || 0} de ${colaborador.pdi.total || 0} tarefas`);
   kpi(doc,149.5,y,44.5,'Alinhamentos',`${colaborador.alinhamentosFeitos}/${colaborador.alinhamentosTotal}`,'realizados');
   y += 30;
+
+  const alertas = alertasColaborador(colaborador);
+  if (alertas.length) {
+    y = section(doc, y, 'Atenção');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.4);
+    doc.setTextColor(145, 82, 20);
+    for (const mensagem of alertas) {
+      y = ensure(doc, y, 9);
+      const linhas = doc.splitTextToSize(`• ${mensagem}`, 172);
+      doc.text(linhas, 18, y);
+      y += Math.max(6, linhas.length * 4);
+    }
+    y += 2;
+  }
 
   y = evolucao(doc,y,'Evolução — Gestor',colaborador.respostas,'Gestor');
   y = evolucao(doc,y,'Evolução — Anjo',colaborador.respostas,'Anjo');
