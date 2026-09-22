@@ -130,21 +130,41 @@ function AssessmentContent() {
   const { data: trilhas = [] } = trpc.trilhas.list.useQuery();
   const { data: mentores = [] } = trpc.mentor.list.useQuery();
 
+  // Nível vigente: o ciclo atual deve ser lido pelo contratoNivelId correto.
+  // Isso impede misturar o DISC/PDI do ciclo anterior com o novo ciclo.
+  const { data: nivelVigente, isLoading: loadingNivelVigente } = trpc.contratoNiveis.vigente.useQuery(
+    { alunoId: selectedAlunoId! },
+    { enabled: !!selectedAlunoId }
+  );
+  const contratoNivelAtualId = nivelVigente?.id ?? null;
+
   const { data: assessments = [], refetch: refetchAssessments } = trpc.assessment.porAluno.useQuery(
+    { alunoId: selectedAlunoId!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAlunoId && !loadingNivelVigente }
+  );
+
+  // Histórico de ciclos arquivados (PDI + DISC) — usado quando o novo ciclo foi liberado
+  // para não dar a falsa impressão de que o aluno nunca teve Assessment/PDI.
+  const { data: historicoCiclos = [] } = trpc.onboarding.historicoCiclos.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
   );
 
-  // Buscar resultado da Avaliação de Perfil Comportamental do aluno
+  const ultimoCicloArquivado = useMemo(() => {
+    if (!historicoCiclos.length) return null;
+    return [...historicoCiclos].sort((a: any, b: any) => Number(b.numeroCiclo) - Number(a.numeroCiclo))[0] as any;
+  }, [historicoCiclos]);
+
+  // Resultado do ciclo ATUAL. A mesma origem usada no onboarding já filtra por contratoNivelId.
   const { data: discResultado, refetch: refetchDisc } = trpc.disc.resultado.useQuery(
-    { alunoId: selectedAlunoId! },
-    { enabled: !!selectedAlunoId }
+    { alunoId: selectedAlunoId!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAlunoId && !loadingNivelVigente }
   );
 
-  // Buscar autopercepções de competências do aluno
+  // Autopercepção também pertence ao ciclo/nível vigente.
   const { data: autopercepcoesAluno = [] } = trpc.autopercepção.porAluno.useQuery(
-    { alunoId: selectedAlunoId! },
-    { enabled: !!selectedAlunoId }
+    { alunoId: selectedAlunoId!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAlunoId && !loadingNivelVigente }
   );
 
   // Buscar lista de competências para nomes
@@ -468,13 +488,60 @@ function AssessmentContent() {
                     </div>
                   )}
                 </>
+              ) : ultimoCicloArquivado && (
+                ultimoCicloArquivado.scoreD != null ||
+                ultimoCicloArquivado.scoreI != null ||
+                ultimoCicloArquivado.scoreS != null ||
+                ultimoCicloArquivado.scoreC != null
+              ) ? (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <CheckCircle2 className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-900">
+                        Assessment do ciclo anterior preservado
+                      </p>
+                      <p className="text-xs text-blue-700 mt-0.5">
+                        O novo ciclo foi liberado e ainda não possui um novo Assessment. Abaixo está o resultado arquivado do ciclo {ultimoCicloArquivado.numeroCiclo}.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: 'Dominância (D)', score: ultimoCicloArquivado.scoreD, color: 'bg-red-500' },
+                      { label: 'Influência (I)', score: ultimoCicloArquivado.scoreI, color: 'bg-yellow-500' },
+                      { label: 'Estabilidade (S)', score: ultimoCicloArquivado.scoreS, color: 'bg-green-500' },
+                      { label: 'Conformidade (C)', score: ultimoCicloArquivado.scoreC, color: 'bg-blue-500' },
+                    ].map(dim => (
+                      <div key={dim.label} className="text-center">
+                        <div className="text-xs text-muted-foreground mb-1">{dim.label}</div>
+                        <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${dim.color}`} style={{ width: `${Math.min(Number(dim.score || 0), 100)}%` }} />
+                        </div>
+                        <div className="text-sm font-bold mt-1">{Number(dim.score || 0).toFixed(0)}%</div>
+                      </div>
+                    ))}
+                  </div>
+                  {ultimoCicloArquivado.perfilPredominante && (
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-[#0A1E3E] text-white">
+                        Perfil Primário: {ultimoCicloArquivado.perfilPredominante}
+                      </Badge>
+                      {ultimoCicloArquivado.perfilSecundario && (
+                        <Badge variant="outline" className="border-[#0A1E3E] text-[#0A1E3E]">
+                          Secundário: {ultimoCicloArquivado.perfilSecundario}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-amber-800">Avaliação de Perfil Comportamental não realizada</p>
+                    <p className="text-sm font-medium text-amber-800">Assessment do ciclo atual ainda não realizado</p>
                     <p className="text-xs text-amber-600 mt-0.5">
-                      Este aluno ainda não completou o Avaliação de Perfil Comportamental no Onboarding.
+                      Não há resultado do ciclo atual nem snapshot histórico disponível para este aluno.
                     </p>
                   </div>
                 </div>
@@ -853,6 +920,34 @@ function AssessmentContent() {
               );
             })()}
 
+          </CardContent>
+        </Card>
+      )}
+
+      {/* PDI arquivado do ciclo anterior */}
+      {selectedAlunoId && selectedAluno && ultimoCicloArquivado?.assessmentPdiId && assessments.length === 0 && (
+        <Card className="border-blue-200 bg-blue-50/50 border-2">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <BookOpen className="h-5 w-5 text-blue-700" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-blue-900">PDI do ciclo anterior preservado</h4>
+                <p className="text-sm text-blue-700">
+                  O PDI anterior foi arquivado no ciclo {ultimoCicloArquivado.numeroCiclo}. O novo ciclo ainda está aguardando a criação de um novo PDI.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-blue-300 text-blue-800 hover:bg-blue-100 flex-shrink-0"
+                onClick={() => setLocation(`/pdi/${ultimoCicloArquivado.assessmentPdiId}`)}
+              >
+                <Eye className="h-3.5 w-3.5 mr-1" />
+                Ver PDI arquivado
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

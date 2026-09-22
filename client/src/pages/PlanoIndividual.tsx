@@ -168,9 +168,18 @@ function PlanoContent() {
     { enabled: !!userConsultorId && !isAdmin }
   );
   const { data: empresas } = trpc.indicadores.empresas.useQuery();
-  const { data: planoAluno, refetch: refetchPlano } = trpc.planoIndividual.byAluno.useQuery(
+
+  // O Plano Individual deve refletir o ciclo/nível vigente.
+  // Para alunos com mais de um ciclo (como Izabel), isso evita misturar dados históricos.
+  const { data: nivelVigente, isLoading: loadingNivelVigente } = trpc.contratoNiveis.vigente.useQuery(
     { alunoId: selectedAluno! },
     { enabled: !!selectedAluno }
+  );
+  const contratoNivelAtualId = nivelVigente?.id ?? null;
+
+  const { data: planoAluno, refetch: refetchPlano } = trpc.planoIndividual.byAluno.useQuery(
+    { alunoId: selectedAluno!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAluno && !loadingNivelVigente }
   );
   const { data: competencias } = trpc.competencias.listWithTrilha.useQuery();
   const { data: trilhas } = trpc.trilhas.list.useQuery();
@@ -180,10 +189,10 @@ function PlanoContent() {
     { enabled: !!selectedAluno }
   );
 
-  // Assessment queries
+  // Assessment/PDI do ciclo atual
   const { data: assessments = [], refetch: refetchAssessments } = trpc.assessment.porAluno.useQuery(
-    { alunoId: selectedAluno! },
-    { enabled: !!selectedAluno }
+    { alunoId: selectedAluno!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAluno && !loadingNivelVigente }
   );
 
   // Contrato queries
@@ -218,16 +227,17 @@ function PlanoContent() {
     { alunoId: selectedAluno! },
     { enabled: !!selectedAluno }
   );
-  // DISC
+  // DISC do ciclo atual — mantém exatamente a apresentação visual já usada no plano do Fábio,
+  // mas agora busca o resultado do nível vigente quando o aluno tem múltiplos ciclos.
   const { data: discResultado } = trpc.disc.resultado.useQuery(
-    { alunoId: selectedAluno! },
-    { enabled: !!selectedAluno }
+    { alunoId: selectedAluno!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAluno && !loadingNivelVigente }
   );
 
-  // Autopercepção de competências
+  // Autopercepção de competências do ciclo atual
   const { data: autopercepcoesData = [] } = (trpc as any).autopercepção.porAluno.useQuery(
-    { alunoId: selectedAluno! },
-    { enabled: !!selectedAluno }
+    { alunoId: selectedAluno!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAluno && !loadingNivelVigente }
   );
 
   // Mentores list
