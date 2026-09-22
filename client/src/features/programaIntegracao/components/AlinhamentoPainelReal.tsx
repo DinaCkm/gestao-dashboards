@@ -156,8 +156,7 @@ export function AlinhamentoPainelReal({
 
   return (
     <div className="rounded-lg border bg-background px-4 py-1">
-      {numero !== 1 && (
-              {linha({
+      {numero !== 1 && linha({
                 label: 'E-mail de agendamento',
                 children: (
                   <div className="flex flex-wrap items-center gap-2">
@@ -200,7 +199,6 @@ export function AlinhamentoPainelReal({
                   </div>
                 ),
               })}
-      )}
 
       {linha({
         label: 'Já foi agendado?',
