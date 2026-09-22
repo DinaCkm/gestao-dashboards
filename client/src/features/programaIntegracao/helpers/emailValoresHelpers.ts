@@ -223,6 +223,7 @@ export function valoresEmailIntegracao(
     ORDINAL: n ? ORD[n] : '',
     MARCO: n ? String(MARCO[n]) : '',
     DATA_ALIN: dataAlin ? fmtc(dataAlin) : '',
+    HORA_ALIN: n ? String(processo.alin?.[String(n)]?.hora || processo.alin?.[n]?.hora || '') : '',
     STATUS_PDI: statusPdiTexto(processo),
     PENDENCIAS: pendenciasTextoEmail(processo, feriados, contexto.hoje || hojeIsoLocal()),
     STATUS_CURSOS: statusCursosTexto(processo),
