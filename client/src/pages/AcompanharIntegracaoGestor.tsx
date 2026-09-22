@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AlertTriangle, BarChart3, ClipboardList, Download, Info, Loader2, Search, Sparkles, UserCheck, Users } from 'lucide-react';
+import { AlertTriangle, BarChart3, ClipboardList, Download, Info, Loader2, Search, Sparkles, Trash2, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import {
   LineChart,
@@ -30,6 +30,8 @@ import {
   type RespostaAcompanhamento,
 } from '@/features/programaIntegracao/helpers/evolucaoAcompanhamento';
 import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/helpers/acompanhamentoIntegracaoPdf';
+import { arquivarRespostaRecebida } from '@/features/programaIntegracao/api/respostas';
+import { toast } from 'sonner';
 
 interface Pendencia {
   ciclo: number;
@@ -89,8 +91,16 @@ interface PerfilAssessment {
     descritoresReconhecidos: number;
     compatibilidade: number | null;
     motivo: string | null;
+    matriz?: 'historica' | 'atual' | null;
     clusters: ClusterExpectativa[];
   };
+  bemAcolhidoAtual?: {
+    rid: string;
+    protocolo: string;
+    formVersion: number;
+    submittedAt: string | null;
+    matriz: 'historica' | 'atual' | null;
+  } | null;
 }
 
 interface ColaboradorAcompanhamento {
@@ -174,11 +184,16 @@ function PerfilAssessmentModal({
   colaborador,
   open,
   onOpenChange,
+  adminView,
+  onRespostaArquivada,
 }: {
   colaborador: ColaboradorAcompanhamento | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  adminView?: boolean;
+  onRespostaArquivada?: () => Promise<void> | void;
 }) {
+  const [arquivandoBem, setArquivandoBem] = useState(false);
   if (!colaborador) return null;
 
   const perfil = colaborador.perfilAssessment;
@@ -189,6 +204,38 @@ function PerfilAssessmentModal({
   const expectativaPorKey = new Map<string, ClusterExpectativa>(
     (perfil?.expectativaGestor?.clusters || []).map((item) => [item.key, item] as const),
   );
+  const classeComparacao = (prioridade: number, perfilColaborador: number | null | undefined) => {
+    if (perfilColaborador == null || !Number.isFinite(Number(perfilColaborador)) || prioridade <= 0) {
+      return 'border-slate-200 bg-slate-50';
+    }
+    const perfilNumero = Number(perfilColaborador);
+    if (perfilNumero >= prioridade) return 'border-emerald-300 bg-emerald-50';
+    const diferenca = prioridade - perfilNumero;
+    if (diferenca <= 5) return 'border-emerald-300 bg-emerald-50';
+    if (diferenca <= 20) return 'border-blue-300 bg-blue-50';
+    if (diferenca <= 40) return 'border-amber-300 bg-amber-50';
+    return 'border-orange-300 bg-orange-50';
+  };
+
+  const arquivarBemAtual = async () => {
+    const bem = perfil?.bemAcolhidoAtual;
+    if (!bem?.rid) return;
+    const confirmar = window.confirm(
+      'Excluir esta resposta do BEM Acolhido da visão ativa?\n\nA resposta não será apagada. Ela ficará guardada em Respostas Recebidas > Excluídas e poderá ser restaurada depois. Todos os cálculos passarão a considerar apenas respostas ativas.',
+    );
+    if (!confirmar) return;
+    try {
+      setArquivandoBem(true);
+      await arquivarRespostaRecebida(bem.rid);
+      toast.success('Resposta do BEM Acolhido movida para Excluídas.');
+      onOpenChange(false);
+      await onRespostaArquivada?.();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível excluir a resposta.');
+    } finally {
+      setArquivandoBem(false);
+    }
+  };
 
   const discCards = DISC_PERFIL_RESUMO.map((item) => {
     const score = item.key === 'D'
@@ -210,7 +257,7 @@ function PerfilAssessmentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-6xl gap-0 overflow-hidden p-0 sm:w-[calc(100vw-2rem)]">
+      <DialogContent className="max-h-[94vh] w-[calc(100vw-0.75rem)] max-w-[1480px] gap-0 overflow-hidden p-0 sm:w-[96vw]">
         <div className="border-b bg-gradient-to-r from-violet-950 via-violet-800 to-indigo-700 px-5 py-5 pr-12 text-white sm:px-7">
           <DialogHeader className="text-left">
             <DialogTitle className="text-xl font-bold text-white sm:text-2xl">
@@ -274,7 +321,7 @@ function PerfilAssessmentModal({
                   <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">2. Autoavaliação</div>
                   <h3 className="mt-1 text-lg font-bold">Autoavaliação de Competências</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Cada resultado corresponde à média das competências avaliadas no cluster ÷ 5 × 100.
+                    Esta autoavaliação mostra como o próprio colaborador percebe suas competências em cada dimensão.
                   </p>
                 </div>
 
@@ -313,12 +360,26 @@ function PerfilAssessmentModal({
               </section>
 
               <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
-                <div className="mb-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">3. Expectativa do Gestor</div>
-                  <h3 className="mt-1 text-lg font-bold">Expectativa do Gestor</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                    A prioridade do gestor é um peso relativo entre dimensões. Ela não representa uma nota esperada e a comparação acontece sempre cluster × cluster.
-                  </p>
+                <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">3. Expectativa do Gestor</div>
+                    <h3 className="mt-1 text-lg font-bold">Expectativa do Gestor</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                      A prioridade do gestor é um peso relativo entre dimensões. Ela não representa uma nota esperada e a comparação acontece sempre cluster × cluster.
+                    </p>
+                  </div>
+                  {adminView && perfil?.bemAcolhidoAtual?.rid && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+                      disabled={arquivandoBem}
+                      onClick={() => void arquivarBemAtual()}
+                    >
+                      {arquivandoBem ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                      Excluir resposta do BEM
+                    </Button>
+                  )}
                 </div>
 
                 {perfil?.expectativaGestor?.compatibilidade == null ? (
@@ -347,7 +408,7 @@ function PerfilAssessmentModal({
                     const auto = autoPorKey.get(cluster.key);
                     const prioridade = expectativa?.prioridade ?? 0;
                     return (
-                      <div key={cluster.key} className="min-w-0 rounded-xl border p-4">
+                      <div key={cluster.key} className={`min-w-0 rounded-xl border p-4 ${classeComparacao(prioridade, auto?.percentual)}`}>
                         <div className="mb-3 text-sm font-bold leading-snug">{cluster.nome}</div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <div className="rounded-lg bg-violet-50 p-3">
@@ -376,8 +437,16 @@ function PerfilAssessmentModal({
                   })}
                 </div>
 
-                <div className="mt-4 rounded-lg bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
-                  0% de prioridade não significa ausência de competência esperada. Significa apenas que aquela dimensão não foi priorizada pelo gestor e, por isso, não participa do cálculo de compatibilidade.
+                <div className="mt-4 space-y-2 rounded-lg bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+                  <p>0% de prioridade não significa ausência de competência esperada. Significa apenas que aquela dimensão não foi priorizada pelo gestor e, por isso, não participa do cálculo de compatibilidade.</p>
+                  <p>
+                    Cores da comparação: verde quando o perfil do colaborador é igual/superior à prioridade do gestor ou está até 5 pontos abaixo; azul quando está entre 5 e 20 pontos abaixo; amarelo entre 20 e 40 pontos abaixo; laranja quando a diferença supera 40 pontos.
+                  </p>
+                  {adminView && (
+                    <p>
+                      Respostas excluídas não entram nos cálculos e permanecem preservadas em Programa de Integração → Respostas Recebidas → Excluídas, onde podem ser restauradas.
+                    </p>
+                  )}
                 </div>
               </section>
 
@@ -878,6 +947,11 @@ export default function AcompanharIntegracaoGestor() {
           colaborador={perfilColaborador}
           open={perfilOpen}
           onOpenChange={setPerfilOpen}
+          adminView={dados?.adminView}
+          onRespostaArquivada={async () => {
+            await carregar(gestorView);
+            setPerfilColaborador(null);
+          }}
         />
       </div>
     </DashboardLayout>
