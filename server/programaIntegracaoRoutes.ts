@@ -1,5 +1,10 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { INTEGRACAO_CLUSTERS } from "@shared/integracaoAssessment";
+import {
+  BEM_HISTORICO_CLUSTERS,
+  BEM_MATRIZ_ATUAL_PUBLICADA_EM,
+  BEM_MATRIZ_ATUAL_VERSAO,
+  INTEGRACAO_CLUSTERS,
+} from "@shared/integracaoAssessment";
 import { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";
 import { getRawConnection } from "./db";
 import mysql from "mysql2/promise";
@@ -42,56 +47,47 @@ function listaTextoMulti(valor: unknown): string[] {
   if (Array.isArray(valor)) {
     return valor.map((item) => String(item || "").trim()).filter(Boolean);
   }
+  if (valor && typeof valor === "object") {
+    return Object.values(valor as Record<string, unknown>)
+      .flatMap((item) => listaTextoMulti(item))
+      .filter(Boolean);
+  }
   const texto = String(valor || "").trim();
   if (!texto) return [];
-  return texto.split(",").map((item) => item.trim()).filter(Boolean);
+  if (texto.startsWith("[") && texto.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(texto);
+      if (Array.isArray(parsed)) return listaTextoMulti(parsed);
+    } catch {}
+  }
+  return texto
+    .split(/[\n,;|]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
-function calcularExpectativaGestorBem(row: any | null) {
-  if (!row) {
-    return {
-      temRespostaBem: false,
-      descritoresReconhecidos: 0,
-      compatibilidade: null,
-      motivo: "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
-      clusters: [],
-    };
-  }
+function detectarMatrizBem(row: any): "historica" | "atual" {
+  const versao = Number(row?.formVersion || 0);
+  if (versao >= BEM_MATRIZ_ATUAL_VERSAO) return "atual";
 
-  const answers = asJson<Record<string, any>>(row.answers, {});
-  const selecionadosOriginais = listaTextoMulti(answers.bem_caracteristicas);
-  const selecionados = new Set(selecionadosOriginais.map(normTxt));
+  // Importações com versão 1 representam o acervo histórico e não devem ser
+  // reclassificadas só porque foram tecnicamente importadas em uma data recente.
+  if (versao === 1 && String(row?.source || "") === "importacao") return "historica";
 
-  const clustersBase = INTEGRACAO_CLUSTERS.map((cluster) => {
-    const escolhidos = cluster.descritoresGestor.filter((item) => selecionados.has(normTxt(item)));
-    const total = cluster.descritoresGestor.length;
-    const indice = total > 0 ? (escolhidos.length / total) * 100 : 0;
-    return {
-      key: cluster.key,
-      nome: cluster.nome,
-      selecionados: escolhidos,
-      quantidadeSelecionada: escolhidos.length,
-      totalDescritores: total,
-      indice,
-    };
-  });
+  // A primeira publicação da nova lista ocorreu antes de o formVersion ser
+  // elevado para 2. Para esse pequeno intervalo de respostas públicas, a data
+  // funciona como fallback sem tocar no dado original armazenado.
+  const submittedAt = row?.submittedAt ? new Date(row.submittedAt).getTime() : 0;
+  const corte = new Date(BEM_MATRIZ_ATUAL_PUBLICADA_EM).getTime();
+  if (submittedAt && Number.isFinite(submittedAt) && submittedAt >= corte) return "atual";
 
-  const reconhecidos = clustersBase.reduce((soma, item) => soma + item.quantidadeSelecionada, 0);
-  if (!reconhecidos) {
-    return {
-      temRespostaBem: true,
-      descritoresReconhecidos: 0,
-      compatibilidade: null,
-      motivo: selecionadosOriginais.length
-        ? "A resposta existente utiliza descritores anteriores do Formulário BEM Acolhido e não pode ser comparada com a nova matriz sem reclassificação."
-        : "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
-      clusters: clustersBase.map((item) => ({ ...item, prioridade: 0, nivel: "Não priorizada" })),
-    };
-  }
+  return "historica";
+}
 
-  const maiorIndice = Math.max(...clustersBase.map((item) => item.indice));
-  const clusters = clustersBase.map((item) => {
-    const prioridade = maiorIndice > 0 ? (item.indice / maiorIndice) * 100 : 0;
+function normalizarPrioridades(clustersBase: any[]) {
+  const maiorIndice = Math.max(0, ...clustersBase.map((item) => Number(item.indice || 0)));
+  return clustersBase.map((item) => {
+    const prioridade = maiorIndice > 0 ? (Number(item.indice || 0) / maiorIndice) * 100 : 0;
     const nivel = prioridade <= 0
       ? "Não priorizada"
       : prioridade >= 75
@@ -101,13 +97,135 @@ function calcularExpectativaGestorBem(row: any | null) {
           : "Baixa prioridade";
     return { ...item, prioridade, nivel };
   });
+}
+
+function calcularExpectativaGestorBem(row: any | null) {
+  if (!row) {
+    return {
+      temRespostaBem: false,
+      matriz: null,
+      descritoresReconhecidos: 0,
+      compatibilidade: null,
+      motivo: "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
+      clusters: [],
+    };
+  }
+
+  const answers = asJson<Record<string, any>>(row.answers, {});
+  const selecionadosOriginais = listaTextoMulti(
+    answers.bem_caracteristicas ??
+    answers["11"] ??
+    answers.field_11 ??
+    answers.caracteristicas
+  );
+  const selecionadosNorm = new Set(selecionadosOriginais.map(normTxt));
+  const matriz = detectarMatrizBem(row);
+
+  if (matriz === "historica") {
+    const clustersBase = BEM_HISTORICO_CLUSTERS.map((cluster) => {
+      const reconhecidos = Object.entries(cluster.pesos)
+        .filter(([palavra]) => selecionadosNorm.has(normTxt(palavra)));
+      const pesoSelecionado = reconhecidos.reduce((soma, [, peso]) => soma + Number(peso), 0);
+      const indice = cluster.pesoTotalPossivel > 0
+        ? (pesoSelecionado / cluster.pesoTotalPossivel) * 100
+        : 0;
+      return {
+        key: cluster.key,
+        nome: cluster.nome,
+        selecionados: reconhecidos.map(([palavra]) => palavra),
+        quantidadeSelecionada: reconhecidos.length,
+        pesoSelecionado,
+        totalDescritores: cluster.pesoTotalPossivel,
+        indice,
+      };
+    });
+
+    const reconhecidosUnicos = new Set(
+      clustersBase.flatMap((cluster) => cluster.selecionados.map(normTxt)),
+    ).size;
+    const clusters = normalizarPrioridades(clustersBase);
+
+    return {
+      temRespostaBem: true,
+      matriz,
+      descritoresReconhecidos: reconhecidosUnicos,
+      compatibilidade: null,
+      motivo: reconhecidosUnicos
+        ? null
+        : "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
+      clusters,
+    };
+  }
+
+  const clustersBase = INTEGRACAO_CLUSTERS.map((cluster) => {
+    const escolhidos = cluster.descritoresGestor.filter((item) => selecionadosNorm.has(normTxt(item)));
+    const total = cluster.descritoresGestor.length;
+    const indice = total > 0 ? (escolhidos.length / total) * 100 : 0;
+    return {
+      key: cluster.key,
+      nome: cluster.nome,
+      selecionados: escolhidos,
+      quantidadeSelecionada: escolhidos.length,
+      pesoSelecionado: escolhidos.length,
+      totalDescritores: total,
+      indice,
+    };
+  });
+
+  const reconhecidos = clustersBase.reduce((soma, item) => soma + item.quantidadeSelecionada, 0);
+  const clusters = normalizarPrioridades(clustersBase);
 
   return {
     temRespostaBem: true,
+    matriz,
     descritoresReconhecidos: reconhecidos,
     compatibilidade: null,
-    motivo: null,
+    motivo: reconhecidos
+      ? null
+      : "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
     clusters,
+  };
+}
+
+function combinarExpectativaComPerfil(expectativa: any, autoClusters: any[]) {
+  const autoPorKey = new Map((autoClusters || []).map((item: any) => [item.key, item]));
+  const clusters = (expectativa?.clusters || []).map((item: any) => ({
+    ...item,
+    perfilColaborador: autoPorKey.get(item.key)?.percentual ?? null,
+  }));
+
+  if (!expectativa?.descritoresReconhecidos) {
+    return { ...expectativa, clusters, compatibilidade: null };
+  }
+
+  const priorizados = clusters.filter((item: any) => Number(item.prioridade || 0) > 0);
+  const faltantes = priorizados.filter((item: any) => {
+    const perfil = item.perfilColaborador == null ? null : Number(item.perfilColaborador);
+    return perfil == null || !Number.isFinite(perfil);
+  });
+
+  if (faltantes.length) {
+    return {
+      ...expectativa,
+      clusters,
+      compatibilidade: null,
+      motivo: "A autoavaliação ainda não possui informações suficientes em todos os clusters priorizados pelo gestor para calcular a compatibilidade.",
+    };
+  }
+
+  const somaPesos = priorizados.reduce((soma: number, item: any) => soma + Number(item.prioridade || 0), 0);
+  const somaPonderada = priorizados.reduce(
+    (soma: number, item: any) => soma + Number(item.perfilColaborador) * Number(item.prioridade || 0),
+    0,
+  );
+
+  return {
+    ...expectativa,
+    clusters,
+    compatibilidade: somaPesos > 0 ? somaPonderada / somaPesos : null,
+    motivo: somaPesos > 0
+      ? null
+      : "Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.",
   };
 }
 
@@ -1859,6 +1977,9 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
     const [cfgRows] = (await connection.execute(`SELECT valor FROM programa_integracao_config WHERE chave='geral' LIMIT 1`)) as any;
     const config = cfgRows?.[0] ? asJson(cfgRows[0].valor, {}) : {};
     const cfg = config?.formConfig?.[formKey] || { active:true, version:1, dupPolicy:"bloquear" };
+    const effectiveFormVersion = formKey === "bem"
+      ? Math.max(BEM_MATRIZ_ATUAL_VERSAO, Number(cfg.version || 1))
+      : Number(cfg.version || 1);
     if (cfg.active === false) return res.status(409).json({ ok:false, erro:"Este formulário está desativado no momento." });
     const data = req.body || {};
     if (!String(data.nomeColaborador || "").trim()) return res.status(400).json({ ok:false, erro:"Informe o nome do colaborador.", campo:"nomeColaborador" });
@@ -1884,7 +2005,7 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
       const dupPolicy = ["bloquear", "substituir", "adicional"].includes(String(cfg.dupPolicy)) ? String(cfg.dupPolicy) : "bloquear";
 
       if (duplicate && dupPolicy === "bloquear") {
-        const saved = await insertResponse(connection, data, formKey, Number(cfg.version || 1), { candidatos: match.candidatos }, "pendente", "registro_falhou");
+        const saved = await insertResponse(connection, data, formKey, effectiveFormVersion, { candidatos: match.candidatos }, "pendente", "registro_falhou");
         return res.json({ ok:true, pendente:true, protocolo:saved.protocolo, motivo:"duplicado" });
       }
 
@@ -1896,7 +2017,7 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
           [duplicate.id],
         );
       }
-      const saved = await insertResponse(connection, data, formKey, Number(cfg.version || 1), match, "vinculada", null);
+      const saved = await insertResponse(connection, data, formKey, effectiveFormVersion, match, "vinculada", null);
       await connection.commit();
       transactionStarted = false;
       return res.json({
@@ -1909,7 +2030,7 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
       });
     }
 
-    const saved = await insertResponse(connection, data, formKey, Number(cfg.version || 1), match, "pendente", match.status || "ambiguo");
+    const saved = await insertResponse(connection, data, formKey, effectiveFormVersion, match, "pendente", match.status || "ambiguo");
     return res.json({ ok:true, pendente:true, protocolo:saved.protocolo });
   } catch (error) {
     if (transactionStarted) {

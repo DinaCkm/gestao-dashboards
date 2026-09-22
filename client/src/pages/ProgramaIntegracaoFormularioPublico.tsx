@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import '@/features/programaIntegracao/programaIntegracaoV4.css';
 
 const SLUGS = new Set<PublicFormSlug>([
@@ -356,6 +357,43 @@ export default function ProgramaIntegracaoFormularioPublico() {
 
     if (q.type === 'multi') {
       const atuais = Array.isArray(value) ? value : String(value || '').split(',').map((v) => v.trim()).filter(Boolean);
+
+      if (q.code === 'bem_caracteristicas') {
+        return (
+          <fieldset key={q.code} className="space-y-4">
+            <legend className="text-sm font-medium">{label}</legend>
+            <div className="space-y-4">
+              {INTEGRACAO_CLUSTERS.map((cluster) => (
+                <div key={cluster.key} className="rounded-xl border bg-muted/20 p-4">
+                  <div className="mb-3">
+                    <h3 className="text-sm font-bold">{cluster.nome}</h3>
+                    <p className="text-xs text-muted-foreground">{cluster.descritoresGestor.length} opções disponíveis</p>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {cluster.descritoresGestor.map((descricao) => {
+                      const marcado = atuais.includes(descricao);
+                      return (
+                        <label key={descricao} className={`flex items-center gap-2 rounded-md border p-2 text-sm transition ${marcado ? 'border-primary bg-primary/5' : 'bg-background'}`}>
+                          <input
+                            type="checkbox"
+                            checked={marcado}
+                            onChange={() => atualizarAnswer(
+                              q.code,
+                              marcado ? atuais.filter((x) => x !== descricao) : [...atuais, descricao],
+                            )}
+                          />
+                          {descricao}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </fieldset>
+        );
+      }
+
       return <fieldset key={q.code} className="space-y-2"><legend className="text-sm font-medium">{label}</legend><div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">{(q.options || []).map((opt) => { const o = optionValueLabel(opt); const marcado = atuais.includes(o.value); return <label key={o.value} className="flex items-center gap-2 rounded-md border bg-background p-2 text-sm"><input type="checkbox" checked={marcado} onChange={() => atualizarAnswer(q.code, marcado ? atuais.filter((x) => x !== o.value) : [...atuais, o.value])} />{o.label}</label>; })}</div></fieldset>;
     }
 
