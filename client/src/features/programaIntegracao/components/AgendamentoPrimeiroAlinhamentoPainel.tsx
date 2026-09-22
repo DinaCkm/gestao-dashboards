@@ -28,7 +28,8 @@ export function AgendamentoPrimeiroAlinhamentoPainel({
 }: AgendamentoPrimeiroAlinhamentoPainelProps) {
   const estado = estadoAlinhamentoAtual(processo, 1);
   const confirmacaoGestorOk = fichaAcaoAtual(processo, 'ag1-02').s === 'ok';
-  const concluido = fichaAcaoAtual(processo, 'ag1-03').s === 'ok';
+  const conviteEnviado = fichaAcaoAtual(processo, 'ag1-03').s === 'ok';
+  const agendamentoRegistrado = Boolean(estado.data && estado.hora && estado.link);
   const [data, setData] = useState(estado.data);
   const [hora, setHora] = useState(estado.hora);
   const [link, setLink] = useState(estado.link);
@@ -66,7 +67,7 @@ export function AgendamentoPrimeiroAlinhamentoPainel({
         link: link.trim(),
       });
       await onSalvarProcesso(proximo);
-      toast.success('Agendamento salvo. O 15º dia foi atualizado automaticamente para Aguardando.');
+      toast.success('Agendamento salvo. O 15º dia foi atualizado para Aguardando. Agora gere o e-mail de confirmação e marque o convite como enviado.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Não foi possível salvar o agendamento.');
     } finally {
@@ -86,7 +87,8 @@ export function AgendamentoPrimeiroAlinhamentoPainel({
         </div>
         <div className="flex flex-wrap gap-2">
           {!confirmacaoGestorOk && <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">Aguardando confirmação do gestor</Badge>}
-          {concluido && <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800">Agendamento registrado</Badge>}
+          {agendamentoRegistrado && <Badge variant="outline" className="border-blue-300 bg-blue-50 text-blue-800">Agendamento registrado</Badge>}
+          {conviteEnviado && <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-emerald-800">Convite enviado</Badge>}
         </div>
       </div>
 
@@ -136,10 +138,10 @@ export function AgendamentoPrimeiroAlinhamentoPainel({
           onClick={() => void salvar()}
           disabled={salvando || !confirmacaoGestorOk}
         >
-          {salvando ? 'Salvando...' : 'Salvar agendamento e concluir etapa'}
+          {salvando ? 'Salvando...' : 'Salvar agendamento'}
         </Button>
         <span className="text-xs text-muted-foreground">
-          Ao criar o Meet em uma nova guia, copie o link gerado e cole no campo acima.
+          Ao criar o Meet em uma nova guia, copie o link gerado e cole no campo acima. Depois de salvar, use “Gerar” abaixo para preparar o e-mail ao gestor; marcar “enviado” conclui esta etapa.
         </span>
       </div>
     </div>
