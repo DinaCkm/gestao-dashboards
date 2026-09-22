@@ -645,7 +645,6 @@ function PerfilAssessmentModal({
       </DialogContent>
     </Dialog>
   );
-  );
 }
 
 function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] {
