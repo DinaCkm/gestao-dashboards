@@ -40,10 +40,15 @@ body{background:linear-gradient(180deg,#F4F1F9 0,#F7F8FC 260px,#F7F8FC 100%);min
 .field-error{display:flex;align-items:flex-start;gap:6px;margin-top:7px;color:#983B3B;font-size:11.5px;font-weight:600}
 .hint{margin-top:6px;font-size:11.5px;line-height:1.48;white-space:pre-line}
 .multi{gap:8px;background:transparent;padding:0}
-.multi label{display:flex;align-items:flex-start;gap:8px;min-height:42px;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease,background .15s ease}
-.multi label:hover{transform:translateY(-1px) scale(1.005);border-color:#BBA7CB;box-shadow:0 8px 18px -16px rgba(60,36,83,.55)}
-.multi label:has(input:checked){border-color:var(--brand);background:var(--brand-soft);color:var(--brand-ink);box-shadow:0 0 0 1px rgba(107,62,143,.08)}
-.multi input{accent-color:var(--brand);margin-top:2px}
+.multi{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;background:transparent;padding:0}
+.multi label{position:relative;display:flex;min-height:86px;padding:13px 10px 11px;border:1px solid #DED9E8;border-radius:13px;background:#fff;cursor:pointer;align-items:center;justify-content:center;text-align:center;color:#566074;font-size:12px;font-weight:600;line-height:1.3;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease,background .15s ease,color .15s ease}
+.multi label:hover{transform:translateY(-1px) scale(1.01);border-color:#A996C2;box-shadow:0 10px 22px -18px rgba(60,36,83,.65)}
+.multi label:has(input:checked){border-color:#8D78C9;background:#F0ECFF;color:#55408A;box-shadow:0 0 0 1px rgba(107,62,143,.06),0 10px 20px -18px rgba(80,59,138,.5)}
+.multi input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.choice-mark{position:absolute;top:8px;left:8px;width:19px;height:19px;border:1.5px solid #C9C4D8;border-radius:6px;display:grid;place-items:center;background:#fff;color:transparent;font-size:11px;font-weight:800;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.multi label:has(input:checked) .choice-mark{background:#6B3E8F;border-color:#6B3E8F;color:#fff;transform:scale(1.03)}
+.choice-label{display:block;padding:10px 4px 0}
+.multi label:focus-within{outline:3px solid rgba(107,62,143,.18);outline-offset:2px}
 .bem-cluster{padding:15px;border-radius:13px;background:#FAFAFD}.bem-cluster-title{font-size:13.5px}.bem-cluster-count{margin-bottom:10px}
 .scale{gap:8px}.scale label{min-height:72px;display:flex;flex-direction:column;justify-content:center;gap:5px;border-radius:11px;padding:9px 5px;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}.scale label:hover{transform:translateY(-1px) scale(1.01);box-shadow:0 10px 18px -17px rgba(38,31,53,.65)}.scale input{position:absolute;opacity:0;pointer-events:none}
 .btn{min-height:42px;padding:9px 16px;border-radius:10px;transition:transform .13s ease,box-shadow .15s ease,background .15s ease,border-color .15s ease}
@@ -58,7 +63,8 @@ body{background:linear-gradient(180deg,#F4F1F9 0,#F7F8FC 260px,#F7F8FC 100%);min
 .reveal{opacity:0;transform:translateY(10px);transition:opacity .34s ease,transform .34s ease}.reveal.visible{opacity:1;transform:none}
 .loading-inline{display:inline-flex;align-items:center;gap:8px}.spinner{width:15px;height:15px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:pi-spin .7s linear infinite}
 @keyframes pi-spin{to{transform:rotate(360deg)}}@keyframes pi-pop{from{opacity:0;transform:scale(.92) translateY(5px)}to{opacity:1;transform:none}}
-@media(max-width:720px){body{background:var(--paper)}.top{padding:16px 14px 0}.wrap{padding:12px 10px 32px}.form-shell{border-radius:14px}.form-hero{padding:22px 18px}.form-hero h1{font-size:22px}.form-body{padding:18px 14px 20px}.form-section{padding:16px 14px}.actions{margin:20px -14px -20px;padding:12px 14px}.multi{grid-template-columns:1fr}.scale{grid-template-columns:repeat(2,minmax(0,1fr))}.scale label{min-height:58px}.grid{grid-template-columns:1fr}.btn{min-height:46px}.form-section-head{gap:9px}}
+@media(max-width:720px){body{background:var(--paper)}.top{padding:16px 14px 0}.wrap{padding:12px 10px 32px}.form-shell{border-radius:14px}.form-hero{padding:22px 18px}.form-hero h1{font-size:22px}.form-body{padding:18px 14px 20px}.form-section{padding:16px 14px}.actions{margin:20px -14px -20px;padding:12px 14px}.multi{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.multi label{min-height:76px;padding:11px 7px 9px;font-size:11px}.choice-mark{top:6px;left:6px;width:17px;height:17px}.choice-label{padding-top:9px}.scale{grid-template-columns:repeat(2,minmax(0,1fr))}.scale label{min-height:58px}.grid{grid-template-columns:1fr}.btn{min-height:46px}.form-section-head{gap:9px}}
+@media(max-width:340px){.multi{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.reveal{opacity:1!important;transform:none!important}.multi label:hover,.scale label:hover,.btn:hover{transform:none!important}}
 
 `
@@ -91,7 +97,7 @@ function publicFormHtml(slug: string) {
   <main class="wrap" id="app"></main>
   <script>const DATA=${data};
   const f=DATA.form;
-  const paginado=f.key==='pesquisa'||f.key==='aval';
+  const paginado=true;
   let page=0,sent=false,sending=false,result=null,error='',errorField='';
   let ACTIVE={colaboradores:[],gestores:[],anjos:[]};
   const values={nomeColaborador:'',unidade:'',outraUnidade:'',dataInicio:'',emailColaborador:'',respondentName:'',cycleValue:'',role:'',answers:{}};
@@ -145,9 +151,9 @@ function publicFormHtml(slug: string) {
     }else if(q.type==='multi'){
       const arr=Array.isArray(v)?v:String(v||'').split(',').map(x=>x.trim()).filter(Boolean);const set=new Set(arr);
       if(q.code==='bem_caracteristicas'){
-        ctl='<div class="bem-clusters">'+DATA.clustersBem.map(g=>'<section class="bem-cluster"><div class="bem-cluster-title">'+esc(g.nome)+'</div><div class="bem-cluster-count">'+g.descritoresGestor.length+' opções disponíveis</div><div class="multi">'+g.descritoresGestor.map(x=>'<label><input type="checkbox" data-multi="'+esc(q.code)+'" value="'+esc(x)+'" '+(set.has(x)?'checked':'')+'><span>'+esc(x)+'</span></label>').join('')+'</div></section>').join('')+'</div>';
+        ctl='<div class="bem-clusters">'+DATA.clustersBem.map(g=>'<section class="bem-cluster"><div class="bem-cluster-title">'+esc(g.nome)+'</div><div class="bem-cluster-count">'+g.descritoresGestor.length+' opções disponíveis</div><div class="multi">'+g.descritoresGestor.map(x=>'<label><input type="checkbox" data-multi="'+esc(q.code)+'" value="'+esc(x)+'" '+(set.has(x)?'checked':'')+'><span class="choice-mark" aria-hidden="true">✓</span><span class="choice-label">'+esc(x)+'</span></label>').join('')+'</div></section>').join('')+'</div>';
       }else{
-        ctl='<div class="multi">'+q.options.map(o=>{const x=optionValue(o);return '<label><input type="checkbox" data-multi="'+esc(q.code)+'" value="'+esc(x)+'" '+(set.has(x)?'checked':'')+'><span>'+esc(optionLabel(o))+'</span></label>';}).join('')+'</div>';
+        ctl='<div class="multi">'+q.options.map(o=>{const x=optionValue(o);return '<label><input type="checkbox" data-multi="'+esc(q.code)+'" value="'+esc(x)+'" '+(set.has(x)?'checked':'')+'><span class="choice-mark" aria-hidden="true">✓</span><span class="choice-label">'+esc(optionLabel(o))+'</span></label>';}).join('')+'</div>';
       }
     }else if(q.type==='textarea'){
       const len=String(v||'').length;
@@ -344,7 +350,7 @@ function publicFormHtml(slug: string) {
       body=sectionHtml(pg,page+(f.identity.respondent?1:0));
     }
 
-    const progress=(paginado?'<div class="progress-card"><div class="progress-row"><span>Progresso do preenchimento</span><b>'+progressPct()+'%</b></div><div class="progress-track" aria-hidden="true"><div class="progress-bar" style="width:'+progressPct()+'%"></div></div></div>':'');
+    const progress='<div class="progress-card"><div class="progress-row"><span>Progresso do preenchimento</span><b>'+progressPct()+'%</b></div><div class="progress-track" aria-hidden="true"><div class="progress-bar" style="width:'+progressPct()+'%"></div></div></div>';
     const globalError=error&&!errorField?'<div class="msg error" role="alert">'+esc(error)+'</div>':'';
     const nav=paginado
       ?'<div class="actions">'+(page?'<button class="btn" id="back" type="button">← Voltar</button>':'<span></span>')+(page<pages.length-1?'<button class="btn primary" id="next" type="button">Avançar →</button>':'<button class="btn primary" id="send" type="button" '+(sending?'disabled':'')+'>'+(sending?'<span class="loading-inline"><span class="spinner"></span>Enviando...</span>':'Enviar formulário')+'</button>')+'</div>'
