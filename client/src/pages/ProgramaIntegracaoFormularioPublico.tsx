@@ -363,11 +363,6 @@ export default function ProgramaIntegracaoFormularioPublico() {
       return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<select value={String(value)} onChange={(e) => atualizarAnswer(q.code, e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Selecione…</option>{(q.options || []).map((opt) => { const o = optionValueLabel(opt); return <option key={o.value} value={o.value}>{o.label}</option>; })}</select></label>;
     }
 
-    if (q.code === 'bem_anjo') {
-      const lista = opcoesAtivas.anjos;
-      return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<select value={String(value)} onChange={(e) => atualizarAnswer(q.code, e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2"><option value="">Selecione…</option>{lista.map((nome) => <option key={nome} value={nome}>{nome}</option>)}</select></label>;
-    }
-
     if (q.type === 'textarea') {
       return <label key={q.code} className="block space-y-1"><span className="text-sm font-medium">{label}</span>{q.hint && <span className="block text-xs text-muted-foreground">{q.hint}</span>}<textarea value={String(value)} onChange={(e) => atualizarAnswer(q.code, e.target.value)} className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2" /><span className="block text-[11px] text-muted-foreground">Mínimo de 10 caracteres quando houver resposta.</span></label>;
     }
