@@ -232,6 +232,7 @@ const programaIntegracaoSubmenu: SubMenuItem[] = [
   { icon: ClipboardList, label: "Painel da Semana", path: "/programa-integracao?tab=painel" },
   { icon: CalendarDays, label: "Agenda Geral", path: "/programa-integracao?tab=agenda" },
   { icon: BarChart3, label: "Indicadores", path: "/programa-integracao?tab=indicadores" },
+  { icon: UserCheck, label: "Acompanhar Integração", path: "/gestor/integracao" },
   { icon: ClipboardEdit, label: "Registrar Respostas", path: "/programa-integracao?tab=registrar" },
   { icon: FileText, label: "Respostas Recebidas", path: "/programa-integracao?tab=respostas" },
   { icon: ClipboardCheck, label: "Formulários", path: "/programa-integracao?tab=formularios" },
@@ -784,7 +785,10 @@ function DashboardLayoutContent({
 
                 {/* PROGRAMA DE INTEGRACAO - acesso exclusivo do administrador completo */}
                 {isFullAdmin && (() => {
-                  const integrationActive = location.split("?")[0].startsWith("/programa-integracao");
+                  const locationBase = location.split("?")[0];
+                  const integrationActive =
+                    locationBase.startsWith("/programa-integracao") ||
+                    locationBase === "/gestor/integracao";
                   const search = typeof window !== "undefined" ? window.location.search : "";
                   const tabAtual = new URLSearchParams(search).get("tab") || "painel";
                   return (
@@ -805,8 +809,12 @@ function DashboardLayoutContent({
                             <CollapsibleContent>
                               <SidebarMenuSub>
                                 {programaIntegracaoSubmenu.map((item) => {
-                                  const tabItem = new URLSearchParams(item.path.split("?")[1] || "").get("tab") || "painel";
-                                  const isActive = integrationActive && tabAtual === tabItem;
+                                  const itemBase = item.path.split("?")[0];
+                                  const itemQuery = item.path.split("?")[1] || "";
+                                  const tabItem = new URLSearchParams(itemQuery).get("tab");
+                                  const isActive = itemBase === "/gestor/integracao"
+                                    ? locationBase === "/gestor/integracao"
+                                    : locationBase.startsWith("/programa-integracao") && tabAtual === (tabItem || "painel");
                                   return (
                                     <SidebarMenuSubItem key={item.path}>
                                       <SidebarMenuSubButton
