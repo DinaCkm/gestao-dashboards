@@ -84,7 +84,7 @@ export default function CustomLogin() {
       : alunoId.trim();
     
     if (credential.length === 0) {
-      setError(loginMode === "cpf" ? "Informe seu CPF." : "Informe seu ID de aluno.");
+      setError(loginMode === "cpf" ? "Informe seu CPF." : "Informe seu ID.");
       return;
     }
     
@@ -259,7 +259,7 @@ export default function CustomLogin() {
               <CardDescription>
                 {loginMode === "cpf" 
                   ? "Informe seu email e CPF para entrar" 
-                  : "Informe seu email e ID de aluno para entrar"}
+                  : "Informe seu email e ID para entrar"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -358,13 +358,13 @@ export default function CustomLogin() {
                   <div className="space-y-2">
                     <Label htmlFor="login-id" className="flex items-center gap-2">
                       <Hash className="h-4 w-4 text-muted-foreground" />
-                      ID do Aluno
+                      ID
                     </Label>
                     <Input
                       id="login-id"
-                      placeholder="Seu ID numérico (ex: 667257)"
+                      placeholder="Ex.: 667257 ou G180004"
                       value={alunoId}
-                      onChange={(e) => setAlunoId(e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) => setAlunoId(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ''))}
                       required
                       autoComplete="off"
                     />
