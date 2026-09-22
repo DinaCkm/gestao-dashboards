@@ -222,7 +222,7 @@ export const MODELOS_EMAIL_PADRAO_INTEGRACAO: Record<string, ModeloEmailIntegrac
 export const ORDEM_EMAILS_INTEGRACAO = [
   'm_ugp_controle', 'm_gestor_inicio', 'm_cobranca_bem', 'm_anjo_inicio', 'm_anjo_inicio_ugp',
   'm_agenda', 'm_primeiros_passos', 'm_confirma_acesso', 'm_primeiros_registros',
-  'm_agendamento_1', 'm_agendamento_2', 'm_agendamento_3', 'm_agendamento_4',
+  'm_agendamento_1', 'm_confirmacao_agendamento_1', 'm_agendamento_2', 'm_agendamento_3', 'm_agendamento_4',
   'm_pos1_colab', 'm_pos1_gestor', 'm_pos1_ugp', 'm_pos1_anjo',
   'm_pos2_colab', 'm_pos2_gestor', 'm_pos2_ugp', 'm_pos2_anjo',
   'm_agradecimento_anjo',
