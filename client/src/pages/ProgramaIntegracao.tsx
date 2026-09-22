@@ -414,7 +414,7 @@ export default function ProgramaIntegracao() {
           </TabsList>
 
           <TabsContent value="painel" className="space-y-6 mt-6">
-            <PainelSemana processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} respostasPendentes={respostasPendentes} config={config} onRevisarRespostas={handleRevisarRespostas} onProcessoClick={(id) => setLocation(`/programa-integracao/detalhe/${id}`)} onConcluirAcao={handleMarcarConcluido} onAlterarStatusAcao={handleStatusAcao} onAlterarCampoAcao={handleCampoFichaAcao} onAdicionarNotaAcao={handleAdicionarNotaAcao} onRemoverNotaAcao={handleRemoverNotaAcao} onConcluirGrupo={handleConcluirGrupo} onAplicarStatusGrupo={handleAplicarStatusGrupo} onEditarModeloEmail={(chave) => { setEmailModeloSelecionado(chave); setConfigSubTab('emails'); setActiveTab('config'); }} />
+            <PainelSemana processosAtivos={processosAtivos} processosEncerrados={processosEncerrados} feriados={feriados} respostasPendentes={respostasPendentes} config={config} onRevisarRespostas={handleRevisarRespostas} onProcessoClick={(id, itemId) => setLocation(`/programa-integracao/detalhe/${id}${itemId ? `?item=${encodeURIComponent(itemId)}` : ''}`)} onConcluirAcao={handleMarcarConcluido} onAlterarStatusAcao={handleStatusAcao} onAlterarCampoAcao={handleCampoFichaAcao} onAdicionarNotaAcao={handleAdicionarNotaAcao} onRemoverNotaAcao={handleRemoverNotaAcao} onConcluirGrupo={handleConcluirGrupo} onAplicarStatusGrupo={handleAplicarStatusGrupo} onEditarModeloEmail={(chave) => { setEmailModeloSelecionado(chave); setConfigSubTab('emails'); setActiveTab('config'); }} />
           </TabsContent>
 
           <TabsContent value="agenda" className="space-y-6 mt-6">
