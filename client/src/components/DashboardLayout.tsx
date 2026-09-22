@@ -505,12 +505,17 @@ function DashboardLayoutContent({
       if (item.requireConsultorId && !hasConsultorId) return false;
       if (item.hideIfConsultorId && hasConsultorId) return false;
 
+      // Acompanhar Integração é uma área especial: não aparece no gerente comum.
+      if (item.path === '/gestor/integracao') {
+        return Boolean(isSpecialManager && managerPagePerms?.includes('/gestor/integracao'));
+      }
+
       if (hasManagerRestrictions && userRole === 'manager') {
         return managerPagePerms!.includes(item.path);
       }
       return true;
     });
-  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, managerPagePerms]);
+  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms]);
 
   useEffect(() => {
     if (!hasManagerRestrictions || user?.role !== 'manager') return;
