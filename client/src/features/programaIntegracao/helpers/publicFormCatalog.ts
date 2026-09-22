@@ -1,3 +1,5 @@
+import { BEM_ACOLHIDO_DESCRITORES } from '@shared/integracaoAssessment';
+
 export type PublicQuestionType = 'text' | 'textarea' | 'date' | 'cpf' | 'tel' | 'select' | 'scale' | 'multi';
 export type PublicQuestion = { code: string; label: string; type: PublicQuestionType; required?: boolean; options?: Array<string | { value: string; label: string }>; hint?: string };
 export type PublicSection = { title: string; publicTitle?: string; intro?: string; questions: PublicQuestion[] };
@@ -15,7 +17,7 @@ export type PublicFormCatalog = {
 };
 
 export const UNIDADES_INTEGRACAO = ['UAS','UMC','UGE','URI','UAC','UAR','UTIC','UCI','AUD','UGOC','UGP','CDE','RBP','RMN','RVA','RME','RNO','RPJ','RSG','RSU','RSE','URC','Regional Norte','Regional Bico do Papagaio','Outras Regionais','Outra'];
-export const QUALIDADES_BEM = ['Animado','Atencioso','Ativo','Audaz','Autêntico','Autoconfiante','Autoritário','Calado','Calmo','Carismático','Cativante','Competitivo','Compreensivo','Convincente','Corajoso','Cortês','Criativo','Decidido','Desconfiado','Destemido','Diplomático','Direto','Disciplinado','Dócil','Egoísta','Empreendedor','Encantador','Enérgico','Entusiasta','Envergonhado','Envolvente','Esclarecido','Espontâneo','Extrovertido','Firme','Flexível','Formal','Generoso','Gentil','Humilde','Impaciente','Influente','Irreverente','Leal','Livre','Meticuloso','Original','Ousado','Paciente','Pacífico','Passivo','Perfeccionista','Persistente','Persuasivo','Preocupado','Proativo','Prudente','Querido','Realista','Receoso','Respeitoso','Retraído','Satisfeito','Saudável','Sensato','Sensível','Sério','Simpático','Simples','Sociável','Sossegado','Suave','Teimoso','Tímido','Tolerante','Tradicional','Versátil'];
+export const QUALIDADES_BEM = BEM_ACOLHIDO_DESCRITORES;
 
 const scale = (code: string, label: string): PublicQuestion => ({ code, label, type: 'scale', required: true });
 const text = (code: string, label: string, required = true, hint?: string): PublicQuestion => ({ code, label, type: label.length > 70 ? 'textarea' : 'text', required, hint });
