@@ -205,7 +205,7 @@ export function gerarAcompanhamentoIntegracaoPdf(colaborador: ColaboradorAcompan
       doc.setFontSize(7.2);
       doc.setTextColor(p.atrasado?150:55,p.atrasado?65:65,p.atrasado?65:75);
       const prazo = p.prazo ? new Date(`${p.prazo}T12:00:00`).toLocaleDateString('pt-BR') : '—';
-      doc.text(`${p.papel} · ${p.formulario} · ${p.ciclo}º ciclo · prazo ${prazo}${p.atrasado?' · ATRASADO':''}`,18,y);
+      doc.text(`${p.papel} · ${p.formulario} · Alinhamento ${p.ciclo} · prazo ${prazo}${p.atrasado?' · ATRASADO':''}`,18,y);
       y += 5;
     });
   }
