@@ -311,7 +311,7 @@ function publicFormHtml(slug: string) {
     }else if(pg.identity){
       body=identity();
     }else{
-      body=sectionHtml(pg,page);
+      body=sectionHtml(pg,page+(f.identity.respondent?1:0));
     }
 
     const progress=(paginado?'<div class="progress-card"><div class="progress-row"><span>Progresso do preenchimento</span><b>'+progressPct()+'%</b></div><div class="progress-track" aria-hidden="true"><div class="progress-bar" style="width:'+progressPct()+'%"></div></div></div>':'');
