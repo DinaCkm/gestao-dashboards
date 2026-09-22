@@ -770,18 +770,36 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       }).length;
 
       const formulariosPendentes: any[] = [];
+      const feito = estado.feito && typeof estado.feito === "object" ? estado.feito : {};
+      const solicitacoesPorCiclo: Record<number, Record<"Gestor" | "Anjo" | "Colaborador", string>> = {
+        1: { Gestor: "pos1-05", Anjo: "pos1-07", Colaborador: "pos1-04" },
+        2: { Gestor: "pos2-05", Anjo: "pos2-07", Colaborador: "pos2-04" },
+        3: { Gestor: "pos3-03", Anjo: "pos3-05", Colaborador: "pos3-02" },
+        4: { Gestor: "pos4-04", Anjo: "pos4-06", Colaborador: "pos4-03" },
+      };
+
       [1,2,3,4].forEach((ciclo) => {
-        const a = alin[String(ciclo)] ?? alin[ciclo] ?? {};
-        const referencia = String(a.realizado || a.data || "").slice(0,10);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(referencia)) return;
-        const prazo = addDiasIso(referencia, 2);
         const esperados = [
-          { papel: "Gestor", form: "aval", formulario: "Avaliação do Programa de Integração" },
-          { papel: "Anjo", form: "aval", formulario: "Avaliação do Programa de Integração" },
-          { papel: "Colaborador", form: "pesquisa", formulario: "Pesquisa de Integração" },
+          { papel: "Gestor" as const, form: "aval", formulario: "Avaliação do Programa de Integração" },
+          { papel: "Anjo" as const, form: "aval", formulario: "Avaliação do Programa de Integração" },
+          { papel: "Colaborador" as const, form: "pesquisa", formulario: "Pesquisa de Integração" },
         ];
+
         esperados.forEach((item) => {
+          const itemSolicitacao = solicitacoesPorCiclo[ciclo]?.[item.papel];
+          const fichaSolicitacao = itemSolicitacao && feito[itemSolicitacao] && typeof feito[itemSolicitacao] === "object"
+            ? feito[itemSolicitacao]
+            : null;
+
+          // Só vira pendência depois que a solicitação correspondente foi efetivamente enviada.
+          // O alinhamento estar marcado/agendado, sozinho, não cria cobrança.
+          if (!fichaSolicitacao || String(fichaSolicitacao.s || "") !== "ok") return;
+
           if (!temRespostaCiclo(respostas, item.form, item.papel, ciclo)) {
+            const dataSolicitacao = String(fichaSolicitacao.d || "").slice(0,10);
+            const prazo = /^\d{4}-\d{2}-\d{2}$/.test(dataSolicitacao)
+              ? addDiasIso(dataSolicitacao, 2)
+              : "";
             const cycleValue = item.form === "pesquisa"
               ? ({ 1: "15", 2: "45", 3: "75", 4: "150" } as Record<number, string>)[ciclo] || String(ciclo)
               : String(ciclo);
@@ -792,6 +810,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
               papel: item.papel,
               formulario: item.formulario,
               prazo,
+              solicitadoEm: dataSolicitacao || null,
               atrasado: Boolean(prazo && prazo < hoje),
             });
           }
