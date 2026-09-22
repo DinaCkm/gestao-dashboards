@@ -90,24 +90,255 @@ function publicFormHtml(slug: string) {
   <div class="top"><div class="mark">CKM</div><div><b>Programa de Integração · Sebrae/TO</b><div class="small muted">Formulário oficial hospedado no EcoLíder</div></div></div>
   <main class="wrap" id="app"></main>
   <script>const DATA=${data};
-  const f=DATA.form;let page=0,sent=false,result=null,error='';let ACTIVE={colaboradores:[],gestores:[],anjos:[]};const values={nomeColaborador:'',unidade:'',outraUnidade:'',dataInicio:'',emailColaborador:'',respondentName:'',cycleValue:'',role:'',answers:{}};
-  const pages=[{title:'Identificação',identity:true},...f.sections];
+  const f=DATA.form;
+  const paginado=f.key==='pesquisa'||f.key==='aval';
+  let page=0,sent=false,sending=false,result=null,error='',errorField='';
+  let ACTIVE={colaboradores:[],gestores:[],anjos:[]};
+  const values={nomeColaborador:'',unidade:'',outraUnidade:'',dataInicio:'',emailColaborador:'',respondentName:'',cycleValue:'',role:'',answers:{}};
+  const pages=paginado?[{title:'Identificação',identity:true},...f.sections]:[{title:'Formulário',all:true}];
+  const storageKey='eco-integracao-draft-'+f.slug;
+
   function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function optionValue(o){return typeof o==='string'?o:o.value}function optionLabel(o){return typeof o==='string'?o:o.label}
-  function field(q){const v=values.answers[q.code]||'';let ctl='';if(q.type==='scale'){ctl='<div class="scale">'+[0,1,2,3,4,5].map(n=>'<label><input type="radio" name="'+esc(q.code)+'" data-code="'+esc(q.code)+'" value="'+n+'" '+(String(v)===String(n)?'checked':'')+'> '+n+(n===0?' · sem opinião':'')+'</label>').join('')+'</div>';}else if(q.type==='select'){ctl='<select data-code="'+esc(q.code)+'"><option value="">— escolha —</option>'+q.options.map(o=>'<option value="'+esc(optionValue(o))+'" '+(v===optionValue(o)?'selected':'')+'>'+esc(optionLabel(o))+'</option>').join('')+'</select>';}else if(q.type==='multi'){const set=new Set(String(v).split(',').map(x=>x.trim()).filter(Boolean));if(q.code==='bem_caracteristicas'){ctl='<div class="bem-clusters">'+DATA.clustersBem.map(g=>'<section class="bem-cluster"><div class="bem-cluster-title">'+esc(g.nome)+'</div><div class="bem-cluster-count">'+g.descritoresGestor.length+' opções disponíveis</div><div class="multi">'+g.descritoresGestor.map(x=>'<label><input type="checkbox" data-multi="'+esc(q.code)+'" value="'+esc(x)+'" '+(set.has(x)?'checked':'')+'> '+esc(x)+'</label>').join('')+'</div></section>').join('')+'</div>';}else{ctl='<div class="multi">'+q.options.map(o=>{const x=optionValue(o);return '<label><input type="checkbox" data-multi="'+esc(q.code)+'" value="'+esc(x)+'" '+(set.has(x)?'checked':'')+'> '+esc(optionLabel(o))+'</label>';}).join('')+'</div>';}}else if(q.type==='textarea'){ctl='<textarea data-code="'+esc(q.code)+'">'+esc(v)+'</textarea>';}else{const type=q.type==='date'?'date':'text',inputmode=(q.type==='cpf'||q.type==='tel')?' inputmode="numeric" pattern="[0-9]*"':'',extra=q.type==='cpf'?' maxlength="11" placeholder="somente números"':q.type==='tel'?' maxlength="11" placeholder="63999998888"':'';ctl='<input type="'+type+'"'+inputmode+extra+' data-code="'+esc(q.code)+'" value="'+esc(v)+'">';}return '<div class="field"><label>'+esc(q.label)+(q.required!==false?' <span class="req">*</span>':'')+'</label>'+ctl+(q.hint?'<div class="hint">'+esc(q.hint)+'</div>':'')+'</div>';}
-  function identity(){let h='<div class="intro">'+f.intro.map(p=>'<p>'+esc(p)+'</p>').join('')+'</div><div class="section"><div class="section-title">Sobre quem esta resposta é</div><div class="field"><label>Nome completo do colaborador <span class="req">*</span></label>'+(f.key==='controle'?'<input data-meta="nomeColaborador" value="'+esc(values.nomeColaborador)+'" placeholder="Nome completo do novo colaborador"><div class="hint">Este formulário inicia o cadastro; por isso o nome pode ser informado livremente.</div>':'<select data-meta="nomeColaborador"><option value="">— selecione —</option>'+ACTIVE.colaboradores.map(nome=>'<option value="'+esc(nome)+'" '+(values.nomeColaborador===nome?'selected':'')+'>'+esc(nome)+'</option>').join('')+'</select><div class="hint">A lista mostra somente colaboradores ativos no Onboarding.</div>')+'</div>';
-   if(f.identity.unidade){h+='<div class="field"><label>Unidade <span class="req">*</span></label><select data-meta="unidade"><option value="">— selecione —</option>'+DATA.unidades.map(u=>'<option value="'+esc(u)+'" '+(values.unidade===u?'selected':'')+'>'+esc(u)+'</option>').join('')+'</select></div>';if(values.unidade==='Outra')h+='<div class="field"><label>Qual unidade/regional? <span class="req">*</span></label><input data-meta="outraUnidade" value="'+esc(values.outraUnidade)+'" placeholder="Digite o nome da unidade"><div class="hint">Escreva o nome da unidade ou regional.</div></div>';}
-   if(f.identity.dataInicio)h+='<div class="field"><label>Data de início do colaborador <span class="req">*</span></label><input type="date" data-meta="dataInicio" value="'+esc(values.dataInicio)+'"></div>';
-   if(f.identity.email)h+='<div class="field"><label>'+(f.key==='controle'?'E-mail Pessoal do Novo Colaborador':'E-mail do colaborador (se souber)')+'</label><input type="email" data-meta="emailColaborador" value="'+esc(values.emailColaborador)+'">'+(f.key==='controle'?'<div class="hint">Este e-mail não pode ser um e-mail do Sebrae/TO — use o e-mail pessoal do colaborador.</div>':'')+'</div>';
-   if(f.identity.cycle)h+='<div class="field"><label>'+(f.key==='pesquisa'?'Essa pesquisa refere-se a qual período de participação no programa?':f.key==='aval'?'Essa pesquisa refere-se a qual feedback no programa?':'A que período (alinhamento) esta resposta se refere?')+' <span class="req">*</span></label><select data-meta="cycleValue"><option value="">— escolha —</option>'+f.cycleOptions.map(o=>'<option value="'+esc(o.value)+'" '+(values.cycleValue===o.value?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select></div>';
-   if(f.identity.role)h+='<div class="field"><label>Você está respondendo como <span class="req">*</span></label><select data-meta="role"><option value="">— escolha —</option><option '+(values.role==='Gestor'?'selected':'')+'>Gestor</option><option '+(values.role==='Anjo'?'selected':'')+'>Anjo</option></select></div>';
-   if(f.identity.respondent){const lista=f.key==='bem'?ACTIVE.gestores:f.key==='aval'?(values.role==='Anjo'?ACTIVE.anjos:values.role==='Gestor'?ACTIVE.gestores:[]):null;const controle=lista?'<select data-meta="respondentName"><option value="">— selecione —</option>'+lista.map(nome=>'<option value="'+esc(nome)+'" '+(values.respondentName===nome?'selected':'')+'>'+esc(nome)+'</option>').join('')+'</select>':'<input data-meta="respondentName" value="'+esc(values.respondentName)+'" placeholder="nome e sobrenome, como no cadastro">';h+='<div class="section-title">Sobre quem está respondendo</div><div class="field"><label>Seu nome completo <span class="req">*</span></label>'+controle+'</div>';}
-   return h+'</div>';}
-  function validate(){error='';if(page===0){if(!values.nomeColaborador.trim())error='Informe o nome completo do colaborador.';else if(f.identity.unidade&&!values.unidade)error='Escolha a unidade.';else if(f.identity.unidade&&values.unidade==='Outra'&&!values.outraUnidade.trim())error='Informe qual é a outra unidade/regional.';else if(f.identity.dataInicio&&!values.dataInicio)error='Informe a data de início.';else if(f.identity.cycle&&!values.cycleValue)error='Escolha o período.';else if(f.identity.role&&!values.role)error='Informe se a resposta é do Gestor ou do Anjo.';else if(f.identity.respondent&&!values.respondentName.trim())error='Informe seu nome completo.';}else{for(const q of pages[page].questions){if(q.code==='aval_reacao_feedback'&&values.role!=='Gestor')continue;const v=values.answers[q.code];if((q.required!==false)&&(!v&&String(v)!=='0')){error='Preencha: '+q.label;break;}if(q.type==='textarea'&&v&&String(v).trim().length<10){error='A resposta de texto precisa ter pelo menos 10 caracteres.';break;}}}return !error;}
-  function sync(){document.querySelectorAll('[data-meta]').forEach(el=>values[el.dataset.meta]=el.value);document.querySelectorAll('[data-code]').forEach(el=>{if(el.type==='radio'){if(el.checked)values.answers[el.dataset.code]=el.value;}else values.answers[el.dataset.code]=el.value;});document.querySelectorAll('[data-multi]').forEach(el=>{const code=el.dataset.multi;const all=[...document.querySelectorAll('[data-multi="'+code+'"]')].filter(x=>x.checked).map(x=>x.value);values.answers[code]=all.join(', ');});}
-  async function submit(){sync();if(!validate()){render();return;}const cyc=f.cycleOptions?.find(o=>o.value===values.cycleValue);const unidade=values.unidade==='Outra'?values.outraUnidade.trim():values.unidade;const payload={nomeColaborador:values.nomeColaborador,unidade,dataInicio:values.dataInicio,emailColaborador:values.emailColaborador,respondentName:f.identity.respondent?values.respondentName:values.nomeColaborador,cycle:cyc?cyc.cycle:0,cycleLabel:cyc?cyc.label:'',role:values.role,answers:values.answers};try{const r=await fetch('/api/public/programa-integracao/forms/${slug}/responses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.erro||'Não foi possível registrar a resposta.');result=j;sent=true;render();scrollTo(0,0);}catch(e){error=e.message;render();}}
-  function render(){const app=document.getElementById('app');if(sent){app.innerHTML='<div class="card"><div class="msg ok"><h1>Resposta enviada com sucesso</h1><p>Obrigado pela participação.</p><div>Protocolo desta resposta: <span class="proto">'+esc(result.protocolo||'')+'</span></div><div class="small muted" style="margin-top:4px">Guarde este número — ele identifica sua resposta caso precise consultar depois.</div>'+(result.pendente?'<p class="small">A resposta foi recebida e está aguardando conferência administrativa para vinculação ao processo correto. Ela não será perdida.</p>':'')+'</div>'+(f.outro?'<div class="intro">'+f.outro.map(p=>'<p>'+esc(p)+'</p>').join('')+'</div>':'')+'</div>';return;}const pg=pages[page];const publicTitle=pg.identity?'':(pg.publicTitle===''?'Formulário':(pg.publicTitle||pg.title||'Formulário'));const scaleTips=(!pg.identity&&page===1&&(f.key==='pesquisa'||f.key==='aval'))?'<div class="msg"><b>Dicas rápidas para responder:</b><br>'+DATA.dicasEscala.map(d=>'• '+esc(d)).join('<br>')+'<br><br><b>Veja o significado da escala para responder:</b><br>'+DATA.legendaEscala.map(esc).join('<br>')+'</div>':'';const introSection=(!pg.identity&&pg.intro)?'<div class="intro">'+String(pg.intro).split(/\\n{2,}/).map(p=>'<p>'+esc(p)+'</p>').join('')+'</div>':'';const questions=pg.identity?[]:pg.questions.filter(q=>!(q.code==='aval_reacao_feedback'&&values.role!=='Gestor'));let body=pg.identity?identity():'<div class="section-title">'+esc(publicTitle)+'</div>'+scaleTips+introSection+questions.map(field).join('');app.innerHTML='<div class="card"><h1>'+esc(f.name)+'</h1><p class="muted">'+esc(f.description)+'</p><div class="steps">'+pages.map((_,i)=>'<span class="step '+(i<page?'done':i===page?'on':'')+'"></span>').join('')+'</div><div class="small muted" style="text-align:center;margin-bottom:18px">Página '+(page+1)+' de '+pages.length+'</div>'+(error?'<div class="msg error">'+esc(error)+'</div>':'')+body+'<div class="actions">'+(page?'<button class="btn" id="back">← Voltar</button>':'<span></span>')+(page<pages.length-1?'<button class="btn primary" id="next">Avançar →</button>':'<button class="btn primary" id="send">Enviar resposta</button>')+'</div></div>';document.getElementById('back')?.addEventListener('click',()=>{sync();page--;error='';render();scrollTo(0,0)});document.getElementById('next')?.addEventListener('click',()=>{sync();if(validate()){page++;error='';render();scrollTo(0,0)}else render()});document.getElementById('send')?.addEventListener('click',submit);document.querySelector('[data-meta="unidade"]')?.addEventListener('change',()=>{sync();render();});document.querySelector('[data-meta="role"]')?.addEventListener('change',()=>{sync();values.respondentName='';render();});}
-  fetch('/api/public/programa-integracao/opcoes-ativas',{headers:{Accept:'application/json'},cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{ACTIVE={colaboradores:j.colaboradores||[],gestores:j.gestores||[],anjos:j.anjos||[]};render();}).catch(()=>render());</script></body></html>`;
+  function textHtml(s){return esc(String(s??'').replace(/\\n/g,'\n')).replace(/\n/g,'<br>');}
+  function optionValue(o){return typeof o==='string'?o:o.value}
+  function optionLabel(o){return typeof o==='string'?o:o.label}
+  function currentValue(code){return values.answers[code]??''}
+  function isYes(v){return /^(sim|SIM)$/i.test(String(v||'').trim())}
+  function shouldShow(q){
+    if(q.code==='aval_reacao_feedback'&&values.role!=='Gestor')return false;
+    if(q.code==='pdi_qual_acao_motivo')return isYes(values.answers.pdi_relatou_dificuldade);
+    if(q.code==='pdi_qual_alteracao')return isYes(values.answers.pdi_houve_readequacao);
+    if(q.code==='pdi_qual_realinhamento')return isYes(values.answers.pdi_realinhamento_postura);
+    return true;
+  }
+  function roleCopy(){return f.targetRole?'Respondente: '+f.targetRole:''}
+  function progressPct(){return Math.round(((page+1)/pages.length)*100)}
+  function fieldError(code){return errorField===code?'<div class="field-error" role="alert">⚠ '+esc(error)+'</div>':''}
+  function fieldClass(code,v){return 'field reveal '+(String(v??'').trim()?'filled ':'')+(errorField===code?'has-error ':'')}
+
+  function saveDraft(){
+    if(f.key!=='aval')return;
+    try{sessionStorage.setItem(storageKey,JSON.stringify({values,page,at:Date.now()}));}catch{}
+  }
+  function restoreDraft(){
+    if(f.key!=='aval')return;
+    try{
+      const raw=sessionStorage.getItem(storageKey);if(!raw)return;
+      const d=JSON.parse(raw);
+      if(!d||!d.values)return;
+      Object.assign(values,d.values);
+      values.answers={...(d.values.answers||{})};
+      if(Number.isInteger(d.page))page=Math.max(0,Math.min(pages.length-1,d.page));
+    }catch{}
+  }
+  function clearDraft(){try{sessionStorage.removeItem(storageKey)}catch{}}
+
+  function field(q){
+    if(!shouldShow(q))return '';
+    const v=currentValue(q.code);let ctl='';
+    const required=q.required!==false||(q.code==='aval_reacao_feedback'&&values.role==='Gestor');
+    const label='<div class="question-label">'+textHtml(q.label)+(required?' <span class="req">*</span>':'')+'</div>';
+    if(q.type==='scale'){
+      ctl='<div class="scale" role="radiogroup" aria-label="'+esc(q.label)+'">'+[0,1,2,3,4,5].map(n=>'<label><input type="radio" name="'+esc(q.code)+'" data-code="'+esc(q.code)+'" value="'+n+'" '+(String(v)===String(n)?'checked':'')+'><span style="font:700 16px/1 var(--font-m)">'+n+'</span><span class="small">'+esc(n===0?'Sem opinião':n===1?'Discordo totalmente':n===2?'Discordo':n===3?'Neutro':n===4?'Concordo':'Concordo totalmente')+'</span></label>').join('')+'</div>';
+    }else if(q.type==='select'){
+      ctl='<select data-code="'+esc(q.code)+'" aria-label="'+esc(q.label)+'"><option value="">Selecione…</option>'+q.options.map(o=>'<option value="'+esc(optionValue(o))+'" '+(String(v)===String(optionValue(o))?'selected':'')+'>'+esc(optionLabel(o))+'</option>').join('')+'</select>';
+    }else if(q.type==='multi'){
+      const arr=Array.isArray(v)?v:String(v||'').split(',').map(x=>x.trim()).filter(Boolean);const set=new Set(arr);
+      if(q.code==='bem_caracteristicas'){
+        ctl='<div class="bem-clusters">'+DATA.clustersBem.map(g=>'<section class="bem-cluster"><div class="bem-cluster-title">'+esc(g.nome)+'</div><div class="bem-cluster-count">'+g.descritoresGestor.length+' opções disponíveis</div><div class="multi">'+g.descritoresGestor.map(x=>'<label><input type="checkbox" data-multi="'+esc(q.code)+'" value="'+esc(x)+'" '+(set.has(x)?'checked':'')+'><span>'+esc(x)+'</span></label>').join('')+'</div></section>').join('')+'</div>';
+      }else{
+        ctl='<div class="multi">'+q.options.map(o=>{const x=optionValue(o);return '<label><input type="checkbox" data-multi="'+esc(q.code)+'" value="'+esc(x)+'" '+(set.has(x)?'checked':'')+'><span>'+esc(optionLabel(o))+'</span></label>';}).join('')+'</div>';
+      }
+    }else if(q.type==='textarea'){
+      const len=String(v||'').length;
+      ctl='<textarea data-code="'+esc(q.code)+'" aria-label="'+esc(q.label)+'">'+esc(v)+'</textarea><div class="char-count">'+len+' caracteres</div>';
+    }else{
+      const type=q.type==='date'?'date':q.type==='cpf'||q.type==='tel'?'tel':'text';
+      const inputmode=(q.type==='cpf'||q.type==='tel')?' inputmode="numeric"':'';
+      const autocomplete=q.type==='tel'?' autocomplete="tel"':q.type==='date'?' autocomplete="bday"':'';
+      const extra=q.type==='cpf'?' maxlength="11" placeholder="Somente números"':q.type==='tel'?' maxlength="11" placeholder="63999998888"':'';
+      ctl='<input type="'+type+'"'+inputmode+autocomplete+extra+' data-code="'+esc(q.code)+'" aria-label="'+esc(q.label)+'" value="'+esc(v)+'">';
+    }
+    return '<div class="'+fieldClass(q.code,v)+'" data-field="'+esc(q.code)+'">'+label+(q.hint?'<div class="hint">'+textHtml(q.hint)+'</div>':'')+ctl+fieldError(q.code)+'</div>';
+  }
+
+  function identity(){
+    let h='<div class="intro-card reveal">'+f.intro.map(p=>'<p>'+textHtml(p)+'</p>').join('')+'</div>';
+    h+='<section class="form-section reveal"><div class="form-section-head"><div class="section-index">01</div><div><h2>Sobre quem esta resposta é</h2><div class="small muted">Dados usados para localizar o processo correto e evitar duplicidades.</div></div></div>';
+    h+='<div class="'+fieldClass('nomeColaborador',values.nomeColaborador)+'" data-field="nomeColaborador"><label>Nome completo do colaborador <span class="req">*</span></label>'+(f.key==='controle'?'<input data-meta="nomeColaborador" autocomplete="name" value="'+esc(values.nomeColaborador)+'" placeholder="Nome completo do novo colaborador">':'<select data-meta="nomeColaborador"><option value="">Selecione…</option>'+ACTIVE.colaboradores.map(nome=>'<option value="'+esc(nome)+'" '+(values.nomeColaborador===nome?'selected':'')+'>'+esc(nome)+'</option>').join('')+'</select>')+(f.key==='controle'?'<div class="hint">Este formulário inicia o cadastro; por isso o nome pode ser informado livremente.</div>':'<div class="hint">A lista mostra somente colaboradores ativos no Onboarding.</div>')+fieldError('nomeColaborador')+'</div>';
+    if(f.identity.unidade){
+      h+='<div class="'+fieldClass('unidade',values.unidade)+'" data-field="unidade"><label>Unidade <span class="req">*</span></label><select data-meta="unidade"><option value="">Selecione…</option>'+DATA.unidades.map(u=>'<option value="'+esc(u)+'" '+(values.unidade===u?'selected':'')+'>'+esc(u)+'</option>').join('')+'</select>'+fieldError('unidade')+'</div>';
+      if(values.unidade==='Outra')h+='<div class="'+fieldClass('outraUnidade',values.outraUnidade)+'" data-field="outraUnidade"><label>Qual unidade/regional? <span class="req">*</span></label><input data-meta="outraUnidade" value="'+esc(values.outraUnidade)+'" placeholder="Digite o nome da unidade"><div class="hint">Escreva o nome da unidade ou regional.</div>'+fieldError('outraUnidade')+'</div>';
+    }
+    if(f.identity.dataInicio)h+='<div class="'+fieldClass('dataInicio',values.dataInicio)+'" data-field="dataInicio"><label>Data de início do colaborador <span class="req">*</span></label><input type="date" data-meta="dataInicio" value="'+esc(values.dataInicio)+'">'+fieldError('dataInicio')+'</div>';
+    if(f.identity.email)h+='<div class="'+fieldClass('emailColaborador',values.emailColaborador)+'" data-field="emailColaborador"><label>'+(f.key==='controle'?'E-mail Pessoal do Novo Colaborador':'E-mail do colaborador (se souber)')+'</label><input type="email" autocomplete="email" data-meta="emailColaborador" value="'+esc(values.emailColaborador)+'">'+(f.key==='controle'?'<div class="hint">Use o e-mail pessoal do colaborador, não o e-mail institucional do Sebrae/TO.</div>':'')+fieldError('emailColaborador')+'</div>';
+    if(f.identity.cycle)h+='<div class="'+fieldClass('cycleValue',values.cycleValue)+'" data-field="cycleValue"><label>'+(f.key==='pesquisa'?'Essa pesquisa refere-se a qual período de participação no programa?':f.key==='aval'?'Essa avaliação refere-se a qual feedback no programa?':'A que período esta resposta se refere?')+' <span class="req">*</span></label><select data-meta="cycleValue"><option value="">Selecione…</option>'+f.cycleOptions.map(o=>'<option value="'+esc(o.value)+'" '+(values.cycleValue===o.value?'selected':'')+'>'+esc(o.label)+'</option>').join('')+'</select>'+fieldError('cycleValue')+'</div>';
+    if(f.identity.role)h+='<div class="'+fieldClass('role',values.role)+'" data-field="role"><label>Você está respondendo como <span class="req">*</span></label><select data-meta="role"><option value="">Selecione…</option><option value="Gestor" '+(values.role==='Gestor'?'selected':'')+'>Gestor</option><option value="Anjo" '+(values.role==='Anjo'?'selected':'')+'>Anjo</option></select>'+fieldError('role')+'</div>';
+    if(f.identity.respondent){
+      const lista=f.key==='bem'?ACTIVE.gestores:f.key==='aval'?(values.role==='Anjo'?ACTIVE.anjos:values.role==='Gestor'?ACTIVE.gestores:[]):null;
+      const controle=lista?'<select data-meta="respondentName"><option value="">Selecione…</option>'+lista.map(nome=>'<option value="'+esc(nome)+'" '+(values.respondentName===nome?'selected':'')+'>'+esc(nome)+'</option>').join('')+'</select>':'<input data-meta="respondentName" autocomplete="name" value="'+esc(values.respondentName)+'" placeholder="Nome e sobrenome">';
+      h+='</section><section class="form-section reveal"><div class="form-section-head"><div class="section-index">02</div><div><h2>Sobre quem está respondendo</h2><div class="small muted">Identifique a pessoa responsável por esta resposta.</div></div></div><div class="'+fieldClass('respondentName',values.respondentName)+'" data-field="respondentName"><label>Seu nome completo <span class="req">*</span></label>'+controle+fieldError('respondentName')+'</div>';
+    }
+    return h+'</section>';
+  }
+
+  function sectionHtml(section,index){
+    const publicTitle=section.publicTitle===''?'Formulário':(section.publicTitle||section.title||'Formulário');
+    const tips=(f.key==='pesquisa'||f.key==='aval')&&((paginado&&page===1)||(!paginado&&index===0))
+      ?'<div class="intro-card reveal"><p><b>Dicas rápidas para responder</b></p>'+DATA.dicasEscala.map(d=>'<p>• '+esc(d)+'</p>').join('')+'<div style="border-top:1px solid var(--line);margin-top:10px;padding-top:10px">'+DATA.legendaEscala.map(l=>'<p>'+esc(l)+'</p>').join('')+'</div></div>'
+      :'';
+    const intro=section.intro?'<div class="form-section-intro">'+textHtml(section.intro)+'</div>':'';
+    const questions=section.questions.filter(shouldShow).map(field).join('');
+    return tips+'<section class="form-section reveal"><div class="form-section-head"><div class="section-index">'+String(index+1).padStart(2,'0')+'</div><div><h2>'+esc(publicTitle)+'</h2>'+intro+'</div></div>'+questions+'</section>';
+  }
+
+  function validateIdentity(){
+    if(!values.nomeColaborador.trim())return fail('nomeColaborador','Informe o nome completo do colaborador.');
+    if(f.identity.unidade&&!values.unidade)return fail('unidade','Selecione a unidade.');
+    if(f.identity.unidade&&values.unidade==='Outra'&&!values.outraUnidade.trim())return fail('outraUnidade','Informe qual é a outra unidade/regional.');
+    if(f.identity.dataInicio&&!values.dataInicio)return fail('dataInicio','Informe a data de início do colaborador.');
+    if(f.identity.cycle&&!values.cycleValue)return fail('cycleValue','Selecione o período deste acompanhamento.');
+    if(f.identity.role&&!values.role)return fail('role','Informe se quem responde é Gestor ou Anjo.');
+    if(f.identity.respondent&&!values.respondentName.trim())return fail('respondentName','Informe o nome de quem está respondendo.');
+    return true;
+  }
+  function validateQuestions(questions){
+    for(const q of questions){
+      if(!shouldShow(q))continue;
+      const v=values.answers[q.code];
+      const filled=Array.isArray(v)?v.length>0:String(v??'').trim()!=='';
+      const required=q.required!==false||(q.code==='aval_reacao_feedback'&&values.role==='Gestor');
+      if(required&&!filled)return fail(q.code,'Responda esta pergunta antes de continuar.');
+      if(q.type==='textarea'&&filled&&String(v).trim().length<10)return fail(q.code,'Escreva pelo menos 10 caracteres para completar esta resposta.');
+      if(q.type==='cpf'&&filled&&!/^\d{11}$/.test(String(v).replace(/\D/g,'')))return fail(q.code,'Informe o CPF com 11 números.');
+      if(q.type==='tel'&&filled){const n=String(v).replace(/\D/g,'');if(n.length<10||n.length>11)return fail(q.code,'Informe o telefone com DDD, usando 10 ou 11 números.');}
+    }
+    return true;
+  }
+  function validateCurrent(){
+    error='';errorField='';
+    if(!paginado){
+      if(!validateIdentity())return false;
+      for(const s of f.sections)if(!validateQuestions(s.questions))return false;
+      return true;
+    }
+    if(page===0)return validateIdentity();
+    return validateQuestions(pages[page].questions||[]);
+  }
+  function validateAll(){
+    error='';errorField='';
+    if(!validateIdentity())return {ok:false,page:0};
+    for(let i=0;i<f.sections.length;i++){
+      if(!validateQuestions(f.sections[i].questions))return {ok:false,page:paginado?i+1:0};
+    }
+    return {ok:true,page};
+  }
+  function fail(code,msg){errorField=code;error=msg;return false}
+
+  function sync(){
+    document.querySelectorAll('[data-meta]').forEach(el=>values[el.dataset.meta]=el.value);
+    document.querySelectorAll('[data-code]').forEach(el=>{
+      if(el.type==='radio'){if(el.checked)values.answers[el.dataset.code]=el.value;}
+      else values.answers[el.dataset.code]=el.value;
+    });
+    document.querySelectorAll('[data-multi]').forEach(el=>{
+      const code=el.dataset.multi;
+      const all=[...document.querySelectorAll('[data-multi="'+code+'"]')].filter(x=>x.checked).map(x=>x.value);
+      values.answers[code]=all;
+    });
+    saveDraft();
+  }
+
+  function focusError(){
+    if(!errorField)return;
+    requestAnimationFrame(()=>{
+      const wrap=document.querySelector('[data-field="'+CSS.escape(errorField)+'"]');
+      if(!wrap)return;
+      wrap.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
+      const control=wrap.querySelector('input,select,textarea,button');
+      if(control)setTimeout(()=>control.focus({preventScroll:true}),180);
+    });
+  }
+
+  function setupReveal(){
+    const nodes=[...document.querySelectorAll('.reveal')];
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){nodes.forEach(n=>n.classList.add('visible'));return;}
+    if(!('IntersectionObserver'in window)){nodes.forEach(n=>n.classList.add('visible'));return;}
+    const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');io.unobserve(e.target)}}),{threshold:.08,rootMargin:'0px 0px -25px 0px'});
+    nodes.forEach(n=>io.observe(n));
+  }
+
+  function bind(){
+    document.getElementById('back')?.addEventListener('click',()=>{sync();page=Math.max(0,page-1);error='';errorField='';render();scrollTo({top:0,behavior:'smooth'});});
+    document.getElementById('next')?.addEventListener('click',()=>{sync();if(validateCurrent()){page=Math.min(pages.length-1,page+1);error='';errorField='';saveDraft();render();scrollTo({top:0,behavior:'smooth'});}else{render();focusError();}});
+    document.getElementById('send')?.addEventListener('click',submit);
+    document.querySelectorAll('input,select,textarea').forEach(el=>{
+      el.addEventListener('change',()=>{sync();error='';errorField='';if(el.dataset.meta==='unidade'||el.dataset.meta==='role'){if(el.dataset.meta==='role')values.respondentName='';render();}});
+      el.addEventListener('input',()=>{sync();});
+    });
+  }
+
+  async function submit(){
+    if(sending)return;
+    sync();
+    const val=validateAll();
+    if(!val.ok){page=val.page;render();focusError();return;}
+    const cyc=f.cycleOptions?.find(o=>o.value===values.cycleValue);
+    const unidade=values.unidade==='Outra'?values.outraUnidade.trim():values.unidade;
+    const payload={nomeColaborador:values.nomeColaborador,unidade,dataInicio:values.dataInicio,emailColaborador:values.emailColaborador,respondentName:f.identity.respondent?values.respondentName:values.nomeColaborador,cycle:cyc?cyc.cycle:0,cycleLabel:cyc?cyc.label:'',role:values.role,answers:values.answers};
+    try{
+      sending=true;error='';errorField='';render();
+      const r=await fetch('/api/public/programa-integracao/forms/${slug}/responses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const j=await r.json();
+      if(!r.ok||!j.ok)throw new Error(j.erro||'Não foi possível registrar a resposta.');
+      result=j;sent=true;clearDraft();render();scrollTo(0,0);
+    }catch(e){
+      error=e.message||'Não foi possível enviar a resposta.';errorField='';render();
+    }finally{sending=false;if(!sent)render();}
+  }
+
+  function render(){
+    const app=document.getElementById('app');
+    if(sent){
+      app.innerHTML='<div class="form-shell"><div class="success-state"><div class="success-icon">✓</div><h1>Formulário enviado com sucesso</h1><p class="muted">As informações foram registradas.</p><div class="msg ok" style="max-width:420px;margin:22px auto"><div class="small muted">Protocolo desta resposta</div><div class="proto">'+esc(result.protocolo||'')+'</div><div class="small muted" style="margin-top:6px">Guarde este número caso precise localizar esta resposta.</div></div>'+(result.pendente?'<p class="small muted">A resposta foi recebida e está aguardando conferência administrativa para vinculação ao processo correto. Não é necessário reenviar.</p>':'')+(f.outro?'<div class="intro">'+f.outro.map(p=>'<p>'+textHtml(p)+'</p>').join('')+'</div>':'')+'</div></div>';
+      setupReveal();return;
+    }
+
+    const pg=pages[page];
+    let body='';
+    if(!paginado){
+      body=identity()+f.sections.map((s,i)=>sectionHtml(s,i+(f.identity.respondent?2:1))).join('');
+    }else if(pg.identity){
+      body=identity();
+    }else{
+      body=sectionHtml(pg,page);
+    }
+
+    const progress=(paginado?'<div class="progress-card"><div class="progress-row"><span>Progresso do preenchimento</span><b>'+progressPct()+'%</b></div><div class="progress-track" aria-hidden="true"><div class="progress-bar" style="width:'+progressPct()+'%"></div></div></div>':'');
+    const globalError=error&&!errorField?'<div class="msg error" role="alert">'+esc(error)+'</div>':'';
+    const nav=paginado
+      ?'<div class="actions">'+(page?'<button class="btn" id="back" type="button">← Voltar</button>':'<span></span>')+(page<pages.length-1?'<button class="btn primary" id="next" type="button">Avançar →</button>':'<button class="btn primary" id="send" type="button" '+(sending?'disabled':'')+'>'+(sending?'<span class="loading-inline"><span class="spinner"></span>Enviando...</span>':'Enviar formulário')+'</button>')+'</div>'
+      :'<div class="actions"><span></span><button class="btn primary" id="send" type="button" '+(sending?'disabled':'')+'>'+(sending?'<span class="loading-inline"><span class="spinner"></span>Enviando...</span>':'Enviar formulário')+'</button></div>';
+
+    app.innerHTML='<div class="form-shell"><header class="form-hero"><div class="eyebrow">Programa de Integração · EcoLíder</div><h1>'+esc(f.name)+'</h1><p>'+textHtml(f.description)+'</p><div class="role-pill">'+esc(roleCopy())+'</div></header><div class="form-body">'+progress+(paginado?'<div class="steps">'+pages.map((_,i)=>'<span class="step '+(i<page?'done':i===page?'on':'')+'"></span>').join('')+'</div><div class="page-label">Etapa '+(page+1)+' de '+pages.length+(pg.title?' · '+esc(pg.title):'')+'</div>':'')+globalError+body+nav+'</div></div>';
+    bind();setupReveal();if(errorField)focusError();
+  }
+
+  restoreDraft();
+  const params=new URLSearchParams(location.search);
+  if(params.get('nome'))values.nomeColaborador=params.get('nome')||values.nomeColaborador;
+  if(params.get('unidade'))values.unidade=params.get('unidade')||values.unidade;
+  if(params.get('ciclo'))values.cycleValue=params.get('ciclo')||values.cycleValue;
+  if(params.get('papel'))values.role=params.get('papel')||values.role;
+  if(params.get('respondente'))values.respondentName=params.get('respondente')||values.respondentName;
+  if(params.get('inicio'))values.dataInicio=params.get('inicio')||values.dataInicio;
+  if(params.get('email'))values.emailColaborador=params.get('email')||values.emailColaborador;
+
+  document.getElementById('app').innerHTML='<div class="form-shell"><div class="form-body"><div class="msg"><span class="loading-inline"><span class="spinner"></span>Carregando opções do formulário...</span></div></div></div>';
+  fetch('/api/public/programa-integracao/opcoes-ativas',{headers:{Accept:'application/json'},cache:'no-store'})
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(j=>{ACTIVE={colaboradores:j.colaboradores||[],gestores:j.gestores||[],anjos:j.anjos||[]};render();})
+    .catch(()=>render());</script></body></html>`;
 }
 
 /**
