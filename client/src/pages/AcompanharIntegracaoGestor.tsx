@@ -200,7 +200,7 @@ function PerfilAssessmentModal({
   const leituraComparacao = (prioridade: number, perfilColaborador: number | null | undefined) => {
     if (perfilColaborador == null || !Number.isFinite(Number(perfilColaborador)) || prioridade <= 0) {
       return {
-        classes: 'border-slate-200 bg-slate-50',
+        classes: 'border-slate-200 bg-white border-t-[3px] border-t-slate-300',
         badge: 'border-slate-300 bg-white text-slate-700',
         rotulo: prioridade <= 0 ? 'Não priorizada' : 'Sem autoavaliação',
       };
@@ -209,7 +209,7 @@ function PerfilAssessmentModal({
     const perfilNumero = Number(perfilColaborador);
     if (perfilNumero >= prioridade) {
       return {
-        classes: 'border-emerald-300 bg-emerald-50',
+        classes: 'border-slate-200 bg-white border-t-[3px] border-t-emerald-500',
         badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
         rotulo: 'Perfil atende ou supera a prioridade',
       };
@@ -218,27 +218,27 @@ function PerfilAssessmentModal({
     const diferenca = prioridade - perfilNumero;
     if (diferenca <= 5) {
       return {
-        classes: 'border-emerald-300 bg-emerald-50',
+        classes: 'border-slate-200 bg-white border-t-[3px] border-t-emerald-500',
         badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
         rotulo: 'Muito próximo · até 5 p.p.',
       };
     }
     if (diferenca <= 20) {
       return {
-        classes: 'border-blue-300 bg-blue-50',
+        classes: 'border-slate-200 bg-white border-t-[3px] border-t-blue-500',
         badge: 'border-blue-300 bg-blue-100 text-blue-900',
         rotulo: 'Próximo · até 20 p.p.',
       };
     }
     if (diferenca <= 40) {
       return {
-        classes: 'border-amber-300 bg-amber-50',
+        classes: 'border-slate-200 bg-white border-t-[3px] border-t-amber-400',
         badge: 'border-amber-300 bg-amber-100 text-amber-950',
         rotulo: 'Atenção · 20 a 40 p.p.',
       };
     }
     return {
-      classes: 'border-orange-400 bg-orange-50',
+      classes: 'border-slate-200 bg-white border-t-[3px] border-t-orange-500',
       badge: 'border-orange-400 bg-orange-100 text-orange-950',
       rotulo: 'Diferença alta · acima de 40 p.p.',
     };
@@ -253,37 +253,136 @@ function PerfilAssessmentModal({
           ? disc?.scoreS
           : disc?.scoreC;
     const classes = item.key === 'D'
-      ? 'border-red-200 bg-red-50 text-red-950'
+      ? 'border-slate-200 bg-white text-slate-950 border-t-[3px] border-t-red-500'
       : item.key === 'I'
-        ? 'border-amber-200 bg-amber-50 text-amber-950'
+        ? 'border-slate-200 bg-white text-slate-950 border-t-[3px] border-t-amber-400'
         : item.key === 'S'
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
-          : 'border-blue-200 bg-blue-50 text-blue-950';
+          ? 'border-slate-200 bg-white text-slate-950 border-t-[3px] border-t-emerald-500'
+          : 'border-slate-200 bg-white text-slate-950 border-t-[3px] border-t-blue-500';
     return { ...item, score: score == null ? null : Number(score), classes };
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[95vh] !w-[98vw] !max-w-[1780px] gap-0 overflow-hidden p-0 sm:!w-[97vw] sm:!max-w-[1780px]">
-        <div className="border-b bg-gradient-to-r from-violet-950 via-violet-800 to-indigo-700 px-5 py-5 pr-12 text-white sm:px-7">
-          <DialogHeader className="text-left">
-            <DialogTitle className="text-xl font-bold text-white sm:text-2xl">
+      <DialogContent
+        data-assessment-modal="true"
+        className="assessment-profile-modal max-h-[95vh] !w-[98vw] !max-w-[1780px] gap-0 overflow-hidden rounded-2xl border border-slate-200/60 bg-[#F6F8FB] p-0 shadow-[0_24px_70px_rgba(15,23,42,0.20)] sm:!w-[97vw] sm:!max-w-[1780px]"
+      >
+        <style>{`
+          [data-slot="dialog-portal"]:has(.assessment-profile-modal) > [data-slot="dialog-overlay"] {
+            background: rgba(15, 23, 42, 0.48);
+          }
+          .assessment-profile-modal [data-slot="dialog-close"] {
+            top: 16px;
+            right: 16px;
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            opacity: 1;
+            transition: background-color 160ms ease, transform 160ms ease;
+          }
+          .assessment-profile-modal [data-slot="dialog-close"]:hover {
+            background: rgba(255, 255, 255, 0.14);
+          }
+          .assessment-profile-modal [data-slot="dialog-close"]:active {
+            transform: scale(.94);
+          }
+          .assessment-profile-modal [data-slot="dialog-close"]:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, .24);
+          }
+          .assessment-profile-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(75, 61, 150, .35) transparent;
+          }
+          .assessment-profile-scroll::-webkit-scrollbar {
+            width: 7px;
+          }
+          .assessment-profile-scroll::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .assessment-profile-scroll::-webkit-scrollbar-thumb {
+            border-radius: 999px;
+            background: rgba(75, 61, 150, .35);
+          }
+          .assessment-profile-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(75, 61, 150, .55);
+          }
+          .assessment-section {
+            box-shadow:
+              0 2px 8px rgba(15, 23, 42, .025),
+              0 6px 20px rgba(15, 23, 42, .025);
+            animation: assessment-fade-up 360ms cubic-bezier(.2,.75,.25,1) both;
+          }
+          .assessment-card {
+            transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+            animation: assessment-fade-up 340ms cubic-bezier(.2,.75,.25,1) both;
+          }
+          .assessment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 9px 24px rgba(15, 23, 42, .07);
+          }
+          .assessment-stagger > .assessment-card:nth-child(2) { animation-delay: 35ms; }
+          .assessment-stagger > .assessment-card:nth-child(3) { animation-delay: 70ms; }
+          .assessment-stagger > .assessment-card:nth-child(4) { animation-delay: 105ms; }
+          .assessment-stagger > .assessment-card:nth-child(5) { animation-delay: 140ms; }
+          .assessment-progress-fill {
+            transform-origin: left center;
+            animation: assessment-fill 600ms cubic-bezier(.2,.75,.25,1) both;
+          }
+          .assessment-details-body {
+            animation: assessment-details 260ms ease both;
+          }
+          @keyframes assessment-fade-up {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes assessment-fill {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+          }
+          @keyframes assessment-details {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .assessment-section,
+            .assessment-card,
+            .assessment-progress-fill,
+            .assessment-details-body {
+              animation: none !important;
+              transition-duration: .01ms !important;
+            }
+            .assessment-card:hover,
+            .assessment-profile-modal [data-slot="dialog-close"]:active {
+              transform: none !important;
+            }
+          }
+        `}</style>
+
+        <div className="border-b border-white/10 bg-[linear-gradient(115deg,#35147D_0%,#5B21D6_52%,#4938E8_100%)] px-5 py-5 pr-14 text-white sm:px-6 lg:px-7">
+          <DialogHeader className="gap-2 text-left">
+            <DialogTitle className="text-xl font-bold leading-tight text-white">
               Perfil do Assessment
             </DialogTitle>
-            <DialogDescription className="text-sm text-white/80">
+            <DialogDescription className="text-xs leading-relaxed text-white/80 sm:text-sm">
               {colaborador.nome} · perfil comportamental, autoavaliação de competências e expectativa do gestor.
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        <div className="max-h-[calc(94vh-92px)] overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
+        <div className="assessment-profile-scroll max-h-[calc(94vh-92px)] overflow-y-auto overflow-x-hidden bg-[#F6F8FB] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 xl:px-10">
           <TooltipProvider>
-            <div className="space-y-6">
-              <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
-                <div className="mb-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">1. Perfil Comportamental</div>
-                  <h3 className="mt-1 text-lg font-bold">Perfil Comportamental</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
+            <div className="space-y-5 sm:space-y-6">
+              <section className="assessment-section rounded-2xl border border-slate-200/70 bg-white p-5 sm:p-6">
+                <div className="mb-4 sm:mb-5">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet-700">1. Perfil Comportamental</div>
+                  <h3 className="mt-1.5 text-[17px] font-bold leading-tight text-[#132536]">Perfil Comportamental</h3>
+                  <p className="mt-1.5 text-xs leading-5 text-slate-500">
                     Percentuais do resultado mais recente do Assessment/Avaliação de Potencial.
                   </p>
                 </div>
@@ -297,16 +396,16 @@ function PerfilAssessmentModal({
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="assessment-stagger grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {discCards.map((item) => (
-                      <div key={item.key} className={`min-w-0 rounded-xl border p-4 ${item.classes}`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 text-sm font-bold leading-snug">{item.nome}</div>
+                      <div key={item.key} className={`assessment-card min-w-0 rounded-xl border p-4 sm:p-5 ${item.classes}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 text-sm font-bold leading-snug text-slate-800">{item.nome}</div>
                           <UiTooltip>
                             <TooltipTrigger asChild>
                               <button
                                 type="button"
-                                className="shrink-0 rounded-full p-1 opacity-80 hover:bg-white/60 hover:opacity-100"
+                                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
                                 aria-label={`Informações sobre ${item.nome}`}
                               >
                                 <Info className="h-4 w-4" />
@@ -315,35 +414,35 @@ function PerfilAssessmentModal({
                             <TooltipContent className="max-w-xs text-xs leading-relaxed">{item.descricao}</TooltipContent>
                           </UiTooltip>
                         </div>
-                        <div className="mt-4 text-3xl font-bold">{fmtPct1(item.score)}</div>
-                        <div className="mt-1 text-sm font-semibold">{item.rotulo}</div>
+                        <div className="mt-5 text-[27px] font-bold leading-none tracking-[-0.02em] text-slate-950">{fmtPct1(item.score)}</div>
+                        <div className="mt-2 text-sm font-semibold text-slate-600">{item.rotulo}</div>
                       </div>
                     ))}
                   </div>
                 )}
               </section>
 
-              <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
-                <div className="mb-4">
-                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">2. Autoavaliação</div>
-                  <h3 className="mt-1 text-lg font-bold">Autoavaliação de Competências</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
+              <section className="assessment-section rounded-2xl border border-slate-200/70 bg-white p-5 sm:p-6">
+                <div className="mb-4 sm:mb-5">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet-700">2. Autoavaliação</div>
+                  <h3 className="mt-1.5 text-[17px] font-bold leading-tight text-[#132536]">Autoavaliação de Competências</h3>
+                  <p className="mt-1.5 text-xs leading-5 text-slate-500">
                     Esta autoavaliação mostra como o próprio colaborador percebe suas competências em cada dimensão.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <div className="assessment-stagger grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {INTEGRACAO_CLUSTERS.map((cluster) => {
                     const dados = autoPorKey.get(cluster.key);
                     return (
-                      <div key={cluster.key} className="min-w-0 rounded-xl border bg-muted/20 p-4">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0 text-sm font-semibold leading-snug">{cluster.nome}</div>
+                      <div key={cluster.key} className="assessment-card flex min-w-0 flex-col rounded-xl border border-slate-200 bg-slate-50/45 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 text-sm font-semibold leading-snug text-slate-800">{cluster.nome}</div>
                           <UiTooltip>
                             <TooltipTrigger asChild>
                               <button
                                 type="button"
-                                className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition-colors hover:bg-white hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
                                 aria-label={`Competências de ${cluster.nome}`}
                               >
                                 <Info className="h-4 w-4" />
@@ -354,11 +453,17 @@ function PerfilAssessmentModal({
                             </TooltipContent>
                           </UiTooltip>
                         </div>
-                        <div className="mt-3 text-3xl font-bold">{fmtPct1(dados?.percentual)}</div>
-                        <div className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                        <div className="mt-4 text-[27px] font-bold leading-none tracking-[-0.02em] text-slate-950">{fmtPct1(dados?.percentual)}</div>
+                        <div className="mt-2 min-h-[34px] text-xs leading-relaxed text-slate-500">
                           {dados?.totalAvaliadas
                             ? `${dados.totalAvaliadas} de ${dados.totalCompetencias} competências com autoavaliação`
                             : 'Sem autoavaliação registrada neste cluster'}
+                        </div>
+                        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-violet-100/80">
+                          <div
+                            className="assessment-progress-fill h-full rounded-full bg-violet-600"
+                            style={{ width: `${dados?.percentual ?? 0}%` }}
+                          />
                         </div>
                       </div>
                     );
@@ -366,12 +471,12 @@ function PerfilAssessmentModal({
                 </div>
               </section>
 
-              <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+              <section className="assessment-section rounded-2xl border border-slate-200/70 bg-white p-5 sm:p-6">
                 <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">3. Expectativa do Gestor</div>
-                    <h3 className="mt-1 text-lg font-bold">Expectativa do Gestor</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet-700">3. Expectativa do Gestor</div>
+                    <h3 className="mt-1.5 text-[17px] font-bold leading-tight text-[#132536]">Expectativa do Gestor</h3>
+                    <p className="mt-1.5 text-xs leading-5 text-slate-500">
                       A prioridade do gestor é um peso relativo entre dimensões. Ela não representa uma nota esperada e a comparação acontece sempre cluster × cluster.
                     </p>
                   </div>
@@ -386,51 +491,71 @@ function PerfilAssessmentModal({
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 p-4 sm:p-5">
+                  <div className="mb-5 rounded-[14px] border border-violet-300/50 bg-[linear-gradient(135deg,rgba(104,65,255,0.065),rgba(104,65,255,0.025))] p-5 sm:p-6">
                     <div className="text-sm font-semibold text-violet-800">Compatibilidade com a expectativa do gestor</div>
-                    <div className="mt-1 text-4xl font-bold text-violet-950">
+                    <div className="mt-2 text-[34px] font-bold leading-none tracking-[-0.025em] text-violet-950">
                       {fmtPct1(perfil.expectativaGestor.compatibilidade)}
                     </div>
-                    <div className="mt-2 text-xs leading-relaxed text-violet-800">
+                    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-violet-100">
+                      <div
+                        className="assessment-progress-fill h-full rounded-full bg-violet-600"
+                        style={{ width: `${perfil.expectativaGestor.compatibilidade}%` }}
+                      />
+                    </div>
+                    <div className="mt-3 text-xs leading-relaxed text-violet-800">
                       Resultado ponderado pelos clusters priorizados pelo gestor. Dimensões não priorizadas ficam fora do cálculo.
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <div className="assessment-stagger grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {INTEGRACAO_CLUSTERS.map((cluster) => {
                     const expectativa = expectativaPorKey.get(cluster.key);
                     const auto = autoPorKey.get(cluster.key);
                     const prioridade = expectativa?.prioridade ?? 0;
                     const leitura = leituraComparacao(prioridade, auto?.percentual);
                     return (
-                      <div key={cluster.key} className={`min-w-0 rounded-xl border p-4 shadow-sm ${leitura.classes}`}>
-                        <div className="mb-3 flex flex-col gap-2">
-                          <div className="text-sm font-bold leading-snug">{cluster.nome}</div>
-                          <Badge variant="outline" className={`w-fit whitespace-normal text-[10px] leading-tight ${leitura.badge}`}>
+                      <div key={cluster.key} className={`assessment-card min-w-0 rounded-xl border p-4 ${leitura.classes}`}>
+                        <div className="mb-4 flex min-h-[64px] flex-col gap-2">
+                          <div className="text-sm font-bold leading-snug text-slate-800">{cluster.nome}</div>
+                          <Badge variant="outline" className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-semibold leading-tight ${leitura.badge}`}>
                             {leitura.rotulo}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <div className="rounded-lg bg-violet-50 p-3">
-                            <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">Prioridade do gestor</div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-0">
+                          <div className="min-w-0 sm:border-r sm:border-slate-200 sm:pr-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-violet-700">Prioridade do gestor</div>
                             {perfil?.expectativaGestor?.descritoresReconhecidos ? (
                               prioridade > 0 ? (
                                 <>
-                                  <div className="mt-1 text-2xl font-bold text-violet-950">{fmtPct1(prioridade)}</div>
-                                  <div className="mt-1 text-xs text-violet-800">{expectativa?.nivel}</div>
+                                  <div className="mt-2 text-2xl font-bold leading-none text-violet-950">{fmtPct1(prioridade)}</div>
+                                  <div className="mt-2 min-h-[32px] text-xs leading-relaxed text-violet-800">{expectativa?.nivel}</div>
+                                  <div className="mt-3 h-1 overflow-hidden rounded-full bg-violet-100">
+                                    <div
+                                      className="assessment-progress-fill h-full rounded-full bg-violet-600"
+                                      style={{ width: `${prioridade}%` }}
+                                    />
+                                  </div>
                                 </>
                               ) : (
-                                <div className="mt-2 text-sm font-semibold text-muted-foreground">Não priorizada pelo gestor</div>
+                                <div className="mt-2 text-sm font-semibold text-slate-500">Não priorizada pelo gestor</div>
                               )
                             ) : (
-                              <div className="mt-2 text-sm text-muted-foreground">Sem informação</div>
+                              <div className="mt-2 text-sm text-slate-500">Sem informação</div>
                             )}
                           </div>
-                          <div className="rounded-lg bg-slate-50 p-3">
-                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">Perfil do colaborador</div>
-                            <div className="mt-1 text-2xl font-bold text-slate-950">{fmtPct1(auto?.percentual)}</div>
-                            <div className="mt-1 text-xs text-slate-600">Autoavaliação do cluster</div>
+
+                          <div className="min-w-0 sm:pl-3">
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Perfil do colaborador</div>
+                            <div className="mt-2 text-2xl font-bold leading-none text-slate-950">{fmtPct1(auto?.percentual)}</div>
+                            <div className="mt-2 min-h-[32px] text-xs leading-relaxed text-slate-500">Autoavaliação do cluster</div>
+                            <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-200">
+                              <div
+                                className="assessment-progress-fill h-full rounded-full bg-slate-700"
+                                style={{ width: `${auto?.percentual ?? 0}%` }}
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -438,45 +563,52 @@ function PerfilAssessmentModal({
                   })}
                 </div>
 
-                <div className="mt-4 grid gap-2 rounded-xl border bg-white/70 p-3 text-xs leading-relaxed text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-emerald-900">
-                    <strong>Verde:</strong> perfil igual ou maior que a prioridade, ou até 5 pontos percentuais abaixo.
-                  </div>
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 text-blue-900">
-                    <strong>Azul:</strong> perfil entre mais de 5 e até 20 pontos percentuais abaixo da prioridade.
-                  </div>
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-amber-950">
-                    <strong>Amarelo:</strong> diferença acima de 20 e até 40 pontos percentuais.
-                  </div>
-                  <div className="rounded-lg border border-orange-300 bg-orange-50 p-2 text-orange-950">
-                    <strong>Laranja:</strong> diferença acima de 40 pontos percentuais.
+                <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
+                  <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="flex items-start gap-2">
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+                      <span><strong className="text-emerald-800">Verde:</strong> perfil igual ou maior que a prioridade, ou até 5 pontos percentuais abaixo.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" aria-hidden="true" />
+                      <span><strong className="text-blue-800">Azul:</strong> perfil entre mais de 5 e até 20 pontos percentuais abaixo da prioridade.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
+                      <span><strong className="text-amber-800">Amarelo:</strong> diferença acima de 20 e até 40 pontos percentuais.</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-orange-500" aria-hidden="true" />
+                      <span><strong className="text-orange-800">Laranja:</strong> diferença acima de 40 pontos percentuais.</span>
+                    </div>
                   </div>
                 </div>
-                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+
+                <p className="mt-3 text-[11px] leading-5 text-slate-500">
                   Uma dimensão não priorizada não significa que o gestor espera ausência daquela competência. Ela apenas não recebeu peso na comparação.
                 </p>
               </section>
 
-              <details className="group rounded-2xl border bg-slate-50/80 shadow-sm">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold text-slate-900">
+              <details className="assessment-section group overflow-hidden rounded-2xl border border-slate-200/70 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-300 sm:px-6">
                   <span>Como estes resultados são calculados?</span>
-                  <span className="rounded-full border bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:hidden">Ver explicação</span>
-                  <span className="hidden rounded-full border bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:inline">Ocultar explicação</span>
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:hidden">Ver explicação</span>
+                  <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:inline">Ocultar explicação</span>
                 </summary>
-                <div className="grid gap-4 border-t px-5 py-5 text-sm leading-relaxed text-slate-700 lg:grid-cols-2">
-                  <div className="rounded-xl border bg-white p-4">
+                <div className="assessment-details-body grid gap-3 border-t border-slate-200 px-5 py-5 text-sm leading-relaxed text-slate-700 sm:px-6 lg:grid-cols-2">
+                  <div className="rounded-xl bg-slate-50/70 p-4">
                     <h4 className="font-bold text-slate-950">1. Perfil Comportamental</h4>
                     <p className="mt-2">
                       Os percentuais de Dominância, Influência, Estabilidade e Conformidade/Cautela vêm diretamente do resultado mais recente do Assessment/Avaliação de Potencial do colaborador.
                     </p>
                   </div>
-                  <div className="rounded-xl border bg-white p-4">
+                  <div className="rounded-xl bg-slate-50/70 p-4">
                     <h4 className="font-bold text-slate-950">2. Autoavaliação de Competências</h4>
                     <p className="mt-2">
                       Representa como o próprio colaborador se percebe. As competências respondidas de 1 a 5 são agrupadas nos cinco clusters. O sistema calcula a média das competências encontradas em cada cluster e transforma essa média em percentual.
                     </p>
                   </div>
-                  <div className="rounded-xl border bg-white p-4">
+                  <div className="rounded-xl bg-slate-50/70 p-4">
                     <h4 className="font-bold text-slate-950">3. Prioridade do Gestor</h4>
                     <p className="mt-2">
                       O BEM Acolhido não mede o nível esperado da competência. Ele mostra quais dimensões o gestor priorizou. Na lista atual, o sistema considera a proporção de descritores selecionados dentro de cada cluster. Nas respostas históricas, utiliza os pesos definidos para as palavras antigas, sem alterar a resposta original.
@@ -485,7 +617,7 @@ function PerfilAssessmentModal({
                       Depois, o maior índice encontrado vira 100% de prioridade e os demais são normalizados proporcionalmente.
                     </p>
                   </div>
-                  <div className="rounded-xl border bg-white p-4">
+                  <div className="rounded-xl bg-slate-50/70 p-4">
                     <h4 className="font-bold text-slate-950">4. Compatibilidade</h4>
                     <p className="mt-2">
                       A prioridade do gestor funciona como peso para o perfil autopercebido do colaborador. O sistema multiplica o percentual do colaborador pela prioridade de cada cluster, soma os resultados e divide pela soma das prioridades.
@@ -497,9 +629,14 @@ function PerfilAssessmentModal({
                 </div>
               </details>
 
-              <div className="flex justify-end border-t pt-4">
+              <div className="flex justify-end border-t border-slate-200 pt-5">
                 <DialogClose asChild>
-                  <Button variant="outline">Fechar janela</Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-lg border-slate-200 bg-white px-4 shadow-none transition-[background-color,border-color,transform,box-shadow] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[.98] focus-visible:ring-2 focus-visible:ring-violet-300"
+                  >
+                    Fechar janela
+                  </Button>
                 </DialogClose>
               </div>
             </div>
@@ -507,6 +644,7 @@ function PerfilAssessmentModal({
         </div>
       </DialogContent>
     </Dialog>
+  );
   );
 }
 
