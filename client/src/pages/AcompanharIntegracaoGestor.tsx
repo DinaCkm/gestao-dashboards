@@ -182,8 +182,12 @@ function PerfilAssessmentModal({
   if (!colaborador) return null;
   const perfil = colaborador.perfilAssessment;
   const disc = perfil?.disc;
-  const autoPorKey = new Map((perfil?.autoavaliacaoClusters || []).map((item) => [item.key, item]));
-  const expectativaPorKey = new Map((perfil?.expectativaGestor?.clusters || []).map((item) => [item.key, item]));
+  const autoPorKey = new Map<string, ClusterAutoavaliacao>(
+    (perfil?.autoavaliacaoClusters || []).map((item) => [item.key, item] as const),
+  );
+  const expectativaPorKey = new Map<string, ClusterExpectativa>(
+    (perfil?.expectativaGestor?.clusters || []).map((item) => [item.key, item] as const),
+  );
 
   const discCards = DISC_PERFIL_RESUMO.map((item) => {
     const score = item.key === 'D'
@@ -239,8 +243,9 @@ function PerfilAssessmentModal({
                           <TooltipContent className="max-w-xs text-xs leading-relaxed">{item.descricao}</TooltipContent>
                         </UiTooltip>
                       </div>
-                      <div className="mt-4 text-3xl font-bold">{fmtPct1(item.score)}</div>
-                      <div className="mt-1 text-sm font-semibold">{item.rotulo}</div>
+                      <div className="mt-4 text-xl font-bold">
+                        {item.rotulo}: <span className="text-3xl">{fmtPct1(item.score)}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -716,7 +721,7 @@ export default function AcompanharIntegracaoGestor() {
                           }}
                         >
                           <Sparkles className="h-3.5 w-3.5" />
-                          Perfil
+                          Assessment
                         </Button>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2 text-xs">
