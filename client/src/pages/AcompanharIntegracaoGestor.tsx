@@ -193,6 +193,7 @@ function PerfilAssessmentModal({
   adminView?: boolean;
   onRespostaArquivada?: () => Promise<void> | void;
 }) {
+  const [arquivandoBem, setArquivandoBem] = useState(false);
   if (!colaborador) return null;
 
   const perfil = colaborador.perfilAssessment;
@@ -203,8 +204,6 @@ function PerfilAssessmentModal({
   const expectativaPorKey = new Map<string, ClusterExpectativa>(
     (perfil?.expectativaGestor?.clusters || []).map((item) => [item.key, item] as const),
   );
-  const [arquivandoBem, setArquivandoBem] = useState(false);
-
   const classeComparacao = (prioridade: number, perfilColaborador: number | null | undefined) => {
     if (perfilColaborador == null || !Number.isFinite(Number(perfilColaborador)) || prioridade <= 0) {
       return 'border-slate-200 bg-slate-50';
