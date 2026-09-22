@@ -99,7 +99,7 @@ function publicFormHtml(slug: string) {
   const storageKey='eco-integracao-draft-'+f.slug;
 
   function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function textHtml(s){return esc(String(s??'').replace(/\\n/g,'\n')).replace(/\n/g,'<br>');}
+  function textHtml(s){return esc(String(s??'')).split(String.fromCharCode(10)).join('<br>');}
   function optionValue(o){return typeof o==='string'?o:o.value}
   function optionLabel(o){return typeof o==='string'?o:o.label}
   function currentValue(code){return values.answers[code]??''}
@@ -210,8 +210,8 @@ function publicFormHtml(slug: string) {
       const required=q.required!==false||(q.code==='aval_reacao_feedback'&&values.role==='Gestor');
       if(required&&!filled)return fail(q.code,'Responda esta pergunta antes de continuar.');
       if(q.type==='textarea'&&filled&&String(v).trim().length<10)return fail(q.code,'Escreva pelo menos 10 caracteres para completar esta resposta.');
-      if(q.type==='cpf'&&filled&&!/^\d{11}$/.test(String(v).replace(/\D/g,'')))return fail(q.code,'Informe o CPF com 11 números.');
-      if(q.type==='tel'&&filled){const n=String(v).replace(/\D/g,'');if(n.length<10||n.length>11)return fail(q.code,'Informe o telefone com DDD, usando 10 ou 11 números.');}
+      if(q.type==='cpf'&&filled&&!/^[0-9]{11}$/.test(String(v).replace(/[^0-9]/g,'')))return fail(q.code,'Informe o CPF com 11 números.');
+      if(q.type==='tel'&&filled){const n=String(v).replace(/[^0-9]/g,'');if(n.length<10||n.length>11)return fail(q.code,'Informe o telefone com DDD, usando 10 ou 11 números.');}
     }
     return true;
   }
