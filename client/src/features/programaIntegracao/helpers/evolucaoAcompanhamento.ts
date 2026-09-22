@@ -84,3 +84,71 @@ export function percentualNumero(valor: string): number | null {
   const match = String(valor || '').match(/(100|75|50|25|0)%/);
   return match ? Number(match[1]) : null;
 }
+
+
+export const INDICES_PESQUISA_COLABORADOR = [
+  {
+    chave: 'culturaPertencimento',
+    nome: 'Cultura e pertencimento',
+    indices: [9, 10, 11, 12, 13],
+  },
+  {
+    chave: 'anjoColegas',
+    nome: 'Percepção do Anjo e colegas',
+    indices: [14, 15, 16, 17, 18],
+  },
+  {
+    chave: 'gestao',
+    nome: 'Percepção da Gestão',
+    indices: [19, 20, 21],
+  },
+  {
+    chave: 'trabalhoDesenvolvimento',
+    nome: 'Percepção do Trabalho e desenvolvimento',
+    indices: [22, 23, 24, 25, 26, 27, 28],
+    indicesInvertidos: [23],
+  },
+] as const;
+
+export interface MomentoPesquisaColaborador {
+  ciclo: number;
+  label: string;
+  indices: Record<string, number | null>;
+}
+
+function notaPesquisa(resposta: RespostaAcompanhamento, indice: number, invertida = false): number | null {
+  const n = numero(valorEm(resposta, indice));
+  // Na Pesquisa de Integração, 0 significa "sem opinião" e não compõe o índice.
+  if (n == null || n <= 0 || n > 5) return null;
+  return invertida ? 6 - n : n;
+}
+
+export function evolucaoPesquisaColaborador(
+  respostas: RespostaAcompanhamento[],
+): MomentoPesquisaColaborador[] {
+  return [1, 2, 3, 4].flatMap((ciclo) => {
+    const resposta = respostas
+      .filter((r) => r.form === 'pesquisa' && Number(r.ciclo) === ciclo)
+      .slice(-1)[0];
+    if (!resposta) return [];
+
+    const indices: Record<string, number | null> = {};
+
+    INDICES_PESQUISA_COLABORADOR.forEach((grupo) => {
+      const invertidos = new Set<number>('indicesInvertidos' in grupo ? grupo.indicesInvertidos : []);
+      const notas = grupo.indices
+        .map((indice) => notaPesquisa(resposta, indice, invertidos.has(indice)))
+        .filter((n): n is number => n != null);
+
+      indices[grupo.chave] = notas.length
+        ? (notas.reduce((soma, n) => soma + n, 0) / notas.length) * 20
+        : null;
+    });
+
+    return [{
+      ciclo,
+      label: `${ciclo}º`,
+      indices,
+    }];
+  });
+}

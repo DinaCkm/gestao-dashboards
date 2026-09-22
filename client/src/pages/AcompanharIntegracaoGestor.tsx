@@ -20,6 +20,8 @@ import {
 } from 'recharts';
 import {
   evolucaoPorPapel,
+  evolucaoPesquisaColaborador,
+  INDICES_PESQUISA_COLABORADOR,
   PILARES_ACOMPANHAMENTO,
   percentualNumero,
   type RespostaAcompanhamento,
@@ -128,6 +130,94 @@ function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] 
     alertas.push('Esse colaborador ainda não realizou nenhuma das tarefas registradas no PDI.');
   }
   return alertas;
+}
+
+function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompanhamento[] }) {
+  const momentos = useMemo(() => evolucaoPesquisaColaborador(respostas), [respostas]);
+  const chartData = momentos.map((m) => ({
+    momento: m.label,
+    ...m.indices,
+  }));
+
+  return (
+    <Card className="overflow-hidden border-indigo-200/70">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <BarChart3 className="h-5 w-5 text-indigo-600" />
+          Evolução — Colaborador (Pesquisa de Integração)
+        </CardTitle>
+        <CardDescription>
+          Evolução da percepção do próprio colaborador ao longo dos alinhamentos.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {!momentos.length ? (
+          <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+            O colaborador ainda não possui Pesquisa de Integração respondida.
+          </div>
+        ) : (
+          <>
+            <div className="h-[320px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
+                  <XAxis dataKey="momento" />
+                  <YAxis domain={[0, 100]} ticks={[0,20,40,60,80,100]} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip formatter={(v: number) => `${Number(v).toFixed(1).replace('.', ',')}%`} />
+                  <Legend />
+                  {INDICES_PESQUISA_COLABORADOR.map((grupo, i) => (
+                    <Line
+                      key={grupo.chave}
+                      type="monotone"
+                      dataKey={grupo.chave}
+                      name={grupo.nome}
+                      stroke={CORES[i % CORES.length]}
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                      connectNulls
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full min-w-[700px] text-sm">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-3 py-2 text-left">Índice</th>
+                    {momentos.map((m) => (
+                      <th key={m.ciclo} className="px-3 py-2 text-center">Alinhamento {m.ciclo}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {INDICES_PESQUISA_COLABORADOR.map((grupo) => (
+                    <tr key={grupo.chave} className="border-t">
+                      <td className="px-3 py-2 font-medium">{grupo.nome}</td>
+                      {momentos.map((m) => (
+                        <td key={m.ciclo} className="px-3 py-2 text-center font-semibold">
+                          {m.indices[grupo.chave] == null
+                            ? '—'
+                            : `${m.indices[grupo.chave]!.toFixed(1).replace('.', ',')}%`}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="rounded-lg border bg-muted/20 p-3 text-xs text-muted-foreground">
+              Índices calculados a partir das questões de cada bloco da Pesquisa de Integração.
+              Respostas 0 (“sem opinião”) não entram na média. No item de sobrecarga, a escala é invertida
+              para que percentuais maiores mantenham sempre o mesmo sentido de percepção mais favorável.
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function EvolucaoBloco({ titulo, respostas, papel }: {
@@ -410,6 +500,10 @@ export default function AcompanharIntegracaoGestor() {
 
                 <EvolucaoBloco titulo="Evolução — Gestor" respostas={colaborador.respostas} papel="Gestor" />
                 <EvolucaoBloco titulo="Evolução — Anjo" respostas={colaborador.respostas} papel="Anjo" />
+
+                {dados?.scope === 'all' && (
+                  <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
+                )}
 
                 <Card>
                   <CardHeader>
