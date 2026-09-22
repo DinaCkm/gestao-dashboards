@@ -45,7 +45,7 @@ function campoDerivadoBem(processo: ProcessoIntegracao) {
   const resposta = ultimaRespostaBem(processo);
   const bOriginal = processo.bem || {};
   const fonteBem = String((bOriginal as any).fonte || '').toLowerCase();
-  const cacheVeioDoFormulario = !resposta && fonteBem.includes('formul');
+  const cacheVeioDoFormulario = fonteBem.includes('formul');
   // Se a resposta ativa foi excluída, um snapshot antigo do formulário não pode
   // continuar aparecendo como se ainda estivesse vinculado ao processo.
   // Dados realmente manuais continuam preservados.
