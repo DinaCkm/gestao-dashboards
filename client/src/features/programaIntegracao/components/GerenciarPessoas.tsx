@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { trpc } from '@/lib/trpc';
 import { ArrowDown, ArrowUp, CheckCircle2, CircleAlert, Clock3, FlaskConical, Loader2, Plus, Search, Sun } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -51,6 +53,7 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
   const [testeAnjo, setTesteAnjo] = useState('');
   const [testeAnjoEmail, setTesteAnjoEmail] = useState('');
   const [testeMentora, setTesteMentora] = useState('');
+  const [testeEmpresaProgramId, setTesteEmpresaProgramId] = useState('');
   const [operacao, setOperacao] = useState<string | null>(null);
   const [statusEco, setStatusEco] = useState<Record<string, EcoLiderAndamento>>({});
   const [statusEcoCarregando, setStatusEcoCarregando] = useState(false);
@@ -60,6 +63,12 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
   const [vinculoManualAberto, setVinculoManualAberto] = useState<string | null>(null);
   const [vinculandoEco, setVinculandoEco] = useState<string | null>(null);
   const [carregandoListaEco, setCarregandoListaEco] = useState<string | null>(null);
+  const { data: empresas = [] } = trpc.admin.listEmpresas.useQuery();
+
+  const empresaTesteSelecionada = useMemo(
+    () => (empresas || []).find((empresa: any) => String(empresa.id) === testeEmpresaProgramId) || null,
+    [empresas, testeEmpresaProgramId],
+  );
 
   const pessoasFiltradas = useMemo(() => {
     let resultado = [...processos];
@@ -247,6 +256,10 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
       toast.error('Informe pelo menos nome e CPF para criar o teste vazio.');
       return;
     }
+    if (!testeEmpresaProgramId) {
+      toast.error('Selecione a empresa deste processo de teste.');
+      return;
+    }
 
     const confirmou = window.confirm(
       'Criar este processo fictício de teste com TODOS os formulários vazios?\n\n' +
@@ -268,6 +281,8 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
         anjoEmail: testeAnjoEmail,
         consultora: testeMentora,
         consideracoes: 'REGISTRO FICTÍCIO PARA TESTE DE FORMULÁRIOS',
+        empresaProgramId: Number(testeEmpresaProgramId),
+        empresaProgramNome: String(empresaTesteSelecionada?.name || ''),
       }, idsGlobais.length);
 
       await onSaved();
@@ -278,6 +293,10 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
   };
 
   const criarDemoCompleta = async () => {
+    if (!testeEmpresaProgramId) {
+      toast.error('Selecione a empresa da demonstração antes de criar a Mariana.');
+      return;
+    }
     const confirmou = window.confirm(
       'Criar a demonstração completa antiga?\n\n' +
       'Ela inclui Mariana Alves Teixeira (demonstração), alinhamentos e respostas fictícias já preenchidas.',
@@ -285,7 +304,11 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
     if (!confirmou) return;
 
     await executar('criar-demo-completa', async () => {
-      const criado = await criarProcessoDemonstracaoSeguro(feriados);
+      const criado = await criarProcessoDemonstracaoSeguro(
+        feriados,
+        Number(testeEmpresaProgramId),
+        String(empresaTesteSelecionada?.name || ''),
+      );
       await onSaved();
       toast.success(`Demonstração completa criada com ${criado.respostas} resposta(s) fictícia(s).`);
       onAbrirPessoa(criado.legacyId);
@@ -434,6 +457,22 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                 <span className="font-medium text-muted-foreground">Mentora</span>
                 <Input value={testeMentora} onChange={(e) => setTesteMentora(e.target.value)} placeholder="Opcional" />
               </label>
+              <label className="space-y-1 text-xs md:col-span-2 xl:col-span-1">
+                <span className="font-medium text-muted-foreground">Empresa do teste/demonstração *</span>
+                <Select value={testeEmpresaProgramId} onValueChange={setTesteEmpresaProgramId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a empresa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(empresas || []).map((empresa: any) => (
+                      <SelectItem key={empresa.id} value={String(empresa.id)}>{empresa.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="block text-[10px] text-muted-foreground">
+                  Define em qual visão UGP/RH este processo fictício poderá aparecer.
+                </span>
+              </label>
             </div>
 
             <div className="flex flex-wrap gap-2 border-t pt-4">
@@ -542,7 +581,28 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
             const vinculoManualExistente = ecoAlunoId > 0 && ecoVinculoModo === 'manual';
             const mostrarBotaoVinculoEco = precisaVinculoEco || vinculoManualExistente;
             const manualAberto = Boolean(pessoa.id && vinculoManualAberto === pessoa.id);
+            const ehDemonstracao = String(pessoa.id || '').startsWith('demo') ||
+              pessoa.nome === 'Mariana Alves Teixeira (demonstração)';
+            const empresaTesteAtualId = String((pessoa.teste as any)?.empresaProgramId || '');
+            const empresaTesteAtualNome = String((pessoa.teste as any)?.empresaProgramNome || '');
 
+            const vincularEmpresaDemonstracao = async (programId: string) => {
+              if (!pessoa.id) return;
+              const empresa = (empresas || []).find((item: any) => String(item.id) === programId);
+              if (!empresa) return;
+              await executar(`empresa-demo-${pessoa.id}`, async () => {
+                await atualizarEstadoProcesso(pessoa.id!, {
+                  ...pessoa,
+                  teste: {
+                    ...(pessoa.teste || {}),
+                    empresaProgramId: Number(programId),
+                    empresaProgramNome: String(empresa.name || ''),
+                  },
+                });
+                await onSaved();
+                toast.success(`Demonstração vinculada à empresa ${empresa.name}.`);
+              }, 'Não foi possível vincular a demonstração à empresa.');
+            };
 
             return (
               <Card key={chavePessoa} className="hover:shadow-md transition">
@@ -587,6 +647,30 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                 </CardHeader>
 
                 <CardContent className="space-y-3">
+                  {ehDemonstracao && (
+                    <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-3">
+                      <div className="mb-2 text-xs font-semibold text-violet-800">Empresa da demonstração</div>
+                      <Select
+                        value={empresaTesteAtualId}
+                        onValueChange={(value) => void vincularEmpresaDemonstracao(value)}
+                        disabled={Boolean(operacao)}
+                      >
+                        <SelectTrigger className="h-9 bg-white">
+                          <SelectValue placeholder="Selecione a empresa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(empresas || []).map((empresa: any) => (
+                            <SelectItem key={empresa.id} value={String(empresa.id)}>{empresa.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="mt-1 text-[10px] text-violet-700">
+                        {empresaTesteAtualNome
+                          ? `Visível para a UGP/RH de ${empresaTesteAtualNome}.`
+                          : 'Sem empresa vinculada: por segurança, a UGP/RH não verá esta demonstração.'}
+                      </p>
+                    </div>
+                  )}
                   {manualAberto && (
                     <div className={`rounded-lg border p-2.5 ${
                       vinculoManualExistente
