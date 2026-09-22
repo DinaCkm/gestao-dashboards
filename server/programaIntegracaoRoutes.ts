@@ -771,6 +771,34 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       const formulariosPendentes: any[] = [];
       const feito = estado.feito && typeof estado.feito === "object" ? estado.feito : {};
+      const respostaBemAtiva = respostas.some((r: any) => r.form === "bem");
+      const fichaSolicitacaoBem = feito["pre-05"] && typeof feito["pre-05"] === "object" ? feito["pre-05"] : null;
+      const fichaRetornoBem = feito["pre-04b"] && typeof feito["pre-04b"] === "object" ? feito["pre-04b"] : null;
+
+      // O BEM é uma pendência de pré-integração. Só aparece depois que o e-mail
+      // de início ao gestor com o formulário foi efetivamente enviado.
+      if (
+        !respostaBemAtiva &&
+        String(fichaSolicitacaoBem?.s || "") === "ok" &&
+        String(fichaRetornoBem?.s || "") !== "ok"
+      ) {
+        const dataSolicitacaoBem = String(fichaSolicitacaoBem?.d || "").slice(0,10);
+        const prazoBem = /^\d{4}-\d{2}-\d{2}$/.test(dataSolicitacaoBem)
+          ? addDiasIso(dataSolicitacaoBem, 2)
+          : "";
+        formulariosPendentes.push({
+          ciclo: 0,
+          etapa: "Pré-integração",
+          formKey: "bem",
+          cycleValue: "",
+          papel: "Gestor",
+          formulario: "Bem Acolhido em Nossa Unidade",
+          prazo: prazoBem,
+          solicitadoEm: dataSolicitacaoBem || null,
+          atrasado: Boolean(prazoBem && prazoBem < hoje),
+        });
+      }
+
       const solicitacoesPorCiclo: Record<number, Record<"Gestor" | "Anjo" | "Colaborador", string>> = {
         1: { Gestor: "pos1-05", Anjo: "pos1-07", Colaborador: "pos1-04" },
         2: { Gestor: "pos2-05", Anjo: "pos2-07", Colaborador: "pos2-04" },
