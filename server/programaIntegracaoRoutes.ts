@@ -70,8 +70,13 @@ function detectarMatrizBem(row: any): "historica" | "atual" {
   const versao = Number(row?.formVersion || 0);
   if (versao >= BEM_MATRIZ_ATUAL_VERSAO) return "atual";
 
+  // Importações com versão 1 representam o acervo histórico e não devem ser
+  // reclassificadas só porque foram tecnicamente importadas em uma data recente.
+  if (versao === 1 && String(row?.source || "") === "importacao") return "historica";
+
   // A primeira publicação da nova lista ocorreu antes de o formVersion ser
-  // elevado para 2. Para esse pequeno intervalo, usamos a data como fallback.
+  // elevado para 2. Para esse pequeno intervalo de respostas públicas, a data
+  // funciona como fallback sem tocar no dado original armazenado.
   const submittedAt = row?.submittedAt ? new Date(row.submittedAt).getTime() : 0;
   const corte = new Date(BEM_MATRIZ_ATUAL_PUBLICADA_EM).getTime();
   if (submittedAt && Number.isFinite(submittedAt) && submittedAt >= corte) return "atual";
