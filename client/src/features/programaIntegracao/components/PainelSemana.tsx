@@ -53,7 +53,7 @@ interface PainelSemanaProps {
   feriados?: string[];
   respostasPendentes?: any[];
   config: BootstrapState['config'];
-  onProcessoClick?: (processId: string) => void;
+  onProcessoClick?: (processId: string, itemId?: string) => void;
   onRevisarRespostas?: () => void;
   onConcluirAcao?: (processId: string, itemId: string) => Promise<void> | void;
   onAlterarStatusAcao?: (processId: string, itemId: string, status: StatusAcaoLegado) => void;
@@ -539,7 +539,7 @@ export function PainelSemana({
                             </button>}
                             {salvandoAcao === chave && <span className="mt-0.5 text-[11px] text-muted-foreground whitespace-nowrap">Salvando e conferindo...</span>}
                             <div className="min-w-0 flex-1">
-                              <button type="button" className="text-left min-w-0" onClick={() => onProcessoClick?.(acao.pid)}>
+                              <button type="button" className="text-left min-w-0" onClick={() => onProcessoClick?.(acao.pid, grupo.itemId)}>
                                 <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full border flex-shrink-0" style={acao.p.cor ? { backgroundColor: acao.p.cor } : undefined} /><span className="font-medium truncate">{acao.p.nome}</span></div>
                                 <div className="text-xs text-muted-foreground mt-1 ml-4">{acao.p.cargo || 'Cargo não informado'}{acao.p.unidade ? ` · ${acao.p.unidade}` : ''}</div>
                               </button>
@@ -570,6 +570,16 @@ export function PainelSemana({
                                 >
                                   Baixar tutorial
                                 </a>
+                              </Button>
+                            )}
+                            {grupo.itemId === 'ag1-03' && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => onProcessoClick?.(acao.pid, grupo.itemId)}
+                              >
+                                Abrir agendamento
                               </Button>
                             )}
                             {ehEmail && (
