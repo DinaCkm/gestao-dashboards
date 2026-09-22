@@ -43,7 +43,13 @@ function valorResposta(resposta: RespostaFormulario | null, codigo: string, indi
 
 function campoDerivadoBem(processo: ProcessoIntegracao) {
   const resposta = ultimaRespostaBem(processo);
-  const b = processo.bem || {};
+  const bOriginal = processo.bem || {};
+  const fonteBem = String((bOriginal as any).fonte || '').toLowerCase();
+  const cacheVeioDoFormulario = !resposta && fonteBem.includes('formul');
+  // Se a resposta ativa foi excluída, um snapshot antigo do formulário não pode
+  // continuar aparecendo como se ainda estivesse vinculado ao processo.
+  // Dados realmente manuais continuam preservados.
+  const b = cacheVeioDoFormulario ? {} : bOriginal;
 
   const qualidadesAuto = valorResposta(resposta, 'bem_caracteristicas', 11);
   const primeiros15 = valorResposta(resposta, 'bem_primeiros_15_dias', 14);
@@ -68,7 +74,13 @@ function campoDerivadoBem(processo: ProcessoIntegracao) {
     || processo.gestor
     || '';
   const dataAuto = resposta?.quando || resposta?.em || (resposta?.submittedAt ? String(resposta.submittedAt).slice(0, 10) : '');
-  const status = String(b.status || (resposta ? 'recebido' : statusAcaoAtual(processo, 'pre-04b') === 'ok' ? 'recebido' : 'pendente'));
+  const status = String(
+    resposta
+      ? (b.status || 'recebido')
+      : cacheVeioDoFormulario
+        ? 'pendente'
+        : (b.status || (statusAcaoAtual(processo, 'pre-04b') === 'ok' ? 'recebido' : 'pendente'))
+  );
 
   return {
     resposta,
@@ -79,6 +91,7 @@ function campoDerivadoBem(processo: ProcessoIntegracao) {
     atividades: String(b.atividades || '').trim() || atividadesAuto,
     obs: String(b.obs || '').trim() || observacoesAuto,
     manualQualidades: Boolean(String(b.qualidades || '').trim()),
+    cacheVeioDoFormulario,
   };
 }
 
@@ -90,13 +103,13 @@ export function BemTesteProcesso({ processo, config, onSalvarProcesso }: BemTest
   const linkPadrao = linkIntegracaoPorChave('ecolider', config.links)?.u || 'https://ecolider.ecodobem.com';
 
   const [bemDraft, setBemDraft] = useState<Record<string, string>>(() => ({
-    status: String(processo.bem?.status || bem.status),
-    gestor: String(processo.bem?.gestor || ''),
-    data: String(processo.bem?.data || ''),
-    arquivo: String(processo.bem?.arquivo || ''),
-    qualidades: String(processo.bem?.qualidades || ''),
-    atividades: String(processo.bem?.atividades || ''),
-    obs: String(processo.bem?.obs || ''),
+    status: String(bem.cacheVeioDoFormulario ? bem.status : (processo.bem?.status || bem.status)),
+    gestor: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.gestor || '')),
+    data: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.data || '')),
+    arquivo: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.arquivo || '')),
+    qualidades: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.qualidades || '')),
+    atividades: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.atividades || '')),
+    obs: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.obs || '')),
   }));
   const [testeDraft, setTesteDraft] = useState<Record<string, string>>(() => ({
     status: String(processo.teste?.status || testeStatus),
@@ -109,13 +122,13 @@ export function BemTesteProcesso({ processo, config, onSalvarProcesso }: BemTest
   useEffect(() => {
     if (statusEdicao === 'dirty' || statusEdicao === 'saving') return;
     setBemDraft({
-      status: String(processo.bem?.status || bem.status),
-      gestor: String(processo.bem?.gestor || ''),
-      data: String(processo.bem?.data || ''),
-      arquivo: String(processo.bem?.arquivo || ''),
-      qualidades: String(processo.bem?.qualidades || ''),
-      atividades: String(processo.bem?.atividades || ''),
-      obs: String(processo.bem?.obs || ''),
+      status: String(bem.cacheVeioDoFormulario ? bem.status : (processo.bem?.status || bem.status)),
+      gestor: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.gestor || '')),
+      data: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.data || '')),
+      arquivo: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.arquivo || '')),
+      qualidades: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.qualidades || '')),
+      atividades: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.atividades || '')),
+      obs: String(bem.cacheVeioDoFormulario ? '' : (processo.bem?.obs || '')),
     });
     setTesteDraft({
       status: String(processo.teste?.status || testeStatus),
