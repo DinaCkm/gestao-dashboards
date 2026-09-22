@@ -216,6 +216,27 @@ export default function ProgramaIntegracaoFormularioPublico() {
     colaboradores: [], gestores: [], anjos: [],
   });
 
+  // Permite abrir o formulário a partir do acompanhamento já com os dados
+  // conhecidos preenchidos. O usuário ainda pode revisar antes de enviar.
+  useEffect(() => {
+    const paramsBusca = new URLSearchParams(window.location.search);
+    const nome = String(paramsBusca.get('nome') || '').trim();
+    const unidade = String(paramsBusca.get('unidade') || '').trim();
+    const ciclo = String(paramsBusca.get('ciclo') || '').trim();
+    const papel = String(paramsBusca.get('papel') || '').trim();
+    const respondente = String(paramsBusca.get('respondente') || '').trim();
+
+    if (!nome && !unidade && !ciclo && !papel && !respondente) return;
+    setDraft((atual) => ({
+      ...atual,
+      nomeColaborador: nome || atual.nomeColaborador,
+      unidade: unidade || atual.unidade,
+      cycleValue: ciclo || atual.cycleValue,
+      role: papel || atual.role,
+      respondentName: respondente || atual.respondentName,
+    }));
+  }, [slug]);
+
   useEffect(() => {
     let ativo = true;
     carregarOpcoesAtivasFormulario()
