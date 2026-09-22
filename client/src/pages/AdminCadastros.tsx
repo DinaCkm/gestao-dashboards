@@ -3487,17 +3487,25 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       ) : "-"}
                     </TableCell>
                     <TableCell>
-                      {g.isAlsoStudent ? (
-                        <Badge className="bg-blue-600">
-                          <ArrowLeftRight className="h-3 w-3 mr-1" />
-                          Aluno + Gerente
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">
-                          <Building2 className="h-3 w-3 mr-1" />
-                          Gerente Puro
-                        </Badge>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {g.isAlsoStudent ? (
+                          <Badge className="bg-blue-600">
+                            <ArrowLeftRight className="h-3 w-3 mr-1" />
+                            Aluno + Gerente
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            <Building2 className="h-3 w-3 mr-1" />
+                            Gerente Puro
+                          </Badge>
+                        )}
+                        {g.isSpecialManager && (
+                          <Badge className="bg-violet-600">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Especial
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
