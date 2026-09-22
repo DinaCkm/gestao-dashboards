@@ -344,7 +344,9 @@ export function checarPreparacaoMentora(
     add('pendencias', 'ok', 'Pendências', String(processo.pendencias || '').trim() || 'nenhuma registrada');
   }
 
-  add('link', String(alinhamento.link || '').trim() ? 'ok' : 'aviso', 'Link da reunião', String(alinhamento.link || '').trim() || 'ainda não definido — o briefing sai como “a confirmar”');
+  if (numero !== 1) {
+    add('link', String(alinhamento.link || '').trim() ? 'ok' : 'aviso', 'Link da reunião', String(alinhamento.link || '').trim() || 'ainda não definido — o briefing sai como “a confirmar”');
+  }
 
   const bloqueios = itens.filter((x) => x.nivel === 'bloq').length;
   const avisos = itens.filter((x) => x.nivel === 'aviso').length;
