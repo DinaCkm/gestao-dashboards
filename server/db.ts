@@ -9809,6 +9809,20 @@ export async function getGerentesEmpresa(): Promise<any[]> {
   const allTurmas = await db.select().from(turmas);
   const allConsultors = await db.select().from(consultors);
   const allMentoringSessions = await db.select().from(mentoringSessions);
+  const [managerPermissionRows] = await db.execute(sql.raw(
+    `SELECT userId,permissions FROM admin_page_permissions`
+  )) as any;
+  const specialManagerIds = new Set<number>();
+  for (const row of managerPermissionRows || []) {
+    try {
+      const permissions = typeof row.permissions === 'string'
+        ? JSON.parse(row.permissions)
+        : row.permissions;
+      if (Array.isArray(permissions) && permissions.includes('scope:manager:special')) {
+        specialManagerIds.add(Number(row.userId));
+      }
+    } catch {}
+  }
   
   const alunoMap = new Map(allAlunos.map(a => [a.id, a]));
   const programMap = new Map(allPrograms.map(p => [p.id, p]));
@@ -9855,6 +9869,7 @@ export async function getGerentesEmpresa(): Promise<any[]> {
         alunoId: u.alunoId,
         alunoName: aluno?.name || null,
         isAlsoStudent: !!u.alunoId,
+        isSpecialManager: specialManagerIds.has(Number(u.id)),
         consultorId: u.consultorId,
         turmaId: aluno?.turmaId || null,
         turmaName: turma?.name || null,
