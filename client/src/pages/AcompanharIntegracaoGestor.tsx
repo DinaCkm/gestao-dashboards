@@ -7,14 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, BarChart3, ClipboardList, Download, Loader2, Search, UserCheck, Users } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlertTriangle, BarChart3, ClipboardList, Download, Info, Loader2, Search, Sparkles, UserCheck, Users } from 'lucide-react';
+import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import {
   LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
   ResponsiveContainer,
 } from 'recharts';
@@ -45,6 +48,51 @@ interface GestorDisponivel {
   colaboradores: number;
 }
 
+interface ClusterAutoavaliacao {
+  key: string;
+  nome: string;
+  competencias: string[];
+  competenciasEncontradas: string[];
+  totalCompetencias: number;
+  totalAvaliadas: number;
+  media: number | null;
+  percentual: number | null;
+}
+
+interface ClusterExpectativa {
+  key: string;
+  nome: string;
+  selecionados: string[];
+  quantidadeSelecionada: number;
+  totalDescritores: number;
+  indice: number;
+  prioridade: number;
+  nivel: string;
+  perfilColaborador: number | null;
+}
+
+interface PerfilAssessment {
+  alunoEcoId: number | null;
+  disc: {
+    scoreD: number;
+    scoreI: number;
+    scoreS: number;
+    scoreC: number;
+    perfilPredominante?: string | null;
+    perfilSecundario?: string | null;
+    ciclo?: number;
+    completedAt?: string | null;
+  } | null;
+  autoavaliacaoClusters: ClusterAutoavaliacao[];
+  expectativaGestor: {
+    temRespostaBem: boolean;
+    descritoresReconhecidos: number;
+    compatibilidade: number | null;
+    motivo: string | null;
+    clusters: ClusterExpectativa[];
+  };
+}
+
 interface ColaboradorAcompanhamento {
   id: string;
   nome: string;
@@ -63,6 +111,7 @@ interface ColaboradorAcompanhamento {
   ultimaEntradaEcoLider: string | null;
   assessmentPotencialConcluido: boolean | null;
   assessmentPotencialConcluidoEm: string | null;
+  perfilAssessment: PerfilAssessment;
   respostas: RespostaAcompanhamento[];
   formulariosPendentes: Pendencia[];
 }
@@ -115,6 +164,204 @@ function linkPreencherFormulario(colaborador: ColaboradorAcompanhamento, pendenc
   return `/formularios/${slug}?${params.toString()}`;
 }
 
+function fmtPct1(n: number | null | undefined) {
+  return n == null || !Number.isFinite(Number(n))
+    ? '—'
+    : `${Number(n).toFixed(1).replace('.', ',')}%`;
+}
+
+function PerfilAssessmentModal({
+  colaborador,
+  open,
+  onOpenChange,
+}: {
+  colaborador: ColaboradorAcompanhamento | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  if (!colaborador) return null;
+  const perfil = colaborador.perfilAssessment;
+  const disc = perfil?.disc;
+  const autoPorKey = new Map((perfil?.autoavaliacaoClusters || []).map((item) => [item.key, item]));
+  const expectativaPorKey = new Map((perfil?.expectativaGestor?.clusters || []).map((item) => [item.key, item]));
+
+  const discCards = DISC_PERFIL_RESUMO.map((item) => {
+    const score = item.key === 'D'
+      ? disc?.scoreD
+      : item.key === 'I'
+        ? disc?.scoreI
+        : item.key === 'S'
+          ? disc?.scoreS
+          : disc?.scoreC;
+    const classes = item.key === 'D'
+      ? 'border-red-300 bg-red-50 text-red-950'
+      : item.key === 'I'
+        ? 'border-amber-300 bg-amber-50 text-amber-950'
+        : item.key === 'S'
+          ? 'border-emerald-300 bg-emerald-50 text-emerald-950'
+          : 'border-blue-300 bg-blue-50 text-blue-950';
+    return { ...item, score: score == null ? null : Number(score), classes };
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Perfil do Assessment — {colaborador.nome}</DialogTitle>
+          <DialogDescription>
+            Perfil comportamental, autoavaliação de competências e expectativa registrada pelo gestor no BEM Acolhido.
+          </DialogDescription>
+        </DialogHeader>
+
+        <TooltipProvider>
+          <div className="space-y-7">
+            <section className="space-y-3">
+              <div>
+                <h3 className="text-lg font-bold">Perfil Comportamental</h3>
+                <p className="text-sm text-muted-foreground">Percentuais do resultado mais recente do Assessment.</p>
+              </div>
+              {!disc ? (
+                <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
+                  Ainda não há resultado de Assessment/Avaliação de Potencial disponível para este colaborador.
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {discCards.map((item) => (
+                    <div key={item.key} className={`rounded-xl border p-4 ${item.classes}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="text-sm font-bold">{item.nome}</div>
+                        <UiTooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="rounded-full p-0.5 opacity-80 hover:opacity-100" aria-label={`Informações sobre ${item.nome}`}>
+                              <Info className="h-4 w-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs text-xs leading-relaxed">{item.descricao}</TooltipContent>
+                        </UiTooltip>
+                      </div>
+                      <div className="mt-4 text-3xl font-bold">{fmtPct1(item.score)}</div>
+                      <div className="mt-1 text-sm font-semibold">{item.rotulo}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="space-y-3 border-t pt-6">
+              <div>
+                <h3 className="text-lg font-bold">Autoavaliação de Competências</h3>
+                <p className="text-sm text-muted-foreground">
+                  Média das competências avaliadas no cluster ÷ 5 × 100.
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                {INTEGRACAO_CLUSTERS.map((cluster) => {
+                  const dados = autoPorKey.get(cluster.key);
+                  return (
+                    <div key={cluster.key} className="rounded-xl border bg-muted/20 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="text-sm font-semibold leading-snug">{cluster.nome}</div>
+                        <UiTooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="rounded-full p-0.5 text-muted-foreground hover:text-foreground" aria-label={`Competências de ${cluster.nome}`}>
+                              <Info className="h-4 w-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-sm text-xs leading-relaxed">
+                            {cluster.competencias.join(', ')}.
+                          </TooltipContent>
+                        </UiTooltip>
+                      </div>
+                      <div className="mt-4 text-3xl font-bold">{fmtPct1(dados?.percentual)}</div>
+                      <div className="mt-2 text-[11px] text-muted-foreground">
+                        {dados?.totalAvaliadas
+                          ? `${dados.totalAvaliadas} de ${dados.totalCompetencias} competências com autoavaliação`
+                          : 'Sem autoavaliação registrada neste cluster'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="space-y-4 border-t pt-6">
+              <div>
+                <h3 className="text-lg font-bold">Expectativa do Gestor</h3>
+                <p className="text-sm text-muted-foreground">
+                  A prioridade do gestor funciona como peso para analisar o perfil autopercebido do colaborador; não representa uma nota esperada.
+                </p>
+              </div>
+
+              {perfil?.expectativaGestor?.compatibilidade == null ? (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    {perfil?.expectativaGestor?.motivo ||
+                      'Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.'}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="rounded-xl border border-violet-200 bg-violet-50 p-5">
+                  <div className="text-sm font-semibold text-violet-800">Compatibilidade com a expectativa do gestor</div>
+                  <div className="mt-1 text-4xl font-bold text-violet-950">
+                    {fmtPct1(perfil.expectativaGestor.compatibilidade)}
+                  </div>
+                  <div className="mt-2 text-xs text-violet-800">
+                    Cálculo ponderado: o resultado do colaborador em cada cluster é ponderado pela prioridade relativa definida pelo gestor.
+                  </div>
+                </div>
+              )}
+
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Categoria</th>
+                      <th className="px-3 py-2 text-center">Expectativa do gestor</th>
+                      <th className="px-3 py-2 text-center">Perfil do colaborador</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {INTEGRACAO_CLUSTERS.map((cluster) => {
+                      const expectativa = expectativaPorKey.get(cluster.key);
+                      const auto = autoPorKey.get(cluster.key);
+                      const prioridade = expectativa?.prioridade ?? 0;
+                      return (
+                        <tr key={cluster.key} className="border-t">
+                          <td className="px-3 py-3 font-medium">{cluster.nome}</td>
+                          <td className="px-3 py-3 text-center">
+                            {perfil?.expectativaGestor?.descritoresReconhecidos ? (
+                              prioridade > 0 ? (
+                                <div>
+                                  <div className="font-semibold">Prioridade {fmtPct1(prioridade)}</div>
+                                  <div className="text-xs text-muted-foreground">{expectativa?.nivel}</div>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">Não priorizada pelo gestor</span>
+                              )
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 text-center font-semibold">{fmtPct1(auto?.percentual)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                0% de prioridade significa apenas que o cluster não foi priorizado pelo gestor; não significa ausência da competência esperada.
+              </p>
+            </section>
+          </div>
+        </TooltipProvider>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] {
   const alertas: string[] = [];
   if (colaborador.acessouEcoLider === false) {
@@ -163,7 +410,7 @@ function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompan
                   <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
                   <XAxis dataKey="momento" />
                   <YAxis domain={[0, 100]} ticks={[0,20,40,60,80,100]} tickFormatter={(v) => `${v}%`} />
-                  <Tooltip formatter={(v: number) => `${Number(v).toFixed(1).replace('.', ',')}%`} />
+                  <ChartTooltip formatter={(v: number) => `${Number(v).toFixed(1).replace('.', ',')}%`} />
                   <Legend />
                   {INDICES_PESQUISA_COLABORADOR.map((grupo, i) => (
                     <Line
@@ -254,7 +501,7 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.25} />
                   <XAxis dataKey="momento" />
                   <YAxis domain={[0, 5]} ticks={[0,1,2,3,4,5]} />
-                  <Tooltip formatter={(v: number) => Number(v).toFixed(2).replace('.', ',')} />
+                  <ChartTooltip formatter={(v: number) => Number(v).toFixed(2).replace('.', ',')} />
                   <Legend />
                   {PILARES_ACOMPANHAMENTO.map((p, i) => (
                     <Line
@@ -327,6 +574,13 @@ export default function AcompanharIntegracaoGestor() {
   const [busca, setBusca] = useState('');
   const [selecionadoId, setSelecionadoId] = useState('');
   const [gestorView, setGestorView] = useState('all');
+  const [perfilOpen, setPerfilOpen] = useState(false);
+  const [perfilColaborador, setPerfilColaborador] = useState<ColaboradorAcompanhamento | null>(null);
+
+  const abrirPerfil = (item: ColaboradorAcompanhamento) => {
+    setPerfilColaborador(item);
+    setPerfilOpen(true);
+  };
 
   const carregar = async (gestor = gestorView) => {
     setLoading(true);
@@ -436,14 +690,35 @@ export default function AcompanharIntegracaoGestor() {
                 </div>
                 <div className="max-h-[65vh] space-y-2 overflow-y-auto pr-1">
                   {filtrados.map((c) => (
-                    <button
+                    <div
                       key={c.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setSelecionadoId(c.id)}
-                      className={`w-full rounded-lg border p-3 text-left transition-colors ${colaborador?.id === c.id ? 'border-violet-400 bg-violet-50 dark:bg-violet-950/20' : 'hover:bg-muted/40'}`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setSelecionadoId(c.id);
+                      }}
+                      className={`w-full cursor-pointer rounded-lg border p-3 text-left transition-colors ${colaborador?.id === c.id ? 'border-violet-400 bg-violet-50 dark:bg-violet-950/20' : 'hover:bg-muted/40'}`}
                     >
-                      <div className="font-semibold">{c.nome}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{c.cargo || 'Cargo não informado'} · {c.unidade || 'Unidade não informada'}</div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold">{c.nome}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{c.cargo || 'Cargo não informado'} · {c.unidade || 'Unidade não informada'}</div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 shrink-0 gap-1 px-2 text-[11px]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirPerfil(c);
+                          }}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Perfil
+                        </Button>
+                      </div>
                       <div className="mt-2 flex flex-wrap gap-2 text-xs">
                         <span>Dia {c.dia}/{c.totalDias}</span>
                         {!!c.formulariosPendentes.length && <span className="font-semibold text-amber-700">{c.formulariosPendentes.length} pendência(s)</span>}
@@ -451,7 +726,7 @@ export default function AcompanharIntegracaoGestor() {
                           <span className="font-semibold text-red-700">{alertasDoColaborador(c).length} alerta(s)</span>
                         )}
                       </div>
-                    </button>
+                    </div>
                   ))}
                   {!filtrados.length && <div className="py-8 text-center text-sm text-muted-foreground">Nenhum colaborador encontrado.</div>}
                 </div>
@@ -468,13 +743,22 @@ export default function AcompanharIntegracaoGestor() {
                         <p className="mt-1 text-sm !text-white/90">{colaborador.cargo || 'Cargo não informado'} · {colaborador.unidade || 'Unidade/Regional não informada'}</p>
                         <p className="mt-2 text-xs !text-white/80">Início: {dataBr(colaborador.inicio)}</p>
                       </div>
-                      <Button
-                        variant="secondary"
-                        className="gap-2 border-0 bg-amber-400 text-black hover:bg-amber-300"
-                        onClick={() => gerarAcompanhamentoIntegracaoPdf(colaborador)}
-                      >
-                        <Download className="h-4 w-4" /> Exportar relatório completo PDF
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="secondary"
+                          className="gap-2 border-0 bg-white/95 text-violet-900 hover:bg-white"
+                          onClick={() => abrirPerfil(colaborador)}
+                        >
+                          <Sparkles className="h-4 w-4" /> Perfil do Assessment
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="gap-2 border-0 bg-amber-400 text-black hover:bg-amber-300"
+                          onClick={() => gerarAcompanhamentoIntegracaoPdf(colaborador)}
+                        >
+                          <Download className="h-4 w-4" /> Exportar relatório completo PDF
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -558,6 +842,11 @@ export default function AcompanharIntegracaoGestor() {
             )}
           </div>
         )}
+        <PerfilAssessmentModal
+          colaborador={perfilColaborador}
+          open={perfilOpen}
+          onOpenChange={setPerfilOpen}
+        />
       </div>
     </DashboardLayout>
   );
