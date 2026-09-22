@@ -244,7 +244,8 @@ function publicFormHtml(slug: string) {
     document.querySelectorAll('[data-multi]').forEach(el=>{
       const code=el.dataset.multi;
       const all=[...document.querySelectorAll('[data-multi="'+code+'"]')].filter(x=>x.checked).map(x=>x.value);
-      values.answers[code]=all;
+      // Mantém o mesmo formato histórico do renderizador público (texto separado por vírgula).
+      values.answers[code]=all.join(', ');
     });
     saveDraft();
   }
