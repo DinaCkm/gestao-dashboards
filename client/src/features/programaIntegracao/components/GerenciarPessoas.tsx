@@ -32,10 +32,11 @@ interface GerenciarPessoasProps {
   processos: ProcessoIntegracao[];
   feriados?: string[];
   onAbrirPessoa: (processoId: string) => void;
+  onAbrirFormulariosPessoa?: (processoId: string) => void;
   onSaved: () => Promise<void> | void;
 }
 
-export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSaved }: GerenciarPessoasProps) {
+export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAbrirFormulariosPessoa, onSaved }: GerenciarPessoasProps) {
   const [busca, setBusca] = useState('');
   const [filtroSituacao, setFiltroSituacao] = useState<'ativo' | 'encerrado' | 'todos'>('ativo');
   const [criando, setCriando] = useState(false);
@@ -778,6 +779,16 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onSa
                     <Button size="sm" variant="outline" onClick={() => pessoa.id && onAbrirPessoa(pessoa.id)} disabled={Boolean(operacao)}>
                       Timeline
                     </Button>
+                    {onAbrirFormulariosPessoa && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => pessoa.id && onAbrirFormulariosPessoa(pessoa.id)}
+                        disabled={Boolean(operacao)}
+                      >
+                        Formulários
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" onClick={() => void alterarSituacao(pessoa)} disabled={Boolean(operacao)}>
                       {emOperacao && operacao?.startsWith('situacao-') && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
                       {pessoa.situacao === 'encerrado' ? 'Reabrir' : 'Encerrar'}

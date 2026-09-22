@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { BootstrapState, ProcessoIntegracao, RespostaFormulario } from '../types';
 import { salvarSecaoConfig } from '../api/client';
 import { ROTAS_PUBLICAS_FORMULARIOS } from '../helpers/paridadeHtml';
@@ -8,15 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RotateCcw, Trash2, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
+import { arquivarRespostaRecebida, listarRespostasExcluidas, restaurarRespostaRecebida, type RespostaExcluida } from '../api/respostas';
 
-export type FormularioAdminSubTab = 'disponiveis' | 'links' | 'pendentes' | 'recebidas' | 'textos' | 'config';
+export type FormularioAdminSubTab = 'disponiveis' | 'pessoas' | 'links' | 'pendentes' | 'recebidas' | 'textos' | 'config';
 
 interface FormulariosIntegracaoAdminProps {
   config: BootstrapState['config'];
   processos: ProcessoIntegracao[];
   initialTab?: FormularioAdminSubTab;
+  initialProcessoId?: string;
   onSaved?: () => Promise<void> | void;
 }
 
@@ -66,6 +68,7 @@ export function FormulariosIntegracaoAdmin({
   config,
   processos,
   initialTab = 'disponiveis',
+  initialProcessoId = '',
   onSaved,
 }: FormulariosIntegracaoAdminProps) {
   const [tab, setTab] = useState<FormularioAdminSubTab>(initialTab);
@@ -73,6 +76,10 @@ export function FormulariosIntegracaoAdmin({
   const [formFiltro, setFormFiltro] = useState<FormKey | ''>('');
   const [aberta, setAberta] = useState<string | null>(null);
   const [salvandoForm, setSalvandoForm] = useState<FormKey | null>(null);
+  const [pessoaSelecionadaId, setPessoaSelecionadaId] = useState(initialProcessoId);
+  const [excluidas, setExcluidas] = useState<RespostaExcluida[]>([]);
+  const [carregandoExcluidas, setCarregandoExcluidas] = useState(false);
+  const [operandoRid, setOperandoRid] = useState<string | null>(null);
 
   const respostas = useMemo<RespostaComProcesso[]>(() => {
     return processos.flatMap((processo) => (processo.resp || []).map((resposta) => ({
@@ -93,6 +100,81 @@ export function FormulariosIntegracaoAdmin({
   }, [respostas, busca, formFiltro]);
 
   const pendentes = Array.isArray(config?.respostasPendentes) ? config.respostasPendentes : [];
+
+  const pessoaSelecionada = useMemo(
+    () => processos.find((processo) => processo.id === pessoaSelecionadaId) || null,
+    [processos, pessoaSelecionadaId],
+  );
+
+  useEffect(() => {
+    if (initialProcessoId && processos.some((processo) => processo.id === initialProcessoId)) {
+      setPessoaSelecionadaId(initialProcessoId);
+    } else if (!pessoaSelecionadaId && processos[0]?.id) {
+      setPessoaSelecionadaId(processos[0].id);
+    }
+  }, [initialProcessoId, processos, pessoaSelecionadaId]);
+
+  const carregarExcluidas = async () => {
+    try {
+      setCarregandoExcluidas(true);
+      setExcluidas(await listarRespostasExcluidas());
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível carregar os formulários excluídos.');
+    } finally {
+      setCarregandoExcluidas(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tab === 'pessoas') void carregarExcluidas();
+  }, [tab]);
+
+  const linkFormularioPessoa = (form: (typeof FORMULARIOS)[number], processo: ProcessoIntegracao) => {
+    const params = new URLSearchParams();
+    if (processo.nome) params.set('nome', processo.nome);
+    if (processo.unidade) params.set('unidade', processo.unidade);
+    if (processo.inicio) params.set('inicio', processo.inicio);
+    if (processo.email) params.set('email', processo.email);
+    if (form.key === 'bem' && processo.gestor) params.set('respondente', processo.gestor);
+    return `${form.rota}?${params.toString()}`;
+  };
+
+  const excluirRespostaPessoa = async (processo: ProcessoIntegracao, resposta: RespostaFormulario) => {
+    const form = FORMULARIOS.find((item) => item.key === resposta.form);
+    const confirmar = window.confirm(
+      `Excluir esta resposta ativa?\n\n${processo.nome} — ${form?.nome || resposta.form}\n\nEla NÃO será apagada. Ficará guardada em “Formulários excluídos” e poderá ser restaurada. Enquanto estiver excluída, não será usada na Timeline, pendências, indicadores ou cálculos.`,
+    );
+    if (!confirmar) return;
+    try {
+      setOperandoRid(resposta.rid);
+      await arquivarRespostaRecebida(resposta.rid);
+      await onSaved?.();
+      await carregarExcluidas();
+      toast.success('Resposta movida para Formulários excluídos.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível excluir a resposta.');
+    } finally {
+      setOperandoRid(null);
+    }
+  };
+
+  const restaurarRespostaPessoa = async (resposta: RespostaExcluida) => {
+    const confirmar = window.confirm(
+      `Restaurar esta resposta?\n\n${resposta.processoNome} — ${nomeFormulario(resposta.form)}\n\nEla voltará a ser uma resposta ativa e voltará a refletir nas áreas do Programa de Integração.`,
+    );
+    if (!confirmar) return;
+    try {
+      setOperandoRid(resposta.rid);
+      await restaurarRespostaRecebida(resposta.rid);
+      await onSaved?.();
+      await carregarExcluidas();
+      toast.success('Resposta restaurada com sucesso.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível restaurar a resposta.');
+    } finally {
+      setOperandoRid(null);
+    }
+  };
 
   const abrirFormulario = (rota: string) => {
     window.open(rota, '_blank', 'noopener,noreferrer');
@@ -128,8 +210,9 @@ export function FormulariosIntegracaoAdmin({
       <CardHeader><CardTitle>Formulários de Integração</CardTitle></CardHeader>
       <CardContent>
         <Tabs value={tab} onValueChange={(value) => setTab(value as FormularioAdminSubTab)}>
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7">
             <TabsTrigger value="disponiveis" className="text-xs md:text-sm">Formulários disponíveis</TabsTrigger>
+            <TabsTrigger value="pessoas" className="text-xs md:text-sm">Por pessoa</TabsTrigger>
             <TabsTrigger value="links" className="text-xs md:text-sm">Links de resposta</TabsTrigger>
             <TabsTrigger value="pendentes" className="text-xs md:text-sm">Pendentes de vinculação</TabsTrigger>
             <TabsTrigger value="recebidas" className="text-xs md:text-sm">Respostas recebidas</TabsTrigger>
@@ -164,6 +247,137 @@ export function FormulariosIntegracaoAdmin({
                 );
               })}
             </div>
+          </TabsContent>
+
+          <TabsContent value="pessoas" className="mt-6 space-y-5">
+            <div className="rounded-xl border bg-muted/20 p-4">
+              <div className="flex items-start gap-3">
+                <UserRound className="mt-0.5 h-5 w-5 text-violet-700" />
+                <div>
+                  <h3 className="font-semibold">Formulários por pessoa</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Selecione o colaborador para abrir, conferir, excluir ou restaurar respostas. Respostas excluídas ficam preservadas, mas não participam das áreas ativas do Programa de Integração.
+                  </p>
+                </div>
+              </div>
+              <select
+                value={pessoaSelecionadaId}
+                onChange={(e) => setPessoaSelecionadaId(e.target.value)}
+                className="mt-4 h-10 w-full max-w-xl rounded-md border bg-background px-3 text-sm"
+              >
+                <option value="">Selecione uma pessoa</option>
+                {processos.map((processo) => (
+                  <option key={processo.id} value={processo.id}>{processo.nome}</option>
+                ))}
+              </select>
+            </div>
+
+            {pessoaSelecionada ? (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-xl font-bold">{pessoaSelecionada.nome}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {pessoaSelecionada.cargo || 'Cargo não informado'} · {pessoaSelecionada.unidade || 'Unidade não informada'}
+                  </p>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {FORMULARIOS.map((form) => {
+                    const ativas = (pessoaSelecionada.resp || []).filter((resposta) => resposta.form === form.key);
+                    const removidas = excluidas.filter((resposta) =>
+                      resposta.processoIdLocal === pessoaSelecionada.id && resposta.form === form.key
+                    );
+                    return (
+                      <Card key={form.key} className="shadow-none">
+                        <CardContent className="space-y-4 pt-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h4 className="font-semibold">{form.nome}</h4>
+                              <p className="mt-1 text-xs text-muted-foreground">{form.papel}</p>
+                            </div>
+                            <Badge variant="outline" className={ativas.length ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : 'border-amber-300 bg-amber-50 text-amber-800'}>
+                              {ativas.length ? `${ativas.length} ativa${ativas.length === 1 ? '' : 's'}` : 'Sem resposta ativa'}
+                            </Badge>
+                          </div>
+
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={ativas.length ? 'outline' : 'default'}
+                            onClick={() => abrirFormulario(linkFormularioPessoa(form, pessoaSelecionada))}
+                          >
+                            {ativas.length ? 'Abrir formulário' : 'Preencher formulário'}
+                          </Button>
+
+                          {ativas.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Respostas ativas</div>
+                              {ativas.map((resposta) => (
+                                <div key={resposta.rid} className="flex flex-col gap-2 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
+                                  <div className="min-w-0 text-xs">
+                                    <div className="font-medium">{resposta.protocolo || 'Sem protocolo'}</div>
+                                    <div className="mt-1 text-muted-foreground">
+                                      {resposta.em || resposta.submittedAt?.slice(0, 10) || 'Data não informada'}
+                                      {resposta.ciclo ? ` · ${resposta.ciclo}º alinhamento` : ''}
+                                      {resposta.papel ? ` · ${resposta.papel}` : ''}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-red-200 text-red-700 hover:bg-red-50"
+                                    disabled={operandoRid === resposta.rid}
+                                    onClick={() => void excluirRespostaPessoa(pessoaSelecionada, resposta)}
+                                  >
+                                    {operandoRid === resposta.rid ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4" />}
+                                    Excluir resposta
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="space-y-2 border-t pt-3">
+                            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              Formulários excluídos ({removidas.length})
+                            </div>
+                            {carregandoExcluidas ? (
+                              <div className="text-xs text-muted-foreground">Carregando histórico...</div>
+                            ) : removidas.length ? removidas.map((resposta) => (
+                              <div key={resposta.rid} className="flex flex-col gap-2 rounded-lg border border-dashed bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="text-xs">
+                                  <div className="font-medium">{resposta.protocolo || 'Sem protocolo'}</div>
+                                  <div className="mt-1 text-muted-foreground">
+                                    excluída em {resposta.excluidaEm ? new Date(resposta.excluidaEm).toLocaleString('pt-BR') : 'data não informada'}
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={operandoRid === resposta.rid}
+                                  onClick={() => void restaurarRespostaPessoa(resposta)}
+                                >
+                                  {operandoRid === resposta.rid ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RotateCcw className="mr-1 h-4 w-4" />}
+                                  Restaurar
+                                </Button>
+                              </div>
+                            )) : (
+                              <div className="text-xs text-muted-foreground">Nenhuma resposta excluída deste formulário.</div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                Selecione uma pessoa para gerenciar os formulários vinculados a ela.
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="links" className="mt-6 space-y-4">

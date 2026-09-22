@@ -226,8 +226,10 @@ export default function ProgramaIntegracaoFormularioPublico() {
     const ciclo = String(paramsBusca.get('ciclo') || '').trim();
     const papel = String(paramsBusca.get('papel') || '').trim();
     const respondente = String(paramsBusca.get('respondente') || '').trim();
+    const inicio = String(paramsBusca.get('inicio') || '').trim();
+    const email = String(paramsBusca.get('email') || '').trim();
 
-    if (!nome && !unidade && !ciclo && !papel && !respondente) return;
+    if (!nome && !unidade && !ciclo && !papel && !respondente && !inicio && !email) return;
     setDraft((atual) => ({
       ...atual,
       nomeColaborador: nome || atual.nomeColaborador,
@@ -235,6 +237,8 @@ export default function ProgramaIntegracaoFormularioPublico() {
       cycleValue: ciclo || atual.cycleValue,
       role: papel || atual.role,
       respondentName: respondente || atual.respondentName,
+      dataInicio: inicio || atual.dataInicio,
+      emailColaborador: email || atual.emailColaborador,
     }));
   }, [slug]);
 

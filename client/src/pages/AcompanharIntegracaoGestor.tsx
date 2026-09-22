@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AlertTriangle, BarChart3, ClipboardList, Download, Info, Loader2, Search, Sparkles, Trash2, UserCheck, Users } from 'lucide-react';
+import { AlertTriangle, BarChart3, ClipboardList, Download, Info, Loader2, Search, Sparkles, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import {
   LineChart,
@@ -30,8 +30,6 @@ import {
   type RespostaAcompanhamento,
 } from '@/features/programaIntegracao/helpers/evolucaoAcompanhamento';
 import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/helpers/acompanhamentoIntegracaoPdf';
-import { arquivarRespostaRecebida } from '@/features/programaIntegracao/api/respostas';
-import { toast } from 'sonner';
 
 interface Pendencia {
   ciclo: number;
@@ -94,13 +92,6 @@ interface PerfilAssessment {
     matriz?: 'historica' | 'atual' | null;
     clusters: ClusterExpectativa[];
   };
-  bemAcolhidoAtual?: {
-    rid: string;
-    protocolo: string;
-    formVersion: number;
-    submittedAt: string | null;
-    matriz: 'historica' | 'atual' | null;
-  } | null;
 }
 
 interface ColaboradorAcompanhamento {
@@ -184,16 +175,11 @@ function PerfilAssessmentModal({
   colaborador,
   open,
   onOpenChange,
-  adminView,
-  onRespostaArquivada,
 }: {
   colaborador: ColaboradorAcompanhamento | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  adminView?: boolean;
-  onRespostaArquivada?: () => Promise<void> | void;
 }) {
-  const [arquivandoBem, setArquivandoBem] = useState(false);
   if (!colaborador) return null;
 
   const perfil = colaborador.perfilAssessment;
@@ -215,26 +201,6 @@ function PerfilAssessmentModal({
     if (diferenca <= 20) return 'border-blue-300 bg-blue-50';
     if (diferenca <= 40) return 'border-amber-300 bg-amber-50';
     return 'border-orange-300 bg-orange-50';
-  };
-
-  const arquivarBemAtual = async () => {
-    const bem = perfil?.bemAcolhidoAtual;
-    if (!bem?.rid) return;
-    const confirmar = window.confirm(
-      'Excluir esta resposta do BEM Acolhido da visão ativa?\n\nA resposta não será apagada. Ela ficará guardada em Respostas Recebidas > Excluídas e poderá ser restaurada depois. Todos os cálculos passarão a considerar apenas respostas ativas.',
-    );
-    if (!confirmar) return;
-    try {
-      setArquivandoBem(true);
-      await arquivarRespostaRecebida(bem.rid);
-      toast.success('Resposta do BEM Acolhido movida para Excluídas.');
-      onOpenChange(false);
-      await onRespostaArquivada?.();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Não foi possível excluir a resposta.');
-    } finally {
-      setArquivandoBem(false);
-    }
   };
 
   const discCards = DISC_PERFIL_RESUMO.map((item) => {
@@ -368,18 +334,6 @@ function PerfilAssessmentModal({
                       A prioridade do gestor é um peso relativo entre dimensões. Ela não representa uma nota esperada e a comparação acontece sempre cluster × cluster.
                     </p>
                   </div>
-                  {adminView && perfil?.bemAcolhidoAtual?.rid && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="shrink-0 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-                      disabled={arquivandoBem}
-                      onClick={() => void arquivarBemAtual()}
-                    >
-                      {arquivandoBem ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                      Excluir resposta do BEM
-                    </Button>
-                  )}
                 </div>
 
                 {perfil?.expectativaGestor?.compatibilidade == null ? (
@@ -442,11 +396,6 @@ function PerfilAssessmentModal({
                   <p>
                     Cores da comparação: verde quando o perfil do colaborador é igual/superior à prioridade do gestor ou está até 5 pontos abaixo; azul quando está entre 5 e 20 pontos abaixo; amarelo entre 20 e 40 pontos abaixo; laranja quando a diferença supera 40 pontos.
                   </p>
-                  {adminView && (
-                    <p>
-                      Respostas excluídas não entram nos cálculos e permanecem preservadas em Programa de Integração → Respostas Recebidas → Excluídas, onde podem ser restauradas.
-                    </p>
-                  )}
                 </div>
               </section>
 
@@ -947,11 +896,6 @@ export default function AcompanharIntegracaoGestor() {
           colaborador={perfilColaborador}
           open={perfilOpen}
           onOpenChange={setPerfilOpen}
-          adminView={dados?.adminView}
-          onRespostaArquivada={async () => {
-            await carregar(gestorView);
-            setPerfilColaborador(null);
-          }}
         />
       </div>
     </DashboardLayout>

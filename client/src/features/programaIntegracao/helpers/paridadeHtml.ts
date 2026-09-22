@@ -12,6 +12,7 @@ export const MENU_PRINCIPAL_HTML = [
 
 export const ABAS_FORMULARIOS_HTML = [
   { id: 'disponiveis', label: 'Formulários disponíveis' },
+  { id: 'pessoas', label: 'Por pessoa' },
   { id: 'links', label: 'Links de resposta' },
   { id: 'pendentes', label: 'Pendentes de vinculação' },
   { id: 'respostas', label: 'Respostas recebidas' },

@@ -70,6 +70,7 @@ export default function ProgramaIntegracao() {
   const [state, setState] = useState<BootstrapState | null>(null);
   const [activeTab, setActiveTab] = useState<MainTabValue>('painel');
   const [formularioSubTab, setFormularioSubTab] = useState<FormularioAdminSubTab>('disponiveis');
+  const [formularioPessoaId, setFormularioPessoaId] = useState('');
   const [configSubTab, setConfigSubTab] = useState<ConfigSubTab>('emails');
   const [emailModeloSelecionado, setEmailModeloSelecionado] = useState('');
 
@@ -118,10 +119,22 @@ export default function ProgramaIntegracao() {
     const chaveEmail = params.get('email') || '';
     const tabUrl = params.get('tab') as MainTabValue | null;
     const configUrl = params.get('config') as ConfigSubTab | null;
+    const formTabUrl = params.get('formtab') as FormularioAdminSubTab | null;
+    const pessoaUrl = params.get('pessoa') || '';
     const tabsValidas: MainTabValue[] = ['painel','agenda','indicadores','registrar','respostas','formularios','atas','pessoas','config'];
     const configsValidas: ConfigSubTab[] = ['emails','mentoras','cursos','aviso','links','datas','backup'];
+    const formTabsValidas: FormularioAdminSubTab[] = ['disponiveis','pessoas','links','pendentes','recebidas','textos','config'];
 
     if (tabUrl && tabsValidas.includes(tabUrl)) setActiveTab(tabUrl);
+    if (formTabUrl && formTabsValidas.includes(formTabUrl)) {
+      setFormularioSubTab(formTabUrl);
+      setActiveTab('formularios');
+    }
+    if (pessoaUrl) {
+      setFormularioPessoaId(pessoaUrl);
+      setFormularioSubTab('pessoas');
+      setActiveTab('formularios');
+    }
     if (configUrl && configsValidas.includes(configUrl)) {
       setActiveTab('config');
       setConfigSubTab(configUrl);
@@ -434,7 +447,14 @@ export default function ProgramaIntegracao() {
           </TabsContent>
 
           <TabsContent value="formularios" className="space-y-6 mt-6">
-            <FormulariosIntegracaoAdmin key={formularioSubTab} config={config} processos={todosProcesos} initialTab={formularioSubTab} onSaved={recarregarEstado} />
+            <FormulariosIntegracaoAdmin
+              key={`${formularioSubTab}-${formularioPessoaId}`}
+              config={config}
+              processos={todosProcesos}
+              initialTab={formularioSubTab}
+              initialProcessoId={formularioPessoaId}
+              onSaved={recarregarEstado}
+            />
           </TabsContent>
 
           <TabsContent value="atas" className="space-y-6 mt-6">
@@ -446,6 +466,12 @@ export default function ProgramaIntegracao() {
               processos={todosProcesos}
               feriados={feriados}
               onAbrirPessoa={(id) => setLocation(`/programa-integracao/detalhe/${id}`)}
+              onAbrirFormulariosPessoa={(id) => {
+                setFormularioPessoaId(id);
+                setFormularioSubTab('pessoas');
+                setActiveTab('formularios');
+                setLocation(`/programa-integracao?tab=formularios&formtab=pessoas&pessoa=${encodeURIComponent(id)}`);
+              }}
               onSaved={recarregarEstado}
             />
           </TabsContent>

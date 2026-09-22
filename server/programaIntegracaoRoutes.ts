@@ -809,17 +809,6 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         calcularExpectativaGestorBem(ultimaRespostaBem),
         perfilAssessment?.autoavaliacaoClusters || [],
       );
-      const bemAcolhidoAtual = ultimaRespostaBem
-        ? {
-            rid: String(ultimaRespostaBem.legacyRid || ""),
-            protocolo: String(ultimaRespostaBem.protocolo || ""),
-            formVersion: Number(ultimaRespostaBem.formVersion || 0),
-            submittedAt: ultimaRespostaBem.submittedAt
-              ? new Date(ultimaRespostaBem.submittedAt).toISOString()
-              : null,
-            matriz: expectativaGestor?.matriz || null,
-          }
-        : null;
       const inicio = sqlDateToIso(row.inicio);
       const diaRaw = inicio ? diasEntreIso(inicio, hoje) + 1 : 0;
       const dia = Math.max(0, Math.min(150, diaRaw));
@@ -847,7 +836,6 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           disc: perfilAssessment?.disc || null,
           autoavaliacaoClusters: perfilAssessment?.autoavaliacaoClusters || [],
           expectativaGestor,
-          bemAcolhidoAtual,
         },
         respostas: respostas.filter((r) =>
           (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo")) ||
