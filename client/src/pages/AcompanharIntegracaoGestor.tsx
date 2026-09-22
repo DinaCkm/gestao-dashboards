@@ -190,17 +190,51 @@ function PerfilAssessmentModal({
   const expectativaPorKey = new Map<string, ClusterExpectativa>(
     (perfil?.expectativaGestor?.clusters || []).map((item) => [item.key, item] as const),
   );
-  const classeComparacao = (prioridade: number, perfilColaborador: number | null | undefined) => {
+  const leituraComparacao = (prioridade: number, perfilColaborador: number | null | undefined) => {
     if (perfilColaborador == null || !Number.isFinite(Number(perfilColaborador)) || prioridade <= 0) {
-      return 'border-slate-200 bg-slate-50';
+      return {
+        classes: 'border-slate-200 bg-slate-50',
+        badge: 'border-slate-300 bg-white text-slate-700',
+        rotulo: prioridade <= 0 ? 'Não priorizada' : 'Sem autoavaliação',
+      };
     }
+
     const perfilNumero = Number(perfilColaborador);
-    if (perfilNumero >= prioridade) return 'border-emerald-300 bg-emerald-50';
+    if (perfilNumero >= prioridade) {
+      return {
+        classes: 'border-emerald-300 bg-emerald-50',
+        badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
+        rotulo: 'Perfil atende ou supera a prioridade',
+      };
+    }
+
     const diferenca = prioridade - perfilNumero;
-    if (diferenca <= 5) return 'border-emerald-300 bg-emerald-50';
-    if (diferenca <= 20) return 'border-blue-300 bg-blue-50';
-    if (diferenca <= 40) return 'border-amber-300 bg-amber-50';
-    return 'border-orange-300 bg-orange-50';
+    if (diferenca <= 5) {
+      return {
+        classes: 'border-emerald-300 bg-emerald-50',
+        badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
+        rotulo: 'Muito próximo · até 5 p.p.',
+      };
+    }
+    if (diferenca <= 20) {
+      return {
+        classes: 'border-blue-300 bg-blue-50',
+        badge: 'border-blue-300 bg-blue-100 text-blue-900',
+        rotulo: 'Próximo · até 20 p.p.',
+      };
+    }
+    if (diferenca <= 40) {
+      return {
+        classes: 'border-amber-300 bg-amber-50',
+        badge: 'border-amber-300 bg-amber-100 text-amber-950',
+        rotulo: 'Atenção · 20 a 40 p.p.',
+      };
+    }
+    return {
+      classes: 'border-orange-400 bg-orange-50',
+      badge: 'border-orange-400 bg-orange-100 text-orange-950',
+      rotulo: 'Diferença alta · acima de 40 p.p.',
+    };
   };
 
   const discCards = DISC_PERFIL_RESUMO.map((item) => {
@@ -223,7 +257,7 @@ function PerfilAssessmentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[94vh] w-[calc(100vw-0.75rem)] max-w-[1480px] gap-0 overflow-hidden p-0 sm:w-[96vw]">
+      <DialogContent className="max-h-[95vh] !w-[98vw] !max-w-[1780px] gap-0 overflow-hidden p-0 sm:!w-[97vw] sm:!max-w-[1780px]">
         <div className="border-b bg-gradient-to-r from-violet-950 via-violet-800 to-indigo-700 px-5 py-5 pr-12 text-white sm:px-7">
           <DialogHeader className="text-left">
             <DialogTitle className="text-xl font-bold text-white sm:text-2xl">
@@ -235,7 +269,7 @@ function PerfilAssessmentModal({
           </DialogHeader>
         </div>
 
-        <div className="max-h-[calc(92vh-96px)] overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 lg:px-7">
+        <div className="max-h-[calc(94vh-92px)] overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
           <TooltipProvider>
             <div className="space-y-6">
               <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
@@ -256,7 +290,7 @@ function PerfilAssessmentModal({
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {discCards.map((item) => (
                       <div key={item.key} className={`min-w-0 rounded-xl border p-4 ${item.classes}`}>
                         <div className="flex items-start justify-between gap-2">
@@ -291,7 +325,7 @@ function PerfilAssessmentModal({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {INTEGRACAO_CLUSTERS.map((cluster) => {
                     const dados = autoPorKey.get(cluster.key);
                     return (
@@ -356,14 +390,20 @@ function PerfilAssessmentModal({
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {INTEGRACAO_CLUSTERS.map((cluster) => {
                     const expectativa = expectativaPorKey.get(cluster.key);
                     const auto = autoPorKey.get(cluster.key);
                     const prioridade = expectativa?.prioridade ?? 0;
+                    const leitura = leituraComparacao(prioridade, auto?.percentual);
                     return (
-                      <div key={cluster.key} className={`min-w-0 rounded-xl border p-4 ${classeComparacao(prioridade, auto?.percentual)}`}>
-                        <div className="mb-3 text-sm font-bold leading-snug">{cluster.nome}</div>
+                      <div key={cluster.key} className={`min-w-0 rounded-xl border p-4 shadow-sm ${leitura.classes}`}>
+                        <div className="mb-3 flex flex-col gap-2">
+                          <div className="text-sm font-bold leading-snug">{cluster.nome}</div>
+                          <Badge variant="outline" className={`w-fit whitespace-normal text-[10px] leading-tight ${leitura.badge}`}>
+                            {leitura.rotulo}
+                          </Badge>
+                        </div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <div className="rounded-lg bg-violet-50 p-3">
                             <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">Prioridade do gestor</div>
@@ -391,13 +431,64 @@ function PerfilAssessmentModal({
                   })}
                 </div>
 
-                <div className="mt-4 space-y-2 rounded-lg bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
-                  <p>0% de prioridade não significa ausência de competência esperada. Significa apenas que aquela dimensão não foi priorizada pelo gestor e, por isso, não participa do cálculo de compatibilidade.</p>
-                  <p>
-                    Cores da comparação: verde quando o perfil do colaborador é igual/superior à prioridade do gestor ou está até 5 pontos abaixo; azul quando está entre 5 e 20 pontos abaixo; amarelo entre 20 e 40 pontos abaixo; laranja quando a diferença supera 40 pontos.
-                  </p>
+                <div className="mt-4 grid gap-2 rounded-xl border bg-white/70 p-3 text-xs leading-relaxed text-muted-foreground sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-emerald-900">
+                    <strong>Verde:</strong> perfil igual ou maior que a prioridade, ou até 5 pontos percentuais abaixo.
+                  </div>
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 text-blue-900">
+                    <strong>Azul:</strong> perfil entre mais de 5 e até 20 pontos percentuais abaixo da prioridade.
+                  </div>
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-2 text-amber-950">
+                    <strong>Amarelo:</strong> diferença acima de 20 e até 40 pontos percentuais.
+                  </div>
+                  <div className="rounded-lg border border-orange-300 bg-orange-50 p-2 text-orange-950">
+                    <strong>Laranja:</strong> diferença acima de 40 pontos percentuais.
+                  </div>
                 </div>
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                  Uma dimensão não priorizada não significa que o gestor espera ausência daquela competência. Ela apenas não recebeu peso na comparação.
+                </p>
               </section>
+
+              <details className="group rounded-2xl border bg-slate-50/80 shadow-sm">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold text-slate-900">
+                  <span>Como estes resultados são calculados?</span>
+                  <span className="rounded-full border bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:hidden">Ver explicação</span>
+                  <span className="hidden rounded-full border bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:inline">Ocultar explicação</span>
+                </summary>
+                <div className="grid gap-4 border-t px-5 py-5 text-sm leading-relaxed text-slate-700 lg:grid-cols-2">
+                  <div className="rounded-xl border bg-white p-4">
+                    <h4 className="font-bold text-slate-950">1. Perfil Comportamental</h4>
+                    <p className="mt-2">
+                      Os percentuais de Dominância, Influência, Estabilidade e Conformidade/Cautela vêm diretamente do resultado mais recente do Assessment/Avaliação de Potencial do colaborador.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-white p-4">
+                    <h4 className="font-bold text-slate-950">2. Autoavaliação de Competências</h4>
+                    <p className="mt-2">
+                      Representa como o próprio colaborador se percebe. As competências respondidas de 1 a 5 são agrupadas nos cinco clusters. O sistema calcula a média das competências encontradas em cada cluster e transforma essa média em percentual.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-white p-4">
+                    <h4 className="font-bold text-slate-950">3. Prioridade do Gestor</h4>
+                    <p className="mt-2">
+                      O BEM Acolhido não mede o nível esperado da competência. Ele mostra quais dimensões o gestor priorizou. Na lista atual, o sistema considera a proporção de descritores selecionados dentro de cada cluster. Nas respostas históricas, utiliza os pesos definidos para as palavras antigas, sem alterar a resposta original.
+                    </p>
+                    <p className="mt-2">
+                      Depois, o maior índice encontrado vira 100% de prioridade e os demais são normalizados proporcionalmente.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border bg-white p-4">
+                    <h4 className="font-bold text-slate-950">4. Compatibilidade</h4>
+                    <p className="mt-2">
+                      A prioridade do gestor funciona como peso para o perfil autopercebido do colaborador. O sistema multiplica o percentual do colaborador pela prioridade de cada cluster, soma os resultados e divide pela soma das prioridades.
+                    </p>
+                    <p className="mt-2">
+                      Clusters não priorizados ficam fora dessa conta. Se faltar autoavaliação em uma dimensão priorizada, a compatibilidade não é calculada para evitar um resultado enganoso.
+                    </p>
+                  </div>
+                </div>
+              </details>
 
               <div className="flex justify-end border-t pt-4">
                 <DialogClose asChild>
