@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { AlertTriangle, BarChart3, ClipboardList, Download, Info, Loader2, Search, Sparkles, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
@@ -180,6 +180,7 @@ function PerfilAssessmentModal({
   onOpenChange: (open: boolean) => void;
 }) {
   if (!colaborador) return null;
+
   const perfil = colaborador.perfilAssessment;
   const disc = perfil?.disc;
   const autoPorKey = new Map<string, ClusterAutoavaliacao>(
@@ -198,170 +199,196 @@ function PerfilAssessmentModal({
           ? disc?.scoreS
           : disc?.scoreC;
     const classes = item.key === 'D'
-      ? 'border-red-300 bg-red-50 text-red-950'
+      ? 'border-red-200 bg-red-50 text-red-950'
       : item.key === 'I'
-        ? 'border-amber-300 bg-amber-50 text-amber-950'
+        ? 'border-amber-200 bg-amber-50 text-amber-950'
         : item.key === 'S'
-          ? 'border-emerald-300 bg-emerald-50 text-emerald-950'
-          : 'border-blue-300 bg-blue-50 text-blue-950';
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
+          : 'border-blue-200 bg-blue-50 text-blue-950';
     return { ...item, score: score == null ? null : Number(score), classes };
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Perfil do Assessment — {colaborador.nome}</DialogTitle>
-          <DialogDescription>
-            Perfil comportamental, autoavaliação de competências e expectativa registrada pelo gestor no BEM Acolhido.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-6xl gap-0 overflow-hidden p-0 sm:w-[calc(100vw-2rem)]">
+        <div className="border-b bg-gradient-to-r from-violet-950 via-violet-800 to-indigo-700 px-5 py-5 pr-12 text-white sm:px-7">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-xl font-bold text-white sm:text-2xl">
+              Perfil do Assessment
+            </DialogTitle>
+            <DialogDescription className="text-sm text-white/80">
+              {colaborador.nome} · perfil comportamental, autoavaliação de competências e expectativa do gestor.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <TooltipProvider>
-          <div className="space-y-7">
-            <section className="space-y-3">
-              <div>
-                <h3 className="text-lg font-bold">Perfil Comportamental</h3>
-                <p className="text-sm text-muted-foreground">Percentuais do resultado mais recente do Assessment.</p>
-              </div>
-              {!disc ? (
-                <div className="rounded-lg border border-dashed p-5 text-sm text-muted-foreground">
-                  Ainda não há resultado de Assessment/Avaliação de Potencial disponível para este colaborador.
+        <div className="max-h-[calc(92vh-96px)] overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-6 lg:px-7">
+          <TooltipProvider>
+            <div className="space-y-6">
+              <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+                <div className="mb-4">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">1. Perfil Comportamental</div>
+                  <h3 className="mt-1 text-lg font-bold">Perfil Comportamental</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Percentuais do resultado mais recente do Assessment/Avaliação de Potencial.
+                  </p>
                 </div>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {discCards.map((item) => (
-                    <div key={item.key} className={`rounded-xl border p-4 ${item.classes}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="text-sm font-bold">{item.nome}</div>
-                        <UiTooltip>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="rounded-full p-0.5 opacity-80 hover:opacity-100" aria-label={`Informações sobre ${item.nome}`}>
-                              <Info className="h-4 w-4" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs text-xs leading-relaxed">{item.descricao}</TooltipContent>
-                        </UiTooltip>
-                      </div>
-                      <div className="mt-4 text-xl font-bold">
-                        {item.rotulo}: <span className="text-3xl">{fmtPct1(item.score)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
 
-            <section className="space-y-3 border-t pt-6">
-              <div>
-                <h3 className="text-lg font-bold">Autoavaliação de Competências</h3>
-                <p className="text-sm text-muted-foreground">
-                  Média das competências avaliadas no cluster ÷ 5 × 100.
-                </p>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                {INTEGRACAO_CLUSTERS.map((cluster) => {
-                  const dados = autoPorKey.get(cluster.key);
-                  return (
-                    <div key={cluster.key} className="rounded-xl border bg-muted/20 p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="text-sm font-semibold leading-snug">{cluster.nome}</div>
-                        <UiTooltip>
-                          <TooltipTrigger asChild>
-                            <button type="button" className="rounded-full p-0.5 text-muted-foreground hover:text-foreground" aria-label={`Competências de ${cluster.nome}`}>
-                              <Info className="h-4 w-4" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-sm text-xs leading-relaxed">
-                            {cluster.competencias.join(', ')}.
-                          </TooltipContent>
-                        </UiTooltip>
+                {!disc ? (
+                  <Alert className="border-amber-200 bg-amber-50 text-amber-950">
+                    <AlertTriangle className="h-4 w-4 text-amber-700" />
+                    <AlertTitle>Assessment/Avaliação de Potencial ainda não realizado</AlertTitle>
+                    <AlertDescription>
+                      Este colaborador ainda não possui resultado de Assessment disponível. Nenhum percentual é apresentado como zero para evitar interpretação incorreta.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {discCards.map((item) => (
+                      <div key={item.key} className={`min-w-0 rounded-xl border p-4 ${item.classes}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 text-sm font-bold leading-snug">{item.nome}</div>
+                          <UiTooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="shrink-0 rounded-full p-1 opacity-80 hover:bg-white/60 hover:opacity-100"
+                                aria-label={`Informações sobre ${item.nome}`}
+                              >
+                                <Info className="h-4 w-4" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs text-xs leading-relaxed">{item.descricao}</TooltipContent>
+                          </UiTooltip>
+                        </div>
+                        <div className="mt-4 text-3xl font-bold">{fmtPct1(item.score)}</div>
+                        <div className="mt-1 text-sm font-semibold">{item.rotulo}</div>
                       </div>
-                      <div className="mt-4 text-3xl font-bold">{fmtPct1(dados?.percentual)}</div>
-                      <div className="mt-2 text-[11px] text-muted-foreground">
-                        {dados?.totalAvaliadas
-                          ? `${dados.totalAvaliadas} de ${dados.totalCompetencias} competências com autoavaliação`
-                          : 'Sem autoavaliação registrada neste cluster'}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="space-y-4 border-t pt-6">
-              <div>
-                <h3 className="text-lg font-bold">Expectativa do Gestor</h3>
-                <p className="text-sm text-muted-foreground">
-                  A prioridade do gestor funciona como peso para analisar o perfil autopercebido do colaborador; não representa uma nota esperada.
-                </p>
-              </div>
-
-              {perfil?.expectativaGestor?.compatibilidade == null ? (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    {perfil?.expectativaGestor?.motivo ||
-                      'Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.'}
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="rounded-xl border border-violet-200 bg-violet-50 p-5">
-                  <div className="text-sm font-semibold text-violet-800">Compatibilidade com a expectativa do gestor</div>
-                  <div className="mt-1 text-4xl font-bold text-violet-950">
-                    {fmtPct1(perfil.expectativaGestor.compatibilidade)}
+                    ))}
                   </div>
-                  <div className="mt-2 text-xs text-violet-800">
-                    Cálculo ponderado: o resultado do colaborador em cada cluster é ponderado pela prioridade relativa definida pelo gestor.
-                  </div>
-                </div>
-              )}
+                )}
+              </section>
 
-              <div className="overflow-x-auto rounded-lg border">
-                <table className="w-full min-w-[760px] text-sm">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Categoria</th>
-                      <th className="px-3 py-2 text-center">Expectativa do gestor</th>
-                      <th className="px-3 py-2 text-center">Perfil do colaborador</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {INTEGRACAO_CLUSTERS.map((cluster) => {
-                      const expectativa = expectativaPorKey.get(cluster.key);
-                      const auto = autoPorKey.get(cluster.key);
-                      const prioridade = expectativa?.prioridade ?? 0;
-                      return (
-                        <tr key={cluster.key} className="border-t">
-                          <td className="px-3 py-3 font-medium">{cluster.nome}</td>
-                          <td className="px-3 py-3 text-center">
+              <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+                <div className="mb-4">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">2. Autoavaliação</div>
+                  <h3 className="mt-1 text-lg font-bold">Autoavaliação de Competências</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Cada resultado corresponde à média das competências avaliadas no cluster ÷ 5 × 100.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {INTEGRACAO_CLUSTERS.map((cluster) => {
+                    const dados = autoPorKey.get(cluster.key);
+                    return (
+                      <div key={cluster.key} className="min-w-0 rounded-xl border bg-muted/20 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 text-sm font-semibold leading-snug">{cluster.nome}</div>
+                          <UiTooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                aria-label={`Competências de ${cluster.nome}`}
+                              >
+                                <Info className="h-4 w-4" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-sm text-xs leading-relaxed">
+                              {cluster.competencias.join(', ')}.
+                            </TooltipContent>
+                          </UiTooltip>
+                        </div>
+                        <div className="mt-3 text-3xl font-bold">{fmtPct1(dados?.percentual)}</div>
+                        <div className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                          {dados?.totalAvaliadas
+                            ? `${dados.totalAvaliadas} de ${dados.totalCompetencias} competências com autoavaliação`
+                            : 'Sem autoavaliação registrada neste cluster'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+                <div className="mb-4">
+                  <div className="text-xs font-semibold uppercase tracking-[0.14em] text-violet-600">3. Expectativa do Gestor</div>
+                  <h3 className="mt-1 text-lg font-bold">Expectativa do Gestor</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    A prioridade do gestor é um peso relativo entre dimensões. Ela não representa uma nota esperada e a comparação acontece sempre cluster × cluster.
+                  </p>
+                </div>
+
+                {perfil?.expectativaGestor?.compatibilidade == null ? (
+                  <Alert className="mb-4">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      {perfil?.expectativaGestor?.motivo ||
+                        'Ainda não há informações suficientes para comparar o perfil do colaborador com a expectativa do gestor.'}
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 p-4 sm:p-5">
+                    <div className="text-sm font-semibold text-violet-800">Compatibilidade com a expectativa do gestor</div>
+                    <div className="mt-1 text-4xl font-bold text-violet-950">
+                      {fmtPct1(perfil.expectativaGestor.compatibilidade)}
+                    </div>
+                    <div className="mt-2 text-xs leading-relaxed text-violet-800">
+                      Resultado ponderado pelos clusters priorizados pelo gestor. Dimensões não priorizadas ficam fora do cálculo.
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {INTEGRACAO_CLUSTERS.map((cluster) => {
+                    const expectativa = expectativaPorKey.get(cluster.key);
+                    const auto = autoPorKey.get(cluster.key);
+                    const prioridade = expectativa?.prioridade ?? 0;
+                    return (
+                      <div key={cluster.key} className="min-w-0 rounded-xl border p-4">
+                        <div className="mb-3 text-sm font-bold leading-snug">{cluster.nome}</div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div className="rounded-lg bg-violet-50 p-3">
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">Prioridade do gestor</div>
                             {perfil?.expectativaGestor?.descritoresReconhecidos ? (
                               prioridade > 0 ? (
-                                <div>
-                                  <div className="font-semibold">Prioridade {fmtPct1(prioridade)}</div>
-                                  <div className="text-xs text-muted-foreground">{expectativa?.nivel}</div>
-                                </div>
+                                <>
+                                  <div className="mt-1 text-2xl font-bold text-violet-950">{fmtPct1(prioridade)}</div>
+                                  <div className="mt-1 text-xs text-violet-800">{expectativa?.nivel}</div>
+                                </>
                               ) : (
-                                <span className="text-muted-foreground">Não priorizada pelo gestor</span>
+                                <div className="mt-2 text-sm font-semibold text-muted-foreground">Não priorizada pelo gestor</div>
                               )
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <div className="mt-2 text-sm text-muted-foreground">Sem informação</div>
                             )}
-                          </td>
-                          <td className="px-3 py-3 text-center font-semibold">{fmtPct1(auto?.percentual)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                          <div className="rounded-lg bg-slate-50 p-3">
+                            <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">Perfil do colaborador</div>
+                            <div className="mt-1 text-2xl font-bold text-slate-950">{fmtPct1(auto?.percentual)}</div>
+                            <div className="mt-1 text-xs text-slate-600">Autoavaliação do cluster</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-              <p className="text-xs text-muted-foreground">
-                0% de prioridade significa apenas que o cluster não foi priorizado pelo gestor; não significa ausência da competência esperada.
-              </p>
-            </section>
-          </div>
-        </TooltipProvider>
+                <div className="mt-4 rounded-lg bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+                  0% de prioridade não significa ausência de competência esperada. Significa apenas que aquela dimensão não foi priorizada pelo gestor e, por isso, não participa do cálculo de compatibilidade.
+                </div>
+              </section>
+
+              <div className="flex justify-end border-t pt-4">
+                <DialogClose asChild>
+                  <Button variant="outline">Fechar janela</Button>
+                </DialogClose>
+              </div>
+            </div>
+          </TooltipProvider>
+        </div>
       </DialogContent>
     </Dialog>
   );
