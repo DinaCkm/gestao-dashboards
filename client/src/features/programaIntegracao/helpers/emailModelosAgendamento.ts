@@ -38,6 +38,23 @@ function modeloAgendamento(n: 1 | 2 | 3 | 4): ModeloEmailIntegracao {
 /** Espelha literalmente o gerador `agend(n,extra)` do HTML histórico. */
 export const MODELOS_EMAIL_AGENDAMENTO_INTEGRACAO: Record<string, ModeloEmailIntegracao> = {
   m_agendamento_1: modeloAgendamento(1),
+  m_confirmacao_agendamento_1: {
+    fase: 'Agendamento dos alinhamentos',
+    nome: 'Confirmação do 1º Alinhamento · Gestor',
+    para: '{{EMAIL_GESTOR}}',
+    cc: '',
+    assunto: '[Onboarding] 1º Alinhamento de {{COLABORADOR}} confirmado',
+    corpo:
+      'Olá {{GESTOR_1}}, tudo bem?\n\n' +
+      'O **1º Alinhamento de {{COLABORADOR}} está confirmado**.\n\n' +
+      '**Data:** {{DATA_ALIN}}\n' +
+      '**Horário:** {{HORA_ALIN}}\n' +
+      '**Link da reunião:** {{LINK_REUNIAO}}\n\n' +
+      'Por favor, comunique e reforce este agendamento com **{{PRIMEIRO_NOME}}**, para que ele(a) também reserve o horário e esteja disponível para a conversa.\n\n' +
+      'No dia, usaremos esse encontro para conversar sobre as primeiras percepções da integração, alinhar expectativas e apoiar os próximos passos do desenvolvimento.' +
+      ASSINATURA_EMAIL_INTEGRACAO,
+    anexo: '',
+  },
   m_agendamento_2: modeloAgendamento(2),
   m_agendamento_3: modeloAgendamento(3),
   m_agendamento_4: modeloAgendamento(4),
