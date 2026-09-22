@@ -8694,7 +8694,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
     createGerentePuro: adminOrAdmin2Procedure
       .input(z.object({
         name: z.string().min(1),
-        email: z.string().email(),
+        email: z.string().trim().toLowerCase().email('Informe um e-mail válido.'),
         cpf: z.string().min(11, 'CPF é obrigatório para o login do Gerente Puro'),
         programId: z.number(),
         especial: z.boolean().optional().default(false),
@@ -8714,6 +8714,25 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           programId: input.programId,
           permissions,
         });
+      }),
+
+    // Editar somente Gerente Puro/Especial. Aluno + Gerente é bloqueado também no servidor.
+    updateGerentePuro: adminOrAdmin2Procedure
+      .input(z.object({
+        userId: z.number(),
+        name: z.string().trim().min(1, 'Informe o nome do gerente.'),
+        email: z.string().trim().toLowerCase().email('Informe um e-mail válido.'),
+        cpf: z.string().min(11, 'CPF deve conter 11 dígitos.'),
+        loginId: z.string()
+          .trim()
+          .min(1, 'Informe o ID de login.')
+          .max(50, 'O ID de login deve ter no máximo 50 caracteres.')
+          .regex(/^[A-Za-z0-9_-]+$/, 'O ID pode conter apenas letras, números, hífen e sublinhado.')
+          .transform((value) => value.toUpperCase()),
+        programId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return await db.updateGerentePuro(input);
       }),
 
     // Remover papel de gerente
