@@ -1601,9 +1601,19 @@ programaIntegracaoRouter.delete("/api/programa-integracao/respostas/:legacyRid",
       [resposta.id],
     );
 
+    const bemAntes = formKey === "bem" && !outraRespostaAtiva && estadoAntes?.bem && typeof estadoAntes.bem === "object"
+      ? { ...estadoAntes.bem }
+      : null;
+
     let itemVoltouPendente = false;
     if (processo && itemId && !outraRespostaAtiva) {
       const proximoEstado = limparItemParaPendente(estadoAntes, itemId);
+      if (formKey === "bem") {
+        const fonteBem = normTxt(proximoEstado?.bem?.fonte || "");
+        if (fonteBem.includes("formulario")) {
+          proximoEstado.bem = {};
+        }
+      }
       await connection.execute(
         `UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
         [JSON.stringify(proximoEstado), processoId],
@@ -1626,6 +1636,7 @@ programaIntegracaoRouter.delete("/api/programa-integracao/respostas/:legacyRid",
         outraRespostaAtiva,
         itemVoltouPendente,
         fichaAntes,
+        bemAntes,
       },
     );
 
@@ -1729,6 +1740,9 @@ programaIntegracaoRouter.post("/api/programa-integracao/respostas/:legacyRid/res
       const dataAnterior = String(fichaAntes?.d || "").slice(0, 10);
       const descricao = `Resposta restaurada — ${FORM_NAMES[formKey as ProgramaIntegracaoFormKey] || formKey}${ciclo ? ` · ${ciclo}º ciclo` : ""}${papel ? ` · ${papel}` : ""}.`;
       const proximoEstado = marcarItemComoRespondido(processo.estado, itemId, descricao, dataAnterior || undefined);
+      if (formKey === "bem" && metadata?.bemAntes && typeof metadata.bemAntes === "object") {
+        proximoEstado.bem = metadata.bemAntes;
+      }
       await connection.execute(
         `UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
         [JSON.stringify(proximoEstado), processoId],
