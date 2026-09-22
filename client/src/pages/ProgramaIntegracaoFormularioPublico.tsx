@@ -65,14 +65,29 @@ const VAZIO: DraftPublico = {
   answers: {},
 };
 
+function normalizarQuebras(value: unknown): string {
+  return String(value ?? '').replace(/\\n/g, '\n');
+}
+
+function normalizarCatalogo<T>(value: T): T {
+  if (typeof value === 'string') return normalizarQuebras(value) as T;
+  if (Array.isArray(value)) return value.map((item) => normalizarCatalogo(item)) as T;
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, normalizarCatalogo(item)]),
+    ) as T;
+  }
+  return value;
+}
+
 function paragrafos(value: unknown, fallback: string[] | undefined) {
-  if (value == null) return fallback;
-  return String(value).split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  if (value == null) return fallback?.map((item) => normalizarQuebras(item));
+  return normalizarQuebras(value).split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 }
 
 function escolhas(value: unknown) {
   if (value == null || String(value).trim() === '') return null;
-  return String(value).split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
+  return normalizarQuebras(value).split('\n').map((line) => line.trim()).filter(Boolean).map((line) => {
     const pos = line.indexOf('|');
     return pos > 0
       ? { value: line.slice(0, pos).trim(), label: line.slice(pos + 1).trim() }
@@ -283,7 +298,7 @@ export default function ProgramaIntegracaoFormularioPublico() {
   }, [baseForm, slug]);
 
   const form = useMemo(
-    () => baseForm ? aplicarTextosConfigurados(baseForm, meta) : null,
+    () => baseForm ? normalizarCatalogo(aplicarTextosConfigurados(baseForm, meta)) : null,
     [baseForm, meta],
   );
   const totalPaginas = form ? form.sections.length + 1 : 0;
