@@ -526,7 +526,8 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         assessmentPotencialConcluido: andamento?.assessmentPotencialConcluido ?? null,
         assessmentPotencialConcluidoEm: andamento?.assessmentPotencialConcluidoEm || null,
         respostas: respostas.filter((r) =>
-          (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo"))
+          (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo")) ||
+          r.form === "pesquisa"
         ),
         formulariosPendentes,
       };
