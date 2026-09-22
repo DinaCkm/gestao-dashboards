@@ -130,9 +130,17 @@ function AssessmentContent() {
   const { data: trilhas = [] } = trpc.trilhas.list.useQuery();
   const { data: mentores = [] } = trpc.mentor.list.useQuery();
 
-  const { data: assessments = [], refetch: refetchAssessments } = trpc.assessment.porAluno.useQuery(
+  // Nível vigente: o ciclo atual deve ser lido pelo contratoNivelId correto.
+  // Isso impede misturar o DISC/PDI do ciclo anterior com o novo ciclo.
+  const { data: nivelVigente, isLoading: loadingNivelVigente } = trpc.contratoNiveis.vigente.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
+  );
+  const contratoNivelAtualId = nivelVigente?.id ?? null;
+
+  const { data: assessments = [], refetch: refetchAssessments } = trpc.assessment.porAluno.useQuery(
+    { alunoId: selectedAlunoId!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAlunoId && !loadingNivelVigente }
   );
 
   // Histórico de ciclos arquivados (PDI + DISC) — usado quando o novo ciclo foi liberado
@@ -147,16 +155,16 @@ function AssessmentContent() {
     return [...historicoCiclos].sort((a: any, b: any) => Number(b.numeroCiclo) - Number(a.numeroCiclo))[0] as any;
   }, [historicoCiclos]);
 
-  // Buscar resultado da Avaliação de Perfil Comportamental do aluno
+  // Resultado do ciclo ATUAL. A mesma origem usada no onboarding já filtra por contratoNivelId.
   const { data: discResultado, refetch: refetchDisc } = trpc.disc.resultado.useQuery(
-    { alunoId: selectedAlunoId! },
-    { enabled: !!selectedAlunoId }
+    { alunoId: selectedAlunoId!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAlunoId && !loadingNivelVigente }
   );
 
-  // Buscar autopercepções de competências do aluno
+  // Autopercepção também pertence ao ciclo/nível vigente.
   const { data: autopercepcoesAluno = [] } = trpc.autopercepção.porAluno.useQuery(
-    { alunoId: selectedAlunoId! },
-    { enabled: !!selectedAlunoId }
+    { alunoId: selectedAlunoId!, contratoNivelId: contratoNivelAtualId },
+    { enabled: !!selectedAlunoId && !loadingNivelVigente }
   );
 
   // Buscar lista de competências para nomes
