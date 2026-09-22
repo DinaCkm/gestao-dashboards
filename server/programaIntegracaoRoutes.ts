@@ -485,8 +485,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         ];
         esperados.forEach((item) => {
           if (!temRespostaCiclo(respostas, item.form, item.papel, ciclo)) {
+            const cycleValue = item.form === "pesquisa"
+              ? ({ 1: "15", 2: "45", 3: "75", 4: "150" } as Record<number, string>)[ciclo] || String(ciclo)
+              : String(ciclo);
             formulariosPendentes.push({
               ciclo,
+              formKey: item.form,
+              cycleValue,
               papel: item.papel,
               formulario: item.formulario,
               prazo,
