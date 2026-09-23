@@ -3256,6 +3256,17 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
     !searchAluno || a.name.toLowerCase().includes(searchAluno.toLowerCase()) || a.email?.toLowerCase().includes(searchAluno.toLowerCase())
   );
 
+  const integracaoProcessosFiltrados = integracaoProcessos.filter((processo: any) => {
+    const termo = integracaoBusca.trim().toLowerCase();
+    if (!termo) return true;
+    return (
+      String(processo.nome || "").toLowerCase().includes(termo) ||
+      String(processo.email || "").toLowerCase().includes(termo) ||
+      String(processo.cargo || "").toLowerCase().includes(termo) ||
+      String(processo.unidade || "").toLowerCase().includes(termo)
+    );
+  });
+
   const handlePromote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAlunoId || !selectedProgramId) {
@@ -3564,18 +3575,9 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                             </label>
                           ))}
                         </div>
-                        {puroPermissions.includes("/gestor/integracao") && (
-                          <div className="space-y-2 border-t pt-3">
-                            <Label>Escopo dentro da empresa</Label>
-                            <Select value={puroIntegracaoEscopo} onValueChange={(v) => setPuroIntegracaoEscopo(v as "gestor" | "all")}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContentNoPortal>
-                                <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
-                                <SelectItem value="all">Todos os colaboradores ativos da empresa</SelectItem>
-                              </SelectContentNoPortal>
-                            </Select>
-                          </div>
-                        )}
+                        <p className="text-xs text-muted-foreground border-t pt-3">
+                          O acesso ao Programa de Integração é configurado separadamente após a criação do gerente, pelo botão <strong>Configurar</strong>.
+                        </p>
                       </div>
                     )}
                   </div>
@@ -3833,101 +3835,300 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
       </Dialog>
 
       <Dialog open={!!permissaoOpenId} onOpenChange={(open) => !open && setPermissaoOpenId(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Configurar acesso do Gerente</DialogTitle>
             <DialogDescription>
-              O gerente comum mantém a visão padrão da própria empresa. Marque Gerente Especial apenas quando precisar personalizar o menu.
+              Perfil, acessos gerais e Programa de Integração são configurações independentes.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-2">
-            <Label>Empresa *</Label>
-            <Select value={editProgramId} onValueChange={setEditProgramId}>
-              <SelectTrigger><SelectValue placeholder="Selecione a empresa" /></SelectTrigger>
-              <SelectContentNoPortal>
-                {empresas.map((emp) => (
-                  <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
-                ))}
-              </SelectContentNoPortal>
-            </Select>
-          </div>
-
-          <label className="flex items-start gap-3 rounded-lg border p-3">
-            <Checkbox
-              checked={editEspecial}
-              onCheckedChange={(checked) => setEditEspecial(Boolean(checked))}
-            />
-            <span>
-              <span className="block text-sm font-semibold">Gerente Especial</span>
-              <span className="block text-xs text-muted-foreground mt-1">
-                Quando marcado, este gerente verá somente as áreas selecionadas abaixo, sempre dentro da empresa escolhida.
-              </span>
-            </span>
-          </label>
-
-          {editEspecial && (
-            <>
-              <div className="grid gap-2 sm:grid-cols-2 py-2">
-                {MANAGER_MENU_OPTIONS.map((item) => (
-                  <label key={item.path} className="flex items-center gap-2 rounded-md border p-2 text-sm">
-                    <Checkbox
-                      checked={editPermissions.includes(item.path)}
-                      onCheckedChange={(checked) => setEditPermissions((atual) => checked
-                        ? [...new Set([...atual, item.path])]
-                        : atual.filter((p) => p !== item.path))}
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
+          <div className="space-y-5">
+            <div className="rounded-xl border bg-muted/20 p-4 space-y-3">
+              <div>
+                <p className="text-sm font-semibold">1. Perfil atual</p>
+                <p className="text-xs text-muted-foreground">
+                  Somente leitura. Nada neste bloco será alterado por esta configuração.
+                </p>
               </div>
-              {editPermissions.includes("/gestor/integracao") && (
-                <div className="space-y-2">
-                  <Label>Escopo de Acompanhar Integração</Label>
-                  <Select value={editEscopo} onValueChange={(v) => setEditEscopo(v as "gestor" | "all")}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContentNoPortal>
-                      <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
-                      <SelectItem value="all">Todos os colaboradores ativos da empresa</SelectItem>
-                    </SelectContentNoPortal>
-                  </Select>
+              <div className="grid gap-3 sm:grid-cols-2 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Pessoa</p>
+                  <p className="font-medium">{gerenteSelecionadoConfig?.name || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Perfil</p>
+                  <p className="font-medium">
+                    {gerenteSelecionadoConfig?.isAlsoStudent ? "Aluno + Gerente" : "Gerente Puro"}
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-muted-foreground">
+                    {gerenteSelecionadoConfig?.isAlsoStudent ? "Empresa do perfil/aluno" : "Empresa cadastral do gerente"}
+                  </p>
+                  <p className="font-medium">{gerenteSelecionadoConfig?.programName || "-"}</p>
+                </div>
+              </div>
+              {gerenteSelecionadoConfig?.isAlsoStudent && (
+                <Alert className="border-blue-200 bg-blue-50">
+                  <AlertDescription className="text-blue-800 text-xs">
+                    A empresa do aluno, PDI, Assessment, jornadas e histórico não são alterados nesta tela.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            <div className="rounded-xl border p-4 space-y-4">
+              <div>
+                <p className="text-sm font-semibold">2. Acessos gerais como gerente</p>
+                <p className="text-xs text-muted-foreground">
+                  Gerente Especial significa apenas restrição de menu. Não altera empresa nem vínculo do perfil.
+                </p>
+              </div>
+
+              <label className="flex items-start gap-3 rounded-lg border p-3">
+                <Checkbox
+                  checked={editEspecial}
+                  onCheckedChange={(checked) => setEditEspecial(Boolean(checked))}
+                />
+                <span>
+                  <span className="block text-sm font-semibold">Gerente Especial</span>
+                  <span className="block text-xs text-muted-foreground mt-1">
+                    Quando marcado, este gerente verá somente as áreas gerais selecionadas abaixo.
+                  </span>
+                </span>
+              </label>
+
+              {editEspecial && (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {MANAGER_MENU_OPTIONS.map((item) => (
+                    <label key={item.path} className="flex items-center gap-2 rounded-md border p-2 text-sm">
+                      <Checkbox
+                        checked={editPermissions.includes(item.path)}
+                        onCheckedChange={(checked) => setEditPermissions((atual) => checked
+                          ? [...new Set([...atual, item.path])]
+                          : atual.filter((p) => p !== item.path))}
+                      />
+                      <span>{item.label}</span>
+                    </label>
+                  ))}
                 </div>
               )}
-            </>
-          )}
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!permissaoOpenId || salvarConfiguracaoGerente.isPending}
+                  onClick={() => {
+                    if (!permissaoOpenId) return;
+                    if (editEspecial && editPermissions.length === 0) {
+                      toast.error("Selecione pelo menos uma área para o Gerente Especial.");
+                      return;
+                    }
+                    salvarConfiguracaoGerente.mutate({
+                      userId: permissaoOpenId,
+                      programId: editProgramId ? parseInt(editProgramId) : 0,
+                      especial: editEspecial,
+                      permissions: editEspecial ? [...editPermissions] : [],
+                    });
+                  }}
+                >
+                  {salvarConfiguracaoGerente.isPending ? "Salvando acessos..." : "Salvar acessos gerais"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border p-4 space-y-4">
+              <div>
+                <p className="text-sm font-semibold">3. Programa de Integração</p>
+                <p className="text-xs text-muted-foreground">
+                  Esta empresa e este escopo valem somente para Acompanhar Integração e não substituem a empresa do perfil.
+                </p>
+              </div>
+
+              <label className="flex items-start gap-3 rounded-lg border p-3">
+                <Checkbox
+                  checked={integracaoEnabled}
+                  onCheckedChange={(checked) => setIntegracaoEnabled(Boolean(checked))}
+                />
+                <span>
+                  <span className="block text-sm font-semibold">Permitir acesso ao Acompanhar Integração</span>
+                  <span className="block text-xs text-muted-foreground mt-1">
+                    Pode ser usado tanto por Gerente Especial quanto por gerente com os demais menus já existentes.
+                  </span>
+                </span>
+              </label>
+
+              {integracaoEnabled && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Empresa acompanhada no Programa de Integração *</Label>
+                    <Select
+                      value={integracaoProgramId}
+                      onValueChange={(value) => {
+                        setIntegracaoProgramId(value);
+                        setIntegracaoProcessIds([]);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a empresa acompanhada" />
+                      </SelectTrigger>
+                      <SelectContentNoPortal>
+                        {empresas.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id.toString()}>{emp.name}</SelectItem>
+                        ))}
+                      </SelectContentNoPortal>
+                    </Select>
+                    {gerenteSelecionadoConfig?.programName && integracaoProgramId && (
+                      <p className="text-xs text-muted-foreground">
+                        Empresa do perfil: <strong>{gerenteSelecionadoConfig.programName}</strong>. Empresa da Integração:
+                        {" "}
+                        <strong>{empresas.find((emp: any) => String(emp.id) === integracaoProgramId)?.name || "-"}</strong>.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Quem este gerente pode acompanhar?</Label>
+                    <Select
+                      value={integracaoMode}
+                      onValueChange={(value) => {
+                        setIntegracaoMode(value as "gestor" | "all" | "manual");
+                        if (value !== "manual") setIntegracaoProcessIds([]);
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContentNoPortal>
+                        <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
+                        <SelectItem value="all">Todos os colaboradores ativos desta empresa</SelectItem>
+                        <SelectItem value="manual">Selecionar colaboradores manualmente</SelectItem>
+                      </SelectContentNoPortal>
+                    </Select>
+                  </div>
+
+                  {integracaoMode === "manual" && (
+                    <div className="space-y-3 rounded-lg border bg-muted/10 p-3">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Selecionar colaboradores</p>
+                          <p className="text-xs text-muted-foreground">
+                            A lista contém somente processos ativos de Onboarding da empresa escolhida.
+                          </p>
+                        </div>
+                        <div className="text-xs font-medium">
+                          Selecionados: {integracaoProcessIds.length} de {integracaoProcessos.length}
+                        </div>
+                      </div>
+
+                      <Input
+                        value={integracaoBusca}
+                        onChange={(event) => setIntegracaoBusca(event.target.value)}
+                        placeholder="Buscar por nome, e-mail, cargo ou unidade..."
+                      />
+
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={integracaoProcessosLoading || integracaoProcessos.length === 0}
+                          onClick={() => setIntegracaoProcessIds(integracaoProcessos.map((processo: any) => Number(processo.id)))}
+                        >
+                          Selecionar todos
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          disabled={integracaoProcessIds.length === 0}
+                          onClick={() => setIntegracaoProcessIds([])}
+                        >
+                          Limpar seleção
+                        </Button>
+                      </div>
+
+                      {integracaoProcessosLoading ? (
+                        <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Carregando colaboradores ativos...
+                        </div>
+                      ) : integracaoProcessosErro ? (
+                        <Alert variant="destructive">
+                          <AlertDescription>{integracaoProcessosErro}</AlertDescription>
+                        </Alert>
+                      ) : (
+                        <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                          {integracaoProcessosFiltrados.map((processo: any) => {
+                            const id = Number(processo.id);
+                            const checked = integracaoProcessIds.includes(id);
+                            return (
+                              <label key={id} className="flex items-start gap-3 rounded-md border p-3 text-sm">
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(value) => {
+                                    setIntegracaoProcessIds((atual) => value
+                                      ? [...new Set([...atual, id])]
+                                      : atual.filter((item) => item !== id));
+                                  }}
+                                />
+                                <span className="min-w-0">
+                                  <span className="block font-medium">{processo.nome || "Sem nome"}</span>
+                                  <span className="block text-xs text-muted-foreground">
+                                    {[processo.cargo, processo.unidade, processo.email].filter(Boolean).join(" · ")}
+                                  </span>
+                                </span>
+                              </label>
+                            );
+                          })}
+                          {integracaoProcessosFiltrados.length === 0 && (
+                            <p className="py-5 text-center text-sm text-muted-foreground">
+                              Nenhum processo ativo encontrado com este filtro.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  disabled={!permissaoOpenId || salvarIntegracaoGerente.isPending}
+                  onClick={() => {
+                    if (!permissaoOpenId) return;
+                    if (integracaoEnabled && !integracaoProgramId) {
+                      toast.error("Selecione a empresa acompanhada no Programa de Integração.");
+                      return;
+                    }
+                    if (integracaoEnabled && integracaoMode === "manual" && integracaoProcessIds.length === 0) {
+                      toast.error("Selecione pelo menos um colaborador para o escopo manual.");
+                      return;
+                    }
+                    salvarIntegracaoGerente.mutate({
+                      userId: permissaoOpenId,
+                      enabled: integracaoEnabled,
+                      programId: integracaoEnabled ? parseInt(integracaoProgramId) : null,
+                      mode: integracaoMode,
+                      processIds: integracaoMode === "manual" ? integracaoProcessIds : [],
+                    });
+                  }}
+                >
+                  {salvarIntegracaoGerente.isPending ? "Salvando Integração..." : "Salvar Programa de Integração"}
+                </Button>
+              </div>
+            </div>
+          </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              disabled={!permissaoOpenId || salvarConfiguracaoGerente.isPending}
-              onClick={() => {
-                if (!permissaoOpenId) return;
-                if (!editProgramId) {
-                  toast.error("Selecione a empresa deste gerente.");
-                  return;
-                }
-                if (editEspecial && editPermissions.length === 0) {
-                  toast.error("Selecione pelo menos uma área para o Gerente Especial.");
-                  return;
-                }
-                const permissions = editEspecial ? [
-                  ...editPermissions,
-                  ...(editPermissions.includes("/gestor/integracao") && editEscopo === "all"
-                    ? ["scope:integracao:all"]
-                    : []),
-                ] : [];
-                salvarConfiguracaoGerente.mutate({
-                  userId: permissaoOpenId,
-                  programId: parseInt(editProgramId),
-                  especial: editEspecial,
-                  permissions,
-                });
-              }}
-            >
-              {salvarConfiguracaoGerente.isPending ? "Salvando..." : "Salvar configuração"}
+            <Button type="button" variant="outline" onClick={() => setPermissaoOpenId(null)}>
+              Fechar
             </Button>
           </DialogFooter>
         </DialogContent>
+      </Dialog>
       </Dialog>
     </Card>
   );
