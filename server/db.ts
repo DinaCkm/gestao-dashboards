@@ -15355,12 +15355,47 @@ export async function setManagerGeneralPermissionsPreservingIntegracao(
   userId: number,
   permissions: string[],
 ): Promise<void> {
-  const currentPermissions = await getAdminPermissions(userId);
-  const nextPermissions = mergeGeneralManagerPermissionsPreservingIntegracao(
-    currentPermissions,
-    permissions,
-  );
-  await setAdminPermissions(userId, nextPermissions);
+  if (!process.env.DATABASE_URL) throw new Error("Banco de dados não disponível");
+  let raw: mysql.Connection | null = null;
+
+  try {
+    raw = await mysql.createConnection(process.env.DATABASE_URL);
+    await raw.beginTransaction();
+
+    const [permissionRows]: any = await raw.execute(
+      `SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1 FOR UPDATE`,
+      [userId],
+    );
+    let currentPermissions: string[] = [];
+    try {
+      const rawPermissions = permissionRows?.[0]?.permissions;
+      currentPermissions = Array.isArray(rawPermissions)
+        ? rawPermissions
+        : JSON.parse(String(rawPermissions || "[]"));
+      if (!Array.isArray(currentPermissions)) currentPermissions = [];
+    } catch {
+      currentPermissions = [];
+    }
+
+    const nextPermissions = mergeGeneralManagerPermissionsPreservingIntegracao(
+      currentPermissions,
+      permissions,
+    );
+
+    await raw.execute(
+      `INSERT INTO admin_page_permissions (userId,permissions)
+       VALUES (?,?)
+       ON DUPLICATE KEY UPDATE permissions=VALUES(permissions),updatedAt=CURRENT_TIMESTAMP`,
+      [userId, JSON.stringify(nextPermissions)],
+    );
+
+    await raw.commit();
+  } catch (error) {
+    try { if (raw) await raw.rollback(); } catch {}
+    throw error;
+  } finally {
+    try { if (raw) await raw.end(); } catch {}
+  }
 }
 
 export async function setManagerIntegracaoConfig(data: {
