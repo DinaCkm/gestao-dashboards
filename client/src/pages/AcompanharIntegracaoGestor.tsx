@@ -209,7 +209,7 @@ function PerfilAssessmentModal({
     const perfilNumero = Number(perfilColaborador);
     if (perfilNumero >= prioridade) {
       return {
-        classes: 'border-slate-200 bg-white border-t-[3px] border-t-emerald-500',
+        classes: 'border-emerald-200 bg-emerald-50/60 border-t-[3px] border-t-emerald-500',
         badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
         rotulo: 'Perfil próximo da expectativa',
       };
@@ -218,27 +218,27 @@ function PerfilAssessmentModal({
     const diferenca = prioridade - perfilNumero;
     if (diferenca <= 5) {
       return {
-        classes: 'border-slate-200 bg-white border-t-[3px] border-t-emerald-500',
+        classes: 'border-emerald-200 bg-emerald-50/60 border-t-[3px] border-t-emerald-500',
         badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
         rotulo: 'Perfil próximo da expectativa',
       };
     }
     if (diferenca <= 20) {
       return {
-        classes: 'border-slate-200 bg-white border-t-[3px] border-t-blue-500',
+        classes: 'border-blue-200 bg-blue-50/60 border-t-[3px] border-t-blue-500',
         badge: 'border-blue-300 bg-blue-100 text-blue-900',
         rotulo: 'Levemente abaixo da prioridade',
       };
     }
     if (diferenca <= 40) {
       return {
-        classes: 'border-slate-200 bg-white border-t-[3px] border-t-amber-400',
+        classes: 'border-amber-200 bg-amber-50/65 border-t-[3px] border-t-amber-400',
         badge: 'border-amber-300 bg-amber-100 text-amber-950',
         rotulo: 'Diferença significativa',
       };
     }
     return {
-      classes: 'border-slate-200 bg-white border-t-[3px] border-t-orange-500',
+      classes: 'border-orange-200 bg-orange-50/65 border-t-[3px] border-t-orange-500',
       badge: 'border-orange-400 bg-orange-100 text-orange-950',
       rotulo: 'Grande diferença',
     };
@@ -266,7 +266,7 @@ function PerfilAssessmentModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         data-assessment-modal="true"
-        className="assessment-profile-modal max-h-[95vh] !w-[98vw] !max-w-[1780px] gap-0 overflow-hidden rounded-2xl border border-slate-200/60 bg-[#F6F8FB] p-0 shadow-[0_24px_70px_rgba(15,23,42,0.20)] sm:!w-[97vw] sm:!max-w-[1780px]"
+        className="assessment-profile-modal max-h-[90vh] !w-[93vw] !max-w-[1690px] gap-0 overflow-hidden rounded-2xl border border-slate-200/60 bg-[#F6F8FB] p-0 shadow-[0_24px_70px_rgba(15,23,42,0.20)] sm:!w-[92vw] sm:!max-w-[1690px]"
       >
         <style>{`
           [data-slot="dialog-portal"]:has(.assessment-profile-modal) > [data-slot="dialog-overlay"] {
@@ -375,7 +375,7 @@ function PerfilAssessmentModal({
           </DialogHeader>
         </div>
 
-        <div className="assessment-profile-scroll max-h-[calc(94vh-92px)] overflow-y-auto overflow-x-hidden bg-[#F6F8FB] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 xl:px-10">
+        <div className="assessment-profile-scroll max-h-[calc(89vh-92px)] overflow-y-auto overflow-x-hidden bg-[#F6F8FB] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 xl:px-10">
           <TooltipProvider>
             <div className="space-y-5 sm:space-y-6">
               <section className="assessment-section rounded-2xl border border-slate-200/70 bg-white p-5 sm:p-6">
@@ -435,7 +435,7 @@ function PerfilAssessmentModal({
                   {INTEGRACAO_CLUSTERS.map((cluster) => {
                     const dados = autoPorKey.get(cluster.key);
                     return (
-                      <div key={cluster.key} className="assessment-card flex min-w-0 flex-col rounded-xl border border-slate-200 bg-slate-50/45 p-4">
+                      <div key={cluster.key} className="assessment-card flex min-w-0 flex-col rounded-xl border border-violet-100/80 bg-gradient-to-br from-violet-50/70 via-white to-blue-50/75 p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 text-sm font-semibold leading-snug text-slate-800">{cluster.nome}</div>
                           <UiTooltip>
