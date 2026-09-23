@@ -631,6 +631,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/admin/processos-ativos", 
 
     const alunosEmpresa = await listarAlunosAtivosDaEmpresa(connection, programId);
     const alunosEmpresaPorId = new Map(alunosEmpresa.map((a: any) => [Number(a.id), a]));
+    const alunosAtivosGlobais = await listarAlunosAtivosParaResolucaoEmpresa(connection);
 
     const processos = (processRows || []).filter((row: any) => {
       const estado = asJson<Record<string, any>>(row.estado, {});
@@ -650,12 +651,12 @@ programaIntegracaoRouter.get("/api/programa-integracao/admin/processos-ativos", 
         return true;
       }
 
-      const match = escolherCorrespondenciaEcoSegura(
+      const match = escolherCorrespondenciaEmpresaSegura(
         String(row.nome || ""),
         String(row.email || ""),
-        alunosEmpresa,
+        alunosAtivosGlobais,
       );
-      return match.status === "automatico_seguro";
+      return Boolean(match && Number(match.programId || 0) === programId);
     }).map((row: any) => ({
       id: Number(row.id),
       legacyId: String(row.legacyId || ""),
@@ -751,6 +752,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       ? []
       : await listarAlunosAtivosDaEmpresa(connection, empresaId);
     const alunosEmpresaPorId = new Map(alunosEmpresa.map((a: any) => [Number(a.id), a]));
+    const alunosAtivosGlobais = user.role === "admin"
+      ? []
+      : await listarAlunosAtivosParaResolucaoEmpresa(connection);
 
     function resolverAlunoDaEmpresa(row: any): any | null {
       if (user.role === "admin") return { id: Number(row.alunoId || 0) || null };
@@ -774,12 +778,12 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         return alunosEmpresaPorId.get(ecoAlunoId) || null;
       }
 
-      const match = escolherCorrespondenciaEcoSegura(
+      const match = escolherCorrespondenciaEmpresaSegura(
         String(row.nome || ""),
         String(row.email || ""),
-        alunosEmpresa,
+        alunosAtivosGlobais,
       );
-      return match.status === "automatico_seguro" ? match.aluno : null;
+      return match && Number(match.programId || 0) === empresaId ? match : null;
     }
 
     const alunoEmpresaPorProcesso = new Map<number, any>();
@@ -1038,6 +1042,28 @@ function tokensNomeEco(value: unknown): string[] {
   return nomeCanonicoEco(value).split(" ").filter(Boolean);
 }
 
+function escolherCorrespondenciaEmpresaSegura(
+  nomeProcesso: string,
+  emailProcesso: string,
+  alunosAtivosGlobais: any[],
+): any | null {
+  const email = String(emailProcesso || "").trim().toLowerCase();
+  if (email) {
+    const porEmail = alunosAtivosGlobais.filter(
+      (aluno) => String(aluno.email || "").trim().toLowerCase() === email,
+    );
+    if (porEmail.length === 1) return porEmail[0];
+    if (porEmail.length > 1) return null;
+  }
+
+  const nome = nomeCanonicoEco(nomeProcesso);
+  if (!nome) return null;
+  const porNome = alunosAtivosGlobais.filter(
+    (aluno) => nomeCanonicoEco(aluno.nome) === nome,
+  );
+  return porNome.length === 1 ? porNome[0] : null;
+}
+
 function escolherCorrespondenciaEcoSegura(nomeProcesso: string, emailProcesso: string, alunosEco: any[]) {
   const email = String(emailProcesso || "").trim().toLowerCase();
   if (email) {
@@ -1117,6 +1143,23 @@ async function listarAlunosEcoLiderDisponiveis(connection: any) {
     id: Number(row.id),
     nome: String(row.nome || ""),
     email: String(row.email || ""),
+    programId: Number(row.programId || 0) || null,
+  }));
+}
+
+async function listarAlunosAtivosParaResolucaoEmpresa(connection: any) {
+  const [rows] = (await connection.execute(
+    `SELECT id,name AS nome,email,cpf,programId
+     FROM alunos
+     WHERE COALESCE(isActive,1)=1
+     ORDER BY id ASC`,
+  )) as any;
+
+  return (rows || []).map((row: any) => ({
+    id: Number(row.id),
+    nome: String(row.nome || ""),
+    email: String(row.email || ""),
+    cpf: String(row.cpf || ""),
     programId: Number(row.programId || 0) || null,
   }));
 }
