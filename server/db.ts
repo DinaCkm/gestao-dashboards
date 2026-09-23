@@ -15347,6 +15347,18 @@ export async function getManagerIntegracaoConfig(userId: number) {
   return parseManagerIntegracaoPermissions(permissions);
 }
 
+export async function setManagerGeneralPermissionsPreservingIntegracao(
+  userId: number,
+  permissions: string[],
+): Promise<void> {
+  const currentPermissions = await getAdminPermissions(userId);
+  const nextPermissions = mergeGeneralManagerPermissionsPreservingIntegracao(
+    currentPermissions,
+    permissions,
+  );
+  await setAdminPermissions(userId, nextPermissions);
+}
+
 export async function setManagerIntegracaoConfig(data: {
   userId: number;
   enabled: boolean;
