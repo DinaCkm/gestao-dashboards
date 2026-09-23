@@ -3096,6 +3096,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   const [searchAluno, setSearchAluno] = useState("");
   const [selectedAlunoId, setSelectedAlunoId] = useState("");
   const [searchGerente, setSearchGerente] = useState("");
+  const [gerentesExpandidos, setGerentesExpandidos] = useState<number[]>([]);
 
   // Gerente Puro form
   const [puroNome, setPuroNome] = useState("");
@@ -3283,6 +3284,39 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
       String(processo.unidade || "").toLowerCase().includes(termo)
     );
   });
+
+  const gerentesFiltrados = useMemo(() => {
+    const term = searchGerente.toLowerCase().trim();
+    if (!term) return gerentesEmpresa;
+    const cpfTerm = term.replace(/\D/g, '');
+    return gerentesEmpresa.filter((g: any) => (
+      (g.name || "").toLowerCase().includes(term) ||
+      (g.email || "").toLowerCase().includes(term) ||
+      (g.cpf || "").includes(cpfTerm) ||
+      (g.loginId || "").toLowerCase().includes(term) ||
+      (g.programName || "").toLowerCase().includes(term) ||
+      (g.turmaName || "").toLowerCase().includes(term) ||
+      (g.mentorName || "").toLowerCase().includes(term)
+    ));
+  }, [gerentesEmpresa, searchGerente]);
+
+  const todosGerentesVisiveisExpandidos = gerentesFiltrados.length > 0 &&
+    gerentesFiltrados.every((g: any) => gerentesExpandidos.includes(Number(g.id)));
+
+  const toggleGerenteExpandido = (id: number) => {
+    setGerentesExpandidos((atuais) =>
+      atuais.includes(id) ? atuais.filter((item) => item !== id) : [...atuais, id]
+    );
+  };
+
+  const toggleTodosGerentesVisiveis = () => {
+    const idsVisiveis = gerentesFiltrados.map((g: any) => Number(g.id));
+    if (todosGerentesVisiveisExpandidos) {
+      setGerentesExpandidos((atuais) => atuais.filter((id) => !idsVisiveis.includes(id)));
+    } else {
+      setGerentesExpandidos((atuais) => [...new Set([...atuais, ...idsVisiveis])]);
+    }
+  };
 
   const handlePromote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -3639,140 +3673,252 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
               )}
             </div>
 
-            <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome Completo</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>CPF</TableHead>
-                  <TableHead>ID Login</TableHead>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Turma</TableHead>
-                  <TableHead>Mentor</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {gerentesEmpresa
-                  .filter((g: any) => {
-                    const term = searchGerente.toLowerCase().trim();
-                    if (!term) return true;
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs text-muted-foreground">
+                {gerentesFiltrados.length} gerente{gerentesFiltrados.length === 1 ? "" : "s"} exibido{gerentesFiltrados.length === 1 ? "" : "s"}.
+              </p>
+              {gerentesFiltrados.length > 0 && (
+                <Button type="button" variant="ghost" size="sm" onClick={toggleTodosGerentesVisiveis} className="h-8 text-xs">
+                  {todosGerentesVisiveisExpandidos ? (
+                    <><ChevronDown className="mr-1.5 h-4 w-4 rotate-180" /> Recolher detalhes</>
+                  ) : (
+                    <><ChevronDown className="mr-1.5 h-4 w-4" /> Expandir detalhes</>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-slate-200/80">
+              <Table className="w-full table-fixed">
+                <TableHeader className="bg-slate-50/80">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[28%]">Gerente</TableHead>
+                    <TableHead className="w-[18%]">Perfil</TableHead>
+                    <TableHead className="w-[23%]">Empresa / Vínculo</TableHead>
+                    <TableHead className="w-[18%]">Mentoria</TableHead>
+                    <TableHead className="w-[13%] text-right">Acesso</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {gerentesFiltrados.map((g: any) => {
+                    const id = Number(g.id);
+                    const expandido = gerentesExpandidos.includes(id);
+                    const cpfFormatado = g.cpf
+                      ? g.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+                      : "-";
+
                     return (
-                      (g.name || "").toLowerCase().includes(term) ||
-                      (g.email || "").toLowerCase().includes(term) ||
-                      (g.cpf || "").includes(term.replace(/\D/g, '')) ||
-                      (g.loginId || "").toLowerCase().includes(term) ||
-                      (g.programName || "").toLowerCase().includes(term) ||
-                      (g.turmaName || "").toLowerCase().includes(term) ||
-                      (g.mentorName || "").toLowerCase().includes(term)
+                      <React.Fragment key={g.id}>
+                        <TableRow className="group border-slate-200/70 transition-colors hover:bg-slate-50/70">
+                          <TableCell className="py-3 align-middle">
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-slate-900" title={g.name || ""}>{g.name || "-"}</p>
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground" title={g.email || ""}>{g.email || "Sem e-mail"}</p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="py-3 align-middle">
+                            <div className="flex flex-wrap gap-1.5">
+                              {g.isAlsoStudent ? (
+                                <Badge className="bg-blue-600 text-[10px]">
+                                  <ArrowLeftRight className="mr-1 h-3 w-3" />
+                                  Aluno + Gerente
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-[10px]">
+                                  <Building2 className="mr-1 h-3 w-3" />
+                                  Gerente Puro
+                                </Badge>
+                              )}
+                              {g.isSpecialManager && (
+                                <Badge className="bg-violet-600 text-[10px]">
+                                  <Shield className="mr-1 h-3 w-3" />
+                                  Especial
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="py-3 align-middle">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-slate-800" title={g.programName || ""}>{g.programName || "-"}</p>
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground" title={g.turmaName || ""}>
+                                {g.turmaName ? `Turma: ${g.turmaName}` : "Sem turma vinculada"}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="py-3 align-middle">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm text-slate-800" title={g.mentorName || ""}>{g.mentorName || "Sem mentor"}</p>
+                              {g.mentorId && <p className="mt-0.5 text-xs text-muted-foreground">ID: {g.mentorId}</p>}
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="py-3 align-middle">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-2.5 text-xs"
+                                onClick={() => setPermissaoOpenId(g.id)}
+                              >
+                                <Shield className="mr-1.5 h-3.5 w-3.5" />
+                                Configurar
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0"
+                                onClick={() => toggleGerenteExpandido(id)}
+                                aria-label={expandido ? `Recolher detalhes de ${g.name}` : `Expandir detalhes de ${g.name}`}
+                                title={expandido ? "Recolher detalhes" : "Ver todos os detalhes"}
+                              >
+                                {expandido ? <ChevronDown className="h-4 w-4 rotate-180" /> : <ChevronDown className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+
+                        {expandido && (
+                          <TableRow className="border-slate-200/70 bg-slate-50/45 hover:bg-slate-50/45">
+                            <TableCell colSpan={5} className="p-0">
+                              <div className="border-t border-slate-200/70 px-5 py-4">
+                                <div className="grid gap-5 lg:grid-cols-3">
+                                  <div className="space-y-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Identificação completa</p>
+                                    <div className="grid gap-2 text-sm">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Nome completo</p>
+                                        <p className="font-medium text-slate-900">{g.name || "-"}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">E-mail</p>
+                                        <p className="break-all text-slate-800">{g.email || "-"}</p>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                          <p className="text-xs text-muted-foreground">CPF</p>
+                                          <p className="font-mono text-slate-800">{cpfFormatado}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-xs text-muted-foreground">ID Login</p>
+                                          <p className="font-mono text-slate-800">{g.loginId || "-"}</p>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">ID do Aluno</p>
+                                        <p className="text-slate-800">{g.alunoId || "-"}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Vínculos</p>
+                                    <div className="grid gap-2 text-sm">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Empresa</p>
+                                        <p className="font-medium text-slate-900">{g.programName || "-"}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Turma</p>
+                                        <p className="text-slate-800">{g.turmaName || "-"}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Mentor</p>
+                                        <p className="text-slate-800">{g.mentorName || "-"}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">ID do Mentor</p>
+                                        <p className="text-slate-800">{g.mentorId || "-"}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-3">
+                                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">Perfil e ações</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {g.isAlsoStudent ? (
+                                        <Badge className="bg-blue-600">
+                                          <ArrowLeftRight className="mr-1 h-3 w-3" />
+                                          Aluno + Gerente
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="secondary">
+                                          <Building2 className="mr-1 h-3 w-3" />
+                                          Gerente Puro
+                                        </Badge>
+                                      )}
+                                      {g.isSpecialManager && (
+                                        <Badge className="bg-violet-600">
+                                          <Shield className="mr-1 h-3 w-3" />
+                                          Gerente Especial
+                                        </Badge>
+                                      )}
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2 pt-2">
+                                      {!g.isAlsoStudent && g.consultorId && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleCadastroEditOpen(g)}
+                                        >
+                                          <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                                          Editar Cadastro
+                                        </Button>
+                                      )}
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setPermissaoOpenId(g.id)}
+                                      >
+                                        <Shield className="mr-1.5 h-3.5 w-3.5" />
+                                        Configurar
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => handleRemove(g.id, g.name)}
+                                        disabled={isRemoving}
+                                      >
+                                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                                        Remover
+                                      </Button>
+                                    </div>
+
+                                    {g.isAlsoStudent && (
+                                      <p className="text-xs leading-relaxed text-muted-foreground">
+                                        O cadastro de identificação deste perfil Aluno + Gerente continua sendo editado pela área de Alunos.
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     );
-                  })
-                  .map((g: any) => (
-                  <TableRow key={g.id}>
-                    <TableCell className="font-medium">
-                      <div>
-                        <p>{g.name}</p>
-                        {g.alunoId && <p className="text-xs text-muted-foreground">Aluno #{g.alunoId}</p>}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">{g.email || "-"}</TableCell>
-                    <TableCell className="text-sm font-mono">
-                      {g.cpf ? g.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : "-"}
-                    </TableCell>
-                    <TableCell className="text-sm font-mono">{g.loginId || "-"}</TableCell>
-                    <TableCell>{g.programName || "-"}</TableCell>
-                    <TableCell className="text-sm">{g.turmaName || "-"}</TableCell>
-                    <TableCell className="text-sm">
-                      {g.mentorName ? (
-                        <div>
-                          <p>{g.mentorName}</p>
-                          {g.mentorId && <p className="text-xs text-muted-foreground">ID: {g.mentorId}</p>}
-                        </div>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {g.isAlsoStudent ? (
-                          <Badge className="bg-blue-600">
-                            <ArrowLeftRight className="h-3 w-3 mr-1" />
-                            Aluno + Gerente
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            <Building2 className="h-3 w-3 mr-1" />
-                            Gerente Puro
-                          </Badge>
-                        )}
-                        {g.isSpecialManager && (
-                          <Badge className="bg-violet-600">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Especial
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        {!g.isAlsoStudent && g.consultorId && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCadastroEditOpen(g)}
-                          >
-                            <Pencil className="h-3 w-3 mr-1" />
-                            Editar Cadastro
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPermissaoOpenId(g.id)}
-                        >
-                          <Shield className="h-3 w-3 mr-1" />
-                          Configurar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleRemove(g.id, g.name)}
-                          disabled={isRemoving}
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Remover
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {gerentesEmpresa.length === 0 && !searchGerente && (
-                  <TableRow>
-                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
-                      Nenhum gerente de empresa com visão dupla cadastrado. Use "Promover Aluno" ou "Gerente Puro" para adicionar.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {gerentesEmpresa.length > 0 && searchGerente && gerentesEmpresa.filter((g: any) => {
-                    const term = searchGerente.toLowerCase().trim();
-                    return (
-                      (g.name || "").toLowerCase().includes(term) ||
-                      (g.email || "").toLowerCase().includes(term) ||
-                      (g.cpf || "").includes(term.replace(/\D/g, '')) ||
-                      (g.loginId || "").toLowerCase().includes(term) ||
-                      (g.programName || "").toLowerCase().includes(term) ||
-                      (g.turmaName || "").toLowerCase().includes(term) ||
-                      (g.mentorName || "").toLowerCase().includes(term)
-                    );
-                  }).length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
-                      Nenhum gerente encontrado com os filtros aplicados.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  })}
+
+                  {gerentesEmpresa.length === 0 && !searchGerente && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                        Nenhum gerente de empresa com visão dupla cadastrado. Use "Promover Aluno" ou "Gerente Puro" para adicionar.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {gerentesEmpresa.length > 0 && gerentesFiltrados.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                        Nenhum gerente encontrado com os filtros aplicados.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </>
         )}
