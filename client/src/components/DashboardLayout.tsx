@@ -513,9 +513,10 @@ function DashboardLayoutContent({
       if (item.requireConsultorId && !hasConsultorId) return false;
       if (item.hideIfConsultorId && hasConsultorId) return false;
 
-      // Acompanhar Integração é uma área especial: não aparece no gerente comum.
+      // Acompanhar Integração é independente de "Gerente Especial":
+      // aparece para qualquer gerente explicitamente autorizado nesta área.
       if (item.path === '/gestor/integracao') {
-        return Boolean(isSpecialManager && managerPagePerms?.includes('/gestor/integracao'));
+        return Boolean(managerPagePerms?.includes('/gestor/integracao'));
       }
 
       if (hasManagerRestrictions && userRole === 'manager') {

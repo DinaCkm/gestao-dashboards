@@ -7,6 +7,7 @@ import {
 } from "@shared/integracaoAssessment";
 import { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";
 import { getRawConnection } from "./db";
+import { parseManagerIntegracaoPermissions } from "./managerIntegracaoPermissions";
 import mysql from "mysql2/promise";
 import { sdk } from "./_core/sdk";
 import {
@@ -368,13 +369,32 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   } catch { return res.status(401).json({ error: "Sessão inválida ou expirada." }); }
 }
 
+async function requireAdminOrAdmin2(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    if (!user || (user.role !== "admin" && user.role !== "admin2")) {
+      return res.status(403).json({ error: "Acesso restrito à administração." });
+    }
+    (req as any).authenticatedUser = user;
+    next();
+  } catch {
+    return res.status(401).json({ error: "Sessão inválida ou expirada." });
+  }
+}
+
 async function requireAcompanharIntegracao(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await sdk.authenticateRequest(req);
     if (!user) return res.status(401).json({ error: "Sessão inválida ou expirada." });
     if (user.role === "admin") {
       (req as any).authenticatedUser = user;
-      (req as any).integracaoScopeAll = true;
+      (req as any).integracaoConfig = {
+        enabled: true,
+        programId: null,
+        mode: "all",
+        processIds: [],
+        legacyScopeAll: false,
+      };
       return next();
     }
     if (user.role !== "manager") {
@@ -387,21 +407,23 @@ async function requireAcompanharIntegracao(req: Request, res: Response, next: Ne
       "SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1",
       [Number((user as any).id || 0)],
     )) as any;
+
     let permissions: string[] = [];
     try {
       const raw = rows?.[0]?.permissions;
       permissions = Array.isArray(raw) ? raw : JSON.parse(String(raw || "[]"));
-    } catch { permissions = []; }
-
-    if (!permissions.includes("scope:manager:special")) {
-      return res.status(403).json({ error: "Acompanhar Integração está disponível somente para Gerente Especial autorizado." });
+      if (!Array.isArray(permissions)) permissions = [];
+    } catch {
+      permissions = [];
     }
-    if (!permissions.includes("/gestor/integracao")) {
-      return res.status(403).json({ error: "Acompanhar Integração não está liberado para este Gerente Especial." });
+
+    const integracaoConfig = parseManagerIntegracaoPermissions(permissions);
+    if (!integracaoConfig.enabled) {
+      return res.status(403).json({ error: "Acompanhar Integração não está liberado para este gerente." });
     }
 
     (req as any).authenticatedUser = user;
-    (req as any).integracaoScopeAll = permissions.includes("scope:integracao:all");
+    (req as any).integracaoConfig = integracaoConfig;
     next();
   } catch {
     return res.status(401).json({ error: "Sessão inválida ou expirada." });
@@ -581,19 +603,111 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
 
 
 
+programaIntegracaoRouter.get("/api/programa-integracao/admin/processos-ativos", requireAdminOrAdmin2, async (req, res) => {
+  try {
+    const programId = Number(req.query.programId || 0);
+    if (!Number.isInteger(programId) || programId <= 0) {
+      return res.status(400).json({ error: "Empresa inválida." });
+    }
+
+    const connection = await getConnectionOr503(res);
+    if (!connection) return;
+
+    const [programRows] = (await connection.execute(
+      `SELECT id,name FROM programs WHERE id=? AND isActive=1 LIMIT 1`,
+      [programId],
+    )) as any;
+    const program = programRows?.[0];
+    if (!program) {
+      return res.status(404).json({ error: "Empresa não encontrada ou inativa." });
+    }
+
+    const [processRows] = (await connection.execute(
+      `SELECT id,legacyId,alunoId,nome,email,cargo,unidade,estado
+       FROM programa_integracao_processos
+       WHERE situacao='ativo' AND tipo='Onboarding'
+       ORDER BY nome,id`,
+    )) as any;
+
+    const alunosEmpresa = await listarAlunosAtivosDaEmpresa(connection, programId);
+    const alunosEmpresaPorId = new Map(alunosEmpresa.map((a: any) => [Number(a.id), a]));
+    const alunosAtivosGlobais = await listarAlunosAtivosParaResolucaoEmpresa(connection);
+
+    const processos = (processRows || []).filter((row: any) => {
+      const estado = asJson<Record<string, any>>(row.estado, {});
+
+      const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
+      if (empresaTesteId > 0) {
+        return empresaTesteId === programId;
+      }
+
+      const alunoIdDireto = Number(row.alunoId || 0);
+      if (alunoIdDireto && alunosEmpresaPorId.has(alunoIdDireto)) {
+        return true;
+      }
+
+      const ecoAlunoId = Number(estado?.teste?.ecoAlunoId || 0);
+      if (ecoAlunoId && alunosEmpresaPorId.has(ecoAlunoId)) {
+        return true;
+      }
+
+      const match = escolherCorrespondenciaEmpresaSegura(
+        String(row.nome || ""),
+        String(row.email || ""),
+        alunosAtivosGlobais,
+      );
+      return Boolean(match && Number(match.programId || 0) === programId);
+    }).map((row: any) => ({
+      id: Number(row.id),
+      legacyId: String(row.legacyId || ""),
+      nome: String(row.nome || ""),
+      email: String(row.email || ""),
+      cargo: String(row.cargo || ""),
+      unidade: String(row.unidade || ""),
+    }));
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({
+      ok: true,
+      program: { id: Number(program.id), name: String(program.name || "") },
+      processos,
+    });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] listar processos ativos para configuração de gerente:", error);
+    return res.status(500).json({ error: "Não foi possível listar os processos ativos da empresa." });
+  }
+});
+
+
 programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", requireAcompanharIntegracao, async (req, res) => {
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
     const user = (req as any).authenticatedUser || {};
-    const scopeAll = Boolean((req as any).integracaoScopeAll);
+    const integracaoConfig = (req as any).integracaoConfig || {
+      enabled: true,
+      programId: null,
+      mode: "all",
+      processIds: [],
+      legacyScopeAll: false,
+    };
+    const integracaoMode = user.role === "admin" ? "all" : String(integracaoConfig.mode || "gestor");
+    const scopeAll = integracaoMode === "all";
+    const manualProcessIds = new Set<number>(
+      Array.isArray(integracaoConfig.processIds)
+        ? integracaoConfig.processIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
+        : [],
+    );
     const nomeGerente = normTxt(user.name || "");
     const emailGerente = String(user.email || "").trim().toLowerCase();
 
-    // Regra multiempresa: gerente sempre precisa estar vinculado a uma empresa.
-    // managedProgramId vem do registro de consultor; programId é o vínculo direto do usuário.
-    const empresaId = Number(user.managedProgramId ?? user.programId ?? 0) || 0;
+    // A empresa específica da Integração é independente da empresa do perfil/aluno.
+    // Configurações antigas sem esse token continuam usando o vínculo histórico como fallback.
+    const empresaIntegracaoId = Number(integracaoConfig.programId || 0) || 0;
+    const empresaId = user.role === "manager"
+      ? (empresaIntegracaoId || Number(user.managedProgramId ?? user.programId ?? 0) || 0)
+      : 0;
     if (user.role === "manager" && !empresaId) {
-      return res.status(403).json({ error: "Este gerente não possui empresa vinculada." });
+      return res.status(403).json({ error: "Este gerente não possui empresa configurada para acompanhar a Integração." });
     }
 
     const [processRows] = (await connection.execute(
@@ -638,6 +752,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       ? []
       : await listarAlunosAtivosDaEmpresa(connection, empresaId);
     const alunosEmpresaPorId = new Map(alunosEmpresa.map((a: any) => [Number(a.id), a]));
+    const alunosAtivosGlobais = user.role === "admin"
+      ? []
+      : await listarAlunosAtivosParaResolucaoEmpresa(connection);
 
     function resolverAlunoDaEmpresa(row: any): any | null {
       if (user.role === "admin") return { id: Number(row.alunoId || 0) || null };
@@ -661,12 +778,12 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         return alunosEmpresaPorId.get(ecoAlunoId) || null;
       }
 
-      const match = escolherCorrespondenciaEcoSegura(
+      const match = escolherCorrespondenciaEmpresaSegura(
         String(row.nome || ""),
         String(row.email || ""),
-        alunosEmpresa,
+        alunosAtivosGlobais,
       );
-      return match.status === "automatico_seguro" ? match.aluno : null;
+      return match && Number(match.programId || 0) === empresaId ? match : null;
     }
 
     const alunoEmpresaPorProcesso = new Map<number, any>();
@@ -680,7 +797,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       if (!alunoEmpresa) return false; // fail closed: sem vínculo seguro com a empresa, não exibe.
       alunoEmpresaPorProcesso.set(Number(row.id), alunoEmpresa);
 
-      if (scopeAll) return true; // UGP/RH: todos, porém somente da própria empresa.
+      if (scopeAll) return true; // Todos, porém somente da empresa configurada.
+      if (integracaoMode === "manual") {
+        return manualProcessIds.has(Number(row.id));
+      }
 
       const gestorNome = normTxt(row.gestor || "");
       const gestorEmail = String(row.gestorEmail || "").trim().toLowerCase();
@@ -693,7 +813,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     if (!permitidos.length) {
       return res.json({
         ok: true,
-        scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : (scopeAll ? "all" : "gestor"),
+        scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : integracaoMode,
         adminView: user.role === "admin",
         gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
         gestorSelecionado,
@@ -895,7 +1015,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : (scopeAll ? "all" : "gestor"),
+      scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : integracaoMode,
       adminView: user.role === "admin",
       gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
       gestorSelecionado,
@@ -920,6 +1040,28 @@ function nomeCanonicoEco(value: unknown): string {
 
 function tokensNomeEco(value: unknown): string[] {
   return nomeCanonicoEco(value).split(" ").filter(Boolean);
+}
+
+function escolherCorrespondenciaEmpresaSegura(
+  nomeProcesso: string,
+  emailProcesso: string,
+  alunosAtivosGlobais: any[],
+): any | null {
+  const email = String(emailProcesso || "").trim().toLowerCase();
+  if (email) {
+    const porEmail = alunosAtivosGlobais.filter(
+      (aluno) => String(aluno.email || "").trim().toLowerCase() === email,
+    );
+    if (porEmail.length === 1) return porEmail[0];
+    if (porEmail.length > 1) return null;
+  }
+
+  const nome = nomeCanonicoEco(nomeProcesso);
+  if (!nome) return null;
+  const porNome = alunosAtivosGlobais.filter(
+    (aluno) => nomeCanonicoEco(aluno.nome) === nome,
+  );
+  return porNome.length === 1 ? porNome[0] : null;
 }
 
 function escolherCorrespondenciaEcoSegura(nomeProcesso: string, emailProcesso: string, alunosEco: any[]) {
@@ -1001,6 +1143,23 @@ async function listarAlunosEcoLiderDisponiveis(connection: any) {
     id: Number(row.id),
     nome: String(row.nome || ""),
     email: String(row.email || ""),
+    programId: Number(row.programId || 0) || null,
+  }));
+}
+
+async function listarAlunosAtivosParaResolucaoEmpresa(connection: any) {
+  const [rows] = (await connection.execute(
+    `SELECT id,name AS nome,email,cpf,programId
+     FROM alunos
+     WHERE COALESCE(isActive,1)=1
+     ORDER BY id ASC`,
+  )) as any;
+
+  return (rows || []).map((row: any) => ({
+    id: Number(row.id),
+    nome: String(row.nome || ""),
+    email: String(row.email || ""),
+    cpf: String(row.cpf || ""),
     programId: Number(row.programId || 0) || null,
   }));
 }

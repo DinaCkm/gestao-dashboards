@@ -85,6 +85,12 @@ import {
   validarNivelEmAndamentoUnicoRepo,
   type ContratoNivelComDatas,
 } from "./contrato-niveis.service";
+import {
+  mergeGeneralManagerPermissionsPreservingIntegracao,
+  parseManagerIntegracaoPermissions,
+  replaceIntegracaoPermissions,
+  type IntegracaoManagerMode,
+} from "./managerIntegracaoPermissions";
 
 const createDbClient = () =>
   drizzle(process.env.DATABASE_URL!, { schema, mode: "default" });
@@ -9984,6 +9990,8 @@ export async function getGerentesEmpresa(): Promise<any[]> {
       const consultorDoGerente = u.consultorId ? consultorMap.get(u.consultorId) : null;
       const programIdEfetivo = u.programId ?? consultorDoGerente?.managedProgramId ?? null;
       const program = programIdEfetivo ? programMap.get(programIdEfetivo) : null;
+      const alunoProgramId = aluno?.programId ?? null;
+      const alunoProgram = alunoProgramId ? programMap.get(alunoProgramId) : null;
       const turma = aluno?.turmaId ? turmaMap.get(aluno.turmaId) : null;
       const mentorId = u.alunoId ? alunoMentorMap.get(u.alunoId) : null;
       const mentor = mentorId ? consultorMap.get(mentorId) : null;
@@ -9997,6 +10005,8 @@ export async function getGerentesEmpresa(): Promise<any[]> {
         programName: program?.name || null,
         alunoId: u.alunoId,
         alunoName: aluno?.name || null,
+        alunoProgramId,
+        alunoProgramName: alunoProgram?.name || null,
         isAlsoStudent: !!u.alunoId,
         isSpecialManager: specialManagerIds.has(Number(u.id)),
         consultorId: u.consultorId,
@@ -15336,13 +15346,163 @@ export async function setAdminPermissions(userId: number, permissions: string[])
   ));
 }
 
+export async function getManagerIntegracaoConfig(userId: number) {
+  const permissions = await getAdminPermissions(userId);
+  return parseManagerIntegracaoPermissions(permissions);
+}
+
+export async function setManagerGeneralPermissionsPreservingIntegracao(
+  userId: number,
+  permissions: string[],
+): Promise<void> {
+  if (!process.env.DATABASE_URL) throw new Error("Banco de dados não disponível");
+  let raw: mysql.Connection | null = null;
+
+  try {
+    raw = await mysql.createConnection(process.env.DATABASE_URL);
+    await raw.beginTransaction();
+
+    const [permissionRows]: any = await raw.execute(
+      `SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1 FOR UPDATE`,
+      [userId],
+    );
+    let currentPermissions: string[] = [];
+    try {
+      const rawPermissions = permissionRows?.[0]?.permissions;
+      currentPermissions = Array.isArray(rawPermissions)
+        ? rawPermissions
+        : JSON.parse(String(rawPermissions || "[]"));
+      if (!Array.isArray(currentPermissions)) currentPermissions = [];
+    } catch {
+      currentPermissions = [];
+    }
+
+    const nextPermissions = mergeGeneralManagerPermissionsPreservingIntegracao(
+      currentPermissions,
+      permissions,
+    );
+
+    await raw.execute(
+      `INSERT INTO admin_page_permissions (userId,permissions)
+       VALUES (?,?)
+       ON DUPLICATE KEY UPDATE permissions=VALUES(permissions),updatedAt=CURRENT_TIMESTAMP`,
+      [userId, JSON.stringify(nextPermissions)],
+    );
+
+    await raw.commit();
+  } catch (error) {
+    try { if (raw) await raw.rollback(); } catch {}
+    throw error;
+  } finally {
+    try { if (raw) await raw.end(); } catch {}
+  }
+}
+
+export async function setManagerIntegracaoConfig(data: {
+  userId: number;
+  enabled: boolean;
+  programId: number | null;
+  mode: IntegracaoManagerMode;
+  processIds?: number[];
+}): Promise<{ success: boolean; message?: string }> {
+  if (!process.env.DATABASE_URL) {
+    return { success: false, message: "Banco de dados não disponível" };
+  }
+
+  let raw: mysql.Connection | null = null;
+  try {
+    raw = await mysql.createConnection(process.env.DATABASE_URL);
+    await raw.beginTransaction();
+
+    const [managerRows]: any = await raw.execute(
+      `SELECT id,role,isActive FROM users WHERE id=? LIMIT 1 FOR UPDATE`,
+      [data.userId],
+    );
+    const manager = managerRows?.[0];
+    if (!manager || manager.role !== "manager" || Number(manager.isActive) !== 1) {
+      await raw.rollback();
+      return { success: false, message: "Gerente não encontrado ou inativo." };
+    }
+
+    if (data.enabled) {
+      const programId = Number(data.programId || 0);
+      if (!programId) {
+        await raw.rollback();
+        return { success: false, message: "Selecione a empresa acompanhada no Programa de Integração." };
+      }
+      const [programRows]: any = await raw.execute(
+        `SELECT id FROM programs WHERE id=? AND isActive=1 LIMIT 1`,
+        [programId],
+      );
+      if (!programRows?.[0]) {
+        await raw.rollback();
+        return { success: false, message: "A empresa selecionada não existe ou está inativa." };
+      }
+    }
+
+    const [permissionRows]: any = await raw.execute(
+      `SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1 FOR UPDATE`,
+      [data.userId],
+    );
+
+    let currentPermissions: string[] = [];
+    try {
+      const rawPermissions = permissionRows?.[0]?.permissions;
+      currentPermissions = Array.isArray(rawPermissions)
+        ? rawPermissions
+        : JSON.parse(String(rawPermissions || "[]"));
+      if (!Array.isArray(currentPermissions)) currentPermissions = [];
+    } catch {
+      currentPermissions = [];
+    }
+
+    const nextPermissions = replaceIntegracaoPermissions(currentPermissions, {
+      enabled: data.enabled,
+      programId: data.programId,
+      mode: data.mode,
+      processIds: data.processIds,
+    });
+
+    const isSpecialManager = nextPermissions.includes("scope:manager:special");
+    const authorizedPaths = nextPermissions.filter((permission) => permission.startsWith("/"));
+    if (isSpecialManager && authorizedPaths.length === 0) {
+      await raw.rollback();
+      return {
+        success: false,
+        message: "Antes de remover o Programa de Integração, libere ao menos uma área geral ou desmarque Gerente Especial.",
+      };
+    }
+
+    await raw.execute(
+      `INSERT INTO admin_page_permissions (userId,permissions)
+       VALUES (?,?)
+       ON DUPLICATE KEY UPDATE permissions=VALUES(permissions),updatedAt=CURRENT_TIMESTAMP`,
+      [data.userId, JSON.stringify(nextPermissions)],
+    );
+
+    await raw.commit();
+    return {
+      success: true,
+      message: data.enabled
+        ? "Configuração do Programa de Integração atualizada com sucesso."
+        : "Acesso ao Programa de Integração removido sem alterar os demais acessos do gerente.",
+    };
+  } catch (error: any) {
+    try { if (raw) await raw.rollback(); } catch {}
+    console.error("[setManagerIntegracaoConfig] Falha transacional:", error);
+    return { success: false, message: error?.message || "Não foi possível salvar a configuração da Integração." };
+  } finally {
+    try { if (raw) await raw.end(); } catch {}
+  }
+}
+
 /**
  * Configuração do Gerente Especial sem criar novo papel ou nova tabela.
  * Atualiza empresa do usuário + consultor e a lista de áreas na mesma transação.
  */
 export async function configurarGerenteEspecial(data: {
   userId: number;
-  programId: number;
+  programId: number; // Mantido no contrato por compatibilidade; não altera mais vínculo de empresa.
   especial: boolean;
   permissions: string[];
 }): Promise<{ success: boolean; message?: string }> {
@@ -15354,32 +15514,39 @@ export async function configurarGerenteEspecial(data: {
     await raw.beginTransaction();
 
     const [userRows]: any = await raw.execute(
-      `SELECT id,role,consultorId FROM users WHERE id=? AND isActive=1 LIMIT 1 FOR UPDATE`,
+      `SELECT id,role FROM users WHERE id=? AND isActive=1 LIMIT 1 FOR UPDATE`,
       [data.userId],
     );
     const user = userRows?.[0];
-    if (!user || user.role !== 'manager') {
+    if (!user || user.role !== "manager") {
       await raw.rollback();
       return { success: false, message: "Gerente não encontrado ou inativo." };
     }
 
-    await raw.execute(
-      `UPDATE users SET programId=?,updatedAt=NOW() WHERE id=?`,
-      [data.programId, data.userId],
+    // Configurar restrição de menus não pode alterar empresa do aluno, empresa do
+    // usuário nem empresa gerenciada. Vínculos cadastrais usam seus fluxos próprios.
+    const [permissionRows]: any = await raw.execute(
+      `SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1 FOR UPDATE`,
+      [data.userId],
     );
-
-    if (user.consultorId) {
-      await raw.execute(
-        `UPDATE consultors
-         SET managedProgramId=?,updatedAt=NOW()
-         WHERE id=? AND role='gerente'`,
-        [data.programId, Number(user.consultorId)],
-      );
+    let currentPermissions: string[] = [];
+    try {
+      const rawPermissions = permissionRows?.[0]?.permissions;
+      currentPermissions = Array.isArray(rawPermissions)
+        ? rawPermissions
+        : JSON.parse(String(rawPermissions || "[]"));
+      if (!Array.isArray(currentPermissions)) currentPermissions = [];
+    } catch {
+      currentPermissions = [];
     }
 
-    const permissions = data.especial
+    const nextGeneralPermissions = data.especial
       ? [...new Set(["scope:manager:special", ...data.permissions.filter(Boolean)])]
       : [];
+    const permissions = mergeGeneralManagerPermissionsPreservingIntegracao(
+      currentPermissions,
+      nextGeneralPermissions,
+    );
 
     await raw.execute(
       `INSERT INTO admin_page_permissions (userId,permissions)
@@ -15392,13 +15559,13 @@ export async function configurarGerenteEspecial(data: {
     return {
       success: true,
       message: data.especial
-        ? "Gerente Especial configurado com sucesso."
-        : "Gerente voltou ao acesso padrão da empresa.",
+        ? "Restrição de menus do Gerente Especial atualizada com sucesso."
+        : "Gerente voltou ao acesso gerencial padrão sem alterar seus vínculos cadastrais.",
     };
   } catch (error: any) {
     try { if (raw) await raw.rollback(); } catch {}
     console.error("[configurarGerenteEspecial] Falha transacional:", error);
-    return { success: false, message: error?.message || "Não foi possível atualizar o gerente." };
+    return { success: false, message: error?.message || "Não foi possível atualizar os acessos do gerente." };
   } finally {
     try { if (raw) await raw.end(); } catch {}
   }
