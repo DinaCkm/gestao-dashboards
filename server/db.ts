@@ -15555,9 +15555,35 @@ export async function configurarGerenteEspecial(data: {
       [data.userId, JSON.stringify(permissions)],
     );
 
+    const [savedRows]: any = await raw.execute(
+      `SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1`,
+      [data.userId],
+    );
+    let savedPermissions: string[] = [];
+    try {
+      const rawSaved = savedRows?.[0]?.permissions;
+      savedPermissions = Array.isArray(rawSaved)
+        ? rawSaved
+        : JSON.parse(String(rawSaved || "[]"));
+      if (!Array.isArray(savedPermissions)) savedPermissions = [];
+    } catch {
+      savedPermissions = [];
+    }
+
+    const savedEspecial = savedPermissions.includes("scope:manager:special");
+    if (savedEspecial !== data.especial) {
+      await raw.rollback();
+      return {
+        success: false,
+        message: "A configuração não pôde ser confirmada após a gravação. Nenhuma alteração foi mantida.",
+      };
+    }
+
     await raw.commit();
     return {
       success: true,
+      especial: savedEspecial,
+      permissions: savedPermissions,
       message: data.especial
         ? "Restrição de menus do Gerente Especial atualizada com sucesso."
         : "Gerente voltou ao acesso gerencial padrão sem alterar seus vínculos cadastrais.",
