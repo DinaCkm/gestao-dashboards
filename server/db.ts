@@ -15505,7 +15505,7 @@ export async function configurarGerenteEspecial(data: {
   programId: number; // Mantido no contrato por compatibilidade; não altera mais vínculo de empresa.
   especial: boolean;
   permissions: string[];
-}): Promise<{ success: boolean; message?: string }> {
+}): Promise<{ success: boolean; especial?: boolean; permissions?: string[]; message?: string }> {
   if (!process.env.DATABASE_URL) return { success: false, message: "Banco de dados não disponível" };
   let raw: mysql.Connection | null = null;
 
