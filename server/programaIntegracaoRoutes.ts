@@ -761,10 +761,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       const estado = asJson<Record<string, any>>(row.estado, {});
       const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
-      if (scopeAll && empresaTesteId > 0 && empresaTesteId === empresaId) {
+      if (empresaTesteId > 0 && empresaTesteId === empresaId) {
         // Processos fictícios/demonstração podem não ter aluno real na EcoLíder.
-        // Para a visão UGP/RH, aceitar somente quando a empresa do teste estiver
-        // explicitamente vinculada e coincidir com a empresa do usuário.
+        // Aceitar somente quando a empresa do teste estiver explicitamente vinculada
+        // e coincidir com a empresa configurada para a Integração. O filtro final de
+        // escopo (gestor, todos ou manual) continua sendo aplicado depois desta etapa.
         return { id: null, programId: empresaId, demoEmpresa: true };
       }
 
