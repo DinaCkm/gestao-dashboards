@@ -4129,7 +4129,6 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </Dialog>
     </Card>
   );
 }
