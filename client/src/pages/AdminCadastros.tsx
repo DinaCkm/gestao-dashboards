@@ -3869,7 +3869,9 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                   <p className="text-xs text-muted-foreground">
                     {gerenteSelecionadoConfig?.isAlsoStudent ? "Empresa do perfil/aluno" : "Empresa cadastral do gerente"}
                   </p>
-                  <p className="font-medium">{gerenteSelecionadoConfig?.programName || "-"}</p>
+                  <p className="font-medium">{gerenteSelecionadoConfig?.isAlsoStudent
+                    ? (gerenteSelecionadoConfig?.alunoProgramName || "-")
+                    : (gerenteSelecionadoConfig?.programName || "-")}</p>
                 </div>
               </div>
               {gerenteSelecionadoConfig?.isAlsoStudent && (
@@ -3983,9 +3985,13 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                         ))}
                       </SelectContentNoPortal>
                     </Select>
-                    {gerenteSelecionadoConfig?.programName && integracaoProgramId && (
+                    {(gerenteSelecionadoConfig?.isAlsoStudent
+                      ? gerenteSelecionadoConfig?.alunoProgramName
+                      : gerenteSelecionadoConfig?.programName) && integracaoProgramId && (
                       <p className="text-xs text-muted-foreground">
-                        Empresa do perfil: <strong>{gerenteSelecionadoConfig.programName}</strong>. Empresa da Integração:
+                        Empresa do perfil: <strong>{gerenteSelecionadoConfig?.isAlsoStudent
+                          ? gerenteSelecionadoConfig?.alunoProgramName
+                          : gerenteSelecionadoConfig?.programName}</strong>. Empresa da Integração:
                         {" "}
                         <strong>{empresas.find((emp: any) => String(emp.id) === integracaoProgramId)?.name || "-"}</strong>.
                       </p>
