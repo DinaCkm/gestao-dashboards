@@ -923,7 +923,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : (scopeAll ? "all" : "gestor"),
+      scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : integracaoMode,
       adminView: user.role === "admin",
       gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
       gestorSelecionado,
