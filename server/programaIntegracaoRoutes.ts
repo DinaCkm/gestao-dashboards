@@ -369,6 +369,19 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   } catch { return res.status(401).json({ error: "Sessão inválida ou expirada." }); }
 }
 
+async function requireAdminOrAdmin2(req: Request, res: Response, next: NextFunction) {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    if (!user || (user.role !== "admin" && user.role !== "admin2")) {
+      return res.status(403).json({ error: "Acesso restrito à administração." });
+    }
+    (req as any).authenticatedUser = user;
+    next();
+  } catch {
+    return res.status(401).json({ error: "Sessão inválida ou expirada." });
+  }
+}
+
 async function requireAcompanharIntegracao(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await sdk.authenticateRequest(req);
@@ -588,6 +601,81 @@ programaIntegracaoRouter.get("/api/programa-integracao/bootstrap", requireAdmin,
   }
 });
 
+
+
+programaIntegracaoRouter.get("/api/programa-integracao/admin/processos-ativos", requireAdminOrAdmin2, async (req, res) => {
+  try {
+    const programId = Number(req.query.programId || 0);
+    if (!Number.isInteger(programId) || programId <= 0) {
+      return res.status(400).json({ error: "Empresa inválida." });
+    }
+
+    const connection = await getConnectionOr503(res);
+    if (!connection) return;
+
+    const [programRows] = (await connection.execute(
+      `SELECT id,name FROM programs WHERE id=? AND isActive=1 LIMIT 1`,
+      [programId],
+    )) as any;
+    const program = programRows?.[0];
+    if (!program) {
+      return res.status(404).json({ error: "Empresa não encontrada ou inativa." });
+    }
+
+    const [processRows] = (await connection.execute(
+      `SELECT id,legacyId,alunoId,nome,email,cargo,unidade,estado
+       FROM programa_integracao_processos
+       WHERE situacao='ativo' AND tipo='Onboarding'
+       ORDER BY nome,id`,
+    )) as any;
+
+    const alunosEmpresa = await listarAlunosAtivosDaEmpresa(connection, programId);
+    const alunosEmpresaPorId = new Map(alunosEmpresa.map((a: any) => [Number(a.id), a]));
+
+    const processos = (processRows || []).filter((row: any) => {
+      const estado = asJson<Record<string, any>>(row.estado, {});
+
+      const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
+      if (empresaTesteId > 0) {
+        return empresaTesteId === programId;
+      }
+
+      const alunoIdDireto = Number(row.alunoId || 0);
+      if (alunoIdDireto && alunosEmpresaPorId.has(alunoIdDireto)) {
+        return true;
+      }
+
+      const ecoAlunoId = Number(estado?.teste?.ecoAlunoId || 0);
+      if (ecoAlunoId && alunosEmpresaPorId.has(ecoAlunoId)) {
+        return true;
+      }
+
+      const match = escolherCorrespondenciaEcoSegura(
+        String(row.nome || ""),
+        String(row.email || ""),
+        alunosEmpresa,
+      );
+      return match.status === "automatico_seguro";
+    }).map((row: any) => ({
+      id: Number(row.id),
+      legacyId: String(row.legacyId || ""),
+      nome: String(row.nome || ""),
+      email: String(row.email || ""),
+      cargo: String(row.cargo || ""),
+      unidade: String(row.unidade || ""),
+    }));
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({
+      ok: true,
+      program: { id: Number(program.id), name: String(program.name || "") },
+      processos,
+    });
+  } catch (error) {
+    console.error("[ProgramaIntegracao] listar processos ativos para configuração de gerente:", error);
+    return res.status(500).json({ error: "Não foi possível listar os processos ativos da empresa." });
+  }
+});
 
 
 programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", requireAcompanharIntegracao, async (req, res) => {
