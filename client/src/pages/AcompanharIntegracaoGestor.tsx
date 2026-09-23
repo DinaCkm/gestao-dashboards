@@ -211,7 +211,7 @@ function PerfilAssessmentModal({
       return {
         classes: 'border-slate-200 bg-white border-t-[3px] border-t-emerald-500',
         badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
-        rotulo: 'Perfil atende ou supera a prioridade',
+        rotulo: 'Perfil próximo da expectativa',
       };
     }
 
@@ -220,27 +220,27 @@ function PerfilAssessmentModal({
       return {
         classes: 'border-slate-200 bg-white border-t-[3px] border-t-emerald-500',
         badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
-        rotulo: 'Muito próximo · até 5 p.p.',
+        rotulo: 'Perfil próximo da expectativa',
       };
     }
     if (diferenca <= 20) {
       return {
         classes: 'border-slate-200 bg-white border-t-[3px] border-t-blue-500',
         badge: 'border-blue-300 bg-blue-100 text-blue-900',
-        rotulo: 'Próximo · até 20 p.p.',
+        rotulo: 'Levemente abaixo da prioridade',
       };
     }
     if (diferenca <= 40) {
       return {
         classes: 'border-slate-200 bg-white border-t-[3px] border-t-amber-400',
         badge: 'border-amber-300 bg-amber-100 text-amber-950',
-        rotulo: 'Atenção · 20 a 40 p.p.',
+        rotulo: 'Diferença significativa',
       };
     }
     return {
       classes: 'border-slate-200 bg-white border-t-[3px] border-t-orange-500',
       badge: 'border-orange-400 bg-orange-100 text-orange-950',
-      rotulo: 'Diferença alta · acima de 40 p.p.',
+      rotulo: 'Grande diferença',
     };
   };
 
@@ -253,12 +253,12 @@ function PerfilAssessmentModal({
           ? disc?.scoreS
           : disc?.scoreC;
     const classes = item.key === 'D'
-      ? 'border-slate-200 bg-white text-slate-950 border-t-[3px] border-t-red-500'
+      ? 'border-red-200 bg-red-50/80 text-slate-950 border-t-[3px] border-t-red-500'
       : item.key === 'I'
-        ? 'border-slate-200 bg-white text-slate-950 border-t-[3px] border-t-amber-400'
+        ? 'border-amber-200 bg-amber-50/90 text-slate-950 border-t-[3px] border-t-amber-400'
         : item.key === 'S'
-          ? 'border-slate-200 bg-white text-slate-950 border-t-[3px] border-t-emerald-500'
-          : 'border-slate-200 bg-white text-slate-950 border-t-[3px] border-t-blue-500';
+          ? 'border-emerald-200 bg-emerald-50/80 text-slate-950 border-t-[3px] border-t-emerald-500'
+          : 'border-blue-200 bg-blue-50/80 text-slate-950 border-t-[3px] border-t-blue-500';
     return { ...item, score: score == null ? null : Number(score), classes };
   });
 
@@ -370,7 +370,7 @@ function PerfilAssessmentModal({
               Perfil do Assessment
             </DialogTitle>
             <DialogDescription className="text-xs leading-relaxed text-white/80 sm:text-sm">
-              {colaborador.nome} · perfil comportamental, autoavaliação de competências e expectativa do gestor.
+              {colaborador.nome} · leitura integrada do perfil comportamental, da autoavaliação e das prioridades registradas pelo gestor no BEM Acolhido.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -383,7 +383,7 @@ function PerfilAssessmentModal({
                   <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet-700">1. Perfil Comportamental</div>
                   <h3 className="mt-1.5 text-[17px] font-bold leading-tight text-[#132536]">Perfil Comportamental</h3>
                   <p className="mt-1.5 text-xs leading-5 text-slate-500">
-                    Percentuais do resultado mais recente do Assessment/Avaliação de Potencial.
+                    Mostra as quatro tendências comportamentais do resultado mais recente do Assessment/Avaliação de Potencial do colaborador.
                   </p>
                 </div>
 
@@ -427,7 +427,7 @@ function PerfilAssessmentModal({
                   <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet-700">2. Autoavaliação</div>
                   <h3 className="mt-1.5 text-[17px] font-bold leading-tight text-[#132536]">Autoavaliação de Competências</h3>
                   <p className="mt-1.5 text-xs leading-5 text-slate-500">
-                    Esta autoavaliação mostra como o próprio colaborador percebe suas competências em cada dimensão.
+                    Mostra como o próprio colaborador avalia suas competências. Para facilitar a leitura, os resultados são apresentados por grandes dimensões de desenvolvimento.
                   </p>
                 </div>
 
@@ -457,7 +457,7 @@ function PerfilAssessmentModal({
                         <div className="mt-2 min-h-[34px] text-xs leading-relaxed text-slate-500">
                           {dados?.totalAvaliadas
                             ? `${dados.totalAvaliadas} de ${dados.totalCompetencias} competências com autoavaliação`
-                            : 'Sem autoavaliação registrada neste cluster'}
+                            : 'Sem autoavaliação registrada nesta dimensão'}
                         </div>
                         <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-violet-100/80">
                           <div
@@ -477,7 +477,7 @@ function PerfilAssessmentModal({
                     <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet-700">3. Expectativa do Gestor</div>
                     <h3 className="mt-1.5 text-[17px] font-bold leading-tight text-[#132536]">Expectativa do Gestor</h3>
                     <p className="mt-1.5 text-xs leading-5 text-slate-500">
-                      A prioridade do gestor é um peso relativo entre dimensões. Ela não representa uma nota esperada e a comparação acontece sempre cluster × cluster.
+                      A prioridade do gestor vem do formulário BEM Acolhido em Nossa Unidade e mostra quais dimensões ele considera mais importantes para o desenvolvimento do colaborador. A leitura do perfil reúne DISC e autoavaliação; nesta comparação com a expectativa do gestor, o percentual de cada dimensão usa a autoavaliação feita pelo próprio colaborador.
                     </p>
                   </div>
                 </div>
@@ -491,19 +491,19 @@ function PerfilAssessmentModal({
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="mb-5 rounded-[14px] border border-violet-300/50 bg-[linear-gradient(135deg,rgba(104,65,255,0.065),rgba(104,65,255,0.025))] p-5 sm:p-6">
-                    <div className="text-sm font-semibold text-violet-800">Compatibilidade com a expectativa do gestor</div>
-                    <div className="mt-2 text-[34px] font-bold leading-none tracking-[-0.025em] text-violet-950">
+                  <div className="mb-5 rounded-[14px] border border-white/20 bg-gradient-to-r from-violet-700 via-indigo-600 to-blue-600 p-5 text-center text-white shadow-sm sm:p-6">
+                    <div className="text-sm font-semibold text-white/95">Compatibilidade com a expectativa do gestor</div>
+                    <div className="mt-2 text-[36px] font-bold leading-none tracking-[-0.025em] text-white">
                       {fmtPct1(perfil.expectativaGestor.compatibilidade)}
                     </div>
-                    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-violet-100">
+                    <div className="mx-auto mt-4 h-1.5 max-w-2xl overflow-hidden rounded-full bg-white/25">
                       <div
-                        className="assessment-progress-fill h-full rounded-full bg-violet-600"
+                        className="assessment-progress-fill h-full rounded-full bg-white"
                         style={{ width: `${perfil.expectativaGestor.compatibilidade}%` }}
                       />
                     </div>
-                    <div className="mt-3 text-xs leading-relaxed text-violet-800">
-                      Resultado ponderado pelos clusters priorizados pelo gestor. Dimensões não priorizadas ficam fora do cálculo.
+                    <div className="mx-auto mt-3 max-w-3xl text-xs leading-relaxed text-white/90">
+                      Este índice resume o quanto a autoavaliação do colaborador, nas dimensões priorizadas, está próxima das prioridades registradas pelo gestor no BEM Acolhido.
                     </div>
                   </div>
                 )}
@@ -525,7 +525,7 @@ function PerfilAssessmentModal({
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-0">
                           <div className="min-w-0 sm:border-r sm:border-slate-200 sm:pr-3">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-violet-700">Prioridade do gestor</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-violet-700">Prioridade do gestor (BEM)</div>
                             {perfil?.expectativaGestor?.descritoresReconhecidos ? (
                               prioridade > 0 ? (
                                 <>
@@ -547,9 +547,9 @@ function PerfilAssessmentModal({
                           </div>
 
                           <div className="min-w-0 sm:pl-3">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Perfil do colaborador</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Autoavaliação do colaborador</div>
                             <div className="mt-2 text-2xl font-bold leading-none text-slate-950">{fmtPct1(auto?.percentual)}</div>
-                            <div className="mt-2 min-h-[32px] text-xs leading-relaxed text-slate-500">Autoavaliação do cluster</div>
+                            <div className="mt-2 min-h-[32px] text-xs leading-relaxed text-slate-500">Autoavaliação nesta dimensão</div>
                             <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-200">
                               <div
                                 className="assessment-progress-fill h-full rounded-full bg-slate-700"
@@ -564,22 +564,23 @@ function PerfilAssessmentModal({
                 </div>
 
                 <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">
+                  <div className="mb-3 font-semibold text-slate-800">Legenda de cores</div>
                   <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="flex items-start gap-2">
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
-                      <span><strong className="text-emerald-800">Verde:</strong> perfil igual ou maior que a prioridade, ou até 5 pontos percentuais abaixo.</span>
+                      <span><strong className="text-emerald-800">Verde:</strong> perfil do colaborador próximo do que o gestor espera.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" aria-hidden="true" />
-                      <span><strong className="text-blue-800">Azul:</strong> perfil entre mais de 5 e até 20 pontos percentuais abaixo da prioridade.</span>
+                      <span><strong className="text-blue-800">Azul:</strong> perfil do colaborador levemente abaixo da prioridade indicada pelo gestor.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-400" aria-hidden="true" />
-                      <span><strong className="text-amber-800">Amarelo:</strong> diferença acima de 20 e até 40 pontos percentuais.</span>
+                      <span><strong className="text-amber-800">Amarelo:</strong> perfil com diferença significativa em relação à prioridade do gestor.</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-orange-500" aria-hidden="true" />
-                      <span><strong className="text-orange-800">Laranja:</strong> diferença acima de 40 pontos percentuais.</span>
+                      <span><strong className="text-orange-800">Laranja:</strong> perfil com grande diferença em relação à prioridade do gestor.</span>
                     </div>
                   </div>
                 </div>
@@ -591,39 +592,39 @@ function PerfilAssessmentModal({
 
               <details className="assessment-section group overflow-hidden rounded-2xl border border-slate-200/70 bg-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-300 sm:px-6">
-                  <span>Como estes resultados são calculados?</span>
+                  <span>Como interpretar estes resultados?</span>
                   <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:hidden">Ver explicação</span>
                   <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:inline">Ocultar explicação</span>
                 </summary>
                 <div className="assessment-details-body grid gap-3 border-t border-slate-200 px-5 py-5 text-sm leading-relaxed text-slate-700 sm:px-6 lg:grid-cols-2">
                   <div className="rounded-xl bg-slate-50/70 p-4">
-                    <h4 className="font-bold text-slate-950">1. Perfil Comportamental</h4>
+                    <h4 className="font-bold text-slate-950">1. Perfil Comportamental (DISC)</h4>
                     <p className="mt-2">
-                      Os percentuais de Dominância, Influência, Estabilidade e Conformidade/Cautela vêm diretamente do resultado mais recente do Assessment/Avaliação de Potencial do colaborador.
+                      Mostra as tendências de Dominância, Influência, Estabilidade e Conformidade/Cautela identificadas no Assessment/Avaliação de Potencial. Essa leitura ajuda a compreender preferências de comportamento e complementa a visão de desenvolvimento do colaborador.
                     </p>
                   </div>
                   <div className="rounded-xl bg-slate-50/70 p-4">
-                    <h4 className="font-bold text-slate-950">2. Autoavaliação de Competências</h4>
+                    <h4 className="font-bold text-slate-950">2. Autoavaliação do Colaborador</h4>
                     <p className="mt-2">
-                      Representa como o próprio colaborador se percebe. As competências respondidas de 1 a 5 são agrupadas nos cinco clusters. O sistema calcula a média das competências encontradas em cada cluster e transforma essa média em percentual.
+                      Mostra como o próprio colaborador percebe suas competências. As respostas são organizadas em cinco grandes dimensões de desenvolvimento e apresentadas em percentual para facilitar a leitura.
                     </p>
                   </div>
                   <div className="rounded-xl bg-slate-50/70 p-4">
-                    <h4 className="font-bold text-slate-950">3. Prioridade do Gestor</h4>
+                    <h4 className="font-bold text-slate-950">3. Prioridades do Gestor (BEM Acolhido)</h4>
                     <p className="mt-2">
-                      O BEM Acolhido não mede o nível esperado da competência. Ele mostra quais dimensões o gestor priorizou. Na lista atual, o sistema considera a proporção de descritores selecionados dentro de cada cluster. Nas respostas históricas, utiliza os pesos definidos para as palavras antigas, sem alterar a resposta original.
+                      As prioridades do gestor vêm do formulário BEM Acolhido em Nossa Unidade. Elas indicam quais dimensões de desenvolvimento receberam maior destaque pelo gestor e não representam uma nota do colaborador.
                     </p>
                     <p className="mt-2">
-                      Depois, o maior índice encontrado vira 100% de prioridade e os demais são normalizados proporcionalmente.
+                      O sistema transforma essas escolhas em prioridades relativas para permitir a comparação com a percepção do próprio colaborador.
                     </p>
                   </div>
                   <div className="rounded-xl bg-slate-50/70 p-4">
-                    <h4 className="font-bold text-slate-950">4. Compatibilidade</h4>
+                    <h4 className="font-bold text-slate-950">4. Compatibilidade com a Expectativa</h4>
                     <p className="mt-2">
-                      A prioridade do gestor funciona como peso para o perfil autopercebido do colaborador. O sistema multiplica o percentual do colaborador pela prioridade de cada cluster, soma os resultados e divide pela soma das prioridades.
+                      O índice compara a autoavaliação do colaborador com as dimensões priorizadas pelo gestor no BEM Acolhido. Quanto mais próximos estiverem esses resultados, maior será a compatibilidade apresentada.
                     </p>
                     <p className="mt-2">
-                      Clusters não priorizados ficam fora dessa conta. Se faltar autoavaliação em uma dimensão priorizada, a compatibilidade não é calculada para evitar um resultado enganoso.
+                      O DISC complementa a leitura geral do perfil do colaborador, mas não altera esse percentual de compatibilidade. Dimensões não priorizadas pelo gestor ficam fora dessa conta.
                     </p>
                   </div>
                 </div>
@@ -1125,8 +1126,8 @@ export default function AcompanharIntegracaoGestor() {
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Alinhamentos realizados</div><div className="mt-2 text-3xl font-bold">{colaborador.alinhamentosFeitos}<span className="text-base text-muted-foreground">/{colaborador.alinhamentosTotal}</span></div><Progress className="mt-3" value={(colaborador.alinhamentosFeitos/colaborador.alinhamentosTotal)*100} /></CardContent></Card>
                 </div>
 
-                <EvolucaoBloco titulo="Evolução — Gestor" respostas={colaborador.respostas} papel="Gestor" />
-                <EvolucaoBloco titulo="Evolução — Anjo" respostas={colaborador.respostas} papel="Anjo" />
+                <EvolucaoBloco titulo="Evolução — Percepção do Gestor sobre o Empregado" respostas={colaborador.respostas} papel="Gestor" />
+                <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Empregado" respostas={colaborador.respostas} papel="Anjo" />
 
                 {dados?.scope === 'all' && (
                   <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
