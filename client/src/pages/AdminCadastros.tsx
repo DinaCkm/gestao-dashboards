@@ -3234,8 +3234,22 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   const salvarConfiguracaoGerente = trpc.admin.configureSpecialManager.useMutation({
     onSuccess: async (data) => {
       if (data.success) {
+        if (typeof data.especial === "boolean") {
+          setEditEspecial(data.especial);
+        }
+        if (Array.isArray(data.permissions)) {
+          setEditPermissions(
+            data.permissions.filter((p: string) => p.startsWith("/") && p !== "/gestor/integracao")
+          );
+        }
+        const refreshed = await refetchPermissoesGerente();
+        if (Array.isArray(refreshed.data)) {
+          setEditEspecial(refreshed.data.includes("scope:manager:special"));
+          setEditPermissions(
+            refreshed.data.filter((p: string) => p.startsWith("/") && p !== "/gestor/integracao")
+          );
+        }
         toast.success(data.message || "Acessos gerais atualizados.");
-        await refetchPermissoesGerente();
       } else {
         toast.error(data.message || "Não foi possível atualizar os acessos gerais.");
       }
