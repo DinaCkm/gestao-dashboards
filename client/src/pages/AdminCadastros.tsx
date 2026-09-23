@@ -3214,7 +3214,10 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
         return body;
       })
       .then((body) => {
-        setIntegracaoProcessos(Array.isArray(body?.processos) ? body.processos : []);
+        const processos = Array.isArray(body?.processos) ? body.processos : [];
+        setIntegracaoProcessos(processos);
+        const idsValidos = new Set(processos.map((processo: any) => Number(processo.id)));
+        setIntegracaoProcessIds((atuais) => atuais.filter((id) => idsValidos.has(Number(id))));
       })
       .catch((error: any) => {
         if (error?.name === "AbortError") return;
@@ -3922,8 +3925,8 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                   disabled={!permissaoOpenId || salvarConfiguracaoGerente.isPending}
                   onClick={() => {
                     if (!permissaoOpenId) return;
-                    if (editEspecial && editPermissions.length === 0) {
-                      toast.error("Selecione pelo menos uma área para o Gerente Especial.");
+                    if (editEspecial && editPermissions.length === 0 && !integracaoConfig?.enabled) {
+                      toast.error("Selecione pelo menos uma área geral ou salve primeiro o Programa de Integração.");
                       return;
                     }
                     salvarConfiguracaoGerente.mutate({
