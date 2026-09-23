@@ -9990,6 +9990,8 @@ export async function getGerentesEmpresa(): Promise<any[]> {
       const consultorDoGerente = u.consultorId ? consultorMap.get(u.consultorId) : null;
       const programIdEfetivo = u.programId ?? consultorDoGerente?.managedProgramId ?? null;
       const program = programIdEfetivo ? programMap.get(programIdEfetivo) : null;
+      const alunoProgramId = aluno?.programId ?? null;
+      const alunoProgram = alunoProgramId ? programMap.get(alunoProgramId) : null;
       const turma = aluno?.turmaId ? turmaMap.get(aluno.turmaId) : null;
       const mentorId = u.alunoId ? alunoMentorMap.get(u.alunoId) : null;
       const mentor = mentorId ? consultorMap.get(mentorId) : null;
@@ -10003,6 +10005,8 @@ export async function getGerentesEmpresa(): Promise<any[]> {
         programName: program?.name || null,
         alunoId: u.alunoId,
         alunoName: aluno?.name || null,
+        alunoProgramId,
+        alunoProgramName: alunoProgram?.name || null,
         isAlsoStudent: !!u.alunoId,
         isSpecialManager: specialManagerIds.has(Number(u.id)),
         consultorId: u.consultorId,
