@@ -3103,8 +3103,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   const [puroCpf, setPuroCpf] = useState("");
   const [puroProgramId, setPuroProgramId] = useState("");
   const [puroEspecial, setPuroEspecial] = useState(false);
-  const [puroPermissions, setPuroPermissions] = useState<string[]>(["/gestor/integracao"]);
-  const [puroIntegracaoEscopo, setPuroIntegracaoEscopo] = useState<"gestor" | "all">("gestor");
+  const [puroPermissions, setPuroPermissions] = useState<string[]>([]);
 
   // Edição cadastral somente de Gerente Puro/Especial. Aluno + Gerente fica protegido.
   const [cadastroEditOpen, setCadastroEditOpen] = useState(false);
@@ -3119,7 +3118,15 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   const [editEspecial, setEditEspecial] = useState(false);
   const [editProgramId, setEditProgramId] = useState("");
   const [editPermissions, setEditPermissions] = useState<string[]>([]);
-  const [editEscopo, setEditEscopo] = useState<"gestor" | "all">("gestor");
+
+  const [integracaoEnabled, setIntegracaoEnabled] = useState(false);
+  const [integracaoProgramId, setIntegracaoProgramId] = useState("");
+  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual">("gestor");
+  const [integracaoProcessIds, setIntegracaoProcessIds] = useState<number[]>([]);
+  const [integracaoProcessos, setIntegracaoProcessos] = useState<any[]>([]);
+  const [integracaoProcessosLoading, setIntegracaoProcessosLoading] = useState(false);
+  const [integracaoProcessosErro, setIntegracaoProcessosErro] = useState("");
+  const [integracaoBusca, setIntegracaoBusca] = useState("");
 
   const MANAGER_MENU_OPTIONS = [
     { path: "/boas-vindas-gestor", label: "Boas-Vindas" },
@@ -3136,7 +3143,6 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
     { path: "/disc360/estrutura-organizacional", label: "Estrutura Organizacional" },
     { path: "/disc360/perfis-cargo", label: "Perfis de Cargo" },
     { path: "/disc360/resultado-match", label: "Resultado / Match" },
-    { path: "/gestor/integracao", label: "Acompanhar Integração" },
   ];
 
   // Query alunos da empresa selecionada (para promoção)
@@ -3149,27 +3155,101 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
     { userId: permissaoOpenId || 0 },
     { enabled: !!permissaoOpenId }
   );
+  const { data: integracaoConfig, refetch: refetchIntegracaoConfig } = trpc.admin.getManagerIntegracaoConfig.useQuery(
+    { userId: permissaoOpenId || 0 },
+    { enabled: !!permissaoOpenId }
+  );
+
+  const gerenteSelecionadoConfig = permissaoOpenId
+    ? gerentesEmpresa.find((g: any) => Number(g.id) === permissaoOpenId)
+    : null;
 
   useEffect(() => {
     if (!permissaoOpenId || !Array.isArray(permissoesGerente)) return;
     const gerenteSelecionado = gerentesEmpresa.find((g: any) => Number(g.id) === permissaoOpenId);
     setEditEspecial(permissoesGerente.includes("scope:manager:special"));
     setEditProgramId(gerenteSelecionado?.programId ? String(gerenteSelecionado.programId) : "");
-    setEditPermissions(permissoesGerente.filter((p: string) => p.startsWith("/")));
-    setEditEscopo(permissoesGerente.includes("scope:integracao:all") ? "all" : "gestor");
+    setEditPermissions(
+      permissoesGerente.filter((p: string) => p.startsWith("/") && p !== "/gestor/integracao")
+    );
   }, [permissaoOpenId, permissoesGerente, gerentesEmpresa]);
+
+  useEffect(() => {
+    if (!permissaoOpenId || !integracaoConfig) return;
+    const gerenteSelecionado = gerentesEmpresa.find((g: any) => Number(g.id) === permissaoOpenId);
+    setIntegracaoEnabled(Boolean(integracaoConfig.enabled));
+    setIntegracaoProgramId(
+      integracaoConfig.programId
+        ? String(integracaoConfig.programId)
+        : gerenteSelecionado?.programId
+          ? String(gerenteSelecionado.programId)
+          : ""
+    );
+    setIntegracaoMode((integracaoConfig.mode || "gestor") as "gestor" | "all" | "manual");
+    setIntegracaoProcessIds(Array.isArray(integracaoConfig.processIds) ? integracaoConfig.processIds : []);
+    setIntegracaoBusca("");
+    setIntegracaoProcessosErro("");
+  }, [permissaoOpenId, integracaoConfig, gerentesEmpresa]);
+
+  useEffect(() => {
+    if (!permissaoOpenId || !integracaoEnabled || integracaoMode !== "manual" || !integracaoProgramId) {
+      setIntegracaoProcessos([]);
+      setIntegracaoProcessosErro("");
+      setIntegracaoProcessosLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIntegracaoProcessosLoading(true);
+    setIntegracaoProcessosErro("");
+
+    fetch(`/api/programa-integracao/admin/processos-ativos?programId=${encodeURIComponent(integracaoProgramId)}`, {
+      credentials: "include",
+      signal: controller.signal,
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body?.error || "Não foi possível carregar os colaboradores.");
+        return body;
+      })
+      .then((body) => {
+        setIntegracaoProcessos(Array.isArray(body?.processos) ? body.processos : []);
+      })
+      .catch((error: any) => {
+        if (error?.name === "AbortError") return;
+        setIntegracaoProcessos([]);
+        setIntegracaoProcessosErro(error?.message || "Não foi possível carregar os colaboradores.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIntegracaoProcessosLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [permissaoOpenId, integracaoEnabled, integracaoMode, integracaoProgramId]);
 
   const salvarConfiguracaoGerente = trpc.admin.configureSpecialManager.useMutation({
     onSuccess: async (data) => {
       if (data.success) {
-        toast.success(data.message || "Configuração do gerente atualizada.");
+        toast.success(data.message || "Acessos gerais atualizados.");
         await refetchPermissoesGerente();
-        setPermissaoOpenId(null);
       } else {
-        toast.error(data.message || "Não foi possível atualizar o gerente.");
+        toast.error(data.message || "Não foi possível atualizar os acessos gerais.");
       }
     },
-    onError: (err) => toast.error(`Erro ao salvar configuração: ${err.message}`),
+    onError: (err) => toast.error(`Erro ao salvar acessos gerais: ${err.message}`),
+  });
+
+  const salvarIntegracaoGerente = trpc.admin.setManagerIntegracaoConfig.useMutation({
+    onSuccess: async (data) => {
+      if (data.success) {
+        toast.success(data.message || "Programa de Integração atualizado.");
+        await Promise.all([refetchIntegracaoConfig(), refetchPermissoesGerente()]);
+      } else {
+        toast.error(data.message || "Não foi possível atualizar o Programa de Integração.");
+      }
+    },
+    onError: (err) => toast.error(`Erro ao salvar Programa de Integração: ${err.message}`),
   });
 
   const filteredAlunos = (alunosProgram || []).filter((a: any) =>
@@ -3209,12 +3289,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
       toast.error("Selecione pelo menos uma área para o Gerente Especial.");
       return;
     }
-    const permissions = puroEspecial ? [
-      ...puroPermissions,
-      ...(puroPermissions.includes("/gestor/integracao") && puroIntegracaoEscopo === "all"
-        ? ["scope:integracao:all"]
-        : []),
-    ] : [];
+    const permissions = puroEspecial ? [...puroPermissions] : [];
 
     try {
       const result = await onCreatePuro({
@@ -3232,8 +3307,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
       setPuroCpf("");
       setPuroProgramId("");
       setPuroEspecial(false);
-      setPuroPermissions(["/gestor/integracao"]);
-      setPuroIntegracaoEscopo("gestor");
+      setPuroPermissions([]);
       setPuroOpen(false);
     } catch {
       // A mutation exibe o erro. Mantemos o formulário aberto e preenchido.
