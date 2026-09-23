@@ -85,6 +85,12 @@ import {
   validarNivelEmAndamentoUnicoRepo,
   type ContratoNivelComDatas,
 } from "./contrato-niveis.service";
+import {
+  mergeGeneralManagerPermissionsPreservingIntegracao,
+  parseManagerIntegracaoPermissions,
+  replaceIntegracaoPermissions,
+  type IntegracaoManagerMode,
+} from "./managerIntegracaoPermissions";
 
 const createDbClient = () =>
   drizzle(process.env.DATABASE_URL!, { schema, mode: "default" });
@@ -15336,6 +15342,51 @@ export async function setAdminPermissions(userId: number, permissions: string[])
   ));
 }
 
+export async function getManagerIntegracaoConfig(userId: number) {
+  const permissions = await getAdminPermissions(userId);
+  return parseManagerIntegracaoPermissions(permissions);
+}
+
+export async function setManagerIntegracaoConfig(data: {
+  userId: number;
+  enabled: boolean;
+  programId: number | null;
+  mode: IntegracaoManagerMode;
+  processIds?: number[];
+}): Promise<{ success: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, message: "Banco de dados não disponível" };
+
+  const [managerRows] = await db.select({ id: users.id, role: users.role, isActive: users.isActive })
+    .from(users)
+    .where(eq(users.id, data.userId))
+    .limit(1);
+  const manager = managerRows?.[0];
+  if (!manager || manager.role !== "manager" || manager.isActive !== 1) {
+    return { success: false, message: "Gerente não encontrado ou inativo." };
+  }
+
+  try {
+    const currentPermissions = await getAdminPermissions(data.userId);
+    const nextPermissions = replaceIntegracaoPermissions(currentPermissions, {
+      enabled: data.enabled,
+      programId: data.programId,
+      mode: data.mode,
+      processIds: data.processIds,
+    });
+    await setAdminPermissions(data.userId, nextPermissions);
+    return {
+      success: true,
+      message: data.enabled
+        ? "Configuração do Programa de Integração atualizada com sucesso."
+        : "Acesso ao Programa de Integração removido sem alterar os demais acessos do gerente.",
+    };
+  } catch (error: any) {
+    console.error("[setManagerIntegracaoConfig] Falha ao salvar configuração:", error);
+    return { success: false, message: error?.message || "Não foi possível salvar a configuração da Integração." };
+  }
+}
+
 /**
  * Configuração do Gerente Especial sem criar novo papel ou nova tabela.
  * Atualiza empresa do usuário + consultor e a lista de áreas na mesma transação.
@@ -15377,9 +15428,28 @@ export async function configurarGerenteEspecial(data: {
       );
     }
 
-    const permissions = data.especial
+    const [permissionRows]: any = await raw.execute(
+      `SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1 FOR UPDATE`,
+      [data.userId],
+    );
+    let currentPermissions: string[] = [];
+    try {
+      const rawPermissions = permissionRows?.[0]?.permissions;
+      currentPermissions = Array.isArray(rawPermissions)
+        ? rawPermissions
+        : JSON.parse(String(rawPermissions || "[]"));
+      if (!Array.isArray(currentPermissions)) currentPermissions = [];
+    } catch {
+      currentPermissions = [];
+    }
+
+    const nextGeneralPermissions = data.especial
       ? [...new Set(["scope:manager:special", ...data.permissions.filter(Boolean)])]
       : [];
+    const permissions = mergeGeneralManagerPermissionsPreservingIntegracao(
+      currentPermissions,
+      nextGeneralPermissions,
+    );
 
     await raw.execute(
       `INSERT INTO admin_page_permissions (userId,permissions)
