@@ -15453,7 +15453,7 @@ export async function setManagerIntegracaoConfig(data: {
  */
 export async function configurarGerenteEspecial(data: {
   userId: number;
-  programId: number;
+  programId: number; // Mantido no contrato por compatibilidade; não altera mais vínculo de empresa.
   especial: boolean;
   permissions: string[];
 }): Promise<{ success: boolean; message?: string }> {
@@ -15465,29 +15465,17 @@ export async function configurarGerenteEspecial(data: {
     await raw.beginTransaction();
 
     const [userRows]: any = await raw.execute(
-      `SELECT id,role,consultorId FROM users WHERE id=? AND isActive=1 LIMIT 1 FOR UPDATE`,
+      `SELECT id,role FROM users WHERE id=? AND isActive=1 LIMIT 1 FOR UPDATE`,
       [data.userId],
     );
     const user = userRows?.[0];
-    if (!user || user.role !== 'manager') {
+    if (!user || user.role !== "manager") {
       await raw.rollback();
       return { success: false, message: "Gerente não encontrado ou inativo." };
     }
 
-    await raw.execute(
-      `UPDATE users SET programId=?,updatedAt=NOW() WHERE id=?`,
-      [data.programId, data.userId],
-    );
-
-    if (user.consultorId) {
-      await raw.execute(
-        `UPDATE consultors
-         SET managedProgramId=?,updatedAt=NOW()
-         WHERE id=? AND role='gerente'`,
-        [data.programId, Number(user.consultorId)],
-      );
-    }
-
+    // Configurar restrição de menus não pode alterar empresa do aluno, empresa do
+    // usuário nem empresa gerenciada. Vínculos cadastrais usam seus fluxos próprios.
     const [permissionRows]: any = await raw.execute(
       `SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1 FOR UPDATE`,
       [data.userId],
@@ -15522,13 +15510,13 @@ export async function configurarGerenteEspecial(data: {
     return {
       success: true,
       message: data.especial
-        ? "Gerente Especial configurado com sucesso."
-        : "Gerente voltou ao acesso padrão da empresa.",
+        ? "Restrição de menus do Gerente Especial atualizada com sucesso."
+        : "Gerente voltou ao acesso gerencial padrão sem alterar seus vínculos cadastrais.",
     };
   } catch (error: any) {
     try { if (raw) await raw.rollback(); } catch {}
     console.error("[configurarGerenteEspecial] Falha transacional:", error);
-    return { success: false, message: error?.message || "Não foi possível atualizar o gerente." };
+    return { success: false, message: error?.message || "Não foi possível atualizar os acessos do gerente." };
   } finally {
     try { if (raw) await raw.end(); } catch {}
   }
