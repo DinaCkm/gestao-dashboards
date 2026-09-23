@@ -4110,6 +4110,10 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       toast.error("Selecione pelo menos um colaborador para o escopo manual.");
                       return;
                     }
+                    if (!integracaoEnabled && editEspecial && editPermissions.length === 0) {
+                      toast.error("Antes de remover a Integração, libere ao menos uma área geral ou desmarque Gerente Especial.");
+                      return;
+                    }
                     salvarIntegracaoGerente.mutate({
                       userId: permissaoOpenId,
                       enabled: integracaoEnabled,
