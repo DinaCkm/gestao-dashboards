@@ -8686,7 +8686,16 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
         if (!gerente) throw new TRPCError({ code: 'NOT_FOUND', message: 'Gerente não encontrado.' });
         if (input.especial && input.permissions.length === 0) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Selecione pelo menos uma área para o Gerente Especial.' });
+          const atuais = await db.getAdminPermissions(input.userId);
+          const possuiIntegracaoIndependente =
+            atuais.includes("/gestor/integracao") &&
+            atuais.some((permission: string) => permission.startsWith("scope:integracao:program:"));
+          if (!possuiIntegracaoIndependente) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Selecione pelo menos uma área geral ou salve primeiro o acesso ao Programa de Integração.',
+            });
+          }
         }
         return await db.configurarGerenteEspecial(input);
       }),
