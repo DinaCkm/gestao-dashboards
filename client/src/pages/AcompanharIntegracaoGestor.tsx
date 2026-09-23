@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AlertTriangle, BarChart3, ClipboardList, Download, Info, Loader2, Search, Sparkles, UserCheck, Users } from 'lucide-react';
+import { AlertTriangle, BarChart3, Brain, ClipboardList, Download, Handshake, Info, Loader2, Network, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import {
   LineChart,
@@ -130,6 +130,14 @@ interface AcompanhamentoResponse {
 
 const CORES = ['#6D4BA3', '#2563EB', '#0F8A8A', '#A65A8A', '#D08A2D', '#4F6F52'];
 
+const CLUSTER_ICONES: Record<string, React.ComponentType<{ className?: string }>> = {
+  cognitivas_analiticas: Brain,
+  intrapessoais_autogestao: Target,
+  interpessoais_relacionais: Handshake,
+  lideranca_gestao: Users,
+  estrategicas_organizacionais: Network,
+};
+
 function fmtPct(n: number | null) {
   return n == null ? '—' : `${Math.round(n)}%`;
 }
@@ -209,7 +217,7 @@ function PerfilAssessmentModal({
     const perfilNumero = Number(perfilColaborador);
     if (perfilNumero >= prioridade) {
       return {
-        classes: 'border-emerald-200 bg-emerald-50/60 border-t-[3px] border-t-emerald-500',
+        classes: 'border-emerald-300 bg-emerald-100/75 border-t-[3px] border-t-emerald-500',
         badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
         rotulo: 'Perfil próximo da expectativa',
       };
@@ -218,27 +226,27 @@ function PerfilAssessmentModal({
     const diferenca = prioridade - perfilNumero;
     if (diferenca <= 5) {
       return {
-        classes: 'border-emerald-200 bg-emerald-50/60 border-t-[3px] border-t-emerald-500',
+        classes: 'border-emerald-300 bg-emerald-100/75 border-t-[3px] border-t-emerald-500',
         badge: 'border-emerald-300 bg-emerald-100 text-emerald-900',
         rotulo: 'Perfil próximo da expectativa',
       };
     }
     if (diferenca <= 20) {
       return {
-        classes: 'border-blue-200 bg-blue-50/60 border-t-[3px] border-t-blue-500',
+        classes: 'border-blue-300 bg-blue-100/80 border-t-[3px] border-t-blue-500',
         badge: 'border-blue-300 bg-blue-100 text-blue-900',
         rotulo: 'Levemente abaixo da prioridade',
       };
     }
     if (diferenca <= 40) {
       return {
-        classes: 'border-amber-200 bg-amber-50/65 border-t-[3px] border-t-amber-400',
+        classes: 'border-amber-300 bg-amber-100/80 border-t-[3px] border-t-amber-400',
         badge: 'border-amber-300 bg-amber-100 text-amber-950',
         rotulo: 'Diferença significativa',
       };
     }
     return {
-      classes: 'border-orange-200 bg-orange-50/65 border-t-[3px] border-t-orange-500',
+      classes: 'border-orange-300 bg-orange-100/80 border-t-[3px] border-t-orange-500',
       badge: 'border-orange-400 bg-orange-100 text-orange-950',
       rotulo: 'Grande diferença',
     };
@@ -434,34 +442,36 @@ function PerfilAssessmentModal({
                 <div className="assessment-stagger grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
                   {INTEGRACAO_CLUSTERS.map((cluster) => {
                     const dados = autoPorKey.get(cluster.key);
+                    const ClusterIcon = CLUSTER_ICONES[cluster.key] || Sparkles;
                     return (
-                      <div key={cluster.key} className="assessment-card flex min-w-0 flex-col rounded-xl border border-violet-100/80 bg-gradient-to-br from-violet-50/70 via-white to-blue-50/75 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 text-sm font-semibold leading-snug text-slate-800">{cluster.nome}</div>
-                          <UiTooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                type="button"
-                                className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-slate-400 transition-colors hover:bg-white hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
-                                aria-label={`Competências de ${cluster.nome}`}
-                              >
-                                <Info className="h-4 w-4" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-sm text-xs leading-relaxed">
-                              {cluster.competencias.join(', ')}.
-                            </TooltipContent>
-                          </UiTooltip>
+                      <div key={cluster.key} className="assessment-card relative flex min-w-0 flex-col items-center rounded-xl border border-violet-200 bg-gradient-to-br from-violet-100/80 via-indigo-50/90 to-blue-100/80 p-4 text-center">
+                        <UiTooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-violet-500 transition-colors hover:bg-white/80 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+                              aria-label={`Competências de ${cluster.nome}`}
+                            >
+                              <Info className="h-4 w-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-sm text-xs leading-relaxed">
+                            {cluster.competencias.join(', ')}.
+                          </TooltipContent>
+                        </UiTooltip>
+                        <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/75 text-violet-700 shadow-sm ring-1 ring-violet-200/80">
+                          <ClusterIcon className="h-7 w-7" />
                         </div>
+                        <div className="min-h-[40px] text-sm font-semibold leading-snug text-slate-800">{cluster.nome}</div>
                         <div className="mt-4 text-[27px] font-bold leading-none tracking-[-0.02em] text-slate-950">{fmtPct1(dados?.percentual)}</div>
-                        <div className="mt-2 min-h-[34px] text-xs leading-relaxed text-slate-500">
+                        <div className="mt-2 min-h-[34px] text-xs leading-relaxed text-slate-600">
                           {dados?.totalAvaliadas
                             ? `${dados.totalAvaliadas} de ${dados.totalCompetencias} competências com autoavaliação`
                             : 'Sem autoavaliação registrada nesta dimensão'}
                         </div>
-                        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-violet-100/80">
+                        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/80">
                           <div
-                            className="assessment-progress-fill h-full rounded-full bg-violet-600"
+                            className="assessment-progress-fill h-full rounded-full bg-gradient-to-r from-violet-600 to-blue-600"
                             style={{ width: `${dados?.percentual ?? 0}%` }}
                           />
                         </div>
@@ -514,9 +524,13 @@ function PerfilAssessmentModal({
                     const auto = autoPorKey.get(cluster.key);
                     const prioridade = expectativa?.prioridade ?? 0;
                     const leitura = leituraComparacao(prioridade, auto?.percentual);
+                    const ClusterIcon = CLUSTER_ICONES[cluster.key] || Sparkles;
                     return (
-                      <div key={cluster.key} className={`assessment-card min-w-0 rounded-xl border p-4 ${leitura.classes}`}>
-                        <div className="mb-4 flex min-h-[64px] flex-col gap-2">
+                      <div key={cluster.key} className={`assessment-card min-w-0 rounded-xl border p-4 text-center ${leitura.classes}`}>
+                        <div className="mb-4 flex min-h-[116px] flex-col items-center gap-2">
+                          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white/70 text-slate-700 shadow-sm ring-1 ring-black/5">
+                            <ClusterIcon className="h-7 w-7" />
+                          </div>
                           <div className="text-sm font-bold leading-snug text-slate-800">{cluster.nome}</div>
                           <Badge variant="outline" className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-semibold leading-tight ${leitura.badge}`}>
                             {leitura.rotulo}
@@ -524,7 +538,7 @@ function PerfilAssessmentModal({
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-0">
-                          <div className="min-w-0 sm:border-r sm:border-slate-200 sm:pr-3">
+                          <div className="min-w-0 text-center sm:border-r sm:border-slate-300/70 sm:pr-3">
                             <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-violet-700">Prioridade do gestor (BEM)</div>
                             {perfil?.expectativaGestor?.descritoresReconhecidos ? (
                               prioridade > 0 ? (
@@ -546,7 +560,7 @@ function PerfilAssessmentModal({
                             )}
                           </div>
 
-                          <div className="min-w-0 sm:pl-3">
+                          <div className="min-w-0 text-center sm:pl-3">
                             <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Autoavaliação do colaborador</div>
                             <div className="mt-2 text-2xl font-bold leading-none text-slate-950">{fmtPct1(auto?.percentual)}</div>
                             <div className="mt-2 min-h-[32px] text-xs leading-relaxed text-slate-500">Autoavaliação nesta dimensão</div>
