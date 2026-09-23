@@ -15424,6 +15424,16 @@ export async function setManagerIntegracaoConfig(data: {
       processIds: data.processIds,
     });
 
+    const isSpecialManager = nextPermissions.includes("scope:manager:special");
+    const authorizedPaths = nextPermissions.filter((permission) => permission.startsWith("/"));
+    if (isSpecialManager && authorizedPaths.length === 0) {
+      await raw.rollback();
+      return {
+        success: false,
+        message: "Antes de remover o Programa de Integração, libere ao menos uma área geral ou desmarque Gerente Especial.",
+      };
+    }
+
     await raw.execute(
       `INSERT INTO admin_page_permissions (userId,permissions)
        VALUES (?,?)
