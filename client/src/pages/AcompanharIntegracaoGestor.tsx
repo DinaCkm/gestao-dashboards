@@ -547,7 +547,7 @@ function PerfilAssessmentModal({
                           </div>
 
                           <div className="min-w-0 sm:pl-3">
-                            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Perfil do colaborador</div>
+                            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">Autoavaliação do colaborador</div>
                             <div className="mt-2 text-2xl font-bold leading-none text-slate-950">{fmtPct1(auto?.percentual)}</div>
                             <div className="mt-2 min-h-[32px] text-xs leading-relaxed text-slate-500">Autoavaliação nesta dimensão</div>
                             <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-200">
