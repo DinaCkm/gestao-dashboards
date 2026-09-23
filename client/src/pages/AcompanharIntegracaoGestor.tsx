@@ -1062,8 +1062,66 @@ export default function AcompanharIntegracaoGestor() {
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Dia do Onboarding</div><div className="mt-2 text-3xl font-bold">{colaborador.dia}<span className="text-base text-muted-foreground">/{colaborador.totalDias}</span></div><Progress className="mt-3" value={(colaborador.dia/colaborador.totalDias)*100} /></CardContent></Card>
-                  <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Jornada Compliance</div><div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.jornadaCompliance.percentual)}</div><Progress className="mt-3" value={colaborador.jornadaCompliance.percentual || 0} /><div className="mt-2 text-xs text-muted-foreground">{colaborador.jornadaCompliance.concluidas} de {colaborador.jornadaCompliance.total} atividades</div></CardContent></Card>
-                  <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Tarefas do PDI</div><div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.pdi.percentual)}</div><Progress className="mt-3" value={colaborador.pdi.percentual || 0} /><div className="mt-2 text-xs text-muted-foreground">{colaborador.pdi.total ? `${colaborador.pdi.concluidas} de ${colaborador.pdi.total} tarefas` : 'Sem tarefas registradas'}</div></CardContent></Card>
+                  <Card>
+                    <CardContent className="pt-5">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
+                        <span>Jornada Compliance</span>
+                        <UiTooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                              aria-label="Informações importantes sobre a Jornada Compliance"
+                            >
+                              <AlertTriangle className="h-3.5 w-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-md p-3 text-xs leading-relaxed">
+                            <div className="space-y-2 normal-case font-normal">
+                              <p>
+                                A Jornada Compliance reúne os documentos e conteúdos de Compliance, incluindo informações de LGPD e os demais materiais indicados. Ela foi estruturada para capacitar os colaboradores sobre diretrizes, normas e boas práticas de compliance da organização.
+                              </p>
+                              <p>
+                                No contexto do SEBRAE Tocantins, seu objetivo é apoiar a compreensão e o cumprimento dos princípios éticos, legais e regulatórios aplicáveis ao ambiente de trabalho.
+                              </p>
+                              <p className="font-semibold">
+                                Atenção: este percentual não corresponde à conclusão de todos os cursos da Universidade Sebrae. A Jornada Compliance apresenta ao aluno os cursos que ele deve concluir na Universidade Sebrae, juntamente com os documentos e conteúdos de Compliance.
+                              </p>
+                            </div>
+                          </TooltipContent>
+                        </UiTooltip>
+                      </div>
+                      <div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.jornadaCompliance.percentual)}</div>
+                      <Progress className="mt-3" value={colaborador.jornadaCompliance.percentual || 0} />
+                      <div className="mt-2 text-xs text-muted-foreground">{colaborador.jornadaCompliance.concluidas} de {colaborador.jornadaCompliance.total} atividades</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-5">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
+                        <span>Tarefas do PDI</span>
+                        <UiTooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+                              aria-label="Informações sobre as Tarefas do PDI"
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-sm p-3 text-xs leading-relaxed">
+                            <p className="normal-case font-normal">
+                              As tarefas do PDI contemplam tanto as ações comportamentais quanto as técnicas solicitadas pelo gestor direto do colaborador no formulário BEM Acolhido em Nossa Unidade.
+                            </p>
+                          </TooltipContent>
+                        </UiTooltip>
+                      </div>
+                      <div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.pdi.percentual)}</div>
+                      <Progress className="mt-3" value={colaborador.pdi.percentual || 0} />
+                      <div className="mt-2 text-xs text-muted-foreground">{colaborador.pdi.total ? `${colaborador.pdi.concluidas} de ${colaborador.pdi.total} tarefas` : 'Sem tarefas registradas'}</div>
+                    </CardContent>
+                  </Card>
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Alinhamentos realizados</div><div className="mt-2 text-3xl font-bold">{colaborador.alinhamentosFeitos}<span className="text-base text-muted-foreground">/{colaborador.alinhamentosTotal}</span></div><Progress className="mt-3" value={(colaborador.alinhamentosFeitos/colaborador.alinhamentosTotal)*100} /></CardContent></Card>
                 </div>
 
