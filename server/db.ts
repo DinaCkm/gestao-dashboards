@@ -15366,27 +15366,72 @@ export async function setManagerIntegracaoConfig(data: {
   mode: IntegracaoManagerMode;
   processIds?: number[];
 }): Promise<{ success: boolean; message?: string }> {
-  const db = await getDb();
-  if (!db) return { success: false, message: "Banco de dados não disponível" };
-
-  const [managerRows] = await db.select({ id: users.id, role: users.role, isActive: users.isActive })
-    .from(users)
-    .where(eq(users.id, data.userId))
-    .limit(1);
-  const manager = managerRows?.[0];
-  if (!manager || manager.role !== "manager" || manager.isActive !== 1) {
-    return { success: false, message: "Gerente não encontrado ou inativo." };
+  if (!process.env.DATABASE_URL) {
+    return { success: false, message: "Banco de dados não disponível" };
   }
 
+  let raw: mysql.Connection | null = null;
   try {
-    const currentPermissions = await getAdminPermissions(data.userId);
+    raw = await mysql.createConnection(process.env.DATABASE_URL);
+    await raw.beginTransaction();
+
+    const [managerRows]: any = await raw.execute(
+      `SELECT id,role,isActive FROM users WHERE id=? LIMIT 1 FOR UPDATE`,
+      [data.userId],
+    );
+    const manager = managerRows?.[0];
+    if (!manager || manager.role !== "manager" || Number(manager.isActive) !== 1) {
+      await raw.rollback();
+      return { success: false, message: "Gerente não encontrado ou inativo." };
+    }
+
+    if (data.enabled) {
+      const programId = Number(data.programId || 0);
+      if (!programId) {
+        await raw.rollback();
+        return { success: false, message: "Selecione a empresa acompanhada no Programa de Integração." };
+      }
+      const [programRows]: any = await raw.execute(
+        `SELECT id FROM programs WHERE id=? AND isActive=1 LIMIT 1`,
+        [programId],
+      );
+      if (!programRows?.[0]) {
+        await raw.rollback();
+        return { success: false, message: "A empresa selecionada não existe ou está inativa." };
+      }
+    }
+
+    const [permissionRows]: any = await raw.execute(
+      `SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1 FOR UPDATE`,
+      [data.userId],
+    );
+
+    let currentPermissions: string[] = [];
+    try {
+      const rawPermissions = permissionRows?.[0]?.permissions;
+      currentPermissions = Array.isArray(rawPermissions)
+        ? rawPermissions
+        : JSON.parse(String(rawPermissions || "[]"));
+      if (!Array.isArray(currentPermissions)) currentPermissions = [];
+    } catch {
+      currentPermissions = [];
+    }
+
     const nextPermissions = replaceIntegracaoPermissions(currentPermissions, {
       enabled: data.enabled,
       programId: data.programId,
       mode: data.mode,
       processIds: data.processIds,
     });
-    await setAdminPermissions(data.userId, nextPermissions);
+
+    await raw.execute(
+      `INSERT INTO admin_page_permissions (userId,permissions)
+       VALUES (?,?)
+       ON DUPLICATE KEY UPDATE permissions=VALUES(permissions),updatedAt=CURRENT_TIMESTAMP`,
+      [data.userId, JSON.stringify(nextPermissions)],
+    );
+
+    await raw.commit();
     return {
       success: true,
       message: data.enabled
@@ -15394,8 +15439,11 @@ export async function setManagerIntegracaoConfig(data: {
         : "Acesso ao Programa de Integração removido sem alterar os demais acessos do gerente.",
     };
   } catch (error: any) {
-    console.error("[setManagerIntegracaoConfig] Falha ao salvar configuração:", error);
+    try { if (raw) await raw.rollback(); } catch {}
+    console.error("[setManagerIntegracaoConfig] Falha transacional:", error);
     return { success: false, message: error?.message || "Não foi possível salvar a configuração da Integração." };
+  } finally {
+    try { if (raw) await raw.end(); } catch {}
   }
 }
 
