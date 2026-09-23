@@ -8646,8 +8646,33 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
       .mutation(async ({ input }) => {
         const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
         if (!gerente) throw new TRPCError({ code: 'NOT_FOUND', message: 'Gerente não encontrado.' });
-        await db.setAdminPermissions(input.userId, input.permissions);
+        await db.setManagerGeneralPermissionsPreservingIntegracao(input.userId, input.permissions);
         return { success: true };
+      }),
+
+    getManagerIntegracaoConfig: adminOrAdmin2Procedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
+        if (!gerente) throw new TRPCError({ code: 'NOT_FOUND', message: 'Gerente não encontrado.' });
+        return await db.getManagerIntegracaoConfig(input.userId);
+      }),
+
+    setManagerIntegracaoConfig: adminOrAdmin2Procedure
+      .input(z.object({
+        userId: z.number(),
+        enabled: z.boolean(),
+        programId: z.number().int().positive().nullable(),
+        mode: z.enum(["gestor", "all", "manual"]),
+        processIds: z.array(z.number().int().positive()).optional().default([]),
+      }))
+      .mutation(async ({ input }) => {
+        const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
+        if (!gerente) throw new TRPCError({ code: 'NOT_FOUND', message: 'Gerente não encontrado.' });
+        if (input.enabled && !input.programId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Selecione a empresa acompanhada no Programa de Integração.' });
+        }
+        return await db.setManagerIntegracaoConfig(input);
       }),
 
     configureSpecialManager: adminOrAdmin2Procedure
