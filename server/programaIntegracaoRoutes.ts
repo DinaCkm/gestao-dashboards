@@ -7,6 +7,7 @@ import {
 } from "@shared/integracaoAssessment";
 import { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";
 import { getRawConnection } from "./db";
+import { parseManagerIntegracaoPermissions } from "./managerIntegracaoPermissions";
 import mysql from "mysql2/promise";
 import { sdk } from "./_core/sdk";
 import {
@@ -374,7 +375,13 @@ async function requireAcompanharIntegracao(req: Request, res: Response, next: Ne
     if (!user) return res.status(401).json({ error: "Sessão inválida ou expirada." });
     if (user.role === "admin") {
       (req as any).authenticatedUser = user;
-      (req as any).integracaoScopeAll = true;
+      (req as any).integracaoConfig = {
+        enabled: true,
+        programId: null,
+        mode: "all",
+        processIds: [],
+        legacyScopeAll: false,
+      };
       return next();
     }
     if (user.role !== "manager") {
@@ -387,21 +394,23 @@ async function requireAcompanharIntegracao(req: Request, res: Response, next: Ne
       "SELECT permissions FROM admin_page_permissions WHERE userId=? LIMIT 1",
       [Number((user as any).id || 0)],
     )) as any;
+
     let permissions: string[] = [];
     try {
       const raw = rows?.[0]?.permissions;
       permissions = Array.isArray(raw) ? raw : JSON.parse(String(raw || "[]"));
-    } catch { permissions = []; }
-
-    if (!permissions.includes("scope:manager:special")) {
-      return res.status(403).json({ error: "Acompanhar Integração está disponível somente para Gerente Especial autorizado." });
+      if (!Array.isArray(permissions)) permissions = [];
+    } catch {
+      permissions = [];
     }
-    if (!permissions.includes("/gestor/integracao")) {
-      return res.status(403).json({ error: "Acompanhar Integração não está liberado para este Gerente Especial." });
+
+    const integracaoConfig = parseManagerIntegracaoPermissions(permissions);
+    if (!integracaoConfig.enabled) {
+      return res.status(403).json({ error: "Acompanhar Integração não está liberado para este gerente." });
     }
 
     (req as any).authenticatedUser = user;
-    (req as any).integracaoScopeAll = permissions.includes("scope:integracao:all");
+    (req as any).integracaoConfig = integracaoConfig;
     next();
   } catch {
     return res.status(401).json({ error: "Sessão inválida ou expirada." });
@@ -585,15 +594,31 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
     const user = (req as any).authenticatedUser || {};
-    const scopeAll = Boolean((req as any).integracaoScopeAll);
+    const integracaoConfig = (req as any).integracaoConfig || {
+      enabled: true,
+      programId: null,
+      mode: "all",
+      processIds: [],
+      legacyScopeAll: false,
+    };
+    const integracaoMode = user.role === "admin" ? "all" : String(integracaoConfig.mode || "gestor");
+    const scopeAll = integracaoMode === "all";
+    const manualProcessIds = new Set<number>(
+      Array.isArray(integracaoConfig.processIds)
+        ? integracaoConfig.processIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
+        : [],
+    );
     const nomeGerente = normTxt(user.name || "");
     const emailGerente = String(user.email || "").trim().toLowerCase();
 
-    // Regra multiempresa: gerente sempre precisa estar vinculado a uma empresa.
-    // managedProgramId vem do registro de consultor; programId é o vínculo direto do usuário.
-    const empresaId = Number(user.managedProgramId ?? user.programId ?? 0) || 0;
+    // A empresa específica da Integração é independente da empresa do perfil/aluno.
+    // Configurações antigas sem esse token continuam usando o vínculo histórico como fallback.
+    const empresaIntegracaoId = Number(integracaoConfig.programId || 0) || 0;
+    const empresaId = user.role === "manager"
+      ? (empresaIntegracaoId || Number(user.managedProgramId ?? user.programId ?? 0) || 0)
+      : 0;
     if (user.role === "manager" && !empresaId) {
-      return res.status(403).json({ error: "Este gerente não possui empresa vinculada." });
+      return res.status(403).json({ error: "Este gerente não possui empresa configurada para acompanhar a Integração." });
     }
 
     const [processRows] = (await connection.execute(
@@ -680,7 +705,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       if (!alunoEmpresa) return false; // fail closed: sem vínculo seguro com a empresa, não exibe.
       alunoEmpresaPorProcesso.set(Number(row.id), alunoEmpresa);
 
-      if (scopeAll) return true; // UGP/RH: todos, porém somente da própria empresa.
+      if (scopeAll) return true; // Todos, porém somente da empresa configurada.
+      if (integracaoMode === "manual") {
+        return manualProcessIds.has(Number(row.id));
+      }
 
       const gestorNome = normTxt(row.gestor || "");
       const gestorEmail = String(row.gestorEmail || "").trim().toLowerCase();
@@ -693,7 +721,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     if (!permitidos.length) {
       return res.json({
         ok: true,
-        scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : (scopeAll ? "all" : "gestor"),
+        scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : integracaoMode,
         adminView: user.role === "admin",
         gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
         gestorSelecionado,
