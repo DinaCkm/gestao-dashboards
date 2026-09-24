@@ -602,6 +602,7 @@ export function DetalheProcessoReal({
                 legacyId={String(rascunhoProcesso.id)}
                 anjo={rascunhoProcesso.anjo || ''}
                 anjoEmail={rascunhoProcesso.anjoEmail || ''}
+                situacao={rascunhoProcesso.situacao || ''}
               />
             )}
           </div>
