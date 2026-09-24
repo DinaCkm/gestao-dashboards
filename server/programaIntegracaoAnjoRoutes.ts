@@ -212,10 +212,12 @@ programaIntegracaoAnjoRouter.get(
         params.push(like, like, like);
       }
       const [rows] = (await connection.execute(
-        `SELECT id,name,email,cpf,role,programId,alunoId,consultorId,isActive
-         FROM users
-         WHERE ${where}
-         ORDER BY name ASC,id ASC
+        `SELECT u.id,u.name,u.email,u.cpf,u.role,u.programId,u.alunoId,u.consultorId,u.isActive,
+                p.name AS programName
+         FROM users u
+         LEFT JOIN programs p ON p.id=u.programId
+         WHERE ${where.replace(/\b(isActive|role|name|email|cpf)\b/g, "u.$1")}
+         ORDER BY u.name ASC,u.id ASC
          LIMIT 100`,
         params,
       )) as any;
@@ -237,9 +239,11 @@ programaIntegracaoAnjoRouter.get(
     try {
       const [rows] = (await connection.execute(
         `SELECT p.id,p.legacyId,p.anjo,p.anjoEmail,p.anjoUserId,
-                u.name AS userName,u.email AS userEmail,u.cpf AS userCpf,u.role AS userRole,u.alunoId,u.consultorId,u.isActive
+                u.name AS userName,u.email AS userEmail,u.cpf AS userCpf,u.role AS userRole,u.alunoId,u.consultorId,u.isActive,
+                pr.name AS programName
          FROM programa_integracao_processos p
          LEFT JOIN users u ON u.id=p.anjoUserId
+         LEFT JOIN programs pr ON pr.id=u.programId
          WHERE p.legacyId=? AND p.situacao<>'removido'
          LIMIT 1`,
         [legacyId],
@@ -328,15 +332,13 @@ programaIntegracaoAnjoRouter.post(
     const nome = String(req.body?.nome || "").trim();
     const email = normalizeEmail(req.body?.email);
     const cpf = normalizeCpf(req.body?.cpf);
-    const programId = req.body?.programId == null || req.body?.programId === ""
-      ? null
-      : Number(req.body.programId);
+    const programId = Number(req.body?.programId || 0);
 
     if (!nome || !email || !/^\S+@\S+\.\S+$/.test(email) || cpf.length !== 11) {
       return res.status(400).json({ error: "Informe nome, e-mail válido e CPF com 11 dígitos." });
     }
-    if (programId !== null && (!Number.isInteger(programId) || programId <= 0)) {
-      return res.status(400).json({ error: "Empresa/programa inválido." });
+    if (!Number.isInteger(programId) || programId <= 0) {
+      return res.status(400).json({ error: "Selecione a empresa do Colaborador Anjo." });
     }
 
     let transactionStarted = false;
@@ -344,16 +346,14 @@ programaIntegracaoAnjoRouter.post(
       await connection.beginTransaction();
       transactionStarted = true;
 
-      if (programId !== null) {
-        const [programas] = (await connection.execute(
-          `SELECT id FROM programs WHERE id=? AND isActive=1 LIMIT 1`,
-          [programId],
-        )) as any;
-        if (!programas?.[0]) {
-          await connection.rollback();
-          transactionStarted = false;
-          return res.status(400).json({ error: "A empresa selecionada não está ativa ou não existe." });
-        }
+      const [programas] = (await connection.execute(
+        `SELECT id FROM programs WHERE id=? AND isActive=1 LIMIT 1`,
+        [programId],
+      )) as any;
+      if (!programas?.[0]) {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(400).json({ error: "A empresa selecionada não está ativa ou não existe." });
       }
 
       const [processos] = (await connection.execute(
