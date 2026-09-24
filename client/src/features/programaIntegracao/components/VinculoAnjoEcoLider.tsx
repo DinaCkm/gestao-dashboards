@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +61,7 @@ export default function VinculoAnjoEcoLider({
   const [email, setEmail] = useState(anjoEmail || "");
   const [cpf, setCpf] = useState("");
   const [programId, setProgramId] = useState("");
-  const { data: programs = [] } = trpc.programs.list.useQuery();
+  const [programas, setProgramas] = useState<Array<{ id: number; name: string }>>([]);
 
   const endpoint = useMemo(
     () => `/api/programa-integracao/admin/processos/${encodeURIComponent(legacyId)}/anjo-vinculo`,
@@ -81,7 +80,17 @@ export default function VinculoAnjoEcoLider({
     }
   };
 
-  useEffect(() => { void carregar(); }, [endpoint]);
+  useEffect(() => {
+    let ativo = true;
+    void carregar();
+    fetch("/api/programa-integracao/admin/anjo/programas", { cache: "no-store" })
+      .then((response) => json<{ ok: boolean; programas: Array<{ id: number; name: string }> }>(response))
+      .then((data) => { if (ativo) setProgramas(data.programas || []); })
+      .catch((error) => {
+        if (ativo) toast.error(error instanceof Error ? error.message : "Não foi possível carregar as empresas.");
+      });
+    return () => { ativo = false; };
+  }, [endpoint]);
 
   const pesquisar = async () => {
     setBuscando(true);
@@ -221,7 +230,7 @@ export default function VinculoAnjoEcoLider({
                     <span className="font-medium">Empresa</span>
                     <select value={programId} onChange={(e) => setProgramId(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                       <option value="">Selecione a empresa</option>
-                      {(programs as any[]).map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}
+                      {programas.map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}
                     </select>
                   </label>
                 </div>
