@@ -5,6 +5,8 @@ const TABLE = "programa_integracao_processos";
 const COLUMN = "anjoUserId";
 const INDEX = "idx_pi_processos_anjo_user";
 const APPLY = process.env.PROGRAMA_INTEGRACAO_ANJO_APPLY === "YES";
+const ENVIRONMENT_NAME = String(process.env.RAILWAY_ENVIRONMENT_NAME || "").trim().toLowerCase();
+const ALLOW_PRODUCTION = process.env.PROGRAMA_INTEGRACAO_ANJO_ALLOW_PRODUCTION === "YES";
 
 async function inspect(connection) {
   const [tables] = await connection.execute(
@@ -68,6 +70,13 @@ async function main() {
         "Nenhuma alteração foi executada. Para aplicar conscientemente, defina PROGRAMA_INTEGRACAO_ANJO_APPLY=YES.",
       );
       return;
+    }
+
+    if (ENVIRONMENT_NAME === "production" && !ALLOW_PRODUCTION) {
+      throw new Error(
+        "Ambiente production detectado. Migração bloqueada: além de PROGRAMA_INTEGRACAO_ANJO_APPLY=YES, " +
+        "é obrigatório definir PROGRAMA_INTEGRACAO_ANJO_ALLOW_PRODUCTION=YES após autorização específica.",
+      );
     }
 
     const sql = await fs.readFile(
