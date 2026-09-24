@@ -32,24 +32,26 @@ function asJson<T = any>(value: unknown, fallback: T): T {
 async function requireAuthenticated(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await sdk.authenticateRequest(req);
-    if (!user || Number(user.isActive ?? 1) === 0) {
-      return res.status(401).json({ error: "Sessão inválida ou expirada." });
-    }
+    if (!user) return res.status(401).json({ error: "Sessão inválida ou expirada." });
     (req as any).authenticatedUser = user;
-    next();
+    return next();
   } catch {
     return res.status(401).json({ error: "Sessão inválida ou expirada." });
   }
 }
 
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  await requireAuthenticated(req, res, () => {
-    const user = (req as any).authenticatedUser;
-    if (user?.role !== "admin") {
+  try {
+    const user = await sdk.authenticateRequest(req);
+    if (!user) return res.status(401).json({ error: "Sessão inválida ou expirada." });
+    if (user.role !== "admin") {
       return res.status(403).json({ error: "Acesso restrito ao administrador." });
     }
-    next();
-  });
+    (req as any).authenticatedUser = user;
+    return next();
+  } catch {
+    return res.status(401).json({ error: "Sessão inválida ou expirada." });
+  }
 }
 
 async function getConnectionOr503(res: Response) {
@@ -340,6 +342,18 @@ programaIntegracaoAnjoRouter.post(
     try {
       await connection.beginTransaction();
       transactionStarted = true;
+
+      if (programId !== null) {
+        const [programas] = (await connection.execute(
+          `SELECT id FROM programs WHERE id=? AND isActive=1 LIMIT 1`,
+          [programId],
+        )) as any;
+        if (!programas?.[0]) {
+          await connection.rollback();
+          transactionStarted = false;
+          return res.status(400).json({ error: "A empresa selecionada não está ativa ou não existe." });
+        }
+      }
 
       const [processos] = (await connection.execute(
         `SELECT id,anjo,anjoEmail,anjoUserId FROM programa_integracao_processos
