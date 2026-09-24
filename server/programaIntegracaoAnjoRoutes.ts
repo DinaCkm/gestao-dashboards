@@ -141,6 +141,7 @@ programaIntegracaoAnjoRouter.get(
            AND formKey='aval'
            AND papel='Anjo'
            AND statusVinculo='vinculada'
+           AND statusResposta<>'excluida'
          ORDER BY submittedAt DESC,id DESC`,
         processoIds,
       )) as any;
