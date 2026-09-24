@@ -27,7 +27,7 @@ export default function Home() {
   const [anjoStatusResolvido, setAnjoStatusResolvido] = useState(false);
 
   const usuarioPotencialmenteAnjoPuro = Boolean(
-    user?.role === "user" && !(user as any)?.alunoId && !(user as any)?.consultorId
+    user?.role === "user" && (user as any)?.loginMethod === "angel" && !(user as any)?.alunoId && !(user as any)?.consultorId
   );
 
   useEffect(() => {
