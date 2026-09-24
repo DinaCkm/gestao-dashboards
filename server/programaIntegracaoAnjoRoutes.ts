@@ -420,7 +420,7 @@ programaIntegracaoAnjoRouter.post(
       const [insert] = (await connection.execute(
         `INSERT INTO users
            (openId,name,email,cpf,loginMethod,role,programId,alunoId,consultorId,isActive,lastSignedIn)
-         VALUES (?,?,?,?,'angel','user',?,NULL,NULL,1,NULL)`,
+         VALUES (?,?,?,?,'angel','user',?,NULL,NULL,1,CURRENT_TIMESTAMP)`,
         [openId, nome, email, cpf, programId],
       )) as any;
       const newUserId = Number(insert?.insertId || 0);
