@@ -141,7 +141,7 @@ programaIntegracaoAnjoRouter.get(
            AND formKey='aval'
            AND papel='Anjo'
            AND statusVinculo='vinculada'
-           AND statusResposta<>'excluida'
+           AND COALESCE(statusResposta,'')<>'excluida'
          ORDER BY submittedAt DESC,id DESC`,
         processoIds,
       )) as any;
@@ -272,12 +272,15 @@ programaIntegracaoAnjoRouter.post(
 
     try {
       const [processos] = (await connection.execute(
-        `SELECT id,anjo,anjoEmail,anjoUserId FROM programa_integracao_processos
+        `SELECT id,anjo,anjoEmail,anjoUserId,situacao FROM programa_integracao_processos
          WHERE legacyId=? AND situacao<>'removido' LIMIT 1`,
         [legacyId],
       )) as any;
       const processo = processos?.[0];
       if (!processo) return res.status(404).json({ error: "Processo não encontrado." });
+      if (String(processo.situacao) !== "ativo") {
+        return res.status(409).json({ error: "O processo não está ativo. Nenhum novo vínculo de Anjo pode ser criado." });
+      }
 
       let usuario: any = null;
       if (userId !== null) {
@@ -357,7 +360,7 @@ programaIntegracaoAnjoRouter.post(
       }
 
       const [processos] = (await connection.execute(
-        `SELECT id,anjo,anjoEmail,anjoUserId FROM programa_integracao_processos
+        `SELECT id,anjo,anjoEmail,anjoUserId,situacao FROM programa_integracao_processos
          WHERE legacyId=? AND situacao<>'removido' LIMIT 1 FOR UPDATE`,
         [legacyId],
       )) as any;
@@ -366,6 +369,11 @@ programaIntegracaoAnjoRouter.post(
         await connection.rollback();
         transactionStarted = false;
         return res.status(404).json({ error: "Processo não encontrado." });
+      }
+      if (String(processo.situacao) !== "ativo") {
+        await connection.rollback();
+        transactionStarted = false;
+        return res.status(409).json({ error: "O processo não está ativo. Nenhum acesso de Anjo pode ser criado." });
       }
 
       const [existentes] = (await connection.execute(
