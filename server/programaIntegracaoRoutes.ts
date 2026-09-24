@@ -2174,6 +2174,28 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
     const match = await findProcess(connection, data);
     if (match.status === "ok") {
       const processoId = Number(match.processo.dbId), cycle = Number(data.cycle || 0), role = String(data.role || "");
+
+      // Avaliação do Anjo só pode ser respondida depois que o alinhamento correspondente
+      // foi efetivamente marcado como realizado. Datas previstas não liberam o formulário.
+      if (formKey === "aval" && role === "Anjo" && cycle >= 1 && cycle <= 4) {
+        const [processRows] = (await connection.execute(
+          `SELECT estado FROM programa_integracao_processos WHERE id=? LIMIT 1`,
+          [processoId],
+        )) as any;
+        const estadoProcesso = asJson<Record<string, any>>(processRows?.[0]?.estado, {});
+        const alinhamentos = estadoProcesso.alin && typeof estadoProcesso.alin === "object"
+          ? estadoProcesso.alin
+          : {};
+        const alinhamento = alinhamentos[String(cycle)] ?? alinhamentos[cycle] ?? {};
+        if (!Boolean(alinhamento?.realizado)) {
+          return res.status(409).json({
+            ok: false,
+            erro: `Este formulário ainda não está disponível para preenchimento. Ele será liberado após a realização do ${cycle}.º alinhamento.`,
+            campo: "cycle",
+          });
+        }
+      }
+
       const [dups] = (await connection.execute(
         `SELECT id FROM programa_integracao_respostas WHERE processoId=? AND formKey=? AND ciclo=? AND COALESCE(papel,'')=? AND statusVinculo='vinculada' ORDER BY id DESC LIMIT 1`,
         [processoId, formKey, cycle, role],

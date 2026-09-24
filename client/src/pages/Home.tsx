@@ -17,15 +17,37 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { carregarStatusAnjo, type AnjoStatusResponse } from "@/features/programaIntegracao/api/anjo";
 
 export default function Home() {
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
+  const [anjoStatus, setAnjoStatus] = useState<AnjoStatusResponse | null>(null);
+  const [anjoStatusResolvido, setAnjoStatusResolvido] = useState(false);
+
+  const usuarioPotencialmenteAnjoPuro = Boolean(
+    user?.role === "user" && (user as any)?.loginMethod === "angel" && !(user as any)?.alunoId && !(user as any)?.consultorId
+  );
+
+  useEffect(() => {
+    let ativo = true;
+    if (loading || !user || !usuarioPotencialmenteAnjoPuro) {
+      setAnjoStatusResolvido(!loading);
+      if (!usuarioPotencialmenteAnjoPuro) setAnjoStatus(null);
+      return () => { ativo = false; };
+    }
+    setAnjoStatusResolvido(false);
+    carregarStatusAnjo()
+      .then((status) => { if (ativo) setAnjoStatus(status); })
+      .catch(() => { if (ativo) setAnjoStatus(null); })
+      .finally(() => { if (ativo) setAnjoStatusResolvido(true); });
+    return () => { ativo = false; };
+  }, [loading, user, usuarioPotencialmenteAnjoPuro]);
 
   // Verificar status de onboarding do aluno
   const { data: onboardingStatus } = trpc.aluno.onboardingStatus.useQuery(undefined, {
-    enabled: !loading && !!user && (user.role === "user" || (user.role === "manager" && !!(user as any).alunoId)),
+    enabled: !loading && !!user && !usuarioPotencialmenteAnjoPuro && (user.role === "user" || (user.role === "manager" && !!(user as any).alunoId)),
   });
 
   const { data: managerPerms } = trpc.admin.getManagerPermissions.useQuery(undefined, {
@@ -75,6 +97,11 @@ export default function Home() {
     }
 
     if (user.role === "user") {
+      if (usuarioPotencialmenteAnjoPuro) {
+        if (!anjoStatusResolvido) return;
+        setLocation(anjoStatus?.hasActiveAssignments ? "/anjo/formularios" : "/anjo");
+        return;
+      }
       // Verificar se precisa de onboarding
       if (onboardingStatus) {
         // Candidato de processo seletivo → sempre vai para o portal PS
@@ -92,7 +119,7 @@ export default function Home() {
       return;
     }
     // admin stays on Home
-  }, [user, loading, setLocation, onboardingStatus, managerPerms]);
+  }, [user, loading, setLocation, onboardingStatus, managerPerms, usuarioPotencialmenteAnjoPuro, anjoStatus, anjoStatusResolvido]);
 
   const isAdmin = user?.role === "admin" || user?.role === "admin2";
 

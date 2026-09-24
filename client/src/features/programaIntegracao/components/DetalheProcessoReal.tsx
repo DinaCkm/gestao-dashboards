@@ -52,6 +52,8 @@ import {
 import { ChevronDown, PanelRightOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
+import VinculoAnjoEcoLider from "./VinculoAnjoEcoLider";
+
 interface DetalheProcessoRealProps {
   processo: ProcessoIntegracao;
   config: BootstrapState['config'];
@@ -595,6 +597,14 @@ export function DetalheProcessoReal({
             {campoTexto('anjo', 'Anjo')}
             {campoTexto('anjoEmail', 'E-mail do Anjo', 'email')}
             {campoTexto('ugp', 'Destinatário na UGP', 'text', 'nome ou e-mail')}
+            {rascunhoProcesso.id && (
+              <VinculoAnjoEcoLider
+                legacyId={String(rascunhoProcesso.id)}
+                anjo={rascunhoProcesso.anjo || ''}
+                anjoEmail={rascunhoProcesso.anjoEmail || ''}
+                situacao={rascunhoProcesso.situacao || ''}
+              />
+            )}
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {campoLongo('horarios', 'Horários sugeridos (um por linha)', '09h00\n14h00')}

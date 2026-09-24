@@ -88,6 +88,7 @@ import { Button } from "./ui/button";
 import CustomLogin from "./CustomLogin";
 import RoleSwitcher from "@/components/RoleSwitcher";
 import NotificationBell from "@/components/NotificationBell";
+import { carregarStatusAnjo, type AnjoStatusResponse } from "@/features/programaIntegracao/api/anjo";
 
 // ============================================================
 // TIPOS
@@ -377,6 +378,26 @@ function DashboardLayoutContent({
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const [anjoAccess, setAnjoAccess] = useState<AnjoStatusResponse | null>(null);
+  const [anjoAccessResolved, setAnjoAccessResolved] = useState(false);
+
+  useEffect(() => {
+    let ativo = true;
+    if (!user || user.role === "admin" || user.role === "admin2") {
+      setAnjoAccess(null);
+      setAnjoAccessResolved(true);
+      return () => { ativo = false; };
+    }
+    setAnjoAccessResolved(false);
+    carregarStatusAnjo()
+      .then((status) => { if (ativo) setAnjoAccess(status); })
+      .catch(() => { if (ativo) setAnjoAccess(null); })
+      .finally(() => { if (ativo) setAnjoAccessResolved(true); });
+    return () => { ativo = false; };
+  }, [user]);
+
+  const hasActiveAngelAccess = Boolean(anjoAccess?.hasActiveAssignments);
+  const isPureAngel = Boolean(anjoAccess?.pureAngel);
 
   const isAdmin = user?.role === "admin" || user?.role === "admin2";
   const isFullAdmin = user?.role === "admin"; // admin completo (acessa Parametrização)
@@ -488,6 +509,7 @@ function DashboardLayoutContent({
   // Para não-admin, filtrar itens do menu
   const filteredOtherItems = useMemo(() => {
     const userRole = user?.role || "user";
+    if (isPureAngel) return [];
     if (waitingManagerPermissions && userRole === 'manager') return [];
     return otherMenuItems.filter(item => {
       if (!item.roles.includes(userRole as "admin" | "manager" | "user")) return false;
@@ -524,20 +546,33 @@ function DashboardLayoutContent({
       }
       return true;
     });
-  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms, waitingManagerPermissions]);
+  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms, waitingManagerPermissions, isPureAngel]);
 
   useEffect(() => {
     if (!hasManagerRestrictions || user?.role !== 'manager') return;
     const base = location.split('?')[0];
     const liberadas = (managerPagePerms || []).filter((p: string) => p.startsWith('/'));
-    const permitido = liberadas.some((p: string) => base === p || base.startsWith(p + '/'));
+    const angelRouteAllowed = hasActiveAngelAccess && (base === "/anjo/formularios" || base === "/anjo/orientacoes");
+    const permitido = angelRouteAllowed || liberadas.some((p: string) => base === p || base.startsWith(p + '/'));
     if (!permitido && liberadas.length) {
       setLocation(liberadas[0]);
     }
-  }, [hasManagerRestrictions, managerPagePerms, user?.role, consultorRole, location, setLocation]);
+  }, [hasManagerRestrictions, managerPagePerms, user?.role, consultorRole, location, setLocation, hasActiveAngelAccess]);
+
+  useEffect(() => {
+    if (!anjoAccessResolved || !isPureAngel) return;
+    const base = location.split("?")[0];
+    const permitido = base === "/anjo" || base === "/anjo/formularios" || base === "/anjo/orientacoes";
+    if (!permitido) {
+      setLocation(hasActiveAngelAccess ? "/anjo/formularios" : "/anjo");
+    }
+  }, [anjoAccessResolved, isPureAngel, hasActiveAngelAccess, location, setLocation]);
 
   // Encontrar label ativo para mobile header
   const activeLabel = useMemo(() => {
+    if (location === "/anjo/formularios") return "Acompanhar Formulários";
+    if (location === "/anjo/orientacoes") return "Orientações do Anjo";
+    if (location === "/anjo") return "Espaço do Anjo";
     if (location === "/") return "Painel Admin";
     if (isAdmin) {
       for (const group of adminMenuGroups) {
@@ -595,6 +630,7 @@ function DashboardLayoutContent({
     if (role === 'admin2') return { label: "Admin N2", className: "bg-blue-100 text-blue-700" };
     if (role === 'manager' && cRole === 'mentor') return { label: "Mentor", className: "bg-orange-100 text-orange-700" };
     if (role === 'manager') return { label: "Gerente", className: "bg-secondary/20 text-secondary" };
+    if (isPureAngel) return { label: "Anjo", className: "bg-violet-100 text-violet-700" };
     return { label: "Aluno", className: "bg-green-100 text-green-700" };
   };
 
@@ -672,7 +708,7 @@ function DashboardLayoutContent({
                 />
               )}
               </div>
-              {!isCollapsed && <NotificationBell />}
+              {!isCollapsed && anjoAccessResolved && !isPureAngel && <NotificationBell />}
             </div>
           </SidebarHeader>
 
@@ -839,40 +875,55 @@ function DashboardLayoutContent({
                 })()}
               </>
             ) : (
-              /* MENU PARA MENTOR / GESTOR / ALUNO (flat, sem grupos) */
-              <SidebarMenu className="px-2 py-1 pb-2">
-                {waitingManagerPermissions && user?.role === 'manager' ? (
-                  <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Carregando acessos...</span>
-                  </div>
-                ) : filteredOtherItems.map(item => {
-                  const isActive = location === item.path;
-                  return (
-                    <SidebarMenuItem key={`${item.path}-${item.label}`}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => setLocation(item.path)}
-                        tooltip={item.label}
-                        className={`h-10 transition-all font-normal ${isActive
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover:bg-sidebar-accent/50"
-                        }`}
-                      >
-                        <item.icon
-                          className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                        />
-                        <span className={isActive ? "text-foreground font-medium" : ""}>{item.label}</span>
-                        {item.path === '/painel-revisoes' && revisoesBadgeCount > 0 && (
-                          <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">
-                            {revisoesBadgeCount}
-                          </span>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
+              /* MENU PARA MENTOR / GESTOR / ALUNO + ESPAÇO ADITIVO DO ANJO */
+              <>
+                {hasActiveAngelAccess && (
+                  <SidebarGroup className="px-2 py-1">
+                    <SidebarGroupLabel>Espaço do Anjo</SidebarGroupLabel>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={location === "/anjo/formularios"} onClick={() => setLocation("/anjo/formularios")} tooltip="Acompanhar Formulários">
+                          <ClipboardCheck className="h-4 w-4" /><span>Acompanhar Formulários</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={location === "/anjo/orientacoes"} onClick={() => setLocation("/anjo/orientacoes")} tooltip="Orientações do Anjo">
+                          <BookOpen className="h-4 w-4" /><span>Orientações do Anjo</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroup>
+                )}
+                <SidebarMenu className="px-2 py-1 pb-2">
+                  {waitingManagerPermissions && user?.role === 'manager' ? (
+                    <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Carregando acessos...</span>
+                    </div>
+                  ) : filteredOtherItems.map(item => {
+                    const isActive = location === item.path;
+                    return (
+                      <SidebarMenuItem key={`${item.path}-${item.label}`}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          onClick={() => setLocation(item.path)}
+                          tooltip={item.label}
+                          className={`h-10 transition-all font-normal ${isActive
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "hover:bg-sidebar-accent/50"
+                          }`}
+                        >
+                          <item.icon className={`h-4 w-4 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                          <span className={isActive ? "text-foreground font-medium" : ""}>{item.label}</span>
+                          {item.path === '/painel-revisoes' && revisoesBadgeCount > 0 && (
+                            <span className="ml-auto text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold min-w-[20px] text-center animate-pulse">{revisoesBadgeCount}</span>
+                          )}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </>
             )}
 
 
@@ -883,7 +934,7 @@ function DashboardLayoutContent({
             <div className="mb-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
               <div className="flex items-center gap-2 justify-between">
                 <RoleSwitcher />
-                <NotificationBell />
+                {anjoAccessResolved && !isPureAngel && <NotificationBell />}
               </div>
             </div>
             <DropdownMenu>
@@ -910,24 +961,28 @@ function DashboardLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (consultorRole === 'mentor') {
-                      setLocation("/mentor/configuracoes");
-                    } else if (consultorRole === 'gerente') {
-                      setLocation("/dashboard/gestor");
-                    } else if (user?.role === 'user') {
-                      setLocation("/meu-dashboard");
-                    } else {
-                      setLocation("/dashboard/individual");
-                    }
-                  }}
-                  className="cursor-pointer"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Meu Perfil</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {!isPureAngel && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (consultorRole === 'mentor') {
+                          setLocation("/mentor/configuracoes");
+                        } else if (consultorRole === 'gerente') {
+                          setLocation("/dashboard/gestor");
+                        } else if (user?.role === 'user') {
+                          setLocation("/meu-dashboard");
+                        } else {
+                          setLocation("/dashboard/individual");
+                        }
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Meu Perfil</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"
@@ -950,7 +1005,7 @@ function DashboardLayoutContent({
       </div>
 
       {/* Banner de impersonação - aparece quando admin está visualizando como aluno */}
-      <ImpersonationBanner />
+      {!isPureAngel && <ImpersonationBanner />}
       <SidebarInset className="gradient-bg">
         {isMobile && (
           <div className="flex border-b border-border h-14 items-center justify-between bg-background/80 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
@@ -965,7 +1020,7 @@ function DashboardLayoutContent({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              {anjoAccessResolved && !isPureAngel && <NotificationBell />}
               <RoleSwitcher />
             </div>
           </div>

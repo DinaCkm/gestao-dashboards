@@ -125,6 +125,9 @@ import ProgramaIntegracao from "./pages/ProgramaIntegracao";
 import ProgramaIntegracaoDetalhe from "./pages/ProgramaIntegracaoDetalhe";
 import ProgramaIntegracaoFormularioPublico from "./pages/ProgramaIntegracaoFormularioPublico";
 import AcompanharIntegracaoGestor from "./pages/AcompanharIntegracaoGestor";
+import AnjoFormularios from "./pages/AnjoFormularios";
+import AnjoOrientacoes from "./pages/AnjoOrientacoes";
+import AnjoSemIntegracoes from "./pages/AnjoSemIntegracoes";
 
 function Router() {
   return (
@@ -200,6 +203,9 @@ function Router() {
       <Route path={"/programa-integracao/detalhe/:processoId"} component={ProgramaIntegracaoDetalhe} />
       <Route path={"/programa-integracao"} component={ProgramaIntegracao} />
       <Route path={"/gestor/integracao"} component={AcompanharIntegracaoGestor} />
+      <Route path={"/anjo/formularios"} component={AnjoFormularios} />
+      <Route path={"/anjo/orientacoes"} component={AnjoOrientacoes} />
+      <Route path={"/anjo"} component={AnjoSemIntegracoes} />
       <Route path={"/disc360"} component={Disc360Dashboard} />
       <Route path={"/disc360/perfis-empresa"} component={PerfilEmpresaDiretoria} />
       <Route path={"/disc360/responder-convite/:token"} component={ResponderConviteCultura} />
