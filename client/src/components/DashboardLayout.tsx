@@ -1005,7 +1005,7 @@ function DashboardLayoutContent({
       </div>
 
       {/* Banner de impersonação - aparece quando admin está visualizando como aluno */}
-      <ImpersonationBanner />
+      {!isPureAngel && <ImpersonationBanner />}
       <SidebarInset className="gradient-bg">
         {isMobile && (
           <div className="flex border-b border-border h-14 items-center justify-between bg-background/80 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
