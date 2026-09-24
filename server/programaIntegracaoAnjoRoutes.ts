@@ -323,10 +323,14 @@ programaIntegracaoAnjoRouter.post(
       await audit(
         connection,
         req,
-        userId ? "anjo_usuario_vinculado" : "anjo_usuario_desvinculado",
         userId
-          ? `Usuário EcoLíder vinculado ao Colaborador Anjo do processo ${legacyId}.`
-          : `Vínculo de usuário do Colaborador Anjo removido do processo ${legacyId}; nome e e-mail históricos foram preservados.`,
+          ? (processo.anjoUserId != null && Number(processo.anjoUserId) !== userId ? "anjo_usuario_trocado" : "anjo_usuario_vinculado")
+          : "anjo_usuario_desvinculado",
+        userId
+          ? (processo.anjoUserId != null && Number(processo.anjoUserId) !== userId
+              ? `Usuário EcoLíder do Colaborador Anjo trocado no processo ${legacyId}; histórico do processo preservado.`
+              : `Usuário EcoLíder vinculado ao Colaborador Anjo do processo ${legacyId}.`)
+          : `Vínculo de usuário do Colaborador Anjo removido do processo ${legacyId}; nome, e-mail e histórico do processo foram preservados.`,
         Number(processo.id),
         {
           anterior: processo.anjoUserId == null ? null : Number(processo.anjoUserId),
