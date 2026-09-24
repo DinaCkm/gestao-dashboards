@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Link2, Loader2, Search, UserPlus } from "lucide-react";
+import { Link2, Loader2, Search, UserPlus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 type UsuarioAnjo = {
@@ -60,6 +60,7 @@ export default function VinculoAnjoEcoLider({
   const [buscando, setBuscando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [mostrarCriacao, setMostrarCriacao] = useState(false);
+  const [mostrarTroca, setMostrarTroca] = useState(false);
   const [nome, setNome] = useState(anjo || "");
   const [email, setEmail] = useState(anjoEmail || "");
   const [cpf, setCpf] = useState("");
@@ -120,6 +121,7 @@ export default function VinculoAnjoEcoLider({
       toast.success(userId ? "Usuário vinculado ao Colaborador Anjo." : "Vínculo removido. Nome e e-mail históricos foram preservados.");
       setUsuarios([]);
       setBusca("");
+      setMostrarTroca(false);
       await carregar();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível alterar o vínculo.");
@@ -192,11 +194,48 @@ export default function VinculoAnjoEcoLider({
                 Perfil atual: {vinculo.userRole === "manager" ? "Gerente" : vinculo.alunoId ? "Aluno" : "Acesso somente como Anjo"}
               </p>
             </div>
-            <Button type="button" variant="outline" disabled={salvando} onClick={() => void vincular(null)}>
-              Desvincular usuário
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" disabled={salvando || !processoAtivo} onClick={() => { setMostrarTroca((v) => !v); setUsuarios([]); setBusca(""); }}>
+                <RefreshCw className="mr-2 h-4 w-4" />Trocar usuário vinculado
+              </Button>
+              <Button type="button" variant="outline" disabled={salvando || !processoAtivo} onClick={() => void vincular(null)}>
+                Desvincular usuário
+              </Button>
+            </div>
           </div>
-        ) : (
+        ) : null}
+
+        {vinculo?.anjoUserId && mostrarTroca && processoAtivo && (
+          <div className="space-y-3 rounded-lg border border-violet-200 bg-violet-50/40 p-3">
+            <div>
+              <p className="text-sm font-semibold">Trocar usuário vinculado</p>
+              <p className="text-xs text-muted-foreground">A troca altera apenas quem terá acesso daqui para frente. Respostas, datas e histórico do processo permanecem preservados.</p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar outro usuário por nome, e-mail ou CPF" />
+              <Button type="button" variant="outline" onClick={() => void pesquisar()} disabled={buscando}>
+                {buscando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}Buscar
+              </Button>
+            </div>
+            {usuarios.length > 0 && (
+              <div className="space-y-2">
+                {usuarios.filter((usuario) => usuario.id !== vinculo.anjoUserId).map((usuario) => (
+                  <div key={usuario.id} className="flex flex-col gap-2 rounded-md border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-sm">
+                      <p className="font-medium">{usuario.name || "Sem nome"}</p>
+                      <p className="text-xs text-muted-foreground">{usuario.email || "Sem e-mail"} · {usuario.programName || "Empresa não identificada"} · CPF {usuario.cpf ? `***.***.${usuario.cpf.slice(-5, -2)}-${usuario.cpf.slice(-2)}` : "não informado"}</p>
+                    </div>
+                    <Button type="button" size="sm" onClick={() => void vincular(usuario.id)} disabled={salvando}>
+                      <RefreshCw className="mr-2 h-4 w-4" />Vincular no lugar do atual
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!vinculo?.anjoUserId ? (
           <>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
               <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar usuário por nome, e-mail ou CPF" disabled={!processoAtivo} />
@@ -249,7 +288,7 @@ export default function VinculoAnjoEcoLider({
               </div>
             )}
           </>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );
