@@ -1,4 +1,5 @@
-import DashboardLayout from "@/components/DashboardLayout";\nimport AnjoRouteGuard from "@/features/programaIntegracao/components/AnjoRouteGuard";
+import DashboardLayout from "@/components/DashboardLayout";
+import AnjoRouteGuard from "@/features/programaIntegracao/components/AnjoRouteGuard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Alert, AlertDescription } from "@/components/ui/alert";
