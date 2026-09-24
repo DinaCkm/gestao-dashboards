@@ -35,7 +35,9 @@ jobs:
       - name: Baseline TypeScript check
         id: baseline_check
         continue-on-error: true
-        run: pnpm check
+        run: |
+          rm -f node_modules/typescript/tsbuildinfo
+          pnpm check
 
       - name: Record baseline result
         run: echo "Baseline TypeScript outcome = ${{ steps.baseline_check.outcome }}"
@@ -64,7 +66,12 @@ jobs:
       - name: Feature TypeScript check
         id: feature_check
         continue-on-error: true
-        run: pnpm check
+        run: |
+          rm -f node_modules/typescript/tsbuildinfo
+          pnpm check
+
+      - name: Migration script syntax check
+        run: node --check scripts/migrate-programa-integracao-anjo-user.mjs
 
       - name: Build
         run: pnpm build
