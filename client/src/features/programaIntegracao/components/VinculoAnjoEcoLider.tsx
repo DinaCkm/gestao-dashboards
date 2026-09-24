@@ -17,6 +17,7 @@ type UsuarioAnjo = {
   alunoId?: number | null;
   consultorId?: number | null;
   isActive?: number;
+  programName?: string | null;
 };
 
 type Vinculo = {
@@ -32,6 +33,7 @@ type Vinculo = {
   alunoId?: number | null;
   consultorId?: number | null;
   isActive?: number | null;
+  programName?: string | null;
 };
 
 async function json<T>(response: Response): Promise<T> {
@@ -168,6 +170,7 @@ export default function VinculoAnjoEcoLider({
             <div className="text-sm">
               <p className="font-semibold">{vinculo.userName || "Usuário EcoLíder"}</p>
               <p className="text-muted-foreground">{vinculo.userEmail || "E-mail não informado"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{vinculo.programName || "Empresa não identificada"} · CPF {vinculo.userCpf ? `***.***.${vinculo.userCpf.slice(-5, -2)}-${vinculo.userCpf.slice(-2)}` : "não informado"}</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Perfil atual: {vinculo.userRole === "manager" ? "Gerente" : vinculo.alunoId ? "Aluno" : "Acesso somente como Anjo"}
               </p>
@@ -195,7 +198,8 @@ export default function VinculoAnjoEcoLider({
                   <div key={usuario.id} className="flex flex-col gap-2 rounded-md border bg-background p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-sm">
                       <p className="font-medium">{usuario.name || "Sem nome"}</p>
-                      <p className="text-xs text-muted-foreground">{usuario.email || "Sem e-mail"} · {usuario.role === "manager" ? "Gerente" : usuario.alunoId ? "Aluno" : "Usuário"}</p>
+                      <p className="text-xs text-muted-foreground">{usuario.email || "Sem e-mail"} · {usuario.programName || "Empresa não identificada"} · CPF {usuario.cpf ? `***.***.${usuario.cpf.slice(-5, -2)}-${usuario.cpf.slice(-2)}` : "não informado"}</p>
+                      <p className="text-xs text-muted-foreground">{usuario.role === "manager" ? "Gerente" : usuario.alunoId ? "Aluno" : "Usuário EcoLíder"}</p>
                     </div>
                     <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => void vincular(usuario.id)}>
                       <Link2 className="mr-2 h-4 w-4" />Vincular
@@ -216,13 +220,13 @@ export default function VinculoAnjoEcoLider({
                   <label className="space-y-1 text-xs">
                     <span className="font-medium">Empresa</span>
                     <select value={programId} onChange={(e) => setProgramId(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      <option value="">Sem empresa definida</option>
+                      <option value="">Selecione a empresa</option>
                       {(programs as any[]).map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}
                     </select>
                   </label>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button type="button" disabled={salvando} onClick={() => void criarAcesso()}>{salvando ? "Criando..." : "Criar acesso e vincular"}</Button>
+                  <Button type="button" disabled={salvando || !programId || !nome.trim() || !email.trim() || cpf.length !== 11} onClick={() => void criarAcesso()}>{salvando ? "Criando..." : "Criar acesso e vincular"}</Button>
                   <Button type="button" variant="ghost" disabled={salvando} onClick={() => setMostrarCriacao(false)}>Cancelar</Button>
                 </div>
               </div>
