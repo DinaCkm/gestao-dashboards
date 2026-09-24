@@ -708,7 +708,7 @@ function DashboardLayoutContent({
                 />
               )}
               </div>
-              {!isCollapsed && <NotificationBell />}
+              {!isCollapsed && anjoAccessResolved && !isPureAngel && <NotificationBell />}
             </div>
           </SidebarHeader>
 
@@ -934,7 +934,7 @@ function DashboardLayoutContent({
             <div className="mb-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
               <div className="flex items-center gap-2 justify-between">
                 <RoleSwitcher />
-                <NotificationBell />
+                {anjoAccessResolved && !isPureAngel && <NotificationBell />}
               </div>
             </div>
             <DropdownMenu>
@@ -961,24 +961,28 @@ function DashboardLayoutContent({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={() => {
-                    if (consultorRole === 'mentor') {
-                      setLocation("/mentor/configuracoes");
-                    } else if (consultorRole === 'gerente') {
-                      setLocation("/dashboard/gestor");
-                    } else if (user?.role === 'user') {
-                      setLocation("/meu-dashboard");
-                    } else {
-                      setLocation("/dashboard/individual");
-                    }
-                  }}
-                  className="cursor-pointer"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Meu Perfil</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {!isPureAngel && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (consultorRole === 'mentor') {
+                          setLocation("/mentor/configuracoes");
+                        } else if (consultorRole === 'gerente') {
+                          setLocation("/dashboard/gestor");
+                        } else if (user?.role === 'user') {
+                          setLocation("/meu-dashboard");
+                        } else {
+                          setLocation("/dashboard/individual");
+                        }
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Meu Perfil</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-destructive focus:text-destructive"
@@ -1016,7 +1020,7 @@ function DashboardLayoutContent({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              {anjoAccessResolved && !isPureAngel && <NotificationBell />}
               <RoleSwitcher />
             </div>
           </div>
