@@ -83,7 +83,7 @@ async function audit(
 
 async function activeAssignments(connection: any, userId: number) {
   const [rows] = (await connection.execute(
-    `SELECT id,legacyId,nome,cargo,unidade,tipo,inicio,situacao,anjo,anjoEmail,anjoUserId,estado
+    `SELECT id,legacyId,nome,email,cargo,unidade,tipo,inicio,situacao,anjo,anjoEmail,anjoUserId,estado
      FROM programa_integracao_processos
      WHERE anjoUserId=? AND situacao='ativo'
      ORDER BY inicio ASC,id ASC`,
@@ -180,7 +180,7 @@ programaIntegracaoAnjoRouter.get(
               ? `Disponível após a realização do ${ciclo}.º alinhamento.`
               : null,
             respondidoEm: resposta?.submittedAt ? new Date(resposta.submittedAt).toISOString() : null,
-            rotaPublica: `/formularios/avaliacao-programa?processo=${encodeURIComponent(String(processo.legacyId || ""))}&ciclo=${ciclo}&papel=Anjo`,
+            rotaPublica: `/formularios/avaliacao-programa?nome=${encodeURIComponent(String(processo.nome || ""))}&unidade=${encodeURIComponent(String(processo.unidade || ""))}&ciclo=${ciclo}&papel=Anjo&respondente=${encodeURIComponent(String((req as any).authenticatedUser?.name || ""))}&inicio=${encodeURIComponent(String(processo.inicio || ""))}&email=${encodeURIComponent(String(processo.email || ""))}`,
           });
         }
       }
