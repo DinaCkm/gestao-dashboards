@@ -74,6 +74,7 @@ export default function AnjoOrientacoes() {
 
   return (
     <DashboardLayout>
+      <AnjoRouteGuard>
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="rounded-2xl border bg-gradient-to-br from-violet-50 via-background to-cyan-50 p-5 sm:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -158,6 +159,7 @@ export default function AnjoOrientacoes() {
           </CardContent>
         </Card>
       </div>
+      </AnjoRouteGuard>
     </DashboardLayout>
   );
 }
