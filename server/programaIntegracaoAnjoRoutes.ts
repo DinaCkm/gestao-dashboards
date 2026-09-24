@@ -102,7 +102,7 @@ programaIntegracaoAnjoRouter.get(
       const user = (req as any).authenticatedUser;
       const userId = Number(user.id);
       const ativos = await activeAssignments(connection, userId);
-      const pureAngel = user.role === "user" && !user.alunoId && !user.consultorId;
+      const pureAngel = user.role === "user" && user.loginMethod === "angel" && !user.alunoId && !user.consultorId;
       return res.json({
         ok: true,
         hasActiveAssignments: ativos.length > 0,
@@ -379,7 +379,7 @@ programaIntegracaoAnjoRouter.post(
       const [insert] = (await connection.execute(
         `INSERT INTO users
            (openId,name,email,cpf,loginMethod,role,programId,alunoId,consultorId,isActive,lastSignedIn)
-         VALUES (?,?,?,?,'email_cpf','user',?,NULL,NULL,1,NULL)`,
+         VALUES (?,?,?,?,'angel','user',?,NULL,NULL,1,NULL)`,
         [openId, nome, email, cpf, programId],
       )) as any;
       const newUserId = Number(insert?.insertId || 0);
