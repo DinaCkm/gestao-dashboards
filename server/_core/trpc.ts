@@ -17,6 +17,22 @@ const requireUser = t.middleware(async opts => {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
   }
 
+  // Contas criadas exclusivamente para o Colaborador Anjo não recebem acesso
+  // genérico às APIs internas da plataforma. O espaço do Anjo usa rotas próprias,
+  // com escopo por processo ativo. Se no futuro o mesmo usuário virar aluno ou
+  // gerente, a presença de alunoId/consultorId/role apropriado libera o fluxo normal.
+  const isAngelOnly =
+    ctx.user.role === "user" &&
+    ctx.user.loginMethod === "angel" &&
+    !ctx.user.alunoId &&
+    !ctx.user.consultorId;
+  if (isAngelOnly) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Este acesso é exclusivo do Espaço do Anjo.",
+    });
+  }
+
   return next({
     ctx: {
       ...ctx,
