@@ -197,6 +197,24 @@ programaIntegracaoAnjoRouter.get(
 );
 
 programaIntegracaoAnjoRouter.get(
+  "/api/programa-integracao/admin/anjo/programas",
+  requireAdmin,
+  async (_req, res) => {
+    const connection = await getConnectionOr503(res);
+    if (!connection) return;
+    try {
+      const [rows] = (await connection.execute(
+        `SELECT id,name FROM programs WHERE isActive=1 ORDER BY name ASC,id ASC`,
+      )) as any;
+      return res.json({ ok: true, programas: rows || [] });
+    } catch (error) {
+      console.error("[ProgramaIntegracaoAnjo] listar programas:", error);
+      return res.status(500).json({ error: "Não foi possível listar as empresas." });
+    }
+  },
+);
+
+programaIntegracaoAnjoRouter.get(
   "/api/programa-integracao/admin/anjo/usuarios",
   requireAdmin,
   async (req, res) => {
