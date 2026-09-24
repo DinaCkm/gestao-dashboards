@@ -45,11 +45,14 @@ export default function VinculoAnjoEcoLider({
   legacyId,
   anjo,
   anjoEmail,
+  situacao,
 }: {
   legacyId: string;
   anjo: string;
   anjoEmail: string;
+  situacao: string;
 }) {
+  const processoAtivo = situacao === "ativo";
   const [vinculo, setVinculo] = useState<Vinculo | null>(null);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
@@ -174,6 +177,11 @@ export default function VinculoAnjoEcoLider({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {!processoAtivo && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            Este processo está encerrado. O vínculo histórico do Anjo permanece visível, mas novos vínculos ou novos acessos não podem ser criados.
+          </div>
+        )}
         {vinculo?.anjoUserId ? (
           <div className="flex flex-col gap-3 rounded-lg border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm">
@@ -191,11 +199,11 @@ export default function VinculoAnjoEcoLider({
         ) : (
           <>
             <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
-              <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar usuário por nome, e-mail ou CPF" />
-              <Button type="button" variant="outline" onClick={() => void pesquisar()} disabled={buscando}>
+              <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar usuário por nome, e-mail ou CPF" disabled={!processoAtivo} />
+              <Button type="button" variant="outline" onClick={() => void pesquisar()} disabled={buscando || !processoAtivo}>
                 {buscando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}Buscar
               </Button>
-              <Button type="button" onClick={() => setMostrarCriacao((v) => !v)}>
+              <Button type="button" onClick={() => setMostrarCriacao((v) => !v)} disabled={!processoAtivo}>
                 <UserPlus className="mr-2 h-4 w-4" />Criar acesso do Anjo
               </Button>
             </div>
@@ -210,7 +218,7 @@ export default function VinculoAnjoEcoLider({
                       <p className="text-xs text-muted-foreground">{usuario.email || "Sem e-mail"} · {usuario.programName || "Empresa não identificada"} · CPF {usuario.cpf ? `***.***.${usuario.cpf.slice(-5, -2)}-${usuario.cpf.slice(-2)}` : "não informado"}</p>
                       <p className="text-xs text-muted-foreground">{usuario.role === "manager" ? "Gerente" : usuario.alunoId ? "Aluno" : "Usuário EcoLíder"}</p>
                     </div>
-                    <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => void vincular(usuario.id)}>
+                    <Button type="button" size="sm" variant="outline" disabled={salvando || !processoAtivo} onClick={() => void vincular(usuario.id)}>
                       <Link2 className="mr-2 h-4 w-4" />Vincular
                     </Button>
                   </div>
@@ -218,7 +226,7 @@ export default function VinculoAnjoEcoLider({
               </div>
             )}
 
-            {mostrarCriacao && (
+            {mostrarCriacao && processoAtivo && (
               <div className="rounded-lg border bg-muted/20 p-4">
                 <p className="font-semibold">Criar acesso mínimo do Anjo</p>
                 <p className="mt-1 text-xs text-muted-foreground">Antes de criar, o sistema confere e-mail e CPF para evitar duplicidade. Este cadastro não cria aluno, gerente ou consultor.</p>
