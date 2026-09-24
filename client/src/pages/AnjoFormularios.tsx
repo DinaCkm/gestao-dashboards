@@ -4,7 +4,7 @@ import AnjoRouteGuard from "@/features/programaIntegracao/components/AnjoRouteGu
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardCheck, Clock3, CheckCircle2, FileText, Loader2 } from "lucide-react";
+import { ClipboardCheck, Clock3, CheckCircle2, FileText, Loader2, Sparkles } from "lucide-react";
 import { carregarFormulariosAnjo, type AnjoFormulariosResponse } from "@/features/programaIntegracao/api/anjo";
 
 function formatarData(value: string | null) {
@@ -47,6 +47,20 @@ export default function AnjoFormularios() {
           <Card><CardContent className="py-12 text-center"><ClipboardCheck className="mx-auto h-10 w-10 text-muted-foreground" /><p className="mt-4 font-semibold">Você não possui integrações ativas sob seu acompanhamento no momento.</p><p className="mt-1 text-sm text-muted-foreground">Quando houver um processo ativo em que você esteja vinculado como Anjo, ele aparecerá aqui.</p></CardContent></Card>
         ) : (
           <>
+            {dados.indicadores.pendentes === 0 && (
+              <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 shadow-sm">
+                <div className="mt-0.5 rounded-full bg-emerald-100 p-2">
+                  <Sparkles className="h-5 w-5 text-emerald-700" />
+                </div>
+                <div>
+                  <p className="font-semibold">Parabéns! Você está em dia com os formulários.</p>
+                  <p className="mt-1 text-sm text-emerald-800">
+                    Não há formulários pendentes no momento. Os que ainda não estão disponíveis serão liberados no momento previsto da integração.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-3 sm:grid-cols-3">
               <Card><CardContent className="flex items-center gap-3 pt-6"><Clock3 className="h-5 w-5 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Aguardando liberação</p><p className="text-2xl font-bold">{dados.indicadores.aguardando}</p></div></CardContent></Card>
               <Card><CardContent className="flex items-center gap-3 pt-6"><FileText className="h-5 w-5 text-amber-600" /><div><p className="text-xs text-muted-foreground">Pendentes</p><p className="text-2xl font-bold">{dados.indicadores.pendentes}</p></div></CardContent></Card>

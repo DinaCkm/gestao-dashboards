@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck } from "lucide-react";
+import { HeartHandshake, Route, Users, MessageCircle, CalendarCheck, ArrowRight, ShieldCheck, Sunrise, Handshake, Compass, Coffee, Milestone, Heart, Lightbulb, Headphones, Eye, Network, Sprout, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 
 const etapas = [
@@ -61,6 +61,8 @@ const etapas = [
   },
 ];
 
+const etapaIcones = [Sunrise, Handshake, Compass, Coffee, Milestone];
+
 const esperado = [
   ["Acolher", "Contribuir para que a chegada e a adaptação sejam mais leves e positivas."],
   ["Orientar", "Compartilhar caminhos, rotinas, referências e informações úteis para o dia a dia."],
@@ -69,6 +71,8 @@ const esperado = [
   ["Incentivar integração", "Ajudar o colaborador a criar conexões e compreender a cultura da equipe."],
   ["Apoiar desenvolvimento", "Estimular aprendizados e direcionar a pessoa às referências adequadas quando necessário."],
 ];
+
+const esperadoIcones = [Heart, Lightbulb, Headphones, Eye, Network, Sprout];
 
 export default function AnjoOrientacoes() {
   const [, setLocation] = useLocation();
@@ -80,7 +84,7 @@ export default function AnjoOrientacoes() {
         <div className="rounded-2xl border bg-gradient-to-br from-violet-50 via-background to-cyan-50 p-5 sm:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-3xl">
-              <Badge variant="outline">Espaço do Anjo</Badge>
+              <Badge variant="outline" className="gap-1.5"><Sparkles className="h-3.5 w-3.5" />Espaço do Anjo</Badge>
               <h1 className="mt-3 text-3xl font-bold tracking-tight">Cartilha e Orientações do Anjo</h1>
               <p className="mt-2 text-sm text-muted-foreground">Tudo o que você precisa saber para apoiar o colaborador durante sua integração.</p>
             </div>
@@ -109,10 +113,15 @@ export default function AnjoOrientacoes() {
         <div>
           <div className="mb-3 flex items-center gap-2"><Route className="h-5 w-5" /><h2 className="text-xl font-semibold">Linha do tempo orientativa</h2></div>
           <Accordion type="single" collapsible className="space-y-2">
-            {etapas.map((etapa) => (
+            {etapas.map((etapa, index) => {
+              const EtapaIcone = etapaIcones[index];
+              return (
               <AccordionItem key={etapa.id} value={etapa.id} className="rounded-lg border px-4">
                 <AccordionTrigger className="hover:no-underline">
-                  <span className="flex items-center gap-3 text-left"><span className="text-xs font-bold text-violet-600">{etapa.numero}</span><span>{etapa.titulo}</span></span>
+                  <span className="flex items-center gap-3 text-left">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-50 text-violet-700"><EtapaIcone className="h-4 w-4" /></span>
+                    <span><span className="block text-xs font-bold text-violet-600">{etapa.numero}</span><span>{etapa.titulo}</span></span>
+                  </span>
                 </AccordionTrigger>
                 <AccordionContent>
                   <ul className="space-y-2 pb-2 text-sm text-muted-foreground">
@@ -120,16 +129,26 @@ export default function AnjoOrientacoes() {
                   </ul>
                 </AccordionContent>
               </AccordionItem>
-            ))}
+              );
+            })}
           </Accordion>
         </div>
 
         <div>
           <div className="mb-3 flex items-center gap-2"><CalendarCheck className="h-5 w-5" /><h2 className="text-xl font-semibold">O que se espera do Anjo</h2></div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {esperado.map(([titulo, descricao]) => (
-              <Card key={titulo}><CardContent className="pt-5"><p className="font-semibold">{titulo}</p><p className="mt-1 text-sm text-muted-foreground">{descricao}</p></CardContent></Card>
-            ))}
+            {esperado.map(([titulo, descricao], index) => {
+              const EsperadoIcone = esperadoIcones[index];
+              return (
+                <Card key={titulo} className="transition-shadow hover:shadow-sm">
+                  <CardContent className="pt-5">
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-700"><EsperadoIcone className="h-4 w-4" /></div>
+                    <p className="font-semibold">{titulo}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{descricao}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
 
