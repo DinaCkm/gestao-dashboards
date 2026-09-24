@@ -44,6 +44,9 @@ export const programaIntegracaoProcessos = mysqlTable(
     gestorTel: varchar("gestorTel", { length: 40 }),
     anjo: varchar("anjo", { length: 255 }),
     anjoEmail: varchar("anjoEmail", { length: 320 }),
+    // Vínculo opcional com o usuário EcoLíder que exerce o papel de Anjo.
+    // O papel continua derivado do processo ativo; não altera role/aluno/gerente.
+    anjoUserId: int("anjoUserId"),
     consultora: varchar("consultora", { length: 255 }),
     mentorLegacyId: varchar("mentorLegacyId", { length: 100 }),
     ugp: varchar("ugp", { length: 255 }),
@@ -70,6 +73,7 @@ export const programaIntegracaoProcessos = mysqlTable(
     emailIdx: index("idx_pi_processos_email").on(table.email),
     nomeInicioIdx: index("idx_pi_processos_nome_inicio").on(table.nome, table.inicio),
     situacaoIdx: index("idx_pi_processos_situacao").on(table.situacao),
+    anjoUserIdx: index("idx_pi_processos_anjo_user").on(table.anjoUserId),
   }),
 );
 
