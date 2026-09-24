@@ -28,6 +28,7 @@ export default function AnjoFormularios() {
 
   return (
     <DashboardLayout>
+      <AnjoRouteGuard>
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-violet-600">Espaço do Anjo</p>
@@ -78,6 +79,7 @@ export default function AnjoFormularios() {
           </>
         )}
       </div>
+      </AnjoRouteGuard>
     </DashboardLayout>
   );
 }
