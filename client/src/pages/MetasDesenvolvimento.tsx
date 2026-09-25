@@ -833,7 +833,7 @@ function MetasContent() {
           <Card>
             <CardContent className="p-4 text-center">
               <p className="text-2xl font-bold">{metasResumo.total}</p>
-              <p className="text-xs text-muted-foreground">Total de Metas</p>
+              <p className="text-xs text-muted-foreground">Total de Micrometas</p>
             </CardContent>
           </Card>
           <Card>
