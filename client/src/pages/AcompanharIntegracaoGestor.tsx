@@ -121,6 +121,7 @@ interface ColaboradorAcompanhamento {
 interface AcompanhamentoResponse {
   ok: boolean;
   scope: 'all' | 'gestor';
+  accessLevel?: 'ugp' | 'gestor';
   adminView?: boolean;
   gestoresDisponiveis?: GestorDisponivel[];
   gestorSelecionado?: GestorDisponivel | null;
@@ -184,6 +185,170 @@ function fmtPct1(n: number | null | undefined) {
   return n == null || !Number.isFinite(Number(n))
     ? '—'
     : `${Number(n).toFixed(1).replace('.', ',')}%`;
+}
+
+function mediaNumeros(valores: Array<number | null | undefined>): number | null {
+  const validos = valores.filter((v): v is number => v != null && Number.isFinite(Number(v))).map(Number);
+  return validos.length ? validos.reduce((s, v) => s + v, 0) / validos.length : null;
+}
+
+function mediaMomentoPesquisa(momento: ReturnType<typeof evolucaoPesquisaColaborador>[number] | undefined): number | null {
+  if (!momento) return null;
+  return mediaNumeros(Object.values(momento.indices));
+}
+
+function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
+  const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
+  const gestor = evolucaoPorPapel(colaborador.respostas, 'Gestor');
+  const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
+
+  const experiencia = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+  const adaptacao = mediaNumeros([
+    gestor[gestor.length - 1]?.mediaGeral == null ? null : gestor[gestor.length - 1]!.mediaGeral! * 20,
+    anjo[anjo.length - 1]?.mediaGeral == null ? null : anjo[anjo.length - 1]!.mediaGeral! * 20,
+  ]);
+  const desenvolvimento = mediaNumeros([
+    colaborador.pdi.percentual,
+    colaborador.jornadaCompliance.percentual,
+  ]);
+
+  const componentes = [
+    { chave: 'Experiência', valor: experiencia, peso: 40 },
+    { chave: 'Adaptação observada', valor: adaptacao, peso: 35 },
+    { chave: 'Desenvolvimento', valor: desenvolvimento, peso: 25 },
+  ].filter((item) => item.valor != null);
+
+  const cobertura = componentes.reduce((s, item) => s + item.peso, 0);
+  const indice = cobertura >= 60
+    ? componentes.reduce((s, item) => s + Number(item.valor) * item.peso, 0) / cobertura
+    : null;
+
+  return { indice, cobertura, experiencia, adaptacao, desenvolvimento };
+}
+
+function saudeProcesso(colaborador: ColaboradorAcompanhamento) {
+  const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
+  const pendentes = colaborador.formulariosPendentes.length;
+  const alinhamentosEsperados = colaborador.dia >= 150 ? 4 : colaborador.dia >= 75 ? 3 : colaborador.dia >= 45 ? 2 : colaborador.dia >= 15 ? 1 : 0;
+  const alinhamentosEmAberto = Math.max(0, alinhamentosEsperados - colaborador.alinhamentosFeitos);
+
+  if (atrasados > 0 || alinhamentosEmAberto > 0) {
+    return {
+      rotulo: 'Requer atenção',
+      detalhe: [
+        atrasados ? `${atrasados} formulário(s) atrasado(s)` : '',
+        alinhamentosEmAberto ? `${alinhamentosEmAberto} alinhamento(s) previsto(s) ainda não realizado(s)` : '',
+      ].filter(Boolean).join(' · '),
+      classes: 'border-amber-300 bg-amber-50 text-amber-950',
+    };
+  }
+  if (pendentes > 0) {
+    return {
+      rotulo: 'Em acompanhamento',
+      detalhe: `${pendentes} formulário(s) solicitado(s) aguardando resposta`,
+      classes: 'border-blue-200 bg-blue-50 text-blue-950',
+    };
+  }
+  return {
+    rotulo: 'Em dia',
+    detalhe: 'Sem pendências operacionais identificadas até este momento.',
+    classes: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+  };
+}
+
+function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
+  const sinais: string[] = [];
+  const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
+  if (atrasados) sinais.push(`${atrasados} formulário(s) atrasado(s)`);
+
+  const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
+  if (pesquisa.length >= 2) {
+    const anterior = mediaMomentoPesquisa(pesquisa[pesquisa.length - 2]);
+    const atual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+    if (anterior != null && atual != null && anterior - atual >= 10) {
+      sinais.push(`experiência do colaborador caiu ${Math.round(anterior - atual)} p.p. desde o ciclo anterior`);
+    }
+  }
+
+  const gestor = evolucaoPorPapel(colaborador.respostas, 'Gestor');
+  const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
+  const g = gestor[gestor.length - 1]?.mediaGeral;
+  const a = anjo[anjo.length - 1]?.mediaGeral;
+  if (g != null && a != null && Math.abs(g - a) * 20 >= 20) {
+    sinais.push('Gestor e Anjo apresentam percepções significativamente diferentes no ciclo mais recente');
+  }
+
+  if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
+    sinais.push(`PDI com ${Math.round(colaborador.pdi.percentual)}% de avanço`);
+  }
+  if (colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual != null && colaborador.jornadaCompliance.percentual === 0) {
+    sinais.push('Jornada Compliance ainda não iniciada');
+  }
+  return sinais;
+}
+
+function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
+  const gestor = evolucaoPorPapel(colaborador.respostas, 'Gestor');
+  const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
+  const pesquisaAtual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+  const gestorAtual = gestor[gestor.length - 1]?.mediaGeral == null ? null : gestor[gestor.length - 1]!.mediaGeral! * 20;
+  const anjoAtual = anjo[anjo.length - 1]?.mediaGeral == null ? null : anjo[anjo.length - 1]!.mediaGeral! * 20;
+  const sinais = sinaisAtencaoUgp(colaborador);
+
+  const evolucaoTexto = (() => {
+    if (pesquisa.length < 2) return 'Ainda não há dois ciclos da Pesquisa de Integração para comparar a experiência do colaborador.';
+    const anterior = mediaMomentoPesquisa(pesquisa[pesquisa.length - 2]);
+    const atual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+    if (anterior == null || atual == null) return 'A Pesquisa de Integração ainda não possui base suficiente para comparar os dois ciclos mais recentes.';
+    const delta = atual - anterior;
+    if (Math.abs(delta) < 3) return 'A experiência relatada pelo colaborador permaneceu estável entre os dois ciclos mais recentes.';
+    return delta > 0
+      ? `A experiência relatada pelo colaborador melhorou aproximadamente ${Math.round(delta)} p.p. desde o ciclo anterior.`
+      : `A experiência relatada pelo colaborador caiu aproximadamente ${Math.round(Math.abs(delta))} p.p. desde o ciclo anterior.`;
+  })();
+
+  return (
+    <Card className="overflow-hidden border-violet-200/80">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Sparkles className="h-5 w-5 text-violet-600" />Leitura integrada do ciclo</CardTitle>
+        <CardDescription>
+          Síntese para UGP/RH. Os três números abaixo resumem instrumentos diferentes e não representam uma comparação de perguntas idênticas.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            ['Colaborador', pesquisaAtual, 'Pesquisa de Integração'],
+            ['Gestor', gestorAtual, 'Avaliação do Programa'],
+            ['Anjo', anjoAtual, 'Avaliação do Programa'],
+          ].map(([rotulo, valor, fonte]) => (
+            <div key={String(rotulo)} className="rounded-xl border bg-muted/15 p-4">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{rotulo}</div>
+              <div className="mt-1 text-3xl font-bold">{valor == null ? '—' : `${Math.round(Number(valor))}%`}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{fonte}</div>
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-xl border bg-slate-50/70 p-4 text-sm">
+            <div className="font-semibold">Desde o ciclo anterior</div>
+            <p className="mt-1 text-muted-foreground">{evolucaoTexto}</p>
+          </div>
+          <div className="rounded-xl border bg-slate-50/70 p-4 text-sm">
+            <div className="font-semibold">Pontos para acompanhamento</div>
+            {sinais.length ? (
+              <ul className="mt-1 space-y-1 text-muted-foreground">
+                {sinais.slice(0, 3).map((sinal) => <li key={sinal}>• {sinal}</li>)}
+              </ul>
+            ) : (
+              <p className="mt-1 text-muted-foreground">Nenhum sinal objetivo de atenção identificado nos dados disponíveis deste ciclo.</p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function PerfilAssessmentModal({
