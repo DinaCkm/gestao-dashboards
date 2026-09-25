@@ -10485,19 +10485,31 @@ export async function getMetasResumo(alunoId: number) {
     ? await db.select({ id: assessmentPdi.id, status: assessmentPdi.status }).from(assessmentPdi).where(inArray(assessmentPdi.id, pdiIds as number[]))
     : [];
   const pdiStatusMap = new Map(pdisStatus.map(p => [p.id, p.status]));
-  const allMetas = allMetasRaw.filter(m => {
+  const metasVigentes = allMetasRaw.filter(m => {
     const pdiStatus = pdiStatusMap.get(m.assessmentPdiId);
     return pdiStatus !== 'congelado';
   });
   
-  if (allMetas.length === 0) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
+  if (metasVigentes.length === 0) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
+
+  // Regra estrutural da tela de Metas:
+  // a primeira meta criada é a Meta Desafiadora Principal; as demais são Micro Metas.
+  // A Meta Desafiadora é o objetivo agregador e NÃO entra no indicador de cumprimento.
+  const metasOrdenadas = [...metasVigentes].sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return aTime !== bTime ? aTime - bTime : a.id - b.id;
+  });
+  const microMetas = metasOrdenadas.slice(1);
   
-  // Cumprida = evidência validada pela mentora (metas.status = 'validada')
-  const cumpridas = allMetas.filter(m => m.status === 'validada').length;
+  if (microMetas.length === 0) return { total: 0, cumpridas: 0, percentual: 0, porCompetencia: [] };
   
-  // Agrupar por competência
+  // Cumprida = evidência da MICRO META validada pela mentora (metas.status = 'validada')
+  const cumpridas = microMetas.filter(m => m.status === 'validada').length;
+  
+  // Agrupar somente as micro metas por competência
   const porCompetenciaMap = new Map<number, { competenciaId: number, assessmentCompetenciaId: number, total: number, cumpridas: number }>();
-  for (const meta of allMetas) {
+  for (const meta of microMetas) {
     const key = meta.assessmentCompetenciaId;
     if (!porCompetenciaMap.has(key)) {
       porCompetenciaMap.set(key, { competenciaId: meta.competenciaId, assessmentCompetenciaId: key, total: 0, cumpridas: 0 });
@@ -10513,9 +10525,9 @@ export async function getMetasResumo(alunoId: number) {
   }));
   
   return {
-    total: allMetas.length,
+    total: microMetas.length,
     cumpridas,
-    percentual: Math.round((cumpridas / allMetas.length) * 100),
+    percentual: Math.round((cumpridas / microMetas.length) * 100),
     porCompetencia
   };
 }
@@ -10578,24 +10590,48 @@ export async function getMetasResumoTodos() {
   const db = await getDb();
   if (!db) return [];
   
-  const allMetas = await db.select().from(metas).where(eq(metas.isActive, 1));
-  if (allMetas.length === 0) return [];
+  const allMetasRaw = await db.select().from(metas).where(eq(metas.isActive, 1));
+  if (allMetasRaw.length === 0) return [];
+
+  // Manter a visão do gestor alinhada à visão individual: ciclo anterior congelado
+  // não entra no indicador atual.
+  const pdiIds = Array.from(new Set(allMetasRaw.map(m => m.assessmentPdiId).filter(Boolean)));
+  const pdisStatus = pdiIds.length > 0
+    ? await db.select({ id: assessmentPdi.id, status: assessmentPdi.status }).from(assessmentPdi).where(inArray(assessmentPdi.id, pdiIds as number[]))
+    : [];
+  const pdiStatusMap = new Map(pdisStatus.map(p => [p.id, p.status]));
+  const metasVigentes = allMetasRaw.filter(m => pdiStatusMap.get(m.assessmentPdiId) !== 'congelado');
+  if (metasVigentes.length === 0) return [];
   
   // Buscar dados dos alunos para enriquecer o retorno
-  const alunoIds = Array.from(new Set(allMetas.map(m => m.alunoId)));
+  const alunoIds = Array.from(new Set(metasVigentes.map(m => m.alunoId)));
   const alunosList = await db.select().from(alunos).where(inArray(alunos.id, alunoIds));
   const alunosMap = new Map(alunosList.map(a => [a.id, a]));
+
+  // Separar a Meta Desafiadora Principal (primeira criada) das Micro Metas
+  // para cada aluno. Somente Micro Metas entram nos indicadores.
+  const metasPorAluno = new Map<number, typeof metasVigentes>();
+  for (const meta of metasVigentes) {
+    if (!metasPorAluno.has(meta.alunoId)) metasPorAluno.set(meta.alunoId, []);
+    metasPorAluno.get(meta.alunoId)!.push(meta);
+  }
   
-  // Agrupar por aluno — cumprida = evidência validada pela mentora (metas.status = 'validada')
   const porAluno = new Map<number, { total: number, cumpridas: number, naoCumpridas: number, emAndamento: number }>();
-  for (const meta of allMetas) {
-    if (!porAluno.has(meta.alunoId)) {
-      porAluno.set(meta.alunoId, { total: 0, cumpridas: 0, naoCumpridas: 0, emAndamento: 0 });
+  for (const [alunoId, metasAluno] of metasPorAluno.entries()) {
+    const ordenadas = [...metasAluno].sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aTime !== bTime ? aTime - bTime : a.id - b.id;
+    });
+    const microMetas = ordenadas.slice(1);
+
+    const data = { total: 0, cumpridas: 0, naoCumpridas: 0, emAndamento: 0 };
+    for (const meta of microMetas) {
+      data.total++;
+      if (meta.status === 'validada') data.cumpridas++;
+      else data.emAndamento++; // pendente ou entregue (aguardando validação) = em andamento
     }
-    const entry = porAluno.get(meta.alunoId)!;
-    entry.total++;
-    if (meta.status === 'validada') entry.cumpridas++;
-    else entry.emAndamento++; // pendente ou entregue (aguardando validação) = em andamento
+    porAluno.set(alunoId, data);
   }
   
   return Array.from(porAluno.entries()).map(([alunoId, data]) => {
