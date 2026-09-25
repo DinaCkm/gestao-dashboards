@@ -105,7 +105,7 @@ function VisaoIndividualAluno({
               </div>
               <div>
                 <p className="text-2xl font-bold">{total}</p>
-                <p className="text-sm text-muted-foreground">Total de Metas</p>
+                <p className="text-sm text-muted-foreground">Total de Micrometas</p>
               </div>
             </div>
           </CardContent>
@@ -447,7 +447,7 @@ export default function MetasGestor() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{consolidado.totalMetas}</p>
-                  <p className="text-xs text-muted-foreground">Total de Metas</p>
+                  <p className="text-xs text-muted-foreground">Total de Micrometas</p>
                 </div>
               </div>
             </CardContent>
