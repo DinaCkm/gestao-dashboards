@@ -99,6 +99,101 @@ type DbClient = ReturnType<typeof createDbClient>;
 let _db: DbClient | null = null;
 let _connection: mysql.Connection | null = null;
 
+export async function ensureDemoUgpLoginFixture() {
+  const db = await getDb();
+  if (!db) return { ok: false, reason: "db_unavailable" as const };
+
+  const demoOpenId = "demo_ugp_integracao_20260925";
+  const demoName = "[TESTE] UGP Integração SEBRAE TO";
+  const demoEmail = "ugp.teste.integracao@example.com";
+  const demoCpf = "99999999999";
+  const demoLoginId = "UGPTESTE";
+
+  const [user] = await db.select()
+    .from(users)
+    .where(and(eq(users.openId, demoOpenId), eq(users.name, demoName)))
+    .limit(1);
+
+  if (!user) {
+    console.log("[DemoIntegracao] UGP_LOGIN_SKIP fixture não encontrada");
+    return { ok: true, skipped: true as const };
+  }
+
+  await db.update(users)
+    .set({
+      email: demoEmail,
+      cpf: demoCpf,
+      role: "manager",
+      loginMethod: "email_cpf",
+      isActive: 1,
+      lastSignedIn: new Date(),
+    })
+    .where(eq(users.id, user.id));
+
+  if (user.consultorId) {
+    await db.update(consultors)
+      .set({
+        name: demoName,
+        email: demoEmail,
+        cpf: demoCpf,
+        loginId: demoLoginId,
+        role: "gerente",
+        isActive: 1,
+        canLogin: 1,
+      })
+      .where(eq(consultors.id, user.consultorId));
+  }
+
+  const [confirmed] = await db.select({
+    id: users.id,
+    email: users.email,
+    cpf: users.cpf,
+    role: users.role,
+    isActive: users.isActive,
+    consultorId: users.consultorId,
+  })
+    .from(users)
+    .where(and(
+      eq(users.id, user.id),
+      eq(users.email, demoEmail),
+      eq(users.cpf, demoCpf),
+      eq(users.role, "manager"),
+      eq(users.isActive, 1),
+    ))
+    .limit(1);
+
+  if (!confirmed) {
+    throw new Error("[DemoIntegracao] Falha ao confirmar normalização da UGP fictícia");
+  }
+
+  if (confirmed.consultorId) {
+    const [consultor] = await db.select({
+      isActive: consultors.isActive,
+      canLogin: consultors.canLogin,
+      email: consultors.email,
+      cpf: consultors.cpf,
+    })
+      .from(consultors)
+      .where(eq(consultors.id, confirmed.consultorId))
+      .limit(1);
+
+    if (!consultor || consultor.isActive !== 1 || consultor.canLogin !== 1 || consultor.email !== demoEmail || consultor.cpf !== demoCpf) {
+      throw new Error("[DemoIntegracao] Consultor fictício não ficou apto ao login");
+    }
+  }
+
+  console.log("[DemoIntegracao] UGP_LOGIN_OK", JSON.stringify({
+    userId: confirmed.id,
+    email: confirmed.email,
+    cpf: confirmed.cpf,
+    role: confirmed.role,
+    isActive: confirmed.isActive,
+    consultorId: confirmed.consultorId,
+  }));
+
+  return { ok: true, skipped: false as const, userId: confirmed.id };
+}
+
 export async function getRawConnection() {
   if (!_connection && process.env.DATABASE_URL) {
     try {
