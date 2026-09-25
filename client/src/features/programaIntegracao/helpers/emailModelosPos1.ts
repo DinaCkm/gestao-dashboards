@@ -60,7 +60,7 @@ export const MODELOS_EMAIL_POS1_INTEGRACAO: Record<string, ModeloEmailIntegracao
       '**O PDI de Integração já está publicado** na plataforma do Ecossistema do B.E.M.\n\n' +
       '**Você pode escolher como prefere acompanhar**\n' +
       '- Se quiser acompanhar a evolução do processo, as ações do PDI e a situação dos formulários/preenchimentos, acesse o EcoLíder:\n{{LINK_ECOLIDER}}\n' +
-      '- Entre com o seu **e-mail e CPF**. Se o seu acesso ainda não estiver habilitado, ou se tiver qualquer dúvida para entrar, é só nos avisar que ajudamos.\n' +
+      '- Se o seu acesso já estiver habilitado, entre com o seu **e-mail e CPF**. Se ainda não estiver habilitado, ou se tiver qualquer dúvida para entrar, é só nos avisar que ajudamos.\n' +
       '- Se preferir apenas responder o formulário deste ciclo, não precisa entrar na plataforma: você pode usar diretamente o link abaixo.\n\n' +
       'Nos próximos ciclos vamos revisitar esse plano com você — se em algum momento achar que faz sentido ajustar alguma ação, é só nos dizer.\n\n' +
       '---\n\n' +
