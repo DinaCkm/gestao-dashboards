@@ -1265,7 +1265,7 @@ export default function AcompanharIntegracaoGestor() {
                         <Button
                           variant="secondary"
                           className="gap-2 border-0 bg-amber-400 text-black hover:bg-amber-300"
-                          onClick={() => gerarAcompanhamentoIntegracaoPdf(colaborador)}
+                          onClick={() => gerarAcompanhamentoIntegracaoPdf(colaborador, { visaoUgpRh: isUgpRh })}
                         >
                           <Download className="h-4 w-4" /> {isUgpRh ? 'Exportar relatório completo PDF' : 'Exportar acompanhamento PDF'}
                         </Button>
