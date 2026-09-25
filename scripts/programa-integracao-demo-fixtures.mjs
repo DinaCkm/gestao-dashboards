@@ -877,10 +877,80 @@ async function remove(connection) {
   }
 }
 
+async function normalizeUgpLogin(connection) {
+  if (process.env.PROGRAMA_INTEGRACAO_DEMO_APPLY !== "YES") {
+    throw new Error("Normalização bloqueada: defina PROGRAMA_INTEGRACAO_DEMO_APPLY=YES.");
+  }
+  if (process.env.PROGRAMA_INTEGRACAO_DEMO_ALLOW_PRODUCTION !== "YES") {
+    throw new Error("Normalização em produção bloqueada: defina PROGRAMA_INTEGRACAO_DEMO_ALLOW_PRODUCTION=YES.");
+  }
+
+  const [userRows] = await connection.execute(
+    "SELECT id,consultorId FROM users WHERE openId=? LIMIT 1",
+    [DEMO.ugp.openId]
+  );
+  const user = userRows?.[0];
+  if (!user) throw new Error("Usuário UGP fictício não encontrado pelo openId esperado.");
+
+  await connection.beginTransaction();
+  try {
+    await connection.execute(
+      `UPDATE users
+       SET name=?,email=?,cpf=?,loginMethod='email_cpf',role='manager',isActive=1,updatedAt=NOW()
+       WHERE id=? AND openId=?`,
+      [DEMO.ugp.name, DEMO.ugp.email, DEMO.ugp.cpf, user.id, DEMO.ugp.openId]
+    );
+
+    if (user.consultorId) {
+      await connection.execute(
+        `UPDATE consultors
+         SET name=?,email=?,cpf=?,loginId=?,role='gerente',isActive=1,canLogin=1,updatedAt=NOW()
+         WHERE id=?`,
+        [DEMO.ugp.name, DEMO.ugp.email, DEMO.ugp.cpf, DEMO.ugp.loginId, user.consultorId]
+      );
+    }
+
+    const [matchRows] = await connection.execute(
+      `SELECT u.id,u.openId,u.email,u.cpf,u.role,u.isActive,u.consultorId,
+              c.email AS consultorEmail,c.cpf AS consultorCpf,c.isActive AS consultorAtivo,c.canLogin
+       FROM users u
+       LEFT JOIN consultors c ON c.id=u.consultorId
+       WHERE u.openId=?
+         AND LOWER(u.email)=LOWER(?)
+         AND u.cpf=?
+         AND u.role='manager'
+         AND u.isActive=1
+       LIMIT 1`,
+      [DEMO.ugp.openId, DEMO.ugp.email, DEMO.ugp.cpf]
+    );
+    const matched = matchRows?.[0];
+    if (!matched) throw new Error("Usuário UGP fictício não atende aos critérios exatos do login após normalização.");
+    if (matched.consultorId && (Number(matched.consultorAtivo) !== 1 || Number(matched.canLogin) !== 1)) {
+      throw new Error("Consultor vinculado à UGP fictícia não está ativo/com login liberado após normalização.");
+    }
+
+    await connection.commit();
+    console.log("[DemoIntegracao] UGP_LOGIN_OK " + JSON.stringify({
+      userId: Number(matched.id),
+      openId: matched.openId,
+      email: matched.email,
+      cpf: matched.cpf,
+      role: matched.role,
+      isActive: Number(matched.isActive),
+      consultorId: Number(matched.consultorId || 0),
+      consultorAtivo: matched.consultorId ? Number(matched.consultorAtivo) : null,
+      canLogin: matched.consultorId ? Number(matched.canLogin) : null,
+    }));
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  }
+}
+
 async function main() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL ausente.");
-  if (!["verify","apply","remove"].includes(MODE)) {
-    throw new Error("PROGRAMA_INTEGRACAO_DEMO_MODE deve ser verify, apply ou remove.");
+  if (!["verify","apply","remove","normalize-login"].includes(MODE)) {
+    throw new Error("PROGRAMA_INTEGRACAO_DEMO_MODE deve ser verify, apply, remove ou normalize-login.");
   }
 
   const connection = await mysql.createConnection(process.env.DATABASE_URL);
@@ -889,9 +959,12 @@ async function main() {
       await verify(connection);
     } else if (MODE === "apply") {
       await apply(connection);
-    } else {
+    } else if (MODE === "remove") {
       await remove(connection);
       await verify(connection);
+    } else {
+      await normalizeUgpLogin(connection);
+      await verify(connection, { throwOnMissing: true });
     }
   } finally {
     await connection.end();
