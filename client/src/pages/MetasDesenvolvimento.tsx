@@ -605,8 +605,13 @@ function MetasContent() {
                   compõem a evolução da meta principal.
                 </li>
                 <li>
-                  <strong>Evidências e validação</strong> devem ser acompanhadas
-                  na mesma estrutura que o aluno visualiza no dashboard.
+                  Para uma <strong>Micro Meta contar como cumprida</strong>, abra
+                  a evidência enviada pelo aluno e clique em{" "}
+                  <strong>Aprovar Micrometa</strong>.
+                </li>
+                <li>
+                  O <strong>acompanhamento mensal</strong> é um registro histórico
+                  da evolução e <strong>não substitui a validação da evidência</strong>.
                 </li>
               </ul>
             </div>
@@ -1112,106 +1117,192 @@ function MetasContent() {
 
                           {expanded && (
                             <div className="border-t bg-white p-4 space-y-3">
-                              <div className="p-3 rounded-lg border bg-blue-50">
-                                <p className="text-xs font-semibold text-blue-800 mb-1">
-                                  Evidência enviada pelo aluno
-                                </p>
+                              <div
+                                className={`p-4 rounded-lg border ${
+                                  submission?.status === "validada"
+                                    ? "bg-emerald-50 border-emerald-200"
+                                    : submission?.status === "entregue"
+                                    ? "bg-blue-50 border-blue-200"
+                                    : "bg-gray-50 border-gray-200"
+                                }`}
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                  <p
+                                    className={`text-xs font-semibold ${
+                                      submission?.status === "validada"
+                                        ? "text-emerald-800"
+                                        : submission?.status === "entregue"
+                                        ? "text-blue-800"
+                                        : "text-gray-700"
+                                    }`}
+                                  >
+                                    Evidência enviada pelo aluno
+                                  </p>
+                                  {submission && (
+                                    <Badge
+                                      className={`text-xs ${
+                                        submission.status === "validada"
+                                          ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                          : submission.status === "entregue"
+                                          ? "bg-blue-100 text-blue-800 border-blue-200"
+                                          : "bg-amber-100 text-amber-800 border-amber-200"
+                                      }`}
+                                    >
+                                      {submission.status === "validada"
+                                        ? "Micrometa validada"
+                                        : submission.status === "entregue"
+                                        ? "Aguardando validação da mentora"
+                                        : submission.motivoRejeicao
+                                        ? "Devolvida para ajuste"
+                                        : "Pendente"}
+                                    </Badge>
+                                  )}
+                                </div>
+
                                 {!submission ? (
                                   <p className="text-xs text-muted-foreground">
-                                    Ainda não há evidência enviada para esta micro meta.
+                                    O aluno ainda não enviou evidência para esta micrometa.
                                   </p>
                                 ) : (
                                   <div className="space-y-2 text-xs">
-                                    <p>
-                                      Status atual:{" "}
-                                      <strong>
-                                        {submission.status === "validada"
-                                          ? "Validada pela mentora"
-                                          : submission.status === "entregue"
-                                          ? "Aguardando validação"
-                                          : "Pendente"}
-                                      </strong>
-                                    </p>
-                                    <p>
-                                      Data de envio:{" "}
-                                      {formatDate(submission.submittedAt)}
-                                    </p>
-                                    {submission.relatoAluno && (
+                                    {submission.submittedAt && (
                                       <p>
-                                        Relato:{" "}
-                                        {submission.relatoAluno}
+                                        <strong>Enviada em:</strong>{" "}
+                                        {formatDate(submission.submittedAt)}
                                       </p>
+                                    )}
+                                    {submission.relatoAluno && (
+                                      <div className="rounded-md border bg-white/70 p-3">
+                                        <p className="font-semibold mb-1">Relato do aluno</p>
+                                        <p className="whitespace-pre-wrap">
+                                          {submission.relatoAluno}
+                                        </p>
+                                      </div>
                                     )}
                                     {submission.evidenceLink && (
                                       <a
                                         href={submission.evidenceLink}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-blue-600 hover:underline inline-flex items-center gap-1"
+                                        className="text-blue-600 hover:underline inline-flex items-center gap-1 font-medium"
                                       >
                                         <ExternalLink className="h-3 w-3" />{" "}
-                                        Abrir link enviado
+                                        Abrir link da evidência
                                       </a>
                                     )}
                                     {submission.evidenceImageUrl && (
-                                      <img
-                                        src={submission.evidenceImageUrl}
-                                        alt="Evidência do aluno"
-                                        className="max-h-40 rounded border"
-                                      />
+                                      <div>
+                                        <p className="font-semibold mb-1">Imagem enviada</p>
+                                        <img
+                                          src={submission.evidenceImageUrl}
+                                          alt="Evidência do aluno"
+                                          className="max-h-56 rounded border bg-white"
+                                        />
+                                      </div>
+                                    )}
+                                    {submission.motivoRejeicao && submission.status !== "validada" && (
+                                      <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-800">
+                                        <strong>Devolvida ao aluno:</strong>{" "}
+                                        {submission.motivoRejeicao}
+                                      </div>
                                     )}
                                   </div>
                                 )}
                               </div>
 
-                              {submission && (
-                                <div className="flex flex-wrap gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() =>
-                                      validarMetaEvidencia.mutate({
-                                        metaId: meta.id,
-                                      })
-                                    }
-                                    disabled={
-                                      validarMetaEvidencia.isPending ||
-                                      submission.status !== "entregue"
-                                    }
-                                  >
-                                    Aprovar evidência
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setFeedbackMetaId(meta.id);
-                                      setFeedbackAction("ajuste");
-                                      setFeedbackText("");
-                                    }}
-                                  >
-                                    Solicitar ajuste
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="border-red-300 text-red-700 hover:bg-red-50"
-                                    onClick={() => {
-                                      setFeedbackMetaId(meta.id);
-                                      setFeedbackAction("reprovar");
-                                      setFeedbackText("");
-                                    }}
-                                  >
-                                    Reprovar evidência
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => handleOpenAcomp(meta.id)}
-                                  >
-                                    Marcar concluída
-                                  </Button>
+                              {submission?.status === "entregue" && (
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 space-y-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-emerald-900">
+                                      Validação da micrometa
+                                    </p>
+                                    <p className="text-xs text-emerald-800 mt-1">
+                                      Analise a evidência acima. A micrometa só contará
+                                      como cumprida depois da aprovação da mentora.
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    <Button
+                                      size="sm"
+                                      className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                      onClick={() =>
+                                        validarMetaEvidencia.mutate({
+                                          metaId: meta.id,
+                                        })
+                                      }
+                                      disabled={validarMetaEvidencia.isPending}
+                                    >
+                                      {validarMetaEvidencia.isPending ? (
+                                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                      ) : (
+                                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                                      )}
+                                      Aprovar Micrometa
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setFeedbackMetaId(meta.id);
+                                        setFeedbackAction("ajuste");
+                                        setFeedbackText("");
+                                      }}
+                                    >
+                                      Solicitar ajuste
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-red-300 text-red-700 hover:bg-red-50"
+                                      onClick={() => {
+                                        setFeedbackMetaId(meta.id);
+                                        setFeedbackAction("reprovar");
+                                        setFeedbackText("");
+                                      }}
+                                    >
+                                      Reprovar evidência
+                                    </Button>
+                                  </div>
                                 </div>
                               )}
+
+                              {submission?.status === "validada" && (
+                                <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 flex items-start gap-3">
+                                  <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                                  <div>
+                                    <p className="text-sm font-semibold text-emerald-900">
+                                      Micrometa validada pela mentora
+                                    </p>
+                                    <p className="text-xs text-emerald-800 mt-1">
+                                      Esta micrometa já conta como cumprida na Jornada de
+                                      Superação
+                                      {submission.validatedAt
+                                        ? ` desde ${formatDate(submission.validatedAt)}`
+                                        : ""}.
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="rounded-lg border border-dashed bg-gray-50 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div>
+                                  <p className="text-xs font-semibold text-gray-800">
+                                    Acompanhamento mensal
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Registro histórico da evolução. Não valida nem conclui a
+                                    micrometa.
+                                  </p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenAcomp(meta.id)}
+                                >
+                                  <Calendar className="h-4 w-4 mr-2" />
+                                  Registrar acompanhamento
+                                </Button>
+                              </div>
 
                               <div>
                                 <p className="text-xs font-semibold mb-1">
@@ -1627,7 +1718,7 @@ function MetasContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Acompanhamento / Conclusão */}
+      {/* Dialog: Acompanhamento mensal (histórico; não valida a micrometa) */}
       <Dialog
         open={!!progressMetaId}
         onOpenChange={open => {
@@ -1638,11 +1729,12 @@ function MetasContent() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
-              Registrar Evolução da Micro Meta
+              Registrar Acompanhamento Mensal
             </DialogTitle>
             <DialogDescription>
-              Atualize o status da micro meta com base na evidência e no
-              acompanhamento da mentoria.
+              Registre a percepção de evolução no mês. Este histórico não valida
+              a evidência nem conclui a micrometa; para isso, use{" "}
+              <strong>Aprovar Micrometa</strong> no bloco de evidência.
             </DialogDescription>
           </DialogHeader>
 
@@ -1687,7 +1779,9 @@ function MetasContent() {
 
             {/* Status */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Status</label>
+              <label className="text-sm font-medium mb-2 block">
+                Situação observada no mês
+              </label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setAcompStatus("cumprida")}
