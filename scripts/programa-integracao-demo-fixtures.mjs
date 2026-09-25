@@ -209,6 +209,29 @@ async function verify(connection, { throwOnMissing = false } = {}) {
     assessment: { discResultados: disc, autoavaliacoes: auto },
   };
 
+  if (process.env.PROGRAMA_INTEGRACAO_DEMO_STRICT === "YES") {
+    const erros = [];
+    if (!summary.ugp?.active || summary.ugp?.role !== "manager") erros.push("UGP fictícia não está ativa como manager");
+    if (!summary.ugp?.permissions?.includes("/gestor/integracao")) erros.push("UGP sem /gestor/integracao");
+    if (!summary.ugp?.permissions?.includes("scope:integracao:mode:all")) erros.push("UGP sem mode all");
+    if (!summary.ugp?.permissions?.includes("scope:integracao:all")) erros.push("UGP sem scope all");
+    if (!summary.aluno?.active) erros.push("colaborador fictício não está ativo");
+    if (summary.processo?.situacao !== "ativo") erros.push("processo fictício não está ativo");
+    if (Number(summary.processo?.respostas || 0) !== 16) erros.push(`esperadas 16 respostas; encontradas ${summary.processo?.respostas || 0}`);
+    if (summary.pdi.total !== 4 || summary.pdi.concluidas !== 3) erros.push(`PDI esperado 3/4; encontrado ${summary.pdi.concluidas}/${summary.pdi.total}`);
+    if (summary.compliance.total !== 4 || summary.compliance.concluidas !== 3) erros.push(`Compliance esperado 3/4; encontrado ${summary.compliance.concluidas}/${summary.compliance.total}`);
+    if (summary.assessment.discResultados < 1) erros.push("DISC fictício ausente");
+    if (summary.assessment.autoavaliacoes < 5) erros.push(`autoavaliação insuficiente: ${summary.assessment.autoavaliacoes} registro(s)`);
+    if (erros.length) throw new Error("Verificação estrita da fixture falhou: " + erros.join("; "));
+    console.log("[DemoIntegracao] STRICT_OK " + JSON.stringify({
+      respostas: summary.processo.respostas,
+      pdi: summary.pdi,
+      compliance: summary.compliance,
+      assessment: summary.assessment,
+      permissions: summary.ugp.permissions,
+    }));
+  }
+
   console.log("[DemoIntegracao] VERIFY " + JSON.stringify(summary));
   return { core, summary };
 }
