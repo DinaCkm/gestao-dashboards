@@ -1087,7 +1087,18 @@ export default function AcompanharIntegracaoGestor() {
   }, [dados, busca]);
 
   const colaborador = (dados?.colaboradores || []).find((c) => c.id === selecionadoId) || filtrados[0] || null;
+  const isUgpRh = dados?.accessLevel === 'ugp' || dados?.scope === 'all';
   const alertasColaborador = colaborador ? alertasDoColaborador(colaborador) : [];
+  const indiceAtual = colaborador && isUgpRh ? indiceIntegracao(colaborador) : null;
+  const saudeAtual = colaborador ? saudeProcesso(colaborador) : null;
+  const radarUgp = useMemo(() => {
+    if (!isUgpRh) return [];
+    return (dados?.colaboradores || [])
+      .map((item) => ({ item, sinais: sinaisAtencaoUgp(item) }))
+      .filter((entrada) => entrada.sinais.length > 0)
+      .sort((a, b) => b.sinais.length - a.sinais.length)
+      .slice(0, 5);
+  }, [dados, isUgpRh]);
 
   const trocarVisaoGerente = (value: string) => {
     setGestorView(value);
@@ -1102,7 +1113,7 @@ export default function AcompanharIntegracaoGestor() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="text-sm font-semibold uppercase tracking-wider text-violet-600">
-              {dados?.adminView ? 'Visão Administrativa' : 'Visão do Gestor'}
+              {dados?.adminView ? 'Visão Administrativa' : isUgpRh ? 'Visão UGP/RH' : 'Visão do Gestor'}
             </div>
             <h1 className="text-3xl font-bold tracking-tight">Acompanhar Integração</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -1142,7 +1153,38 @@ export default function AcompanharIntegracaoGestor() {
         ) : erro ? (
           <Card><CardContent className="py-12 text-center"><p className="font-semibold text-destructive">{erro}</p><Button className="mt-4" onClick={() => void carregar()}>Tentar novamente</Button></CardContent></Card>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
+          <div className="space-y-6">
+            {isUgpRh && (
+              <Card className="border-violet-200/80 bg-gradient-to-r from-violet-50/90 via-white to-indigo-50/70">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg"><AlertTriangle className="h-5 w-5 text-violet-700" />Radar de atenção</CardTitle>
+                  <CardDescription>Prioriza sinais objetivos dos colaboradores ativos sem transformar percepções em diagnóstico ou previsão.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!radarUgp.length ? (
+                    <div className="rounded-lg border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">Nenhum sinal objetivo de atenção identificado nos dados disponíveis neste momento.</div>
+                  ) : (
+                    <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                      {radarUgp.map(({ item, sinais }) => (
+                        <button
+                          type="button"
+                          key={item.id}
+                          onClick={() => setSelecionadoId(item.id)}
+                          className="rounded-xl border bg-white p-4 text-left transition hover:-translate-y-px hover:shadow-sm"
+                        >
+                          <div className="font-semibold">{item.nome}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{item.cargo || 'Cargo não informado'} · Dia {item.dia}/{item.totalDias}</div>
+                          <div className="mt-3 space-y-1 text-xs text-amber-900">
+                            {sinais.slice(0, 2).map((sinal) => <div key={sinal}>• {sinal}</div>)}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
             <Card className="h-fit xl:sticky xl:top-4">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base"><Users className="h-4 w-4" />Colaboradores</CardTitle>
@@ -1170,19 +1212,21 @@ export default function AcompanharIntegracaoGestor() {
                           <div className="font-semibold">{c.nome}</div>
                           <div className="mt-1 text-xs text-muted-foreground">{c.cargo || 'Cargo não informado'} · {c.unidade || 'Unidade não informada'}</div>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-8 shrink-0 gap-1 px-2 text-[11px]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            abrirPerfil(c);
-                          }}
-                        >
-                          <Sparkles className="h-3.5 w-3.5" />
-                          Assessment
-                        </Button>
+                        {isUgpRh && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 shrink-0 gap-1 px-2 text-[11px]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              abrirPerfil(c);
+                            }}
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Assessment
+                          </Button>
+                        )}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2 text-xs">
                         <span>Dia {c.dia}/{c.totalDias}</span>
@@ -1209,19 +1253,21 @@ export default function AcompanharIntegracaoGestor() {
                         <p className="mt-2 text-xs !text-white/80">Início: {dataBr(colaborador.inicio)}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="secondary"
-                          className="gap-2 border-0 bg-white/95 text-violet-900 hover:bg-white"
-                          onClick={() => abrirPerfil(colaborador)}
-                        >
-                          <Sparkles className="h-4 w-4" /> Perfil do Assessment
-                        </Button>
+                        {isUgpRh && (
+                          <Button
+                            variant="secondary"
+                            className="gap-2 border-0 bg-white/95 text-violet-900 hover:bg-white"
+                            onClick={() => abrirPerfil(colaborador)}
+                          >
+                            <Sparkles className="h-4 w-4" /> Perfil do Assessment
+                          </Button>
+                        )}
                         <Button
                           variant="secondary"
                           className="gap-2 border-0 bg-amber-400 text-black hover:bg-amber-300"
                           onClick={() => gerarAcompanhamentoIntegracaoPdf(colaborador)}
                         >
-                          <Download className="h-4 w-4" /> Exportar relatório completo PDF
+                          <Download className="h-4 w-4" /> {isUgpRh ? 'Exportar relatório completo PDF' : 'Exportar acompanhamento PDF'}
                         </Button>
                       </div>
                     </div>
@@ -1240,7 +1286,26 @@ export default function AcompanharIntegracaoGestor() {
                   </div>
                 )}
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {isUgpRh && indiceAtual && (
+                    <Card className="border-violet-200">
+                      <CardContent className="pt-5">
+                        <div className="text-xs font-semibold uppercase text-muted-foreground">Índice de Integração</div>
+                        <div className="mt-2 text-3xl font-bold">{indiceAtual.indice == null ? '—' : `${Math.round(indiceAtual.indice)}%`}</div>
+                        <Progress className="mt-3" value={indiceAtual.indice || 0} />
+                        <div className="mt-2 text-xs text-muted-foreground">Cobertura dos dados: {indiceAtual.cobertura}% · mínimo de 60% para cálculo.</div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {saudeAtual && (
+                    <Card className={saudeAtual.classes}>
+                      <CardContent className="pt-5">
+                        <div className="text-xs font-semibold uppercase opacity-70">Saúde do Processo</div>
+                        <div className="mt-2 text-2xl font-bold">{saudeAtual.rotulo}</div>
+                        <div className="mt-2 text-xs opacity-80">{saudeAtual.detalhe}</div>
+                      </CardContent>
+                    </Card>
+                  )}
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Dia do Onboarding</div><div className="mt-2 text-3xl font-bold">{colaborador.dia}<span className="text-base text-muted-foreground">/{colaborador.totalDias}</span></div><Progress className="mt-3" value={(colaborador.dia/colaborador.totalDias)*100} /></CardContent></Card>
                   <Card>
                     <CardContent className="pt-5">
@@ -1305,11 +1370,20 @@ export default function AcompanharIntegracaoGestor() {
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Alinhamentos realizados</div><div className="mt-2 text-3xl font-bold">{colaborador.alinhamentosFeitos}<span className="text-base text-muted-foreground">/{colaborador.alinhamentosTotal}</span></div><Progress className="mt-3" value={(colaborador.alinhamentosFeitos/colaborador.alinhamentosTotal)*100} /></CardContent></Card>
                 </div>
 
-                <EvolucaoBloco titulo="Evolução — Percepção do Gestor sobre o Empregado" respostas={colaborador.respostas} papel="Gestor" />
-                <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Empregado" respostas={colaborador.respostas} papel="Anjo" />
+                {isUgpRh && <LeituraIntegradaUgp colaborador={colaborador} />}
 
-                {dados?.scope === 'all' && (
+                {isUgpRh && (
                   <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
+                )}
+
+                <EvolucaoBloco
+                  titulo={isUgpRh ? "Evolução — Percepção do Gestor sobre o Empregado" : "Minha percepção sobre o colaborador"}
+                  respostas={colaborador.respostas}
+                  papel="Gestor"
+                />
+
+                {isUgpRh && (
+                  <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Empregado" respostas={colaborador.respostas} papel="Anjo" />
                 )}
 
                 <Card>
@@ -1363,13 +1437,16 @@ export default function AcompanharIntegracaoGestor() {
             ) : (
               <Card><CardContent className="py-16 text-center"><UserCheck className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-3 text-muted-foreground">Nenhum colaborador disponível para este acesso.</p></CardContent></Card>
             )}
+            </div>
           </div>
         )}
-        <PerfilAssessmentModal
-          colaborador={perfilColaborador}
-          open={perfilOpen}
-          onOpenChange={setPerfilOpen}
-        />
+        {isUgpRh && (
+          <PerfilAssessmentModal
+            colaborador={perfilColaborador}
+            open={perfilOpen}
+            onOpenChange={setPerfilOpen}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
