@@ -20,6 +20,30 @@ function formatCpf(value: string): string {
 
 type LoginMode = "cpf" | "id";
 
+function emailValido(value: string): boolean {
+  const email = value.trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+function mensagemLoginAmigavel(message?: string): string {
+  const raw = String(message || "").trim();
+  const tecnico =
+    raw.startsWith("[{") ||
+    raw.includes('"invalid_format"') ||
+    raw.includes('"code"') ||
+    raw.includes('"path"');
+
+  if (tecnico && raw.toLowerCase().includes("email")) {
+    return "E-mail inválido. Confira se o endereço foi digitado corretamente, incluindo @ e o domínio (ex.: nome@empresa.com).";
+  }
+
+  if (tecnico) {
+    return "Não foi possível validar os dados informados. Confira o e-mail e o CPF/ID e tente novamente.";
+  }
+
+  return raw || "Não foi possível entrar. Confira seus dados e tente novamente.";
+}
+
 export default function CustomLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +79,7 @@ export default function CustomLogin() {
       }
     },
     onError: (err) => {
-      setError(err.message || "Erro ao fazer login. Verifique suas credenciais.");
+      setError(mensagemLoginAmigavel(err.message));
       setLoading(false);
     },
   });
@@ -78,6 +102,18 @@ export default function CustomLogin() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const emailNormalizado = email.trim().toLowerCase();
+
+    if (!emailNormalizado) {
+      setError("Informe seu e-mail.");
+      return;
+    }
+
+    if (!emailValido(emailNormalizado)) {
+      setError("E-mail inválido. Confira se o endereço foi digitado corretamente, incluindo @ e o domínio (ex.: nome@empresa.com).");
+      return;
+    }
     
     const credential = loginMode === "cpf" 
       ? cpf.replace(/\D/g, '') 
@@ -95,7 +131,7 @@ export default function CustomLogin() {
     
     setLoading(true);
     emailCpfLoginMutation.mutate({
-      email: email.trim().toLowerCase(),
+      email: emailNormalizado,
       credential,
     });
   };
