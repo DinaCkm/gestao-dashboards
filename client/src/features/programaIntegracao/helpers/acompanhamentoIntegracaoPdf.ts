@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { evolucaoPorPapel, PILARES_ACOMPANHAMENTO, percentualNumero, type RespostaAcompanhamento } from './evolucaoAcompanhamento';
+import { evolucaoPorPapel, evolucaoPesquisaColaborador, INDICES_PESQUISA_COLABORADOR, PILARES_ACOMPANHAMENTO, percentualNumero, type RespostaAcompanhamento } from './evolucaoAcompanhamento';
 
 export interface ColaboradorAcompanhamentoPdf {
   nome: string;
@@ -74,6 +74,52 @@ function alertasColaborador(colaborador: ColaboradorAcompanhamentoPdf): string[]
   return alertas;
 }
 
+function experienciaColaborador(doc: jsPDF, y: number, respostas: RespostaAcompanhamento[]) {
+  const momentos = evolucaoPesquisaColaborador(respostas);
+  y = section(doc, y, 'Evolução da experiência do colaborador');
+  if (!momentos.length) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(110, 110, 115);
+    doc.text('Ainda não há Pesquisa de Integração registrada para este colaborador.', 18, y);
+    return y + 8;
+  }
+
+  const xLabel = 18;
+  const xStart = 92;
+  const col = 20;
+  doc.setFillColor(242, 240, 246);
+  doc.rect(16, y, 178, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.6);
+  doc.setTextColor(70, 75, 85);
+  doc.text('DIMENSÃO', xLabel, y + 4.6);
+  momentos.forEach((m, i) => doc.text(m.label, xStart + i * col + 4, y + 4.6));
+  y += 7;
+
+  INDICES_PESQUISA_COLABORADOR.forEach((grupo) => {
+    y = ensure(doc, y, 8);
+    doc.setDrawColor(232, 230, 236);
+    doc.rect(16, y, 178, 8, 'S');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(35, 43, 55);
+    doc.text(grupo.nome, xLabel, y + 5);
+    momentos.forEach((m, i) => {
+      const v = m.indices[grupo.chave];
+      doc.text(v == null ? '—' : `${v.toFixed(1).replace('.', ',')}%`, xStart + i * col + 2, y + 5);
+    });
+    y += 8;
+  });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(110, 110, 120);
+  const nota = doc.splitTextToSize('As dimensões vêm da Pesquisa de Integração do próprio colaborador. Respostas “sem opinião” não entram na média e o item de sobrecarga é invertido para manter o mesmo sentido de leitura.', 174);
+  y = ensure(doc, y + 3, nota.length * 3 + 5);
+  doc.text(nota, 18, y);
+  return y + nota.length * 3 + 5;
+}
+
 function evolucao(doc: jsPDF, y: number, titulo: string, respostas: RespostaAcompanhamento[], papel: 'Gestor' | 'Anjo') {
   const momentos = evolucaoPorPapel(respostas, papel);
   y = section(doc, y, titulo);
@@ -142,7 +188,10 @@ function evolucao(doc: jsPDF, y: number, titulo: string, respostas: RespostaAcom
   return y + 25;
 }
 
-export function gerarAcompanhamentoIntegracaoPdf(colaborador: ColaboradorAcompanhamentoPdf) {
+export function gerarAcompanhamentoIntegracaoPdf(
+  colaborador: ColaboradorAcompanhamentoPdf,
+  opcoes: { visaoUgpRh?: boolean } = {},
+) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   doc.setFillColor(24, 34, 49);
   doc.rect(0, 0, 210, 35, 'F');
@@ -151,7 +200,7 @@ export function gerarAcompanhamentoIntegracaoPdf(colaborador: ColaboradorAcompan
   doc.setTextColor(255,255,255);
   doc.text('ECO DO B.E.M. · PROGRAMA DE INTEGRAÇÃO', 16, 11);
   doc.setFontSize(17);
-  doc.text('Acompanhamento da Integração', 16, 22);
+  doc.text(opcoes.visaoUgpRh ? 'Relatório Executivo de Integração' : 'Acompanhamento da Integração', 16, 22);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(195,202,212);
@@ -191,8 +240,13 @@ export function gerarAcompanhamentoIntegracaoPdf(colaborador: ColaboradorAcompan
     y += 2;
   }
 
-  y = evolucao(doc,y,'Evolução — Gestor',colaborador.respostas,'Gestor');
-  y = evolucao(doc,y,'Evolução — Anjo',colaborador.respostas,'Anjo');
+  if (opcoes.visaoUgpRh) {
+    y = experienciaColaborador(doc, y, colaborador.respostas);
+    y = evolucao(doc,y,'Evolução — Gestor',colaborador.respostas,'Gestor');
+    y = evolucao(doc,y,'Evolução — Anjo',colaborador.respostas,'Anjo');
+  } else {
+    y = evolucao(doc,y,'Minha evolução como gestor',colaborador.respostas,'Gestor');
+  }
 
   y = section(doc,y,'Formulários pendentes');
   if (!colaborador.formulariosPendentes.length) {
@@ -218,5 +272,5 @@ export function gerarAcompanhamentoIntegracaoPdf(colaborador: ColaboradorAcompan
     doc.text('Programa de Integração · Eco do B.E.M.',16,291);
     doc.text(`Página ${p} de ${pages}`,194,291,{align:'right'});
   }
-  doc.save(`Acompanhamento Integracao - ${nomeArquivo(colaborador.nome)}.pdf`);
+  doc.save(`${opcoes.visaoUgpRh ? 'Relatorio Executivo Integracao' : 'Acompanhamento Integracao'} - ${nomeArquivo(colaborador.nome)}.pdf`);
 }
