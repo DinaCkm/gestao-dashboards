@@ -2663,7 +2663,7 @@ const submitMetaEvidence = trpc.metas.enviarEvidencia.useMutation({
                           <Flag className="h-5 w-5 text-blue-600" />
                         </div>
                         <p className="text-2xl font-bold text-blue-900">{resumo.total}</p>
-                        <p className="text-xs text-blue-700 font-medium">Total de Metas</p>
+                        <p className="text-xs text-blue-700 font-medium">Total de Micrometas</p>
                       </CardContent>
                     </Card>
                     <Card className="bg-emerald-50 border border-emerald-200 shadow-sm">
