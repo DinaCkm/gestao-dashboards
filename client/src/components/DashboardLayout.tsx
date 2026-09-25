@@ -570,7 +570,7 @@ function DashboardLayoutContent({
 
   // Encontrar label ativo para mobile header
   const activeLabel = useMemo(() => {
-    if (location === "/anjo/formularios") return "Acompanhar Formulários";
+    if (location === "/anjo/formularios") return "Acompanhar Integração";
     if (location === "/anjo/orientacoes") return "Orientações do Anjo";
     if (location === "/anjo") return "Espaço do Anjo";
     if (location === "/") return "Painel Admin";
@@ -882,8 +882,8 @@ function DashboardLayoutContent({
                     <SidebarGroupLabel>Espaço do Anjo</SidebarGroupLabel>
                     <SidebarMenu>
                       <SidebarMenuItem>
-                        <SidebarMenuButton isActive={location === "/anjo/formularios"} onClick={() => setLocation("/anjo/formularios")} tooltip="Acompanhar Formulários">
-                          <ClipboardCheck className="h-4 w-4" /><span>Acompanhar Formulários</span>
+                        <SidebarMenuButton isActive={location === "/anjo/formularios"} onClick={() => setLocation("/anjo/formularios")} tooltip="Acompanhar Integração">
+                          <ClipboardCheck className="h-4 w-4" /><span>Acompanhar Integração</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       <SidebarMenuItem>

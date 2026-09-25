@@ -22,10 +22,28 @@ export type AnjoFormulario = {
   rotaPublica: string;
 };
 
+export type AnjoEvolucaoCiclo = {
+  ciclo: number;
+  label: string;
+  respondidoEm: string | null;
+  pilares: Record<string, number | null>;
+  mediaGeral: number | null;
+};
+
+export type AnjoEvolucao = {
+  processoId: number;
+  legacyId: string;
+  colaborador: string;
+  cargo: string;
+  unidade: string;
+  ciclos: AnjoEvolucaoCiclo[];
+};
+
 export type AnjoFormulariosResponse = {
   ok: boolean;
   indicadores: { aguardando: number; pendentes: number; respondidos: number };
   formularios: AnjoFormulario[];
+  evolucao: AnjoEvolucao[];
 };
 
 async function lerJson<T>(response: Response): Promise<T> {

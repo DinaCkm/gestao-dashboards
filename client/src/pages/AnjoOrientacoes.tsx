@@ -89,7 +89,7 @@ export default function AnjoOrientacoes() {
               <p className="mt-2 text-sm text-muted-foreground">Tudo o que você precisa saber para apoiar o colaborador durante sua integração.</p>
             </div>
             <Button type="button" onClick={() => setLocation("/anjo/formularios")}>
-              Acompanhar meus formulários <ArrowRight className="ml-2 h-4 w-4" />
+              Acompanhar integração <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -174,8 +174,8 @@ export default function AnjoOrientacoes() {
 
         <Card>
           <CardContent className="flex flex-col gap-3 pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="font-semibold">Precisa conferir seus formulários?</p><p className="text-sm text-muted-foreground">Veja o que está aguardando liberação, pendente ou já respondido.</p></div>
-            <Button type="button" variant="outline" onClick={() => setLocation("/anjo/formularios")}><Users className="mr-2 h-4 w-4" />Acompanhar formulários</Button>
+            <div><p className="font-semibold">Precisa conferir seus formulários?</p><p className="text-sm text-muted-foreground">Veja seus formulários e a evolução das avaliações que você já respondeu.</p></div>
+            <Button type="button" variant="outline" onClick={() => setLocation("/anjo/formularios")}><Users className="mr-2 h-4 w-4" />Acompanhar integração</Button>
           </CardContent>
         </Card>
       </div>
