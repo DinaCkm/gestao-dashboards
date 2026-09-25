@@ -121,6 +121,7 @@ interface ColaboradorAcompanhamento {
 interface AcompanhamentoResponse {
   ok: boolean;
   scope: 'all' | 'gestor';
+  accessLevel?: 'ugp' | 'gestor';
   adminView?: boolean;
   gestoresDisponiveis?: GestorDisponivel[];
   gestorSelecionado?: GestorDisponivel | null;
@@ -184,6 +185,170 @@ function fmtPct1(n: number | null | undefined) {
   return n == null || !Number.isFinite(Number(n))
     ? '—'
     : `${Number(n).toFixed(1).replace('.', ',')}%`;
+}
+
+function mediaNumeros(valores: Array<number | null | undefined>): number | null {
+  const validos = valores.filter((v): v is number => v != null && Number.isFinite(Number(v))).map(Number);
+  return validos.length ? validos.reduce((s, v) => s + v, 0) / validos.length : null;
+}
+
+function mediaMomentoPesquisa(momento: ReturnType<typeof evolucaoPesquisaColaborador>[number] | undefined): number | null {
+  if (!momento) return null;
+  return mediaNumeros(Object.values(momento.indices));
+}
+
+function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
+  const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
+  const gestor = evolucaoPorPapel(colaborador.respostas, 'Gestor');
+  const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
+
+  const experiencia = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+  const adaptacao = mediaNumeros([
+    gestor[gestor.length - 1]?.mediaGeral == null ? null : gestor[gestor.length - 1]!.mediaGeral! * 20,
+    anjo[anjo.length - 1]?.mediaGeral == null ? null : anjo[anjo.length - 1]!.mediaGeral! * 20,
+  ]);
+  const desenvolvimento = mediaNumeros([
+    colaborador.pdi.percentual,
+    colaborador.jornadaCompliance.percentual,
+  ]);
+
+  const componentes = [
+    { chave: 'Experiência', valor: experiencia, peso: 40 },
+    { chave: 'Adaptação observada', valor: adaptacao, peso: 35 },
+    { chave: 'Desenvolvimento', valor: desenvolvimento, peso: 25 },
+  ].filter((item) => item.valor != null);
+
+  const cobertura = componentes.reduce((s, item) => s + item.peso, 0);
+  const indice = cobertura >= 60
+    ? componentes.reduce((s, item) => s + Number(item.valor) * item.peso, 0) / cobertura
+    : null;
+
+  return { indice, cobertura, experiencia, adaptacao, desenvolvimento };
+}
+
+function saudeProcesso(colaborador: ColaboradorAcompanhamento) {
+  const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
+  const pendentes = colaborador.formulariosPendentes.length;
+  const alinhamentosEsperados = colaborador.dia >= 150 ? 4 : colaborador.dia >= 75 ? 3 : colaborador.dia >= 45 ? 2 : colaborador.dia >= 15 ? 1 : 0;
+  const alinhamentosEmAberto = Math.max(0, alinhamentosEsperados - colaborador.alinhamentosFeitos);
+
+  if (atrasados > 0 || alinhamentosEmAberto > 0) {
+    return {
+      rotulo: 'Requer atenção',
+      detalhe: [
+        atrasados ? `${atrasados} formulário(s) atrasado(s)` : '',
+        alinhamentosEmAberto ? `${alinhamentosEmAberto} alinhamento(s) previsto(s) ainda não realizado(s)` : '',
+      ].filter(Boolean).join(' · '),
+      classes: 'border-amber-300 bg-amber-50 text-amber-950',
+    };
+  }
+  if (pendentes > 0) {
+    return {
+      rotulo: 'Em acompanhamento',
+      detalhe: `${pendentes} formulário(s) solicitado(s) aguardando resposta`,
+      classes: 'border-blue-200 bg-blue-50 text-blue-950',
+    };
+  }
+  return {
+    rotulo: 'Em dia',
+    detalhe: 'Sem pendências operacionais identificadas até este momento.',
+    classes: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+  };
+}
+
+function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
+  const sinais: string[] = [];
+  const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
+  if (atrasados) sinais.push(`${atrasados} formulário(s) atrasado(s)`);
+
+  const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
+  if (pesquisa.length >= 2) {
+    const anterior = mediaMomentoPesquisa(pesquisa[pesquisa.length - 2]);
+    const atual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+    if (anterior != null && atual != null && anterior - atual >= 10) {
+      sinais.push(`experiência do colaborador caiu ${Math.round(anterior - atual)} p.p. desde o ciclo anterior`);
+    }
+  }
+
+  const gestor = evolucaoPorPapel(colaborador.respostas, 'Gestor');
+  const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
+  const g = gestor[gestor.length - 1]?.mediaGeral;
+  const a = anjo[anjo.length - 1]?.mediaGeral;
+  if (g != null && a != null && Math.abs(g - a) * 20 >= 20) {
+    sinais.push('Gestor e Anjo apresentam percepções significativamente diferentes no ciclo mais recente');
+  }
+
+  if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
+    sinais.push(`PDI com ${Math.round(colaborador.pdi.percentual)}% de avanço`);
+  }
+  if (colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual != null && colaborador.jornadaCompliance.percentual === 0) {
+    sinais.push('Jornada Compliance ainda não iniciada');
+  }
+  return sinais;
+}
+
+function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
+  const gestor = evolucaoPorPapel(colaborador.respostas, 'Gestor');
+  const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
+  const pesquisaAtual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+  const gestorAtual = gestor[gestor.length - 1]?.mediaGeral == null ? null : gestor[gestor.length - 1]!.mediaGeral! * 20;
+  const anjoAtual = anjo[anjo.length - 1]?.mediaGeral == null ? null : anjo[anjo.length - 1]!.mediaGeral! * 20;
+  const sinais = sinaisAtencaoUgp(colaborador);
+
+  const evolucaoTexto = (() => {
+    if (pesquisa.length < 2) return 'Ainda não há dois ciclos da Pesquisa de Integração para comparar a experiência do colaborador.';
+    const anterior = mediaMomentoPesquisa(pesquisa[pesquisa.length - 2]);
+    const atual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+    if (anterior == null || atual == null) return 'A Pesquisa de Integração ainda não possui base suficiente para comparar os dois ciclos mais recentes.';
+    const delta = atual - anterior;
+    if (Math.abs(delta) < 3) return 'A experiência relatada pelo colaborador permaneceu estável entre os dois ciclos mais recentes.';
+    return delta > 0
+      ? `A experiência relatada pelo colaborador melhorou aproximadamente ${Math.round(delta)} p.p. desde o ciclo anterior.`
+      : `A experiência relatada pelo colaborador caiu aproximadamente ${Math.round(Math.abs(delta))} p.p. desde o ciclo anterior.`;
+  })();
+
+  return (
+    <Card className="overflow-hidden border-violet-200/80">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg"><Sparkles className="h-5 w-5 text-violet-600" />Leitura integrada do ciclo</CardTitle>
+        <CardDescription>
+          Síntese para UGP/RH. Os três números abaixo resumem instrumentos diferentes e não representam uma comparação de perguntas idênticas.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            ['Colaborador', pesquisaAtual, 'Pesquisa de Integração'],
+            ['Gestor', gestorAtual, 'Avaliação do Programa'],
+            ['Anjo', anjoAtual, 'Avaliação do Programa'],
+          ].map(([rotulo, valor, fonte]) => (
+            <div key={String(rotulo)} className="rounded-xl border bg-muted/15 p-4">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{rotulo}</div>
+              <div className="mt-1 text-3xl font-bold">{valor == null ? '—' : `${Math.round(Number(valor))}%`}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{fonte}</div>
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-xl border bg-slate-50/70 p-4 text-sm">
+            <div className="font-semibold">Desde o ciclo anterior</div>
+            <p className="mt-1 text-muted-foreground">{evolucaoTexto}</p>
+          </div>
+          <div className="rounded-xl border bg-slate-50/70 p-4 text-sm">
+            <div className="font-semibold">Pontos para acompanhamento</div>
+            {sinais.length ? (
+              <ul className="mt-1 space-y-1 text-muted-foreground">
+                {sinais.slice(0, 3).map((sinal) => <li key={sinal}>• {sinal}</li>)}
+              </ul>
+            ) : (
+              <p className="mt-1 text-muted-foreground">Nenhum sinal objetivo de atenção identificado nos dados disponíveis deste ciclo.</p>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function PerfilAssessmentModal({
@@ -922,7 +1087,18 @@ export default function AcompanharIntegracaoGestor() {
   }, [dados, busca]);
 
   const colaborador = (dados?.colaboradores || []).find((c) => c.id === selecionadoId) || filtrados[0] || null;
+  const isUgpRh = dados?.accessLevel === 'ugp' || dados?.scope === 'all';
   const alertasColaborador = colaborador ? alertasDoColaborador(colaborador) : [];
+  const indiceAtual = colaborador && isUgpRh ? indiceIntegracao(colaborador) : null;
+  const saudeAtual = colaborador ? saudeProcesso(colaborador) : null;
+  const radarUgp = useMemo(() => {
+    if (!isUgpRh) return [];
+    return (dados?.colaboradores || [])
+      .map((item) => ({ item, sinais: sinaisAtencaoUgp(item) }))
+      .filter((entrada) => entrada.sinais.length > 0)
+      .sort((a, b) => b.sinais.length - a.sinais.length)
+      .slice(0, 5);
+  }, [dados, isUgpRh]);
 
   const trocarVisaoGerente = (value: string) => {
     setGestorView(value);
@@ -937,7 +1113,7 @@ export default function AcompanharIntegracaoGestor() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="text-sm font-semibold uppercase tracking-wider text-violet-600">
-              {dados?.adminView ? 'Visão Administrativa' : 'Visão do Gestor'}
+              {dados?.adminView ? 'Visão Administrativa' : isUgpRh ? 'Visão UGP/RH' : 'Visão do Gestor'}
             </div>
             <h1 className="text-3xl font-bold tracking-tight">Acompanhar Integração</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -977,7 +1153,38 @@ export default function AcompanharIntegracaoGestor() {
         ) : erro ? (
           <Card><CardContent className="py-12 text-center"><p className="font-semibold text-destructive">{erro}</p><Button className="mt-4" onClick={() => void carregar()}>Tentar novamente</Button></CardContent></Card>
         ) : (
-          <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
+          <div className="space-y-6">
+            {isUgpRh && (
+              <Card className="border-violet-200/80 bg-gradient-to-r from-violet-50/90 via-white to-indigo-50/70">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg"><AlertTriangle className="h-5 w-5 text-violet-700" />Radar de atenção</CardTitle>
+                  <CardDescription>Prioriza sinais objetivos dos colaboradores ativos sem transformar percepções em diagnóstico ou previsão.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!radarUgp.length ? (
+                    <div className="rounded-lg border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">Nenhum sinal objetivo de atenção identificado nos dados disponíveis neste momento.</div>
+                  ) : (
+                    <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                      {radarUgp.map(({ item, sinais }) => (
+                        <button
+                          type="button"
+                          key={item.id}
+                          onClick={() => setSelecionadoId(item.id)}
+                          className="rounded-xl border bg-white p-4 text-left transition hover:-translate-y-px hover:shadow-sm"
+                        >
+                          <div className="font-semibold">{item.nome}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{item.cargo || 'Cargo não informado'} · Dia {item.dia}/{item.totalDias}</div>
+                          <div className="mt-3 space-y-1 text-xs text-amber-900">
+                            {sinais.slice(0, 2).map((sinal) => <div key={sinal}>• {sinal}</div>)}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            <div className="grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
             <Card className="h-fit xl:sticky xl:top-4">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base"><Users className="h-4 w-4" />Colaboradores</CardTitle>
@@ -1005,19 +1212,21 @@ export default function AcompanharIntegracaoGestor() {
                           <div className="font-semibold">{c.nome}</div>
                           <div className="mt-1 text-xs text-muted-foreground">{c.cargo || 'Cargo não informado'} · {c.unidade || 'Unidade não informada'}</div>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-8 shrink-0 gap-1 px-2 text-[11px]"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            abrirPerfil(c);
-                          }}
-                        >
-                          <Sparkles className="h-3.5 w-3.5" />
-                          Assessment
-                        </Button>
+                        {isUgpRh && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 shrink-0 gap-1 px-2 text-[11px]"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              abrirPerfil(c);
+                            }}
+                          >
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Assessment
+                          </Button>
+                        )}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2 text-xs">
                         <span>Dia {c.dia}/{c.totalDias}</span>
@@ -1044,19 +1253,21 @@ export default function AcompanharIntegracaoGestor() {
                         <p className="mt-2 text-xs !text-white/80">Início: {dataBr(colaborador.inicio)}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="secondary"
-                          className="gap-2 border-0 bg-white/95 text-violet-900 hover:bg-white"
-                          onClick={() => abrirPerfil(colaborador)}
-                        >
-                          <Sparkles className="h-4 w-4" /> Perfil do Assessment
-                        </Button>
+                        {isUgpRh && (
+                          <Button
+                            variant="secondary"
+                            className="gap-2 border-0 bg-white/95 text-violet-900 hover:bg-white"
+                            onClick={() => abrirPerfil(colaborador)}
+                          >
+                            <Sparkles className="h-4 w-4" /> Perfil do Assessment
+                          </Button>
+                        )}
                         <Button
                           variant="secondary"
                           className="gap-2 border-0 bg-amber-400 text-black hover:bg-amber-300"
                           onClick={() => gerarAcompanhamentoIntegracaoPdf(colaborador)}
                         >
-                          <Download className="h-4 w-4" /> Exportar relatório completo PDF
+                          <Download className="h-4 w-4" /> {isUgpRh ? 'Exportar relatório completo PDF' : 'Exportar acompanhamento PDF'}
                         </Button>
                       </div>
                     </div>
@@ -1075,7 +1286,26 @@ export default function AcompanharIntegracaoGestor() {
                   </div>
                 )}
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {isUgpRh && indiceAtual && (
+                    <Card className="border-violet-200">
+                      <CardContent className="pt-5">
+                        <div className="text-xs font-semibold uppercase text-muted-foreground">Índice de Integração</div>
+                        <div className="mt-2 text-3xl font-bold">{indiceAtual.indice == null ? '—' : `${Math.round(indiceAtual.indice)}%`}</div>
+                        <Progress className="mt-3" value={indiceAtual.indice || 0} />
+                        <div className="mt-2 text-xs text-muted-foreground">Cobertura dos dados: {indiceAtual.cobertura}% · mínimo de 60% para cálculo.</div>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {saudeAtual && (
+                    <Card className={saudeAtual.classes}>
+                      <CardContent className="pt-5">
+                        <div className="text-xs font-semibold uppercase opacity-70">Saúde do Processo</div>
+                        <div className="mt-2 text-2xl font-bold">{saudeAtual.rotulo}</div>
+                        <div className="mt-2 text-xs opacity-80">{saudeAtual.detalhe}</div>
+                      </CardContent>
+                    </Card>
+                  )}
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Dia do Onboarding</div><div className="mt-2 text-3xl font-bold">{colaborador.dia}<span className="text-base text-muted-foreground">/{colaborador.totalDias}</span></div><Progress className="mt-3" value={(colaborador.dia/colaborador.totalDias)*100} /></CardContent></Card>
                   <Card>
                     <CardContent className="pt-5">
@@ -1140,11 +1370,20 @@ export default function AcompanharIntegracaoGestor() {
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Alinhamentos realizados</div><div className="mt-2 text-3xl font-bold">{colaborador.alinhamentosFeitos}<span className="text-base text-muted-foreground">/{colaborador.alinhamentosTotal}</span></div><Progress className="mt-3" value={(colaborador.alinhamentosFeitos/colaborador.alinhamentosTotal)*100} /></CardContent></Card>
                 </div>
 
-                <EvolucaoBloco titulo="Evolução — Percepção do Gestor sobre o Empregado" respostas={colaborador.respostas} papel="Gestor" />
-                <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Empregado" respostas={colaborador.respostas} papel="Anjo" />
+                {isUgpRh && <LeituraIntegradaUgp colaborador={colaborador} />}
 
-                {dados?.scope === 'all' && (
+                {isUgpRh && (
                   <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
+                )}
+
+                <EvolucaoBloco
+                  titulo={isUgpRh ? "Evolução — Percepção do Gestor sobre o Empregado" : "Minha percepção sobre o colaborador"}
+                  respostas={colaborador.respostas}
+                  papel="Gestor"
+                />
+
+                {isUgpRh && (
+                  <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Empregado" respostas={colaborador.respostas} papel="Anjo" />
                 )}
 
                 <Card>
@@ -1198,13 +1437,16 @@ export default function AcompanharIntegracaoGestor() {
             ) : (
               <Card><CardContent className="py-16 text-center"><UserCheck className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-3 text-muted-foreground">Nenhum colaborador disponível para este acesso.</p></CardContent></Card>
             )}
+            </div>
           </div>
         )}
-        <PerfilAssessmentModal
-          colaborador={perfilColaborador}
-          open={perfilOpen}
-          onOpenChange={setPerfilOpen}
-        />
+        {isUgpRh && (
+          <PerfilAssessmentModal
+            colaborador={perfilColaborador}
+            open={perfilOpen}
+            onOpenChange={setPerfilOpen}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
