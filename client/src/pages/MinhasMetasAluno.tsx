@@ -205,7 +205,7 @@ export default function MinhasMetasAluno() {
                 <Target className="h-5 w-5 text-[#0A1E3E]" />
               </div>
               <p className="text-3xl font-bold text-[#0A1E3E]">{resumo.total}</p>
-              <p className="text-xs text-gray-500 mt-1">Total de Metas</p>
+              <p className="text-xs text-gray-500 mt-1">Total de Micrometas</p>
             </CardContent>
           </Card>
           <Card className="border border-gray-200 shadow-sm">
@@ -214,7 +214,7 @@ export default function MinhasMetasAluno() {
                 <CheckCircle2 className="h-5 w-5 text-emerald-600" />
               </div>
               <p className="text-3xl font-bold text-emerald-600">{resumo.cumpridas}</p>
-              <p className="text-xs text-gray-500 mt-1">Cumpridas</p>
+              <p className="text-xs text-gray-500 mt-1">Micrometas Cumpridas</p>
             </CardContent>
           </Card>
           <Card className="border border-gray-200 shadow-sm">
@@ -223,7 +223,7 @@ export default function MinhasMetasAluno() {
                 <XCircle className="h-5 w-5 text-red-500" />
               </div>
               <p className="text-3xl font-bold text-red-500">{naoCumpridas}</p>
-              <p className="text-xs text-gray-500 mt-1">Não Cumpridas</p>
+              <p className="text-xs text-gray-500 mt-1">Micrometas Não Cumpridas</p>
             </CardContent>
           </Card>
           <Card className="border border-gray-200 shadow-sm">
