@@ -1294,6 +1294,15 @@ export default function AcompanharIntegracaoGestor() {
                         <div className="mt-2 text-3xl font-bold">{indiceAtual.indice == null ? '—' : `${Math.round(indiceAtual.indice)}%`}</div>
                         <Progress className="mt-3" value={indiceAtual.indice || 0} />
                         <div className="mt-2 text-xs text-muted-foreground">Cobertura dos dados: {indiceAtual.cobertura}% · mínimo de 60% para cálculo.</div>
+                        <details className="mt-3 rounded-lg border bg-muted/10 px-3 py-2 text-xs">
+                          <summary className="cursor-pointer font-semibold text-violet-700">Como é calculado</summary>
+                          <div className="mt-2 space-y-1.5 text-muted-foreground">
+                            <div className="flex justify-between gap-3"><span>Experiência do colaborador</span><b>{indiceAtual.experiencia == null ? 'sem base' : `${Math.round(indiceAtual.experiencia)}%`} · peso 40%</b></div>
+                            <div className="flex justify-between gap-3"><span>Adaptação observada</span><b>{indiceAtual.adaptacao == null ? 'sem base' : `${Math.round(indiceAtual.adaptacao)}%`} · peso 35%</b></div>
+                            <div className="flex justify-between gap-3"><span>Desenvolvimento (PDI + Compliance)</span><b>{indiceAtual.desenvolvimento == null ? 'sem base' : `${Math.round(indiceAtual.desenvolvimento)}%`} · peso 25%</b></div>
+                            <p className="pt-1 leading-relaxed">O cálculo usa apenas componentes disponíveis e reajusta proporcionalmente os pesos. Assessment/DISC não entra no índice e pendências administrativas não reduzem a nota da pessoa.</p>
+                          </div>
+                        </details>
                       </CardContent>
                     </Card>
                   )}
