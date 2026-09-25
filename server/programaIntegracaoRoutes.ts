@@ -692,6 +692,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     };
     const integracaoMode = user.role === "admin" ? "all" : String(integracaoConfig.mode || "gestor");
     const scopeAll = integracaoMode === "all";
+    // A visão UGP/RH não é um novo papel global. Ela nasce exclusivamente do
+    // escopo "todos" do Programa de Integração. Escopos "gestor" e "manual"
+    // permanecem restritos, mesmo quando incluem mais de um colaborador.
+    const acessoUgpRh = user.role === "admin" ? !String(req.query.gestor || "").trim() || String(req.query.gestor || "").trim() === "all" : scopeAll;
     const manualProcessIds = new Set<number>(
       Array.isArray(integracaoConfig.processIds)
         ? integracaoConfig.processIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
@@ -814,7 +818,8 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     if (!permitidos.length) {
       return res.json({
         ok: true,
-        scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : integracaoMode,
+        scope: acessoUgpRh ? "all" : "gestor",
+        accessLevel: acessoUgpRh ? "ugp" : "gestor",
         adminView: user.role === "admin",
         gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
         gestorSelecionado,
@@ -999,24 +1004,47 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         ultimaEntradaEcoLider: andamento?.ultimaEntradaEcoLider || null,
         assessmentPotencialConcluido: andamento?.assessmentPotencialConcluido ?? null,
         assessmentPotencialConcluidoEm: andamento?.assessmentPotencialConcluidoEm || null,
-        perfilAssessment: {
-          alunoEcoId: ecoId || null,
-          disc: perfilAssessment?.disc || null,
-          autoavaliacaoClusters: perfilAssessment?.autoavaliacaoClusters || [],
-          expectativaGestor,
-        },
-        respostas: respostas.filter((r) =>
-          (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo")) ||
-          r.form === "pesquisa"
-        ),
-        formulariosPendentes,
+        // LGPD / minimização: detalhes de Assessment e percepções do
+        // colaborador/Anjo só são enviados para a visão UGP/RH. Na visão de
+        // Gestor, o servidor entrega apenas a evolução produzida pelo próprio
+        // Gestor e suas pendências de formulário.
+        perfilAssessment: acessoUgpRh
+          ? {
+              alunoEcoId: ecoId || null,
+              disc: perfilAssessment?.disc || null,
+              autoavaliacaoClusters: perfilAssessment?.autoavaliacaoClusters || [],
+              expectativaGestor,
+            }
+          : {
+              alunoEcoId: ecoId || null,
+              disc: null,
+              autoavaliacaoClusters: [],
+              expectativaGestor: {
+                temRespostaBem: false,
+                descritoresReconhecidos: 0,
+                compatibilidade: null,
+                motivo: null,
+                matriz: null,
+                clusters: [],
+              },
+            },
+        respostas: acessoUgpRh
+          ? respostas.filter((r) =>
+              (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo")) ||
+              r.form === "pesquisa"
+            )
+          : respostas.filter((r) => r.form === "aval" && r.papel === "Gestor"),
+        formulariosPendentes: acessoUgpRh
+          ? formulariosPendentes
+          : formulariosPendentes.filter((p) => p.papel === "Gestor"),
       };
     });
 
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      scope: user.role === "admin" ? (gestorSelecionado ? "gestor" : "all") : integracaoMode,
+      scope: acessoUgpRh ? "all" : "gestor",
+        accessLevel: acessoUgpRh ? "ugp" : "gestor",
       adminView: user.role === "admin",
       gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
       gestorSelecionado,
