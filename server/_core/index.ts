@@ -30,7 +30,7 @@ import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
 import { iniciarCronLembreteChecklistWebinar } from "../cronLembreteChecklistWebinar";
 import { iniciarCronDevolutivaLembreteD1 } from "../cronDevolutivaLembreteD1";
 import { ENV } from "./env";
-import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport, ensureDevolutivasTables, ensureMetaEvidenciaColumns, ensureDiretorSupport, ensureDemoUgpLoginFixture, ensureDemoIntegrationProcessFixture } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport, ensureDevolutivasTables, ensureMetaEvidenciaColumns, ensureDiretorSupport, ensureDemoUgpLoginFixture } from "../db";
 
 async function startServer() {
   // Garantir que as tabelas da Biblioteca Pedagógica existam no banco
@@ -48,7 +48,6 @@ async function startServer() {
   await ensureDiretorSupport(); // garante papel de Diretor/Área (EcoDISC 360) com visão restrita por diretoria
   await ensureCourseMetadataTable(); // garante persistência do resumo textual dos cursos
   await ensureDemoUgpLoginFixture(); // normaliza somente o usuário fictício de demonstração da UGP
-  await ensureDemoIntegrationProcessFixture(); // cria apenas o processo fictício isolado de demonstração da UGP
 
   const app = express();
   const server = createServer(app);
