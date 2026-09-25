@@ -148,6 +148,35 @@ export function DetalheProcessoReal({
   const dia = useMemo(() => diaAtualDetalhe(processo), [processo]);
   const alinhamentos = useMemo(() => resumosAlinhamentosDetalhe(processo, feriados), [processo, feriados]);
   const etapas = useMemo(() => etapasDetalheProcesso(processo, feriados, filtro), [processo, feriados, filtro]);
+  const etapasTodas = useMemo(() => etapasDetalheProcesso(processo, feriados, ''), [processo, feriados]);
+  const momentosIntegracao = useMemo(() => {
+    const etapaPorId = new Map(etapasTodas.map((item) => [item.etapa.et.id, item]));
+    const marco = (id: string, titulo: string, apoio: string) => {
+      const item = etapaPorId.get(id);
+      return {
+        id,
+        titulo,
+        apoio,
+        status: item?.estado?.l || 'Não iniciado',
+        statusKey: item?.estado?.k || 'off',
+      };
+    };
+    return [
+      marco('pre', 'Preparação', 'Antes da chegada'),
+      marco('d1', 'Chegada', '1º dia'),
+      marco('d15', '1º alinhamento', '15º dia'),
+      marco('d45', '2º alinhamento', '45º dia'),
+      marco('d75', '3º alinhamento', '75º dia'),
+      marco('d150', '4º alinhamento', '150º dia'),
+      {
+        id: 'encerramento',
+        titulo: 'Encerramento',
+        apoio: processo.situacao === 'encerrado' ? 'Processo concluído' : 'Após o ciclo final',
+        status: processo.situacao === 'encerrado' ? 'Encerrado' : 'Aguardando',
+        statusKey: processo.situacao === 'encerrado' ? 'ok' : 'off',
+      },
+    ];
+  }, [etapasTodas, processo.situacao]);
 
   useEffect(() => {
     if (!itemDeepLink || deepLinkAplicadoRef.current) return;
@@ -664,24 +693,58 @@ export function DetalheProcessoReal({
       </div>
       <RespostasProcessoAgrupadas processo={processo} />
 
-      <div className="grid gap-3 md:grid-cols-4">
-        {alinhamentos.map((alinhamento) => (
-          <Card key={alinhamento.n}>
-            <CardContent className="pt-5 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-semibold">{alinhamento.n}º alinhamento</p>
-                <Badge variant="outline" className={statusClasses[alinhamento.estado.k]}>{alinhamento.estado.l}</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">Marco do {alinhamento.marco}º dia{alinhamento.dataMarco ? ` · previsto ${formatarData(alinhamento.dataMarco)}` : ''}</p>
-              <p className="text-xs">Data agendada: <b>{alinhamento.data ? formatarData(alinhamento.data) : 'não definida'}</b>{alinhamento.hora ? ` · ${alinhamento.hora}` : ''}</p>
-              <p className="text-xs">Agendamento: <b>{alinhamento.agendamento}</b></p>
-              <p className="text-xs">Data efetiva da reunião: <b>{alinhamento.dataEfetiva ? formatarData(alinhamento.dataEfetiva) : 'não registrada'}</b></p>
-              {alinhamento.link && <p className="truncate text-xs" title={alinhamento.link}>Link da reunião: <b>{alinhamento.link}</b></p>}
-              {alinhamento.relatorios && <p className="text-xs">Relatórios: <b>{alinhamento.relatorios}</b></p>}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card className="overflow-hidden">
+        <CardContent className="pt-5">
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Momentos da Integração</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Visão rápida dos grandes marcos do processo. Os detalhes e as ações continuam na jornada abaixo.
+            </p>
+          </div>
+          <div className="overflow-x-auto pb-1">
+            <div className="grid min-w-[880px] grid-cols-7 gap-2">
+              {momentosIntegracao.map((momento, index) => (
+                <div key={momento.id} className="relative">
+                  {index < momentosIntegracao.length - 1 && (
+                    <div className="absolute left-[58%] top-4 h-px w-[88%] bg-border" aria-hidden="true" />
+                  )}
+                  <div className="relative z-10 rounded-xl border bg-background p-3">
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                      <span className={`grid h-8 w-8 place-items-center rounded-full border text-xs font-bold ${statusClasses[momento.statusKey as keyof typeof statusClasses]}`}>
+                        {index + 1}
+                      </span>
+                      <Badge variant="outline" className={statusClasses[momento.statusKey as keyof typeof statusClasses]}>
+                        {momento.status}
+                      </Badge>
+                    </div>
+                    <div className="text-sm font-semibold leading-tight">{momento.titulo}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{momento.apoio}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <details className="mt-4 rounded-lg border bg-muted/10">
+            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-muted-foreground">
+              Ver datas dos alinhamentos
+            </summary>
+            <div className="grid gap-2 border-t p-3 md:grid-cols-2 xl:grid-cols-4">
+              {alinhamentos.map((alinhamento) => (
+                <div key={alinhamento.n} className="rounded-lg border bg-background p-3 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold">{alinhamento.n}º alinhamento</span>
+                    <Badge variant="outline" className={statusClasses[alinhamento.estado.k]}>{alinhamento.estado.l}</Badge>
+                  </div>
+                  <p className="mt-2 text-muted-foreground">
+                    Previsto: {alinhamento.dataMarco ? formatarData(alinhamento.dataMarco) : '—'}
+                    {alinhamento.dataEfetiva ? ` · realizado: ${formatarData(alinhamento.dataEfetiva)}` : ''}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </details>
+        </CardContent>
+      </Card>
 
       <div className="flex flex-wrap gap-2">
         {FILTROS_DETALHE_PROCESSO.map(([valor, label]) => (
