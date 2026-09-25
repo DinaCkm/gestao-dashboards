@@ -57,10 +57,14 @@ export const MODELOS_EMAIL_POS1_INTEGRACAO: Record<string, ModeloEmailIntegracao
       'Olá {{GESTOR_1}}, tudo bem?\n\n' +
       'Obrigado pelo tempo e pela abertura na nossa conversa de **{{DATA_ALIN_1}}**. Suas percepções foram fundamentais para desenhar o plano de desenvolvimento de {{PRIMEIRO_NOME}}.\n\n' +
       '**Segue em anexo a ata** do alinhamento, com o que foi conversado e os pontos combinados.\n\n' +
-      '**O PDI de Integração já está publicado** na plataforma do Ecossistema do B.E.M. e você pode acompanhar as ações e os prazos por lá:\n{{LINK_ECOLIDER}}\n\n' +
+      '**O PDI de Integração já está publicado** na plataforma do Ecossistema do B.E.M.\n\n' +
+      '**Você pode escolher como prefere acompanhar**\n' +
+      '- Se quiser acompanhar a evolução do processo, as ações do PDI e a situação dos formulários/preenchimentos, acesse o EcoLíder:\n{{LINK_ECOLIDER}}\n' +
+      '- Se o seu acesso já estiver habilitado, entre com o seu **e-mail e CPF**. Se ainda não estiver habilitado, ou se tiver qualquer dúvida para entrar, é só nos avisar que ajudamos.\n' +
+      '- Se preferir apenas responder o formulário deste ciclo, não precisa entrar na plataforma: você pode usar diretamente o link abaixo.\n\n' +
       'Nos próximos ciclos vamos revisitar esse plano com você — se em algum momento achar que faz sentido ajustar alguma ação, é só nos dizer.\n\n' +
       '---\n\n' +
-      '**Um pedido rápido — formulário obrigatório**\nPara registrarmos sua avaliação deste primeiro ciclo, o preenchimento do **Formulário de Avaliação do Programa de Integração** é obrigatório:\n{{LINK_AVAL_PROGRAMA}}\n\n' +
+      '**Um pedido rápido — formulário obrigatório**\nPara registrarmos sua avaliação deste primeiro ciclo, o preenchimento do **Formulário de Avaliação do Programa de Integração** é obrigatório. Você pode responder diretamente por este link, **sem precisar fazer login**:\n{{LINK_AVAL_PROGRAMA}}\n\n' +
       'São poucos minutos, e é com base nele que conseguimos preparar o relatório de evolução do colaborador para as próximas conversas.\n\n' +
       'Obrigado pela parceria!' + ASS,
     anexo: 'Ata do 1º Alinhamento',
@@ -95,7 +99,12 @@ export const MODELOS_EMAIL_POS1_INTEGRACAO: Record<string, ModeloEmailIntegracao
       'Olá {{ANJO_1}}, tudo bem?\n\n' +
       'Fizemos há pouco o **1º Alinhamento** do processo de integração de **{{COLABORADOR}}**, e agora gostaríamos de ouvir você.\n\n' +
       'Como Anjo, você acompanha o dia a dia de perto e enxerga coisas que não aparecem numa conversa formal: como {{PRIMEIRO_NOME}} está se enturmando, se está à vontade para perguntar, o que ainda parece difícil.\n\n' +
-      '**Formulário de Avaliação do Programa de Integração — preenchimento obrigatório:**\n{{LINK_AVAL_PROGRAMA}}\n\n' +
+      '**Você pode escolher como prefere acompanhar**\n' +
+      '- Se quiser acompanhar a evolução do processo e a situação dos seus formulários, acesse o EcoLíder:\n{{LINK_ECOLIDER}}\n' +
+      '- Entre com o seu **e-mail e CPF**. No **Espaço do Anjo** você pode acompanhar o que está aguardando liberação, o que está pendente, o que já foi respondido e consultar as orientações do seu papel.\n' +
+      '- Se ainda não conseguir acessar, ou se tiver qualquer dúvida, é só nos avisar que ajudamos.\n' +
+      '- Se preferir apenas responder este formulário agora, não precisa entrar na plataforma.\n\n' +
+      '**Formulário de Avaliação do Programa de Integração — preenchimento obrigatório:**\nVocê pode responder diretamente por este link, **sem precisar fazer login**:\n{{LINK_AVAL_PROGRAMA}}\n\n' +
       'São poucos minutos e sua percepção entra no acompanhamento do processo.\n\n' +
       'E, claro: se estiver sentindo qualquer dificuldade no papel de Anjo, ou notar algo que mereça atenção, fale com a gente a qualquer momento — não precisa esperar o formulário.\n\n' +
       'Obrigado pelo apoio!' + ASS,
