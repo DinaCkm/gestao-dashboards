@@ -11,6 +11,39 @@ const ITENS_AVALIACAO_ANJO: Record<number, string> = {
   4: "pos4-09",
 };
 
+const PILARES_AVALIACAO_ANJO = [
+  { key: "adaptacao", nome: "Adaptação ao Trabalho", codigos: ["aval_compromissos","aval_parceria","aval_compartilha_informacoes","aval_persistencia","aval_interesse_entusiasmo","aval_expressao"] },
+  { key: "etica", nome: "Conduta Ética", codigos: ["aval_padroes_eticos","aval_transparencia","aval_respeito"] },
+  { key: "seguranca", nome: "Segurança da Informação", codigos: ["aval_sigilo","aval_consistencia_informacoes","aval_analise_decisao"] },
+  { key: "postura", nome: "Postura no Trabalho", codigos: ["aval_conhecimento_tecnico","aval_conhecimento_pratica","aval_atividades_previstas","aval_apoio_tecnico","aval_interpretacao","aval_melhorias"] },
+  { key: "equipe", nome: "Trabalho em Equipe", codigos: ["aval_participa_discussoes","aval_cooperacao","aval_clareza_ideias","aval_aceita_pontos_vista","aval_articulacao","aval_postura_equipe"] },
+  { key: "qualidade", nome: "Qualidade do Trabalho", codigos: ["aval_foco_resultados","aval_cumpre_prazos","aval_cumpre_metas","aval_prioridades","aval_parcerias","aval_qualidade","aval_postura_critica","aval_tempo_resposta"] },
+] as const;
+
+function numeroEscala(value: unknown): number | null {
+  const n = Number(String(value ?? "").replace(",", "."));
+  return Number.isFinite(n) && n >= 1 && n <= 5 ? n : null;
+}
+
+function calcularEvolucaoAnjo(answersRaw: unknown) {
+  const answers = asJson<Record<string, unknown>>(answersRaw, {});
+  const pilares: Record<string, number | null> = {};
+  const gerais: number[] = [];
+
+  for (const pilar of PILARES_AVALIACAO_ANJO) {
+    const notas = pilar.codigos
+      .map((codigo) => numeroEscala(answers[codigo]))
+      .filter((nota): nota is number => nota != null);
+    pilares[pilar.key] = notas.length ? notas.reduce((s, nota) => s + nota, 0) / notas.length : null;
+    gerais.push(...notas);
+  }
+
+  return {
+    pilares,
+    mediaGeral: gerais.length ? gerais.reduce((s, nota) => s + nota, 0) / gerais.length : null,
+  };
+}
+
 function sanitizeLegacyId(value: unknown) {
   return String(value ?? "").trim().slice(0, 100);
 }
@@ -129,13 +162,13 @@ programaIntegracaoAnjoRouter.get(
       const userId = Number((req as any).authenticatedUser.id);
       const processos = await activeAssignments(connection, userId);
       if (!processos.length) {
-        return res.json({ ok: true, indicadores: { aguardando: 0, pendentes: 0, respondidos: 0 }, formularios: [] });
+        return res.json({ ok: true, indicadores: { aguardando: 0, pendentes: 0, respondidos: 0 }, formularios: [], evolucao: [] });
       }
 
       const processoIds = processos.map((p: any) => Number(p.id));
       const placeholders = processoIds.map(() => "?").join(",");
       const [respostas] = (await connection.execute(
-        `SELECT id,processoId,ciclo,itemId,respondentName,submittedAt
+        `SELECT id,processoId,ciclo,itemId,respondentName,submittedAt,answers
          FROM programa_integracao_respostas
          WHERE processoId IN (${placeholders})
            AND formKey='aval'
@@ -147,9 +180,24 @@ programaIntegracaoAnjoRouter.get(
       )) as any;
 
       const respostaPorChave = new Map<string, any>();
+      const evolucaoPorProcesso = new Map<number, any[]>();
       for (const resposta of respostas || []) {
-        const chave = `${Number(resposta.processoId)}|${Number(resposta.ciclo)}`;
+        const processoId = Number(resposta.processoId);
+        const ciclo = Number(resposta.ciclo);
+        const chave = `${processoId}|${ciclo}`;
         if (!respostaPorChave.has(chave)) respostaPorChave.set(chave, resposta);
+
+        const atual = evolucaoPorProcesso.get(processoId) || [];
+        if (!atual.some((item: any) => Number(item.ciclo) === ciclo)) {
+          const calculada = calcularEvolucaoAnjo(resposta.answers);
+          atual.push({
+            ciclo,
+            label: `${ciclo}º`,
+            respondidoEm: resposta.submittedAt ? new Date(resposta.submittedAt).toISOString() : null,
+            ...calculada,
+          });
+          evolucaoPorProcesso.set(processoId, atual);
+        }
       }
 
       const formularios: any[] = [];
@@ -188,7 +236,18 @@ programaIntegracaoAnjoRouter.get(
         }
       }
 
-      return res.json({ ok: true, indicadores, formularios });
+      const evolucao = processos
+        .map((processo: any) => ({
+          processoId: Number(processo.id),
+          legacyId: String(processo.legacyId || ""),
+          colaborador: String(processo.nome || ""),
+          cargo: String(processo.cargo || ""),
+          unidade: String(processo.unidade || ""),
+          ciclos: (evolucaoPorProcesso.get(Number(processo.id)) || []).sort((a, b) => Number(a.ciclo) - Number(b.ciclo)),
+        }))
+        .filter((item: any) => item.ciclos.length > 0);
+
+      return res.json({ ok: true, indicadores, formularios, evolucao });
     } catch (error) {
       console.error("[ProgramaIntegracaoAnjo] formularios:", error);
       return res.status(500).json({ error: "Não foi possível carregar os formulários do Anjo." });
