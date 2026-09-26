@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Link2, Loader2, Search, UserPlus, RefreshCw } from "lucide-react";
+import { GraduationCap, Link2, Loader2, Search, UserPlus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 type UsuarioAnjo = {
@@ -59,6 +59,7 @@ export default function VinculoAnjoEcoLider({
   const [usuarios, setUsuarios] = useState<UsuarioAnjo[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [transformandoAluno, setTransformandoAluno] = useState(false);
   const [mostrarCriacao, setMostrarCriacao] = useState(false);
   const [mostrarTroca, setMostrarTroca] = useState(false);
   const [nome, setNome] = useState(anjo || "");
@@ -130,6 +131,41 @@ export default function VinculoAnjoEcoLider({
     }
   };
 
+  const transformarEmAluno = async () => {
+    if (!vinculo?.anjoUserId || vinculo.alunoId) return;
+    const confirmar = window.confirm(
+      'Transformar este Colaborador Anjo também em Aluno?\n\nO sistema manterá o MESMO usuário EcoLíder. Se já existir um perfil de Aluno compatível, ele será vinculado. Se não existir, será criado somente o perfil de Aluno, sem criar uma segunda conta.\n\nNenhum histórico do Anjo será apagado.',
+    );
+    if (!confirmar) return;
+
+    setTransformandoAluno(true);
+    try {
+      const response = await fetch(
+        `/api/programa-integracao/admin/processos/${encodeURIComponent(legacyId)}/anjo-aluno`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (Array.isArray(data?.existingUsers) && data.existingUsers.length) {
+          const primeiro = data.existingUsers[0];
+          throw new Error(
+            `${data.error || 'O perfil já possui outro usuário.'} Usuário existente: ${primeiro.name || primeiro.email || '#' + primeiro.id}.`,
+          );
+        }
+        throw new Error(data?.error || 'Não foi possível transformar o Anjo em Aluno.');
+      }
+      toast.success(data?.message || 'O Anjo agora também possui perfil de Aluno.');
+      await carregar();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível transformar o Anjo em Aluno.');
+    } finally {
+      setTransformandoAluno(false);
+    }
+  };
+
   const criarAcesso = async () => {
     setSalvando(true);
     try {
@@ -191,14 +227,31 @@ export default function VinculoAnjoEcoLider({
               <p className="text-muted-foreground">{vinculo.userEmail || "E-mail não informado"}</p>
               <p className="mt-1 text-xs text-muted-foreground">{vinculo.programName || "Empresa não identificada"} · CPF {vinculo.userCpf ? `***.***.${vinculo.userCpf.slice(-5, -2)}-${vinculo.userCpf.slice(-2)}` : "não informado"}</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Perfil atual: {vinculo.userRole === "manager" ? "Gerente" : vinculo.alunoId ? "Aluno" : "Acesso somente como Anjo"}
+                Perfil atual: {vinculo.userRole === "manager" && vinculo.alunoId
+                  ? "Gerente + Aluno + Anjo"
+                  : vinculo.userRole === "manager"
+                    ? "Gerente + Anjo"
+                    : vinculo.alunoId
+                      ? "Aluno + Anjo"
+                      : "Acesso somente como Anjo"}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" disabled={salvando || !processoAtivo} onClick={() => { setMostrarTroca((v) => !v); setUsuarios([]); setBusca(""); }}>
+              {!vinculo.alunoId && (
+                <Button
+                  type="button"
+                  variant="default"
+                  disabled={salvando || transformandoAluno || !processoAtivo}
+                  onClick={() => void transformarEmAluno()}
+                >
+                  {transformandoAluno ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GraduationCap className="mr-2 h-4 w-4" />}
+                  {transformandoAluno ? "Transformando..." : "Transformar também em Aluno"}
+                </Button>
+              )}
+              <Button type="button" variant="outline" disabled={salvando || transformandoAluno || !processoAtivo} onClick={() => { setMostrarTroca((v) => !v); setUsuarios([]); setBusca(""); }}>
                 <RefreshCw className="mr-2 h-4 w-4" />Trocar usuário vinculado
               </Button>
-              <Button type="button" variant="outline" disabled={salvando || !processoAtivo} onClick={() => void vincular(null)}>
+              <Button type="button" variant="outline" disabled={salvando || transformandoAluno || !processoAtivo} onClick={() => void vincular(null)}>
                 Desvincular usuário
               </Button>
             </div>
@@ -268,7 +321,7 @@ export default function VinculoAnjoEcoLider({
             {mostrarCriacao && processoAtivo && (
               <div className="rounded-lg border bg-muted/20 p-4">
                 <p className="font-semibold">Criar acesso mínimo do Anjo</p>
-                <p className="mt-1 text-xs text-muted-foreground">Antes de criar, o sistema confere e-mail e CPF para evitar duplicidade. Este cadastro não cria aluno, gerente ou consultor.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Antes de criar, o sistema confere e-mail e CPF para evitar duplicidade. Este primeiro passo cria somente o acesso do Anjo. Se futuramente ele também participar como Aluno, use “Transformar também em Aluno” no mesmo usuário.</p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <label className="space-y-1 text-xs"><span className="font-medium">Nome</span><Input value={nome} onChange={(e) => setNome(e.target.value)} /></label>
                   <label className="space-y-1 text-xs"><span className="font-medium">E-mail</span><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>

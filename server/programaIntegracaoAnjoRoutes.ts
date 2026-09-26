@@ -407,6 +407,242 @@ programaIntegracaoAnjoRouter.post(
 );
 
 programaIntegracaoAnjoRouter.post(
+  "/api/programa-integracao/admin/processos/:legacyId/anjo-aluno",
+  requireAdmin,
+  async (req, res) => {
+    const connection = await getConnectionOr503(res);
+    if (!connection) return;
+
+    const legacyId = sanitizeLegacyId(req.params.legacyId);
+    let transactionStarted = false;
+
+    try {
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      const [processos] = (await connection.execute(
+        `SELECT id,legacyId,anjo,anjoEmail,anjoUserId,situacao
+         FROM programa_integracao_processos
+         WHERE legacyId=? AND situacao<>'removido'
+         LIMIT 1 FOR UPDATE`,
+        [legacyId],
+      )) as any;
+      const processo = processos?.[0];
+      if (!processo) {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(404).json({ error: "Processo não encontrado." });
+      }
+      if (String(processo.situacao) !== "ativo") {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(409).json({ error: "O processo não está ativo. Nenhuma alteração foi realizada." });
+      }
+
+      const anjoUserId = Number(processo.anjoUserId || 0);
+      if (!anjoUserId) {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(409).json({ error: "Primeiro vincule um usuário EcoLíder ao Colaborador Anjo." });
+      }
+
+      const [usuarios] = (await connection.execute(
+        `SELECT id,name,email,cpf,role,programId,alunoId,consultorId,isActive,loginMethod
+         FROM users WHERE id=? LIMIT 1 FOR UPDATE`,
+        [anjoUserId],
+      )) as any;
+      const usuario = usuarios?.[0];
+      if (!usuario || Number(usuario.isActive) !== 1) {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(409).json({ error: "O usuário vinculado ao Anjo não está ativo." });
+      }
+      if (!["user", "manager"].includes(String(usuario.role))) {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(409).json({ error: "Este tipo de usuário não pode receber perfil de Aluno por esta função." });
+      }
+
+      if (Number(usuario.alunoId || 0) > 0) {
+        await connection.commit();
+        transactionStarted = false;
+        return res.json({
+          ok: true,
+          alreadyLinked: true,
+          alunoId: Number(usuario.alunoId),
+          message: "Este usuário já possui perfil de Aluno. Nenhuma duplicidade foi criada.",
+        });
+      }
+
+      const email = normalizeEmail(usuario.email);
+      const cpf = normalizeCpf(usuario.cpf);
+      const programIdUsuario = Number(usuario.programId || 0) || null;
+
+      if (!email) {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(409).json({ error: "O usuário do Anjo precisa ter e-mail para ser vinculado como Aluno." });
+      }
+
+      const condicoes: string[] = ["LOWER(email)=?"];
+      const params: any[] = [email];
+      if (cpf) {
+        condicoes.push("REPLACE(REPLACE(REPLACE(cpf,'.',''),'-',''),' ','')=?");
+        params.push(cpf);
+        condicoes.push("externalId=?");
+        params.push(cpf);
+      }
+
+      const [alunosEncontrados] = (await connection.execute(
+        `SELECT id,externalId,cpf,name,email,programId,isActive,canLogin,tipoPortal
+         FROM alunos
+         WHERE (${condicoes.join(" OR ")})
+         ORDER BY isActive DESC,id ASC
+         FOR UPDATE`,
+        params,
+      )) as any;
+
+      const unicos = new Map<number, any>();
+      for (const aluno of alunosEncontrados || []) unicos.set(Number(aluno.id), aluno);
+      const candidatos = Array.from(unicos.values());
+
+      if (candidatos.length > 1) {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(409).json({
+          error: "Há mais de um cadastro de Aluno compatível com este e-mail/CPF. Nenhum vínculo foi alterado; revise os cadastros antes de continuar.",
+          candidatos: candidatos.map((a: any) => ({
+            id: Number(a.id),
+            name: String(a.name || ""),
+            email: String(a.email || ""),
+            programId: Number(a.programId || 0) || null,
+          })),
+        });
+      }
+
+      let aluno = candidatos[0] || null;
+      let alunoCriado = false;
+
+      if (aluno) {
+        if (Number(aluno.isActive) !== 1) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({ error: "Já existe um perfil de Aluno correspondente, mas ele está inativo. Reative-o antes de vincular." });
+        }
+        const programIdAluno = Number(aluno.programId || 0) || null;
+        if (programIdUsuario && programIdAluno && programIdUsuario !== programIdAluno) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({
+            error: "O usuário do Anjo e o perfil de Aluno encontrado pertencem a empresas diferentes. Nenhuma alteração foi realizada.",
+          });
+        }
+
+        const [outrosUsers] = (await connection.execute(
+          `SELECT id,name,email,role,isActive FROM users
+           WHERE alunoId=? AND id<>? AND isActive=1
+           ORDER BY id ASC LIMIT 5`,
+          [Number(aluno.id), anjoUserId],
+        )) as any;
+        if (outrosUsers?.length) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({
+            error: "Este perfil de Aluno já está vinculado a outro usuário. Para evitar duas contas para a mesma pessoa, nenhum novo vínculo foi criado. Use o usuário já existente no vínculo do Anjo.",
+            existingUsers: outrosUsers,
+            alunoId: Number(aluno.id),
+          });
+        }
+
+        await connection.execute(
+          `UPDATE alunos SET canLogin=1,updatedAt=CURRENT_TIMESTAMP WHERE id=?`,
+          [Number(aluno.id)],
+        );
+      } else {
+        if (cpf.length !== 11) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({
+            error: "Não existe perfil de Aluno correspondente e o usuário do Anjo não possui CPF válido com 11 dígitos. Complete o CPF antes de transformar em Aluno.",
+          });
+        }
+        if (!programIdUsuario) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({
+            error: "Não existe perfil de Aluno correspondente e o usuário do Anjo não possui empresa definida. Defina a empresa antes de transformar em Aluno.",
+          });
+        }
+
+        const nome = String(usuario.name || processo.anjo || "").trim();
+        if (!nome) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({ error: "O usuário do Anjo precisa ter nome antes de ser transformado em Aluno." });
+        }
+
+        const [insertAluno] = (await connection.execute(
+          `INSERT INTO alunos
+             (externalId,cpf,name,email,programId,canLogin,isActive,tipoMentoria,plataformaAulas,tipoPortal,createdAt,updatedAt)
+           VALUES (?,?,?,?,?,1,1,'individual','sistema_interno','desenvolvimento',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+          [cpf, cpf, nome, email, programIdUsuario],
+        )) as any;
+        const novoAlunoId = Number(insertAluno?.insertId || 0);
+        if (!novoAlunoId) throw new Error("O novo perfil de Aluno não retornou identificador.");
+
+        const [novoAlunoRows] = (await connection.execute(
+          `SELECT id,externalId,cpf,name,email,programId,isActive,canLogin,tipoPortal
+           FROM alunos WHERE id=? LIMIT 1`,
+          [novoAlunoId],
+        )) as any;
+        aluno = novoAlunoRows?.[0];
+        if (!aluno) throw new Error("O perfil de Aluno foi criado, mas não pôde ser relido.");
+        alunoCriado = true;
+      }
+
+      const alunoId = Number(aluno.id);
+      const programIdAluno = Number(aluno.programId || 0) || programIdUsuario;
+      const loginMethod = cpf.length === 11 ? "email_cpf" : "email_id";
+
+      await connection.execute(
+        `UPDATE users
+         SET alunoId=?,programId=COALESCE(?,programId),loginMethod=?,updatedAt=CURRENT_TIMESTAMP
+         WHERE id=?`,
+        [alunoId, programIdAluno, loginMethod, anjoUserId],
+      );
+
+      await audit(
+        connection,
+        req,
+        alunoCriado ? "anjo_transformado_aluno" : "anjo_vinculado_aluno_existente",
+        alunoCriado
+          ? `O usuário do Colaborador Anjo foi mantido e recebeu um novo perfil de Aluno no processo ${legacyId}, sem criação de segundo usuário.`
+          : `O usuário do Colaborador Anjo foi vinculado ao perfil de Aluno existente no processo ${legacyId}, sem criação de segundo usuário.`,
+        Number(processo.id),
+        {
+          userId: anjoUserId,
+          alunoId,
+          alunoCriado,
+          rolePreservada: String(usuario.role),
+          programId: programIdAluno,
+        },
+      );
+
+      await connection.commit();
+      transactionStarted = false;
+      return res.json({
+        ok: true,
+        alunoId,
+        alunoCriado,
+        userId: anjoUserId,
+        role: String(usuario.role),
+        message: alunoCriado
+          ? "Perfil de Aluno criado na mesma conta do Anjo. Nenhum usuário duplicado foi criado."
+          : "Perfil de Aluno existente vinculado à mesma conta do Anjo.",
+      });
+    } catch (error: any) {
+      if (transactionStarted) {
+        try { await connection.rollback(); } catch {}
+      }
+      if (error?.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({
+          error: "Já existe um cadastro usando este e-mail, CPF ou identificador. A operação foi revertida para evitar duplicidade.",
+        });
+      }
+      console.error("[ProgramaIntegracaoAnjo] transformar Anjo em Aluno:", error);
+      return res.status(500).json({ error: "Não foi possível transformar o Anjo em Aluno. A operação foi revertida." });
+    }
+  },
+);
+
+programaIntegracaoAnjoRouter.post(
   "/api/programa-integracao/admin/processos/:legacyId/anjo-acesso",
   requireAdmin,
   async (req, res) => {
