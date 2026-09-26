@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
-import { storageGet, storagePut } from "./storage";
+import { storageDownloadBuffer, storageGet, storagePut } from "./storage";
 
 export const programaIntegracaoRegistrosRouter = Router();
 
@@ -261,9 +261,15 @@ programaIntegracaoRegistrosRouter.post(
           return res.status(400).json({ error: "Para Documento, use PDF, Word, Excel ou PowerPoint." });
         }
 
+        const base64 = String(req.body.fileData || "");
+        if (base64.length > 14 * 1024 * 1024) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(400).json({ error: "O arquivo deve ter no máximo 10 MB." });
+        }
+
         let buffer: Buffer;
         try {
-          buffer = Buffer.from(String(req.body.fileData), "base64");
+          buffer = Buffer.from(base64, "base64");
         } catch {
           await connection.rollback(); transactionStarted = false;
           return res.status(400).json({ error: "Arquivo inválido." });
@@ -357,6 +363,10 @@ programaIntegracaoRegistrosRouter.patch(
       }
 
       const anterior = registros[indice];
+      if (anterior.fileKey && validacao.value.tipo !== anterior.tipo) {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(409).json({ error: "O tipo de um registro com arquivo não pode ser alterado. Crie um novo registro se precisar trocar Foto por Documento ou vice-versa." });
+      }
       const atualizado: RegistroIntegracao = {
         ...anterior,
         ...validacao.value,
@@ -533,6 +543,15 @@ programaIntegracaoRegistrosRouter.get(
       const estado = asJson<Record<string, any>>(processo.estado, {});
       const registro = registrosDoEstado(estado).find((item) => item.id === registroId);
       if (!registro || !registro.fileKey) return res.status(404).json({ error: "Arquivo não encontrado." });
+
+      if (String(req.query.download || "") === "1") {
+        const buffer = await storageDownloadBuffer(registro.fileKey);
+        const fileName = String(registro.fileName || "arquivo").replace(/[\r\n"]/g, "");
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("Content-Type", registro.mimeType || "application/octet-stream");
+        res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+        return res.send(buffer);
+      }
 
       const arquivo = await storageGet(registro.fileKey);
       res.setHeader("Cache-Control", "no-store");
