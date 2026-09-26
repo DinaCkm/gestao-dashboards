@@ -318,7 +318,10 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
   const [bemExistente] = await tx
     .select({ id: programaIntegracaoRespostas.id })
     .from(programaIntegracaoRespostas)
-    .where(eq(programaIntegracaoRespostas.dedupeKey, bemDedupeKey))
+    .where(or(
+      eq(programaIntegracaoRespostas.dedupeKey, bemDedupeKey),
+      eq(programaIntegracaoRespostas.legacyRid, bemDedupeKey),
+    ))
     .limit(1);
 
   if (!bemExistente) {
