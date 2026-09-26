@@ -2,9 +2,9 @@ import { exigirConexaoParaAlterar } from '../helpers/connectionGuard';
 
 const API_BASE = '/api/programa-integracao';
 
-export type RegistroIntegracaoTipo = 'foto' | 'documento' | 'relato' | 'outro';
-export type RegistroIntegracaoOrigem = 'Colaborador' | 'Gestor' | 'Anjo' | 'UGP' | 'CKM / Consultora';
-export type RegistroIntegracaoAlinhamento = 'Preparação' | '15 dias' | '45 dias' | '75 dias' | '150 dias' | 'Geral';
+export type RegistroIntegracaoTipo = 'foto' | 'documento' | 'relato' | 'outro' | 'nao_informado';
+export type RegistroIntegracaoOrigem = 'Colaborador' | 'Gestor' | 'Anjo' | 'UGP' | 'CKM / Consultora' | 'Não informado';
+export type RegistroIntegracaoAlinhamento = 'Preparação' | '15 dias' | '45 dias' | '75 dias' | '150 dias' | 'Geral' | 'Não informado';
 
 export interface RegistroIntegracaoItem {
   id: string;
