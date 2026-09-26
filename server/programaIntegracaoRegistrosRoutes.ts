@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
-import { storageDownloadBuffer, storageGet, storagePut } from "./storage";
+import { storageDelete, storageDownloadBuffer, storageGet, storagePut } from "./storage";
 
 export const programaIntegracaoRegistrosRouter = Router();
 
@@ -222,6 +222,7 @@ programaIntegracaoRegistrosRouter.post(
 
     const connection = await getConnectionOr503(res); if (!connection) return;
     let transactionStarted = false;
+    let uploadedFileKey: string | null = null;
 
     try {
       await connection.beginTransaction();
@@ -284,6 +285,7 @@ programaIntegracaoRegistrosRouter.post(
         mimeType = MIME_BY_EXT[ext];
         fileKey = `programa-integracao/registros/${Number(processo.id)}/${randomUUID()}.${ext}`;
         await storagePut(fileKey, buffer, mimeType, "private, max-age=0, no-store");
+        uploadedFileKey = fileKey;
       }
 
       const registro: RegistroIntegracao = {
@@ -321,6 +323,11 @@ programaIntegracaoRegistrosRouter.post(
     } catch (error) {
       if (transactionStarted) {
         try { await connection.rollback(); } catch {}
+      }
+      if (uploadedFileKey) {
+        try { await storageDelete(uploadedFileKey); } catch (cleanupError) {
+          console.warn("[ProgramaIntegracaoRegistros] Falha ao limpar upload após rollback:", cleanupError);
+        }
       }
       console.error("[ProgramaIntegracaoRegistros] criar:", error);
       return res.status(500).json({ error: "Não foi possível criar o registro. Nenhuma alteração parcial foi confirmada." });
