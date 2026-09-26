@@ -144,7 +144,25 @@ function demoAtaFields(scenario: "evolucao" | "queda", ciclo: number) {
     },
   ];
 
-  return (scenario === "queda" ? queda : evolucao)[Math.max(0, Math.min(3, ciclo - 1))];
+  const base = (scenario === "queda" ? queda : evolucao)[Math.max(0, Math.min(3, ciclo - 1))];
+  const contexto = scenario === "queda"
+    ? "Neste cenário demonstrativo, o registro foi propositalmente construído para permitir que a UGP observe uma trajetória que exige acompanhamento. O texto considera o contexto do período, as mudanças percebidas ao longo dos alinhamentos e a necessidade de separar fatos, percepções e hipóteses antes de definir qualquer encaminhamento."
+    : "Neste cenário demonstrativo, o registro foi propositalmente construído para representar uma integração acompanhada de forma completa. O texto registra contexto, evolução observada, pontos de sustentação e próximos passos, permitindo que a UGP compreenda o percurso sem depender apenas dos indicadores numéricos.";
+
+  const acompanhamento = ciclo === 1
+    ? "Por se tratar do primeiro alinhamento, recomenda-se preservar uma rotina de acompanhamento mais próxima, confirmar a compreensão das responsabilidades e registrar dúvidas recorrentes. O objetivo não é antecipar conclusões, mas estabelecer uma linha de base clara para comparação com os alinhamentos seguintes."
+    : ciclo === 2
+      ? "Na comparação com o alinhamento anterior, devem ser observadas especialmente as mudanças de autonomia, clareza de prioridades, qualidade da comunicação e capacidade de mobilizar a rede de apoio. Os próximos passos precisam ser objetivos, atribuídos a responsáveis e acompanhados até o encontro seguinte."
+      : ciclo === 3
+        ? "Neste momento do processo, a análise deve verificar se os comportamentos observados estão se consolidando, se as ações combinadas anteriormente foram efetivas e quais fatores ainda precisam de suporte. Recomenda-se conectar os achados ao PDI e às responsabilidades compartilhadas entre colaborador, liderança e Anjo."
+        : "No encerramento formal, o registro deve consolidar a trajetória completa, destacar avanços e pontos que precisam permanecer em acompanhamento após o Programa de Integração. O fechamento não encerra o desenvolvimento: as ações remanescentes devem migrar para a rotina de liderança e para o PDI.";
+
+  return {
+    lider: `${base.lider}\n\n${contexto}\n\n${acompanhamento}\n\nRegistro complementar da liderança: foram considerados exemplos concretos do período, a resposta do colaborador aos direcionamentos recebidos, a forma como solicita apoio e a consistência das entregas. Recomenda-se que os próximos feedbacks continuem apoiados em situações observáveis, evitando interpretações genéricas.`,
+    colab: `${base.colab}\n\n${contexto}\n\n${acompanhamento}\n\nRegistro complementar do colaborador: foram explorados acolhimento, entendimento do papel, relacionamento com liderança e equipe, segurança para pedir ajuda, clareza das prioridades e percepção sobre o próprio desenvolvimento. Eventuais dificuldades devem ser tratadas como temas de acompanhamento e não como rótulos sobre a pessoa.`,
+    conclusao: `${base.conclusao}\n\n${acompanhamento}\n\nEncaminhamentos registrados: manter os responsáveis informados, acompanhar os combinados até o próximo marco e registrar evidências objetivas de avanço ou necessidade de ajuste. Caso surjam mudanças de contexto, o plano deve ser revisto para preservar clareza de responsabilidades e continuidade do suporte.`,
+    consultora: `${base.consultora}\n\n${contexto}\n\n${acompanhamento}\n\nParecer complementar da consultora: a leitura apresentada considera o conjunto dos registros disponíveis e deve ser interpretada em contexto. Recomenda-se combinar os achados qualitativos desta ata com os formulários, o andamento do processo, o PDI e a Jornada Compliance, evitando conclusões isoladas a partir de um único indicador.`,
+  };
 }
 
 const DIMENSOES = {
