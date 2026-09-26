@@ -6,9 +6,9 @@ import { storageDelete, storageDownloadBuffer, storageGet, storagePut } from "./
 
 export const programaIntegracaoRegistrosRouter = Router();
 
-type RegistroTipo = "foto" | "documento" | "relato" | "outro";
-type RegistroOrigem = "Colaborador" | "Gestor" | "Anjo" | "UGP" | "CKM / Consultora";
-type RegistroAlinhamento = "Preparação" | "15 dias" | "45 dias" | "75 dias" | "150 dias" | "Geral";
+type RegistroTipo = "foto" | "documento" | "relato" | "outro" | "nao_informado";
+type RegistroOrigem = "Colaborador" | "Gestor" | "Anjo" | "UGP" | "CKM / Consultora" | "Não informado";
+type RegistroAlinhamento = "Preparação" | "15 dias" | "45 dias" | "75 dias" | "150 dias" | "Geral" | "Não informado";
 
 interface RegistroIntegracao {
   id: string;
@@ -31,9 +31,9 @@ interface RegistroIntegracao {
   excluidoPorNome?: string | null;
 }
 
-const TIPOS = new Set<RegistroTipo>(["foto", "documento", "relato", "outro"]);
-const ORIGENS = new Set<RegistroOrigem>(["Colaborador", "Gestor", "Anjo", "UGP", "CKM / Consultora"]);
-const ALINHAMENTOS = new Set<RegistroAlinhamento>(["Preparação", "15 dias", "45 dias", "75 dias", "150 dias", "Geral"]);
+const TIPOS = new Set<RegistroTipo>(["foto", "documento", "relato", "outro", "nao_informado"]);
+const ORIGENS = new Set<RegistroOrigem>(["Colaborador", "Gestor", "Anjo", "UGP", "CKM / Consultora", "Não informado"]);
+const ALINHAMENTOS = new Set<RegistroAlinhamento>(["Preparação", "15 dias", "45 dias", "75 dias", "150 dias", "Geral", "Não informado"]);
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -135,15 +135,17 @@ async function audit(
 }
 
 function validarPayload(body: any, editando = false) {
-  const tipo = sanitizeText(body?.tipo, 20) as RegistroTipo;
-  const titulo = sanitizeText(body?.titulo, 160);
+  const tipoRaw = sanitizeText(body?.tipo, 20);
+  const tipo = (tipoRaw || "nao_informado") as RegistroTipo;
+  const titulo = sanitizeText(body?.titulo, 160) || "Não informado";
   const descricao = sanitizeText(body?.descricao, 6000);
   const dataAcontecimento = sanitizeText(body?.dataAcontecimento, 10);
-  const origem = sanitizeText(body?.origem, 40) as RegistroOrigem;
-  const alinhamento = sanitizeText(body?.alinhamento, 30) as RegistroAlinhamento;
+  const origemRaw = sanitizeText(body?.origem, 40);
+  const origem = (origemRaw || "Não informado") as RegistroOrigem;
+  const alinhamentoRaw = sanitizeText(body?.alinhamento, 30);
+  const alinhamento = (alinhamentoRaw || "Não informado") as RegistroAlinhamento;
 
   if (!TIPOS.has(tipo)) return { error: "Tipo de registro inválido." };
-  if (!titulo) return { error: "Informe o título do registro." };
   if (dataAcontecimento && !/^\d{4}-\d{2}-\d{2}$/.test(dataAcontecimento)) {
     return { error: "A data do acontecimento deve estar no formato AAAA-MM-DD." };
   }
