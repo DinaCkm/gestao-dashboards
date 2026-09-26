@@ -2047,6 +2047,7 @@ export default function AcompanharIntegracaoGestor() {
                         <div className="mt-2 text-xs opacity-80">{saudeAtual.detalhe}</div>
                       </CardContent>
                     </Card>
+                  )}
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Dia do Onboarding</div><div className="mt-2 text-3xl font-bold">{colaborador.dia}<span className="text-base text-muted-foreground">/{colaborador.totalDias}</span></div><Progress className="mt-3" value={(colaborador.dia/colaborador.totalDias)*100} /></CardContent></Card>
                   <Card>
                     <CardContent className="pt-5">
