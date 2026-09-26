@@ -52,7 +52,7 @@ function ciclo(
         `Obrigado pela conversa de **{{${dtok}}}**. Segue **em anexo a ata** do alinhamento para o seu acompanhamento.\n\n` +
         midGestor + '\n\n' +
         '---\n\n' +
-        '**Um pedido rápido — formulário obrigatório**\nPara fechar este ciclo, o preenchimento do **Formulário de Avaliação do Programa de Integração** é obrigatório:\n{{LINK_AVAL_PROGRAMA}}\n\n' +
+        '**Um pedido rápido — formulário obrigatório**\nPara fechar este alinhamento, o preenchimento do **Formulário de Avaliação do Programa de Integração** é obrigatório:\n{{LINK_AVAL_PROGRAMA}}\n\n' +
         'São poucos minutos e é o que alimenta o relatório de evolução que enviamos antes do próximo encontro.\n\n' +
         'Obrigado pela parceria de sempre!' + ASS,
       anexo: `Ata do ${n}º Alinhamento`,
@@ -63,7 +63,7 @@ function ciclo(
       nome: `${n}º Alinhamento · Anjo`,
       para: '{{EMAIL_ANJO}}',
       cc: '',
-      assunto: `[Onboarding] Sua percepção sobre {{PRIMEIRO_NOME}} — ${n}º ciclo`,
+      assunto: `[Onboarding] Sua percepção sobre {{PRIMEIRO_NOME}} — ${n}º alinhamento`,
       corpo:
         'Olá {{ANJO_1}}, tudo bem?\n\n' +
         `Concluímos o **${n}º Alinhamento** do Onboarding de **{{COLABORADOR}}** e queremos de novo contar com o seu olhar sobre esse período.\n\n` +
@@ -79,7 +79,7 @@ const C2 = ciclo(
   2,
   'DATA_ALIN_2',
   'Foi bom ver os avanços que você já fez nesse período e conversar sobre os pontos que seguimos acompanhando juntos.',
-  'Neste ciclo olhamos a evolução do PDI, o que já foi concluído e os pontos que ainda merecem atenção. Se surgir algo no dia a dia que valha ajustar no plano, é só nos avisar.',
+  'Neste alinhamento olhamos a evolução do PDI, o que já foi concluído e os pontos que ainda merecem atenção. Se surgir algo no dia a dia que valha ajustar no plano, é só nos avisar.',
 );
 
 const C3 = ciclo(
@@ -99,7 +99,7 @@ export const MODELOS_EMAIL_CICLOS_23_INTEGRACAO: Record<string, ModeloEmailInteg
     assunto: '[Onboarding] 2º Alinhamento – {{COLABORADOR}}',
     corpo:
       'Olá, tudo bem?\n\n' +
-      'Realizamos o **2º Alinhamento** do Onboarding de **{{COLABORADOR}}** em **{{DATA_ALIN_2}}**. Seguem os materiais deste ciclo.\n\n' +
+      'Realizamos o **2º Alinhamento** do Onboarding de **{{COLABORADOR}}** em **{{DATA_ALIN_2}}**. Seguem os materiais deste alinhamento.\n\n' +
       '- **Ata do 2º Alinhamento** — em anexo;\n' +
       '- **Relatório completo de acompanhamento** — em anexo;\n' +
       '- **Status do PDI:** {{STATUS_PDI}};\n' +
@@ -145,7 +145,7 @@ export const MODELOS_EMAIL_CICLOS_23_INTEGRACAO: Record<string, ModeloEmailInteg
       '- **Status atual do PDI:** {{STATUS_PDI}};\n\n' +
       '**Pendências**\n{{PENDENCIAS}}\n\n' +
       '{{BLOCO_CONSIDERACOES}}' +
-      'Os formulários deste ciclo foram encaminhados ao colaborador, ao gestor e ao Anjo. O reconhecimento do Anjo também foi orientado à gestão da unidade.\n\n' +
+      'Os formulários deste alinhamento foram encaminhados ao colaborador, ao gestor e ao Anjo. O reconhecimento do Anjo também foi orientado à gestão da unidade.\n\n' +
       'Ficamos à disposição.' + ASS,
     anexo: 'Ata do 3º Alinhamento; Relatório completo',
   },
