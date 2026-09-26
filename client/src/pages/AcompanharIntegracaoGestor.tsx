@@ -314,9 +314,9 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
   const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
   const g = gestor[gestor.length - 1]?.mediaGeral;
   const a = anjo[anjo.length - 1]?.mediaGeral;
-  if (g != null && a != null && Math.abs(g - a) * 20 >= 15) {
-    const diferenca = Math.round(Math.abs(g - a) * 20);
-    sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram percepções diferentes sobre a adaptação do colaborador (diferença de ${diferenca} pontos em uma escala de 0 a 100).`);
+  if (g != null && a != null && Math.abs(g - a) >= 3) {
+    const diferenca = Math.abs(g - a);
+    sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram uma diferença relevante na percepção sobre a adaptação do colaborador (diferença de ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5).`);
   }
 
   if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
@@ -844,7 +844,7 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
                   <XAxis dataKey="momento" tick={{ fontSize: 11 }} />
                   <YAxis domain={[0,100]} tick={{ fontSize: 11 }} />
                   <ChartTooltip formatter={(value: any) => [`${value}%`, 'Experiência']} />
-                  <Line type="monotone" dataKey="experiencia" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} connectNulls />
+                  <Line type="linear" dataKey="experiencia" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -1651,7 +1651,7 @@ function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompan
                   {INDICES_PESQUISA_COLABORADOR.map((grupo, i) => (
                     <Line
                       key={grupo.chave}
-                      type="monotone"
+                      type="linear"
                       dataKey={grupo.chave}
                       name={grupo.nome}
                       stroke={CORES[i % CORES.length]}
@@ -1670,7 +1670,7 @@ function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompan
                   <tr>
                     <th className="px-3 py-2 text-left">Índice</th>
                     {momentos.map((m) => (
-                      <th key={m.ciclo} className="px-3 py-2 text-center">Alinhamento {m.ciclo}</th>
+                      <th key={m.ciclo} className="px-3 py-2 text-center">Alinhamento de {diaDoAlinhamento(m.ciclo)} dias</th>
                     ))}
                   </tr>
                 </thead>
@@ -1742,7 +1742,7 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
                   {PILARES_ACOMPANHAMENTO.map((p, i) => (
                     <Line
                       key={p.chave}
-                      type="monotone"
+                      type="linear"
                       dataKey={p.chave}
                       name={p.nome}
                       stroke={CORES[i % CORES.length]}
@@ -2047,9 +2047,11 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
         <div className="mt-5 space-y-4">
           {PILARES_ACOMPANHAMENTO.map((pilar)=>{
             const gv=g?.pilares[pilar.chave]??null, av=a?.pilares[pilar.chave]??null;
-            const gp=gv==null?null:gv*20, ap=av==null?null:av*20, dif=gp!=null&&ap!=null?Math.abs(gp-ap):null;
-            const alerta=dif!=null&&dif>=15;
-            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')}</span>{dif!=null&&<span className="font-semibold text-slate-500">diferença: {Math.round(dif)} pontos</span>}</div></div>;
+            const gp=gv==null?null:gv*20, ap=av==null?null:av*20;
+            const difOriginal=gv!=null&&av!=null?Math.abs(gv-av):null;
+            const dif=gp!=null&&ap!=null?Math.abs(gp-ap):null;
+            const alerta=difOriginal!=null&&difOriginal>=3;
+            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')}</span>{difOriginal!=null&&<span className="font-semibold text-slate-500">diferença na nota original: {difOriginal.toFixed(2).replace('.',',')} ponto(s)</span>}</div></div>;
           })}
         </div>
       </CardContent>
