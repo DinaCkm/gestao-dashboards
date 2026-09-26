@@ -302,8 +302,9 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
   const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
   const g = gestor[gestor.length - 1]?.mediaGeral;
   const a = anjo[anjo.length - 1]?.mediaGeral;
-  if (g != null && a != null && Math.abs(g - a) * 20 >= 20) {
-    sinais.push('No alinhamento mais recente, Gestor e Anjo apresentaram percepções significativamente diferentes sobre a adaptação do colaborador.');
+  if (g != null && a != null && Math.abs(g - a) * 20 >= 15) {
+    const diferenca = Math.round(Math.abs(g - a) * 20);
+    sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram percepções diferentes sobre a adaptação do colaborador (diferença de ${diferenca} pontos em uma escala de 0 a 100).`);
   }
 
   if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
@@ -2057,10 +2058,10 @@ export default function AcompanharIntegracaoGestor() {
                           <TooltipTrigger asChild>
                             <button
                               type="button"
-                              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-amber-600 transition-colors hover:bg-amber-50 hover:text-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-                              aria-label="Informações importantes sobre a Jornada Compliance"
+                              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+                              aria-label="Informações sobre a Jornada Compliance"
                             >
-                              <AlertTriangle className="h-3.5 w-3.5" />
+                              <Info className="h-3.5 w-3.5" />
                             </button>
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-md p-3 text-xs leading-relaxed">

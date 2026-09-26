@@ -14,6 +14,12 @@ export const PILARES_ACOMPANHAMENTO = [
   { chave: 'qualidade', nome: 'Qualidade do Trabalho', de: 30, ate: 37 },
 ] as const;
 
+const DIAS_ALINHAMENTO = [15, 45, 75, 150] as const;
+
+function rotuloAlinhamento(ciclo: number) {
+  return `${DIAS_ALINHAMENTO[ciclo - 1] || ciclo} dias`;
+}
+
 export interface MomentoAcompanhamento {
   ciclo: number;
   label: string;
@@ -70,7 +76,7 @@ export function evolucaoPorPapel(
 
     return [{
       ciclo,
-      label: `${ciclo}º`,
+      label: rotuloAlinhamento(ciclo),
       pilares,
       mediaGeral: qtdGeral ? somaGeral / qtdGeral : null,
       desenvolvimento: percentual(valorEm(resposta, 38)),
@@ -147,7 +153,7 @@ export function evolucaoPesquisaColaborador(
 
     return [{
       ciclo,
-      label: `${ciclo}º`,
+      label: rotuloAlinhamento(ciclo),
       indices,
     }];
   });

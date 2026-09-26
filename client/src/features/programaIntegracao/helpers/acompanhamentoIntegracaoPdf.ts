@@ -19,6 +19,17 @@ export interface ColaboradorAcompanhamentoPdf {
 
 const fmt = (n: number | null | undefined) => n == null ? '—' : `${Math.round(n)}%`;
 
+function mediaNumeros(valores: Array<number | null | undefined>): number | null {
+  const validos = valores.filter((v): v is number => v != null && Number.isFinite(Number(v)));
+  return validos.length ? validos.reduce((s, v) => s + Number(v), 0) / validos.length : null;
+}
+
+function mediaAdaptacaoAtual(respostas: RespostaAcompanhamento[], papel: 'Gestor' | 'Anjo'): number | null {
+  const momentos = evolucaoPorPapel(respostas, papel);
+  const media = momentos[momentos.length - 1]?.mediaGeral;
+  return media == null ? null : media * 20;
+}
+
 function nomeArquivo(value: string) {
   return String(value || 'Colaborador').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim();
 }
@@ -160,11 +171,23 @@ function evolucao(doc: jsPDF, y: number, titulo: string, respostas: RespostaAcom
   y += 4;
 
   const ultimo = momentos[momentos.length - 1];
-  y = ensure(doc, y, 27);
+  y = ensure(doc, y, 35);
+  const adaptacaoAtual = ultimo.mediaGeral == null ? null : ultimo.mediaGeral * 20;
+  doc.setFillColor(246, 250, 255);
+  doc.setDrawColor(210, 224, 242);
+  doc.roundedRect(16, y, 178, 11, 2, 2, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(58, 93, 145);
+  doc.text(`ADAPTAÇÃO OBSERVADA · ${papel.toUpperCase()}`, 20, y + 4.5);
+  doc.setFontSize(11);
+  doc.setTextColor(25, 35, 48);
+  doc.text(adaptacaoAtual == null ? '—' : `${Math.round(adaptacaoAtual)}%`, 174, y + 7, { align: 'right' });
+  y += 15;
   const indicadores = [
-    ['Desenvolvimento', ultimo.desenvolvimento],
-    ['Produtividade', ultimo.produtividade],
-    ['Conceito geral', ultimo.conceitoGeral],
+    ['Indicador complementar · Desenvolvimento', ultimo.desenvolvimento],
+    ['Indicador complementar · Produtividade', ultimo.produtividade],
+    ['Indicador complementar · Conceito geral', ultimo.conceitoGeral],
   ] as const;
   indicadores.forEach(([tituloInd, valor], i) => {
     const x = 16 + i * 60;
@@ -225,6 +248,26 @@ export function gerarAcompanhamentoIntegracaoPdf(
   kpi(doc,149.5,y,44.5,'Alinhamentos',`${colaborador.alinhamentosFeitos}/${colaborador.alinhamentosTotal}`,'realizados');
   y += 30;
 
+  if (opcoes.visaoUgpRh) {
+    const gestorAtual = mediaAdaptacaoAtual(colaborador.respostas, 'Gestor');
+    const anjoAtual = mediaAdaptacaoAtual(colaborador.respostas, 'Anjo');
+    if (gestorAtual != null || anjoAtual != null) {
+      y = section(doc, y, 'Adaptação observada — mesma escala da tela');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(70, 78, 88);
+      const linhas: string[] = [];
+      if (gestorAtual != null) linhas.push(`Gestor: ${Math.round(gestorAtual)}%`);
+      if (anjoAtual != null) linhas.push(`Anjo: ${Math.round(anjoAtual)}%`);
+      doc.text(linhas.join(' · '), 18, y);
+      y += 5;
+      doc.setFontSize(6.5);
+      doc.setTextColor(110, 110, 120);
+      doc.text('Percentuais calculados a partir da média das perguntas de adaptação do alinhamento mais recente. Os campos Desenvolvimento, Produtividade e Conceito geral aparecem depois como indicadores complementares do formulário.', 18, y, { maxWidth: 174 });
+      y += 10;
+    }
+  }
+
   const alertas = alertasColaborador(colaborador);
   if (alertas.length) {
     y = section(doc, y, 'Atenção');
@@ -259,7 +302,8 @@ export function gerarAcompanhamentoIntegracaoPdf(
       doc.setFontSize(7.2);
       doc.setTextColor(p.atrasado?150:55,p.atrasado?65:65,p.atrasado?65:75);
       const prazo = p.prazo ? new Date(`${p.prazo}T12:00:00`).toLocaleDateString('pt-BR') : '—';
-      const etapa = p.ciclo === 0 ? (p.etapa || 'Pré-integração') : `Alinhamento ${p.ciclo}`;
+      const dias = [15, 45, 75, 150];
+      const etapa = p.ciclo === 0 ? (p.etapa || 'Pré-integração') : `Alinhamento de ${dias[p.ciclo - 1] || p.ciclo} dias`;
       doc.text(`${p.papel} · ${p.formulario} · ${etapa} · prazo ${prazo}${p.atrasado?' · ATRASADO':''}`,18,y);
       y += 5;
     });
