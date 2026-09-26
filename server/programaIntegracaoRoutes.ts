@@ -871,7 +871,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       if (!ecoId && user.role === "admin") {
         const estado = asJson<Record<string, any>>(row.estado, {});
-        ecoId = Number(estado?.teste?.ecoAlunoId || row.alunoId || 0);
+        const testeAdmin = estado?.teste || {};
+        const perfilDemoSomenteAssessment =
+          Boolean(testeAdmin?.perfilDemoAutorizado) &&
+          String(testeAdmin?.demoTag || "").startsWith("ugp_demo_");
+        ecoId = perfilDemoSomenteAssessment
+          ? Number(row.alunoId || 0)
+          : Number(testeAdmin?.ecoAlunoId || row.alunoId || 0);
         if (!ecoId) {
           const match = escolherCorrespondenciaEcoSegura(String(row.nome || ""), String(row.email || ""), alunosEcoPermitidos);
           if (match.status === "automatico_seguro" && match.aluno?.id) ecoId = Number(match.aluno.id);
