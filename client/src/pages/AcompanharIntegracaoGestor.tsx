@@ -1008,7 +1008,7 @@ function PerfilAssessmentResumo({
             </div>
 
           {perfil?.expectativaGestor?.temRespostaBem && perfil.expectativaGestor.clusters?.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm lg:col-span-2">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <div className="font-black text-slate-900">Autoavaliação × prioridade do Gestor (BEM)</div>
@@ -1028,7 +1028,7 @@ function PerfilAssessmentResumo({
                   return (
                     <div key={item.key}>
                       <div className="text-xs font-semibold text-slate-700">{item.nome}</div>
-                      <div className="relative mt-2 h-8">
+                      <div className="relative mx-3 mt-2 h-8">
                         <div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100" />
                         {auto != null && (
                           <span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white bg-blue-600 shadow" style={{ left: Math.max(0,Math.min(100,auto)) + '%' }} />
@@ -1961,7 +1961,7 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
     <Card className="rounded-2xl border-slate-200 shadow-sm">
       <CardContent className="p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div><div className="font-bold text-slate-950">Marcos da integração</div><div className="mt-1 text-xs text-slate-500">Status dos formulários após cada alinhamento.</div></div>
+          <div><div className="font-bold text-slate-950">Status dos formulários por alinhamento</div><div className="mt-1 text-xs leading-relaxed text-slate-500">Veja, em cada alinhamento de 15, 45, 75 e 150 dias, se Colaborador (C), Gestor (G) e Anjo (A) já responderam os formulários previstos.</div></div>
           <div className="flex gap-3 text-[11px]"><span style={{color:PAPEL_CORES.colaborador}} className="font-semibold">● Colaborador</span><span style={{color:PAPEL_CORES.gestor}} className="font-semibold">● Gestor</span><span style={{color:PAPEL_CORES.anjo}} className="font-semibold">● Anjo</span></div>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -2060,12 +2060,52 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
 }
 
 function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
-  const compliancePendentes=(colaborador.jornadaCompliance.itens||[]).filter((x)=>!x.concluida);
-  const pdiPendentes=(colaborador.pdi.itens||[]).filter((x)=>!x.concluida);
+  const itens = [
+    {
+      titulo: 'Jornada Compliance',
+      percentual: colaborador.jornadaCompliance.percentual,
+      detalhe: colaborador.jornadaCompliance.total
+        ? colaborador.jornadaCompliance.concluidas + ' de ' + colaborador.jornadaCompliance.total + ' atividades concluídas'
+        : 'Ainda sem atividades registradas.',
+      icon: CheckCircle2,
+    },
+    {
+      titulo: 'Plano de Desenvolvimento (PDI)',
+      percentual: colaborador.pdi.percentual,
+      detalhe: colaborador.pdi.total
+        ? colaborador.pdi.concluidas + ' de ' + colaborador.pdi.total + ' tarefas concluídas'
+        : 'Ainda sem tarefas registradas.',
+      icon: Target,
+    },
+  ];
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card className="rounded-2xl border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex justify-between gap-3"><div><div className="font-bold">Jornada Compliance</div><div className="mt-1 text-xs text-slate-500">O que já foi concluído e o que ainda falta.</div></div><div className="font-mono text-3xl font-black">{fmtPct(colaborador.jornadaCompliance.percentual)}</div></div><Progress className="mt-4 h-2" value={colaborador.jornadaCompliance.percentual||0}/><div className="mt-4 space-y-2">{compliancePendentes.length?compliancePendentes.slice(0,12).map((x)=><div key={x.id} className="rounded-xl border bg-slate-50 p-3"><div className="text-sm font-semibold">{x.titulo}</div>{x.curso&&<div className="mt-1 text-xs text-slate-500">{x.curso}</div>}</div>):<div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{colaborador.jornadaCompliance.total?'Todas as atividades registradas estão concluídas.':'Ainda não há atividades registradas.'}</div>}</div></CardContent></Card>
-      <Card className="rounded-2xl border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex justify-between gap-3"><div><div className="font-bold">Plano de Desenvolvimento (PDI)</div><div className="mt-1 text-xs text-slate-500">Tarefas, status e prazo quando disponível.</div></div><div className="font-mono text-3xl font-black">{fmtPct(colaborador.pdi.percentual)}</div></div><Progress className="mt-4 h-2" value={colaborador.pdi.percentual||0}/><div className="mt-4 space-y-2">{pdiPendentes.length?pdiPendentes.slice(0,12).map((x)=><div key={x.id} className="rounded-xl border bg-slate-50 p-3"><div className="flex justify-between gap-3"><div className="text-sm font-semibold">{x.titulo}</div><Badge variant="outline">{String(x.status||'pendente').replaceAll('_',' ')}</Badge></div>{x.prazo&&<div className="mt-1 text-xs text-slate-500">Prazo: {dataBr(x.prazo)}</div>}</div>):<div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{colaborador.pdi.total?'Todas as tarefas registradas estão concluídas.':'Ainda não há tarefas registradas.'}</div>}</div></CardContent></Card>
+      {itens.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Card key={item.titulo} className="rounded-2xl border-slate-200 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 font-black text-slate-950">
+                    <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Icon className="h-4 w-4" /></span>
+                    {item.titulo}
+                  </div>
+                  <div className="mt-2 text-sm text-slate-500">{item.detalhe}</div>
+                </div>
+                <div className="font-mono text-4xl font-black tabular-nums text-slate-950">
+                  {item.percentual == null ? '—' : Math.round(item.percentual) + '%'}
+                </div>
+              </div>
+              <Progress className="mt-5 h-3" value={item.percentual || 0} />
+              <div className="mt-3 text-xs leading-relaxed text-slate-500">
+                Esta aba apresenta somente o avanço percentual. Os cursos e conteúdos individuais não são exibidos aqui.
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
