@@ -403,14 +403,15 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
     sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram uma diferença relevante na percepção sobre a adaptação do colaborador (diferença de ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5).`);
   }
 
-  if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
+  const fechamento = requisitosFechamento(colaborador);
+  if (!fechamento.prazoFinal && colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
     sinais.push(`PDI com ${Math.round(colaborador.pdi.percentual)}% de avanço`);
   }
-  if (colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual != null && colaborador.jornadaCompliance.percentual === 0) {
+  if (!fechamento.prazoFinal && colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual != null && colaborador.jornadaCompliance.percentual === 0) {
     sinais.push('Jornada Compliance ainda não iniciada');
   }
 
-  const fechamento = requisitosFechamento(colaborador);
+
   if (fechamento.prazoFinal) {
     if (!fechamento.complianceOk) {
       sinais.push(`Jornada Compliance precisa estar 100% concluída até o 150º dia (atual: ${colaborador.jornadaCompliance.percentual == null ? 'sem dado' : Math.round(Number(colaborador.jornadaCompliance.percentual)) + '%'}).`);
