@@ -1007,6 +1007,21 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       const formulariosPendentes: any[] = [];
       const feito = estado.feito && typeof estado.feito === "object" ? estado.feito : {};
+
+      // O Programa de Integração possui 95 ações reais no plano.
+      // Para a carteira executiva, o percentual do processo considera somente
+      // ações efetivamente concluídas (status "ok"), preservando a mesma lógica
+      // histórica de progresso usada no painel operacional.
+      const totalAcoesProcesso = 95;
+      const acoesConcluidasProcesso = Math.min(
+        totalAcoesProcesso,
+        Object.values(feito).filter((valor: any) =>
+          valor && typeof valor === "object" && String(valor.s || "") === "ok"
+        ).length,
+      );
+      const percentualProcessoConcluido = totalAcoesProcesso
+        ? Math.round((acoesConcluidasProcesso * 100) / totalAcoesProcesso)
+        : 0;
       const respostaBemAtiva = respostas.some((r: any) => r.form === "bem");
       const fichaSolicitacaoBem = feito["pre-05"] && typeof feito["pre-05"] === "object" ? feito["pre-05"] : null;
       const fichaRetornoBem = feito["pre-04b"] && typeof feito["pre-04b"] === "object" ? feito["pre-04b"] : null;
@@ -1109,6 +1124,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         anjo: row.anjo || "",
         alinhamentosFeitos,
         alinhamentosTotal: 4,
+        processoAcoes: {
+          total: totalAcoesProcesso,
+          concluidas: acoesConcluidasProcesso,
+          percentual: percentualProcessoConcluido,
+        },
         jornadaCompliance: andamento?.jornadaCompliance || { total: 0, concluidas: 0, percentual: null },
         pdi: andamento?.pdi || { total: 0, concluidas: 0, percentual: null },
         acessouEcoLider: andamento?.acessouEcoLider ?? null,
