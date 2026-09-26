@@ -2196,6 +2196,16 @@ function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamen
 
 function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const alertas = alertasDoColaborador(colaborador);
+  const pendencias = colaborador.formulariosPendentes || [];
+  const atrasados = pendencias.filter((p) => p.atrasado).length;
+
+  if (pendencias.length > 0) {
+    alertas.unshift(
+      atrasados > 0
+        ? atrasados + ' formulário(s) está(ão) atrasado(s) e precisa(m) de acompanhamento.'
+        : pendencias.length + ' formulário(s) está(ão) pendente(s) de preenchimento.'
+    );
+  }
 
   if (!alertas.length) {
     return (
@@ -2214,7 +2224,7 @@ function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcomp
           <div className="min-w-0">
             <div className="font-black text-slate-950">Alertas operacionais</div>
             <p className="mt-1 text-xs leading-relaxed text-slate-600">
-              São avisos objetivos do processo. Eles não entram no Índice de Integração e não representam diagnóstico.
+              Aqui entram pendências de formulário e outros avisos objetivos do processo. Eles não representam diagnóstico.
             </p>
           </div>
         </div>
@@ -2230,7 +2240,6 @@ function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcomp
     </Card>
   );
 }
-
 function TabelaFormulariosPendentesUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const pendencias = colaborador.formulariosPendentes || [];
 
