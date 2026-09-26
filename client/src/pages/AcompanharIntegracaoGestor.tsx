@@ -2076,11 +2076,12 @@ function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamen
 
 
 function CarteiraUgp({
-  colaboradores,busca,setBusca,unidade,setUnidade,status,setStatus,radarFiltro,setRadarFiltro,onAbrir
+  colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir
 }: {
   colaboradores: ColaboradorAcompanhamento[];
   busca:string; setBusca:(v:string)=>void;
   unidade:string; setUnidade:(v:string)=>void;
+  fase:string; setFase:(v:string)=>void;
   status:string; setStatus:(v:string)=>void;
   radarFiltro:string; setRadarFiltro:(v:string)=>void;
   onAbrir:(id:string)=>void;
@@ -2097,6 +2098,11 @@ function CarteiraUgp({
     const termo=busca.trim().toLowerCase();
     const okBusca=!termo||[x.nome,x.cargo,x.unidade].some((v)=>String(v||'').toLowerCase().includes(termo));
     const okUnidade=unidade==='all'||x.unidade===unidade;
+    const okFase=fase==='all'
+      || (fase==='ate15' && x.dia<=15)
+      || (fase==='16a45' && x.dia>15 && x.dia<=45)
+      || (fase==='46a75' && x.dia>45 && x.dia<=75)
+      || (fase==='76a150' && x.dia>75);
     const st=statusCarteira(x);
     const okStatus=status==='all'||st.chave===status;
     const sinais=sinaisAtencaoUgp(x).map((s)=>s.toLowerCase());
@@ -2104,7 +2110,7 @@ function CarteiraUgp({
       ||(radarFiltro==='queda'&&sinais.some((s)=>s.includes('menor')))
       ||(radarFiltro==='divergencia'&&sinais.some((s)=>s.includes('gestor')&&s.includes('anjo')))
       ||(radarFiltro==='atraso'&&x.formulariosPendentes.some((p)=>p.atrasado));
-    return okBusca&&okUnidade&&okStatus&&okRadar;
+    return okBusca&&okUnidade&&okFase&&okStatus&&okRadar;
   });
   const indices=colaboradores.map((x)=>indiceIntegracao(x).indice).filter((v):v is number=>v!=null);
   const indiceMedio=indices.length?Math.round(indices.reduce((s,v)=>s+v,0)/indices.length):null;
@@ -2153,6 +2159,7 @@ function CarteiraUgp({
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><Input className="pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/></div>
             <Select value={unidade} onValueChange={setUnidade}><SelectTrigger className="w-full lg:w-[220px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todas as unidades</SelectItem>{unidades.map((u)=><SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select>
+            <Select value={fase} onValueChange={setFase}><SelectTrigger className="w-full lg:w-[180px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todas as fases</SelectItem><SelectItem value="ate15">Até 15 dias</SelectItem><SelectItem value="16a45">16 a 45 dias</SelectItem><SelectItem value="46a75">46 a 75 dias</SelectItem><SelectItem value="76a150">76 a 150 dias</SelectItem></SelectContent></Select>
             <Select value={status} onValueChange={setStatus}><SelectTrigger className="w-full lg:w-[190px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todos os status</SelectItem><SelectItem value="em_dia">Em dia</SelectItem><SelectItem value="acompanhar">Acompanhar</SelectItem><SelectItem value="atencao">Atenção</SelectItem></SelectContent></Select>
           </div>
         </div>
@@ -2220,6 +2227,7 @@ export default function AcompanharIntegracaoGestor() {
   const [perfilColaborador, setPerfilColaborador] = useState<ColaboradorAcompanhamento | null>(null);
   const [modoDetalhe, setModoDetalhe] = useState(false);
   const [unidadeFiltro, setUnidadeFiltro] = useState('all');
+  const [faseFiltro, setFaseFiltro] = useState('all');
   const [statusFiltro, setStatusFiltro] = useState('all');
   const [radarFiltro, setRadarFiltro] = useState('all');
 
@@ -2283,6 +2291,7 @@ export default function AcompanharIntegracaoGestor() {
     setSelecionadoId('');
     setModoDetalhe(false);
     setUnidadeFiltro('all');
+    setFaseFiltro('all');
     setStatusFiltro('all');
     setRadarFiltro('all');
     void carregar(value);
@@ -2373,6 +2382,8 @@ export default function AcompanharIntegracaoGestor() {
                 setBusca={setBusca}
                 unidade={unidadeFiltro}
                 setUnidade={setUnidadeFiltro}
+                fase={faseFiltro}
+                setFase={setFaseFiltro}
                 status={statusFiltro}
                 setStatus={setStatusFiltro}
                 radarFiltro={radarFiltro}
