@@ -202,7 +202,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
   };
 
   let [processo] = await tx
-    .select({ id: programaIntegracaoProcessos.id, estado: programaIntegracaoProcessos.estado })
+    .select({ id: programaIntegracaoProcessos.id, nome: programaIntegracaoProcessos.nome, estado: programaIntegracaoProcessos.estado })
     .from(programaIntegracaoProcessos)
     .where(eq(programaIntegracaoProcessos.legacyId, demo.legacyId))
     .limit(1);
@@ -246,13 +246,22 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     if (!processo) throw new Error(`[DemoIntegracao] ${demo.tag} create failed`);
   } else {
     const currentState = (processo.estado || {}) as Record<string, any>;
-    const teste = currentState.teste || {};
-    if (teste.demoTag !== demo.tag || Number(teste.empresaProgramId) !== PROGRAM_ID) {
-      throw new Error(`[DemoIntegracao] ${demo.tag} abort: existing legacyId is not expected fixture`);
+    if (String(processo.nome || "") !== demo.name) {
+      throw new Error(`[DemoIntegracao] ${demo.tag} existing record name mismatch`);
     }
+    const estadoNormalizado = {
+      ...currentState,
+      ...estado,
+      teste: {
+        ...(currentState.teste || {}),
+        ...(estado.teste || {}),
+        demoTag: demo.tag,
+        empresaProgramId: PROGRAM_ID,
+      },
+    };
     await tx
       .update(programaIntegracaoProcessos)
-      .set({ estado, nome: demo.name, gestor: demo.gestor, gestorEmail: demo.gestorEmail, anjo: demo.anjo, anjoEmail: demo.anjoEmail })
+      .set({ estado: estadoNormalizado, nome: demo.name, gestor: demo.gestor, gestorEmail: demo.gestorEmail, anjo: demo.anjo, anjoEmail: demo.anjoEmail })
       .where(eq(programaIntegracaoProcessos.id, processo.id));
   }
 
