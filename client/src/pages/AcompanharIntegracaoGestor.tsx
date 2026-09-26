@@ -2085,6 +2085,87 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
           </div>
         </CardContent>
       </Card>
+
+      {(() => {
+        const comSinais = colaboradores
+          .map((item) => ({ item, sinais: sinaisAtencaoUgp(item) }))
+          .filter((entrada) => entrada.sinais.length > 0)
+          .sort((a,b) => b.sinais.length - a.sinais.length);
+
+        if (!comSinais.length) {
+          return (
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-4 text-sm text-emerald-800 shadow-sm">
+              <CheckCircle2 className="mr-2 inline h-4 w-4" />
+              Nenhum colaborador apresenta sinal objetivo de atenção nos dados disponíveis neste momento.
+            </div>
+          );
+        }
+
+        const filtradosRadar = radarFiltro === 'all'
+          ? comSinais
+          : comSinais.filter(({ item, sinais }) => {
+              const baixos = sinais.map((s)=>s.toLowerCase());
+              if (radarFiltro === 'queda') return baixos.some((s)=>s.includes('menor'));
+              if (radarFiltro === 'divergencia') return baixos.some((s)=>s.includes('gestor') && s.includes('anjo'));
+              if (radarFiltro === 'atraso') return item.formulariosPendentes.some((p)=>p.atrasado);
+              return true;
+            });
+
+        return (
+          <Card className="rounded-2xl border-violet-200/80 bg-[linear-gradient(135deg,#faf7ff_0%,#ffffff_55%,#f5f7ff_100%)] shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <AlertTriangle className="h-5 w-5 text-violet-700" />
+                Pessoas que merecem atenção agora
+              </CardTitle>
+              <CardDescription>
+                Cada cartão mostra quem precisa de acompanhamento e por quê. Os sinais são objetivos e servem para orientar a ação da UGP/RH; não são diagnóstico nem previsão.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!filtradosRadar.length ? (
+                <div className="rounded-xl border border-dashed bg-white/70 p-5 text-sm text-slate-500">
+                  Nenhuma pessoa corresponde ao filtro de Radar selecionado.
+                </div>
+              ) : (
+                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                  {filtradosRadar.slice(0,6).map(({ item, sinais }) => (
+                    <button
+                      type="button"
+                      key={item.id}
+                      onClick={() => onAbrir(item.id)}
+                      className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-1 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-black text-slate-950">{item.nome}</div>
+                          <div className="mt-1 text-xs text-slate-500">{item.cargo || 'Cargo não informado'} · Dia {item.dia}/{item.totalDias}</div>
+                        </div>
+                        <Badge variant="outline" className="shrink-0 border-amber-200 bg-amber-50 text-amber-800">
+                          {sinais.length} sinal(is)
+                        </Badge>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {sinais.slice(0,3).map((sinal) => (
+                          <div key={sinal} className="rounded-xl bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-950">
+                            <AlertTriangle className="mr-1.5 inline h-3.5 w-3.5 text-amber-700" />
+                            {sinal}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 inline-flex items-center gap-1 text-xs font-black text-violet-700">
+                        Ver acompanhamento desta pessoa
+                        <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
         <div className="border-b px-5 py-4"><div className="font-bold text-slate-950">Heatmap da trajetória</div><div className="mt-1 text-xs text-slate-500">Uma única escala azul: tons mais claros representam valores menores e tons mais intensos, valores maiores.</div></div>
         <div className="overflow-x-auto">
@@ -2571,23 +2652,8 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
           {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
           <TimelineAlinhamentos colaborador={colaborador}/>
           <SinaisCompactos colaborador={colaborador}/>
-
-          {colaborador.formulariosPendentes.length>0&&(
-            <details className="rounded-2xl border bg-white shadow-sm">
-              <summary className="cursor-pointer px-5 py-4 font-semibold text-slate-900">Ver {colaborador.formulariosPendentes.length} formulário(s) pendente(s)</summary>
-              <div className="space-y-2 border-t p-4">
-                {colaborador.formulariosPendentes.map((p,i)=>(
-                  <div key={i} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <div className="text-sm font-semibold">{p.papel} · {p.formulario}</div>
-                      <div className="text-xs text-slate-500">{p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'} · prazo {dataBr(p.prazo)}</div>
-                    </div>
-                    <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge>
-                  </div>
-                ))}
-              </div>
-            </details>
-          )}
+          <AlertasOperacionaisUgp colaborador={colaborador}/>
+          <TabelaFormulariosPendentesUgp colaborador={colaborador}/>
         </TabsContent>
 
         <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
