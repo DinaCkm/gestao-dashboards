@@ -2047,9 +2047,7 @@ export default function AcompanharIntegracaoGestor() {
                         <div className="mt-2 text-xs opacity-80">{saudeAtual.detalhe}</div>
                       </CardContent>
                     </Card>
-                  )}
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Dia do Onboarding</div><div className="mt-2 text-3xl font-bold">{colaborador.dia}<span className="text-base text-muted-foreground">/{colaborador.totalDias}</span></div><Progress className="mt-3" value={(colaborador.dia/colaborador.totalDias)*100} /></CardContent></Card>
-                  {colaborador.jornadaCompliance.total > 0 && (
                   <Card>
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
@@ -2079,13 +2077,19 @@ export default function AcompanharIntegracaoGestor() {
                           </TooltipContent>
                         </UiTooltip>
                       </div>
-                      <div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.jornadaCompliance.percentual)}</div>
-                      <Progress className="mt-3" value={colaborador.jornadaCompliance.percentual || 0} />
-                      <div className="mt-2 text-xs text-muted-foreground">{colaborador.jornadaCompliance.concluidas} de {colaborador.jornadaCompliance.total} atividades</div>
+                      {colaborador.jornadaCompliance.total > 0 ? (
+                        <>
+                          <div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.jornadaCompliance.percentual)}</div>
+                          <Progress className="mt-3" value={colaborador.jornadaCompliance.percentual || 0} />
+                          <div className="mt-2 text-xs text-muted-foreground">{colaborador.jornadaCompliance.concluidas} de {colaborador.jornadaCompliance.total} atividades</div>
+                        </>
+                      ) : (
+                        <div className="mt-3 rounded-xl bg-slate-50 px-3 py-3 text-sm font-medium text-slate-500">
+                          Ainda sem atividades registradas.
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
-                  )}
-                  {colaborador.pdi.total > 0 && (
                   <Card>
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
@@ -2107,9 +2111,17 @@ export default function AcompanharIntegracaoGestor() {
                           </TooltipContent>
                         </UiTooltip>
                       </div>
-                      <div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.pdi.percentual)}</div>
-                      <Progress className="mt-3" value={colaborador.pdi.percentual || 0} />
-                      <div className="mt-2 text-xs text-muted-foreground">{colaborador.pdi.concluidas} de {colaborador.pdi.total} tarefas</div>
+                      {colaborador.pdi.total > 0 ? (
+                        <>
+                          <div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.pdi.percentual)}</div>
+                          <Progress className="mt-3" value={colaborador.pdi.percentual || 0} />
+                          <div className="mt-2 text-xs text-muted-foreground">{colaborador.pdi.concluidas} de {colaborador.pdi.total} tarefas</div>
+                        </>
+                      ) : (
+                        <div className="mt-3 rounded-xl bg-slate-50 px-3 py-3 text-sm font-medium text-slate-500">
+                          Ainda sem tarefas registradas.
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                   )}
