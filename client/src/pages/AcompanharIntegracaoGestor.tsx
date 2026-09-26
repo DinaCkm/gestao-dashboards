@@ -2663,7 +2663,10 @@ function RegistrosAlinhamentosUgp({
         </Card>
 
         <Dialog open={Boolean(selecionado)} onOpenChange={(open) => !open && setSelecionado(null)}>
-          <DialogContent className="h-[92vh] w-[96vw] max-w-[1500px] overflow-hidden p-0">
+          <DialogContent
+            className="overflow-hidden p-0"
+            style={{ width: 'min(1400px, calc(100vw - 32px))', maxWidth: 'none', height: '90vh' }}
+          >
             {selecionado && (
               <div className="flex h-full flex-col">
                 <DialogHeader className="border-b bg-gradient-to-r from-violet-50 via-white to-slate-50 px-7 py-5">
@@ -2752,7 +2755,10 @@ function RegistrosAlinhamentosUgp({
       </Card>
 
       <Dialog open={Boolean(selecionado)} onOpenChange={(open) => !open && setSelecionado(null)}>
-        <DialogContent className="h-[92vh] w-[96vw] max-w-[1500px] overflow-hidden p-0">
+        <DialogContent
+            className="overflow-hidden p-0"
+            style={{ width: 'min(1400px, calc(100vw - 32px))', maxWidth: 'none', height: '90vh' }}
+          >
           {selecionado && (
             <div className="flex h-full flex-col">
               <DialogHeader className="border-b bg-gradient-to-r from-violet-50 via-white to-slate-50 px-7 py-5">
