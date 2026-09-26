@@ -430,72 +430,84 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
       texto: sinais.length
         ? `${sinais.length} sinal(is) objetivo(s) pedem atenção neste momento.`
         : 'Não há sinais críticos no momento. Confira a trajetória para entender a evolução.',
-      acao: 'Ver resumo',
+      acao: 'Abrir resumo executivo',
       destino: 'resumo-executivo',
-      destaque: sinais.length > 0 ? 'border-amber-200 bg-amber-50/70' : 'border-emerald-200 bg-emerald-50/60',
+      icon: Activity,
     },
     {
       numero: '2',
       titulo: 'Entenda o que mudou',
       texto: quedas.length
-        ? `${quedas.length} dimensão(ões) caiu(ram) desde o último ciclo. A maior mudança aparece destacada.`
-        : 'Compare 15, 45, 75 e 150 dias e veja onde houve avanço, estabilidade ou queda.',
-      acao: 'Ver trajetória',
+        ? `${quedas.length} dimensão(ões) caiu(ram) desde o último ciclo. Veja onde aconteceu e quanto mudou.`
+        : 'Compare 15, 45, 75 e 150 dias para enxergar avanço, estabilidade ou queda.',
+      acao: 'Abrir trajetória',
       destino: 'trajetoria-integracao',
-      destaque: quedas.length > 0 ? 'border-rose-200 bg-rose-50/60' : 'border-blue-200 bg-blue-50/60',
+      icon: Route,
     },
     {
       numero: '3',
       titulo: perfilDisponivel ? 'Conheça o perfil e as percepções' : 'Compare os três olhares',
       texto: perfilDisponivel
-        ? 'DISC/Assessment, percepção do colaborador, Gestor e Anjo ajudam a contextualizar a integração.'
-        : 'Compare como Colaborador, Gestor e Anjo percebem a experiência e a adaptação.',
-      acao: perfilDisponivel ? 'Ver perfil' : 'Ver três olhares',
+        ? 'DISC/Assessment, Colaborador, Gestor e Anjo ajudam a contextualizar a integração sem misturar os instrumentos.'
+        : 'Compare Colaborador, Gestor e Anjo para entender convergências e diferenças de percepção.',
+      acao: perfilDisponivel ? 'Abrir perfil' : 'Abrir três olhares',
       destino: perfilDisponivel ? 'perfil-assessment-resumo' : 'tres-olhares',
-      destaque: 'border-violet-200 bg-violet-50/60',
+      icon: perfilDisponivel ? Brain : Users,
     },
   ];
 
   return (
-    <Card className="overflow-hidden border-0 shadow-sm ring-1 ring-slate-200/70">
-      <CardHeader className="border-b bg-gradient-to-r from-slate-950 via-violet-950 to-indigo-950 text-white">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+    <Card className="overflow-hidden rounded-3xl border-0 bg-[linear-gradient(120deg,#171033_0%,#3b1679_48%,#4c35c8_100%)] text-white shadow-[0_14px_35px_rgba(45,24,100,0.18)]">
+      <CardContent className="p-5 sm:p-6">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-sm font-semibold text-violet-200">
-              <Eye className="h-4 w-4" /> COMECE POR AQUI
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.16em] text-violet-200">
+              <Eye className="h-4 w-4" /> Comece por aqui
             </div>
-            <CardTitle className="mt-1 text-xl !text-white">Leitura rápida para RH / UGP</CardTitle>
-            <CardDescription className="!text-white/75">
-              Em poucos passos, entenda o que está acontecendo, o que mudou e onde vale aprofundar.
-            </CardDescription>
+            <h3 className="mt-2 text-2xl font-black tracking-tight text-white">Leitura rápida para RH / UGP</h3>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-white/75">
+              Esta área funciona como um roteiro. Comece pela situação atual, depois veja a trajetória e, por fim,
+              aprofunde o perfil e as diferentes percepções.
+            </p>
           </div>
-          <Badge className="w-fit border-white/20 bg-white/10 text-white hover:bg-white/10">
-            Dia {colaborador.dia} de {colaborador.totalDias}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-3 p-4 lg:grid-cols-3">
-        {passos.map((passo) => (
-          <button
-            key={passo.numero}
-            type="button"
-            onClick={() => navegarPara(passo.destino)}
-            className={`group rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${passo.destaque}`}
-          >
-            <div className="flex items-start gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-sm font-black text-white shadow-sm">
-                {passo.numero}
-              </span>
-              <div className="min-w-0">
-                <div className="font-bold text-slate-950">{passo.titulo}</div>
-                <p className="mt-1 text-sm leading-relaxed text-slate-600">{passo.texto}</p>
-                <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-violet-700">
-                  {passo.acao} <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                </span>
-              </div>
+          <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-2 backdrop-blur-sm">
+            <Activity className="h-4 w-4 text-violet-200" />
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-white/60">Momento atual</div>
+              <div className="text-sm font-black">Dia {colaborador.dia} de {colaborador.totalDias}</div>
             </div>
-          </button>
-        ))}
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          {passos.map((passo) => {
+            const Icon = passo.icon;
+            return (
+              <button
+                key={passo.numero}
+                type="button"
+                onClick={() => navegarPara(passo.destino)}
+                className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left backdrop-blur-sm transition-all duration-200 hover:-translate-y-1 hover:bg-white/15 hover:shadow-[0_12px_30px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-violet-950 shadow-sm">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-violet-200">Passo {passo.numero}</span>
+                    </div>
+                    <div className="mt-1 font-black text-white">{passo.titulo}</div>
+                    <p className="mt-1 text-sm leading-relaxed text-white/70">{passo.texto}</p>
+                    <span className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-100">
+                      {passo.acao} <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </CardContent>
     </Card>
   );
@@ -503,87 +515,122 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
 
 function IndiceIntegracaoExplicado({
   indiceAtual,
+  colaborador,
 }: {
   indiceAtual: ReturnType<typeof indiceIntegracao>;
+  colaborador: ColaboradorAcompanhamento;
 }) {
   const parcial = indiceAtual.cobertura < 100;
+  const pesquisaMomentos = evolucaoPesquisaColaborador(colaborador.respostas);
+  const gestorMomentos = evolucaoPorPapel(colaborador.respostas, 'Gestor');
+  const anjoMomentos = evolucaoPorPapel(colaborador.respostas, 'Anjo');
+  const ultimaPesquisa = pesquisaMomentos[pesquisaMomentos.length - 1];
+  const ultimoGestor = gestorMomentos[gestorMomentos.length - 1];
+  const ultimoAnjo = anjoMomentos[anjoMomentos.length - 1];
+
   const itens = [
     {
       titulo: 'Experiência do colaborador',
-      subtitulo: 'Como a pessoa relata a própria integração',
       valor: indiceAtual.experiencia,
       peso: 40,
       icon: Users,
+      origem: 'Pesquisa de Integração respondida pelo próprio colaborador',
+      momento: ultimaPesquisa ? `último marco disponível: ${[15,45,75,150][ultimaPesquisa.ciclo - 1] || ultimaPesquisa.ciclo} dias` : 'sem pesquisa disponível',
+      explicacao: 'O sistema reúne as respostas sobre cultura e pertencimento, apoio do Anjo e colegas, gestão e trabalho/desenvolvimento. Essas respostas são convertidas para uma escala de 0 a 100 e resumidas em uma média.',
     },
     {
       titulo: 'Adaptação observada',
-      subtitulo: 'Percepção mais recente de Gestor e Anjo',
       valor: indiceAtual.adaptacao,
       peso: 35,
       icon: UserCheck,
+      origem: 'Avaliações preenchidas por Gestor e Anjo',
+      momento: `${ultimoGestor ? 'Gestor com avaliação disponível' : 'Gestor sem avaliação'} · ${ultimoAnjo ? 'Anjo com avaliação disponível' : 'Anjo sem avaliação'}`,
+      explicacao: 'O sistema usa a percepção mais recente de quem acompanha o colaborador no trabalho. Gestor e Anjo não respondem a mesma pesquisa do colaborador; por isso esta parte representa outro olhar sobre a adaptação.',
     },
     {
       titulo: 'Desenvolvimento',
-      subtitulo: 'Avanço do PDI e da Jornada Compliance',
       valor: indiceAtual.desenvolvimento,
       peso: 25,
       icon: Target,
+      origem: 'Avanço registrado no PDI e na Jornada Compliance',
+      momento: colaborador.pdi.total || colaborador.jornadaCompliance.total
+        ? `PDI: ${fmtPct(colaborador.pdi.percentual)} · Compliance: ${fmtPct(colaborador.jornadaCompliance.percentual)}`
+        : 'ainda não há dados de PDI/Compliance para este processo',
+      explicacao: 'Esta parte não mede sentimento nem perfil comportamental. Ela verifica se as ações de desenvolvimento e os conteúdos de Compliance estão avançando.',
     },
   ];
 
   return (
-    <Card className="overflow-hidden border-violet-200 shadow-sm">
-      <CardHeader className="bg-gradient-to-r from-violet-50 via-white to-indigo-50">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <Card className="overflow-hidden rounded-3xl border border-violet-200/70 bg-white shadow-sm transition-shadow duration-200 hover:shadow-lg">
+      <CardHeader className="border-b bg-[linear-gradient(135deg,#f7f3ff_0%,#ffffff_45%,#eef2ff_100%)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <CardTitle className="text-lg">Índice de Integração</CardTitle>
+              <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Network className="h-5 w-5" /></span>
+              <CardTitle className="text-xl">Índice de Integração</CardTitle>
               <Badge variant={parcial ? 'secondary' : 'default'}>
                 {parcial ? 'Resultado parcial' : 'Resultado completo'}
               </Badge>
             </div>
-            <CardDescription className="mt-1 max-w-2xl">
-              Um resumo executivo da integração. Ele combina experiência, adaptação observada e desenvolvimento — sem misturar DISC/Assessment ou atrasos administrativos.
+            <CardDescription className="mt-2 max-w-3xl text-sm leading-relaxed">
+              Pense neste índice como um <b>resumo executivo</b>. Ele não é uma avaliação psicológica e não substitui a leitura dos formulários.
+              Ele apenas reúne, em um único número, os dados de integração que já foram coletados.
             </CardDescription>
           </div>
-          <div className="rounded-2xl border border-violet-200 bg-white px-5 py-3 text-center shadow-sm">
+          <div className="rounded-2xl border border-violet-200 bg-white px-6 py-4 text-center shadow-sm">
             <div className="text-4xl font-black tracking-tight text-violet-950">
               {indiceAtual.indice == null ? '—' : `${Math.round(indiceAtual.indice)}%`}
             </div>
-            <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-              {parcial ? `${indiceAtual.cobertura}% dos componentes disponíveis` : 'cobertura completa'}
+            <div className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              {parcial ? `cobertura atual: ${indiceAtual.cobertura}%` : 'cobertura completa'}
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 p-5">
+
+      <CardContent className="space-y-5 p-5">
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-blue-100 p-2 text-blue-700"><Info className="h-4 w-4" /></span>
+            <div>
+              <div className="font-black text-slate-900">Como este número nasce, passo a passo</div>
+              <div className="mt-2 grid gap-3 text-sm leading-relaxed text-slate-700 md:grid-cols-3">
+                <div><b>1. Coletamos.</b><br/>O colaborador responde a Pesquisa de Integração; Gestor e Anjo respondem suas avaliações; PDI e Compliance registram desenvolvimento.</div>
+                <div><b>2. Transformamos.</b><br/>Cada fonte é convertida para uma escala comparável de 0 a 100, sem misturar DISC/Assessment no cálculo.</div>
+                <div><b>3. Combinamos.</b><br/>As partes disponíveis entram com pesos definidos. Se alguma ainda não existe, o sistema recalcula somente com o que já está disponível.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {parcial && (
-          <Alert className="border-blue-200 bg-blue-50/70">
-            <Info className="h-4 w-4 text-blue-700" />
-            <AlertTitle>Como interpretar este número</AlertTitle>
+          <Alert className="border-amber-200 bg-amber-50/80">
+            <AlertTriangle className="h-4 w-4 text-amber-700" />
+            <AlertTitle>Este resultado ainda é parcial</AlertTitle>
             <AlertDescription className="leading-relaxed text-slate-700">
-              O índice é <b>parcial</b> porque nem todos os componentes possuem dados. O sistema não inventa informação:
-              calcula somente com o que já existe e informa a cobertura. Quando PDI e Compliance estiverem disponíveis,
-              o componente Desenvolvimento passa a integrar o resultado.
+              Hoje existe base para {indiceAtual.cobertura}% dos componentes previstos. O sistema não preenche o que falta com estimativas.
+              Por isso, leia o número junto com a cobertura e com os componentes abaixo.
             </AlertDescription>
           </Alert>
         )}
-        <div className="grid gap-3 xl:grid-cols-3">
+
+        <div className="grid gap-4 xl:grid-cols-3">
           {itens.map((item) => {
             const Icon = item.icon;
             const disponivel = item.valor != null;
             return (
-              <div key={item.titulo} className={`rounded-2xl border p-4 ${disponivel ? 'bg-white' : 'border-dashed bg-slate-50/60'}`}>
+              <div key={item.titulo} className={`group rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${disponivel ? 'bg-white' : 'border-dashed bg-slate-50/70'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Icon className="h-4 w-4" /></span>
                     <div>
-                      <div className="font-bold text-slate-900">{item.titulo}</div>
-                      <div className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.subtitulo}</div>
+                      <div className="font-black text-slate-900">{item.titulo}</div>
+                      <div className="mt-1 text-xs font-semibold text-violet-700">{item.origem}</div>
                     </div>
                   </div>
                   <Badge variant="outline">peso {item.peso}%</Badge>
                 </div>
+
                 <div className="mt-4 flex items-end justify-between gap-3">
                   <div className="text-3xl font-black text-slate-950">
                     {disponivel ? `${Math.round(Number(item.valor))}%` : 'Sem dado'}
@@ -591,17 +638,25 @@ function IndiceIntegracaoExplicado({
                   {disponivel ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <Info className="h-5 w-5 text-slate-400" />}
                 </div>
                 <Progress className="mt-3 h-2" value={Number(item.valor || 0)} />
+                <div className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
+                  <div className="font-bold text-slate-800">De onde veio agora</div>
+                  <div className="mt-1">{item.momento}</div>
+                  <div className="mt-2 font-bold text-slate-800">O que este componente quer dizer</div>
+                  <div className="mt-1">{item.explicacao}</div>
+                </div>
               </div>
             );
           })}
         </div>
-        <details className="rounded-xl border bg-slate-50/60 px-4 py-3 text-sm">
-          <summary className="cursor-pointer font-bold text-violet-800">Ver fórmula e regras do cálculo</summary>
+
+        <details className="rounded-2xl border bg-slate-50/70 px-4 py-3 text-sm">
+          <summary className="cursor-pointer font-black text-violet-800">Ver a fórmula técnica e as regras</summary>
           <div className="mt-3 space-y-2 leading-relaxed text-slate-600">
-            <p><b>Experiência (40%)</b>: média das quatro dimensões da Pesquisa de Integração no ciclo mais recente.</p>
-            <p><b>Adaptação observada (35%)</b>: média das avaliações mais recentes disponíveis de Gestor e Anjo, convertidas para escala de 0 a 100.</p>
-            <p><b>Desenvolvimento (25%)</b>: média do avanço do PDI e da Jornada Compliance.</p>
-            <p>Se um componente ainda não possui dado, seus pesos disponíveis são reajustados proporcionalmente. O índice só é exibido com cobertura mínima de 60%.</p>
+            <p><b>Experiência do colaborador — 40%</b>: média das quatro dimensões da Pesquisa de Integração mais recente disponível.</p>
+            <p><b>Adaptação observada — 35%</b>: média das avaliações mais recentes de Gestor e Anjo, convertidas para escala de 0 a 100.</p>
+            <p><b>Desenvolvimento — 25%</b>: média do avanço do PDI e da Jornada Compliance.</p>
+            <p>Quando um componente não possui dado, os pesos das partes existentes são reajustados proporcionalmente. O índice só aparece com cobertura mínima de 60%.</p>
+            <p><b>Não entra no índice:</b> DISC, Assessment e pendências administrativas do processo.</p>
           </div>
         </details>
       </CardContent>
@@ -613,62 +668,121 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
   const trajetoria = trajetoriaPesquisa(colaborador.respostas);
   const mudancas = mudancasDimensoes(colaborador.respostas);
   const maiorQueda = mudancas.find((m) => m.direcao === 'caiu');
+  const parecer = parecerTrajetoria(colaborador.respostas);
+  const ParecerIcon = parecer.icon;
+
+  const chartData = trajetoria.map((momento) => ({
+    momento: `${[15,45,75,150][momento.ciclo - 1] || momento.ciclo} dias`,
+    experiencia: momento.geral == null ? null : Math.round(momento.geral),
+  }));
 
   return (
-    <Card id="trajetoria-integracao" className="scroll-mt-6 overflow-hidden border-slate-200 shadow-sm">
-      <CardHeader className="border-b bg-gradient-to-r from-blue-50 via-white to-cyan-50">
+    <Card id="trajetoria-integracao" className="scroll-mt-6 overflow-hidden rounded-3xl border-slate-200 shadow-sm transition-shadow duration-200 hover:shadow-lg">
+      <CardHeader className="border-b bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_52%,#ecfeff_100%)]">
         <div className="flex items-start gap-3">
           <span className="rounded-xl bg-blue-100 p-2.5 text-blue-700"><Route className="h-5 w-5" /></span>
           <div>
             <CardTitle className="text-xl">Trajetória da Integração</CardTitle>
-            <CardDescription className="mt-1">
-              Acompanhe como a experiência relatada pelo colaborador mudou nos marcos de 15, 45, 75 e 150 dias.
-              Verde indica melhora, vermelho indica queda e cinza indica estabilidade.
+            <CardDescription className="mt-1 max-w-4xl leading-relaxed">
+              Aqui você acompanha <b>como o próprio colaborador relatou a experiência dele</b> ao longo da integração.
+              Os números vêm da <b>Pesquisa de Integração</b>, respondida nos marcos de 15, 45, 75 e 150 dias,
+              normalmente após os respectivos ciclos de acompanhamento. Esta leitura é exclusiva para UGP/RH.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-5 p-5">
-        <div className="grid gap-3 md:grid-cols-4">
-          {trajetoria.map((momento, index) => {
-            const visual = visualDelta(momento.delta);
-            const Icon = visual.icon;
-            const dia = [15,45,75,150][momento.ciclo - 1] || momento.ciclo;
-            return (
-              <div key={momento.ciclo} className="relative rounded-2xl border bg-white p-4 shadow-sm">
-                {index < trajetoria.length - 1 && <div className="absolute -right-3 top-1/2 hidden h-px w-3 bg-slate-300 md:block" />}
-                <div className="text-xs font-bold uppercase tracking-wide text-slate-500">{dia} dias</div>
-                <div className="mt-2 text-3xl font-black text-slate-950">{momento.geral == null ? '—' : `${Math.round(momento.geral)}%`}</div>
-                <div className={`mt-3 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${visual.classes}`}>
-                  <Icon className="h-3.5 w-3.5" /> {index === 0 ? 'ponto inicial' : visual.texto}
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border bg-white p-4">
+            <div className="flex items-center gap-2 font-black text-slate-900"><ClipboardList className="h-4 w-4 text-blue-700" /> Quem respondeu?</div>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">O próprio colaborador, por meio da Pesquisa de Integração.</p>
+          </div>
+          <div className="rounded-2xl border bg-white p-4">
+            <div className="flex items-center gap-2 font-black text-slate-900"><Route className="h-4 w-4 text-blue-700" /> Quando é observado?</div>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">Nos principais marcos da jornada: 15, 45, 75 e 150 dias.</p>
+          </div>
+          <div className="rounded-2xl border bg-white p-4">
+            <div className="flex items-center gap-2 font-black text-slate-900"><Eye className="h-4 w-4 text-blue-700" /> O que observar?</div>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">Se a experiência melhora, cai, oscila ou permanece estável ao longo do tempo.</p>
+          </div>
+        </div>
+
+        <div className={`rounded-2xl border p-4 ${parecer.classes}`}>
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-white/70 p-2"><ParecerIcon className="h-5 w-5" /></span>
+            <div>
+              <div className="font-black">{parecer.titulo}</div>
+              <p className="mt-1 text-sm leading-relaxed opacity-90">{parecer.texto}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
+          <div className="grid gap-3 md:grid-cols-2">
+            {trajetoria.map((momento, index) => {
+              const visual = visualDelta(momento.delta);
+              const Icon = visual.icon;
+              const dia = [15,45,75,150][momento.ciclo - 1] || momento.ciclo;
+              return (
+                <div key={momento.ciclo} className="group relative rounded-2xl border bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs font-black uppercase tracking-wide text-slate-500">{dia} dias</div>
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">Pesquisa do colaborador</span>
+                  </div>
+                  <div className="mt-2 text-3xl font-black text-slate-950">{momento.geral == null ? '—' : `${Math.round(momento.geral)}%`}</div>
+                  <div className={`mt-3 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${visual.classes}`}>
+                    <Icon className="h-3.5 w-3.5" /> {index === 0 ? 'ponto inicial' : visual.texto}
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+
+          <div className="rounded-2xl border bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-black text-slate-900">Evolução visual</div>
+                <div className="text-xs text-slate-500">Média geral da Pesquisa de Integração em cada marco.</div>
               </div>
-            );
-          })}
+              <BarChart3 className="h-5 w-5 text-blue-700" />
+            </div>
+            <div className="mt-4 h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="momento" tick={{ fontSize: 11 }} />
+                  <YAxis domain={[0,100]} tick={{ fontSize: 11 }} />
+                  <ChartTooltip formatter={(value: any) => [`${value}%`, 'Experiência']} />
+                  <Line type="monotone" dataKey="experiencia" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
 
         {maiorQueda ? (
           <Alert className="border-rose-200 bg-rose-50/70">
             <ArrowDownRight className="h-4 w-4 text-rose-700" />
-            <AlertTitle>Queda que merece ser observada</AlertTitle>
-            <AlertDescription>
+            <AlertTitle>Queda do último ciclo que merece ser observada</AlertTitle>
+            <AlertDescription className="leading-relaxed">
               <b>{maiorQueda.nome}</b> caiu {Math.abs(Math.round(maiorQueda.delta || 0))} p.p. em relação ao ciclo anterior.
-              Isso não é diagnóstico: é um sinal objetivo para o RH verificar contexto e evolução.
+              O sistema não conclui o motivo. Ele apenas sinaliza a mudança para que a UGP/RH verifique o contexto no acompanhamento.
             </AlertDescription>
           </Alert>
         ) : (
           <Alert className="border-emerald-200 bg-emerald-50/70">
             <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-            <AlertTitle>Sem queda relevante no ciclo mais recente</AlertTitle>
+            <AlertTitle>Sem queda relevante no último ciclo</AlertTitle>
             <AlertDescription>As dimensões disponíveis permaneceram estáveis ou apresentaram melhora.</AlertDescription>
           </Alert>
         )}
 
         <div className="overflow-x-auto rounded-2xl border">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-slate-950 text-white">
               <tr>
-                <th className="px-4 py-3 text-left">O que estamos observando</th>
+                <th className="px-4 py-3 text-left">Dimensão observada</th>
                 {trajetoria.map((m) => <th key={m.ciclo} className="px-3 py-3 text-center">{[15,45,75,150][m.ciclo - 1]} dias</th>)}
                 <th className="px-4 py-3 text-center">Última mudança</th>
               </tr>
@@ -679,10 +793,10 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
                 const visual = visualDelta(mudanca?.delta ?? null);
                 const Icon = visual.icon;
                 return (
-                  <tr key={grupo.chave} className="border-t">
+                  <tr key={grupo.chave} className="border-t transition-colors hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <div className="font-bold text-slate-900">{grupo.nome}</div>
-                      <div className="mt-0.5 text-xs text-slate-500">
+                      <div className="font-black text-slate-900">{grupo.nome}</div>
+                      <div className="mt-0.5 text-xs leading-relaxed text-slate-500">
                         {grupo.chave === 'culturaPertencimento' ? 'Cultura, pertencimento, orgulho e identificação com a organização.' :
                          grupo.chave === 'anjoColegas' ? 'Apoio do Anjo, confiança e relações com os colegas.' :
                          grupo.chave === 'gestao' ? 'Clareza, comunicação e apoio percebidos na gestão.' :
@@ -690,7 +804,7 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
                       </div>
                     </td>
                     {trajetoria.map((m) => (
-                      <td key={m.ciclo} className="px-3 py-3 text-center font-bold">
+                      <td key={m.ciclo} className="px-3 py-3 text-center font-black">
                         {m.indices[grupo.chave] == null ? '—' : `${Math.round(Number(m.indices[grupo.chave]))}%`}
                       </td>
                     ))}
@@ -723,32 +837,33 @@ function PerfilAssessmentResumo({
   const temDados = Boolean(disc || clustersComDado.length);
 
   return (
-    <Card id="perfil-assessment-resumo" className="scroll-mt-6 overflow-hidden border-violet-200 shadow-sm">
-      <CardHeader className="border-b bg-gradient-to-r from-violet-950 via-purple-900 to-indigo-900 text-white">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+    <Card id="perfil-assessment-resumo" className="scroll-mt-6 overflow-hidden rounded-3xl border-0 bg-[linear-gradient(135deg,#f5f0ff_0%,#ffffff_48%,#eef2ff_100%)] shadow-sm ring-1 ring-violet-200/70 transition-all duration-200 hover:shadow-lg">
+      <CardContent className="p-5 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-3">
-            <span className="rounded-xl bg-white/10 p-2.5"><Brain className="h-5 w-5" /></span>
+            <span className="rounded-2xl bg-violet-700 p-3 text-white shadow-sm"><Brain className="h-5 w-5" /></span>
             <div>
-              <CardTitle className="!text-white">Perfil comportamental e Assessment</CardTitle>
-              <CardDescription className="mt-1 !text-white/75">
-                Contextualiza como a pessoa tende a atuar e como ela se percebe. Não entra no Índice de Integração.
-              </CardDescription>
+              <div className="text-xs font-black uppercase tracking-[0.14em] text-violet-700">Contexto comportamental</div>
+              <h3 className="mt-1 text-xl font-black text-slate-950">Perfil comportamental e Assessment</h3>
+              <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600">
+                Esta área ajuda a compreender tendências comportamentais, a autoavaliação do colaborador e, quando o BEM está preenchido,
+                a expectativa registrada pelo Gestor. <b>Esses dados não entram no Índice de Integração.</b>
+              </p>
             </div>
           </div>
-          <Button variant="secondary" className="gap-2 bg-white text-violet-950 hover:bg-violet-50" onClick={onAbrir}>
+          <Button className="gap-2 bg-violet-700 text-white shadow-sm hover:bg-violet-800" onClick={onAbrir}>
             <Sparkles className="h-4 w-4" /> Ver análise completa
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="p-5">
+
         {!temDados ? (
-          <div className="rounded-xl border border-dashed bg-slate-50 p-5 text-sm text-slate-600">
+          <div className="mt-5 rounded-2xl border border-dashed border-violet-200 bg-white/70 p-5 text-sm text-slate-600">
             Ainda não há DISC/Assessment vinculado a esta demonstração.
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="rounded-2xl border bg-violet-50/50 p-5">
-              <div className="text-xs font-bold uppercase tracking-wide text-violet-700">Perfil DISC predominante</div>
+          <div className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="group rounded-2xl border border-violet-200 bg-white/85 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+              <div className="text-xs font-black uppercase tracking-wide text-violet-700">Perfil DISC predominante</div>
               <div className="mt-2 text-4xl font-black text-violet-950">{disc?.perfilPredominante || '—'}</div>
               <div className="mt-1 text-sm text-slate-600">
                 {disc?.perfilSecundario ? `Perfil secundário: ${disc.perfilSecundario}` : 'Sem perfil secundário disponível'}
@@ -757,21 +872,24 @@ function PerfilAssessmentResumo({
                 {[
                   ['D', disc?.scoreD], ['I', disc?.scoreI], ['S', disc?.scoreS], ['C', disc?.scoreC],
                 ].map(([label, value]) => (
-                  <div key={String(label)} className="rounded-xl border bg-white p-2 text-center">
-                    <div className="text-[10px] font-bold text-slate-500">{label}</div>
+                  <div key={String(label)} className="rounded-xl border bg-slate-50 p-2 text-center transition-all hover:bg-white hover:shadow-sm">
+                    <div className="text-[10px] font-black text-slate-500">{label}</div>
                     <div className="text-lg font-black">{value == null ? '—' : Math.round(Number(value))}</div>
                   </div>
                 ))}
               </div>
+              <p className="mt-4 text-xs leading-relaxed text-slate-500">
+                O DISC descreve tendências de comportamento. Ele serve como contexto para a conversa e não como diagnóstico ou nota de desempenho.
+              </p>
             </div>
-            <div>
+            <div className="rounded-2xl border border-violet-200 bg-white/85 p-5 shadow-sm">
               <div className="mb-3">
-                <div className="font-bold text-slate-900">Como o colaborador se percebe</div>
-                <div className="text-xs text-slate-500">Autoavaliação agrupada por dimensões do Assessment.</div>
+                <div className="font-black text-slate-900">Como o colaborador se percebe</div>
+                <div className="text-xs leading-relaxed text-slate-500">Autoavaliação agrupada por dimensões do Assessment.</div>
               </div>
               <div className="space-y-2">
                 {clustersComDado.slice(0, 5).map((item) => (
-                  <div key={item.key} className="rounded-xl border bg-white p-3">
+                  <div key={item.key} className="group rounded-xl border bg-white p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-semibold">{item.nome}</span>
                       <span className="text-sm font-black">{Math.round(Number(item.percentual))}%</span>
@@ -1792,7 +1910,7 @@ export default function AcompanharIntegracaoGestor() {
                 <div id="resumo-executivo" className="scroll-mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {isUgpRh && indiceAtual && (
                     <div className="sm:col-span-2 xl:col-span-3">
-                      <IndiceIntegracaoExplicado indiceAtual={indiceAtual} />
+                      <IndiceIntegracaoExplicado indiceAtual={indiceAtual} colaborador={colaborador} />
                     </div>
                   )}
                   {saudeAtual && (
