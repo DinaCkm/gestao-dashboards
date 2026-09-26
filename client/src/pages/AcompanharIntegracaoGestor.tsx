@@ -1738,10 +1738,33 @@ export default function AcompanharIntegracaoGestor() {
   const [gestorView, setGestorView] = useState('all');
   const [perfilOpen, setPerfilOpen] = useState(false);
   const [perfilColaborador, setPerfilColaborador] = useState<ColaboradorAcompanhamento | null>(null);
+  const [destaqueSelecionado, setDestaqueSelecionado] = useState(false);
 
   const abrirPerfil = (item: ColaboradorAcompanhamento) => {
     setPerfilColaborador(item);
     setPerfilOpen(true);
+  };
+
+  const selecionarColaborador = (id: string, opcoes?: { rolar?: boolean }) => {
+    setSelecionadoId(id);
+    try {
+      window.sessionStorage.setItem('programa-integracao:colaborador-selecionado', id);
+    } catch {
+      // A seleção continua funcionando mesmo se o navegador bloquear storage.
+    }
+
+    if (opcoes?.rolar) {
+      setDestaqueSelecionado(true);
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          document.getElementById('acompanhamento-colaborador')?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }, 60);
+      });
+      window.setTimeout(() => setDestaqueSelecionado(false), 2200);
+    }
   };
 
   const carregar = async (gestor = gestorView) => {
@@ -1761,9 +1784,24 @@ export default function AcompanharIntegracaoGestor() {
       if (json?.adminView) {
         setGestorView(json?.gestorSelecionado?.key || 'all');
       }
-      setSelecionadoId((atual) => atual && json.colaboradores.some((c: any) => c.id === atual)
-        ? atual
-        : json.colaboradores[0]?.id || '');
+      setSelecionadoId((atual) => {
+        let guardado = '';
+        try {
+          guardado = window.sessionStorage.getItem('programa-integracao:colaborador-selecionado') || '';
+        } catch {
+          guardado = '';
+        }
+        const preferido = atual || guardado;
+        const proximo = preferido && json.colaboradores.some((c: any) => c.id === preferido)
+          ? preferido
+          : json.colaboradores[0]?.id || '';
+        try {
+          if (proximo) window.sessionStorage.setItem('programa-integracao:colaborador-selecionado', proximo);
+        } catch {
+          // Sem impacto funcional.
+        }
+        return proximo;
+      });
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível carregar o acompanhamento.');
     } finally {
@@ -1855,7 +1893,10 @@ export default function AcompanharIntegracaoGestor() {
               <Card className="border-violet-200/80 bg-gradient-to-r from-violet-50/90 via-white to-indigo-50/70">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg"><AlertTriangle className="h-5 w-5 text-violet-700" />Radar de atenção</CardTitle>
-                  <CardDescription>Prioriza sinais objetivos dos colaboradores ativos sem transformar percepções em diagnóstico ou previsão.</CardDescription>
+                  <CardDescription>
+                    Prioriza sinais objetivos dos colaboradores ativos sem transformar percepções em diagnóstico ou previsão.
+                    Clique em um cartão para abrir diretamente o acompanhamento daquela pessoa.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!radarUgp.length ? (
@@ -1866,13 +1907,25 @@ export default function AcompanharIntegracaoGestor() {
                         <button
                           type="button"
                           key={item.id}
-                          onClick={() => setSelecionadoId(item.id)}
-                          className="rounded-xl border bg-white p-4 text-left transition hover:-translate-y-px hover:shadow-sm"
+                          onClick={() => selecionarColaborador(item.id, { rolar: true })}
+                          aria-current={colaborador?.id === item.id ? 'true' : undefined}
+                          className={`group rounded-2xl border bg-white p-4 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 ${colaborador?.id === item.id ? 'border-violet-400 ring-2 ring-violet-100' : 'border-slate-200'}`}
                         >
-                          <div className="font-semibold">{item.nome}</div>
-                          <div className="mt-1 text-xs text-muted-foreground">{item.cargo || 'Cargo não informado'} · Dia {item.dia}/{item.totalDias}</div>
-                          <div className="mt-3 space-y-1 text-xs text-amber-900">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-black text-slate-950">{item.nome}</div>
+                              <div className="mt-1 text-xs text-muted-foreground">{item.cargo || 'Cargo não informado'} · Dia {item.dia}/{item.totalDias}</div>
+                            </div>
+                            {colaborador?.id === item.id && (
+                              <Badge className="shrink-0 bg-violet-100 text-violet-800 hover:bg-violet-100">Selecionado</Badge>
+                            )}
+                          </div>
+                          <div className="mt-3 space-y-1.5 text-xs leading-relaxed text-amber-900">
                             {sinais.slice(0, 2).map((sinal) => <div key={sinal}>• {sinal}</div>)}
+                          </div>
+                          <div className="mt-4 flex items-center gap-1 text-xs font-black text-violet-700">
+                            Ver acompanhamento deste colaborador
+                            <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                           </div>
                         </button>
                       ))}
@@ -1898,9 +1951,9 @@ export default function AcompanharIntegracaoGestor() {
                       key={c.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => setSelecionadoId(c.id)}
+                      onClick={() => selecionarColaborador(c.id)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') setSelecionadoId(c.id);
+                        if (e.key === 'Enter' || e.key === ' ') selecionarColaborador(c.id);
                       }}
                       className={`w-full cursor-pointer rounded-lg border p-3 text-left transition-colors ${colaborador?.id === c.id ? 'border-violet-400 bg-violet-50 dark:bg-violet-950/20' : 'hover:bg-muted/40'}`}
                     >
@@ -1941,10 +1994,16 @@ export default function AcompanharIntegracaoGestor() {
 
             {colaborador ? (
               <div className="space-y-6">
-                <Card className="overflow-hidden rounded-xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] shadow-md">
+                <Card
+                  id="acompanhamento-colaborador"
+                  className={`scroll-mt-4 overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] shadow-md transition-all duration-300 ${destaqueSelecionado ? 'ring-4 ring-amber-300/80 shadow-xl' : ''}`}
+                >
                   <CardContent className="p-6">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
+                        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/85">
+                          <UserCheck className="h-3.5 w-3.5" /> Colaborador selecionado para acompanhamento
+                        </div>
                         <h2 className="text-2xl font-bold !text-white drop-shadow-sm">{colaborador.nome}</h2>
                         <p className="mt-1 text-sm !text-white/90">{colaborador.cargo || 'Cargo não informado'} · {colaborador.unidade || 'Unidade/Regional não informada'}</p>
                         <p className="mt-2 text-xs !text-white/80">Início: {dataBr(colaborador.inicio)}</p>
