@@ -131,7 +131,7 @@ export const MODELOS_EMAIL_PADRAO_INTEGRACAO: Record<string, ModeloEmailIntegrac
       '- ali ficam registrados os **conhecimentos, documentos e treinamentos** que a pessoa precisa dominar nos primeiros seis meses;\n' +
       '- as **tarefas que você planejou para os primeiros 15 e 60 dias** entram direto na conversa do 1º Alinhamento e na construção do **PDI de Integração**;\n' +
       '- sem essas informações, o plano de desenvolvimento sai genérico e a adaptação tende a demorar mais.\n\n' +
-      '**Como isso volta para você**\nCom o formulário respondido, chegamos ao 1º Alinhamento já sabendo o que você espera do colaborador — e a conversa rende muito mais. Depois de cada ciclo, você recebe a ata e o relatório de evolução.\n\n' +
+      '**Como isso volta para você**\nCom o formulário respondido, chegamos ao 1º Alinhamento já sabendo o que você espera do colaborador — e a conversa rende muito mais. Depois de cada alinhamento, você recebe a ata e o relatório de evolução.\n\n' +
       '---\n\n' +
       'Se alguma informação ainda não estiver fechada, pode preencher com o que já tem e nos avisar que complementamos depois. E se preferir, respondemos juntos: é só dizer um horário que a gente chama você.\n\n' +
       'Ficamos no aguardo!' + ASS,
