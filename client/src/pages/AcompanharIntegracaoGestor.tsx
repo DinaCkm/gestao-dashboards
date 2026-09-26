@@ -1113,9 +1113,14 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
   const gestor = evolucaoPorPapel(colaborador.respostas, 'Gestor');
   const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
   const pesquisaAtual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
-  const gestorAtual = gestor[gestor.length - 1]?.mediaGeral == null ? null : gestor[gestor.length - 1]!.mediaGeral! * 20;
-  const anjoAtual = anjo[anjo.length - 1]?.mediaGeral == null ? null : anjo[anjo.length - 1]!.mediaGeral! * 20;
+  const gestorUltimo = gestor[gestor.length - 1];
+  const anjoUltimo = anjo[anjo.length - 1];
+  const gestorAtual = gestorUltimo?.mediaGeral == null ? null : Number(gestorUltimo.mediaGeral);
+  const anjoAtual = anjoUltimo?.mediaGeral == null ? null : Number(anjoUltimo.mediaGeral);
   const sinais = sinaisAtencaoUgp(colaborador);
+  const mudancas = mudancasDimensoes(colaborador.respostas);
+  const parecer = parecerTrajetoria(colaborador.respostas);
+  const ParecerIcon = parecer.icon;
 
   const evolucaoTexto = (() => {
     if (pesquisa.length < 2) return 'Ainda não há dois alinhamentos com a Pesquisa de Integração respondida para comparar a experiência do colaborador.';
@@ -1128,47 +1133,169 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
     if (Math.abs(delta) < 3) return `A experiência relatada pelo colaborador permaneceu estável entre os alinhamentos de ${diaDoAlinhamento(momentoAnterior.ciclo)} e ${diaDoAlinhamento(momentoAtual.ciclo)} dias.`;
     const variacao = variacaoPercentual(anterior, atual);
     return delta > 0
-      ? `Pelas respostas da Pesquisa de Integração, a experiência relatada ficou ${variacao == null ? 'maior' : `${Math.round(Math.abs(variacao))}% maior`} no alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias.`
-      : `Pelas respostas da Pesquisa de Integração, a experiência relatada ficou ${variacao == null ? 'menor' : `${Math.round(Math.abs(variacao))}% menor`} no alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias.`;
+      ? `Pelas respostas da Pesquisa de Integração, a experiência relatada ficou ${variacao == null ? 'maior' : `aproximadamente ${Math.round(Math.abs(variacao))}% maior`} no alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias.`
+      : `Pelas respostas da Pesquisa de Integração, a experiência relatada ficou ${variacao == null ? 'menor' : `aproximadamente ${Math.round(Math.abs(variacao))}% menor`} no alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias.`;
   })();
 
+  const comparacaoGestorAnjo = (() => {
+    if (gestorAtual == null || anjoAtual == null) {
+      return {
+        titulo: 'Comparação Gestor × Anjo ainda incompleta',
+        texto: 'É preciso ter as duas avaliações no mesmo alinhamento para verificar se existe diferença relevante de percepção.',
+        classes: 'border-slate-200 bg-slate-50 text-slate-700',
+      };
+    }
+    if (Number(gestorUltimo?.ciclo || 0) !== Number(anjoUltimo?.ciclo || 0)) {
+      return {
+        titulo: 'Avaliações em alinhamentos diferentes',
+        texto: `A avaliação mais recente do Gestor é do alinhamento de ${diaDoAlinhamento(gestorUltimo?.ciclo)} dias e a do Anjo é do alinhamento de ${diaDoAlinhamento(anjoUltimo?.ciclo)} dias. O sistema não compara momentos diferentes.`,
+        classes: 'border-slate-200 bg-slate-50 text-slate-700',
+      };
+    }
+    const diferenca = Math.abs(gestorAtual - anjoAtual);
+    if (diferenca >= 3) {
+      return {
+        titulo: 'Diferença relevante entre Gestor e Anjo',
+        texto: `No alinhamento de ${diaDoAlinhamento(gestorUltimo?.ciclo)} dias, as médias diferem ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5. Vale compreender o contexto dessa diferença sem presumir o motivo.`,
+        classes: 'border-amber-200 bg-amber-50 text-amber-950',
+      };
+    }
+    return {
+      titulo: 'Sem diferença relevante entre Gestor e Anjo',
+      texto: `No alinhamento de ${diaDoAlinhamento(gestorUltimo?.ciclo)} dias, a distância entre as médias é de ${diferenca.toFixed(1).replace('.', ',')} ponto(s) na escala de 1 a 5, abaixo do critério de 3 pontos adotado para sinalização.`,
+      classes: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+    };
+  })();
+
+  const proximosPassos = (() => {
+    const itens: string[] = [];
+    const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
+    if (atrasados) itens.push(`Regularizar ${atrasados} formulário(s) atrasado(s) antes da próxima leitura consolidada.`);
+
+    const maiorQueda = mudancas.find((item) => item.direcao === 'caiu');
+    if (maiorQueda) {
+      itens.push(`Explorar no próximo alinhamento o contexto da mudança em “${maiorQueda.nome}”, sem atribuir causa apenas ao resultado numérico.`);
+    }
+
+    if (
+      gestorAtual != null &&
+      anjoAtual != null &&
+      Number(gestorUltimo?.ciclo || 0) === Number(anjoUltimo?.ciclo || 0) &&
+      Math.abs(gestorAtual - anjoAtual) >= 3
+    ) {
+      itens.push('Compreender por que Gestor e Anjo estão percebendo a adaptação de maneiras diferentes, usando exemplos concretos do período.');
+    }
+
+    if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
+      itens.push(`Revisar a execução do PDI, que está em ${Math.round(colaborador.pdi.percentual)}% de avanço.`);
+    }
+    if (colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual === 0) {
+      itens.push('Verificar o início da Jornada Compliance e eventuais impedimentos operacionais.');
+    }
+
+    if (!itens.length) {
+      itens.push('Manter o acompanhamento previsto e confirmar no próximo alinhamento se a trajetória permanece estável ou evolui.');
+    }
+    return itens.slice(0, 4);
+  })();
+
+  const pesquisaCiclo = pesquisa[pesquisa.length - 1]?.ciclo;
+
   return (
-    <Card className="overflow-hidden border-violet-200/80">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg"><Sparkles className="h-5 w-5 text-violet-600" />Leitura integrada do alinhamento</CardTitle>
-        <CardDescription>
-          Síntese para UGP/RH. Os três números abaixo resumem instrumentos diferentes e não representam uma comparação de perguntas idênticas.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-3">
-          {[
-            ['Colaborador', pesquisaAtual, 'Pesquisa de Integração'],
-            ['Gestor', gestorAtual, 'Avaliação do Programa'],
-            ['Anjo', anjoAtual, 'Avaliação do Programa'],
-          ].map(([rotulo, valor, fonte]) => (
-            <div key={String(rotulo)} className="rounded-xl border bg-muted/15 p-4">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{rotulo}</div>
-              <div className="mt-1 text-3xl font-bold">{valor == null ? '—' : `${Math.round(Number(valor))}%`}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{fonte}</div>
-            </div>
-          ))}
-        </div>
-        <div className="grid gap-3 lg:grid-cols-2">
-          <div className="rounded-xl border bg-slate-50/70 p-4 text-sm">
-            <div className="font-semibold">Desde o alinhamento anterior</div>
-            <p className="mt-1 text-muted-foreground">{evolucaoTexto}</p>
+    <Card id="resumo-executivo" className="scroll-mt-6 overflow-hidden rounded-3xl border-violet-200/80 bg-white shadow-sm">
+      <CardHeader className="border-b bg-[linear-gradient(135deg,#f7f3ff_0%,#ffffff_50%,#eef2ff_100%)]">
+        <div className="flex items-start gap-3">
+          <span className="rounded-2xl bg-violet-700 p-3 text-white shadow-sm"><Sparkles className="h-5 w-5" /></span>
+          <div>
+            <div className="text-xs font-black uppercase tracking-[0.14em] text-violet-700">Leitura integrada</div>
+            <CardTitle className="mt-1 text-xl">O que os dados disponíveis mostram neste momento</CardTitle>
+            <CardDescription className="mt-1 max-w-4xl leading-relaxed">
+              Síntese objetiva para UGP/RH, construída por regras do sistema. Ela reúne informações já registradas,
+              mas não faz diagnóstico, não presume causas e não mistura perguntas de instrumentos diferentes.
+            </CardDescription>
           </div>
-          <div className="rounded-xl border bg-slate-50/70 p-4 text-sm">
-            <div className="font-semibold">Pontos para acompanhamento</div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-5 p-5">
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4">
+            <div className="text-xs font-black uppercase tracking-wide text-blue-700">Colaborador</div>
+            <div className="mt-1 text-3xl font-black text-slate-950">{pesquisaAtual == null ? '—' : `${Math.round(pesquisaAtual)}%`}</div>
+            <div className="mt-1 text-xs leading-relaxed text-slate-600">
+              Pesquisa de Integração{pesquisaCiclo ? ` · alinhamento de ${diaDoAlinhamento(pesquisaCiclo)} dias` : ''}
+            </div>
+            <div className="mt-2 text-[11px] leading-relaxed text-slate-500">Escala apresentada de 0 a 100, derivada das respostas originais de 1 a 5.</div>
+          </div>
+
+          <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-4">
+            <div className="text-xs font-black uppercase tracking-wide text-teal-700">Gestor</div>
+            <div className="mt-1 text-3xl font-black text-slate-950">{gestorAtual == null ? '—' : `${gestorAtual.toFixed(2).replace('.', ',')} / 5`}</div>
+            <div className="mt-1 text-xs leading-relaxed text-slate-600">
+              Avaliação do Programa{gestorUltimo ? ` · alinhamento de ${diaDoAlinhamento(gestorUltimo.ciclo)} dias` : ''}
+            </div>
+            <div className="mt-2 text-[11px] leading-relaxed text-slate-500">Média dos pilares na escala original de 1 a 5.</div>
+          </div>
+
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4">
+            <div className="text-xs font-black uppercase tracking-wide text-amber-700">Anjo</div>
+            <div className="mt-1 text-3xl font-black text-slate-950">{anjoAtual == null ? '—' : `${anjoAtual.toFixed(2).replace('.', ',')} / 5`}</div>
+            <div className="mt-1 text-xs leading-relaxed text-slate-600">
+              Avaliação do Programa{anjoUltimo ? ` · alinhamento de ${diaDoAlinhamento(anjoUltimo.ciclo)} dias` : ''}
+            </div>
+            <div className="mt-2 text-[11px] leading-relaxed text-slate-500">Média dos pilares na escala original de 1 a 5.</div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <div className={`rounded-2xl border p-4 ${parecer.classes}`}>
+            <div className="flex items-start gap-3">
+              <span className="rounded-xl bg-white/70 p-2"><ParecerIcon className="h-5 w-5" /></span>
+              <div>
+                <div className="font-black">Trajetória do colaborador</div>
+                <div className="mt-1 text-sm font-semibold">{parecer.titulo}</div>
+                <p className="mt-1 text-sm leading-relaxed opacity-90">{evolucaoTexto}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className={`rounded-2xl border p-4 ${comparacaoGestorAnjo.classes}`}>
+            <div className="flex items-start gap-3">
+              <span className="rounded-xl bg-white/70 p-2"><Users className="h-5 w-5" /></span>
+              <div>
+                <div className="font-black">Gestor × Anjo</div>
+                <div className="mt-1 text-sm font-semibold">{comparacaoGestorAnjo.titulo}</div>
+                <p className="mt-1 text-sm leading-relaxed opacity-90">{comparacaoGestorAnjo.texto}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <div className="flex items-center gap-2 font-black text-slate-900"><AlertTriangle className="h-4 w-4 text-amber-600" /> Sinais objetivos de atenção</div>
             {sinais.length ? (
-              <ul className="mt-1 space-y-1 text-muted-foreground">
-                {sinais.slice(0, 3).map((sinal) => <li key={sinal}>• {sinal}</li>)}
+              <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-700">
+                {sinais.slice(0, 4).map((sinal) => <li key={sinal} className="flex gap-2"><span aria-hidden="true">•</span><span>{sinal}</span></li>)}
               </ul>
             ) : (
-              <p className="mt-1 text-muted-foreground">Nenhum sinal objetivo de atenção identificado nos dados disponíveis neste alinhamento.</p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">Nenhum sinal objetivo de atenção identificado nos dados disponíveis neste momento.</p>
             )}
           </div>
+
+          <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4">
+            <div className="flex items-center gap-2 font-black text-slate-900"><Target className="h-4 w-4 text-violet-700" /> Para o próximo alinhamento</div>
+            <ul className="mt-3 space-y-2 text-sm leading-relaxed text-slate-700">
+              {proximosPassos.map((passo) => <li key={passo} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-violet-700" /><span>{passo}</span></li>)}
+            </ul>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs leading-relaxed text-slate-500">
+            A Leitura Integrada usa somente dados já existentes na plataforma. DISC/Assessment pode contextualizar a conversa em sua área própria,
+            mas não é misturado aos resultados dos formulários nesta síntese. O detalhamento por alinhamento e por dimensão permanece disponível na aba <b>Trajetória</b>.
+          </p>
         </div>
       </CardContent>
     </Card>
@@ -3038,17 +3165,7 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
         </TabsList>
 
         <TabsContent value="visao" className="space-y-4">
-          <Card className="rounded-2xl border-violet-100 bg-gradient-to-r from-violet-50 via-white to-blue-50 shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-start gap-3">
-                <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Sparkles className="h-5 w-5"/></span>
-                <div>
-                  <div className="text-xs font-bold uppercase tracking-wide text-violet-700">Resumo executivo</div>
-                  <p className="mt-2 text-base font-semibold leading-relaxed text-slate-800">{resumoExecutivoTexto(colaborador)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <LeituraIntegradaUgp colaborador={colaborador} />
 
           {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
           <TimelineAlinhamentos colaborador={colaborador}/>
