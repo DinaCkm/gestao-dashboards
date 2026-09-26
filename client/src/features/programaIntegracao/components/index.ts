@@ -23,3 +23,5 @@ export { DetalheProcessoReal } from './DetalheProcessoReal';
 export { default as DetalheProcesso } from './DetalheProcesso';
 
 export { RegistrosIntegracaoPainel } from './RegistrosIntegracaoPainel';
+
+export { LeituraIntegradaBackoffice } from './LeituraIntegradaBackoffice';
