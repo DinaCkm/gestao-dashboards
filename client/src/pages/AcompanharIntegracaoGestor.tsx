@@ -109,6 +109,18 @@ interface ColaboradorAcompanhamento {
   anjo: string;
   alinhamentosFeitos: number;
   alinhamentosTotal: number;
+  registrosAlinhamentos?: Array<{
+    numero: number;
+    marco: number;
+    realizado: boolean;
+    data: string | null;
+    registradoEm: string | null;
+    temConteudo: boolean;
+    lider: string;
+    colab: string;
+    conclusao: string;
+    consultora: string;
+  }>;
   processoAcoes: {
     total: number;
     concluidas: number;
@@ -2393,7 +2405,7 @@ function CarteiraUgp({
               {lista.map((x)=>{
                 const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
                 const progresso=x.processoAcoes || {total:95,concluidas:0,percentual:0};
-                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-violet-50/40"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-mono font-black tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[110px]"><div className="font-mono text-base font-black tabular-nums text-slate-950">{Math.round(progresso.percentual)}%</div><Progress className="mt-1.5 h-2" value={progresso.percentual}/><div className="mt-1 text-[10px] text-slate-500">{progresso.concluidas} de {progresso.total} ações</div></div></td><td className="px-4 py-4 text-center font-mono text-lg font-black tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
+                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-violet-50/40"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-mono font-black tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[110px]"><div className="font-mono text-base font-black tabular-nums text-slate-950">{Math.round(progresso.percentual)}%</div><Progress className="mt-1.5 h-2" value={progresso.percentual}/></div></td><td className="px-4 py-4 text-center font-mono text-lg font-black tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
               })}
               {!lista.length&&<tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
             </tbody>
@@ -2489,6 +2501,97 @@ function GuiaCompactoUgp({
   );
 }
 
+function RegistrosAlinhamentosUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const registros = (colaborador.registrosAlinhamentos || []).filter((item) => item.temConteudo);
+  const [selecionado, setSelecionado] = useState<(typeof registros)[number] | null>(null);
+  if (!registros.length) return null;
+
+  const resumo = (texto: string) => {
+    const limpo = String(texto || '').trim();
+    if (!limpo) return 'Registro disponível.';
+    return limpo.length > 150 ? limpo.slice(0, 147).trimEnd() + '...' : limpo;
+  };
+
+  return (
+    <>
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+        <CardHeader className="border-b bg-gradient-to-r from-slate-50 via-white to-violet-50/60">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><ClipboardList className="h-5 w-5" /></span>
+            <div>
+              <CardTitle className="text-lg">Registros dos alinhamentos</CardTitle>
+              <CardDescription className="mt-1 max-w-3xl leading-relaxed">
+                Síntese das atas e dos relatórios preparados para a UGP/RH. A tela mostra somente um resumo para facilitar a leitura; use “Ver registro” para consultar as percepções completas.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {registros.map((item) => (
+              <button
+                key={item.numero}
+                type="button"
+                onClick={() => setSelecionado(item)}
+                className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-violet-700">
+                      Alinhamento de {item.marco} dias
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">{item.data ? dataBr(item.data) : 'Data não informada'}</div>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 p-1.5 text-emerald-700"><CheckCircle2 className="h-4 w-4" /></span>
+                </div>
+                <div className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Parecer da consultora</div>
+                <p className="mt-1 min-h-[60px] text-sm leading-relaxed text-slate-700">{resumo(item.consultora || item.conclusao)}</p>
+                <div className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700">
+                  Ver registro completo <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={Boolean(selecionado)} onOpenChange={(open) => !open && setSelecionado(null)}>
+        <DialogContent className="max-h-[88vh] max-w-4xl overflow-y-auto">
+          {selecionado && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Registro do alinhamento de {selecionado.marco} dias</DialogTitle>
+                <DialogDescription>
+                  Ata de reunião e relatório para a UGP/RH · {selecionado.data ? dataBr(selecionado.data) : 'data não informada'}.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 md:grid-cols-2">
+                {[
+                  ['Percepção do Líder', selecionado.lider],
+                  ['Percepção do Colaborador', selecionado.colab],
+                  ['Conclusão da ata', selecionado.conclusao],
+                  ['Conclusão / Percepção da Consultora', selecionado.consultora],
+                ].map(([titulo, texto]) => (
+                  <div key={titulo} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                    <div className="text-xs font-black uppercase tracking-[0.08em] text-slate-500">{titulo}</div>
+                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-800">{texto || 'Sem registro.'}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-xl border-l-4 border-violet-300 bg-violet-50/60 p-3 text-xs leading-relaxed text-slate-600">
+                Registro de acompanhamento destinado à UGP/RH. As percepções devem ser lidas em conjunto com os formulários, a trajetória e os demais dados do processo, sem uso como diagnóstico isolado.
+              </div>
+              <div className="flex justify-end">
+                <DialogClose asChild><Button variant="outline">Fechar</Button></DialogClose>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function EvolucaoFormulariosUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   return (
     <div className="space-y-4">
@@ -2568,6 +2671,7 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
 
           {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
           <TimelineAlinhamentos colaborador={colaborador}/>
+          <RegistrosAlinhamentosUgp colaborador={colaborador}/>
           <SinaisCompactos colaborador={colaborador}/>
           <AlertasOperacionaisUgp colaborador={colaborador}/>
           <TabelaFormulariosPendentesUgp colaborador={colaborador}/>
