@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { AlertTriangle, BarChart3, Brain, ClipboardList, Download, Handshake, Info, Loader2, Network, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Brain, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, Handshake, Info, Loader2, Network, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import {
   LineChart,
@@ -285,6 +285,445 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
     sinais.push('Jornada Compliance ainda não iniciada');
   }
   return sinais;
+}
+
+
+type DirecaoMudanca = 'subiu' | 'caiu' | 'estavel' | 'sem_base';
+
+function direcaoMudanca(delta: number | null): DirecaoMudanca {
+  if (delta == null || !Number.isFinite(delta)) return 'sem_base';
+  if (delta >= 3) return 'subiu';
+  if (delta <= -3) return 'caiu';
+  return 'estavel';
+}
+
+function visualDelta(delta: number | null) {
+  const direcao = direcaoMudanca(delta);
+  if (direcao === 'subiu') return {
+    icon: ArrowUpRight,
+    texto: `+${Math.round(delta || 0)} p.p.`,
+    classes: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  };
+  if (direcao === 'caiu') return {
+    icon: ArrowDownRight,
+    texto: `${Math.round(delta || 0)} p.p.`,
+    classes: 'border-rose-200 bg-rose-50 text-rose-800',
+  };
+  if (direcao === 'estavel') return {
+    icon: ArrowRight,
+    texto: 'estável',
+    classes: 'border-slate-200 bg-slate-50 text-slate-700',
+  };
+  return {
+    icon: Info,
+    texto: 'sem comparação',
+    classes: 'border-slate-200 bg-white text-slate-500',
+  };
+}
+
+function trajetoriaPesquisa(respostas: RespostaAcompanhamento[]) {
+  const momentos = evolucaoPesquisaColaborador(respostas);
+  return momentos.map((momento, index) => {
+    const geral = mediaMomentoPesquisa(momento);
+    const anterior = index > 0 ? mediaMomentoPesquisa(momentos[index - 1]) : null;
+    return {
+      ...momento,
+      geral,
+      delta: geral != null && anterior != null ? geral - anterior : null,
+      anterior: momentos[index - 1] || null,
+    };
+  });
+}
+
+function mudancasDimensoes(respostas: RespostaAcompanhamento[]) {
+  const momentos = evolucaoPesquisaColaborador(respostas);
+  if (momentos.length < 2) return [];
+  const atual = momentos[momentos.length - 1];
+  const anterior = momentos[momentos.length - 2];
+  return INDICES_PESQUISA_COLABORADOR.map((grupo) => {
+    const a = anterior.indices[grupo.chave];
+    const b = atual.indices[grupo.chave];
+    const delta = a != null && b != null ? b - a : null;
+    return { nome: grupo.nome, anterior: a, atual: b, delta, direcao: direcaoMudanca(delta) };
+  }).sort((a, b) => Math.abs(b.delta || 0) - Math.abs(a.delta || 0));
+}
+
+function navegarPara(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const sinais = sinaisAtencaoUgp(colaborador);
+  const mudancas = mudancasDimensoes(colaborador.respostas);
+  const quedas = mudancas.filter((m) => m.direcao === 'caiu');
+  const perfilDisponivel = Boolean(
+    colaborador.perfilAssessment?.disc ||
+    colaborador.perfilAssessment?.autoavaliacaoClusters?.some((item) => item.percentual != null)
+  );
+
+  const passos = [
+    {
+      numero: '1',
+      titulo: 'Veja a situação agora',
+      texto: sinais.length
+        ? `${sinais.length} sinal(is) objetivo(s) pedem atenção neste momento.`
+        : 'Não há sinais críticos no momento. Confira a trajetória para entender a evolução.',
+      acao: 'Ver resumo',
+      destino: 'resumo-executivo',
+      destaque: sinais.length > 0 ? 'border-amber-200 bg-amber-50/70' : 'border-emerald-200 bg-emerald-50/60',
+    },
+    {
+      numero: '2',
+      titulo: 'Entenda o que mudou',
+      texto: quedas.length
+        ? `${quedas.length} dimensão(ões) caiu(ram) desde o último ciclo. A maior mudança aparece destacada.`
+        : 'Compare 15, 45, 75 e 150 dias e veja onde houve avanço, estabilidade ou queda.',
+      acao: 'Ver trajetória',
+      destino: 'trajetoria-integracao',
+      destaque: quedas.length > 0 ? 'border-rose-200 bg-rose-50/60' : 'border-blue-200 bg-blue-50/60',
+    },
+    {
+      numero: '3',
+      titulo: perfilDisponivel ? 'Conheça o perfil e as percepções' : 'Compare os três olhares',
+      texto: perfilDisponivel
+        ? 'DISC/Assessment, percepção do colaborador, Gestor e Anjo ajudam a contextualizar a integração.'
+        : 'Compare como Colaborador, Gestor e Anjo percebem a experiência e a adaptação.',
+      acao: perfilDisponivel ? 'Ver perfil' : 'Ver três olhares',
+      destino: perfilDisponivel ? 'perfil-assessment-resumo' : 'tres-olhares',
+      destaque: 'border-violet-200 bg-violet-50/60',
+    },
+  ];
+
+  return (
+    <Card className="overflow-hidden border-0 shadow-sm ring-1 ring-slate-200/70">
+      <CardHeader className="border-b bg-gradient-to-r from-slate-950 via-violet-950 to-indigo-950 text-white">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-violet-200">
+              <Eye className="h-4 w-4" /> COMECE POR AQUI
+            </div>
+            <CardTitle className="mt-1 text-xl !text-white">Leitura rápida para RH / UGP</CardTitle>
+            <CardDescription className="!text-white/75">
+              Em poucos passos, entenda o que está acontecendo, o que mudou e onde vale aprofundar.
+            </CardDescription>
+          </div>
+          <Badge className="w-fit border-white/20 bg-white/10 text-white hover:bg-white/10">
+            Dia {colaborador.dia} de {colaborador.totalDias}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4 lg:grid-cols-3">
+        {passos.map((passo) => (
+          <button
+            key={passo.numero}
+            type="button"
+            onClick={() => navegarPara(passo.destino)}
+            className={`group rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${passo.destaque}`}
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-950 text-sm font-black text-white shadow-sm">
+                {passo.numero}
+              </span>
+              <div className="min-w-0">
+                <div className="font-bold text-slate-950">{passo.titulo}</div>
+                <p className="mt-1 text-sm leading-relaxed text-slate-600">{passo.texto}</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-violet-700">
+                  {passo.acao} <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </div>
+            </div>
+          </button>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function IndiceIntegracaoExplicado({
+  indiceAtual,
+}: {
+  indiceAtual: ReturnType<typeof indiceIntegracao>;
+}) {
+  const parcial = indiceAtual.cobertura < 100;
+  const itens = [
+    {
+      titulo: 'Experiência do colaborador',
+      subtitulo: 'Como a pessoa relata a própria integração',
+      valor: indiceAtual.experiencia,
+      peso: 40,
+      icon: Users,
+    },
+    {
+      titulo: 'Adaptação observada',
+      subtitulo: 'Percepção mais recente de Gestor e Anjo',
+      valor: indiceAtual.adaptacao,
+      peso: 35,
+      icon: UserCheck,
+    },
+    {
+      titulo: 'Desenvolvimento',
+      subtitulo: 'Avanço do PDI e da Jornada Compliance',
+      valor: indiceAtual.desenvolvimento,
+      peso: 25,
+      icon: Target,
+    },
+  ];
+
+  return (
+    <Card className="overflow-hidden border-violet-200 shadow-sm">
+      <CardHeader className="bg-gradient-to-r from-violet-50 via-white to-indigo-50">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="text-lg">Índice de Integração</CardTitle>
+              <Badge variant={parcial ? 'secondary' : 'default'}>
+                {parcial ? 'Resultado parcial' : 'Resultado completo'}
+              </Badge>
+            </div>
+            <CardDescription className="mt-1 max-w-2xl">
+              Um resumo executivo da integração. Ele combina experiência, adaptação observada e desenvolvimento — sem misturar DISC/Assessment ou atrasos administrativos.
+            </CardDescription>
+          </div>
+          <div className="rounded-2xl border border-violet-200 bg-white px-5 py-3 text-center shadow-sm">
+            <div className="text-4xl font-black tracking-tight text-violet-950">
+              {indiceAtual.indice == null ? '—' : `${Math.round(indiceAtual.indice)}%`}
+            </div>
+            <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              {parcial ? `${indiceAtual.cobertura}% dos componentes disponíveis` : 'cobertura completa'}
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 p-5">
+        {parcial && (
+          <Alert className="border-blue-200 bg-blue-50/70">
+            <Info className="h-4 w-4 text-blue-700" />
+            <AlertTitle>Como interpretar este número</AlertTitle>
+            <AlertDescription className="leading-relaxed text-slate-700">
+              O índice é <b>parcial</b> porque nem todos os componentes possuem dados. O sistema não inventa informação:
+              calcula somente com o que já existe e informa a cobertura. Quando PDI e Compliance estiverem disponíveis,
+              o componente Desenvolvimento passa a integrar o resultado.
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="grid gap-3 xl:grid-cols-3">
+          {itens.map((item) => {
+            const Icon = item.icon;
+            const disponivel = item.valor != null;
+            return (
+              <div key={item.titulo} className={`rounded-2xl border p-4 ${disponivel ? 'bg-white' : 'border-dashed bg-slate-50/60'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Icon className="h-4 w-4" /></span>
+                    <div>
+                      <div className="font-bold text-slate-900">{item.titulo}</div>
+                      <div className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.subtitulo}</div>
+                    </div>
+                  </div>
+                  <Badge variant="outline">peso {item.peso}%</Badge>
+                </div>
+                <div className="mt-4 flex items-end justify-between gap-3">
+                  <div className="text-3xl font-black text-slate-950">
+                    {disponivel ? `${Math.round(Number(item.valor))}%` : 'Sem dado'}
+                  </div>
+                  {disponivel ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <Info className="h-5 w-5 text-slate-400" />}
+                </div>
+                <Progress className="mt-3 h-2" value={Number(item.valor || 0)} />
+              </div>
+            );
+          })}
+        </div>
+        <details className="rounded-xl border bg-slate-50/60 px-4 py-3 text-sm">
+          <summary className="cursor-pointer font-bold text-violet-800">Ver fórmula e regras do cálculo</summary>
+          <div className="mt-3 space-y-2 leading-relaxed text-slate-600">
+            <p><b>Experiência (40%)</b>: média das quatro dimensões da Pesquisa de Integração no ciclo mais recente.</p>
+            <p><b>Adaptação observada (35%)</b>: média das avaliações mais recentes disponíveis de Gestor e Anjo, convertidas para escala de 0 a 100.</p>
+            <p><b>Desenvolvimento (25%)</b>: média do avanço do PDI e da Jornada Compliance.</p>
+            <p>Se um componente ainda não possui dado, seus pesos disponíveis são reajustados proporcionalmente. O índice só é exibido com cobertura mínima de 60%.</p>
+          </div>
+        </details>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const trajetoria = trajetoriaPesquisa(colaborador.respostas);
+  const mudancas = mudancasDimensoes(colaborador.respostas);
+  const maiorQueda = mudancas.find((m) => m.direcao === 'caiu');
+
+  return (
+    <Card id="trajetoria-integracao" className="scroll-mt-6 overflow-hidden border-slate-200 shadow-sm">
+      <CardHeader className="border-b bg-gradient-to-r from-blue-50 via-white to-cyan-50">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-blue-100 p-2.5 text-blue-700"><Route className="h-5 w-5" /></span>
+          <div>
+            <CardTitle className="text-xl">Trajetória da Integração</CardTitle>
+            <CardDescription className="mt-1">
+              Acompanhe como a experiência relatada pelo colaborador mudou nos marcos de 15, 45, 75 e 150 dias.
+              Verde indica melhora, vermelho indica queda e cinza indica estabilidade.
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5 p-5">
+        <div className="grid gap-3 md:grid-cols-4">
+          {trajetoria.map((momento, index) => {
+            const visual = visualDelta(momento.delta);
+            const Icon = visual.icon;
+            const dia = [15,45,75,150][momento.ciclo - 1] || momento.ciclo;
+            return (
+              <div key={momento.ciclo} className="relative rounded-2xl border bg-white p-4 shadow-sm">
+                {index < trajetoria.length - 1 && <div className="absolute -right-3 top-1/2 hidden h-px w-3 bg-slate-300 md:block" />}
+                <div className="text-xs font-bold uppercase tracking-wide text-slate-500">{dia} dias</div>
+                <div className="mt-2 text-3xl font-black text-slate-950">{momento.geral == null ? '—' : `${Math.round(momento.geral)}%`}</div>
+                <div className={`mt-3 inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${visual.classes}`}>
+                  <Icon className="h-3.5 w-3.5" /> {index === 0 ? 'ponto inicial' : visual.texto}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {maiorQueda ? (
+          <Alert className="border-rose-200 bg-rose-50/70">
+            <ArrowDownRight className="h-4 w-4 text-rose-700" />
+            <AlertTitle>Queda que merece ser observada</AlertTitle>
+            <AlertDescription>
+              <b>{maiorQueda.nome}</b> caiu {Math.abs(Math.round(maiorQueda.delta || 0))} p.p. em relação ao ciclo anterior.
+              Isso não é diagnóstico: é um sinal objetivo para o RH verificar contexto e evolução.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert className="border-emerald-200 bg-emerald-50/70">
+            <CheckCircle2 className="h-4 w-4 text-emerald-700" />
+            <AlertTitle>Sem queda relevante no ciclo mais recente</AlertTitle>
+            <AlertDescription>As dimensões disponíveis permaneceram estáveis ou apresentaram melhora.</AlertDescription>
+          </Alert>
+        )}
+
+        <div className="overflow-x-auto rounded-2xl border">
+          <table className="w-full min-w-[760px] text-sm">
+            <thead className="bg-slate-950 text-white">
+              <tr>
+                <th className="px-4 py-3 text-left">O que estamos observando</th>
+                {trajetoria.map((m) => <th key={m.ciclo} className="px-3 py-3 text-center">{[15,45,75,150][m.ciclo - 1]} dias</th>)}
+                <th className="px-4 py-3 text-center">Última mudança</th>
+              </tr>
+            </thead>
+            <tbody>
+              {INDICES_PESQUISA_COLABORADOR.map((grupo) => {
+                const mudanca = mudancas.find((m) => m.nome === grupo.nome);
+                const visual = visualDelta(mudanca?.delta ?? null);
+                const Icon = visual.icon;
+                return (
+                  <tr key={grupo.chave} className="border-t">
+                    <td className="px-4 py-3">
+                      <div className="font-bold text-slate-900">{grupo.nome}</div>
+                      <div className="mt-0.5 text-xs text-slate-500">
+                        {grupo.chave === 'culturaPertencimento' ? 'Cultura, pertencimento, orgulho e identificação com a organização.' :
+                         grupo.chave === 'anjoColegas' ? 'Apoio do Anjo, confiança e relações com os colegas.' :
+                         grupo.chave === 'gestao' ? 'Clareza, comunicação e apoio percebidos na gestão.' :
+                         'Satisfação com o trabalho, segurança técnica, apoio e desenvolvimento.'}
+                      </div>
+                    </td>
+                    {trajetoria.map((m) => (
+                      <td key={m.ciclo} className="px-3 py-3 text-center font-bold">
+                        {m.indices[grupo.chave] == null ? '—' : `${Math.round(Number(m.indices[grupo.chave]))}%`}
+                      </td>
+                    ))}
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold ${visual.classes}`}>
+                        <Icon className="h-3.5 w-3.5" /> {visual.texto}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PerfilAssessmentResumo({
+  colaborador,
+  onAbrir,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onAbrir: () => void;
+}) {
+  const perfil = colaborador.perfilAssessment;
+  const disc = perfil?.disc;
+  const clustersComDado = (perfil?.autoavaliacaoClusters || []).filter((item) => item.percentual != null);
+  const temDados = Boolean(disc || clustersComDado.length);
+
+  return (
+    <Card id="perfil-assessment-resumo" className="scroll-mt-6 overflow-hidden border-violet-200 shadow-sm">
+      <CardHeader className="border-b bg-gradient-to-r from-violet-950 via-purple-900 to-indigo-900 text-white">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-white/10 p-2.5"><Brain className="h-5 w-5" /></span>
+            <div>
+              <CardTitle className="!text-white">Perfil comportamental e Assessment</CardTitle>
+              <CardDescription className="mt-1 !text-white/75">
+                Contextualiza como a pessoa tende a atuar e como ela se percebe. Não entra no Índice de Integração.
+              </CardDescription>
+            </div>
+          </div>
+          <Button variant="secondary" className="gap-2 bg-white text-violet-950 hover:bg-violet-50" onClick={onAbrir}>
+            <Sparkles className="h-4 w-4" /> Ver análise completa
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="p-5">
+        {!temDados ? (
+          <div className="rounded-xl border border-dashed bg-slate-50 p-5 text-sm text-slate-600">
+            Ainda não há DISC/Assessment vinculado a esta demonstração.
+          </div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="rounded-2xl border bg-violet-50/50 p-5">
+              <div className="text-xs font-bold uppercase tracking-wide text-violet-700">Perfil DISC predominante</div>
+              <div className="mt-2 text-4xl font-black text-violet-950">{disc?.perfilPredominante || '—'}</div>
+              <div className="mt-1 text-sm text-slate-600">
+                {disc?.perfilSecundario ? `Perfil secundário: ${disc.perfilSecundario}` : 'Sem perfil secundário disponível'}
+              </div>
+              <div className="mt-4 grid grid-cols-4 gap-2">
+                {[
+                  ['D', disc?.scoreD], ['I', disc?.scoreI], ['S', disc?.scoreS], ['C', disc?.scoreC],
+                ].map(([label, value]) => (
+                  <div key={String(label)} className="rounded-xl border bg-white p-2 text-center">
+                    <div className="text-[10px] font-bold text-slate-500">{label}</div>
+                    <div className="text-lg font-black">{value == null ? '—' : Math.round(Number(value))}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="mb-3">
+                <div className="font-bold text-slate-900">Como o colaborador se percebe</div>
+                <div className="text-xs text-slate-500">Autoavaliação agrupada por dimensões do Assessment.</div>
+              </div>
+              <div className="space-y-2">
+                {clustersComDado.slice(0, 5).map((item) => (
+                  <div key={item.key} className="rounded-xl border bg-white p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold">{item.nome}</span>
+                      <span className="text-sm font-black">{Math.round(Number(item.percentual))}%</span>
+                    </div>
+                    <Progress className="mt-2 h-2" value={Number(item.percentual || 0)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
@@ -1274,6 +1713,8 @@ export default function AcompanharIntegracaoGestor() {
                   </CardContent>
                 </Card>
 
+                {isUgpRh && <GuiaLeituraUgp colaborador={colaborador} />}
+
                 {alertasColaborador.length > 0 && (
                   <div className="space-y-2">
                     {alertasColaborador.map((mensagem) => (
@@ -1286,25 +1727,11 @@ export default function AcompanharIntegracaoGestor() {
                   </div>
                 )}
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div id="resumo-executivo" className="scroll-mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {isUgpRh && indiceAtual && (
-                    <Card className="border-violet-200">
-                      <CardContent className="pt-5">
-                        <div className="text-xs font-semibold uppercase text-muted-foreground">Índice de Integração</div>
-                        <div className="mt-2 text-3xl font-bold">{indiceAtual.indice == null ? '—' : `${Math.round(indiceAtual.indice)}%`}</div>
-                        <Progress className="mt-3" value={indiceAtual.indice || 0} />
-                        <div className="mt-2 text-xs text-muted-foreground">Cobertura dos dados: {indiceAtual.cobertura}% · mínimo de 60% para cálculo.</div>
-                        <details className="mt-3 rounded-lg border bg-muted/10 px-3 py-2 text-xs">
-                          <summary className="cursor-pointer font-semibold text-violet-700">Como é calculado</summary>
-                          <div className="mt-2 space-y-1.5 text-muted-foreground">
-                            <div className="flex justify-between gap-3"><span>Experiência do colaborador</span><b>{indiceAtual.experiencia == null ? 'sem base' : `${Math.round(indiceAtual.experiencia)}%`} · peso 40%</b></div>
-                            <div className="flex justify-between gap-3"><span>Adaptação observada</span><b>{indiceAtual.adaptacao == null ? 'sem base' : `${Math.round(indiceAtual.adaptacao)}%`} · peso 35%</b></div>
-                            <div className="flex justify-between gap-3"><span>Desenvolvimento (PDI + Compliance)</span><b>{indiceAtual.desenvolvimento == null ? 'sem base' : `${Math.round(indiceAtual.desenvolvimento)}%`} · peso 25%</b></div>
-                            <p className="pt-1 leading-relaxed">O cálculo usa apenas componentes disponíveis e reajusta proporcionalmente os pesos. Assessment/DISC não entra no índice e pendências administrativas não reduzem a nota da pessoa.</p>
-                          </div>
-                        </details>
-                      </CardContent>
-                    </Card>
+                    <div className="sm:col-span-2 xl:col-span-3">
+                      <IndiceIntegracaoExplicado indiceAtual={indiceAtual} />
+                    </div>
                   )}
                   {saudeAtual && (
                     <Card className={saudeAtual.classes}>
@@ -1379,7 +1806,20 @@ export default function AcompanharIntegracaoGestor() {
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Alinhamentos realizados</div><div className="mt-2 text-3xl font-bold">{colaborador.alinhamentosFeitos}<span className="text-base text-muted-foreground">/{colaborador.alinhamentosTotal}</span></div><Progress className="mt-3" value={(colaborador.alinhamentosFeitos/colaborador.alinhamentosTotal)*100} /></CardContent></Card>
                 </div>
 
-                {isUgpRh && <LeituraIntegradaUgp colaborador={colaborador} />}
+                {isUgpRh && <TrajetoriaIntegracao colaborador={colaborador} />}
+
+                {isUgpRh && (
+                  <PerfilAssessmentResumo
+                    colaborador={colaborador}
+                    onAbrir={() => abrirPerfil(colaborador)}
+                  />
+                )}
+
+                {isUgpRh && (
+                  <div id="tres-olhares" className="scroll-mt-6">
+                    <LeituraIntegradaUgp colaborador={colaborador} />
+                  </div>
+                )}
 
                 {isUgpRh && (
                   <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
