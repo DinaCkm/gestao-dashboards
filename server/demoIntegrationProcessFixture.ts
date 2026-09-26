@@ -421,7 +421,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
   ) => {
     const dedupeKey = `${demo.tag}:${formKey}:${papel.toLowerCase()}:${cycle.ciclo}`;
     const scenarioCode = demo.scenario === "queda" ? "Q" : demo.scenario === "pendencias" ? "P" : "S";
-    const protocolo = `DEMO-${scenarioCode}-${formKey === "pesquisa" ? "PES" : papel === "Gestor" ? "GES" : "ANJ"}-${cycle.ciclo}`;
+    const protocolo = `APRESENTACAO-${scenarioCode}-${formKey === "pesquisa" ? "PES" : papel === "Gestor" ? "GES" : "ANJ"}-${cycle.ciclo}`;
     const [existing] = await tx
       .select({ id: programaIntegracaoRespostas.id })
       .from(programaIntegracaoRespostas)
@@ -464,7 +464,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
   };
 
   const bemDedupeKey = `${demo.tag}:bem:gestor:0`;
-  const bemProtocolo = `DEMO-${demo.scenario === "queda" ? "Q" : demo.scenario === "pendencias" ? "P" : "S"}-BEM`;
+  const bemProtocolo = `APRESENTACAO-${demo.scenario === "queda" ? "Q" : demo.scenario === "pendencias" ? "P" : "S"}-BEM`;
   const [bemExistente] = await tx
     .select({ id: programaIntegracaoRespostas.id })
     .from(programaIntegracaoRespostas)
