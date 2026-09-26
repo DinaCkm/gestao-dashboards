@@ -67,6 +67,38 @@ function tipoIcone(tipo: RegistroIntegracaoTipo) {
   return Paperclip;
 }
 
+function FotoPreview({ legacyId, item }: { legacyId: string; item: RegistroIntegracaoItem }) {
+  const [url, setUrl] = useState('');
+  const [falhou, setFalhou] = useState(false);
+
+  useEffect(() => {
+    let cancelado = false;
+    if (item.tipo !== 'foto' || !item.hasFile || item.excluidoEm) return;
+    obterArquivoRegistroIntegracao(legacyId, item.id)
+      .then((arquivo) => { if (!cancelado) setUrl(arquivo.url); })
+      .catch(() => { if (!cancelado) setFalhou(true); });
+    return () => { cancelado = true; };
+  }, [legacyId, item.id, item.tipo, item.hasFile, item.excluidoEm]);
+
+  if (item.tipo !== 'foto' || !item.hasFile || item.excluidoEm) return null;
+  if (falhou) {
+    return <div className="mt-3 grid h-44 place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground">Não foi possível carregar a prévia.</div>;
+  }
+  if (!url) {
+    return <div className="mt-3 grid h-44 place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground">Carregando foto...</div>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+      className="mt-3 block w-full overflow-hidden rounded-lg border bg-muted/20 text-left"
+      title="Abrir foto em tamanho maior"
+    >
+      <img src={url} alt={item.titulo} className="h-52 w-full object-cover transition-transform hover:scale-[1.01]" />
+    </button>
+  );
+}
+
 async function arquivoParaBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
   const bytesArr = new Uint8Array(buffer);
@@ -414,6 +446,8 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                   </div>
 
                   {item.descricao && <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{item.descricao}</p>}
+
+                  <FotoPreview legacyId={legacyId} item={item} />
 
                   {item.hasFile && (
                     <div className="mt-3 rounded-lg border bg-muted/20 p-3">
