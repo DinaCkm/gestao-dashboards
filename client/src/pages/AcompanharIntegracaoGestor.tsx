@@ -309,6 +309,31 @@ function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
   return { indice, cobertura, experiencia, adaptacao, desenvolvimento };
 }
 
+function requisitosFechamento(colaborador: ColaboradorAcompanhamento) {
+  const pendentes = colaborador.formulariosPendentes.length;
+  const acoesOk = Number(colaborador.processoAcoes.percentual || 0) >= 100;
+  const alinhamentosOk = colaborador.alinhamentosFeitos >= colaborador.alinhamentosTotal;
+  const formulariosOk = pendentes === 0;
+  const complianceOk = colaborador.jornadaCompliance.percentual != null && Number(colaborador.jornadaCompliance.percentual) >= 100;
+  const pdiOk = colaborador.pdi.percentual != null && Number(colaborador.pdi.percentual) >= 100;
+  const prazoFinal = colaborador.totalDias > 0 && colaborador.dia >= colaborador.totalDias;
+
+  const pendenciasFechamento: string[] = [];
+  if (!acoesOk) pendenciasFechamento.push('ações do processo');
+  if (!alinhamentosOk) pendenciasFechamento.push('alinhamentos');
+  if (!formulariosOk) pendenciasFechamento.push('formulários');
+  if (!complianceOk) pendenciasFechamento.push('Jornada Compliance');
+  if (!pdiOk) pendenciasFechamento.push('tarefas do PDI');
+
+  return {
+    prazoFinal,
+    completo: acoesOk && alinhamentosOk && formulariosOk && complianceOk && pdiOk,
+    pendenciasFechamento,
+    complianceOk,
+    pdiOk,
+  };
+}
+
 function saudeProcesso(colaborador: ColaboradorAcompanhamento) {
   const avisosEquipe = colaborador.avisosGestorEquipe || [];
   const atrasadosProprios = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
@@ -317,16 +342,21 @@ function saudeProcesso(colaborador: ColaboradorAcompanhamento) {
   const pendentes = colaborador.formulariosPendentes.length + avisosEquipe.length;
   const alinhamentosEsperados = colaborador.dia >= 150 ? 4 : colaborador.dia >= 75 ? 3 : colaborador.dia >= 45 ? 2 : colaborador.dia >= 15 ? 1 : 0;
   const alinhamentosEmAberto = Math.max(0, alinhamentosEsperados - colaborador.alinhamentosFeitos);
+  const fechamento = requisitosFechamento(colaborador);
 
-  if (atrasados > 0 || alinhamentosEmAberto > 0) {
+  if (atrasados > 0 || alinhamentosEmAberto > 0 || (fechamento.prazoFinal && !fechamento.completo)) {
     const textoAtrasados = atrasados
       ? `${atrasados} ${atrasados === 1 ? 'formulário atrasado' : 'formulários atrasados'}${atrasadosEquipe > 0 ? ' na equipe' : ''}`
+      : '';
+    const fechamentoTexto = fechamento.prazoFinal && !fechamento.completo
+      ? `fechamento pendente: ${fechamento.pendenciasFechamento.join(', ')}`
       : '';
     return {
       rotulo: 'Requer atenção',
       detalhe: [
         textoAtrasados,
         alinhamentosEmAberto ? `${alinhamentosEmAberto} ${alinhamentosEmAberto === 1 ? 'alinhamento previsto ainda não realizado' : 'alinhamentos previstos ainda não realizados'}` : '',
+        fechamentoTexto,
       ].filter(Boolean).join(' · '),
       classes: 'border-amber-300 bg-amber-50 text-amber-950',
     };
@@ -373,11 +403,22 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
     sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram uma diferença relevante na percepção sobre a adaptação do colaborador (diferença de ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5).`);
   }
 
-  if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
+  const fechamento = requisitosFechamento(colaborador);
+  if (!fechamento.prazoFinal && colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
     sinais.push(`PDI com ${Math.round(colaborador.pdi.percentual)}% de avanço`);
   }
-  if (colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual != null && colaborador.jornadaCompliance.percentual === 0) {
+  if (!fechamento.prazoFinal && colaborador.dia >= 45 && colaborador.jornadaCompliance.percentual != null && colaborador.jornadaCompliance.percentual === 0) {
     sinais.push('Jornada Compliance ainda não iniciada');
+  }
+
+
+  if (fechamento.prazoFinal) {
+    if (!fechamento.complianceOk) {
+      sinais.push(`Jornada Compliance precisa estar 100% concluída até o 150º dia (atual: ${colaborador.jornadaCompliance.percentual == null ? 'sem dado' : Math.round(Number(colaborador.jornadaCompliance.percentual)) + '%'}).`);
+    }
+    if (!fechamento.pdiOk) {
+      sinais.push(`As tarefas do PDI precisam estar 100% concluídas até o 150º dia (atual: ${colaborador.pdi.percentual == null ? 'sem dado' : Math.round(Number(colaborador.pdi.percentual)) + '%'}).`);
+    }
   }
   return sinais;
 }
@@ -1993,9 +2034,9 @@ function statusCarteira(colaborador: ColaboradorAcompanhamento) {
   const sinais = sinaisAtencaoUgp(colaborador);
   const pendentes = colaborador.formulariosPendentes.length;
   const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
-  const prazoDoProcessoConcluido = colaborador.totalDias > 0 && colaborador.dia >= colaborador.totalDias;
+  const fechamento = requisitosFechamento(colaborador);
 
-  if (atrasados > 0 || (prazoDoProcessoConcluido && pendentes > 0) || sinais.length >= 2) {
+  if (atrasados > 0 || (fechamento.prazoFinal && !fechamento.completo) || sinais.length >= 2) {
     return { chave: 'atencao', rotulo: 'Atenção', classes: 'bg-amber-50 text-amber-800 border-amber-200' };
   }
   if (pendentes > 0 || sinais.length === 1) {
@@ -2644,7 +2685,8 @@ function CarteiraUgp({
               {lista.map((x)=>{
                 const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
                 const progresso=x.processoAcoes || {total:95,concluidas:0,percentual:0};
-                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-[#F7F5FF]"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-bold tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[110px]"><div className="text-base font-bold tabular-nums text-slate-950">{Math.round(progresso.percentual)}%</div><Progress className="mt-1.5 h-2" value={progresso.percentual}/></div></td><td className="px-4 py-4 text-center text-lg font-bold tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
+                const fechamento=requisitosFechamento(x);
+                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-[#F7F5FF]"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-bold tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[130px]">{fechamento.completo ? <><div className="text-base font-bold tabular-nums text-emerald-700">100%</div><div className="mt-1 text-[11px] font-semibold text-emerald-700">Completo</div></> : <><div className="text-sm font-bold text-amber-700">Pendente</div><div className="mt-1 text-[11px] leading-tight text-slate-500">{Math.round(progresso.percentual)}% das ações</div></>}<Progress className="mt-1.5 h-2" value={fechamento.completo ? 100 : Math.min(99, progresso.percentual)}/></div></td><td className="px-4 py-4 text-center text-lg font-bold tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
               })}
               {!lista.length&&<tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
             </tbody>
