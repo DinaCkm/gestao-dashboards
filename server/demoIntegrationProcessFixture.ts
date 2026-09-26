@@ -327,6 +327,10 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       perfilDemoFullEcoAutorizado: Boolean(profile?.id),
       ecoVinculoModo: "manual_demo_autorizado",
       perfilDemoFonte: profile?.name || null,
+      andamentoDemoOverride: {
+        jornadaCompliance: { total: 61, concluidas: 61, percentual: 100 },
+        pdi: { total: 2, concluidas: 2, percentual: 100 },
+      },
     },
   };
 
