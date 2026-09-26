@@ -137,13 +137,23 @@ function averageOf(answers: Record<string, any>) {
     : 0;
 }
 
-async function resolveProfile(tx: any, patterns: readonly string[]) {
+async function resolveProfile(tx: any, patterns: readonly string[], fallbackLatestTest = false) {
   const condicoes = patterns.map((pattern) => like(alunos.name, pattern));
-  const candidatos = await tx
+  let candidatos = await tx
     .select({ id: alunos.id, name: alunos.name, programId: alunos.programId })
     .from(alunos)
     .where(or(...condicoes))
+    .orderBy(desc(alunos.id))
     .limit(20);
+
+  if (!candidatos.length && fallbackLatestTest) {
+    candidatos = await tx
+      .select({ id: alunos.id, name: alunos.name, programId: alunos.programId })
+      .from(alunos)
+      .where(like(alunos.name, "%teste%"))
+      .orderBy(desc(alunos.id))
+      .limit(30);
+  }
 
   for (const candidato of candidatos) {
     const [disc] = await tx
@@ -342,7 +352,7 @@ export async function ensureDemoIntegrationProcessFixture() {
   return await db.transaction(async (tx) => {
     const resultados = [];
     for (const demo of DEMOS) {
-      const profile = await resolveProfile(tx, demo.profilePatterns);
+      const profile = await resolveProfile(tx, demo.profilePatterns, demo.scenario === "queda");
       const result = await ensureDemo(tx, program, demo, profile);
       resultados.push({ tag: demo.tag, ...result });
       console.log("[DemoIntegracao] DEMO_OK", JSON.stringify({ tag: demo.tag, ...result }));
