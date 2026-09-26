@@ -116,3 +116,7 @@ export async function obterArquivoRegistroIntegracao(
   if (!response.ok) throw new Error(await erroDaResposta(response, 'Não foi possível abrir o arquivo.'));
   return response.json();
 }
+
+export function urlDownloadRegistroIntegracao(legacyId: string, registroId: string): string {
+  return `${API_BASE}/processos/${encodeURIComponent(legacyId)}/registros/${encodeURIComponent(registroId)}/arquivo?download=1`;
+}
