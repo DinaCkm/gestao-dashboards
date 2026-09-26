@@ -301,11 +301,14 @@ function saudeProcesso(colaborador: ColaboradorAcompanhamento) {
   const alinhamentosEmAberto = Math.max(0, alinhamentosEsperados - colaborador.alinhamentosFeitos);
 
   if (atrasados > 0 || alinhamentosEmAberto > 0) {
+    const textoAtrasados = atrasados
+      ? `${atrasados} ${atrasados === 1 ? 'formulário atrasado' : 'formulários atrasados'}${atrasadosEquipe > 0 ? ' na equipe' : ''}`
+      : '';
     return {
       rotulo: 'Requer atenção',
       detalhe: [
-        atrasados ? `${atrasados} formulário(s) atrasado(s)` : '',
-        alinhamentosEmAberto ? `${alinhamentosEmAberto} alinhamento(s) previsto(s) ainda não realizado(s)` : '',
+        textoAtrasados,
+        alinhamentosEmAberto ? `${alinhamentosEmAberto} ${alinhamentosEmAberto === 1 ? 'alinhamento previsto ainda não realizado' : 'alinhamentos previstos ainda não realizados'}` : '',
       ].filter(Boolean).join(' · '),
       classes: 'border-amber-300 bg-amber-50 text-amber-950',
     };
@@ -1958,7 +1961,7 @@ function KpisOperacionais({ colaborador }: { colaborador: ColaboradorAcompanhame
     { titulo:'Dia do onboarding', valor:String(colaborador.dia) + '/' + colaborador.totalDias, detalhe:'posição atual na jornada', icon:Route, classes:'border-slate-200 bg-white text-slate-950', ajuda:null },
     { titulo:'Jornada Compliance', valor:colaborador.jornadaCompliance.total ? fmtPct(colaborador.jornadaCompliance.percentual) : 'Sem dados', detalhe:colaborador.jornadaCompliance.total ? colaborador.jornadaCompliance.concluidas + ' de ' + colaborador.jornadaCompliance.total + ' atividades' : 'ainda sem atividades registradas', icon:CheckCircle2, classes:'border-slate-200 bg-white text-slate-950', ajuda:ajudaCompliance },
     { titulo:'Tarefas do PDI', valor:colaborador.pdi.total ? fmtPct(colaborador.pdi.percentual) : 'Sem dados', detalhe:colaborador.pdi.total ? colaborador.pdi.concluidas + ' de ' + colaborador.pdi.total + ' tarefas' : 'ainda sem tarefas registradas', icon:Target, classes:'border-slate-200 bg-white text-slate-950', ajuda:ajudaPdi },
-    { titulo:'Alinhamentos realizados', valor:String(colaborador.alinhamentosFeitos) + '/' + colaborador.alinhamentosTotal, detalhe:colaborador.formulariosPendentes.length ? colaborador.formulariosPendentes.length + ' formulário(s) pendente(s)' : 'sem pendências de formulário', icon:Users, classes:'border-slate-200 bg-white text-slate-950', ajuda:null },
+    { titulo:'Alinhamentos realizados', valor:String(colaborador.alinhamentosFeitos) + '/' + colaborador.alinhamentosTotal, detalhe:colaborador.alinhamentosFeitos >= colaborador.alinhamentosTotal ? 'todos os alinhamentos concluídos' : (colaborador.alinhamentosTotal - colaborador.alinhamentosFeitos) + ' alinhamento(s) ainda pendente(s)', icon:Users, classes:'border-slate-200 bg-white text-slate-950', ajuda:null },
   ];
 
   return (
@@ -2911,9 +2914,9 @@ function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhame
           <div className="flex items-start gap-3">
             <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><ClipboardList className="h-5 w-5" /></span>
             <div>
-              <div className="font-black text-slate-950">Formulários pendentes</div>
+              <div className="font-black text-slate-950">Formulários que o Gestor precisa responder</div>
               <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                Aqui aparecem somente as pendências que fazem parte da visão do Gestor. Nenhuma resposta pessoal do colaborador é exibida.
+                Aqui aparecem somente os formulários que dependem de resposta do próprio Gestor. Pendências do Anjo ou do colaborador aparecem em Avisos de atenção, sem revelar o conteúdo das respostas.
               </p>
             </div>
           </div>
@@ -2933,7 +2936,7 @@ function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhame
               </div>
             )) : (
               <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                Nenhum formulário pendente para o Gestor neste momento.
+                O Gestor não possui formulários pendentes neste momento.
               </div>
             )}
           </div>
@@ -2989,7 +2992,7 @@ function GestorDetalheSimples({ colaborador }: { colaborador:ColaboradorAcompanh
     <div className="space-y-4">
       <Card className="overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] text-white shadow-md">
         <CardContent className="p-6">
-          <h2 className="text-2xl font-black">{colaborador.nome}</h2>
+          <h2 className="text-2xl font-black" style={{ color: '#ffffff' }}>{colaborador.nome}</h2>
           <p className="mt-1 text-sm text-white/80">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</p>
           <p className="mt-2 text-xs text-white/70">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</p>
         </CardContent>
