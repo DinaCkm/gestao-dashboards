@@ -979,16 +979,19 @@ function PerfilAssessmentResumo({
   const disc = perfil?.disc;
   const clustersComDado = (perfil?.autoavaliacaoClusters || []).filter((item) => item.percentual != null);
   const temDados = Boolean(disc || clustersComDado.length);
+  const perfilPredominanteLetra = String(disc?.perfilPredominante || '').trim().toUpperCase().charAt(0);
+  const maiorAutoavaliacao = clustersComDado.length
+    ? Math.max(...clustersComDado.map((item) => Number(item.percentual || 0)))
+    : null;
 
   return (
-    <Card id="perfil-assessment-resumo" className="scroll-mt-6 overflow-hidden rounded-3xl border-0 bg-[linear-gradient(135deg,#f5f0ff_0%,#ffffff_48%,#eef2ff_100%)] shadow-sm ring-1 ring-violet-200/70 transition-all duration-200 hover:shadow-lg">
+    <Card id="perfil-assessment-resumo" className="scroll-mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,.05)]">
       <CardContent className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-3">
             <span className="rounded-2xl bg-violet-700 p-3 text-white shadow-sm"><Brain className="h-5 w-5" /></span>
             <div>
-              <div className="text-xs font-black uppercase tracking-[0.14em] text-violet-700">Contexto comportamental</div>
-              <h3 className="mt-1 text-xl font-black text-slate-950">Perfil comportamental e Assessment</h3>
+              <h3 className="text-lg font-semibold text-slate-950">Perfil comportamental e Assessment</h3>
               <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600">
                 Esta área ajuda a compreender tendências comportamentais, a autoavaliação do colaborador e, quando o BEM está preenchido,
                 a expectativa registrada pelo Gestor. <b>Esses dados não entram no Índice de Integração.</b>
@@ -1012,7 +1015,7 @@ function PerfilAssessmentResumo({
           </div>
         ) : (
           <div className="mt-5 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="group rounded-2xl border border-violet-200 bg-white/85 p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+            <div className="rounded-xl border border-slate-200 bg-[#FAFAFD] p-5 shadow-none">
               <div className="text-xs font-black uppercase tracking-wide text-violet-700">Perfil DISC predominante</div>
               <div className="mt-2 text-4xl font-black text-violet-950">{disc?.perfilPredominante || '—'}</div>
               <div className="mt-1 text-sm text-slate-600">
@@ -1026,14 +1029,15 @@ function PerfilAssessmentResumo({
                   ['C', 'Conformidade', disc?.scoreC],
                 ].map(([label, nome, value]) => {
                   const numero = value == null ? null : Number(value);
+                  const predominante = String(label) === perfilPredominanteLetra;
                   return (
                     <div key={String(label)}>
                       <div className="flex items-center justify-between gap-3 text-xs">
-                        <span className="font-semibold text-slate-700">{label} · {nome}</span>
-                        <span className="font-bold tabular-nums text-slate-950">{numero == null ? '—' : Math.round(numero)}</span>
+                        <span className={predominante ? 'font-bold text-violet-800' : 'font-semibold text-slate-700'}>{label} · {nome}</span>
+                        <span className={predominante ? 'font-bold tabular-nums text-violet-800' : 'font-semibold tabular-nums text-slate-700'}>{numero == null ? '—' : Math.round(numero)}</span>
                       </div>
                       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div className="h-full rounded-full bg-violet-600 transition-all" style={{ width: Math.max(0, Math.min(100, numero || 0)) + '%' }} />
+                        <div className={'h-full rounded-full transition-all duration-700 ' + (predominante ? 'bg-violet-700' : 'bg-violet-200')} style={{ width: Math.max(0, Math.min(100, numero || 0)) + '%' }} />
                       </div>
                     </div>
                   );
@@ -1043,21 +1047,25 @@ function PerfilAssessmentResumo({
                 O DISC descreve tendências de comportamento. Ele serve como contexto para a conversa e não como diagnóstico ou nota de desempenho.
               </p>
             </div>
-            <div className="rounded-2xl border border-violet-200 bg-white/85 p-5 shadow-sm">
+            <div className="rounded-xl border border-slate-200 bg-[#FAFAFD] p-5 shadow-none">
               <div className="mb-3">
                 <div className="font-black text-slate-900">Como o colaborador se percebe</div>
                 <div className="text-xs leading-relaxed text-slate-500">Autoavaliação agrupada por dimensões do Assessment.</div>
               </div>
               <div className="space-y-2">
-                {clustersComDado.slice(0, 5).map((item) => (
-                  <div key={item.key} className="group rounded-xl border bg-white p-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold">{item.nome}</span>
-                      <span className="text-sm font-black">{Math.round(Number(item.percentual))}%</span>
+                {clustersComDado.slice(0, 5).map((item) => {
+                  const valor = Number(item.percentual || 0);
+                  const maior = maiorAutoavaliacao != null && valor === maiorAutoavaliacao;
+                  return (
+                    <div key={item.key} className="px-1 py-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className={maior ? 'text-sm font-bold text-slate-950' : 'text-sm font-medium text-slate-700'}>{item.nome}</span>
+                        <span className={maior ? 'text-sm font-bold tabular-nums text-violet-800' : 'text-sm font-semibold tabular-nums text-slate-700'}>{Math.round(valor)}%</span>
+                      </div>
+                      <Progress className="mt-2 h-2 [&>div]:bg-violet-600" value={valor} />
                     </div>
-                    <Progress className="mt-2 h-2" value={Number(item.percentual || 0)} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
