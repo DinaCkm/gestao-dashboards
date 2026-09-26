@@ -11,7 +11,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, Di
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, Camera, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Handshake, Info, LayoutDashboard, ListChecks, MessageSquareText, Network, Paperclip, RefreshCw, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, Camera, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Handshake, Info, LayoutDashboard, ListChecks, Maximize2, MessageSquareText, Minimize2, Network, Paperclip, RefreshCw, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import {
   LineChart,
@@ -2707,6 +2707,7 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
   const [tipo, setTipo] = useState('todos');
   const [origem, setOrigem] = useState('todas');
   const [alinhamento, setAlinhamento] = useState('todos');
+  const [recolhido, setRecolhido] = useState(false);
 
   const origens = Array.from(new Set(registros.map((item) => item.origem).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const alinhamentos = ['Preparação','15 dias','45 dias','75 dias','150 dias','Geral']
@@ -2734,17 +2735,31 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
     <div className="space-y-4">
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
         <CardHeader className="border-b bg-gradient-to-r from-violet-50/70 via-white to-blue-50/60">
-          <div className="flex items-start gap-3">
-            <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Paperclip className="h-5 w-5" /></span>
-            <div>
-              <CardTitle className="text-lg">Registros da Integração</CardTitle>
-              <CardDescription className="mt-1 max-w-3xl leading-relaxed">
-                Evidências complementares do processo: fotos, documentos e relatos registrados no back-office. Esta área é exclusiva da UGP/RH.
-              </CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Paperclip className="h-5 w-5" /></span>
+              <div>
+                <CardTitle className="text-lg">Registros da Integração</CardTitle>
+                <CardDescription className="mt-1 max-w-3xl leading-relaxed">
+                  Evidências complementares do processo: fotos, documentos e relatos registrados no back-office. Esta área é exclusiva da UGP/RH.
+                </CardDescription>
+              </div>
             </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setRecolhido((atual) => !atual)}
+              aria-expanded={!recolhido}
+              title={recolhido ? 'Maximizar Registros da Integração' : 'Minimizar Registros da Integração'}
+              className="shrink-0"
+            >
+              {recolhido ? <Maximize2 className="mr-1.5 h-4 w-4" /> : <Minimize2 className="mr-1.5 h-4 w-4" />}
+              {recolhido ? 'Maximizar' : 'Minimizar'}
+            </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 p-5">
+        <CardContent className={`space-y-4 p-5 ${recolhido ? 'hidden' : ''}`}>
           <div className="grid gap-3 lg:grid-cols-[1fr_210px_210px]">
             <div className="flex flex-wrap gap-2">
               {[
