@@ -32,19 +32,19 @@ const TIPOS: Array<[RegistroIntegracaoTipo | 'todos' | 'excluidos', string]> = [
   ['excluidos', 'Excluídos'],
 ];
 
-const ORIGENS: RegistroIntegracaoOrigem[] = ['Colaborador', 'Gestor', 'Anjo', 'UGP', 'CKM / Consultora'];
-const ALINHAMENTOS: RegistroIntegracaoAlinhamento[] = ['Preparação', '15 dias', '45 dias', '75 dias', '150 dias', 'Geral'];
+const ORIGENS: RegistroIntegracaoOrigem[] = ['Não informado', 'Colaborador', 'Gestor', 'Anjo', 'UGP', 'CKM / Consultora'];
+const ALINHAMENTOS: RegistroIntegracaoAlinhamento[] = ['Não informado', 'Preparação', '15 dias', '45 dias', '75 dias', '150 dias', 'Geral'];
 
 const hoje = () => new Date().toISOString().slice(0, 10);
 
 function estadoInicial(): RegistroIntegracaoPayload {
   return {
-    tipo: 'foto',
+    tipo: 'nao_informado',
     titulo: '',
     descricao: '',
-    dataAcontecimento: hoje(),
-    origem: 'CKM / Consultora',
-    alinhamento: 'Geral',
+    dataAcontecimento: '',
+    origem: 'Não informado',
+    alinhamento: 'Não informado',
   };
 }
 
@@ -55,7 +55,7 @@ function bytes(valor: number) {
 }
 
 function dataBr(iso: string) {
-  if (!iso) return '—';
+  if (!iso) return 'Não informado';
   const data = iso.slice(0, 10).split('-');
   return data.length === 3 ? `${data[2]}/${data[1]}/${data[0]}` : iso;
 }
@@ -82,19 +82,23 @@ function FotoPreview({ legacyId, item }: { legacyId: string; item: RegistroInteg
 
   if (item.tipo !== 'foto' || !item.hasFile || item.excluidoEm) return null;
   if (falhou) {
-    return <div className="mt-3 grid h-44 place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground">Não foi possível carregar a prévia.</div>;
+    return <div className="mt-3 grid h-28 place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground">Não foi possível carregar a prévia.</div>;
   }
   if (!url) {
-    return <div className="mt-3 grid h-44 place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground">Carregando foto...</div>;
+    return <div className="mt-3 grid h-28 place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground">Carregando foto...</div>;
   }
   return (
     <button
       type="button"
       onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
-      className="mt-3 block w-full overflow-hidden rounded-lg border bg-muted/20 text-left"
+      className="mt-3 flex max-h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/20 p-2"
       title="Abrir foto em tamanho maior"
     >
-      <img src={url} alt={item.titulo} className="h-52 w-full object-cover transition-transform hover:scale-[1.01]" />
+      <img
+        src={url}
+        alt={item.titulo || 'Foto do registro'}
+        className="h-auto max-h-44 w-auto max-w-full object-contain transition-transform hover:scale-[1.01]"
+      />
     </button>
   );
 }
@@ -176,10 +180,6 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
   };
 
   const salvar = async () => {
-    if (!payload.titulo.trim()) {
-      toast.error('Informe o título do registro.');
-      return;
-    }
     if ((payload.tipo === 'foto' || payload.tipo === 'documento') && !editando && !arquivo) {
       toast.error(payload.tipo === 'foto' ? 'Selecione uma foto.' : 'Selecione um documento.');
       return;
@@ -343,6 +343,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                   }}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
                 >
+                  <option value="nao_informado">Não informado</option>
                   <option value="foto">Foto</option>
                   <option value="documento">Documento</option>
                   <option value="relato">Relato</option>
@@ -360,8 +361,9 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                   }}
                   maxLength={160}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  placeholder="Ex.: Recepção no primeiro dia"
+                  placeholder="Ex.: Recepção no primeiro dia · deixe em branco se não informado"
                 />
+                <div className="text-[11px] text-muted-foreground">Se ficar em branco, será salvo como “Não informado”.</div>
               </label>
 
               <label className="space-y-1 text-xs">
@@ -375,6 +377,13 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                   }}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
+                <button
+                  type="button"
+                  className="text-left text-[11px] text-violet-700 hover:underline"
+                  onClick={() => setPayload((atual) => ({ ...atual, dataAcontecimento: '' }))}
+                >
+                  Marcar como não informado
+                </button>
               </label>
 
               <label className="space-y-1 text-xs">
@@ -415,9 +424,18 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                   }}
                   maxLength={6000}
                   className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  placeholder="Contextualize o registro, quando necessário."
+                  placeholder="Contextualize o registro, quando necessário. Deixe em branco se não informado."
                 />
-                <div className="text-right text-[11px] text-muted-foreground">{payload.descricao.length}/6000</div>
+                <div className="flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+                  <button
+                    type="button"
+                    className="text-violet-700 hover:underline"
+                    onClick={() => setPayload((atual) => ({ ...atual, descricao: '' }))}
+                  >
+                    Marcar como não informado
+                  </button>
+                  <span>{payload.descricao.length}/6000</span>
+                </div>
               </label>
 
               {!editando && (
@@ -456,7 +474,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
             Nenhum registro encontrado neste filtro.
           </div>
         ) : (
-          <div className={filtro === 'foto' ? 'grid gap-4 sm:grid-cols-2 xl:grid-cols-3' : 'space-y-3'}>
+          <div className={filtro === 'foto' ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4' : 'space-y-3'}>
             {filtrados.map((item) => {
               const Icone = tipoIcone(item.tipo);
               return (
@@ -467,10 +485,10 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                         <Icone className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold leading-tight">{item.titulo}</div>
+                        <div className="font-semibold leading-tight">{item.titulo || 'Não informado'}</div>
                         <div className="mt-1 flex flex-wrap gap-1.5">
-                          <Badge variant="outline">{item.origem}</Badge>
-                          <Badge variant="outline">{item.alinhamento}</Badge>
+                          <Badge variant="outline">{item.origem || 'Não informado'}</Badge>
+                          <Badge variant="outline">{item.alinhamento || 'Não informado'}</Badge>
                           <Badge variant="outline">{dataBr(item.dataAcontecimento)}</Badge>
                           {item.excluidoEm && <Badge variant="destructive">Excluído</Badge>}
                         </div>
@@ -478,7 +496,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                     </div>
                   </div>
 
-                  {item.descricao && <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{item.descricao}</p>}
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{item.descricao || 'Não informado'}</p>
 
                   <FotoPreview legacyId={legacyId} item={item} />
 
