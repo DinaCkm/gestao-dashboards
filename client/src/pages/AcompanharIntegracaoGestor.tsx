@@ -1947,6 +1947,20 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
             </div>
           ))}
         </div>
+
+        <details className="mt-4 overflow-hidden rounded-xl border border-violet-100 bg-violet-50/40">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-black text-violet-800 hover:bg-violet-50">
+            ⓘ Entenda como o Índice de Integração é calculado
+          </summary>
+          <div className="space-y-3 border-t border-violet-100 bg-white px-4 py-4 text-sm leading-relaxed text-slate-650">
+            <div><b>Experiência do colaborador — peso 40%.</b> Mostra como o próprio colaborador relata sua integração na Pesquisa de Integração. O sistema reúne Cultura e pertencimento, Anjo e colegas, Gestão e Trabalho/desenvolvimento e transforma as respostas em uma escala de 0 a 100.</div>
+            <div><b>Adaptação observada — peso 35%.</b> Mostra como Gestor e Anjo percebem a adaptação do colaborador ao trabalho. As notas originais das avaliações são convertidas para uma escala de 0 a 100 para compor o índice.</div>
+            <div><b>Desenvolvimento — peso 25%.</b> Mostra o avanço registrado no PDI e na Jornada Compliance. Ele não mede sentimento, satisfação ou perfil comportamental.</div>
+            <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+              Se uma dessas fontes ainda não existir, o sistema não inventa um resultado: os pesos disponíveis são reajustados proporcionalmente. O índice só aparece quando existe cobertura mínima de 60%. DISC/Assessment e atrasos administrativos não entram na nota.
+            </div>
+          </div>
+        </details>
       </CardContent>
     </Card>
   );
@@ -1992,12 +2006,23 @@ function quantidadeValidasPesquisa(respostas: RespostaAcompanhamento[], ciclo:nu
 function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const momentos = evolucaoPesquisaColaborador(colaborador.respostas);
   const geral = momentos.map((m) => ({ dia:diaDoAlinhamento(m.ciclo), geral:mediaMomentoPesquisa(m) }));
+  const parecer = parecerTrajetoria(colaborador.respostas);
+  const ParecerIcon = parecer.icon;
   const heatStyle = (valor:number|null) => {
     if (valor == null) return {backgroundColor:'#F8FAFC',color:'#94A3B8'};
     return {backgroundColor:'rgba(37,99,235,' + (0.10 + (valor/100)*0.55) + ')',color:'#0F172A'};
   };
   return (
     <div className="space-y-4">
+      <div className={`rounded-2xl border p-4 shadow-sm ${parecer.classes}`}>
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-white/80 p-2 shadow-sm"><ParecerIcon className="h-5 w-5" /></span>
+          <div>
+            <div className="font-black">{parecer.titulo}</div>
+            <p className="mt-1 text-sm leading-relaxed opacity-85">{parecer.texto}</p>
+          </div>
+        </div>
+      </div>
       <Card className="rounded-2xl border-slate-200 shadow-sm">
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-3"><div><div className="font-bold text-slate-950">Experiência ao longo do tempo</div><div className="mt-1 text-xs text-slate-500">Média geral da Pesquisa de Integração. O eixo respeita a distância real entre 15, 45, 75 e 150 dias.</div></div><Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">Colaborador</Badge></div>
