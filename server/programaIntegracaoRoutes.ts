@@ -579,7 +579,7 @@ function addDiasIso(iso: string, dias: number): string {
   return data.toISOString().slice(0, 10);
 }
 
-function respostaCompacta(row: any) {
+function respostaCompacta(row: any, incluirDetalhesUgp = false) {
   const answers = asJson<Record<string, any>>(row.answers, {});
   const qmap = PROGRAMA_INTEGRACAO_QUESTION_INDEX[row.formKey as ProgramaIntegracaoFormKey] || {};
   const c: Array<[number, string]> = [];
@@ -592,6 +592,13 @@ function respostaCompacta(row: any) {
     ciclo: Number(row.ciclo || 0),
     papel: row.papel || "",
     c,
+    ...(incluirDetalhesUgp
+      ? {
+          answers,
+          respondentName: String(row.respondentName || row.avaliador || ""),
+          submittedAt: row.submittedAt ? new Date(row.submittedAt).toISOString() : "",
+        }
+      : {}),
   };
 }
 
@@ -901,7 +908,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     for (const row of responseRows || []) {
       const pid = Number(row.processoId);
       const arr = respostasPorProcesso.get(pid) || [];
-      arr.push(respostaCompacta(row));
+      arr.push(respostaCompacta(row, acessoUgpRh));
       respostasPorProcesso.set(pid, arr);
 
       const rawArr = respostasRawPorProcesso.get(pid) || [];
