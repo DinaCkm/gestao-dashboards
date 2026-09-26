@@ -152,3 +152,22 @@ export async function storageDelete(relKey: string): Promise<void> {
 
   await client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
 }
+
+export async function storageGetDownload(
+  relKey: string,
+  fileName: string,
+): Promise<{ key: string; url: string }> {
+  const { bucketName } = requireR2Env();
+  const client = getR2Client();
+  const key = normalizeKey(relKey);
+  const safeName = String(fileName || "arquivo").replace(/[\r\n"]/g, "");
+
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+    ResponseContentDisposition: `attachment; filename="${safeName}"`,
+  });
+
+  const signedUrl = await getSignedUrl(client, command, { expiresIn: 3600 });
+  return { key, url: signedUrl };
+}
