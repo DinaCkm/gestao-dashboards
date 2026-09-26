@@ -391,14 +391,18 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                 <div className="text-right text-[11px] text-muted-foreground">{payload.descricao.length}/6000</div>
               </label>
 
-              {!editando && (payload.tipo === 'foto' || payload.tipo === 'documento') && (
+              {!editando && (
                 <label className="space-y-1 text-xs md:col-span-2 xl:col-span-3">
                   <span className="font-medium text-muted-foreground">
-                    {payload.tipo === 'foto' ? 'Foto' : 'Documento'} · máximo 10 MB
+                    {payload.tipo === 'foto'
+                      ? 'Foto obrigatória · máximo 10 MB'
+                      : payload.tipo === 'documento'
+                        ? 'Documento obrigatório · máximo 10 MB'
+                        : 'Anexo opcional · máximo 10 MB'}
                   </span>
                   <input
                     type="file"
-                    accept={payload.tipo === 'foto' ? '.jpg,.jpeg,.png,.webp' : '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx'}
+                    accept={payload.tipo === 'foto' ? '.jpg,.jpeg,.png,.webp' : '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp'}
                     onChange={(e) => setArquivo(e.currentTarget.files?.[0] || null)}
                     className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   />
@@ -455,9 +459,14 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                       <div className="mt-1 text-xs text-muted-foreground">{bytes(item.sizeBytes)}</div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Button type="button" size="sm" variant="outline" onClick={() => void abrirArquivo(item)}>Visualizar</Button>
-                        <a href={urlDownloadRegistroIntegracao(legacyId, item.id)}>
-                          <Button type="button" size="sm" variant="outline">Baixar</Button>
-                        </a>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(urlDownloadRegistroIntegracao(legacyId, item.id), '_blank', 'noopener,noreferrer')}
+                        >
+                          Baixar
+                        </Button>
                       </div>
                     </div>
                   )}
