@@ -1201,7 +1201,22 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       const ecoId = alunoEcoPorProcesso.get(Number(row.id));
       const perfilEcoId = perfilEcoPorProcesso.get(Number(row.id)) || ecoId;
-      const andamento = ecoId ? ecoStatus[String(ecoId)] : null;
+      const andamentoEco = ecoId ? ecoStatus[String(ecoId)] : null;
+      const estadoAtualDemo = asJson<Record<string, any>>(row.estado, {});
+      const testeAtualDemo = estadoAtualDemo?.teste || {};
+      const overrideDemo = testeAtualDemo?.andamentoDemoOverride;
+      const overridePermitido =
+        Boolean(testeAtualDemo?.perfilDemoFullEcoAutorizado) &&
+        String(testeAtualDemo?.demoTag || "").startsWith("ugp_demo_") &&
+        overrideDemo &&
+        typeof overrideDemo === "object";
+      const andamento = overridePermitido
+        ? {
+            ...(andamentoEco || {}),
+            jornadaCompliance: overrideDemo.jornadaCompliance || andamentoEco?.jornadaCompliance,
+            pdi: overrideDemo.pdi || andamentoEco?.pdi,
+          }
+        : andamentoEco;
       const perfilAssessment = perfilEcoId ? perfisAssessment[String(perfilEcoId)] : null;
       const rawRespostas = respostasRawPorProcesso.get(Number(row.id)) || [];
       const ultimaRespostaBem = rawRespostas
