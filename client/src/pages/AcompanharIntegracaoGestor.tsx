@@ -32,6 +32,7 @@ import {
   type RespostaAcompanhamento,
 } from '@/features/programaIntegracao/helpers/evolucaoAcompanhamento';
 import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/helpers/acompanhamentoIntegracaoPdf';
+import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helpers/atasRelatoriosHelpers';
 
 interface Pendencia {
   ciclo: number;
@@ -120,6 +121,17 @@ interface ColaboradorAcompanhamento {
     colab: string;
     conclusao: string;
     consultora: string;
+  }>;
+  documentoAtaRelatorio?: {
+    tipo: string;
+    consultora: string;
+  } | null;
+  avisosGestorEquipe?: Array<{
+    papel: 'Anjo' | 'Colaborador';
+    ciclo: number;
+    formulario: string;
+    prazo: string;
+    mensagem: string;
   }>;
   processoAcoes: {
     total: number;
@@ -2169,7 +2181,8 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
   ];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="space-y-4">
+      <div className="grid gap-4 lg:grid-cols-2">
       {itens.map((item) => {
         const Icon = item.icon;
         return (
@@ -2195,6 +2208,8 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
           </Card>
         );
       })}
+      </div>
+      <RegistrosAlinhamentosUgp colaborador={colaborador} modo="documentos" />
     </div>
   );
 }
@@ -2501,7 +2516,59 @@ function GuiaCompactoUgp({
   );
 }
 
-function RegistrosAlinhamentosUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+function processoDocumentoUgp(
+  colaborador: ColaboradorAcompanhamento,
+  registro: NonNullable<ColaboradorAcompanhamento['registrosAlinhamentos']>[number],
+) {
+  const numero = registro.numero;
+  return {
+    id: colaborador.id,
+    nome: colaborador.nome,
+    cargo: colaborador.cargo,
+    unidade: colaborador.unidade,
+    inicio: colaborador.inicio,
+    tipo: colaborador.documentoAtaRelatorio?.tipo || 'Onboarding',
+    gestor: colaborador.gestor,
+    anjo: colaborador.anjo,
+    consultora: colaborador.documentoAtaRelatorio?.consultora || '',
+    alin: {
+      [String(numero)]: {
+        realizado: registro.data || true,
+        data: registro.data || '',
+        ataEm: registro.registradoEm || registro.data || '',
+        ata: {
+          lider: registro.lider || '',
+          colab: registro.colab || '',
+          conclusao: registro.conclusao || '',
+          consultora: registro.consultora || '',
+        },
+      },
+    },
+    feito: {},
+  } as any;
+}
+
+function baixarDocumentoUgp(
+  colaborador: ColaboradorAcompanhamento,
+  registro: NonNullable<ColaboradorAcompanhamento['registrosAlinhamentos']>[number],
+  tipo: 'ata' | 'ugp',
+) {
+  gerarDocumentoAtaRelatorio(
+    processoDocumentoUgp(colaborador, registro),
+    registro.numero as 1 | 2 | 3 | 4,
+    tipo,
+    undefined,
+    [],
+  );
+}
+
+function RegistrosAlinhamentosUgp({
+  colaborador,
+  modo = 'resumo',
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  modo?: 'resumo' | 'documentos';
+}) {
   const registros = (colaborador.registrosAlinhamentos || []).filter((item) => item.temConteudo);
   const [selecionado, setSelecionado] = useState<(typeof registros)[number] | null>(null);
   if (!registros.length) return null;
@@ -2509,8 +2576,100 @@ function RegistrosAlinhamentosUgp({ colaborador }: { colaborador: ColaboradorAco
   const resumo = (texto: string) => {
     const limpo = String(texto || '').trim();
     if (!limpo) return 'Registro disponível.';
-    return limpo.length > 150 ? limpo.slice(0, 147).trimEnd() + '...' : limpo;
+    return limpo.length > 170 ? limpo.slice(0, 167).trimEnd() + '...' : limpo;
   };
+
+  if (modo === 'documentos') {
+    return (
+      <>
+        <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+          <CardHeader className="border-b bg-gradient-to-r from-violet-50/70 via-white to-slate-50">
+            <div className="flex items-start gap-3">
+              <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><ClipboardList className="h-5 w-5" /></span>
+              <div>
+                <CardTitle className="text-lg">Registros e documentos dos alinhamentos</CardTitle>
+                <CardDescription className="mt-1 max-w-3xl leading-relaxed">
+                  Consulte os registros completos e baixe a Ata ou o Relatório UGP de cada alinhamento. Os arquivos são gerados pela mesma fonte usada no back-office.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-5">
+            <div className="space-y-3">
+              {registros.map((item) => (
+                <div key={item.numero} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="font-black text-slate-950">Alinhamento de {item.marco} dias</div>
+                    <div className="mt-1 text-xs text-slate-500">{item.data ? dataBr(item.data) : 'Data não informada'} · Registro completo</div>
+                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">{resumo(item.consultora || item.conclusao)}</p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => setSelecionado(item)}>
+                      <Eye className="mr-1.5 h-4 w-4" /> Ver registro
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,item,'ata')}>
+                      <Download className="mr-1.5 h-4 w-4" /> Baixar ata
+                    </Button>
+                    <Button type="button" size="sm" className="bg-violet-700 hover:bg-violet-800" onClick={() => baixarDocumentoUgp(colaborador,item,'ugp')}>
+                      <Download className="mr-1.5 h-4 w-4" /> Relatório UGP
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Dialog open={Boolean(selecionado)} onOpenChange={(open) => !open && setSelecionado(null)}>
+          <DialogContent className="h-[92vh] w-[96vw] max-w-[1500px] overflow-hidden p-0">
+            {selecionado && (
+              <div className="flex h-full flex-col">
+                <DialogHeader className="border-b bg-gradient-to-r from-violet-50 via-white to-slate-50 px-7 py-5">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <DialogTitle className="text-2xl">Registro do alinhamento de {selecionado.marco} dias</DialogTitle>
+                      <DialogDescription className="mt-1">
+                        Ata de reunião e relatório para a UGP/RH · {selecionado.data ? dataBr(selecionado.data) : 'data não informada'}.
+                      </DialogDescription>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pr-8">
+                      <Button type="button" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ata')}>
+                        <Download className="mr-1.5 h-4 w-4" /> Baixar ata
+                      </Button>
+                      <Button type="button" className="bg-violet-700 hover:bg-violet-800" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ugp')}>
+                        <Download className="mr-1.5 h-4 w-4" /> Baixar relatório UGP
+                      </Button>
+                    </div>
+                  </div>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto px-7 py-6">
+                  <div className="mx-auto max-w-[1320px] space-y-5">
+                    {[
+                      ['Percepção do Líder', selecionado.lider, 'border-teal-200 bg-teal-50/30'],
+                      ['Percepção do Colaborador', selecionado.colab, 'border-blue-200 bg-blue-50/30'],
+                      ['Conclusão da ata', selecionado.conclusao, 'border-slate-200 bg-slate-50/70'],
+                      ['Conclusão / Percepção da Consultora', selecionado.consultora, 'border-violet-200 bg-violet-50/40'],
+                    ].map(([titulo, texto, classes]) => (
+                      <section key={titulo} className={'rounded-2xl border p-6 ' + classes}>
+                        <div className="text-xs font-black uppercase tracking-[0.08em] text-slate-500">{titulo}</div>
+                        <p className="mt-3 whitespace-pre-line text-[15px] leading-7 text-slate-800">{texto || 'Sem registro.'}</p>
+                      </section>
+                    ))}
+                    <div className="rounded-xl border-l-4 border-violet-300 bg-violet-50/60 p-4 text-xs leading-relaxed text-slate-600">
+                      Registro de acompanhamento destinado à UGP/RH. As percepções devem ser lidas em conjunto com os formulários, a trajetória e os demais dados do processo, sem uso como diagnóstico isolado.
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end border-t bg-white px-7 py-4">
+                  <DialogClose asChild><Button variant="outline">Fechar</Button></DialogClose>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
 
   return (
     <>
@@ -2521,7 +2680,7 @@ function RegistrosAlinhamentosUgp({ colaborador }: { colaborador: ColaboradorAco
             <div>
               <CardTitle className="text-lg">Registros dos alinhamentos</CardTitle>
               <CardDescription className="mt-1 max-w-3xl leading-relaxed">
-                Síntese das atas e dos relatórios preparados para a UGP/RH. A tela mostra somente um resumo para facilitar a leitura; use “Ver registro” para consultar as percepções completas.
+                Síntese das atas e relatórios dos alinhamentos para acompanhamento da UGP/RH.
               </CardDescription>
             </div>
           </div>
@@ -2529,68 +2688,78 @@ function RegistrosAlinhamentosUgp({ colaborador }: { colaborador: ColaboradorAco
         <CardContent className="p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {registros.map((item) => (
-              <button
-                key={item.numero}
-                type="button"
-                onClick={() => setSelecionado(item)}
-                className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
-              >
+              <div key={item.numero} className="rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-violet-700">
-                      Alinhamento de {item.marco} dias
-                    </div>
+                    <div className="text-[11px] font-black uppercase tracking-[0.08em] text-violet-700">Alinhamento de {item.marco} dias</div>
                     <div className="mt-1 text-xs text-slate-500">{item.data ? dataBr(item.data) : 'Data não informada'}</div>
                   </div>
-                  <span className="rounded-full bg-emerald-50 p-1.5 text-emerald-700"><CheckCircle2 className="h-4 w-4" /></span>
+                  <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">Registro completo</Badge>
                 </div>
                 <div className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Parecer da consultora</div>
-                <p className="mt-1 min-h-[60px] text-sm leading-relaxed text-slate-700">{resumo(item.consultora || item.conclusao)}</p>
-                <div className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700">
-                  Ver registro completo <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                <p className="mt-1 min-h-[72px] text-sm leading-relaxed text-slate-700">{resumo(item.consultora || item.conclusao)}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="ghost" className="px-0 text-violet-700 hover:bg-transparent hover:text-violet-900" onClick={() => setSelecionado(item)}>
+                    Ver registro completo <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                  </Button>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
       <Dialog open={Boolean(selecionado)} onOpenChange={(open) => !open && setSelecionado(null)}>
-        <DialogContent className="max-h-[88vh] max-w-4xl overflow-y-auto">
+        <DialogContent className="h-[92vh] w-[96vw] max-w-[1500px] overflow-hidden p-0">
           {selecionado && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Registro do alinhamento de {selecionado.marco} dias</DialogTitle>
-                <DialogDescription>
-                  Ata de reunião e relatório para a UGP/RH · {selecionado.data ? dataBr(selecionado.data) : 'data não informada'}.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 md:grid-cols-2">
-                {[
-                  ['Percepção do Líder', selecionado.lider],
-                  ['Percepção do Colaborador', selecionado.colab],
-                  ['Conclusão da ata', selecionado.conclusao],
-                  ['Conclusão / Percepção da Consultora', selecionado.consultora],
-                ].map(([titulo, texto]) => (
-                  <div key={titulo} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-                    <div className="text-xs font-black uppercase tracking-[0.08em] text-slate-500">{titulo}</div>
-                    <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-800">{texto || 'Sem registro.'}</p>
+            <div className="flex h-full flex-col">
+              <DialogHeader className="border-b bg-gradient-to-r from-violet-50 via-white to-slate-50 px-7 py-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <DialogTitle className="text-2xl">Registro do alinhamento de {selecionado.marco} dias</DialogTitle>
+                    <DialogDescription className="mt-1">
+                      Ata de reunião e relatório para a UGP/RH · {selecionado.data ? dataBr(selecionado.data) : 'data não informada'}.
+                    </DialogDescription>
                   </div>
-                ))}
+                  <div className="flex flex-wrap gap-2 pr-8">
+                    <Button type="button" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ata')}>
+                      <Download className="mr-1.5 h-4 w-4" /> Baixar ata
+                    </Button>
+                    <Button type="button" className="bg-violet-700 hover:bg-violet-800" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ugp')}>
+                      <Download className="mr-1.5 h-4 w-4" /> Baixar relatório UGP
+                    </Button>
+                  </div>
+                </div>
+              </DialogHeader>
+              <div className="flex-1 overflow-y-auto px-7 py-6">
+                <div className="mx-auto max-w-[1320px] space-y-5">
+                  {[
+                    ['Percepção do Líder', selecionado.lider, 'border-teal-200 bg-teal-50/30'],
+                    ['Percepção do Colaborador', selecionado.colab, 'border-blue-200 bg-blue-50/30'],
+                    ['Conclusão da ata', selecionado.conclusao, 'border-slate-200 bg-slate-50/70'],
+                    ['Conclusão / Percepção da Consultora', selecionado.consultora, 'border-violet-200 bg-violet-50/40'],
+                  ].map(([titulo, texto, classes]) => (
+                    <section key={titulo} className={'rounded-2xl border p-6 ' + classes}>
+                      <div className="text-xs font-black uppercase tracking-[0.08em] text-slate-500">{titulo}</div>
+                      <p className="mt-3 whitespace-pre-line text-[15px] leading-7 text-slate-800">{texto || 'Sem registro.'}</p>
+                    </section>
+                  ))}
+                  <div className="rounded-xl border-l-4 border-violet-300 bg-violet-50/60 p-4 text-xs leading-relaxed text-slate-600">
+                    Registro de acompanhamento destinado à UGP/RH. As percepções devem ser lidas em conjunto com os formulários, a trajetória e os demais dados do processo, sem uso como diagnóstico isolado.
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border-l-4 border-violet-300 bg-violet-50/60 p-3 text-xs leading-relaxed text-slate-600">
-                Registro de acompanhamento destinado à UGP/RH. As percepções devem ser lidas em conjunto com os formulários, a trajetória e os demais dados do processo, sem uso como diagnóstico isolado.
-              </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end border-t bg-white px-7 py-4">
                 <DialogClose asChild><Button variant="outline">Fechar</Button></DialogClose>
               </div>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
     </>
   );
 }
+
 
 function EvolucaoFormulariosUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   return (
@@ -2694,6 +2863,7 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
 function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const pendencias = colaborador.formulariosPendentes || [];
   const alertas = alertasDoColaborador(colaborador);
+  const avisosEquipe = colaborador.avisosGestorEquipe || [];
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -2743,15 +2913,22 @@ function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhame
             </div>
           </div>
           <div className="mt-4 space-y-2">
+            {avisosEquipe.map((aviso) => (
+              <div key={aviso.papel + '-' + aviso.ciclo} className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
+                <div className="font-black">{aviso.papel === 'Anjo' ? 'Formulário do Anjo em atraso' : 'Formulário do colaborador em atraso'}</div>
+                <div className="mt-1 leading-relaxed">{aviso.mensagem}</div>
+                {aviso.prazo && <div className="mt-1 text-xs opacity-75">Prazo: {dataBr(aviso.prazo)}</div>}
+              </div>
+            ))}
             {alertas.length ? alertas.map((alerta)=>(
               <div key={alerta} className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                 {alerta}
               </div>
-            )) : (
+            )) : !avisosEquipe.length ? (
               <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
                 Nenhum aviso operacional de atenção identificado neste momento.
               </div>
-            )}
+            ) : null}
           </div>
         </CardContent>
       </Card>
