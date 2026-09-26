@@ -350,7 +350,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       tipo: "Onboarding",
       inicio: "2026-04-29",
       participacao: "Presencial",
-      situacao: "encerrado",
+      situacao: "ativo",
       gestor: demo.gestor,
       gestorEmail: demo.gestorEmail,
       gestorTel: "(63) 90000-0001",
@@ -397,7 +397,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       .set({
         estado: estadoNormalizado,
         nome: demo.name,
-        situacao: "encerrado",
+        situacao: "ativo",
         gestor: demo.gestor,
         gestorEmail: demo.gestorEmail,
         anjo: demo.anjo,
