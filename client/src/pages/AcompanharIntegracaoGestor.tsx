@@ -2326,13 +2326,6 @@ function CarteiraUgp({
   onAbrir:(id:string)=>void;
 }) {
   const unidades=Array.from(new Set(colaboradores.map((x)=>x.unidade).filter(Boolean))).sort();
-  const conta=(tipo:string)=>colaboradores.filter((x)=>{
-    const sinais=sinaisAtencaoUgp(x).map((s)=>s.toLowerCase());
-    if(tipo==='queda') return sinais.some((s)=>s.includes('menor'));
-    if(tipo==='divergencia') return sinais.some((s)=>s.includes('gestor')&&s.includes('anjo'));
-    if(tipo==='atraso') return x.formulariosPendentes.some((p)=>p.atrasado);
-    return false;
-  }).length;
   const lista=colaboradores.filter((x)=>{
     const termo=busca.trim().toLowerCase();
     const okBusca=!termo||[x.nome,x.cargo,x.unidade].some((v)=>String(v||'').toLowerCase().includes(termo));
@@ -2344,18 +2337,15 @@ function CarteiraUgp({
       || (fase==='76a150' && x.dia>75);
     const st=statusCarteira(x);
     const okStatus=status==='all'||st.chave===status;
-    const sinais=sinaisAtencaoUgp(x).map((s)=>s.toLowerCase());
-    const okRadar=radarFiltro==='all'
-      ||(radarFiltro==='queda'&&sinais.some((s)=>s.includes('menor')))
-      ||(radarFiltro==='divergencia'&&sinais.some((s)=>s.includes('gestor')&&s.includes('anjo')))
-      ||(radarFiltro==='atraso'&&x.formulariosPendentes.some((p)=>p.atrasado));
-    return okBusca&&okUnidade&&okFase&&okStatus&&okRadar;
+    const okAtraso=radarFiltro!=='atraso'||x.formulariosPendentes.some((p)=>p.atrasado);
+    return okBusca&&okUnidade&&okFase&&okStatus&&okAtraso;
   });
   const indices=colaboradores.map((x)=>indiceIntegracao(x).indice).filter((v):v is number=>v!=null);
   const indiceMedio=indices.length?Math.round(indices.reduce((s,v)=>s+v,0)/indices.length):null;
   const atencao=colaboradores.filter((x)=>statusCarteira(x).chave==='atencao').length;
   const pendencias=colaboradores.reduce((s,x)=>s+x.formulariosPendentes.length,0);
   const concluindo=colaboradores.filter((x)=>x.dia>=140).length;
+
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -2363,7 +2353,7 @@ function CarteiraUgp({
           ['Ativos',colaboradores.length,'pessoas em integração'],
           ['Atenção',atencao,'com sinais prioritários'],
           ['Pendências',pendencias,'formulários pendentes'],
-          ['Índice médio',indiceMedio==null?'—':String(indiceMedio)+'%','entre resultados disponíveis'],
+          ['Índice médio de desenvolvimento',indiceMedio==null?'—':String(indiceMedio)+'%','entre resultados disponíveis'],
           ['Concluindo',concluindo,'a partir do dia 140'],
         ].map(([label,value,detail])=>(
           <Card key={String(label)} className="rounded-2xl border-slate-200 shadow-sm transition-shadow hover:shadow-md">
@@ -2375,24 +2365,18 @@ function CarteiraUgp({
           </Card>
         ))}
       </div>
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Radar</span>
-            {[
-              ['all','Todos',null],
-              ['queda','Queda de experiência',conta('queda')],
-              ['divergencia','Divergência Gestor×Anjo',conta('divergencia')],
-              ['atraso','Formulário atrasado',conta('atraso')],
-            ].map(([key,label,count])=>(
-              <button key={String(key)} type="button" onClick={()=>setRadarFiltro(String(key))}
-                className={'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:shadow-sm '+(radarFiltro===key?'border-violet-300 bg-violet-100 text-violet-900':'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>
-                {label}{count!=null?' '+count:''}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={()=>setRadarFiltro(radarFiltro==='atraso'?'all':'atraso')}
+          className={'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-all hover:shadow-sm '+(radarFiltro==='atraso'?'border-amber-300 bg-amber-50 text-amber-900':'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}
+        >
+          <AlertTriangle className="h-4 w-4" />
+          {radarFiltro==='atraso'?'Mostrando processos com formulários em atraso':'Filtrar processos com formulários em atraso'}
+        </button>
+      </div>
+
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
         <div className="border-b bg-white p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -2403,14 +2387,15 @@ function CarteiraUgp({
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px] text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-left">Jornada</th><th className="px-4 py-3 text-center">Índice</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
+          <table className="w-full min-w-[1180px] text-sm">
+            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-center">Dias em integração</th><th className="px-4 py-3 text-center">Processo completo</th><th className="px-4 py-3 text-center">Índice de desenvolvimento</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
             <tbody>
               {lista.map((x)=>{
                 const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
-                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-violet-50/40"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'} · Dia {x.dia}/{x.totalDias}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4"><JornadaMini colaborador={x}/></td><td className="px-4 py-4 text-center font-mono text-lg font-black tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
+                const progresso=x.processoAcoes || {total:95,concluidas:0,percentual:0};
+                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-violet-50/40"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-mono font-black tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[110px]"><div className="font-mono text-base font-black tabular-nums text-slate-950">{Math.round(progresso.percentual)}%</div><Progress className="mt-1.5 h-2" value={progresso.percentual}/><div className="mt-1 text-[10px] text-slate-500">{progresso.concluidas} de {progresso.total} ações</div></div></td><td className="px-4 py-4 text-center font-mono text-lg font-black tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
               })}
-              {!lista.length&&<tr><td colSpan={7} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
+              {!lista.length&&<tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -2418,7 +2403,6 @@ function CarteiraUgp({
     </div>
   );
 }
-
 
 function GuiaCompactoUgp({
   colaborador,
