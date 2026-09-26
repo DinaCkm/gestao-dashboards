@@ -206,70 +206,120 @@ function EvolucaoPapel({ respostas, papel }: { respostas: RespostaAcompanhamento
   );
 }
 
-function RespostasDetalhadas({ respostas }: { respostas: RespostaAcompanhamento[] }) {
+function RespostasDetalhadas({
+  respostas,
+  tipo,
+}: {
+  respostas: RespostaAcompanhamento[];
+  tipo: TipoModal;
+}) {
   const registros = respostas
-    .filter((r) => r.form === 'pesquisa' || (r.form === 'aval' && (r.papel === 'Gestor' || r.papel === 'Anjo')))
+    .filter((r) => {
+      if (tipo === 'colaborador') return r.form === 'pesquisa';
+      if (tipo === 'gestor') return r.form === 'aval' && r.papel === 'Gestor';
+      return r.form === 'aval' && r.papel === 'Anjo';
+    })
     .slice()
-    .sort((a,b) => {
-      const ordem = (r: RespostaAcompanhamento) => r.form === 'pesquisa' ? 0 : r.papel === 'Gestor' ? 1 : 2;
-      return ordem(a) - ordem(b) || Number(a.ciclo) - Number(b.ciclo);
-    });
+    .sort((a,b) => Number(a.ciclo) - Number(b.ciclo));
 
-  if (!registros.length) return <div className="rounded-xl border border-dashed p-6 text-sm text-slate-500">Ainda não há respostas detalhadas disponíveis.</div>;
+  if (!registros.length) {
+    return (
+      <section className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-5 text-sm text-slate-500">
+        Ainda não há respostas detalhadas disponíveis para este instrumento.
+      </section>
+    );
+  }
+
+  const maiorCiclo = Math.max(...registros.map((r) => Number(r.ciclo || 0)));
+  const papel = tipo === 'colaborador' ? 'Colaborador' : tipo === 'gestor' ? 'Gestor' : 'Anjo';
+  const instrumento = tipo === 'colaborador' ? 'Pesquisa de Integração' : 'Avaliação do Programa';
+  const cores = tipo === 'colaborador'
+    ? 'border-blue-200 bg-blue-50/35 text-blue-800'
+    : tipo === 'gestor'
+      ? 'border-teal-200 bg-teal-50/35 text-teal-800'
+      : 'border-amber-200 bg-amber-50/35 text-amber-800';
 
   return (
-    <div className="space-y-4">
-      {registros.map((resposta, indice) => {
-        const papel = resposta.form === 'pesquisa' ? 'Colaborador' : resposta.papel;
-        const perguntas = perguntasCatalogo(resposta.form);
-        const answers = resposta.answers || {};
-        const secoes = perguntas.reduce<Record<string, typeof perguntas>>((acc, pergunta) => {
-          if (!(pergunta.code in answers)) return acc;
-          if (!acc[pergunta.secao]) acc[pergunta.secao] = [];
-          acc[pergunta.secao].push(pergunta);
-          return acc;
-        }, {});
-        const classes = papel === 'Colaborador'
-          ? 'border-blue-200 bg-blue-50/40'
-          : papel === 'Gestor'
-            ? 'border-teal-200 bg-teal-50/40'
-            : 'border-amber-200 bg-amber-50/40';
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+      <div className="border-b border-slate-200 px-4 py-3">
+        <div className="text-[15px] font-semibold text-slate-950">Respostas detalhadas — {papel}</div>
+        <div className="mt-0.5 text-xs leading-relaxed text-slate-500">
+          {instrumento}. Abra cada alinhamento para consultar as respostas pergunta por pergunta.
+        </div>
+      </div>
 
-        return (
-          <div key={resposta.form + '-' + resposta.papel + '-' + String(resposta.ciclo) + '-' + String(indice)} className={'rounded-xl border p-4 ' + classes}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <div className="font-semibold text-slate-950">{papel}</div>
-                <div className="mt-0.5 text-xs text-slate-600">
-                  {resposta.form === 'pesquisa' ? 'Pesquisa de Integração' : 'Avaliação do Programa'} · alinhamento de {diaDoAlinhamento(resposta.ciclo)} dias
+      <div className="space-y-2 p-3">
+        {registros.map((resposta, indice) => {
+          const perguntas = perguntasCatalogo(resposta.form);
+          const answers = resposta.answers || {};
+          const secoes = perguntas.reduce<Record<string, typeof perguntas>>((acc, pergunta) => {
+            if (!(pergunta.code in answers)) return acc;
+            if (!acc[pergunta.secao]) acc[pergunta.secao] = [];
+            acc[pergunta.secao].push(pergunta);
+            return acc;
+          }, {});
+          const alinhamento = diaDoAlinhamento(resposta.ciclo);
+          const maisRecente = Number(resposta.ciclo || 0) === maiorCiclo;
+
+          return (
+            <details
+              key={resposta.form + '-' + resposta.papel + '-' + String(resposta.ciclo) + '-' + String(indice)}
+              open={maisRecente}
+              className="overflow-hidden rounded-lg border border-slate-200 bg-white"
+            >
+              <summary className="cursor-pointer list-none px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                    <span className="text-sm font-semibold text-slate-900">Alinhamento de {alinhamento} dias</span>
+                    {maisRecente && (
+                      <span className={'rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.05em] ' + cores}>
+                        Mais recente
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right text-[11px] text-slate-500">
+                    {resposta.respondentName ? <span>{resposta.respondentName}</span> : null}
+                    {resposta.submittedAt ? (
+                      <span>{resposta.respondentName ? ' · ' : ''}{new Date(resposta.submittedAt).toLocaleDateString('pt-BR')}</span>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-              <Badge variant="outline" className="bg-white/70">{papel}</Badge>
-            </div>
+              </summary>
 
-            {!Object.keys(secoes).length ? (
-              <div className="mt-3 text-sm text-slate-500">A resposta existe, mas o detalhamento pergunta a pergunta não está disponível nesta versão do registro.</div>
-            ) : (
-              <div className="mt-4 space-y-4">
-                {Object.entries(secoes).map(([secao, itens]) => (
-                  <section key={secao}>
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">{secao}</div>
-                    <div className="grid gap-2 lg:grid-cols-2">
-                      {itens.map((pergunta) => (
-                        <div key={pergunta.code} className="rounded-lg bg-white/85 p-3">
-                          <div className="text-xs leading-relaxed text-slate-500">{pergunta.label}</div>
-                          <div className="mt-1 text-sm font-medium leading-relaxed text-slate-900">{valorApresentado(pergunta, answers[pergunta.code])}</div>
+              <div className="border-t border-slate-200 px-3 py-3">
+                {!Object.keys(secoes).length ? (
+                  <div className="text-sm text-slate-500">
+                    A resposta existe, mas o detalhamento pergunta a pergunta não está disponível nesta versão do registro.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(secoes).map(([secao, itens]) => (
+                      <section key={secao}>
+                        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-500">{secao}</div>
+                        <div className="divide-y divide-slate-100 rounded-lg bg-[#FAFAFD] px-3">
+                          {itens.map((pergunta) => (
+                            <div
+                              key={pergunta.code}
+                              className="grid gap-1 py-2.5 md:grid-cols-[minmax(280px,1.25fr)_minmax(220px,.75fr)] md:gap-4"
+                            >
+                              <div className="text-xs leading-relaxed text-slate-600">{pergunta.label}</div>
+                              <div className="text-sm font-medium leading-relaxed text-slate-950 md:text-right">
+                                {valorApresentado(pergunta, answers[pergunta.code])}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                ))}
+                      </section>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
+            </details>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
@@ -342,18 +392,6 @@ export function FormulariosEvolucaoUgp({ respostas }: { respostas: RespostaAcomp
         })}
       </div>
 
-      <details className="rounded-2xl border border-slate-200 bg-[#FAFAFD]">
-        <summary className="cursor-pointer list-none px-5 py-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-400">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="font-semibold text-slate-900">Respostas detalhadas dos formulários</div>
-              <div className="mt-1 text-sm text-slate-500">Recolhido por padrão. Abra para consultar pergunta por pergunta, separada por papel e alinhamento.</div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-violet-600" />
-          </div>
-        </summary>
-        <div className="border-t border-slate-200 px-5 py-5"><RespostasDetalhadas respostas={respostas} /></div>
-      </details>
 
       <Dialog open={modal != null} onOpenChange={(open) => { if (!open) setModal(null); }}>
         <DialogContent className="overflow-hidden p-0" style={{ width: 'min(1450px, calc(100vw - 32px))', maxWidth: 'none', maxHeight: '92vh' }}>
@@ -362,10 +400,13 @@ export function FormulariosEvolucaoUgp({ respostas }: { respostas: RespostaAcomp
               <DialogTitle className="text-xl">{titulo}</DialogTitle>
               <DialogDescription>Visualização da evolução ao longo dos alinhamentos.</DialogDescription>
             </DialogHeader>
-            <div className="overflow-y-auto bg-[#F6F6FA] p-5 sm:p-6">
-              {modal === 'colaborador' && <EvolucaoColaborador respostas={respostas} />}
-              {modal === 'gestor' && <EvolucaoPapel respostas={respostas} papel="Gestor" />}
-              {modal === 'anjo' && <EvolucaoPapel respostas={respostas} papel="Anjo" />}
+            <div className="overflow-y-auto bg-[#F6F6FA] p-4 sm:p-5">
+              <div className="space-y-4">
+                {modal === 'colaborador' && <EvolucaoColaborador respostas={respostas} />}
+                {modal === 'gestor' && <EvolucaoPapel respostas={respostas} papel="Gestor" />}
+                {modal === 'anjo' && <EvolucaoPapel respostas={respostas} papel="Anjo" />}
+                {modal && <RespostasDetalhadas respostas={respostas} tipo={modal} />}
+              </div>
             </div>
             <div className="flex justify-end border-t bg-white px-6 py-4"><DialogClose asChild><Button variant="outline">Fechar</Button></DialogClose></div>
           </div>
