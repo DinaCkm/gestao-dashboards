@@ -33,7 +33,7 @@ import {
 } from '@/features/programaIntegracao/helpers/evolucaoAcompanhamento';
 import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/helpers/acompanhamentoIntegracaoPdf';
 import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helpers/atasRelatoriosHelpers';
-import { PUBLIC_FORM_CATALOG, optionValueLabel } from '@/features/programaIntegracao/helpers/publicFormCatalog';
+import { FormulariosEvolucaoUgp } from '@/features/programaIntegracao/components/FormulariosEvolucaoUgp';
 
 interface Pendencia {
   ciclo: number;
@@ -3207,7 +3207,7 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
         <TabsContent value="formularios" className="space-y-4">
           <AlertasOperacionaisUgp colaborador={colaborador}/>
           <TabelaFormulariosPendentesUgp colaborador={colaborador}/>
-          <EvolucaoFormulariosUgp colaborador={colaborador}/>
+          <FormulariosEvolucaoUgp respostas={colaborador.respostas}/>
         </TabsContent>
         <TabsContent value="desenvolvimento"><DesenvolvimentoDetalhe colaborador={colaborador}/></TabsContent>
         <TabsContent value="registros"><RegistrosIntegracaoUgp colaborador={colaborador}/></TabsContent>
