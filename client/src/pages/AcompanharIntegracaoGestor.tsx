@@ -2545,10 +2545,9 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
       <GuiaCompactoUgp colaborador={colaborador} onSelect={setAba} />
 
       <Tabs value={aba} onValueChange={setAba} className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-3 xl:grid-cols-6">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-3 xl:grid-cols-5">
           <TabsTrigger value="visao" className="rounded-xl py-2.5">Visão geral</TabsTrigger>
           <TabsTrigger value="trajetoria" className="rounded-xl py-2.5">Trajetória</TabsTrigger>
-          <TabsTrigger value="percepcoes" className="rounded-xl py-2.5">Percepções</TabsTrigger>
           <TabsTrigger value="formularios" className="rounded-xl py-2.5">Formulários</TabsTrigger>
           <TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5">Desenvolvimento</TabsTrigger>
           <TabsTrigger value="perfil" className="rounded-xl py-2.5">Perfil</TabsTrigger>
@@ -2575,8 +2574,11 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
         </TabsContent>
 
         <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
-        <TabsContent value="percepcoes"><PercepcoesDumbbell colaborador={colaborador}/></TabsContent>
-        <TabsContent value="formularios"><EvolucaoFormulariosUgp colaborador={colaborador}/></TabsContent>
+        <TabsContent value="formularios" className="space-y-4">
+          <AlertasOperacionaisUgp colaborador={colaborador}/>
+          <TabelaFormulariosPendentesUgp colaborador={colaborador}/>
+          <EvolucaoFormulariosUgp colaborador={colaborador}/>
+        </TabsContent>
         <TabsContent value="desenvolvimento"><DesenvolvimentoDetalhe colaborador={colaborador}/></TabsContent>
         <TabsContent value="perfil"><PerfilAssessmentResumo colaborador={colaborador} onAbrir={onPerfil}/></TabsContent>
       </Tabs>
