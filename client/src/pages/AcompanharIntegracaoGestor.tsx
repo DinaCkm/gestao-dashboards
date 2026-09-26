@@ -400,7 +400,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm font-semibold text-violet-200">
-              <Eye className="h-4 w-4" /> COMEÇE POR AQUI
+              <Eye className="h-4 w-4" /> COMECE POR AQUI
             </div>
             <CardTitle className="mt-1 text-xl !text-white">Leitura rápida para RH / UGP</CardTitle>
             <CardDescription className="!text-white/75">
@@ -1713,6 +1713,8 @@ export default function AcompanharIntegracaoGestor() {
                   </CardContent>
                 </Card>
 
+                {isUgpRh && <GuiaLeituraUgp colaborador={colaborador} />}
+
                 {alertasColaborador.length > 0 && (
                   <div className="space-y-2">
                     {alertasColaborador.map((mensagem) => (
@@ -1725,25 +1727,11 @@ export default function AcompanharIntegracaoGestor() {
                   </div>
                 )}
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div id="resumo-executivo" className="scroll-mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {isUgpRh && indiceAtual && (
-                    <Card className="border-violet-200">
-                      <CardContent className="pt-5">
-                        <div className="text-xs font-semibold uppercase text-muted-foreground">Índice de Integração</div>
-                        <div className="mt-2 text-3xl font-bold">{indiceAtual.indice == null ? '—' : `${Math.round(indiceAtual.indice)}%`}</div>
-                        <Progress className="mt-3" value={indiceAtual.indice || 0} />
-                        <div className="mt-2 text-xs text-muted-foreground">Cobertura dos dados: {indiceAtual.cobertura}% · mínimo de 60% para cálculo.</div>
-                        <details className="mt-3 rounded-lg border bg-muted/10 px-3 py-2 text-xs">
-                          <summary className="cursor-pointer font-semibold text-violet-700">Como é calculado</summary>
-                          <div className="mt-2 space-y-1.5 text-muted-foreground">
-                            <div className="flex justify-between gap-3"><span>Experiência do colaborador</span><b>{indiceAtual.experiencia == null ? 'sem base' : `${Math.round(indiceAtual.experiencia)}%`} · peso 40%</b></div>
-                            <div className="flex justify-between gap-3"><span>Adaptação observada</span><b>{indiceAtual.adaptacao == null ? 'sem base' : `${Math.round(indiceAtual.adaptacao)}%`} · peso 35%</b></div>
-                            <div className="flex justify-between gap-3"><span>Desenvolvimento (PDI + Compliance)</span><b>{indiceAtual.desenvolvimento == null ? 'sem base' : `${Math.round(indiceAtual.desenvolvimento)}%`} · peso 25%</b></div>
-                            <p className="pt-1 leading-relaxed">O cálculo usa apenas componentes disponíveis e reajusta proporcionalmente os pesos. Assessment/DISC não entra no índice e pendências administrativas não reduzem a nota da pessoa.</p>
-                          </div>
-                        </details>
-                      </CardContent>
-                    </Card>
+                    <div className="sm:col-span-2 xl:col-span-3">
+                      <IndiceIntegracaoExplicado indiceAtual={indiceAtual} />
+                    </div>
                   )}
                   {saudeAtual && (
                     <Card className={saudeAtual.classes}>
@@ -1818,7 +1806,20 @@ export default function AcompanharIntegracaoGestor() {
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Alinhamentos realizados</div><div className="mt-2 text-3xl font-bold">{colaborador.alinhamentosFeitos}<span className="text-base text-muted-foreground">/{colaborador.alinhamentosTotal}</span></div><Progress className="mt-3" value={(colaborador.alinhamentosFeitos/colaborador.alinhamentosTotal)*100} /></CardContent></Card>
                 </div>
 
-                {isUgpRh && <LeituraIntegradaUgp colaborador={colaborador} />}
+                {isUgpRh && <TrajetoriaIntegracao colaborador={colaborador} />}
+
+                {isUgpRh && (
+                  <PerfilAssessmentResumo
+                    colaborador={colaborador}
+                    onAbrir={() => abrirPerfil(colaborador)}
+                  />
+                )}
+
+                {isUgpRh && (
+                  <div id="tres-olhares" className="scroll-mt-6">
+                    <LeituraIntegradaUgp colaborador={colaborador} />
+                  </div>
+                )}
 
                 {isUgpRh && (
                   <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
