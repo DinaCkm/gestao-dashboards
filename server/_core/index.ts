@@ -30,6 +30,7 @@ import { iniciarCronPsLembreteD1 } from "../cronPsLembreteD1";
 import { iniciarCronLembreteChecklistWebinar } from "../cronLembreteChecklistWebinar";
 import { iniciarCronDevolutivaLembreteD1 } from "../cronDevolutivaLembreteD1";
 import { ENV } from "./env";
+import { ensureDemoIntegrationProcessFixture } from "../demoIntegrationProcessFixture";
 import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport, ensureDevolutivasTables, ensureMetaEvidenciaColumns, ensureDiretorSupport, ensureDemoUgpLoginFixture } from "../db";
 
 async function startServer() {
@@ -48,6 +49,13 @@ async function startServer() {
   await ensureDiretorSupport(); // garante papel de Diretor/Área (EcoDISC 360) com visão restrita por diretoria
   await ensureCourseMetadataTable(); // garante persistência do resumo textual dos cursos
   await ensureDemoUgpLoginFixture(); // normaliza somente o usuário fictício de demonstração da UGP
+  try {
+    await ensureDemoIntegrationProcessFixture();
+  } catch (error) {
+    // A fixture é apenas de demonstração. Uma falha nela nunca deve impedir
+    // a inicialização normal da plataforma.
+    console.warn("[DemoIntegracao] MARINA_FIXTURE_ERROR", error);
+  }
 
   const app = express();
   const server = createServer(app);
