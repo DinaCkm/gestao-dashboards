@@ -109,6 +109,11 @@ interface ColaboradorAcompanhamento {
   anjo: string;
   alinhamentosFeitos: number;
   alinhamentosTotal: number;
+  processoAcoes: {
+    total: number;
+    concluidas: number;
+    percentual: number;
+  };
   jornadaCompliance: {
     total: number;
     concluidas: number;
@@ -2086,86 +2091,6 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
         </CardContent>
       </Card>
 
-      {(() => {
-        const comSinais = colaboradores
-          .map((item) => ({ item, sinais: sinaisAtencaoUgp(item) }))
-          .filter((entrada) => entrada.sinais.length > 0)
-          .sort((a,b) => b.sinais.length - a.sinais.length);
-
-        if (!comSinais.length) {
-          return (
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-4 text-sm text-emerald-800 shadow-sm">
-              <CheckCircle2 className="mr-2 inline h-4 w-4" />
-              Nenhum colaborador apresenta sinal objetivo de atenção nos dados disponíveis neste momento.
-            </div>
-          );
-        }
-
-        const filtradosRadar = radarFiltro === 'all'
-          ? comSinais
-          : comSinais.filter(({ item, sinais }) => {
-              const baixos = sinais.map((s)=>s.toLowerCase());
-              if (radarFiltro === 'queda') return baixos.some((s)=>s.includes('menor'));
-              if (radarFiltro === 'divergencia') return baixos.some((s)=>s.includes('gestor') && s.includes('anjo'));
-              if (radarFiltro === 'atraso') return item.formulariosPendentes.some((p)=>p.atrasado);
-              return true;
-            });
-
-        return (
-          <Card className="rounded-2xl border-violet-200/80 bg-[linear-gradient(135deg,#faf7ff_0%,#ffffff_55%,#f5f7ff_100%)] shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <AlertTriangle className="h-5 w-5 text-violet-700" />
-                Pessoas que merecem atenção agora
-              </CardTitle>
-              <CardDescription>
-                Cada cartão mostra quem precisa de acompanhamento e por quê. Os sinais são objetivos e servem para orientar a ação da UGP/RH; não são diagnóstico nem previsão.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {!filtradosRadar.length ? (
-                <div className="rounded-xl border border-dashed bg-white/70 p-5 text-sm text-slate-500">
-                  Nenhuma pessoa corresponde ao filtro de Radar selecionado.
-                </div>
-              ) : (
-                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-                  {filtradosRadar.slice(0,6).map(({ item, sinais }) => (
-                    <button
-                      type="button"
-                      key={item.id}
-                      onClick={() => onAbrir(item.id)}
-                      className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-1 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-black text-slate-950">{item.nome}</div>
-                          <div className="mt-1 text-xs text-slate-500">{item.cargo || 'Cargo não informado'} · Dia {item.dia}/{item.totalDias}</div>
-                        </div>
-                        <Badge variant="outline" className="shrink-0 border-amber-200 bg-amber-50 text-amber-800">
-                          {sinais.length} sinal(is)
-                        </Badge>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {sinais.slice(0,3).map((sinal) => (
-                          <div key={sinal} className="rounded-xl bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-950">
-                            <AlertTriangle className="mr-1.5 inline h-3.5 w-3.5 text-amber-700" />
-                            {sinal}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-4 inline-flex items-center gap-1 text-xs font-black text-violet-700">
-                        Ver acompanhamento desta pessoa
-                        <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })()}
-
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
         <div className="border-b px-5 py-4"><div className="font-bold text-slate-950">Heatmap da trajetória</div><div className="mt-1 text-xs text-slate-500">Uma única escala azul: tons mais claros representam valores menores e tons mais intensos, valores maiores.</div></div>
         <div className="overflow-x-auto">
@@ -2271,6 +2196,16 @@ function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamen
 
 function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const alertas = alertasDoColaborador(colaborador);
+  const pendencias = colaborador.formulariosPendentes || [];
+  const atrasados = pendencias.filter((p) => p.atrasado).length;
+
+  if (pendencias.length > 0) {
+    alertas.unshift(
+      atrasados > 0
+        ? atrasados + ' formulário(s) está(ão) atrasado(s) e precisa(m) de acompanhamento.'
+        : pendencias.length + ' formulário(s) está(ão) pendente(s) de preenchimento.'
+    );
+  }
 
   if (!alertas.length) {
     return (
@@ -2289,7 +2224,7 @@ function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcomp
           <div className="min-w-0">
             <div className="font-black text-slate-950">Alertas operacionais</div>
             <p className="mt-1 text-xs leading-relaxed text-slate-600">
-              São avisos objetivos do processo. Eles não entram no Índice de Integração e não representam diagnóstico.
+              Aqui entram pendências de formulário e outros avisos objetivos do processo. Eles não representam diagnóstico.
             </p>
           </div>
         </div>
@@ -2305,7 +2240,6 @@ function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcomp
     </Card>
   );
 }
-
 function TabelaFormulariosPendentesUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const pendencias = colaborador.formulariosPendentes || [];
 
@@ -2392,13 +2326,6 @@ function CarteiraUgp({
   onAbrir:(id:string)=>void;
 }) {
   const unidades=Array.from(new Set(colaboradores.map((x)=>x.unidade).filter(Boolean))).sort();
-  const conta=(tipo:string)=>colaboradores.filter((x)=>{
-    const sinais=sinaisAtencaoUgp(x).map((s)=>s.toLowerCase());
-    if(tipo==='queda') return sinais.some((s)=>s.includes('menor'));
-    if(tipo==='divergencia') return sinais.some((s)=>s.includes('gestor')&&s.includes('anjo'));
-    if(tipo==='atraso') return x.formulariosPendentes.some((p)=>p.atrasado);
-    return false;
-  }).length;
   const lista=colaboradores.filter((x)=>{
     const termo=busca.trim().toLowerCase();
     const okBusca=!termo||[x.nome,x.cargo,x.unidade].some((v)=>String(v||'').toLowerCase().includes(termo));
@@ -2410,18 +2337,15 @@ function CarteiraUgp({
       || (fase==='76a150' && x.dia>75);
     const st=statusCarteira(x);
     const okStatus=status==='all'||st.chave===status;
-    const sinais=sinaisAtencaoUgp(x).map((s)=>s.toLowerCase());
-    const okRadar=radarFiltro==='all'
-      ||(radarFiltro==='queda'&&sinais.some((s)=>s.includes('menor')))
-      ||(radarFiltro==='divergencia'&&sinais.some((s)=>s.includes('gestor')&&s.includes('anjo')))
-      ||(radarFiltro==='atraso'&&x.formulariosPendentes.some((p)=>p.atrasado));
-    return okBusca&&okUnidade&&okFase&&okStatus&&okRadar;
+    const okAtraso=radarFiltro!=='atraso'||x.formulariosPendentes.some((p)=>p.atrasado);
+    return okBusca&&okUnidade&&okFase&&okStatus&&okAtraso;
   });
   const indices=colaboradores.map((x)=>indiceIntegracao(x).indice).filter((v):v is number=>v!=null);
   const indiceMedio=indices.length?Math.round(indices.reduce((s,v)=>s+v,0)/indices.length):null;
   const atencao=colaboradores.filter((x)=>statusCarteira(x).chave==='atencao').length;
   const pendencias=colaboradores.reduce((s,x)=>s+x.formulariosPendentes.length,0);
   const concluindo=colaboradores.filter((x)=>x.dia>=140).length;
+
   return (
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -2429,7 +2353,7 @@ function CarteiraUgp({
           ['Ativos',colaboradores.length,'pessoas em integração'],
           ['Atenção',atencao,'com sinais prioritários'],
           ['Pendências',pendencias,'formulários pendentes'],
-          ['Índice médio',indiceMedio==null?'—':String(indiceMedio)+'%','entre resultados disponíveis'],
+          ['Índice médio de desenvolvimento',indiceMedio==null?'—':String(indiceMedio)+'%','entre resultados disponíveis'],
           ['Concluindo',concluindo,'a partir do dia 140'],
         ].map(([label,value,detail])=>(
           <Card key={String(label)} className="rounded-2xl border-slate-200 shadow-sm transition-shadow hover:shadow-md">
@@ -2441,24 +2365,18 @@ function CarteiraUgp({
           </Card>
         ))}
       </div>
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Radar</span>
-            {[
-              ['all','Todos',null],
-              ['queda','Queda de experiência',conta('queda')],
-              ['divergencia','Divergência Gestor×Anjo',conta('divergencia')],
-              ['atraso','Formulário atrasado',conta('atraso')],
-            ].map(([key,label,count])=>(
-              <button key={String(key)} type="button" onClick={()=>setRadarFiltro(String(key))}
-                className={'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:shadow-sm '+(radarFiltro===key?'border-violet-300 bg-violet-100 text-violet-900':'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>
-                {label}{count!=null?' '+count:''}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={()=>setRadarFiltro(radarFiltro==='atraso'?'all':'atraso')}
+          className={'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-all hover:shadow-sm '+(radarFiltro==='atraso'?'border-amber-300 bg-amber-50 text-amber-900':'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}
+        >
+          <AlertTriangle className="h-4 w-4" />
+          {radarFiltro==='atraso'?'Mostrando processos com formulários em atraso':'Filtrar processos com formulários em atraso'}
+        </button>
+      </div>
+
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
         <div className="border-b bg-white p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -2469,14 +2387,15 @@ function CarteiraUgp({
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1050px] text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-left">Jornada</th><th className="px-4 py-3 text-center">Índice</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
+          <table className="w-full min-w-[1180px] text-sm">
+            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-center">Dias em integração</th><th className="px-4 py-3 text-center">Processo completo</th><th className="px-4 py-3 text-center">Índice de desenvolvimento</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
             <tbody>
               {lista.map((x)=>{
                 const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
-                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-violet-50/40"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'} · Dia {x.dia}/{x.totalDias}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4"><JornadaMini colaborador={x}/></td><td className="px-4 py-4 text-center font-mono text-lg font-black tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
+                const progresso=x.processoAcoes || {total:95,concluidas:0,percentual:0};
+                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-violet-50/40"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-mono font-black tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[110px]"><div className="font-mono text-base font-black tabular-nums text-slate-950">{Math.round(progresso.percentual)}%</div><Progress className="mt-1.5 h-2" value={progresso.percentual}/><div className="mt-1 text-[10px] text-slate-500">{progresso.concluidas} de {progresso.total} ações</div></div></td><td className="px-4 py-4 text-center font-mono text-lg font-black tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
               })}
-              {!lista.length&&<tr><td colSpan={7} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
+              {!lista.length&&<tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -2484,7 +2403,6 @@ function CarteiraUgp({
     </div>
   );
 }
-
 
 function GuiaCompactoUgp({
   colaborador,
@@ -2627,10 +2545,9 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
       <GuiaCompactoUgp colaborador={colaborador} onSelect={setAba} />
 
       <Tabs value={aba} onValueChange={setAba} className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-3 xl:grid-cols-6">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-3 xl:grid-cols-5">
           <TabsTrigger value="visao" className="rounded-xl py-2.5">Visão geral</TabsTrigger>
           <TabsTrigger value="trajetoria" className="rounded-xl py-2.5">Trajetória</TabsTrigger>
-          <TabsTrigger value="percepcoes" className="rounded-xl py-2.5">Percepções</TabsTrigger>
           <TabsTrigger value="formularios" className="rounded-xl py-2.5">Formulários</TabsTrigger>
           <TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5">Desenvolvimento</TabsTrigger>
           <TabsTrigger value="perfil" className="rounded-xl py-2.5">Perfil</TabsTrigger>
@@ -2657,8 +2574,11 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
         </TabsContent>
 
         <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
-        <TabsContent value="percepcoes"><PercepcoesDumbbell colaborador={colaborador}/></TabsContent>
-        <TabsContent value="formularios"><EvolucaoFormulariosUgp colaborador={colaborador}/></TabsContent>
+        <TabsContent value="formularios" className="space-y-4">
+          <AlertasOperacionaisUgp colaborador={colaborador}/>
+          <TabelaFormulariosPendentesUgp colaborador={colaborador}/>
+          <EvolucaoFormulariosUgp colaborador={colaborador}/>
+        </TabsContent>
         <TabsContent value="desenvolvimento"><DesenvolvimentoDetalhe colaborador={colaborador}/></TabsContent>
         <TabsContent value="perfil"><PerfilAssessmentResumo colaborador={colaborador} onAbrir={onPerfil}/></TabsContent>
       </Tabs>
