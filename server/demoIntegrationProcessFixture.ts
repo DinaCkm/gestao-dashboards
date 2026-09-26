@@ -168,7 +168,10 @@ async function resolveProfile(tx: any, patterns: readonly string[], fallbackLate
 }
 
 async function ensureDemo(tx: any, program: { id: number; name: string }, demo: typeof DEMOS[number], profile: any | null) {
-  const feito: Record<string, any> = {};
+  const feito: Record<string, any> = {
+    "pre-05": { s: "ok", d: "2026-04-24" },
+    "pre-04b": { s: "ok", d: "2026-04-25" },
+  };
   for (const cycle of CYCLES) {
     for (const itemId of [cycle.pesquisa, cycle.gestor, cycle.anjo]) {
       feito[itemId] = { s: "ok", d: cycle.data };
@@ -300,6 +303,65 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     });
   };
 
+  const bemDedupeKey = `${demo.tag}:bem:gestor:0`;
+  const [bemExistente] = await tx
+    .select({ id: programaIntegracaoRespostas.id })
+    .from(programaIntegracaoRespostas)
+    .where(eq(programaIntegracaoRespostas.dedupeKey, bemDedupeKey))
+    .limit(1);
+
+  if (!bemExistente) {
+    const caracteristicas = demo.scenario === "queda"
+      ? ["Analítico","Detalhista","Prudente","Determinado","Acolhedor","Comunicativo","Orientador","Estratégico"]
+      : ["Analítico","Criativo","Detalhista","Flexível","Acolhedor","Atencioso","Comunicativo","Estratégico"];
+
+    const bemAnswers: Record<string, any> = {
+      bem_gestor: demo.gestor,
+      bem_unidade: "Unidade de Desenvolvimento [TESTE]",
+      bem_colaborador: demo.name,
+      bem_data_inicio: "2026-04-29",
+      bem_funcao: demo.scenario === "queda" ? "Analista de Relacionamento" : "Analista de Projetos",
+      bem_anjo: demo.anjo,
+      bem_caracteristicas: caracteristicas,
+      bem_conhecimentos_tecnicos: demo.scenario === "queda"
+        ? "Atendimento consultivo, registro de demandas, análise de informações e organização da rotina."
+        : "Gestão de projetos, organização de rotinas, análise de informações e acompanhamento de entregas.",
+      bem_documentos_treinamentos: "Manual do colaborador, normas internas, materiais da unidade e conteúdos de integração.",
+      bem_treinamentos_uc: "Integração institucional, proteção de dados e segurança da informação.",
+      bem_primeiros_15_dias: "Conhecer a equipe, a rotina, os principais processos, sistemas e prioridades da unidade, com acompanhamento próximo do Gestor e do Anjo.",
+      bem_primeiros_60_dias: "Assumir entregas de forma progressiva, ampliar autonomia, revisar aprendizados e alinhar pontos de desenvolvimento com o Gestor.",
+    };
+
+    await tx.insert(programaIntegracaoRespostas).values({
+      processoId,
+      legacyRid: bemDedupeKey,
+      protocolo: `DEMO-${demo.scenario === "queda" ? "Q" : "M"}-BEM`,
+      dedupeKey: bemDedupeKey,
+      formKey: "bem",
+      ciclo: 0,
+      papel: "Gestor",
+      itemId: "pre-04b",
+      formVersion: 2,
+      statusVinculo: "vinculada",
+      statusResposta: "valido",
+      nomeColaborador: demo.name,
+      unidade: "Unidade de Desenvolvimento [TESTE]",
+      dataInicio: "2026-04-29",
+      emailColaborador: demo.email,
+      nomeOrig: demo.name,
+      avaliador: demo.gestor,
+      respondentName: demo.gestor,
+      respondentEmail: demo.gestorEmail,
+      source: "admin",
+      media: null,
+      alertas: [],
+      answers: bemAnswers,
+      quandoOriginal: "2026-04-25",
+      emOriginal: "2026-04-25",
+      submittedAt: new Date("2026-04-25T12:00:00.000Z"),
+    });
+  }
+
   for (const cycle of CYCLES) {
     await ensureResponse(
       cycle, "pesquisa", "Colaborador", cycle.pesquisa, demo.name, demo.email,
@@ -322,8 +384,8 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       eq(programaIntegracaoRespostas.processoId, processoId),
       eq(programaIntegracaoRespostas.statusVinculo, "vinculada"),
     ));
-  if (respostas.length < 12) {
-    throw new Error(`[DemoIntegracao] ${demo.tag} verify expected 12 responses, found ${respostas.length}`);
+  if (respostas.length < 13) {
+    throw new Error(`[DemoIntegracao] ${demo.tag} verify expected at least 13 responses (including BEM), found ${respostas.length}`);
   }
 
   return {

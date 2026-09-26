@@ -116,6 +116,7 @@ interface ColaboradorAcompanhamento {
   perfilAssessment: PerfilAssessment;
   respostas: RespostaAcompanhamento[];
   formulariosPendentes: Pendencia[];
+  dicasGestor?: Array<{ titulo: string; texto: string }>;
 }
 
 interface AcompanhamentoResponse {
@@ -412,6 +413,42 @@ function mudancasDimensoes(respostas: RespostaAcompanhamento[]) {
 
 function navegarPara(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function DicasGestorProtegidas({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const dicas = colaborador.dicasGestor || [];
+  if (!dicas.length) return null;
+
+  return (
+    <Card className="overflow-hidden rounded-3xl border-blue-200 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_55%,#ecfeff_100%)] shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-2xl bg-blue-700 p-3 text-white shadow-sm"><Handshake className="h-5 w-5" /></span>
+          <div className="min-w-0">
+            <div className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">Dicas para apoiar a integração</div>
+            <h3 className="mt-1 text-lg font-black text-slate-950">Pequenas ações de acompanhamento</h3>
+            <p className="mt-1 text-sm leading-relaxed text-slate-600">
+              Estas são orientações preventivas para o Gestor. Por privacidade, esta tela não mostra respostas,
+              notas, percentuais nem o conteúdo do formulário respondido pelo colaborador.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          {dicas.map((dica) => (
+            <div key={dica.titulo} className="group rounded-2xl border border-blue-100 bg-white/85 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+              <div className="flex items-start gap-3">
+                <span className="rounded-xl bg-blue-50 p-2 text-blue-700"><Sparkles className="h-4 w-4" /></span>
+                <div>
+                  <div className="font-black text-slate-900">{dica.titulo}</div>
+                  <p className="mt-1 text-sm leading-relaxed text-slate-600">{dica.texto}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
@@ -849,6 +886,12 @@ function PerfilAssessmentResumo({
                 Esta área ajuda a compreender tendências comportamentais, a autoavaliação do colaborador e, quando o BEM está preenchido,
                 a expectativa registrada pelo Gestor. <b>Esses dados não entram no Índice de Integração.</b>
               </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge variant="outline" className="bg-white/80">
+                  {perfil?.expectativaGestor?.temRespostaBem ? 'BEM do Gestor disponível' : 'BEM do Gestor ainda não disponível'}
+                </Badge>
+                <Badge variant="outline" className="bg-white/80">Visível somente para UGP/RH</Badge>
+              </div>
             </div>
           </div>
           <Button className="gap-2 bg-violet-700 text-white shadow-sm hover:bg-violet-800" onClick={onAbrir}>
@@ -1894,6 +1937,8 @@ export default function AcompanharIntegracaoGestor() {
                 </Card>
 
                 {isUgpRh && <GuiaLeituraUgp colaborador={colaborador} />}
+
+                {!isUgpRh && <DicasGestorProtegidas colaborador={colaborador} />}
 
                 {alertasColaborador.length > 0 && (
                   <div className="space-y-2">

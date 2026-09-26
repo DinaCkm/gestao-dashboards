@@ -188,6 +188,59 @@ function calcularExpectativaGestorBem(row: any | null) {
   };
 }
 
+function dicasProtegidasParaGestor(respostas: any[]) {
+  const pesquisas = (respostas || [])
+    .filter((r: any) => r.form === "pesquisa" && Number(r.ciclo || 0) > 0)
+    .sort((a: any, b: any) => Number(a.ciclo || 0) - Number(b.ciclo || 0));
+  const ultima = pesquisas[pesquisas.length - 1];
+  if (!ultima) return [];
+
+  const valorIndice = (indice: number, invertido = false) => {
+    const par = (ultima.c || []).find((item: any) => Number(item?.[0]) === indice);
+    const n = Number(String(par?.[1] ?? "").replace(",", "."));
+    if (!Number.isFinite(n) || n <= 0 || n > 5) return null;
+    return invertido ? 6 - n : n;
+  };
+
+  const media = (indices: number[], invertidos: number[] = []) => {
+    const inv = new Set(invertidos);
+    const notas = indices
+      .map((indice) => valorIndice(indice, inv.has(indice)))
+      .filter((n): n is number => n != null);
+    return notas.length ? (notas.reduce((soma, n) => soma + n, 0) / notas.length) * 20 : null;
+  };
+
+  const dimensoes = [
+    {
+      valor: media([9,10,11,12,13]),
+      titulo: "Fortaleça acolhimento e pertencimento",
+      texto: "Reserve um momento individual para perguntar como está sendo a adaptação, se a pessoa se sente acolhida pela equipe e se existe algum apoio simples que possa facilitar sua integração.",
+    },
+    {
+      valor: media([14,15,16,17,18]),
+      titulo: "Reforce a rede de apoio",
+      texto: "Cheque se o colaborador sabe com quem contar no dia a dia e se a relação com Anjo e colegas está oferecendo o suporte necessário para dúvidas e adaptação à rotina.",
+    },
+    {
+      valor: media([19,20,21]),
+      titulo: "Aproxime a comunicação da liderança",
+      texto: "Faça uma conversa breve para confirmar se prioridades, expectativas e formas de pedir ajuda estão claras. Reforce disponibilidade para dúvidas sem esperar que a pessoa traga o problema sozinha.",
+    },
+    {
+      valor: media([22,23,24,25,26,27,28], [23]),
+      titulo: "Revise condições para o trabalho e desenvolvimento",
+      texto: "Confirme se a pessoa está conseguindo realizar as atividades com clareza, recursos e apoio suficientes e se precisa de orientação adicional para ganhar segurança e autonomia.",
+    },
+  ];
+
+  // Proteção de privacidade: a dica só nasce em situação realmente baixa
+  // (<40%) e o payload NÃO inclui nota, percentual, resposta nem dimensão bruta.
+  return dimensoes
+    .filter((item) => item.valor != null && Number(item.valor) < 40)
+    .slice(0, 2)
+    .map(({ titulo, texto }) => ({ titulo, texto }));
+}
+
 function combinarExpectativaComPerfil(expectativa: any, autoClusters: any[]) {
   const autoPorKey = new Map((autoClusters || []).map((item: any) => [item.key, item]));
   const clusters = (expectativa?.clusters || []).map((item: any) => ({
@@ -1074,6 +1127,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         formulariosPendentes: acessoUgpRh
           ? formulariosPendentes
           : formulariosPendentes.filter((p) => p.papel === "Gestor"),
+        // O Gestor recebe apenas orientações genéricas de cuidado quando um
+        // sinal está muito baixo. Nunca recebe a resposta, a nota, o percentual
+        // ou a dimensão do formulário do colaborador que originou a orientação.
+        dicasGestor: acessoUgpRh ? [] : dicasProtegidasParaGestor(respostas),
       };
     });
 
