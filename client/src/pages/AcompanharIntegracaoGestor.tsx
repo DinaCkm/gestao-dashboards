@@ -198,6 +198,28 @@ function mediaMomentoPesquisa(momento: ReturnType<typeof evolucaoPesquisaColabor
   return mediaNumeros(Object.values(momento.indices));
 }
 
+function diaDoAlinhamento(numero: number | null | undefined) {
+  const dias = [15, 45, 75, 150];
+  const indice = Number(numero || 0) - 1;
+  return dias[indice] || Number(numero || 0);
+}
+
+function variacaoPercentual(anterior: number | null | undefined, atual: number | null | undefined): number | null {
+  if (anterior == null || atual == null || !Number.isFinite(Number(anterior)) || !Number.isFinite(Number(atual)) || Number(anterior) === 0) {
+    return null;
+  }
+  return ((Number(atual) - Number(anterior)) / Number(anterior)) * 100;
+}
+
+function textoVariacaoPercentual(anterior: number | null | undefined, atual: number | null | undefined) {
+  const variacao = variacaoPercentual(anterior, atual);
+  if (variacao == null) return 'sem comparação';
+  if (Math.abs(variacao) < 1) return 'praticamente igual';
+  return variacao > 0
+    ? `${Math.round(Math.abs(variacao))}% maior`
+    : `${Math.round(Math.abs(variacao))}% menor`;
+}
+
 function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
   const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
   const gestor = evolucaoPorPapel(colaborador.respostas, 'Gestor');
@@ -264,10 +286,15 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
 
   const pesquisa = evolucaoPesquisaColaborador(colaborador.respostas);
   if (pesquisa.length >= 2) {
-    const anterior = mediaMomentoPesquisa(pesquisa[pesquisa.length - 2]);
-    const atual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
+    const momentoAnterior = pesquisa[pesquisa.length - 2];
+    const momentoAtual = pesquisa[pesquisa.length - 1];
+    const anterior = mediaMomentoPesquisa(momentoAnterior);
+    const atual = mediaMomentoPesquisa(momentoAtual);
     if (anterior != null && atual != null && anterior - atual >= 10) {
-      sinais.push(`experiência do colaborador caiu ${Math.round(anterior - atual)} p.p. desde o ciclo anterior`);
+      const variacao = variacaoPercentual(anterior, atual);
+      sinais.push(
+        `Pelas respostas do colaborador na Pesquisa de Integração do alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias, a experiência geral ficou ${variacao == null ? 'menor' : `${Math.round(Math.abs(variacao))}% menor`} do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias (${Math.round(atual)}% agora; ${Math.round(anterior)}% antes).`
+      );
     }
   }
 
@@ -276,7 +303,7 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
   const g = gestor[gestor.length - 1]?.mediaGeral;
   const a = anjo[anjo.length - 1]?.mediaGeral;
   if (g != null && a != null && Math.abs(g - a) * 20 >= 20) {
-    sinais.push('Gestor e Anjo apresentam percepções significativamente diferentes no ciclo mais recente');
+    sinais.push('No alinhamento mais recente, Gestor e Anjo apresentaram percepções significativamente diferentes sobre a adaptação do colaborador.');
   }
 
   if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
@@ -298,16 +325,16 @@ function direcaoMudanca(delta: number | null): DirecaoMudanca {
   return 'estavel';
 }
 
-function visualDelta(delta: number | null) {
+function visualDelta(delta: number | null, anterior?: number | null, atual?: number | null) {
   const direcao = direcaoMudanca(delta);
   if (direcao === 'subiu') return {
     icon: ArrowUpRight,
-    texto: `+${Math.round(delta || 0)} p.p.`,
+    texto: textoVariacaoPercentual(anterior, atual),
     classes: 'border-emerald-200 bg-emerald-50 text-emerald-800',
   };
   if (direcao === 'caiu') return {
     icon: ArrowDownRight,
-    texto: `${Math.round(delta || 0)} p.p.`,
+    texto: textoVariacaoPercentual(anterior, atual),
     classes: 'border-rose-200 bg-rose-50 text-rose-800',
   };
   if (direcao === 'estavel') return {
@@ -331,6 +358,7 @@ function trajetoriaPesquisa(respostas: RespostaAcompanhamento[]) {
       ...momento,
       geral,
       delta: geral != null && anterior != null ? geral - anterior : null,
+      anteriorGeral: anterior,
       anterior: momentos[index - 1] || null,
     };
   });
@@ -341,7 +369,7 @@ function parecerTrajetoria(respostas: RespostaAcompanhamento[]) {
   if (pontos.length < 2) {
     return {
       titulo: 'Ainda não há histórico suficiente',
-      texto: 'É necessário ter pelo menos dois momentos respondidos para interpretar a direção da trajetória.',
+      texto: 'É necessário ter pelo menos dois alinhamentos com a Pesquisa de Integração respondida para interpretar a direção da trajetória.',
       classes: 'border-slate-200 bg-slate-50 text-slate-700',
       icon: Info,
     };
@@ -351,13 +379,17 @@ function parecerTrajetoria(respostas: RespostaAcompanhamento[]) {
   const deltas = valores.slice(1).map((valor, index) => valor - valores[index]);
   const subidas = deltas.filter((delta) => delta >= 3).length;
   const quedas = deltas.filter((delta) => delta <= -3).length;
-  const maiorQueda = Math.min(...deltas);
-  const variacaoTotal = valores[valores.length - 1] - valores[0];
+  const indiceMaiorQueda = deltas.reduce((melhor, delta, index) => delta < deltas[melhor] ? index : melhor, 0);
+  const maiorQueda = deltas[indiceMaiorQueda];
+  const variacaoTotal = variacaoPercentual(valores[0], valores[valores.length - 1]);
 
   if (maiorQueda <= -10) {
+    const anterior = valores[indiceMaiorQueda];
+    const atual = valores[indiceMaiorQueda + 1];
+    const variacao = variacaoPercentual(anterior, atual);
     return {
       titulo: 'Houve uma queda importante na trajetória',
-      texto: `Em pelo menos um intervalo, a experiência caiu ${Math.abs(Math.round(maiorQueda))} p.p. A recomendação é revisar o contexto desse período e conversar com os envolvidos antes de concluir o motivo.`,
+      texto: `Entre o alinhamento de ${diaDoAlinhamento(pontos[indiceMaiorQueda].ciclo)} dias e o de ${diaDoAlinhamento(pontos[indiceMaiorQueda + 1].ciclo)} dias, a experiência relatada ficou ${variacao == null ? 'menor' : `${Math.round(Math.abs(variacao))}% menor`}. Vale revisar o que mudou nesse período antes de concluir o motivo.`,
       classes: 'border-rose-200 bg-rose-50 text-rose-900',
       icon: ArrowDownRight,
     };
@@ -365,26 +397,26 @@ function parecerTrajetoria(respostas: RespostaAcompanhamento[]) {
 
   if (subidas > 0 && quedas > 0) {
     return {
-      titulo: 'A trajetória oscilou ao longo dos ciclos',
-      texto: 'Houve momentos de melhora e de queda. Essa flutuação merece acompanhamento porque indica que a experiência não evoluiu de forma linear.',
+      titulo: 'A trajetória oscilou entre os alinhamentos',
+      texto: 'Houve momentos de melhora e de queda. Essa flutuação merece acompanhamento porque a experiência do colaborador não evoluiu de forma contínua.',
       classes: 'border-amber-200 bg-amber-50 text-amber-900',
       icon: Activity,
     };
   }
 
-  if (variacaoTotal >= 8 && quedas === 0) {
+  if (variacaoTotal != null && variacaoTotal >= 8 && quedas === 0) {
     return {
       titulo: 'A trajetória mostra evolução consistente',
-      texto: `Do primeiro ao último momento disponível, a experiência avançou aproximadamente ${Math.round(variacaoTotal)} p.p., sem queda relevante entre os ciclos.`,
+      texto: `Do primeiro ao último alinhamento disponível, a experiência relatada ficou aproximadamente ${Math.round(Math.abs(variacaoTotal))}% maior, sem queda relevante entre os alinhamentos.`,
       classes: 'border-emerald-200 bg-emerald-50 text-emerald-900',
       icon: ArrowUpRight,
     };
   }
 
-  if (variacaoTotal <= -8 && subidas === 0) {
+  if (variacaoTotal != null && variacaoTotal <= -8 && subidas === 0) {
     return {
       titulo: 'A trajetória mostra perda gradual',
-      texto: `Do primeiro ao último momento disponível, a experiência reduziu aproximadamente ${Math.abs(Math.round(variacaoTotal))} p.p. Vale aprofundar o que mudou no período.`,
+      texto: `Do primeiro ao último alinhamento disponível, a experiência relatada ficou aproximadamente ${Math.round(Math.abs(variacaoTotal))}% menor. Vale aprofundar o que mudou no período.`,
       classes: 'border-rose-200 bg-rose-50 text-rose-900',
       icon: ArrowDownRight,
     };
@@ -392,7 +424,7 @@ function parecerTrajetoria(respostas: RespostaAcompanhamento[]) {
 
   return {
     titulo: 'A trajetória está relativamente estável',
-    texto: 'As variações entre os ciclos são pequenas. Continue observando os próximos momentos para confirmar a tendência.',
+    texto: 'As variações entre os alinhamentos são pequenas. Continue observando os próximos alinhamentos para confirmar a tendência.',
     classes: 'border-blue-200 bg-blue-50 text-blue-900',
     icon: ArrowRight,
   };
@@ -475,7 +507,7 @@ function GuiaLeituraUgp({ colaborador }: { colaborador: ColaboradorAcompanhament
       numero: '2',
       titulo: 'Entenda o que mudou',
       texto: quedas.length
-        ? `${quedas.length} dimensão(ões) caiu(ram) desde o último ciclo. Veja onde aconteceu e quanto mudou.`
+        ? `${quedas.length} dimensão(ões) caiu(ram) desde o último alinhamento. Veja onde aconteceu e quanto mudou.`
         : 'Compare 15, 45, 75 e 150 dias para enxergar avanço, estabilidade ou queda.',
       acao: 'Abrir trajetória',
       destino: 'trajetoria-integracao',
@@ -572,8 +604,8 @@ function IndiceIntegracaoExplicado({
       peso: 40,
       icon: Users,
       origem: 'Pesquisa de Integração respondida pelo próprio colaborador',
-      momento: ultimaPesquisa ? `último marco disponível: ${[15,45,75,150][ultimaPesquisa.ciclo - 1] || ultimaPesquisa.ciclo} dias` : 'sem pesquisa disponível',
-      explicacao: 'O sistema reúne as respostas sobre cultura e pertencimento, apoio do Anjo e colegas, gestão e trabalho/desenvolvimento. Essas respostas são convertidas para uma escala de 0 a 100 e resumidas em uma média.',
+      momento: ultimaPesquisa ? `último alinhamento disponível: ${diaDoAlinhamento(ultimaPesquisa.ciclo)} dias` : 'sem Pesquisa de Integração disponível',
+      explicacao: 'Esse número indica o quanto a experiência de integração está sendo percebida de forma positiva pelo próprio colaborador. Ele vem da Pesquisa de Integração respondida após os alinhamentos de 15, 45, 75 e 150 dias. O sistema reúne as respostas sobre cultura e pertencimento, apoio do Anjo e colegas, gestão e trabalho/desenvolvimento e transforma o conjunto em uma escala de 0 a 100.',
     },
     {
       titulo: 'Adaptação observada',
@@ -582,7 +614,7 @@ function IndiceIntegracaoExplicado({
       icon: UserCheck,
       origem: 'Avaliações preenchidas por Gestor e Anjo',
       momento: `${ultimoGestor ? 'Gestor com avaliação disponível' : 'Gestor sem avaliação'} · ${ultimoAnjo ? 'Anjo com avaliação disponível' : 'Anjo sem avaliação'}`,
-      explicacao: 'O sistema usa a percepção mais recente de quem acompanha o colaborador no trabalho. Gestor e Anjo não respondem a mesma pesquisa do colaborador; por isso esta parte representa outro olhar sobre a adaptação.',
+      explicacao: 'Essa porcentagem indica como Gestor e Anjo estão percebendo a adaptação do colaborador ao trabalho. Ela vem das avaliações preenchidas por eles após os alinhamentos. O sistema considera a avaliação mais recente de cada um e transforma essas respostas em uma escala de 0 a 100. Ela não é a mesma coisa que a Pesquisa respondida pelo colaborador.',
     },
     {
       titulo: 'Desenvolvimento',
@@ -593,7 +625,7 @@ function IndiceIntegracaoExplicado({
       momento: colaborador.pdi.total || colaborador.jornadaCompliance.total
         ? `PDI: ${fmtPct(colaborador.pdi.percentual)} · Compliance: ${fmtPct(colaborador.jornadaCompliance.percentual)}`
         : 'ainda não há dados de PDI/Compliance para este processo',
-      explicacao: 'Esta parte não mede sentimento nem perfil comportamental. Ela verifica se as ações de desenvolvimento e os conteúdos de Compliance estão avançando.',
+      explicacao: 'Esse item indica quanto do desenvolvimento previsto para o colaborador já avançou. Ele vem do vínculo com o ECO Líderes e considera o andamento das tarefas do PDI e da Jornada Compliance. Não mede sentimento, satisfação ou perfil comportamental.',
     },
   ];
 
@@ -723,7 +755,7 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
             <CardDescription className="mt-1 max-w-4xl leading-relaxed">
               Aqui você acompanha <b>como o próprio colaborador relatou a experiência dele</b> ao longo da integração.
               Os números vêm da <b>Pesquisa de Integração</b>, respondida nos marcos de 15, 45, 75 e 150 dias,
-              normalmente após os respectivos ciclos de acompanhamento. Esta leitura é exclusiva para UGP/RH.
+              após os respectivos alinhamentos. Esta leitura é exclusiva para UGP/RH.
             </CardDescription>
           </div>
         </div>
@@ -758,13 +790,13 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
         <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
           <div className="grid gap-3 md:grid-cols-2">
             {trajetoria.map((momento, index) => {
-              const visual = visualDelta(momento.delta);
+              const visual = visualDelta(momento.delta, momento.anteriorGeral, momento.geral);
               const Icon = visual.icon;
               const dia = [15,45,75,150][momento.ciclo - 1] || momento.ciclo;
               return (
                 <div key={momento.ciclo} className="group relative rounded-2xl border bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-xs font-black uppercase tracking-wide text-slate-500">{dia} dias</div>
+                    <div className="text-xs font-black uppercase tracking-wide text-slate-500">Alinhamento de {dia} dias</div>
                     <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500">Pesquisa do colaborador</span>
                   </div>
                   <div className="mt-2 text-3xl font-black text-slate-950">{momento.geral == null ? '—' : `${Math.round(momento.geral)}%`}</div>
@@ -801,16 +833,16 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
         {maiorQueda ? (
           <Alert className="border-rose-200 bg-rose-50/70">
             <ArrowDownRight className="h-4 w-4 text-rose-700" />
-            <AlertTitle>Queda do último ciclo que merece ser observada</AlertTitle>
+            <AlertTitle>Queda no último alinhamento que merece ser observada</AlertTitle>
             <AlertDescription className="leading-relaxed">
-              <b>{maiorQueda.nome}</b> caiu {Math.abs(Math.round(maiorQueda.delta || 0))} p.p. em relação ao ciclo anterior.
+              <b>{maiorQueda.nome}</b> ficou {textoVariacaoPercentual(maiorQueda.anterior, maiorQueda.atual)} em relação ao alinhamento anterior.
               O sistema não conclui o motivo. Ele apenas sinaliza a mudança para que a UGP/RH verifique o contexto no acompanhamento.
             </AlertDescription>
           </Alert>
         ) : (
           <Alert className="border-emerald-200 bg-emerald-50/70">
             <CheckCircle2 className="h-4 w-4 text-emerald-700" />
-            <AlertTitle>Sem queda relevante no último ciclo</AlertTitle>
+            <AlertTitle>Sem queda relevante no último alinhamento</AlertTitle>
             <AlertDescription>As dimensões disponíveis permaneceram estáveis ou apresentaram melhora.</AlertDescription>
           </Alert>
         )}
@@ -820,14 +852,14 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
             <thead className="bg-slate-950 text-white">
               <tr>
                 <th className="px-4 py-3 text-left">Dimensão observada</th>
-                {trajetoria.map((m) => <th key={m.ciclo} className="px-3 py-3 text-center">{[15,45,75,150][m.ciclo - 1]} dias</th>)}
+                {trajetoria.map((m) => <th key={m.ciclo} className="px-3 py-3 text-center">Alinhamento {diaDoAlinhamento(m.ciclo)} dias</th>)}
                 <th className="px-4 py-3 text-center">Última mudança</th>
               </tr>
             </thead>
             <tbody>
               {INDICES_PESQUISA_COLABORADOR.map((grupo) => {
                 const mudanca = mudancas.find((m) => m.nome === grupo.nome);
-                const visual = visualDelta(mudanca?.delta ?? null);
+                const visual = visualDelta(mudanca?.delta ?? null, mudanca?.anterior ?? null, mudanca?.atual ?? null);
                 const Icon = visual.icon;
                 return (
                   <tr key={grupo.chave} className="border-t transition-colors hover:bg-slate-50">
@@ -959,21 +991,24 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
   const sinais = sinaisAtencaoUgp(colaborador);
 
   const evolucaoTexto = (() => {
-    if (pesquisa.length < 2) return 'Ainda não há dois ciclos da Pesquisa de Integração para comparar a experiência do colaborador.';
-    const anterior = mediaMomentoPesquisa(pesquisa[pesquisa.length - 2]);
-    const atual = mediaMomentoPesquisa(pesquisa[pesquisa.length - 1]);
-    if (anterior == null || atual == null) return 'A Pesquisa de Integração ainda não possui base suficiente para comparar os dois ciclos mais recentes.';
+    if (pesquisa.length < 2) return 'Ainda não há dois alinhamentos com a Pesquisa de Integração respondida para comparar a experiência do colaborador.';
+    const momentoAnterior = pesquisa[pesquisa.length - 2];
+    const momentoAtual = pesquisa[pesquisa.length - 1];
+    const anterior = mediaMomentoPesquisa(momentoAnterior);
+    const atual = mediaMomentoPesquisa(momentoAtual);
+    if (anterior == null || atual == null) return 'A Pesquisa de Integração ainda não possui base suficiente para comparar os dois alinhamentos mais recentes.';
     const delta = atual - anterior;
-    if (Math.abs(delta) < 3) return 'A experiência relatada pelo colaborador permaneceu estável entre os dois ciclos mais recentes.';
+    if (Math.abs(delta) < 3) return `A experiência relatada pelo colaborador permaneceu estável entre os alinhamentos de ${diaDoAlinhamento(momentoAnterior.ciclo)} e ${diaDoAlinhamento(momentoAtual.ciclo)} dias.`;
+    const variacao = variacaoPercentual(anterior, atual);
     return delta > 0
-      ? `A experiência relatada pelo colaborador melhorou aproximadamente ${Math.round(delta)} p.p. desde o ciclo anterior.`
-      : `A experiência relatada pelo colaborador caiu aproximadamente ${Math.round(Math.abs(delta))} p.p. desde o ciclo anterior.`;
+      ? `Pelas respostas da Pesquisa de Integração, a experiência relatada ficou ${variacao == null ? 'maior' : `${Math.round(Math.abs(variacao))}% maior`} no alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias.`
+      : `Pelas respostas da Pesquisa de Integração, a experiência relatada ficou ${variacao == null ? 'menor' : `${Math.round(Math.abs(variacao))}% menor`} no alinhamento de ${diaDoAlinhamento(momentoAtual.ciclo)} dias do que no alinhamento de ${diaDoAlinhamento(momentoAnterior.ciclo)} dias.`;
   })();
 
   return (
     <Card className="overflow-hidden border-violet-200/80">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg"><Sparkles className="h-5 w-5 text-violet-600" />Leitura integrada do ciclo</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-lg"><Sparkles className="h-5 w-5 text-violet-600" />Leitura integrada do alinhamento</CardTitle>
         <CardDescription>
           Síntese para UGP/RH. Os três números abaixo resumem instrumentos diferentes e não representam uma comparação de perguntas idênticas.
         </CardDescription>
@@ -994,7 +1029,7 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
         </div>
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="rounded-xl border bg-slate-50/70 p-4 text-sm">
-            <div className="font-semibold">Desde o ciclo anterior</div>
+            <div className="font-semibold">Desde o alinhamento anterior</div>
             <p className="mt-1 text-muted-foreground">{evolucaoTexto}</p>
           </div>
           <div className="rounded-xl border bg-slate-50/70 p-4 text-sm">
@@ -1004,7 +1039,7 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
                 {sinais.slice(0, 3).map((sinal) => <li key={sinal}>• {sinal}</li>)}
               </ul>
             ) : (
-              <p className="mt-1 text-muted-foreground">Nenhum sinal objetivo de atenção identificado nos dados disponíveis deste ciclo.</p>
+              <p className="mt-1 text-muted-foreground">Nenhum sinal objetivo de atenção identificado nos dados disponíveis neste alinhamento.</p>
             )}
           </div>
         </div>
