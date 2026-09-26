@@ -62,6 +62,33 @@ const CYCLES = [
   { ciclo: 4, data: "2026-09-25", pesquisa: "pos4-07", gestor: "pos4-08", anjo: "pos4-09" },
 ] as const;
 
+const DEMO_ALL_ACTION_IDS = [
+  "pre-00","pre-01","pre-02","pre-03","pre-05","pre-04b","pre-06","pre-07","pre-08","pre-09","pre-10",
+  "d1-01","d1-02","d1-04","d1-03","d2-01","d2-02","d3-01","d3-03","d3-04","d3-02","sem1-01",
+  "ag1-00","ag1-01","ag1-02","ag1-03","d15-01","d15-02","d15-03","pos1-01","pos1-02","pos1-03","pos1-04","pos1-05","pos1-06","pos1-07","pos1-08","pos1-09","pos1-10",
+  "ag2-00","ag2-01","ag2-02","ag2-03","d45-01","d45-02","d45-03","d45-04","pos2-01","pos2-02","pos2-03","pos2-04","pos2-05","pos2-06","pos2-07","pos2-08","pos2-09","pos2-10",
+  "d60-01","d60-02","ag3-00","ag3-01","ag3-02","ag3-03","d75-01","d75-02","d75-03","pos3-01","pos3-02","pos3-03","pos3-04","pos3-05","pos3-06","pos3-07","pos3-08","pos3-09","pos3-10","pos3-11","pos3-12",
+  "ag4-00","ag4-01","ag4-02","ag4-03","d150-01","d150-02","d150-03","pos4-01","pos4-02","pos4-03","pos4-04","pos4-05","pos4-06","pos4-07","pos4-08","pos4-09","pos4-10",
+] as const;
+
+function demoActionDate(itemId: string) {
+  if (itemId.startsWith("ag4") || itemId.startsWith("d150") || itemId.startsWith("pos4")) return "2026-09-25";
+  if (itemId.startsWith("ag3") || itemId.startsWith("d75") || itemId.startsWith("pos3")) return "2026-07-12";
+  if (itemId.startsWith("d60")) return "2026-06-27";
+  if (itemId.startsWith("ag2") || itemId.startsWith("d45") || itemId.startsWith("pos2")) return "2026-06-12";
+  if (itemId.startsWith("ag1") || itemId.startsWith("d15") || itemId.startsWith("pos1")) return "2026-05-13";
+  if (itemId.startsWith("d3") || itemId.startsWith("sem1")) return "2026-05-02";
+  if (itemId.startsWith("d2")) return "2026-05-01";
+  if (itemId.startsWith("d1")) return "2026-04-30";
+  return "2026-04-29";
+}
+
+function demoCompletedActionMap() {
+  return Object.fromEntries(
+    DEMO_ALL_ACTION_IDS.map((itemId) => [itemId, { s: "ok", d: demoActionDate(itemId) }]),
+  );
+}
+
 const DIMENSOES = {
   cultura: PESQUISA_KEYS.slice(0, 5),
   anjo: PESQUISA_KEYS.slice(5, 10),
@@ -168,15 +195,7 @@ async function resolveProfile(tx: any, patterns: readonly string[], fallbackLate
 }
 
 async function ensureDemo(tx: any, program: { id: number; name: string }, demo: typeof DEMOS[number], profile: any | null) {
-  const feito: Record<string, any> = {
-    "pre-05": { s: "ok", d: "2026-04-24" },
-    "pre-04b": { s: "ok", d: "2026-04-25" },
-  };
-  for (const cycle of CYCLES) {
-    for (const itemId of [cycle.pesquisa, cycle.gestor, cycle.anjo]) {
-      feito[itemId] = { s: "ok", d: cycle.data };
-    }
-  }
+  const feito: Record<string, any> = demoCompletedActionMap();
 
   const estado = {
     feito,
@@ -409,9 +428,26 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     throw new Error(`[DemoIntegracao] ${demo.tag} verify expected at least 13 responses (including BEM), found ${respostas.length}`);
   }
 
+  const [processoVerificado] = await tx
+    .select({ estado: programaIntegracaoProcessos.estado })
+    .from(programaIntegracaoProcessos)
+    .where(eq(programaIntegracaoProcessos.id, processoId))
+    .limit(1);
+  const feitoVerificado = ((processoVerificado?.estado || {}) as Record<string, any>).feito || {};
+  const acoesConcluidas = DEMO_ALL_ACTION_IDS.filter((itemId) => String(feitoVerificado?.[itemId]?.s || "") === "ok").length;
+  const alinhamentosRegistrados = Object.values((((processoVerificado?.estado || {}) as Record<string, any>).alin || {}))
+    .filter((item: any) => Boolean(item?.realizado)).length;
+  if (acoesConcluidas !== DEMO_ALL_ACTION_IDS.length || alinhamentosRegistrados !== 4) {
+    throw new Error(
+      `[DemoIntegracao] ${demo.tag} verify incomplete demo: actions ${acoesConcluidas}/${DEMO_ALL_ACTION_IDS.length}, alignments ${alinhamentosRegistrados}/4`,
+    );
+  }
+
   return {
     processoId,
     respostas: respostas.length,
+    acoesConcluidas,
+    alinhamentosRegistrados,
     profileId: profile?.id || null,
     profileName: profile?.name || null,
   };
