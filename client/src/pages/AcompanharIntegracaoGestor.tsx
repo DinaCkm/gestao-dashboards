@@ -11,7 +11,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, Di
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, Filter, Handshake, Info, LayoutDashboard, ListChecks, Network, RefreshCw, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, Camera, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Handshake, Info, LayoutDashboard, ListChecks, MessageSquareText, Network, Paperclip, RefreshCw, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import {
   LineChart,
@@ -126,6 +126,23 @@ interface ColaboradorAcompanhamento {
     tipo: string;
     consultora: string;
   } | null;
+  registrosIntegracao?: Array<{
+    id: string;
+    tipo: 'foto' | 'documento' | 'relato' | 'outro' | string;
+    titulo: string;
+    descricao: string;
+    dataAcontecimento: string;
+    origem: string;
+    alinhamento: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    hasFile: boolean;
+    fileUrl: string;
+    downloadUrl: string;
+    cadastradoPorNome: string;
+    cadastradoEm: string;
+  }>;
   avisosGestorEquipe?: Array<{
     papel: 'Anjo' | 'Colaborador';
     ciclo: number;
@@ -2558,6 +2575,152 @@ function GuiaCompactoUgp({
   );
 }
 
+function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const registros = colaborador.registrosIntegracao || [];
+  const [tipo, setTipo] = useState('todos');
+  const [origem, setOrigem] = useState('todas');
+  const [alinhamento, setAlinhamento] = useState('todos');
+
+  const origens = Array.from(new Set(registros.map((item) => item.origem).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const alinhamentos = ['Preparação','15 dias','45 dias','75 dias','150 dias','Geral']
+    .filter((item) => registros.some((registro) => registro.alinhamento === item));
+
+  const filtrados = registros.filter((item) =>
+    (tipo === 'todos' || item.tipo === tipo) &&
+    (origem === 'todas' || item.origem === origem) &&
+    (alinhamento === 'todos' || item.alinhamento === alinhamento)
+  );
+
+  const tamanho = (valor: number) => {
+    if (!valor) return '';
+    return valor < 1024 * 1024
+      ? Math.max(1, Math.round(valor / 1024)) + ' KB'
+      : (valor / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const Icone = ({ tipo: t }: { tipo: string }) => {
+    const C = t === 'foto' ? Camera : t === 'documento' ? FileText : t === 'relato' ? MessageSquareText : Paperclip;
+    return <C className="h-5 w-5" />;
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+        <CardHeader className="border-b bg-gradient-to-r from-violet-50/70 via-white to-blue-50/60">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Paperclip className="h-5 w-5" /></span>
+            <div>
+              <CardTitle className="text-lg">Registros da Integração</CardTitle>
+              <CardDescription className="mt-1 max-w-3xl leading-relaxed">
+                Evidências complementares do processo: fotos, documentos e relatos registrados no back-office. Esta área é exclusiva da UGP/RH.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 p-5">
+          <div className="grid gap-3 lg:grid-cols-[1fr_210px_210px]">
+            <div className="flex flex-wrap gap-2">
+              {[
+                ['todos','Todos'],
+                ['foto','Fotos'],
+                ['documento','Documentos'],
+                ['relato','Relatos'],
+                ['outro','Outros'],
+              ].map(([valor,label]) => (
+                <Button key={valor} type="button" size="sm" variant={tipo===valor?'default':'outline'} onClick={()=>setTipo(valor)}>
+                  {label}{valor==='todos' ? ' ('+registros.length+')' : ''}
+                </Button>
+              ))}
+            </div>
+            <Select value={origem} onValueChange={setOrigem}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as origens</SelectItem>
+                {origens.map((item)=><SelectItem key={item} value={item}>{item}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={alinhamento} onValueChange={setAlinhamento}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os alinhamentos</SelectItem>
+                {alinhamentos.map((item)=><SelectItem key={item} value={item}>{item}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {!filtrados.length ? (
+            <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-slate-500">
+              Nenhum registro encontrado neste filtro.
+            </div>
+          ) : tipo === 'foto' ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {filtrados.map((item)=>(
+                <div key={item.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                  {item.fileUrl ? (
+                    <button type="button" className="block w-full overflow-hidden bg-slate-100" onClick={()=>window.open(item.fileUrl,'_blank','noopener,noreferrer')}>
+                      <img src={item.fileUrl} alt={item.titulo} className="h-56 w-full object-cover transition-transform hover:scale-[1.01]" />
+                    </button>
+                  ) : (
+                    <div className="grid h-56 place-items-center bg-slate-50 text-sm text-slate-400">Foto indisponível</div>
+                  )}
+                  <div className="p-4">
+                    <div className="font-black text-slate-950">{item.titulo}</div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <Badge variant="outline">{item.origem}</Badge>
+                      <Badge variant="outline">{item.alinhamento}</Badge>
+                      {item.dataAcontecimento && <Badge variant="outline">{dataBr(item.dataAcontecimento)}</Badge>}
+                    </div>
+                    {item.descricao && <p className="mt-3 text-sm leading-relaxed text-slate-600">{item.descricao}</p>}
+                    {item.downloadUrl && (
+                      <Button type="button" size="sm" variant="outline" className="mt-3" onClick={()=>window.open(item.downloadUrl,'_blank','noopener,noreferrer')}>
+                        <Download className="mr-1.5 h-4 w-4" /> Baixar foto
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtrados.map((item)=>(
+                <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-700"><Icone tipo={item.tipo} /></span>
+                      <div className="min-w-0">
+                        <div className="font-black text-slate-950">{item.titulo}</div>
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                          <Badge variant="outline">{item.origem}</Badge>
+                          <Badge variant="outline">{item.alinhamento}</Badge>
+                          {item.dataAcontecimento && <Badge variant="outline">{dataBr(item.dataAcontecimento)}</Badge>}
+                        </div>
+                        {item.descricao && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">{item.descricao}</p>}
+                        <div className="mt-3 text-[11px] text-slate-400">
+                          Registrado por {item.cadastradoPorNome || 'CKM'}{item.cadastradoEm ? ' em '+new Date(item.cadastradoEm).toLocaleString('pt-BR') : ''}
+                        </div>
+                      </div>
+                    </div>
+                    {item.hasFile && (
+                      <div className="shrink-0 rounded-xl border bg-slate-50 p-3 lg:min-w-[250px]">
+                        <div className="max-w-[270px] truncate text-sm font-semibold text-slate-800">{item.fileName || 'Arquivo'}</div>
+                        {item.sizeBytes > 0 && <div className="mt-1 text-xs text-slate-500">{tamanho(item.sizeBytes)}</div>}
+                        <div className="mt-3 flex gap-2">
+                          {item.fileUrl && <Button type="button" size="sm" variant="outline" onClick={()=>window.open(item.fileUrl,'_blank','noopener,noreferrer')}><Eye className="mr-1.5 h-4 w-4"/>Visualizar</Button>}
+                          {item.downloadUrl && <Button type="button" size="sm" variant="outline" onClick={()=>window.open(item.downloadUrl,'_blank','noopener,noreferrer')}><Download className="mr-1.5 h-4 w-4"/>Baixar</Button>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function processoDocumentoUgp(
   colaborador: ColaboradorAcompanhamento,
   registro: NonNullable<ColaboradorAcompanhamento['registrosAlinhamentos']>[number],
@@ -2829,8 +2992,8 @@ function EvolucaoFormulariosUgp({ colaborador }: { colaborador: ColaboradorAcomp
         </CardContent>
       </Card>
       <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
-      <EvolucaoBloco titulo="Evolução — Percepção do Gestor sobre o Empregado" respostas={colaborador.respostas} papel="Gestor" />
-      <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Empregado" respostas={colaborador.respostas} papel="Anjo" />
+      <EvolucaoBloco titulo="Evolução — Percepção do Gestor sobre o Colaborador" respostas={colaborador.respostas} papel="Gestor" />
+      <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Colaborador" respostas={colaborador.respostas} papel="Anjo" />
     </div>
   );
 }
@@ -2865,11 +3028,12 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
       <GuiaCompactoUgp colaborador={colaborador} onSelect={setAba} />
 
       <Tabs value={aba} onValueChange={setAba} className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-3 xl:grid-cols-5">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-3 xl:grid-cols-6">
           <TabsTrigger value="visao" className="rounded-xl py-2.5">Visão geral</TabsTrigger>
           <TabsTrigger value="trajetoria" className="rounded-xl py-2.5">Trajetória</TabsTrigger>
           <TabsTrigger value="formularios" className="rounded-xl py-2.5">Formulários</TabsTrigger>
           <TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5">Desenvolvimento</TabsTrigger>
+          <TabsTrigger value="registros" className="rounded-xl py-2.5">Registros</TabsTrigger>
           <TabsTrigger value="perfil" className="rounded-xl py-2.5">Perfil</TabsTrigger>
         </TabsList>
 
@@ -2901,6 +3065,7 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
           <EvolucaoFormulariosUgp colaborador={colaborador}/>
         </TabsContent>
         <TabsContent value="desenvolvimento"><DesenvolvimentoDetalhe colaborador={colaborador}/></TabsContent>
+        <TabsContent value="registros"><RegistrosIntegracaoUgp colaborador={colaborador}/></TabsContent>
         <TabsContent value="perfil"><PerfilAssessmentResumo colaborador={colaborador} onAbrir={onPerfil}/></TabsContent>
       </Tabs>
     </div>
