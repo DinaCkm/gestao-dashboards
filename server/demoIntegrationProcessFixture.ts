@@ -10,34 +10,59 @@ const PROGRAM_ID = 17;
 
 const DEMOS = [
   {
-    tag: "ugp_demo_marina_20260925",
-    legacyId: "demo-integracao-ugp-20260925",
-    name: "[TESTE] Marina Demo Integração",
-    email: "marina.demo.integracao@example.com",
-    cpf: "88888888888",
-    ordem: 9998,
+    tag: "ugp_apresentacao_sucesso_20260926",
+    legacyId: "demo-apresentacao-sucesso-20260926",
+    name: "Emily Carter (sucesso completo)",
+    email: "emily.carter@example.com",
+    cpf: "66666666666",
+    ordem: 9997,
     scenario: "evolucao" as const,
-    profilePatterns: ["%Jade%Marcia%"],
-    gestor: "[TESTE] Rafael Gestor Demo",
-    gestorEmail: "rafael.gestor.demo@example.com",
-    anjo: "[TESTE] Camila Anjo Demo",
-    anjoEmail: "camila.anjo.demo@example.com",
+    gestor: "Michael Turner",
+    gestorEmail: "michael.turner@example.com",
+    anjo: "Rachel Adams",
+    anjoEmail: "rachel.adams@example.com",
+    mentora: "Natalie Moore",
   },
   {
-    tag: "ugp_demo_queda_20260925",
-    legacyId: "demo-integracao-queda-20260925",
-    name: "[TESTE] Cenário Queda de Integração",
-    email: "cenario.queda.integracao@example.com",
-    cpf: "77777777777",
-    ordem: 9999,
+    tag: "ugp_apresentacao_queda_20260926",
+    legacyId: "demo-apresentacao-queda-20260926",
+    name: "Daniel Brooks (queda de tendência)",
+    email: "daniel.brooks@example.com",
+    cpf: "55555555555",
+    ordem: 9998,
     scenario: "queda" as const,
-    profilePatterns: ["%Jade%Marcia%"],
-    gestor: "[TESTE] Gestor Cenário Queda",
-    gestorEmail: "gestor.queda.demo@example.com",
-    anjo: "[TESTE] Anjo Cenário Queda",
-    anjoEmail: "anjo.queda.demo@example.com",
+    gestor: "Thomas Reed",
+    gestorEmail: "thomas.reed@example.com",
+    anjo: "Olivia Grant",
+    anjoEmail: "olivia.grant@example.com",
+    mentora: "Vanessa Clark",
+  },
+  {
+    tag: "ugp_apresentacao_pendencias_20260926",
+    legacyId: "demo-apresentacao-pendencias-20260926",
+    name: "Sophie Bennett (2 formulários pendentes)",
+    email: "sophie.bennett@example.com",
+    cpf: "44444444444",
+    ordem: 9999,
+    scenario: "pendencias" as const,
+    gestor: "Robert Hayes",
+    gestorEmail: "robert.hayes@example.com",
+    anjo: "Chloe Parker",
+    anjoEmail: "chloe.parker@example.com",
+    mentora: "Melissa Stone",
   },
 ] as const;
+
+const OLD_DEMO_NAMES = [
+  "[TESTE] Marina Demo Integração",
+  "[TESTE] Cenário Queda de Integração",
+  "Mariana Alves Teixeira (demonstração)",
+] as const;
+
+const OLD_DEMO_LEGACY_IDS = new Set([
+  "demo-integracao-ugp-20260925",
+  "demo-integracao-queda-20260925",
+]);
 
 const PESQUISA_KEYS = [
   "pesquisa_cultura_valores","pesquisa_pertencimento","pesquisa_dia_a_dia","pesquisa_orgulho","pesquisa_importancia_atividades",
@@ -89,7 +114,7 @@ function demoCompletedActionMap() {
   );
 }
 
-function demoAtaFields(scenario: "evolucao" | "queda", ciclo: number) {
+function demoAtaFields(scenario: "evolucao" | "queda" | "pendencias", ciclo: number) {
   const evolucao = [
     {
       lider: "O líder relata boa receptividade, interesse em aprender e adaptação inicial positiva. Ainda precisa de referências mais claras para priorizar demandas e ganhar segurança nas decisões.",
@@ -146,8 +171,10 @@ function demoAtaFields(scenario: "evolucao" | "queda", ciclo: number) {
 
   const base = (scenario === "queda" ? queda : evolucao)[Math.max(0, Math.min(3, ciclo - 1))];
   const contexto = scenario === "queda"
-    ? "Neste cenário demonstrativo, o registro foi propositalmente construído para permitir que a UGP observe uma trajetória que exige acompanhamento. O texto considera o contexto do período, as mudanças percebidas ao longo dos alinhamentos e a necessidade de separar fatos, percepções e hipóteses antes de definir qualquer encaminhamento."
-    : "Neste cenário demonstrativo, o registro foi propositalmente construído para representar uma integração acompanhada de forma completa. O texto registra contexto, evolução observada, pontos de sustentação e próximos passos, permitindo que a UGP compreenda o percurso sem depender apenas dos indicadores numéricos.";
+    ? "A trajetória deste processo mostra redução progressiva de segurança, clareza e percepção de apoio. O registro considera o contexto do período, as mudanças percebidas ao longo dos alinhamentos e a necessidade de separar fatos, percepções e hipóteses antes de definir qualquer encaminhamento."
+    : scenario === "pendencias"
+      ? "A integração foi concluída com trajetória positiva e ações do processo realizadas. Permanecem apenas duas pendências formais de formulário no alinhamento final, que devem ser regularizadas sem descaracterizar o encerramento das atividades previstas."
+      : "A integração foi concluída com evolução consistente, boa adaptação ao contexto, responsabilidades compreendidas e ações previstas executadas. O registro consolida os avanços observados e os próximos passos de desenvolvimento.";
 
   const acompanhamento = ciclo === 1
     ? "Por se tratar do primeiro alinhamento, recomenda-se preservar uma rotina de acompanhamento mais próxima, confirmar a compreensão das responsabilidades e registrar dúvidas recorrentes. O objetivo não é antecipar conclusões, mas estabelecer uma linha de base clara para comparação com os alinhamentos seguintes."
@@ -173,21 +200,21 @@ const DIMENSOES = {
 };
 
 function pesquisaAnswers(
-  scenario: "evolucao" | "queda",
+  scenario: "evolucao" | "queda" | "pendencias",
   ciclo: number,
 ): Record<string, string> {
-  const matriz = scenario === "evolucao"
+  const matriz = scenario === "queda"
     ? [
-        { cultura: 3, anjo: 3, gestao: 3, trabalho: 3 },
-        { cultura: 4, anjo: 4, gestao: 4, trabalho: 4 },
-        { cultura: 5, anjo: 4, gestao: 5, trabalho: 4 },
-        { cultura: 5, anjo: 3, gestao: 5, trabalho: 4 },
-      ]
-    : [
         { cultura: 5, anjo: 5, gestao: 5, trabalho: 5 },
         { cultura: 5, anjo: 4, gestao: 5, trabalho: 4 },
         { cultura: 4, anjo: 3, gestao: 4, trabalho: 3 },
         { cultura: 3, anjo: 2, gestao: 3, trabalho: 2 },
+      ]
+    : [
+        { cultura: 3, anjo: 3, gestao: 3, trabalho: 3 },
+        { cultura: 4, anjo: 4, gestao: 4, trabalho: 4 },
+        { cultura: 5, anjo: 4, gestao: 5, trabalho: 4 },
+        { cultura: 5, anjo: 3, gestao: 5, trabalho: 4 },
       ];
   const alvo = matriz[Math.max(0, Math.min(3, ciclo - 1))];
   const answers: Record<string, string> = {};
@@ -201,13 +228,13 @@ function pesquisaAnswers(
 }
 
 function avaliacaoAnswers(
-  scenario: "evolucao" | "queda",
+  scenario: "evolucao" | "queda" | "pendencias",
   ciclo: number,
   papel: "Gestor" | "Anjo",
 ): Record<string, string> {
-  const base = scenario === "evolucao"
-    ? (papel === "Gestor" ? [3,4,4,5][ciclo - 1] : [3,3,4,4][ciclo - 1])
-    : (papel === "Gestor" ? [5,5,4,4][ciclo - 1] : [5,4,3,2][ciclo - 1]);
+  const base = scenario === "queda"
+    ? (papel === "Gestor" ? [5,5,4,4][ciclo - 1] : [5,4,3,2][ciclo - 1])
+    : (papel === "Gestor" ? [3,4,4,5][ciclo - 1] : [3,3,4,4][ciclo - 1]);
   const answers = Object.fromEntries(
     AVAL_KEYS.map((key, index) => [
       key,
@@ -318,25 +345,29 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       email: demo.email,
       emailCorporativo: demo.email,
       tel: "(63) 90000-0002",
-      cargo: demo.scenario === "queda" ? "Analista de Relacionamento" : "Analista de Projetos",
-      unidade: "Unidade de Desenvolvimento [TESTE]",
+      cargo: demo.scenario === "queda" ? "Analista de Relacionamento" : demo.scenario === "pendencias" ? "Analista de Operações" : "Analista de Projetos",
+      unidade: "Unidade de Estratégia e Desenvolvimento",
       tipo: "Onboarding",
       inicio: "2026-04-29",
       participacao: "Presencial",
-      situacao: "ativo",
+      situacao: "encerrado",
       gestor: demo.gestor,
       gestorEmail: demo.gestorEmail,
       gestorTel: "(63) 90000-0001",
       anjo: demo.anjo,
       anjoEmail: demo.anjoEmail,
-      consultora: "[TESTE] Mentora Demo",
-      ugp: "[TESTE] UGP Integração SEBRAE TO",
+      consultora: demo.mentora,
+      ugp: "Unidade de Gestão de Pessoas",
       horarios: "09:00\n14:00\n16:00",
       statusPdi: "",
       pendencias: "",
       statusCursos: "",
-      consideracoes: "Processo fictício criado exclusivamente para demonstração da Visão UGP/RH.",
-      notas: "Não representa colaborador real.",
+      consideracoes: demo.scenario === "queda"
+        ? "Integração encerrada com necessidade de continuidade do acompanhamento gerencial."
+        : demo.scenario === "pendencias"
+          ? "Integração encerrada; permanecem duas pendências formais de formulário no alinhamento final."
+          : "Integração encerrada com evolução consistente e todas as etapas concluídas.",
+      notas: "",
       cor: demo.scenario === "queda" ? "#B45309" : "#6D4BA3",
       estado,
     });
@@ -363,7 +394,17 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     };
     await tx
       .update(programaIntegracaoProcessos)
-      .set({ estado: estadoNormalizado, nome: demo.name, gestor: demo.gestor, gestorEmail: demo.gestorEmail, anjo: demo.anjo, anjoEmail: demo.anjoEmail })
+      .set({
+        estado: estadoNormalizado,
+        nome: demo.name,
+        situacao: "encerrado",
+        gestor: demo.gestor,
+        gestorEmail: demo.gestorEmail,
+        anjo: demo.anjo,
+        anjoEmail: demo.anjoEmail,
+        consultora: demo.mentora,
+        unidade: "Unidade de Estratégia e Desenvolvimento",
+      })
       .where(eq(programaIntegracaoProcessos.id, processo.id));
   }
 
@@ -379,7 +420,8 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     answers: Record<string, any>,
   ) => {
     const dedupeKey = `${demo.tag}:${formKey}:${papel.toLowerCase()}:${cycle.ciclo}`;
-    const protocolo = `DEMO-${demo.scenario === "queda" ? "Q" : "M"}-${formKey === "pesquisa" ? "PES" : papel === "Gestor" ? "GES" : "ANJ"}-${cycle.ciclo}`;
+    const scenarioCode = demo.scenario === "queda" ? "Q" : demo.scenario === "pendencias" ? "P" : "S";
+    const protocolo = `DEMO-${scenarioCode}-${formKey === "pesquisa" ? "PES" : papel === "Gestor" ? "GES" : "ANJ"}-${cycle.ciclo}`;
     const [existing] = await tx
       .select({ id: programaIntegracaoRespostas.id })
       .from(programaIntegracaoRespostas)
@@ -404,7 +446,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       statusVinculo: "vinculada",
       statusResposta: "valido",
       nomeColaborador: demo.name,
-      unidade: "Unidade de Desenvolvimento [TESTE]",
+      unidade: "Unidade de Estratégia e Desenvolvimento",
       dataInicio: "2026-04-29",
       emailColaborador: demo.email,
       nomeOrig: demo.name,
@@ -422,7 +464,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
   };
 
   const bemDedupeKey = `${demo.tag}:bem:gestor:0`;
-  const bemProtocolo = `DEMO-${demo.scenario === "queda" ? "Q" : "M"}-BEM`;
+  const bemProtocolo = `DEMO-${demo.scenario === "queda" ? "Q" : demo.scenario === "pendencias" ? "P" : "S"}-BEM`;
   const [bemExistente] = await tx
     .select({ id: programaIntegracaoRespostas.id })
     .from(programaIntegracaoRespostas)
@@ -440,10 +482,10 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
 
     const bemAnswers: Record<string, any> = {
       bem_gestor: demo.gestor,
-      bem_unidade: "Unidade de Desenvolvimento [TESTE]",
+      bem_unidade: "Unidade de Estratégia e Desenvolvimento",
       bem_colaborador: demo.name,
       bem_data_inicio: "2026-04-29",
-      bem_funcao: demo.scenario === "queda" ? "Analista de Relacionamento" : "Analista de Projetos",
+      bem_funcao: demo.scenario === "queda" ? "Analista de Relacionamento" : demo.scenario === "pendencias" ? "Analista de Operações" : "Analista de Projetos",
       bem_anjo: demo.anjo,
       bem_caracteristicas: caracteristicas,
       bem_conhecimentos_tecnicos: demo.scenario === "queda"
@@ -468,7 +510,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       statusVinculo: "vinculada",
       statusResposta: "valido",
       nomeColaborador: demo.name,
-      unidade: "Unidade de Desenvolvimento [TESTE]",
+      unidade: "Unidade de Estratégia e Desenvolvimento",
       dataInicio: "2026-04-29",
       emailColaborador: demo.email,
       nomeOrig: demo.name,
@@ -486,11 +528,16 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
   }
 
   for (const cycle of CYCLES) {
-    await ensureResponse(
-      cycle, "pesquisa", "Colaborador", cycle.pesquisa, demo.name, demo.email,
-      pesquisaAnswers(demo.scenario, cycle.ciclo),
-    );
+    const omitirPesquisaFinal = demo.scenario === "pendencias" && cycle.ciclo === 4;
+    if (!omitirPesquisaFinal) {
+      await ensureResponse(
+        cycle, "pesquisa", "Colaborador", cycle.pesquisa, demo.name, demo.email,
+        pesquisaAnswers(demo.scenario, cycle.ciclo),
+      );
+    }
     for (const role of ["Gestor", "Anjo"] as const) {
+      const omitirAnjoFinal = demo.scenario === "pendencias" && cycle.ciclo === 4 && role === "Anjo";
+      if (omitirAnjoFinal) continue;
       await ensureResponse(
         cycle, "aval", role, role === "Gestor" ? cycle.gestor : cycle.anjo,
         role === "Gestor" ? demo.gestor : demo.anjo,
@@ -507,8 +554,9 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       eq(programaIntegracaoRespostas.processoId, processoId),
       eq(programaIntegracaoRespostas.statusVinculo, "vinculada"),
     ));
-  if (respostas.length < 13) {
-    throw new Error(`[DemoIntegracao] ${demo.tag} verify expected at least 13 responses (including BEM), found ${respostas.length}`);
+  const respostasEsperadas = demo.scenario === "pendencias" ? 11 : 13;
+  if (respostas.length < respostasEsperadas) {
+    throw new Error(`[DemoIntegracao] ${demo.tag} verify expected at least ${respostasEsperadas} responses (including BEM), found ${respostas.length}`);
   }
 
   const [processoVerificado] = await tx
@@ -559,60 +607,77 @@ export async function ensureDemoIntegrationProcessFixture() {
   }
 
   return await db.transaction(async (tx) => {
+    const antigos = await tx
+      .select({
+        id: programaIntegracaoProcessos.id,
+        legacyId: programaIntegracaoProcessos.legacyId,
+        nome: programaIntegracaoProcessos.nome,
+        situacao: programaIntegracaoProcessos.situacao,
+        estado: programaIntegracaoProcessos.estado,
+      })
+      .from(programaIntegracaoProcessos)
+      .where(or(...OLD_DEMO_NAMES.map((nome) => eq(programaIntegracaoProcessos.nome, nome))))
+      .limit(20);
+
+    for (const processo of antigos) {
+      if (String(processo.situacao || "") === "removido") continue;
+      const estadoAtual = (processo.estado || {}) as Record<string, any>;
+      const testeAtual = estadoAtual.teste || {};
+      const reconhecidoComoDemo =
+        OLD_DEMO_LEGACY_IDS.has(String(processo.legacyId || "")) ||
+        String(processo.legacyId || "").toLowerCase().startsWith("demo") ||
+        Boolean(testeAtual.demoTag) ||
+        String(processo.nome || "").includes("(demonstração)") ||
+        String(processo.nome || "").startsWith("[TESTE]");
+
+      if (!reconhecidoComoDemo) {
+        console.warn("[DemoIntegracao] DEMO_ARCHIVE_SKIP_UNSAFE", JSON.stringify({
+          processoId: processo.id,
+          legacyId: processo.legacyId,
+          nome: processo.nome,
+        }));
+        continue;
+      }
+
+      await tx
+        .update(programaIntegracaoProcessos)
+        .set({
+          situacao: "removido",
+          estado: {
+            ...estadoAtual,
+            teste: {
+              ...testeAtual,
+              archivedDemoAt: "2026-09-26",
+              archivedDemoReason: "substituido_por_cenarios_de_apresentacao",
+            },
+          },
+        })
+        .where(eq(programaIntegracaoProcessos.id, processo.id));
+
+      console.log("[DemoIntegracao] OLD_DEMO_ARCHIVED", JSON.stringify({
+        processoId: processo.id,
+        legacyId: processo.legacyId,
+        nome: processo.nome,
+      }));
+    }
+
+    const jade = await resolveProfile(tx, ["%Jade%Marcia%"], false);
+    if (!jade?.id) {
+      throw new Error("[DemoIntegracao] Jade Marcia test profile with DISC was not found; presentation demos were not created.");
+    }
+
     const resultados = [];
     for (const demo of DEMOS) {
-      const profile = await resolveProfile(tx, demo.profilePatterns, false);
-      const result = await ensureDemo(tx, program, demo, profile);
+      const result = await ensureDemo(tx, program, demo, jade);
       resultados.push({ tag: demo.tag, ...result });
       console.log("[DemoIntegracao] DEMO_OK", JSON.stringify({ tag: demo.tag, ...result }));
     }
 
-    const jade = await resolveProfile(tx, ["%Jade%Marcia%"], false);
-    if (jade?.id) {
-      const marianas = await tx
-        .select({
-          id: programaIntegracaoProcessos.id,
-          legacyId: programaIntegracaoProcessos.legacyId,
-          nome: programaIntegracaoProcessos.nome,
-          estado: programaIntegracaoProcessos.estado,
-        })
-        .from(programaIntegracaoProcessos)
-        .where(eq(programaIntegracaoProcessos.nome, "Mariana Alves Teixeira (demonstração)"))
-        .limit(5);
-
-      for (const processo of marianas) {
-        const estadoAtual = (processo.estado || {}) as Record<string, any>;
-        const testeAtual = estadoAtual.teste || {};
-        const novoEstado = {
-          ...estadoAtual,
-          teste: {
-            ...testeAtual,
-            demoTag: testeAtual.demoTag || "ugp_demo_mariana_historica",
-            empresaProgramId: Number(testeAtual.empresaProgramId || PROGRAM_ID),
-            empresaProgramNome: testeAtual.empresaProgramNome || program.name,
-            ecoAlunoId: jade.id,
-            ecoAlunoNome: jade.name,
-            perfilDemoAutorizado: true,
-            perfilDemoFullEcoAutorizado: true,
-            ecoVinculoModo: "manual_demo_autorizado",
-            perfilDemoFonte: jade.name,
-          },
-        };
-        await tx
-          .update(programaIntegracaoProcessos)
-          .set({ estado: novoEstado })
-          .where(eq(programaIntegracaoProcessos.id, processo.id));
-
-        console.log("[DemoIntegracao] DEMO_FULL_ECO_LINK_OK", JSON.stringify({
-          processoId: processo.id,
-          legacyId: processo.legacyId,
-          nome: processo.nome,
-          ecoAlunoId: jade.id,
-          ecoAlunoNome: jade.name,
-        }));
-      }
-    }
-
-    return { ok: true, demos: resultados };
+    return {
+      ok: true,
+      archivedOldDemos: antigos.filter((item) => String(item.situacao || "") !== "removido").length,
+      linkedEcoProfile: { id: jade.id, name: jade.name },
+      demos: resultados,
+    };
   });
 }
