@@ -2703,7 +2703,7 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
   const [tipo, setTipo] = useState('todos');
   const [origem, setOrigem] = useState('todas');
   const [alinhamento, setAlinhamento] = useState('todos');
-  const [recolhido, setRecolhido] = useState(true);
+  const [recolhido, setRecolhido] = useState(false);
 
   const origens = Array.from(new Set(registros.map((item) => item.origem).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const alinhamentos = ['Não informado','Preparação','15 dias','45 dias','75 dias','150 dias','Geral']
