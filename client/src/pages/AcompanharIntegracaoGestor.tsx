@@ -1991,9 +1991,16 @@ const PAPEL_CORES = { colaborador: '#2563EB', gestor: '#0F766E', anjo: '#D97706'
 
 function statusCarteira(colaborador: ColaboradorAcompanhamento) {
   const sinais = sinaisAtencaoUgp(colaborador);
+  const pendentes = colaborador.formulariosPendentes.length;
   const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
-  if (atrasados > 0 || sinais.length >= 2) return { chave: 'atencao', rotulo: 'Atenção', classes: 'bg-amber-50 text-amber-800 border-amber-200' };
-  if (sinais.length === 1) return { chave: 'acompanhar', rotulo: 'Acompanhar', classes: 'bg-blue-50 text-blue-800 border-blue-200' };
+  const prazoDoProcessoConcluido = colaborador.totalDias > 0 && colaborador.dia >= colaborador.totalDias;
+
+  if (atrasados > 0 || (prazoDoProcessoConcluido && pendentes > 0) || sinais.length >= 2) {
+    return { chave: 'atencao', rotulo: 'Atenção', classes: 'bg-amber-50 text-amber-800 border-amber-200' };
+  }
+  if (pendentes > 0 || sinais.length === 1) {
+    return { chave: 'acompanhar', rotulo: 'Acompanhar', classes: 'bg-blue-50 text-blue-800 border-blue-200' };
+  }
   return { chave: 'em_dia', rotulo: 'Em dia', classes: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
 }
 
