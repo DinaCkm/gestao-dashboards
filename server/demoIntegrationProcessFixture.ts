@@ -10,7 +10,7 @@ const PROGRAM_ID = 17;
 
 const DEMOS = [
   {
-    tag: "ugp_apresentacao_sucesso_20260926",
+    tag: "ugp_demo_apresentacao_sucesso_20260926",
     legacyId: "demo-apresentacao-sucesso-20260926",
     name: "Emily Carter (sucesso completo)",
     email: "emily.carter@example.com",
@@ -24,7 +24,7 @@ const DEMOS = [
     mentora: "Natalie Moore",
   },
   {
-    tag: "ugp_apresentacao_queda_20260926",
+    tag: "ugp_demo_apresentacao_queda_20260926",
     legacyId: "demo-apresentacao-queda-20260926",
     name: "Daniel Brooks (queda de tendência)",
     email: "daniel.brooks@example.com",
@@ -38,7 +38,7 @@ const DEMOS = [
     mentora: "Vanessa Clark",
   },
   {
-    tag: "ugp_apresentacao_pendencias_20260926",
+    tag: "ugp_demo_apresentacao_pendencias_20260926",
     legacyId: "demo-apresentacao-pendencias-20260926",
     name: "Sophie Bennett (2 formulários pendentes)",
     email: "sophie.bennett@example.com",
