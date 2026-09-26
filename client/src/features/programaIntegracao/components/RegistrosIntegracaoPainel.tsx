@@ -67,7 +67,7 @@ function tipoIcone(tipo: RegistroIntegracaoTipo) {
   return Paperclip;
 }
 
-function FotoPreview({ legacyId, item }: { legacyId: string; item: RegistroIntegracaoItem }) {
+function FotoPreview({ legacyId, item, compacto = false }: { legacyId: string; item: RegistroIntegracaoItem; compacto?: boolean }) {
   const [url, setUrl] = useState('');
   const [falhou, setFalhou] = useState(false);
 
@@ -82,22 +82,30 @@ function FotoPreview({ legacyId, item }: { legacyId: string; item: RegistroInteg
 
   if (item.tipo !== 'foto' || !item.hasFile || item.excluidoEm) return null;
   if (falhou) {
-    return <div className="mt-3 grid h-28 place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground">Não foi possível carregar a prévia.</div>;
+    return (
+      <div className={`mt-3 grid place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground ${compacto ? 'h-24 max-w-[220px]' : 'h-28'}`}>
+        Não foi possível carregar a prévia.
+      </div>
+    );
   }
   if (!url) {
-    return <div className="mt-3 grid h-28 place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground">Carregando foto...</div>;
+    return (
+      <div className={`mt-3 grid place-items-center rounded-lg border bg-muted/20 text-xs text-muted-foreground ${compacto ? 'h-24 max-w-[220px]' : 'h-28'}`}>
+        Carregando foto...
+      </div>
+    );
   }
   return (
     <button
       type="button"
       onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
-      className="mt-3 flex max-h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/20 p-2"
+      className={`mt-3 flex items-center justify-center overflow-hidden rounded-lg border bg-muted/20 p-2 ${compacto ? 'max-h-32 max-w-[220px]' : 'max-h-48 w-full'}`}
       title="Abrir foto em tamanho maior"
     >
       <img
         src={url}
         alt={item.titulo || 'Foto do registro'}
-        className="h-auto max-h-44 w-auto max-w-full object-contain transition-transform hover:scale-[1.01]"
+        className={`h-auto w-auto max-w-full object-contain transition-transform hover:scale-[1.01] ${compacto ? 'max-h-28' : 'max-h-44'}`}
       />
     </button>
   );
@@ -498,7 +506,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
 
                   <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{item.descricao || 'Não informado'}</p>
 
-                  <FotoPreview legacyId={legacyId} item={item} />
+                  <FotoPreview legacyId={legacyId} item={item} compacto={filtro === 'todos'} />
 
                   {item.hasFile && (
                     <div className="mt-3 rounded-lg border bg-muted/20 p-3">
