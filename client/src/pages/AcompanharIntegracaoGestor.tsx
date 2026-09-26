@@ -1859,13 +1859,40 @@ function JornadaMini({ colaborador }: { colaborador: ColaboradorAcompanhamento }
 
 function KpisOperacionais({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const saude = saudeProcesso(colaborador);
+
+  const ajudaCompliance = (
+    <div className="space-y-2 normal-case font-normal">
+      <p>
+        A Jornada Compliance reúne os documentos e conteúdos de Compliance, incluindo informações de LGPD e os demais materiais indicados. Ela foi estruturada para capacitar os colaboradores sobre diretrizes, normas e boas práticas de compliance da organização.
+      </p>
+      <p>
+        No contexto do SEBRAE Tocantins, seu objetivo é apoiar a compreensão e o cumprimento dos princípios éticos, legais e regulatórios aplicáveis ao ambiente de trabalho.
+      </p>
+      <p className="font-semibold">
+        Atenção: este percentual não corresponde à conclusão de todos os cursos da Universidade Sebrae. A Jornada Compliance apresenta ao aluno os cursos que ele deve concluir na Universidade Sebrae, juntamente com os documentos e conteúdos de Compliance.
+      </p>
+    </div>
+  );
+
+  const ajudaPdi = (
+    <div className="space-y-2 normal-case font-normal">
+      <p>
+        As tarefas do PDI contemplam tanto as ações comportamentais quanto as técnicas solicitadas pelo gestor direto do colaborador no formulário BEM Acolhido em Nossa Unidade.
+      </p>
+      <p>
+        O percentual mostra apenas o avanço das tarefas registradas no PDI e não representa avaliação de desempenho, satisfação ou perfil comportamental.
+      </p>
+    </div>
+  );
+
   const itens = [
-    { titulo:'Saúde do processo', valor:saude.rotulo, detalhe:saude.detalhe, icon:Activity, classes:saude.classes },
-    { titulo:'Dia do onboarding', valor:String(colaborador.dia) + '/' + colaborador.totalDias, detalhe:'posição atual na jornada', icon:Route, classes:'border-slate-200 bg-white text-slate-950' },
-    { titulo:'Jornada Compliance', valor:colaborador.jornadaCompliance.total ? fmtPct(colaborador.jornadaCompliance.percentual) : 'Sem dados', detalhe:colaborador.jornadaCompliance.total ? colaborador.jornadaCompliance.concluidas + ' de ' + colaborador.jornadaCompliance.total + ' atividades' : 'ainda sem atividades registradas', icon:CheckCircle2, classes:'border-slate-200 bg-white text-slate-950' },
-    { titulo:'Tarefas do PDI', valor:colaborador.pdi.total ? fmtPct(colaborador.pdi.percentual) : 'Sem dados', detalhe:colaborador.pdi.total ? colaborador.pdi.concluidas + ' de ' + colaborador.pdi.total + ' tarefas' : 'ainda sem tarefas registradas', icon:Target, classes:'border-slate-200 bg-white text-slate-950' },
-    { titulo:'Alinhamentos realizados', valor:String(colaborador.alinhamentosFeitos) + '/' + colaborador.alinhamentosTotal, detalhe:colaborador.formulariosPendentes.length ? colaborador.formulariosPendentes.length + ' formulário(s) pendente(s)' : 'sem pendências de formulário', icon:Users, classes:'border-slate-200 bg-white text-slate-950' },
+    { titulo:'Saúde do processo', valor:saude.rotulo, detalhe:saude.detalhe, icon:Activity, classes:saude.classes, ajuda:null },
+    { titulo:'Dia do onboarding', valor:String(colaborador.dia) + '/' + colaborador.totalDias, detalhe:'posição atual na jornada', icon:Route, classes:'border-slate-200 bg-white text-slate-950', ajuda:null },
+    { titulo:'Jornada Compliance', valor:colaborador.jornadaCompliance.total ? fmtPct(colaborador.jornadaCompliance.percentual) : 'Sem dados', detalhe:colaborador.jornadaCompliance.total ? colaborador.jornadaCompliance.concluidas + ' de ' + colaborador.jornadaCompliance.total + ' atividades' : 'ainda sem atividades registradas', icon:CheckCircle2, classes:'border-slate-200 bg-white text-slate-950', ajuda:ajudaCompliance },
+    { titulo:'Tarefas do PDI', valor:colaborador.pdi.total ? fmtPct(colaborador.pdi.percentual) : 'Sem dados', detalhe:colaborador.pdi.total ? colaborador.pdi.concluidas + ' de ' + colaborador.pdi.total + ' tarefas' : 'ainda sem tarefas registradas', icon:Target, classes:'border-slate-200 bg-white text-slate-950', ajuda:ajudaPdi },
+    { titulo:'Alinhamentos realizados', valor:String(colaborador.alinhamentosFeitos) + '/' + colaborador.alinhamentosTotal, detalhe:colaborador.formulariosPendentes.length ? colaborador.formulariosPendentes.length + ' formulário(s) pendente(s)' : 'sem pendências de formulário', icon:Users, classes:'border-slate-200 bg-white text-slate-950', ajuda:null },
   ];
+
   return (
     <div className="grid gap-3 md:grid-cols-5">
       {itens.map((item) => {
@@ -1874,8 +1901,27 @@ function KpisOperacionais({ colaborador }: { colaborador: ColaboradorAcompanhame
           <Card key={item.titulo} className={'group overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ' + item.classes}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-2">
-                <div className="text-[11px] font-bold uppercase tracking-[0.08em] opacity-65">{item.titulo}</div>
-                <Icon className="h-4 w-4 opacity-55" />
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <div className="truncate text-[11px] font-bold uppercase tracking-[0.08em] opacity-65">{item.titulo}</div>
+                  {item.ajuda && (
+                    <UiTooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+                          aria-label={'Mais informações sobre ' + item.titulo}
+                        >
+                          <Info className="h-3.5 w-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-md p-3 text-xs leading-relaxed">
+                        {item.ajuda}
+                      </TooltipContent>
+                    </UiTooltip>
+                  )}
+                </div>
+                <Icon className="h-4 w-4 shrink-0 opacity-55" />
               </div>
               <div className="mt-3 font-mono text-2xl font-black tabular-nums">{item.valor}</div>
               <div className="mt-1 text-xs leading-relaxed opacity-70">{item.detalhe}</div>
@@ -2141,6 +2187,117 @@ function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamen
   return <div className="space-y-2">{sinais.map((s)=><div key={s} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><AlertTriangle className="mr-2 inline h-4 w-4"/>{s}</div>)}</div>;
 }
 
+
+function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const alertas = alertasDoColaborador(colaborador);
+
+  if (!alertas.length) {
+    return (
+      <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-800">
+        <CheckCircle2 className="mr-2 inline h-4 w-4" />
+        Nenhum alerta operacional identificado neste momento.
+      </div>
+    );
+  }
+
+  return (
+    <Card className="rounded-2xl border-amber-200 bg-amber-50/40 shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
+          <div className="min-w-0">
+            <div className="font-black text-slate-950">Alertas operacionais</div>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              São avisos objetivos do processo. Eles não entram no Índice de Integração e não representam diagnóstico.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-2 md:grid-cols-2">
+          {alertas.map((alerta) => (
+            <div key={alerta} className="rounded-xl border border-amber-200 bg-white p-3 text-sm font-medium text-amber-950">
+              <AlertTriangle className="mr-2 inline h-4 w-4 text-amber-700" />
+              {alerta}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TabelaFormulariosPendentesUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const pendencias = colaborador.formulariosPendentes || [];
+
+  return (
+    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ClipboardList className="h-5 w-5 text-indigo-600" />
+          Formulários pendentes
+        </CardTitle>
+        <CardDescription>
+          Pendências de formulários já solicitados ao Colaborador, Gestor ou Anjo. Quando houver um formulário público disponível, use o botão Preencher para abrir diretamente a resposta correspondente.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {!pendencias.length ? (
+          <div className="rounded-xl border border-dashed bg-slate-50/70 p-8 text-center text-sm text-slate-500">
+            Nenhum formulário pendente para este colaborador.
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border">
+            <table className="w-full min-w-[820px] text-sm">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-3 py-3 text-left">Responsável</th>
+                  <th className="px-3 py-3 text-left">Formulário</th>
+                  <th className="px-3 py-3 text-center">Etapa / Alinhamento</th>
+                  <th className="px-3 py-3 text-center">Prazo</th>
+                  <th className="px-3 py-3 text-center">Situação</th>
+                  <th className="px-3 py-3 text-center">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendencias.map((p, i) => {
+                  const link = linkPreencherFormulario(colaborador, p);
+                  return (
+                    <tr key={p.papel + '-' + p.ciclo + '-' + i} className="border-t transition-colors hover:bg-slate-50/70">
+                      <td className="px-3 py-3 font-semibold text-slate-900">{p.papel}</td>
+                      <td className="px-3 py-3">{p.formulario}</td>
+                      <td className="px-3 py-3 text-center">
+                        {p.ciclo === 0 ? (p.etapa || 'Pré-integração') : 'Alinhamento de ' + diaDoAlinhamento(p.ciclo) + ' dias'}
+                      </td>
+                      <td className="px-3 py-3 text-center">{dataBr(p.prazo)}</td>
+                      <td className="px-3 py-3 text-center">
+                        <Badge variant={p.atrasado ? 'destructive' : 'secondary'}>{p.atrasado ? 'Atrasado' : 'Pendente'}</Badge>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        {link ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5"
+                            onClick={() => window.open(link, '_blank', 'noopener,noreferrer')}
+                          >
+                            <ClipboardList className="h-3.5 w-3.5" />
+                            Preencher
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-slate-400">Sem link direto</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 function CarteiraUgp({
   colaboradores,busca,setBusca,unidade,setUnidade,fase,setFase,status,setStatus,radarFiltro,setRadarFiltro,onAbrir
