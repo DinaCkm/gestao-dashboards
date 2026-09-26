@@ -498,13 +498,19 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     .from(programaIntegracaoProcessos)
     .where(eq(programaIntegracaoProcessos.id, processoId))
     .limit(1);
-  const feitoVerificado = ((processoVerificado?.estado || {}) as Record<string, any>).feito || {};
+  const estadoVerificado = (processoVerificado?.estado || {}) as Record<string, any>;
+  const feitoVerificado = estadoVerificado.feito || {};
+  const alinVerificado = estadoVerificado.alin || {};
   const acoesConcluidas = DEMO_ALL_ACTION_IDS.filter((itemId) => String(feitoVerificado?.[itemId]?.s || "") === "ok").length;
-  const alinhamentosRegistrados = Object.values((((processoVerificado?.estado || {}) as Record<string, any>).alin || {}))
+  const alinhamentosRegistrados = Object.values(alinVerificado)
     .filter((item: any) => Boolean(item?.realizado)).length;
-  if (acoesConcluidas !== DEMO_ALL_ACTION_IDS.length || alinhamentosRegistrados !== 4) {
+  const atasCompletas = [1,2,3,4].filter((numero) => {
+    const ata = (alinVerificado[String(numero)] ?? alinVerificado[numero] ?? {})?.ata || {};
+    return ["lider","colab","conclusao","consultora"].every((chave) => String(ata?.[chave] || "").trim().length > 0);
+  }).length;
+  if (acoesConcluidas !== DEMO_ALL_ACTION_IDS.length || alinhamentosRegistrados !== 4 || atasCompletas !== 4) {
     throw new Error(
-      `[DemoIntegracao] ${demo.tag} verify incomplete demo: actions ${acoesConcluidas}/${DEMO_ALL_ACTION_IDS.length}, alignments ${alinhamentosRegistrados}/4`,
+      `[DemoIntegracao] ${demo.tag} verify incomplete demo: actions ${acoesConcluidas}/${DEMO_ALL_ACTION_IDS.length}, alignments ${alinhamentosRegistrados}/4, reports ${atasCompletas}/4`,
     );
   }
 
@@ -513,6 +519,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     respostas: respostas.length,
     acoesConcluidas,
     alinhamentosRegistrados,
+    atasCompletas,
     profileId: profile?.id || null,
     profileName: profile?.name || null,
   };
