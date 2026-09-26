@@ -1030,7 +1030,7 @@ function PerfilAssessmentResumo({
                     <div key={String(label)}>
                       <div className="flex items-center justify-between gap-3 text-xs">
                         <span className="font-semibold text-slate-700">{label} · {nome}</span>
-                        <span className="font-mono font-black tabular-nums text-slate-950">{numero == null ? '—' : Math.round(numero)}</span>
+                        <span className="font-bold tabular-nums text-slate-950">{numero == null ? '—' : Math.round(numero)}</span>
                       </div>
                       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
                         <div className="h-full rounded-full bg-violet-600 transition-all" style={{ width: Math.max(0, Math.min(100, numero || 0)) + '%' }} />
@@ -2171,7 +2171,7 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
   const somaPesos = comps.reduce((s,x) => s + x.peso, 0) || 1;
   const contribs = comps.map((x) => ({ ...x, contribuicao:x.valor * x.peso / somaPesos }));
   return (
-    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
       <CardContent className="p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -2194,7 +2194,7 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
           {contribs.map((x) => (
             <div key={x.nome} className="rounded-xl bg-slate-50 px-3 py-2 text-xs">
               <div className="flex items-center gap-2 font-semibold text-slate-800"><span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor:x.cor}} />{x.nome}</div>
-              <div className="mt-1 font-mono font-black tabular-nums text-slate-950">{Math.round(x.valor)}%</div>
+              <div className="mt-1 font-bold tabular-nums text-slate-950">{Math.round(x.valor)}%</div>
             </div>
           ))}
         </div>
@@ -2223,7 +2223,7 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
     return { numero, dia:diaDoAlinhamento(numero), c:tem('pesquisa','Colaborador'), g:tem('aval','Gestor'), a:tem('aval','Anjo') };
   });
   return (
-    <Card className="rounded-2xl border-slate-200 shadow-sm">
+    <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
       <CardContent className="p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div><div className="font-bold text-slate-950">Status dos formulários por alinhamento</div><div className="mt-1 text-xs leading-relaxed text-slate-500">Veja, em cada alinhamento de 15, 45, 75 e 150 dias, se Colaborador (C), Gestor (G) e Anjo (A) já responderam os formulários previstos.</div></div>
@@ -2280,7 +2280,7 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
           </div>
         </div>
       </div>
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
+      <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-3"><div><div className="font-bold text-slate-950">Experiência ao longo do tempo</div><div className="mt-1 text-xs text-slate-500">Média geral da Pesquisa de Integração. O eixo respeita a distância real entre 15, 45, 75 e 150 dias.</div></div><Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">Colaborador</Badge></div>
           <div className="mt-4 h-[280px]">
@@ -2297,7 +2297,7 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <div className="border-b px-5 py-4">
           <div className="font-bold text-slate-950">Heatmap da trajetória</div>
           <div className="mt-1 text-sm leading-relaxed text-slate-600">
@@ -2348,7 +2348,7 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
   const [selecionado,setSelecionado]=useState(String(ciclos[ciclos.length-1]||1));
   const ciclo=Number(selecionado), g=gestor.find((m)=>m.ciclo===ciclo), a=anjo.find((m)=>m.ciclo===ciclo);
   return (
-    <Card className="rounded-2xl border-slate-200 shadow-sm">
+    <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
       <CardContent className="p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><div className="font-bold text-slate-950">Gestor × Anjo</div><div className="mt-1 text-xs text-slate-500">Escala normalizada para 0–100; a nota original de 1 a 5 aparece ao lado.</div></div><Select value={selecionado} onValueChange={setSelecionado}><SelectTrigger className="w-[200px]"><SelectValue/></SelectTrigger><SelectContent>{ciclos.map((x)=><SelectItem key={x} value={String(x)}>Alinhamento de {diaDoAlinhamento(x)} dias</SelectItem>)}</SelectContent></Select></div>
         <div className="mt-5 space-y-4">
@@ -2392,7 +2392,7 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
       {itens.map((item) => {
         const Icon = item.icon;
         return (
-          <Card key={item.titulo} className="rounded-2xl border-slate-200 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+          <Card key={item.titulo} className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
             <CardContent className="p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -2402,11 +2402,11 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
                   </div>
                   <div className="mt-2 text-sm text-slate-500">{item.detalhe}</div>
                 </div>
-                <div className="font-mono text-4xl font-black tabular-nums text-slate-950">
-                  {item.percentual == null ? '—' : Math.round(item.percentual) + '%'}
+                <div className={'tabular-nums ' + (item.percentual == null ? 'text-xl font-medium text-slate-400' : 'text-[28px] font-bold leading-8 text-slate-950')}>
+                  {item.percentual == null ? 'Sem dados' : Math.round(item.percentual) + '%'}
                 </div>
               </div>
-              <Progress className="mt-5 h-3" value={item.percentual || 0} />
+              <Progress className="mt-5 h-2.5 [&>div]:bg-violet-600" value={item.percentual || 0} />
               <div className="mt-3 text-xs leading-relaxed text-slate-500">
                 Esta aba apresenta somente o avanço percentual. Os cursos e conteúdos individuais não são exibidos aqui.
               </div>
@@ -2453,7 +2453,7 @@ function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcomp
   if (!alertas.length) return null;
 
   return (
-    <Card className="rounded-2xl border-amber-200 bg-amber-50/40 shadow-sm">
+    <Card className="rounded-2xl border border-amber-200 border-l-4 border-l-amber-500 bg-amber-50 shadow-none">
       <CardContent className="p-5">
         <div className="flex items-start gap-3">
           <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
@@ -2466,7 +2466,7 @@ function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcomp
         </div>
         <div className="mt-4 grid gap-2 md:grid-cols-2">
           {alertas.map((alerta) => (
-            <div key={alerta} className="rounded-xl border border-amber-200 bg-white p-3 text-sm font-medium text-amber-950">
+            <div key={alerta} className="rounded-xl border border-amber-200/70 bg-amber-50/60 p-3 text-sm font-medium text-amber-950">
               <AlertTriangle className="mr-2 inline h-4 w-4 text-amber-700" />
               {alerta}
             </div>
@@ -2480,7 +2480,7 @@ function TabelaFormulariosPendentesUgp({ colaborador }: { colaborador: Colaborad
   const pendencias = colaborador.formulariosPendentes || [];
 
   return (
-    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <ClipboardList className="h-5 w-5 text-indigo-600" />
@@ -2592,10 +2592,10 @@ function CarteiraUgp({
           ['Índice médio de desenvolvimento',indiceMedio==null?'—':String(indiceMedio)+'%','entre resultados disponíveis'],
           ['Concluindo',concluindo,'a partir do dia 140'],
         ].map(([label,value,detail])=>(
-          <Card key={String(label)} className="rounded-2xl border-slate-200 shadow-sm transition-shadow hover:shadow-md">
+          <Card key={String(label)} className="rounded-2xl border-slate-200 border-t-[3px] border-t-violet-400 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
             <CardContent className="p-4">
               <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</div>
-              <div className="mt-2 font-mono text-3xl font-black tabular-nums text-slate-950">{value}</div>
+              <div className="mt-2 text-[28px] font-bold tabular-nums text-slate-950">{value}</div>
               <div className="mt-1 text-xs text-slate-500">{detail}</div>
             </CardContent>
           </Card>
@@ -2613,7 +2613,7 @@ function CarteiraUgp({
         </button>
       </div>
 
-      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <div className="border-b bg-white p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><Input className="pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/></div>
@@ -2629,7 +2629,7 @@ function CarteiraUgp({
               {lista.map((x)=>{
                 const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
                 const progresso=x.processoAcoes || {total:95,concluidas:0,percentual:0};
-                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-violet-50/40"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-mono font-black tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[110px]"><div className="font-mono text-base font-black tabular-nums text-slate-950">{Math.round(progresso.percentual)}%</div><Progress className="mt-1.5 h-2" value={progresso.percentual}/></div></td><td className="px-4 py-4 text-center font-mono text-lg font-black tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
+                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-[#F7F5FF]"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-bold tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[110px]"><div className="text-base font-bold tabular-nums text-slate-950">{Math.round(progresso.percentual)}%</div><Progress className="mt-1.5 h-2" value={progresso.percentual}/></div></td><td className="px-4 py-4 text-center text-lg font-bold tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
               })}
               {!lista.length&&<tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
             </tbody>
@@ -2751,7 +2751,7 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
 
   return (
     <div className="space-y-4">
-      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <CardHeader className="border-b bg-gradient-to-r from-violet-50/70 via-white to-blue-50/60">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3">
@@ -2966,8 +2966,8 @@ function RegistrosAlinhamentosUgp({
   if (modo === 'documentos') {
     return (
       <>
-        <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
-          <CardHeader className="border-b bg-gradient-to-r from-violet-50/70 via-white to-slate-50">
+        <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+          <CardHeader className="border-b bg-white">
             <div className="flex items-start gap-3">
               <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><ClipboardList className="h-5 w-5" /></span>
               <div>
@@ -3060,8 +3060,8 @@ function RegistrosAlinhamentosUgp({
 
   return (
     <>
-      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
-        <CardHeader className="border-b bg-gradient-to-r from-slate-50 via-white to-violet-50/60">
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+        <CardHeader className="border-b bg-white">
           <div className="flex items-start gap-3">
             <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><ClipboardList className="h-5 w-5" /></span>
             <div>
@@ -3249,7 +3249,7 @@ function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhame
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
+      <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <CardContent className="p-5">
           <div className="flex items-start gap-3">
             <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><ClipboardList className="h-5 w-5" /></span>
@@ -3283,7 +3283,7 @@ function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhame
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl border-slate-200 shadow-sm">
+      <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <CardContent className="p-5">
           <div className="flex items-start gap-3">
             <span className="rounded-xl bg-rose-100 p-2 text-rose-700"><AlertTriangle className="h-5 w-5" /></span>
@@ -3523,7 +3523,7 @@ export default function AcompanharIntegracaoGestor() {
           ) : colaborador ? (
             <div className="space-y-4">
               {colaboradores.length > 1 && (
-                <Card className="rounded-2xl border-slate-200 shadow-sm">
+                <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
                   <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
                     <div className="text-sm font-semibold text-slate-700">Colaborador da equipe</div>
                     <Select value={colaborador.id} onValueChange={setSelecionadoId}>
