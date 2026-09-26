@@ -314,9 +314,9 @@ function sinaisAtencaoUgp(colaborador: ColaboradorAcompanhamento): string[] {
   const anjo = evolucaoPorPapel(colaborador.respostas, 'Anjo');
   const g = gestor[gestor.length - 1]?.mediaGeral;
   const a = anjo[anjo.length - 1]?.mediaGeral;
-  if (g != null && a != null && Math.abs(g - a) * 20 >= 15) {
-    const diferenca = Math.round(Math.abs(g - a) * 20);
-    sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram percepções diferentes sobre a adaptação do colaborador (diferença de ${diferenca} pontos em uma escala de 0 a 100).`);
+  if (g != null && a != null && Math.abs(g - a) >= 3) {
+    const diferenca = Math.abs(g - a);
+    sinais.push(`No alinhamento mais recente, Gestor e Anjo apresentaram uma diferença relevante na percepção sobre a adaptação do colaborador (diferença de ${diferenca.toFixed(1).replace('.', ',')} pontos na escala original de 1 a 5).`);
   }
 
   if (colaborador.dia >= 45 && colaborador.pdi.percentual != null && colaborador.pdi.percentual < 25) {
@@ -844,7 +844,7 @@ function TrajetoriaIntegracao({ colaborador }: { colaborador: ColaboradorAcompan
                   <XAxis dataKey="momento" tick={{ fontSize: 11 }} />
                   <YAxis domain={[0,100]} tick={{ fontSize: 11 }} />
                   <ChartTooltip formatter={(value: any) => [`${value}%`, 'Experiência']} />
-                  <Line type="monotone" dataKey="experiencia" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} connectNulls />
+                  <Line type="linear" dataKey="experiencia" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -1008,7 +1008,7 @@ function PerfilAssessmentResumo({
             </div>
 
           {perfil?.expectativaGestor?.temRespostaBem && perfil.expectativaGestor.clusters?.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm lg:col-span-2">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <div className="font-black text-slate-900">Autoavaliação × prioridade do Gestor (BEM)</div>
@@ -1028,7 +1028,7 @@ function PerfilAssessmentResumo({
                   return (
                     <div key={item.key}>
                       <div className="text-xs font-semibold text-slate-700">{item.nome}</div>
-                      <div className="relative mt-2 h-8">
+                      <div className="relative mx-3 mt-2 h-8">
                         <div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100" />
                         {auto != null && (
                           <span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white bg-blue-600 shadow" style={{ left: Math.max(0,Math.min(100,auto)) + '%' }} />
@@ -1651,7 +1651,7 @@ function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompan
                   {INDICES_PESQUISA_COLABORADOR.map((grupo, i) => (
                     <Line
                       key={grupo.chave}
-                      type="monotone"
+                      type="linear"
                       dataKey={grupo.chave}
                       name={grupo.nome}
                       stroke={CORES[i % CORES.length]}
@@ -1670,7 +1670,7 @@ function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompan
                   <tr>
                     <th className="px-3 py-2 text-left">Índice</th>
                     {momentos.map((m) => (
-                      <th key={m.ciclo} className="px-3 py-2 text-center">Alinhamento {m.ciclo}</th>
+                      <th key={m.ciclo} className="px-3 py-2 text-center">Alinhamento de {diaDoAlinhamento(m.ciclo)} dias</th>
                     ))}
                   </tr>
                 </thead>
@@ -1742,7 +1742,7 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
                   {PILARES_ACOMPANHAMENTO.map((p, i) => (
                     <Line
                       key={p.chave}
-                      type="monotone"
+                      type="linear"
                       dataKey={p.chave}
                       name={p.nome}
                       stroke={CORES[i % CORES.length]}
@@ -1947,6 +1947,20 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
             </div>
           ))}
         </div>
+
+        <details className="mt-4 overflow-hidden rounded-xl border border-violet-100 bg-violet-50/40">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-black text-violet-800 hover:bg-violet-50">
+            ⓘ Entenda como o Índice de Integração é calculado
+          </summary>
+          <div className="space-y-3 border-t border-violet-100 bg-white px-4 py-4 text-sm leading-relaxed text-slate-650">
+            <div><b>Experiência do colaborador — peso 40%.</b> Mostra como o próprio colaborador relata sua integração na Pesquisa de Integração. O sistema reúne Cultura e pertencimento, Anjo e colegas, Gestão e Trabalho/desenvolvimento e transforma as respostas em uma escala de 0 a 100.</div>
+            <div><b>Adaptação observada — peso 35%.</b> Mostra como Gestor e Anjo percebem a adaptação do colaborador ao trabalho. As notas originais das avaliações são convertidas para uma escala de 0 a 100 para compor o índice.</div>
+            <div><b>Desenvolvimento — peso 25%.</b> Mostra o avanço registrado no PDI e na Jornada Compliance. Ele não mede sentimento, satisfação ou perfil comportamental.</div>
+            <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+              Se uma dessas fontes ainda não existir, o sistema não inventa um resultado: os pesos disponíveis são reajustados proporcionalmente. O índice só aparece quando existe cobertura mínima de 60%. DISC/Assessment e atrasos administrativos não entram na nota.
+            </div>
+          </div>
+        </details>
       </CardContent>
     </Card>
   );
@@ -1961,7 +1975,7 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
     <Card className="rounded-2xl border-slate-200 shadow-sm">
       <CardContent className="p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div><div className="font-bold text-slate-950">Marcos da integração</div><div className="mt-1 text-xs text-slate-500">Status dos formulários após cada alinhamento.</div></div>
+          <div><div className="font-bold text-slate-950">Status dos formulários por alinhamento</div><div className="mt-1 text-xs leading-relaxed text-slate-500">Veja, em cada alinhamento de 15, 45, 75 e 150 dias, se Colaborador (C), Gestor (G) e Anjo (A) já responderam os formulários previstos.</div></div>
           <div className="flex gap-3 text-[11px]"><span style={{color:PAPEL_CORES.colaborador}} className="font-semibold">● Colaborador</span><span style={{color:PAPEL_CORES.gestor}} className="font-semibold">● Gestor</span><span style={{color:PAPEL_CORES.anjo}} className="font-semibold">● Anjo</span></div>
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -1992,12 +2006,23 @@ function quantidadeValidasPesquisa(respostas: RespostaAcompanhamento[], ciclo:nu
 function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const momentos = evolucaoPesquisaColaborador(colaborador.respostas);
   const geral = momentos.map((m) => ({ dia:diaDoAlinhamento(m.ciclo), geral:mediaMomentoPesquisa(m) }));
+  const parecer = parecerTrajetoria(colaborador.respostas);
+  const ParecerIcon = parecer.icon;
   const heatStyle = (valor:number|null) => {
     if (valor == null) return {backgroundColor:'#F8FAFC',color:'#94A3B8'};
     return {backgroundColor:'rgba(37,99,235,' + (0.10 + (valor/100)*0.55) + ')',color:'#0F172A'};
   };
   return (
     <div className="space-y-4">
+      <div className={`rounded-2xl border p-4 shadow-sm ${parecer.classes}`}>
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-white/80 p-2 shadow-sm"><ParecerIcon className="h-5 w-5" /></span>
+          <div>
+            <div className="font-black">{parecer.titulo}</div>
+            <p className="mt-1 text-sm leading-relaxed opacity-85">{parecer.texto}</p>
+          </div>
+        </div>
+      </div>
       <Card className="rounded-2xl border-slate-200 shadow-sm">
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-3"><div><div className="font-bold text-slate-950">Experiência ao longo do tempo</div><div className="mt-1 text-xs text-slate-500">Média geral da Pesquisa de Integração. O eixo respeita a distância real entre 15, 45, 75 e 150 dias.</div></div><Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">Colaborador</Badge></div>
@@ -2047,9 +2072,11 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
         <div className="mt-5 space-y-4">
           {PILARES_ACOMPANHAMENTO.map((pilar)=>{
             const gv=g?.pilares[pilar.chave]??null, av=a?.pilares[pilar.chave]??null;
-            const gp=gv==null?null:gv*20, ap=av==null?null:av*20, dif=gp!=null&&ap!=null?Math.abs(gp-ap):null;
-            const alerta=dif!=null&&dif>=15;
-            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')}</span>{dif!=null&&<span className="font-semibold text-slate-500">diferença: {Math.round(dif)} pontos</span>}</div></div>;
+            const gp=gv==null?null:gv*20, ap=av==null?null:av*20;
+            const difOriginal=gv!=null&&av!=null?Math.abs(gv-av):null;
+            const dif=gp!=null&&ap!=null?Math.abs(gp-ap):null;
+            const alerta=difOriginal!=null&&difOriginal>=3;
+            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')}</span>{difOriginal!=null&&<span className="font-semibold text-slate-500">diferença na nota original: {difOriginal.toFixed(2).replace('.',',')} ponto(s)</span>}</div></div>;
           })}
         </div>
       </CardContent>
@@ -2058,12 +2085,52 @@ function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanha
 }
 
 function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
-  const compliancePendentes=(colaborador.jornadaCompliance.itens||[]).filter((x)=>!x.concluida);
-  const pdiPendentes=(colaborador.pdi.itens||[]).filter((x)=>!x.concluida);
+  const itens = [
+    {
+      titulo: 'Jornada Compliance',
+      percentual: colaborador.jornadaCompliance.percentual,
+      detalhe: colaborador.jornadaCompliance.total
+        ? colaborador.jornadaCompliance.concluidas + ' de ' + colaborador.jornadaCompliance.total + ' atividades concluídas'
+        : 'Ainda sem atividades registradas.',
+      icon: CheckCircle2,
+    },
+    {
+      titulo: 'Plano de Desenvolvimento (PDI)',
+      percentual: colaborador.pdi.percentual,
+      detalhe: colaborador.pdi.total
+        ? colaborador.pdi.concluidas + ' de ' + colaborador.pdi.total + ' tarefas concluídas'
+        : 'Ainda sem tarefas registradas.',
+      icon: Target,
+    },
+  ];
+
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card className="rounded-2xl border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex justify-between gap-3"><div><div className="font-bold">Jornada Compliance</div><div className="mt-1 text-xs text-slate-500">O que já foi concluído e o que ainda falta.</div></div><div className="font-mono text-3xl font-black">{fmtPct(colaborador.jornadaCompliance.percentual)}</div></div><Progress className="mt-4 h-2" value={colaborador.jornadaCompliance.percentual||0}/><div className="mt-4 space-y-2">{compliancePendentes.length?compliancePendentes.slice(0,12).map((x)=><div key={x.id} className="rounded-xl border bg-slate-50 p-3"><div className="text-sm font-semibold">{x.titulo}</div>{x.curso&&<div className="mt-1 text-xs text-slate-500">{x.curso}</div>}</div>):<div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{colaborador.jornadaCompliance.total?'Todas as atividades registradas estão concluídas.':'Ainda não há atividades registradas.'}</div>}</div></CardContent></Card>
-      <Card className="rounded-2xl border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex justify-between gap-3"><div><div className="font-bold">Plano de Desenvolvimento (PDI)</div><div className="mt-1 text-xs text-slate-500">Tarefas, status e prazo quando disponível.</div></div><div className="font-mono text-3xl font-black">{fmtPct(colaborador.pdi.percentual)}</div></div><Progress className="mt-4 h-2" value={colaborador.pdi.percentual||0}/><div className="mt-4 space-y-2">{pdiPendentes.length?pdiPendentes.slice(0,12).map((x)=><div key={x.id} className="rounded-xl border bg-slate-50 p-3"><div className="flex justify-between gap-3"><div className="text-sm font-semibold">{x.titulo}</div><Badge variant="outline">{String(x.status||'pendente').replaceAll('_',' ')}</Badge></div>{x.prazo&&<div className="mt-1 text-xs text-slate-500">Prazo: {dataBr(x.prazo)}</div>}</div>):<div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{colaborador.pdi.total?'Todas as tarefas registradas estão concluídas.':'Ainda não há tarefas registradas.'}</div>}</div></CardContent></Card>
+      {itens.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Card key={item.titulo} className="rounded-2xl border-slate-200 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 font-black text-slate-950">
+                    <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Icon className="h-4 w-4" /></span>
+                    {item.titulo}
+                  </div>
+                  <div className="mt-2 text-sm text-slate-500">{item.detalhe}</div>
+                </div>
+                <div className="font-mono text-4xl font-black tabular-nums text-slate-950">
+                  {item.percentual == null ? '—' : Math.round(item.percentual) + '%'}
+                </div>
+              </div>
+              <Progress className="mt-5 h-3" value={item.percentual || 0} />
+              <div className="mt-3 text-xs leading-relaxed text-slate-500">
+                Esta aba apresenta somente o avanço percentual. Os cursos e conteúdos individuais não são exibidos aqui.
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
@@ -2180,31 +2247,195 @@ function CarteiraUgp({
   );
 }
 
+
+function GuiaCompactoUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: string) => void;
+}) {
+  const sinais = sinaisAtencaoUgp(colaborador);
+  const parecer = parecerTrajetoria(colaborador.respostas);
+  const passos = [
+    {
+      numero: '1',
+      titulo: 'Veja a situação agora',
+      texto: sinais.length
+        ? sinais.length + ' sinal(is) objetivo(s) pedem atenção. Veja o resumo e os formulários pendentes.'
+        : 'Não há sinais críticos no momento. Confira a trajetória para entender como a integração vem evoluindo.',
+      aba: 'visao',
+      acao: 'Ver situação atual',
+      icon: Activity,
+    },
+    {
+      numero: '2',
+      titulo: 'Entenda a trajetória',
+      texto: parecer.texto,
+      aba: 'trajetoria',
+      acao: 'Ver trajetória',
+      icon: Route,
+    },
+    {
+      numero: '3',
+      titulo: 'Acompanhe os formulários',
+      texto: 'Veja a evolução completa da Pesquisa do Colaborador e das avaliações de Gestor e Anjo nos alinhamentos de 15, 45, 75 e 150 dias.',
+      aba: 'formularios',
+      acao: 'Ver evolução dos formulários',
+      icon: BarChart3,
+    },
+  ];
+
+  return (
+    <Card className="overflow-hidden rounded-2xl border-violet-100 bg-[linear-gradient(135deg,#faf7ff_0%,#ffffff_52%,#f3f7ff_100%)] shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-violet-700">
+              <Eye className="h-4 w-4" /> Comece por aqui
+            </div>
+            <h3 className="mt-1 text-lg font-black text-slate-950">Leitura orientada para RH / UGP</h3>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600">
+              Use estes três caminhos para entender primeiro a situação atual, depois a trajetória e, por fim, a evolução detalhada dos formulários.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit bg-white">Dia {colaborador.dia} de {colaborador.totalDias}</Badge>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          {passos.map((passo) => {
+            const Icon = passo.icon;
+            return (
+              <button
+                key={passo.numero}
+                type="button"
+                onClick={() => onSelect(passo.aba)}
+                className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-1 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-100 text-violet-700">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Passo {passo.numero}</div>
+                    <div className="mt-0.5 font-black text-slate-950">{passo.titulo}</div>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600">{passo.texto}</p>
+                    <div className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700">
+                      {passo.acao} <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EvolucaoFormulariosUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  return (
+    <div className="space-y-4">
+      <Card className="rounded-2xl border-blue-100 bg-blue-50/40 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-blue-100 p-2 text-blue-700"><BarChart3 className="h-5 w-5" /></span>
+            <div>
+              <div className="font-black text-slate-950">Evolução dos formulários ao longo dos alinhamentos</div>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                Esta área preserva o histórico completo dos três instrumentos. A Pesquisa mostra a percepção do próprio colaborador; as avaliações de Gestor e Anjo mostram como a adaptação foi observada por cada papel. São instrumentos diferentes e devem ser interpretados separadamente.
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                Os gráficos usam linhas retas entre os pontos porque os dados existem somente nos alinhamentos registrados — não há medição contínua entre eles.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
+      <EvolucaoBloco titulo="Evolução — Percepção do Gestor sobre o Empregado" respostas={colaborador.respostas} papel="Gestor" />
+      <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Empregado" respostas={colaborador.respostas} papel="Anjo" />
+    </div>
+  );
+}
+
 function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void; onPerfil:()=>void }) {
   const st=statusCarteira(colaborador);
+  const [aba, setAba] = useState('visao');
+
   return (
     <div className="space-y-4">
       <div className="sticky top-0 z-20 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
             <Button variant="ghost" size="sm" onClick={onVoltar} className="mt-0.5 gap-1"><ArrowLeft className="h-4 w-4"/>Carteira</Button>
-            <div><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-black text-slate-950">{colaborador.nome}</h2><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></div><div className="mt-1 text-sm text-slate-600">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</div><div className="mt-1 text-xs text-slate-500">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</div></div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl font-black text-slate-950">{colaborador.nome}</h2>
+                <Badge variant="outline" className={st.classes}>{st.rotulo}</Badge>
+              </div>
+              <div className="mt-1 text-sm text-slate-600">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</div>
+              <div className="mt-1 text-xs text-slate-500">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</div>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2"><Button variant="outline" className="gap-2" onClick={onPerfil}><Sparkles className="h-4 w-4"/>Assessment</Button><Button className="gap-2 bg-violet-700 hover:bg-violet-800" onClick={()=>gerarAcompanhamentoIntegracaoPdf(colaborador,{visaoUgpRh:true})}><Download className="h-4 w-4"/>PDF executivo</Button></div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="gap-2" onClick={onPerfil}><Sparkles className="h-4 w-4"/>Assessment</Button>
+            <Button className="gap-2 bg-violet-700 hover:bg-violet-800" onClick={()=>gerarAcompanhamentoIntegracaoPdf(colaborador,{visaoUgpRh:true})}><Download className="h-4 w-4"/>PDF executivo</Button>
+          </div>
         </div>
       </div>
+
       <KpisOperacionais colaborador={colaborador}/>
-      <Tabs defaultValue="visao" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-5"><TabsTrigger value="visao" className="rounded-xl py-2.5">Visão geral</TabsTrigger><TabsTrigger value="trajetoria" className="rounded-xl py-2.5">Trajetória</TabsTrigger><TabsTrigger value="percepcoes" className="rounded-xl py-2.5">Percepções</TabsTrigger><TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5">Desenvolvimento</TabsTrigger><TabsTrigger value="perfil" className="rounded-xl py-2.5">Perfil</TabsTrigger></TabsList>
+      <GuiaCompactoUgp colaborador={colaborador} onSelect={setAba} />
+
+      <Tabs value={aba} onValueChange={setAba} className="space-y-4">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-3 xl:grid-cols-6">
+          <TabsTrigger value="visao" className="rounded-xl py-2.5">Visão geral</TabsTrigger>
+          <TabsTrigger value="trajetoria" className="rounded-xl py-2.5">Trajetória</TabsTrigger>
+          <TabsTrigger value="percepcoes" className="rounded-xl py-2.5">Percepções</TabsTrigger>
+          <TabsTrigger value="formularios" className="rounded-xl py-2.5">Formulários</TabsTrigger>
+          <TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5">Desenvolvimento</TabsTrigger>
+          <TabsTrigger value="perfil" className="rounded-xl py-2.5">Perfil</TabsTrigger>
+        </TabsList>
+
         <TabsContent value="visao" className="space-y-4">
-          <Card className="rounded-2xl border-violet-100 bg-gradient-to-r from-violet-50 via-white to-blue-50 shadow-sm"><CardContent className="p-5"><div className="flex items-start gap-3"><span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Sparkles className="h-5 w-5"/></span><div><div className="text-xs font-bold uppercase tracking-wide text-violet-700">Resumo executivo</div><p className="mt-2 text-base font-semibold leading-relaxed text-slate-800">{resumoExecutivoTexto(colaborador)}</p></div></div></CardContent></Card>
+          <Card className="rounded-2xl border-violet-100 bg-gradient-to-r from-violet-50 via-white to-blue-50 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3">
+                <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Sparkles className="h-5 w-5"/></span>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-violet-700">Resumo executivo</div>
+                  <p className="mt-2 text-base font-semibold leading-relaxed text-slate-800">{resumoExecutivoTexto(colaborador)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
           <TimelineAlinhamentos colaborador={colaborador}/>
           <SinaisCompactos colaborador={colaborador}/>
-          {colaborador.formulariosPendentes.length>0&&<details className="rounded-2xl border bg-white shadow-sm"><summary className="cursor-pointer px-5 py-4 font-semibold text-slate-900">Ver {colaborador.formulariosPendentes.length} formulário(s) pendente(s)</summary><div className="space-y-2 border-t p-4">{colaborador.formulariosPendentes.map((p,i)=><div key={i} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-sm font-semibold">{p.papel} · {p.formulario}</div><div className="text-xs text-slate-500">{p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'} · prazo {dataBr(p.prazo)}</div></div><Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge></div>)}</div></details>}
+
+          {colaborador.formulariosPendentes.length>0&&(
+            <details className="rounded-2xl border bg-white shadow-sm">
+              <summary className="cursor-pointer px-5 py-4 font-semibold text-slate-900">Ver {colaborador.formulariosPendentes.length} formulário(s) pendente(s)</summary>
+              <div className="space-y-2 border-t p-4">
+                {colaborador.formulariosPendentes.map((p,i)=>(
+                  <div key={i} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">{p.papel} · {p.formulario}</div>
+                      <div className="text-xs text-slate-500">{p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'} · prazo {dataBr(p.prazo)}</div>
+                    </div>
+                    <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </TabsContent>
+
         <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
         <TabsContent value="percepcoes"><PercepcoesDumbbell colaborador={colaborador}/></TabsContent>
+        <TabsContent value="formularios"><EvolucaoFormulariosUgp colaborador={colaborador}/></TabsContent>
         <TabsContent value="desenvolvimento"><DesenvolvimentoDetalhe colaborador={colaborador}/></TabsContent>
         <TabsContent value="perfil"><PerfilAssessmentResumo colaborador={colaborador} onAbrir={onPerfil}/></TabsContent>
       </Tabs>
@@ -2212,8 +2443,92 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
   );
 }
 
+
+function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const pendencias = colaborador.formulariosPendentes || [];
+  const alertas = alertasDoColaborador(colaborador);
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><ClipboardList className="h-5 w-5" /></span>
+            <div>
+              <div className="font-black text-slate-950">Formulários pendentes</div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                Aqui aparecem somente as pendências que fazem parte da visão do Gestor. Nenhuma resposta pessoal do colaborador é exibida.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            {pendencias.length ? pendencias.map((p,i)=>(
+              <div key={i} className="rounded-xl border bg-slate-50 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'}
+                      {p.prazo ? ' · prazo ' + dataBr(p.prazo) : ''}
+                    </div>
+                  </div>
+                  <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge>
+                </div>
+              </div>
+            )) : (
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+                Nenhum formulário pendente para o Gestor neste momento.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-rose-100 p-2 text-rose-700"><AlertTriangle className="h-5 w-5" /></span>
+            <div>
+              <div className="font-black text-slate-950">Avisos de atenção</div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                Avisos operacionais e de acompanhamento disponíveis ao Gestor, sem revelar respostas, percentuais ou conteúdos sensíveis do colaborador.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            {alertas.length ? alertas.map((alerta)=>(
+              <div key={alerta} className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {alerta}
+              </div>
+            )) : (
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+                Nenhum aviso operacional de atenção identificado neste momento.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function GestorDetalheSimples({ colaborador }: { colaborador:ColaboradorAcompanhamento }) {
-  return <div className="space-y-4"><Card className="overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] text-white shadow-md"><CardContent className="p-6"><h2 className="text-2xl font-black">{colaborador.nome}</h2><p className="mt-1 text-sm text-white/80">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</p><p className="mt-2 text-xs text-white/70">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</p></CardContent></Card><KpisOperacionais colaborador={colaborador}/><DicasGestorProtegidas colaborador={colaborador}/><EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/></div>;
+  return (
+    <div className="space-y-4">
+      <Card className="overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] text-white shadow-md">
+        <CardContent className="p-6">
+          <h2 className="text-2xl font-black">{colaborador.nome}</h2>
+          <p className="mt-1 text-sm text-white/80">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</p>
+          <p className="mt-2 text-xs text-white/70">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</p>
+        </CardContent>
+      </Card>
+
+      <KpisOperacionais colaborador={colaborador}/>
+      <PendenciasGestor colaborador={colaborador}/>
+      <DicasGestorProtegidas colaborador={colaborador}/>
+      <EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/>
+    </div>
+  );
 }
 
 export default function AcompanharIntegracaoGestor() {
