@@ -1291,14 +1291,11 @@ function LeituraIntegradaUgp({ colaborador }: { colaborador: ColaboradorAcompanh
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="max-w-3xl text-xs leading-relaxed text-slate-500">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-xs leading-relaxed text-slate-500">
             A Leitura Integrada usa somente dados já existentes na plataforma. DISC/Assessment pode contextualizar a conversa em sua área própria,
-            mas não é misturado aos resultados dos formulários nesta síntese.
+            mas não é misturado aos resultados dos formulários nesta síntese. O detalhamento por alinhamento e por dimensão permanece disponível na aba <b>Trajetória</b>.
           </p>
-          <Button type="button" size="sm" variant="outline" onClick={() => navegarPara('trajetoria-integracao')}>
-            Ver trajetória detalhada <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
         </div>
       </CardContent>
     </Card>
