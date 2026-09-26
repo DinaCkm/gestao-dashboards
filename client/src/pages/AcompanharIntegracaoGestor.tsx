@@ -2247,31 +2247,195 @@ function CarteiraUgp({
   );
 }
 
+
+function GuiaCompactoUgp({
+  colaborador,
+  onSelect,
+}: {
+  colaborador: ColaboradorAcompanhamento;
+  onSelect: (aba: string) => void;
+}) {
+  const sinais = sinaisAtencaoUgp(colaborador);
+  const parecer = parecerTrajetoria(colaborador.respostas);
+  const passos = [
+    {
+      numero: '1',
+      titulo: 'Veja a situação agora',
+      texto: sinais.length
+        ? sinais.length + ' sinal(is) objetivo(s) pedem atenção. Veja o resumo e os formulários pendentes.'
+        : 'Não há sinais críticos no momento. Confira a trajetória para entender como a integração vem evoluindo.',
+      aba: 'visao',
+      acao: 'Ver situação atual',
+      icon: Activity,
+    },
+    {
+      numero: '2',
+      titulo: 'Entenda a trajetória',
+      texto: parecer.texto,
+      aba: 'trajetoria',
+      acao: 'Ver trajetória',
+      icon: Route,
+    },
+    {
+      numero: '3',
+      titulo: 'Acompanhe os formulários',
+      texto: 'Veja a evolução completa da Pesquisa do Colaborador e das avaliações de Gestor e Anjo nos alinhamentos de 15, 45, 75 e 150 dias.',
+      aba: 'formularios',
+      acao: 'Ver evolução dos formulários',
+      icon: BarChart3,
+    },
+  ];
+
+  return (
+    <Card className="overflow-hidden rounded-2xl border-violet-100 bg-[linear-gradient(135deg,#faf7ff_0%,#ffffff_52%,#f3f7ff_100%)] shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-violet-700">
+              <Eye className="h-4 w-4" /> Comece por aqui
+            </div>
+            <h3 className="mt-1 text-lg font-black text-slate-950">Leitura orientada para RH / UGP</h3>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600">
+              Use estes três caminhos para entender primeiro a situação atual, depois a trajetória e, por fim, a evolução detalhada dos formulários.
+            </p>
+          </div>
+          <Badge variant="outline" className="w-fit bg-white">Dia {colaborador.dia} de {colaborador.totalDias}</Badge>
+        </div>
+        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+          {passos.map((passo) => {
+            const Icon = passo.icon;
+            return (
+              <button
+                key={passo.numero}
+                type="button"
+                onClick={() => onSelect(passo.aba)}
+                className="group rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all duration-200 hover:-translate-y-1 hover:border-violet-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-100 text-violet-700">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Passo {passo.numero}</div>
+                    <div className="mt-0.5 font-black text-slate-950">{passo.titulo}</div>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600">{passo.texto}</p>
+                    <div className="mt-3 inline-flex items-center gap-1 text-xs font-black text-violet-700">
+                      {passo.acao} <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EvolucaoFormulariosUgp({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  return (
+    <div className="space-y-4">
+      <Card className="rounded-2xl border-blue-100 bg-blue-50/40 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-blue-100 p-2 text-blue-700"><BarChart3 className="h-5 w-5" /></span>
+            <div>
+              <div className="font-black text-slate-950">Evolução dos formulários ao longo dos alinhamentos</div>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                Esta área preserva o histórico completo dos três instrumentos. A Pesquisa mostra a percepção do próprio colaborador; as avaliações de Gestor e Anjo mostram como a adaptação foi observada por cada papel. São instrumentos diferentes e devem ser interpretados separadamente.
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                Os gráficos usam linhas retas entre os pontos porque os dados existem somente nos alinhamentos registrados — não há medição contínua entre eles.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      <EvolucaoPesquisaColaborador respostas={colaborador.respostas} />
+      <EvolucaoBloco titulo="Evolução — Percepção do Gestor sobre o Empregado" respostas={colaborador.respostas} papel="Gestor" />
+      <EvolucaoBloco titulo="Evolução — Percepção do Anjo sobre o Empregado" respostas={colaborador.respostas} papel="Anjo" />
+    </div>
+  );
+}
+
 function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void; onPerfil:()=>void }) {
   const st=statusCarteira(colaborador);
+  const [aba, setAba] = useState('visao');
+
   return (
     <div className="space-y-4">
       <div className="sticky top-0 z-20 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
             <Button variant="ghost" size="sm" onClick={onVoltar} className="mt-0.5 gap-1"><ArrowLeft className="h-4 w-4"/>Carteira</Button>
-            <div><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-black text-slate-950">{colaborador.nome}</h2><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></div><div className="mt-1 text-sm text-slate-600">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</div><div className="mt-1 text-xs text-slate-500">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</div></div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl font-black text-slate-950">{colaborador.nome}</h2>
+                <Badge variant="outline" className={st.classes}>{st.rotulo}</Badge>
+              </div>
+              <div className="mt-1 text-sm text-slate-600">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</div>
+              <div className="mt-1 text-xs text-slate-500">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</div>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2"><Button variant="outline" className="gap-2" onClick={onPerfil}><Sparkles className="h-4 w-4"/>Assessment</Button><Button className="gap-2 bg-violet-700 hover:bg-violet-800" onClick={()=>gerarAcompanhamentoIntegracaoPdf(colaborador,{visaoUgpRh:true})}><Download className="h-4 w-4"/>PDF executivo</Button></div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className="gap-2" onClick={onPerfil}><Sparkles className="h-4 w-4"/>Assessment</Button>
+            <Button className="gap-2 bg-violet-700 hover:bg-violet-800" onClick={()=>gerarAcompanhamentoIntegracaoPdf(colaborador,{visaoUgpRh:true})}><Download className="h-4 w-4"/>PDF executivo</Button>
+          </div>
         </div>
       </div>
+
       <KpisOperacionais colaborador={colaborador}/>
-      <Tabs defaultValue="visao" className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-5"><TabsTrigger value="visao" className="rounded-xl py-2.5">Visão geral</TabsTrigger><TabsTrigger value="trajetoria" className="rounded-xl py-2.5">Trajetória</TabsTrigger><TabsTrigger value="percepcoes" className="rounded-xl py-2.5">Percepções</TabsTrigger><TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5">Desenvolvimento</TabsTrigger><TabsTrigger value="perfil" className="rounded-xl py-2.5">Perfil</TabsTrigger></TabsList>
+      <GuiaCompactoUgp colaborador={colaborador} onSelect={setAba} />
+
+      <Tabs value={aba} onValueChange={setAba} className="space-y-4">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-3 xl:grid-cols-6">
+          <TabsTrigger value="visao" className="rounded-xl py-2.5">Visão geral</TabsTrigger>
+          <TabsTrigger value="trajetoria" className="rounded-xl py-2.5">Trajetória</TabsTrigger>
+          <TabsTrigger value="percepcoes" className="rounded-xl py-2.5">Percepções</TabsTrigger>
+          <TabsTrigger value="formularios" className="rounded-xl py-2.5">Formulários</TabsTrigger>
+          <TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5">Desenvolvimento</TabsTrigger>
+          <TabsTrigger value="perfil" className="rounded-xl py-2.5">Perfil</TabsTrigger>
+        </TabsList>
+
         <TabsContent value="visao" className="space-y-4">
-          <Card className="rounded-2xl border-violet-100 bg-gradient-to-r from-violet-50 via-white to-blue-50 shadow-sm"><CardContent className="p-5"><div className="flex items-start gap-3"><span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Sparkles className="h-5 w-5"/></span><div><div className="text-xs font-bold uppercase tracking-wide text-violet-700">Resumo executivo</div><p className="mt-2 text-base font-semibold leading-relaxed text-slate-800">{resumoExecutivoTexto(colaborador)}</p></div></div></CardContent></Card>
+          <Card className="rounded-2xl border-violet-100 bg-gradient-to-r from-violet-50 via-white to-blue-50 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3">
+                <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Sparkles className="h-5 w-5"/></span>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-violet-700">Resumo executivo</div>
+                  <p className="mt-2 text-base font-semibold leading-relaxed text-slate-800">{resumoExecutivoTexto(colaborador)}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
           <TimelineAlinhamentos colaborador={colaborador}/>
           <SinaisCompactos colaborador={colaborador}/>
-          {colaborador.formulariosPendentes.length>0&&<details className="rounded-2xl border bg-white shadow-sm"><summary className="cursor-pointer px-5 py-4 font-semibold text-slate-900">Ver {colaborador.formulariosPendentes.length} formulário(s) pendente(s)</summary><div className="space-y-2 border-t p-4">{colaborador.formulariosPendentes.map((p,i)=><div key={i} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-sm font-semibold">{p.papel} · {p.formulario}</div><div className="text-xs text-slate-500">{p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'} · prazo {dataBr(p.prazo)}</div></div><Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge></div>)}</div></details>}
+
+          {colaborador.formulariosPendentes.length>0&&(
+            <details className="rounded-2xl border bg-white shadow-sm">
+              <summary className="cursor-pointer px-5 py-4 font-semibold text-slate-900">Ver {colaborador.formulariosPendentes.length} formulário(s) pendente(s)</summary>
+              <div className="space-y-2 border-t p-4">
+                {colaborador.formulariosPendentes.map((p,i)=>(
+                  <div key={i} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-sm font-semibold">{p.papel} · {p.formulario}</div>
+                      <div className="text-xs text-slate-500">{p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'} · prazo {dataBr(p.prazo)}</div>
+                    </div>
+                    <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge>
+                  </div>
+                ))}
+              </div>
+            </details>
+          )}
         </TabsContent>
+
         <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
         <TabsContent value="percepcoes"><PercepcoesDumbbell colaborador={colaborador}/></TabsContent>
+        <TabsContent value="formularios"><EvolucaoFormulariosUgp colaborador={colaborador}/></TabsContent>
         <TabsContent value="desenvolvimento"><DesenvolvimentoDetalhe colaborador={colaborador}/></TabsContent>
         <TabsContent value="perfil"><PerfilAssessmentResumo colaborador={colaborador} onAbrir={onPerfil}/></TabsContent>
       </Tabs>
