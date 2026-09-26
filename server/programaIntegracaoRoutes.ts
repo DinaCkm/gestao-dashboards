@@ -10,6 +10,7 @@ import { getRawConnection } from "./db";
 import { parseManagerIntegracaoPermissions } from "./managerIntegracaoPermissions";
 import mysql from "mysql2/promise";
 import { sdk } from "./_core/sdk";
+import { storageGet, storageGetDownload } from "./storage";
 import {
   PROGRAMA_INTEGRACAO_ESCALAS,
   PROGRAMA_INTEGRACAO_QUESTION_INDEX,
@@ -996,6 +997,51 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const perfisAssessment = await perfisAssessmentAlunos(connection, assessmentEcoIds);
     const hoje = todayIso();
 
+    const registrosIntegracaoPorProcesso = new Map<number, any[]>();
+    if (acessoUgpRh) {
+      for (const row of permitidos) {
+        const estado = asJson<Record<string, any>>(row.estado, {});
+        const registros = Array.isArray(estado?.registrosIntegracao)
+          ? estado.registrosIntegracao.filter((item: any) => item && typeof item === "object" && !item.excluidoEm)
+          : [];
+        const visiveis: any[] = [];
+        for (const item of registros) {
+          let fileUrl = "";
+          let downloadUrl = "";
+          if (item?.fileKey) {
+            try {
+              const [view, download] = await Promise.all([
+                storageGet(String(item.fileKey)),
+                storageGetDownload(String(item.fileKey), String(item.fileName || "arquivo")),
+              ]);
+              fileUrl = view.url;
+              downloadUrl = download.url;
+            } catch (error) {
+              console.warn("[ProgramaIntegracao] Não foi possível gerar URL assinada de registro:", error);
+            }
+          }
+          visiveis.push({
+            id: String(item.id || ""),
+            tipo: String(item.tipo || ""),
+            titulo: String(item.titulo || ""),
+            descricao: String(item.descricao || ""),
+            dataAcontecimento: String(item.dataAcontecimento || ""),
+            origem: String(item.origem || ""),
+            alinhamento: String(item.alinhamento || ""),
+            fileName: String(item.fileName || ""),
+            mimeType: String(item.mimeType || ""),
+            sizeBytes: Number(item.sizeBytes || 0),
+            hasFile: Boolean(item.fileKey),
+            fileUrl,
+            downloadUrl,
+            cadastradoPorNome: String(item.cadastradoPorNome || ""),
+            cadastradoEm: String(item.cadastradoEm || ""),
+          });
+        }
+        registrosIntegracaoPorProcesso.set(Number(row.id), visiveis);
+      }
+    }
+
     const colaboradores = permitidos.map((row: any) => {
       const estado = asJson<Record<string, any>>(row.estado, {});
       const respostas = respostasPorProcesso.get(Number(row.id)) || [];
@@ -1176,6 +1222,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         alinhamentosTotal: 4,
         registrosAlinhamentos,
         documentoAtaRelatorio,
+        registrosIntegracao: acessoUgpRh ? (registrosIntegracaoPorProcesso.get(Number(row.id)) || []) : [],
         avisosGestorEquipe,
         processoAcoes: {
           total: totalAcoesProcesso,
