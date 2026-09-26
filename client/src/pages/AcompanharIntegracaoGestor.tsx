@@ -2084,7 +2084,10 @@ function KpisOperacionais({ colaborador }: { colaborador: ColaboradorAcompanhame
         No contexto do SEBRAE Tocantins, seu objetivo é apoiar a compreensão e o cumprimento dos princípios éticos, legais e regulatórios aplicáveis ao ambiente de trabalho.
       </p>
       <p className="font-semibold">
-        Atenção: este percentual não corresponde à conclusão de todos os cursos da Universidade Sebrae. A Jornada Compliance apresenta ao aluno os cursos que ele deve concluir na Universidade Sebrae, juntamente com os documentos e conteúdos de Compliance.
+        Atenção: este percentual não corresponde à conclusão de todos os cursos da Universidade Sebrae.
+      </p>
+      <p className="font-semibold">
+        Dentro da Jornada Compliance HÁ APENAS UM INFORMATIVO AO ALUNO dos cursos que ele deve concluir diretamente na Universidade Sebrae.
       </p>
     </div>
   );
@@ -2420,14 +2423,7 @@ function AlertasOperacionaisUgp({ colaborador }: { colaborador: ColaboradorAcomp
     );
   }
 
-  if (!alertas.length) {
-    return (
-      <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-800">
-        <CheckCircle2 className="mr-2 inline h-4 w-4" />
-        Nenhum alerta operacional identificado neste momento.
-      </div>
-    );
-  }
+  if (!alertas.length) return null;
 
   return (
     <Card className="rounded-2xl border-amber-200 bg-amber-50/40 shadow-sm">
@@ -2707,7 +2703,7 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
   const [tipo, setTipo] = useState('todos');
   const [origem, setOrigem] = useState('todas');
   const [alinhamento, setAlinhamento] = useState('todos');
-  const [recolhido, setRecolhido] = useState(false);
+  const [recolhido, setRecolhido] = useState(true);
 
   const origens = Array.from(new Set(registros.map((item) => item.origem).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
   const alinhamentos = ['Não informado','Preparação','15 dias','45 dias','75 dias','150 dias','Geral']
@@ -2831,10 +2827,10 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
               {filtrados.map((item)=>(
                 <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex flex-col gap-3">
                     <div className="flex min-w-0 items-start gap-3">
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-700"><Icone tipo={item.tipo} /></span>
                       <div className="min-w-0">
@@ -2858,13 +2854,11 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
                             />
                           </button>
                         )}
-                        <div className="mt-3 text-[11px] text-slate-400">
-                          Registrado por {item.cadastradoPorNome || 'CKM'}{item.cadastradoEm ? ' em '+new Date(item.cadastradoEm).toLocaleString('pt-BR') : ''}
-                        </div>
+
                       </div>
                     </div>
                     {item.hasFile && (
-                      <div className="shrink-0 rounded-xl border bg-slate-50 p-3 lg:min-w-[250px]">
+                      <div className="rounded-xl border bg-slate-50 p-3">
                         <div className="max-w-[270px] truncate text-sm font-semibold text-slate-800">{item.fileName || 'Arquivo'}</div>
                         {item.sizeBytes > 0 && <div className="mt-1 text-xs text-slate-500">{tamanho(item.sizeBytes)}</div>}
                         <div className="mt-3 flex gap-2">

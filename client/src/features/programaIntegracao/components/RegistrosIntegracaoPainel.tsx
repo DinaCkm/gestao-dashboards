@@ -133,7 +133,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
   const [editando, setEditando] = useState<RegistroIntegracaoItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [recolhido, setRecolhido] = useState(false);
+  const [recolhido, setRecolhido] = useState(true);
 
   const carregar = async () => {
     try {
@@ -174,6 +174,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
   };
 
   const iniciarEdicao = (item: RegistroIntegracaoItem) => {
+    setRecolhido(false);
     setEditando(item);
     setPayload({
       tipo: item.tipo,
@@ -482,11 +483,11 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
             Nenhum registro encontrado neste filtro.
           </div>
         ) : (
-          <div className={filtro === 'foto' ? 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4' : 'space-y-3'}>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {filtrados.map((item) => {
               const Icone = tipoIcone(item.tipo);
               return (
-                <div key={item.id} className="rounded-xl border bg-background p-4">
+                <div key={item.id} className="rounded-xl border bg-background p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
                       <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted">
