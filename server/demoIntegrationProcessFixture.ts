@@ -89,6 +89,64 @@ function demoCompletedActionMap() {
   );
 }
 
+function demoAtaFields(scenario: "evolucao" | "queda", ciclo: number) {
+  const evolucao = [
+    {
+      lider: "O líder relata boa receptividade, interesse em aprender e adaptação inicial positiva. Ainda precisa de referências mais claras para priorizar demandas e ganhar segurança nas decisões.",
+      colab: "O colaborador relata acolhimento pela equipe e boa compreensão inicial da cultura e da rotina. Diz que ainda está organizando prioridades e conhecendo melhor os fluxos internos.",
+      conclusao: "Manter acompanhamento próximo nas próximas semanas, reforçar prioridades da função e combinar checkpoints curtos com o gestor e o Anjo.",
+      consultora: "A integração inicia de forma positiva e coerente com o período de adaptação. Recomenda-se manter orientação frequente, com clareza de prioridades e espaço para dúvidas.",
+    },
+    {
+      lider: "O líder percebe evolução na autonomia, na organização das entregas e na interação com a equipe. A pessoa já demanda menos direcionamento para atividades recorrentes.",
+      colab: "O colaborador relata maior segurança para executar as atividades e melhor compreensão das expectativas da função. Percebe avanço no relacionamento com equipe e gestor.",
+      conclusao: "Dar continuidade ao ganho de autonomia, reforçar o PDI e ampliar gradualmente a responsabilidade sobre entregas de maior complexidade.",
+      consultora: "Há evolução consistente entre o primeiro e o segundo alinhamento. O cenário indica adaptação progressiva e maior clareza sobre responsabilidades e desenvolvimento.",
+    },
+    {
+      lider: "O líder observa estabilidade positiva, boa qualidade das entregas e participação mais ativa nas discussões da equipe. Ainda há espaço para ampliar iniciativa em decisões menos estruturadas.",
+      colab: "O colaborador relata sentimento de pertencimento mais consolidado e segurança para buscar apoio quando necessário. Considera que já compreende bem a rotina e os principais processos.",
+      conclusao: "Consolidar os comportamentos já desenvolvidos, estimular decisões com maior autonomia e manter foco nas metas do PDI.",
+      consultora: "O processo apresenta consolidação da adaptação, sem sinais relevantes de regressão. O foco passa a ser desenvolvimento e sustentação da autonomia.",
+    },
+    {
+      lider: "O líder considera a integração concluída de forma satisfatória, com autonomia adequada, boa interação e domínio das principais responsabilidades da função.",
+      colab: "O colaborador relata estar integrado à equipe, compreender seu papel e sentir segurança para conduzir as atividades. Identifica como próximo passo continuar avançando no PDI.",
+      conclusao: "Encerrar formalmente o Programa de Integração e manter o desenvolvimento por meio do PDI e dos acompanhamentos regulares da liderança.",
+      consultora: "A integração foi concluída com evolução consistente. Os dados dos alinhamentos e formulários indicam adaptação positiva e condições para continuidade do desenvolvimento fora do programa.",
+    },
+  ];
+
+  const queda = [
+    {
+      lider: "O líder relata início positivo, boa participação e disponibilidade para aprender. A adaptação inicial ocorre dentro do esperado.",
+      colab: "O colaborador relata bom acolhimento, clareza inicial das atividades e percepção favorável sobre equipe, gestor e rotina.",
+      conclusao: "Manter o acompanhamento previsto e reforçar os canais de apoio durante a adaptação.",
+      consultora: "O primeiro alinhamento apresenta sinais positivos e não indica necessidade de ação adicional além do acompanhamento regular.",
+    },
+    {
+      lider: "O líder ainda percebe boa entrega, mas nota menor iniciativa para buscar informações e maior necessidade de confirmação antes de avançar.",
+      colab: "O colaborador relata que algumas demandas e prioridades ficaram menos claras e que passou a depender mais de orientação para organizar a rotina.",
+      conclusao: "Reforçar expectativas, prioridades e critérios de decisão, com conversas curtas de acompanhamento entre os alinhamentos formais.",
+      consultora: "Há uma mudança moderada em relação ao primeiro alinhamento. Recomenda-se aprofundar causas operacionais e reforçar clareza de prioridades, sem antecipar conclusões.",
+    },
+    {
+      lider: "O líder percebe queda de participação e maior hesitação diante de demandas novas. As entregas seguem acontecendo, mas com necessidade maior de direcionamento.",
+      colab: "O colaborador relata menor segurança, mais dificuldade para organizar prioridades e percepção de apoio menos consistente no dia a dia.",
+      conclusao: "Criar um plano curto de acompanhamento, revisar prioridades da função e combinar pontos semanais com gestor e Anjo.",
+      consultora: "A trajetória passou a apresentar queda mais clara. É recomendável investigar mudanças de contexto, comunicação e apoio antes de atribuir causas ao comportamento individual.",
+    },
+    {
+      lider: "O líder relata necessidade de acompanhamento mais próximo e redução da autonomia em comparação aos primeiros meses.",
+      colab: "O colaborador relata experiência de integração menos favorável, com menor sensação de apoio e mais dificuldade para compreender prioridades e expectativas.",
+      conclusao: "Encerrar o ciclo formal com plano de continuidade, responsabilidades claras e acompanhamento estruturado da liderança nas próximas semanas.",
+      consultora: "O último alinhamento confirma queda em relação aos anteriores. A recomendação é tratar o cenário como tema de acompanhamento gerencial, revisar fatores de contexto e pactuar ações objetivas de suporte e desenvolvimento.",
+    },
+  ];
+
+  return (scenario === "queda" ? queda : evolucao)[Math.max(0, Math.min(3, ciclo - 1))];
+}
+
 const DIMENSOES = {
   cultura: PESQUISA_KEYS.slice(0, 5),
   anjo: PESQUISA_KEYS.slice(5, 10),
@@ -202,7 +260,14 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     alin: Object.fromEntries(
       CYCLES.map((cycle) => [
         String(cycle.ciclo),
-        { realizado: true, dataReal: cycle.data, data: cycle.data, hora: "09:00" },
+        {
+          realizado: true,
+          dataReal: cycle.data,
+          data: cycle.data,
+          hora: "09:00",
+          ataEm: cycle.data,
+          ata: demoAtaFields(demo.scenario, cycle.ciclo),
+        },
       ]),
     ),
     bem: {},
