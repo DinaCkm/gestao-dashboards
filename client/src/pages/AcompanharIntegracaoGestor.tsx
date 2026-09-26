@@ -2443,8 +2443,92 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
   );
 }
 
+
+function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const pendencias = colaborador.formulariosPendentes || [];
+  const alertas = alertasDoColaborador(colaborador);
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><ClipboardList className="h-5 w-5" /></span>
+            <div>
+              <div className="font-black text-slate-950">Formulários pendentes</div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                Aqui aparecem somente as pendências que fazem parte da visão do Gestor. Nenhuma resposta pessoal do colaborador é exibida.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            {pendencias.length ? pendencias.map((p,i)=>(
+              <div key={i} className="rounded-xl border bg-slate-50 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'}
+                      {p.prazo ? ' · prazo ' + dataBr(p.prazo) : ''}
+                    </div>
+                  </div>
+                  <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge>
+                </div>
+              </div>
+            )) : (
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+                Nenhum formulário pendente para o Gestor neste momento.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-rose-100 p-2 text-rose-700"><AlertTriangle className="h-5 w-5" /></span>
+            <div>
+              <div className="font-black text-slate-950">Avisos de atenção</div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                Avisos operacionais e de acompanhamento disponíveis ao Gestor, sem revelar respostas, percentuais ou conteúdos sensíveis do colaborador.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            {alertas.length ? alertas.map((alerta)=>(
+              <div key={alerta} className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {alerta}
+              </div>
+            )) : (
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+                Nenhum aviso operacional de atenção identificado neste momento.
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function GestorDetalheSimples({ colaborador }: { colaborador:ColaboradorAcompanhamento }) {
-  return <div className="space-y-4"><Card className="overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] text-white shadow-md"><CardContent className="p-6"><h2 className="text-2xl font-black">{colaborador.nome}</h2><p className="mt-1 text-sm text-white/80">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</p><p className="mt-2 text-xs text-white/70">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</p></CardContent></Card><KpisOperacionais colaborador={colaborador}/><DicasGestorProtegidas colaborador={colaborador}/><EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/></div>;
+  return (
+    <div className="space-y-4">
+      <Card className="overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] text-white shadow-md">
+        <CardContent className="p-6">
+          <h2 className="text-2xl font-black">{colaborador.nome}</h2>
+          <p className="mt-1 text-sm text-white/80">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</p>
+          <p className="mt-2 text-xs text-white/70">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</p>
+        </CardContent>
+      </Card>
+
+      <KpisOperacionais colaborador={colaborador}/>
+      <PendenciasGestor colaborador={colaborador}/>
+      <DicasGestorProtegidas colaborador={colaborador}/>
+      <EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/>
+    </div>
+  );
 }
 
 export default function AcompanharIntegracaoGestor() {
