@@ -173,7 +173,7 @@ export function DetalheProcessoReal({
       {
         id: 'encerramento',
         titulo: 'Encerramento',
-        apoio: processo.situacao === 'encerrado' ? 'Processo concluído' : 'Após o ciclo final',
+        apoio: processo.situacao === 'encerrado' ? 'Processo concluído' : 'Após o alinhamento final',
         status: processo.situacao === 'encerrado' ? 'Encerrado' : 'Aguardando',
         statusKey: processo.situacao === 'encerrado' ? 'ok' : 'off',
       },
