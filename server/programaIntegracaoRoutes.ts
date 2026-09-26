@@ -1004,6 +1004,26 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         const a = alin[String(n)] ?? alin[n];
         return Boolean(a?.realizado);
       }).length;
+      const registrosAlinhamentos = acessoUgpRh
+        ? [1,2,3,4].map((numero) => {
+            const a = alin[String(numero)] ?? alin[numero] ?? {};
+            const ata = a?.ata && typeof a.ata === "object" ? a.ata : {};
+            const marco = ({ 1: 15, 2: 45, 3: 75, 4: 150 } as Record<number, number>)[numero];
+            const temConteudo = ["lider","colab","conclusao","consultora"].some((chave) => String(ata?.[chave] || "").trim());
+            return {
+              numero,
+              marco,
+              realizado: Boolean(a?.realizado),
+              data: String(a?.dataReal || a?.data || "").slice(0,10) || null,
+              registradoEm: String(a?.ataEm || "").slice(0,10) || null,
+              temConteudo,
+              lider: String(ata?.lider || ""),
+              colab: String(ata?.colab || ""),
+              conclusao: String(ata?.conclusao || ""),
+              consultora: String(ata?.consultora || ""),
+            };
+          })
+        : [];
 
       const formulariosPendentes: any[] = [];
       const feito = estado.feito && typeof estado.feito === "object" ? estado.feito : {};
@@ -1124,6 +1144,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         anjo: row.anjo || "",
         alinhamentosFeitos,
         alinhamentosTotal: 4,
+        registrosAlinhamentos,
         processoAcoes: {
           total: totalAcoesProcesso,
           concluidas: acoesConcluidasProcesso,
