@@ -33,6 +33,7 @@ import {
 } from '@/features/programaIntegracao/helpers/evolucaoAcompanhamento';
 import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/helpers/acompanhamentoIntegracaoPdf';
 import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helpers/atasRelatoriosHelpers';
+import { PUBLIC_FORM_CATALOG, optionValueLabel } from '@/features/programaIntegracao/helpers/publicFormCatalog';
 
 interface Pendencia {
   ciclo: number;
@@ -1060,47 +1061,6 @@ function PerfilAssessmentResumo({
               </div>
             </div>
 
-          {perfil?.expectativaGestor?.temRespostaBem && perfil.expectativaGestor.clusters?.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm lg:col-span-2">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <div className="font-black text-slate-900">Autoavaliação × prioridade do Gestor (BEM)</div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    A distância entre os pontos ajuda a enxergar onde a percepção do colaborador e a prioridade registrada pelo Gestor estão mais próximas ou mais distantes.
-                  </div>
-                </div>
-                <div className="flex gap-3 text-[11px] font-semibold">
-                  <span className="text-blue-700">● Colaborador</span>
-                  <span className="text-teal-700">◆ Gestor/BEM</span>
-                </div>
-              </div>
-              <div className="mt-5 space-y-4">
-                {perfil.expectativaGestor.clusters.map((item) => {
-                  const auto = item.perfilColaborador == null ? null : Number(item.perfilColaborador);
-                  const gestor = Number(item.prioridade || 0);
-                  return (
-                    <div key={item.key}>
-                      <div className="text-xs font-semibold text-slate-700">{item.nome}</div>
-                      <div className="relative mx-3 mt-2 h-8">
-                        <div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100" />
-                        {auto != null && (
-                          <span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white bg-blue-600 shadow" style={{ left: Math.max(0,Math.min(100,auto)) + '%' }} />
-                        )}
-                        <span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white bg-teal-700 shadow" style={{ left: Math.max(0,Math.min(100,gestor)) + '%' }} />
-                        {auto != null && (
-                          <span className="absolute top-4 h-1 bg-slate-300" style={{ left: Math.min(auto,gestor) + '%', width: Math.abs(auto-gestor) + '%' }} />
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-4 text-[11px]">
-                        <span className="font-bold text-blue-700">Autoavaliação: {auto == null ? '—' : Math.round(auto) + '%'}</span>
-                        <span className="font-bold text-teal-700">Prioridade BEM: {Math.round(gestor)}%</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
           </div>
         )}
       </CardContent>
@@ -2274,7 +2234,13 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
   const ParecerIcon = parecer.icon;
   const heatStyle = (valor:number|null) => {
     if (valor == null) return {backgroundColor:'#F8FAFC',color:'#94A3B8'};
-    return {backgroundColor:'rgba(37,99,235,' + (0.10 + (valor/100)*0.55) + ')',color:'#0F172A'};
+    // A cor usa uma faixa visual de 60 a 100 para tornar diferenças altas mais perceptíveis.
+    // O número exibido continua sendo o percentual real, sem alteração de cálculo.
+    const normalizado = Math.max(0, Math.min(1, (valor - 60) / 40));
+    return {
+      backgroundColor:'rgba(37,99,235,' + (0.12 + normalizado * 0.60) + ')',
+      color: normalizado > 0.58 ? '#FFFFFF' : '#0F172A'
+    };
   };
   return (
     <div className="space-y-4">
@@ -2305,7 +2271,23 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
       </Card>
 
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
-        <div className="border-b px-5 py-4"><div className="font-bold text-slate-950">Heatmap da trajetória</div><div className="mt-1 text-xs text-slate-500">Uma única escala azul: tons mais claros representam valores menores e tons mais intensos, valores maiores.</div></div>
+        <div className="border-b px-5 py-4">
+          <div className="font-bold text-slate-950">Heatmap da trajetória</div>
+          <div className="mt-1 text-sm leading-relaxed text-slate-600">
+            Mostra, em uma única tabela, como cada dimensão da <b>Pesquisa de Integração respondida pelo próprio colaborador</b> evoluiu nos alinhamentos de 15, 45, 75 e 150 dias.
+            Ele serve para localizar rapidamente estabilidade, melhora ou queda por tema — sem substituir a leitura das respostas detalhadas.
+          </div>
+          <details className="mt-3 rounded-xl bg-[#FAFAFD] px-4 py-3 text-sm text-slate-700">
+            <summary className="cursor-pointer font-semibold text-violet-700">Como os valores são calculados e como ler as cores?</summary>
+            <div className="mt-3 space-y-2 leading-relaxed">
+              <p><b>Fonte:</b> Pesquisa de Integração do Colaborador. As respostas originais usam escala de 1 a 5; a opção 0 (“sem opinião”) não entra na média.</p>
+              <p><b>Cálculo:</b> as perguntas são agrupadas em quatro dimensões. O sistema calcula a média das respostas válidas de cada grupo e multiplica por 20 para apresentar o resultado de 0 a 100. Ex.: média 4,0 = 80%.</p>
+              <p><b>Exceção:</b> a pergunta sobre sobrecarga é invertida para que, em todas as dimensões, um percentual maior mantenha o mesmo sentido de percepção mais favorável.</p>
+              <p><b>Cores:</b> o número dentro da célula é sempre o resultado real. A intensidade do azul é apenas um recurso visual; valores mais altos ficam mais intensos. Como estes resultados costumam estar em faixa alta, a escala de cor é concentrada visualmente entre 60 e 100 para facilitar a comparação.</p>
+              <p><b>Variação:</b> compara os dois alinhamentos mais recentes disponíveis daquela dimensão. ↑ indica aumento, ↓ redução e → estabilidade.</p>
+            </div>
+          </details>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead className="bg-slate-50"><tr><th className="px-4 py-3 text-left">Dimensão</th>{[15,45,75,150].map((dia)=><th key={dia} className="px-3 py-3 text-center">{dia}d</th>)}<th className="px-4 py-3 text-center">Variação</th></tr></thead>
@@ -2314,7 +2296,15 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
                 const vals=[1,2,3,4].map((ciclo)=>momentos.find((m)=>m.ciclo===ciclo)?.indices[grupo.chave]??null);
                 const existentes=vals.filter((v):v is number=>v!=null);
                 const delta=existentes.length>=2?existentes[existentes.length-1]-existentes[existentes.length-2]:null;
-                return <tr key={grupo.chave} className="border-t"><td className="px-4 py-3 font-semibold text-slate-800">{grupo.nome}</td>{vals.map((v,i)=><td key={i} className="px-3 py-3 text-center"><UiTooltip><TooltipTrigger asChild><div className="mx-auto rounded-xl px-3 py-2 font-mono font-black tabular-nums" style={heatStyle(v)}>{v==null?'—':Math.round(v)}</div></TooltipTrigger><TooltipContent className="text-xs">{v==null?'Sem resposta neste alinhamento':Math.round(v)+'% · '+quantidadeValidasPesquisa(colaborador.respostas,i+1,grupo.indices)+' resposta(s) válida(s)'}</TooltipContent></UiTooltip></td>)}<td className="px-4 py-3 text-center font-mono font-bold">{delta==null?'—':delta>2?'↑ '+Math.round(delta):delta<-2?'↓ '+Math.abs(Math.round(delta)):'→'}</td></tr>;
+                const variacaoClasses = delta == null
+                  ? 'border-slate-200 bg-slate-50 text-slate-500'
+                  : delta > 2
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                    : delta < -2
+                      ? 'border-rose-200 bg-rose-50 text-rose-800'
+                      : 'border-slate-200 bg-slate-50 text-slate-700';
+                const variacaoTexto = delta == null ? '—' : delta > 2 ? '↑ ' + Math.round(delta) : delta < -2 ? '↓ ' + Math.abs(Math.round(delta)) : '→ estável';
+                return <tr key={grupo.chave} className="border-t transition-colors hover:bg-[#F7F5FF]"><td className="px-4 py-3 font-semibold text-slate-800">{grupo.nome}</td>{vals.map((v,i)=><td key={i} className="px-3 py-3 text-center"><UiTooltip><TooltipTrigger asChild><div className="mx-auto rounded-xl px-3 py-2 font-bold tabular-nums" style={heatStyle(v)}>{v==null?'—':Math.round(v)}</div></TooltipTrigger><TooltipContent className="text-xs">{v==null?'Sem resposta neste alinhamento':Math.round(v)+'% · alinhamento de '+[15,45,75,150][i]+' dias · '+quantidadeValidasPesquisa(colaborador.respostas,i+1,grupo.indices)+' resposta(s) válida(s)'}</TooltipContent></UiTooltip></td>)}<td className="px-4 py-3 text-center"><span className={'inline-flex rounded-full border px-2.5 py-1 text-xs font-bold '+variacaoClasses}>{variacaoTexto}</span></td></tr>;
               })}
             </tbody>
           </table>
@@ -2404,9 +2394,19 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
 }
 
 function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
-  const sinais=sinaisAtencaoUgp(colaborador);
-  if(!sinais.length) return <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-800"><CheckCircle2 className="mr-2 inline h-4 w-4"/>Nenhum sinal objetivo de atenção identificado neste momento.</div>;
-  return <div className="space-y-2">{sinais.map((s)=><div key={s} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><AlertTriangle className="mr-2 inline h-4 w-4"/>{s}</div>)}</div>;
+  // Pendências de formulário já aparecem em Alertas operacionais e na tabela de pendências.
+  // Aqui ficam apenas os demais sinais objetivos, para não duplicar o mesmo aviso na tela.
+  const sinais = sinaisAtencaoUgp(colaborador).filter((s) => !/formul[aá]rio/i.test(s));
+  if (!sinais.length) return null;
+  return (
+    <div className="space-y-2">
+      {sinais.map((s) => (
+        <div key={s} className="border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <AlertTriangle className="mr-2 inline h-4 w-4 text-amber-700" />{s}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 
@@ -3195,8 +3195,6 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
         </TabsList>
 
         <TabsContent value="visao" className="space-y-4">
-          <LeituraIntegradaUgp colaborador={colaborador} />
-
           {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
           <TimelineAlinhamentos colaborador={colaborador}/>
           <RegistrosAlinhamentosUgp colaborador={colaborador}/>
