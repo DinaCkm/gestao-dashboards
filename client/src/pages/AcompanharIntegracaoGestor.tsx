@@ -335,6 +335,68 @@ function trajetoriaPesquisa(respostas: RespostaAcompanhamento[]) {
   });
 }
 
+function parecerTrajetoria(respostas: RespostaAcompanhamento[]) {
+  const pontos = trajetoriaPesquisa(respostas).filter((item) => item.geral != null);
+  if (pontos.length < 2) {
+    return {
+      titulo: 'Ainda não há histórico suficiente',
+      texto: 'É necessário ter pelo menos dois momentos respondidos para interpretar a direção da trajetória.',
+      classes: 'border-slate-200 bg-slate-50 text-slate-700',
+      icon: Info,
+    };
+  }
+
+  const valores = pontos.map((item) => Number(item.geral));
+  const deltas = valores.slice(1).map((valor, index) => valor - valores[index]);
+  const subidas = deltas.filter((delta) => delta >= 3).length;
+  const quedas = deltas.filter((delta) => delta <= -3).length;
+  const maiorQueda = Math.min(...deltas);
+  const variacaoTotal = valores[valores.length - 1] - valores[0];
+
+  if (maiorQueda <= -10) {
+    return {
+      titulo: 'Houve uma queda importante na trajetória',
+      texto: `Em pelo menos um intervalo, a experiência caiu ${Math.abs(Math.round(maiorQueda))} p.p. A recomendação é revisar o contexto desse período e conversar com os envolvidos antes de concluir o motivo.`,
+      classes: 'border-rose-200 bg-rose-50 text-rose-900',
+      icon: ArrowDownRight,
+    };
+  }
+
+  if (subidas > 0 && quedas > 0) {
+    return {
+      titulo: 'A trajetória oscilou ao longo dos ciclos',
+      texto: 'Houve momentos de melhora e de queda. Essa flutuação merece acompanhamento porque indica que a experiência não evoluiu de forma linear.',
+      classes: 'border-amber-200 bg-amber-50 text-amber-900',
+      icon: Activity,
+    };
+  }
+
+  if (variacaoTotal >= 8 && quedas === 0) {
+    return {
+      titulo: 'A trajetória mostra evolução consistente',
+      texto: `Do primeiro ao último momento disponível, a experiência avançou aproximadamente ${Math.round(variacaoTotal)} p.p., sem queda relevante entre os ciclos.`,
+      classes: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+      icon: ArrowUpRight,
+    };
+  }
+
+  if (variacaoTotal <= -8 && subidas === 0) {
+    return {
+      titulo: 'A trajetória mostra perda gradual',
+      texto: `Do primeiro ao último momento disponível, a experiência reduziu aproximadamente ${Math.abs(Math.round(variacaoTotal))} p.p. Vale aprofundar o que mudou no período.`,
+      classes: 'border-rose-200 bg-rose-50 text-rose-900',
+      icon: ArrowDownRight,
+    };
+  }
+
+  return {
+    titulo: 'A trajetória está relativamente estável',
+    texto: 'As variações entre os ciclos são pequenas. Continue observando os próximos momentos para confirmar a tendência.',
+    classes: 'border-blue-200 bg-blue-50 text-blue-900',
+    icon: ArrowRight,
+  };
+}
+
 function mudancasDimensoes(respostas: RespostaAcompanhamento[]) {
   const momentos = evolucaoPesquisaColaborador(respostas);
   if (momentos.length < 2) return [];
