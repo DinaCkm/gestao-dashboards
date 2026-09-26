@@ -3,6 +3,10 @@ export interface RespostaAcompanhamento {
   ciclo: number;
   papel: string;
   c: Array<[number, string]>;
+  // Campos abaixo só são enviados pelo backend na visão UGP/RH.
+  answers?: Record<string, string | string[]>;
+  respondentName?: string;
+  submittedAt?: string;
 }
 
 export const PILARES_ACOMPANHAMENTO = [
