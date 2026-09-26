@@ -31,7 +31,7 @@ const DEMOS = [
     cpf: "77777777777",
     ordem: 9999,
     scenario: "queda" as const,
-    profilePatterns: ["%Último%Usuário%Teste%", "%Ultimo%Usuario%Teste%", "%Usu%rio%Teste%"],
+    profilePatterns: ["%Jade%Marcia%"],
     gestor: "[TESTE] Gestor Cenário Queda",
     gestorEmail: "gestor.queda.demo@example.com",
     anjo: "[TESTE] Anjo Cenário Queda",
@@ -195,6 +195,8 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
       ecoAlunoId: profile?.id || null,
       ecoAlunoNome: profile?.name || null,
       perfilDemoAutorizado: Boolean(profile?.id),
+      perfilDemoFullEcoAutorizado: Boolean(profile?.id),
+      ecoVinculoModo: "manual_demo_autorizado",
       perfilDemoFonte: profile?.name || null,
     },
   };
@@ -414,11 +416,58 @@ export async function ensureDemoIntegrationProcessFixture() {
   return await db.transaction(async (tx) => {
     const resultados = [];
     for (const demo of DEMOS) {
-      const profile = await resolveProfile(tx, demo.profilePatterns, demo.scenario === "queda");
+      const profile = await resolveProfile(tx, demo.profilePatterns, false);
       const result = await ensureDemo(tx, program, demo, profile);
       resultados.push({ tag: demo.tag, ...result });
       console.log("[DemoIntegracao] DEMO_OK", JSON.stringify({ tag: demo.tag, ...result }));
     }
+
+    const jade = await resolveProfile(tx, ["%Jade%Marcia%"], false);
+    if (jade?.id) {
+      const marianas = await tx
+        .select({
+          id: programaIntegracaoProcessos.id,
+          legacyId: programaIntegracaoProcessos.legacyId,
+          nome: programaIntegracaoProcessos.nome,
+          estado: programaIntegracaoProcessos.estado,
+        })
+        .from(programaIntegracaoProcessos)
+        .where(eq(programaIntegracaoProcessos.nome, "Mariana Alves Teixeira (demonstração)"))
+        .limit(5);
+
+      for (const processo of marianas) {
+        const estadoAtual = (processo.estado || {}) as Record<string, any>;
+        const testeAtual = estadoAtual.teste || {};
+        const novoEstado = {
+          ...estadoAtual,
+          teste: {
+            ...testeAtual,
+            demoTag: testeAtual.demoTag || "ugp_demo_mariana_historica",
+            empresaProgramId: Number(testeAtual.empresaProgramId || PROGRAM_ID),
+            empresaProgramNome: testeAtual.empresaProgramNome || program.name,
+            ecoAlunoId: jade.id,
+            ecoAlunoNome: jade.name,
+            perfilDemoAutorizado: true,
+            perfilDemoFullEcoAutorizado: true,
+            ecoVinculoModo: "manual_demo_autorizado",
+            perfilDemoFonte: jade.name,
+          },
+        };
+        await tx
+          .update(programaIntegracaoProcessos)
+          .set({ estado: novoEstado })
+          .where(eq(programaIntegracaoProcessos.id, processo.id));
+
+        console.log("[DemoIntegracao] DEMO_FULL_ECO_LINK_OK", JSON.stringify({
+          processoId: processo.id,
+          legacyId: processo.legacyId,
+          nome: processo.nome,
+          ecoAlunoId: jade.id,
+          ecoAlunoNome: jade.name,
+        }));
+      }
+    }
+
     return { ok: true, demos: resultados };
   });
 }
