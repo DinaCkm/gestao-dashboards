@@ -194,7 +194,7 @@ function EvolucaoPapel({ respostas, papel }: { respostas: RespostaAcompanhamento
                 <div key={String(label)} className="rounded-xl border bg-white p-4">
                   <div className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">{label}</div>
                   <div className="mt-1 text-2xl font-bold tabular-nums">{n == null ? String(value || '—') : String(n) + '%'}</div>
-                  {n != null && <Progress value={n} className="mt-3 h-2" />}
+                  {n != null && <Progress value={n} className="mt-3 h-2 [&>div]:bg-violet-600" />}
                   <div className="mt-3 text-xs leading-relaxed text-slate-500">Pergunta {String(pergunta)} · escala 0/25/50/75/100%.</div>
                 </div>
               );
@@ -313,8 +313,8 @@ export function FormulariosEvolucaoUgp({ respostas }: { respostas: RespostaAcomp
       : 'Evolução — Percepção do Anjo sobre o Colaborador';
 
   return (
-    <div className="space-y-5">
-      <div>
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <h3 className="text-lg font-semibold text-slate-950">Evolução dos formulários</h3>
         <p className="mt-1 max-w-4xl text-sm leading-relaxed text-slate-600">Cada instrumento tem finalidade e escala próprias. Abra a evolução desejada; Pesquisa, Gestor e Anjo permanecem separados para evitar comparação indevida.</p>
       </div>
