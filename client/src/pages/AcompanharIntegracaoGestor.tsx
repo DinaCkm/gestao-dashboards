@@ -604,7 +604,7 @@ function IndiceIntegracaoExplicado({
       peso: 40,
       icon: Users,
       origem: 'Pesquisa de Integração respondida pelo próprio colaborador',
-      momento: ultimaPesquisa ? `último alinhamento disponível: ${diaDoAlinhamento(ultimaPesquisa.ciclo)} dias` : 'sem Pesquisa de Integração disponível',
+      momento: ultimaPesquisa ? `Pesquisa de Integração do alinhamento de ${diaDoAlinhamento(ultimaPesquisa.ciclo)} dias.` : null,
       explicacao: 'Esse número indica o quanto a experiência de integração está sendo percebida de forma positiva pelo próprio colaborador. Ele vem da Pesquisa de Integração respondida após os alinhamentos de 15, 45, 75 e 150 dias. O sistema reúne as respostas sobre cultura e pertencimento, apoio do Anjo e colegas, gestão e trabalho/desenvolvimento e transforma o conjunto em uma escala de 0 a 100.',
     },
     {
@@ -613,7 +613,9 @@ function IndiceIntegracaoExplicado({
       peso: 35,
       icon: UserCheck,
       origem: 'Avaliações preenchidas por Gestor e Anjo',
-      momento: `${ultimoGestor ? 'Gestor com avaliação disponível' : 'Gestor sem avaliação'} · ${ultimoAnjo ? 'Anjo com avaliação disponível' : 'Anjo sem avaliação'}`,
+      momento: ultimoGestor || ultimoAnjo
+        ? `Avaliação considerada: ${[ultimoGestor ? 'Gestor' : null, ultimoAnjo ? 'Anjo' : null].filter(Boolean).join(' e ')} no alinhamento mais recente.`
+        : null,
       explicacao: 'Essa porcentagem indica como Gestor e Anjo estão percebendo a adaptação do colaborador ao trabalho. Ela vem das avaliações preenchidas por eles após os alinhamentos. O sistema considera a avaliação mais recente de cada um e transforma essas respostas em uma escala de 0 a 100. Ela não é a mesma coisa que a Pesquisa respondida pelo colaborador.',
     },
     {
@@ -622,12 +624,17 @@ function IndiceIntegracaoExplicado({
       peso: 25,
       icon: Target,
       origem: 'Avanço registrado no PDI e na Jornada Compliance',
-      momento: colaborador.pdi.total || colaborador.jornadaCompliance.total
-        ? `PDI: ${fmtPct(colaborador.pdi.percentual)} · Compliance: ${fmtPct(colaborador.jornadaCompliance.percentual)}`
-        : 'ainda não há dados de PDI/Compliance para este processo',
+      momento: colaborador.pdi.total && colaborador.jornadaCompliance.total
+        ? `Informações consideradas: PDI em ${fmtPct(colaborador.pdi.percentual)} e Jornada Compliance em ${fmtPct(colaborador.jornadaCompliance.percentual)}.`
+        : colaborador.pdi.total
+          ? `Informação considerada: PDI em ${fmtPct(colaborador.pdi.percentual)}.`
+          : colaborador.jornadaCompliance.total
+            ? `Informação considerada: Jornada Compliance em ${fmtPct(colaborador.jornadaCompliance.percentual)}.`
+            : null,
       explicacao: 'Esse item indica quanto do desenvolvimento previsto para o colaborador já avançou. Ele vem do vínculo com o ECO Líderes e considera o andamento das tarefas do PDI e da Jornada Compliance. Não mede sentimento, satisfação ou perfil comportamental.',
     },
   ];
+  const itensDisponiveis = itens.filter((item) => item.valor != null);
 
   return (
     <Card className="overflow-hidden rounded-3xl border border-violet-200/70 bg-white shadow-sm transition-shadow duration-200 hover:shadow-lg">
@@ -684,11 +691,10 @@ function IndiceIntegracaoExplicado({
         )}
 
         <div className="grid gap-4 xl:grid-cols-3">
-          {itens.map((item) => {
+          {itensDisponiveis.map((item) => {
             const Icon = item.icon;
-            const disponivel = item.valor != null;
             return (
-              <div key={item.titulo} className={`group rounded-2xl border p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${disponivel ? 'bg-white' : 'border-dashed bg-slate-50/70'}`}>
+              <div key={item.titulo} className="group rounded-2xl border bg-white p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Icon className="h-4 w-4" /></span>
@@ -701,16 +707,18 @@ function IndiceIntegracaoExplicado({
                 </div>
 
                 <div className="mt-4 flex items-end justify-between gap-3">
-                  <div className="text-3xl font-black text-slate-950">
-                    {disponivel ? `${Math.round(Number(item.valor))}%` : 'Sem dado'}
-                  </div>
-                  {disponivel ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <Info className="h-5 w-5 text-slate-400" />}
+                  <div className="text-3xl font-black text-slate-950">{Math.round(Number(item.valor))}%</div>
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                 </div>
                 <Progress className="mt-3 h-2" value={Number(item.valor || 0)} />
                 <div className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
-                  <div className="font-bold text-slate-800">De onde veio agora</div>
-                  <div className="mt-1">{item.momento}</div>
-                  <div className="mt-2 font-bold text-slate-800">{item.titulo === 'Desenvolvimento' ? 'O que este item indica' : 'O que este número indica'}</div>
+                  {item.momento && (
+                    <>
+                      <div className="font-bold text-slate-800">Informação considerada neste resultado</div>
+                      <div className="mt-1">{item.momento}</div>
+                    </>
+                  )}
+                  <div className={`${item.momento ? 'mt-3' : ''} font-bold text-slate-800`}>{item.titulo === 'Desenvolvimento' ? 'O que este item indica' : 'O que este número indica'}</div>
                   <div className="mt-1">{item.explicacao}</div>
                 </div>
               </div>
@@ -2030,28 +2038,7 @@ export default function AcompanharIntegracaoGestor() {
                   </CardContent>
                 </Card>
 
-                {isUgpRh && <GuiaLeituraUgp colaborador={colaborador} />}
-
-                {!isUgpRh && <DicasGestorProtegidas colaborador={colaborador} />}
-
-                {alertasColaborador.length > 0 && (
-                  <div className="space-y-2">
-                    {alertasColaborador.map((mensagem) => (
-                      <Alert key={mensagem} className="border-amber-300 bg-amber-50 text-amber-950">
-                        <AlertTriangle className="h-4 w-4 text-amber-700" />
-                        <AlertTitle className="font-bold">Atenção</AlertTitle>
-                        <AlertDescription>{mensagem}</AlertDescription>
-                      </Alert>
-                    ))}
-                  </div>
-                )}
-
                 <div id="resumo-executivo" className="scroll-mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {isUgpRh && indiceAtual && (
-                    <div className="sm:col-span-2 xl:col-span-3">
-                      <IndiceIntegracaoExplicado indiceAtual={indiceAtual} colaborador={colaborador} />
-                    </div>
-                  )}
                   {saudeAtual && (
                     <Card className={saudeAtual.classes}>
                       <CardContent className="pt-5">
@@ -2062,6 +2049,7 @@ export default function AcompanharIntegracaoGestor() {
                     </Card>
                   )}
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Dia do Onboarding</div><div className="mt-2 text-3xl font-bold">{colaborador.dia}<span className="text-base text-muted-foreground">/{colaborador.totalDias}</span></div><Progress className="mt-3" value={(colaborador.dia/colaborador.totalDias)*100} /></CardContent></Card>
+                  {colaborador.jornadaCompliance.total > 0 && (
                   <Card>
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
@@ -2096,6 +2084,8 @@ export default function AcompanharIntegracaoGestor() {
                       <div className="mt-2 text-xs text-muted-foreground">{colaborador.jornadaCompliance.concluidas} de {colaborador.jornadaCompliance.total} atividades</div>
                     </CardContent>
                   </Card>
+                  )}
+                  {colaborador.pdi.total > 0 && (
                   <Card>
                     <CardContent className="pt-5">
                       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase text-muted-foreground">
@@ -2119,13 +2109,38 @@ export default function AcompanharIntegracaoGestor() {
                       </div>
                       <div className="mt-2 text-3xl font-bold">{fmtPct(colaborador.pdi.percentual)}</div>
                       <Progress className="mt-3" value={colaborador.pdi.percentual || 0} />
-                      <div className="mt-2 text-xs text-muted-foreground">{colaborador.pdi.total ? `${colaborador.pdi.concluidas} de ${colaborador.pdi.total} tarefas` : 'Sem tarefas registradas'}</div>
+                      <div className="mt-2 text-xs text-muted-foreground">{colaborador.pdi.concluidas} de {colaborador.pdi.total} tarefas</div>
                     </CardContent>
                   </Card>
+                  )}
                   <Card><CardContent className="pt-5"><div className="text-xs font-semibold uppercase text-muted-foreground">Alinhamentos realizados</div><div className="mt-2 text-3xl font-bold">{colaborador.alinhamentosFeitos}<span className="text-base text-muted-foreground">/{colaborador.alinhamentosTotal}</span></div><Progress className="mt-3" value={(colaborador.alinhamentosFeitos/colaborador.alinhamentosTotal)*100} /></CardContent></Card>
                 </div>
 
-                {isUgpRh && <TrajetoriaIntegracao colaborador={colaborador} />}
+                {isUgpRh && <GuiaLeituraUgp colaborador={colaborador} />}
+
+                {!isUgpRh && <DicasGestorProtegidas colaborador={colaborador} />}
+
+                {alertasColaborador.length > 0 && (
+                  <div className="space-y-2">
+                    {alertasColaborador.map((mensagem) => (
+                      <Alert key={mensagem} className="border-amber-300 bg-amber-50 text-amber-950">
+                        <AlertTriangle className="h-4 w-4 text-amber-700" />
+                        <AlertTitle className="font-bold">Atenção</AlertTitle>
+                        <AlertDescription>{mensagem}</AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                )}
+
+                {isUgpRh && indiceAtual?.indice != null && (
+                  <div id="indice-integracao" className="scroll-mt-6">
+                    <IndiceIntegracaoExplicado indiceAtual={indiceAtual} colaborador={colaborador} />
+                  </div>
+                )}
+
+                {isUgpRh && evolucaoPesquisaColaborador(colaborador.respostas).length > 0 && (
+                  <TrajetoriaIntegracao colaborador={colaborador} />
+                )}
 
                 {isUgpRh && (
                   <PerfilAssessmentResumo
