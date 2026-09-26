@@ -1025,6 +1025,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           })
         : [];
 
+      const documentoAtaRelatorio = acessoUgpRh
+        ? {
+            tipo: String(row.tipo || "Onboarding"),
+            consultora: String(row.consultora || ""),
+          }
+        : null;
+
       const formulariosPendentes: any[] = [];
       const feito = estado.feito && typeof estado.feito === "object" ? estado.feito : {};
 
@@ -1116,6 +1123,23 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         });
       });
 
+      // Para a visão do Gestor, expomos apenas o fato operacional de que o
+      // formulário do Anjo ou do Colaborador está atrasado. Nenhuma resposta,
+      // nota, percentual, dimensão ou conteúdo do formulário é enviado.
+      const avisosGestorEquipe = acessoUgpRh
+        ? []
+        : formulariosPendentes
+            .filter((p) => p.atrasado && (p.papel === "Anjo" || p.papel === "Colaborador"))
+            .map((p) => ({
+              papel: p.papel,
+              ciclo: Number(p.ciclo || 0),
+              formulario: String(p.formulario || ""),
+              prazo: String(p.prazo || ""),
+              mensagem: p.papel === "Anjo"
+                ? `O formulário do Anjo está atrasado no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias. Solicite ao Anjo que conclua o preenchimento.`
+                : `O formulário do colaborador está atrasado no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias. Oriente o colaborador a concluir o preenchimento.`,
+            }));
+
       const ecoId = alunoEcoPorProcesso.get(Number(row.id));
       const perfilEcoId = perfilEcoPorProcesso.get(Number(row.id)) || ecoId;
       const andamento = ecoId ? ecoStatus[String(ecoId)] : null;
@@ -1145,6 +1169,8 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         alinhamentosFeitos,
         alinhamentosTotal: 4,
         registrosAlinhamentos,
+        documentoAtaRelatorio,
+        avisosGestorEquipe,
         processoAcoes: {
           total: totalAcoesProcesso,
           concluidas: acoesConcluidasProcesso,
