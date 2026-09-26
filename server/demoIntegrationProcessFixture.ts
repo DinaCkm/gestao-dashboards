@@ -211,10 +211,10 @@ function pesquisaAnswers(
         { cultura: 3, anjo: 2, gestao: 3, trabalho: 2 },
       ]
     : [
-        { cultura: 3, anjo: 3, gestao: 3, trabalho: 3 },
         { cultura: 4, anjo: 4, gestao: 4, trabalho: 4 },
-        { cultura: 5, anjo: 4, gestao: 5, trabalho: 4 },
-        { cultura: 5, anjo: 3, gestao: 5, trabalho: 4 },
+        { cultura: 4, anjo: 4, gestao: 4, trabalho: 4 },
+        { cultura: 5, anjo: 5, gestao: 5, trabalho: 5 },
+        { cultura: 5, anjo: 5, gestao: 5, trabalho: 5 },
       ];
   const alvo = matriz[Math.max(0, Math.min(3, ciclo - 1))];
   const answers: Record<string, string> = {};
@@ -234,7 +234,7 @@ function avaliacaoAnswers(
 ): Record<string, string> {
   const base = scenario === "queda"
     ? (papel === "Gestor" ? [5,5,4,4][ciclo - 1] : [5,4,3,2][ciclo - 1])
-    : (papel === "Gestor" ? [3,4,4,5][ciclo - 1] : [3,3,4,4][ciclo - 1]);
+    : (papel === "Gestor" ? [4,4,5,5][ciclo - 1] : [4,4,5,5][ciclo - 1]);
   const answers = Object.fromEntries(
     AVAL_KEYS.map((key, index) => [
       key,
@@ -243,7 +243,7 @@ function avaliacaoAnswers(
   ) as Record<string, string>;
   const conceito = scenario === "queda"
     ? ["100%","100%","75%","50%"][ciclo - 1]
-    : ["50%","75%","75%","100%"][ciclo - 1];
+    : ["75%","75%","100%","100%"][ciclo - 1];
   answers.aval_desenvolvimento_conceito = conceito;
   answers.aval_produtividade_conceito = conceito;
   answers.aval_conceito_geral = conceito;
@@ -649,6 +649,7 @@ export async function ensureDemoIntegrationProcessFixture() {
               ...testeAtual,
               archivedDemoAt: "2026-09-26",
               archivedDemoReason: "substituido_por_cenarios_de_apresentacao",
+              archivedDemoPreviousSituacao: String(processo.situacao || "ativo"),
             },
           },
         })
