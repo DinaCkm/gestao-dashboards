@@ -1878,7 +1878,21 @@ programaIntegracaoRouter.put("/api/programa-integracao/processos/:legacyId", req
     const legacyId = sanitizeLegacyId(req.params.legacyId); const p = req.body?.processo;
     if (!legacyId || !p || typeof p !== "object") return res.status(400).json({ error: "Processo inválido." });
     const ordem = Number(req.body?.ordem ?? 0) || 0;
-    const estado = { ...p }; delete estado.resp;
+
+    // Registros da Integração são gerenciados por API própria e não podem ser
+    // apagados por uma ficha do processo que ficou aberta antes de um novo
+    // registro ser criado. O servidor preserva sempre a versão mais recente.
+    const [estadoRows] = (await connection.execute(
+      `SELECT estado FROM programa_integracao_processos WHERE legacyId=? LIMIT 1`,
+      [legacyId],
+    )) as any;
+    const estadoAtualServidor = estadoRows?.[0] ? asJson<Record<string, any>>(estadoRows[0].estado, {}) : {};
+    const estado = { ...p };
+    if (Array.isArray(estadoAtualServidor.registrosIntegracao)) {
+      estado.registrosIntegracao = estadoAtualServidor.registrosIntegracao;
+    }
+    delete estado.resp;
+
     const values = [legacyId, null, ordem, String(p.nome || "Sem nome"), p.cpf || null, p.nasc || null, p.email || null, p.emailCorporativo || null, p.tel || null, p.cargo || null, p.unidade || null, p.tipo || "Onboarding", p.inicio || todayIso(), p.part || "Presencial", p.situacao || "ativo", p.gestor || null, p.gestorEmail || null, p.gestorTel || null, p.anjo || null, p.anjoEmail || null, p.consultora || null, p.mentorId || null, p.ugp || null, p.horarios || null, p.statusPdi || null, p.pendencias || null, p.statusCursos || null, p.consideracoes || null, p.notas || null, p.cor || null, JSON.stringify(estado)];
     await connection.execute(
       `INSERT INTO programa_integracao_processos (legacyId,alunoId,ordem,nome,cpf,nasc,email,emailCorporativo,tel,cargo,unidade,tipo,inicio,participacao,situacao,gestor,gestorEmail,gestorTel,anjo,anjoEmail,consultora,mentorLegacyId,ugp,horarios,statusPdi,pendencias,statusCursos,consideracoes,notas,cor,estado)

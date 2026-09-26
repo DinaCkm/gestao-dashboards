@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ENV } from "./_core/env";
 
@@ -143,4 +143,12 @@ export async function storageDownloadBuffer(
     });
   }
   return Buffer.concat(chunks);
+}
+
+export async function storageDelete(relKey: string): Promise<void> {
+  const { bucketName } = requireR2Env();
+  const client = getR2Client();
+  const key = normalizeKey(relKey);
+
+  await client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
 }

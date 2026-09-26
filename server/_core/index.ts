@@ -11,6 +11,7 @@ import { programaIntegracaoImportRouter } from "../programaIntegracaoImportRoute
 import { programaIntegracaoPendingRouter } from "../programaIntegracaoPendingRoutes";
 import { programaIntegracaoRestoreRouter } from "../programaIntegracaoRestoreRoutes";
 import { programaIntegracaoPeopleRouter } from "../programaIntegracaoPeopleRoutes";
+import { programaIntegracaoRegistrosRouter } from "../programaIntegracaoRegistrosRoutes";
 import { programaIntegracaoAnjoRouter } from "../programaIntegracaoAnjoRoutes";
 import { programaIntegracaoRouter } from "../programaIntegracaoRoutes";
 import { registerProgramaIntegracaoPages } from "../programaIntegracaoPages";
@@ -80,6 +81,7 @@ async function startServer() {
   app.use(programaIntegracaoPendingRouter);
   app.use(programaIntegracaoRestoreRouter);
   app.use(programaIntegracaoPeopleRouter);
+  app.use(programaIntegracaoRegistrosRouter);
   app.use(programaIntegracaoAnjoRouter);
   app.use(programaIntegracaoRouter);
   registerProgramaIntegracaoPages(app);

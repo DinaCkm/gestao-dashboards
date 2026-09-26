@@ -21,3 +21,5 @@ export { AtasRelatoriosGeral } from './AtasRelatoriosGeral';
 export { AtaRelatorioPainel } from './AtaRelatorioPainel';
 export { DetalheProcessoReal } from './DetalheProcessoReal';
 export { default as DetalheProcesso } from './DetalheProcesso';
+
+export { RegistrosIntegracaoPainel } from './RegistrosIntegracaoPainel';

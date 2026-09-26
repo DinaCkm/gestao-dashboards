@@ -38,6 +38,7 @@ import { BemTesteProcesso } from './BemTesteProcesso';
 import { RespostasProcessoAgrupadas } from './RespostasProcessoAgrupadas';
 import { ObservacoesAcao } from './ObservacoesAcao';
 import { ControlesEspeciaisAcao } from './ControlesEspeciaisAcao';
+import { RegistrosIntegracaoPainel } from './RegistrosIntegracaoPainel';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -687,6 +688,8 @@ export function DetalheProcessoReal({
           </div>
         </div>
       </details>
+
+      {processo.id && <RegistrosIntegracaoPainel legacyId={String(processo.id)} />}
 
       <div id="integracao-bem-teste" className="scroll-mt-6">
         <BemTesteProcesso processo={processo} config={config} onSalvarProcesso={salvar} />
