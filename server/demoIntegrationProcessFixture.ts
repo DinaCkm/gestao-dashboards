@@ -1,23 +1,43 @@
-import { and, eq } from "drizzle-orm";
-import { programs } from "../drizzle/schema";
+import { and, desc, eq, like, or } from "drizzle-orm";
+import { alunos, discResultados, programs } from "../drizzle/schema";
 import {
   programaIntegracaoProcessos,
   programaIntegracaoRespostas,
 } from "../drizzle/programaIntegracaoSchema";
 import { getDb } from "./db";
 
-const DEMO = {
-  tag: "ugp_demo_marina_20260925",
-  legacyId: "demo-integracao-ugp-20260925",
-  name: "[TESTE] Marina Demo Integração",
-  email: "marina.demo.integracao@example.com",
-  cpf: "88888888888",
-  programId: 17,
-  gestor: "[TESTE] Rafael Gestor Demo",
-  gestorEmail: "rafael.gestor.demo@example.com",
-  anjo: "[TESTE] Camila Anjo Demo",
-  anjoEmail: "camila.anjo.demo@example.com",
-};
+const PROGRAM_ID = 17;
+
+const DEMOS = [
+  {
+    tag: "ugp_demo_marina_20260925",
+    legacyId: "demo-integracao-ugp-20260925",
+    name: "[TESTE] Marina Demo Integração",
+    email: "marina.demo.integracao@example.com",
+    cpf: "88888888888",
+    ordem: 9998,
+    scenario: "evolucao" as const,
+    profilePatterns: ["%Jade%Marcia%"],
+    gestor: "[TESTE] Rafael Gestor Demo",
+    gestorEmail: "rafael.gestor.demo@example.com",
+    anjo: "[TESTE] Camila Anjo Demo",
+    anjoEmail: "camila.anjo.demo@example.com",
+  },
+  {
+    tag: "ugp_demo_queda_20260925",
+    legacyId: "demo-integracao-queda-20260925",
+    name: "[TESTE] Cenário Queda de Integração",
+    email: "cenario.queda.integracao@example.com",
+    cpf: "77777777777",
+    ordem: 9999,
+    scenario: "queda" as const,
+    profilePatterns: ["%Último%Usuário%Teste%", "%Ultimo%Usuario%Teste%", "%Usu%rio%Teste%"],
+    gestor: "[TESTE] Gestor Cenário Queda",
+    gestorEmail: "gestor.queda.demo@example.com",
+    anjo: "[TESTE] Anjo Cenário Queda",
+    anjoEmail: "anjo.queda.demo@example.com",
+  },
+] as const;
 
 const PESQUISA_KEYS = [
   "pesquisa_cultura_valores","pesquisa_pertencimento","pesquisa_dia_a_dia","pesquisa_orgulho","pesquisa_importancia_atividades",
@@ -36,19 +56,76 @@ const AVAL_KEYS = [
 ];
 
 const CYCLES = [
-  { ciclo: 1, data: "2026-05-13", pesquisa: "pos1-08", gestor: "pos1-09", anjo: "pos1-10", p: 3, g: 3, a: 3 },
-  { ciclo: 2, data: "2026-06-12", pesquisa: "pos2-08", gestor: "pos2-09", anjo: "pos2-10", p: 4, g: 4, a: 3 },
-  { ciclo: 3, data: "2026-07-12", pesquisa: "pos3-09", gestor: "pos3-10", anjo: "pos3-11", p: 4, g: 4, a: 4 },
-  { ciclo: 4, data: "2026-09-25", pesquisa: "pos4-07", gestor: "pos4-08", anjo: "pos4-09", p: 4, g: 5, a: 4 },
-];
+  { ciclo: 1, data: "2026-05-13", pesquisa: "pos1-08", gestor: "pos1-09", anjo: "pos1-10" },
+  { ciclo: 2, data: "2026-06-12", pesquisa: "pos2-08", gestor: "pos2-09", anjo: "pos2-10" },
+  { ciclo: 3, data: "2026-07-12", pesquisa: "pos3-09", gestor: "pos3-10", anjo: "pos3-11" },
+  { ciclo: 4, data: "2026-09-25", pesquisa: "pos4-07", gestor: "pos4-08", anjo: "pos4-09" },
+] as const;
 
-function answersFor(keys: string[], base: number, ciclo: number) {
-  return Object.fromEntries(
-    keys.map((key, index) => [
+const DIMENSOES = {
+  cultura: PESQUISA_KEYS.slice(0, 5),
+  anjo: PESQUISA_KEYS.slice(5, 10),
+  gestao: PESQUISA_KEYS.slice(10, 13),
+  trabalho: PESQUISA_KEYS.slice(13, 20),
+};
+
+function pesquisaAnswers(
+  scenario: "evolucao" | "queda",
+  ciclo: number,
+): Record<string, string> {
+  const matriz = scenario === "evolucao"
+    ? [
+        { cultura: 3, anjo: 3, gestao: 3, trabalho: 3 },
+        { cultura: 4, anjo: 4, gestao: 4, trabalho: 4 },
+        { cultura: 5, anjo: 4, gestao: 5, trabalho: 4 },
+        { cultura: 5, anjo: 3, gestao: 5, trabalho: 4 },
+      ]
+    : [
+        { cultura: 5, anjo: 5, gestao: 5, trabalho: 5 },
+        { cultura: 5, anjo: 4, gestao: 5, trabalho: 4 },
+        { cultura: 4, anjo: 3, gestao: 4, trabalho: 3 },
+        { cultura: 3, anjo: 2, gestao: 3, trabalho: 2 },
+      ];
+  const alvo = matriz[Math.max(0, Math.min(3, ciclo - 1))];
+  const answers: Record<string, string> = {};
+  (Object.keys(DIMENSOES) as Array<keyof typeof DIMENSOES>).forEach((dimensao) => {
+    const nota = alvo[dimensao];
+    DIMENSOES[dimensao].forEach((key) => {
+      answers[key] = String(key === "pesquisa_sobrecarga" ? 6 - nota : nota);
+    });
+  });
+  return answers;
+}
+
+function avaliacaoAnswers(
+  scenario: "evolucao" | "queda",
+  ciclo: number,
+  papel: "Gestor" | "Anjo",
+): Record<string, string> {
+  const base = scenario === "evolucao"
+    ? (papel === "Gestor" ? [3,4,4,5][ciclo - 1] : [3,3,4,4][ciclo - 1])
+    : (papel === "Gestor" ? [5,5,4,4][ciclo - 1] : [5,4,3,2][ciclo - 1]);
+  const answers = Object.fromEntries(
+    AVAL_KEYS.map((key, index) => [
       key,
-      String(Math.min(5, Math.max(1, base + ((index + ciclo) % 7 === 0 ? 1 : 0)))),
+      String(Math.max(1, Math.min(5, base + ((index + ciclo) % 11 === 0 ? 1 : 0)))),
     ]),
-  );
+  ) as Record<string, string>;
+  const conceito = scenario === "queda"
+    ? ["100%","100%","75%","50%"][ciclo - 1]
+    : ["50%","75%","75%","100%"][ciclo - 1];
+  answers.aval_desenvolvimento_conceito = conceito;
+  answers.aval_produtividade_conceito = conceito;
+  answers.aval_conceito_geral = conceito;
+  answers.aval_potencialidades = papel === "Gestor"
+    ? "Organização, proatividade e boa interação com a equipe."
+    : "Cooperação e abertura para orientações.";
+  answers.aval_menos_favoraveis = scenario === "queda"
+    ? "Foi percebida redução de segurança e participação ao longo dos últimos ciclos."
+    : "Pode ampliar segurança em decisões de maior complexidade.";
+  answers.aval_orientacoes_desenvolvimento =
+    "Aprofundar priorização, comunicação de avanços e tomada de decisão.";
+  return answers;
 }
 
 function averageOf(answers: Record<string, any>) {
@@ -60,6 +137,193 @@ function averageOf(answers: Record<string, any>) {
     : 0;
 }
 
+async function resolveProfile(tx: any, patterns: readonly string[]) {
+  const condicoes = patterns.map((pattern) => like(alunos.name, pattern));
+  const candidatos = await tx
+    .select({ id: alunos.id, name: alunos.name, programId: alunos.programId })
+    .from(alunos)
+    .where(or(...condicoes))
+    .limit(20);
+
+  for (const candidato of candidatos) {
+    const [disc] = await tx
+      .select({ id: discResultados.id })
+      .from(discResultados)
+      .where(eq(discResultados.alunoId, candidato.id))
+      .orderBy(desc(discResultados.completedAt), desc(discResultados.id))
+      .limit(1);
+    if (disc) return candidato;
+  }
+  return null;
+}
+
+async function ensureDemo(tx: any, program: { id: number; name: string }, demo: typeof DEMOS[number], profile: any | null) {
+  const feito: Record<string, any> = {};
+  for (const cycle of CYCLES) {
+    for (const itemId of [cycle.pesquisa, cycle.gestor, cycle.anjo]) {
+      feito[itemId] = { s: "ok", d: cycle.data };
+    }
+  }
+
+  const estado = {
+    feito,
+    alin: Object.fromEntries(
+      CYCLES.map((cycle) => [
+        String(cycle.ciclo),
+        { realizado: true, dataReal: cycle.data, data: cycle.data, hora: "09:00" },
+      ]),
+    ),
+    bem: {},
+    teste: {
+      demoTag: demo.tag,
+      demoScenario: demo.scenario,
+      empresaProgramId: program.id,
+      empresaProgramNome: program.name,
+      ecoAlunoId: profile?.id || null,
+      ecoAlunoNome: profile?.name || null,
+      perfilDemoAutorizado: Boolean(profile?.id),
+      perfilDemoFonte: profile?.name || null,
+    },
+  };
+
+  let [processo] = await tx
+    .select({ id: programaIntegracaoProcessos.id, estado: programaIntegracaoProcessos.estado })
+    .from(programaIntegracaoProcessos)
+    .where(eq(programaIntegracaoProcessos.legacyId, demo.legacyId))
+    .limit(1);
+
+  if (!processo) {
+    await tx.insert(programaIntegracaoProcessos).values({
+      legacyId: demo.legacyId,
+      ordem: demo.ordem,
+      nome: demo.name,
+      cpf: demo.cpf,
+      email: demo.email,
+      emailCorporativo: demo.email,
+      tel: "(63) 90000-0002",
+      cargo: demo.scenario === "queda" ? "Analista de Relacionamento" : "Analista de Projetos",
+      unidade: "Unidade de Desenvolvimento [TESTE]",
+      tipo: "Onboarding",
+      inicio: "2026-04-29",
+      participacao: "Presencial",
+      situacao: "ativo",
+      gestor: demo.gestor,
+      gestorEmail: demo.gestorEmail,
+      gestorTel: "(63) 90000-0001",
+      anjo: demo.anjo,
+      anjoEmail: demo.anjoEmail,
+      consultora: "[TESTE] Mentora Demo",
+      ugp: "[TESTE] UGP Integração SEBRAE TO",
+      horarios: "09:00\n14:00\n16:00",
+      statusPdi: "",
+      pendencias: "",
+      statusCursos: "",
+      consideracoes: "Processo fictício criado exclusivamente para demonstração da Visão UGP/RH.",
+      notas: "Não representa colaborador real.",
+      cor: demo.scenario === "queda" ? "#B45309" : "#6D4BA3",
+      estado,
+    });
+    [processo] = await tx
+      .select({ id: programaIntegracaoProcessos.id, estado: programaIntegracaoProcessos.estado })
+      .from(programaIntegracaoProcessos)
+      .where(eq(programaIntegracaoProcessos.legacyId, demo.legacyId))
+      .limit(1);
+    if (!processo) throw new Error(`[DemoIntegracao] ${demo.tag} create failed`);
+  } else {
+    const currentState = (processo.estado || {}) as Record<string, any>;
+    const teste = currentState.teste || {};
+    if (teste.demoTag !== demo.tag || Number(teste.empresaProgramId) !== PROGRAM_ID) {
+      throw new Error(`[DemoIntegracao] ${demo.tag} abort: existing legacyId is not expected fixture`);
+    }
+    await tx
+      .update(programaIntegracaoProcessos)
+      .set({ estado, nome: demo.name, gestor: demo.gestor, gestorEmail: demo.gestorEmail, anjo: demo.anjo, anjoEmail: demo.anjoEmail })
+      .where(eq(programaIntegracaoProcessos.id, processo.id));
+  }
+
+  const processoId = Number(processo.id);
+
+  const ensureResponse = async (
+    cycle: typeof CYCLES[number],
+    formKey: string,
+    papel: string,
+    itemId: string,
+    respondentName: string,
+    respondentEmail: string,
+    answers: Record<string, any>,
+  ) => {
+    const dedupeKey = `${demo.tag}:${formKey}:${papel.toLowerCase()}:${cycle.ciclo}`;
+    const [existing] = await tx
+      .select({ id: programaIntegracaoRespostas.id })
+      .from(programaIntegracaoRespostas)
+      .where(eq(programaIntegracaoRespostas.dedupeKey, dedupeKey))
+      .limit(1);
+    if (existing) return;
+
+    await tx.insert(programaIntegracaoRespostas).values({
+      processoId,
+      legacyRid: dedupeKey,
+      protocolo: `DEMO-${demo.scenario === "queda" ? "Q" : "M"}-${formKey === "pesquisa" ? "PES" : papel === "Gestor" ? "GES" : "ANJ"}-${cycle.ciclo}`,
+      dedupeKey,
+      formKey,
+      ciclo: cycle.ciclo,
+      papel,
+      itemId,
+      formVersion: 1,
+      statusVinculo: "vinculada",
+      statusResposta: "valido",
+      nomeColaborador: demo.name,
+      unidade: "Unidade de Desenvolvimento [TESTE]",
+      dataInicio: "2026-04-29",
+      emailColaborador: demo.email,
+      nomeOrig: demo.name,
+      avaliador: respondentName,
+      respondentName,
+      respondentEmail,
+      source: "admin",
+      media: averageOf(answers).toFixed(2),
+      alertas: [],
+      answers,
+      quandoOriginal: cycle.data,
+      emOriginal: cycle.data,
+      submittedAt: new Date(`${cycle.data}T12:00:00.000Z`),
+    });
+  };
+
+  for (const cycle of CYCLES) {
+    await ensureResponse(
+      cycle, "pesquisa", "Colaborador", cycle.pesquisa, demo.name, demo.email,
+      pesquisaAnswers(demo.scenario, cycle.ciclo),
+    );
+    for (const role of ["Gestor", "Anjo"] as const) {
+      await ensureResponse(
+        cycle, "aval", role, role === "Gestor" ? cycle.gestor : cycle.anjo,
+        role === "Gestor" ? demo.gestor : demo.anjo,
+        role === "Gestor" ? demo.gestorEmail : demo.anjoEmail,
+        avaliacaoAnswers(demo.scenario, cycle.ciclo, role),
+      );
+    }
+  }
+
+  const respostas = await tx
+    .select({ id: programaIntegracaoRespostas.id })
+    .from(programaIntegracaoRespostas)
+    .where(and(
+      eq(programaIntegracaoRespostas.processoId, processoId),
+      eq(programaIntegracaoRespostas.statusVinculo, "vinculada"),
+    ));
+  if (respostas.length < 12) {
+    throw new Error(`[DemoIntegracao] ${demo.tag} verify expected 12 responses, found ${respostas.length}`);
+  }
+
+  return {
+    processoId,
+    respostas: respostas.length,
+    profileId: profile?.id || null,
+    profileName: profile?.name || null,
+  };
+}
+
 export async function ensureDemoIntegrationProcessFixture() {
   const db = await getDb();
   if (!db) return { ok: false, reason: "db_unavailable" as const };
@@ -67,237 +331,22 @@ export async function ensureDemoIntegrationProcessFixture() {
   const [program] = await db
     .select({ id: programs.id, name: programs.name })
     .from(programs)
-    .where(and(eq(programs.id, DEMO.programId), eq(programs.isActive, 1)))
+    .where(and(eq(programs.id, PROGRAM_ID), eq(programs.isActive, 1)))
     .limit(1);
 
   if (!program) {
-    console.log("[DemoIntegracao] MARINA_SKIP program 17 unavailable");
+    console.log("[DemoIntegracao] DEMOS_SKIP program 17 unavailable");
     return { ok: true, skipped: true as const };
   }
 
   return await db.transaction(async (tx) => {
-    const feito: Record<string, any> = {};
-    for (const cycle of CYCLES) {
-      for (const itemId of [cycle.pesquisa, cycle.gestor, cycle.anjo]) {
-        feito[itemId] = { s: "ok", d: cycle.data };
-      }
+    const resultados = [];
+    for (const demo of DEMOS) {
+      const profile = await resolveProfile(tx, demo.profilePatterns);
+      const result = await ensureDemo(tx, program, demo, profile);
+      resultados.push({ tag: demo.tag, ...result });
+      console.log("[DemoIntegracao] DEMO_OK", JSON.stringify({ tag: demo.tag, ...result }));
     }
-
-    const estado = {
-      feito,
-      alin: Object.fromEntries(
-        CYCLES.map((cycle) => [
-          String(cycle.ciclo),
-          {
-            realizado: true,
-            dataReal: cycle.data,
-            data: cycle.data,
-            hora: "09:00",
-          },
-        ]),
-      ),
-      bem: {},
-      teste: {
-        demoTag: DEMO.tag,
-        empresaProgramId: program.id,
-        empresaProgramNome: program.name,
-      },
-    };
-
-    let [processo] = await tx
-      .select({
-        id: programaIntegracaoProcessos.id,
-        estado: programaIntegracaoProcessos.estado,
-      })
-      .from(programaIntegracaoProcessos)
-      .where(eq(programaIntegracaoProcessos.legacyId, DEMO.legacyId))
-      .limit(1);
-
-    if (!processo) {
-      await tx.insert(programaIntegracaoProcessos).values({
-        legacyId: DEMO.legacyId,
-        ordem: 9999,
-        nome: DEMO.name,
-        cpf: DEMO.cpf,
-        email: DEMO.email,
-        emailCorporativo: DEMO.email,
-        tel: "(63) 90000-0002",
-        cargo: "Analista de Projetos",
-        unidade: "Unidade de Desenvolvimento [TESTE]",
-        tipo: "Onboarding",
-        inicio: "2026-04-29",
-        participacao: "Presencial",
-        situacao: "ativo",
-        gestor: DEMO.gestor,
-        gestorEmail: DEMO.gestorEmail,
-        gestorTel: "(63) 90000-0001",
-        anjo: DEMO.anjo,
-        anjoEmail: DEMO.anjoEmail,
-        consultora: "[TESTE] Mentora Demo",
-        ugp: "[TESTE] UGP Integração SEBRAE TO",
-        horarios: "09:00\n14:00\n16:00",
-        statusPdi: "",
-        pendencias: "",
-        statusCursos: "",
-        consideracoes:
-          "Processo fictício criado exclusivamente para demonstração da Visão UGP/RH.",
-        notas: "Não representa colaborador real.",
-        cor: "#6D4BA3",
-        estado,
-      });
-
-      [processo] = await tx
-        .select({
-          id: programaIntegracaoProcessos.id,
-          estado: programaIntegracaoProcessos.estado,
-        })
-        .from(programaIntegracaoProcessos)
-        .where(eq(programaIntegracaoProcessos.legacyId, DEMO.legacyId))
-        .limit(1);
-
-      if (!processo) throw new Error("[DemoIntegracao] MARINA_CREATE failed");
-
-      console.log(
-        "[DemoIntegracao] MARINA_CREATED",
-        JSON.stringify({ processoId: processo.id, programId: program.id }),
-      );
-    } else {
-      const currentState = (processo.estado || {}) as Record<string, any>;
-      const teste = currentState.teste || {};
-      if (
-        teste.demoTag !== DEMO.tag ||
-        Number(teste.empresaProgramId) !== DEMO.programId
-      ) {
-        throw new Error(
-          "[DemoIntegracao] MARINA_ABORT existing legacyId is not the expected fixture",
-        );
-      }
-    }
-
-    const processoId = processo.id;
-
-    const ensureResponse = async (
-      cycle: (typeof CYCLES)[number],
-      formKey: string,
-      papel: string,
-      itemId: string,
-      respondentName: string,
-      respondentEmail: string,
-      answers: Record<string, any>,
-    ) => {
-      const dedupeKey = `${DEMO.tag}:${formKey}:${papel.toLowerCase()}:${cycle.ciclo}`;
-      const [existing] = await tx
-        .select({ id: programaIntegracaoRespostas.id })
-        .from(programaIntegracaoRespostas)
-        .where(eq(programaIntegracaoRespostas.dedupeKey, dedupeKey))
-        .limit(1);
-
-      if (existing) return;
-
-      await tx.insert(programaIntegracaoRespostas).values({
-        processoId,
-        legacyRid: dedupeKey,
-        protocolo: `DEMO-${formKey === "pesquisa" ? "PES" : papel === "Gestor" ? "GES" : "ANJ"}-${cycle.ciclo}`,
-        dedupeKey,
-        formKey,
-        ciclo: cycle.ciclo,
-        papel,
-        itemId,
-        formVersion: 1,
-        statusVinculo: "vinculada",
-        statusResposta: "valido",
-        nomeColaborador: DEMO.name,
-        unidade: "Unidade de Desenvolvimento [TESTE]",
-        dataInicio: "2026-04-29",
-        emailColaborador: DEMO.email,
-        nomeOrig: DEMO.name,
-        avaliador: respondentName,
-        respondentName,
-        respondentEmail,
-        source: "admin",
-        media: averageOf(answers).toFixed(2),
-        alertas: [],
-        answers,
-        quandoOriginal: cycle.data,
-        emOriginal: cycle.data,
-        submittedAt: new Date(`${cycle.data}T12:00:00.000Z`),
-      });
-    };
-
-    for (const cycle of CYCLES) {
-      await ensureResponse(
-        cycle,
-        "pesquisa",
-        "Colaborador",
-        cycle.pesquisa,
-        DEMO.name,
-        DEMO.email,
-        answersFor(PESQUISA_KEYS, cycle.p, cycle.ciclo),
-      );
-
-      for (const role of ["Gestor", "Anjo"] as const) {
-        const isGestor = role === "Gestor";
-        const answers = answersFor(
-          AVAL_KEYS,
-          isGestor ? cycle.g : cycle.a,
-          cycle.ciclo,
-        );
-        const conceito =
-          cycle.ciclo === 1
-            ? "50%"
-            : cycle.ciclo === 4 && isGestor
-              ? "100%"
-              : "75%";
-
-        answers.aval_desenvolvimento_conceito = conceito;
-        answers.aval_produtividade_conceito = conceito;
-        answers.aval_conceito_geral = conceito;
-        answers.aval_potencialidades = isGestor
-          ? "Organização, proatividade e boa interação com a equipe."
-          : "Cooperação e abertura para orientações.";
-        answers.aval_menos_favoraveis = isGestor
-          ? "Ampliar segurança em decisões complexas."
-          : "Ainda busca validação em alguns momentos.";
-        answers.aval_orientacoes_desenvolvimento =
-          "Aprofundar priorização, comunicação de avanços e tomada de decisão.";
-
-        await ensureResponse(
-          cycle,
-          "aval",
-          role,
-          isGestor ? cycle.gestor : cycle.anjo,
-          isGestor ? DEMO.gestor : DEMO.anjo,
-          isGestor ? DEMO.gestorEmail : DEMO.anjoEmail,
-          answers,
-        );
-      }
-    }
-
-    const respostas = await tx
-      .select({ id: programaIntegracaoRespostas.id })
-      .from(programaIntegracaoRespostas)
-      .where(
-        and(
-          eq(programaIntegracaoRespostas.processoId, processoId),
-          eq(programaIntegracaoRespostas.statusVinculo, "vinculada"),
-        ),
-      );
-
-    if (respostas.length < 12) {
-      throw new Error(
-        `[DemoIntegracao] MARINA_VERIFY expected 12 responses, found ${respostas.length}`,
-      );
-    }
-
-    console.log(
-      "[DemoIntegracao] MARINA_OK",
-      JSON.stringify({
-        processoId,
-        programId: program.id,
-        respostas: respostas.length,
-      }),
-    );
-
-    return { ok: true, processoId, respostas: respostas.length };
+    return { ok: true, demos: resultados };
   });
 }
