@@ -131,6 +131,7 @@ interface ColaboradorAcompanhamento {
     ciclo: number;
     formulario: string;
     prazo: string;
+    atrasado: boolean;
     mensagem: string;
   }>;
   processoAcoes: {
@@ -291,8 +292,11 @@ function indiceIntegracao(colaborador: ColaboradorAcompanhamento) {
 }
 
 function saudeProcesso(colaborador: ColaboradorAcompanhamento) {
-  const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
-  const pendentes = colaborador.formulariosPendentes.length;
+  const avisosEquipe = colaborador.avisosGestorEquipe || [];
+  const atrasadosProprios = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
+  const atrasadosEquipe = avisosEquipe.filter((p) => p.atrasado).length;
+  const atrasados = atrasadosProprios + atrasadosEquipe;
+  const pendentes = colaborador.formulariosPendentes.length + avisosEquipe.length;
   const alinhamentosEsperados = colaborador.dia >= 150 ? 4 : colaborador.dia >= 75 ? 3 : colaborador.dia >= 45 ? 2 : colaborador.dia >= 15 ? 1 : 0;
   const alinhamentosEmAberto = Math.max(0, alinhamentosEsperados - colaborador.alinhamentosFeitos);
 
@@ -1659,7 +1663,7 @@ function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompan
           Evolução — Colaborador (Pesquisa de Integração)
         </CardTitle>
         <CardDescription>
-          Evolução da percepção do próprio colaborador ao longo dos alinhamentos.
+          Percepção do próprio colaborador ao longo dos alinhamentos, calculada a partir da Pesquisa de Integração.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -1669,6 +1673,20 @@ function EvolucaoPesquisaColaborador({ respostas }: { respostas: RespostaAcompan
           </div>
         ) : (
           <>
+            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-sm leading-relaxed text-slate-700">
+              <div className="font-bold text-slate-950">De onde vêm estes percentuais?</div>
+              <p className="mt-1">
+                O colaborador responde à Pesquisa de Integração em escala de 1 a 5. As perguntas são agrupadas por tema,
+                o sistema calcula a média de cada grupo e multiplica o resultado por 20 apenas para apresentar a leitura
+                em uma escala de 0 a 100. Assim, média 3,0 = 60%, média 4,0 = 80% e média 5,0 = 100%.
+              </p>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
+                <div><b>Cultura e pertencimento:</b> valores, pertencimento, rotina, orgulho e importância das atividades.</div>
+                <div><b>Anjo e colegas:</b> apoio do Anjo, conforto, confiança, ajuda e vínculos com colegas.</div>
+                <div><b>Gestão:</b> clareza do gestor, transparência da comunicação e incentivo à aprendizagem.</div>
+                <div><b>Trabalho e desenvolvimento:</b> satisfação, carga percebida, uso do conhecimento, busca de apoio, melhorias, cooperação e progresso no PDI.</div>
+              </div>
+            </div>
             <div className="h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
@@ -1751,7 +1769,9 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
           <BarChart3 className="h-5 w-5 text-violet-600" />
           {titulo}
         </CardTitle>
-        <CardDescription>Médias por pilar ao longo dos feedbacks registrados.</CardDescription>
+        <CardDescription>
+          Percepção do {papel} sobre o colaborador. Os seis pilares usam perguntas respondidas em escala de 1 a 5.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         {!momentos.length ? (
@@ -1760,6 +1780,13 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
           </div>
         ) : (
           <>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 text-sm leading-relaxed text-slate-700">
+              <div className="font-bold text-slate-950">Como ler esta avaliação?</div>
+              <p className="mt-1">
+                As linhas do gráfico e da tabela mostram a média das respostas do {papel} em seis pilares.
+                Cada pergunta desses pilares é respondida na escala original de 1 a 5; por isso, valores como 3,00, 4,17 ou 5,00 são médias nessa mesma escala.
+              </p>
+            </div>
             <div className="h-[310px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
@@ -1807,22 +1834,34 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
               </table>
             </div>
 
-            {papel === 'Gestor' && ultimo && (
-              <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  ['Desenvolvimento', ultimo.desenvolvimento],
-                  ['Produtividade', ultimo.produtividade],
-                  ['Conceito Geral', ultimo.conceitoGeral],
-                ].map(([label, value]) => {
-                  const n = percentualNumero(value);
-                  return (
-                    <div key={label} className="rounded-xl border bg-muted/20 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-                      <div className="mt-1 text-2xl font-bold">{n == null ? value : `${n}%`}</div>
-                      {n != null && <Progress value={n} className="mt-3 h-2" />}
-                    </div>
-                  );
-                })}
+            {ultimo && (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-4 text-sm leading-relaxed text-slate-700">
+                  <div className="font-bold text-slate-950">Indicadores complementares do formulário</div>
+                  <p className="mt-1">
+                    Desenvolvimento, Produtividade e Conceito Geral são perguntas específicas do mesmo formulário respondido pelo {papel}.
+                    Elas não usam a escala de 1 a 5 dos pilares acima: cada uma é escolhida diretamente entre 0%, 25%, 50%, 75% ou 100%.
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {[
+                    ['Desenvolvimento', ultimo.desenvolvimento, 38],
+                    ['Produtividade', ultimo.produtividade, 39],
+                    ['Conceito Geral', ultimo.conceitoGeral, 40],
+                  ].map(([label, value, pergunta]) => {
+                    const n = percentualNumero(String(value));
+                    return (
+                      <div key={String(label)} className="rounded-xl border bg-muted/20 p-4">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+                        <div className="mt-1 text-2xl font-bold">{n == null ? value : `${n}%`}</div>
+                        {n != null && <Progress value={n} className="mt-3 h-2" />}
+                        <div className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                          Pergunta {pergunta} · respondida pelo {papel} · {ultimo.label} · escala 0/25/50/75/100%.
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </>
@@ -2914,8 +2953,17 @@ function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhame
           </div>
           <div className="mt-4 space-y-2">
             {avisosEquipe.map((aviso) => (
-              <div key={aviso.papel + '-' + aviso.ciclo} className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
-                <div className="font-black">{aviso.papel === 'Anjo' ? 'Formulário do Anjo em atraso' : 'Formulário do colaborador em atraso'}</div>
+              <div
+                key={aviso.papel + '-' + aviso.ciclo}
+                className={`rounded-xl border p-3 text-sm ${aviso.atrasado
+                  ? 'border-rose-200 bg-rose-50 text-rose-900'
+                  : 'border-blue-200 bg-blue-50 text-blue-900'}`}
+              >
+                <div className="font-black">
+                  {aviso.atrasado
+                    ? (aviso.papel === 'Anjo' ? 'Formulário do Anjo em atraso' : 'Formulário do colaborador em atraso')
+                    : (aviso.papel === 'Anjo' ? 'Formulário do Anjo aguardando resposta' : 'Formulário do colaborador aguardando resposta')}
+                </div>
                 <div className="mt-1 leading-relaxed">{aviso.mensagem}</div>
                 {aviso.prazo && <div className="mt-1 text-xs opacity-75">Prazo: {dataBr(aviso.prazo)}</div>}
               </div>

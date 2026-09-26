@@ -1123,21 +1123,27 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         });
       });
 
-      // Para a visão do Gestor, expomos apenas o fato operacional de que o
-      // formulário do Anjo ou do Colaborador está atrasado. Nenhuma resposta,
-      // nota, percentual, dimensão ou conteúdo do formulário é enviado.
+      // Para a visão do Gestor, expomos apenas o estado operacional das
+      // pendências do Anjo e do Colaborador (papel, alinhamento, prazo e se
+      // está atrasado). Nenhuma resposta, nota, percentual, dimensão ou
+      // conteúdo do formulário é enviado.
       const avisosGestorEquipe = acessoUgpRh
         ? []
         : formulariosPendentes
-            .filter((p) => p.atrasado && (p.papel === "Anjo" || p.papel === "Colaborador"))
+            .filter((p) => p.papel === "Anjo" || p.papel === "Colaborador")
             .map((p) => ({
               papel: p.papel,
               ciclo: Number(p.ciclo || 0),
               formulario: String(p.formulario || ""),
               prazo: String(p.prazo || ""),
-              mensagem: p.papel === "Anjo"
-                ? `O formulário do Anjo está atrasado no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias. Solicite ao Anjo que conclua o preenchimento.`
-                : `O formulário do colaborador está atrasado no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias. Oriente o colaborador a concluir o preenchimento.`,
+              atrasado: Boolean(p.atrasado),
+              mensagem: p.atrasado
+                ? (p.papel === "Anjo"
+                    ? `O formulário do Anjo está atrasado no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias. Solicite ao Anjo que conclua o preenchimento.`
+                    : `O formulário do colaborador está atrasado no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias. Oriente o colaborador a concluir o preenchimento.`)
+                : (p.papel === "Anjo"
+                    ? `O formulário do Anjo está pendente no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias e ainda está dentro do prazo. Relembre o Anjo sobre a necessidade de conclusão.`
+                    : `O formulário do colaborador está pendente no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias e ainda está dentro do prazo. Oriente o colaborador a concluir o preenchimento.`),
             }));
 
       const ecoId = alunoEcoPorProcesso.get(Number(row.id));
