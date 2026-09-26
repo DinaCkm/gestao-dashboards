@@ -35,7 +35,7 @@ const FORMULARIOS: Array<{
 }> = [
   { key: 'controle', nome: 'Controle do Programa de Integração', descricao: 'Cadastro do novo colaborador, preenchido pela UGP. Registrar aqui já marca o cadastro como preenchido — e completa os dados do processo.', papel: 'UGP', rota: ROTAS_PUBLICAS_FORMULARIOS.controle, questoes: 11 },
   { key: 'bem', nome: 'Bem Acolhido em Nossa Unidade', descricao: 'Preparação da chegada, respondida pelo gestor. Traz o Anjo escolhido e o que foi planejado para os primeiros 15 e 60 dias.', papel: 'Gestor', rota: ROTAS_PUBLICAS_FORMULARIOS.bem, questoes: 11 },
-  { key: 'pesquisa', nome: 'Pesquisa de Integração', descricao: 'Respondida pelo colaborador depois de cada alinhamento. O período informado define a qual ciclo a resposta pertence.', papel: 'Colaborador', rota: ROTAS_PUBLICAS_FORMULARIOS.pesquisa, questoes: 23 },
+  { key: 'pesquisa', nome: 'Pesquisa de Integração', descricao: 'Respondida pelo colaborador depois de cada alinhamento. O período informado define a qual alinhamento a resposta pertence.', papel: 'Colaborador', rota: ROTAS_PUBLICAS_FORMULARIOS.pesquisa, questoes: 23 },
   { key: 'aval', nome: 'Avaliação do Programa de Integração', descricao: 'Respondida pelo gestor e pelo Anjo depois de cada alinhamento. É o formulário que libera o relatório de evolução dos e-mails de agendamento.', papel: 'Gestor / Anjo', rota: ROTAS_PUBLICAS_FORMULARIOS.aval, questoes: 42 },
   { key: 'pdi', nome: 'Acompanhamento do PDI', descricao: 'Preenchido pela CKM e enviado à UGP no 45º e no 150º dia. Atualiza o status do PDI e da Jornada Compliance usados nos e-mails.', papel: 'CKM', rota: ROTAS_PUBLICAS_FORMULARIOS.pdi, questoes: 15 },
 ];
@@ -413,7 +413,7 @@ export function FormulariosIntegracaoAdmin({
             </div>
             <div className="overflow-x-auto rounded-lg border">
               <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-xs text-muted-foreground"><tr><th className="p-3 text-left">Protocolo</th><th className="p-3 text-left">Colaborador</th><th className="p-3 text-left">Formulário</th><th className="p-3 text-left">Ciclo</th><th className="p-3 text-left">Papel</th><th className="p-3 text-left">Data</th><th className="p-3 text-left">Detalhe</th></tr></thead>
+                <thead className="bg-muted/50 text-xs text-muted-foreground"><tr><th className="p-3 text-left">Protocolo</th><th className="p-3 text-left">Colaborador</th><th className="p-3 text-left">Formulário</th><th className="p-3 text-left">Alinhamento</th><th className="p-3 text-left">Papel</th><th className="p-3 text-left">Data</th><th className="p-3 text-left">Detalhe</th></tr></thead>
                 <tbody className="divide-y">
                   {respostasFiltradas.map((item) => {
                     const r = item.resposta; const chave = `${item.processoId}|${r.rid}`; const detalhes = Object.entries(r.answers || {});
@@ -455,7 +455,7 @@ export function FormulariosIntegracaoAdmin({
                         </select>
                       </label>
                       <label className="space-y-1 text-xs text-muted-foreground">
-                        <span>Quando já existe resposta do mesmo formulário/ciclo/papel</span>
+                        <span>Quando já existe resposta do mesmo formulário/alinhamento/papel</span>
                         <select className="h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground" disabled={busy} value={dupPolicy} onChange={(event) => salvarConfigFormulario(form.key, { dupPolicy: event.target.value as DupPolicy })}>
                           <option value="bloquear">Bloquear e enviar para revisão</option>
                           <option value="substituir">Substituir, preservando a anterior no histórico</option>

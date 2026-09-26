@@ -27,9 +27,9 @@ interface RegistrarRespostasProps {
 const FORM_DESCRIPTION: Record<FormImportKey, string> = {
   controle: 'Cadastro do novo colaborador, preenchido pela UGP. Registrar aqui marca o cadastro como preenchido e pode completar dados ainda vazios do processo.',
   bem: 'Preparação da chegada, respondida pelo gestor. Traz o Anjo escolhido e o planejamento dos primeiros dias.',
-  pesquisa: 'Respondida pelo colaborador depois de cada alinhamento. O período informado define a qual ciclo a resposta pertence.',
+  pesquisa: 'Respondida pelo colaborador depois de cada alinhamento. O período informado define a qual alinhamento a resposta pertence.',
   aval: 'Respondida pelo gestor e pelo Anjo depois de cada alinhamento. É a base das avaliações usadas no acompanhamento da evolução.',
-  pdi: 'Preenchido pela CKM/UGP nos ciclos previstos. Atualiza os indicadores de execução do PDI e da Jornada Compliance.',
+  pdi: 'Preenchido pela CKM/UGP nos alinhamentos previstos. Atualiza os indicadores de execução do PDI e da Jornada Compliance.',
 };
 
 const FORM_ORDER = Object.keys(IMPORT_FORM_DEFINITIONS) as FormImportKey[];

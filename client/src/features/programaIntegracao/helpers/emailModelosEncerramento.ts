@@ -36,7 +36,7 @@ export const MODELOS_EMAIL_ENCERRAMENTO_INTEGRACAO: Record<string, ModeloEmailIn
     assunto: '[Onboarding] Encerramento do Onboarding de {{COLABORADOR}}',
     corpo:
       'Olá {{GESTOR_1}}, tudo bem?\n\n' +
-      'Com a conversa de **{{DATA_ALIN_4}}**, encerramos oficialmente o ciclo de acompanhamento do Onboarding de **{{COLABORADOR}}**.\n\n' +
+      'Com a conversa de **{{DATA_ALIN_4}}**, encerramos oficialmente o período de acompanhamento do Onboarding de **{{COLABORADOR}}**.\n\n' +
       'Queremos agradecer de verdade pela parceria nesses 150 dias: pela disponibilidade nas quatro conversas, pelo cuidado na recepção e pelo acompanhamento do desenvolvimento do colaborador. Nada disso funciona sem a gestão junto.\n\n' +
       '**Segue em anexo a Ata de Encerramento.**\n\n' +
       '**Status final do PDI**\n{{STATUS_PDI}}\n\n' +
@@ -56,7 +56,7 @@ export const MODELOS_EMAIL_ENCERRAMENTO_INTEGRACAO: Record<string, ModeloEmailIn
     assunto: '[Onboarding] Encerramento do Processo – {{COLABORADOR}}',
     corpo:
       'Olá, tudo bem?\n\n' +
-      'Concluímos o **4º e último alinhamento** do Onboarding de **{{COLABORADOR}}** em **{{DATA_ALIN_4}}**, encerrando o ciclo de acompanhamento. Seguem os materiais finais.\n\n' +
+      'Concluímos o **4º e último alinhamento** do Onboarding de **{{COLABORADOR}}** em **{{DATA_ALIN_4}}**, encerrando o período de acompanhamento. Seguem os materiais finais.\n\n' +
       '**Documentos em anexo**\n' +
       '- Ata final de encerramento;\n' +
       '- Relatório completo final;\n' +

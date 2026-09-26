@@ -192,7 +192,7 @@ export function PendenciasFormularioAdmin({ pendentes, processos, nomeFormulario
               <div>
                 <p className="font-semibold">{item?.protocolo || 'Sem protocolo'} · {item?.nomeColaborador || 'Pessoa não identificada'}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {nomeFormulario(item?.formKey)}{item?.cycle ? ` · ciclo ${item.cycle}` : ''}{item?.role ? ` · ${item.role}` : ''}
+                  {nomeFormulario(item?.formKey)}{item?.cycle ? ` · ${item.cycle}º alinhamento` : ''}{item?.role ? ` · ${item.role}` : ''}
                 </p>
               </div>
               <Badge variant="outline">{item?.motivo || 'revisão necessária'}</Badge>
