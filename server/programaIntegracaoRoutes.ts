@@ -860,7 +860,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       ? alunosEco
       : alunosEco.filter((a: any) => Number(a.programId || 0) === empresaId);
     const ecoIds: number[] = [];
+    const assessmentEcoIds: number[] = [];
     const alunoEcoPorProcesso = new Map<number, number>();
+    const perfilEcoPorProcesso = new Map<number, number>();
 
     for (const row of permitidos) {
       const pid = Number(row.id);
@@ -880,10 +882,38 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       if (ecoId > 0 && (user.role === "admin" || alunosEcoPermitidos.some((a: any) => Number(a.id) === ecoId))) {
         ecoIds.push(ecoId);
         alunoEcoPorProcesso.set(pid, ecoId);
+        assessmentEcoIds.push(ecoId);
+        perfilEcoPorProcesso.set(pid, ecoId);
+      }
+
+      // Exceção estritamente de demonstração: permite usar um perfil fake/teste
+      // previamente autorizado apenas para DISC/Assessment. Não concede acesso
+      // a PDI, Compliance ou outros dados desse perfil e não altera o escopo
+      // normal da empresa.
+      const estadoDemo = asJson<Record<string, any>>(row.estado, {});
+      const testeDemo = estadoDemo?.teste || {};
+      const perfilDemoId = Number(testeDemo?.ecoAlunoId || 0);
+      const perfilDemoAutorizado =
+        acessoUgpRh &&
+        Boolean(testeDemo?.perfilDemoAutorizado) &&
+        String(testeDemo?.demoTag || "").startsWith("ugp_demo_") &&
+        user.role !== "admin" &&
+        Number(testeDemo?.empresaProgramId || 0) === empresaId;
+
+      // Admin não depende de empresaId; para ele basta a marca explícita de demo.
+      const perfilDemoAdminAutorizado =
+        user.role === "admin" &&
+        acessoUgpRh &&
+        Boolean(testeDemo?.perfilDemoAutorizado) &&
+        String(testeDemo?.demoTag || "").startsWith("ugp_demo_");
+
+      if (perfilDemoId > 0 && (perfilDemoAutorizado || perfilDemoAdminAutorizado)) {
+        assessmentEcoIds.push(perfilDemoId);
+        perfilEcoPorProcesso.set(pid, perfilDemoId);
       }
     }
     const ecoStatus = await statusEcoLiderAlunos(connection, ecoIds);
-    const perfisAssessment = await perfisAssessmentAlunos(connection, ecoIds);
+    const perfisAssessment = await perfisAssessmentAlunos(connection, assessmentEcoIds);
     const hoje = todayIso();
 
     const colaboradores = permitidos.map((row: any) => {
@@ -972,8 +1002,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       });
 
       const ecoId = alunoEcoPorProcesso.get(Number(row.id));
+      const perfilEcoId = perfilEcoPorProcesso.get(Number(row.id)) || ecoId;
       const andamento = ecoId ? ecoStatus[String(ecoId)] : null;
-      const perfilAssessment = ecoId ? perfisAssessment[String(ecoId)] : null;
+      const perfilAssessment = perfilEcoId ? perfisAssessment[String(perfilEcoId)] : null;
       const rawRespostas = respostasRawPorProcesso.get(Number(row.id)) || [];
       const ultimaRespostaBem = rawRespostas
         .filter((item: any) => item.formKey === "bem")
@@ -1010,7 +1041,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         // Gestor e suas pendências de formulário.
         perfilAssessment: acessoUgpRh
           ? {
-              alunoEcoId: ecoId || null,
+              alunoEcoId: perfilEcoId || null,
               disc: perfilAssessment?.disc || null,
               autoavaliacaoClusters: perfilAssessment?.autoavaliacaoClusters || [],
               expectativaGestor,
