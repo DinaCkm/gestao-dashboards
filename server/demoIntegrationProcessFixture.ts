@@ -277,17 +277,22 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     answers: Record<string, any>,
   ) => {
     const dedupeKey = `${demo.tag}:${formKey}:${papel.toLowerCase()}:${cycle.ciclo}`;
+    const protocolo = `DEMO-${demo.scenario === "queda" ? "Q" : "M"}-${formKey === "pesquisa" ? "PES" : papel === "Gestor" ? "GES" : "ANJ"}-${cycle.ciclo}`;
     const [existing] = await tx
       .select({ id: programaIntegracaoRespostas.id })
       .from(programaIntegracaoRespostas)
-      .where(eq(programaIntegracaoRespostas.dedupeKey, dedupeKey))
+      .where(or(
+        eq(programaIntegracaoRespostas.dedupeKey, dedupeKey),
+        eq(programaIntegracaoRespostas.legacyRid, dedupeKey),
+        eq(programaIntegracaoRespostas.protocolo, protocolo),
+      ))
       .limit(1);
     if (existing) return;
 
     await tx.insert(programaIntegracaoRespostas).values({
       processoId,
       legacyRid: dedupeKey,
-      protocolo: `DEMO-${demo.scenario === "queda" ? "Q" : "M"}-${formKey === "pesquisa" ? "PES" : papel === "Gestor" ? "GES" : "ANJ"}-${cycle.ciclo}`,
+      protocolo,
       dedupeKey,
       formKey,
       ciclo: cycle.ciclo,
@@ -315,12 +320,14 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
   };
 
   const bemDedupeKey = `${demo.tag}:bem:gestor:0`;
+  const bemProtocolo = `DEMO-${demo.scenario === "queda" ? "Q" : "M"}-BEM`;
   const [bemExistente] = await tx
     .select({ id: programaIntegracaoRespostas.id })
     .from(programaIntegracaoRespostas)
     .where(or(
       eq(programaIntegracaoRespostas.dedupeKey, bemDedupeKey),
       eq(programaIntegracaoRespostas.legacyRid, bemDedupeKey),
+      eq(programaIntegracaoRespostas.protocolo, bemProtocolo),
     ))
     .limit(1);
 
@@ -349,7 +356,7 @@ async function ensureDemo(tx: any, program: { id: number; name: string }, demo: 
     await tx.insert(programaIntegracaoRespostas).values({
       processoId,
       legacyRid: bemDedupeKey,
-      protocolo: `DEMO-${demo.scenario === "queda" ? "Q" : "M"}-BEM`,
+      protocolo: bemProtocolo,
       dedupeKey: bemDedupeKey,
       formKey: "bem",
       ciclo: 0,
