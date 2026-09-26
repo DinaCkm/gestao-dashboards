@@ -61,10 +61,10 @@ export const MODELOS_EMAIL_POS1_INTEGRACAO: Record<string, ModeloEmailIntegracao
       '**Você pode escolher como prefere acompanhar**\n' +
       '- Se quiser acompanhar a evolução do processo, as ações do PDI e a situação dos formulários/preenchimentos, acesse o EcoLíder:\n{{LINK_ECOLIDER}}\n' +
       '- Se o seu acesso já estiver habilitado, entre com o seu **e-mail e CPF**. Se ainda não estiver habilitado, ou se tiver qualquer dúvida para entrar, é só nos avisar que ajudamos.\n' +
-      '- Se preferir apenas responder o formulário deste ciclo, não precisa entrar na plataforma: você pode usar diretamente o link abaixo.\n\n' +
-      'Nos próximos ciclos vamos revisitar esse plano com você — se em algum momento achar que faz sentido ajustar alguma ação, é só nos dizer.\n\n' +
+      '- Se preferir apenas responder o formulário deste alinhamento, não precisa entrar na plataforma: você pode usar diretamente o link abaixo.\n\n' +
+      'Nos próximos alinhamentos vamos revisitar esse plano com você — se em algum momento achar que faz sentido ajustar alguma ação, é só nos dizer.\n\n' +
       '---\n\n' +
-      '**Um pedido rápido — formulário obrigatório**\nPara registrarmos sua avaliação deste primeiro ciclo, o preenchimento do **Formulário de Avaliação do Programa de Integração** é obrigatório. Você pode responder diretamente por este link, **sem precisar fazer login**:\n{{LINK_AVAL_PROGRAMA}}\n\n' +
+      '**Um pedido rápido — formulário obrigatório**\nPara registrarmos sua avaliação deste primeiro alinhamento, o preenchimento do **Formulário de Avaliação do Programa de Integração** é obrigatório. Você pode responder diretamente por este link, **sem precisar fazer login**:\n{{LINK_AVAL_PROGRAMA}}\n\n' +
       'São poucos minutos, e é com base nele que conseguimos preparar o relatório de evolução do colaborador para as próximas conversas.\n\n' +
       'Obrigado pela parceria!' + ASS,
     anexo: 'Ata do 1º Alinhamento',
@@ -84,7 +84,7 @@ export const MODELOS_EMAIL_POS1_INTEGRACAO: Record<string, ModeloEmailIntegracao
       '- **Avaliação de Potencial consolidada** — em anexo;\n' +
       '- **PDI de Integração** — publicado na plataforma do Ecossistema do B.E.M.;\n' +
       '- **Formulário Bem Acolhido em Nossa Unidade** — {{STATUS_PDI}}.\n\n' +
-      'O colaborador já recebeu as orientações de acesso ao PDI e a gestão foi comunicada para acompanhamento. Os formulários deste ciclo foram encaminhados ao colaborador, ao gestor e ao Anjo.\n\n' +
+      'O colaborador já recebeu as orientações de acesso ao PDI e a gestão foi comunicada para acompanhamento. Os formulários deste alinhamento foram encaminhados ao colaborador, ao gestor e ao Anjo.\n\n' +
       '**Acompanhamento pela UGP**\n' +
       'Como responsável pela UGP deste processo, você também pode acompanhar os processos disponibilizados para o seu perfil diretamente pelo EcoLíder:\n{{LINK_ECOLIDER}}\n' +
       'Se o seu acesso estiver habilitado, entre com o seu **e-mail e CPF cadastrado**. Pela plataforma, é possível acompanhar a evolução dos colaboradores, a situação dos formulários e os preenchimentos que ainda estiverem pendentes.\n' +
