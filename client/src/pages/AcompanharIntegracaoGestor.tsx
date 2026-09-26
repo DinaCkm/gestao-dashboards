@@ -964,15 +964,26 @@ function PerfilAssessmentResumo({
               <div className="mt-1 text-sm text-slate-600">
                 {disc?.perfilSecundario ? `Perfil secundário: ${disc.perfilSecundario}` : 'Sem perfil secundário disponível'}
               </div>
-              <div className="mt-4 grid grid-cols-4 gap-2">
+              <div className="mt-4 space-y-3">
                 {[
-                  ['D', disc?.scoreD], ['I', disc?.scoreI], ['S', disc?.scoreS], ['C', disc?.scoreC],
-                ].map(([label, value]) => (
-                  <div key={String(label)} className="rounded-xl border bg-slate-50 p-2 text-center transition-all hover:bg-white hover:shadow-sm">
-                    <div className="text-[10px] font-black text-slate-500">{label}</div>
-                    <div className="text-lg font-black">{value == null ? '—' : Math.round(Number(value))}</div>
-                  </div>
-                ))}
+                  ['D', 'Dominância', disc?.scoreD],
+                  ['I', 'Influência', disc?.scoreI],
+                  ['S', 'Estabilidade', disc?.scoreS],
+                  ['C', 'Conformidade', disc?.scoreC],
+                ].map(([label, nome, value]) => {
+                  const numero = value == null ? null : Number(value);
+                  return (
+                    <div key={String(label)}>
+                      <div className="flex items-center justify-between gap-3 text-xs">
+                        <span className="font-semibold text-slate-700">{label} · {nome}</span>
+                        <span className="font-mono font-black tabular-nums text-slate-950">{numero == null ? '—' : Math.round(numero)}</span>
+                      </div>
+                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full bg-violet-600 transition-all" style={{ width: Math.max(0, Math.min(100, numero || 0)) + '%' }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
               <p className="mt-4 text-xs leading-relaxed text-slate-500">
                 O DISC descreve tendências de comportamento. Ele serve como contexto para a conversa e não como diagnóstico ou nota de desempenho.
@@ -995,6 +1006,48 @@ function PerfilAssessmentResumo({
                 ))}
               </div>
             </div>
+
+          {perfil?.expectativaGestor?.temRespostaBem && perfil.expectativaGestor.clusters?.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="font-black text-slate-900">Autoavaliação × prioridade do Gestor (BEM)</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    A distância entre os pontos ajuda a enxergar onde a percepção do colaborador e a prioridade registrada pelo Gestor estão mais próximas ou mais distantes.
+                  </div>
+                </div>
+                <div className="flex gap-3 text-[11px] font-semibold">
+                  <span className="text-blue-700">● Colaborador</span>
+                  <span className="text-teal-700">◆ Gestor/BEM</span>
+                </div>
+              </div>
+              <div className="mt-5 space-y-4">
+                {perfil.expectativaGestor.clusters.map((item) => {
+                  const auto = item.perfilColaborador == null ? null : Number(item.perfilColaborador);
+                  const gestor = Number(item.prioridade || 0);
+                  return (
+                    <div key={item.key}>
+                      <div className="text-xs font-semibold text-slate-700">{item.nome}</div>
+                      <div className="relative mt-2 h-8">
+                        <div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100" />
+                        {auto != null && (
+                          <span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white bg-blue-600 shadow" style={{ left: Math.max(0,Math.min(100,auto)) + '%' }} />
+                        )}
+                        <span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white bg-teal-700 shadow" style={{ left: Math.max(0,Math.min(100,gestor)) + '%' }} />
+                        {auto != null && (
+                          <span className="absolute top-4 h-1 bg-slate-300" style={{ left: Math.min(auto,gestor) + '%', width: Math.abs(auto-gestor) + '%' }} />
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-4 text-[11px]">
+                        <span className="font-bold text-blue-700">Autoavaliação: {auto == null ? '—' : Math.round(auto) + '%'}</span>
+                        <span className="font-bold text-teal-700">Prioridade BEM: {Math.round(gestor)}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           </div>
         )}
       </CardContent>
