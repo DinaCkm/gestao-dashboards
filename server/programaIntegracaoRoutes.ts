@@ -937,21 +937,42 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         }
       }
 
-      // Status de PDI/Compliance só consulta IDs que também pertencem ao escopo da empresa.
-      if (ecoId > 0 && (user.role === "admin" || alunosEcoPermitidos.some((a: any) => Number(a.id) === ecoId))) {
+      const estadoDemo = asJson<Record<string, any>>(row.estado, {});
+      const testeDemo = estadoDemo?.teste || {};
+      const perfilDemoId = Number(testeDemo?.ecoAlunoId || 0);
+
+      // Vínculo ECO Líder completo em processos fictícios explicitamente autorizados.
+      // Esta exceção existe apenas para demonstrações marcadas com ugp_demo_* e nunca
+      // amplia o escopo de processos reais. Permite trazer PDI, Compliance e Assessment
+      // do perfil fake/teste escolhido para compor a demonstração.
+      const demoFullEcoAutorizado =
+        Boolean(testeDemo?.perfilDemoFullEcoAutorizado) &&
+        Boolean(testeDemo?.perfilDemoAutorizado) &&
+        String(testeDemo?.demoTag || "").startsWith("ugp_demo_") &&
+        perfilDemoId > 0 &&
+        (
+          user.role === "admin" ||
+          (acessoUgpRh && Number(testeDemo?.empresaProgramId || 0) === empresaId)
+        );
+
+      if (demoFullEcoAutorizado) {
+        ecoIds.push(perfilDemoId);
+        alunoEcoPorProcesso.set(pid, perfilDemoId);
+        assessmentEcoIds.push(perfilDemoId);
+        perfilEcoPorProcesso.set(pid, perfilDemoId);
+      }
+
+      // Status normal de PDI/Compliance só consulta IDs que pertencem ao escopo da empresa.
+      if (!demoFullEcoAutorizado && ecoId > 0 && (user.role === "admin" || alunosEcoPermitidos.some((a: any) => Number(a.id) === ecoId))) {
         ecoIds.push(ecoId);
         alunoEcoPorProcesso.set(pid, ecoId);
         assessmentEcoIds.push(ecoId);
         perfilEcoPorProcesso.set(pid, ecoId);
       }
 
-      // Exceção estritamente de demonstração: permite usar um perfil fake/teste
-      // previamente autorizado apenas para DISC/Assessment. Não concede acesso
-      // a PDI, Compliance ou outros dados desse perfil e não altera o escopo
-      // normal da empresa.
-      const estadoDemo = asJson<Record<string, any>>(row.estado, {});
-      const testeDemo = estadoDemo?.teste || {};
-      const perfilDemoId = Number(testeDemo?.ecoAlunoId || 0);
+      // Exceção estritamente de demonstração para DISC/Assessment quando não houver
+      // vínculo ECO completo autorizado.
+
       const perfilDemoAutorizado =
         acessoUgpRh &&
         Boolean(testeDemo?.perfilDemoAutorizado) &&
