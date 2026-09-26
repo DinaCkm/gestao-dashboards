@@ -1332,8 +1332,8 @@ async function statusEcoLiderAlunos(connection: any, alunoIds: number[]) {
   const saida: Record<string, any> = {};
   for (const alunoId of ids) {
     saida[String(alunoId)] = {
-      pdi: { total: 0, concluidas: 0, percentual: null, statusTexto: "Ainda sem tarefas registradas no PDI." },
-      jornadaCompliance: { total: 0, concluidas: 0, percentual: null, statusTexto: "Jornada Compliance: ainda sem atividades registradas." },
+      pdi: { total: 0, concluidas: 0, percentual: null, statusTexto: "Ainda sem tarefas registradas no PDI.", itens: [] },
+      jornadaCompliance: { total: 0, concluidas: 0, percentual: null, statusTexto: "Jornada Compliance: ainda sem atividades registradas.", itens: [] },
       acessouEcoLider: false,
       ultimaEntradaEcoLider: null,
       assessmentPotencialConcluido: false,
@@ -1423,7 +1423,40 @@ async function statusEcoLiderAlunos(connection: any, alunoIds: number[]) {
       statusTexto: total > 0
         ? `${concluidas} de ${total} tarefas concluídas`
         : "Ainda sem tarefas registradas no PDI.",
+      itens: [],
     };
+  }
+
+  const [tarefasDetalheRows] = (await connection.execute(
+    `SELECT
+       ms.alunoId,ms.id,ms.taskStatus,ms.taskDeadline,ms.customTaskTitle,ms.customTaskDescription,ms.taskId,
+       tl.nome AS bibliotecaNome
+     FROM mentoring_sessions ms
+     LEFT JOIN task_library tl ON tl.id=ms.taskId
+     WHERE ms.alunoId IN (${placeholders})
+       AND COALESCE(ms.cancelada,0)=0
+       AND (
+         ms.taskMode='livre'
+         OR ms.taskStatus IS NULL
+         OR ms.taskStatus<>'sem_tarefa'
+         OR (ms.customTaskTitle IS NOT NULL AND TRIM(ms.customTaskTitle)<>'')
+       )
+     ORDER BY ms.alunoId,COALESCE(ms.taskDeadline,'9999-12-31'),ms.id`,
+    ids,
+  )) as any;
+
+  for (const row of tarefasDetalheRows || []) {
+    const alunoId = Number(row.alunoId || 0);
+    const status = saida[String(alunoId)];
+    if (!status) continue;
+    status.pdi.itens.push({
+      id: Number(row.id),
+      titulo: String(row.customTaskTitle || row.bibliotecaNome || "Tarefa de desenvolvimento"),
+      descricao: String(row.customTaskDescription || ""),
+      status: String(row.taskStatus || "nao_entregue"),
+      prazo: row.taskDeadline ? sqlDateToIso(row.taskDeadline) : null,
+      concluida: ["validada","concluida"].includes(String(row.taskStatus || "")),
+    });
   }
 
   const [complianceRows] = (await connection.execute(
@@ -1459,7 +1492,37 @@ async function statusEcoLiderAlunos(connection: any, alunoIds: number[]) {
       statusTexto: percentual != null
         ? `Jornada Compliance: ${percentual}%`
         : "Jornada Compliance: ainda sem atividades registradas.",
+      itens: [],
     };
+  }
+
+  const [complianceDetalheRows] = (await connection.execute(
+    `SELECT
+       aca.alunoId,ac.id,ac.titulo,cc.titulo AS cursoTitulo,
+       COALESCE(aap.status,'nao_iniciada') AS status
+     FROM aluno_curso_atribuido aca
+     INNER JOIN atividades_curso ac ON ac.cursoId=aca.cursoId AND ac.isActive=1
+     LEFT JOIN cursos_competencias cc ON cc.id=aca.cursoId
+     LEFT JOIN aluno_atividade_progresso aap
+       ON aap.alunoId=aca.alunoId
+      AND aap.cursoAtribuidoId=aca.id
+      AND aap.atividadeId=ac.id
+     WHERE aca.alunoId IN (${placeholders})
+     ORDER BY aca.alunoId,cc.titulo,ac.id`,
+    ids,
+  )) as any;
+
+  for (const row of complianceDetalheRows || []) {
+    const alunoId = Number(row.alunoId || 0);
+    const statusAluno = saida[String(alunoId)];
+    if (!statusAluno) continue;
+    statusAluno.jornadaCompliance.itens.push({
+      id: Number(row.id),
+      titulo: String(row.titulo || "Atividade de Compliance"),
+      curso: String(row.cursoTitulo || ""),
+      status: String(row.status || "nao_iniciada"),
+      concluida: ["aprovada","concluida"].includes(String(row.status || "")),
+    });
   }
 
   return saida;

@@ -5,6 +5,9 @@ export interface ColaboradorAcompanhamentoPdf {
   nome: string;
   cargo: string;
   unidade: string;
+  inicio?: string;
+  gestor?: string;
+  anjo?: string;
   dia: number;
   totalDias: number;
   alinhamentosFeitos: number;
@@ -28,6 +31,114 @@ function mediaAdaptacaoAtual(respostas: RespostaAcompanhamento[], papel: 'Gestor
   const momentos = evolucaoPorPapel(respostas, papel);
   const media = momentos[momentos.length - 1]?.mediaGeral;
   return media == null ? null : media * 20;
+}
+
+function mediaPesquisaAtual(respostas: RespostaAcompanhamento[]): number | null {
+  const momentos = evolucaoPesquisaColaborador(respostas);
+  const ultimo = momentos[momentos.length - 1];
+  if (!ultimo) return null;
+  return mediaNumeros(Object.values(ultimo.indices));
+}
+
+function indiceExecutivoPdf(colaborador: ColaboradorAcompanhamentoPdf) {
+  const experiencia = mediaPesquisaAtual(colaborador.respostas);
+  const gestor = mediaAdaptacaoAtual(colaborador.respostas, 'Gestor');
+  const anjo = mediaAdaptacaoAtual(colaborador.respostas, 'Anjo');
+  const adaptacao = mediaNumeros([gestor, anjo]);
+  const desenvolvimento = mediaNumeros([colaborador.pdi.percentual, colaborador.jornadaCompliance.percentual]);
+  const componentes = [
+    { nome: 'Experiência', valor: experiencia, peso: 40, cor: [37,99,235] as [number,number,number] },
+    { nome: 'Adaptação', valor: adaptacao, peso: 35, cor: [15,118,110] as [number,number,number] },
+    { nome: 'Desenvolvimento', valor: desenvolvimento, peso: 25, cor: [124,58,237] as [number,number,number] },
+  ].filter((x) => x.valor != null) as Array<{nome:string;valor:number;peso:number;cor:[number,number,number]}>;
+  const somaPesos = componentes.reduce((s,x) => s + x.peso, 0);
+  const indice = somaPesos >= 60
+    ? componentes.reduce((s,x) => s + x.valor * (x.peso / somaPesos), 0)
+    : null;
+  return { indice, componentes, cobertura: somaPesos };
+}
+
+function resumoExecutivoPdf(colaborador: ColaboradorAcompanhamentoPdf) {
+  const indice = indiceExecutivoPdf(colaborador);
+  const partes: string[] = [];
+  const momentos = evolucaoPesquisaColaborador(colaborador.respostas);
+  if (momentos.length >= 2) {
+    const primeiro = mediaNumeros(Object.values(momentos[0].indices));
+    const ultimo = mediaNumeros(Object.values(momentos[momentos.length - 1].indices));
+    if (primeiro != null && ultimo != null && primeiro > 0) {
+      const variacao = ((ultimo - primeiro) / primeiro) * 100;
+      partes.push(Math.abs(variacao) < 3
+        ? 'A experiência relatada permaneceu relativamente estável entre os alinhamentos disponíveis'
+        : variacao > 0
+          ? 'A experiência relatada ficou ' + Math.round(Math.abs(variacao)) + '% maior entre o primeiro e o último alinhamento disponível'
+          : 'A experiência relatada ficou ' + Math.round(Math.abs(variacao)) + '% menor entre o primeiro e o último alinhamento disponível');
+    }
+  }
+  const faltamCompliance = Math.max(0, Number(colaborador.jornadaCompliance.total || 0) - Number(colaborador.jornadaCompliance.concluidas || 0));
+  const faltamPdi = Math.max(0, Number(colaborador.pdi.total || 0) - Number(colaborador.pdi.concluidas || 0));
+  if (colaborador.jornadaCompliance.percentual != null) partes.push('Compliance em ' + Math.round(colaborador.jornadaCompliance.percentual) + '%' + (faltamCompliance ? ', com ' + faltamCompliance + ' atividade(s) restante(s)' : ''));
+  if (colaborador.pdi.percentual != null) partes.push('PDI em ' + Math.round(colaborador.pdi.percentual) + '%' + (faltamPdi ? ', com ' + faltamPdi + ' tarefa(s) restante(s)' : ''));
+  if (indice.indice != null) partes.push('Índice de Integração em ' + Math.round(indice.indice) + '%');
+  return partes.length ? partes.join('. ') + '.' : 'Ainda não há dados suficientes para produzir uma síntese executiva.';
+}
+
+function timelinePdf(doc: jsPDF, y: number, respostas: RespostaAcompanhamento[]) {
+  y = section(doc, y, 'Marcos da integração');
+  const marcos = [1,2,3,4];
+  const xs = [30,75,120,165];
+  doc.setDrawColor(210,214,220);
+  doc.setLineWidth(0.6);
+  doc.line(xs[0],y+7,xs[3],y+7);
+  marcos.forEach((ciclo,i) => {
+    const dia=[15,45,75,150][i];
+    const tem=(form:string,papel:string)=>respostas.some((r)=>Number(r.ciclo)===ciclo&&r.form===form&&(form==='pesquisa'||r.papel===papel));
+    doc.setFillColor(255,255,255);
+    doc.setDrawColor(110,75,160);
+    doc.circle(xs[i],y+7,4,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(45,50,60);
+    doc.text(String(dia)+'d',xs[i],y+16,{align:'center'});
+    const papeis=[['C',tem('pesquisa','Colaborador'),37,99,235],['G',tem('aval','Gestor'),15,118,110],['A',tem('aval','Anjo'),217,119,6]] as const;
+    papeis.forEach((p,j)=>{
+      if(p[1]) doc.setFillColor(p[2],p[3],p[4]); else doc.setFillColor(235,237,240);
+      doc.circle(xs[i]-7+j*7,y+23,2.5,'F');
+      doc.setFontSize(5.5); doc.setTextColor(p[1]?255:125,p[1]?255:130,p[1]?255:140);
+      doc.text(p[0],xs[i]-7+j*7,y+24,{align:'center'});
+    });
+  });
+  doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(100,105,115);
+  doc.text('C = Colaborador · G = Gestor · A = Anjo',16,y+31);
+  doc.text('PDI pode iniciar após o alinhamento de 15 dias.',194,y+31,{align:'right'});
+  return y+37;
+}
+
+function comparativoGestorAnjoPdf(doc: jsPDF, y: number, respostas: RespostaAcompanhamento[]) {
+  const gestor=evolucaoPorPapel(respostas,'Gestor');
+  const anjo=evolucaoPorPapel(respostas,'Anjo');
+  const ciclos=[1,2,3,4].filter((c)=>gestor.some((m)=>m.ciclo===c)||anjo.some((m)=>m.ciclo===c));
+  if(!ciclos.length) return y;
+  const ciclo=ciclos[ciclos.length-1];
+  const g=gestor.find((m)=>m.ciclo===ciclo);
+  const a=anjo.find((m)=>m.ciclo===ciclo);
+  y=section(doc,y,'Percepções — Gestor × Anjo');
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(100,105,115);
+  doc.text('Comparação normalizada em escala de 0 a 100 no alinhamento de '+String([15,45,75,150][ciclo-1]||ciclo)+' dias.',18,y);
+  y+=6;
+  PILARES_ACOMPANHAMENTO.forEach((pilar)=>{
+    y=ensure(doc,y,12);
+    const gv=g?.pilares[pilar.chave]??null, av=a?.pilares[pilar.chave]??null;
+    const gp=gv==null?null:gv*20, ap=av==null?null:av*20;
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(45,50,60);
+    doc.text(pilar.nome,18,y+4);
+    const x0=85,w=95,yy=y+3;
+    doc.setDrawColor(225,228,232); doc.setLineWidth(1); doc.line(x0,yy,x0+w,yy);
+    if(gp!=null){doc.setFillColor(15,118,110);doc.circle(x0+w*(gp/100),yy,2.5,'F');}
+    if(ap!=null){doc.setFillColor(217,119,6);doc.rect(x0+w*(ap/100)-2,yy-2,4,4,'F');}
+    if(gp!=null&&ap!=null){doc.setDrawColor(180,185,192);doc.setLineWidth(0.6);doc.line(x0+w*(Math.min(gp,ap)/100),yy,x0+w*(Math.max(gp,ap)/100),yy);}
+    doc.setFontSize(5.8); doc.setTextColor(15,118,110); doc.text('G '+(gp==null?'—':String(Math.round(gp))+'%'),183,y+2);
+    doc.setTextColor(217,119,6); doc.text('A '+(ap==null?'—':String(Math.round(ap))+'%'),183,y+6);
+    y+=10;
+  });
+  return y+3;
 }
 
 function nomeArquivo(value: string) {
@@ -118,7 +229,15 @@ function experienciaColaborador(doc: jsPDF, y: number, respostas: RespostaAcompa
     doc.text(grupo.nome, xLabel, y + 5);
     momentos.forEach((m, i) => {
       const v = m.indices[grupo.chave];
+      if (v != null) {
+        const intensidade = Math.max(0, Math.min(1, v / 100));
+        doc.setFillColor(Math.round(239 - 90 * intensidade), Math.round(246 - 75 * intensidade), Math.round(255 - 20 * intensidade));
+        doc.rect(xStart + i * col, y + 0.5, col - 1, 7, 'F');
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(35, 43, 55);
       doc.text(v == null ? '—' : `${v.toFixed(1).replace('.', ',')}%`, xStart + i * col + 2, y + 5);
+      doc.setFont('helvetica', 'normal');
     });
     y += 8;
   });
@@ -239,14 +358,52 @@ export function gerarAcompanhamentoIntegracaoPdf(
   doc.setFontSize(8);
   doc.setTextColor(100,107,117);
   doc.text(`${colaborador.cargo || 'Cargo não informado'} · ${colaborador.unidade || 'Unidade não informada'}`,16,y);
-  y += 8;
+  y += 4;
+  const detalhesPessoa = [
+    colaborador.inicio ? 'Início: ' + new Date(colaborador.inicio + 'T12:00:00').toLocaleDateString('pt-BR') : null,
+    colaborador.gestor ? 'Gestor: ' + colaborador.gestor : null,
+    colaborador.anjo ? 'Anjo: ' + colaborador.anjo : null,
+  ].filter(Boolean).join(' · ');
+  if (detalhesPessoa) {
+    doc.setFontSize(6.8); doc.setTextColor(120,125,135); doc.text(detalhesPessoa,16,y); y += 7;
+  } else y += 4;
 
   const w = 41.5;
   kpi(doc,16,y,w,'Dia do Onboarding',`${colaborador.dia}/${colaborador.totalDias}`,'jornada de integração');
   kpi(doc,60.5,y,w,'Jornada Compliance',fmt(colaborador.jornadaCompliance.percentual),`${colaborador.jornadaCompliance.concluidas || 0} de ${colaborador.jornadaCompliance.total || 0} atividades`);
   kpi(doc,105,y,w,'Tarefas do PDI',fmt(colaborador.pdi.percentual),`${colaborador.pdi.concluidas || 0} de ${colaborador.pdi.total || 0} tarefas`);
-  kpi(doc,149.5,y,44.5,'Alinhamentos',`${colaborador.alinhamentosFeitos}/${colaborador.alinhamentosTotal}`,'realizados');
+  kpi(doc,149.5,y,44.5,'Alinhamentos',String(colaborador.alinhamentosFeitos)+'/'+String(colaborador.alinhamentosTotal),'realizados');
   y += 30;
+
+  if (opcoes.visaoUgpRh) {
+    const resumo = resumoExecutivoPdf(colaborador);
+    y = section(doc,y,'Sumário executivo');
+    doc.setFillColor(247,245,252); doc.setDrawColor(228,223,240);
+    const resumoLinhas=doc.splitTextToSize(resumo,168);
+    const resumoAltura=Math.max(18,resumoLinhas.length*4+8);
+    doc.roundedRect(16,y,178,resumoAltura,2,2,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(45,50,60);
+    doc.text(resumoLinhas,21,y+7);
+    y += resumoAltura + 7;
+
+    const indiceInfo=indiceExecutivoPdf(colaborador);
+    if(indiceInfo.indice!=null){
+      y=section(doc,y,'Índice de Integração');
+      doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(81,55,125);
+      doc.text(String(Math.round(indiceInfo.indice))+'%',18,y+9);
+      const barX=50,barY=y+3,barW=140,barH=7;
+      let cursor=barX;
+      const soma=indiceInfo.componentes.reduce((s,x)=>s+x.peso,0)||1;
+      indiceInfo.componentes.forEach((x)=>{
+        const largura=barW*(x.peso/soma);
+        doc.setFillColor(x.cor[0],x.cor[1],x.cor[2]); doc.rect(cursor,barY,largura,barH,'F'); cursor+=largura;
+      });
+      doc.setFont('helvetica','normal'); doc.setFontSize(5.8); doc.setTextColor(80,85,95);
+      doc.text(indiceInfo.componentes.map((x)=>x.nome+' '+String(Math.round(x.valor))+'%').join(' · '),50,y+15);
+      y+=22;
+    }
+    y=timelinePdf(doc,y,colaborador.respostas);
+  }
 
   if (opcoes.visaoUgpRh) {
     const gestorAtual = mediaAdaptacaoAtual(colaborador.respostas, 'Gestor');
@@ -284,7 +441,10 @@ export function gerarAcompanhamentoIntegracaoPdf(
   }
 
   if (opcoes.visaoUgpRh) {
+    doc.addPage(); y = 18;
     y = experienciaColaborador(doc, y, colaborador.respostas);
+    y = comparativoGestorAnjoPdf(doc,y,colaborador.respostas);
+    y = section(doc,y,'Anexo — dados detalhados');
     y = evolucao(doc,y,'Evolução — Gestor',colaborador.respostas,'Gestor');
     y = evolucao(doc,y,'Evolução — Anjo',colaborador.respostas,'Anjo');
   } else {
@@ -313,7 +473,7 @@ export function gerarAcompanhamentoIntegracaoPdf(
   for (let p=1;p<=pages;p++) {
     doc.setPage(p);
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(135,140,148);
-    doc.text('Programa de Integração · Eco do B.E.M.',16,291);
+    doc.text(opcoes.visaoUgpRh ? 'Documento confidencial · uso UGP/RH · Programa de Integração · Eco do B.E.M.' : 'Programa de Integração · Eco do B.E.M.',16,291);
     doc.text(`Página ${p} de ${pages}`,194,291,{align:'right'});
   }
   doc.save(`${opcoes.visaoUgpRh ? 'Relatorio Executivo Integracao' : 'Acompanhamento Integracao'} - ${nomeArquivo(colaborador.nome)}.pdf`);
