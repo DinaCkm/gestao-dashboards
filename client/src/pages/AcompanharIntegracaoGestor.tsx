@@ -9,7 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Activity, AlertTriangle, ArrowDownRight, ArrowRight, ArrowUpRight, BarChart3, Brain, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, Handshake, Info, Loader2, Network, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, Filter, Handshake, Info, LayoutDashboard, ListChecks, Network, RefreshCw, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
 import {
   LineChart,
@@ -107,8 +109,18 @@ interface ColaboradorAcompanhamento {
   anjo: string;
   alinhamentosFeitos: number;
   alinhamentosTotal: number;
-  jornadaCompliance: { total: number; concluidas: number; percentual: number | null };
-  pdi: { total: number; concluidas: number; percentual: number | null };
+  jornadaCompliance: {
+    total: number;
+    concluidas: number;
+    percentual: number | null;
+    itens?: Array<{ id: number; titulo: string; curso?: string; status: string; concluida: boolean }>;
+  };
+  pdi: {
+    total: number;
+    concluidas: number;
+    percentual: number | null;
+    itens?: Array<{ id: number; titulo: string; descricao?: string; status: string; prazo?: string | null; concluida: boolean }>;
+  };
   acessouEcoLider: boolean | null;
   ultimaEntradaEcoLider: string | null;
   assessmentPotencialConcluido: boolean | null;
