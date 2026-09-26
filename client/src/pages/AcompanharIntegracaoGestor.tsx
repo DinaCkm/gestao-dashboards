@@ -2710,7 +2710,7 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
   const [recolhido, setRecolhido] = useState(false);
 
   const origens = Array.from(new Set(registros.map((item) => item.origem).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'));
-  const alinhamentos = ['Preparação','15 dias','45 dias','75 dias','150 dias','Geral']
+  const alinhamentos = ['Não informado','Preparação','15 dias','45 dias','75 dias','150 dias','Geral']
     .filter((item) => registros.some((registro) => registro.alinhamento === item));
 
   const filtrados = registros.filter((item) =>
@@ -2795,24 +2795,32 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
               Nenhum registro encontrado neste filtro.
             </div>
           ) : tipo === 'foto' ? (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
               {filtrados.map((item)=>(
                 <div key={item.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                   {item.fileUrl ? (
-                    <button type="button" className="block w-full overflow-hidden bg-slate-100" onClick={()=>window.open(item.fileUrl,'_blank','noopener,noreferrer')}>
-                      <img src={item.fileUrl} alt={item.titulo} className="h-56 w-full object-cover transition-transform hover:scale-[1.01]" />
+                    <button
+                      type="button"
+                      className="flex max-h-48 w-full items-center justify-center overflow-hidden bg-slate-50 p-2"
+                      onClick={()=>window.open(item.fileUrl,'_blank','noopener,noreferrer')}
+                    >
+                      <img
+                        src={item.fileUrl}
+                        alt={item.titulo || 'Foto do registro'}
+                        className="h-auto max-h-44 w-auto max-w-full object-contain transition-transform hover:scale-[1.01]"
+                      />
                     </button>
                   ) : (
-                    <div className="grid h-56 place-items-center bg-slate-50 text-sm text-slate-400">Foto indisponível</div>
+                    <div className="grid h-28 place-items-center bg-slate-50 text-sm text-slate-400">Foto indisponível</div>
                   )}
                   <div className="p-4">
-                    <div className="font-black text-slate-950">{item.titulo}</div>
+                    <div className="font-black text-slate-950">{item.titulo || 'Não informado'}</div>
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      <Badge variant="outline">{item.origem}</Badge>
-                      <Badge variant="outline">{item.alinhamento}</Badge>
-                      {item.dataAcontecimento && <Badge variant="outline">{dataBr(item.dataAcontecimento)}</Badge>}
+                      <Badge variant="outline">{item.origem || 'Não informado'}</Badge>
+                      <Badge variant="outline">{item.alinhamento || 'Não informado'}</Badge>
+                      <Badge variant="outline">{item.dataAcontecimento ? dataBr(item.dataAcontecimento) : 'Não informado'}</Badge>
                     </div>
-                    {item.descricao && <p className="mt-3 text-sm leading-relaxed text-slate-600">{item.descricao}</p>}
+                    <p className="mt-3 text-sm leading-relaxed text-slate-600">{item.descricao || 'Não informado'}</p>
                     {item.downloadUrl && (
                       <Button type="button" size="sm" variant="outline" className="mt-3" onClick={()=>window.open(item.downloadUrl,'_blank','noopener,noreferrer')}>
                         <Download className="mr-1.5 h-4 w-4" /> Baixar foto
@@ -2830,13 +2838,26 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
                     <div className="flex min-w-0 items-start gap-3">
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-700"><Icone tipo={item.tipo} /></span>
                       <div className="min-w-0">
-                        <div className="font-black text-slate-950">{item.titulo}</div>
+                        <div className="font-black text-slate-950">{item.titulo || 'Não informado'}</div>
                         <div className="mt-1 flex flex-wrap gap-1.5">
-                          <Badge variant="outline">{item.origem}</Badge>
-                          <Badge variant="outline">{item.alinhamento}</Badge>
-                          {item.dataAcontecimento && <Badge variant="outline">{dataBr(item.dataAcontecimento)}</Badge>}
+                          <Badge variant="outline">{item.origem || 'Não informado'}</Badge>
+                          <Badge variant="outline">{item.alinhamento || 'Não informado'}</Badge>
+                          <Badge variant="outline">{item.dataAcontecimento ? dataBr(item.dataAcontecimento) : 'Não informado'}</Badge>
                         </div>
-                        {item.descricao && <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">{item.descricao}</p>}
+                        <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-slate-600">{item.descricao || 'Não informado'}</p>
+                        {item.tipo === 'foto' && item.fileUrl && (
+                          <button
+                            type="button"
+                            className="mt-3 flex max-h-32 max-w-[220px] items-center justify-center overflow-hidden rounded-xl border bg-slate-50 p-1.5"
+                            onClick={()=>window.open(item.fileUrl,'_blank','noopener,noreferrer')}
+                          >
+                            <img
+                              src={item.fileUrl}
+                              alt={item.titulo || 'Foto do registro'}
+                              className="h-auto max-h-28 w-auto max-w-full object-contain"
+                            />
+                          </button>
+                        )}
                         <div className="mt-3 text-[11px] text-slate-400">
                           Registrado por {item.cadastradoPorNome || 'CKM'}{item.cadastradoEm ? ' em '+new Date(item.cadastradoEm).toLocaleString('pt-BR') : ''}
                         </div>
