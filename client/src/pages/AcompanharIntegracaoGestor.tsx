@@ -1750,6 +1750,277 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
   );
 }
 
+
+const PAPEL_CORES = { colaborador: '#2563EB', gestor: '#0F766E', anjo: '#D97706' } as const;
+
+function statusCarteira(colaborador: ColaboradorAcompanhamento) {
+  const sinais = sinaisAtencaoUgp(colaborador);
+  const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
+  if (atrasados > 0 || sinais.length >= 2) return { chave: 'atencao', rotulo: 'Atenção', classes: 'bg-amber-50 text-amber-800 border-amber-200' };
+  if (sinais.length === 1) return { chave: 'acompanhar', rotulo: 'Acompanhar', classes: 'bg-blue-50 text-blue-800 border-blue-200' };
+  return { chave: 'em_dia', rotulo: 'Em dia', classes: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+}
+
+function tendenciaGeral(colaborador: ColaboradorAcompanhamento) {
+  return trajetoriaPesquisa(colaborador.respostas)
+    .filter((m) => m.geral != null)
+    .map((m) => ({ dia: diaDoAlinhamento(m.ciclo), valor: Number(m.geral) }));
+}
+
+function SparklineMini({ pontos }: { pontos: Array<{ dia: number; valor: number }> }) {
+  if (pontos.length < 2) return <span className="text-xs text-slate-400">sem tendência</span>;
+  const width = 92, height = 28;
+  const coords = pontos.map((p) => {
+    const x = ((p.dia - 15) / 135) * width;
+    const y = height - (p.valor / 100) * height;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  return (
+    <svg viewBox={'0 0 ' + width + ' ' + height} className="h-8 w-24 overflow-visible" aria-label="Tendência da experiência">
+      <polyline points={coords} fill="none" stroke={PAPEL_CORES.colaborador} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {pontos.map((p) => {
+        const x = ((p.dia - 15) / 135) * width;
+        const y = height - (p.valor / 100) * height;
+        return <circle key={p.dia} cx={x} cy={y} r="2.5" fill={PAPEL_CORES.colaborador} />;
+      })}
+    </svg>
+  );
+}
+
+function JornadaMini({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const respondidos = new Set(colaborador.respostas.filter((r) => r.form === 'pesquisa' && Number(r.ciclo) > 0).map((r) => diaDoAlinhamento(r.ciclo)));
+  return (
+    <div className="min-w-[190px]">
+      <div className="relative flex items-center justify-between">
+        <div className="absolute left-2 right-2 top-2.5 h-px bg-slate-200" />
+        {[15,45,75,150].map((dia) => (
+          <div key={dia} className="relative z-10 flex flex-col items-center gap-1">
+            <span className={'h-5 w-5 rounded-full border-2 ' + (respondidos.has(dia) ? 'border-violet-600 bg-violet-600' : 'border-slate-300 bg-white')} />
+            <span className="text-[10px] font-semibold text-slate-500">{dia}d</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KpisOperacionais({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const saude = saudeProcesso(colaborador);
+  const itens = [
+    { titulo:'Saúde do processo', valor:saude.rotulo, detalhe:saude.detalhe, icon:Activity, classes:saude.classes },
+    { titulo:'Dia do onboarding', valor:String(colaborador.dia) + '/' + colaborador.totalDias, detalhe:'posição atual na jornada', icon:Route, classes:'border-slate-200 bg-white text-slate-950' },
+    { titulo:'Jornada Compliance', valor:colaborador.jornadaCompliance.total ? fmtPct(colaborador.jornadaCompliance.percentual) : 'Sem dados', detalhe:colaborador.jornadaCompliance.total ? colaborador.jornadaCompliance.concluidas + ' de ' + colaborador.jornadaCompliance.total + ' atividades' : 'ainda sem atividades registradas', icon:CheckCircle2, classes:'border-slate-200 bg-white text-slate-950' },
+    { titulo:'Tarefas do PDI', valor:colaborador.pdi.total ? fmtPct(colaborador.pdi.percentual) : 'Sem dados', detalhe:colaborador.pdi.total ? colaborador.pdi.concluidas + ' de ' + colaborador.pdi.total + ' tarefas' : 'ainda sem tarefas registradas', icon:Target, classes:'border-slate-200 bg-white text-slate-950' },
+    { titulo:'Alinhamentos realizados', valor:String(colaborador.alinhamentosFeitos) + '/' + colaborador.alinhamentosTotal, detalhe:colaborador.formulariosPendentes.length ? colaborador.formulariosPendentes.length + ' formulário(s) pendente(s)' : 'sem pendências de formulário', icon:Users, classes:'border-slate-200 bg-white text-slate-950' },
+  ];
+  return (
+    <div className="grid gap-3 md:grid-cols-5">
+      {itens.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Card key={item.titulo} className={'group overflow-hidden rounded-2xl border shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ' + item.classes}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[11px] font-bold uppercase tracking-[0.08em] opacity-65">{item.titulo}</div>
+                <Icon className="h-4 w-4 opacity-55" />
+              </div>
+              <div className="mt-3 font-mono text-2xl font-black tabular-nums">{item.valor}</div>
+              <div className="mt-1 text-xs leading-relaxed opacity-70">{item.detalhe}</div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+function resumoExecutivoTexto(colaborador: ColaboradorAcompanhamento) {
+  const indice = indiceIntegracao(colaborador);
+  const trajetoria = tendenciaGeral(colaborador);
+  const sinais = sinaisAtencaoUgp(colaborador);
+  const partes: string[] = [];
+  if (trajetoria.length >= 2) {
+    const delta = variacaoPercentual(trajetoria[0].valor, trajetoria[trajetoria.length - 1].valor);
+    if (delta != null && Math.abs(delta) >= 3) partes.push(delta > 0 ? 'A experiência relatada ficou ' + Math.round(Math.abs(delta)) + '% maior entre o primeiro e o último alinhamento disponível' : 'A experiência relatada ficou ' + Math.round(Math.abs(delta)) + '% menor entre o primeiro e o último alinhamento disponível');
+    else partes.push('A experiência relatada permaneceu relativamente estável entre os alinhamentos disponíveis');
+  }
+  if (indice.adaptacao != null) partes.push('a adaptação observada está em ' + Math.round(indice.adaptacao) + '%');
+  if (colaborador.jornadaCompliance.percentual != null) {
+    const faltam = Math.max(0, colaborador.jornadaCompliance.total - colaborador.jornadaCompliance.concluidas);
+    partes.push('Compliance em ' + Math.round(colaborador.jornadaCompliance.percentual) + '%' + (faltam ? ', com ' + faltam + ' atividade(s) restante(s)' : ''));
+  }
+  if (colaborador.pdi.percentual != null) {
+    const faltam = Math.max(0, colaborador.pdi.total - colaborador.pdi.concluidas);
+    partes.push('PDI em ' + Math.round(colaborador.pdi.percentual) + '%' + (faltam ? ', com ' + faltam + ' tarefa(s) restante(s)' : ''));
+  }
+  if (sinais.length) partes.push(sinais.length + ' sinal(is) objetivo(s) merecem atenção');
+  return partes.length ? partes.join('. ') + '.' : 'Ainda não há dados suficientes para produzir uma síntese executiva da integração.';
+}
+
+function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const indice = indiceIntegracao(colaborador);
+  const comps = [
+    { nome:'Experiência', valor:indice.experiencia, peso:40, cor:PAPEL_CORES.colaborador },
+    { nome:'Adaptação', valor:indice.adaptacao, peso:35, cor:PAPEL_CORES.gestor },
+    { nome:'Desenvolvimento', valor:indice.desenvolvimento, peso:25, cor:'#7C3AED' },
+  ].filter((x) => x.valor != null) as Array<{nome:string; valor:number; peso:number; cor:string}>;
+  const somaPesos = comps.reduce((s,x) => s + x.peso, 0) || 1;
+  const contribs = comps.map((x) => ({ ...x, contribuicao:x.valor * x.peso / somaPesos }));
+  return (
+    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Network className="h-5 w-5 text-violet-700" />
+              <div className="font-bold text-slate-950">Índice de Integração</div>
+              <UiTooltip>
+                <TooltipTrigger asChild><button type="button" className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><Info className="h-4 w-4" /></button></TooltipTrigger>
+                <TooltipContent className="max-w-sm text-xs leading-relaxed">Combina Experiência do Colaborador (40%), Adaptação observada por Gestor/Anjo (35%) e Desenvolvimento — PDI + Compliance (25%). Se uma fonte ainda não existe, os pesos disponíveis são reajustados. DISC/Assessment não entra no cálculo.</TooltipContent>
+              </UiTooltip>
+            </div>
+            <div className="mt-1 text-xs text-slate-500">Resumo executivo em escala de 0 a 100.</div>
+          </div>
+          <div className="font-mono text-4xl font-black tabular-nums text-violet-950">{indice.indice == null ? '—' : Math.round(indice.indice) + '%'}</div>
+        </div>
+        <div className="mt-5 flex h-4 overflow-hidden rounded-full bg-slate-100">
+          {contribs.map((x) => <div key={x.nome} title={x.nome + ': ' + Math.round(x.valor) + '%'} style={{ width:Math.max(2,x.contribuicao) + '%', backgroundColor:x.cor }} />)}
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          {contribs.map((x) => (
+            <div key={x.nome} className="rounded-xl bg-slate-50 px-3 py-2 text-xs">
+              <div className="flex items-center gap-2 font-semibold text-slate-800"><span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor:x.cor}} />{x.nome}</div>
+              <div className="mt-1 font-mono font-black tabular-nums text-slate-950">{Math.round(x.valor)}%</div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const marcos = [1,2,3,4].map((numero) => {
+    const tem = (form:string,papel:string) => colaborador.respostas.some((r) => Number(r.ciclo) === numero && r.form === form && (form === 'pesquisa' || r.papel === papel));
+    return { numero, dia:diaDoAlinhamento(numero), c:tem('pesquisa','Colaborador'), g:tem('aval','Gestor'), a:tem('aval','Anjo') };
+  });
+  return (
+    <Card className="rounded-2xl border-slate-200 shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div><div className="font-bold text-slate-950">Marcos da integração</div><div className="mt-1 text-xs text-slate-500">Status dos formulários após cada alinhamento.</div></div>
+          <div className="flex gap-3 text-[11px]"><span style={{color:PAPEL_CORES.colaborador}} className="font-semibold">● Colaborador</span><span style={{color:PAPEL_CORES.gestor}} className="font-semibold">● Gestor</span><span style={{color:PAPEL_CORES.anjo}} className="font-semibold">● Anjo</span></div>
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {marcos.map((m) => (
+            <div key={m.numero} className="rounded-2xl border bg-white p-3 text-center">
+              <div className="text-sm font-black text-slate-900">{m.dia} dias</div>
+              <div className="mt-3 flex justify-center gap-2">
+                {[['C',m.c,PAPEL_CORES.colaborador],['G',m.g,PAPEL_CORES.gestor],['A',m.a,PAPEL_CORES.anjo]].map(([label,ok,cor]) => (
+                  <span key={String(label)} title={ok ? 'Respondido' : 'Ainda não respondido'} className="grid h-7 w-7 place-items-center rounded-full border text-[10px] font-black" style={ok ? {backgroundColor:String(cor),borderColor:String(cor),color:'#fff'} : {borderColor:'#CBD5E1',color:'#94A3B8'}}>{label}</span>
+                ))}
+              </div>
+              {m.numero === 1 && <div className="mt-3 text-[10px] font-semibold text-violet-700">▲ PDI pode iniciar após este alinhamento</div>}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function quantidadeValidasPesquisa(respostas: RespostaAcompanhamento[], ciclo:number, indices: readonly number[]) {
+  const r = respostas.filter((x) => x.form === 'pesquisa' && Number(x.ciclo) === ciclo).slice(-1)[0];
+  if (!r) return 0;
+  const mapa = new Map((r.c || []).map(([i,v]) => [Number(i), Number(String(v).replace(',','.'))]));
+  return indices.filter((i) => { const n=mapa.get(i); return n != null && Number.isFinite(n) && n > 0 && n <= 5; }).length;
+}
+
+function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const momentos = evolucaoPesquisaColaborador(colaborador.respostas);
+  const geral = momentos.map((m) => ({ dia:diaDoAlinhamento(m.ciclo), geral:mediaMomentoPesquisa(m) }));
+  const heatStyle = (valor:number|null) => {
+    if (valor == null) return {backgroundColor:'#F8FAFC',color:'#94A3B8'};
+    return {backgroundColor:'rgba(37,99,235,' + (0.10 + (valor/100)*0.55) + ')',color:'#0F172A'};
+  };
+  return (
+    <div className="space-y-4">
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-3"><div><div className="font-bold text-slate-950">Experiência ao longo do tempo</div><div className="mt-1 text-xs text-slate-500">Média geral da Pesquisa de Integração. O eixo respeita a distância real entre 15, 45, 75 e 150 dias.</div></div><Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">Colaborador</Badge></div>
+          <div className="mt-4 h-[280px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={geral} margin={{top:10,right:20,left:-10,bottom:5}}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.25} />
+                <XAxis type="number" dataKey="dia" domain={[15,150]} ticks={[15,45,75,150]} tickFormatter={(v) => String(v) + 'd'} />
+                <YAxis domain={[0,100]} ticks={[0,20,40,60,80,100]} tickFormatter={(v) => String(v) + '%'} />
+                <ChartTooltip formatter={(v:number) => [Number(v).toFixed(1).replace('.',',') + '%','Experiência']} labelFormatter={(v) => 'Alinhamento de ' + v + ' dias'} />
+                <Line type="linear" dataKey="geral" stroke={PAPEL_CORES.colaborador} strokeWidth={3} dot={{r:4}} activeDot={{r:6}} connectNulls />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+        <div className="border-b px-5 py-4"><div className="font-bold text-slate-950">Heatmap da trajetória</div><div className="mt-1 text-xs text-slate-500">Uma única escala azul: tons mais claros representam valores menores e tons mais intensos, valores maiores.</div></div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
+            <thead className="bg-slate-50"><tr><th className="px-4 py-3 text-left">Dimensão</th>{[15,45,75,150].map((dia)=><th key={dia} className="px-3 py-3 text-center">{dia}d</th>)}<th className="px-4 py-3 text-center">Variação</th></tr></thead>
+            <tbody>
+              {INDICES_PESQUISA_COLABORADOR.map((grupo) => {
+                const vals=[1,2,3,4].map((ciclo)=>momentos.find((m)=>m.ciclo===ciclo)?.indices[grupo.chave]??null);
+                const existentes=vals.filter((v):v is number=>v!=null);
+                const delta=existentes.length>=2?existentes[existentes.length-1]-existentes[existentes.length-2]:null;
+                return <tr key={grupo.chave} className="border-t"><td className="px-4 py-3 font-semibold text-slate-800">{grupo.nome}</td>{vals.map((v,i)=><td key={i} className="px-3 py-3 text-center"><UiTooltip><TooltipTrigger asChild><div className="mx-auto rounded-xl px-3 py-2 font-mono font-black tabular-nums" style={heatStyle(v)}>{v==null?'—':Math.round(v)}</div></TooltipTrigger><TooltipContent className="text-xs">{v==null?'Sem resposta neste alinhamento':Math.round(v)+'% · '+quantidadeValidasPesquisa(colaborador.respostas,i+1,grupo.indices)+' resposta(s) válida(s)'}</TooltipContent></UiTooltip></td>)}<td className="px-4 py-3 text-center font-mono font-bold">{delta==null?'—':delta>2?'↑ '+Math.round(delta):delta<-2?'↓ '+Math.abs(Math.round(delta)):'→'}</td></tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function PercepcoesDumbbell({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const gestor=evolucaoPorPapel(colaborador.respostas,'Gestor');
+  const anjo=evolucaoPorPapel(colaborador.respostas,'Anjo');
+  const ciclos=[1,2,3,4].filter((x)=>gestor.some((m)=>m.ciclo===x)||anjo.some((m)=>m.ciclo===x));
+  const [selecionado,setSelecionado]=useState(String(ciclos[ciclos.length-1]||1));
+  const ciclo=Number(selecionado), g=gestor.find((m)=>m.ciclo===ciclo), a=anjo.find((m)=>m.ciclo===ciclo);
+  return (
+    <Card className="rounded-2xl border-slate-200 shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><div className="font-bold text-slate-950">Gestor × Anjo</div><div className="mt-1 text-xs text-slate-500">Escala normalizada para 0–100; a nota original de 1 a 5 aparece ao lado.</div></div><Select value={selecionado} onValueChange={setSelecionado}><SelectTrigger className="w-[200px]"><SelectValue/></SelectTrigger><SelectContent>{ciclos.map((x)=><SelectItem key={x} value={String(x)}>Alinhamento de {diaDoAlinhamento(x)} dias</SelectItem>)}</SelectContent></Select></div>
+        <div className="mt-5 space-y-4">
+          {PILARES_ACOMPANHAMENTO.map((pilar)=>{
+            const gv=g?.pilares[pilar.chave]??null, av=a?.pilares[pilar.chave]??null;
+            const gp=gv==null?null:gv*20, ap=av==null?null:av*20, dif=gp!=null&&ap!=null?Math.abs(gp-ap):null;
+            const alerta=dif!=null&&dif>=15;
+            return <div key={pilar.chave} className={'rounded-2xl border p-4 '+(alerta?'border-amber-200 bg-amber-50/50':'border-slate-200 bg-white')}><div className="flex justify-between gap-3"><div className="font-semibold">{pilar.nome}</div>{alerta&&<Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">diferença relevante</Badge>}</div><div className="relative mt-4 h-8"><div className="absolute left-0 right-0 top-4 h-1 rounded-full bg-slate-100"/>{gp!=null&&ap!=null&&<div className="absolute top-4 h-1" style={{left:Math.min(gp,ap)+'%',width:Math.abs(gp-ap)+'%',backgroundColor:'#CBD5E1'}}/>}{gp!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow" style={{left:gp+'%',backgroundColor:PAPEL_CORES.gestor}}/>}{ap!=null&&<span className="absolute top-1 h-6 w-6 -translate-x-1/2 rotate-45 rounded-[4px] border-4 border-white shadow" style={{left:ap+'%',backgroundColor:PAPEL_CORES.anjo}}/>}</div><div className="mt-2 flex flex-wrap gap-4 text-xs"><span style={{color:PAPEL_CORES.gestor}} className="font-bold">Gestor: {gp==null?'—':Math.round(gp)+'% · nota '+gv?.toFixed(2).replace('.',',')}</span><span style={{color:PAPEL_CORES.anjo}} className="font-bold">Anjo: {ap==null?'—':Math.round(ap)+'% · nota '+av?.toFixed(2).replace('.',',')}</span>{dif!=null&&<span className="font-semibold text-slate-500">diferença: {Math.round(dif)} pontos</span>}</div></div>;
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const compliancePendentes=(colaborador.jornadaCompliance.itens||[]).filter((x)=>!x.concluida);
+  const pdiPendentes=(colaborador.pdi.itens||[]).filter((x)=>!x.concluida);
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card className="rounded-2xl border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex justify-between gap-3"><div><div className="font-bold">Jornada Compliance</div><div className="mt-1 text-xs text-slate-500">O que já foi concluído e o que ainda falta.</div></div><div className="font-mono text-3xl font-black">{fmtPct(colaborador.jornadaCompliance.percentual)}</div></div><Progress className="mt-4 h-2" value={colaborador.jornadaCompliance.percentual||0}/><div className="mt-4 space-y-2">{compliancePendentes.length?compliancePendentes.slice(0,12).map((x)=><div key={x.id} className="rounded-xl border bg-slate-50 p-3"><div className="text-sm font-semibold">{x.titulo}</div>{x.curso&&<div className="mt-1 text-xs text-slate-500">{x.curso}</div>}</div>):<div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{colaborador.jornadaCompliance.total?'Todas as atividades registradas estão concluídas.':'Ainda não há atividades registradas.'}</div>}</div></CardContent></Card>
+      <Card className="rounded-2xl border-slate-200 shadow-sm"><CardContent className="p-5"><div className="flex justify-between gap-3"><div><div className="font-bold">Plano de Desenvolvimento (PDI)</div><div className="mt-1 text-xs text-slate-500">Tarefas, status e prazo quando disponível.</div></div><div className="font-mono text-3xl font-black">{fmtPct(colaborador.pdi.percentual)}</div></div><Progress className="mt-4 h-2" value={colaborador.pdi.percentual||0}/><div className="mt-4 space-y-2">{pdiPendentes.length?pdiPendentes.slice(0,12).map((x)=><div key={x.id} className="rounded-xl border bg-slate-50 p-3"><div className="flex justify-between gap-3"><div className="text-sm font-semibold">{x.titulo}</div><Badge variant="outline">{String(x.status||'pendente').replaceAll('_',' ')}</Badge></div>{x.prazo&&<div className="mt-1 text-xs text-slate-500">Prazo: {dataBr(x.prazo)}</div>}</div>):<div className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">{colaborador.pdi.total?'Todas as tarefas registradas estão concluídas.':'Ainda não há tarefas registradas.'}</div>}</div></CardContent></Card>
+    </div>
+  );
+}
+
+function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const sinais=sinaisAtencaoUgp(colaborador);
+  if(!sinais.length) return <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-800"><CheckCircle2 className="mr-2 inline h-4 w-4"/>Nenhum sinal objetivo de atenção identificado neste momento.</div>;
+  return <div className="space-y-2">{sinais.map((s)=><div key={s} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><AlertTriangle className="mr-2 inline h-4 w-4"/>{s}</div>)}</div>;
+}
+
 export default function AcompanharIntegracaoGestor() {
   const [dados, setDados] = useState<AcompanhamentoResponse | null>(null);
   const [erro, setErro] = useState('');
