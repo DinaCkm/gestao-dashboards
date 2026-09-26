@@ -3,7 +3,6 @@ import { ProcessoIntegracao } from '../types';
 import { arquivarProcesso, atualizarEstadoProcesso } from '../api/client';
 import {
   alterarSituacaoProcessoSeguro,
-  criarProcessoDemonstracaoSeguro,
   criarProcessoSeguro,
   criarProcessoTesteVazioSeguro,
   reordenarProcessosSeguro,
@@ -293,28 +292,6 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
     }, 'Não foi possível criar o processo de teste vazio.');
   };
 
-  const criarDemoCompleta = async () => {
-    if (!testeEmpresaProgramId) {
-      toast.error('Selecione a empresa da demonstração antes de criar a Mariana.');
-      return;
-    }
-    const confirmou = window.confirm(
-      'Criar a demonstração completa antiga?\n\n' +
-      'Ela inclui Mariana Alves Teixeira (demonstração), alinhamentos e respostas fictícias já preenchidas.',
-    );
-    if (!confirmou) return;
-
-    await executar('criar-demo-completa', async () => {
-      const criado = await criarProcessoDemonstracaoSeguro(
-        feriados,
-        Number(testeEmpresaProgramId),
-        String(empresaTesteSelecionada?.name || ''),
-      );
-      await onSaved();
-      toast.success(`Demonstração completa criada com ${criado.respostas} resposta(s) fictícia(s).`);
-      onAbrirPessoa(criado.legacyId);
-    }, 'Não foi possível criar a demonstração completa.');
-  };
 
   const mover = async (processoId: string, direcao: -1 | 1) => {
     if (busca.trim()) {
@@ -480,10 +457,6 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
               <Button type="button" onClick={() => void criarTesteVazio()} disabled={Boolean(operacao)}>
                 {operacao === 'criar-teste-vazio' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Criar com formulários vazios
-              </Button>
-              <Button type="button" variant="outline" onClick={() => void criarDemoCompleta()} disabled={Boolean(operacao)}>
-                {operacao === 'criar-demo-completa' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar demonstração completa antiga
               </Button>
               <Button type="button" variant="ghost" onClick={() => setTesteAberto(false)} disabled={Boolean(operacao)}>
                 Fechar
