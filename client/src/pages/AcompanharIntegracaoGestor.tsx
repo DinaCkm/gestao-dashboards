@@ -2021,6 +2021,141 @@ function SinaisCompactos({ colaborador }: { colaborador: ColaboradorAcompanhamen
   return <div className="space-y-2">{sinais.map((s)=><div key={s} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><AlertTriangle className="mr-2 inline h-4 w-4"/>{s}</div>)}</div>;
 }
 
+
+function CarteiraUgp({
+  colaboradores,busca,setBusca,unidade,setUnidade,status,setStatus,radarFiltro,setRadarFiltro,onAbrir
+}: {
+  colaboradores: ColaboradorAcompanhamento[];
+  busca:string; setBusca:(v:string)=>void;
+  unidade:string; setUnidade:(v:string)=>void;
+  status:string; setStatus:(v:string)=>void;
+  radarFiltro:string; setRadarFiltro:(v:string)=>void;
+  onAbrir:(id:string)=>void;
+}) {
+  const unidades=Array.from(new Set(colaboradores.map((x)=>x.unidade).filter(Boolean))).sort();
+  const conta=(tipo:string)=>colaboradores.filter((x)=>{
+    const sinais=sinaisAtencaoUgp(x).map((s)=>s.toLowerCase());
+    if(tipo==='queda') return sinais.some((s)=>s.includes('menor'));
+    if(tipo==='divergencia') return sinais.some((s)=>s.includes('gestor')&&s.includes('anjo'));
+    if(tipo==='atraso') return x.formulariosPendentes.some((p)=>p.atrasado);
+    return false;
+  }).length;
+  const lista=colaboradores.filter((x)=>{
+    const termo=busca.trim().toLowerCase();
+    const okBusca=!termo||[x.nome,x.cargo,x.unidade].some((v)=>String(v||'').toLowerCase().includes(termo));
+    const okUnidade=unidade==='all'||x.unidade===unidade;
+    const st=statusCarteira(x);
+    const okStatus=status==='all'||st.chave===status;
+    const sinais=sinaisAtencaoUgp(x).map((s)=>s.toLowerCase());
+    const okRadar=radarFiltro==='all'
+      ||(radarFiltro==='queda'&&sinais.some((s)=>s.includes('menor')))
+      ||(radarFiltro==='divergencia'&&sinais.some((s)=>s.includes('gestor')&&s.includes('anjo')))
+      ||(radarFiltro==='atraso'&&x.formulariosPendentes.some((p)=>p.atrasado));
+    return okBusca&&okUnidade&&okStatus&&okRadar;
+  });
+  const indices=colaboradores.map((x)=>indiceIntegracao(x).indice).filter((v):v is number=>v!=null);
+  const indiceMedio=indices.length?Math.round(indices.reduce((s,v)=>s+v,0)/indices.length):null;
+  const atencao=colaboradores.filter((x)=>statusCarteira(x).chave==='atencao').length;
+  const pendencias=colaboradores.reduce((s,x)=>s+x.formulariosPendentes.length,0);
+  const concluindo=colaboradores.filter((x)=>x.dia>=140).length;
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          ['Ativos',colaboradores.length,'pessoas em integração'],
+          ['Atenção',atencao,'com sinais prioritários'],
+          ['Pendências',pendencias,'formulários pendentes'],
+          ['Índice médio',indiceMedio==null?'—':String(indiceMedio)+'%','entre resultados disponíveis'],
+          ['Concluindo',concluindo,'a partir do dia 140'],
+        ].map(([label,value,detail])=>(
+          <Card key={String(label)} className="rounded-2xl border-slate-200 shadow-sm transition-shadow hover:shadow-md">
+            <CardContent className="p-4">
+              <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</div>
+              <div className="mt-2 font-mono text-3xl font-black tabular-nums text-slate-950">{value}</div>
+              <div className="mt-1 text-xs text-slate-500">{detail}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Card className="rounded-2xl border-slate-200 shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-xs font-bold uppercase tracking-wide text-slate-500">Radar</span>
+            {[
+              ['all','Todos',null],
+              ['queda','Queda de experiência',conta('queda')],
+              ['divergencia','Divergência Gestor×Anjo',conta('divergencia')],
+              ['atraso','Formulário atrasado',conta('atraso')],
+            ].map(([key,label,count])=>(
+              <button key={String(key)} type="button" onClick={()=>setRadarFiltro(String(key))}
+                className={'rounded-full border px-3 py-1.5 text-xs font-semibold transition-all hover:shadow-sm '+(radarFiltro===key?'border-violet-300 bg-violet-100 text-violet-900':'border-slate-200 bg-white text-slate-600 hover:bg-slate-50')}>
+                {label}{count!=null?' '+count:''}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
+        <div className="border-b bg-white p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><Input className="pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/></div>
+            <Select value={unidade} onValueChange={setUnidade}><SelectTrigger className="w-full lg:w-[220px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todas as unidades</SelectItem>{unidades.map((u)=><SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select>
+            <Select value={status} onValueChange={setStatus}><SelectTrigger className="w-full lg:w-[190px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todos os status</SelectItem><SelectItem value="em_dia">Em dia</SelectItem><SelectItem value="acompanhar">Acompanhar</SelectItem><SelectItem value="atencao">Atenção</SelectItem></SelectContent></Select>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1050px] text-sm">
+            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-left">Jornada</th><th className="px-4 py-3 text-center">Índice</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
+            <tbody>
+              {lista.map((x)=>{
+                const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
+                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-violet-50/40"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'} · Dia {x.dia}/{x.totalDias}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4"><JornadaMini colaborador={x}/></td><td className="px-4 py-4 text-center font-mono text-lg font-black tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
+              })}
+              {!lista.length&&<tr><td colSpan={7} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void; onPerfil:()=>void }) {
+  const st=statusCarteira(colaborador);
+  return (
+    <div className="space-y-4">
+      <div className="sticky top-0 z-20 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-sm backdrop-blur">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <Button variant="ghost" size="sm" onClick={onVoltar} className="mt-0.5 gap-1"><ArrowLeft className="h-4 w-4"/>Carteira</Button>
+            <div><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-black text-slate-950">{colaborador.nome}</h2><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></div><div className="mt-1 text-sm text-slate-600">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</div><div className="mt-1 text-xs text-slate-500">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</div></div>
+          </div>
+          <div className="flex flex-wrap gap-2"><Button variant="outline" className="gap-2" onClick={onPerfil}><Sparkles className="h-4 w-4"/>Assessment</Button><Button className="gap-2 bg-violet-700 hover:bg-violet-800" onClick={()=>gerarAcompanhamentoIntegracaoPdf(colaborador,{visaoUgpRh:true})}><Download className="h-4 w-4"/>PDF executivo</Button></div>
+        </div>
+      </div>
+      <KpisOperacionais colaborador={colaborador}/>
+      <Tabs defaultValue="visao" className="space-y-4">
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 md:grid-cols-5"><TabsTrigger value="visao" className="rounded-xl py-2.5">Visão geral</TabsTrigger><TabsTrigger value="trajetoria" className="rounded-xl py-2.5">Trajetória</TabsTrigger><TabsTrigger value="percepcoes" className="rounded-xl py-2.5">Percepções</TabsTrigger><TabsTrigger value="desenvolvimento" className="rounded-xl py-2.5">Desenvolvimento</TabsTrigger><TabsTrigger value="perfil" className="rounded-xl py-2.5">Perfil</TabsTrigger></TabsList>
+        <TabsContent value="visao" className="space-y-4">
+          <Card className="rounded-2xl border-violet-100 bg-gradient-to-r from-violet-50 via-white to-blue-50 shadow-sm"><CardContent className="p-5"><div className="flex items-start gap-3"><span className="rounded-xl bg-violet-100 p-2 text-violet-700"><Sparkles className="h-5 w-5"/></span><div><div className="text-xs font-bold uppercase tracking-wide text-violet-700">Resumo executivo</div><p className="mt-2 text-base font-semibold leading-relaxed text-slate-800">{resumoExecutivoTexto(colaborador)}</p></div></div></CardContent></Card>
+          {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
+          <TimelineAlinhamentos colaborador={colaborador}/>
+          <SinaisCompactos colaborador={colaborador}/>
+          {colaborador.formulariosPendentes.length>0&&<details className="rounded-2xl border bg-white shadow-sm"><summary className="cursor-pointer px-5 py-4 font-semibold text-slate-900">Ver {colaborador.formulariosPendentes.length} formulário(s) pendente(s)</summary><div className="space-y-2 border-t p-4">{colaborador.formulariosPendentes.map((p,i)=><div key={i} className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between"><div><div className="text-sm font-semibold">{p.papel} · {p.formulario}</div><div className="text-xs text-slate-500">{p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'} · prazo {dataBr(p.prazo)}</div></div><Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge></div>)}</div></details>}
+        </TabsContent>
+        <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
+        <TabsContent value="percepcoes"><PercepcoesDumbbell colaborador={colaborador}/></TabsContent>
+        <TabsContent value="desenvolvimento"><DesenvolvimentoDetalhe colaborador={colaborador}/></TabsContent>
+        <TabsContent value="perfil"><PerfilAssessmentResumo colaborador={colaborador} onAbrir={onPerfil}/></TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function GestorDetalheSimples({ colaborador }: { colaborador:ColaboradorAcompanhamento }) {
+  return <div className="space-y-4"><Card className="overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] text-white shadow-md"><CardContent className="p-6"><h2 className="text-2xl font-black">{colaborador.nome}</h2><p className="mt-1 text-sm text-white/80">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</p><p className="mt-2 text-xs text-white/70">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</p></CardContent></Card><KpisOperacionais colaborador={colaborador}/><DicasGestorProtegidas colaborador={colaborador}/><EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/></div>;
+}
+
 export default function AcompanharIntegracaoGestor() {
   const [dados, setDados] = useState<AcompanhamentoResponse | null>(null);
   const [erro, setErro] = useState('');
