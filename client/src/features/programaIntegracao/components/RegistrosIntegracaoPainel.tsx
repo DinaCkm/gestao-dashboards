@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, FileText, MessageSquareText, Paperclip, Pencil, RotateCcw, Trash2, Upload } from 'lucide-react';
+import { Camera, FileText, Maximize2, MessageSquareText, Minimize2, Paperclip, Pencil, RotateCcw, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   criarRegistroIntegracao,
@@ -121,6 +121,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
   const [editando, setEditando] = useState<RegistroIntegracaoItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [recolhido, setRecolhido] = useState(false);
 
   const carregar = async () => {
     try {
@@ -156,6 +157,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
     setEditando(null);
     setPayload(estadoInicial());
     setArquivo(null);
+    setRecolhido(false);
     setFormAberto(true);
   };
 
@@ -264,13 +266,25 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
               alinhamento, data e autoria. Exclusões são preservadas para restauração.
             </p>
           </div>
-          <Button type="button" onClick={iniciarNovo}>
-            <Upload className="mr-2 h-4 w-4" /> Adicionar registro
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRecolhido((atual) => !atual)}
+              aria-expanded={!recolhido}
+              title={recolhido ? 'Maximizar Registros da Integração' : 'Minimizar Registros da Integração'}
+            >
+              {recolhido ? <Maximize2 className="mr-2 h-4 w-4" /> : <Minimize2 className="mr-2 h-4 w-4" />}
+              {recolhido ? 'Maximizar' : 'Minimizar'}
+            </Button>
+            <Button type="button" onClick={iniciarNovo}>
+              <Upload className="mr-2 h-4 w-4" /> Adicionar registro
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className={`space-y-4 ${recolhido ? 'hidden' : ''}`}>
         <div className="grid gap-3 lg:grid-cols-[1fr_190px_190px]">
           <div className="flex flex-wrap gap-2">
             {TIPOS.map(([valor, label]) => (
@@ -340,7 +354,10 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                 <span className="font-medium text-muted-foreground">Título</span>
                 <input
                   value={payload.titulo}
-                  onChange={(e) => setPayload((atual) => ({ ...atual, titulo: e.currentTarget.value }))}
+                  onChange={(e) => {
+                    const titulo = e.currentTarget.value;
+                    setPayload((atual) => ({ ...atual, titulo }));
+                  }}
                   maxLength={160}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   placeholder="Ex.: Recepção no primeiro dia"
@@ -352,7 +369,10 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                 <input
                   type="date"
                   value={payload.dataAcontecimento}
-                  onChange={(e) => setPayload((atual) => ({ ...atual, dataAcontecimento: e.currentTarget.value }))}
+                  onChange={(e) => {
+                    const dataAcontecimento = e.currentTarget.value;
+                    setPayload((atual) => ({ ...atual, dataAcontecimento }));
+                  }}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
               </label>
@@ -361,7 +381,10 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                 <span className="font-medium text-muted-foreground">Origem / enviado por</span>
                 <select
                   value={payload.origem}
-                  onChange={(e) => setPayload((atual) => ({ ...atual, origem: e.currentTarget.value as RegistroIntegracaoOrigem }))}
+                  onChange={(e) => {
+                    const origem = e.currentTarget.value as RegistroIntegracaoOrigem;
+                    setPayload((atual) => ({ ...atual, origem }));
+                  }}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   {ORIGENS.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -372,7 +395,10 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                 <span className="font-medium text-muted-foreground">Alinhamento relacionado</span>
                 <select
                   value={payload.alinhamento}
-                  onChange={(e) => setPayload((atual) => ({ ...atual, alinhamento: e.currentTarget.value as RegistroIntegracaoAlinhamento }))}
+                  onChange={(e) => {
+                    const alinhamento = e.currentTarget.value as RegistroIntegracaoAlinhamento;
+                    setPayload((atual) => ({ ...atual, alinhamento }));
+                  }}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   {ALINHAMENTOS.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -383,7 +409,10 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                 <span className="font-medium text-muted-foreground">Descrição / relato</span>
                 <textarea
                   value={payload.descricao}
-                  onChange={(e) => setPayload((atual) => ({ ...atual, descricao: e.currentTarget.value }))}
+                  onChange={(e) => {
+                    const descricao = e.currentTarget.value;
+                    setPayload((atual) => ({ ...atual, descricao }));
+                  }}
                   maxLength={6000}
                   className="min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   placeholder="Contextualize o registro, quando necessário."
