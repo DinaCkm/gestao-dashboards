@@ -710,7 +710,7 @@ function IndiceIntegracaoExplicado({
                 <div className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
                   <div className="font-bold text-slate-800">De onde veio agora</div>
                   <div className="mt-1">{item.momento}</div>
-                  <div className="mt-2 font-bold text-slate-800">O que este componente quer dizer</div>
+                  <div className="mt-2 font-bold text-slate-800">{item.titulo === 'Desenvolvimento' ? 'O que este item indica' : 'O que este número indica'}</div>
                   <div className="mt-1">{item.explicacao}</div>
                 </div>
               </div>
