@@ -39,6 +39,7 @@ import { RespostasProcessoAgrupadas } from './RespostasProcessoAgrupadas';
 import { ObservacoesAcao } from './ObservacoesAcao';
 import { ControlesEspeciaisAcao } from './ControlesEspeciaisAcao';
 import { RegistrosIntegracaoPainel } from './RegistrosIntegracaoPainel';
+import { LeituraIntegradaBackoffice } from './LeituraIntegradaBackoffice';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -592,6 +593,8 @@ export function DetalheProcessoReal({
           </div>
         </CardContent>
       </Card>
+
+      <LeituraIntegradaBackoffice processo={processo} />
 
       <details className="rounded-lg border bg-background">
         <summary className="cursor-pointer px-4 py-3 font-semibold">
