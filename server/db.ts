@@ -2378,6 +2378,70 @@ export async function updateAluno(alunoId: number, data: {
   return { success: true };
 }
 
+/**
+ * Sincroniza somente a identidade de login de um perfil Aluno + Gerente.
+ * Não cria usuário, não altera role, permissões, empresa gerenciada ou consultorId.
+ * Falha fechada se não houver exatamente um vínculo users.alunoId para o aluno.
+ */
+export async function syncAlunoGerenteIdentity(alunoId: number): Promise<{ success: boolean; synced: boolean; message?: string }> {
+  const db = await getDb();
+  if (!db) return { success: false, synced: false, message: "Banco de dados não disponível" };
+
+  const [aluno] = await db.select({
+    id: alunos.id,
+    name: alunos.name,
+    email: alunos.email,
+    cpf: alunos.cpf,
+  }).from(alunos).where(eq(alunos.id, alunoId)).limit(1);
+  if (!aluno) return { success: false, synced: false, message: "Aluno não encontrado" };
+
+  const linkedUsers = await db.select({
+    id: users.id,
+    role: users.role,
+    alunoId: users.alunoId,
+    email: users.email,
+  }).from(users).where(eq(users.alunoId, alunoId)).limit(2);
+
+  if (linkedUsers.length === 0) return { success: true, synced: false };
+  if (linkedUsers.length !== 1) {
+    return { success: false, synced: false, message: "Há mais de um usuário vinculado a este aluno. Sincronização bloqueada para revisão manual." };
+  }
+
+  const linkedUser = linkedUsers[0];
+  if (linkedUser.role !== "manager") return { success: true, synced: false };
+
+  const normalizedEmail = aluno.email?.trim().toLowerCase() || null;
+  const normalizedCpf = aluno.cpf ? aluno.cpf.replace(/\D/g, "") : null;
+
+  if (normalizedEmail) {
+    const conflictingUsers = await db.select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.email, normalizedEmail), not(eq(users.id, linkedUser.id)), eq(users.isActive, 1)))
+      .limit(1);
+    if (conflictingUsers.length) {
+      return { success: false, synced: false, message: "O novo e-mail do aluno já pertence a outro usuário ativo. O login do perfil Aluno + Gerente não foi alterado." };
+    }
+  }
+
+  if (normalizedCpf) {
+    const conflictingCpf = await db.select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.cpf, normalizedCpf), not(eq(users.id, linkedUser.id)), eq(users.isActive, 1)))
+      .limit(1);
+    if (conflictingCpf.length) {
+      return { success: false, synced: false, message: "O CPF do aluno já pertence a outro usuário ativo. O login do perfil Aluno + Gerente não foi alterado." };
+    }
+  }
+
+  await db.update(users).set({
+    name: aluno.name,
+    email: normalizedEmail,
+    cpf: normalizedCpf,
+  }).where(and(eq(users.id, linkedUser.id), eq(users.alunoId, alunoId), eq(users.role, "manager")));
+
+  return { success: true, synced: true };
+}
+
 export async function createAluno(data: { name: string; email: string; externalId: string; programId?: number; contratoInicio?: string; contratoFim?: string; totalSessoesContratadas?: number; tipoMentoria?: 'individual' | 'grupo'; plataformaAulas?: 'scaffold' | 'sistema_interno'; tipoPortal?: 'desenvolvimento' | 'assessment' }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
