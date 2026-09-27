@@ -103,20 +103,25 @@ export async function configureGerenteRhTesteRestrictedUgpOnce() {
   const db = await getDb();
   if (!db) return { ok: false, reason: "db_unavailable" as const };
 
-  const [user] = await db.select({
+  const candidates = await db.select({
     id: users.id,
     name: users.name,
     role: users.role,
     programId: users.programId,
   })
     .from(users)
-    .where(eq(users.name, "Gerente RH Teste"))
-    .limit(2);
+    .where(like(users.name, "%Gerente%RH%Teste%"))
+    .limit(10);
 
-  if (!user) {
-    console.log("[DemoIntegracao] GERENTE_RH_TESTE_SKIP usuario exato não localizado");
-    return { ok: true, skipped: true as const, reason: "user_not_found" as const };
+  const managerCandidates = candidates.filter((item) => item.role === "manager");
+  if (managerCandidates.length !== 1) {
+    console.log("[DemoIntegracao] GERENTE_RH_TESTE_CANDIDATES", JSON.stringify(
+      managerCandidates.map((item) => ({ id: item.id, name: item.name, role: item.role }))
+    ));
+    console.log("[DemoIntegracao] GERENTE_RH_TESTE_SKIP quantidade de candidatos segura diferente de 1");
+    return { ok: true, skipped: true as const, reason: "ambiguous_or_missing_user" as const };
   }
+  const user = managerCandidates[0];
   if (user.role !== "manager") {
     throw new Error("[DemoIntegracao] Gerente RH Teste existe, mas não possui role manager; configuração abortada.");
   }
