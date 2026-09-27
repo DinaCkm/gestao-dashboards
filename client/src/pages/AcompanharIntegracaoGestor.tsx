@@ -2033,6 +2033,16 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
 
 const PAPEL_CORES = { colaborador: '#2563EB', gestor: '#0F766E', anjo: '#D97706' } as const;
 
+function temFormularioEmAtrasoOperacional(colaborador: ColaboradorAcompanhamento) {
+  if (colaborador.formulariosPendentes.some((p) => p.atrasado)) return true;
+  // No encerramento da jornada, qualquer formulário ainda pendente impede o fechamento
+  // e deve aparecer no radar de atraso/atenção, mesmo que a solicitação individual
+  // tenha sido enviada recentemente.
+  return colaborador.totalDias > 0 &&
+    colaborador.dia >= colaborador.totalDias &&
+    colaborador.formulariosPendentes.length > 0;
+}
+
 function statusCarteira(colaborador: ColaboradorAcompanhamento) {
   const sinais = sinaisAtencaoUgp(colaborador);
   const pendentes = colaborador.formulariosPendentes.length;
@@ -2632,7 +2642,7 @@ function CarteiraUgp({
       || (fase==='76a150' && x.dia>75);
     const st=statusCarteira(x);
     const okStatus=status==='all'||st.chave===status;
-    const okAtraso=radarFiltro!=='atraso'||x.formulariosPendentes.some((p)=>p.atrasado);
+    const okAtraso=radarFiltro!=='atraso'||temFormularioEmAtrasoOperacional(x);
     return okBusca&&okUnidade&&okFase&&okStatus&&okAtraso;
   });
   const indices=colaboradores.map((x)=>indiceIntegracao(x).indice).filter((v):v is number=>v!=null);
@@ -3506,7 +3516,7 @@ export default function AcompanharIntegracaoGestor() {
                 {dados?.adminView
                   ? 'Visão Administrativa'
                   : dados?.restrictedUgp
-                    ? `Visão UGP/RH restrita — ${dados.authorizedCount ?? colaboradores.length} colaboradores autorizados`
+                    ? 'Visão UGP/RH'
                     : isUgpRh
                       ? 'Visão UGP/RH'
                       : 'Visão do Gestor'}
@@ -3620,22 +3630,35 @@ export default function AcompanharIntegracaoGestor() {
           )}
 
           <Dialog open={demoNoticeOpen} onOpenChange={setDemoNoticeOpen}>
-            <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Ambiente de demonstração</DialogTitle>
-                <DialogDescription>
-                  Este acesso foi preparado exclusivamente para apresentação do Programa de Integração.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-3 text-sm text-slate-700">
-                <p>Os nomes, cenários e registros exibidos neste acesso são fictícios e foram preparados para demonstração.</p>
-                <p><b>Você verá somente os colaboradores previamente autorizados.</b> Pessoas e processos reais não fazem parte deste acesso.</p>
-                <p>As informações apresentadas servem para demonstrar a experiência de navegação e os recursos da visão UGP/RH.</p>
+            <DialogContent className="overflow-hidden border-0 p-0 shadow-2xl sm:max-w-xl">
+              <div className="bg-gradient-to-br from-violet-50 via-white to-cyan-50 px-6 pb-5 pt-7 sm:px-8 sm:pt-8">
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 shadow-sm">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <DialogHeader className="text-left">
+                  <DialogTitle className="text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+                    Bem-vindo(a) ao acompanhamento do Programa de Integração!
+                  </DialogTitle>
+                  <DialogDescription className="pt-2 text-base leading-relaxed text-slate-600">
+                    É um prazer ter você acompanhando o Programa de Integração.
+                  </DialogDescription>
+                </DialogHeader>
               </div>
-              <div className="flex justify-end">
-                <DialogClose asChild>
-                  <Button>Entendi, continuar</Button>
-                </DialogClose>
+              <div className="space-y-4 px-6 pb-7 sm:px-8">
+                <p className="text-sm leading-6 text-slate-600">
+                  Neste espaço, você poderá acompanhar de forma simples e visual a jornada de integração dos colaboradores da sua equipe, identificando avanços, pontos de atenção e oportunidades de acompanhamento ao longo de todo o processo.
+                </p>
+                <p className="text-sm leading-6 text-slate-600">
+                  Explore os indicadores, acompanhe cada jornada e conheça os recursos disponíveis para apoiar uma integração cada vez mais estruturada e efetiva.
+                </p>
+                <div className="pt-1">
+                  <DialogClose asChild>
+                    <Button className="h-11 w-full rounded-xl bg-violet-700 font-semibold hover:bg-violet-800">
+                      Acessar acompanhamento
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DialogClose>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
