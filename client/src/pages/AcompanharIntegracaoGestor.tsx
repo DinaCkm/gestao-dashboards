@@ -183,6 +183,8 @@ interface AcompanhamentoResponse {
   ok: boolean;
   scope: 'all' | 'gestor';
   accessLevel?: 'ugp' | 'gestor';
+  restrictedUgp?: boolean;
+  authorizedCount?: number | null;
   adminView?: boolean;
   gestoresDisponiveis?: GestorDisponivel[];
   gestorSelecionado?: GestorDisponivel | null;
@@ -3495,7 +3497,13 @@ export default function AcompanharIntegracaoGestor() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.12em] text-violet-600">
-                {dados?.adminView ? 'Visão Administrativa' : isUgpRh ? 'Visão UGP/RH' : 'Visão do Gestor'}
+                {dados?.adminView
+                  ? 'Visão Administrativa'
+                  : dados?.restrictedUgp
+                    ? `Visão UGP/RH restrita — ${dados.authorizedCount ?? colaboradores.length} colaboradores autorizados`
+                    : isUgpRh
+                      ? 'Visão UGP/RH'
+                      : 'Visão do Gestor'}
               </div>
               <h1 className="mt-1 text-[28px] font-bold leading-[34px] tracking-tight text-slate-950">Acompanhar Integração</h1>
               <p className="mt-1 text-sm text-slate-500">
