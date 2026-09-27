@@ -107,7 +107,22 @@ export async function ensureDemoUgpLoginFixture() {
   const demoName = "[TESTE] UGP Integração SEBRAE TO";
   const demoEmail = "ugp.teste.integracao@example.com";
   const demoCpf = "99999999999";
-  const demoLoginId = "UGPTESTE";
+
+  // Regra permanente: esta fixture só cria a conta fictícia quando ela ainda não existe.
+  // Depois da primeira criação, nome, e-mail, CPF, empresa e permissões passam a ser
+  // administrados exclusivamente pela plataforma e nunca são sobrescritos no boot.
+  const [existingUser] = await db.select()
+    .from(users)
+    .where(eq(users.openId, demoOpenId))
+    .limit(1);
+
+  if (existingUser) {
+    console.log("[DemoIntegracao] UGP_LOGIN_PRESERVED", JSON.stringify({
+      userId: existingUser.id,
+      consultorId: existingUser.consultorId,
+    }));
+    return { ok: true, skipped: true as const, userId: existingUser.id };
+  }
 
   const programRows = await db.select().from(programs).where(eq(programs.isActive, 1));
   const program = programRows.find((item) => {
@@ -122,153 +137,39 @@ export async function ensureDemoUgpLoginFixture() {
     return { ok: true, skipped: true as const };
   }
 
-  let [user] = await db.select()
-    .from(users)
-    .where(or(
-      eq(users.openId, demoOpenId),
-      eq(users.email, demoEmail),
-    ))
-    .limit(1);
-
-  if (!user) {
-    const criado = await createGerentePuro({
-      name: demoName,
-      email: demoEmail,
-      cpf: demoCpf,
-      programId: Number(program.id),
-      permissions: ["scope:manager:special"],
-    });
-    if (!criado.success || !criado.userId || !criado.consultorId) {
-      throw new Error(`[DemoIntegracao] Não foi possível criar a UGP fictícia: ${criado.message || "erro desconhecido"}`);
-    }
-
-    const integracao = await setManagerIntegracaoConfig({
-      userId: criado.userId,
-      enabled: true,
-      programId: Number(program.id),
-      mode: "all",
-      processIds: [],
-    });
-    if (!integracao.success) {
-      throw new Error(`[DemoIntegracao] Não foi possível configurar o escopo all da UGP fictícia: ${integracao.message || "erro desconhecido"}`);
-    }
-
-    await db.update(users)
-      .set({ openId: demoOpenId })
-      .where(eq(users.id, criado.userId));
-
-    user = (await db.select().from(users).where(eq(users.id, criado.userId)).limit(1))[0];
-    console.log("[DemoIntegracao] UGP_CREATED", JSON.stringify({
-      userId: criado.userId,
-      consultorId: criado.consultorId,
-      programId: Number(program.id),
-    }));
+  const criado = await createGerentePuro({
+    name: demoName,
+    email: demoEmail,
+    cpf: demoCpf,
+    programId: Number(program.id),
+    permissions: ["scope:manager:special"],
+  });
+  if (!criado.success || !criado.userId || !criado.consultorId) {
+    throw new Error(`[DemoIntegracao] Não foi possível criar a UGP fictícia: ${criado.message || "erro desconhecido"}`);
   }
 
-  if (!user) throw new Error("[DemoIntegracao] UGP fictícia ausente após tentativa de criação.");
+  const integracao = await setManagerIntegracaoConfig({
+    userId: criado.userId,
+    enabled: true,
+    programId: Number(program.id),
+    mode: "all",
+    processIds: [],
+  });
+  if (!integracao.success) {
+    throw new Error(`[DemoIntegracao] Não foi possível configurar o escopo inicial da UGP fictícia: ${integracao.message || "erro desconhecido"}`);
+  }
 
   await db.update(users)
-    .set({
-      name: demoName,
-      email: demoEmail,
-      cpf: demoCpf,
-      role: "manager",
-      loginMethod: "email_cpf",
-      programId: Number(program.id),
-      isActive: 1,
-      lastSignedIn: new Date(),
-    })
-    .where(eq(users.id, user.id));
+    .set({ openId: demoOpenId })
+    .where(eq(users.id, criado.userId));
 
-  if (user.consultorId) {
-    await db.update(consultors)
-      .set({
-        name: demoName,
-        email: demoEmail,
-        cpf: demoCpf,
-        loginId: demoLoginId,
-        role: "gerente",
-        managedProgramId: Number(program.id),
-        isActive: 1,
-        canLogin: 1,
-      })
-      .where(eq(consultors.id, user.consultorId));
-  }
-
-  const perms = await getAdminPermissions(user.id);
-  const desiredPerms = replaceIntegracaoPermissions(
-    Array.from(new Set([...perms, "scope:manager:special"])),
-    {
-      enabled: true,
-      programId: Number(program.id),
-      mode: "all",
-      processIds: [],
-    },
-  );
-  await setAdminPermissions(user.id, desiredPerms);
-
-  const [confirmed] = await db.select({
-    id: users.id,
-    email: users.email,
-    cpf: users.cpf,
-    role: users.role,
-    isActive: users.isActive,
-    consultorId: users.consultorId,
-  })
-    .from(users)
-    .where(and(
-      eq(users.id, user.id),
-      eq(users.email, demoEmail),
-      eq(users.cpf, demoCpf),
-      eq(users.role, "manager"),
-      eq(users.isActive, 1),
-    ))
-    .limit(1);
-
-  if (!confirmed) {
-    throw new Error("[DemoIntegracao] Falha ao confirmar criação/normalização da UGP fictícia");
-  }
-
-  if (confirmed.consultorId) {
-    const [consultor] = await db.select({
-      isActive: consultors.isActive,
-      canLogin: consultors.canLogin,
-      email: consultors.email,
-      cpf: consultors.cpf,
-      managedProgramId: consultors.managedProgramId,
-    })
-      .from(consultors)
-      .where(eq(consultors.id, confirmed.consultorId))
-      .limit(1);
-
-    if (!consultor || consultor.isActive !== 1 || consultor.canLogin !== 1 || consultor.email !== demoEmail || consultor.cpf !== demoCpf || Number(consultor.managedProgramId) !== Number(program.id)) {
-      throw new Error("[DemoIntegracao] Consultor fictício não ficou apto ao login");
-    }
-  }
-
-  const confirmedPerms = await getAdminPermissions(confirmed.id);
-  if (
-    !confirmedPerms.includes("scope:manager:special") ||
-    !confirmedPerms.includes("/gestor/integracao") ||
-    !confirmedPerms.includes(`scope:integracao:program:${program.id}`) ||
-    !confirmedPerms.includes("scope:integracao:mode:all") ||
-    !confirmedPerms.includes("scope:integracao:all")
-  ) {
-    throw new Error("[DemoIntegracao] Permissões da UGP fictícia não ficaram completas.");
-  }
-
-  console.log("[DemoIntegracao] UGP_LOGIN_OK", JSON.stringify({
-    userId: confirmed.id,
-    email: confirmed.email,
-    cpf: confirmed.cpf,
-    role: confirmed.role,
-    isActive: confirmed.isActive,
-    consultorId: confirmed.consultorId,
+  console.log("[DemoIntegracao] UGP_CREATED", JSON.stringify({
+    userId: criado.userId,
+    consultorId: criado.consultorId,
     programId: Number(program.id),
-    permissions: confirmedPerms,
   }));
 
-  return { ok: true, skipped: false as const, userId: confirmed.id };
+  return { ok: true, skipped: false as const, userId: criado.userId };
 }
 
 export async function getRawConnection() {
