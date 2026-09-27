@@ -8663,8 +8663,9 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         userId: z.number(),
         enabled: z.boolean(),
         programId: z.number().int().positive().nullable(),
-        mode: z.enum(["gestor", "all", "manual"]),
+        mode: z.enum(["gestor", "all", "manual", "ugp_restrita"]),
         processIds: z.array(z.number().int().positive()).optional().default([]),
+        demoOnly: z.boolean().optional().default(false),
       }))
       .mutation(async ({ input }) => {
         const gerente = (await db.getGerentesEmpresa()).find((g: any) => Number(g.id) === input.userId);
