@@ -3122,7 +3122,8 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
 
   const [integracaoEnabled, setIntegracaoEnabled] = useState(false);
   const [integracaoProgramId, setIntegracaoProgramId] = useState("");
-  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual">("gestor");
+  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual" | "ugp_restrita">("gestor");
+  const [integracaoDemoOnly, setIntegracaoDemoOnly] = useState(false);
   const [integracaoProcessIds, setIntegracaoProcessIds] = useState<number[]>([]);
   const [integracaoProcessos, setIntegracaoProcessos] = useState<any[]>([]);
   const [integracaoProcessosLoading, setIntegracaoProcessosLoading] = useState(false);
@@ -4172,6 +4173,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                         <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
                         <SelectItem value="all">Todos os colaboradores ativos desta empresa</SelectItem>
                         <SelectItem value="manual">Selecionar colaboradores manualmente</SelectItem>
+                      <SelectItem value="ugp_restrita">UGP/RH restrita — colaboradores selecionados</SelectItem>
                       </SelectContentNoPortal>
                     </Select>
                   </div>
@@ -4285,7 +4287,8 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       enabled: integracaoEnabled,
                       programId: integracaoEnabled ? parseInt(integracaoProgramId) : null,
                       mode: integracaoMode,
-                      processIds: integracaoMode === "manual" ? integracaoProcessIds : [],
+                      processIds: (integracaoMode === "manual" || integracaoMode === "ugp_restrita") ? integracaoProcessIds : [],
+        demoOnly: integracaoMode === "ugp_restrita" ? integracaoDemoOnly : false,
                     });
                   }}
                 >
