@@ -183,6 +183,9 @@ interface AcompanhamentoResponse {
   ok: boolean;
   scope: 'all' | 'gestor';
   accessLevel?: 'ugp' | 'gestor';
+  restrictedUgp?: boolean;
+  demoOnly?: boolean;
+  authorizedCount?: number | null;
   adminView?: boolean;
   gestoresDisponiveis?: GestorDisponivel[];
   gestorSelecionado?: GestorDisponivel | null;
@@ -3417,6 +3420,7 @@ export default function AcompanharIntegracaoGestor() {
   const [faseFiltro, setFaseFiltro] = useState('all');
   const [statusFiltro, setStatusFiltro] = useState('all');
   const [radarFiltro, setRadarFiltro] = useState('all');
+  const [demoNoticeOpen, setDemoNoticeOpen] = useState(false);
 
   const abrirPerfil = (item: ColaboradorAcompanhamento) => {
     setPerfilColaborador(item);
@@ -3461,6 +3465,10 @@ export default function AcompanharIntegracaoGestor() {
 
   useEffect(() => { void carregar(); }, []);
 
+  useEffect(() => {
+    if (dados?.restrictedUgp && dados?.demoOnly) setDemoNoticeOpen(true);
+  }, [dados?.restrictedUgp, dados?.demoOnly]);
+
   const colaboradores = dados?.colaboradores || [];
   const isUgpRh = dados?.accessLevel === 'ugp' || dados?.scope === 'all';
   const colaborador = colaboradores.find((item) => item.id === selecionadoId) || colaboradores[0] || null;
@@ -3495,7 +3503,13 @@ export default function AcompanharIntegracaoGestor() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.12em] text-violet-600">
-                {dados?.adminView ? 'Visão Administrativa' : isUgpRh ? 'Visão UGP/RH' : 'Visão do Gestor'}
+                {dados?.adminView
+                  ? 'Visão Administrativa'
+                  : dados?.restrictedUgp
+                    ? `Visão UGP/RH restrita — ${dados.authorizedCount ?? colaboradores.length} colaboradores autorizados`
+                    : isUgpRh
+                      ? 'Visão UGP/RH'
+                      : 'Visão do Gestor'}
               </div>
               <h1 className="mt-1 text-[28px] font-bold leading-[34px] tracking-tight text-slate-950">Acompanhar Integração</h1>
               <p className="mt-1 text-sm text-slate-500">
@@ -3604,6 +3618,27 @@ export default function AcompanharIntegracaoGestor() {
               </CardContent>
             </Card>
           )}
+
+          <Dialog open={demoNoticeOpen} onOpenChange={setDemoNoticeOpen}>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Ambiente de demonstração</DialogTitle>
+                <DialogDescription>
+                  Este acesso foi preparado exclusivamente para apresentação do Programa de Integração.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 text-sm text-slate-700">
+                <p>Os nomes, cenários e registros exibidos neste acesso são fictícios e foram preparados para demonstração.</p>
+                <p><b>Você verá somente os colaboradores previamente autorizados.</b> Pessoas e processos reais não fazem parte deste acesso.</p>
+                <p>As informações apresentadas servem para demonstrar a experiência de navegação e os recursos da visão UGP/RH.</p>
+              </div>
+              <div className="flex justify-end">
+                <DialogClose asChild>
+                  <Button>Entendi, continuar</Button>
+                </DialogClose>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {isUgpRh && (
             <PerfilAssessmentModal

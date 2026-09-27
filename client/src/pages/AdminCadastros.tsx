@@ -3122,7 +3122,8 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
 
   const [integracaoEnabled, setIntegracaoEnabled] = useState(false);
   const [integracaoProgramId, setIntegracaoProgramId] = useState("");
-  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual">("gestor");
+  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual" | "ugp_restrita">("gestor");
+  const [integracaoDemoOnly, setIntegracaoDemoOnly] = useState(false);
   const [integracaoProcessIds, setIntegracaoProcessIds] = useState<number[]>([]);
   const [integracaoProcessos, setIntegracaoProcessos] = useState<any[]>([]);
   const [integracaoProcessosLoading, setIntegracaoProcessosLoading] = useState(false);
@@ -3186,14 +3187,15 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
           ? String(gerenteSelecionado.programId)
           : ""
     );
-    setIntegracaoMode((integracaoConfig.mode || "gestor") as "gestor" | "all" | "manual");
+    setIntegracaoMode((integracaoConfig.mode || "gestor") as "gestor" | "all" | "manual" | "ugp_restrita");
+    setIntegracaoDemoOnly(Boolean(integracaoConfig.demoOnly));
     setIntegracaoProcessIds(Array.isArray(integracaoConfig.processIds) ? integracaoConfig.processIds : []);
     setIntegracaoBusca("");
     setIntegracaoProcessosErro("");
   }, [permissaoOpenId, integracaoConfig, gerentesEmpresa]);
 
   useEffect(() => {
-    if (!permissaoOpenId || !integracaoEnabled || integracaoMode !== "manual" || !integracaoProgramId) {
+    if (!permissaoOpenId || !integracaoEnabled || !["manual", "ugp_restrita"].includes(integracaoMode) || !integracaoProgramId) {
       setIntegracaoProcessos([]);
       setIntegracaoProcessosErro("");
       setIntegracaoProcessosLoading(false);
@@ -4163,21 +4165,40 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                     <Select
                       value={integracaoMode}
                       onValueChange={(value) => {
-                        setIntegracaoMode(value as "gestor" | "all" | "manual");
-                        if (value !== "manual") setIntegracaoProcessIds([]);
+                        setIntegracaoMode(value as "gestor" | "all" | "manual" | "ugp_restrita");
+                        if (value !== "manual" && value !== "ugp_restrita") setIntegracaoProcessIds([]);
+                        if (value !== "ugp_restrita") setIntegracaoDemoOnly(false);
                       }}
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContentNoPortal>
                         <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
                         <SelectItem value="all">Todos os colaboradores ativos desta empresa</SelectItem>
-                        <SelectItem value="manual">Selecionar colaboradores manualmente</SelectItem>
+                          <SelectItem value="manual">Selecionar colaboradores manualmente</SelectItem>
+                        <SelectItem value="ugp_restrita">UGP/RH restrita — colaboradores selecionados</SelectItem>
                       </SelectContentNoPortal>
                     </Select>
                   </div>
 
-                  {integracaoMode === "manual" && (
+                  {(integracaoMode === "manual" || integracaoMode === "ugp_restrita") && (
                     <div className="space-y-3 rounded-lg border bg-muted/10 p-3">
+                      {integracaoMode === "ugp_restrita" && (
+                        <div className="space-y-2 rounded-md border border-violet-200 bg-violet-50/70 p-3">
+                          <p className="text-sm font-medium text-violet-950">Visão UGP/RH restrita</p>
+                          <p className="text-xs text-violet-800">
+                            O usuário verá o mesmo conteúdo de leitura da UGP/RH, mas somente dos colaboradores marcados abaixo.
+                          </p>
+                          <label className="flex items-start gap-2 text-xs text-violet-900">
+                            <Checkbox
+                              checked={integracaoDemoOnly}
+                              onCheckedChange={(checked) => setIntegracaoDemoOnly(Boolean(checked))}
+                            />
+                            <span>
+                              <b>Somente demonstração.</b> Bloquear no backend qualquer processo que não tenha a identificação segura de demonstração.
+                            </span>
+                          </label>
+                        </div>
+                      )}
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-sm font-medium">Selecionar colaboradores</p>
@@ -4272,8 +4293,8 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       toast.error("Selecione a empresa acompanhada no Programa de Integração.");
                       return;
                     }
-                    if (integracaoEnabled && integracaoMode === "manual" && integracaoProcessIds.length === 0) {
-                      toast.error("Selecione pelo menos um colaborador para o escopo manual.");
+                    if (integracaoEnabled && (integracaoMode === "manual" || integracaoMode === "ugp_restrita") && integracaoProcessIds.length === 0) {
+                      toast.error("Selecione pelo menos um colaborador para este escopo.");
                       return;
                     }
                     if (!integracaoEnabled && editEspecial && editPermissions.length === 0) {
@@ -4285,7 +4306,8 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       enabled: integracaoEnabled,
                       programId: integracaoEnabled ? parseInt(integracaoProgramId) : null,
                       mode: integracaoMode,
-                      processIds: integracaoMode === "manual" ? integracaoProcessIds : [],
+                      processIds: (integracaoMode === "manual" || integracaoMode === "ugp_restrita") ? integracaoProcessIds : [],
+                      demoOnly: integracaoMode === "ugp_restrita" ? integracaoDemoOnly : false,
                     });
                   }}
                 >

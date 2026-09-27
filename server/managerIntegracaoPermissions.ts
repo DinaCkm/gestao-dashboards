@@ -1,4 +1,4 @@
-export type IntegracaoManagerMode = "gestor" | "all" | "manual";
+export type IntegracaoManagerMode = "gestor" | "all" | "manual" | "ugp_restrita";
 
 export type ManagerIntegracaoConfig = {
   enabled: boolean;
@@ -6,6 +6,7 @@ export type ManagerIntegracaoConfig = {
   mode: IntegracaoManagerMode;
   processIds: number[];
   legacyScopeAll: boolean;
+  demoOnly: boolean;
 };
 
 const INTEGRACAO_ROUTE_PERMISSION = "/gestor/integracao";
@@ -13,6 +14,7 @@ const INTEGRACAO_SCOPE_PREFIX = "scope:integracao:";
 const INTEGRACAO_PROGRAM_PREFIX = "scope:integracao:program:";
 const INTEGRACAO_MODE_PREFIX = "scope:integracao:mode:";
 const INTEGRACAO_PROCESS_PREFIX = "scope:integracao:process:";
+const INTEGRACAO_DEMO_ONLY = "scope:integracao:demo-only";
 
 function positiveInt(value: unknown): number | null {
   const n = Number(value);
@@ -31,6 +33,7 @@ export function parseManagerIntegracaoPermissions(permissions: string[]): Manage
   const safePermissions = Array.isArray(permissions) ? permissions.filter(Boolean) : [];
   const enabled = safePermissions.includes(INTEGRACAO_ROUTE_PERMISSION);
   const legacyScopeAll = safePermissions.includes("scope:integracao:all");
+  const demoOnly = safePermissions.includes(INTEGRACAO_DEMO_ONLY);
 
   const programToken = safePermissions.find((permission) => permission.startsWith(INTEGRACAO_PROGRAM_PREFIX));
   const programId = programToken
@@ -40,7 +43,7 @@ export function parseManagerIntegracaoPermissions(permissions: string[]): Manage
   const modeToken = safePermissions.find((permission) => permission.startsWith(INTEGRACAO_MODE_PREFIX));
   const rawMode = modeToken?.slice(INTEGRACAO_MODE_PREFIX.length);
   const mode: IntegracaoManagerMode =
-    rawMode === "manual" || rawMode === "all" || rawMode === "gestor"
+    rawMode === "manual" || rawMode === "all" || rawMode === "gestor" || rawMode === "ugp_restrita"
       ? rawMode
       : legacyScopeAll
         ? "all"
@@ -59,6 +62,7 @@ export function parseManagerIntegracaoPermissions(permissions: string[]): Manage
     mode,
     processIds,
     legacyScopeAll,
+    demoOnly,
   };
 }
 
@@ -67,6 +71,7 @@ export function buildManagerIntegracaoPermissions(config: {
   programId: number | null;
   mode: IntegracaoManagerMode;
   processIds?: number[];
+  demoOnly?: boolean;
 }): string[] {
   if (!config.enabled) return [];
 
@@ -84,7 +89,9 @@ export function buildManagerIntegracaoPermissions(config: {
   // Compatibilidade temporária com a lógica antiga, que ainda reconhece este token.
   if (config.mode === "all") permissions.push("scope:integracao:all");
 
-  if (config.mode === "manual") {
+  if (config.demoOnly) permissions.push(INTEGRACAO_DEMO_ONLY);
+
+  if (config.mode === "manual" || config.mode === "ugp_restrita") {
     const processIds = Array.from(new Set(
       (config.processIds || [])
         .map(positiveInt)
@@ -106,6 +113,7 @@ export function replaceIntegracaoPermissions(
     programId: number | null;
     mode: IntegracaoManagerMode;
     processIds?: number[];
+    demoOnly?: boolean;
   },
 ): string[] {
   const preserved = (currentPermissions || []).filter((permission) => !isIntegracaoPermissionToken(permission));

@@ -753,10 +753,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     };
     const integracaoMode = user.role === "admin" ? "all" : String(integracaoConfig.mode || "gestor");
     const scopeAll = integracaoMode === "all";
-    // A visão UGP/RH não é um novo papel global. Ela nasce exclusivamente do
-    // escopo "todos" do Programa de Integração. Escopos "gestor" e "manual"
-    // permanecem restritos, mesmo quando incluem mais de um colaborador.
-    const acessoUgpRh = user.role === "admin" ? !String(req.query.gestor || "").trim() || String(req.query.gestor || "").trim() === "all" : scopeAll;
+    const scopeUgpRestrita = integracaoMode === "ugp_restrita";
+    const demoOnly = scopeUgpRestrita && Boolean(integracaoConfig.demoOnly);
+    // UGP restrita mantém o mesmo conteúdo de leitura da UGP/RH, mas nunca amplia
+    // o universo de processos: a allowlist continua sendo aplicada no backend.
+    const acessoUgpRh = user.role === "admin"
+      ? !String(req.query.gestor || "").trim() || String(req.query.gestor || "").trim() === "all"
+      : (scopeAll || scopeUgpRestrita);
     const manualProcessIds = new Set<number>(
       Array.isArray(integracaoConfig.processIds)
         ? integracaoConfig.processIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
@@ -864,8 +867,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       alunoEmpresaPorProcesso.set(Number(row.id), alunoEmpresa);
 
       if (scopeAll) return true; // Todos, porém somente da empresa configurada.
-      if (integracaoMode === "manual") {
-        return manualProcessIds.has(Number(row.id));
+      if (integracaoMode === "manual" || scopeUgpRestrita) {
+        if (!manualProcessIds.has(Number(row.id))) return false;
+        if (demoOnly) {
+          const estadoEscopo = asJson<Record<string, any>>(row.estado, {});
+          return String(estadoEscopo?.teste?.demoTag || "").startsWith("ugp_demo_");
+        }
+        return true;
       }
 
       const gestorNome = normTxt(row.gestor || "");
@@ -879,8 +887,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     if (!permitidos.length) {
       return res.json({
         ok: true,
-        scope: acessoUgpRh ? "all" : "gestor",
+        scope: scopeAll || user.role === "admin" ? "all" : "gestor",
         accessLevel: acessoUgpRh ? "ugp" : "gestor",
+        restrictedUgp: scopeUgpRestrita,
+        demoOnly,
+        authorizedCount: scopeUgpRestrita ? manualProcessIds.size : null,
         adminView: user.role === "admin",
         gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
         gestorSelecionado,
@@ -1300,8 +1311,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      scope: acessoUgpRh ? "all" : "gestor",
-        accessLevel: acessoUgpRh ? "ugp" : "gestor",
+      scope: scopeAll || user.role === "admin" ? "all" : "gestor",
+      accessLevel: acessoUgpRh ? "ugp" : "gestor",
+      restrictedUgp: scopeUgpRestrita,
+      demoOnly,
+      authorizedCount: scopeUgpRestrita ? manualProcessIds.size : null,
       adminView: user.role === "admin",
       gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
       gestorSelecionado,

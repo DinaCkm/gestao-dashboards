@@ -15612,6 +15612,7 @@ export async function setManagerIntegracaoConfig(data: {
   programId: number | null;
   mode: IntegracaoManagerMode;
   processIds?: number[];
+  demoOnly?: boolean;
 }): Promise<{ success: boolean; message?: string }> {
   if (!process.env.DATABASE_URL) {
     return { success: false, message: "Banco de dados não disponível" };
@@ -15669,6 +15670,7 @@ export async function setManagerIntegracaoConfig(data: {
       programId: data.programId,
       mode: data.mode,
       processIds: data.processIds,
+      demoOnly: data.demoOnly,
     });
 
     const isSpecialManager = nextPermissions.includes("scope:manager:special");

@@ -22,6 +22,7 @@ describe("managerIntegracaoPermissions", () => {
       mode: "gestor",
       processIds: [],
       legacyScopeAll: false,
+      demoOnly: false,
     });
   });
 
@@ -36,6 +37,7 @@ describe("managerIntegracaoPermissions", () => {
     expect(parsed.programId).toBeNull();
     expect(parsed.mode).toBe("all");
     expect(parsed.legacyScopeAll).toBe(true);
+    expect(parsed.demoOnly).toBe(false);
   });
 
   it("gera seleção manual por IDs técnicos únicos e ordenados", () => {
@@ -52,6 +54,35 @@ describe("managerIntegracaoPermissions", () => {
       "scope:integracao:process:5",
       "scope:integracao:process:8",
     ]);
+  });
+
+  it("gera UGP restrita com allowlist e proteção opcional de demonstração", () => {
+    const permissions = buildManagerIntegracaoPermissions({
+      enabled: true,
+      programId: 17,
+      mode: "ugp_restrita",
+      processIds: [303, 301, 302],
+      demoOnly: true,
+    });
+
+    expect(permissions).toEqual([
+      "/gestor/integracao",
+      "scope:integracao:program:17",
+      "scope:integracao:mode:ugp_restrita",
+      "scope:integracao:demo-only",
+      "scope:integracao:process:301",
+      "scope:integracao:process:302",
+      "scope:integracao:process:303",
+    ]);
+
+    expect(parseManagerIntegracaoPermissions(permissions)).toEqual({
+      enabled: true,
+      programId: 17,
+      mode: "ugp_restrita",
+      processIds: [301, 302, 303],
+      legacyScopeAll: false,
+      demoOnly: true,
+    });
   });
 
   it("troca somente tokens da Integração e preserva acessos gerais", () => {
