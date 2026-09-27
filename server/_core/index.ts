@@ -15,6 +15,9 @@ import { programaIntegracaoRegistrosRouter } from "../programaIntegracaoRegistro
 import { programaIntegracaoAnjoRouter } from "../programaIntegracaoAnjoRoutes";
 import { programaIntegracaoRouter } from "../programaIntegracaoRoutes";
 import { registerProgramaIntegracaoPages } from "../programaIntegracaoPages";
+// ⚠️ TEMPORARY: diagnostic-only route for a one-off production audit request.
+// Must be removed (this import + the app.use below) before merging for real.
+import { diagnosticGerenteRhRouter } from "../routes/diagnostic-gerente-rh";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -85,6 +88,11 @@ async function startServer() {
   app.use(programaIntegracaoAnjoRouter);
   app.use(programaIntegracaoRouter);
   registerProgramaIntegracaoPages(app);
+
+  // ⚠️ TEMPORARY: read-only diagnostic endpoint for a one-off production audit
+  // of "Gerente RH" test/consultor accounts. Remove this line and the import
+  // above before merging this branch for real — it is not meant to be permanent.
+  app.use(diagnosticGerenteRhRouter);
 
   // tRPC API
   app.use(
