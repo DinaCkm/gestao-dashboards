@@ -103,7 +103,7 @@ export async function configureGerenteRhTesteRestrictedUgpOnce() {
   const db = await getDb();
   if (!db) return { ok: false, reason: "db_unavailable" as const };
 
-  const candidates = await db.select({
+  const directCandidates = await db.select({
     id: users.id,
     name: users.name,
     role: users.role,
@@ -113,7 +113,29 @@ export async function configureGerenteRhTesteRestrictedUgpOnce() {
     .where(like(users.name, "%Gerente%RH%Teste%"))
     .limit(10);
 
-  const managerCandidates = candidates.filter((item) => item.role === "manager");
+  const consultorCandidates = await db.select({
+    id: consultors.id,
+    name: consultors.name,
+  })
+    .from(consultors)
+    .where(like(consultors.name, "%Gerente%RH%Teste%"))
+    .limit(10);
+
+  const linkedCandidates = consultorCandidates.length
+    ? await db.select({
+        id: users.id,
+        name: users.name,
+        role: users.role,
+        programId: users.programId,
+      })
+        .from(users)
+        .where(or(...consultorCandidates.map((item) => eq(users.consultorId, item.id))))
+        .limit(10)
+    : [];
+
+  const candidatesById = new Map<number, (typeof directCandidates)[number]>();
+  [...directCandidates, ...linkedCandidates].forEach((item) => candidatesById.set(Number(item.id), item));
+  const managerCandidates = Array.from(candidatesById.values()).filter((item) => item.role === "manager");
   if (managerCandidates.length !== 1) {
     console.log("[DemoIntegracao] GERENTE_RH_TESTE_CANDIDATES", JSON.stringify(
       managerCandidates.map((item) => ({ id: item.id, name: item.name, role: item.role }))
