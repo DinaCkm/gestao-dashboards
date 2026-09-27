@@ -32,7 +32,7 @@ import { iniciarCronLembreteChecklistWebinar } from "../cronLembreteChecklistWeb
 import { iniciarCronDevolutivaLembreteD1 } from "../cronDevolutivaLembreteD1";
 import { ENV } from "./env";
 import { ensureDemoIntegrationProcessFixture } from "../demoIntegrationProcessFixture";
-import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport, ensureDevolutivasTables, ensureMetaEvidenciaColumns, ensureDiretorSupport, ensureDemoUgpLoginFixture, configureGerenteRhTesteRestrictedUgpOnce } from "../db";
+import { ensureBibliotecaPedagogicaTables, ensurePerfilProfissionalColumns, ensureHistoricoCiclosTable, ensureRelatorioMentoriasLogTable, ensureAuditoriaNotesMentoriaTable, ensureGoogleCalendarColumns, ensureProcessoSeletivoColumns, ensureRelatorioEntrevistaColumns, ensurePdfAtividadeSupport, ensureDevolutivasTables, ensureMetaEvidenciaColumns, ensureDiretorSupport, ensureDemoUgpLoginFixture } from "../db";
 
 async function startServer() {
   // Garantir que as tabelas da Biblioteca Pedagógica existam no banco
@@ -50,7 +50,6 @@ async function startServer() {
   await ensureDiretorSupport(); // garante papel de Diretor/Área (EcoDISC 360) com visão restrita por diretoria
   await ensureCourseMetadataTable(); // garante persistência do resumo textual dos cursos
   await ensureDemoUgpLoginFixture(); // normaliza somente o usuário fictício de demonstração da UGP
-  await configureGerenteRhTesteRestrictedUgpOnce(); // configuração única; será removida após confirmação em produção
   try {
     await ensureDemoIntegrationProcessFixture();
   } catch (error) {
