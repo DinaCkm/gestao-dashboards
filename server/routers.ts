@@ -8556,7 +8556,21 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         if (input.departmentId !== undefined) {
           await db.updateAluno(input.alunoId, { departmentId: input.departmentId });
         }
-        return await db.updateAluno(alunoId, updateData);
+        const result = await db.updateAluno(alunoId, updateData);
+        if (!result.success) return result;
+
+        // Aluno + Gerente usa a identidade do aluno como fonte dos dados pessoais.
+        // Sincroniza somente o users já vinculado; nunca cria/vincula outro usuário automaticamente.
+        if (input.name !== undefined || input.email !== undefined || input.cpf !== undefined) {
+          const sync = await db.syncAlunoGerenteIdentity(alunoId);
+          if (!sync.success) {
+            return {
+              success: false,
+              message: `Dados do aluno foram atualizados, mas o login do perfil Aluno + Gerente não foi alterado: ${sync.message}`,
+            };
+          }
+        }
+        return result;
       }),
     
     // Gestão de Acesso (Email + CPF)

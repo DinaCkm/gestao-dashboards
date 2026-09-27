@@ -49,7 +49,7 @@ async function startServer() {
   await ensureMetaEvidenciaColumns(); // garante colunas de evidência/validação em Metas (Jornada de Superação)
   await ensureDiretorSupport(); // garante papel de Diretor/Área (EcoDISC 360) com visão restrita por diretoria
   await ensureCourseMetadataTable(); // garante persistência do resumo textual dos cursos
-  await ensureDemoUgpLoginFixture(); // normaliza somente o usuário fictício de demonstração da UGP
+  await ensureDemoUgpLoginFixture(); // cria a conta fictícia somente se ausente; nunca sobrescreve edições posteriores
   try {
     await ensureDemoIntegrationProcessFixture();
   } catch (error) {
