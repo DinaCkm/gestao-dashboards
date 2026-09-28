@@ -3592,8 +3592,11 @@ export default function AcompanharIntegracaoGestor() {
   useEffect(() => { void carregar(); }, []);
 
   useEffect(() => {
-    if (dados?.restrictedUgp && dados?.demoOnly) setDemoNoticeOpen(true);
-  }, [dados?.restrictedUgp, dados?.demoOnly]);
+    const deveExibirBoasVindas =
+      Boolean(dados?.restrictedUgp && dados?.demoOnly) ||
+      Boolean(!dados?.adminView && dados?.scope === 'all');
+    if (deveExibirBoasVindas) setDemoNoticeOpen(true);
+  }, [dados?.restrictedUgp, dados?.demoOnly, dados?.adminView, dados?.scope]);
 
   const colaboradores = dados?.colaboradores || [];
   const adminVisualizandoGestor = Boolean(dados?.adminView && dados?.gestorSelecionado);
