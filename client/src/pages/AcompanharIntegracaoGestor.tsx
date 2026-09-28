@@ -173,7 +173,8 @@ interface ColaboradorAcompanhamento {
   ultimaEntradaEcoLider: string | null;
   assessmentPotencialConcluido: boolean | null;
   assessmentPotencialConcluidoEm: string | null;
-  perfilAssessment: PerfilAssessment;
+  perfilAssessment: PerfilAssessment | null;
+  statusAcompanhamento?: { chave: 'em_dia' | 'acompanhar' | 'atencao'; rotulo: string };
   respostas: RespostaAcompanhamento[];
   formulariosPendentes: Pendencia[];
   dicasGestor?: Array<{ titulo: string; texto: string }>;
@@ -2044,6 +2045,17 @@ function temFormularioEmAtrasoOperacional(colaborador: ColaboradorAcompanhamento
 }
 
 function statusCarteira(colaborador: ColaboradorAcompanhamento) {
+  const canonico = colaborador.statusAcompanhamento;
+  if (canonico?.chave === 'atencao') {
+    return { chave: 'atencao', rotulo: 'Atenção', classes: 'bg-amber-50 text-amber-800 border-amber-200' };
+  }
+  if (canonico?.chave === 'acompanhar') {
+    return { chave: 'acompanhar', rotulo: 'Acompanhar', classes: 'bg-blue-50 text-blue-800 border-blue-200' };
+  }
+  if (canonico?.chave === 'em_dia') {
+    return { chave: 'em_dia', rotulo: 'Em dia', classes: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+  }
+
   const sinais = sinaisAtencaoUgp(colaborador);
   const pendentes = colaborador.formulariosPendentes.length;
   const atrasados = colaborador.formulariosPendentes.filter((p) => p.atrasado).length;
@@ -2101,8 +2113,23 @@ function JornadaMini({ colaborador }: { colaborador: ColaboradorAcompanhamento }
   );
 }
 
-function KpisOperacionais({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
-  const saude = saudeProcesso(colaborador);
+function KpisOperacionais({ colaborador, visaoGestor = false }: { colaborador: ColaboradorAcompanhamento; visaoGestor?: boolean }) {
+  const status = statusCarteira(colaborador);
+  const saude = visaoGestor
+    ? {
+        rotulo: status.rotulo,
+        detalhe: status.chave === 'atencao'
+          ? 'Há um ponto de atenção no processo. Acompanhe as ações sob sua responsabilidade e os indicadores disponíveis.'
+          : status.chave === 'acompanhar'
+            ? 'O processo requer acompanhamento neste momento.'
+            : 'O processo está em dia com base nos indicadores disponíveis para o Gestor.',
+        classes: status.chave === 'atencao'
+          ? 'border-amber-300 bg-amber-50 text-amber-950'
+          : status.chave === 'acompanhar'
+            ? 'border-blue-200 bg-blue-50 text-blue-950'
+            : 'border-emerald-200 bg-emerald-50 text-emerald-950',
+      }
+    : saudeProcesso(colaborador);
 
   const ajudaCompliance = (
     <div className="space-y-2 normal-case font-normal">
@@ -3312,105 +3339,150 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
 }
 
 
-function PendenciasGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+function FormulariosDoGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const pendencias = colaborador.formulariosPendentes || [];
-  const alertas = alertasDoColaborador(colaborador);
-  const avisosEquipe = colaborador.avisosGestorEquipe || [];
+  const respondidos = (colaborador.respostas || [])
+    .filter((r) => (r.form === 'aval' && r.papel === 'Gestor') || r.form === 'bem')
+    .sort((a,b) => Number(a.ciclo) - Number(b.ciclo));
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-        <CardContent className="p-5">
-          <div className="flex items-start gap-3">
-            <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><ClipboardList className="h-5 w-5" /></span>
-            <div>
-              <div className="font-black text-slate-950">Formulários que o Gestor precisa responder</div>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                Aqui aparecem somente os formulários que dependem de resposta do próprio Gestor. Pendências do Anjo ou do colaborador aparecem em Avisos de atenção, sem revelar o conteúdo das respostas.
-              </p>
-            </div>
+    <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><ClipboardList className="h-5 w-5" /></span>
+          <div>
+            <div className="font-black text-slate-950">Formulários do Gestor</div>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              Aqui aparecem exclusivamente os formulários do próprio Gestor neste Programa de Integração.
+            </p>
           </div>
-          <div className="mt-4 space-y-2">
-            {pendencias.length ? pendencias.map((p,i)=>(
-              <div key={i} className="rounded-xl border bg-slate-50 p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'}
-                      {p.prazo ? ' · prazo ' + dataBr(p.prazo) : ''}
-                    </div>
-                  </div>
-                  <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge>
-                </div>
-              </div>
-            )) : (
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                O Gestor não possui formulários pendentes neste momento.
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-        <CardContent className="p-5">
-          <div className="flex items-start gap-3">
-            <span className="rounded-xl bg-rose-100 p-2 text-rose-700"><AlertTriangle className="h-5 w-5" /></span>
-            <div>
-              <div className="font-black text-slate-950">Avisos de atenção</div>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                Avisos operacionais e de acompanhamento disponíveis ao Gestor, sem revelar respostas, percentuais ou conteúdos sensíveis do colaborador.
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 space-y-2">
-            {avisosEquipe.map((aviso) => (
-              <div
-                key={aviso.papel + '-' + aviso.ciclo}
-                className={`rounded-xl border p-3 text-sm ${aviso.atrasado
-                  ? 'border-rose-200 bg-rose-50 text-rose-900'
-                  : 'border-blue-200 bg-blue-50 text-blue-900'}`}
-              >
-                <div className="font-black">
-                  {aviso.atrasado
-                    ? (aviso.papel === 'Anjo' ? 'Formulário do Anjo em atraso' : 'Formulário do colaborador em atraso')
-                    : (aviso.papel === 'Anjo' ? 'Formulário do Anjo aguardando resposta' : 'Formulário do colaborador aguardando resposta')}
+        <div className="mt-4 space-y-2">
+          {respondidos.map((r, index) => (
+            <div key={'respondido-' + r.form + '-' + r.ciclo + '-' + index} className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+              <div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {r.form === 'bem' ? 'Bem Acolhido em Nossa Unidade' : 'Avaliação do Programa de Integração'}
                 </div>
-                <div className="mt-1 leading-relaxed">{aviso.mensagem}</div>
-                {aviso.prazo && <div className="mt-1 text-xs opacity-75">Prazo: {dataBr(aviso.prazo)}</div>}
+                <div className="mt-1 text-xs text-slate-500">
+                  {r.form === 'bem' ? 'Pré-integração' : 'Alinhamento de ' + diaDoAlinhamento(r.ciclo) + ' dias'}
+                </div>
               </div>
-            ))}
-            {alertas.length ? alertas.map((alerta)=>(
-              <div key={alerta} className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                {alerta}
+              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Respondido</Badge>
+            </div>
+          ))}
+
+          {pendencias.map((p,i)=>(
+            <div key={'pendente-' + i} className="rounded-xl border bg-slate-50 p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    {p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'}
+                    {p.prazo ? ' · prazo ' + dataBr(p.prazo) : ''}
+                  </div>
+                </div>
+                <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge>
               </div>
-            )) : !avisosEquipe.length ? (
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                Nenhum aviso operacional de atenção identificado neste momento.
-              </div>
-            ) : null}
+            </div>
+          ))}
+
+          {!respondidos.length && !pendencias.length && (
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+              Não há formulários do Gestor disponíveis neste momento.
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CarteiraGestor({
+  colaboradores,busca,setBusca,onAbrir
+}: {
+  colaboradores: ColaboradorAcompanhamento[];
+  busca:string; setBusca:(v:string)=>void;
+  onAbrir:(id:string)=>void;
+}) {
+  const termo=busca.trim().toLowerCase();
+  const lista=colaboradores.filter((x)=>!termo||[x.nome,x.cargo,x.unidade].some((v)=>String(v||'').toLowerCase().includes(termo)));
+  const atencao=colaboradores.filter((x)=>statusCarteira(x).chave==='atencao').length;
+  const pendenciasGestor=colaboradores.reduce((s,x)=>s+(x.formulariosPendentes||[]).length,0);
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          ['Colaboradores',colaboradores.length,'em acompanhamento'],
+          ['Atenção',atencao,'processos que exigem atenção'],
+          ['Formulários do Gestor',pendenciasGestor,'pendências sob sua responsabilidade'],
+        ].map(([label,value,detail])=>(
+          <Card key={String(label)} className="rounded-2xl border-slate-200 border-t-[3px] border-t-violet-400 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+            <CardContent className="p-4">
+              <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</div>
+              <div className="mt-2 text-[28px] font-bold tabular-nums text-slate-950">{value}</div>
+              <div className="mt-1 text-xs text-slate-500">{detail}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+        <div className="border-b bg-white p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/>
+            <Input className="pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/>
           </div>
-        </CardContent>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-sm">
+            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3 text-left">Colaborador</th>
+                <th className="px-4 py-3 text-left">Unidade</th>
+                <th className="px-4 py-3 text-center">Dias em integração</th>
+                <th className="px-4 py-3 text-center">Status</th>
+                <th className="px-4 py-3 text-right">Abrir</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lista.map((x)=>{
+                const st=statusCarteira(x);
+                return (
+                  <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-[#F7F5FF]">
+                    <td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td>
+                    <td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td>
+                    <td className="px-4 py-4 text-center font-bold tabular-nums">{x.dia}/{x.totalDias}</td>
+                    <td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td>
+                    <td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td>
+                  </tr>
+                );
+              })}
+              {!lista.length&&<tr><td colSpan={5} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </Card>
     </div>
   );
 }
 
-function GestorDetalheSimples({ colaborador }: { colaborador:ColaboradorAcompanhamento }) {
+function GestorDetalheSimples({ colaborador, onVoltar }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void }) {
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] text-white shadow-md">
         <CardContent className="p-6">
+          <Button variant="ghost" size="sm" onClick={onVoltar} className="mb-3 gap-1 text-white hover:bg-white/10 hover:text-white"><ArrowLeft className="h-4 w-4"/>Carteira</Button>
           <h2 className="text-2xl font-black" style={{ color: '#ffffff' }}>{colaborador.nome}</h2>
           <p className="mt-1 text-sm text-white/80">{colaborador.cargo||'Cargo não informado'} · {colaborador.unidade||'Unidade não informada'}</p>
           <p className="mt-2 text-xs text-white/70">Início {dataBr(colaborador.inicio)} · Dia {colaborador.dia}/{colaborador.totalDias}</p>
         </CardContent>
       </Card>
 
-      <KpisOperacionais colaborador={colaborador}/>
-      <PendenciasGestor colaborador={colaborador}/>
-      <DicasGestorProtegidas colaborador={colaborador}/>
+      <KpisOperacionais colaborador={colaborador} visaoGestor />
+      <FormulariosDoGestor colaborador={colaborador}/>
       <EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/>
     </div>
   );
@@ -3480,7 +3552,7 @@ export default function AcompanharIntegracaoGestor() {
   }, [dados?.restrictedUgp, dados?.demoOnly]);
 
   const colaboradores = dados?.colaboradores || [];
-  const isUgpRh = dados?.accessLevel === 'ugp' || dados?.scope === 'all';
+  const isUgpRh = dados?.accessLevel === 'ugp';
   const colaborador = colaboradores.find((item) => item.id === selecionadoId) || colaboradores[0] || null;
 
   const abrirDetalhe = (id: string) => {
@@ -3601,25 +3673,15 @@ export default function AcompanharIntegracaoGestor() {
                 onAbrir={abrirDetalhe}
               />
             )
-          ) : colaborador ? (
-            <div className="space-y-4">
-              {colaboradores.length > 1 && (
-                <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-                  <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
-                    <div className="text-sm font-semibold text-slate-700">Colaborador da equipe</div>
-                    <Select value={colaborador.id} onValueChange={setSelecionadoId}>
-                      <SelectTrigger className="w-full md:max-w-md"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {colaboradores.map((item) => (
-                          <SelectItem key={item.id} value={item.id}>{item.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </CardContent>
-                </Card>
-              )}
-              <GestorDetalheSimples colaborador={colaborador} />
-            </div>
+          ) : modoDetalhe && colaborador ? (
+            <GestorDetalheSimples colaborador={colaborador} onVoltar={()=>setModoDetalhe(false)} />
+          ) : colaboradores.length ? (
+            <CarteiraGestor
+              colaboradores={colaboradores}
+              busca={busca}
+              setBusca={setBusca}
+              onAbrir={abrirDetalhe}
+            />
           ) : (
             <Card className="rounded-2xl border-slate-200">
               <CardContent className="py-16 text-center">
