@@ -389,6 +389,75 @@ programaIntegracaoPeopleRouter.patch(
 );
 
 programaIntegracaoPeopleRouter.patch(
+  "/api/programa-integracao/processos/:legacyId/visibilidade-acompanhamento",
+  requireAdmin,
+  async (req, res) => {
+    const connection = await getConnectionOr503(res);
+    if (!connection) return;
+
+    const legacyId = sanitizeLegacyId(req.params.legacyId);
+    const oculto = req.body?.oculto === true;
+    if (!legacyId) return res.status(400).json({ error: "Processo inválido." });
+
+    let transactionStarted = false;
+    try {
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      const [rows] = (await connection.execute(
+        `SELECT id,nome,estado,situacao
+         FROM programa_integracao_processos
+         WHERE legacyId=? AND situacao<>'removido'
+         LIMIT 1 FOR UPDATE`,
+        [legacyId],
+      )) as any;
+      const processo = rows?.[0];
+      if (!processo) {
+        await connection.rollback(); transactionStarted = false;
+        return res.status(404).json({ error: "Processo não encontrado." });
+      }
+
+      const estado = asJson<Record<string, any>>(processo.estado, {});
+      const anterior = Boolean(estado?.acompanhamentoOculto);
+      const agora = new Date().toISOString();
+      estado.acompanhamentoOculto = oculto;
+      estado.acompanhamentoOcultoEm = oculto ? agora : null;
+      estado.acompanhamentoOcultoPorUserId = oculto
+        ? (Number((req as any).authenticatedUser?.id || 0) || null)
+        : null;
+
+      await connection.execute(
+        `UPDATE programa_integracao_processos
+         SET estado=?,updatedAt=CURRENT_TIMESTAMP
+         WHERE id=?`,
+        [JSON.stringify(estado), Number(processo.id)],
+      );
+
+      await audit(
+        connection,
+        req,
+        oculto ? "acompanhamento_ocultado" : "acompanhamento_desocultado",
+        oculto
+          ? `Processo ${legacyId} ocultado temporariamente de todas as visões de acompanhamento; dados preservados.`
+          : `Processo ${legacyId} desocultado e novamente disponível nas visões de acompanhamento.`,
+        Number(processo.id),
+        { anterior, atual: oculto, nome: String(processo.nome || "") },
+      );
+
+      await connection.commit();
+      transactionStarted = false;
+      return res.json({ ok: true, legacyId, oculto });
+    } catch (error) {
+      if (transactionStarted) {
+        try { await connection.rollback(); } catch {}
+      }
+      console.error("[ProgramaIntegracaoPessoas] alterar visibilidade do acompanhamento:", error);
+      return res.status(500).json({ error: "Não foi possível alterar a visibilidade do processo." });
+    }
+  },
+);
+
+programaIntegracaoPeopleRouter.patch(
   "/api/programa-integracao/processos/:legacyId/situacao",
   requireAdmin,
   async (req, res) => {
