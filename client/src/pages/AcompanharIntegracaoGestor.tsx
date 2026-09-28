@@ -3318,12 +3318,12 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
         </TabsList>
 
         <TabsContent value="visao" className="space-y-6">
-          {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
-          <TimelineAlinhamentos colaborador={colaborador}/>
-          <RegistrosAlinhamentosUgp colaborador={colaborador}/>
           <SinaisCompactos colaborador={colaborador}/>
           <AlertasOperacionaisUgp colaborador={colaborador}/>
+          {indiceIntegracao(colaborador).indice!=null&&<ComposicaoIndice colaborador={colaborador}/>}
+          <TimelineAlinhamentos colaborador={colaborador}/>
           <TabelaFormulariosPendentesUgp colaborador={colaborador}/>
+          <RegistrosAlinhamentosUgp colaborador={colaborador}/>
         </TabsContent>
 
         <TabsContent value="trajetoria"><TrajetoriaHeatmap colaborador={colaborador}/></TabsContent>
