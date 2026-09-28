@@ -889,10 +889,18 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
        ORDER BY ordem,id`,
     )) as any;
 
+    // Máscara temporária definida pelo Admin em Gerenciar Pessoas.
+    // O processo e todo o histórico permanecem intactos no banco/bootstrap,
+    // mas ele não participa de nenhuma visão do Acompanhar Integração.
+    const processRowsVisiveis = (processRows || []).filter((row: any) => {
+      const estado = asJson<Record<string, any>>(row.estado, {});
+      return !Boolean(estado?.acompanhamentoOculto);
+    });
+
     // No Admin, permitir alternar entre a visão UGP/RH (todos) e a visão exata
     // de cada gerente, usando os vínculos já existentes nos processos ativos.
     const gestoresMap = new Map<string, { key: string; nome: string; email: string; colaboradores: number }>();
-    for (const row of processRows || []) {
+    for (const row of processRowsVisiveis) {
       const key = chaveGerenteAcompanhamento(row.gestor, row.gestorEmail);
       if (!key) continue;
       const atual = gestoresMap.get(key);
@@ -969,7 +977,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     }
 
     const alunoEmpresaPorProcesso = new Map<number, any>();
-    const permitidos = (processRows || []).filter((row: any) => {
+    const permitidos = processRowsVisiveis.filter((row: any) => {
       if (user.role === "admin") {
         if (!gestorSelecionado) return true;
         return chaveGerenteAcompanhamento(row.gestor, row.gestorEmail) === gestorSelecionado.key;
