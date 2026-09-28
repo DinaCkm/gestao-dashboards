@@ -3596,7 +3596,10 @@ export default function AcompanharIntegracaoGestor() {
   }, [dados?.restrictedUgp, dados?.demoOnly]);
 
   const colaboradores = dados?.colaboradores || [];
-  const isUgpRh = dados?.accessLevel === 'ugp';
+  const adminVisualizandoGestor = Boolean(dados?.adminView && dados?.gestorSelecionado);
+  // Defesa em profundidade: mesmo que uma resposta futura venha com accessLevel
+  // incorreto, a seleção explícita de um Gestor no Admin nunca renderiza a UI UGP.
+  const isUgpRh = dados?.accessLevel === 'ugp' && !adminVisualizandoGestor;
   const colaborador = colaboradores.find((item) => item.id === selecionadoId) || colaboradores[0] || null;
 
   const abrirDetalhe = (id: string) => {
@@ -3629,13 +3632,15 @@ export default function AcompanharIntegracaoGestor() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.12em] text-violet-600">
-                {dados?.adminView
-                  ? 'Visão Administrativa'
-                  : dados?.restrictedUgp
-                    ? 'Visão UGP/RH'
-                    : isUgpRh
+                {adminVisualizandoGestor
+                  ? 'Visão do Gestor'
+                  : dados?.adminView
+                    ? 'Visão Administrativa'
+                    : dados?.restrictedUgp
                       ? 'Visão UGP/RH'
-                      : 'Visão do Gestor'}
+                      : isUgpRh
+                        ? 'Visão UGP/RH'
+                        : 'Visão do Gestor'}
               </div>
               <h1 className="mt-1 text-[28px] font-bold leading-[34px] tracking-tight text-slate-950">Acompanhar Integração</h1>
               <p className="mt-1 text-sm text-slate-500">
