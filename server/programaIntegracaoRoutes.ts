@@ -1292,10 +1292,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         });
       });
 
-      // Para a visão do Gestor, expomos apenas o estado operacional das
-      // pendências do Anjo e do Colaborador (papel, alinhamento, prazo e se
-      // está atrasado). Nenhuma resposta, nota, percentual, dimensão ou
-      // conteúdo do formulário é enviado.
+      // Para a visão do Gestor, não expor pendências específicas do Anjo ou
+      // do Colaborador. Esses dados podem influenciar apenas o status agregado
+      // seguro calculado no servidor, sem revelar a origem do sinal.
       // Não enviar ao Gestor comum qualquer detalhe operacional que revele
       // pendências específicas do Anjo ou do colaborador. O status agregado é
       // calculado abaixo usando os dados completos, mas somente o rótulo seguro sai no payload.
