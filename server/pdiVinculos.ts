@@ -85,8 +85,8 @@ export type LinhaCursoVinculado = {
   titulo: string;
   resumo: string | null;
   ordem: number;
-  totalAvaliacoesCurso: number;
-  totalAvaliacoesAtividades: number;
+  totalAtividades: number;
+  totalAtividadesComAvaliacao: number;
 };
 
 // Cursos ativos das competências ativas vinculadas aos códigos pedidos.
@@ -100,11 +100,12 @@ export async function buscarCursosPorCodigos(codigos: string[]): Promise<LinhaCu
   const [rows] = (await connection.execute(
     `SELECT v.codigoPdi, comp.id AS competenciaId, comp.nome AS competenciaNome, t.name AS trilhaNome,
             c.id AS cursoId, c.titulo, m.resumo, c.ordem,
-            (SELECT COUNT(*) FROM avaliacoes_atividade a
-              WHERE a.cursoId = c.id AND a.tipo = 'diagnostico_inicial' AND a.isActive = 1) AS totalAvaliacoesCurso,
-            (SELECT COUNT(*) FROM avaliacoes_atividade a
-               JOIN atividades_curso ac ON ac.id = a.atividadeId AND ac.isActive = 1
-              WHERE ac.cursoId = c.id AND a.tipo = 'atividade' AND a.isActive = 1) AS totalAvaliacoesAtividades
+            (SELECT COUNT(*) FROM atividades_curso ac
+              WHERE ac.cursoId = c.id AND ac.isActive = 1) AS totalAtividades,
+            (SELECT COUNT(*) FROM atividades_curso ac
+              WHERE ac.cursoId = c.id AND ac.isActive = 1
+                AND EXISTS (SELECT 1 FROM avaliacoes_atividade a
+                             WHERE a.atividadeId = ac.id AND a.tipo = 'atividade' AND a.isActive = 1)) AS totalAtividadesComAvaliacao
        FROM pdi_competencia_vinculo v
        JOIN competencias comp ON comp.id = v.competenciaId AND comp.isActive = 1
        LEFT JOIN trilhas t ON t.id = comp.trilhaId
@@ -115,6 +116,14 @@ export async function buscarCursosPorCodigos(codigos: string[]): Promise<LinhaCu
     codigos
   )) as any;
   return Array.isArray(rows) ? rows : [];
+}
+
+export function avaliacaoDoCurso(totalAtividades: number, comAvaliacao: number) {
+  return {
+    atividades: totalAtividades,
+    atividadesComAvaliacao: comAvaliacao,
+    completa: totalAtividades > 0 && comAvaliacao === totalAtividades,
+  };
 }
 
 // Um curso pode estar em mais de um código pedido; cada código recebe a sua lista.
@@ -129,10 +138,9 @@ export function agruparCursosPorCodigo(linhas: LinhaCursoVinculado[]) {
         resumo: linha.resumo ?? null,
         ordem: Number(linha.ordem ?? 0),
         competencia: { id: Number(linha.competenciaId), nome: linha.competenciaNome, trilha: linha.trilhaNome ?? null },
-        avaliacao: {
-          provaDoCurso: Number(linha.totalAvaliacoesCurso ?? 0) > 0,
-          avaliacoesDasAtividades: Number(linha.totalAvaliacoesAtividades ?? 0) > 0,
-        },
+        // Avaliação final = avaliações das atividades (nota mínima 8 em cada uma).
+        // Curso só pode ser indicado no PDI quando todas as atividades ativas têm avaliação.
+        avaliacao: avaliacaoDoCurso(Number(linha.totalAtividades ?? 0), Number(linha.totalAtividadesComAvaliacao ?? 0)),
       });
     }
     porCodigo.set(linha.codigoPdi, grupo);
