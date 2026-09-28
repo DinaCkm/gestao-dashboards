@@ -3342,7 +3342,7 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
 function FormulariosDoGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const pendencias = colaborador.formulariosPendentes || [];
   const respondidos = (colaborador.respostas || [])
-    .filter((r) => r.form === 'aval' && r.papel === 'Gestor')
+    .filter((r) => (r.form === 'aval' && r.papel === 'Gestor') || r.form === 'bem')
     .sort((a,b) => Number(a.ciclo) - Number(b.ciclo));
 
   return (
@@ -3359,11 +3359,15 @@ function FormulariosDoGestor({ colaborador }: { colaborador: ColaboradorAcompanh
         </div>
 
         <div className="mt-4 space-y-2">
-          {respondidos.map((r) => (
-            <div key={'respondido-' + r.ciclo} className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+          {respondidos.map((r, index) => (
+            <div key={'respondido-' + r.form + '-' + r.ciclo + '-' + index} className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 p-3">
               <div>
-                <div className="text-sm font-semibold text-slate-900">Avaliação do Programa de Integração</div>
-                <div className="mt-1 text-xs text-slate-500">Alinhamento de {diaDoAlinhamento(r.ciclo)} dias</div>
+                <div className="text-sm font-semibold text-slate-900">
+                  {r.form === 'bem' ? 'Bem Acolhido em Nossa Unidade' : 'Avaliação do Programa de Integração'}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {r.form === 'bem' ? 'Pré-integração' : 'Alinhamento de ' + diaDoAlinhamento(r.ciclo) + ' dias'}
+                </div>
               </div>
               <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Respondido</Badge>
             </div>
@@ -3405,7 +3409,6 @@ function CarteiraGestor({
   const termo=busca.trim().toLowerCase();
   const lista=colaboradores.filter((x)=>!termo||[x.nome,x.cargo,x.unidade].some((v)=>String(v||'').toLowerCase().includes(termo)));
   const atencao=colaboradores.filter((x)=>statusCarteira(x).chave==='atencao').length;
-  const acompanhar=colaboradores.filter((x)=>statusCarteira(x).chave==='acompanhar').length;
   const pendenciasGestor=colaboradores.reduce((s,x)=>s+(x.formulariosPendentes||[]).length,0);
 
   return (
@@ -3480,6 +3483,7 @@ function GestorDetalheSimples({ colaborador, onVoltar }: { colaborador:Colaborad
 
       <KpisOperacionais colaborador={colaborador} visaoGestor />
       <FormulariosDoGestor colaborador={colaborador}/>
+      <EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/>
     </div>
   );
 }
