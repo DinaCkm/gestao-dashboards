@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq, and, or, ne, asc, desc, inArray, sql } from "drizzle-orm";
+import { eq, and, or, ne, asc, desc, inArray, isNull, sql } from "drizzle-orm";
 import {
   competenciasModulos,
   competencias,
@@ -36,6 +36,7 @@ import { bibliotecaLivrosRouter } from "./routers/bibliotecaLivros";
 import { processosSeletivosRouter } from "./routers/processosSeletivos";
 import { alunosAutonomosRouter } from "./routers/alunosAutonomos";
 import { vinculosPdiRouter } from "./routers/vinculosPdi";
+import { decidirConclusaoCurso } from "./conclusaoCurso";
 import { disc360Router } from "./routers/disc360";
 import { relatorioMentoradoRouter } from "./routers/relatorioMentorado";
 import { meuDesempenhoRouter } from "./routers/meuDesempenho";
@@ -169,6 +170,23 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 // Admin N2 procedure (acesso a tudo exceto Parametrização)
+// Situação de conclusão de um curso atribuído, pelas atividades ativas e o progresso do aluno.
+async function avaliarConclusaoDoCurso(database: any, cursoAtribuidoId: number, cursoId: number) {
+  const atividadesAtivas = await database
+    .select({ id: atividadesCurso.id })
+    .from(atividadesCurso)
+    .where(and(eq(atividadesCurso.cursoId, cursoId), eq(atividadesCurso.isActive, 1)));
+  const progresso = await database
+    .select({
+      atividadeId: alunoAtividadeProgresso.atividadeId,
+      status: alunoAtividadeProgresso.status,
+      notaFinal: alunoAtividadeProgresso.notaFinal,
+    })
+    .from(alunoAtividadeProgresso)
+    .where(eq(alunoAtividadeProgresso.cursoAtribuidoId, cursoAtribuidoId));
+  return decidirConclusaoCurso(atividadesAtivas.map((a: any) => Number(a.id)), progresso);
+}
+
 const adminOrAdmin2Procedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'admin' && ctx.user.role !== 'admin2') {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso restrito a administradores' });
@@ -16971,16 +16989,19 @@ Responda APENAS em JSON com o formato especificado.`
                 )
               );
 
-            const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
-
-            if (todasAprovadas && todasAsAtividades.length === atividades.length) {
+            const decisaoCurso = decidirConclusaoCurso(
+              atividades.map((a) => a.id),
+              todasAsAtividades.map((a) => ({ atividadeId: a.atividadeId, status: a.status, notaFinal: a.notaFinal })),
+            );
+            if (decisaoCurso.concluido) {
               await database
                 .update(alunoCursoAtribuido)
                 .set({
                   status: "concluido",
+                  notaFinal: decisaoCurso.notaFinal !== null ? decisaoCurso.notaFinal.toFixed(1) : null,
                   dataConclusao: new Date(),
                 })
-                .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+                .where(and(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId), isNull(alunoCursoAtribuido.dataConclusao)));
             }
             // Bug 4 fix: Sincronizar student_performance a cada atividade aprovada (não só na conclusão total)
             // Isso garante que o Portal do Aluno mostre o progresso correto em tempo real
@@ -17238,15 +17259,19 @@ Responda APENAS em JSON com o formato especificado.`
               )
             );
 
-          const todasAprovadas = todasAsAtividades.every((a) => a.status === "aprovada");
-
-          if (todasAprovadas && todasAsAtividades.length === atividades.length) {
+          const decisaoCurso = decidirConclusaoCurso(
+            atividades.map((a) => a.id),
+            todasAsAtividades.map((a) => ({ atividadeId: a.atividadeId, status: a.status, notaFinal: a.notaFinal })),
+          );
+          if (decisaoCurso.concluido) {
             await database
               .update(alunoCursoAtribuido)
               .set({
                 status: "concluido",
+                notaFinal: decisaoCurso.notaFinal !== null ? decisaoCurso.notaFinal.toFixed(1) : null,
+                dataConclusao: new Date(),
               })
-              .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+              .where(and(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId), isNull(alunoCursoAtribuido.dataConclusao)));
           }
           // Bug 4 fix: Sincronizar student_performance a cada submissão aprovada (não só na conclusão total)
           // Isso garante que o Portal do Aluno mostre o progresso correto em tempo real
@@ -17582,36 +17607,33 @@ Responda APENAS em JSON com o formato especificado.`
             });
           }
 
-          const [ultimaTentativaJoin] = await database
-            .select()
-            .from(tentativasAvaliacao)
-            .innerJoin(
-              alunoCursoAtribuido,
-              and(
-                eq(tentativasAvaliacao.alunoId, alunoCursoAtribuido.alunoId),
-                eq(alunoCursoAtribuido.cursoId, cursoAtribuido.cursoId)
-              )
-            )
-            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId))
-            .limit(1);
+          // Curso já concluído não volta a "em andamento" (clique repetido ou reflexão após a conclusão)
+          if (cursoAtribuido.status === "concluido") {
+            return {
+              success: true,
+              aprovado: true,
+              notaFinal: cursoAtribuido.notaFinal !== null ? Number(cursoAtribuido.notaFinal) : null,
+              pendentes: 0,
+            };
+          }
 
-          const notaFinal = ultimaTentativaJoin?.tentativas_avaliacao?.nota ?? null;
-          const notaNumerica = Number(notaFinal ?? 0);
-          const aprovado = notaNumerica >= 8;
-
-          await database
-            .update(alunoCursoAtribuido)
-            .set({
-              status: aprovado ? "concluido" : "em_progresso",
-              notaFinal: notaNumerica.toFixed(1),
-              dataConclusao: aprovado ? new Date() : null,
-            })
-            .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+          const decisao = await avaliarConclusaoDoCurso(database, cursoAtribuido.id, cursoAtribuido.cursoId);
+          if (decisao.concluido) {
+            await database
+              .update(alunoCursoAtribuido)
+              .set({
+                status: "concluido",
+                notaFinal: decisao.notaFinal !== null ? decisao.notaFinal.toFixed(1) : null,
+                dataConclusao: cursoAtribuido.dataConclusao ?? new Date(),
+              })
+              .where(eq(alunoCursoAtribuido.id, input.cursoAtribuidoId));
+          }
 
           return {
             success: true,
-            aprovado,
-            notaFinal,
+            aprovado: decisao.concluido,
+            notaFinal: decisao.notaFinal,
+            pendentes: decisao.pendentes,
           };
         }),
       updateAtividade: adminOrAdmin2Procedure

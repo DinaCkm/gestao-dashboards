@@ -10,9 +10,9 @@ import { buscarCatalogoPdi } from "./routers/vinculosPdi";
 
 const SECRET = "segredo-teste";
 const LINHAS = [
-  { codigoPdi: "COMP:FOCO_NO_CLIENTE:BASICA:ATENCAO", competenciaId: 1, competenciaNome: "Atenção", trilhaNome: "Básicas", cursoId: 10, titulo: "Curso A", resumo: "Objetivo A", ordem: 1, totalAvaliacoesCurso: 1, totalAvaliacoesAtividades: 0 },
-  { codigoPdi: "COMP:FOCO_NO_CLIENTE:BASICA:ATENCAO", competenciaId: 1, competenciaNome: "Atenção", trilhaNome: "Básicas", cursoId: 11, titulo: "Curso B", resumo: null, ordem: 2, totalAvaliacoesCurso: 0, totalAvaliacoesAtividades: 0 },
-  { codigoPdi: "TEC:E07", competenciaId: 9, competenciaNome: "Gestão de Pessoas", trilhaNome: "Técnica", cursoId: 90, titulo: "Feedback", resumo: null, ordem: 1, totalAvaliacoesCurso: 0, totalAvaliacoesAtividades: 2 },
+  { codigoPdi: "COMP:FOCO_NO_CLIENTE:BASICA:ATENCAO", competenciaId: 1, competenciaNome: "Atenção", trilhaNome: "Básicas", cursoId: 10, titulo: "Curso A", resumo: "Objetivo A", ordem: 1, totalAtividades: 3, totalAtividadesComAvaliacao: 3 },
+  { codigoPdi: "COMP:FOCO_NO_CLIENTE:BASICA:ATENCAO", competenciaId: 1, competenciaNome: "Atenção", trilhaNome: "Básicas", cursoId: 11, titulo: "Curso B", resumo: null, ordem: 2, totalAtividades: 3, totalAtividadesComAvaliacao: 1 },
+  { codigoPdi: "TEC:E07", competenciaId: 9, competenciaNome: "Gestão de Pessoas", trilhaNome: "Técnica", cursoId: 90, titulo: "Feedback", resumo: null, ordem: 1, totalAtividades: 0, totalAtividadesComAvaliacao: 0 },
 ];
 
 function resposta() {
@@ -50,13 +50,14 @@ describe("códigos de vínculo", () => {
 });
 
 describe("agrupamento dos cursos", () => {
-  it("agrupa por código e informa as avaliações do curso", () => {
+  it("agrupa por código e informa se todas as atividades têm avaliação", () => {
     const grupos = agruparCursosPorCodigo(LINHAS as any);
     const comp = grupos.find((g) => g.codigoPdi === "COMP:FOCO_NO_CLIENTE:BASICA:ATENCAO")!;
     expect(comp.cursos.map((c) => c.id)).toEqual([10, 11]);
-    expect(comp.cursos[0]).toMatchObject({ resumo: "Objetivo A", avaliacao: { provaDoCurso: true, avaliacoesDasAtividades: false } });
-    expect(comp.cursos[1].avaliacao).toEqual({ provaDoCurso: false, avaliacoesDasAtividades: false });
-    expect(grupos.find((g) => g.codigoPdi === "TEC:E07")!.cursos[0].avaliacao.avaliacoesDasAtividades).toBe(true);
+    expect(comp.cursos[0]).toMatchObject({ resumo: "Objetivo A", avaliacao: { completa: true } });
+    expect(comp.cursos[1].avaliacao).toEqual({ atividades: 3, atividadesComAvaliacao: 1, completa: false });
+    // curso sem atividades não conta como avaliado
+    expect(grupos.find((g) => g.codigoPdi === "TEC:E07")!.cursos[0].avaliacao.completa).toBe(false);
   });
 });
 
