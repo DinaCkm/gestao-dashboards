@@ -124,7 +124,10 @@ async function activeAssignments(connection: any, userId: number) {
      ORDER BY inicio ASC,id ASC`,
     [userId],
   )) as any;
-  return rows || [];
+  return (rows || []).filter((row: any) => {
+    const estado = asJson<Record<string, any>>(row.estado, {});
+    return !Boolean(estado?.acompanhamentoOculto);
+  });
 }
 
 programaIntegracaoAnjoRouter.get(
