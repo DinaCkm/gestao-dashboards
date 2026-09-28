@@ -616,6 +616,107 @@ function temRespostaCiclo(respostas: any[], form: string, papel: string, ciclo: 
   );
 }
 
+
+function valorCompactoResposta(resposta: any, indice: number): number | null {
+  const par = (resposta?.c || []).find((item: any) => Number(item?.[0]) === indice);
+  const n = Number(String(par?.[1] ?? "").replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+function mediaNumerosSegura(valores: Array<number | null | undefined>): number | null {
+  const validos = valores.filter((v): v is number => v != null && Number.isFinite(Number(v)));
+  return validos.length ? validos.reduce((s, v) => s + Number(v), 0) / validos.length : null;
+}
+
+function mediaPesquisaCicloSegura(resposta: any): number | null {
+  if (!resposta) return null;
+  const grupos = [
+    { indices: [9,10,11,12,13], invertidos: [] as number[] },
+    { indices: [14,15,16,17,18], invertidos: [] as number[] },
+    { indices: [19,20,21], invertidos: [] as number[] },
+    { indices: [22,23,24,25,26,27,28], invertidos: [23] },
+  ];
+  const medias = grupos.map((grupo) => {
+    const inv = new Set(grupo.invertidos);
+    const notas = grupo.indices.map((indice) => {
+      const n = valorCompactoResposta(resposta, indice);
+      if (n == null || n <= 0 || n > 5) return null;
+      return inv.has(indice) ? 6 - n : n;
+    }).filter((n): n is number => n != null);
+    return notas.length ? (notas.reduce((s, n) => s + n, 0) / notas.length) * 20 : null;
+  });
+  return mediaNumerosSegura(medias);
+}
+
+function mediaAvaliacaoMaisRecenteSegura(respostas: any[], papel: "Gestor" | "Anjo"): number | null {
+  const ordenadas = (respostas || [])
+    .filter((r: any) => r.form === "aval" && r.papel === papel && Number(r.ciclo || 0) > 0)
+    .sort((a: any, b: any) => Number(a.ciclo || 0) - Number(b.ciclo || 0));
+  const resposta = ordenadas[ordenadas.length - 1];
+  if (!resposta) return null;
+  const notas: number[] = [];
+  for (let indice = 6; indice <= 37; indice++) {
+    const n = valorCompactoResposta(resposta, indice);
+    if (n != null) notas.push(n);
+  }
+  return notas.length ? notas.reduce((s, n) => s + n, 0) / notas.length : null;
+}
+
+function statusAcompanhamentoSeguro(params: {
+  respostas: any[];
+  formulariosPendentes: any[];
+  dia: number;
+  totalDias: number;
+  alinhamentosFeitos: number;
+  alinhamentosTotal: number;
+  processoPercentual: number;
+  compliancePercentual: number | null;
+  pdiPercentual: number | null;
+}) {
+  const {
+    respostas, formulariosPendentes, dia, totalDias, alinhamentosFeitos, alinhamentosTotal,
+    processoPercentual, compliancePercentual, pdiPercentual,
+  } = params;
+  const prazoFinal = totalDias > 0 && dia >= totalDias;
+  const atrasados = (formulariosPendentes || []).filter((p: any) => Boolean(p.atrasado)).length;
+  const pendentes = (formulariosPendentes || []).length;
+  const fechamentoIncompleto =
+    processoPercentual < 100 ||
+    alinhamentosFeitos < alinhamentosTotal ||
+    pendentes > 0 ||
+    compliancePercentual == null || Number(compliancePercentual) < 100 ||
+    pdiPercentual == null || Number(pdiPercentual) < 100;
+
+  let sinalCritico = false;
+  let sinalAcompanhamento = false;
+
+  if (atrasados > 0) sinalCritico = true;
+  if (prazoFinal && fechamentoIncompleto) sinalCritico = true;
+
+  const pesquisas = (respostas || [])
+    .filter((r: any) => r.form === "pesquisa" && Number(r.ciclo || 0) > 0)
+    .sort((a: any, b: any) => Number(a.ciclo || 0) - Number(b.ciclo || 0));
+  if (pesquisas.length >= 2) {
+    const anterior = mediaPesquisaCicloSegura(pesquisas[pesquisas.length - 2]);
+    const atual = mediaPesquisaCicloSegura(pesquisas[pesquisas.length - 1]);
+    if (anterior != null && atual != null && anterior - atual >= 10) sinalCritico = true;
+  }
+
+  const mediaGestor = mediaAvaliacaoMaisRecenteSegura(respostas, "Gestor");
+  const mediaAnjo = mediaAvaliacaoMaisRecenteSegura(respostas, "Anjo");
+  if (mediaGestor != null && mediaAnjo != null && Math.abs(mediaGestor - mediaAnjo) >= 3) {
+    sinalCritico = true;
+  }
+
+  if (!prazoFinal && dia >= 45 && pdiPercentual != null && Number(pdiPercentual) < 25) sinalAcompanhamento = true;
+  if (!prazoFinal && dia >= 45 && compliancePercentual != null && Number(compliancePercentual) === 0) sinalAcompanhamento = true;
+  if (pendentes > 0) sinalAcompanhamento = true;
+
+  if (sinalCritico) return { chave: "atencao", rotulo: "Atenção" };
+  if (sinalAcompanhamento) return { chave: "acompanhar", rotulo: "Acompanhar" };
+  return { chave: "em_dia", rotulo: "Em dia" };
+}
+
 function chaveGerenteAcompanhamento(nome: unknown, email: unknown): string {
   const emailNormalizado = String(email || "").trim().toLowerCase();
   if (emailNormalizado) return `email:${emailNormalizado}`;
@@ -1191,24 +1292,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       // pendências do Anjo e do Colaborador (papel, alinhamento, prazo e se
       // está atrasado). Nenhuma resposta, nota, percentual, dimensão ou
       // conteúdo do formulário é enviado.
-      const avisosGestorEquipe = acessoUgpRh
-        ? []
-        : formulariosPendentes
-            .filter((p) => p.papel === "Anjo" || p.papel === "Colaborador")
-            .map((p) => ({
-              papel: p.papel,
-              ciclo: Number(p.ciclo || 0),
-              formulario: String(p.formulario || ""),
-              prazo: String(p.prazo || ""),
-              atrasado: Boolean(p.atrasado),
-              mensagem: p.atrasado
-                ? (p.papel === "Anjo"
-                    ? `O formulário do Anjo está atrasado no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias. Solicite ao Anjo que conclua o preenchimento.`
-                    : `O formulário do colaborador está atrasado no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias. Oriente o colaborador a concluir o preenchimento.`)
-                : (p.papel === "Anjo"
-                    ? `O formulário do Anjo está pendente no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias e ainda está dentro do prazo. Relembre o Anjo sobre a necessidade de conclusão.`
-                    : `O formulário do colaborador está pendente no alinhamento de ${({1:15,2:45,3:75,4:150} as Record<number,number>)[Number(p.ciclo)] || p.ciclo} dias e ainda está dentro do prazo. Oriente o colaborador a concluir o preenchimento.`),
-            }));
+      // Não enviar ao Gestor comum qualquer detalhe operacional que revele
+      // pendências específicas do Anjo ou do colaborador. O status agregado é
+      // calculado abaixo usando os dados completos, mas somente o rótulo seguro sai no payload.
+      const avisosGestorEquipe: any[] = [];
 
       const ecoId = alunoEcoPorProcesso.get(Number(row.id));
       const perfilEcoId = perfilEcoPorProcesso.get(Number(row.id)) || ecoId;
@@ -1240,6 +1327,19 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const inicio = sqlDateToIso(row.inicio);
       const diaRaw = inicio ? diasEntreIso(inicio, hoje) + 1 : 0;
       const dia = Math.max(0, Math.min(150, diaRaw));
+      const jornadaCompliance = andamento?.jornadaCompliance || { total: 0, concluidas: 0, percentual: null };
+      const pdi = andamento?.pdi || { total: 0, concluidas: 0, percentual: null };
+      const statusAcompanhamento = statusAcompanhamentoSeguro({
+        respostas,
+        formulariosPendentes,
+        dia,
+        totalDias: 150,
+        alinhamentosFeitos,
+        alinhamentosTotal: 4,
+        processoPercentual: percentualProcessoConcluido,
+        compliancePercentual: jornadaCompliance.percentual == null ? null : Number(jornadaCompliance.percentual),
+        pdiPercentual: pdi.percentual == null ? null : Number(pdi.percentual),
+      });
 
       return {
         id: row.legacyId || `p${row.id}`,
@@ -1262,12 +1362,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           concluidas: acoesConcluidasProcesso,
           percentual: percentualProcessoConcluido,
         },
-        jornadaCompliance: andamento?.jornadaCompliance || { total: 0, concluidas: 0, percentual: null },
-        pdi: andamento?.pdi || { total: 0, concluidas: 0, percentual: null },
-        acessouEcoLider: andamento?.acessouEcoLider ?? null,
-        ultimaEntradaEcoLider: andamento?.ultimaEntradaEcoLider || null,
-        assessmentPotencialConcluido: andamento?.assessmentPotencialConcluido ?? null,
-        assessmentPotencialConcluidoEm: andamento?.assessmentPotencialConcluidoEm || null,
+        jornadaCompliance,
+        pdi,
+        statusAcompanhamento,
+        acessouEcoLider: acessoUgpRh ? (andamento?.acessouEcoLider ?? null) : null,
+        ultimaEntradaEcoLider: acessoUgpRh ? (andamento?.ultimaEntradaEcoLider || null) : null,
+        assessmentPotencialConcluido: acessoUgpRh ? (andamento?.assessmentPotencialConcluido ?? null) : null,
+        assessmentPotencialConcluidoEm: acessoUgpRh ? (andamento?.assessmentPotencialConcluidoEm || null) : null,
         // LGPD / minimização: detalhes de Assessment e percepções do
         // colaborador/Anjo só são enviados para a visão UGP/RH. Na visão de
         // Gestor, o servidor entrega apenas a evolução produzida pelo próprio
@@ -1279,19 +1380,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
               autoavaliacaoClusters: perfilAssessment?.autoavaliacaoClusters || [],
               expectativaGestor,
             }
-          : {
-              alunoEcoId: ecoId || null,
-              disc: null,
-              autoavaliacaoClusters: [],
-              expectativaGestor: {
-                temRespostaBem: false,
-                descritoresReconhecidos: 0,
-                compatibilidade: null,
-                motivo: null,
-                matriz: null,
-                clusters: [],
-              },
-            },
+          : null,
         respostas: acessoUgpRh
           ? respostas.filter((r) =>
               (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo")) ||
@@ -1301,10 +1390,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         formulariosPendentes: acessoUgpRh
           ? formulariosPendentes
           : formulariosPendentes.filter((p) => p.papel === "Gestor"),
-        // O Gestor recebe apenas orientações genéricas de cuidado quando um
-        // sinal está muito baixo. Nunca recebe a resposta, a nota, o percentual
-        // ou a dimensão do formulário do colaborador que originou a orientação.
-        dicasGestor: acessoUgpRh ? [] : dicasProtegidasParaGestor(respostas),
+        // Gestor comum recebe somente o status final seguro. Nenhuma dica derivada
+        // de respostas do colaborador/Anjo é enviada ao navegador.
+        dicasGestor: [],
       };
     });
 
