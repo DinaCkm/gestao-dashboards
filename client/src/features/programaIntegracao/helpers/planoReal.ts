@@ -91,7 +91,7 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
     {id:'pos1-03', t:'Elaborar o PDI da Integração e publicar na plataforma do Ecossistema do B.E.M.', r:'CKM', link:'ecolider'},
     {id:'pos1-04', t:'E-mail ao colaborador: PDI disponível, como acessar e Pesquisa de Integração', r:'CKM', mail:'m_pos1_colab'},
     {id:'pos1-05', t:'E-mail ao gestor: ata, PDI e Formulário de Avaliação', r:'CKM', mail:'m_pos1_gestor'},
-    {id:'pos1-06', t:'E-mail à UGP: ata, relatório, Avaliação de Potencial, PDI e Bem Acolhido', r:'CKM', mail:'m_pos1_ugp'},
+    {id:'pos1-06', t:'E-mail à UGP: ata, relatório, Avaliação de Potencial e PDI', r:'CKM', mail:'m_pos1_ugp'},
     {id:'pos1-07', t:'E-mail ao Anjo: Formulário de Avaliação do Programa', r:'CKM', mail:'m_pos1_anjo'},
     {id:'pos1-08', t:'Colaborador responder a Pesquisa de Integração do 1º alinhamento', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (1º)'},
     {id:'pos1-09', t:'Gestor responder o Formulário de Avaliação do Programa (1º)', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (1º)'},
