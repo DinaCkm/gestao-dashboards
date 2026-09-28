@@ -3,6 +3,7 @@ import { ProcessoIntegracao } from '../types';
 import { arquivarProcesso, atualizarEstadoProcesso } from '../api/client';
 import {
   alterarSituacaoProcessoSeguro,
+  alterarVisibilidadeAcompanhamentoSeguro,
   criarProcessoSeguro,
   criarProcessoTesteVazioSeguro,
   reordenarProcessosSeguro,
@@ -16,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { trpc } from '@/lib/trpc';
-import { ArrowDown, ArrowUp, CheckCircle2, CircleAlert, Clock3, FlaskConical, Loader2, Plus, Search, Sun } from 'lucide-react';
+import { ArrowDown, ArrowUp, CheckCircle2, CircleAlert, Clock3, Eye, EyeOff, FlaskConical, Loader2, Plus, Search, Sun } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   buscarPerfilEcoLider,
@@ -317,6 +318,27 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
     }, 'Não foi possível atualizar a ordem.');
   };
 
+  const alternarVisibilidadeAcompanhamento = async (pessoa: ProcessoIntegracao) => {
+    if (!pessoa.id) return;
+    const ocultando = !Boolean(pessoa.acompanhamentoOculto);
+    const confirmou = window.confirm(
+      ocultando
+        ? `Ocultar temporariamente ${pessoa.nome} de TODAS as visões do Acompanhar Integração?\n\nO processo, histórico, formulários e dados continuarão preservados. Você poderá desocultar a qualquer momento aqui em Gerenciar Pessoas.`
+        : `Desocultar ${pessoa.nome} e voltar a exibir o processo nas visões do Acompanhar Integração?`,
+    );
+    if (!confirmou) return;
+
+    await executar(`visibilidade-${pessoa.id}`, async () => {
+      await alterarVisibilidadeAcompanhamentoSeguro(pessoa.id!, ocultando);
+      await onSaved();
+      toast.success(
+        ocultando
+          ? 'Processo ocultado temporariamente das visões de acompanhamento.'
+          : 'Processo novamente visível nas visões de acompanhamento.',
+      );
+    }, 'Não foi possível alterar a visibilidade do processo.');
+  };
+
   const alterarSituacao = async (pessoa: ProcessoIntegracao) => {
     if (!pessoa.id) return;
     const encerrando = pessoa.situacao !== 'encerrado';
@@ -559,6 +581,7 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
               pessoa.nome === 'Mariana Alves Teixeira (demonstração)';
             const empresaTesteAtualId = String((pessoa.teste as any)?.empresaProgramId || '');
             const empresaTesteAtualNome = String((pessoa.teste as any)?.empresaProgramNome || '');
+            const acompanhamentoOculto = Boolean(pessoa.acompanhamentoOculto);
 
             const vincularEmpresaDemonstracao = async (programId: string) => {
               if (!pessoa.id) return;
@@ -579,7 +602,7 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
             };
 
             return (
-              <Card key={chavePessoa} className="hover:shadow-md transition">
+              <Card key={chavePessoa} className={`hover:shadow-md transition ${acompanhamentoOculto ? 'border-slate-400 bg-slate-50/70' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -605,6 +628,15 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                         >
                           {vinculoManualExistente ? 'Alterar vínculo ECO Líderes' : 'Vincular ECO Líderes'}
                         </Button>
+                      )}
+                      {acompanhamentoOculto && (
+                        <div
+                          className="inline-flex items-center gap-1.5 rounded-full border border-slate-400 bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700"
+                          title="Oculto temporariamente de todas as visões do Acompanhar Integração"
+                        >
+                          <EyeOff className="h-3.5 w-3.5" />
+                          <span>Oculto do acompanhamento</span>
+                        </div>
                       )}
                       <div
                         className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold ${sinalClasses}`}
@@ -766,6 +798,22 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                       {emOperacao && operacao?.startsWith('situacao-') && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
                       {pessoa.situacao === 'encerrado' ? 'Reabrir' : 'Encerrar'}
                     </Button>
+                    <Button
+                      size="sm"
+                      variant={acompanhamentoOculto ? 'default' : 'outline'}
+                      onClick={() => void alternarVisibilidadeAcompanhamento(pessoa)}
+                      disabled={Boolean(operacao)}
+                      title={acompanhamentoOculto
+                        ? 'Voltar a exibir este processo em todas as visões do Acompanhar Integração'
+                        : 'Ocultar temporariamente este processo de todas as visões do Acompanhar Integração'}
+                    >
+                      {emOperacao && operacao?.startsWith('visibilidade-')
+                        ? <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        : acompanhamentoOculto
+                          ? <Eye className="mr-1 h-3 w-3" />
+                          : <EyeOff className="mr-1 h-3 w-3" />}
+                      {acompanhamentoOculto ? 'Desocultar' : 'Ocultar do acompanhamento'}
+                    </Button>
                   </div>
 
                   <div className="flex items-center justify-between gap-2 border-t pt-3">
@@ -813,7 +861,7 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
 
       <p className="text-xs text-muted-foreground">
         {resolvendoEco ? 'Conferindo vínculos com o ECO Líderes... · ' : ''}
-        Encerrar mantém todo o histórico e tira a pessoa da lista de ativos. Remover apenas arquiva o processo e o retira da visão administrativa; nenhum registro é apagado fisicamente.
+        Ocultar do acompanhamento funciona apenas como máscara temporária: preserva o processo e o mantém aqui para desocultar. Encerrar mantém todo o histórico e tira a pessoa da lista de ativos. Remover apenas arquiva o processo e o retira da visão administrativa; nenhum registro é apagado fisicamente.
       </p>
     </div>
   );

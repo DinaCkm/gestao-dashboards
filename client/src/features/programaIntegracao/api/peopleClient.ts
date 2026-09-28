@@ -249,6 +249,19 @@ export async function criarProcessoDemonstracaoSeguro(
     : new Error('Não foi possível criar um identificador exclusivo para a demonstração.');
 }
 
+export async function alterarVisibilidadeAcompanhamentoSeguro(legacyId: string, oculto: boolean) {
+  exigirConexaoParaAlterar();
+  await apiJson(`/api/programa-integracao/processos/${encodeURIComponent(legacyId)}/visibilidade-acompanhamento`, {
+    method: 'PATCH',
+    body: JSON.stringify({ oculto }),
+  });
+  const state = await confirmarProcesso(legacyId);
+  if (Boolean(state.processos[legacyId]?.acompanhamentoOculto) !== oculto) {
+    throw new Error('A visibilidade foi enviada, mas a confirmação de leitura não correspondeu ao valor gravado.');
+  }
+  return state;
+}
+
 export async function alterarSituacaoProcessoSeguro(legacyId: string, situacao: 'ativo' | 'encerrado') {
   exigirConexaoParaAlterar();
   await apiJson(`/api/programa-integracao/processos/${encodeURIComponent(legacyId)}/situacao`, {

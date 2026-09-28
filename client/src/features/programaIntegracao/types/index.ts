@@ -84,6 +84,10 @@ export interface ProcessoIntegracao {
   alin: Record<string, any>; // Alinhamentos
   bem: Record<string, any>; // Bem acolhido
   teste: Record<string, any>; // Testes
+  // Máscara administrativa temporária: não exclui nem encerra o processo.
+  acompanhamentoOculto?: boolean;
+  acompanhamentoOcultoEm?: string | null;
+  acompanhamentoOcultoPorUserId?: number | null;
   resp: RespostaFormulario[]; // Respostas dos formulários
 }
 
