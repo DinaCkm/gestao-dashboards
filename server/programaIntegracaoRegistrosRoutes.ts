@@ -372,10 +372,33 @@ programaIntegracaoRegistrosRouter.patch(
       }
 
       const anterior = registros[indice];
-      if (anterior.fileKey && validacao.value.tipo !== anterior.tipo) {
-        await connection.rollback(); transactionStarted = false;
-        return res.status(409).json({ error: "O tipo de um registro com arquivo não pode ser alterado. Crie um novo registro se precisar trocar Foto por Documento ou vice-versa." });
+      const tipoDepois = validacao.value.tipo;
+      const alterouTipo = tipoDepois !== anterior.tipo;
+
+      // O Administrador pode reclassificar o registro, inclusive pelo dropdown
+      // de Tipo. Para preservar a coerência do histórico, Foto e Documento
+      // continuam exigindo um anexo compatível já existente.
+      if (alterouTipo && (tipoDepois === "foto" || tipoDepois === "documento")) {
+        if (!anterior.fileKey || !anterior.fileName) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({
+            error: tipoDepois === "foto"
+              ? "Para classificar este registro como Foto, ele precisa possuir uma imagem anexada."
+              : "Para classificar este registro como Documento, ele precisa possuir um documento anexado.",
+          });
+        }
+
+        const extAtual = extensaoArquivo(String(anterior.fileName || ""));
+        if (tipoDepois === "foto" && !FOTO_EXT.has(extAtual)) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({ error: "O anexo atual não é uma imagem compatível. Mantenha outro Tipo ou crie um novo registro com a foto correta." });
+        }
+        if (tipoDepois === "documento" && !DOCUMENTO_EXT.has(extAtual)) {
+          await connection.rollback(); transactionStarted = false;
+          return res.status(409).json({ error: "O anexo atual não é um documento compatível. Mantenha outro Tipo ou crie um novo registro com o documento correto." });
+        }
       }
+
       const atualizado: RegistroIntegracao = {
         ...anterior,
         ...validacao.value,
