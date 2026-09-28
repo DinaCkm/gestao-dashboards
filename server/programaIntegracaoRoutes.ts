@@ -1375,11 +1375,17 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         documentoAtaRelatorio,
         registrosIntegracao: acessoUgpRh ? (registrosIntegracaoPorProcesso.get(Number(row.id)) || []) : [],
         avisosGestorEquipe,
-        processoAcoes: {
-          total: totalAcoesProcesso,
-          concluidas: acoesConcluidasProcesso,
-          percentual: percentualProcessoConcluido,
-        },
+        processoAcoes: acessoUgpRh
+          ? {
+              total: totalAcoesProcesso,
+              concluidas: acoesConcluidasProcesso,
+              percentual: percentualProcessoConcluido,
+            }
+          : {
+              total: 0,
+              concluidas: 0,
+              percentual: 0,
+            },
         jornadaCompliance,
         pdi,
         statusAcompanhamento,
