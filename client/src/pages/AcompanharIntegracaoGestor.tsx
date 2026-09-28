@@ -2118,11 +2118,13 @@ function KpisOperacionais({ colaborador, visaoGestor = false }: { colaborador: C
   const saude = visaoGestor
     ? {
         rotulo: status.rotulo,
-        detalhe: status.chave === 'atencao'
-          ? 'Há um ponto de atenção no processo. Acompanhe as ações sob sua responsabilidade e os indicadores disponíveis.'
-          : status.chave === 'acompanhar'
-            ? 'O processo requer acompanhamento neste momento.'
-            : 'O processo está em dia com base nos indicadores disponíveis para o Gestor.',
+        detalhe: (colaborador.avisosGestorEquipe || []).length > 0
+          ? 'Atenção: há formulários pendentes na sua equipe.'
+          : status.chave === 'atencao'
+            ? 'Há um ponto de atenção no processo. Acompanhe as ações sob sua responsabilidade e os indicadores disponíveis.'
+            : status.chave === 'acompanhar'
+              ? 'O processo requer acompanhamento neste momento.'
+              : 'O processo está em dia com base nos indicadores disponíveis para o Gestor.',
         classes: status.chave === 'atencao'
           ? 'border-amber-300 bg-amber-50 text-amber-950'
           : status.chave === 'acompanhar'
@@ -3339,6 +3341,47 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
 }
 
 
+function PendenciasEquipeGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const pendencias = colaborador.avisosGestorEquipe || [];
+  if (!pendencias.length) return null;
+
+  return (
+    <Card className="rounded-2xl border border-amber-200 bg-amber-50/70 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
+          <div>
+            <div className="font-black text-amber-950">Atenção: há formulários pendentes na sua equipe.</div>
+            <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
+              Você pode acompanhar quais formulários ainda não foram concluídos, sem acesso ao conteúdo das respostas do colaborador ou do Anjo.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {pendencias.map((p, index) => (
+            <div key={p.papel + '-' + p.ciclo + '-' + index} className="rounded-xl border border-amber-200 bg-white p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    Responsável: {p.papel}
+                    {p.ciclo > 0 ? ' · Alinhamento de ' + diaDoAlinhamento(p.ciclo) + ' dias' : ''}
+                    {p.prazo ? ' · Prazo ' + dataBr(p.prazo) : ''}
+                  </div>
+                </div>
+                <Badge variant={p.atrasado ? 'destructive' : 'secondary'}>
+                  {p.atrasado ? 'Atrasado' : 'Pendente'}
+                </Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function FormulariosDoGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
   const pendencias = colaborador.formulariosPendentes || [];
   const respondidos = (colaborador.respostas || [])
@@ -3482,6 +3525,7 @@ function GestorDetalheSimples({ colaborador, onVoltar }: { colaborador:Colaborad
       </Card>
 
       <KpisOperacionais colaborador={colaborador} visaoGestor />
+      <PendenciasEquipeGestor colaborador={colaborador}/>
       <FormulariosDoGestor colaborador={colaborador}/>
       <EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/>
     </div>
