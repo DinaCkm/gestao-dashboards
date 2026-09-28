@@ -82,8 +82,7 @@ export const MODELOS_EMAIL_POS1_INTEGRACAO: Record<string, ModeloEmailIntegracao
       '- **Ata do 1º Alinhamento** — em anexo;\n' +
       '- **Relatório completo do alinhamento** — em anexo;\n' +
       '- **Avaliação de Potencial consolidada** — em anexo;\n' +
-      '- **PDI de Integração** — publicado na plataforma do Ecossistema do B.E.M.;\n' +
-      '- **Formulário Bem Acolhido em Nossa Unidade** — {{STATUS_PDI}}.\n\n' +
+      '- **PDI de Integração** — publicado na plataforma do Ecossistema do B.E.M.\n\n' +
       'O colaborador já recebeu as orientações de acesso ao PDI e a gestão foi comunicada para acompanhamento. Os formulários deste alinhamento foram encaminhados ao colaborador, ao gestor e ao Anjo.\n\n' +
       '**Acompanhamento pela UGP**\n' +
       'Como responsável pela UGP deste processo, você também pode acompanhar os processos disponibilizados para o seu perfil diretamente pelo EcoLíder:\n{{LINK_ECOLIDER}}\n' +
