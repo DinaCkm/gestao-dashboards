@@ -1292,13 +1292,21 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         });
       });
 
-      // Para a visão do Gestor, não expor pendências específicas do Anjo ou
-      // do Colaborador. Esses dados podem influenciar apenas o status agregado
-      // seguro calculado no servidor, sem revelar a origem do sinal.
-      // Não enviar ao Gestor comum qualquer detalhe operacional que revele
-      // pendências específicas do Anjo ou do colaborador. O status agregado é
-      // calculado abaixo usando os dados completos, mas somente o rótulo seguro sai no payload.
-      const avisosGestorEquipe: any[] = [];
+      // O Gestor pode saber que existem formulários pendentes na equipe e
+      // quais formulários estão faltando, com papel responsável, alinhamento e
+      // prazo. Nunca enviar respostas, notas, percentuais, dimensões ou conteúdo
+      // interno dos formulários do Anjo/Colaborador.
+      const avisosGestorEquipe = acessoUgpRh
+        ? []
+        : formulariosPendentes
+            .filter((p) => p.papel === "Anjo" || p.papel === "Colaborador")
+            .map((p) => ({
+              papel: p.papel,
+              ciclo: Number(p.ciclo || 0),
+              formulario: String(p.formulario || ""),
+              prazo: String(p.prazo || ""),
+              atrasado: Boolean(p.atrasado),
+            }));
 
       const ecoId = alunoEcoPorProcesso.get(Number(row.id));
       const perfilEcoId = perfilEcoPorProcesso.get(Number(row.id)) || ecoId;
