@@ -1327,8 +1327,22 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const inicio = sqlDateToIso(row.inicio);
       const diaRaw = inicio ? diasEntreIso(inicio, hoje) + 1 : 0;
       const dia = Math.max(0, Math.min(150, diaRaw));
-      const jornadaCompliance = andamento?.jornadaCompliance || { total: 0, concluidas: 0, percentual: null };
-      const pdi = andamento?.pdi || { total: 0, concluidas: 0, percentual: null };
+      const jornadaComplianceCompleta = andamento?.jornadaCompliance || { total: 0, concluidas: 0, percentual: null };
+      const pdiCompleto = andamento?.pdi || { total: 0, concluidas: 0, percentual: null };
+      const jornadaCompliance = acessoUgpRh
+        ? jornadaComplianceCompleta
+        : {
+            total: Number(jornadaComplianceCompleta?.total || 0),
+            concluidas: Number(jornadaComplianceCompleta?.concluidas || 0),
+            percentual: jornadaComplianceCompleta?.percentual == null ? null : Number(jornadaComplianceCompleta.percentual),
+          };
+      const pdi = acessoUgpRh
+        ? pdiCompleto
+        : {
+            total: Number(pdiCompleto?.total || 0),
+            concluidas: Number(pdiCompleto?.concluidas || 0),
+            percentual: pdiCompleto?.percentual == null ? null : Number(pdiCompleto.percentual),
+          };
       const statusAcompanhamento = statusAcompanhamentoSeguro({
         respostas,
         formulariosPendentes,
@@ -1337,8 +1351,8 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         alinhamentosFeitos,
         alinhamentosTotal: 4,
         processoPercentual: percentualProcessoConcluido,
-        compliancePercentual: jornadaCompliance.percentual == null ? null : Number(jornadaCompliance.percentual),
-        pdiPercentual: pdi.percentual == null ? null : Number(pdi.percentual),
+        compliancePercentual: jornadaComplianceCompleta.percentual == null ? null : Number(jornadaComplianceCompleta.percentual),
+        pdiPercentual: pdiCompleto.percentual == null ? null : Number(pdiCompleto.percentual),
       });
 
       return {
@@ -1350,7 +1364,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         dia,
         totalDias: 150,
         gestor: row.gestor || "",
-        anjo: row.anjo || "",
+        anjo: acessoUgpRh ? (row.anjo || "") : "",
         alinhamentosFeitos,
         alinhamentosTotal: 4,
         registrosAlinhamentos,
@@ -1386,7 +1400,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
               (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo")) ||
               r.form === "pesquisa"
             )
-          : respostas.filter((r) => r.form === "aval" && r.papel === "Gestor"),
+          : respostas.filter((r) =>
+              (r.form === "aval" && r.papel === "Gestor") ||
+              r.form === "bem"
+            ),
         formulariosPendentes: acessoUgpRh
           ? formulariosPendentes
           : formulariosPendentes.filter((p) => p.papel === "Gestor"),
