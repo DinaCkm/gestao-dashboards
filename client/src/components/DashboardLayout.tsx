@@ -184,6 +184,7 @@ const adminMenuGroups: MenuGroup[] = [
       { icon: GraduationCap, label: "Turmas", path: "/turmas" },
       { icon: BookOpen, label: "Trilhas e Competências", path: "/trilhas-competencias" },
       { icon: BookOpen, label: "Criação de Cursos", path: "/competencias-comp-tec" },
+      { icon: BookOpen, label: "Vínculos com o PDI", path: "/admin/vinculos-pdi" },
       { icon: BookOpen, label: "Mini-Cursos", path: "/cursos" },
       { icon: BookOpen, label: "Avaliações", path: "/admin/avaliacoes" },
       { icon: Zap, label: "Atividades Extras", path: "/atividades-extras" },

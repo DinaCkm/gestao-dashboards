@@ -35,6 +35,7 @@ import { fichasPedagogicasRouter } from "./routers/fichasPedagogicas";
 import { bibliotecaLivrosRouter } from "./routers/bibliotecaLivros";
 import { processosSeletivosRouter } from "./routers/processosSeletivos";
 import { alunosAutonomosRouter } from "./routers/alunosAutonomos";
+import { vinculosPdiRouter } from "./routers/vinculosPdi";
 import { disc360Router } from "./routers/disc360";
 import { relatorioMentoradoRouter } from "./routers/relatorioMentorado";
 import { meuDesempenhoRouter } from "./routers/meuDesempenho";
@@ -613,6 +614,7 @@ export const appRouter = router({
   system: systemRouter,
   processosSeletivos: processosSeletivosRouter,
   alunosAutonomos: alunosAutonomosRouter,
+  vinculosPdi: vinculosPdiRouter,
 
   // ============ DIAGNÓSTICO OPERACIONAL (somente leitura, admin) ============
   // Dry-run da antecipação de término de contrato de uma turma inteira.
