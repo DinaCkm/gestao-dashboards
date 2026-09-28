@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { BootstrapState, ProcessoIntegracao } from '../types';
+import { buscarPerfilEcoLider } from '../api/ecoLider';
 import {
   ATA_CONFIDENCIALIDADE,
   aplicarCamposAtaRelatorio,
@@ -30,7 +31,9 @@ export function AtaRelatorioPainel({
   const [rascunho, setRascunho] = useState<CamposAtaRelatorio>(() => camposAtaRelatorio(processo, numero));
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState('');
+  const [gerandoAssessment, setGerandoAssessment] = useState(false);
   const registro: any = processo.alin?.[String(numero)] ?? processo.alin?.[numero] ?? {};
+  const assessmentAlunoId = Number((processo.teste as any)?.ecoAlunoId || 0);
 
   useEffect(() => {
     setRascunho(camposAtaRelatorio(processo, numero));
@@ -72,6 +75,44 @@ export function AtaRelatorioPainel({
     setMensagem('Ata e relatório para a UGP gerados e ação pós-alinhamento registrada como concluída.');
   };
 
+  const baixarAssessmentPdf = async () => {
+    if (!assessmentAlunoId) {
+      setMensagem('Assessment indisponível: este processo ainda não possui um vínculo ECO Líderes confirmado para o colaborador.');
+      return;
+    }
+
+    setGerandoAssessment(true);
+    setMensagem('');
+    try {
+      // Não resolvemos por nome aqui: o PDF só pode usar o vínculo explícito
+      // deste processo, evitando risco de abrir o Assessment de outra pessoa.
+      const retorno = await buscarPerfilEcoLider(processo.nome, assessmentAlunoId, processo.email);
+      if (!retorno.perfil || Number(retorno.perfil.aluno.id) !== assessmentAlunoId) {
+        setMensagem('Assessment indisponível: o vínculo do colaborador não pôde ser confirmado.');
+        return;
+      }
+      if (!retorno.perfil.disc) {
+        setMensagem('Assessment indisponível: o colaborador ainda não concluiu a Avaliação de Potencial.');
+        return;
+      }
+
+      const params = new URLSearchParams();
+      if (processo.nome) params.set('nome', processo.nome);
+      const href = `/api/pdf/individual/${assessmentAlunoId}${params.toString() ? `?${params.toString()}` : ''}`;
+      const link = document.createElement('a');
+      link.href = href;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setMensagem('Download do Assessment iniciado.');
+    } catch (error) {
+      setMensagem(error instanceof Error ? error.message : 'Não foi possível baixar o Assessment.');
+    } finally {
+      setGerandoAssessment(false);
+    }
+  };
+
   const campo = (
     chave: keyof CamposAtaRelatorio,
     titulo: string,
@@ -104,8 +145,20 @@ export function AtaRelatorioPainel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata')}>Só a ata</Button>
-          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp')}>Só relatório UGP</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata')}>Gerar Ata</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp')}>Gerar Relatório</Button>
+          {numero === 1 && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={salvando || gerandoAssessment}
+              onClick={() => void baixarAssessmentPdf()}
+              title={assessmentAlunoId ? 'Baixar o Assessment deste colaborador em PDF' : 'Vincule primeiro este processo ao colaborador correto no ECO Líderes'}
+            >
+              {gerandoAssessment ? 'Preparando Assessment...' : 'Baixar Assessment PDF'}
+            </Button>
+          )}
           <Button type="button" size="sm" disabled={salvando} onClick={gerarDois}>Gerar os dois</Button>
         </div>
       </div>
