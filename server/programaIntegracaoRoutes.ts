@@ -950,11 +950,15 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
       const estado = asJson<Record<string, any>>(row.estado, {});
       const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
-      if (empresaTesteId > 0 && empresaTesteId === empresaId) {
+      if (empresaTesteId > 0) {
+        // Quando a empresa da demonstração estiver explicitamente definida,
+        // ela é a fonte soberana do escopo. Não cair em alunoId/ecoAlunoId/nome-email
+        // para tentar reclassificar o mesmo processo em outra empresa.
+        if (empresaTesteId !== empresaId) return null;
+
         // Processos fictícios/demonstração podem não ter aluno real na EcoLíder.
-        // Aceitar somente quando a empresa do teste estiver explicitamente vinculada
-        // e coincidir com a empresa configurada para a Integração. O filtro final de
-        // escopo (gestor, todos ou manual) continua sendo aplicado depois desta etapa.
+        // Aceitar somente quando a empresa do teste coincidir exatamente com a
+        // empresa configurada para a Integração.
         return { id: null, programId: empresaId, demoEmpresa: true };
       }
 
