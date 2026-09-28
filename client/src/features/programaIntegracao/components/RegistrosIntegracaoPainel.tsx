@@ -271,8 +271,8 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
           <div>
             <CardTitle className="text-lg">Registros da Integração</CardTitle>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              Guarde fotos, documentos, relatos e outras evidências do processo. Cada registro mantém origem,
-              alinhamento, data e autoria. Exclusões são preservadas para restauração.
+              Consulte e edite os registros já existentes do processo. Tipo, título, data, origem, alinhamento e
+              descrição podem ser alterados pelo Administrador. Exclusões são preservadas para restauração.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -286,8 +286,8 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
               {recolhido ? <Maximize2 className="mr-2 h-4 w-4" /> : <Minimize2 className="mr-2 h-4 w-4" />}
               {recolhido ? 'Maximizar' : 'Minimizar'}
             </Button>
-            <Button type="button" onClick={iniciarNovo}>
-              <Upload className="mr-2 h-4 w-4" /> Adicionar registro
+            <Button type="button" variant="outline" onClick={iniciarNovo}>
+              <Upload className="mr-2 h-4 w-4" /> Novo registro
             </Button>
           </div>
         </div>
@@ -333,7 +333,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
               <div>
                 <div className="font-semibold">{editando ? 'Editar registro' : 'Novo registro'}</div>
                 <div className="text-xs text-muted-foreground">
-                  {editando ? 'O arquivo original é preservado; aqui você edita os metadados.' : 'Preencha a origem e o momento do processo para facilitar consultas futuras.'}
+                  {editando ? 'Edite os dados do registro abaixo. O arquivo original e a autoria ficam preservados para manter o histórico.' : 'Preencha a origem e o momento do processo para facilitar consultas futuras.'}
                 </div>
               </div>
               <Button type="button" size="sm" variant="ghost" onClick={() => setFormAberto(false)}>Fechar</Button>
@@ -344,13 +344,12 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                 <span className="font-medium text-muted-foreground">Tipo</span>
                 <select
                   value={payload.tipo}
-                  disabled={Boolean(editando?.hasFile)}
                   onChange={(e) => {
                     const tipo = e.currentTarget.value as RegistroIntegracaoTipo;
                     setPayload((atual) => ({ ...atual, tipo }));
                     setArquivo(null);
                   }}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="nao_informado">Não informado</option>
                   <option value="foto">Foto</option>
@@ -539,10 +538,10 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
                       </Button>
                     ) : (
                       <>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => iniciarEdicao(item)}>
-                          <Pencil className="mr-1.5 h-4 w-4" /> Editar
+                        <Button type="button" size="sm" variant="outline" onClick={() => iniciarEdicao(item)}>
+                          <Pencil className="mr-1.5 h-4 w-4" /> Editar tudo
                         </Button>
-                        <Button type="button" size="sm" variant="ghost" className="text-destructive" onClick={() => void excluir(item)}>
+                        <Button type="button" size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive" onClick={() => void excluir(item)}>
                           <Trash2 className="mr-1.5 h-4 w-4" /> Excluir
                         </Button>
                       </>
