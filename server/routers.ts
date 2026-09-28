@@ -48,6 +48,7 @@ import { buildLembreteEngajamentoEmail, buildNovoCaseEmail, buildCongelamentoTur
 import { cacheOrFetch, cacheInvalidate } from './dataCache';
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from "./aplicabilidadeCalculator";
 import { DISC_PERFIS } from "../shared/discData";
+import { getAlunoIdsInativos, isAlunoInativo, DIAS_INATIVIDADE } from "./inatividadeAluno";
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -4729,6 +4730,11 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
 
         if (!alunoRanking.email) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Aluno sem e-mail cadastrado.' });
+        }
+
+        // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+        if (await isAlunoInativo(Number(alunoRanking.alunoDbId))) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `Aluno inativo (sem ação na plataforma há mais de ${DIAS_INATIVIDADE} dias). Lembretes de pendências não são enviados a inativos.` });
         }
 
         // Calcular posicao do aluno no ranking da empresa
@@ -14455,8 +14461,12 @@ Responda APENAS em JSON com o formato especificado.`
           erro?: string;
         }> = [];
         
+        const alunosInativos = await getAlunoIdsInativos();
+
         for (const aluno of allAlunos) {
           if (!aluno.email) continue;
+          // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+          if (alunosInativos.has(aluno.id)) continue;
           
           // Skip alunos who completed all their sessions (ciclo completo)
           if (cicloCompletoAlunoIds.has(aluno.id)) continue;

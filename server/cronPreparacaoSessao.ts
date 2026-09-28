@@ -16,6 +16,7 @@
  */
 
 import { getDb } from './db';
+import { isAlunoInativo } from './inatividadeAluno';
 import {
   mentorAppointments,
   appointmentParticipants,
@@ -296,6 +297,8 @@ export async function enviarPreparacaoSessao(
     // Buscar aluno e mentora
     const aluno = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1);
     if (!aluno[0]?.email) return;
+    // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+    if (await isAlunoInativo(alunoId)) return;
 
     // Não enviar preparação de sessão a alunos com ciclo encerrado ou congelado
     const pdiAtual = await db

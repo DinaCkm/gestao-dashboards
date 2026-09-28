@@ -6,6 +6,7 @@
  * respeitando o intervalo mínimo de 15 dias entre envios (via email_alertas_log).
  */
 import { getDb } from './db';
+import { getAlunoIdsInativos } from './inatividadeAluno';
 import {
   mentoringSessions,
   alunos,
@@ -109,7 +110,11 @@ export async function verificarEEnviarLembreteTarefaMentoria(dryRun = false): Pr
   let jaEnviadosIgnorados = 0;
   const hojeStr = agora.toISOString().slice(0, 10);
 
+  const alunosInativos = await getAlunoIdsInativos();
+
   for (const [alunoId, sessao] of porAluno) {
+    // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+    if (alunosInativos.has(alunoId)) continue;
     const aluno = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1).then(r => r[0]);
     if (!aluno || !aluno.email) continue;
 

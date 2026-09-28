@@ -10,6 +10,7 @@
  */
 
 import { getDb } from './db';
+import { getAlunoIdsInativos } from './inatividadeAluno';
 import { getAlunos, getConsultors, getPrograms, getAllAssessmentPdis } from './db';
 import { emailAlertasLog } from '../drizzle/schema';
 import { eq, and, gte } from 'drizzle-orm';
@@ -97,7 +98,11 @@ export async function verificarEEnviarAlertasVencimentoCiclo(options?: {
   const ADMIN_EMAIL = 'relacionamento@ckmtalents.net';
   const DINA_EMAIL = 'dina@ckmtalents.net';
 
+  const alunosInativos = await getAlunoIdsInativos();
+
   for (const pdi of activePdis) {
+    // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+    if (alunosInativos.has(pdi.alunoId)) continue;
     const aluno = alunoMap.get(pdi.alunoId);
     if (!aluno || !aluno.email) continue;
 
