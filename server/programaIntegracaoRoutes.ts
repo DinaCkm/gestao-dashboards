@@ -862,9 +862,8 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const demoOnly = scopeUgpRestrita && Boolean(integracaoConfig.demoOnly);
     // UGP restrita mantém o mesmo conteúdo de leitura da UGP/RH, mas nunca amplia
     // o universo de processos: a allowlist continua sendo aplicada no backend.
-    const acessoUgpRh = user.role === "admin"
-      ? !String(req.query.gestor || "").trim() || String(req.query.gestor || "").trim() === "all"
-      : (scopeAll || scopeUgpRestrita);
+    // Para o Admin, o nível de conteúdo será definido depois que o Gestor
+    // solicitado for realmente reconhecido entre os processos ativos.
     const manualProcessIds = new Set<number>(
       Array.isArray(integracaoConfig.processIds)
         ? integracaoConfig.processIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
@@ -918,6 +917,15 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     if (user.role === "admin" && gestorViewKey && gestorViewKey !== "all" && !gestorSelecionado) {
       return res.status(400).json({ error: "O gerente selecionado não foi encontrado entre os processos ativos." });
     }
+
+    // Blindagem do "Visualizar como": um Admin só recebe conteúdo UGP/RH quando
+    // estiver explicitamente na visão "todos". Se um Gestor válido foi
+    // reconhecido, o payload passa a obedecer exatamente às mesmas restrições
+    // de conteúdo do login real desse perfil.
+    const adminVisualizandoGestor = user.role === "admin" && Boolean(gestorSelecionado);
+    const acessoUgpRh = user.role === "admin"
+      ? !adminVisualizandoGestor
+      : (scopeAll || scopeUgpRestrita);
 
     // A empresa é resolvida usando o cadastro ECO Líderes (alunos.programId),
     // sem confiar apenas no nome do gestor e sem abrir dados globais para UGP/RH.
@@ -992,7 +1000,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     if (!permitidos.length) {
       return res.json({
         ok: true,
-        scope: scopeAll || user.role === "admin" ? "all" : "gestor",
+        scope: user.role === "admin"
+        ? (adminVisualizandoGestor ? "gestor" : "all")
+        : (scopeAll ? "all" : "gestor"),
         accessLevel: acessoUgpRh ? "ugp" : "gestor",
         restrictedUgp: scopeUgpRestrita,
         demoOnly,
@@ -1433,7 +1443,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      scope: scopeAll || user.role === "admin" ? "all" : "gestor",
+      scope: user.role === "admin"
+        ? (adminVisualizandoGestor ? "gestor" : "all")
+        : (scopeAll ? "all" : "gestor"),
       accessLevel: acessoUgpRh ? "ugp" : "gestor",
       restrictedUgp: scopeUgpRestrita,
       demoOnly,
