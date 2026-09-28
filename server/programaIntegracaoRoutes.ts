@@ -687,11 +687,10 @@ function statusAcompanhamentoSeguro(params: {
     compliancePercentual == null || Number(compliancePercentual) < 100 ||
     pdiPercentual == null || Number(pdiPercentual) < 100;
 
-  let sinalCritico = false;
-  let sinalAcompanhamento = false;
-
-  if (atrasados > 0) sinalCritico = true;
-  if (prazoFinal && fechamentoIncompleto) sinalCritico = true;
+  // Reproduz a mesma regra de status já usada na carteira UGP, sem expor os
+  // dados que originaram o sinal ao Gestor comum.
+  let sinais = 0;
+  if (atrasados > 0) sinais += 1;
 
   const pesquisas = (respostas || [])
     .filter((r: any) => r.form === "pesquisa" && Number(r.ciclo || 0) > 0)
@@ -699,21 +698,26 @@ function statusAcompanhamentoSeguro(params: {
   if (pesquisas.length >= 2) {
     const anterior = mediaPesquisaCicloSegura(pesquisas[pesquisas.length - 2]);
     const atual = mediaPesquisaCicloSegura(pesquisas[pesquisas.length - 1]);
-    if (anterior != null && atual != null && anterior - atual >= 10) sinalCritico = true;
+    if (anterior != null && atual != null && anterior - atual >= 10) sinais += 1;
   }
 
   const mediaGestor = mediaAvaliacaoMaisRecenteSegura(respostas, "Gestor");
   const mediaAnjo = mediaAvaliacaoMaisRecenteSegura(respostas, "Anjo");
   if (mediaGestor != null && mediaAnjo != null && Math.abs(mediaGestor - mediaAnjo) >= 3) {
-    sinalCritico = true;
+    sinais += 1;
   }
 
-  if (!prazoFinal && dia >= 45 && pdiPercentual != null && Number(pdiPercentual) < 25) sinalAcompanhamento = true;
-  if (!prazoFinal && dia >= 45 && compliancePercentual != null && Number(compliancePercentual) === 0) sinalAcompanhamento = true;
-  if (pendentes > 0) sinalAcompanhamento = true;
+  if (!prazoFinal && dia >= 45 && pdiPercentual != null && Number(pdiPercentual) < 25) sinais += 1;
+  if (!prazoFinal && dia >= 45 && compliancePercentual != null && Number(compliancePercentual) === 0) sinais += 1;
+  if (prazoFinal && (compliancePercentual == null || Number(compliancePercentual) < 100)) sinais += 1;
+  if (prazoFinal && (pdiPercentual == null || Number(pdiPercentual) < 100)) sinais += 1;
 
-  if (sinalCritico) return { chave: "atencao", rotulo: "Atenção" };
-  if (sinalAcompanhamento) return { chave: "acompanhar", rotulo: "Acompanhar" };
+  if (atrasados > 0 || (prazoFinal && fechamentoIncompleto) || sinais >= 2) {
+    return { chave: "atencao", rotulo: "Atenção" };
+  }
+  if (pendentes > 0 || sinais === 1) {
+    return { chave: "acompanhar", rotulo: "Acompanhar" };
+  }
   return { chave: "em_dia", rotulo: "Em dia" };
 }
 
