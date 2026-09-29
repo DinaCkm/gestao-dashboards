@@ -730,7 +730,7 @@ programaIntegracaoPotencialRouter.post(
       }
 
       const anterior = ctx.estado?.teste?.tarefasIntegracaoPadrao;
-      if (anterior) {
+      if (anterior && !anterior.revertidasEm) {
         if (Number(anterior.alunoId || 0) !== ctx.alunoId) {
           throw Object.assign(new Error("Já existe um histórico de tarefas padrão ligado a outro aluno. Revise o vínculo antes de continuar."), { statusCode: 409 });
         }
@@ -989,6 +989,16 @@ programaIntegracaoPotencialRouter.post(
       const prazo = dataIsoValida(item.prazoSugerido);
       if (!prazo || prazo < todayIso()) {
         throw Object.assign(new Error("O prazo sugerido não é mais válido. Gere novamente esta sugestão."), { statusCode: 409 });
+      }
+
+      const [duplicada] = (await connection.execute(
+        `SELECT id FROM mentoring_sessions
+         WHERE alunoId=? AND COALESCE(cancelada,0)=0 AND customTaskTitle=?
+         ORDER BY id DESC LIMIT 1`,
+        [ctx.alunoId, String(item.titulo || "").trim()],
+      )) as any;
+      if (duplicada?.[0]) {
+        throw Object.assign(new Error("Já existe uma tarefa ativa com este mesmo título para o aluno. Nenhuma duplicação foi feita."), { statusCode: 409 });
       }
 
       const jornada = await localizarJornadaCompliance(connection, Number(ctx.aluno.programId || 0) || null);
