@@ -278,17 +278,17 @@ export async function enviarPreparacaoSessao(
   try {
     // Verificar se já enviou este tipo para este agendamento/aluno
     const tipoAlerta = tipo === 'agendamento' ? TIPO_ALERTA_AGENDAMENTO : TIPO_ALERTA_D1;
-    const jaEnviou = await db.select().from(emailAlertasLog)
+    // Idempotência por aluno + tipo de alerta + agendamento.
+    // diasSemSessao é reutilizado neste fluxo exclusivamente para guardar appointmentId.
+    const jaEnviouEsteAppt = await db.select({ id: emailAlertasLog.id }).from(emailAlertasLog)
       .where(and(
         eq(emailAlertasLog.alunoId, alunoId),
         eq(emailAlertasLog.tipoAlerta, tipoAlerta),
+        eq(emailAlertasLog.diasSemSessao, appointmentId),
       ))
       .limit(1);
 
-    // Verificar se já enviou para ESTE appointment específico
-    // Usar diasSemSessao como campo para guardar o appointmentId
-    const jaEnviouEsteAppt = jaEnviou.find((l: any) => l.diasSemSessao === appointmentId);
-    if (jaEnviouEsteAppt) {
+    if (jaEnviouEsteAppt.length > 0) {
       console.log(`[PreparacaoSessao] Já enviado ${tipo} para aluno ${alunoId} agendamento ${appointmentId}`);
       return;
     }
