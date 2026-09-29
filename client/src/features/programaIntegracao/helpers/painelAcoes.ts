@@ -5,7 +5,6 @@ import { fichaAcaoAtual } from './itemStateHelpers';
 import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
 import type { FaixaPainel } from './painelKpis';
 import { FERIADOS_PADRAO_INTEGRACAO } from './configDefaults';
-import { formKeyForItem } from './registrarRespostasParser';
 
 export interface CronogramaEtapaReal {
   et: EtapaPlanoReal;
@@ -132,26 +131,14 @@ function alinhamentoData(processo: ProcessoIntegracao, numero: number): string |
   return normalizarDataCronograma(reg.data);
 }
 
-function alinhamentoRealizado(processo: ProcessoIntegracao, numero: number): string | null {
-  const reg = processo.alin?.[numero] ?? processo.alin?.[String(numero)];
-  if (!reg || typeof reg !== 'object' || !reg.realizado) return null;
-  return normalizarDataCronograma(reg.realizado);
-}
-
-function referenciaFormularioPos(
+function conclusaoDependencia(
   processo: ProcessoIntegracao,
-  numero: number,
-  etapaAlinhamento?: CronogramaEtapaReal,
+  item: ItemPlanoReal,
 ): string | null {
-  return alinhamentoRealizado(processo, numero)
-    || alinhamentoData(processo, numero)
-    || etapaAlinhamento?.data
-    || null;
-}
-
-function formularioPosComPrazoDoAlinhamento(item: ItemPlanoReal): boolean {
-  return Boolean(formKeyForItem(item.id))
-    && (item.r === 'Gestor' || item.r === 'Anjo' || item.r === 'Colaborador');
+  if (!item.dependeDe || !item.prazoAposDependenciaDias) return null;
+  const ficha = fichaAcaoAtual(processo, item.dependeDe);
+  if (ficha.s !== 'ok' || !ficha.d) return null;
+  return normalizarDataCronograma(ficha.d);
 }
 
 export function dataPrevistaItemCronograma(
@@ -228,27 +215,17 @@ export function cronogramaReal(
     };
   });
 
-  const posPorNumero: Record<number, string> = { 1: 'pos1', 2: 'pos2', 3: 'pos3', 4: 'pos4' };
+  etapas.forEach((etapa) => {
+    const datasItens: Record<string, string> = { ...(etapa.datasItens || {}) };
 
-  [1, 2, 3, 4].forEach((numero) => {
-    const etapaPos = etapas.find((etapa) => etapa.et.id === posPorNumero[numero]);
-    const etapaAlinhamento = etapas.find((etapa) => etapa.et.al === numero);
-    if (!etapaPos) return;
-
-    const referencia = referenciaFormularioPos(processo, numero, etapaAlinhamento);
-    if (!referencia) return;
-
-    const prazo = add(referencia, 2);
-    const datasItens: Record<string, string> = {};
-
-    etapaPos.itens.forEach((item) => {
-      if (formularioPosComPrazoDoAlinhamento(item)) {
-        datasItens[item.id] = prazo;
-      }
+    etapa.itens.forEach((item) => {
+      const conclusao = conclusaoDependencia(processo, item);
+      if (!conclusao || !item.prazoAposDependenciaDias) return;
+      datasItens[item.id] = add(conclusao, item.prazoAposDependenciaDias);
     });
 
     if (Object.keys(datasItens).length) {
-      etapaPos.datasItens = datasItens;
+      etapa.datasItens = datasItens;
     }
   });
 

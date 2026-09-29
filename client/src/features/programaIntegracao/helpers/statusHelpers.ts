@@ -4,7 +4,7 @@
 
 import { ProcessoIntegracao } from '../types';
 import { listarEtapasOrdenadas } from './planoHelpers';
-import { PLANO_REAL } from './planoReal';
+import { PLANO_REAL, encontrarItemPlanoReal } from './planoReal';
 
 export type StatusItemKey = 'ok' | 'off' | 'late' | 'act' | 'wait' | 'ontime';
 
@@ -24,6 +24,17 @@ export const PESO_STATUS_ITEM: Record<StatusItemKey, number> = {
   ok: 4,
   off: 5,
 };
+
+export function dependenciaItemPendente(
+  processo: ProcessoIntegracao,
+  itemId: string,
+): boolean {
+  const item = encontrarItemPlanoReal(itemId);
+  if (!item?.dependeDe) return false;
+  const origem = normalizarRegistroFeito(processo.feito?.[item.dependeDe]);
+  return String(origem?.s || '') !== 'ok';
+}
+
 
 function isoDateLocal(data: string | Date): Date {
   if (data instanceof Date) {
@@ -118,6 +129,10 @@ export function calcularStatusItem(
       k: 'off',
       l: s === 'na' ? 'Não se aplica' : 'Não será feita',
     };
+  }
+
+  if (dependenciaItemPendente(processo, itemId)) {
+    return { k: 'wait', l: 'Aguardando envio do e-mail anterior' };
   }
 
   const dif = prevista ? diferencaDias(prevista, hojeRef) : 0;

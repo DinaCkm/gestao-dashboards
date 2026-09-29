@@ -3,7 +3,7 @@ import type { EcoLiderAndamento } from '../api/ecoLider';
 import { coletarAcoesPainel, cronogramaReal, dataPrevistaItemCronograma, type AcaoPainelReal } from './painelAcoes';
 import { calcularKpisPainel } from './painelKpis';
 import { progressoRealProcesso } from './painelProcessos';
-import { calcularStatusItem, normalizarRegistroFeito } from './statusHelpers';
+import { calcularStatusItem, dependenciaItemPendente, normalizarRegistroFeito } from './statusHelpers';
 import { formKeyForItem } from './registrarRespostasParser';
 import { respostaDoItem } from './respostaItemHelpers';
 
@@ -339,7 +339,7 @@ export function calcularIndicadoresAvancados(
         const status = statusSalvo(processo, item.id);
         const dataFim = dataConclusao(processo, item.id);
 
-        if (item.form && !fechado(status)) {
+        if (item.form && !fechado(status) && !dependenciaItemPendente(processo, item.id)) {
           formulariosAbertos++;
           const acao = calcularStatusItem(processo, item.id, dataPrevistaItemCronograma(etapa, item), hojeRef);
           if (acao.k === 'late') formulariosAtrasados++;
@@ -446,6 +446,7 @@ export function calcularIndicadoresAvancados(
     cronograma.forEach((etapa) => {
       etapa.itens.forEach((item) => {
         if (!formKeyForItem(item.id)) return;
+        if (dependenciaItemPendente(processo, item.id)) return;
         const dataItem = dataPrevistaItemCronograma(etapa, item);
         if (dataItem > hoje) return;
 

@@ -1,6 +1,6 @@
 import type { ProcessoIntegracao } from '../types';
 import { cronogramaReal, dataPrevistaItemCronograma } from './painelAcoes';
-import { calcularStatusItem, normalizarRegistroFeito } from './statusHelpers';
+import { calcularStatusItem, dependenciaItemPendente, normalizarRegistroFeito } from './statusHelpers';
 import { progressoRealProcesso, diaAtualReal, sinalRealProcesso } from './painelProcessos';
 import { responsabilidadeAtual } from './responsabilidadeAtualHelpers';
 
@@ -154,7 +154,7 @@ export function calcularIndicadoresProgramaReal(
         const salvo = statusSalvo(processo, item.id);
         const responsabilidade = responsabilidadeAtual(item, salvo);
         const dataItem = dataPrevistaItemCronograma(etapa, item);
-        if (item.form && !fechado(salvo) && dataItem <= hoje) {
+        if (item.form && !fechado(salvo) && !dependenciaItemPendente(processo, item.id) && dataItem <= hoje) {
           const st = calcularStatusItem(processo, item.id, dataItem, hojeRef);
           resultado.pendentes++;
           const papeisPendencia = responsabilidade.papeis.length ? responsabilidade.papeis : [item.r];
