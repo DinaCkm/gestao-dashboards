@@ -929,6 +929,12 @@ programaIntegracaoPotencialRouter.post(
       const legacyId = sanitizeLegacyId(req.params.legacyId);
       const ctx = await contexto(connection, legacyId);
       requireContextoSeguro(ctx, { disc: true, mentora: true });
+      if (!ctx.mentora.competencias.some((item) => String(item || "").trim())) {
+        throw Object.assign(
+          new Error("Registre ao menos uma competência indicada pela consultora antes de consolidar o Assessment."),
+          { statusCode: 409, code: "COMPETENCIAS_MENTORA_AUSENTES" },
+        );
+      }
       const chaveFontes = sourceKey(ctx);
       const gerada = consolidarAvaliacaoSemIa(ctx);
 
@@ -936,6 +942,12 @@ programaIntegracaoPotencialRouter.post(
       try {
         const atual = await contexto(connection, legacyId, true);
         requireContextoSeguro(atual, { disc: true, mentora: true });
+        if (!atual.mentora.competencias.some((item) => String(item || "").trim())) {
+          throw Object.assign(
+            new Error("As competências da consultora não estão mais disponíveis. Nenhuma consolidação foi salva."),
+            { statusCode: 409, code: "COMPETENCIAS_MENTORA_AUSENTES" },
+          );
+        }
         if (sourceKey(atual) !== chaveFontes) {
           throw Object.assign(new Error("Os dados do colaborador mudaram enquanto a avaliação era gerada. Nenhuma avaliação foi salva; gere novamente."), { statusCode: 409 });
         }
