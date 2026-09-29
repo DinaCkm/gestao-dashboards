@@ -340,7 +340,8 @@ async function gerarAvaliacaoComIa(ctx: Awaited<ReturnType<typeof contexto>>) {
           "Diferencie fatos registrados das interpretações integradas. Quando os dados não sustentarem uma conclusão, declare a limitação.",
           "Dê peso especial às competências e observações registradas pela consultora, cruzando-as com a expectativa do gestor, DISC e autoavaliações.",
           "Evite rótulos definitivos. Fale em comportamentos observados, tendências, aderências e aspectos a desenvolver.",
-          "Retorne somente JSON no formato solicitado.",
+          "Retorne somente JSON válido com exatamente estas chaves: sintese (string), caracteristicasComportamentais (array de strings), competenciasObservadas (array de strings), convergencias (array de strings), pontosAtencao (array de strings), desenvolvimento (array de strings), aderenciaDemandas (string), recomendacoes (array de strings) e limitacoes (array de strings).",
+          "Se o DISC estiver ausente, registre essa ausência em limitacoes e prossiga com as demais fontes; não invente um perfil DISC.",
         ].join("\n"),
       },
       { role: "user", content: JSON.stringify(dados) },
@@ -405,6 +406,7 @@ async function gerarSugestoesComIa(
           "A prioridade deve ser: competências/soft skills apontadas pela consultora; lacunas da Avaliação de Potencial; diferenças entre o que o gestor espera e o que os dados indicam; DISC como contexto complementar.",
           "As ações NÃO são sequenciais e nenhuma depende da outra.",
           "Prefira atividades simples, concretas, dinâmicas e aplicáveis ao dia a dia: pequenos relatórios, agenda/planejamento, pesquisa orientada, observação prática, apresentação curta, TED Talk, filme/série, leitura curta de capítulos de livro, checklist, reflexão estruturada ou exercício semelhante.",
+          "Se citar um livro, TED Talk, filme ou série pelo nome, use apenas uma obra real e amplamente conhecida; não invente títulos, autores, links, episódios ou materiais. Se houver dúvida, proponha uma pesquisa orientada sem nomear uma obra específica.",
           "Não use propostas genéricas como 'melhorar comunicação'. Não invente fatos sobre a pessoa.",
           "Cada ação deve conter SOMENTE: titulo, comoFazer e comprovacao.",
           "Não inclua justificativa, motivo da sugestão, resultado esperado nem prazo.",
@@ -652,14 +654,14 @@ programaIntegracaoPotencialRouter.post(
       const connection = await getConnectionOr503(res); if (!connection) return;
       const legacyId = sanitizeLegacyId(req.params.legacyId);
       const ctx = await contexto(connection, legacyId);
-      requireContextoSeguro(ctx, { bem: true, disc: true, mentora: true });
+      requireContextoSeguro(ctx, { bem: true, mentora: true });
       const chaveFontes = sourceKey(ctx);
       const gerada = await gerarAvaliacaoComIa(ctx);
 
       await connection.beginTransaction();
       try {
         const atual = await contexto(connection, legacyId, true);
-        requireContextoSeguro(atual, { bem: true, disc: true, mentora: true });
+        requireContextoSeguro(atual, { bem: true, mentora: true });
         if (sourceKey(atual) !== chaveFontes) {
           throw Object.assign(new Error("Os dados do colaborador mudaram enquanto a avaliação era gerada. Nenhuma avaliação foi salva; gere novamente."), { statusCode: 409 });
         }
@@ -719,8 +721,7 @@ programaIntegracaoPotencialRouter.post(
       const faltantes = [
         !v15 && "Primeiros 15 dias",
         !v60 && "Primeiros 60 dias",
-        !conhecimentos && "Conhecimentos técnicos",
-        !documentos && "Documentos, manuais e treinamentos",
+        (!conhecimentos && !documentos) && "Conhecimentos técnicos / documentos, manuais e treinamentos",
       ].filter(Boolean);
       if (faltantes.length) {
         throw Object.assign(new Error(`O Bem Acolhido está sem: ${faltantes.join(", ")}. Nenhuma tarefa foi criada.`), { statusCode: 409 });
@@ -766,7 +767,10 @@ programaIntegracaoPotencialRouter.post(
       const descricoes = [
         v15,
         v60,
-        `Conhecimentos técnicos imprescindíveis:\n${conhecimentos}\n\nDocumentos, manuais e treinamentos imprescindíveis:\n${documentos}`,
+        [
+          conhecimentos ? `Conhecimentos técnicos imprescindíveis:\n${conhecimentos}` : "",
+          documentos ? `Documentos, manuais e treinamentos imprescindíveis:\n${documentos}` : "",
+        ].filter(Boolean).join("\n\n"),
         "Consulte o PDF de orientação disponível na Jornada Compliance, identifique nele quais cursos obrigatórios devem ser realizados na Universidade Senai e conclua esses cursos diretamente na Universidade Senai até o fim do onboarding.",
       ];
 
@@ -821,7 +825,7 @@ programaIntegracaoPotencialRouter.post(
       const connection = await getConnectionOr503(res); if (!connection) return;
       const legacyId = sanitizeLegacyId(req.params.legacyId);
       const ctx = await contexto(connection, legacyId);
-      requireContextoSeguro(ctx, { bem: true, disc: true, mentora: true });
+      requireContextoSeguro(ctx, { bem: true, mentora: true });
       const avaliacao = ctx.estado?.teste?.avaliacaoPotencialIntegrada;
       if (!avaliacao || Number(avaliacao.alunoId || 0) !== ctx.alunoId) {
         throw Object.assign(new Error("Gere primeiro a Avaliação de Potencial deste colaborador."), { statusCode: 409 });
@@ -838,7 +842,7 @@ programaIntegracaoPotencialRouter.post(
       await connection.beginTransaction();
       try {
         const atual = await contexto(connection, legacyId, true);
-        requireContextoSeguro(atual, { bem: true, disc: true, mentora: true });
+        requireContextoSeguro(atual, { bem: true, mentora: true });
         if (sourceKey(atual) !== chave) {
           throw Object.assign(new Error("Os dados do colaborador mudaram enquanto as sugestões eram geradas. Nada foi salvo; gere novamente."), { statusCode: 409 });
         }
@@ -921,7 +925,7 @@ programaIntegracaoPotencialRouter.post(
       const legacyId = sanitizeLegacyId(req.params.legacyId);
       const sugestaoId = String(req.params.sugestaoId || "");
       const ctx = await contexto(connection, legacyId);
-      requireContextoSeguro(ctx, { bem: true, disc: true, mentora: true });
+      requireContextoSeguro(ctx, { bem: true, mentora: true });
       const pacote = ctx.estado?.teste?.sugestoesDesenvolvimento;
       const item = pacote?.itens?.find((x: any) => String(x.id) === sugestaoId);
       if (!item) throw Object.assign(new Error("Sugestão não encontrada."), { statusCode: 404 });
