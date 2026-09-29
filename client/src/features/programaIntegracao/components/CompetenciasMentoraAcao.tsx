@@ -59,8 +59,17 @@ export function CompetenciasMentoraAcao({
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="">— não selecionar —</option>
+              {valores[indice] && !competenciaConsultoriaPorNome(valores[indice]) && (
+                <option value={valores[indice]}>{valores[indice]} (registro anterior)</option>
+              )}
               {COMPETENCIAS_CONSULTORIA.map((competencia) => (
-                <option key={competencia.nome} value={competencia.nome}>{competencia.nome}</option>
+                <option
+                  key={competencia.nome}
+                  value={competencia.nome}
+                  disabled={valores.some((valor, outroIndice) => outroIndice !== indice && valor === competencia.nome)}
+                >
+                  {competencia.nome}
+                </option>
               ))}
             </select>
             {valores[indice] && competenciaConsultoriaPorNome(valores[indice]) && (
