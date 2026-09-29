@@ -34,6 +34,7 @@ import {
 import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/helpers/acompanhamentoIntegracaoPdf';
 import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helpers/atasRelatoriosHelpers';
 import { FormulariosEvolucaoUgp } from '@/features/programaIntegracao/components/FormulariosEvolucaoUgp';
+import './AcompanharIntegracaoGestor.css';
 
 interface Pendencia {
   ciclo: number;
@@ -1034,7 +1035,7 @@ function PerfilAssessmentResumo({
     : null;
 
   return (
-    <Card id="perfil-assessment-resumo" className="scroll-mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+    <Card id="perfil-assessment-resumo" className="integracao-perfil-card scroll-mt-6 overflow-hidden rounded-2xl bg-white">
       <CardContent className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex items-start gap-3">
@@ -1927,7 +1928,7 @@ function EvolucaoBloco({ titulo, respostas, papel }: {
   const ultimo = momentos[momentos.length - 1];
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="integracao-evolucao-card overflow-hidden">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <BarChart3 className="h-5 w-5 text-violet-600" />
@@ -2182,10 +2183,8 @@ function KpisOperacionais({ colaborador, visaoGestor = false }: { colaborador: C
         return (
           <Card
             key={item.titulo}
-            className={'group overflow-hidden rounded-2xl border border-t-[3px] shadow-[0_1px_2px_rgba(16,24,40,.05)] transition-all duration-200 ' +
-              (item.titulo === 'Saúde do processo'
-                ? (saude.rotulo === 'Em dia' ? 'border-t-emerald-500 ' : saude.rotulo === 'Requer atenção' ? 'border-t-amber-500 ' : 'border-t-blue-500 ')
-                : item.valor === 'Sem dados' ? 'border-t-slate-300 ' : 'border-t-violet-500 ') +
+            className={'integracao-kpi-operacional group overflow-hidden rounded-2xl border transition-all duration-200 ' +
+              (item.titulo === 'Saúde do processo' ? 'integracao-kpi-saude ' : '') +
               item.classes}
           >
             <CardContent className="p-4">
@@ -2210,7 +2209,7 @@ function KpisOperacionais({ colaborador, visaoGestor = false }: { colaborador: C
                     </UiTooltip>
                   )}
                 </div>
-                <Icon className="h-4 w-4 shrink-0 opacity-55" />
+                <span className="integracao-kpi-op-icon"><Icon className="h-4 w-4 shrink-0" /></span>
               </div>
               <div className={'mt-3 tabular-nums ' + (item.valor === 'Sem dados' ? 'text-lg font-medium text-slate-400' : 'text-[28px] font-bold leading-8')}>{item.valor}</div>
               <div className="mt-1 text-xs leading-relaxed opacity-70">{item.detalhe}</div>
@@ -2273,7 +2272,7 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
   const somaPesos = comps.reduce((s,x) => s + x.peso, 0) || 1;
   const contribs = comps.map((x) => ({ ...x, contribuicao:x.valor * x.peso / somaPesos }));
   return (
-    <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+    <Card className="integracao-indice overflow-hidden rounded-2xl">
       <CardContent className="p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -2294,7 +2293,7 @@ function ComposicaoIndice({ colaborador }: { colaborador: ColaboradorAcompanhame
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {contribs.map((x) => (
-            <div key={x.nome} className="rounded-xl bg-slate-50 px-3 py-2 text-xs">
+            <div key={x.nome} className="integracao-indice-comp rounded-xl bg-slate-50 px-3 py-2 text-xs" style={{borderTopColor:x.cor}}>
               <div className="flex items-center gap-2 font-semibold text-slate-800"><span className="h-2.5 w-2.5 rounded-full" style={{backgroundColor:x.cor}} />{x.nome}</div>
               <div className="mt-1 font-bold tabular-nums text-slate-950">{Math.round(x.valor)}%</div>
             </div>
@@ -2336,7 +2335,7 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
   };
 
   return (
-    <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+    <Card className="integracao-timeline rounded-2xl">
       <CardContent className="p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div><div className="font-bold text-slate-950">Status dos formulários por alinhamento</div><div className="mt-1 text-xs leading-relaxed text-slate-500">Veja, em cada alinhamento de 15, 45, 75 e 150 dias, se Colaborador (C), Gestor (G) e Anjo (A) já responderam os formulários previstos.</div></div>
@@ -2344,7 +2343,7 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
         </div>
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {marcos.map((m) => (
-            <div key={m.numero} className="rounded-2xl border bg-white p-3 text-center">
+            <div key={m.numero} className="integracao-marco rounded-2xl border bg-white p-3 text-center" data-active={colaborador.dia <= m.dia && (m.numero === 1 || colaborador.dia > diaDoAlinhamento(m.numero-1)) ? 'true' : 'false'}>
               <div className="text-sm font-black text-slate-900">{m.dia} dias</div>
               <div className="mt-3 flex justify-center gap-2">
                 {([
@@ -2450,7 +2449,7 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
           </details>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="integracao-tabela integracao-tabela-gestor w-full min-w-[760px] text-sm">
             <thead className="bg-slate-50"><tr><th className="px-4 py-3 text-left">Dimensão</th>{[15,45,75,150].map((dia)=><th key={dia} className="px-3 py-3 text-center">{dia}d</th>)}<th className="px-4 py-3 text-center">Variação</th></tr></thead>
             <tbody>
               {INDICES_PESQUISA_COLABORADOR.map((grupo) => {
@@ -2526,7 +2525,7 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
       {itens.map((item) => {
         const Icon = item.icon;
         return (
-          <Card key={item.titulo} className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+          <Card key={item.titulo} className="integracao-desenvolvimento-card rounded-2xl">
             <CardContent className="p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -2536,7 +2535,7 @@ function DesenvolvimentoDetalhe({ colaborador }: { colaborador: ColaboradorAcomp
                   </div>
                   <div className="mt-2 text-sm text-slate-500">{item.detalhe}</div>
                 </div>
-                <div className={'tabular-nums ' + (item.percentual == null ? 'text-xl font-medium text-slate-400' : 'text-[28px] font-bold leading-8 text-slate-950')}>
+                <div className={'integracao-desenvolvimento-numero tabular-nums ' + (item.percentual == null ? 'text-xl font-medium text-slate-400' : 'text-[28px] font-bold leading-8')}>
                   {item.percentual == null ? 'Sem dados' : Math.round(item.percentual) + '%'}
                 </div>
               </div>
@@ -2717,38 +2716,43 @@ function CarteiraUgp({
   const concluindo=colaboradores.filter((x)=>x.dia>=140).length;
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+    <div className="integracao-carteira integracao-carteira-ugp space-y-5">
+      <div className="integracao-kpis grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {[
-          ['Ativos',colaboradores.length,'pessoas em integração'],
-          ['Atenção',atencao,'com sinais prioritários'],
-          ['Pendências',pendencias,'formulários pendentes'],
-          ['Índice médio de desenvolvimento',indiceMedio==null?'—':String(indiceMedio)+'%','entre resultados disponíveis'],
-          ['Concluindo',concluindo,'a partir do dia 140'],
-        ].map(([label,value,detail])=>(
-          <Card key={String(label)} className="rounded-2xl border-slate-200 border-t-[3px] border-t-violet-400 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+          { label:'Ativos', value:colaboradores.length, detail:'pessoas em integração', icon:Users, semantic:'neutral' },
+          { label:'Atenção', value:atencao, detail:'com sinais prioritários', icon:AlertTriangle, semantic:atencao > 0 ? 'warning' : 'neutral' },
+          { label:'Pendências', value:pendencias, detail:'formulários pendentes', icon:ClipboardList, semantic:pendencias > 0 ? 'danger' : 'neutral' },
+          { label:'Índice médio de desenvolvimento', value:indiceMedio==null?'—':String(indiceMedio)+'%', detail:'entre resultados disponíveis', icon:BarChart3, semantic:'neutral' },
+          { label:'Concluindo', value:concluindo, detail:'a partir do dia 140', icon:CheckCircle2, semantic:'neutral' },
+        ].map((item)=>{
+          const Icon = item.icon;
+          return (
+          <Card key={item.label} className="integracao-kpi rounded-2xl" data-semantic={item.semantic}>
             <CardContent className="p-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</div>
-              <div className="mt-2 text-[28px] font-bold tabular-nums text-slate-950">{value}</div>
-              <div className="mt-1 text-xs text-slate-500">{detail}</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{item.label}</div>
+                <span className="integracao-kpi-icon"><Icon className="h-4 w-4"/></span>
+              </div>
+              <div className="mt-2 text-[28px] font-bold tabular-nums text-slate-950">{item.value}</div>
+              <div className="mt-1 text-xs text-slate-500">{item.detail}</div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
 
       <div className="flex justify-end">
         <button
           type="button"
           onClick={()=>setRadarFiltro(radarFiltro==='atraso'?'all':'atraso')}
-          className={'inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-all hover:shadow-sm '+(radarFiltro==='atraso'?'border-amber-300 bg-amber-50 text-amber-900':'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}
+          className={'integracao-chip-atraso inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold '+(radarFiltro==='atraso'?'is-active':'')}
         >
           <AlertTriangle className="h-4 w-4" />
           {radarFiltro==='atraso'?'Mostrando processos com formulários em atraso':'Filtrar processos com formulários em atraso'}
         </button>
       </div>
 
-      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-        <div className="border-b bg-white p-4">
+      <Card className="integracao-tabela-card overflow-hidden rounded-2xl">
+        <div className="integracao-filtros border-b p-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><Input className="pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/></div>
             <Select value={unidade} onValueChange={setUnidade}><SelectTrigger className="w-full lg:w-[220px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todas as unidades</SelectItem>{unidades.map((u)=><SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select>
@@ -2757,14 +2761,14 @@ function CarteiraUgp({
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1180px] text-sm">
+          <table className="integracao-tabela w-full min-w-[1180px] text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3 text-left">Colaborador</th><th className="px-4 py-3 text-left">Unidade</th><th className="px-4 py-3 text-center">Dias em integração</th><th className="px-4 py-3 text-center">Processo completo</th><th className="px-4 py-3 text-center">Índice de desenvolvimento</th><th className="px-4 py-3 text-center">Tendência</th><th className="px-4 py-3 text-center">Status</th><th className="px-4 py-3 text-right">Abrir</th></tr></thead>
             <tbody>
               {lista.map((x)=>{
                 const idx=indiceIntegracao(x).indice, st=statusCarteira(x);
                 const progresso=x.processoAcoes || {total:95,concluidas:0,percentual:0};
                 const fechamento=requisitosFechamento(x);
-                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-[#F7F5FF]"><td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-bold tabular-nums">{x.dia}/{x.totalDias}</td><td className="px-4 py-4 text-center"><div className="mx-auto w-[130px]">{fechamento.completo ? <><div className="text-base font-bold tabular-nums text-emerald-700">100%</div><div className="mt-1 text-[11px] font-semibold text-emerald-700">Completo</div></> : <><div className="text-sm font-bold text-amber-700">Pendente</div><div className="mt-1 text-[11px] leading-tight text-slate-500">{Math.round(progresso.percentual)}% das ações</div></>}<Progress className="mt-1.5 h-2" value={fechamento.completo ? 100 : Math.min(99, progresso.percentual)}/></div></td><td className="px-4 py-4 text-center text-lg font-bold tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
+                return <tr key={x.id} onClick={()=>onAbrir(x.id)} className="integracao-table-row group cursor-pointer border-t"><td className="px-4 py-4"><div className="flex items-center gap-3"><span className="integracao-avatar-lista">{x.nome.split(/\s+/).filter(Boolean).slice(0,2).map((p)=>p[0]).join('').toUpperCase() || '—'}</span><div><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></div></div></td><td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td><td className="px-4 py-4 text-center font-bold tabular-nums"><div className="mx-auto w-[92px]"><div>{x.dia}/{x.totalDias}</div><div className="integracao-mini-track"><span style={{width: Math.max(0,Math.min(100,(x.dia/Math.max(1,x.totalDias))*100))+'%'}} /></div></div></td><td className="px-4 py-4 text-center"><div className="mx-auto w-[130px]">{fechamento.completo ? <><div className="text-base font-bold tabular-nums text-emerald-700">100%</div><div className="mt-1 text-[11px] font-semibold text-emerald-700">Completo</div></> : <><div><span className="integracao-badge-pendente">Pendente</span></div><div className="mt-1 text-[11px] leading-tight text-slate-500">{Math.round(progresso.percentual)}% das ações</div></>}<Progress className="mt-1.5 h-2" value={fechamento.completo ? 100 : Math.min(99, progresso.percentual)}/></div></td><td className="px-4 py-4 text-center text-lg font-bold tabular-nums">{idx==null?'—':Math.round(idx)+'%'}</td><td className="px-4 py-4 text-center"><div className="flex justify-center"><SparklineMini pontos={tendenciaGeral(x)}/></div></td><td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td><td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td></tr>;
               })}
               {!lista.length&&<tr><td colSpan={8} className="px-4 py-12 text-center text-slate-500">Nenhum colaborador encontrado com os filtros atuais.</td></tr>}
             </tbody>
@@ -2814,7 +2818,7 @@ function GuiaCompactoUgp({
   ];
 
   return (
-    <Card className="overflow-hidden rounded-2xl border border-dashed border-violet-200 bg-violet-50/35 shadow-none">
+    <Card className="integracao-guia overflow-hidden rounded-2xl shadow-none">
       <CardContent className="p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -2834,7 +2838,7 @@ function GuiaCompactoUgp({
                 key={passo.numero}
                 type="button"
                 onClick={() => onSelect(passo.aba)}
-                className="group relative rounded-xl border border-slate-200 bg-white/80 p-4 text-left shadow-none transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-[0_8px_24px_-8px_rgba(76,29,149,.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2"
+                className="integracao-guia-passo group relative rounded-xl bg-white p-4 text-left"
               >
                 <div className="flex items-start gap-3">
                   <span className="relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violet-700 text-sm font-bold text-white">{passo.numero}</span>
@@ -3015,7 +3019,7 @@ function RegistrosIntegracaoUgp({ colaborador }: { colaborador: ColaboradorAcomp
                       </div>
                     </div>
                     {item.hasFile && (
-                      <div className="rounded-xl border bg-slate-50 p-3">
+                      <div className="integracao-form-row integracao-form-row-pendente rounded-xl border bg-slate-50 p-3">
                         <div className="max-w-[270px] truncate text-sm font-semibold text-slate-800">{item.fileName || 'Arquivo'}</div>
                         {item.sizeBytes > 0 && <div className="mt-1 text-xs text-slate-500">{tamanho(item.sizeBytes)}</div>}
                         <div className="mt-3 flex gap-2">
@@ -3210,7 +3214,7 @@ function RegistrosAlinhamentosUgp({
         <CardContent className="p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {registros.map((item) => (
-              <div key={item.numero} className="rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md">
+              <div key={item.numero} className="integracao-registro-card rounded-2xl border bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="text-[11px] font-black uppercase tracking-[0.08em] text-violet-700">Alinhamento de {item.marco} dias</div>
@@ -3218,8 +3222,8 @@ function RegistrosAlinhamentosUgp({
                   </div>
                   <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">Registro completo</Badge>
                 </div>
-                <div className="mt-4 text-xs font-bold uppercase tracking-wide text-slate-400">Parecer da consultora</div>
-                <p className="mt-1 min-h-[72px] text-sm leading-relaxed text-slate-700">{resumo(item.consultora || item.conclusao)}</p>
+                <div className="integracao-parecer mt-4 rounded-xl p-3"><div className="text-xs font-bold uppercase tracking-wide text-slate-400">Parecer da consultora</div>
+                <p className="mt-1 min-h-[72px] text-sm leading-relaxed text-slate-700">{resumo(item.consultora || item.conclusao)}</p></div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button type="button" size="sm" variant="ghost" className="px-0 text-violet-700 hover:bg-transparent hover:text-violet-900" onClick={() => setSelecionado(item)}>
                     Ver registro completo <ChevronRight className="ml-1 h-3.5 w-3.5" />
@@ -3318,12 +3322,12 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
   const iniciais = colaborador.nome.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toUpperCase();
 
   return (
-    <div className="space-y-8">
-      <div className="sticky top-0 z-20 rounded-[20px] border border-violet-100 bg-[linear-gradient(135deg,#ffffff_0%,#fbf9ff_55%,#f5f0ff_100%)] p-5 shadow-[0_1px_2px_rgba(16,24,40,.05)] backdrop-blur">
+    <div className="integracao-detalhe integracao-detalhe-ugp space-y-8">
+      <div className="integracao-hero sticky top-0 z-20 rounded-[20px] p-5 backdrop-blur">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
             <Button variant="ghost" size="sm" onClick={onVoltar} className="mt-1 gap-1 rounded-lg"><ArrowLeft className="h-4 w-4"/>Carteira</Button>
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-violet-100 text-base font-bold text-violet-700">{iniciais || '—'}</span>
+            <span className="integracao-avatar-hero grid h-12 w-12 shrink-0 place-items-center rounded-full text-base font-bold">{iniciais || '—'}</span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-[22px] font-bold leading-7 text-slate-950">{colaborador.nome}</h2>
@@ -3335,7 +3339,7 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" className="gap-2" onClick={onPerfil}><Sparkles className="h-4 w-4"/>Assessment</Button>
-            <Button className="gap-2 bg-violet-700 hover:bg-violet-800" onClick={()=>gerarAcompanhamentoIntegracaoPdf(colaborador,{visaoUgpRh:true})}><Download className="h-4 w-4"/>PDF executivo</Button>
+            <Button className="integracao-primary gap-2" onClick={()=>gerarAcompanhamentoIntegracaoPdf(colaborador,{visaoUgpRh:true})}><Download className="h-4 w-4"/>PDF executivo</Button>
           </div>
         </div>
       </div>
@@ -3343,8 +3347,8 @@ function DetalheUgp({ colaborador,onVoltar,onPerfil }: { colaborador:Colaborador
       <KpisOperacionais colaborador={colaborador}/>
       <GuiaCompactoUgp colaborador={colaborador} onSelect={setAba} />
 
-      <Tabs value={aba} onValueChange={setAba} className="space-y-4">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-2xl bg-slate-200/70 p-1 md:grid-cols-3 xl:grid-cols-6">
+      <Tabs value={aba} onValueChange={setAba} className="integracao-tabs space-y-4">
+        <TabsList className="integracao-tabs-list grid h-auto w-full grid-cols-2 gap-1 rounded-2xl p-1 md:grid-cols-3 xl:grid-cols-6">
           <TabsTrigger value="visao" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Visão geral</TabsTrigger>
           <TabsTrigger value="trajetoria" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Trajetória</TabsTrigger>
           <TabsTrigger value="formularios" className="rounded-xl py-2.5 font-semibold text-slate-600 data-[state=active]:bg-violet-700 data-[state=active]:text-white data-[state=active]:shadow-sm focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2">Formulários</TabsTrigger>
@@ -3425,7 +3429,7 @@ function FormulariosDoGestor({ colaborador }: { colaborador: ColaboradorAcompanh
     .sort((a,b) => Number(a.ciclo) - Number(b.ciclo));
 
   return (
-    <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+    <Card className="integracao-formularios-gestor rounded-2xl">
       <CardContent className="p-5">
         <div className="flex items-start gap-3">
           <span className="rounded-xl bg-violet-100 p-2 text-violet-700"><ClipboardList className="h-5 w-5" /></span>
@@ -3439,7 +3443,7 @@ function FormulariosDoGestor({ colaborador }: { colaborador: ColaboradorAcompanh
 
         <div className="mt-4 space-y-2">
           {respondidos.map((r, index) => (
-            <div key={'respondido-' + r.form + '-' + r.ciclo + '-' + index} className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+            <div key={'respondido-' + r.form + '-' + r.ciclo + '-' + index} className="integracao-form-row integracao-form-row-ok flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 p-3">
               <div>
                 <div className="text-sm font-semibold text-slate-900">
                   {r.form === 'bem' ? 'Bem Acolhido em Nossa Unidade' : 'Avaliação do Programa de Integração'}
@@ -3453,7 +3457,7 @@ function FormulariosDoGestor({ colaborador }: { colaborador: ColaboradorAcompanh
           ))}
 
           {pendencias.map((p,i)=>(
-            <div key={'pendente-' + i} className="rounded-xl border bg-slate-50 p-3">
+            <div key={'pendente-' + i} className="integracao-form-row integracao-form-row-pendente rounded-xl border bg-slate-50 p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
@@ -3491,25 +3495,30 @@ function CarteiraGestor({
   const pendenciasGestor=colaboradores.reduce((s,x)=>s+(x.formulariosPendentes||[]).length,0);
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-3">
+    <div className="integracao-carteira integracao-carteira-gestor space-y-5">
+      <div className="integracao-kpis grid gap-3 sm:grid-cols-3">
         {[
-          ['Colaboradores',colaboradores.length,'em acompanhamento'],
-          ['Atenção',atencao,'processos que exigem atenção'],
-          ['Formulários do Gestor',pendenciasGestor,'pendências sob sua responsabilidade'],
-        ].map(([label,value,detail])=>(
-          <Card key={String(label)} className="rounded-2xl border-slate-200 border-t-[3px] border-t-violet-400 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+          { label:'Colaboradores', value:colaboradores.length, detail:'em acompanhamento', icon:Users, semantic:'neutral' },
+          { label:'Atenção', value:atencao, detail:'processos que exigem atenção', icon:AlertTriangle, semantic:atencao > 0 ? 'warning' : 'neutral' },
+          { label:'Formulários do Gestor', value:pendenciasGestor, detail:'pendências sob sua responsabilidade', icon:ClipboardList, semantic:pendenciasGestor > 0 ? 'warning' : 'neutral', pulse:pendenciasGestor > 0 },
+        ].map((item)=>{
+          const Icon = item.icon;
+          return (
+          <Card key={item.label} className={'integracao-kpi rounded-2xl '+(item.pulse ? 'integracao-pulse-once' : '')} data-semantic={item.semantic}>
             <CardContent className="p-4">
-              <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{label}</div>
-              <div className="mt-2 text-[28px] font-bold tabular-nums text-slate-950">{value}</div>
-              <div className="mt-1 text-xs text-slate-500">{detail}</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">{item.label}</div>
+                <span className="integracao-kpi-icon"><Icon className="h-4 w-4"/></span>
+              </div>
+              <div className="mt-2 text-[28px] font-bold tabular-nums text-slate-950">{item.value}</div>
+              <div className="mt-1 text-xs text-slate-500">{item.detail}</div>
             </CardContent>
           </Card>
-        ))}
+        )})}
       </div>
 
-      <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
-        <div className="border-b bg-white p-4">
+      <Card className="integracao-tabela-card overflow-hidden rounded-2xl">
+        <div className="integracao-filtros border-b p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/>
             <Input className="pl-9" value={busca} onChange={(e)=>setBusca(e.target.value)} placeholder="Buscar por nome, cargo ou unidade..."/>
@@ -3530,10 +3539,10 @@ function CarteiraGestor({
               {lista.map((x)=>{
                 const st=statusCarteira(x);
                 return (
-                  <tr key={x.id} onClick={()=>onAbrir(x.id)} className="group cursor-pointer border-t transition-colors hover:bg-[#F7F5FF]">
-                    <td className="px-4 py-4"><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></td>
+                  <tr key={x.id} onClick={()=>onAbrir(x.id)} className="integracao-table-row group cursor-pointer border-t">
+                    <td className="px-4 py-4"><div className="flex items-center gap-3"><span className="integracao-avatar-lista">{x.nome.split(/\s+/).filter(Boolean).slice(0,2).map((p)=>p[0]).join('').toUpperCase() || '—'}</span><div><div className="font-bold text-slate-950">{x.nome}</div><div className="mt-1 text-xs text-slate-500">{x.cargo||'Cargo não informado'}</div></div></div></td>
                     <td className="px-4 py-4 text-slate-600">{x.unidade||'—'}</td>
-                    <td className="px-4 py-4 text-center font-bold tabular-nums">{x.dia}/{x.totalDias}</td>
+                    <td className="px-4 py-4 text-center font-bold tabular-nums"><div className="mx-auto w-[92px]"><div>{x.dia}/{x.totalDias}</div><div className="integracao-mini-track"><span style={{width: Math.max(0,Math.min(100,(x.dia/Math.max(1,x.totalDias))*100))+'%'}} /></div></div></td>
                     <td className="px-4 py-4 text-center"><Badge variant="outline" className={st.classes}>{st.rotulo}</Badge></td>
                     <td className="px-4 py-4 text-right"><Button size="sm" variant="ghost" className="gap-1 text-violet-700">Ver <ChevronRight className="h-4 w-4"/></Button></td>
                   </tr>
@@ -3550,8 +3559,8 @@ function CarteiraGestor({
 
 function GestorDetalheSimples({ colaborador, onVoltar }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void }) {
   return (
-    <div className="space-y-4">
-      <Card className="overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-[#32106f] via-[#6518d9] to-[#4b2ee8] text-white shadow-md">
+    <div className="integracao-detalhe integracao-detalhe-gestor space-y-4">
+      <Card className="integracao-gestor-hero overflow-hidden rounded-2xl border-0 text-white">
         <CardContent className="p-6">
           <Button variant="ghost" size="sm" onClick={onVoltar} className="mb-3 gap-1 text-white hover:bg-white/10 hover:text-white"><ArrowLeft className="h-4 w-4"/>Carteira</Button>
           <h2 className="text-2xl font-black" style={{ color: '#ffffff' }}>{colaborador.nome}</h2>
@@ -3669,10 +3678,10 @@ export default function AcompanharIntegracaoGestor() {
   return (
     <TooltipProvider>
       <DashboardLayout>
-        <div className="mx-auto max-w-[1580px] space-y-8 rounded-[28px] bg-[#F6F6FA] p-4 sm:p-5">
+        <div className="integracao-scope mx-auto max-w-[1580px] space-y-8 rounded-[28px] p-4 sm:p-5" data-visao={isUgpRh ? 'ugp' : 'gestor'}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="text-xs font-bold uppercase tracking-[0.12em] text-violet-600">
+              <div className="integracao-visao-label text-xs font-bold uppercase tracking-[0.12em]">
                 {adminVisualizandoGestor
                   ? 'Visão do Gestor'
                   : dados?.adminView && dados?.gestorSelecionado && isUgpRh
