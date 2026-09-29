@@ -57,6 +57,7 @@ export type ToolChoice =
 
 export type InvokeParams = {
   messages: Message[];
+  provider?: "auto" | "openai";
   tools?: Tool[];
   toolChoice?: ToolChoice;
   tool_choice?: ToolChoice;
@@ -209,14 +210,21 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
+const resolveApiUrl = (provider: "auto" | "openai" = "auto") => {
+  if (provider === "openai") return "https://api.openai.com/v1/chat/completions";
+  return ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
     ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
     : "https://api.openai.com/v1/chat/completions";
+};
 
-const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+const resolveApiKey = (provider: "auto" | "openai" = "auto") =>
+  provider === "openai" ? ENV.openAiApiKey : ENV.forgeApiKey;
+
+const assertApiKey = (provider: "auto" | "openai" = "auto") => {
+  if (!resolveApiKey(provider)) {
+    throw new Error(provider === "openai"
+      ? "OPENAI_API_KEY is not configured"
+      : "LLM API key is not configured");
   }
 };
 
@@ -266,7 +274,8 @@ const normalizeResponseFormat = ({
 };
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  assertApiKey();
+  const provider = params.provider || "auto";
+  assertApiKey(provider);
 
   const {
     messages,
@@ -279,8 +288,9 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     response_format,
   } = params;
 
+  const usaOpenAiDireto = provider === "openai" || !ENV.forgeApiUrl;
   const payload: Record<string, unknown> = {
-    model: ENV.forgeApiUrl ? "gemini-2.5-flash" : "gpt-4o",
+    model: usaOpenAiDireto ? "gpt-4o" : "gemini-2.5-flash",
     messages: messages.map(normalizeMessage),
   };
 
@@ -296,7 +306,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = ENV.forgeApiUrl ? 32768 : 4096
+  payload.max_tokens = usaOpenAiDireto ? 4096 : 32768
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
@@ -309,11 +319,11 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  const response = await fetch(resolveApiUrl(), {
+  const response = await fetch(resolveApiUrl(provider), {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${resolveApiKey(provider)}`,
     },
     body: JSON.stringify(payload),
   });
