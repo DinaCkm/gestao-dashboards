@@ -1425,10 +1425,15 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const perfilEcoId = perfilEcoPorProcesso.get(Number(row.id)) || ecoId;
       const andamentoEco = ecoId ? ecoStatus[String(ecoId)] : null;
       const estadoAtualDemo = asJson<Record<string, any>>(row.estado, {});
+      // A ficha de competências pode vir de registros históricos em formatos
+      // diferentes (array, objeto indexado ou JSON/texto). Normalizamos sem
+      // inferir competências a partir das observações: só o que foi de fato
+      // registrado no campo "competencias" entra no Acompanhar Integração.
+      const competenciasMentoraSelecionadas = listaTextoMulti(
+        estadoAtualDemo?.feito?.["d15-03"]?.competencias,
+      ).slice(0, 4);
       const competenciasMentoraAcompanhamento = recomendacoesConsultoria(
-        Array.isArray(estadoAtualDemo?.feito?.["d15-03"]?.competencias)
-          ? estadoAtualDemo.feito["d15-03"].competencias
-          : [],
+        competenciasMentoraSelecionadas,
       );
       const testeAtualDemo = estadoAtualDemo?.teste || {};
       const overrideDemo = testeAtualDemo?.andamentoDemoOverride;
@@ -1533,6 +1538,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         // Recomendações da consultoria só existem depois do registro explícito
         // no 1º alinhamento. Sem competências selecionadas, nada é enviado para
         // a tela de acompanhamento.
+        competenciasConsultoriaSelecionadas: acessoUgpRh ? competenciasMentoraSelecionadas : [],
         recomendacoesConsultoria: acessoUgpRh ? competenciasMentoraAcompanhamento : [],
         respostas: acessoUgpRh
           ? respostas.filter((r) =>
