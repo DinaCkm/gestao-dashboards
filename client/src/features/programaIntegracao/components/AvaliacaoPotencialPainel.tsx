@@ -151,6 +151,7 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
   const sugestoes = ctx?.sugestoes?.itens || [];
   const previewTarefas = ctx?.tarefasGestorPreview || null;
   const fonteMentora = Boolean(ctx?.fontes.competenciasMentora?.length || ctx?.fontes.observacoesMentora?.length);
+  const competenciasMentoraDisponiveis = Boolean(ctx?.fontes.competenciasMentora?.filter((item) => String(item || '').trim()).length);
 
   return (
     <div className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/30 p-4">
@@ -276,7 +277,7 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          disabled={!ctx?.vinculo.seguro || !ctx?.fontes.disc || !fonteMentora || Boolean(acao)}
+          disabled={!ctx?.vinculo.seguro || !ctx?.fontes.disc || !competenciasMentoraDisponiveis || Boolean(acao)}
           onClick={() => void executar('gerar-avaliacao', () => gerarAvaliacaoPotencial(legacyId), 'Assessment e recomendações consolidados com sucesso.')}
         >
           <FileText className="mr-1 h-4 w-4" /> {acao === 'gerar-avaliacao' ? 'Consolidando...' : 'Consolidar Assessment e Recomendações'}
