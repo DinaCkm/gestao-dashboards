@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import type { ProcessoIntegracao } from '../types';
 import {
+  alterarVinculoAvaliacaoPotencial,
   buscarContextoAvaliacaoPotencial,
   confirmarVinculoAvaliacaoPotencial,
   criarTarefasGestorIntegracao,
@@ -14,6 +15,7 @@ import {
   type ContextoAvaliacaoPotencial,
 } from '../api/avaliacaoPotencial';
 import { baixarAvaliacaoPotencialPdf } from '../helpers/avaliacaoPotencialPdf';
+import { buscarPerfilEcoLider, type EcoLiderAluno } from '../api/ecoLider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -46,6 +48,10 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
   const [carregando, setCarregando] = useState(false);
   const [acao, setAcao] = useState('');
   const [mostrarPreviewTarefas, setMostrarPreviewTarefas] = useState(false);
+  const [alterandoVinculo, setAlterandoVinculo] = useState(false);
+  const [alunosEco, setAlunosEco] = useState<EcoLiderAluno[]>([]);
+  const [alunoSelecionado, setAlunoSelecionado] = useState('');
+  const [carregandoAlunosEco, setCarregandoAlunosEco] = useState(false);
 
   const carregar = useCallback(async () => {
     if (!legacyId) return;
@@ -74,6 +80,67 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
       return null;
     } finally {
       setAcao('');
+    }
+  };
+
+  const abrirAlteracaoVinculo = async () => {
+    if (alterandoVinculo) {
+      setAlterandoVinculo(false);
+      return;
+    }
+    setAlterandoVinculo(true);
+    setAlunoSelecionado(ctx?.vinculo.aluno?.id ? String(ctx.vinculo.aluno.id) : '');
+    setCarregandoAlunosEco(true);
+    try {
+      const retorno = await buscarPerfilEcoLider(processo.nome, undefined, processo.email);
+      setAlunosEco(retorno.alunos || []);
+    } catch (error) {
+      toast.error(mensagemErro(error));
+      setAlterandoVinculo(false);
+    } finally {
+      setCarregandoAlunosEco(false);
+    }
+  };
+
+  const salvarNovoVinculo = async () => {
+    const novoId = Number(alunoSelecionado || 0);
+    if (!novoId) {
+      toast.error('Selecione a pessoa correta no ECO Líderes.');
+      return;
+    }
+    const escolhido = alunosEco.find((aluno) => aluno.id === novoId);
+    if (!escolhido) {
+      toast.error('A pessoa selecionada não está disponível.');
+      return;
+    }
+    const confirmou = window.confirm(
+      `Alterar o vínculo deste processo para ${escolhido.nome}?\n\nEsta ação não altera o cadastro da pessoa no ECO Líderes. Apenas corrige qual aluno está ligado a este processo de integração.`,
+    );
+    if (!confirmou) return;
+
+    const resultado = await executar(
+      'alterar-vinculo',
+      () => alterarVinculoAvaliacaoPotencial(legacyId, novoId),
+      'Vínculo ECO alterado com segurança.',
+    );
+    if (resultado) setAlterandoVinculo(false);
+  };
+
+  const removerVinculo = async () => {
+    const nomeAtual = ctx?.vinculo.aluno?.nome || 'a pessoa atualmente vinculada';
+    const confirmou = window.confirm(
+      `Remover o vínculo com ${nomeAtual}?\n\nO processo ficará sem aluno ECO Líder vinculado até você selecionar a pessoa correta.`,
+    );
+    if (!confirmou) return;
+
+    const resultado = await executar(
+      'remover-vinculo',
+      () => alterarVinculoAvaliacaoPotencial(legacyId, null),
+      'Vínculo ECO removido. Selecione a pessoa correta antes de continuar.',
+    );
+    if (resultado) {
+      setAlterandoVinculo(false);
+      setAlunoSelecionado('');
     }
   };
 
@@ -122,21 +189,88 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
               <p className="font-semibold">Aluno ECO Líder vinculado: {ctx.vinculo.aluno.nome}</p>
               <p className="mt-1 text-xs text-muted-foreground">{ctx.vinculo.motivo}</p>
             </div>
-            {!ctx.vinculo.seguro && (
+            <div className="flex flex-wrap gap-2">
+              {!ctx.vinculo.seguro && (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={Boolean(acao)}
+                  onClick={() => void executar('confirmar-vinculo', () => confirmarVinculoAvaliacaoPotencial(legacyId, ctx.vinculo.aluno!.id), 'Vínculo confirmado para automações.')}
+                >
+                  <ShieldCheck className="mr-1 h-4 w-4" /> Confirmar este vínculo
+                </Button>
+              )}
               <Button
                 type="button"
                 size="sm"
+                variant="outline"
                 disabled={Boolean(acao)}
-                onClick={() => void executar('confirmar-vinculo', () => confirmarVinculoAvaliacaoPotencial(legacyId, ctx.vinculo.aluno!.id), 'Vínculo confirmado para automações.')}
+                onClick={() => void abrirAlteracaoVinculo()}
               >
-                <ShieldCheck className="mr-1 h-4 w-4" /> Confirmar este vínculo
+                {alterandoVinculo ? 'Cancelar alteração' : 'Alterar vínculo'}
               </Button>
-            )}
+            </div>
           </div>
         </div>
       ) : (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          O colaborador ainda não possui um aluno ECO Líder vinculado. Nenhuma avaliação ou tarefa automática será criada até o vínculo ser corrigido.
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span>O colaborador ainda não possui um aluno ECO Líder vinculado. Nenhuma avaliação ou tarefa automática será criada até o vínculo ser corrigido.</span>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={Boolean(acao)}
+              onClick={() => void abrirAlteracaoVinculo()}
+            >
+              Selecionar vínculo
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {alterandoVinculo && (
+        <div className="space-y-3 rounded-lg border border-slate-300 bg-white p-3">
+          <div>
+            <p className="text-sm font-semibold">Selecionar manualmente o aluno correto</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Confira o nome e o e-mail antes de salvar. A seleção manual substitui o vínculo atual somente após sua confirmação.
+            </p>
+          </div>
+          <select
+            value={alunoSelecionado}
+            onChange={(event) => setAlunoSelecionado(event.target.value)}
+            disabled={carregandoAlunosEco || Boolean(acao)}
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+          >
+            <option value="">{carregandoAlunosEco ? 'Carregando alunos...' : '— selecione o aluno correto —'}</option>
+            {alunosEco.map((aluno) => (
+              <option key={aluno.id} value={String(aluno.id)}>
+                {aluno.nome}{aluno.email ? ` · ${aluno.email}` : ''}
+              </option>
+            ))}
+          </select>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              disabled={!alunoSelecionado || carregandoAlunosEco || Boolean(acao)}
+              onClick={() => void salvarNovoVinculo()}
+            >
+              Salvar novo vínculo
+            </Button>
+            {ctx?.vinculo.aluno && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={Boolean(acao)}
+                onClick={() => void removerVinculo()}
+              >
+                Remover vínculo atual
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
