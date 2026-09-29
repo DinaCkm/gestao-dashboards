@@ -379,6 +379,7 @@ async function gerarAvaliacaoComIa(ctx: Awaited<ReturnType<typeof contexto>>) {
   const { response, raw } = await invokeJsonComSingleRetry(
     invokeLLM,
     {
+      provider: "openai",
       messages: [
         {
           role: "system",
@@ -447,6 +448,7 @@ async function gerarSugestoesComIa(
   const { raw } = await invokeJsonComSingleRetry(
     invokeLLM,
     {
+      provider: "openai",
       messages: [
         {
           role: "system",
