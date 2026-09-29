@@ -41,7 +41,7 @@ export function baixarAvaliacaoPotencialPdf(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('Avaliação de Potencial', 16, 13);
+  doc.text('Avaliação de Potencial / Assessment', 16, 13);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text('Programa de Integração', 16, 20);
@@ -55,21 +55,35 @@ export function baixarAvaliacaoPotencialPdf(
   y = addText(doc, `Data da geração: ${dataBr(snapshot.geradaEm)}`, 16, y, 178) + 6;
 
   y = section(doc, 'Síntese', r.sintese, y);
-  y = section(doc, 'Características comportamentais predominantes', r.caracteristicasComportamentais || [], y);
-  y = section(doc, 'Competências observadas', r.competenciasObservadas || [], y);
-  y = section(doc, 'Convergências entre as fontes', r.convergencias || [], y);
-  y = section(doc, 'Pontos de atenção', r.pontosAtencao || [], y);
-  y = section(doc, 'Aderência às demandas da atuação', r.aderenciaDemandas || 'Sem dados suficientes.', y);
-  y = section(doc, 'Pontos de desenvolvimento', r.desenvolvimento || [], y);
-  y = section(doc, 'Recomendações gerais', r.recomendacoes || [], y);
-  section(doc, 'Limitações da análise', r.limitacoes || [], y);
+  y = section(doc, 'Perfil comportamental já registrado no Assessment', r.caracteristicasComportamentais || [], y);
+
+  if (snapshot.recomendacoesConsultoria?.length) {
+    y = section(doc, 'Recomendações de Desenvolvimento pela Consultoria (Pós 1º Alinhamento)', '', y);
+    for (const competencia of snapshot.recomendacoesConsultoria) {
+      if (y > 255) { doc.addPage(); y = 18; }
+      doc.setFontSize(10.5);
+      doc.setTextColor(55, 48, 85);
+      y = addText(doc, competencia.nome, 18, y, 174, true) + 2;
+      doc.setFontSize(9.5);
+      doc.setTextColor(45, 55, 72);
+      y = addText(doc, competencia.descricao, 18, y, 174) + 2;
+      doc.setTextColor(85, 62, 130);
+      y = addText(doc, 'Como desenvolver', 18, y, 174, true) + 1;
+      doc.setTextColor(45, 55, 72);
+      y = addText(doc, competencia.desenvolvimento, 18, y, 174) + 5;
+    }
+  } else {
+    y = section(doc, 'Recomendações de Desenvolvimento pela Consultoria', 'Ainda não há competências registradas pela consultora.', y);
+  }
+
+  section(doc, 'Observações sobre a consolidação', r.limitacoes || [], y);
 
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i += 1) {
     doc.setPage(i);
     doc.setFontSize(7.5);
     doc.setTextColor(120, 128, 145);
-    doc.text(`Avaliação gerada a partir dos registros disponíveis no Programa de Integração • Página ${i}/${pages}`, 16, 292);
+    doc.text(`Consolidação sem IA a partir do Assessment existente e dos registros da consultoria • Página ${i}/${pages}`, 16, 292);
   }
 
   const seguro = String(colaborador.nome || 'colaborador').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toLowerCase();
