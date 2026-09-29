@@ -51,6 +51,10 @@ interface GestorDisponivel {
   nome: string;
   email: string;
   colaboradores: number;
+  origem?: 'processo' | 'configurado';
+  modo?: 'gestor' | 'all' | 'manual' | 'ugp_restrita' | string;
+  empresaId?: number | null;
+  empresaNome?: string;
 }
 
 interface ClusterAutoavaliacao {
@@ -3631,10 +3635,12 @@ export default function AcompanharIntegracaoGestor() {
   }, [dados?.restrictedUgp, dados?.demoOnly, dados?.adminView, dados?.scope]);
 
   const colaboradores = dados?.colaboradores || [];
-  const adminVisualizandoGestor = Boolean(dados?.adminView && dados?.gestorSelecionado);
-  // Defesa em profundidade: mesmo que uma resposta futura venha com accessLevel
-  // incorreto, a seleção explícita de um Gestor no Admin nunca renderiza a UI UGP.
-  const isUgpRh = dados?.accessLevel === 'ugp' && !adminVisualizandoGestor;
+  const adminVisualizandoGestor = Boolean(
+    dados?.adminView && dados?.gestorSelecionado && dados?.accessLevel !== 'ugp',
+  );
+  // Um acesso configurado como UGP/RH ou UGP restrita deve reproduzir a mesma
+  // experiência de conteúdo do login real, mesmo quando selecionado pelo Admin.
+  const isUgpRh = dados?.accessLevel === 'ugp';
   const colaborador = colaboradores.find((item) => item.id === selecionadoId) || colaboradores[0] || null;
 
   const abrirDetalhe = (id: string) => {
@@ -3669,13 +3675,15 @@ export default function AcompanharIntegracaoGestor() {
               <div className="text-xs font-bold uppercase tracking-[0.12em] text-violet-600">
                 {adminVisualizandoGestor
                   ? 'Visão do Gestor'
-                  : dados?.adminView
-                    ? 'Visão Administrativa'
-                    : dados?.restrictedUgp
-                      ? 'Visão UGP/RH'
-                      : isUgpRh
+                  : dados?.adminView && dados?.gestorSelecionado && isUgpRh
+                    ? 'Visão UGP/RH'
+                    : dados?.adminView
+                      ? 'Visão Administrativa'
+                      : dados?.restrictedUgp
                         ? 'Visão UGP/RH'
-                        : 'Visão do Gestor'}
+                        : isUgpRh
+                          ? 'Visão UGP/RH'
+                          : 'Visão do Gestor'}
               </div>
               <h1 className="mt-1 text-[28px] font-bold leading-[34px] tracking-tight text-slate-950">Acompanhar Integração</h1>
               <p className="mt-1 text-sm text-slate-500">
@@ -3692,10 +3700,12 @@ export default function AcompanharIntegracaoGestor() {
                       <SelectValue placeholder="Selecione a visão" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">UGP/RH — todos os colaboradores</SelectItem>
+                      <SelectItem value="all">Visão Administrativa — todos os processos</SelectItem>
                       {(dados.gestoresDisponiveis || []).map((g) => (
                         <SelectItem key={g.key} value={g.key}>
-                          {g.nome} — {g.colaboradores} colaborador(es)
+                          {g.origem === 'configurado'
+                            ? `${g.nome} — ${g.modo === 'ugp_restrita' ? 'UGP/RH restrita' : g.modo === 'all' ? 'UGP/RH' : 'Gestor'}${g.empresaNome ? ` — ${g.empresaNome}` : ''}`
+                            : `${g.nome} — ${g.colaboradores} colaborador(es)`}
                         </SelectItem>
                       ))}
                     </SelectContent>
