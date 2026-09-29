@@ -1435,6 +1435,19 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const competenciasMentoraAcompanhamento = recomendacoesConsultoria(
         competenciasMentoraSelecionadas,
       );
+
+      if (adminView && estadoAtualDemo?.feito?.["d15-03"]) {
+        const rawCompetencias = estadoAtualDemo?.feito?.["d15-03"]?.competencias;
+        console.info("[ProgramaIntegracao][DIAG_COMPETENCIAS]", JSON.stringify({
+          processoId: Number(row.id),
+          legacyId: String(row.legacyId || ""),
+          acessoUgpRh,
+          tipoRaw: Array.isArray(rawCompetencias) ? "array" : typeof rawCompetencias,
+          competenciasLidas: competenciasMentoraSelecionadas,
+          recomendacoesCatalogadas: competenciasMentoraAcompanhamento.map((item) => item.nome),
+        }));
+      }
+
       const testeAtualDemo = estadoAtualDemo?.teste || {};
       const overrideDemo = testeAtualDemo?.andamentoDemoOverride;
       const overridePermitido =
