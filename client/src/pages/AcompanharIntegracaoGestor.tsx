@@ -1774,7 +1774,7 @@ function PerfilAssessmentModal({
                       Recomendações de Desenvolvimento pela Consultoria
                     </h3>
                     <p className="mt-1.5 text-xs leading-5 text-slate-500">
-                      Competências registradas pela consultora após o 1º Alinhamento. Esta área só aparece depois que ao menos uma competência é selecionada no Programa de Integração.
+                      Competências registradas pela consultora após o 1º Alinhamento. Esta área só é liberada após o primeiro alinhamento é finalizado.
                     </p>
                   </div>
 
