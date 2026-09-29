@@ -79,9 +79,9 @@ export const MODELOS_EMAIL_POS1_INTEGRACAO: Record<string, ModeloEmailIntegracao
     corpo:
       'Olá, tudo bem?\n\n' +
       'Realizamos o **1º Alinhamento** do Onboarding de **{{COLABORADOR}}** com {{GESTOR}} em **{{DATA_ALIN_1}}**. Seguem os materiais para acompanhamento, conforme o fluxo do programa.\n\n' +
+      '- **Assessment do 1º Alinhamento** — em anexo;\n' +
       '- **Ata do 1º Alinhamento** — em anexo;\n' +
-      '- **Relatório completo do alinhamento** — em anexo;\n' +
-      '- **Avaliação de Potencial consolidada** — em anexo;\n' +
+      '- **Relatório do 1º Alinhamento** — em anexo;\n' +
       '- **PDI de Integração** — publicado na plataforma do Ecossistema do B.E.M.\n\n' +
       'O colaborador já recebeu as orientações de acesso ao PDI e a gestão foi comunicada para acompanhamento. Os formulários deste alinhamento foram encaminhados ao colaborador, ao gestor e ao Anjo.\n\n' +
       '**Acompanhamento pela UGP**\n' +
@@ -89,7 +89,7 @@ export const MODELOS_EMAIL_POS1_INTEGRACAO: Record<string, ModeloEmailIntegracao
       'Se o seu acesso estiver habilitado, entre com o seu **e-mail e CPF cadastrado**. Pela plataforma, é possível acompanhar a evolução dos colaboradores, a situação dos formulários e os preenchimentos que ainda estiverem pendentes.\n' +
       'Se tiver qualquer dúvida de acesso ou precisar de ajuda, é só nos avisar.\n\n' +
       'Ficamos à disposição para qualquer esclarecimento.' + ASS,
-    anexo: 'Ata do 1º Alinhamento; Relatório completo; Avaliação de Potencial consolidada',
+    anexo: 'Assessment do 1º Alinhamento; Ata do 1º Alinhamento; Relatório do 1º Alinhamento',
   },
 
   m_pos1_anjo: {
