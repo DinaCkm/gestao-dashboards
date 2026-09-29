@@ -481,7 +481,7 @@ async function montarPreviewTarefasGestor(
       conhecimentos ? `Conhecimentos técnicos imprescindíveis:\n${conhecimentos}` : "",
       documentos ? `Documentos, manuais e treinamentos imprescindíveis:\n${documentos}` : "",
     ].filter(Boolean).join("\n\n"),
-    "Consulte o PDF de orientação disponível na Jornada Compliance, identifique nele quais cursos obrigatórios devem ser realizados na Universidade Sebrae e conclua esses cursos diretamente na Universidade Sebrae até o fim do onboarding.",
+    "Consulte o PDF de orientação disponível na Jornada Compliance, identifique todos os cursos obrigatórios, conclua cada um deles diretamente na Universidade Sebrae até o fim do onboarding e envie todos os prints das telas de conclusão dos cursos como comprovação.",
   ];
 
   return {
