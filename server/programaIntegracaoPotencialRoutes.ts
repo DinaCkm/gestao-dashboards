@@ -5,8 +5,6 @@ import { sdk } from "./_core/sdk";
 
 export const programaIntegracaoPotencialRouter = Router();
 
-const TASK_MARKER_NAME = "[Sistema] Programa de Integração — Jornada Compliance";
-const TASK_COMPETENCIA = "Jornada Compliance";
 const TASK_TITLES = [
   "Tarefa solicitada pelo gestor para os primeiros 15 dias",
   "Tarefa solicitada pelo gestor para os primeiros 60 dias",
@@ -455,50 +453,6 @@ function datasSugestoes(hoje: string, fim: string, max = 5) {
   return datas;
 }
 
-async function localizarJornadaCompliance(connection: any, programId: number | null) {
-  const [rows] = (await connection.execute(
-    `SELECT t.id AS trilhaId,t.programId,c.id AS competenciaId
-     FROM trilhas t
-     INNER JOIN competencias c ON c.trilhaId=t.id
-     WHERE t.isActive=1
-       AND c.isActive=1
-       AND LOWER(TRIM(t.name))='jornada compliance'
-       AND LOWER(TRIM(c.nome))='jornada compliance'
-       AND (t.programId IS NULL OR t.programId=?)
-     ORDER BY CASE WHEN t.programId=? THEN 0 ELSE 1 END,t.id,c.id`,
-    [programId || 0, programId || 0],
-  )) as any;
-
-  if (!rows?.length) {
-    throw Object.assign(new Error("Não existe uma Trilha e Competência ativas com o nome exato 'Jornada Compliance' para este aluno."), { statusCode: 409 });
-  }
-
-  const preferencia = rows.filter((r: any) => Number(r.programId || 0) === Number(programId || 0));
-  const candidatos = preferencia.length ? preferencia : rows.filter((r: any) => r.programId == null);
-  if (candidatos.length !== 1) {
-    throw Object.assign(new Error("Há mais de uma configuração possível para Jornada Compliance. Revise o cadastro antes de criar tarefas."), { statusCode: 409 });
-  }
-  return {
-    trilhaId: Number(candidatos[0].trilhaId),
-    competenciaId: Number(candidatos[0].competenciaId),
-  };
-}
-
-async function localizarOuCriarMarcadorTarefa(connection: any) {
-  const [rows] = (await connection.execute(
-    `SELECT id FROM task_library WHERE nome=? AND competencia=? ORDER BY id LIMIT 1`,
-    [TASK_MARKER_NAME, TASK_COMPETENCIA],
-  )) as any;
-  if (rows?.[0]?.id) return Number(rows[0].id);
-
-  const [result] = (await connection.execute(
-    `INSERT INTO task_library (competencia,nome,resumo,o_que_fazer,o_que_ganha,isActive,createdAt)
-     VALUES (?,?,?,?,?,0,CURRENT_TIMESTAMP)`,
-    [TASK_COMPETENCIA, TASK_MARKER_NAME, "", "", ""],
-  )) as any;
-  return Number(result.insertId);
-}
-
 async function consultorParaAluno(connection: any, aluno: any) {
   const direto = Number(aluno?.consultorId || 0);
   if (direto) return direto;
@@ -520,9 +474,8 @@ async function inserirTarefa(
   input: {
     aluno: any;
     consultorId: number;
-    trilhaId: number;
+    trilhaId: number | null;
     contratoNivelId: number | null;
-    taskId: number;
     titulo: string;
     descricao: string;
     prazo: string;
@@ -532,8 +485,8 @@ async function inserirTarefa(
   const [result] = (await connection.execute(
     `INSERT INTO mentoring_sessions
      (alunoId,contratoNivelId,consultorId,turmaId,trilhaId,sessionNumber,sessionDate,presence,taskStatus,
-      taskId,taskDeadline,customTaskTitle,customTaskDescription,taskMode,tipoSessao,cancelada,createdAt)
-     VALUES (?,?,?,?,?,?,?,'presente','nao_entregue',?,?,?,?, 'livre','individual_normal',0,CURRENT_TIMESTAMP)`,
+      taskDeadline,customTaskTitle,customTaskDescription,taskMode,tipoSessao,cancelada,createdAt)
+     VALUES (?,?,?,?,?,?,?,'presente','nao_entregue',?,?,?, 'livre','individual_normal',0,CURRENT_TIMESTAMP)`,
     [
       Number(input.aluno.id),
       input.contratoNivelId,
@@ -542,7 +495,6 @@ async function inserirTarefa(
       input.trilhaId,
       input.sessionNumber,
       todayIso(),
-      input.taskId,
       input.prazo,
       input.titulo,
       input.descricao,
@@ -759,8 +711,10 @@ programaIntegracaoPotencialRouter.post(
         throw Object.assign(new Error("Já existem tarefas com os títulos padrão para este aluno. Nenhuma duplicação foi feita."), { statusCode: 409 });
       }
 
-      const jornada = await localizarJornadaCompliance(connection, Number(ctx.aluno.programId || 0) || null);
-      const taskId = await localizarOuCriarMarcadorTarefa(connection);
+      // Reutiliza a mesma classificacao das tarefas livres ja criadas em Atividades Praticas:
+      // trilha atual do aluno, taskMode='livre' e taskId nulo. Nao cria biblioteca
+      // paralela nem associa artificialmente a tarefa a Jornada Compliance.
+      const trilhaId = Number(ctx.aluno.trilhaId || 0) || null;
       const consultorId = await consultorParaAluno(connection, ctx.aluno);
       const prazo = await dataFimOnboarding(connection, ctx.processo, ctx.estado);
       if (prazo < todayIso()) {
@@ -784,9 +738,8 @@ programaIntegracaoPotencialRouter.post(
         ids.push(await inserirTarefa(connection, {
           aluno: ctx.aluno,
           consultorId,
-          trilhaId: jornada.trilhaId,
+          trilhaId,
           contratoNivelId: sessaoContexto.contratoNivelId,
-          taskId,
           titulo: TASK_TITLES[i],
           descricao: descricoes[i],
           prazo,
@@ -798,8 +751,8 @@ programaIntegracaoPotencialRouter.post(
       ctx.estado.teste.tarefasIntegracaoPadrao = {
         versao: 1,
         alunoId: ctx.alunoId,
-        trilhaId: jornada.trilhaId,
-        competenciaId: jornada.competenciaId,
+        trilhaId,
+        taskMode: "livre",
         criadasEm: new Date().toISOString(),
         prazo,
         sessionIds: {
@@ -1003,8 +956,9 @@ programaIntegracaoPotencialRouter.post(
         throw Object.assign(new Error("Já existe uma tarefa ativa com este mesmo título para o aluno. Nenhuma duplicação foi feita."), { statusCode: 409 });
       }
 
-      const jornada = await localizarJornadaCompliance(connection, Number(ctx.aluno.programId || 0) || null);
-      const taskId = await localizarOuCriarMarcadorTarefa(connection);
+      // Sugestao aprovada entra no mesmo fluxo de tarefa livre do ECO Lider,
+      // usando a trilha atual do aluno e sem criar item artificial na biblioteca.
+      const trilhaId = Number(ctx.aluno.trilhaId || 0) || null;
       const consultorId = await consultorParaAluno(connection, ctx.aluno);
       const sessaoContexto = await contextoNovaTarefa(ctx.alunoId);
       const numero = sessaoContexto.proximoNumero;
@@ -1013,9 +967,8 @@ programaIntegracaoPotencialRouter.post(
       const sessionId = await inserirTarefa(connection, {
         aluno: ctx.aluno,
         consultorId,
-        trilhaId: jornada.trilhaId,
+        trilhaId,
         contratoNivelId: sessaoContexto.contratoNivelId,
-        taskId,
         titulo: String(item.titulo || "").trim(),
         descricao,
         prazo,
