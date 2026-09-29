@@ -6,6 +6,7 @@
  * entre envios para o mesmo aluno (controlado via email_alertas_log).
  */
 import { getDb } from './db';
+import { getAlunoIdsInativos } from './inatividadeAluno';
 import { events, eventParticipation, alunos, emailAlertasLog } from '../drizzle/schema';
 import { eq, and, gte, lte, lt } from 'drizzle-orm';
 import { sendEmail, buildAusenciaWebinarEmail } from './emailService';
@@ -91,7 +92,11 @@ export async function verificarEEnviarAlertasAusenciaWebinar(dryRun = false): Pr
   const alertas: AusenciaWebinarResult[] = [];
   let jaEnviadosIgnorados = 0;
 
+  const alunosInativos = await getAlunoIdsInativos();
+
   for (const [alunoId, ausencia] of porAluno) {
+    // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+    if (alunosInativos.has(alunoId)) continue;
     const aluno = await db.select().from(alunos).where(eq(alunos.id, alunoId)).limit(1).then(r => r[0]);
     if (!aluno || !aluno.email) continue;
 

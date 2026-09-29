@@ -5,6 +5,7 @@
  * Controla duplicatas: só reenvia alerta para a mesma tarefa a cada 7 dias
  */
 import { getDb } from './db';
+import { getAlunoIdsInativos } from './inatividadeAluno';
 import { getAlunosAtivos, getConsultors, getPrograms } from './db';
 import { emailAlertasLog, mentoringSessions } from '../drizzle/schema';
 import { eq, and, gte, inArray } from 'drizzle-orm';
@@ -114,7 +115,11 @@ export async function verificarEEnviarAlertasTarefasEmAberto(options?: {
   const alertas: TarefaEmAbertoResult[] = [];
   let jaEnviadosIgnorados = 0;
 
+  const alunosInativos = await getAlunoIdsInativos();
+
   for (const session of tarefasEmAberto) {
+    // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+    if (alunosInativos.has(session.alunoId)) continue;
     const aluno = alunoMap.get(session.alunoId);
     const mentor = consultorMap.get(session.consultorId);
     if (!aluno || !mentor) continue;

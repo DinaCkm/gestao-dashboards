@@ -6,6 +6,7 @@
  */
 
 import { getDb } from './db';
+import { getAlunoIdsInativos } from './inatividadeAluno';
 import { getAlunosAtivos, getConsultors } from './db';
 import { mentorAppointments, appointmentParticipants, mentoringSessions, emailAlertasLog } from '../drizzle/schema';
 import { eq, and, gte, lte, inArray } from 'drizzle-orm';
@@ -99,6 +100,8 @@ export async function verificarEEnviarLembretesAplicabilidade(options?: {
   const smtpUser = process.env.SMTP_USER || '';
   const loginUrl = 'https://ecolider.ecodobem.com';
 
+  const alunosInativos = await getAlunoIdsInativos();
+
   for (const appointment of upcomingAppointments) {
     const mentor = consultorMap.get(appointment.consultorId);
     if (!mentor) continue;
@@ -109,6 +112,8 @@ export async function verificarEEnviarLembretesAplicabilidade(options?: {
     for (const participant of appointmentParticipantsList) {
       const aluno = alunoMap.get(participant.alunoId);
       if (!aluno || !aluno.email) continue;
+      // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+      if (alunosInativos.has(aluno.id)) continue;
 
       // Check if this aluno has a pending task from last session
       const lastSession = lastSessionByAluno.get(aluno.id);

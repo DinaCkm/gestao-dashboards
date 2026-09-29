@@ -6,6 +6,7 @@
  */
 
 import { getDb } from './db';
+import { getAlunoIdsInativos } from './inatividadeAluno';
 import { getAlunosAtivos, getConsultors, getPrograms, getAllStudentsSessionProgress } from './db';
 import { emailAlertasLog, mentoringSessions, assessmentPdi } from '../drizzle/schema';
 import { eq, and, gte, desc } from 'drizzle-orm';
@@ -97,8 +98,12 @@ export async function verificarEEnviarAlertasMentoria(options?: {
   const allPdis = await db.select({ alunoId: assessmentPdi.alunoId }).from(assessmentPdi);
   const alunosComPdi = new Set(allPdis.map(p => p.alunoId));
 
+  const alunosInativos = await getAlunoIdsInativos();
+
   for (const aluno of allAlunos) {
     if (!aluno.email) continue;
+    // Regra: aluno sem ação na plataforma há +90 dias é inativo — não recebe avisos de pendências
+    if (alunosInativos.has(aluno.id)) continue;
 
     // Skip alunos who completed all their sessions (ciclo completo)
     if (cicloCompletoAlunoIds.has(aluno.id)) continue;
