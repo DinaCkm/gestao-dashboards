@@ -41,7 +41,7 @@ export function baixarAvaliacaoPotencialPdf(
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('Avaliação de Potencial', 16, 13);
+  doc.text('Avaliação de Potencial Consolidada', 16, 13);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.text('Programa de Integração', 16, 20);
@@ -54,7 +54,67 @@ export function baixarAvaliacaoPotencialPdf(
   y = addText(doc, `Cargo: ${colaborador.cargo || '—'}  |  Unidade: ${colaborador.unidade || '—'}`, 16, y, 178) + 1;
   y = addText(doc, `Data da geração: ${dataBr(snapshot.geradaEm)}`, 16, y, 178) + 6;
 
-  y = section(doc, 'Síntese', r.sintese, y);
+  const fontes = (snapshot.fontes || {}) as Record<string, any>;
+  const dados = (fontes.dadosUtilizados || {}) as Record<string, any>;
+  const disc = dados.disc || null;
+  const consultora = dados.consultora || {};
+  const bem = dados.gestorBemAcolhido || {};
+  const autoavaliacoes = Array.isArray(dados.autoavaliacoes) ? dados.autoavaliacoes : [];
+
+  y = section(doc, 'Fontes consideradas na análise', [
+    fontes.bemRespostaId ? 'Bem Acolhido em Nossa Unidade' : 'Bem Acolhido: sem registro identificado no snapshot',
+    disc ? 'Assessment / DISC' : 'Assessment / DISC: não disponível',
+    autoavaliacoes.length ? `Autoavaliação do colaborador (${autoavaliacoes.length} registro(s))` : 'Autoavaliação: não disponível',
+    Array.isArray(consultora.competencias) && consultora.competencias.length
+      ? 'Competências indicadas pela consultora/mentora'
+      : 'Competências da consultora/mentora: não disponíveis',
+  ], y);
+
+  if (disc) {
+    y = section(doc, 'Perfil Comportamental DISC', [
+      `Perfil predominante: ${disc.predominante || '—'}`,
+      `Perfil secundário: ${disc.secundario || '—'}`,
+      `D: ${Number(disc.D ?? 0)} | I: ${Number(disc.I ?? 0)} | S: ${Number(disc.S ?? 0)} | C: ${Number(disc.C ?? 0)}`,
+    ], y);
+  }
+
+  const competenciasMentora = Array.isArray(consultora.competencias)
+    ? consultora.competencias.map((x: any) => String(x || '').trim()).filter(Boolean)
+    : [];
+  if (competenciasMentora.length) {
+    y = section(doc, 'Competências / soft skills indicadas pela consultora', competenciasMentora, y);
+  }
+
+  const observacoesMentora = Array.isArray(consultora.observacoes)
+    ? consultora.observacoes.map((x: any) => String(x || '').trim()).filter(Boolean)
+    : [];
+  if (observacoesMentora.length) {
+    y = section(doc, 'Considerações da consultora / mentora', observacoesMentora, y);
+  }
+
+  const bemItens = [
+    bem.caracteristicasEsperadas ? `Características esperadas: ${bem.caracteristicasEsperadas}` : '',
+    bem.primeiros15Dias ? `Expectativas para os primeiros 15 dias: ${bem.primeiros15Dias}` : '',
+    bem.primeiros60Dias ? `Expectativas para os primeiros 60 dias: ${bem.primeiros60Dias}` : '',
+    bem.conhecimentosTecnicos ? `Conhecimentos técnicos: ${bem.conhecimentosTecnicos}` : '',
+    bem.documentosTreinamentos ? `Documentos e treinamentos: ${bem.documentosTreinamentos}` : '',
+  ].filter(Boolean);
+  if (bemItens.length) {
+    y = section(doc, 'Expectativas do Gestor — Bem Acolhido', bemItens, y);
+  }
+
+  if (autoavaliacoes.length) {
+    const autoItens = autoavaliacoes.map((item: any) => {
+      const nome = String(item?.competenciaNome || item?.competencia || item?.nome || `Competência ${item?.competenciaId || ''}`).trim();
+      const nota = item?.nota ?? item?.valor ?? item?.score;
+      return nota === undefined || nota === null || nota === ''
+        ? nome
+        : `${nome}: ${nota}`;
+    });
+    y = section(doc, 'Autoavaliação do colaborador', autoItens, y);
+  }
+
+  y = section(doc, 'Análise Integrada — Síntese', r.sintese, y);
   y = section(doc, 'Características comportamentais predominantes', r.caracteristicasComportamentais || [], y);
   y = section(doc, 'Competências observadas', r.competenciasObservadas || [], y);
   y = section(doc, 'Convergências entre as fontes', r.convergencias || [], y);
@@ -69,9 +129,9 @@ export function baixarAvaliacaoPotencialPdf(
     doc.setPage(i);
     doc.setFontSize(7.5);
     doc.setTextColor(120, 128, 145);
-    doc.text(`Avaliação gerada a partir dos registros disponíveis no Programa de Integração • Página ${i}/${pages}`, 16, 292);
+    doc.text(`Avaliação de Potencial Consolidada • Programa de Integração • Página ${i}/${pages}`, 16, 292);
   }
 
   const seguro = String(colaborador.nome || 'colaborador').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toLowerCase();
-  doc.save(`avaliacao-potencial-${seguro || 'colaborador'}.pdf`);
+  doc.save(`avaliacao-potencial-consolidada-${seguro || 'colaborador'}.pdf`);
 }
