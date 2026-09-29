@@ -51,6 +51,21 @@ function jsonConfirmacao(valor: unknown): string {
   return JSON.stringify(normalizarJsonConfirmacao(valor ?? {}));
 }
 
+const CHAVES_TESTE_GERENCIADAS_BACKEND = new Set([
+  'ecoAutomacaoConfirmada',
+  'avaliacaoPotencialIntegrada',
+  'sugestoesDesenvolvimento',
+  'tarefasIntegracaoPadrao',
+]);
+
+function estadoParaConfirmacao(campo: keyof ProcessoIntegracao, valor: unknown): unknown {
+  if (campo !== 'teste' || !valor || typeof valor !== 'object' || Array.isArray(valor)) return valor;
+  return Object.fromEntries(
+    Object.entries(valor as Record<string, unknown>)
+      .filter(([chave]) => !CHAVES_TESTE_GERENCIADAS_BACKEND.has(chave)),
+  );
+}
+
 function confirmarProcessoLido(
   legacyId: string,
   esperado: ProcessoIntegracao,
@@ -67,8 +82,8 @@ function confirmarProcessoLido(
   }
 
   for (const campo of CAMPOS_ESTADO_CONFIRMACAO_PROCESSO) {
-    const atual = jsonConfirmacao(lido[campo]);
-    const previsto = jsonConfirmacao(esperado[campo]);
+    const atual = jsonConfirmacao(estadoParaConfirmacao(campo, lido[campo]));
+    const previsto = jsonConfirmacao(estadoParaConfirmacao(campo, esperado[campo]));
     if (atual !== previsto) {
       throw new Error(`O processo ${legacyId} foi salvo, mas o estado ${String(campo)} voltou diferente na conferência.`);
     }

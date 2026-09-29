@@ -2210,6 +2210,28 @@ programaIntegracaoRouter.put("/api/programa-integracao/processos/:legacyId", req
     if (Array.isArray(estadoAtualServidor.registrosIntegracao)) {
       estado.registrosIntegracao = estadoAtualServidor.registrosIntegracao;
     }
+
+    // Chaves gerenciadas exclusivamente pelo backend da Avaliação de Potencial.
+    // Uma ficha antiga aberta no navegador nunca pode apagar snapshot, vínculo
+    // confirmado ou referências de tarefas criadas depois daquela leitura.
+    const testeServidor = estadoAtualServidor?.teste && typeof estadoAtualServidor.teste === "object"
+      ? estadoAtualServidor.teste
+      : {};
+    const testeRecebido = estado?.teste && typeof estado.teste === "object"
+      ? estado.teste
+      : {};
+    estado.teste = { ...testeRecebido };
+    [
+      "ecoAutomacaoConfirmada",
+      "avaliacaoPotencialIntegrada",
+      "sugestoesDesenvolvimento",
+      "tarefasIntegracaoPadrao",
+    ].forEach((chave) => {
+      if (Object.prototype.hasOwnProperty.call(testeServidor, chave)) {
+        estado.teste[chave] = testeServidor[chave];
+      }
+    });
+
     delete estado.resp;
 
     const values = [legacyId, null, ordem, String(p.nome || "Sem nome"), p.cpf || null, p.nasc || null, p.email || null, p.emailCorporativo || null, p.tel || null, p.cargo || null, p.unidade || null, p.tipo || "Onboarding", p.inicio || todayIso(), p.part || "Presencial", p.situacao || "ativo", p.gestor || null, p.gestorEmail || null, p.gestorTel || null, p.anjo || null, p.anjoEmail || null, p.consultora || null, p.mentorId || null, p.ugp || null, p.horarios || null, p.statusPdi || null, p.pendencias || null, p.statusCursos || null, p.consideracoes || null, p.notas || null, p.cor || null, JSON.stringify(estado)];
