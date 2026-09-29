@@ -13,7 +13,12 @@ export interface ColaboradorAcompanhamentoPdf {
   alinhamentosFeitos: number;
   alinhamentosTotal: number;
   jornadaCompliance: { percentual: number | null; total?: number; concluidas?: number };
-  pdi: { percentual: number | null; total?: number; concluidas?: number };
+  pdi: {
+    percentual: number | null;
+    total?: number;
+    concluidas?: number;
+    itens?: Array<{ prazo?: string | null; concluida?: boolean }>;
+  };
   acessouEcoLider?: boolean | null;
   assessmentPotencialConcluido?: boolean | null;
   respostas: RespostaAcompanhamento[];
@@ -190,7 +195,21 @@ function alertasColaborador(colaborador: ColaboradorAcompanhamentoPdf): string[]
   if ((colaborador.jornadaCompliance.total || 0) > 0 && (colaborador.jornadaCompliance.concluidas || 0) === 0) {
     alertas.push('Esse colaborador não iniciou a Jornada Compliance.');
   }
-  if ((colaborador.pdi.total || 0) > 0 && (colaborador.pdi.concluidas || 0) === 0) {
+  if (
+    (colaborador.pdi.total || 0) > 0 &&
+    (colaborador.pdi.concluidas || 0) === 0 &&
+    (colaborador.pdi.itens || []).some((item) => {
+      if (item.concluida || !item.prazo) return false;
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const limite = new Date(hoje);
+      limite.setDate(limite.getDate() + 3);
+      const prazo = new Date(`${String(item.prazo).slice(0, 10)}T12:00:00`);
+      if (Number.isNaN(prazo.getTime())) return false;
+      prazo.setHours(0, 0, 0, 0);
+      return prazo <= limite;
+    })
+  ) {
     alertas.push('Esse colaborador ainda não realizou nenhuma das tarefas registradas no PDI.');
   }
   return alertas;
