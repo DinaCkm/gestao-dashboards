@@ -88,6 +88,16 @@ export async function confirmarVinculoAvaliacaoPotencial(legacyId: string, aluno
   });
 }
 
+export async function alterarVinculoAvaliacaoPotencial(legacyId: string, alunoId: number | null) {
+  return api<{ ok: true; aluno: { id: number; nome: string; email: string } | null }>(
+    `${BASE}/${encodeURIComponent(legacyId)}/vinculo-eco/alterar`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ alunoId }),
+    },
+  );
+}
+
 export async function gerarAvaliacaoPotencial(legacyId: string) {
   return api<{ ok: true; avaliacao: AvaliacaoPotencialSnapshot }>(`${BASE}/${encodeURIComponent(legacyId)}/avaliacao-potencial/gerar`, { method: 'POST' });
 }
