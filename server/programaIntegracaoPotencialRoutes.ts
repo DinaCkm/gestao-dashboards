@@ -24,14 +24,6 @@ function sanitizeLegacyId(value: unknown) {
   return String(value ?? "").trim().slice(0, 100);
 }
 
-function normalizarEmail(value: unknown) {
-  return String(value ?? "").trim().toLowerCase();
-}
-
-function normalizarCpf(value: unknown) {
-  return String(value ?? "").replace(/\D/g, "");
-}
-
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -128,7 +120,7 @@ async function carregarProcesso(connection: any, legacyId: string, lock = false)
 
 async function carregarBem(connection: any, processoId: number) {
   const [rows] = (await connection.execute(
-    `SELECT id,answers,submittedAt
+    `SELECT id,answers,submittedAt,updatedAt
      FROM programa_integracao_respostas
      WHERE processoId=?
        AND formKey='bem'
@@ -212,28 +204,19 @@ function validarVinculo(processo: any, estado: Record<string, any>, aluno: any) 
   const confirmado = estado?.teste?.ecoAutomacaoConfirmada;
   const confirmacaoValida = Number(confirmado?.alunoId || 0) === alunoId;
 
-  const emailAluno = normalizarEmail(aluno.email);
-  const emailsProcesso = [processo.email, processo.emailCorporativo].map(normalizarEmail).filter(Boolean);
-  const emailExato = Boolean(emailAluno && emailsProcesso.includes(emailAluno));
-
-  const cpfAluno = normalizarCpf(aluno.cpf);
-  const cpfProcesso = normalizarCpf(processo.cpf);
-  const cpfExato = Boolean(cpfAluno && cpfProcesso && cpfAluno === cpfProcesso);
-
+  // Para estas automações não reaproveitamos a lógica de correspondência
+  // aproximada do vínculo histórico. Só aceitamos o aluno selecionado
+  // manualmente no Programa ou uma confirmação explícita do Admin para este ID.
   const manual = modo === "manual";
-  const seguro = manual || confirmacaoValida || emailExato || cpfExato;
+  const seguro = manual || confirmacaoValida;
 
   return {
     seguro,
     motivo: seguro
       ? manual
         ? "Vínculo selecionado manualmente no Programa de Integração."
-        : confirmacaoValida
-          ? "Vínculo confirmado para automações."
-          : emailExato
-            ? "Vínculo confirmado por e-mail exato."
-            : "Vínculo confirmado por CPF exato."
-      : "O vínculo existente não é suficiente para automações. Confirme manualmente este aluno antes de continuar.",
+        : "Vínculo confirmado explicitamente para automações."
+      : "O vínculo salvo pode ter vindo de uma correspondência automática. Confirme explicitamente este aluno antes de continuar.",
     precisaConfirmacao: !seguro,
     alunoId,
     modo,
@@ -284,6 +267,7 @@ function sourceKey(ctx: Awaited<ReturnType<typeof contexto>>) {
     alunoId: ctx.alunoId,
     bemId: Number(ctx.bem?.id || 0),
     bemSubmittedAt,
+    bemUpdatedAt: ctx.bem?.updatedAt ? new Date(ctx.bem.updatedAt).toISOString() : "",
     discCiclo: Number(ctx.perfil.disc?.ciclo || 0),
     discAt,
     competencias: ctx.mentora.competencias,
@@ -567,7 +551,14 @@ async function inserirTarefa(
 }
 
 async function contextoNovaTarefa(alunoId: number) {
-  await assertNivelPermiteNovasAtribuicoes(alunoId, null, "programa-integracao.atividade-pratica");
+  try {
+    await assertNivelPermiteNovasAtribuicoes(alunoId, null, "programa-integracao.atividade-pratica");
+  } catch (error: any) {
+    throw Object.assign(
+      new Error(error?.message || "O nível atual do aluno não permite novas atribuições."),
+      { statusCode: 409, code: "NIVEL_BLOQUEADO" },
+    );
+  }
   const nivel = await getContratoNivelVigenteByAluno(alunoId);
   const contratoNivelId = nivel?.id ?? null;
   const sessoesDoNivel = contratoNivelId
@@ -685,6 +676,7 @@ programaIntegracaoPotencialRouter.post(
           fontes: {
             bemRespostaId: Number(atual.bem?.id || 0),
             bemSubmittedAt: atual.bem?.submittedAt ? new Date(atual.bem.submittedAt).toISOString() : null,
+            bemUpdatedAt: atual.bem?.updatedAt ? new Date(atual.bem.updatedAt).toISOString() : null,
             discCiclo: Number(atual.perfil.disc?.ciclo || 0),
             discCompletedAt: atual.perfil.disc?.completedAt ? new Date(atual.perfil.disc.completedAt).toISOString() : null,
             competenciasMentora: atual.mentora.competencias,
