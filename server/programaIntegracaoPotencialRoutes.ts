@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { getRawConnection } from "./db";
+import { assertNivelPermiteNovasAtribuicoes, getContratoNivelVigenteByAluno, getMentoringSessionsByAluno, getMentoringSessionsByAlunoAndNivel, getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
 
 export const programaIntegracaoPotencialRouter = Router();
@@ -536,6 +536,7 @@ async function inserirTarefa(
     aluno: any;
     consultorId: number;
     trilhaId: number;
+    contratoNivelId: number | null;
     taskId: number;
     titulo: string;
     descricao: string;
@@ -545,11 +546,12 @@ async function inserirTarefa(
 ) {
   const [result] = (await connection.execute(
     `INSERT INTO mentoring_sessions
-     (alunoId,consultorId,turmaId,trilhaId,sessionNumber,sessionDate,presence,taskStatus,
+     (alunoId,contratoNivelId,consultorId,turmaId,trilhaId,sessionNumber,sessionDate,presence,taskStatus,
       taskId,taskDeadline,customTaskTitle,customTaskDescription,taskMode,tipoSessao,cancelada,createdAt)
-     VALUES (?,?,?,?,?,?,'presente','nao_entregue',?,?,?,?, 'livre','individual_normal',0,CURRENT_TIMESTAMP)`,
+     VALUES (?,?,?,?,?,?,?,'presente','nao_entregue',?,?,?,?, 'livre','individual_normal',0,CURRENT_TIMESTAMP)`,
     [
       Number(input.aluno.id),
+      input.contratoNivelId,
       input.consultorId,
       input.aluno.turmaId || null,
       input.trilhaId,
@@ -564,12 +566,20 @@ async function inserirTarefa(
   return Number(result.insertId);
 }
 
-async function proximoNumeroSessao(connection: any, alunoId: number) {
-  const [rows] = (await connection.execute(
-    "SELECT COALESCE(MAX(sessionNumber),0) AS maxNumero FROM mentoring_sessions WHERE alunoId=?",
-    [alunoId],
-  )) as any;
-  return Number(rows?.[0]?.maxNumero || 0) + 1;
+async function contextoNovaTarefa(alunoId: number) {
+  await assertNivelPermiteNovasAtribuicoes(alunoId, null, "programa-integracao.atividade-pratica");
+  const nivel = await getContratoNivelVigenteByAluno(alunoId);
+  const contratoNivelId = nivel?.id ?? null;
+  const sessoesDoNivel = contratoNivelId
+    ? await getMentoringSessionsByAlunoAndNivel(alunoId, contratoNivelId)
+    : [];
+  const base = sessoesDoNivel.length > 0
+    ? sessoesDoNivel
+    : await getMentoringSessionsByAluno(alunoId);
+  const proximoNumero = base.length
+    ? Math.max(...base.map((s: any) => Number(s.sessionNumber || 0))) + 1
+    : 1;
+  return { contratoNivelId, proximoNumero };
 }
 
 function httpError(res: Response, error: any, fallback: string) {
@@ -763,7 +773,8 @@ programaIntegracaoPotencialRouter.post(
         throw Object.assign(new Error("O prazo final do onboarding já passou. Nenhuma tarefa foi criada automaticamente."), { statusCode: 409 });
       }
 
-      const base = await proximoNumeroSessao(connection, ctx.alunoId);
+      const sessaoContexto = await contextoNovaTarefa(ctx.alunoId);
+      const base = sessaoContexto.proximoNumero;
       const descricoes = [
         v15,
         v60,
@@ -780,6 +791,7 @@ programaIntegracaoPotencialRouter.post(
           aluno: ctx.aluno,
           consultorId,
           trilhaId: jornada.trilhaId,
+          contratoNivelId: sessaoContexto.contratoNivelId,
           taskId,
           titulo: TASK_TITLES[i],
           descricao: descricoes[i],
@@ -990,13 +1002,15 @@ programaIntegracaoPotencialRouter.post(
       const jornada = await localizarJornadaCompliance(connection, Number(ctx.aluno.programId || 0) || null);
       const taskId = await localizarOuCriarMarcadorTarefa(connection);
       const consultorId = await consultorParaAluno(connection, ctx.aluno);
-      const numero = await proximoNumeroSessao(connection, ctx.alunoId);
+      const sessaoContexto = await contextoNovaTarefa(ctx.alunoId);
+      const numero = sessaoContexto.proximoNumero;
       const descricao = `Como fazer:\n${String(item.comoFazer || "").trim()}\n\nO que enviar para comprovar:\n${String(item.comprovacao || "").trim()}`;
 
       const sessionId = await inserirTarefa(connection, {
         aluno: ctx.aluno,
         consultorId,
         trilhaId: jornada.trilhaId,
+        contratoNivelId: sessaoContexto.contratoNivelId,
         taskId,
         titulo: String(item.titulo || "").trim(),
         descricao,
