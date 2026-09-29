@@ -61,6 +61,7 @@ export interface ContextoAvaliacaoPotencial {
   fontes: {
     bem: boolean;
     disc: boolean;
+    autoavaliacoes: number;
     competenciasMentora: string[];
     observacoesMentora: string[];
   };
