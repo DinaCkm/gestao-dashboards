@@ -1026,3 +1026,111 @@ programaIntegracaoPotencialRouter.post(
     }
   },
 );
+
+
+programaIntegracaoPotencialRouter.post(
+  "/api/programa-integracao/processos/:legacyId/tarefas-gestor/reverter",
+  requireAdmin,
+  async (req, res) => {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    let tx = false;
+    try {
+      const legacyId = sanitizeLegacyId(req.params.legacyId);
+      await connection.beginTransaction(); tx = true;
+      const ctx = await contexto(connection, legacyId, true);
+      requireContextoSeguro(ctx);
+      const registro = ctx.estado?.teste?.tarefasIntegracaoPadrao;
+      if (!registro || Number(registro.alunoId || 0) !== ctx.alunoId) {
+        throw Object.assign(new Error("Não existe um conjunto de tarefas padrão registrado para reversão."), { statusCode: 409 });
+      }
+      const ids = Object.values(registro.sessionIds || {}).map(Number).filter((id) => id > 0);
+      if (ids.length !== 4) {
+        throw Object.assign(new Error("O histórico das quatro tarefas está incompleto. A reversão automática foi bloqueada para evitar cancelar registros errados."), { statusCode: 409 });
+      }
+      const placeholders = ids.map(() => "?").join(",");
+      const [rows] = (await connection.execute(
+        `SELECT id,alunoId,evidenceLink,evidenceImageUrl,submittedAt,validatedAt,cancelada
+         FROM mentoring_sessions
+         WHERE id IN (${placeholders})
+         FOR UPDATE`,
+        ids,
+      )) as any;
+      if ((rows || []).length !== 4 || rows.some((row: any) => Number(row.alunoId) !== ctx.alunoId)) {
+        throw Object.assign(new Error("As tarefas registradas não correspondem integralmente ao aluno atual. Nenhum registro foi alterado."), { statusCode: 409 });
+      }
+      if (rows.some((row: any) => row.evidenceLink || row.evidenceImageUrl || row.submittedAt || row.validatedAt)) {
+        throw Object.assign(new Error("Uma ou mais tarefas já possuem evidência, entrega ou validação. A reversão automática foi bloqueada para preservar o histórico."), { statusCode: 409 });
+      }
+      await connection.execute(
+        `UPDATE mentoring_sessions SET cancelada=1 WHERE id IN (${placeholders}) AND alunoId=?`,
+        [...ids, ctx.alunoId],
+      );
+      ctx.estado.teste.tarefasIntegracaoPadrao = {
+        ...registro,
+        revertidasEm: new Date().toISOString(),
+        revertidasPorUserId: Number((req as any).authenticatedUser?.id || 0) || null,
+      };
+      await connection.execute(
+        "UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?",
+        [JSON.stringify(ctx.estado), Number(ctx.processo.id)],
+      );
+      await audit(connection, req, "tarefas_gestor_revertidas", "As quatro tarefas padrão foram canceladas de forma reversível.", Number(ctx.processo.id), { alunoId: ctx.alunoId, sessionIds: ids });
+      await connection.commit(); tx = false;
+      return res.json({ ok: true, revertidas: 4 });
+    } catch (error) {
+      if (tx) try { await connection.rollback(); } catch {}
+      return httpError(res, error, "Não foi possível reverter as tarefas padrão.");
+    }
+  },
+);
+
+programaIntegracaoPotencialRouter.post(
+  "/api/programa-integracao/processos/:legacyId/sugestoes-desenvolvimento/:sugestaoId/reverter-insercao",
+  requireAdmin,
+  async (req, res) => {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    let tx = false;
+    try {
+      const legacyId = sanitizeLegacyId(req.params.legacyId);
+      const sugestaoId = String(req.params.sugestaoId || "");
+      await connection.beginTransaction(); tx = true;
+      const ctx = await contexto(connection, legacyId, true);
+      requireContextoSeguro(ctx);
+      const pacote = ctx.estado?.teste?.sugestoesDesenvolvimento;
+      const item = pacote?.itens?.find((x: any) => String(x.id) === sugestaoId);
+      const sessionId = Number(item?.sessionId || 0);
+      if (!item || item.status !== "inserida" || !sessionId) {
+        throw Object.assign(new Error("Esta sugestão não possui uma inserção ativa para reverter."), { statusCode: 409 });
+      }
+      const [rows] = (await connection.execute(
+        `SELECT id,alunoId,evidenceLink,evidenceImageUrl,submittedAt,validatedAt,cancelada
+         FROM mentoring_sessions WHERE id=? LIMIT 1 FOR UPDATE`,
+        [sessionId],
+      )) as any;
+      const sessao = rows?.[0];
+      if (!sessao || Number(sessao.alunoId) !== ctx.alunoId || Number(sessao.cancelada || 0) === 1) {
+        throw Object.assign(new Error("A tarefa vinculada não está ativa para este aluno. Nenhum registro foi alterado."), { statusCode: 409 });
+      }
+      if (sessao.evidenceLink || sessao.evidenceImageUrl || sessao.submittedAt || sessao.validatedAt) {
+        throw Object.assign(new Error("A tarefa já possui evidência, entrega ou validação. A reversão automática foi bloqueada para preservar o histórico."), { statusCode: 409 });
+      }
+      await connection.execute(
+        "UPDATE mentoring_sessions SET cancelada=1 WHERE id=? AND alunoId=?",
+        [sessionId, ctx.alunoId],
+      );
+      item.status = "sugerida";
+      item.sessionId = null;
+      item.insercaoRevertidaEm = new Date().toISOString();
+      await connection.execute(
+        "UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?",
+        [JSON.stringify(ctx.estado), Number(ctx.processo.id)],
+      );
+      await audit(connection, req, "sugestao_desenvolvimento_insercao_revertida", "Inserção da sugestão em Atividades Práticas revertida por cancelamento seguro.", Number(ctx.processo.id), { sugestaoId, sessionId, alunoId: ctx.alunoId });
+      await connection.commit(); tx = false;
+      return res.json({ ok: true });
+    } catch (error) {
+      if (tx) try { await connection.rollback(); } catch {}
+      return httpError(res, error, "Não foi possível reverter a inserção desta sugestão.");
+    }
+  },
+);
