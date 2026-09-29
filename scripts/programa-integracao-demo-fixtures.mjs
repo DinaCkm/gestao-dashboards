@@ -398,7 +398,7 @@ async function insertResponse(connection, data) {
       statusVinculo,statusResposta,nomeColaborador,unidade,dataInicio,emailColaborador,
       nomeOrig,avaliador,respondentName,respondentEmail,source,media,alertas,answers,
       quandoOriginal,emOriginal,submittedAt,createdAt,updatedAt)
-     VALUES (?,?,?,?,?,?,?,?,?,'vinculada','valido',?,?,?,?,?,?,?,?, 'admin',NULL,?,?,?, ?,?,?,NOW(),NOW())`,
+     VALUES (?,?,?,?,?,?,?,?,?,'vinculada','valido',?,?,?,?,?,?,?,?,'admin',NULL,?,?,?,?,?,NOW(),NOW())`,
     [
       data.processoId,
       data.legacyRid,
