@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, Camera, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Handshake, Info, LayoutDashboard, ListChecks, Maximize2, MessageSquareText, Minimize2, Network, Paperclip, RefreshCw, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
 import { DISC_PERFIL_RESUMO, INTEGRACAO_CLUSTERS } from '@shared/integracaoAssessment';
+import { competenciaConsultoriaPorNome } from '@shared/competenciasConsultoria';
 import {
   LineChart,
   Line,
@@ -178,6 +179,7 @@ interface ColaboradorAcompanhamento {
   assessmentPotencialConcluido: boolean | null;
   assessmentPotencialConcluidoEm: string | null;
   perfilAssessment: PerfilAssessment | null;
+  competenciasConsultoriaSelecionadas?: string[];
   recomendacoesConsultoria?: Array<{
     nome: string;
     descricao: string;
@@ -1031,6 +1033,17 @@ function PerfilAssessmentResumo({
 }) {
   const perfil = colaborador.perfilAssessment;
   const disc = perfil?.disc;
+  const recomendacoesConsultoriaExibicao = (colaborador.recomendacoesConsultoria || []).length
+    ? (colaborador.recomendacoesConsultoria || [])
+    : (colaborador.competenciasConsultoriaSelecionadas || [])
+        .map((nome) => {
+          const catalogo = competenciaConsultoriaPorNome(nome);
+          return catalogo || {
+            nome,
+            descricao: 'Competência registrada pela consultora. A descrição padronizada ainda não está disponível no catálogo.',
+            desenvolvimento: 'Utilizar as orientações registradas pela consultora no acompanhamento individual.',
+          };
+        });
   const clustersComDado = (perfil?.autoavaliacaoClusters || []).filter((item) => item.percentual != null);
   const temDados = Boolean(disc || clustersComDado.length);
   const perfilPredominanteLetra = String(disc?.perfilPredominante || '').trim().toUpperCase().charAt(0);
@@ -1742,7 +1755,7 @@ function PerfilAssessmentModal({
                 </p>
               </section>
 
-              {(colaborador.recomendacoesConsultoria || []).length > 0 && (
+              {recomendacoesConsultoriaExibicao.length > 0 && (
                 <section className="assessment-section rounded-2xl border border-violet-200/80 bg-white p-5 sm:p-6">
                   <div className="mb-4 sm:mb-5">
                     <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet-700">4. Recomendações da Consultoria</div>
@@ -1755,7 +1768,7 @@ function PerfilAssessmentModal({
                   </div>
 
                   <div className="space-y-3">
-                    {(colaborador.recomendacoesConsultoria || []).map((competencia) => (
+                    {recomendacoesConsultoriaExibicao.map((competencia) => (
                       <div key={competencia.nome} className="rounded-xl border border-violet-100 bg-violet-50/35 p-4 sm:p-5">
                         <div className="text-base font-bold text-slate-950">{competencia.nome}</div>
                         <p className="mt-2 text-sm leading-6 text-slate-700">{competencia.descricao}</p>
