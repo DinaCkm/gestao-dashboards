@@ -59,6 +59,24 @@ export function AtaRelatorioPainel({
     setMensagem(ok ? (tipo === 'ata' ? 'Ata gerada.' : 'Relatório para a UGP gerado.') : 'Não foi possível gerar o arquivo. Confira o nome do colaborador.');
   };
 
+  const baixarRelatorioAssessment = () => {
+    const legacyId = String(processo.id || '');
+    if (!legacyId) {
+      setMensagem('Relatório Assessment indisponível: processo não identificado.');
+      return;
+    }
+    const params = new URLSearchParams();
+    if (processo.nome) params.set('nome', processo.nome);
+    const href = `/api/pdf/programa-integracao/assessment/${encodeURIComponent(legacyId)}${params.toString() ? `?${params.toString()}` : ''}`;
+    const link = document.createElement('a');
+    link.href = href;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setMensagem('Download do Relatório Assessment iniciado.');
+  };
+
   const gerarDois = async () => {
     const salvo = await salvarRascunho();
     const ataOk = gerarDocumentoAtaRelatorio(salvo, numero, 'ata', config, feriados);
@@ -106,6 +124,11 @@ export function AtaRelatorioPainel({
         <div className="flex flex-wrap gap-2">
           <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata')}>Gerar Ata</Button>
           <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp')}>Gerar Relatório</Button>
+          {numero === 1 && (
+            <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={baixarRelatorioAssessment}>
+              Baixar Relatório Assessment
+            </Button>
+          )}
           <Button type="button" size="sm" disabled={salvando} onClick={gerarDois}>Gerar os dois</Button>
         </div>
       </div>
