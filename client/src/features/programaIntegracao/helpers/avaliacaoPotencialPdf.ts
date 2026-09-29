@@ -9,9 +9,30 @@ function dataBr(iso?: string) {
 
 function addText(doc: jsPDF, text: string, x: number, y: number, width: number, bold = false) {
   doc.setFont('helvetica', bold ? 'bold' : 'normal');
-  const lines = doc.splitTextToSize(text || '—', width);
-  doc.text(lines, x, y);
-  return y + lines.length * 5;
+  const lines = doc.splitTextToSize(text || '—', width) as string[];
+  const lineHeight = 5;
+  const bottom = 278;
+  let cursor = y;
+  let index = 0;
+
+  while (index < lines.length) {
+    if (cursor > bottom) {
+      doc.addPage();
+      cursor = 18;
+    }
+    const available = Math.max(1, Math.floor((bottom - cursor) / lineHeight) + 1);
+    const chunk = lines.slice(index, index + available);
+    doc.text(chunk, x, cursor);
+    cursor += chunk.length * lineHeight;
+    index += chunk.length;
+
+    if (index < lines.length) {
+      doc.addPage();
+      cursor = 18;
+    }
+  }
+
+  return cursor;
 }
 
 function section(doc: jsPDF, title: string, items: string[] | string, y: number) {
