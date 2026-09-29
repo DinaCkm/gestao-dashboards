@@ -935,7 +935,7 @@ programaIntegracaoPotencialRouter.post(
       await connection.beginTransaction();
       try {
         const atual = await contexto(connection, legacyId, true);
-        requireContextoSeguro(atual, { bem: true, mentora: true });
+        requireContextoSeguro(atual, { disc: true, mentora: true });
         if (sourceKey(atual) !== chaveFontes) {
           throw Object.assign(new Error("Os dados do colaborador mudaram enquanto a avaliação era gerada. Nenhuma avaliação foi salva; gere novamente."), { statusCode: 409 });
         }
