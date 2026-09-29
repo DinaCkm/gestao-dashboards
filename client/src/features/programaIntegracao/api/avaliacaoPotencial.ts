@@ -67,6 +67,13 @@ export interface ContextoAvaliacaoPotencial {
   avaliacao: AvaliacaoPotencialSnapshot | null;
   sugestoes: { itens: SugestaoDesenvolvimento[] } | null;
   tarefasPadrao: any;
+  tarefasGestorPreview: {
+    disponivel: boolean;
+    prazo: string | null;
+    faltantes: string[];
+    bloqueio: string;
+    itens: Array<{ titulo: string; descricao: string }>;
+  };
 }
 
 export async function buscarContextoAvaliacaoPotencial(legacyId: string) {
