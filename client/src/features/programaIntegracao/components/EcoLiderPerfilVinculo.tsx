@@ -90,7 +90,18 @@ export function EcoLiderPerfilVinculo({
       setAlunos(retorno.alunos || []);
       setSelecionado(String(retorno.perfil.aluno.id));
       setStatus('manual');
-      await persistirPerfil(retorno.perfil, 'manual');
+
+      const testeAtualizado: Record<string, any> = {
+        ...(processo.teste || {}),
+        ecoAlunoId: retorno.perfil.aluno.id,
+        ecoAlunoNome: retorno.perfil.aluno.nome,
+        ecoAlunoEmail: retorno.perfil.aluno.email,
+        ecoVinculoModo: 'manual',
+        ecoPerfil: retorno.perfil,
+      };
+      delete testeAtualizado.ecoAutomacaoConfirmada;
+      await onSalvarProcesso({ ...processo, teste: testeAtualizado });
+
       toast.success('Aluno do Onboarding vinculado ao ECO Líderes.');
     } catch (error) {
       setStatus('erro');
