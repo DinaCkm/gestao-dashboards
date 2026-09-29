@@ -105,9 +105,12 @@ async function buscarPendenciasAluno(alunoId: number, db: any): Promise<Pendenci
     const ciclos = await db.execute(`
       SELECT ce.dataFim, c.nome as competencia
       FROM ciclos_execucao ce
-      JOIN competencias c ON c.id = ce.competenciaId
+      JOIN ciclo_competencias cc ON cc.cicloId = ce.id
+      JOIN competencias c ON c.id = cc.competenciaId
+      LEFT JOIN plano_individual pi ON pi.alunoId = ce.alunoId AND pi.competenciaId = cc.competenciaId
       WHERE ce.alunoId = ${alunoId}
-        AND ce.status = 'em_andamento'
+        AND ce.dataInicio <= '${hoje}'
+        AND COALESCE(pi.status, 'pendente') <> 'concluida'
         AND ce.dataFim >= '${hoje}'
         AND ce.dataFim <= '${em30dias}'
       ORDER BY ce.dataFim ASC
