@@ -166,6 +166,7 @@ export function EmailActionButtons({
         onBaixarRelatorio={ugpNumero ? () => {
           gerarDocumentoAtaRelatorio(processo, ugpNumero, 'ugp', config, feriados, 'pdf');
         } : undefined}
+        numeroAlinhamentoDocumentos={ugpNumero || undefined}
       />
     </>
   );
