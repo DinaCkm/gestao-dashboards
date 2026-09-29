@@ -144,7 +144,7 @@ async function startServer() {
       iniciarCronAusenciaWebinar();
       // Iniciar cron job de lembretes de tarefa pendente + próxima mentoria (verifica diariamente, cooldown 15 dias)
       // iniciarCronLembreteTarefaMentoria(); // substituído por cronPreparacaoSessao
-      iniciarCronPreparacaoSessao(); // lembrete D-1 com todas as pendências
+      // EMERGÊNCIA 29/09/2026: cron D-1 temporariamente desativado para interromper disparos em massa.\n      // Reativar somente após validação do agrupamento e da idempotência por appointmentId.\n      // iniciarCronPreparacaoSessao();
       // Iniciar cron job de relatório de mentorias (dia 25 = prévia, dia 30 = definitivo)
       iniciarCronRelatorioMentorias();
       // Iniciar cron job de lembrete D-1 para entrevistas do Processo Seletivo
