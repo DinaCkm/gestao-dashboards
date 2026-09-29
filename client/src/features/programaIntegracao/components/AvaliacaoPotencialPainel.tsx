@@ -9,6 +9,8 @@ import {
   gerarSugestoesDesenvolvimento,
   inserirSugestaoDesenvolvimento,
   regenerarSugestaoDesenvolvimento,
+  reverterInsercaoSugestaoDesenvolvimento,
+  reverterTarefasGestorIntegracao,
   type ContextoAvaliacaoPotencial,
 } from '../api/avaliacaoPotencial';
 import { baixarAvaliacaoPotencialPdf } from '../helpers/avaliacaoPotencialPdf';
@@ -170,8 +172,22 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
         </Button>
       </div>
 
-      {ctx?.tarefasPadrao && (
-        <p className="text-xs font-medium text-emerald-700">As quatro tarefas padrão já possuem registro de criação para este colaborador.</p>
+      {ctx?.tarefasPadrao && !ctx.tarefasPadrao.revertidasEm && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
+          <p className="flex-1 text-xs font-medium text-emerald-700">As quatro tarefas padrão já possuem registro de criação para este colaborador.</p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={Boolean(acao)}
+            onClick={() => void executar('reverter-tarefas-gestor', () => reverterTarefasGestorIntegracao(legacyId), 'Criação das quatro tarefas revertida com segurança.')}
+          >
+            Reverter criação das 4 tarefas
+          </Button>
+        </div>
+      )}
+      {ctx?.tarefasPadrao?.revertidasEm && (
+        <p className="text-xs font-medium text-amber-700">A criação anterior das quatro tarefas foi revertida. Elas podem ser criadas novamente, se necessário.</p>
       )}
 
       {avaliacao && (
@@ -207,6 +223,19 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
                 </div>
                 <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Como fazer</p><p className="mt-1 text-sm whitespace-pre-line">{item.comoFazer}</p></div>
                 <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">O que enviar para comprovar</p><p className="mt-1 text-sm whitespace-pre-line">{item.comprovacao}</p></div>
+                {item.status === 'inserida' && (
+                  <div className="pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={Boolean(acao)}
+                      onClick={() => void executar(`reverter-insercao-${item.id}`, () => reverterInsercaoSugestaoDesenvolvimento(legacyId, item.id), 'Inserção da tarefa revertida com segurança.')}
+                    >
+                      Reverter inserção
+                    </Button>
+                  </div>
+                )}
                 {item.status !== 'inserida' && (
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button
