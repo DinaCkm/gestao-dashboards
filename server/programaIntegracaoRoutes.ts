@@ -1601,19 +1601,29 @@ function escolherCorrespondenciaEmpresaSegura(
 }
 
 function escolherCorrespondenciaEcoSegura(nomeProcesso: string, emailProcesso: string, alunosEco: any[]) {
+  const canon = nomeCanonicoEco(nomeProcesso);
+  if (!canon) return { status: "nao_encontrado" as const, aluno: null, score: 0, motivo: "nome_vazio" };
+
   const email = String(emailProcesso || "").trim().toLowerCase();
   if (email) {
     const porEmail = alunosEco.filter((a) => String(a.email || "").trim().toLowerCase() === email);
-    if (porEmail.length === 1) {
-      return { status: "automatico_seguro" as const, aluno: porEmail[0], score: 1, motivo: "email_exato" };
-    }
     if (porEmail.length > 1) {
       return { status: "ambiguo" as const, aluno: null, score: 1, motivo: "email_duplicado" };
     }
+    if (porEmail.length === 1) {
+      const aluno = porEmail[0];
+      const nomeCoerente = nomeCanonicoEco(aluno.nome) === canon;
+      if (nomeCoerente) {
+        return { status: "automatico_seguro" as const, aluno, score: 1, motivo: "email_e_nome_exatos" };
+      }
+      return {
+        status: "ambiguo" as const,
+        aluno: null,
+        score: simNome(nomeProcesso, aluno.nome),
+        motivo: "email_exato_nome_divergente",
+      };
+    }
   }
-
-  const canon = nomeCanonicoEco(nomeProcesso);
-  if (!canon) return { status: "nao_encontrado" as const, aluno: null, score: 0, motivo: "nome_vazio" };
 
   // Nome, mesmo quando idêntico, não é identificador forte o bastante para
   // criar vínculo automático. Ele serve somente para ordenar/sugerir candidatos.
