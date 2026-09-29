@@ -1,3 +1,5 @@
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import { aplicarStatusAcao } from './itemStateHelpers';
 import { mentoraVinculada } from './mentoraStateHelpers';
@@ -120,5 +122,125 @@ export function gerarDocumentoAtaRelatorio(processo: ProcessoIntegracao, numero:
   const html = htmlDocumento(processo, numero, tipo, config, feriados);
   const prefixo = tipo === 'ugp' ? 'Relatorio_UGP_' : 'Ata_';
   baixar(new Blob(['\ufeff' + html], { type: 'application/msword;charset=utf-8' }), `${prefixo}${ORD[numero].replace('º','o')}_Alinhamento_${nomeArquivo(processo.nome)}.doc`);
+  return true;
+}
+
+function adicionarTextoPdf(doc: jsPDF, titulo: string, texto: string, yInicial: number): number {
+  const margem = 16;
+  const largura = 178;
+  let y = yInicial;
+
+  const garantirEspaco = (altura = 16) => {
+    if (y + altura > 278) {
+      doc.addPage();
+      y = 18;
+    }
+  };
+
+  garantirEspaco(18);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(63, 42, 103);
+  doc.text(titulo, margem, y);
+  y += 6;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10.5);
+  doc.setTextColor(31, 41, 55);
+  const linhas = doc.splitTextToSize(String(texto || ''), largura) as string[];
+  for (const linha of linhas.length ? linhas : ['—']) {
+    garantirEspaco(6);
+    doc.text(linha, margem, y);
+    y += 5.2;
+  }
+  return y + 3;
+}
+
+export function gerarDocumentoAtaRelatorioPdf(
+  processo: ProcessoIntegracao,
+  numero: 1|2|3|4,
+  tipo: 'ata'|'ugp',
+  config?: BootstrapState['config'],
+  feriados: string[] = [],
+): boolean {
+  if (!processo.nome) return false;
+
+  const c = camposAtaRelatorio(processo, numero);
+  const ugp = tipo === 'ugp';
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+  const titulo = ugp ? `Relatório do ${ORD[numero]} Alinhamento` : `Ata do ${ORD[numero]} Alinhamento`;
+  const subtitulo = `${ugp ? 'Relatório para a UGP' : 'Ata de reunião'} · ${processo.tipo || 'Onboarding'} · Sebrae/TO`;
+
+  doc.setFillColor(75, 36, 130);
+  doc.rect(0, 0, 210, 27, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text(titulo, 16, 13);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.text(subtitulo, 16, 20);
+
+  const cabecalho = dadosCabecalho(processo, numero, config, feriados);
+  autoTable(doc, {
+    startY: 34,
+    head: [['Identificação', 'Informação']],
+    body: cabecalho,
+    theme: 'grid',
+    styles: {
+      font: 'helvetica',
+      fontSize: 9,
+      cellPadding: 2.3,
+      valign: 'middle',
+      textColor: [31, 41, 55],
+      lineColor: [212, 216, 229],
+      lineWidth: 0.2,
+    },
+    headStyles: {
+      fillColor: [239, 241, 247],
+      textColor: [63, 42, 103],
+      fontStyle: 'bold',
+    },
+    columnStyles: {
+      0: { cellWidth: 55, fontStyle: 'bold', fillColor: [247, 248, 252] },
+      1: { cellWidth: 123 },
+    },
+    margin: { left: 16, right: 16 },
+  });
+
+  let y = Number((doc as any).lastAutoTable?.finalY || 80) + 9;
+  y = adicionarTextoPdf(doc, '2. Objetivo da reunião', objetivoAta(processo, numero), y);
+  y = adicionarTextoPdf(doc, '3. Percepção do Líder', c.lider.trim() || '[registrar a percepção do líder]', y);
+  y = adicionarTextoPdf(doc, '4. Percepção do Colaborador', c.colab.trim() || '[registrar a percepção do colaborador]', y);
+  const conclusao = ugp
+    ? (c.consultora.trim() || c.conclusao.trim() || '[registrar a conclusão e o parecer da consultora]')
+    : (c.conclusao.trim() || '[registrar a conclusão da reunião]');
+  y = adicionarTextoPdf(doc, ugp ? '5. Conclusão / Percepção da Consultora' : '5. Conclusão', conclusao, y);
+  y = adicionarTextoPdf(doc, '6. Nota de confidencialidade', ATA_CONFIDENCIALIDADE, y);
+
+  if (y + 26 > 278) {
+    doc.addPage();
+    y = 24;
+  }
+  const consultor = mentoraVinculada(processo, config)?.nome || processo.consultora || 'Consultor(a) CKM';
+  doc.setDrawColor(130, 130, 130);
+  doc.line(20, y + 10, 92, y + 10);
+  doc.line(118, y + 10, 190, y + 10);
+  doc.setFontSize(8.5);
+  doc.setTextColor(80, 80, 80);
+  doc.text(String(consultor), 56, y + 15, { align: 'center' });
+  doc.text(String(processo.gestor || 'Gestor(a) receptor(a)'), 154, y + 15, { align: 'center' });
+
+  const totalPaginas = doc.getNumberOfPages();
+  for (let pagina = 1; pagina <= totalPaginas; pagina += 1) {
+    doc.setPage(pagina);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(105, 115, 135);
+    doc.text(`Programa de Integração · Página ${pagina}/${totalPaginas}`, 105, 292, { align: 'center' });
+  }
+
+  const prefixo = ugp ? 'Relatorio_UGP_' : 'Ata_';
+  doc.save(`${prefixo}${ORD[numero].replace('º','o')}_Alinhamento_${nomeArquivo(processo.nome)}.pdf`);
   return true;
 }
