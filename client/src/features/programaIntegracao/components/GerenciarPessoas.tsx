@@ -149,6 +149,9 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                 ecoAlunoNome: ecoPerfil.aluno.nome,
                 ecoAlunoEmail: ecoPerfil.aluno.email,
                 ecoVinculoModo: 'automatico_seguro',
+                ecoVinculoMotivo: String(resolucao.match.motivo || ''),
+                ecoVinculoScore: Number(resolucao.match.score || 0),
+                ecoVinculoEm: new Date().toISOString(),
                 ecoPerfil,
               },
             });
