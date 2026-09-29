@@ -4,7 +4,7 @@
 
 import { ProcessoIntegracao } from '../types';
 import { listarEtapasOrdenadas } from './planoHelpers';
-import { PLANO_REAL } from './planoReal';
+import { PLANO_REAL, encontrarItemPlanoReal } from './planoReal';
 
 export type StatusItemKey = 'ok' | 'off' | 'late' | 'act' | 'wait' | 'ontime';
 
@@ -118,6 +118,14 @@ export function calcularStatusItem(
       k: 'off',
       l: s === 'na' ? 'Não se aplica' : 'Não será feita',
     };
+  }
+
+  const itemPlano = encontrarItemPlanoReal(itemId);
+  if (itemPlano?.dependeDe) {
+    const origem = normalizarRegistroFeito(processo.feito?.[itemPlano.dependeDe]);
+    if (String(origem?.s || '') !== 'ok') {
+      return { k: 'wait', l: 'Aguardando envio do e-mail anterior' };
+    }
   }
 
   const dif = prevista ? diferencaDias(prevista, hojeRef) : 0;
