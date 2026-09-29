@@ -5,6 +5,7 @@ import {
   BEM_MATRIZ_ATUAL_VERSAO,
   INTEGRACAO_CLUSTERS,
 } from "@shared/integracaoAssessment";
+import { recomendacoesConsultoria } from "@shared/competenciasConsultoria";
 import { PROGRAMA_INTEGRACAO_CATALOG } from "./programaIntegracaoCatalog";
 import { getRawConnection } from "./db";
 import { parseManagerIntegracaoPermissions } from "./managerIntegracaoPermissions";
@@ -1424,6 +1425,11 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const perfilEcoId = perfilEcoPorProcesso.get(Number(row.id)) || ecoId;
       const andamentoEco = ecoId ? ecoStatus[String(ecoId)] : null;
       const estadoAtualDemo = asJson<Record<string, any>>(row.estado, {});
+      const competenciasMentoraAcompanhamento = recomendacoesConsultoria(
+        Array.isArray(estadoAtualDemo?.feito?.["d15-03"]?.competencias)
+          ? estadoAtualDemo.feito["d15-03"].competencias
+          : [],
+      );
       const testeAtualDemo = estadoAtualDemo?.teste || {};
       const overrideDemo = testeAtualDemo?.andamentoDemoOverride;
       const overridePermitido =
@@ -1524,6 +1530,10 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
               expectativaGestor,
             }
           : null,
+        // Recomendações da consultoria só existem depois do registro explícito
+        // no 1º alinhamento. Sem competências selecionadas, nada é enviado para
+        // a tela de acompanhamento.
+        recomendacoesConsultoria: acessoUgpRh ? competenciasMentoraAcompanhamento : [],
         respostas: acessoUgpRh
           ? respostas.filter((r) =>
               (r.form === "aval" && (r.papel === "Gestor" || r.papel === "Anjo")) ||
