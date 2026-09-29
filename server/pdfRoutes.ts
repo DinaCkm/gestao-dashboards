@@ -74,6 +74,35 @@ pdfRouter.get("/api/pdf/individual/:alunoId", async (req: Request, res: Response
   }
 });
 
+pdfRouter.get("/api/pdf/programa-integracao/assessment/:processoId", async (req: Request, res: Response) => {
+  try {
+    const { processoId } = req.params;
+    const nome = (req.query.nome as string) || "";
+    const url = `${getBaseUrl(req)}/gestor/integracao?assessmentPdf=${encodeURIComponent(processoId)}`;
+    const pdf = await renderPdfFromUrl({
+      url,
+      cookie: req.headers.cookie,
+      footerTemplate: FOOTER_TEMPLATE,
+      marginTop: "6mm",
+      marginBottom: MARGIN_BOTTOM,
+      marginLeft: "6mm",
+      marginRight: "6mm",
+      landscape: true,
+      waitForSelector: '[data-assessment-report-ready="true"]',
+      timeoutMs: 60000,
+    });
+    const nomeArquivo = nome
+      ? `relatorio-assessment-${slug(nome)}.pdf`
+      : `relatorio-assessment-${slug(processoId) || "colaborador"}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${nomeArquivo}"`);
+    res.send(pdf);
+  } catch (err) {
+    console.error("Erro ao gerar PDF (Assessment Programa de Integração):", err);
+    res.status(500).json({ error: "Não foi possível gerar o Relatório Assessment." });
+  }
+});
+
 pdfRouter.get("/api/pdf/cultura/:orgProfileId", async (req: Request, res: Response) => {
   try {
     const { orgProfileId } = req.params;

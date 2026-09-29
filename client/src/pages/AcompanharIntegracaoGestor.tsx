@@ -1341,10 +1341,12 @@ function PerfilAssessmentModal({
   colaborador,
   open,
   onOpenChange,
+  printMode = false,
 }: {
   colaborador: ColaboradorAcompanhamento | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  printMode?: boolean;
 }) {
   if (!colaborador) return null;
 
@@ -1436,7 +1438,8 @@ function PerfilAssessmentModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         data-assessment-modal="true"
-        className="assessment-profile-modal max-h-[90vh] !w-[93vw] !max-w-[1690px] gap-0 overflow-hidden rounded-2xl border border-slate-200/60 bg-[#F6F8FB] p-0 shadow-[0_24px_70px_rgba(15,23,42,0.20)] sm:!w-[92vw] sm:!max-w-[1690px]"
+        data-assessment-report-ready={printMode ? "true" : undefined}
+        className={`assessment-profile-modal ${printMode ? 'assessment-profile-print' : ''} max-h-[90vh] !w-[93vw] !max-w-[1690px] gap-0 overflow-hidden rounded-2xl border border-slate-200/60 bg-[#F6F8FB] p-0 shadow-[0_24px_70px_rgba(15,23,42,0.20)] sm:!w-[92vw] sm:!max-w-[1690px]`}
       >
         <style>{`
           [data-slot="dialog-portal"]:has(.assessment-profile-modal) > [data-slot="dialog-overlay"] {
@@ -1518,6 +1521,40 @@ function PerfilAssessmentModal({
           @keyframes assessment-details {
             from { opacity: 0; transform: translateY(-4px); }
             to { opacity: 1; transform: translateY(0); }
+          }
+          @media print {
+            [data-slot="dialog-portal"]:has(.assessment-profile-print) > [data-slot="dialog-overlay"] {
+              display: none !important;
+            }
+            .assessment-profile-print {
+              position: static !important;
+              inset: auto !important;
+              transform: none !important;
+              width: 100% !important;
+              max-width: none !important;
+              max-height: none !important;
+              overflow: visible !important;
+              border: 0 !important;
+              border-radius: 0 !important;
+              box-shadow: none !important;
+            }
+            .assessment-profile-print [data-slot="dialog-close"] {
+              display: none !important;
+            }
+            .assessment-profile-print .assessment-profile-scroll {
+              max-height: none !important;
+              overflow: visible !important;
+            }
+            .assessment-profile-print .assessment-section,
+            .assessment-profile-print .assessment-card {
+              break-inside: avoid;
+              page-break-inside: avoid;
+              animation: none !important;
+              transform: none !important;
+            }
+            .assessment-profile-print details > .assessment-details-body {
+              display: grid !important;
+            }
           }
           @media (prefers-reduced-motion: reduce) {
             .assessment-section,
@@ -1793,7 +1830,7 @@ function PerfilAssessmentModal({
                 </section>
               )}
 
-              <details className="assessment-section group overflow-hidden rounded-2xl border border-slate-200/70 bg-white">
+              <details open={printMode || undefined} className="assessment-section group overflow-hidden rounded-2xl border border-slate-200/70 bg-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-300 sm:px-6">
                   <span>Como interpretar estes resultados?</span>
                   <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 group-open:hidden">Ver explicação</span>
@@ -1833,16 +1870,18 @@ function PerfilAssessmentModal({
                 </div>
               </details>
 
-              <div className="flex justify-end border-t border-slate-200 pt-5">
-                <DialogClose asChild>
-                  <Button
-                    variant="outline"
-                    className="rounded-lg border-slate-200 bg-white px-4 shadow-none transition-[background-color,border-color,transform,box-shadow] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[.98] focus-visible:ring-2 focus-visible:ring-violet-300"
-                  >
-                    Fechar janela
-                  </Button>
-                </DialogClose>
-              </div>
+              {!printMode && (
+                <div className="flex justify-end border-t border-slate-200 pt-5">
+                  <DialogClose asChild>
+                    <Button
+                      variant="outline"
+                      className="rounded-lg border-slate-200 bg-white px-4 shadow-none transition-[background-color,border-color,transform,box-shadow] duration-150 hover:border-slate-300 hover:bg-slate-50 active:scale-[.98] focus-visible:ring-2 focus-visible:ring-violet-300"
+                    >
+                      Fechar janela
+                    </Button>
+                  </DialogClose>
+                </div>
+              )}
             </div>
           </TooltipProvider>
         </div>
@@ -1862,7 +1901,21 @@ function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] 
   if (colaborador.jornadaCompliance.total > 0 && colaborador.jornadaCompliance.concluidas === 0) {
     alertas.push('Esse colaborador não iniciou a Jornada Compliance.');
   }
-  if (colaborador.pdi.total > 0 && colaborador.pdi.concluidas === 0) {
+  if (
+    colaborador.pdi.total > 0 &&
+    colaborador.pdi.concluidas === 0 &&
+    (colaborador.pdi.itens || []).some((item) => {
+      if (item.concluida || !item.prazo) return false;
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const limite = new Date(hoje);
+      limite.setDate(limite.getDate() + 3);
+      const prazo = new Date(`${String(item.prazo).slice(0, 10)}T12:00:00`);
+      if (Number.isNaN(prazo.getTime())) return false;
+      prazo.setHours(0, 0, 0, 0);
+      return prazo <= limite;
+    })
+  ) {
     alertas.push('Esse colaborador ainda não realizou nenhuma das tarefas registradas no PDI.');
   }
   return alertas;
@@ -3639,6 +3692,9 @@ export default function AcompanharIntegracaoGestor() {
   const [statusFiltro, setStatusFiltro] = useState('all');
   const [radarFiltro, setRadarFiltro] = useState('all');
   const [demoNoticeOpen, setDemoNoticeOpen] = useState(false);
+  const assessmentPdfId = typeof window !== 'undefined'
+    ? (new URLSearchParams(window.location.search).get('assessmentPdf') || '')
+    : '';
 
   const abrirPerfil = (item: ColaboradorAcompanhamento) => {
     setPerfilColaborador(item);
@@ -3698,6 +3754,32 @@ export default function AcompanharIntegracaoGestor() {
   // experiência de conteúdo do login real, mesmo quando selecionado pelo Admin.
   const isUgpRh = dados?.accessLevel === 'ugp';
   const colaborador = colaboradores.find((item) => item.id === selecionadoId) || colaboradores[0] || null;
+  const colaboradorAssessmentPdf = assessmentPdfId
+    ? colaboradores.find((item) => item.id === assessmentPdfId) || null
+    : null;
+
+  if (assessmentPdfId) {
+    return (
+      <TooltipProvider>
+        <div className="min-h-screen bg-white">
+          {loading ? (
+            <div className="p-8 text-sm text-slate-500">Preparando Relatório Assessment...</div>
+          ) : erro ? (
+            <div data-assessment-report-ready="true" className="p-8 text-sm text-red-700">{erro}</div>
+          ) : colaboradorAssessmentPdf ? (
+            <PerfilAssessmentModal
+              colaborador={colaboradorAssessmentPdf}
+              open={true}
+              onOpenChange={() => {}}
+              printMode={true}
+            />
+          ) : (
+            <div data-assessment-report-ready="true" className="p-8 text-sm text-red-700">Colaborador não encontrado para este relatório.</div>
+          )}
+        </div>
+      </TooltipProvider>
+    );
+  }
 
   const abrirDetalhe = (id: string) => {
     setSelecionadoId(id);
