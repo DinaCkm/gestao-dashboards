@@ -129,7 +129,15 @@ function contextoIndicaFormulario(texto: string): boolean {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
-  return /formulario|pesquisa|preenchimento|bem acolhido|controle do programa|acompanhamento do pdi/.test(normalizado);
+
+  // Links gerais da plataforma, de cursos ou de reunião não são ações de formulário.
+  // O destaque amarelo fica restrito a formulários/pesquisas de preenchimento.
+  if (/ecolider|plataforma|meus cursos|link da reuniao/.test(normalizado) &&
+      !/formulario de avaliacao|pesquisa de integracao|bem acolhido|controle do programa|relatorio do pdi/.test(normalizado)) {
+    return false;
+  }
+
+  return /formulario de avaliacao|pesquisa de integracao|bem acolhido|controle do programa|relatorio do pdi|preenchimento (?:e )?obrigatorio/.test(normalizado);
 }
 
 function linkFormularioHtml(url: string, rico: boolean): string {
@@ -159,31 +167,45 @@ function listaVisualRica(linhas: string[]): string {
 /** Espelha `mdHtml(corpo)` do HTML histórico para a prévia na tela. */
 export function emailMarkdownParaHtmlPreview(corpo: string): string {
   const blocos = String(corpo || '').split('\n\n');
-  return blocos.map((bloco, indice) => {
+  return blocos.map((bloco) => {
     if (/^>\s?/.test(bloco)) {
       return `<p class="email-aviso">${inlineHtml(bloco.replace(/^>\s?/gm, ''))}</p>`;
     }
     if (bloco.trim() === '---') return '<hr class="email-regra">';
-    const linhas = bloco.split('\n');
-    if (linhas.every((linha) => /^[-•]\s/.test(linha))) return listaVisualPreview(linhas);
 
-    return linhas.map((linha, linhaIndice) => {
-      if (ehUrlIsolada(linha)) {
-        const contexto = [
-          blocos[indice - 1] || '',
-          bloco,
-          linhas[linhaIndice - 1] || '',
-        ].join(' ');
-        if (contextoIndicaFormulario(contexto)) return linkFormularioHtml(linha, false);
+    const linhas = bloco.split('\n');
+    let html = '';
+    let lista: string[] = [];
+    const descarregarLista = () => {
+      if (!lista.length) return;
+      html += listaVisualPreview(lista);
+      lista = [];
+    };
+
+    linhas.forEach((linha, linhaIndice) => {
+      if (/^[-•]\s/.test(linha)) {
+        lista.push(linha);
+        return;
       }
-      return `<p>${inlineHtml(linha)}</p>`;
-    }).join('');
+      descarregarLista();
+
+      if (ehUrlIsolada(linha)) {
+        const contextoLocal = linhas.slice(0, linhaIndice).join(' ');
+        if (contextoIndicaFormulario(contextoLocal)) {
+          html += linkFormularioHtml(linha, false);
+          return;
+        }
+      }
+      html += `<p>${inlineHtml(linha)}</p>`;
+    });
+    descarregarLista();
+    return html;
   }).join('');
 }
 
 export function emailMarkdownParaHtmlRico(corpo: string): string {
   const partes = String(corpo || '').split('\n\n');
-  const blocos = partes.map((bloco, indice) => {
+  const blocos = partes.map((bloco) => {
     const inline = (texto: string) => inlineHtml(texto, false);
     if (/^>\s?/.test(bloco)) {
       return '<div style="font-size:12.5px;color:#5B6675;border-left:3px solid #6B3E8F;padding:8px 12px;background:#F7F8FC;margin:0 0 16px">' +
@@ -192,16 +214,34 @@ export function emailMarkdownParaHtmlRico(corpo: string): string {
     if (bloco.trim() === '---') {
       return '<hr style="border:0;border-top:1px solid #E8E3E0;margin:18px 0">';
     }
-    const linhas = bloco.split('\n');
-    if (linhas.every((linha) => /^[-•]\s/.test(linha))) return listaVisualRica(linhas);
 
-    return linhas.map((linha, linhaIndice) => {
-      if (ehUrlIsolada(linha)) {
-        const contexto = [partes[indice - 1] || '', bloco, linhas[linhaIndice - 1] || ''].join(' ');
-        if (contextoIndicaFormulario(contexto)) return linkFormularioHtml(linha, true);
+    const linhas = bloco.split('\n');
+    let html = '';
+    let lista: string[] = [];
+    const descarregarLista = () => {
+      if (!lista.length) return;
+      html += listaVisualRica(lista);
+      lista = [];
+    };
+
+    linhas.forEach((linha, linhaIndice) => {
+      if (/^[-•]\s/.test(linha)) {
+        lista.push(linha);
+        return;
       }
-      return '<p style="margin:0 0 14px">' + inline(linha) + '</p>';
-    }).join('');
+      descarregarLista();
+
+      if (ehUrlIsolada(linha)) {
+        const contextoLocal = linhas.slice(0, linhaIndice).join(' ');
+        if (contextoIndicaFormulario(contextoLocal)) {
+          html += linkFormularioHtml(linha, true);
+          return;
+        }
+      }
+      html += '<p style="margin:0 0 14px">' + inline(linha) + '</p>';
+    });
+    descarregarLista();
+    return html;
   }).join('');
 
   return '<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;color:#152232">' +
