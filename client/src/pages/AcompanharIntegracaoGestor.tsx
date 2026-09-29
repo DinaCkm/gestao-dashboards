@@ -1798,7 +1798,7 @@ function PerfilAssessmentModal({
                     </p>
                   </div>
                   <div className="rounded-xl bg-slate-50/70 p-4">
-                    <h4 className="font-bold text-slate-950">4. Compatibilidade com a Expectativa</h4>
+                    <h4 className="font-bold text-slate-950">Compatibilidade com a Expectativa</h4>
                     <p className="mt-2">
                       O índice compara a autoavaliação do colaborador com as dimensões priorizadas pelo gestor no BEM Acolhido. Quanto mais próximos estiverem esses resultados, maior será a compatibilidade apresentada.
                     </p>
