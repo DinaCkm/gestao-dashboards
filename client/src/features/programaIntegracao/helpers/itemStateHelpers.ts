@@ -1,4 +1,5 @@
 import type { ProcessoIntegracao } from '../types';
+import { ITENS_PLANO_REAL } from './planoReal';
 
 export type StatusAcaoLegado = '' | 'prog' | 'doing' | 'wait' | 'wait_mentora' | 'wait_gestor' | 'blocked' | 'ok' | 'na' | 'wont';
 export type CampoFichaAcao = 'd' | 'prog' | 'just';
@@ -250,6 +251,18 @@ function sincronizarDependenciasAgendamento(
  * Espelha `aplicarAutomacoes()` do HTML original.
  * Atua somente sobre uma cópia do processo, preservando o objeto recebido.
  */
+function sincronizarDependenciasDeclaradas(feito: Record<string, any>): void {
+  ITENS_PLANO_REAL.forEach((item) => {
+    if (!item.dependeDe) return;
+    const statusOrigem = statusNoFeito(feito, item.dependeDe);
+    if (statusOrigem === 'ok') {
+      liberarBloqueioEtapa(feito, item.id, item.dependeDe);
+      return;
+    }
+    marcarBloqueioEtapa(feito, item.id, item.dependeDe);
+  });
+}
+
 function aplicarAutomacoes(
   feito: Record<string, any>,
   alin: Record<string, any>,
@@ -297,6 +310,8 @@ function aplicarAutomacoes(
     }
 
   });
+
+  sincronizarDependenciasDeclaradas(feito);
 }
 
 /**
