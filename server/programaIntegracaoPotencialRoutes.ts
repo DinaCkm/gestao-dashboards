@@ -438,6 +438,64 @@ async function dataFimOnboarding(connection: any, processo: any, estado: Record<
   return fim;
 }
 
+async function montarPreviewTarefasGestor(
+  connection: any,
+  ctx: Awaited<ReturnType<typeof contexto>>,
+) {
+  if (!ctx.bem) {
+    return {
+      disponivel: false,
+      prazo: null as string | null,
+      faltantes: ["Formulário Bem Acolhido"],
+      bloqueio: "",
+      itens: [] as Array<{ titulo: string; descricao: string }>,
+    };
+  }
+
+  const respostas = asJson<Record<string, any>>(ctx.bem.answers, {});
+  const v15 = answer(respostas, "bem_primeiros_15_dias");
+  const v60 = answer(respostas, "bem_primeiros_60_dias");
+  const conhecimentos = answer(respostas, "bem_conhecimentos_tecnicos");
+  const documentos = answer(respostas, "bem_documentos_treinamentos");
+  const faltantes = [
+    !v15 && "Primeiros 15 dias",
+    !v60 && "Primeiros 60 dias",
+    (!conhecimentos && !documentos) && "Conhecimentos técnicos / documentos, manuais e treinamentos",
+  ].filter(Boolean) as string[];
+
+  let prazo: string | null = null;
+  let bloqueio = "";
+  try {
+    prazo = await dataFimOnboarding(connection, ctx.processo, ctx.estado);
+    if (prazo < todayIso()) {
+      bloqueio = "O prazo final do onboarding já passou. Nenhuma tarefa será criada automaticamente.";
+    }
+  } catch (error: any) {
+    bloqueio = String(error?.message || "Não foi possível calcular o prazo final do onboarding.");
+  }
+
+  const descricoes = [
+    v15,
+    v60,
+    [
+      conhecimentos ? `Conhecimentos técnicos imprescindíveis:\n${conhecimentos}` : "",
+      documentos ? `Documentos, manuais e treinamentos imprescindíveis:\n${documentos}` : "",
+    ].filter(Boolean).join("\n\n"),
+    "Consulte o PDF de orientação disponível na Jornada Compliance, identifique nele quais cursos obrigatórios devem ser realizados na Universidade Senai e conclua esses cursos diretamente na Universidade Senai até o fim do onboarding.",
+  ];
+
+  return {
+    disponivel: Boolean(prazo) && faltantes.length === 0 && !bloqueio,
+    prazo,
+    faltantes,
+    bloqueio,
+    itens: TASK_TITLES.map((titulo, index) => ({
+      titulo,
+      descricao: descricoes[index] || "",
+    })),
+  };
+}
+
 function datasSugestoes(hoje: string, fim: string, max = 5) {
   const inicio = new Date(`${hoje}T12:00:00Z`).getTime();
   const final = new Date(`${fim}T12:00:00Z`).getTime();
@@ -557,6 +615,7 @@ programaIntegracaoPotencialRouter.get(
         avaliacao: teste.avaliacaoPotencialIntegrada || null,
         sugestoes: teste.sugestoesDesenvolvimento || null,
         tarefasPadrao: teste.tarefasIntegracaoPadrao || null,
+        tarefasGestorPreview: await montarPreviewTarefasGestor(connection, ctx),
       });
     } catch (error) {
       return httpError(res, error, "Não foi possível carregar o contexto da Avaliação de Potencial.");
@@ -669,18 +728,15 @@ programaIntegracaoPotencialRouter.post(
       const ctx = await contexto(connection, legacyId, true);
       requireContextoSeguro(ctx, { bem: true });
 
-      const respostas = asJson<Record<string, any>>(ctx.bem.answers, {});
-      const v15 = answer(respostas, "bem_primeiros_15_dias");
-      const v60 = answer(respostas, "bem_primeiros_60_dias");
-      const conhecimentos = answer(respostas, "bem_conhecimentos_tecnicos");
-      const documentos = answer(respostas, "bem_documentos_treinamentos");
-      const faltantes = [
-        !v15 && "Primeiros 15 dias",
-        !v60 && "Primeiros 60 dias",
-        (!conhecimentos && !documentos) && "Conhecimentos técnicos / documentos, manuais e treinamentos",
-      ].filter(Boolean);
-      if (faltantes.length) {
-        throw Object.assign(new Error(`O Bem Acolhido está sem: ${faltantes.join(", ")}. Nenhuma tarefa foi criada.`), { statusCode: 409 });
+      const preview = await montarPreviewTarefasGestor(connection, ctx);
+      if (preview.faltantes.length) {
+        throw Object.assign(new Error(`O Bem Acolhido está sem: ${preview.faltantes.join(", ")}. Nenhuma tarefa foi criada.`), { statusCode: 409 });
+      }
+      if (preview.bloqueio) {
+        throw Object.assign(new Error(preview.bloqueio), { statusCode: 409 });
+      }
+      if (!preview.prazo || !preview.disponivel) {
+        throw Object.assign(new Error("A prévia das tarefas ainda não está pronta para criação."), { statusCode: 409 });
       }
 
       const anterior = ctx.estado?.teste?.tarefasIntegracaoPadrao;
@@ -716,32 +772,21 @@ programaIntegracaoPotencialRouter.post(
       // paralela nem associa artificialmente a tarefa a Jornada Compliance.
       const trilhaId = Number(ctx.aluno.trilhaId || 0) || null;
       const consultorId = await consultorParaAluno(connection, ctx.aluno);
-      const prazo = await dataFimOnboarding(connection, ctx.processo, ctx.estado);
-      if (prazo < todayIso()) {
-        throw Object.assign(new Error("O prazo final do onboarding já passou. Nenhuma tarefa foi criada automaticamente."), { statusCode: 409 });
-      }
+      const prazo = preview.prazo;
 
       const sessaoContexto = await contextoNovaTarefa(ctx.alunoId);
       const base = sessaoContexto.proximoNumero;
-      const descricoes = [
-        v15,
-        v60,
-        [
-          conhecimentos ? `Conhecimentos técnicos imprescindíveis:\n${conhecimentos}` : "",
-          documentos ? `Documentos, manuais e treinamentos imprescindíveis:\n${documentos}` : "",
-        ].filter(Boolean).join("\n\n"),
-        "Consulte o PDF de orientação disponível na Jornada Compliance, identifique nele quais cursos obrigatórios devem ser realizados na Universidade Senai e conclua esses cursos diretamente na Universidade Senai até o fim do onboarding.",
-      ];
 
       const ids: number[] = [];
-      for (let i = 0; i < TASK_TITLES.length; i += 1) {
+      for (let i = 0; i < preview.itens.length; i += 1) {
+        const item = preview.itens[i];
         ids.push(await inserirTarefa(connection, {
           aluno: ctx.aluno,
           consultorId,
           trilhaId,
           contratoNivelId: sessaoContexto.contratoNivelId,
-          titulo: TASK_TITLES[i],
-          descricao: descricoes[i],
+          titulo: item.titulo,
+          descricao: item.descricao,
           prazo,
           sessionNumber: base + i,
         }));
