@@ -1,6 +1,6 @@
 import type { BootstrapState, ProcessoIntegracao } from '../types';
 import { cronogramaReal, dataPrevistaItemCronograma } from './painelAcoes';
-import { calcularStatusItem, type StatusItemPainel } from './statusHelpers';
+import { calcularStatusItem, dependenciaItemPendente, type StatusItemPainel } from './statusHelpers';
 import { adicionarNotaAcao, aplicarStatusAcao, statusAcaoAtual } from './itemStateHelpers';
 import { formatarData } from './dateHelpers';
 import { linkIntegracaoPorChave } from './emailLinksHelpers';
@@ -61,6 +61,7 @@ export function formulariosPendentes(
     etapa.itens.forEach((it) => {
       if (!it.form) return;
       if (fechado(statusAcaoAtual(processo, it.id))) return;
+      if (dependenciaItemPendente(processo, it.id)) return;
       const dataItem = dataPrevistaItemCronograma(etapa, it);
       if (dataItem >= hoje) return;
       out.push({
