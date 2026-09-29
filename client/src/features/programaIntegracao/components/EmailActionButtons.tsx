@@ -10,6 +10,7 @@ import {
 import { modeloPadraoEmailIntegracao } from '../helpers/emailModelosIntegracao';
 import { montarPreviewEmailIntegracao } from '../helpers/emailMontagemHelpers';
 import { fichaAcaoAtual } from '../helpers/itemStateHelpers';
+import { gerarDocumentoAtaRelatorio } from '../helpers/atasRelatoriosHelpers';
 import { EmailPreviewDialog } from './EmailPreviewDialog';
 
 interface EmailActionButtonsProps {
@@ -73,6 +74,21 @@ export function EmailActionButtons({
       )
     : null;
   const relN = chaveAberta ? relatorioDaChave(chaveAberta) : null;
+  const ugpAlinhamento = chaveAberta ? (/^m_pos([1-4])_ugp$/.exec(chaveAberta)?.[1] || '') : '';
+  const ugpNumero = ugpAlinhamento ? Number(ugpAlinhamento) as 1 | 2 | 3 | 4 : null;
+
+  const baixarAssessmentAtual = () => {
+    if (!processoId) return;
+    const params = new URLSearchParams();
+    if (processo.nome) params.set('nome', processo.nome);
+    const href = `/api/pdf/programa-integracao/assessment/${encodeURIComponent(processoId)}${params.toString() ? `?${params.toString()}` : ''}`;
+    const link = document.createElement('a');
+    link.href = href;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const alternarEnviadoComFeedback = async () => {
     if (!onAlternarEnviado) return;
@@ -137,6 +153,14 @@ export function EmailActionButtons({
         onGerarRelatorioEvolucao={relN && onGerarRelatorioEvolucao ? () => {
           onGerarRelatorioEvolucao(processo, relN);
         } : undefined}
+        onBaixarAssessment={chaveAberta === 'm_pos1_ugp' ? baixarAssessmentAtual : undefined}
+        onBaixarAta={ugpNumero ? () => {
+          gerarDocumentoAtaRelatorio(processo, ugpNumero, 'ata', config, feriados, 'pdf');
+        } : undefined}
+        onBaixarRelatorio={ugpNumero ? () => {
+          gerarDocumentoAtaRelatorio(processo, ugpNumero, 'ugp', config, feriados, 'pdf');
+        } : undefined}
+        numeroAlinhamentoDocumentos={ugpNumero || undefined}
       />
     </>
   );

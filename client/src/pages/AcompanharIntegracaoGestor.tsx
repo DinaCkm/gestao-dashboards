@@ -3278,6 +3278,7 @@ function baixarDocumentoUgp(
   colaborador: ColaboradorAcompanhamento,
   registro: NonNullable<ColaboradorAcompanhamento['registrosAlinhamentos']>[number],
   tipo: 'ata' | 'ugp',
+  formato: 'doc' | 'pdf' = 'doc',
 ) {
   gerarDocumentoAtaRelatorio(
     processoDocumentoUgp(colaborador, registro),
@@ -3285,6 +3286,7 @@ function baixarDocumentoUgp(
     tipo,
     undefined,
     [],
+    formato,
   );
 }
 
@@ -3333,11 +3335,17 @@ function RegistrosAlinhamentosUgp({
                     <Button type="button" size="sm" variant="outline" onClick={() => setSelecionado(item)}>
                       <Eye className="mr-1.5 h-4 w-4" /> Ver registro
                     </Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,item,'ata')}>
-                      <Download className="mr-1.5 h-4 w-4" /> Baixar ata
+                    <Button type="button" size="sm" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,item,'ata','doc')}>
+                      <Download className="mr-1.5 h-4 w-4" /> Ata Word
                     </Button>
-                    <Button type="button" size="sm" className="bg-violet-700 hover:bg-violet-800" onClick={() => baixarDocumentoUgp(colaborador,item,'ugp')}>
-                      <Download className="mr-1.5 h-4 w-4" /> Relatório UGP
+                    <Button type="button" size="sm" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,item,'ata','pdf')}>
+                      <Download className="mr-1.5 h-4 w-4" /> Ata PDF
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,item,'ugp','doc')}>
+                      <Download className="mr-1.5 h-4 w-4" /> Relatório Word
+                    </Button>
+                    <Button type="button" size="sm" className="bg-violet-700 hover:bg-violet-800" onClick={() => baixarDocumentoUgp(colaborador,item,'ugp','pdf')}>
+                      <Download className="mr-1.5 h-4 w-4" /> Relatório PDF
                     </Button>
                   </div>
                 </div>
@@ -3362,11 +3370,17 @@ function RegistrosAlinhamentosUgp({
                       </DialogDescription>
                     </div>
                     <div className="flex flex-wrap gap-2 pr-8">
-                      <Button type="button" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ata')}>
-                        <Download className="mr-1.5 h-4 w-4" /> Baixar ata
+                      <Button type="button" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ata','doc')}>
+                        <Download className="mr-1.5 h-4 w-4" /> Ata Word
                       </Button>
-                      <Button type="button" className="bg-violet-700 hover:bg-violet-800" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ugp')}>
-                        <Download className="mr-1.5 h-4 w-4" /> Baixar relatório UGP
+                      <Button type="button" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ata','pdf')}>
+                        <Download className="mr-1.5 h-4 w-4" /> Ata PDF
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ugp','doc')}>
+                        <Download className="mr-1.5 h-4 w-4" /> Relatório Word
+                      </Button>
+                      <Button type="button" className="bg-violet-700 hover:bg-violet-800" onClick={() => baixarDocumentoUgp(colaborador,selecionado,'ugp','pdf')}>
+                        <Download className="mr-1.5 h-4 w-4" /> Relatório PDF
                       </Button>
                     </div>
                   </div>
