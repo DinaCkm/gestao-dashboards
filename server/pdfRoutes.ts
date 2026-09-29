@@ -92,8 +92,8 @@ pdfRouter.get("/api/pdf/programa-integracao/assessment/:processoId", async (req:
       timeoutMs: 60000,
     });
     const nomeArquivo = nome
-      ? `relatorio-assessment-${slug(nome)}.pdf`
-      : `relatorio-assessment-${slug(processoId) || "colaborador"}.pdf`;
+      ? `assessment-acompanhar-integracao-${slug(nome)}.pdf`
+      : `assessment-acompanhar-integracao-${slug(processoId) || "colaborador"}.pdf`;
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${nomeArquivo}"`);
     res.send(pdf);
