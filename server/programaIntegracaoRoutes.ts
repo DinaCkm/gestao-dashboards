@@ -1441,10 +1441,12 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         console.info("[ProgramaIntegracao][DIAG_COMPETENCIAS]", JSON.stringify({
           processoId: Number(row.id),
           legacyId: String(row.legacyId || ""),
+          nome: String(row.nome || ""),
           acessoUgpRh,
           tipoRaw: Array.isArray(rawCompetencias) ? "array" : typeof rawCompetencias,
           competenciasLidas: competenciasMentoraSelecionadas,
           recomendacoesCatalogadas: competenciasMentoraAcompanhamento.map((item) => item.nome),
+          recomendacoesCount: competenciasMentoraAcompanhamento.length,
         }));
       }
 
