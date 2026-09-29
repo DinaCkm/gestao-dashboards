@@ -282,6 +282,27 @@ function llmText(content: any): string {
   return "";
 }
 
+async function invokeJsonComSingleRetry(
+  invokeLLM: (params: any) => Promise<any>,
+  params: any,
+  finalMessage: string,
+) {
+  for (let tentativa = 1; tentativa <= 2; tentativa += 1) {
+    const response = await invokeLLM(params);
+    const raw = llmText(response?.choices?.[0]?.message?.content).trim();
+    if (raw) return { response, raw };
+
+    console.warn("[ProgramaIntegracaoPotencial] IA respondeu sem conteúdo.", {
+      tentativa,
+      modelo: String(response?.model || ""),
+      finishReason: String(response?.choices?.[0]?.finish_reason || ""),
+      choices: Array.isArray(response?.choices) ? response.choices.length : 0,
+    });
+  }
+
+  throw new Error(finalMessage);
+}
+
 async function gerarAvaliacaoComIa(ctx: Awaited<ReturnType<typeof contexto>>) {
   const answers = asJson<Record<string, any>>(ctx.bem?.answers, {});
   const disc = ctx.perfil.disc;
@@ -313,27 +334,28 @@ async function gerarAvaliacaoComIa(ctx: Awaited<ReturnType<typeof contexto>>) {
   };
 
   const { invokeLLM } = await import("./_core/llm");
-  const response = await invokeLLM({
-    messages: [
-      {
-        role: "system",
-        content: [
-          "Você atua como especialista em desenvolvimento organizacional e deve produzir uma Avaliação de Potencial breve, profissional e útil para RH.",
-          "Use exclusivamente os dados fornecidos. Não invente fatos, diagnósticos, características ou motivações.",
-          "Diferencie fatos registrados das interpretações integradas. Quando os dados não sustentarem uma conclusão, declare a limitação.",
-          "Dê peso especial às competências e observações registradas pela consultora, cruzando-as com a expectativa do gestor, DISC e autoavaliações.",
-          "Evite rótulos definitivos. Fale em comportamentos observados, tendências, aderências e aspectos a desenvolver.",
-          "Retorne somente JSON válido com exatamente estas chaves: sintese (string), caracteristicasComportamentais (array de strings), competenciasObservadas (array de strings), convergencias (array de strings), pontosAtencao (array de strings), desenvolvimento (array de strings), aderenciaDemandas (string), recomendacoes (array de strings) e limitacoes (array de strings).",
-          "Se o DISC estiver ausente, registre essa ausência em limitacoes e prossiga com as demais fontes; não invente um perfil DISC.",
-        ].join("\n"),
-      },
-      { role: "user", content: JSON.stringify(dados) },
-    ],
-    response_format: { type: "json_object" },
-  });
-
-  const raw = llmText(response.choices?.[0]?.message?.content);
-  if (!raw) throw new Error("A IA não retornou conteúdo.");
+  const { response, raw } = await invokeJsonComSingleRetry(
+    invokeLLM,
+    {
+      messages: [
+        {
+          role: "system",
+          content: [
+            "Você atua como especialista em desenvolvimento organizacional e deve produzir uma Avaliação de Potencial breve, profissional e útil para RH.",
+            "Use exclusivamente os dados fornecidos. Não invente fatos, diagnósticos, características ou motivações.",
+            "Diferencie fatos registrados das interpretações integradas. Quando os dados não sustentarem uma conclusão, declare a limitação.",
+            "Dê peso especial às competências e observações registradas pela consultora, cruzando-as com a expectativa do gestor, DISC e autoavaliações.",
+            "Evite rótulos definitivos. Fale em comportamentos observados, tendências, aderências e aspectos a desenvolver.",
+            "Retorne somente JSON válido com exatamente estas chaves: sintese (string), caracteristicasComportamentais (array de strings), competenciasObservadas (array de strings), convergencias (array de strings), pontosAtencao (array de strings), desenvolvimento (array de strings), aderenciaDemandas (string), recomendacoes (array de strings) e limitacoes (array de strings).",
+            "Se o DISC estiver ausente, registre essa ausência em limitacoes e prossiga com as demais fontes; não invente um perfil DISC.",
+          ].join("\n"),
+        },
+        { role: "user", content: JSON.stringify(dados) },
+      ],
+      response_format: { type: "json_object" },
+    },
+    "A IA não retornou conteúdo após uma nova tentativa. Tente novamente em alguns instantes.",
+  );
   const parsed = JSON.parse(raw);
   const arr = (value: any) => Array.isArray(value) ? value.map((x) => String(x || "").trim()).filter(Boolean).slice(0, 12) : [];
   const resultado = {
@@ -380,7 +402,9 @@ async function gerarSugestoesComIa(
   };
 
   const { invokeLLM } = await import("./_core/llm");
-  const response = await invokeLLM({
+  const { raw } = await invokeJsonComSingleRetry(
+    invokeLLM,
+    {
     messages: [
       {
         role: "system",
@@ -402,7 +426,9 @@ async function gerarSugestoesComIa(
   });
 
   const raw = llmText(response.choices?.[0]?.message?.content);
-  if (!raw) throw new Error("A IA não retornou sugestões.");
+  if (!raw) throw new Error("A IA não retornou sugestões."),
+    "A IA não retornou sugestões após uma nova tentativa. Tente novamente em alguns instantes.",
+  );
   const parsed = JSON.parse(raw);
   const acoes = Array.isArray(parsed?.acoes) ? parsed.acoes : [];
   const normalizadas = acoes.map((item: any) => ({
@@ -457,7 +483,7 @@ async function montarPreviewTarefasGestor(
       prazo: null as string | null,
       faltantes: ["Formulário Bem Acolhido"],
       bloqueio: "",
-      itens: [] as Array<{ titulo: string; descricao: string }>,
+      itens: [] as Array<{ titulo: string; descricao: string; prazo: string | null }>,
     };
   }
 
