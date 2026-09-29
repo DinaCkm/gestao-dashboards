@@ -101,14 +101,13 @@ export const MODELOS_EMAIL_CICLOS_23_INTEGRACAO: Record<string, ModeloEmailInteg
       'Olá, tudo bem?\n\n' +
       'Realizamos o **2º Alinhamento** do Onboarding de **{{COLABORADOR}}** em **{{DATA_ALIN_2}}**. Seguem os materiais deste alinhamento.\n\n' +
       '- **Ata do 2º Alinhamento** — em anexo;\n' +
-      '- **Relatório completo de acompanhamento** — em anexo;\n' +
-      '- **Status do PDI:** {{STATUS_PDI}};\n' +
-      '- **Relatório de Acompanhamento do PDI** — em anexo.\n\n' +
+      '- **Relatório do 2º Alinhamento** — em anexo;\n' +
+      '- **Status do PDI:** {{STATUS_PDI}}.\n\n' +
       '**Pendências**\n{{PENDENCIAS}}\n\n' +
       '{{BLOCO_CONSIDERACOES}}' +
       'Os formulários do colaborador, do gestor e do Anjo foram encaminhados aos respectivos responsáveis e seguimos acompanhando as devolutivas.\n\n' +
       'Ficamos à disposição.' + ASS,
-    anexo: 'Ata do 2º Alinhamento; Relatório completo de acompanhamento',
+    anexo: 'Ata do 2º Alinhamento; Relatório do 2º Alinhamento',
   },
 
   m_agradecimento_anjo: {
@@ -141,13 +140,13 @@ export const MODELOS_EMAIL_CICLOS_23_INTEGRACAO: Record<string, ModeloEmailInteg
       'Olá, tudo bem?\n\n' +
       'Realizamos o **3º Alinhamento** do Onboarding de **{{COLABORADOR}}** em **{{DATA_ALIN_3}}**. Seguem os materiais para acompanhamento.\n\n' +
       '- **Ata do 3º Alinhamento** — em anexo;\n' +
-      '- **Relatório completo do alinhamento** — em anexo;\n' +
-      '- **Status atual do PDI:** {{STATUS_PDI}};\n\n' +
+      '- **Relatório do 3º Alinhamento** — em anexo;\n' +
+      '- **Status atual do PDI:** {{STATUS_PDI}}.\n\n' +
       '**Pendências**\n{{PENDENCIAS}}\n\n' +
       '{{BLOCO_CONSIDERACOES}}' +
       'Os formulários deste alinhamento foram encaminhados ao colaborador, ao gestor e ao Anjo. O reconhecimento do Anjo também foi orientado à gestão da unidade.\n\n' +
       'Ficamos à disposição.' + ASS,
-    anexo: 'Ata do 3º Alinhamento; Relatório completo',
+    anexo: 'Ata do 3º Alinhamento; Relatório do 3º Alinhamento',
   },
 
   m_reconhecimento_anjo: {
