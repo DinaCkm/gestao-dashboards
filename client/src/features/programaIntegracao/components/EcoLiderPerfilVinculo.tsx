@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { ProcessoIntegracao } from '../types';
 import { buscarPerfilEcoLider, type EcoLiderPerfil, type EcoLiderAluno } from '../api/ecoLider';
+import { alterarVinculoAvaliacaoPotencial } from '../api/avaliacaoPotencial';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -69,12 +70,22 @@ export function EcoLiderPerfilVinculo({
   }, [processo.id, processo.nome, (processo.teste as any)?.ecoAlunoId]);
 
   const vincularManual = async (alunoId: string) => {
-    if (!alunoId) return;
+    if (!alunoId || !processo.id) return;
     try {
       setStatus('carregando');
       setErro('');
       const retorno = await buscarPerfilEcoLider(processo.nome, Number(alunoId), processo.email);
       if (!retorno.perfil?.aluno) throw new Error('Aluno do ECO Líderes não encontrado.');
+
+      const confirmou = window.confirm(
+        `Alterar o vínculo de ${processo.nome} para ${retorno.perfil.aluno.nome}?\n\nConfira o nome e o e-mail antes de continuar.`,
+      );
+      if (!confirmou) {
+        setStatus(String((processo.teste as any)?.ecoVinculoModo || 'idle') as typeof status);
+        return;
+      }
+
+      await alterarVinculoAvaliacaoPotencial(processo.id, retorno.perfil.aluno.id);
       setPerfil(retorno.perfil);
       setAlunos(retorno.alunos || []);
       setSelecionado(String(retorno.perfil.aluno.id));
