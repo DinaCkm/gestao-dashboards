@@ -13,6 +13,8 @@ export interface ItemPlanoReal {
   mailLbl?: number;
   link?: string;
   form?: string;
+  dependeDe?: string;
+  prazoAposDependenciaDias?: number;
   pdf?: number;
   tut?: number;
   ata?: number;
@@ -83,7 +85,7 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
   {id:'d15', g:'a1', dia:15, ajuste:'prox', al:1, t:'15º dia — 1º Alinhamento', s:'Expectativas, percepções iniciais e base do PDI', itens:[
     {id:'d15-01', t:'Realização do 1º Feedback (Alinhamento) com gestor e colaborador', r:'Gestor'},
     {id:'d15-02', t:'Acompanhar e mediar o feedback; registrar percepções e parecer', r:'CKM'},
-    {id:'d15-03', t:'Registrar as 4 competências/soft skills indicadas pela consultora', r:'CKM'}
+    {id:'d15-03', t:'Registrar as competências/soft skills indicadas pela consultora', r:'CKM'}
   ]},
   {id:'pos1', g:'a1', dia:15, ajuste:'prox', mais:1, t:'Pós 1º Alinhamento', s:'Ata, relatório, Avaliação consolidada e PDI', itens:[
     {id:'pos1-01', ata:1, t:'Gerar a ata simples e o relatório completo do 1º Alinhamento', r:'CKM'},
@@ -93,9 +95,9 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
     {id:'pos1-05', t:'E-mail ao gestor: ata, PDI e Formulário de Avaliação', r:'CKM', mail:'m_pos1_gestor'},
     {id:'pos1-06', t:'E-mail à UGP: ata, relatório, Avaliação de Potencial e PDI', r:'CKM', mail:'m_pos1_ugp'},
     {id:'pos1-07', t:'E-mail ao Anjo: Formulário de Avaliação do Programa', r:'CKM', mail:'m_pos1_anjo'},
-    {id:'pos1-08', t:'Colaborador responder a Pesquisa de Integração do 1º alinhamento', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (1º)'},
-    {id:'pos1-09', t:'Gestor responder o Formulário de Avaliação do Programa (1º)', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (1º)'},
-    {id:'pos1-10', t:'Anjo responder o Formulário de Avaliação do Programa (1º)', r:'Anjo', link:'avalPrograma', form:'Avaliação do Programa · Anjo (1º)'}
+    {id:'pos1-08', t:'Colaborador responder a Pesquisa de Integração do 1º alinhamento', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (1º)', dependeDe:'pos1-04', prazoAposDependenciaDias:2},
+    {id:'pos1-09', t:'Gestor responder o Formulário de Avaliação do Programa (1º)', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (1º)', dependeDe:'pos1-05', prazoAposDependenciaDias:2},
+    {id:'pos1-10', t:'Anjo responder o Formulário de Avaliação do Programa (1º)', r:'Anjo', link:'avalPrograma', form:'Avaliação do Programa · Anjo (1º)', dependeDe:'pos1-07', prazoAposDependenciaDias:2}
   ]},
   {id:'ag2', g:'a2', dia:45, off:-7, ajuste:'ant', t:'Agendamento do 2º Alinhamento', s:'7 dias antes do 45º dia', itens:[
     {id:'ag2-00', t:'Preparar a mentora: disponibilidade, briefing e confirmação da reunião', r:'CKM'},
@@ -117,9 +119,9 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
     {id:'pos2-05', t:'E-mail ao gestor: ata e Formulário de Avaliação', r:'CKM', mail:'m_pos2_gestor'},
     {id:'pos2-06', t:'E-mail à UGP: ata, relatório, status do PDI e pendências', r:'CKM', mail:'m_pos2_ugp'},
     {id:'pos2-07', t:'E-mail ao Anjo: Formulário de Avaliação do Programa', r:'CKM', mail:'m_pos2_anjo'},
-    {id:'pos2-08', t:'Colaborador responder a Pesquisa de Integração do 2º alinhamento', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (2º)'},
-    {id:'pos2-09', t:'Gestor responder o Formulário de Avaliação do Programa (2º)', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (2º)'},
-    {id:'pos2-10', t:'Anjo responder o Formulário de Avaliação do Programa (2º)', r:'Anjo', link:'avalPrograma', form:'Avaliação do Programa · Anjo (2º)'}
+    {id:'pos2-08', t:'Colaborador responder a Pesquisa de Integração do 2º alinhamento', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (2º)', dependeDe:'pos2-04', prazoAposDependenciaDias:2},
+    {id:'pos2-09', t:'Gestor responder o Formulário de Avaliação do Programa (2º)', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (2º)', dependeDe:'pos2-05', prazoAposDependenciaDias:2},
+    {id:'pos2-10', t:'Anjo responder o Formulário de Avaliação do Programa (2º)', r:'Anjo', link:'avalPrograma', form:'Avaliação do Programa · Anjo (2º)', dependeDe:'pos2-07', prazoAposDependenciaDias:2}
   ]},
   {id:'d60', g:'a2', dia:60, ajuste:'prox', t:'60º dia — Certificado do Anjo', s:'Lembrete interno da CKM', itens:[
     {id:'d60-01', t:'Preparar o Certificado de Participação do Anjo', r:'CKM'},
@@ -145,9 +147,9 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
     {id:'pos3-06', t:'E-mail ao gestor: reconhecimento do Anjo', r:'CKM', mail:'m_reconhecimento_anjo'},
     {id:'pos3-07', t:'Enviar à UGP todos os Formulários de Avaliação preenchidos pelo gestor e pelo Anjo', r:'CKM'},
     {id:'pos3-08', t:'E-mail à UGP: Relatório de Pontuação da Jornada Compliance', r:'CKM', mail:'m_compliance_ugp'},
-    {id:'pos3-09', t:'Colaborador responder a Pesquisa de Integração do 3º alinhamento', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (3º)'},
-    {id:'pos3-10', t:'Gestor responder o Formulário de Avaliação do Programa (3º)', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (3º)'},
-    {id:'pos3-11', t:'Anjo responder o Formulário de Avaliação do Programa (3º)', r:'Anjo', link:'avalPrograma', form:'Avaliação do Programa · Anjo (3º)'},
+    {id:'pos3-09', t:'Colaborador responder a Pesquisa de Integração do 3º alinhamento', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (3º)', dependeDe:'pos3-02', prazoAposDependenciaDias:2},
+    {id:'pos3-10', t:'Gestor responder o Formulário de Avaliação do Programa (3º)', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (3º)', dependeDe:'pos3-03', prazoAposDependenciaDias:2},
+    {id:'pos3-11', t:'Anjo responder o Formulário de Avaliação do Programa (3º)', r:'Anjo', link:'avalPrograma', form:'Avaliação do Programa · Anjo (3º)', dependeDe:'pos3-05', prazoAposDependenciaDias:2},
     {id:'pos3-12', tut:1, t:'Colaborador concluir a Jornada Compliance', r:'Colaborador', link:'ecolider', form:'Jornada Compliance'}
   ]},
   {id:'ag4', g:'a4', dia:150, off:-7, ajuste:'ant', t:'Agendamento do 4º Alinhamento', s:'7 dias antes do 150º dia', itens:[
@@ -168,9 +170,9 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
     {id:'pos4-04', t:'E-mail ao gestor: encerramento, ata final e Formulário de Avaliação', r:'CKM', mail:'m_pos4_gestor'},
     {id:'pos4-05', t:'E-mail à UGP: fechamento final do processo', r:'CKM', mail:'m_pos4_ugp'},
     {id:'pos4-06', t:'E-mail ao Anjo: encerramento e último Formulário', r:'CKM', mail:'m_pos4_anjo'},
-    {id:'pos4-07', t:'Colaborador responder a última Pesquisa de Integração', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (4º)'},
-    {id:'pos4-08', t:'Gestor responder o último Formulário de Avaliação do Programa', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (4º)'},
-    {id:'pos4-09', t:'Anjo responder o último Formulário de Avaliação do Programa', r:'Anjo', link:'avalPrograma', form:'Avaliação do Programa · Anjo (4º)'},
+    {id:'pos4-07', t:'Colaborador responder a última Pesquisa de Integração', r:'Colaborador', link:'pesquisa', form:'Pesquisa de Integração (4º)', dependeDe:'pos4-03', prazoAposDependenciaDias:2},
+    {id:'pos4-08', t:'Gestor responder o último Formulário de Avaliação do Programa', r:'Gestor', link:'avalPrograma', form:'Avaliação do Programa · gestor (4º)', dependeDe:'pos4-04', prazoAposDependenciaDias:2},
+    {id:'pos4-09', t:'Anjo responder o último Formulário de Avaliação do Programa', r:'Anjo', link:'avalPrograma', form:'Avaliação do Programa · Anjo (4º)', dependeDe:'pos4-06', prazoAposDependenciaDias:2},
     {id:'pos4-10', t:'Registrar o status final: Concluído ou Concluído com pendências', r:'CKM'}
   ]}
 ];
