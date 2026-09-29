@@ -76,6 +76,19 @@ function fakeTimelineDates() {
 }
 
 async function resolveProgram(connection) {
+  const explicitId = Number(process.env.PROGRAMA_INTEGRACAO_DEMO_PROGRAM_ID || 0);
+  if (explicitId) {
+    const [explicitRows] = await connection.execute(
+      "SELECT id,name,code FROM programs WHERE id=? AND COALESCE(isActive,1)=1 LIMIT 1",
+      [explicitId]
+    );
+    const explicit = explicitRows?.[0];
+    if (!explicit) {
+      throw new Error(`Programa explicito ${explicitId} nao existe ou nao esta ativo.`);
+    }
+    return explicit;
+  }
+
   const [rows] = await connection.execute(
     "SELECT id,name,code FROM programs WHERE COALESCE(isActive,1)=1 ORDER BY id"
   );
