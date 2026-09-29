@@ -2320,6 +2320,17 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
     const tem = (form:string,papel:string) => colaborador.respostas.some((r) => Number(r.ciclo) === numero && r.form === form && (form === 'pesquisa' || r.papel === papel));
     return { numero, dia:diaDoAlinhamento(numero), c:tem('pesquisa','Colaborador'), g:tem('aval','Gestor'), a:tem('aval','Anjo') };
   });
+
+  const statusFormulario = (ciclo:number, papel:'Colaborador'|'Gestor'|'Anjo', preenchido:boolean) => {
+    if (preenchido) return 'Preenchido';
+    const pendencia = (colaborador.formulariosPendentes || []).find(
+      (p) => Number(p.ciclo) === ciclo && p.papel === papel,
+    );
+    if (pendencia?.atrasado) return 'Atrasado';
+    if (pendencia) return 'Pendente';
+    return 'Ainda não solicitado';
+  };
+
   return (
     <Card className="rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
       <CardContent className="p-5">
@@ -2332,9 +2343,30 @@ function TimelineAlinhamentos({ colaborador }: { colaborador: ColaboradorAcompan
             <div key={m.numero} className="rounded-2xl border bg-white p-3 text-center">
               <div className="text-sm font-black text-slate-900">{m.dia} dias</div>
               <div className="mt-3 flex justify-center gap-2">
-                {[['C',m.c,PAPEL_CORES.colaborador],['G',m.g,PAPEL_CORES.gestor],['A',m.a,PAPEL_CORES.anjo]].map(([label,ok,cor]) => (
-                  <span key={String(label)} title={ok ? 'Respondido' : 'Ainda não respondido'} className="grid h-7 w-7 place-items-center rounded-full border text-[10px] font-black" style={ok ? {backgroundColor:String(cor),borderColor:String(cor),color:'#fff'} : {borderColor:'#CBD5E1',color:'#94A3B8'}}>{label}</span>
-                ))}
+                {([
+                  ['C','Colaborador',m.c,PAPEL_CORES.colaborador],
+                  ['G','Gestor',m.g,PAPEL_CORES.gestor],
+                  ['A','Anjo',m.a,PAPEL_CORES.anjo],
+                ] as const).map(([label,papel,ok,cor]) => {
+                  const status = statusFormulario(m.numero, papel, ok);
+                  return (
+                    <UiTooltip key={label}>
+                      <TooltipTrigger asChild>
+                        <span
+                          tabIndex={0}
+                          aria-label={`${papel} — ${status}`}
+                          className="grid h-7 w-7 cursor-help place-items-center rounded-full border text-[10px] font-black outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2"
+                          style={ok ? {backgroundColor:String(cor),borderColor:String(cor),color:'#fff'} : {borderColor:'#CBD5E1',color:'#94A3B8'}}
+                        >
+                          {label}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="font-semibold">
+                        {papel} — {status}
+                      </TooltipContent>
+                    </UiTooltip>
+                  );
+                })}
               </div>
               {m.numero === 1 && <div className="mt-3 text-[10px] font-semibold text-violet-700">▲ PDI pode iniciar após este alinhamento</div>}
             </div>
