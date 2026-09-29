@@ -848,7 +848,19 @@ async function remove(connection) {
       await connection.execute("DELETE FROM programa_integracao_processos WHERE id=? AND legacyId=?", [processoId, DEMO.legacyId]);
     }
     if (alunoId) {
-      await connection.execute("DELETE FROM mentoring_sessions WHERE alunoId=? AND customTaskTitle LIKE '[TESTE] %'", [alunoId]);
+      const [alunoUserRows] = await connection.execute(
+        "SELECT id FROM users WHERE alunoId=? AND LOWER(email)=LOWER(?) LIMIT 1",
+        [alunoId, DEMO.aluno.email]
+      );
+      const alunoUserId = Number(alunoUserRows?.[0]?.id || 0);
+
+      // O colaborador desta fixture e exclusivamente ficticio. Remover todas as
+      // sessoes garante rollback integral inclusive das novas tarefas criadas pelo
+      // Programa de Integracao, mesmo quando o titulo nao comeca por [TESTE].
+      await connection.execute("DELETE FROM mentoring_sessions WHERE alunoId=?", [alunoId]);
+      if (alunoUserId) {
+        await connection.execute("DELETE FROM in_app_notifications WHERE userId=?", [alunoUserId]);
+      }
       await connection.execute("DELETE FROM autopercepcoes_competencias WHERE alunoId=?", [alunoId]);
       await connection.execute("DELETE FROM disc_resultados WHERE alunoId=?", [alunoId]);
       if (assignmentId) {
