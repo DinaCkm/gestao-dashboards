@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ProcessoIntegracao } from '../types';
 import { arquivarProcesso, atualizarEstadoProcesso } from '../api/client';
+import { alterarVinculoAvaliacaoPotencial } from '../api/avaliacaoPotencial';
 import {
   alterarSituacaoProcessoSeguro,
   alterarVisibilidadeAcompanhamentoSeguro,
@@ -196,22 +197,15 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
     if (!processo.id || !alunoId || vinculandoEco) return;
     try {
       setVinculandoEco(processo.id);
-      const retorno = await buscarPerfilEcoLider(processo.nome, alunoId, processo.email);
-      if (!retorno.perfil?.aluno) throw new Error('Aluno do ECO Líderes não encontrado.');
-      const ecoPerfil = retorno.perfil;
-      await atualizarEstadoProcesso(processo.id, {
-        ...processo,
-        teste: {
-          ...(processo.teste || {}),
-          ecoAlunoId: ecoPerfil.aluno.id,
-          ecoAlunoNome: ecoPerfil.aluno.nome,
-          ecoAlunoEmail: ecoPerfil.aluno.email,
-          ecoVinculoModo: 'manual',
-          ecoPerfil,
-        },
-      });
+      const escolhido = alunosEco.find((aluno) => aluno.id === alunoId);
+      const confirmou = window.confirm(
+        `Alterar o vínculo de ${processo.nome} para ${escolhido?.nome || 'o aluno selecionado'}?\n\nConfira o nome e o e-mail antes de continuar.`,
+      );
+      if (!confirmou) return;
+
+      const retorno = await alterarVinculoAvaliacaoPotencial(processo.id, alunoId);
       setVinculoManualAberto(null);
-      toast.success(`Vínculo ECO Líderes confirmado para ${ecoPerfil.aluno.nome}.`);
+      toast.success(`Vínculo ECO Líderes confirmado para ${retorno.aluno?.nome || escolhido?.nome || 'o aluno selecionado'}.`);
       await onSaved();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Não foi possível salvar o vínculo com o ECO Líderes.');
@@ -575,7 +569,8 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
             );
             const ecoVinculoModo = String((pessoa.teste as any)?.ecoVinculoModo || '');
             const vinculoManualExistente = ecoAlunoId > 0 && ecoVinculoModo === 'manual';
-            const mostrarBotaoVinculoEco = precisaVinculoEco || vinculoManualExistente;
+            const vinculoExistente = ecoAlunoId > 0;
+            const mostrarBotaoVinculoEco = precisaVinculoEco || vinculoExistente;
             const manualAberto = Boolean(pessoa.id && vinculoManualAberto === pessoa.id);
             const ehDemonstracao = String(pessoa.id || '').startsWith('demo') ||
               pessoa.nome === 'Mariana Alves Teixeira (demonstração)';
@@ -622,11 +617,11 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                           }`}
                           onClick={() => void alternarSeletorEco(pessoa)}
                           disabled={Boolean(vinculandoEco)}
-                          title={vinculoManualExistente
-                            ? 'Alterar o aluno do ECO Líderes vinculado manualmente'
+                          title={vinculoExistente
+                            ? 'Alterar o aluno do ECO Líderes vinculado a este processo'
                             : 'Selecionar manualmente o aluno correspondente no ECO Líderes'}
                         >
-                          {vinculoManualExistente ? 'Alterar vínculo ECO Líderes' : 'Vincular ECO Líderes'}
+                          {vinculoExistente ? 'Alterar vínculo ECO Líderes' : 'Vincular ECO Líderes'}
                         </Button>
                       )}
                       {acompanhamentoOculto && (
@@ -684,14 +679,14 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                         : 'border-amber-200 bg-amber-50'
                     }`}>
                       <p className={`mb-2 text-[11px] ${
-                        vinculoManualExistente ? 'text-slate-700' : 'text-amber-900'
+                        vinculoExistente ? 'text-slate-700' : 'text-amber-900'
                       }`}>
-                        {vinculoManualExistente
-                          ? 'Vínculo atual salvo manualmente. Selecione outro aluno para alterar.'
+                        {vinculoExistente
+                          ? 'Vínculo atual existente. Selecione outro aluno para alterar com confirmação.'
                           : 'Selecione o aluno correspondente em Alunos Autônomos → Evolução por aluno.'}
                       </p>
                       <select
-                        defaultValue={vinculoManualExistente ? String(ecoAlunoId) : ''}
+                        defaultValue={vinculoExistente ? String(ecoAlunoId) : ''}
                         disabled={vinculandoEco === pessoa.id || carregandoListaEco === pessoa.id}
                         onChange={(e) => {
                           const id = Number(e.currentTarget.value || 0);
