@@ -41,6 +41,7 @@ export interface RenderPdfOptions {
   marginRight?: string;
   timeoutMs?: number;
   landscape?: boolean;
+  waitForSelector?: string;
 }
 
 /**
@@ -86,6 +87,11 @@ export async function renderPdfFromUrl(opts: RenderPdfOptions): Promise<Buffer> 
       timeout: opts.timeoutMs ?? 60000,
     });
     await page.emulateMediaType("print");
+    if (opts.waitForSelector) {
+      await page.waitForSelector(opts.waitForSelector, {
+        timeout: opts.timeoutMs ?? 60000,
+      });
+    }
     // Garante que as fontes web terminaram de carregar antes de imprimir.
     await page.evaluate(() => (document as any).fonts?.ready);
 
