@@ -272,6 +272,7 @@ function sourceKey(ctx: Awaited<ReturnType<typeof contexto>>) {
     discAt,
     competencias: ctx.mentora.competencias,
     observacoes: ctx.mentora.observacoes,
+    autoavaliacoes: ctx.perfil.autoavaliacoes,
   });
 }
 
@@ -349,7 +350,7 @@ async function gerarAvaliacaoComIa(ctx: Awaited<ReturnType<typeof contexto>>) {
     limitacoes: arr(parsed?.limitacoes),
   };
   if (!resultado.sintese) throw new Error("A IA retornou uma avaliação sem síntese válida.");
-  return { resultado, modelo: String(response.model || "") };
+  return { resultado, modelo: String(response.model || ""), dadosFontes: dados };
 }
 
 async function gerarSugestoesComIa(
@@ -681,6 +682,7 @@ programaIntegracaoPotencialRouter.post(
             discCompletedAt: atual.perfil.disc?.completedAt ? new Date(atual.perfil.disc.completedAt).toISOString() : null,
             competenciasMentora: atual.mentora.competencias,
             observacoesMentora: atual.mentora.observacoes,
+            dadosUtilizados: gerada.dadosFontes,
           },
           resultado: gerada.resultado,
         };
