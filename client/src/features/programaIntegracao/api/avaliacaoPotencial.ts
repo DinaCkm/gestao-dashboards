@@ -35,6 +35,11 @@ export interface AvaliacaoPotencialSnapshot {
   modelo?: string;
   fontes?: Record<string, any>;
   resultado: AvaliacaoPotencialResultado;
+  recomendacoesConsultoria?: Array<{
+    nome: string;
+    descricao: string;
+    desenvolvimento: string;
+  }>;
 }
 
 export interface SugestaoDesenvolvimento {

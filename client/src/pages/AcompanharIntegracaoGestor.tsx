@@ -178,6 +178,11 @@ interface ColaboradorAcompanhamento {
   assessmentPotencialConcluido: boolean | null;
   assessmentPotencialConcluidoEm: string | null;
   perfilAssessment: PerfilAssessment | null;
+  recomendacoesConsultoria?: Array<{
+    nome: string;
+    descricao: string;
+    desenvolvimento: string;
+  }>;
   statusAcompanhamento?: { chave: 'em_dia' | 'acompanhar' | 'atencao'; rotulo: string };
   respostas: RespostaAcompanhamento[];
   formulariosPendentes: Pendencia[];
@@ -1737,6 +1742,33 @@ function PerfilAssessmentModal({
                 </p>
               </section>
 
+              {(colaborador.recomendacoesConsultoria || []).length > 0 && (
+                <section className="assessment-section rounded-2xl border border-violet-200/80 bg-white p-5 sm:p-6">
+                  <div className="mb-4 sm:mb-5">
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-violet-700">4. Recomendações da Consultoria</div>
+                    <h3 className="mt-1.5 text-[17px] font-bold leading-tight text-[#132536]">
+                      Recomendações de Desenvolvimento pela Consultoria
+                    </h3>
+                    <p className="mt-1.5 text-xs leading-5 text-slate-500">
+                      Competências registradas pela consultora após o 1º Alinhamento. Esta área só aparece depois que ao menos uma competência é selecionada no Programa de Integração.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(colaborador.recomendacoesConsultoria || []).map((competencia) => (
+                      <div key={competencia.nome} className="rounded-xl border border-violet-100 bg-violet-50/35 p-4 sm:p-5">
+                        <div className="text-base font-bold text-slate-950">{competencia.nome}</div>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">{competencia.descricao}</p>
+                        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+                          <div className="text-xs font-bold uppercase tracking-wide text-violet-700">Como desenvolver</div>
+                          <p className="mt-1.5 text-sm leading-6 text-slate-700">{competencia.desenvolvimento}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <details className="assessment-section group overflow-hidden rounded-2xl border border-slate-200/70 bg-white">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-violet-300 sm:px-6">
                   <span>Como interpretar estes resultados?</span>
@@ -1766,7 +1798,7 @@ function PerfilAssessmentModal({
                     </p>
                   </div>
                   <div className="rounded-xl bg-slate-50/70 p-4">
-                    <h4 className="font-bold text-slate-950">4. Compatibilidade com a Expectativa</h4>
+                    <h4 className="font-bold text-slate-950">Compatibilidade com a Expectativa</h4>
                     <p className="mt-2">
                       O índice compara a autoavaliação do colaborador com as dimensões priorizadas pelo gestor no BEM Acolhido. Quanto mais próximos estiverem esses resultados, maior será a compatibilidade apresentada.
                     </p>

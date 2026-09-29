@@ -83,7 +83,7 @@ export const PLANO_REAL: EtapaPlanoReal[] = [
   {id:'d15', g:'a1', dia:15, ajuste:'prox', al:1, t:'15º dia — 1º Alinhamento', s:'Expectativas, percepções iniciais e base do PDI', itens:[
     {id:'d15-01', t:'Realização do 1º Feedback (Alinhamento) com gestor e colaborador', r:'Gestor'},
     {id:'d15-02', t:'Acompanhar e mediar o feedback; registrar percepções e parecer', r:'CKM'},
-    {id:'d15-03', t:'Registrar as 4 competências/soft skills indicadas pela consultora', r:'CKM'}
+    {id:'d15-03', t:'Registrar as competências/soft skills indicadas pela consultora', r:'CKM'}
   ]},
   {id:'pos1', g:'a1', dia:15, ajuste:'prox', mais:1, t:'Pós 1º Alinhamento', s:'Ata, relatório, Avaliação consolidada e PDI', itens:[
     {id:'pos1-01', ata:1, t:'Gerar a ata simples e o relatório completo do 1º Alinhamento', r:'CKM'},

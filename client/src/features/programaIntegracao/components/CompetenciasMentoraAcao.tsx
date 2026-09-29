@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import type { ProcessoIntegracao } from '../types';
 import { atualizarCompetenciasAcao, competenciasAcaoAtual } from '../helpers/itemStateHelpers';
 import { Button } from '@/components/ui/button';
+import { COMPETENCIAS_CONSULTORIA, competenciaConsultoriaPorNome } from '@shared/competenciasConsultoria';
 
 interface CompetenciasMentoraAcaoProps {
   processo: ProcessoIntegracao;
@@ -37,9 +38,9 @@ export function CompetenciasMentoraAcao({
   return (
     <div className="space-y-3 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
       <div>
-        <p className="text-sm font-semibold">4 competências / soft skills indicadas pela consultora</p>
+        <p className="text-sm font-semibold">Competências / soft skills indicadas pela consultora</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Registre cada competência separadamente. As observações continuam disponíveis logo abaixo.
+          Selecione de 1 a 4 competências. Enquanto nenhuma competência for registrada, nada será acrescentado ao Acompanhar Integração.
         </p>
       </div>
 
@@ -47,18 +48,35 @@ export function CompetenciasMentoraAcao({
         {[0, 1, 2, 3].map((indice) => (
           <label key={indice} className="space-y-1 text-xs">
             <span className="font-medium text-muted-foreground">Competência {indice + 1}</span>
-            <input
+            <select
               value={valores[indice] || ''}
               disabled={saving || salvando}
-              maxLength={180}
               onChange={(e) => {
                 const proximo = [...valores];
                 proximo[indice] = e.currentTarget.value;
                 setValores(proximo);
               }}
-              placeholder={'Competência ' + (indice + 1)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            />
+            >
+              <option value="">— não selecionar —</option>
+              {valores[indice] && !competenciaConsultoriaPorNome(valores[indice]) && (
+                <option value={valores[indice]}>{valores[indice]} (registro anterior)</option>
+              )}
+              {COMPETENCIAS_CONSULTORIA.map((competencia) => (
+                <option
+                  key={competencia.nome}
+                  value={competencia.nome}
+                  disabled={valores.some((valor, outroIndice) => outroIndice !== indice && valor === competencia.nome)}
+                >
+                  {competencia.nome}
+                </option>
+              ))}
+            </select>
+            {valores[indice] && competenciaConsultoriaPorNome(valores[indice]) && (
+              <p className="mt-1 leading-relaxed text-muted-foreground">
+                {competenciaConsultoriaPorNome(valores[indice])!.descricao}
+              </p>
+            )}
           </label>
         ))}
       </div>

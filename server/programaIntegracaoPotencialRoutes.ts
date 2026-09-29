@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { assertNivelPermiteNovasAtribuicoes, createNotification, getAllUsers, getContratoNivelVigenteByAluno, getMentoringSessionsByAluno, getMentoringSessionsByAlunoAndNivel, getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
+import { recomendacoesConsultoria } from "@shared/competenciasConsultoria";
 
 export const programaIntegracaoPotencialRouter = Router();
 
@@ -289,7 +290,7 @@ function requireContextoSeguro(ctx: Awaited<ReturnType<typeof contexto>>, opts?:
     throw Object.assign(new Error("O Perfil DISC deste aluno ainda não está disponível."), { statusCode: 409, code: "DISC_AUSENTE" });
   }
   if (opts?.mentora && ctx.mentora.competencias.length === 0 && ctx.mentora.observacoes.length === 0) {
-    throw Object.assign(new Error("Registre as competências/soft skills ou observações da consultora no item do 15º dia antes de gerar a avaliação."), { statusCode: 409, code: "MENTORA_AUSENTE" });
+    throw Object.assign(new Error("Registre as competências/soft skills da consultora no item do 15º dia antes de consolidar o Assessment."), { statusCode: 409, code: "MENTORA_AUSENTE" });
   }
 }
 
@@ -343,6 +344,57 @@ async function invokeJsonComSingleRetry(
   }
 
   throw new Error(finalMessage);
+}
+
+function consolidarAvaliacaoSemIa(ctx: Awaited<ReturnType<typeof contexto>>) {
+  const disc = ctx.perfil.disc;
+  const recomendacoes = recomendacoesConsultoria(ctx.mentora.competencias);
+  const caracteristicasComportamentais: string[] = [];
+
+  if (disc?.perfilPredominante) {
+    caracteristicasComportamentais.push(`Perfil predominante no DISC: ${String(disc.perfilPredominante)}.`);
+  }
+  if (disc?.perfilSecundario) {
+    caracteristicasComportamentais.push(`Perfil secundário no DISC: ${String(disc.perfilSecundario)}.`);
+  }
+  if (disc) {
+    caracteristicasComportamentais.push(
+      `Indicadores DISC registrados: D ${Number(disc.scoreD || 0)}%, I ${Number(disc.scoreI || 0)}%, S ${Number(disc.scoreS || 0)}% e C ${Number(disc.scoreC || 0)}%.`,
+    );
+  }
+
+  const resultado = {
+    sintese: "Consolidação do Assessment/Avaliação de Potencial já registrado no ECO Líder com as recomendações de desenvolvimento indicadas pela consultoria após o 1º Alinhamento. Este conteúdo não é gerado por IA e não recalcula o Assessment.",
+    caracteristicasComportamentais,
+    competenciasObservadas: recomendacoes.map((item) => item.nome),
+    convergencias: [],
+    pontosAtencao: [],
+    desenvolvimento: recomendacoes.map((item) => item.nome),
+    aderenciaDemandas: "",
+    recomendacoes: recomendacoes.map((item) => `${item.nome}: ${item.desenvolvimento}`),
+    limitacoes: [
+      "A consolidação apresenta dados já registrados no Assessment e as competências indicadas pela consultoria; não produz diagnóstico novo nem inferências automáticas.",
+      ...(ctx.perfil.autoavaliacoes.length ? [] : ["Não há autoavaliação de competências disponível para complementar a consulta."]),
+    ],
+  };
+
+  return {
+    resultado,
+    recomendacoesConsultoria: recomendacoes,
+    dadosFontes: {
+      disc: disc ? {
+        predominante: String(disc.perfilPredominante || ""),
+        secundario: String(disc.perfilSecundario || ""),
+        D: Number(disc.scoreD || 0),
+        I: Number(disc.scoreI || 0),
+        S: Number(disc.scoreS || 0),
+        C: Number(disc.scoreC || 0),
+      } : null,
+      autoavaliacoes: ctx.perfil.autoavaliacoes,
+      competenciasConsultoria: recomendacoes,
+      observacoesMentora: ctx.mentora.observacoes,
+    },
+  };
 }
 
 async function gerarAvaliacaoComIa(ctx: Awaited<ReturnType<typeof contexto>>) {
@@ -876,24 +928,36 @@ programaIntegracaoPotencialRouter.post(
       const connection = await getConnectionOr503(res); if (!connection) return;
       const legacyId = sanitizeLegacyId(req.params.legacyId);
       const ctx = await contexto(connection, legacyId);
-      requireContextoSeguro(ctx, { bem: true, mentora: true });
+      requireContextoSeguro(ctx, { disc: true, mentora: true });
+      if (!ctx.mentora.competencias.some((item) => String(item || "").trim())) {
+        throw Object.assign(
+          new Error("Registre ao menos uma competência indicada pela consultora antes de consolidar o Assessment."),
+          { statusCode: 409, code: "COMPETENCIAS_MENTORA_AUSENTES" },
+        );
+      }
       const chaveFontes = sourceKey(ctx);
-      const gerada = await gerarAvaliacaoComIa(ctx);
+      const gerada = consolidarAvaliacaoSemIa(ctx);
 
       await connection.beginTransaction();
       try {
         const atual = await contexto(connection, legacyId, true);
-        requireContextoSeguro(atual, { bem: true, mentora: true });
+        requireContextoSeguro(atual, { disc: true, mentora: true });
+        if (!atual.mentora.competencias.some((item) => String(item || "").trim())) {
+          throw Object.assign(
+            new Error("As competências da consultora não estão mais disponíveis. Nenhuma consolidação foi salva."),
+            { statusCode: 409, code: "COMPETENCIAS_MENTORA_AUSENTES" },
+          );
+        }
         if (sourceKey(atual) !== chaveFontes) {
           throw Object.assign(new Error("Os dados do colaborador mudaram enquanto a avaliação era gerada. Nenhuma avaliação foi salva; gere novamente."), { statusCode: 409 });
         }
         atual.estado.teste = atual.estado.teste || {};
         const snapshot = {
-          versao: 1,
+          versao: 2,
           geradaEm: new Date().toISOString(),
           geradaPorUserId: Number((req as any).authenticatedUser?.id || 0) || null,
           alunoId: atual.alunoId,
-          modelo: gerada.modelo,
+          modelo: "consolidacao-sem-ia-v2",
           fontes: {
             bemRespostaId: Number(atual.bem?.id || 0),
             bemSubmittedAt: atual.bem?.submittedAt ? new Date(atual.bem.submittedAt).toISOString() : null,
@@ -905,6 +969,7 @@ programaIntegracaoPotencialRouter.post(
             dadosUtilizados: gerada.dadosFontes,
           },
           resultado: gerada.resultado,
+          recomendacoesConsultoria: gerada.recomendacoesConsultoria,
         };
         atual.estado.teste.avaliacaoPotencialIntegrada = snapshot;
         delete atual.estado.teste.sugestoesDesenvolvimento;
@@ -912,7 +977,7 @@ programaIntegracaoPotencialRouter.post(
           "UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?",
           [JSON.stringify(atual.estado), Number(atual.processo.id)],
         );
-        await audit(connection, req, "avaliacao_potencial_ia_gerada", "Avaliação de Potencial integrada gerada e registrada.", Number(atual.processo.id), { alunoId: atual.alunoId, modelo: gerada.modelo });
+        await audit(connection, req, "avaliacao_potencial_consolidada_sem_ia", "Assessment existente e recomendações da consultoria consolidados sem uso de IA.", Number(atual.processo.id), { alunoId: atual.alunoId, modelo: "consolidacao-sem-ia-v2" });
         await connection.commit();
         return res.json({ ok: true, avaliacao: snapshot });
       } catch (error) {
