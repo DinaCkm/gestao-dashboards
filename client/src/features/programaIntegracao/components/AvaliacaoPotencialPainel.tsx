@@ -7,7 +7,6 @@ import {
   criarTarefasGestorIntegracao,
   descartarSugestaoDesenvolvimento,
   gerarAvaliacaoPotencial,
-  gerarSugestoesDesenvolvimento,
   inserirSugestaoDesenvolvimento,
   regenerarSugestaoDesenvolvimento,
   reverterInsercaoSugestaoDesenvolvimento,
@@ -19,7 +18,7 @@ import { buscarPerfilEcoLider, type EcoLiderAluno } from '../api/ecoLider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, FileText, Lightbulb, PlusCircle, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
+import { Download, FileText, PlusCircle, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -157,9 +156,9 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
     <div className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/30 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-semibold">Avaliação de Potencial integrada</p>
+          <p className="font-semibold">Assessment + Recomendações da Consultoria</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Cruzamento seguro entre registros da consultora, Bem Acolhido, Assessment/DISC e autoavaliação disponível do colaborador.
+            Consolidação do Assessment já existente com as competências indicadas pela consultora. Não utiliza IA e não recalcula o Assessment.
           </p>
         </div>
         <Button type="button" size="sm" variant="ghost" disabled={carregando || Boolean(acao)} onClick={() => void carregar()}>
@@ -277,10 +276,10 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          disabled={!ctx?.vinculo.seguro || Boolean(acao)}
-          onClick={() => void executar('gerar-avaliacao', () => gerarAvaliacaoPotencial(legacyId), 'Avaliação de Potencial gerada com sucesso.')}
+          disabled={!ctx?.vinculo.seguro || !ctx?.fontes.disc || !fonteMentora || Boolean(acao)}
+          onClick={() => void executar('gerar-avaliacao', () => gerarAvaliacaoPotencial(legacyId), 'Assessment e recomendações consolidados com sucesso.')}
         >
-          <FileText className="mr-1 h-4 w-4" /> {acao === 'gerar-avaliacao' ? 'Gerando...' : 'Gerar Avaliação de Potencial'}
+          <FileText className="mr-1 h-4 w-4" /> {acao === 'gerar-avaliacao' ? 'Consolidando...' : 'Consolidar Assessment e Recomendações'}
         </Button>
 
         <Button
@@ -301,14 +300,6 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
           <PlusCircle className="mr-1 h-4 w-4" /> {mostrarPreviewTarefas ? 'Ocultar prévia das tarefas' : 'Revisar Tarefas do Gestor'}
         </Button>
 
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!avaliacao || !ctx?.vinculo.seguro || Boolean(acao)}
-          onClick={() => void executar('sugerir', () => gerarSugestoesDesenvolvimento(legacyId), 'Sugestões de desenvolvimento geradas.')}
-        >
-          <Lightbulb className="mr-1 h-4 w-4" /> {acao === 'sugerir' ? 'Gerando...' : 'Sugerir Ações de Desenvolvimento'}
-        </Button>
       </div>
 
       {mostrarPreviewTarefas && previewTarefas && (
@@ -417,7 +408,21 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
             <Lista titulo="Pontos de atenção" itens={avaliacao.resultado.pontosAtencao} />
             <Lista titulo="Pontos de desenvolvimento" itens={avaliacao.resultado.desenvolvimento} />
             {avaliacao.resultado.aderenciaDemandas && <div><p className="text-sm font-semibold">Aderência às demandas da atuação</p><p className="mt-1 text-sm text-muted-foreground">{avaliacao.resultado.aderenciaDemandas}</p></div>}
-            <Lista titulo="Recomendações gerais" itens={avaliacao.resultado.recomendacoes} />
+            {avaliacao.recomendacoesConsultoria?.length ? (
+              <div className="space-y-3">
+                <p className="text-sm font-semibold">Recomendações de Desenvolvimento pela Consultoria</p>
+                {avaliacao.recomendacoesConsultoria.map((competencia) => (
+                  <div key={competencia.nome} className="rounded-lg border bg-background p-3">
+                    <p className="font-semibold">{competencia.nome}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{competencia.descricao}</p>
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-violet-700">Como desenvolver</p>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{competencia.desenvolvimento}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Lista titulo="Recomendações gerais" itens={avaliacao.resultado.recomendacoes} />
+            )}
             <Lista titulo="Limitações da análise" itens={avaliacao.resultado.limitacoes} />
           </CardContent>
         </Card>
