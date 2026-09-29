@@ -405,28 +405,25 @@ async function gerarSugestoesComIa(
   const { raw } = await invokeJsonComSingleRetry(
     invokeLLM,
     {
-    messages: [
-      {
-        role: "system",
-        content: [
-          "Gere ações práticas e independentes de desenvolvimento para um colaborador em onboarding.",
-          "A prioridade deve ser: competências/soft skills apontadas pela consultora; lacunas da Avaliação de Potencial; diferenças entre o que o gestor espera e o que os dados indicam; DISC como contexto complementar.",
-          "As ações NÃO são sequenciais e nenhuma depende da outra.",
-          "Prefira atividades simples, concretas, dinâmicas e aplicáveis ao dia a dia: pequenos relatórios, agenda/planejamento, pesquisa orientada, observação prática, apresentação curta, TED Talk, filme/série, leitura curta de capítulos de livro, checklist, reflexão estruturada ou exercício semelhante.",
-          "Se citar um livro, TED Talk, filme ou série pelo nome, use apenas uma obra real e amplamente conhecida; não invente títulos, autores, links, episódios ou materiais. Se houver dúvida, proponha uma pesquisa orientada sem nomear uma obra específica.",
-          "Não use propostas genéricas como 'melhorar comunicação'. Não invente fatos sobre a pessoa.",
-          "Cada ação deve conter SOMENTE: titulo, comoFazer e comprovacao.",
-          "Não inclua justificativa, motivo da sugestão, resultado esperado nem prazo.",
-          "Retorne somente JSON no formato {\"acoes\":[...]}.",
-        ].join("\n"),
-      },
-      { role: "user", content: JSON.stringify(dados) },
-    ],
-    response_format: { type: "json_object" },
-  });
-
-  const raw = llmText(response.choices?.[0]?.message?.content);
-  if (!raw) throw new Error("A IA não retornou sugestões."),
+      messages: [
+        {
+          role: "system",
+          content: [
+            "Gere ações práticas e independentes de desenvolvimento para um colaborador em onboarding.",
+            "A prioridade deve ser: competências/soft skills apontadas pela consultora; lacunas da Avaliação de Potencial; diferenças entre o que o gestor espera e o que os dados indicam; DISC como contexto complementar.",
+            "As ações NÃO são sequenciais e nenhuma depende da outra.",
+            "Prefira atividades simples, concretas, dinâmicas e aplicáveis ao dia a dia: pequenos relatórios, agenda/planejamento, pesquisa orientada, observação prática, apresentação curta, TED Talk, filme/série, leitura curta de capítulos de livro, checklist, reflexão estruturada ou exercício semelhante.",
+            "Se citar um livro, TED Talk, filme ou série pelo nome, use apenas uma obra real e amplamente conhecida; não invente títulos, autores, links, episódios ou materiais. Se houver dúvida, proponha uma pesquisa orientada sem nomear uma obra específica.",
+            "Não use propostas genéricas como 'melhorar comunicação'. Não invente fatos sobre a pessoa.",
+            "Cada ação deve conter SOMENTE: titulo, comoFazer e comprovacao.",
+            "Não inclua justificativa, motivo da sugestão, resultado esperado nem prazo.",
+            "Retorne somente JSON no formato {\"acoes\":[...]}.",
+          ].join("\n"),
+        },
+        { role: "user", content: JSON.stringify(dados) },
+      ],
+      response_format: { type: "json_object" },
+    },
     "A IA não retornou sugestões após uma nova tentativa. Tente novamente em alguns instantes.",
   );
   const parsed = JSON.parse(raw);
