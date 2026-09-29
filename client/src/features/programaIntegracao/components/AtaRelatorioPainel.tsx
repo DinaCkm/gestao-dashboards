@@ -142,8 +142,8 @@ export function AtaRelatorioPainel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata')}>Gerar Ata</Button>
-          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp')}>Gerar Relatório</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata')}>Ata em Word</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp')}>Relatório em Word</Button>
           <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => void gerarPdf('ata')}>Ata em PDF</Button>
           <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => void gerarPdf('ugp')}>Relatório em PDF</Button>
           {numero === 1 && (
@@ -152,7 +152,7 @@ export function AtaRelatorioPainel({
             </Button>
           )}
           <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => void gerarDoisPdf()}>Gerar os dois PDFs</Button>
-          <Button type="button" size="sm" disabled={salvando} onClick={gerarDois}>Gerar os dois</Button>
+          <Button type="button" size="sm" disabled={salvando} onClick={gerarDois}>Gerar os dois em Word</Button>
         </div>
       </div>
 
