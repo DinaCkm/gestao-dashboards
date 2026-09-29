@@ -11,6 +11,7 @@ import { getAlunosAtivos, getConsultors, getPrograms, getAllStudentsSessionProgr
 import { emailAlertasLog, mentoringSessions, assessmentPdi } from '../drizzle/schema';
 import { eq, and, gte, desc } from 'drizzle-orm';
 import { sendEmail, buildMentoringAlertEmail } from './emailService';
+import { isRealMentoringSession } from "@shared/mentoringSessionSemantics";
 
 const DIAS_MINIMO = 30;
 const DIAS_ENTRE_ALERTAS = 7; // Não reenviar alerta para o mesmo aluno em menos de 7 dias
@@ -63,6 +64,7 @@ export async function verificarEEnviarAlertasMentoria(options?: {
   // Calculate last session per aluno (with any mentor)
   const lastSessionByAluno = new Map<number, { date: Date; consultorId: number }>();
   for (const session of allSessions) {
+    if (!isRealMentoringSession(session)) continue;
     if (!session.sessionDate) continue;
     const sessionDate = new Date(session.sessionDate);
     const current = lastSessionByAluno.get(session.alunoId);
