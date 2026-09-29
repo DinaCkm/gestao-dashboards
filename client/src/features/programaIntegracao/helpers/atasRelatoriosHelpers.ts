@@ -156,13 +156,38 @@ function tituloSecaoPdf(doc: jsPDF, y: number, titulo: string): number {
 }
 
 function textoJustificadoPdf(doc: jsPDF, y: number, texto: string): number {
-  const linhas = doc.splitTextToSize(String(texto || '—'), 174);
-  y = garantirEspacoPdf(doc, y, linhas.length * 4.6 + 3);
+  const paragrafos = String(texto || '—')
+    .split(/\n+/)
+    .map((paragrafo) => paragrafo.trim())
+    .filter(Boolean);
+  const blocos = paragrafos.length ? paragrafos : ['—'];
+  const alturaLinha = 4.6;
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(32, 38, 48);
-  doc.text(linhas, 18, y, { align: 'justify', maxWidth: 174 });
-  return y + linhas.length * 4.6 + 2;
+
+  blocos.forEach((paragrafo, indiceParagrafo) => {
+    const linhas = doc.splitTextToSize(paragrafo, 174);
+    y = garantirEspacoPdf(doc, y, linhas.length * alturaLinha + 3);
+
+    linhas.forEach((linha: string, indiceLinha: number) => {
+      const ultimaLinha = indiceLinha === linhas.length - 1;
+      doc.text(
+        String(linha),
+        18,
+        y + indiceLinha * alturaLinha,
+        ultimaLinha
+          ? { align: 'left' }
+          : { align: 'justify', maxWidth: 174 },
+      );
+    });
+
+    y += linhas.length * alturaLinha;
+    if (indiceParagrafo < blocos.length - 1) y += 2.5;
+  });
+
+  return y + 2;
 }
 
 function gerarPdfAtaRelatorio(
@@ -223,7 +248,8 @@ function gerarPdfAtaRelatorio(
   y = tituloSecaoPdf(doc, y, '6. Nota de confidencialidade');
 
   const nota = doc.splitTextToSize(ATA_CONFIDENCIALIDADE, 166);
-  const notaAltura = nota.length * 4.3 + 8;
+  const alturaLinhaNota = 4.3;
+  const notaAltura = nota.length * alturaLinhaNota + 8;
   y = garantirEspacoPdf(doc, y, notaAltura + 18);
   doc.setFillColor(247, 248, 252);
   doc.setDrawColor(107, 62, 143);
@@ -233,7 +259,17 @@ function gerarPdfAtaRelatorio(
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(70, 76, 88);
-  doc.text(nota, 21, y + 6, { align: 'justify', maxWidth: 166 });
+  nota.forEach((linha: string, indiceLinha: number) => {
+    const ultimaLinha = indiceLinha === nota.length - 1;
+    doc.text(
+      String(linha),
+      21,
+      y + 6 + indiceLinha * alturaLinhaNota,
+      ultimaLinha
+        ? { align: 'left' }
+        : { align: 'justify', maxWidth: 166 },
+    );
+  });
   y += notaAltura + 14;
 
   if (consultor) {
