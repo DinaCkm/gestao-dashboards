@@ -58,17 +58,15 @@ export const MODELOS_EMAIL_ENCERRAMENTO_INTEGRACAO: Record<string, ModeloEmailIn
       'Olá, tudo bem?\n\n' +
       'Concluímos o **4º e último alinhamento** do Onboarding de **{{COLABORADOR}}** em **{{DATA_ALIN_4}}**, encerrando o período de acompanhamento. Seguem os materiais finais.\n\n' +
       '**Documentos em anexo**\n' +
-      '- Ata final de encerramento;\n' +
-      '- Relatório completo final;\n' +
-      '- Relatório de Acompanhamento do PDI, preenchido pela CKM.\n\n' +
+      '- **Ata do 4º Alinhamento**;\n' +
+      '- **Relatório do 4º Alinhamento**.\n\n' +
       '**Status final do PDI**\n{{STATUS_PDI}}\n\n' +
       '**Jornada Compliance e cursos institucionais**\n{{STATUS_CURSOS}}\n\n' +
       '**Pendências**\n{{PENDENCIAS}}\n\n' +
       '{{BLOCO_CONSIDERACOES}}' +
-      '**Status do processo:** [CONCLUÍDO / CONCLUÍDO COM PENDÊNCIAS]\n\n' +
       'Os e-mails de encerramento foram enviados separadamente ao colaborador, ao gestor e ao Anjo.\n\n' +
       'Ficamos à disposição caso seja necessária qualquer complementação.' + ASS,
-    anexo: 'Ata final de encerramento; Relatório completo final',
+    anexo: 'Ata do 4º Alinhamento; Relatório do 4º Alinhamento',
   },
 
   m_pos4_anjo: {
