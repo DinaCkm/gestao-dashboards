@@ -37,6 +37,8 @@ import { CobrancaFinalPainel, CobrancaFormulariosDialog } from './CobrancaFormul
 import { BemTesteProcesso } from './BemTesteProcesso';
 import { RespostasProcessoAgrupadas } from './RespostasProcessoAgrupadas';
 import { ObservacoesAcao } from './ObservacoesAcao';
+import { CompetenciasMentoraAcao } from './CompetenciasMentoraAcao';
+import { AvaliacaoPotencialPainel } from './AvaliacaoPotencialPainel';
 import { ControlesEspeciaisAcao } from './ControlesEspeciaisAcao';
 import { RegistrosIntegracaoPainel } from './RegistrosIntegracaoPainel';
 import { LeituraIntegradaBackoffice } from './LeituraIntegradaBackoffice';
@@ -957,6 +959,23 @@ export function DetalheProcessoReal({
                                     processo={processo}
                                     onSalvarProcesso={salvar}
                                   />
+                                </div>
+                              )}
+
+                              {item.id === 'd15-03' && (
+                                <div className="mt-4">
+                                  <CompetenciasMentoraAcao
+                                    processo={processo}
+                                    itemId={item.id}
+                                    onSalvarProcesso={salvar}
+                                    saving={saving}
+                                  />
+                                </div>
+                              )}
+
+                              {item.id === 'pos1-02' && (
+                                <div className="mt-4">
+                                  <AvaliacaoPotencialPainel processo={processo} />
                                 </div>
                               )}
 
