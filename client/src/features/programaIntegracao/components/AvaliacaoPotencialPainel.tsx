@@ -45,6 +45,7 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
   const [ctx, setCtx] = useState<ContextoAvaliacaoPotencial | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [acao, setAcao] = useState('');
+  const [mostrarPreviewTarefas, setMostrarPreviewTarefas] = useState(false);
 
   const carregar = useCallback(async () => {
     if (!legacyId) return;
@@ -82,6 +83,7 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
 
   const avaliacao = ctx?.avaliacao || null;
   const sugestoes = ctx?.sugestoes?.itens || [];
+  const previewTarefas = ctx?.tarefasGestorPreview || null;
   const fonteMentora = Boolean(ctx?.fontes.competenciasMentora?.length || ctx?.fontes.observacoesMentora?.length);
 
   return (
@@ -157,9 +159,9 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
           type="button"
           variant="outline"
           disabled={!ctx?.vinculo.seguro || Boolean(acao)}
-          onClick={() => void executar('tarefas-gestor', () => criarTarefasGestorIntegracao(legacyId), '4 ações criadas com sucesso.')}
+          onClick={() => setMostrarPreviewTarefas((valor) => !valor)}
         >
-          <PlusCircle className="mr-1 h-4 w-4" /> {acao === 'tarefas-gestor' ? 'Criando...' : 'Criar Tarefas do Gestor'}
+          <PlusCircle className="mr-1 h-4 w-4" /> {mostrarPreviewTarefas ? 'Ocultar prévia das tarefas' : 'Revisar Tarefas do Gestor'}
         </Button>
 
         <Button
@@ -171,6 +173,81 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
           <Lightbulb className="mr-1 h-4 w-4" /> {acao === 'sugerir' ? 'Gerando...' : 'Sugerir Ações de Desenvolvimento'}
         </Button>
       </div>
+
+      {mostrarPreviewTarefas && previewTarefas && (
+        <Card className="border-sky-200 bg-sky-50/30">
+          <CardContent className="space-y-4 p-4">
+            <div>
+              <p className="font-semibold">Prévia das tarefas que serão inseridas no PDI</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Esta revisão não cria nenhuma tarefa. Confira o conteúdo abaixo e só confirme se estiver correto.
+              </p>
+            </div>
+
+            {previewTarefas.faltantes.length > 0 && (
+              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="font-semibold">Informações ainda necessárias no Bem Acolhido:</p>
+                <ul className="mt-1 list-disc pl-5">
+                  {previewTarefas.faltantes.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {previewTarefas.bloqueio && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                {previewTarefas.bloqueio}
+              </div>
+            )}
+
+            {previewTarefas.prazo && (
+              <p className="text-sm">
+                <span className="font-semibold">Prazo previsto:</span>{' '}
+                {new Date(`${previewTarefas.prazo}T12:00:00`).toLocaleDateString('pt-BR')}
+              </p>
+            )}
+
+            <div className="space-y-3">
+              {previewTarefas.itens.map((item, indice) => (
+                <div key={item.titulo} className="rounded-lg border bg-background p-3">
+                  <div className="flex items-start gap-2">
+                    <Badge variant="outline">{indice + 1}</Badge>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold">{item.titulo}</p>
+                      <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+                        {item.descricao || 'Sem conteúdo suficiente para esta tarefa.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {!ctx?.tarefasPadrao || ctx.tarefasPadrao.revertidasEm ? (
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  disabled={Boolean(acao)}
+                  onClick={() => setMostrarPreviewTarefas(false)}
+                >
+                  Voltar sem criar
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!ctx?.vinculo.seguro || !previewTarefas.disponivel || Boolean(acao)}
+                  onClick={() => void executar('tarefas-gestor', () => criarTarefasGestorIntegracao(legacyId), '4 ações criadas com sucesso.')}
+                >
+                  <PlusCircle className="mr-1 h-4 w-4" /> {acao === 'tarefas-gestor' ? 'Criando...' : 'Confirmar e criar as 4 tarefas'}
+                </Button>
+              </div>
+            ) : (
+              <p className="border-t pt-3 text-xs font-medium text-emerald-700">
+                Estas tarefas já foram criadas para este colaborador.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {ctx?.tarefasPadrao && !ctx.tarefasPadrao.revertidasEm && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
