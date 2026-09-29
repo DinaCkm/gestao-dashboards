@@ -1434,6 +1434,18 @@ function PerfilAssessmentModal({
     return { ...item, score: score == null ? null : Number(score), classes };
   });
 
+  const baixarAssessmentDaTela = () => {
+    const params = new URLSearchParams();
+    if (colaborador.nome) params.set('nome', colaborador.nome);
+    const href = `/api/pdf/programa-integracao/assessment/${encodeURIComponent(colaborador.id)}${params.toString() ? `?${params.toString()}` : ''}`;
+    const link = document.createElement('a');
+    link.href = href;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -1527,6 +1539,8 @@ function PerfilAssessmentModal({
               display: none !important;
             }
             .assessment-profile-print {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
               position: static !important;
               inset: auto !important;
               transform: none !important;
@@ -1572,14 +1586,28 @@ function PerfilAssessmentModal({
         `}</style>
 
         <div className="border-b border-white/10 bg-[linear-gradient(115deg,#35147D_0%,#5B21D6_52%,#4938E8_100%)] px-5 py-5 pr-14 text-white sm:px-6 lg:px-7">
-          <DialogHeader className="gap-2 text-left">
-            <DialogTitle className="text-xl font-bold leading-tight text-white">
-              Perfil do Assessment
-            </DialogTitle>
-            <DialogDescription className="text-xs leading-relaxed text-white/80 sm:text-sm">
-              {colaborador.nome} · leitura integrada do perfil comportamental, da autoavaliação e das prioridades registradas pelo gestor no BEM Acolhido.
-            </DialogDescription>
-          </DialogHeader>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <DialogHeader className="gap-2 text-left">
+              <DialogTitle className="text-xl font-bold leading-tight text-white">
+                Perfil do Assessment
+              </DialogTitle>
+              <DialogDescription className="text-xs leading-relaxed text-white/80 sm:text-sm">
+                {colaborador.nome} · leitura integrada do perfil comportamental, da autoavaliação e das prioridades registradas pelo gestor no BEM Acolhido.
+              </DialogDescription>
+            </DialogHeader>
+            {!printMode && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={baixarAssessmentDaTela}
+                className="w-fit bg-white text-violet-800 hover:bg-violet-50"
+              >
+                <Download className="mr-1.5 h-4 w-4" />
+                Baixar este Assessment em PDF
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="assessment-profile-scroll max-h-[calc(89vh-92px)] overflow-y-auto overflow-x-hidden bg-[#F6F8FB] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 xl:px-10">
