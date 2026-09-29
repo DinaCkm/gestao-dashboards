@@ -5,6 +5,7 @@ import {
   aplicarCamposAtaRelatorio,
   camposAtaRelatorio,
   gerarDocumentoAtaRelatorio,
+  gerarDocumentoAtaRelatorioPdf,
   marcarAtaRelatorioGerados,
   objetivoAta,
   type CamposAtaRelatorio,
@@ -57,6 +58,25 @@ export function AtaRelatorioPainel({
     const proximo = await salvarRascunho();
     const ok = gerarDocumentoAtaRelatorio(proximo, numero, tipo, config, feriados);
     setMensagem(ok ? (tipo === 'ata' ? 'Ata gerada.' : 'Relatório para a UGP gerado.') : 'Não foi possível gerar o arquivo. Confira o nome do colaborador.');
+  };
+
+  const gerarPdf = async (tipo: 'ata' | 'ugp') => {
+    const proximo = await salvarRascunho();
+    const ok = gerarDocumentoAtaRelatorioPdf(proximo, numero, tipo, config, feriados);
+    setMensagem(ok ? (tipo === 'ata' ? 'Ata em PDF gerada.' : 'Relatório para a UGP em PDF gerado.') : 'Não foi possível gerar o PDF. Confira o nome do colaborador.');
+  };
+
+  const gerarDoisPdf = async () => {
+    const salvo = await salvarRascunho();
+    const ataOk = gerarDocumentoAtaRelatorioPdf(salvo, numero, 'ata', config, feriados);
+    const ugpOk = gerarDocumentoAtaRelatorioPdf(salvo, numero, 'ugp', config, feriados);
+    if (!ataOk || !ugpOk) {
+      setMensagem('Não foi possível gerar os dois PDFs. Confira os dados do processo.');
+      return;
+    }
+    const concluido = marcarAtaRelatorioGerados(salvo, numero);
+    await onSalvarProcesso(concluido);
+    setMensagem('Ata e relatório para a UGP gerados em PDF.');
   };
 
   const baixarRelatorioAssessment = () => {
@@ -124,11 +144,14 @@ export function AtaRelatorioPainel({
         <div className="flex flex-wrap gap-2">
           <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata')}>Gerar Ata</Button>
           <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp')}>Gerar Relatório</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => void gerarPdf('ata')}>Ata em PDF</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => void gerarPdf('ugp')}>Relatório em PDF</Button>
           {numero === 1 && (
             <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={baixarRelatorioAssessment}>
-              Baixar Relatório Assessment
+              Baixar Assessment de Acompanhar Integração
             </Button>
           )}
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => void gerarDoisPdf()}>Gerar os dois PDFs</Button>
           <Button type="button" size="sm" disabled={salvando} onClick={gerarDois}>Gerar os dois</Button>
         </div>
       </div>
