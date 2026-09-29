@@ -32,6 +32,7 @@ interface EmailPreviewDialogProps {
   onBaixarAvaliacaoPotencial?: () => Promise<void> | void;
   onBaixarAta?: () => Promise<void> | void;
   onBaixarRelatorio?: () => Promise<void> | void;
+  numeroAlinhamentoDocumentos?: 1 | 2 | 3 | 4;
 }
 
 function hojeBr(): string {
@@ -103,6 +104,7 @@ export function EmailPreviewDialog({
   onBaixarAvaliacaoPotencial,
   onBaixarAta,
   onBaixarRelatorio,
+  numeroAlinhamentoDocumentos,
 }: EmailPreviewDialogProps) {
   const [copiado, setCopiado] = React.useState<'rico' | 'texto' | null>(null);
   const [alternandoEnviado, setAlternandoEnviado] = React.useState(false);
@@ -261,7 +263,7 @@ export function EmailPreviewDialog({
                 onClick={() => void onBaixarAvaliacaoPotencial()}
                 className="border-[#6B3E8F] bg-white font-semibold text-[#5B3A7D] hover:bg-[#F7F3FB]"
               >
-                Avaliação de Potencial
+                Avaliação de Potencial Consolidada
               </Button>
             )}
             {onBaixarAta && (
@@ -272,7 +274,7 @@ export function EmailPreviewDialog({
                 onClick={() => void onBaixarAta()}
                 className="border-[#3157A4] bg-white font-semibold text-[#3157A4] hover:bg-[#F3F6FC]"
               >
-                Ata PDF
+                {numeroAlinhamentoDocumentos ? `Ata do ${numeroAlinhamentoDocumentos}º Alinhamento (PDF)` : 'Ata (PDF)'}
               </Button>
             )}
             {onBaixarRelatorio && (
@@ -283,7 +285,7 @@ export function EmailPreviewDialog({
                 onClick={() => void onBaixarRelatorio()}
                 className="border-[#3157A4] bg-white font-semibold text-[#3157A4] hover:bg-[#F3F6FC]"
               >
-                Relatório PDF
+                {numeroAlinhamentoDocumentos ? `Relatório do ${numeroAlinhamentoDocumentos}º Alinhamento (PDF)` : 'Relatório (PDF)'}
               </Button>
             )}
             {onAlternarEnviado && (
