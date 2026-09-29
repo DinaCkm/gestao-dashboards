@@ -63,17 +63,17 @@ export function AtaRelatorioPainel({
     setMensagem(ok ? `${documento} gerado em ${formato === 'pdf' ? 'PDF' : 'Word'}.` : 'Não foi possível gerar o arquivo. Confira o nome do colaborador.');
   };
 
-  const gerarDois = async () => {
+  const gerarDois = async (formato: 'doc' | 'pdf' = 'doc') => {
     const salvo = await salvarRascunho();
-    const ataOk = gerarDocumentoAtaRelatorio(salvo, numero, 'ata', config, feriados);
-    const ugpOk = gerarDocumentoAtaRelatorio(salvo, numero, 'ugp', config, feriados);
+    const ataOk = gerarDocumentoAtaRelatorio(salvo, numero, 'ata', config, feriados, formato);
+    const ugpOk = gerarDocumentoAtaRelatorio(salvo, numero, 'ugp', config, feriados, formato);
     if (!ataOk || !ugpOk) {
       setMensagem('Não foi possível gerar os dois arquivos. Confira os dados do processo.');
       return;
     }
     const concluido = marcarAtaRelatorioGerados(salvo, numero);
     await onSalvarProcesso(concluido);
-    setMensagem('Ata e relatório para a UGP gerados e ação pós-alinhamento registrada como concluída.');
+    setMensagem(`Ata e relatório para a UGP gerados em ${formato === 'pdf' ? 'PDF' : 'Word'} e ação pós-alinhamento registrada como concluída.`);
   };
 
   const baixarAssessmentPdf = async () => {
@@ -162,7 +162,8 @@ export function AtaRelatorioPainel({
               {gerandoAssessment ? 'Preparando Assessment...' : 'Baixar Assessment PDF'}
             </Button>
           )}
-          <Button type="button" size="sm" disabled={salvando} onClick={gerarDois}>Gerar os dois</Button>
+          <Button type="button" size="sm" disabled={salvando} onClick={() => gerarDois('doc')}>Gerar os dois</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarDois('pdf')}>Gerar os dois PDF</Button>
         </div>
       </div>
 
