@@ -282,6 +282,27 @@ function llmText(content: any): string {
   return "";
 }
 
+async function invokeJsonComSingleRetry(
+  invokeLLM: (params: any) => Promise<any>,
+  params: any,
+  finalMessage: string,
+) {
+  for (let tentativa = 1; tentativa <= 2; tentativa += 1) {
+    const response = await invokeLLM(params);
+    const raw = llmText(response?.choices?.[0]?.message?.content).trim();
+    if (raw) return { response, raw };
+
+    console.warn("[ProgramaIntegracaoPotencial] IA respondeu sem conteúdo.", {
+      tentativa,
+      modelo: String(response?.model || ""),
+      finishReason: String(response?.choices?.[0]?.finish_reason || ""),
+      choices: Array.isArray(response?.choices) ? response.choices.length : 0,
+    });
+  }
+
+  throw new Error(finalMessage);
+}
+
 async function gerarAvaliacaoComIa(ctx: Awaited<ReturnType<typeof contexto>>) {
   const answers = asJson<Record<string, any>>(ctx.bem?.answers, {});
   const disc = ctx.perfil.disc;
@@ -313,27 +334,28 @@ async function gerarAvaliacaoComIa(ctx: Awaited<ReturnType<typeof contexto>>) {
   };
 
   const { invokeLLM } = await import("./_core/llm");
-  const response = await invokeLLM({
-    messages: [
-      {
-        role: "system",
-        content: [
-          "Você atua como especialista em desenvolvimento organizacional e deve produzir uma Avaliação de Potencial breve, profissional e útil para RH.",
-          "Use exclusivamente os dados fornecidos. Não invente fatos, diagnósticos, características ou motivações.",
-          "Diferencie fatos registrados das interpretações integradas. Quando os dados não sustentarem uma conclusão, declare a limitação.",
-          "Dê peso especial às competências e observações registradas pela consultora, cruzando-as com a expectativa do gestor, DISC e autoavaliações.",
-          "Evite rótulos definitivos. Fale em comportamentos observados, tendências, aderências e aspectos a desenvolver.",
-          "Retorne somente JSON válido com exatamente estas chaves: sintese (string), caracteristicasComportamentais (array de strings), competenciasObservadas (array de strings), convergencias (array de strings), pontosAtencao (array de strings), desenvolvimento (array de strings), aderenciaDemandas (string), recomendacoes (array de strings) e limitacoes (array de strings).",
-          "Se o DISC estiver ausente, registre essa ausência em limitacoes e prossiga com as demais fontes; não invente um perfil DISC.",
-        ].join("\n"),
-      },
-      { role: "user", content: JSON.stringify(dados) },
-    ],
-    response_format: { type: "json_object" },
-  });
-
-  const raw = llmText(response.choices?.[0]?.message?.content);
-  if (!raw) throw new Error("A IA não retornou conteúdo.");
+  const { response, raw } = await invokeJsonComSingleRetry(
+    invokeLLM,
+    {
+      messages: [
+        {
+          role: "system",
+          content: [
+            "Você atua como especialista em desenvolvimento organizacional e deve produzir uma Avaliação de Potencial breve, profissional e útil para RH.",
+            "Use exclusivamente os dados fornecidos. Não invente fatos, diagnósticos, características ou motivações.",
+            "Diferencie fatos registrados das interpretações integradas. Quando os dados não sustentarem uma conclusão, declare a limitação.",
+            "Dê peso especial às competências e observações registradas pela consultora, cruzando-as com a expectativa do gestor, DISC e autoavaliações.",
+            "Evite rótulos definitivos. Fale em comportamentos observados, tendências, aderências e aspectos a desenvolver.",
+            "Retorne somente JSON válido com exatamente estas chaves: sintese (string), caracteristicasComportamentais (array de strings), competenciasObservadas (array de strings), convergencias (array de strings), pontosAtencao (array de strings), desenvolvimento (array de strings), aderenciaDemandas (string), recomendacoes (array de strings) e limitacoes (array de strings).",
+            "Se o DISC estiver ausente, registre essa ausência em limitacoes e prossiga com as demais fontes; não invente um perfil DISC.",
+          ].join("\n"),
+        },
+        { role: "user", content: JSON.stringify(dados) },
+      ],
+      response_format: { type: "json_object" },
+    },
+    "A IA não retornou conteúdo após uma nova tentativa. Tente novamente em alguns instantes.",
+  );
   const parsed = JSON.parse(raw);
   const arr = (value: any) => Array.isArray(value) ? value.map((x) => String(x || "").trim()).filter(Boolean).slice(0, 12) : [];
   const resultado = {
@@ -380,7 +402,9 @@ async function gerarSugestoesComIa(
   };
 
   const { invokeLLM } = await import("./_core/llm");
-  const response = await invokeLLM({
+  const { raw } = await invokeJsonComSingleRetry(
+    invokeLLM,
+    {
     messages: [
       {
         role: "system",
@@ -402,7 +426,9 @@ async function gerarSugestoesComIa(
   });
 
   const raw = llmText(response.choices?.[0]?.message?.content);
-  if (!raw) throw new Error("A IA não retornou sugestões.");
+  if (!raw) throw new Error("A IA não retornou sugestões."),
+    "A IA não retornou sugestões após uma nova tentativa. Tente novamente em alguns instantes.",
+  );
   const parsed = JSON.parse(raw);
   const acoes = Array.isArray(parsed?.acoes) ? parsed.acoes : [];
   const normalizadas = acoes.map((item: any) => ({
@@ -418,14 +444,23 @@ async function gerarSugestoesComIa(
 
 async function dataFimOnboarding(connection: any, processo: any, estado: Record<string, any>) {
   const alinhamento4 = estado?.alin?.["4"] ?? estado?.alin?.[4];
-  const confirmada = dataIsoValida(alinhamento4?.data);
+  const confirmada = dataIsoValida(alinhamento4?.realizado) || dataIsoValida(alinhamento4?.data);
   if (confirmada) return confirmada;
 
   const inicio = dataIsoValida(processo.inicio);
-  if (!inicio) throw Object.assign(new Error("A data de início do onboarding não está válida."), { statusCode: 409 });
+  const alinhamento1 = estado?.alin?.["1"] ?? estado?.alin?.[1];
+  const primeiroAlinhamento = dataIsoValida(alinhamento1?.realizado) || dataIsoValida(alinhamento1?.data);
+  if (!inicio && !primeiroAlinhamento) {
+    throw Object.assign(new Error("Não há uma data válida de início nem do 1º alinhamento para calcular os prazos do onboarding."), { statusCode: 409 });
+  }
 
   const offset = Number(estado?.teste?.agendaRecalculo?.offsetDias || 0);
-  let fim = addDiasIso(inicio, 149 + (Number.isFinite(offset) ? offset : 0));
+  // O 4º alinhamento corresponde ao marco de 150 dias. Quando o cadastro
+  // histórico não possui início válido, a data real/agendada do 1º
+  // alinhamento (marco de 15 dias) é a referência segura já registrada.
+  let fim = inicio
+    ? addDiasIso(inicio, 149 + (Number.isFinite(offset) ? offset : 0))
+    : addDiasIso(primeiroAlinhamento as string, 135);
 
   const [cfgRows] = (await connection.execute(
     "SELECT valor FROM programa_integracao_config WHERE chave='geral' LIMIT 1",
@@ -448,7 +483,7 @@ async function montarPreviewTarefasGestor(
       prazo: null as string | null,
       faltantes: ["Formulário Bem Acolhido"],
       bloqueio: "",
-      itens: [] as Array<{ titulo: string; descricao: string }>,
+      itens: [] as Array<{ titulo: string; descricao: string; prazo: string | null }>,
     };
   }
 
@@ -464,14 +499,29 @@ async function montarPreviewTarefasGestor(
   ].filter(Boolean) as string[];
 
   let prazo: string | null = null;
+  let prazoPrimeiraTarefa: string | null = null;
   let bloqueio = "";
   try {
     prazo = await dataFimOnboarding(connection, ctx.processo, ctx.estado);
+    const alinhamento1 = ctx.estado?.alin?.["1"] ?? ctx.estado?.alin?.[1];
+    const dataPrimeiroAlinhamento = dataIsoValida(alinhamento1?.realizado) || dataIsoValida(alinhamento1?.data);
+    if (dataPrimeiroAlinhamento) {
+      prazoPrimeiraTarefa = addDiasIso(dataPrimeiroAlinhamento, 15);
+    } else {
+      const inicio = dataIsoValida(ctx.processo.inicio);
+      prazoPrimeiraTarefa = inicio ? addDiasIso(inicio, 29) : null;
+    }
     if (prazo < todayIso()) {
       bloqueio = "O prazo final do onboarding já passou. Nenhuma tarefa será criada automaticamente.";
+    } else if (!prazoPrimeiraTarefa) {
+      bloqueio = "Não há uma data válida do 1º alinhamento para calcular o prazo da primeira tarefa.";
+    } else if (prazoPrimeiraTarefa < todayIso()) {
+      // Se a configuração estiver sendo feita depois do marco de 30 dias,
+      // preserva tempo real de execução em vez de criar uma tarefa já vencida.
+      prazoPrimeiraTarefa = addDiasIso(todayIso(), 15);
     }
   } catch (error: any) {
-    bloqueio = String(error?.message || "Não foi possível calcular o prazo final do onboarding.");
+    bloqueio = String(error?.message || "Não foi possível calcular os prazos do onboarding.");
   }
 
   const descricoes = [
@@ -492,6 +542,7 @@ async function montarPreviewTarefasGestor(
     itens: TASK_TITLES.map((titulo, index) => ({
       titulo,
       descricao: descricoes[index] || "",
+      prazo: index === 0 ? prazoPrimeiraTarefa : prazo,
     })),
   };
 }
@@ -814,7 +865,7 @@ programaIntegracaoPotencialRouter.post(
           contratoNivelId: sessaoContexto.contratoNivelId,
           titulo: item.titulo,
           descricao: item.descricao,
-          prazo,
+          prazo: item.prazo || prazo,
           sessionNumber: base + i,
         }));
       }
@@ -827,6 +878,12 @@ programaIntegracaoPotencialRouter.post(
         taskMode: "livre",
         criadasEm: new Date().toISOString(),
         prazo,
+        prazos: {
+          primeiros15Dias: preview.itens[0]?.prazo || prazo,
+          primeiros60Dias: preview.itens[1]?.prazo || prazo,
+          conhecimentosTecnicos: preview.itens[2]?.prazo || prazo,
+          universidadeSebrae: preview.itens[3]?.prazo || prazo,
+        },
         sessionIds: {
           primeiros15Dias: ids[0],
           primeiros60Dias: ids[1],
