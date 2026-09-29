@@ -73,6 +73,7 @@ import {
   processoCandidatos,} from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { calcularAplicabilidadeFinal, calcularMicroTarefaAplicabilidade } from './aplicabilidadeCalculator';
+import { isRealMentoringSession } from "@shared/mentoringSessionSemantics";
 import * as schema from "../drizzle/schema";
 import {
   createContratoNivelRepo,
@@ -5636,7 +5637,8 @@ export async function getSessionProgressByAluno(alunoId: number) {
     totalSessoesEsperadas = Math.max(1, totalMeses);
   }
 
-  // Count sessions completed for this student (excluding assessment sessions and cancelled)
+  // Count only real mentoring encounters. Standalone practical tasks share
+  // mentoring_sessions but must not consume session progress.
   const sessions = await db.select().from(mentoringSessions)
     .where(and(
       eq(mentoringSessions.alunoId, alunoId),
@@ -5644,7 +5646,7 @@ export async function getSessionProgressByAluno(alunoId: number) {
       eq(mentoringSessions.cancelada, 0)
     ));
   
-  const sessoesRealizadas = sessions.length;
+  const sessoesRealizadas = sessions.filter(isRealMentoringSession).length;
   const sessoesFaltantes = Math.max(0, totalSessoesEsperadas - sessoesRealizadas);
   const faltaUmaSessao = sessoesFaltantes === 1;
   const cicloCompleto = sessoesRealizadas >= totalSessoesEsperadas;
@@ -5682,11 +5684,14 @@ export async function getAllStudentsSessionProgress() {
   // Get all mentoring sessions
   const allSessions = await db.select().from(mentoringSessions);
   
-  // Group sessions by aluno (count excludes assessment, but last session date includes all)
+  // Group only real mentoring encounters by aluno. Standalone practical tasks
+  // must not count as sessions and must not reset "last mentoring session" alerts.
   const sessionsByAluno = new Map<number, number>();
   const lastSessionByAluno = new Map<number, Date>();
   const lastMentorByAluno = new Map<number, number>();
   for (const s of allSessions) {
+    if (!isRealMentoringSession(s)) continue;
+
     // Only count non-assessment sessions for progress calculation
     if (!s.isAssessment) {
       sessionsByAluno.set(s.alunoId, (sessionsByAluno.get(s.alunoId) || 0) + 1);
@@ -7929,8 +7934,9 @@ export async function getSaldoSessoes(alunoId: number) {
   if (contratos.length === 0) return null;
   const contrato = contratos[0];
   
-  // Contar sessões realizadas (excluindo assessment)
-  const sessoes = await db.select({ count: sql<number>`COUNT(*)` })
+  // Contar somente encontros reais realizados (excluindo assessment).
+  // Tarefas práticas isoladas usam a mesma tabela, mas não consomem saldo contratual.
+  const sessoes = await db.select()
     .from(mentoringSessions)
     .where(and(
       eq(mentoringSessions.alunoId, alunoId),
@@ -7938,7 +7944,7 @@ export async function getSaldoSessoes(alunoId: number) {
       eq(mentoringSessions.presence, "presente")
     ));
   
-  const sessoesRealizadas = sessoes[0]?.count || 0;
+  const sessoesRealizadas = sessoes.filter(isRealMentoringSession).length;
   const totalContratadas = contrato.totalSessoesContratadas;
   const saldoRestante = totalContratadas - sessoesRealizadas;
   

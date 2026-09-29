@@ -1,4 +1,5 @@
 import { COOKIE_NAME, ADMIN_BACKUP_COOKIE_NAME, MASTER_CPF } from "@shared/const";
+import { isRealMentoringSession, isStandaloneMentoringTask } from "@shared/mentoringSessionSemantics";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -6816,6 +6817,25 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           await ensureNivelAbertoParaAtribuicao(input.alunoId, null, "mentoria.createSession");
         }
 
+        // Definir primeiro a semântica da nova linha. Tarefas isoladas continuam
+        // usando a numeração histórica de tarefas; encontros reais usam somente
+        // outros encontros reais para que a primeira sessão não vire "#5" após 4 tarefas.
+        const effectiveTaskMode = input.taskMode ?? "sem_tarefa";
+        const effectiveTaskStatus = effectiveTaskMode !== "sem_tarefa"
+          ? "nao_entregue"
+          : (input.taskStatus ?? "sem_tarefa");
+        const novaLinhaEhTarefaIsolada = isStandaloneMentoringTask({
+          taskMode: effectiveTaskMode,
+          taskStatus: effectiveTaskStatus,
+          customTaskTitle: input.customTaskTitle,
+          presence: input.presence,
+          engagementScore: input.engagementScore,
+          notaEvolucao: input.notaEvolucao,
+          feedback: input.feedback,
+          mensagemAluno: input.mensagemAluno,
+          appointmentId: input.appointmentId,
+        });
+
         // Calcular próximo número de sessão
         // REGRA: o reset é o marco que reinicia a contagem e ativa o nível como orientador de tudo.
         // - Se o nível vigente já tem sessões vinculadas → reset ocorreu → contar só as sessões do nível atual
@@ -6831,20 +6851,15 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         const baseParaContagem = resetOcorreu
           ? sessoesDoCicloAtual
           : await db.getMentoringSessionsByAluno(input.alunoId);
-        const nextSessionNumber = baseParaContagem.length > 0
-          ? Math.max(...baseParaContagem.map(s => s.sessionNumber ?? 0)) + 1
+        const encontrosReais = baseParaContagem.filter(isRealMentoringSession);
+        const baseParaNumeracao = novaLinhaEhTarefaIsolada ? baseParaContagem : encontrosReais;
+        const nextSessionNumber = baseParaNumeracao.length > 0
+          ? Math.max(...baseParaNumeracao.map(s => s.sessionNumber ?? 0)) + 1
           : 1;
-        // A 1ª sessão só é assessment se for realmente o início (sem histórico nenhum)
-        // ou se o reset acabou de ocorrer (início do novo ciclo)
-        const isInicioDeCiclo = baseParaContagem.length === 0;
+        // A 1ª sessão real só é assessment se for realmente o início dos encontros.
+        // Tarefas isoladas anteriores não alteram essa decisão.
+        const isInicioDeCiclo = !novaLinhaEhTarefaIsolada && encontrosReais.length === 0;
         const tipoSessaoEfetivo = input.tipoSessao ?? (isInicioDeCiclo ? 'individual_assessment' : 'individual_normal');
-
-        // Se a mentora atribuiu uma tarefa nesta sessão, o taskStatus deve ser 'nao_entregue'
-        // para que o aluno veja o botão 'Entregar' no Portal
-        const effectiveTaskMode = input.taskMode ?? "sem_tarefa";
-        const effectiveTaskStatus = effectiveTaskMode !== "sem_tarefa" 
-          ? "nao_entregue" 
-          : (input.taskStatus ?? "sem_tarefa");
 
         const sessionId = await db.createMentoringSession({
           alunoId: input.alunoId,
@@ -9119,9 +9134,12 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
         appointmentId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
-        // Verificar se já existe sessão com mesmo número para o mesmo aluno
+        // Verificar duplicidade somente entre encontros reais.
+        // Uma tarefa isolada pode compartilhar o mesmo sessionNumber sem bloquear a sessão.
         const existingSessions = await db.getMentoringSessionsByAluno(input.alunoId);
-        const duplicate = existingSessions.find(s => s.sessionNumber === input.sessionNumber);
+        const duplicate = existingSessions
+          .filter(isRealMentoringSession)
+          .find(s => s.sessionNumber === input.sessionNumber);
         if (duplicate) {
           throw new TRPCError({
             code: 'CONFLICT',

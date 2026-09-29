@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
 import { and, desc, eq, inArray, isNull, isNotNull, sql } from "drizzle-orm";
 import { COOKIE_NAME } from "@shared/const";
+import { isStandaloneMentoringTask } from "@shared/mentoringSessionSemantics";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { sendEmail, buildBoasVindasAlunoAutonomoEmail, buildConviteAlunoAutonomoEmail } from "../emailService";
@@ -1668,6 +1669,8 @@ export const alunosAutonomosRouter = router({
         feedback: mentoringSessions.feedback,
         mensagemAluno: mentoringSessions.mensagemAluno,
         notaEvolucao: mentoringSessions.notaEvolucao,
+        engagementScore: mentoringSessions.engagementScore,
+        appointmentId: mentoringSessions.appointmentId,
         evidenceLink: mentoringSessions.evidenceLink,
         evidenceImageUrl: mentoringSessions.evidenceImageUrl,
         consultorNome: consultors.name,
@@ -1682,10 +1685,9 @@ export const alunosAutonomosRouter = router({
       )
       .orderBy(desc(mentoringSessions.sessionDate));
 
-    // Separar sessões reais de ações autônomas pelo taskMode:
-    // - taskMode = 'livre' → ação autônoma criada pelo modal "Criar Ação" → Tarefas
-    // - taskMode != 'livre' → sessão real de encontro → Encontros de Feedback
-    const sessoesReais = sessoes.filter(s => s.taskMode !== "livre");
+    // Separar tarefas isoladas de encontros reais pela semântica compartilhada.
+    // Uma sessão real pode ter taskMode='livre' e ainda assim continuar sendo encontro.
+    const sessoesReais = sessoes.filter(s => !isStandaloneMentoringTask(s));
     const tarefasRaw = sessoes.filter(s =>
       s.taskMode === "livre" || s.taskStatus !== "sem_tarefa" || s.customTaskTitle
     );
@@ -1791,7 +1793,7 @@ export const alunosAutonomosRouter = router({
         )
         .orderBy(desc(mentoringSessions.sessionDate));
 
-      const sessoesReais = sessoes.filter(s => s.taskMode !== "livre");
+      const sessoesReais = sessoes.filter(s => !isStandaloneMentoringTask(s));
       const tarefasRaw = sessoes.filter(s =>
         s.taskMode === "livre" || s.taskStatus !== "sem_tarefa" || s.customTaskTitle
       );

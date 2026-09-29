@@ -52,6 +52,7 @@ import {
   Zap
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { isStandaloneMentoringTask } from "@shared/mentoringSessionSemantics";
 
 export default function RegistroMentoria() {
   const { user } = useAuth();
@@ -130,16 +131,11 @@ export default function RegistroMentoria() {
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
   );
-  // Excluir ações autônomas (criadas pelo modal "Criar Ação") da listagem de sessões.
-  // Essas ações têm taskMode='livre' e engagementScore=null sem nota de evolução —
-  // elas são gerenciadas via "Atividades Práticas", não aqui.
-  const sessions = sessionsRaw.filter((s: any) =>
-    !(s.taskMode === 'livre' && s.engagementScore == null && s.notaEvolucao == null && s.presence === 'presente' && !s.appointmentId)
-  );
-  // Ações autônomas — separadas das sessões, exibidas em seção própria
-  const acoesAutonomas = sessionsRaw.filter((s: any) =>
-    s.taskMode === 'livre' && s.engagementScore == null && s.notaEvolucao == null && s.presence === 'presente' && !s.appointmentId
-  );
+  // Excluir apenas tarefas realmente isoladas da listagem de encontros.
+  // Sessões reais com tarefa livre continuam aparecendo como sessão.
+  const sessions = sessionsRaw.filter((s: any) => !isStandaloneMentoringTask(s));
+  // Ações autônomas — separadas das sessões, exibidas em seção própria.
+  const acoesAutonomas = sessionsRaw.filter((s: any) => isStandaloneMentoringTask(s));
   const { data: sessionProgress } = trpc.mentor.sessionProgress.useQuery(
     { alunoId: selectedAlunoId! },
     { enabled: !!selectedAlunoId }
