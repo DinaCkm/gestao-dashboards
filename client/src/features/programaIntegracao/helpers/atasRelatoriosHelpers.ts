@@ -98,7 +98,7 @@ function dadosCabecalho(processo: ProcessoIntegracao, numero: number, config?: B
 }
 
 function nomeConsultor(processo: ProcessoIntegracao, config?: BootstrapState['config']) {
-  return mentoraVinculada(processo, config)?.nome || processo.consultora || 'Consultor(a) CKM';
+  return String(mentoraVinculada(processo, config)?.nome || processo.consultora || '').trim();
 }
 
 function conteudoDocumento(processo: ProcessoIntegracao, numero: number, tipo: 'ata' | 'ugp') {
@@ -120,6 +120,7 @@ function conteudoDocumento(processo: ProcessoIntegracao, numero: number, tipo: '
 
 function htmlDocumento(processo: ProcessoIntegracao, numero: number, tipo: 'ata' | 'ugp', config?: BootstrapState['config'], feriados: string[] = []) {
   const dados = conteudoDocumento(processo, numero, tipo);
+  const consultor = nomeConsultor(processo, config);
   const campos = dadosCabecalho(processo, numero, config, feriados).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('');
   return `<!doctype html><html><head><meta charset="utf-8"><style>
   body{font-family:Arial,sans-serif;color:#1a1a1a;font-size:11pt;line-height:1.45;margin:32px} h1{font-size:20pt;margin-bottom:4px} .sub{color:#666;margin-bottom:22px} h2{font-size:13pt;color:#5b3a7d;border-bottom:1px solid #6b3e8f;padding-bottom:4px;margin-top:22px} p{margin:0 0 12px;text-align:justify} table{width:100%;border-collapse:collapse}td{border:1px solid #d4d8e5;padding:6px;vertical-align:top;text-align:left}td:first-child{width:34%;font-weight:bold;background:#eff1f7}.nota{background:#f7f8fc;border-left:4px solid #6b3e8f;padding:10px;text-align:justify}.realizado{margin-top:38px;border-top:1px solid #777;padding-top:7px;text-align:center;font-size:9pt}
@@ -132,7 +133,7 @@ function htmlDocumento(processo: ProcessoIntegracao, numero: number, tipo: 'ata'
   <h2>4. Percepção do Colaborador</h2><p>${esc(dados.colab)}</p>
   <h2>5. ${dados.ugp ? 'Conclusão / Percepção da Consultora' : 'Conclusão'}</h2><p>${esc(dados.cinco)}</p>
   <h2>6. Nota de confidencialidade</h2><div class="nota">${esc(ATA_CONFIDENCIALIDADE)}</div>
-  <div class="realizado">Realizado com o(a) consultor(a) ${esc(nomeConsultor(processo, config))}</div>
+  ${consultor ? `<div class="realizado">Realizado com o(a) consultor(a) ${esc(consultor)}</div>` : ''}
   </body></html>`;
 }
 
@@ -166,6 +167,7 @@ function textoJustificadoPdf(doc: jsPDF, y: number, texto: string): number {
 
 function gerarPdfAtaRelatorio(processo: ProcessoIntegracao, numero: 1|2|3|4, tipo: 'ata'|'ugp', config?: BootstrapState['config'], feriados: string[] = []) {
   const dados = conteudoDocumento(processo, numero, tipo);
+  const consultor = nomeConsultor(processo, config);
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   let y = 0;
 
@@ -229,13 +231,15 @@ function gerarPdfAtaRelatorio(processo: ProcessoIntegracao, numero: 1|2|3|4, tip
   doc.text(nota, 21, y + 6, { align: 'justify', maxWidth: 166 });
   y += notaAltura + 14;
 
-  y = garantirEspacoPdf(doc, y, 16);
-  doc.setDrawColor(120, 120, 120);
-  doc.line(48, y, 162, y);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
-  doc.text(`Realizado com o(a) consultor(a) ${nomeConsultor(processo, config)}`, 105, y + 5, { align: 'center' });
+  if (consultor) {
+    y = garantirEspacoPdf(doc, y, 16);
+    doc.setDrawColor(120, 120, 120);
+    doc.line(48, y, 162, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Realizado com o(a) consultor(a) ${consultor}`, 105, y + 5, { align: 'center' });
+  }
 
   const paginas = doc.getNumberOfPages();
   for (let p = 1; p <= paginas; p++) {
