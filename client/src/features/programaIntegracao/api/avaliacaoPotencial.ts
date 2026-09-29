@@ -88,6 +88,10 @@ export async function criarTarefasGestorIntegracao(legacyId: string) {
   return api<{ ok: true; criadas: number; sessionIds: number[]; prazo: string }>(`${BASE}/${encodeURIComponent(legacyId)}/tarefas-gestor/criar`, { method: 'POST' });
 }
 
+export async function reverterTarefasGestorIntegracao(legacyId: string) {
+  return api<{ ok: true; revertidas: number }>(`${BASE}/${encodeURIComponent(legacyId)}/tarefas-gestor/reverter`, { method: 'POST' });
+}
+
 export async function gerarSugestoesDesenvolvimento(legacyId: string) {
   return api<{ ok: true; sugestoes: { itens: SugestaoDesenvolvimento[] } }>(`${BASE}/${encodeURIComponent(legacyId)}/sugestoes-desenvolvimento/gerar`, { method: 'POST' });
 }
@@ -102,4 +106,8 @@ export async function regenerarSugestaoDesenvolvimento(legacyId: string, sugesta
 
 export async function inserirSugestaoDesenvolvimento(legacyId: string, sugestaoId: string) {
   return api<{ ok: true; sessionId: number; prazo: string }>(`${BASE}/${encodeURIComponent(legacyId)}/sugestoes-desenvolvimento/${encodeURIComponent(sugestaoId)}/inserir`, { method: 'POST' });
+}
+
+export async function reverterInsercaoSugestaoDesenvolvimento(legacyId: string, sugestaoId: string) {
+  return api<{ ok: true }>(`${BASE}/${encodeURIComponent(legacyId)}/sugestoes-desenvolvimento/${encodeURIComponent(sugestaoId)}/reverter-insercao`, { method: 'POST' });
 }
