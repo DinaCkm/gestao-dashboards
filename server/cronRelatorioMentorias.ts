@@ -349,14 +349,36 @@ export async function gerarEEnviarRelatorioMentorias(
   };
 }
 
+async function relatorioAutomaticoJaEnviado(tipo: 'previa' | 'definitivo'): Promise<boolean> {
+  const dbConn = await getDb();
+  if (!dbConn) return false;
+
+  const periodo = calcularPeriodoPadrao(tipo);
+  const [rows] = await dbConn.execute(sql`
+    SELECT id
+    FROM relatorio_mentorias_log
+    WHERE tipo = ${tipo}
+      AND periodo_inicio = ${periodo.inicio}
+      AND periodo_fim = ${periodo.fim}
+    LIMIT 1
+  `);
+
+  return Array.isArray(rows) && rows.length > 0;
+}
+
 /**
  * Verifica se hoje é dia 25 ou 30 e dispara o relatório automaticamente.
+ * Proteção idempotente: o mesmo tipo/período só pode ser enviado uma vez.
  */
 async function verificarEDispararRelatorio() {
   const hoje = new Date();
   const dia = hoje.getDate();
 
   if (dia === 25) {
+    if (await relatorioAutomaticoJaEnviado('previa')) {
+      console.log('[Cron Relatorio Mentorias] Prévia deste período já enviada — ignorando nova execução.');
+      return;
+    }
     console.log('[Cron Relatorio Mentorias] Dia 25 — enviando PRÉVIA...');
     try {
       const result = await gerarEEnviarRelatorioMentorias('previa');
@@ -365,6 +387,10 @@ async function verificarEDispararRelatorio() {
       console.error('[Cron Relatorio Mentorias] Erro ao enviar prévia:', err);
     }
   } else if (dia === 30) {
+    if (await relatorioAutomaticoJaEnviado('definitivo')) {
+      console.log('[Cron Relatorio Mentorias] Definitivo deste período já enviado — ignorando nova execução.');
+      return;
+    }
     console.log('[Cron Relatorio Mentorias] Dia 30 — enviando DEFINITIVO...');
     try {
       const result = await gerarEEnviarRelatorioMentorias('definitivo');
