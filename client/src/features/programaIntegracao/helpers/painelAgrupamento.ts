@@ -1,6 +1,6 @@
 import type { AcaoPainelReal } from './painelAcoes';
 import { PESO_STATUS_ITEM, type StatusItemPainel } from './statusHelpers';
-import type { ItemPlanoReal, EtapaPlanoReal, LadoIntegracao } from './planoReal';
+import { ITENS_PLANO_REAL, type ItemPlanoReal, type EtapaPlanoReal, type LadoIntegracao } from './planoReal';
 
 export interface GrupoAcaoPainel {
   itemId: string;
@@ -20,15 +20,7 @@ function piorStatus(acoes: AcaoPainelReal[]): StatusItemPainel {
     .sort((a, b) => PESO_STATUS_ITEM[a.k] - PESO_STATUS_ITEM[b.k])[0];
 }
 
-function ordemDependenciaAgendamento(itemId: string): { ciclo: number; ordem: number } | null {
-  const match = itemId.match(/^ag([1-4])-(00|01|02|03)$/);
-  if (!match) return null;
-
-  return {
-    ciclo: Number(match[1]),
-    ordem: Number(match[2]),
-  };
-}
+const ORDEM_PLANO = new Map(ITENS_PLANO_REAL.map((item, indice) => [item.id, indice]));
 
 /**
  * Agrupa exatamente por tarefa/itemId: a mesma tarefa de várias pessoas aparece uma única vez.
@@ -68,21 +60,17 @@ export function agruparAcoesPorTarefa(acoes: AcaoPainelReal[]): GrupoAcaoPainel[
       };
     })
     .sort((a, b) => {
-      const depA = ordemDependenciaAgendamento(a.itemId);
-      const depB = ordemDependenciaAgendamento(b.itemId);
-
-      // Dentro do mesmo alinhamento, a sequência operacional prevalece sobre
-      // o peso visual do status: mentora -> gestor -> confirmação -> convite.
-      if (depA && depB && depA.ciclo === depB.ciclo) {
-        const porSequencia = depA.ordem - depB.ordem;
-        if (porSequencia !== 0) return porSequencia;
-      }
-
-      const porStatus = PESO_STATUS_ITEM[a.statusPior.k] - PESO_STATUS_ITEM[b.statusPior.k];
-      if (porStatus !== 0) return porStatus;
-
+      // O Painel da Semana deve espelhar a mesma sequência operacional da
+      // agenda individual: primeiro a data prevista e, dentro da mesma data,
+      // a ordem original do PLANO_REAL. O status continua visível, mas não
+      // reorganiza as ações.
       const porData = a.dataMaisAntiga.localeCompare(b.dataMaisAntiga);
       if (porData !== 0) return porData;
+
+      const ordemA = ORDEM_PLANO.get(a.itemId) ?? Number.MAX_SAFE_INTEGER;
+      const ordemB = ORDEM_PLANO.get(b.itemId) ?? Number.MAX_SAFE_INTEGER;
+      const porPlano = ordemA - ordemB;
+      if (porPlano !== 0) return porPlano;
 
       return a.item.t.localeCompare(b.item.t, 'pt-BR');
     });
