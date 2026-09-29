@@ -9,7 +9,7 @@ const TASK_TITLES = [
   "Tarefa solicitada pelo gestor para os primeiros 15 dias",
   "Tarefa solicitada pelo gestor para os primeiros 60 dias",
   "Conhecimentos técnicos solicitados pelo gestor",
-  "Concluir os cursos obrigatórios da Universidade Senai",
+  "Concluir os cursos obrigatórios da Universidade Sebrae",
 ] as const;
 
 function asJson<T = any>(value: unknown, fallback: T): T {
@@ -481,7 +481,7 @@ async function montarPreviewTarefasGestor(
       conhecimentos ? `Conhecimentos técnicos imprescindíveis:\n${conhecimentos}` : "",
       documentos ? `Documentos, manuais e treinamentos imprescindíveis:\n${documentos}` : "",
     ].filter(Boolean).join("\n\n"),
-    "Consulte o PDF de orientação disponível na Jornada Compliance, identifique nele quais cursos obrigatórios devem ser realizados na Universidade Senai e conclua esses cursos diretamente na Universidade Senai até o fim do onboarding.",
+    "Consulte o PDF de orientação disponível na Jornada Compliance, identifique nele quais cursos obrigatórios devem ser realizados na Universidade Sebrae e conclua esses cursos diretamente na Universidade Sebrae até o fim do onboarding.",
   ];
 
   return {
@@ -831,7 +831,7 @@ programaIntegracaoPotencialRouter.post(
           primeiros15Dias: ids[0],
           primeiros60Dias: ids[1],
           conhecimentosTecnicos: ids[2],
-          universidadeSenai: ids[3],
+          universidadeSebrae: ids[3],
         },
       };
       await connection.execute(
