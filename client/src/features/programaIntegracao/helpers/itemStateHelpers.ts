@@ -443,6 +443,26 @@ export function removerNotaAcao(
   return { ...processo, feito: novoFeito };
 }
 
+export function competenciasAcaoAtual(
+  processo: ProcessoIntegracao,
+  itemId: string,
+): string[] {
+  const ficha = normalizarFicha(processo.feito?.[itemId]);
+  const competencias = Array.isArray(ficha.competencias) ? ficha.competencias : [];
+  return [0, 1, 2, 3].map((indice) => String(competencias[indice] || ''));
+}
+
+export function atualizarCompetenciasAcao(
+  processo: ProcessoIntegracao,
+  itemId: string,
+  competencias: string[],
+): ProcessoIntegracao {
+  const novoFeito = clonarFeito(processo.feito);
+  const ficha = fichaDe(novoFeito, itemId);
+  ficha.competencias = [0, 1, 2, 3].map((indice) => String(competencias[indice] || '').trim());
+  return { ...processo, feito: novoFeito };
+}
+
 export function fichaAcaoAtual(processo: ProcessoIntegracao, itemId: string): {
   s: StatusAcaoLegado;
   d: string;
