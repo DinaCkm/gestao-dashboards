@@ -29,6 +29,10 @@ interface EmailPreviewDialogProps {
   onMarcadoEnviado?: () => void;
   onEditarModelo?: () => void;
   onGerarRelatorioEvolucao?: () => void;
+  onBaixarAssessment?: () => Promise<void> | void;
+  onBaixarAta?: () => Promise<void> | void;
+  onBaixarRelatorio?: () => Promise<void> | void;
+  numeroAlinhamentoDocumentos?: 1 | 2 | 3 | 4;
 }
 
 function hojeBr(): string {
@@ -97,6 +101,10 @@ export function EmailPreviewDialog({
   onMarcadoEnviado,
   onEditarModelo,
   onGerarRelatorioEvolucao,
+  onBaixarAssessment,
+  onBaixarAta,
+  onBaixarRelatorio,
+  numeroAlinhamentoDocumentos,
 }: EmailPreviewDialogProps) {
   const [copiado, setCopiado] = React.useState<'rico' | 'texto' | null>(null);
   const [alternandoEnviado, setAlternandoEnviado] = React.useState(false);
@@ -189,7 +197,7 @@ export function EmailPreviewDialog({
           </dl>
 
           <div
-            className="email-preview-body px-4 py-5 text-[13px] leading-7 text-[#152232] sm:px-5 sm:text-sm [&_p]:mb-3 [&_.email-aviso]:rounded-r-md [&_.email-aviso]:border-l-[3px] [&_.email-aviso]:border-[#6B3E8F] [&_.email-aviso]:bg-[#F8F8FC] [&_.email-aviso]:px-3 [&_.email-aviso]:py-2 [&_.email-item]:mb-1 [&_.email-item]:pl-3 [&_.email-regra]:my-4 [&_.email-regra]:border-[#E3E5EE] [&_mark]:rounded-sm [&_mark]:bg-amber-100 [&_mark]:px-1 [&_mark]:font-semibold [&_mark]:text-amber-900"
+            className="email-preview-body px-4 py-5 text-[13px] leading-7 text-[#152232] sm:px-5 sm:text-sm [&_p]:mb-3 [&_.email-aviso]:rounded-r-md [&_.email-aviso]:border-l-[3px] [&_.email-aviso]:border-[#6B3E8F] [&_.email-aviso]:bg-[#F8F8FC] [&_.email-aviso]:px-3 [&_.email-aviso]:py-2 [&_.email-regra]:my-4 [&_.email-regra]:border-[#E3E5EE] [&_.email-lista-visual]:mb-4 [&_.email-lista-card]:mb-2 [&_.email-lista-card]:rounded-md [&_.email-lista-card]:border-l-[3px] [&_.email-lista-card]:border-[#6B3E8F] [&_.email-lista-card]:bg-[#F7F8FC] [&_.email-lista-card]:px-3 [&_.email-lista-card]:py-2 [&_.email-form-link]:my-4 [&_.email-form-link]:rounded-lg [&_.email-form-link]:border [&_.email-form-link]:border-[#E7C94A] [&_.email-form-link]:bg-[#FFF3BF] [&_.email-form-link]:px-4 [&_.email-form-link]:py-3 [&_.email-form-link_span]:mb-1 [&_.email-form-link_span]:block [&_.email-form-link_span]:text-[10px] [&_.email-form-link_span]:font-bold [&_.email-form-link_span]:uppercase [&_.email-form-link_span]:tracking-wide [&_.email-form-link_span]:text-[#7A5A00] [&_.email-form-link_a]:break-all [&_.email-form-link_a]:font-bold [&_.email-form-link_a]:text-[#233A73] [&_.email-form-link_a]:underline [&_mark]:rounded-sm [&_mark]:bg-amber-100 [&_mark]:px-1 [&_mark]:font-semibold [&_mark]:text-amber-900"
             dangerouslySetInnerHTML={{ __html: corpoHtml }}
           />
         </div>
@@ -245,6 +253,39 @@ export function EmailPreviewDialog({
                 className="border-[#D7D1CD] bg-white text-[#152232] hover:bg-[#F7F5F4]"
               >
                 Gerar relatório de evolução
+              </Button>
+            )}
+            {onBaixarAssessment && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void onBaixarAssessment()}
+                className="border-[#6B3E8F] bg-white font-semibold text-[#5B3A7D] hover:bg-[#F7F3FB]"
+              >
+                Assessment do 1º Alinhamento (PDF)
+              </Button>
+            )}
+            {onBaixarAta && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void onBaixarAta()}
+                className="border-[#3157A4] bg-white font-semibold text-[#3157A4] hover:bg-[#F3F6FC]"
+              >
+                {numeroAlinhamentoDocumentos ? `Ata do ${numeroAlinhamentoDocumentos}º Alinhamento (PDF)` : 'Ata (PDF)'}
+              </Button>
+            )}
+            {onBaixarRelatorio && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void onBaixarRelatorio()}
+                className="border-[#3157A4] bg-white font-semibold text-[#3157A4] hover:bg-[#F3F6FC]"
+              >
+                {numeroAlinhamentoDocumentos ? `Relatório do ${numeroAlinhamentoDocumentos}º Alinhamento (PDF)` : 'Relatório (PDF)'}
               </Button>
             )}
             {onAlternarEnviado && (
