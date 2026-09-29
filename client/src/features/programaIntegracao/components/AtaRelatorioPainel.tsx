@@ -56,10 +56,11 @@ export function AtaRelatorioPainel({
     }
   };
 
-  const gerarUm = async (tipo: 'ata' | 'ugp') => {
+  const gerarUm = async (tipo: 'ata' | 'ugp', formato: 'doc' | 'pdf' = 'doc') => {
     const proximo = await salvarRascunho();
-    const ok = gerarDocumentoAtaRelatorio(proximo, numero, tipo, config, feriados);
-    setMensagem(ok ? (tipo === 'ata' ? 'Ata gerada.' : 'Relatório para a UGP gerado.') : 'Não foi possível gerar o arquivo. Confira o nome do colaborador.');
+    const ok = gerarDocumentoAtaRelatorio(proximo, numero, tipo, config, feriados, formato);
+    const documento = tipo === 'ata' ? 'Ata' : 'Relatório para a UGP';
+    setMensagem(ok ? `${documento} gerado em ${formato === 'pdf' ? 'PDF' : 'Word'}.` : 'Não foi possível gerar o arquivo. Confira o nome do colaborador.');
   };
 
   const gerarDois = async () => {
@@ -145,8 +146,10 @@ export function AtaRelatorioPainel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata')}>Gerar Ata</Button>
-          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp')}>Gerar Relatório</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata', 'doc')}>Ata Word</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ata', 'pdf')}>Ata PDF</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp', 'doc')}>Relatório Word</Button>
+          <Button type="button" size="sm" variant="outline" disabled={salvando} onClick={() => gerarUm('ugp', 'pdf')}>Relatório PDF</Button>
           {numero === 1 && (
             <Button
               type="button"
