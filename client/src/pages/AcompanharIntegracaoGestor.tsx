@@ -1350,6 +1350,17 @@ function PerfilAssessmentModal({
 
   const perfil = colaborador.perfilAssessment;
   const disc = perfil?.disc;
+  const recomendacoesConsultoriaExibicao = (colaborador.recomendacoesConsultoria || []).length
+    ? (colaborador.recomendacoesConsultoria || [])
+    : (colaborador.competenciasConsultoriaSelecionadas || [])
+        .map((nome) => {
+          const catalogo = competenciaConsultoriaPorNome(nome);
+          return catalogo || {
+            nome,
+            descricao: 'Competência registrada pela consultora. A descrição padronizada ainda não está disponível no catálogo.',
+            desenvolvimento: 'Utilizar as orientações registradas pela consultora no acompanhamento individual.',
+          };
+        });
   const autoPorKey = new Map<string, ClusterAutoavaliacao>(
     (perfil?.autoavaliacaoClusters || []).map((item) => [item.key, item] as const),
   );
