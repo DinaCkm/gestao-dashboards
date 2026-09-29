@@ -98,22 +98,21 @@ function dadosCabecalho(processo: ProcessoIntegracao, numero: number, config?: B
 }
 
 function htmlDocumento(processo: ProcessoIntegracao, numero: number, tipo: 'ata' | 'ugp', config?: BootstrapState['config'], feriados: string[] = []) {
-  const c = camposAtaRelatorio(processo, numero);
-  const ugp = tipo === 'ugp';
+  const dados = conteudoDocumento(processo, numero, tipo);
+  const consultor = nomeConsultor(processo, config);
   const campos = dadosCabecalho(processo, numero, config, feriados).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('');
-  const cinco = ugp ? (c.consultora.trim() || c.conclusao.trim() || '[registrar a conclusão e o parecer da consultora]') : (c.conclusao.trim() || '[registrar a conclusão da reunião]');
   return `<!doctype html><html><head><meta charset="utf-8"><style>
-  body{font-family:Arial,sans-serif;color:#1a1a1a;font-size:11pt;line-height:1.45;margin:32px} h1{font-size:20pt;margin-bottom:4px} .sub{color:#666;margin-bottom:22px} h2{font-size:13pt;color:#5b3a7d;border-bottom:1px solid #6b3e8f;padding-bottom:4px;margin-top:22px} table{width:100%;border-collapse:collapse}td{border:1px solid #d4d8e5;padding:6px;vertical-align:top}td:first-child{width:34%;font-weight:bold;background:#eff1f7}.nota{background:#f7f8fc;border-left:4px solid #6b3e8f;padding:10px}.assin{margin-top:38px;display:flex;gap:40px}.assin div{flex:1;border-top:1px solid #777;padding-top:5px;text-align:center;font-size:9pt}
+  body{font-family:Arial,sans-serif;color:#1a1a1a;font-size:11pt;line-height:1.45;margin:32px} h1{font-size:20pt;margin-bottom:4px} .sub{color:#666;margin-bottom:22px} h2{font-size:13pt;color:#5b3a7d;border-bottom:1px solid #6b3e8f;padding-bottom:4px;margin-top:22px} p{margin:0 0 12px;text-align:justify} table{width:100%;border-collapse:collapse}td{border:1px solid #d4d8e5;padding:6px;vertical-align:top;text-align:left}td:first-child{width:34%;font-weight:bold;background:#eff1f7}.nota{background:#f7f8fc;border-left:4px solid #6b3e8f;padding:10px;text-align:justify}.realizado{margin-top:38px;border-top:1px solid #777;padding-top:7px;text-align:center;font-size:9pt}
   </style></head><body>
-  <h1>${ugp ? `Relatório do ${ORD[numero]} Alinhamento` : `Ata do ${ORD[numero]} Alinhamento`}</h1>
-  <div class="sub">${ugp ? 'Relatório para a UGP' : 'Ata de reunião'} · ${esc(processo.tipo || 'Onboarding')} · Sebrae/TO</div>
+  <h1>${esc(dados.titulo)}</h1>
+  <div class="sub">${esc(dados.subtitulo)} · ${esc(processo.tipo || 'Onboarding')} · Sebrae/TO</div>
   <h2>1. Identificação</h2><table>${campos}</table>
-  <h2>2. Objetivo da reunião</h2><p>${esc(objetivoAta(processo, numero))}</p>
-  <h2>3. Percepção do Líder</h2><p>${esc(c.lider.trim() || '[registrar a percepção do líder]')}</p>
-  <h2>4. Percepção do Colaborador</h2><p>${esc(c.colab.trim() || '[registrar a percepção do colaborador]')}</p>
-  <h2>5. ${ugp ? 'Conclusão / Percepção da Consultora' : 'Conclusão'}</h2><p>${esc(cinco)}</p>
+  <h2>2. Objetivo da reunião</h2><p>${esc(dados.objetivo)}</p>
+  <h2>3. Percepção do Líder</h2><p>${esc(dados.lider)}</p>
+  <h2>4. Percepção do Colaborador</h2><p>${esc(dados.colab)}</p>
+  <h2>5. ${dados.ugp ? 'Conclusão / Percepção da Consultora' : 'Conclusão'}</h2><p>${esc(dados.cinco)}</p>
   <h2>6. Nota de confidencialidade</h2><div class="nota">${esc(ATA_CONFIDENCIALIDADE)}</div>
-  <div class="assin"><div>${esc(mentoraVinculada(processo, config)?.nome || processo.consultora || 'Consultor(a) CKM')}</div><div>${esc(processo.gestor || 'Gestor(a) receptor(a)')}</div></div>
+  ${consultor ? `<div class="realizado">Realizado com o(a) consultor(a) ${esc(consultor)}</div>` : ''}
   </body></html>`;
 }
 
