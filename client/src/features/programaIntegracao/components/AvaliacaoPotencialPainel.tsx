@@ -92,7 +92,7 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
         <div>
           <p className="font-semibold">Avaliação de Potencial integrada</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Cruzamento seguro entre registros da consultora, Bem Acolhido e dados disponíveis do Assessment/DISC.
+            Cruzamento seguro entre registros da consultora, Bem Acolhido, Assessment/DISC e autoavaliação disponível do colaborador.
           </p>
         </div>
         <Button type="button" size="sm" variant="ghost" disabled={carregando || Boolean(acao)} onClick={() => void carregar()}>
@@ -100,12 +100,15 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
         </Button>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg border bg-background p-3 text-sm">
           <div className="flex items-center justify-between gap-2"><span>Bem Acolhido</span><Badge variant={ctx?.fontes.bem ? 'default' : 'outline'}>{ctx?.fontes.bem ? 'Disponível' : 'Ausente'}</Badge></div>
         </div>
         <div className="rounded-lg border bg-background p-3 text-sm">
           <div className="flex items-center justify-between gap-2"><span>Assessment / DISC</span><Badge variant={ctx?.fontes.disc ? 'default' : 'outline'}>{ctx?.fontes.disc ? 'Disponível' : 'Ausente'}</Badge></div>
+        </div>
+        <div className="rounded-lg border bg-background p-3 text-sm">
+          <div className="flex items-center justify-between gap-2"><span>Autoavaliação</span><Badge variant={ctx?.fontes.autoavaliacoes ? 'default' : 'outline'}>{ctx?.fontes.autoavaliacoes ? `${ctx.fontes.autoavaliacoes} registro(s)` : 'Ausente'}</Badge></div>
         </div>
         <div className="rounded-lg border bg-background p-3 text-sm">
           <div className="flex items-center justify-between gap-2"><span>Consultora / competências</span><Badge variant={fonteMentora ? 'default' : 'outline'}>{fonteMentora ? 'Disponível' : 'Ausente'}</Badge></div>
@@ -274,6 +277,7 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Síntese</p>
               <p className="mt-1 text-sm leading-relaxed">{avaliacao.resultado.sintese}</p>
             </div>
+            <Lista titulo="Características comportamentais" itens={avaliacao.resultado.caracteristicasComportamentais} />
             <Lista titulo="Competências observadas" itens={avaliacao.resultado.competenciasObservadas} />
             <Lista titulo="Convergências" itens={avaliacao.resultado.convergencias} />
             <Lista titulo="Pontos de atenção" itens={avaliacao.resultado.pontosAtencao} />
