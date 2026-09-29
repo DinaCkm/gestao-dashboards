@@ -10,6 +10,9 @@ import {
 import { modeloPadraoEmailIntegracao } from '../helpers/emailModelosIntegracao';
 import { montarPreviewEmailIntegracao } from '../helpers/emailMontagemHelpers';
 import { fichaAcaoAtual } from '../helpers/itemStateHelpers';
+import { gerarDocumentoAtaRelatorio } from '../helpers/atasRelatoriosHelpers';
+import { buscarContextoAvaliacaoPotencial } from '../api/avaliacaoPotencial';
+import { baixarAvaliacaoPotencialPdf } from '../helpers/avaliacaoPotencialPdf';
 import { EmailPreviewDialog } from './EmailPreviewDialog';
 
 interface EmailActionButtonsProps {
@@ -73,6 +76,25 @@ export function EmailActionButtons({
       )
     : null;
   const relN = chaveAberta ? relatorioDaChave(chaveAberta) : null;
+  const ugpAlinhamento = chaveAberta ? (/^m_pos([1-4])_ugp$/.exec(chaveAberta)?.[1] || '') : '';
+  const ugpNumero = ugpAlinhamento ? Number(ugpAlinhamento) as 1 | 2 | 3 | 4 : null;
+
+  const baixarAvaliacaoPotencialExistente = async () => {
+    if (!processoId) return;
+    try {
+      const contexto = await buscarContextoAvaliacaoPotencial(processoId);
+      if (!contexto.avaliacao) {
+        toast.error('A Avaliação de Potencial ainda não foi gerada para este colaborador.');
+        return;
+      }
+      baixarAvaliacaoPotencialPdf(
+        { nome: processo.nome, cargo: processo.cargo, unidade: processo.unidade },
+        contexto.avaliacao,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível baixar a Avaliação de Potencial.');
+    }
+  };
 
   const alternarEnviadoComFeedback = async () => {
     if (!onAlternarEnviado) return;
@@ -136,6 +158,13 @@ export function EmailActionButtons({
         } : undefined}
         onGerarRelatorioEvolucao={relN && onGerarRelatorioEvolucao ? () => {
           onGerarRelatorioEvolucao(processo, relN);
+        } : undefined}
+        onBaixarAvaliacaoPotencial={chaveAberta === 'm_pos1_ugp' ? baixarAvaliacaoPotencialExistente : undefined}
+        onBaixarAta={ugpNumero ? () => {
+          gerarDocumentoAtaRelatorio(processo, ugpNumero, 'ata', config, feriados, 'pdf');
+        } : undefined}
+        onBaixarRelatorio={ugpNumero ? () => {
+          gerarDocumentoAtaRelatorio(processo, ugpNumero, 'ugp', config, feriados, 'pdf');
         } : undefined}
       />
     </>
