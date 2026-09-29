@@ -5,20 +5,14 @@ import {
   buscarContextoAvaliacaoPotencial,
   confirmarVinculoAvaliacaoPotencial,
   criarTarefasGestorIntegracao,
-  descartarSugestaoDesenvolvimento,
-  gerarAvaliacaoPotencial,
-  inserirSugestaoDesenvolvimento,
-  regenerarSugestaoDesenvolvimento,
-  reverterInsercaoSugestaoDesenvolvimento,
   reverterTarefasGestorIntegracao,
   type ContextoAvaliacaoPotencial,
 } from '../api/avaliacaoPotencial';
-import { baixarAvaliacaoPotencialPdf } from '../helpers/avaliacaoPotencialPdf';
 import { buscarPerfilEcoLider, type EcoLiderAluno } from '../api/ecoLider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Download, FileText, PlusCircle, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react';
+import { Download, PlusCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -27,18 +21,6 @@ interface Props {
 
 function mensagemErro(error: unknown) {
   return error instanceof Error ? error.message : 'Não foi possível concluir a operação.';
-}
-
-function Lista({ titulo, itens }: { titulo: string; itens?: string[] }) {
-  if (!itens?.length) return null;
-  return (
-    <div>
-      <p className="text-sm font-semibold">{titulo}</p>
-      <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-        {itens.map((item, indice) => <li key={`${titulo}-${indice}`}>{item}</li>)}
-      </ul>
-    </div>
-  );
 }
 
 export function AvaliacaoPotencialPainel({ processo }: Props) {
@@ -143,23 +125,33 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
     }
   };
 
+  const baixarRelatorioAssessment = () => {
+    if (!legacyId) return;
+    const params = new URLSearchParams();
+    if (processo.nome) params.set('nome', processo.nome);
+    const href = `/api/pdf/programa-integracao/assessment/${encodeURIComponent(legacyId)}${params.toString() ? `?${params.toString()}` : ''}`;
+    const link = document.createElement('a');
+    link.href = href;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (carregando && !ctx) {
     return <div className="rounded-xl border bg-muted/20 p-4 text-sm text-muted-foreground">Carregando dados da Avaliação de Potencial...</div>;
   }
 
-  const avaliacao = ctx?.avaliacao || null;
-  const sugestoes = ctx?.sugestoes?.itens || [];
   const previewTarefas = ctx?.tarefasGestorPreview || null;
   const fonteMentora = Boolean(ctx?.fontes.competenciasMentora?.length || ctx?.fontes.observacoesMentora?.length);
-  const competenciasMentoraDisponiveis = Boolean(ctx?.fontes.competenciasMentora?.filter((item) => String(item || '').trim()).length);
 
   return (
     <div className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/30 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-semibold">Assessment + Recomendações da Consultoria</p>
+          <p className="font-semibold">Relatório Assessment Consolidado</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Consolidação do Assessment já existente com as competências indicadas pela consultora. Não utiliza IA e não recalcula o Assessment.
+            O PDF reproduz o mesmo relatório exibido em Acompanhar Integração, com Perfil Comportamental, Autoavaliação, Expectativa do Gestor, Recomendações da Consultoria e a explicação dos resultados.
           </p>
         </div>
         <Button type="button" size="sm" variant="ghost" disabled={carregando || Boolean(acao)} onClick={() => void carregar()}>
@@ -277,31 +269,31 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          disabled={!ctx?.vinculo.seguro || !ctx?.fontes.disc || !competenciasMentoraDisponiveis || Boolean(acao)}
-          onClick={() => void executar('gerar-avaliacao', () => gerarAvaliacaoPotencial(legacyId), 'Assessment e recomendações consolidados com sucesso.')}
+          disabled={!ctx?.vinculo.seguro || !ctx?.fontes.disc || Boolean(acao)}
+          onClick={baixarRelatorioAssessment}
         >
-          <FileText className="mr-1 h-4 w-4" /> {acao === 'gerar-avaliacao' ? 'Consolidando...' : 'Consolidar Assessment e Recomendações'}
+          <Download className="mr-1 h-4 w-4" /> Baixar Relatório Assessment
         </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!avaliacao || Boolean(acao)}
-          onClick={() => avaliacao && baixarAvaliacaoPotencialPdf({ nome: processo.nome, cargo: processo.cargo, unidade: processo.unidade }, avaliacao)}
-        >
-          <Download className="mr-1 h-4 w-4" /> Baixar Avaliação de Potencial
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!ctx?.vinculo.seguro || Boolean(acao)}
-          onClick={() => setMostrarPreviewTarefas((valor) => !valor)}
-        >
-          <PlusCircle className="mr-1 h-4 w-4" /> {mostrarPreviewTarefas ? 'Ocultar prévia das tarefas' : 'Revisar Tarefas do Gestor'}
-        </Button>
-
       </div>
+
+      {(!ctx?.tarefasPadrao || ctx.tarefasPadrao.revertidasEm) && (
+        <div className="flex flex-col gap-3 rounded-lg border border-sky-200 bg-sky-50/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold">Tarefas do PDI</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              A criação das tarefas continua preservada em um bloco separado do Relatório Assessment.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!ctx?.vinculo.seguro || Boolean(acao)}
+            onClick={() => setMostrarPreviewTarefas((valor) => !valor)}
+          >
+            <PlusCircle className="mr-1 h-4 w-4" /> {mostrarPreviewTarefas ? 'Ocultar prévia das tarefas' : 'Revisar Tarefas do Gestor'}
+          </Button>
+        </div>
+      )}
 
       {mostrarPreviewTarefas && previewTarefas && (
         <Card className="border-sky-200 bg-sky-50/30">
@@ -396,102 +388,6 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
         <p className="text-xs font-medium text-amber-700">A criação anterior das quatro tarefas foi revertida. Elas podem ser criadas novamente, se necessário.</p>
       )}
 
-      {avaliacao && (
-        <Card className="border-violet-200">
-          <CardContent className="space-y-4 p-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Síntese</p>
-              <p className="mt-1 text-sm leading-relaxed">{avaliacao.resultado.sintese}</p>
-            </div>
-            <Lista titulo="Características comportamentais" itens={avaliacao.resultado.caracteristicasComportamentais} />
-            <Lista titulo="Competências observadas" itens={avaliacao.resultado.competenciasObservadas} />
-            <Lista titulo="Convergências" itens={avaliacao.resultado.convergencias} />
-            <Lista titulo="Pontos de atenção" itens={avaliacao.resultado.pontosAtencao} />
-            <Lista titulo="Pontos de desenvolvimento" itens={avaliacao.resultado.desenvolvimento} />
-            {avaliacao.resultado.aderenciaDemandas && <div><p className="text-sm font-semibold">Aderência às demandas da atuação</p><p className="mt-1 text-sm text-muted-foreground">{avaliacao.resultado.aderenciaDemandas}</p></div>}
-            {avaliacao.recomendacoesConsultoria?.length ? (
-              <div className="space-y-3">
-                <p className="text-sm font-semibold">Recomendações de Desenvolvimento pela Consultoria</p>
-                {avaliacao.recomendacoesConsultoria.map((competencia) => (
-                  <div key={competencia.nome} className="rounded-lg border bg-background p-3">
-                    <p className="font-semibold">{competencia.nome}</p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{competencia.descricao}</p>
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-violet-700">Como desenvolver</p>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{competencia.desenvolvimento}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <Lista titulo="Recomendações gerais" itens={avaliacao.resultado.recomendacoes} />
-            )}
-            <Lista titulo="Limitações da análise" itens={avaliacao.resultado.limitacoes} />
-          </CardContent>
-        </Card>
-      )}
-
-      {sugestoes.length > 0 && (
-        <div className="space-y-3">
-          <div>
-            <p className="font-semibold">Ações de desenvolvimento sugeridas</p>
-            <p className="mt-1 text-xs text-muted-foreground">Cada sugestão é independente. Só entra nas Atividades Práticas quando você clicar em Inserir nas tarefas.</p>
-          </div>
-          {sugestoes.filter((item) => item.status !== 'descartada').map((item) => (
-            <Card key={item.id} className={item.status === 'inserida' ? 'border-emerald-200 bg-emerald-50/30' : ''}>
-              <CardContent className="space-y-3 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="font-semibold">{item.titulo}</p>
-                  {item.status === 'inserida' && <Badge>Inserida nas tarefas</Badge>}
-                </div>
-                <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Como fazer</p><p className="mt-1 text-sm whitespace-pre-line">{item.comoFazer}</p></div>
-                <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">O que enviar para comprovar</p><p className="mt-1 text-sm whitespace-pre-line">{item.comprovacao}</p></div>
-                {item.status === 'inserida' && (
-                  <div className="pt-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={Boolean(acao)}
-                      onClick={() => void executar(`reverter-insercao-${item.id}`, () => reverterInsercaoSugestaoDesenvolvimento(legacyId, item.id), 'Inserção da tarefa revertida com segurança.')}
-                    >
-                      Reverter inserção
-                    </Button>
-                  </div>
-                )}
-                {item.status !== 'inserida' && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={Boolean(acao)}
-                      onClick={() => void executar(`inserir-${item.id}`, () => inserirSugestaoDesenvolvimento(legacyId, item.id), 'Ação inserida nas tarefas do colaborador.')}
-                    >
-                      <PlusCircle className="mr-1 h-4 w-4" /> Inserir nas tarefas
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={Boolean(acao)}
-                      onClick={() => void executar(`regenerar-${item.id}`, () => regenerarSugestaoDesenvolvimento(legacyId, item.id), 'Nova sugestão gerada.')}
-                    >
-                      <RefreshCw className="mr-1 h-4 w-4" /> Gerar nova tarefa
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      disabled={Boolean(acao)}
-                      onClick={() => void executar(`descartar-${item.id}`, () => descartarSugestaoDesenvolvimento(legacyId, item.id), 'Sugestão descartada.')}
-                    >
-                      <Trash2 className="mr-1 h-4 w-4" /> Descartar
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
