@@ -862,11 +862,35 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const gestorViewKey = adminView ? String(req.query.gestor || "").trim() : "";
 
     const [processRows] = (await connection.execute(
-      `SELECT id,legacyId,alunoId,nome,email,cpf,cargo,unidade,inicio,situacao,gestor,gestorEmail,anjo,estado
+      `SELECT id,legacyId,alunoId,nome,email,cpf,cargo,unidade,inicio,situacao,gestor,gestorEmail,anjo,consultora,mentorLegacyId,estado
        FROM programa_integracao_processos
        WHERE situacao='ativo' AND tipo='Onboarding'
        ORDER BY ordem,id`,
     )) as any;
+
+    // Para os documentos de Ata/Relatório exibidos na visão UGP/RH,
+    // o nome do Consultor CKM deve refletir a mentora efetivamente vinculada
+    // ao processo. O campo legado "consultora" fica apenas como fallback.
+    const [configGeralRows] = (await connection.execute(
+      `SELECT valor FROM programa_integracao_config WHERE chave='geral' LIMIT 1`,
+    )) as any;
+    const configGeralPrograma = configGeralRows?.[0]
+      ? asJson<Record<string, any>>(configGeralRows[0].valor, {})
+      : {};
+    const mentorasConfiguradas = Array.isArray(configGeralPrograma.mentoras)
+      ? configGeralPrograma.mentoras
+      : [];
+    const nomeMentoraResponsavel = (row: any): string => {
+      const mentorId = String(row?.mentorLegacyId || "").trim();
+      if (mentorId) {
+        const vinculada = mentorasConfiguradas.find(
+          (mentora: any) => String(mentora?.id || "").trim() === mentorId,
+        );
+        const nomeVinculado = String(vinculada?.nome || "").trim();
+        if (nomeVinculado) return nomeVinculado;
+      }
+      return String(row?.consultora || "").trim();
+    };
 
     // Máscara temporária definida pelo Admin em Gerenciar Pessoas.
     // O processo e todo o histórico permanecem intactos no banco/bootstrap,
@@ -1310,7 +1334,8 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const documentoAtaRelatorio = acessoUgpRh
         ? {
             tipo: String(row.tipo || "Onboarding"),
-            consultora: String(row.consultora || ""),
+            consultora: nomeMentoraResponsavel(row),
+            mentorId: String(row.mentorLegacyId || ""),
           }
         : null;
 
