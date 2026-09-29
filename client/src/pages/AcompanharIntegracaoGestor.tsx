@@ -1446,13 +1446,8 @@ function PerfilAssessmentModal({
     document.body.removeChild(link);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        data-assessment-modal="true"
-        data-assessment-report-ready={printMode ? "true" : undefined}
-        className={`assessment-profile-modal ${printMode ? 'assessment-profile-print' : ''} max-h-[90vh] !w-[93vw] !max-w-[1690px] gap-0 overflow-hidden rounded-2xl border border-slate-200/60 bg-[#F6F8FB] p-0 shadow-[0_24px_70px_rgba(15,23,42,0.20)] sm:!w-[92vw] sm:!max-w-[1690px]`}
-      >
+  const assessmentContent = (
+    <>
         <style>{`
           [data-slot="dialog-portal"]:has(.assessment-profile-modal) > [data-slot="dialog-overlay"] {
             background: rgba(15, 23, 42, 0.48);
@@ -1570,6 +1565,51 @@ function PerfilAssessmentModal({
               display: grid !important;
             }
           }
+          @media print {
+            .assessment-pdf-document {
+              width: 100% !important;
+              min-height: 0 !important;
+              background: #ffffff !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            .assessment-pdf-document .assessment-profile-scroll {
+              max-height: none !important;
+              overflow: visible !important;
+              background: #F6F8FB !important;
+              padding: 16px !important;
+            }
+            .assessment-pdf-document .assessment-section {
+              break-inside: auto;
+              page-break-inside: auto;
+              box-shadow: none !important;
+            }
+            .assessment-pdf-document .assessment-card,
+            .assessment-pdf-document .assessment-details-body > div {
+              break-inside: avoid;
+              page-break-inside: avoid;
+              animation: none !important;
+              transform: none !important;
+            }
+            .assessment-pdf-document .assessment-stagger {
+              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+            .assessment-pdf-document .assessment-progress-fill {
+              animation: none !important;
+              transform: none !important;
+            }
+            .assessment-pdf-document button[aria-label] {
+              display: none !important;
+            }
+            .assessment-pdf-document details > .assessment-details-body {
+              display: grid !important;
+              grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            }
+            .assessment-pdf-document summary {
+              cursor: default !important;
+            }
+          }
+
           @media (prefers-reduced-motion: reduce) {
             .assessment-section,
             .assessment-card,
@@ -1587,14 +1627,23 @@ function PerfilAssessmentModal({
 
         <div className="border-b border-white/10 bg-[linear-gradient(115deg,#35147D_0%,#5B21D6_52%,#4938E8_100%)] px-5 py-5 pr-14 text-white sm:px-6 lg:px-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <DialogHeader className="gap-2 text-left">
-              <DialogTitle className="text-xl font-bold leading-tight text-white">
-                Perfil do Assessment
-              </DialogTitle>
-              <DialogDescription className="text-xs leading-relaxed text-white/80 sm:text-sm">
-                {colaborador.nome} · leitura integrada do perfil comportamental, da autoavaliação e das prioridades registradas pelo gestor no BEM Acolhido.
-              </DialogDescription>
-            </DialogHeader>
+            {printMode ? (
+              <div className="space-y-2 text-left">
+                <div className="text-xl font-bold leading-tight text-white">Perfil do Assessment</div>
+                <div className="text-xs leading-relaxed text-white/80 sm:text-sm">
+                  {colaborador.nome} · leitura integrada do perfil comportamental, da autoavaliação e das prioridades registradas pelo gestor no BEM Acolhido.
+                </div>
+              </div>
+            ) : (
+              <DialogHeader className="gap-2 text-left">
+                <DialogTitle className="text-xl font-bold leading-tight text-white">
+                  Perfil do Assessment
+                </DialogTitle>
+                <DialogDescription className="text-xs leading-relaxed text-white/80 sm:text-sm">
+                  {colaborador.nome} · leitura integrada do perfil comportamental, da autoavaliação e das prioridades registradas pelo gestor no BEM Acolhido.
+                </DialogDescription>
+              </DialogHeader>
+            )}
             {!printMode && (
               <Button
                 type="button"
@@ -1913,6 +1962,27 @@ function PerfilAssessmentModal({
             </div>
           </TooltipProvider>
         </div>
+    </>
+  );
+
+  if (printMode) {
+    return (
+      <div
+        data-assessment-report-ready="true"
+        className="assessment-pdf-document min-h-screen bg-white"
+      >
+        {assessmentContent}
+      </div>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        data-assessment-modal="true"
+        className="assessment-profile-modal max-h-[90vh] !w-[93vw] !max-w-[1690px] gap-0 overflow-hidden rounded-2xl border border-slate-200/60 bg-[#F6F8FB] p-0 shadow-[0_24px_70px_rgba(15,23,42,0.20)] sm:!w-[92vw] sm:!max-w-[1690px]"
+      >
+        {assessmentContent}
       </DialogContent>
     </Dialog>
   );
