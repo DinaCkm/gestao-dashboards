@@ -120,26 +120,70 @@ function inlineHtml(texto: string, marcarVazio = true): string {
   return out;
 }
 
+function ehUrlIsolada(texto: string): boolean {
+  return /^https?:\/\/\S+$/i.test(String(texto || '').trim());
+}
+
+function contextoIndicaFormulario(texto: string): boolean {
+  const normalizado = String(texto || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  return /formulario|pesquisa|preenchimento|bem acolhido|controle do programa|acompanhamento do pdi/.test(normalizado);
+}
+
+function linkFormularioHtml(url: string, rico: boolean): string {
+  const seguro = escaparHtml(url.trim());
+  if (rico) {
+    return '<div style="margin:10px 0 16px;padding:12px 14px;background:#FFF3BF;border:1px solid #E7C94A;border-radius:8px">' +
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#7A5A00;margin-bottom:5px">Link para preenchimento</div>' +
+      '<a href="' + seguro + '" style="color:#233A73;font-weight:700;text-decoration:underline;word-break:break-all">' + seguro + '</a>' +
+      '</div>';
+  }
+  return '<div class="email-form-link"><span>Link para preenchimento</span><a href="' + seguro + '" target="_blank" rel="noreferrer">' + seguro + '</a></div>';
+}
+
+function listaVisualPreview(linhas: string[]): string {
+  return '<div class="email-lista-visual">' +
+    linhas.map((linha) => '<div class="email-lista-card">' + inlineHtml(linha.replace(/^[-•]\s/, '')) + '</div>').join('') +
+    '</div>';
+}
+
+function listaVisualRica(linhas: string[]): string {
+  return '<div style="margin:2px 0 16px">' +
+    linhas.map((linha) => '<div style="margin:0 0 7px;padding:9px 11px;background:#F7F8FC;border-left:3px solid #6B3E8F;border-radius:4px">' +
+      inlineHtml(linha.replace(/^[-•]\s/, ''), false) + '</div>').join('') +
+    '</div>';
+}
+
 /** Espelha `mdHtml(corpo)` do HTML histórico para a prévia na tela. */
 export function emailMarkdownParaHtmlPreview(corpo: string): string {
-  return String(corpo || '').split('\n\n').map((bloco) => {
+  const blocos = String(corpo || '').split('\n\n');
+  return blocos.map((bloco, indice) => {
     if (/^>\s?/.test(bloco)) {
       return `<p class="email-aviso">${inlineHtml(bloco.replace(/^>\s?/gm, ''))}</p>`;
     }
     if (bloco.trim() === '---') return '<hr class="email-regra">';
     const linhas = bloco.split('\n');
-    if (linhas.every((linha) => /^[-•]\s/.test(linha))) {
-      return linhas
-        .map((linha) => `<p class="email-item">• ${inlineHtml(linha.replace(/^[-•]\s/, ''))}</p>`)
-        .join('');
-    }
-    return `<p>${linhas.map((linha) => inlineHtml(linha)).join('<br>')}</p>`;
+    if (linhas.every((linha) => /^[-•]\s/.test(linha))) return listaVisualPreview(linhas);
+
+    return linhas.map((linha, linhaIndice) => {
+      if (ehUrlIsolada(linha)) {
+        const contexto = [
+          blocos[indice - 1] || '',
+          bloco,
+          linhas[linhaIndice - 1] || '',
+        ].join(' ');
+        if (contextoIndicaFormulario(contexto)) return linkFormularioHtml(linha, false);
+      }
+      return `<p>${inlineHtml(linha)}</p>`;
+    }).join('');
   }).join('');
 }
 
-/** Espelha `mdEmailHtml(m)` do HTML histórico para a cópia rica. */
 export function emailMarkdownParaHtmlRico(corpo: string): string {
-  const blocos = String(corpo || '').split('\n\n').map((bloco) => {
+  const partes = String(corpo || '').split('\n\n');
+  const blocos = partes.map((bloco, indice) => {
     const inline = (texto: string) => inlineHtml(texto, false);
     if (/^>\s?/.test(bloco)) {
       return '<div style="font-size:12.5px;color:#5B6675;border-left:3px solid #6B3E8F;padding:8px 12px;background:#F7F8FC;margin:0 0 16px">' +
@@ -149,13 +193,19 @@ export function emailMarkdownParaHtmlRico(corpo: string): string {
       return '<hr style="border:0;border-top:1px solid #E8E3E0;margin:18px 0">';
     }
     const linhas = bloco.split('\n');
-    if (linhas.every((linha) => /^[-•]\s/.test(linha))) {
-      return '<ul style="margin:0 0 14px;padding-left:20px">' +
-        linhas.map((linha) => '<li style="margin-bottom:4px">' + inline(linha.replace(/^[-•]\s/, '')) + '</li>').join('') +
-        '</ul>';
-    }
-    return '<p style="margin:0 0 14px">' + linhas.map(inline).join('<br>') + '</p>';
+    if (linhas.every((linha) => /^[-•]\s/.test(linha))) return listaVisualRica(linhas);
+
+    return linhas.map((linha, linhaIndice) => {
+      if (ehUrlIsolada(linha)) {
+        const contexto = [partes[indice - 1] || '', bloco, linhas[linhaIndice - 1] || ''].join(' ');
+        if (contextoIndicaFormulario(contexto)) return linkFormularioHtml(linha, true);
+      }
+      return '<p style="margin:0 0 14px">' + inline(linha) + '</p>';
+    }).join('');
   }).join('');
 
-  return '<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;color:#152232">' + blocos + '</div>';
+  return '<div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.6;color:#152232">' +
+    '<div style="height:4px;background:linear-gradient(90deg,#3157A4,#6B3E8F);border-radius:6px 6px 0 0;margin-bottom:18px"></div>' +
+    blocos +
+    '</div>';
 }
