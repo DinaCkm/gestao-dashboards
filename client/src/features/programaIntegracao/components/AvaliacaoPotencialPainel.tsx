@@ -149,9 +149,9 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
     <div className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/30 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-semibold">Relatório Assessment Consolidado</p>
+          <p className="font-semibold">Assessment do colaborador</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            O PDF reproduz o mesmo relatório exibido em Acompanhar Integração, com Perfil Comportamental, Autoavaliação, Expectativa do Gestor, Recomendações da Consultoria e a explicação dos resultados.
+            Baixe em PDF exatamente a mesma visualização do Perfil do Assessment disponível em Acompanhar Integração.
           </p>
         </div>
         <Button type="button" size="sm" variant="ghost" disabled={carregando || Boolean(acao)} onClick={() => void carregar()}>
@@ -272,7 +272,7 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
           disabled={!ctx?.vinculo.seguro || !ctx?.fontes.disc || Boolean(acao)}
           onClick={baixarRelatorioAssessment}
         >
-          <Download className="mr-1 h-4 w-4" /> Baixar Relatório Assessment
+          <Download className="mr-1 h-4 w-4" /> Baixar Assessment de Acompanhar Integração
         </Button>
       </div>
 
