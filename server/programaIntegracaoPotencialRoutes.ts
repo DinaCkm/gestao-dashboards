@@ -142,6 +142,48 @@ async function carregarAluno(connection: any, alunoId: number) {
   return rows?.[0] || null;
 }
 
+async function carregarAlunoEcoElegivel(connection: any, alunoId: number) {
+  const [rows] = (await connection.execute(
+    `SELECT DISTINCT a.id,a.name,a.email,a.cpf,a.programId,a.consultorId,a.turmaId,a.trilhaId,a.isActive
+     FROM alunos a
+     INNER JOIN aluno_curso_atribuido aca ON aca.alunoId=a.id
+     WHERE a.id=?
+       AND a.tipoPortal IN ('aluno_autonomo','assessment')
+       AND COALESCE(a.isActive,1)=1
+     LIMIT 1`,
+    [alunoId],
+  )) as any;
+  return rows?.[0] || null;
+}
+
+function bloquearAlteracaoVinculoComDerivados(estado: Record<string, any>) {
+  const teste = estado?.teste || {};
+  const tarefas = teste.tarefasIntegracaoPadrao;
+  if (tarefas && !tarefas.revertidasEm) {
+    throw Object.assign(
+      new Error("Este vínculo já possui as quatro tarefas padrão criadas. Reverta essas tarefas com segurança antes de alterar o aluno vinculado."),
+      { statusCode: 409, code: "VINCULO_COM_TAREFAS_ATIVAS" },
+    );
+  }
+
+  const sugestoes = teste.sugestoesDesenvolvimento;
+  const sugestaoInserida = Array.isArray(sugestoes?.itens)
+    && sugestoes.itens.some((item: any) => item?.status === "inserida" && Number(item?.sessionId || 0) > 0);
+  if (sugestaoInserida) {
+    throw Object.assign(
+      new Error("Este vínculo possui ação de desenvolvimento já inserida nas tarefas. Reverta a inserção antes de alterar o aluno vinculado."),
+      { statusCode: 409, code: "VINCULO_COM_SUGESTAO_INSERIDA" },
+    );
+  }
+
+  if (teste.avaliacaoPotencialIntegrada || teste.sugestoesDesenvolvimento) {
+    throw Object.assign(
+      new Error("Já existem Avaliação de Potencial ou sugestões geradas para o aluno atual. Para preservar o histórico, o vínculo não será trocado automaticamente. Revise esses registros antes de alterar o aluno."),
+      { statusCode: 409, code: "VINCULO_COM_ANALISE_EXISTENTE" },
+    );
+  }
+}
+
 async function carregarPerfil(connection: any, alunoId: number) {
   const [discRows] = (await connection.execute(
     `SELECT scoreD,scoreI,scoreS,scoreC,perfilPredominante,perfilSecundario,ciclo,completedAt
@@ -694,6 +736,96 @@ programaIntegracaoPotencialRouter.get(
       });
     } catch (error) {
       return httpError(res, error, "Não foi possível carregar o contexto da Avaliação de Potencial.");
+    }
+  },
+);
+
+programaIntegracaoPotencialRouter.post(
+  "/api/programa-integracao/processos/:legacyId/vinculo-eco/alterar",
+  requireAdmin,
+  async (req, res) => {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    let tx = false;
+    try {
+      const legacyId = sanitizeLegacyId(req.params.legacyId);
+      const novoAlunoId = Number(req.body?.alunoId || 0);
+
+      await connection.beginTransaction(); tx = true;
+      const ctx = await contexto(connection, legacyId, true);
+      bloquearAlteracaoVinculoComDerivados(ctx.estado);
+
+      ctx.estado.teste = ctx.estado.teste || {};
+      const anteriorAlunoId = Number(ctx.estado.teste.ecoAlunoId || 0) || null;
+      const anteriorNome = String(ctx.estado.teste.ecoAlunoNome || ctx.aluno?.name || "");
+
+      if (!novoAlunoId) {
+        delete ctx.estado.teste.ecoAlunoId;
+        delete ctx.estado.teste.ecoAlunoNome;
+        delete ctx.estado.teste.ecoAlunoEmail;
+        delete ctx.estado.teste.ecoVinculoModo;
+        delete ctx.estado.teste.ecoPerfil;
+        delete ctx.estado.teste.ecoAutomacaoConfirmada;
+
+        await connection.execute(
+          "UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?",
+          [JSON.stringify(ctx.estado), Number(ctx.processo.id)],
+        );
+        await audit(
+          connection,
+          req,
+          "vinculo_eco_removido_manual",
+          "Vínculo ECO removido manualmente pelo administrador.",
+          Number(ctx.processo.id),
+          { alunoIdAnterior: anteriorAlunoId, nomeAnterior: anteriorNome },
+        );
+        await connection.commit(); tx = false;
+        return res.json({ ok: true, aluno: null });
+      }
+
+      const novoAluno = await carregarAlunoEcoElegivel(connection, novoAlunoId);
+      if (!novoAluno) {
+        throw Object.assign(
+          new Error("O aluno selecionado não está disponível como aluno ativo do ECO Líderes."),
+          { statusCode: 409, code: "ALUNO_ECO_INVALIDO" },
+        );
+      }
+
+      ctx.estado.teste.ecoAlunoId = Number(novoAluno.id);
+      ctx.estado.teste.ecoAlunoNome = String(novoAluno.name || "");
+      ctx.estado.teste.ecoAlunoEmail = String(novoAluno.email || "");
+      ctx.estado.teste.ecoVinculoModo = "manual";
+      delete ctx.estado.teste.ecoPerfil;
+      delete ctx.estado.teste.ecoAutomacaoConfirmada;
+
+      await connection.execute(
+        "UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?",
+        [JSON.stringify(ctx.estado), Number(ctx.processo.id)],
+      );
+      await audit(
+        connection,
+        req,
+        "vinculo_eco_alterado_manual",
+        "Vínculo ECO alterado manualmente pelo administrador.",
+        Number(ctx.processo.id),
+        {
+          alunoIdAnterior: anteriorAlunoId,
+          nomeAnterior: anteriorNome,
+          alunoIdNovo: Number(novoAluno.id),
+          nomeNovo: String(novoAluno.name || ""),
+        },
+      );
+      await connection.commit(); tx = false;
+      return res.json({
+        ok: true,
+        aluno: {
+          id: Number(novoAluno.id),
+          nome: String(novoAluno.name || ""),
+          email: String(novoAluno.email || ""),
+        },
+      });
+    } catch (error) {
+      if (tx) try { await connection.rollback(); } catch {}
+      return httpError(res, error, "Não foi possível alterar o vínculo ECO.");
     }
   },
 );

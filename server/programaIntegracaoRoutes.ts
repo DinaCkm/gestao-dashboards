@@ -1601,68 +1601,47 @@ function escolherCorrespondenciaEmpresaSegura(
 }
 
 function escolherCorrespondenciaEcoSegura(nomeProcesso: string, emailProcesso: string, alunosEco: any[]) {
-  const email = String(emailProcesso || "").trim().toLowerCase();
-  if (email) {
-    const porEmail = alunosEco.filter((a) => String(a.email || "").trim().toLowerCase() === email);
-    if (porEmail.length === 1) {
-      return { status: "automatico_seguro" as const, aluno: porEmail[0], score: 1, motivo: "email_exato" };
-    }
-    if (porEmail.length > 1) {
-      return { status: "ambiguo" as const, aluno: null, score: 1, motivo: "email_duplicado" };
-    }
-  }
-
   const canon = nomeCanonicoEco(nomeProcesso);
   if (!canon) return { status: "nao_encontrado" as const, aluno: null, score: 0, motivo: "nome_vazio" };
 
-  const exatos = alunosEco.filter((a) => nomeCanonicoEco(a.nome) === canon);
-  if (exatos.length === 1) {
-    return { status: "automatico_seguro" as const, aluno: exatos[0], score: 1, motivo: "nome_canonico_exato" };
-  }
-  if (exatos.length > 1) {
-    return { status: "ambiguo" as const, aluno: null, score: 1, motivo: "mais_de_um_nome_equivalente" };
+  const email = String(emailProcesso || "").trim().toLowerCase();
+  if (email) {
+    const porEmail = alunosEco.filter((a) => String(a.email || "").trim().toLowerCase() === email);
+    if (porEmail.length > 1) {
+      return { status: "ambiguo" as const, aluno: null, score: 1, motivo: "email_duplicado" };
+    }
+    if (porEmail.length === 1) {
+      const aluno = porEmail[0];
+      const nomeCoerente = nomeCanonicoEco(aluno.nome) === canon;
+      if (nomeCoerente) {
+        return { status: "automatico_seguro" as const, aluno, score: 1, motivo: "email_e_nome_exatos" };
+      }
+      return {
+        status: "ambiguo" as const,
+        aluno: null,
+        score: simNome(nomeProcesso, aluno.nome),
+        motivo: "email_exato_nome_divergente",
+      };
+    }
   }
 
-  const tokens = tokensNomeEco(nomeProcesso);
-  const primeiro = tokens[0] || "";
-  const ultimo = tokens[tokens.length - 1] || "";
-  const conjuntoProcesso = new Set(tokens);
+  // Nome, mesmo quando idêntico, não é identificador forte o bastante para
+  // criar vínculo automático. Ele serve somente para ordenar/sugerir candidatos.
   const pontuados = alunosEco
-    .map((a) => {
-      const t = tokensNomeEco(a.nome);
-      const score = simNome(nomeProcesso, a.nome);
-      const conjuntoAluno = new Set(t);
-      const menor = tokens.length <= t.length ? tokens : t;
-      const maior = tokens.length <= t.length ? conjuntoAluno : conjuntoProcesso;
-      const menorContido = menor.length >= 2 && menor.every((token) => maior.has(token));
-      const primeiroSimilar = Boolean(primeiro && t[0] && simNome(primeiro, t[0]) >= 0.86);
-      const ultimoIgual = Boolean(ultimo && t[t.length - 1] === ultimo);
-      const extremosIguais = Boolean(primeiro && ultimo && t[0] === primeiro && t[t.length - 1] === ultimo);
-      return { aluno: a, score, menorContido, primeiroSimilar, ultimoIgual, extremosIguais };
-    })
+    .map((a) => ({ aluno: a, score: simNome(nomeProcesso, a.nome) }))
     .sort((a, b) => b.score - a.score);
 
   const top = pontuados[0];
-  const segundo = pontuados[1];
-  if (!top || top.score < 0.76) {
-    return { status: "nao_encontrado" as const, aluno: null, score: top?.score || 0, motivo: "sem_nome_proximo" };
+  if (!top || top.score < 0.40) {
+    return { status: "nao_encontrado" as const, aluno: null, score: top?.score || 0, motivo: "sem_identificador_exato" };
   }
 
-  const margem = top.score - (segundo?.score || 0);
-  const candidatosContidos = pontuados.filter((x) => x.menorContido && x.score >= 0.82);
-  if (candidatosContidos.length === 1 && candidatosContidos[0].aluno.id === top.aluno.id && margem >= 0.06) {
-    return { status: "automatico_seguro" as const, aluno: top.aluno, score: top.score, motivo: "nome_contido_unico" };
-  }
-
-  if (top.score >= 0.90 && top.extremosIguais && margem >= 0.06) {
-    return { status: "automatico_seguro" as const, aluno: top.aluno, score: top.score, motivo: "similaridade_alta_com_margem" };
-  }
-
-  if (top.score >= 0.88 && top.primeiroSimilar && top.ultimoIgual && margem >= 0.08) {
-    return { status: "automatico_seguro" as const, aluno: top.aluno, score: top.score, motivo: "variacao_grafia_com_sobrenome_seguro" };
-  }
-
-  return { status: "ambiguo" as const, aluno: null, score: top.score, motivo: "requer_selecao_manual" };
+  return {
+    status: "ambiguo" as const,
+    aluno: null,
+    score: top.score,
+    motivo: "nome_requer_confirmacao_manual",
+  };
 }
 
 async function listarAlunosEcoLiderDisponiveis(connection: any) {
