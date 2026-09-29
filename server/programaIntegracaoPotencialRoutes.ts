@@ -290,7 +290,7 @@ function requireContextoSeguro(ctx: Awaited<ReturnType<typeof contexto>>, opts?:
     throw Object.assign(new Error("O Perfil DISC deste aluno ainda não está disponível."), { statusCode: 409, code: "DISC_AUSENTE" });
   }
   if (opts?.mentora && ctx.mentora.competencias.length === 0 && ctx.mentora.observacoes.length === 0) {
-    throw Object.assign(new Error("Registre as competências/soft skills ou observações da consultora no item do 15º dia antes de gerar a avaliação."), { statusCode: 409, code: "MENTORA_AUSENTE" });
+    throw Object.assign(new Error("Registre as competências/soft skills da consultora no item do 15º dia antes de consolidar o Assessment."), { statusCode: 409, code: "MENTORA_AUSENTE" });
   }
 }
 
