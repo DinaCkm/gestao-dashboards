@@ -76,19 +76,6 @@ function fakeTimelineDates() {
 }
 
 async function resolveProgram(connection) {
-  const explicitId = Number(process.env.PROGRAMA_INTEGRACAO_DEMO_PROGRAM_ID || 0);
-  if (explicitId) {
-    const [explicitRows] = await connection.execute(
-      "SELECT id,name,code FROM programs WHERE id=? AND COALESCE(isActive,1)=1 LIMIT 1",
-      [explicitId]
-    );
-    const explicit = explicitRows?.[0];
-    if (!explicit) {
-      throw new Error(`Programa explicito ${explicitId} nao existe ou nao esta ativo.`);
-    }
-    return explicit;
-  }
-
   const [rows] = await connection.execute(
     "SELECT id,name,code FROM programs WHERE COALESCE(isActive,1)=1 ORDER BY id"
   );
@@ -398,7 +385,7 @@ async function insertResponse(connection, data) {
       statusVinculo,statusResposta,nomeColaborador,unidade,dataInicio,emailColaborador,
       nomeOrig,avaliador,respondentName,respondentEmail,source,media,alertas,answers,
       quandoOriginal,emOriginal,submittedAt,createdAt,updatedAt)
-     VALUES (?,?,?,?,?,?,?,?,?,'vinculada','valido',?,?,?,?,?,?,?,?,'admin',NULL,?,?,?,?,?,NOW(),NOW())`,
+     VALUES (?,?,?,?,?,?,?,?,?,'vinculada','valido',?,?,?,?,?,?,?,?, 'admin',NULL,?,?,?, ?,?,?,NOW(),NOW())`,
     [
       data.processoId,
       data.legacyRid,
@@ -861,19 +848,7 @@ async function remove(connection) {
       await connection.execute("DELETE FROM programa_integracao_processos WHERE id=? AND legacyId=?", [processoId, DEMO.legacyId]);
     }
     if (alunoId) {
-      const [alunoUserRows] = await connection.execute(
-        "SELECT id FROM users WHERE alunoId=? AND LOWER(email)=LOWER(?) LIMIT 1",
-        [alunoId, DEMO.aluno.email]
-      );
-      const alunoUserId = Number(alunoUserRows?.[0]?.id || 0);
-
-      // O colaborador desta fixture e exclusivamente ficticio. Remover todas as
-      // sessoes garante rollback integral inclusive das novas tarefas criadas pelo
-      // Programa de Integracao, mesmo quando o titulo nao comeca por [TESTE].
-      await connection.execute("DELETE FROM mentoring_sessions WHERE alunoId=?", [alunoId]);
-      if (alunoUserId) {
-        await connection.execute("DELETE FROM in_app_notifications WHERE userId=?", [alunoUserId]);
-      }
+      await connection.execute("DELETE FROM mentoring_sessions WHERE alunoId=? AND customTaskTitle LIKE '[TESTE] %'", [alunoId]);
       await connection.execute("DELETE FROM autopercepcoes_competencias WHERE alunoId=?", [alunoId]);
       await connection.execute("DELETE FROM disc_resultados WHERE alunoId=?", [alunoId]);
       if (assignmentId) {
