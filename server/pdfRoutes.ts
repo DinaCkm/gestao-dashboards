@@ -85,9 +85,9 @@ pdfRouter.get("/api/pdf/programa-integracao/assessment/:processoId", async (req:
       footerTemplate: FOOTER_TEMPLATE,
       marginTop: "6mm",
       marginBottom: MARGIN_BOTTOM,
-      marginLeft: "6mm",
-      marginRight: "6mm",
-      landscape: true,
+      marginLeft: "8mm",
+      marginRight: "8mm",
+      landscape: false,
       waitForSelector: '[data-assessment-report-ready="true"]',
       timeoutMs: 60000,
     });
