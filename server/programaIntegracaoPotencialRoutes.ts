@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { assertNivelPermiteNovasAtribuicoes, getContratoNivelVigenteByAluno, getMentoringSessionsByAluno, getMentoringSessionsByAlunoAndNivel, getRawConnection } from "./db";
+import { assertNivelPermiteNovasAtribuicoes, createNotification, getAllUsers, getContratoNivelVigenteByAluno, getMentoringSessionsByAluno, getMentoringSessionsByAlunoAndNivel, getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
 
 export const programaIntegracaoPotencialRouter = Router();
@@ -527,6 +527,32 @@ async function consultorParaAluno(connection: any, aluno: any) {
   return historico;
 }
 
+async function notificarAlunoSobreTarefas(
+  alunoId: number,
+  quantidade: number,
+  titulo?: string,
+) {
+  try {
+    const allUsers = await getAllUsers();
+    const alunoUser = allUsers.find((u: any) => Number(u.alunoId || 0) === Number(alunoId));
+    if (!alunoUser) return;
+
+    const varias = quantidade > 1;
+    await createNotification({
+      userId: alunoUser.id,
+      title: varias ? `${quantidade} novas tarefas no seu PDI` : "Nova tarefa no seu PDI",
+      message: varias
+        ? `Você recebeu ${quantidade} novas tarefas do Programa de Integração. Consulte seu PDI para ver os prazos e realizar as entregas.`
+        : `Você recebeu uma nova tarefa no seu PDI${titulo ? `: ${titulo}` : "."}`,
+      type: "action",
+      category: "mentoria",
+      link: "/meu-dashboard",
+    });
+  } catch (error) {
+    console.warn("[ProgramaIntegracaoPotencial] Falha ao notificar aluno sobre nova tarefa:", error);
+  }
+}
+
 async function inserirTarefa(
   connection: any,
   input: {
@@ -609,6 +635,7 @@ programaIntegracaoPotencialRouter.get(
         fontes: {
           bem: Boolean(ctx.bem),
           disc: Boolean(ctx.perfil.disc),
+          autoavaliacoes: ctx.perfil.autoavaliacoes.length,
           competenciasMentora: ctx.mentora.competencias,
           observacoesMentora: ctx.mentora.observacoes,
         },
@@ -813,6 +840,7 @@ programaIntegracaoPotencialRouter.post(
       );
       await audit(connection, req, "tarefas_gestor_criadas", "Quatro tarefas padrão do onboarding criadas em Atividades Práticas.", Number(ctx.processo.id), { alunoId: ctx.alunoId, sessionIds: ids, prazo });
       await connection.commit(); tx = false;
+      await notificarAlunoSobreTarefas(ctx.alunoId, 4);
       return res.json({ ok: true, criadas: 4, sessionIds: ids, prazo });
     } catch (error) {
       if (tx) try { await connection.rollback(); } catch {}
@@ -1029,6 +1057,7 @@ programaIntegracaoPotencialRouter.post(
       );
       await audit(connection, req, "sugestao_desenvolvimento_inserida", "Sugestão de desenvolvimento inserida em Atividades Práticas.", Number(ctx.processo.id), { sugestaoId, sessionId, alunoId: ctx.alunoId, prazo });
       await connection.commit(); tx = false;
+      await notificarAlunoSobreTarefas(ctx.alunoId, 1, String(item.titulo || "").trim());
       return res.json({ ok: true, sessionId, prazo });
     } catch (error) {
       if (tx) try { await connection.rollback(); } catch {}
