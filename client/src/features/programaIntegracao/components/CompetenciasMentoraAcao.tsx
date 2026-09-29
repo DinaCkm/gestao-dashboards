@@ -37,9 +37,9 @@ export function CompetenciasMentoraAcao({
   return (
     <div className="space-y-3 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
       <div>
-        <p className="text-sm font-semibold">4 competências / soft skills indicadas pela consultora</p>
+        <p className="text-sm font-semibold">Competências / soft skills indicadas pela consultora</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Registre cada competência separadamente. As observações continuam disponíveis logo abaixo.
+          Registre somente as competências efetivamente indicadas, até o limite de 4. Não é obrigatório preencher os quatro campos.
         </p>
       </div>
 
