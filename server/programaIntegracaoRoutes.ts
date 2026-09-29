@@ -849,38 +849,16 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
   try {
     const connection = await getConnectionOr503(res); if (!connection) return;
     const user = (req as any).authenticatedUser || {};
-    const integracaoConfig = (req as any).integracaoConfig || {
+    const integracaoConfigSessao = (req as any).integracaoConfig || {
       enabled: true,
       programId: null,
       mode: "all",
       processIds: [],
       legacyScopeAll: false,
+      demoOnly: false,
     };
-    const integracaoMode = user.role === "admin" ? "all" : String(integracaoConfig.mode || "gestor");
-    const scopeAll = integracaoMode === "all";
-    const scopeUgpRestrita = integracaoMode === "ugp_restrita";
-    const demoOnly = scopeUgpRestrita && Boolean(integracaoConfig.demoOnly);
-    // UGP restrita mantém o mesmo conteúdo de leitura da UGP/RH, mas nunca amplia
-    // o universo de processos: a allowlist continua sendo aplicada no backend.
-    // Para o Admin, o nível de conteúdo será definido depois que o Gestor
-    // solicitado for realmente reconhecido entre os processos ativos.
-    const manualProcessIds = new Set<number>(
-      Array.isArray(integracaoConfig.processIds)
-        ? integracaoConfig.processIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isInteger(id) && id > 0)
-        : [],
-    );
-    const nomeGerente = normTxt(user.name || "");
-    const emailGerente = String(user.email || "").trim().toLowerCase();
-
-    // A empresa específica da Integração é independente da empresa do perfil/aluno.
-    // Configurações antigas sem esse token continuam usando o vínculo histórico como fallback.
-    const empresaIntegracaoId = Number(integracaoConfig.programId || 0) || 0;
-    const empresaId = user.role === "manager"
-      ? (empresaIntegracaoId || Number(user.managedProgramId ?? user.programId ?? 0) || 0)
-      : 0;
-    if (user.role === "manager" && !empresaId) {
-      return res.status(403).json({ error: "Este gerente não possui empresa configurada para acompanhar a Integração." });
-    }
+    const adminView = user.role === "admin";
+    const gestorViewKey = adminView ? String(req.query.gestor || "").trim() : "";
 
     const [processRows] = (await connection.execute(
       `SELECT id,legacyId,alunoId,nome,email,cpf,cargo,unidade,inicio,situacao,gestor,gestorEmail,anjo,estado
@@ -897,68 +875,180 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       return !Boolean(estado?.acompanhamentoOculto);
     });
 
-    // No Admin, permitir alternar entre a visão UGP/RH (todos) e a visão exata
-    // de cada gerente, usando os vínculos já existentes nos processos ativos.
-    const gestoresMap = new Map<string, { key: string; nome: string; email: string; colaboradores: number }>();
+    type GestorPreview = {
+      key: string;
+      nome: string;
+      email: string;
+      colaboradores: number;
+      origem?: "processo" | "configurado";
+      userId?: number;
+      modo?: string;
+      empresaId?: number | null;
+      empresaNome?: string;
+      config?: ReturnType<typeof parseManagerIntegracaoPermissions>;
+      user?: any;
+    };
+
+    const gestoresProcessoMap = new Map<string, GestorPreview>();
     for (const row of processRowsVisiveis) {
       const key = chaveGerenteAcompanhamento(row.gestor, row.gestorEmail);
       if (!key) continue;
-      const atual = gestoresMap.get(key);
-      if (atual) {
-        atual.colaboradores += 1;
-      } else {
-        gestoresMap.set(key, {
+      const atual = gestoresProcessoMap.get(key);
+      if (atual) atual.colaboradores += 1;
+      else {
+        gestoresProcessoMap.set(key, {
           key,
           nome: String(row.gestor || "").trim() || "Gerente sem nome",
           email: String(row.gestorEmail || "").trim().toLowerCase(),
           colaboradores: 1,
+          origem: "processo",
         });
       }
     }
-    const gestoresDisponiveis = Array.from(gestoresMap.values()).sort((a, b) =>
-      a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }),
-    );
-    const gestorViewKey = user.role === "admin" ? String(req.query.gestor || "").trim() : "";
-    const gestorSelecionado = user.role === "admin" && gestorViewKey && gestorViewKey !== "all"
-      ? gestoresMap.get(gestorViewKey) || null
-      : null;
-    if (user.role === "admin" && gestorViewKey && gestorViewKey !== "all" && !gestorSelecionado) {
-      return res.status(400).json({ error: "O gerente selecionado não foi encontrado entre os processos ativos." });
+
+    const acessosConfiguradosMap = new Map<string, GestorPreview>();
+    if (adminView) {
+      const [managerRows] = (await connection.execute(
+        `SELECT u.id,u.name,u.email,u.programId,u.alunoId,u.consultorId,u.isActive,app.permissions
+         FROM users u
+         INNER JOIN admin_page_permissions app ON app.userId=u.id
+         WHERE u.role='manager' AND u.isActive=1`,
+      )) as any;
+      const [programRows] = (await connection.execute(
+        `SELECT id,name FROM programs WHERE isActive=1 ORDER BY name ASC,id ASC`,
+      )) as any;
+      const programNames = new Map<number, string>(
+        (programRows || []).map((p: any) => [Number(p.id), String(p.name || "")]),
+      );
+
+      for (const row of managerRows || []) {
+        const permissions = asJson<string[]>(row.permissions, []);
+        const config = parseManagerIntegracaoPermissions(permissions);
+        if (!config.enabled) continue;
+        const key = `config:${Number(row.id)}`;
+        acessosConfiguradosMap.set(key, {
+          key,
+          nome: String(row.name || "").trim() || "Gerente sem nome",
+          email: String(row.email || "").trim().toLowerCase(),
+          colaboradores: 0,
+          origem: "configurado",
+          userId: Number(row.id),
+          modo: String(config.mode || "gestor"),
+          empresaId: config.programId,
+          empresaNome: config.programId
+            ? (programNames.get(Number(config.programId)) || `Empresa #${config.programId}`)
+            : "",
+          config,
+          user: row,
+        });
+      }
     }
 
-    // Blindagem do "Visualizar como": um Admin só recebe conteúdo UGP/RH quando
-    // estiver explicitamente na visão "todos". Se um Gestor válido foi
-    // reconhecido, o payload passa a obedecer exatamente às mesmas restrições
-    // de conteúdo do login real desse perfil.
-    const adminVisualizandoGestor = user.role === "admin" && Boolean(gestorSelecionado);
-    const acessoUgpRh = user.role === "admin"
-      ? !adminVisualizandoGestor
+    const acessoConfiguradoSelecionado =
+      adminView && gestorViewKey.startsWith("config:")
+        ? acessosConfiguradosMap.get(gestorViewKey) || null
+        : null;
+    const gestorProcessoSelecionado =
+      adminView && gestorViewKey && gestorViewKey !== "all" && !gestorViewKey.startsWith("config:")
+        ? gestoresProcessoMap.get(gestorViewKey) || null
+        : null;
+
+    if (
+      adminView &&
+      gestorViewKey &&
+      gestorViewKey !== "all" &&
+      !acessoConfiguradoSelecionado &&
+      !gestorProcessoSelecionado
+    ) {
+      return res.status(400).json({ error: "O acesso selecionado não foi encontrado." });
+    }
+
+    const configEfetiva = acessoConfiguradoSelecionado?.config || integracaoConfigSessao;
+    const usuarioEfetivo = acessoConfiguradoSelecionado?.user || user;
+    const integracaoMode = adminView
+      ? acessoConfiguradoSelecionado
+        ? String(configEfetiva.mode || "gestor")
+        : gestorProcessoSelecionado
+          ? "gestor"
+          : "all"
+      : String(configEfetiva.mode || "gestor");
+
+    const scopeAll = integracaoMode === "all";
+    const scopeUgpRestrita = integracaoMode === "ugp_restrita";
+    const demoOnly = scopeUgpRestrita && Boolean(configEfetiva.demoOnly);
+    const manualProcessIds = new Set<number>(
+      Array.isArray(configEfetiva.processIds)
+        ? configEfetiva.processIds
+            .map((id: unknown) => Number(id))
+            .filter((id: number) => Number.isInteger(id) && id > 0)
+        : [],
+    );
+    const nomeGerente = normTxt(usuarioEfetivo.name || "");
+    const emailGerente = String(usuarioEfetivo.email || "").trim().toLowerCase();
+    const empresaIntegracaoId = Number(configEfetiva.programId || 0) || 0;
+    const empresaId = (user.role === "manager" || acessoConfiguradoSelecionado)
+      ? (empresaIntegracaoId || Number(usuarioEfetivo.programId || 0) || 0)
+      : 0;
+    if ((user.role === "manager" || acessoConfiguradoSelecionado) && !empresaId) {
+      return res.status(403).json({ error: "Este gerente não possui empresa configurada para acompanhar a Integração." });
+    }
+
+    const emailsConfigurados = new Set(
+      Array.from(acessosConfiguradosMap.values()).map((g) => g.email).filter(Boolean),
+    );
+    const nomesConfigurados = new Set(
+      Array.from(acessosConfiguradosMap.values()).map((g) => normTxt(g.nome)).filter(Boolean),
+    );
+    const gestoresDisponiveis = [
+      ...Array.from(acessosConfiguradosMap.values()),
+      ...Array.from(gestoresProcessoMap.values()).filter(
+        (g) =>
+          (!g.email || !emailsConfigurados.has(g.email)) &&
+          (!normTxt(g.nome) || !nomesConfigurados.has(normTxt(g.nome))),
+      ),
+    ].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
+
+    const gestorSelecionado: GestorPreview | null =
+      acessoConfiguradoSelecionado || gestorProcessoSelecionado || null;
+    const gestorPublico = (g: GestorPreview) => ({
+      key: g.key,
+      nome: g.nome,
+      email: g.email,
+      colaboradores: g.colaboradores,
+      origem: g.origem,
+      modo: g.modo,
+      empresaId: g.empresaId ?? null,
+      empresaNome: g.empresaNome || "",
+    });
+    const gestoresDisponiveisPublicos = gestoresDisponiveis.map(gestorPublico);
+    const gestorSelecionadoPublico = gestorSelecionado ? gestorPublico(gestorSelecionado) : null;
+    const adminVisualizandoPerfil = adminView && Boolean(gestorSelecionado);
+    const adminGlobal = adminView && !acessoConfiguradoSelecionado;
+
+    const acessoUgpRh = adminView
+      ? acessoConfiguradoSelecionado
+        ? (scopeAll || scopeUgpRestrita)
+        : !gestorProcessoSelecionado
       : (scopeAll || scopeUgpRestrita);
 
-    // A empresa é resolvida usando o cadastro ECO Líderes (alunos.programId),
-    // sem confiar apenas no nome do gestor e sem abrir dados globais para UGP/RH.
-    const alunosEmpresa = user.role === "admin"
-      ? []
-      : await listarAlunosAtivosDaEmpresa(connection, empresaId);
+    const precisaResolverEmpresa = !adminView || Boolean(acessoConfiguradoSelecionado);
+    const alunosEmpresa = precisaResolverEmpresa
+      ? await listarAlunosAtivosDaEmpresa(connection, empresaId)
+      : [];
     const alunosEmpresaPorId = new Map(alunosEmpresa.map((a: any) => [Number(a.id), a]));
-    const alunosAtivosGlobais = user.role === "admin"
-      ? []
-      : await listarAlunosAtivosParaResolucaoEmpresa(connection);
+    const alunosAtivosGlobais = precisaResolverEmpresa
+      ? await listarAlunosAtivosParaResolucaoEmpresa(connection)
+      : [];
 
     function resolverAlunoDaEmpresa(row: any): any | null {
-      if (user.role === "admin") return { id: Number(row.alunoId || 0) || null };
+      if (adminView && !acessoConfiguradoSelecionado) {
+        return { id: Number(row.alunoId || 0) || null };
+      }
 
       const estado = asJson<Record<string, any>>(row.estado, {});
       const empresaTesteId = Number(estado?.teste?.empresaProgramId || 0);
       if (empresaTesteId > 0) {
-        // Quando a empresa da demonstração estiver explicitamente definida,
-        // ela é a fonte soberana do escopo. Não cair em alunoId/ecoAlunoId/nome-email
-        // para tentar reclassificar o mesmo processo em outra empresa.
         if (empresaTesteId !== empresaId) return null;
-
-        // Processos fictícios/demonstração podem não ter aluno real na EcoLíder.
-        // Aceitar somente quando a empresa do teste coincidir exatamente com a
-        // empresa configurada para a Integração.
         return { id: null, programId: empresaId, demoEmpresa: true };
       }
 
@@ -982,9 +1072,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
 
     const alunoEmpresaPorProcesso = new Map<number, any>();
     const permitidos = processRowsVisiveis.filter((row: any) => {
-      if (user.role === "admin") {
-        if (!gestorSelecionado) return true;
-        return chaveGerenteAcompanhamento(row.gestor, row.gestorEmail) === gestorSelecionado.key;
+      if (adminView && !acessoConfiguradoSelecionado) {
+        if (!gestorProcessoSelecionado) return true;
+        return chaveGerenteAcompanhamento(row.gestor, row.gestorEmail) === gestorProcessoSelecionado.key;
       }
 
       const alunoEmpresa = resolverAlunoDaEmpresa(row);
@@ -1012,17 +1102,17 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     if (!permitidos.length) {
       return res.json({
         ok: true,
-        scope: user.role === "admin"
-        ? (adminVisualizandoGestor ? "gestor" : "all")
-        : (scopeAll ? "all" : "gestor"),
+        scope: adminView
+          ? (adminVisualizandoPerfil && !acessoUgpRh ? "gestor" : "all")
+          : (scopeAll ? "all" : "gestor"),
         accessLevel: acessoUgpRh ? "ugp" : "gestor",
         restrictedUgp: scopeUgpRestrita,
         demoOnly,
         authorizedCount: scopeUgpRestrita ? permitidos.length : null,
-        adminView: user.role === "admin",
-        gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
-        gestorSelecionado,
-        empresaId: user.role === "admin" ? null : empresaId,
+        adminView,
+        gestoresDisponiveis: adminView ? gestoresDisponiveisPublicos : [],
+        gestorSelecionado: gestorSelecionadoPublico,
+        empresaId: adminGlobal ? null : empresaId,
         atualizadoEm: new Date().toISOString(),
         colaboradores: [],
       });
@@ -1055,7 +1145,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     }
 
     const alunosEco = await listarAlunosEcoLiderDisponiveis(connection);
-    const alunosEcoPermitidos = user.role === "admin"
+    const alunosEcoPermitidos = adminGlobal
       ? alunosEco
       : alunosEco.filter((a: any) => Number(a.programId || 0) === empresaId);
     const ecoIds: number[] = [];
@@ -1068,7 +1158,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const alunoEmpresa = alunoEmpresaPorProcesso.get(pid);
       let ecoId = Number(alunoEmpresa?.id || 0);
 
-      if (!ecoId && user.role === "admin") {
+      if (!ecoId && adminGlobal) {
         const estado = asJson<Record<string, any>>(row.estado, {});
         const testeAdmin = estado?.teste || {};
         const perfilDemoSomenteAssessment =
@@ -1097,7 +1187,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         String(testeDemo?.demoTag || "").startsWith("ugp_demo_") &&
         perfilDemoId > 0 &&
         (
-          user.role === "admin" ||
+          adminGlobal ||
           (acessoUgpRh && Number(testeDemo?.empresaProgramId || 0) === empresaId)
         );
 
@@ -1109,7 +1199,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       }
 
       // Status normal de PDI/Compliance só consulta IDs que pertencem ao escopo da empresa.
-      if (!demoFullEcoAutorizado && ecoId > 0 && (user.role === "admin" || alunosEcoPermitidos.some((a: any) => Number(a.id) === ecoId))) {
+      if (!demoFullEcoAutorizado && ecoId > 0 && (adminGlobal || alunosEcoPermitidos.some((a: any) => Number(a.id) === ecoId))) {
         ecoIds.push(ecoId);
         alunoEcoPorProcesso.set(pid, ecoId);
         assessmentEcoIds.push(ecoId);
@@ -1123,12 +1213,12 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         acessoUgpRh &&
         Boolean(testeDemo?.perfilDemoAutorizado) &&
         String(testeDemo?.demoTag || "").startsWith("ugp_demo_") &&
-        user.role !== "admin" &&
+        !adminGlobal &&
         Number(testeDemo?.empresaProgramId || 0) === empresaId;
 
       // Admin não depende de empresaId; para ele basta a marca explícita de demo.
       const perfilDemoAdminAutorizado =
-        user.role === "admin" &&
+        adminGlobal &&
         acessoUgpRh &&
         Boolean(testeDemo?.perfilDemoAutorizado) &&
         String(testeDemo?.demoTag || "").startsWith("ugp_demo_");
@@ -1455,17 +1545,17 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     res.setHeader("Cache-Control", "no-store");
     return res.json({
       ok: true,
-      scope: user.role === "admin"
-        ? (adminVisualizandoGestor ? "gestor" : "all")
+      scope: adminView
+        ? (adminVisualizandoPerfil && !acessoUgpRh ? "gestor" : "all")
         : (scopeAll ? "all" : "gestor"),
       accessLevel: acessoUgpRh ? "ugp" : "gestor",
       restrictedUgp: scopeUgpRestrita,
       demoOnly,
       authorizedCount: scopeUgpRestrita ? permitidos.length : null,
-      adminView: user.role === "admin",
-      gestoresDisponiveis: user.role === "admin" ? gestoresDisponiveis : [],
-      gestorSelecionado,
-      empresaId: user.role === "admin" ? null : empresaId,
+      adminView,
+      gestoresDisponiveis: adminView ? gestoresDisponiveisPublicos : [],
+      gestorSelecionado: gestorSelecionadoPublico,
+      empresaId: adminGlobal ? null : empresaId,
       atualizadoEm: new Date().toISOString(),
       colaboradores,
     });
