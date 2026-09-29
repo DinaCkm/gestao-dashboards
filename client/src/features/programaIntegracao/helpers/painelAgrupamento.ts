@@ -60,13 +60,21 @@ export function agruparAcoesPorTarefa(acoes: AcaoPainelReal[]): GrupoAcaoPainel[
       };
     })
     .sort((a, b) => {
-      // Espelha a sequência operacional da agenda/PLANO_REAL.
-      // O status continua visível, mas não reorganiza as tarefas.
+      const ordemA = ORDEM_PLANO.get(a.itemId) ?? Number.MAX_SAFE_INTEGER;
+      const ordemB = ORDEM_PLANO.get(b.itemId) ?? Number.MAX_SAFE_INTEGER;
+
+      // Dentro da mesma etapa, a sequência operacional do PLANO_REAL é soberana.
+      // Isso impede que pessoas com datas diferentes invertam a ordem das ações
+      // (ex.: Ata/Relatório -> Avaliação de Potencial -> PDI no Pós 1º Alinhamento).
+      if (a.etapa.id === b.etapa.id) {
+        const porPlanoNaEtapa = ordemA - ordemB;
+        if (porPlanoNaEtapa !== 0) return porPlanoNaEtapa;
+      }
+
+      // Entre etapas diferentes, preserva a organização cronológica do Painel.
       const porData = a.dataMaisAntiga.localeCompare(b.dataMaisAntiga);
       if (porData !== 0) return porData;
 
-      const ordemA = ORDEM_PLANO.get(a.itemId) ?? Number.MAX_SAFE_INTEGER;
-      const ordemB = ORDEM_PLANO.get(b.itemId) ?? Number.MAX_SAFE_INTEGER;
       const porPlano = ordemA - ordemB;
       if (porPlano !== 0) return porPlano;
 
