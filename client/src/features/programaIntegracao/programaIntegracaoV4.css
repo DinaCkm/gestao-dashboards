@@ -90,7 +90,7 @@
 
 
 .programa-integracao-v4 {
-  --pi-paper:#ECE8F4;
+  --pi-paper:#DDDDF3;
   min-height:calc(100vh - 56px);
   background:var(--pi-paper);
   border-radius:12px 0 0 0;
@@ -517,6 +517,32 @@
 .programa-integracao-v4 .pi-action-group + .pi-action-group {
   margin-top:2px;
 }
+
+/* Painel da Semana: separa claramente fundo, cabeçalho do grupo e linhas
+   das pessoas. Mantém o conteúdo neutro sobre o lavanda azulado da página. */
+.programa-integracao-v4 .pi-action-group .pi-action-head {
+  background:#E2E4EA !important;
+  color:var(--pi-ink) !important;
+}
+.programa-integracao-v4 .pi-action-group .pi-person-row {
+  background:#F6F7F9 !important;
+}
+.programa-integracao-v4 .pi-action-group .pi-person-row:hover,
+.programa-integracao-v4 .pi-action-group .pi-person-row-open {
+  background:#EEF0F5 !important;
+}
+.dark .programa-integracao-v4 .pi-action-group .pi-action-head {
+  background:var(--pi-sunk) !important;
+  color:var(--pi-ink) !important;
+}
+.dark .programa-integracao-v4 .pi-action-group .pi-person-row {
+  background:var(--pi-surface) !important;
+}
+.dark .programa-integracao-v4 .pi-action-group .pi-person-row:hover,
+.dark .programa-integracao-v4 .pi-action-group .pi-person-row-open {
+  background:var(--pi-surface-2) !important;
+}
+
 .programa-integracao-v4 .pi-stage-items {
   box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--pi-line) 65%, transparent);
 }
