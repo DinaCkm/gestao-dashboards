@@ -2800,7 +2800,7 @@ function validatePublicAnswers(catalog: any, formKey: ProgramaIntegracaoFormKey,
 async function findProcess(connection: any, data: any) {
   const [rows] = (await connection.execute(`SELECT id,legacyId,nome,email,emailCorporativo,unidade,inicio FROM programa_integracao_processos WHERE situacao<>'removido'`)) as any;
   const nome = String(data.nomeColaborador || "").trim(); if (!nome) return { status: "nenhum", candidatos: [] as any[] };
-  const emailQ = normTxt(data.emailColaborador), unidQ = String(data.unidade || "").trim(), dataQ = String(data.dataInicio || "").slice(0,10);
+  const emailQ = normTxt(data.emailColaborador), unidQ = String(data.unidade || "").trim(), dataQ = sqlDateToIso(data.dataInicio);
   const candidatos = (rows || []).map((p: any) => {
     const s = Math.max(simNome(nome, p.nome), 0);
     const emailBate = !!(emailQ && ((p.email && normTxt(p.email) === emailQ) || (p.emailCorporativo && normTxt(p.emailCorporativo) === emailQ)));
@@ -2825,7 +2825,7 @@ async function insertResponse(connection: any, data: any, formKey: ProgramaInteg
   const processoId = statusVinculo === "vinculada" ? Number(match.processo.dbId) : null;
   const [result] = (await connection.execute(
     `INSERT INTO programa_integracao_respostas (processoId,formKey,ciclo,papel,itemId,formVersion,statusVinculo,statusResposta,motivoPendencia,candidatos,nomeColaborador,unidade,dataInicio,emailColaborador,respondentName,respondentEmail,source,media,alertas,answers,submittedAt) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)`,
-    [processoId, formKey, cycle, role || null, itemId, version, statusVinculo, motivo === "registro_falhou" ? "registro_falhou" : "valido", motivo, JSON.stringify(candidatos), String(data.nomeColaborador || "").trim(), String(data.unidade || "").trim() || null, data.dataInicio || null, String(data.emailColaborador || "").trim() || null, String(data.respondentName || data.nomeColaborador || "").trim(), String(data.emailColaborador || "").trim() || null, "publico", media, JSON.stringify(alertas), JSON.stringify(answers)]
+    [processoId, formKey, cycle, role || null, itemId, version, statusVinculo, motivo === "registro_falhou" ? "registro_falhou" : "valido", motivo, JSON.stringify(candidatos), String(data.nomeColaborador || "").trim(), String(data.unidade || "").trim() || null, sqlDateToIso(data.dataInicio) || null, String(data.emailColaborador || "").trim() || null, String(data.respondentName || data.nomeColaborador || "").trim(), String(data.emailColaborador || "").trim() || null, "publico", media, JSON.stringify(alertas), JSON.stringify(answers)]
   )) as any;
   const id = Number(result.insertId); const protocolo = `${PROTO_PREFIX[formKey]}-${String(id).padStart(6,"0")}`; const legacyRid = `rpi${id}`;
   await connection.execute(`UPDATE programa_integracao_respostas SET protocolo=?,legacyRid=?,dedupeKey=? WHERE id=?`, [protocolo, legacyRid, `${formKey}|${processoId || 0}|${cycle}|${role}|${id}`, id]);
