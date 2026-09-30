@@ -362,7 +362,7 @@ export function PdiIntegracaoPainel({ processo }: Props) {
                   ) : (
                     <div className="mt-3 space-y-3">
                       {competencia.tarefas.map((tarefa) => (
-                        <label
+                        <div
                           key={tarefa.id}
                           className={`block rounded-lg border p-3 ${tarefa.criada ? 'border-emerald-200 bg-emerald-50/50' : selecionadas.includes(tarefa.id) ? 'border-violet-400 bg-violet-50' : 'bg-background'}`}
                         >
@@ -412,7 +412,7 @@ export function PdiIntegracaoPainel({ processo }: Props) {
                               )}
                             </div>
                           </div>
-                        </label>
+                        </div>
                       ))}
                     </div>
                   )}
