@@ -329,7 +329,7 @@ export function PdiIntegracaoPainel({ processo }: Props) {
             <div>
               <p className="font-semibold">Tarefas sugeridas pelas competências da consultora</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                A biblioteca vem do documento de 99 competências. Nenhuma equivalência é presumida: o nome precisa corresponder exatamente.
+                A biblioteca contém 101 competências. Nenhuma equivalência é presumida: o nome precisa corresponder exatamente.
               </p>
             </div>
 
