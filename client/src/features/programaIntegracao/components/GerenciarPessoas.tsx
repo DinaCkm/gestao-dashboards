@@ -600,13 +600,10 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
               }, 'Não foi possível vincular a demonstração à empresa.');
             };
 
-            const iniciaisPessoa = pessoa.nome
-              .trim()
-              .split(/\s+/)
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((parte) => parte.charAt(0).toUpperCase())
-              .join('') || '—';
+            const partesNome = pessoa.nome.trim().split(/\s+/).filter(Boolean);
+            const iniciaisPessoa = partesNome.length > 1
+              ? `${partesNome[0].charAt(0)}${partesNome[partesNome.length - 1].charAt(0)}`.toUpperCase()
+              : partesNome[0]?.charAt(0).toUpperCase() || '—';
             const compliancePct = andamentoEco?.jornadaCompliance.percentual;
             const pdiPct = andamentoEco?.pdi.percentual;
             const complianceResumo = andamentoEco?.jornadaCompliance.total
@@ -632,12 +629,12 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
               >
                 <CardHeader>
                   <div className="flex items-start gap-3">
-                    <div className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full border border-violet-200 bg-violet-100 text-sm font-bold text-violet-800">
+                    <div className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full border border-violet-200 bg-violet-100 text-sm font-bold text-violet-800 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-200">
                       {iniciaisPessoa}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <CardTitle className="truncate !text-[18px] !font-semibold !leading-tight text-slate-950">
+                      <CardTitle className="truncate !text-[18px] !font-semibold !leading-tight text-slate-950 dark:text-slate-50">
                         {pessoa.nome}
                       </CardTitle>
                       <CardDescription className="mt-1 truncate !text-[12.5px]">
@@ -729,14 +726,14 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                       variant="outline"
                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                         status === 'concluido'
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                          : 'border-blue-200 bg-blue-50 text-blue-700'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/35 dark:text-emerald-200'
+                          : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/35 dark:text-blue-200'
                       }`}
                     >
                       {getLabelStatus(status)}
                     </Badge>
                     {acompanhamentoOculto && (
-                      <Badge variant="outline" className="rounded-full border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+                      <Badge variant="outline" className="rounded-full border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
                         <EyeOff className="mr-1 h-3.5 w-3.5" />
                         Oculto
                       </Badge>
@@ -812,26 +809,26 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                   <div>
                     <div className="mb-1.5 flex items-end justify-between gap-3">
                       <span className="text-xs font-medium text-muted-foreground">Progresso geral</span>
-                      <span className="text-2xl font-semibold leading-none text-slate-950">{progresso}%</span>
+                      <span className="text-2xl font-semibold leading-none text-slate-950 dark:text-slate-50">{progresso}%</span>
                     </div>
                     <Progress value={progresso} className="h-2" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2.5">
-                    <div className="rounded-xl border border-violet-100 bg-violet-50/55 p-3">
+                    <div className="rounded-xl border border-violet-100 bg-violet-50/55 p-3 dark:border-violet-900/60 dark:bg-violet-950/25">
                       <div className="text-[11px] font-medium text-muted-foreground">Jornada Compliance</div>
                       <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
-                        <span className="text-[15px] font-semibold text-slate-900">{complianceResumo}</span>
+                        <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{complianceResumo}</span>
                         <span className="text-xs text-muted-foreground">
                           · {compliancePct != null ? `${compliancePct}%` : 'sem dados'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-violet-100 bg-violet-50/55 p-3">
+                    <div className="rounded-xl border border-violet-100 bg-violet-50/55 p-3 dark:border-violet-900/60 dark:bg-violet-950/25">
                       <div className="text-[11px] font-medium text-muted-foreground">Ações do PDI</div>
                       <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
-                        <span className="text-[15px] font-semibold text-slate-900">{pdiResumo}</span>
+                        <span className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">{pdiResumo}</span>
                         <span className="text-xs text-muted-foreground">
                           · {pdiPct != null ? `${pdiPct}%` : 'sem dados'}
                         </span>
@@ -845,18 +842,18 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
                     </p>
                   )}
 
-                  <div className="space-y-2 border-t border-slate-100 pt-3 text-xs text-muted-foreground">
+                  <div className="space-y-2 border-t border-slate-100 pt-3 text-xs text-muted-foreground dark:border-slate-800">
                     <div className="flex min-w-0 items-center gap-2">
                       <Mail className="h-3.5 w-3.5 flex-shrink-0 text-violet-500" />
                       <span className="truncate">{pessoa.email || 'E-mail não informado'}</span>
                     </div>
                     <div className="flex min-w-0 items-center gap-2">
                       <UserRound className="h-3.5 w-3.5 flex-shrink-0 text-violet-500" />
-                      <span className="truncate">Gestor: <strong className="font-medium text-slate-700">{pessoa.gestor || 'Não informado'}</strong></span>
+                      <span className="truncate">Gestor: <strong className="font-medium text-slate-700 dark:text-slate-200">{pessoa.gestor || 'Não informado'}</strong></span>
                     </div>
                     <div className="flex min-w-0 items-center gap-2">
                       <HeartHandshake className="h-3.5 w-3.5 flex-shrink-0 text-violet-500" />
-                      <span className="truncate">Anjo: <strong className="font-medium text-slate-700">{pessoa.anjo || 'Não informado'}</strong></span>
+                      <span className="truncate">Anjo: <strong className="font-medium text-slate-700 dark:text-slate-200">{pessoa.anjo || 'Não informado'}</strong></span>
                     </div>
                   </div>
 
