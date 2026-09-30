@@ -406,6 +406,10 @@ function DashboardLayoutContent({
   // não terminar, nenhuma navegação comum fica disponível ou clicável.
   const waitingAngelAccess = Boolean(user && !isAdmin && !anjoAccessResolved);
   const locationBaseAnjo = location.split("?")[0];
+  const isAngelWorkspace = Boolean(
+    hasActiveAngelAccess &&
+    (locationBaseAnjo === "/anjo" || locationBaseAnjo.startsWith("/anjo/"))
+  );
   const pureAngelRouteBlocked = Boolean(
     anjoAccessResolved &&
     isPureAngel &&
@@ -520,7 +524,7 @@ function DashboardLayoutContent({
   // Para não-admin, filtrar itens do menu
   const filteredOtherItems = useMemo(() => {
     const userRole = user?.role || "user";
-    if (isPureAngel || waitingAngelAccess) return [];
+    if (isPureAngel || waitingAngelAccess || isAngelWorkspace) return [];
     if (waitingManagerPermissions && userRole === 'manager') return [];
     return otherMenuItems.filter(item => {
       if (!item.roles.includes(userRole as "admin" | "manager" | "user")) return false;
@@ -557,7 +561,7 @@ function DashboardLayoutContent({
       }
       return true;
     });
-  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms, waitingManagerPermissions, isPureAngel, waitingAngelAccess]);
+  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms, waitingManagerPermissions, isPureAngel, waitingAngelAccess, isAngelWorkspace]);
 
   useEffect(() => {
     if (!hasManagerRestrictions || user?.role !== 'manager') return;
