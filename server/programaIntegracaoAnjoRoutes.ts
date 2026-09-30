@@ -11,6 +11,36 @@ const ITENS_AVALIACAO_ANJO: Record<number, string> = {
   4: "pos4-09",
 };
 
+const ITENS_SOLICITACAO_ANJO: Record<number, string> = {
+  1: "pos1-07",
+  2: "pos2-07",
+  3: "pos3-05",
+  4: "pos4-06",
+};
+
+function dataIsoValidaCurta(value: unknown): string {
+  const iso = String(value || "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
+}
+
+function hojeIsoLocal(): string {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+function adicionarDiasIso(value: string, dias: number): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "";
+  const data = new Date(`${value}T12:00:00`);
+  data.setDate(data.getDate() + dias);
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
 const PILARES_AVALIACAO_ANJO = [
   { key: "adaptacao", nome: "Adaptação ao Trabalho", codigos: ["aval_compromissos","aval_parceria","aval_compartilha_informacoes","aval_persistencia","aval_interesse_entusiasmo","aval_expressao"] },
   { key: "etica", nome: "Conduta Ética", codigos: ["aval_padroes_eticos","aval_transparencia","aval_respeito"] },
@@ -206,15 +236,24 @@ programaIntegracaoAnjoRouter.get(
       const formularios: any[] = [];
       const indicadores = { aguardando: 0, pendentes: 0, respondidos: 0 };
 
+      const hoje = hojeIsoLocal();
+
       for (const processo of processos) {
         const estado = asJson<Record<string, any>>(processo.estado, {});
-        const alinhamentos = estado.alin && typeof estado.alin === "object" ? estado.alin : {};
+        const feito = estado.feito && typeof estado.feito === "object" ? estado.feito : {};
 
         for (const ciclo of [1, 2, 3, 4]) {
           const resposta = respostaPorChave.get(`${Number(processo.id)}|${ciclo}`);
-          const alinhamento = alinhamentos[String(ciclo)] ?? alinhamentos[ciclo] ?? {};
-          const realizado = Boolean(alinhamento?.realizado);
-          const status = resposta ? "respondido" : realizado ? "pendente" : "aguardando_liberacao";
+          const solicitacaoId = ITENS_SOLICITACAO_ANJO[ciclo];
+          const fichaSolicitacao = solicitacaoId && feito[solicitacaoId] && typeof feito[solicitacaoId] === "object"
+            ? feito[solicitacaoId]
+            : null;
+          const liberado = String(fichaSolicitacao?.s || "") === "ok";
+          const solicitadoEm = liberado ? dataIsoValidaCurta(fichaSolicitacao?.d) : "";
+          const prazo = solicitadoEm ? adicionarDiasIso(solicitadoEm, 2) : "";
+          const atrasado = Boolean(!resposta && liberado && prazo && prazo < hoje);
+          const status = resposta ? "respondido" : liberado ? "pendente" : "aguardando_liberacao";
+
           if (status === "respondido") indicadores.respondidos += 1;
           else if (status === "pendente") indicadores.pendentes += 1;
           else indicadores.aguardando += 1;
@@ -229,9 +268,11 @@ programaIntegracaoAnjoRouter.get(
             itemId: ITENS_AVALIACAO_ANJO[ciclo],
             nome: "Avaliação do Programa de Integração",
             status,
-            alinhamentoRealizado: realizado,
-            bloqueioMotivo: !resposta && !realizado
-              ? `Disponível após a realização do ${ciclo}.º alinhamento.`
+            solicitadoEm: solicitadoEm || null,
+            prazo: prazo || null,
+            atrasado,
+            bloqueioMotivo: !resposta && !liberado
+              ? `Disponível após o envio do e-mail ao Anjo do ${ciclo}.º alinhamento.`
               : null,
             respondidoEm: resposta?.submittedAt ? new Date(resposta.submittedAt).toISOString() : null,
             rotaPublica: `/formularios/avaliacao-programa?nome=${encodeURIComponent(String(processo.nome || ""))}&unidade=${encodeURIComponent(String(processo.unidade || ""))}&ciclo=${ciclo}&papel=Anjo&respondente=${encodeURIComponent(String((req as any).authenticatedUser?.name || ""))}&inicio=${encodeURIComponent(String(processo.inicio || ""))}&email=${encodeURIComponent(String(processo.email || ""))}`,
