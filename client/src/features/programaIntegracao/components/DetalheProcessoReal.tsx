@@ -538,6 +538,22 @@ export function DetalheProcessoReal({
 
   return (
     <div className="space-y-6">
+      <div className="sticky top-16 z-30 md:top-2">
+        <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-violet-200 bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
+          <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full border border-violet-200 bg-violet-50 text-sm font-bold text-violet-800">
+            {iniciais(rascunhoProcesso.nome)}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-600">Editando</div>
+            <div className="truncate text-base font-bold text-foreground md:text-lg">{rascunhoProcesso.nome}</div>
+          </div>
+          <div className="ml-auto hidden min-w-0 text-right text-xs text-muted-foreground sm:block">
+            <div className="max-w-[280px] truncate">{rascunhoProcesso.cargo || 'Cargo não informado'}</div>
+            {rascunhoProcesso.unidade && <div className="max-w-[280px] truncate">{rascunhoProcesso.unidade}</div>}
+          </div>
+        </div>
+      </div>
+
       <Card>
         <CardContent className="pt-6 space-y-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
