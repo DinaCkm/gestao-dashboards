@@ -1231,21 +1231,39 @@ programaIntegracaoPotencialRouter.post(
     let tx = false;
     try {
       const legacyId = sanitizeLegacyId(req.params.legacyId);
-      const tarefaIds = Array.from(new Set(
-        (Array.isArray(req.body?.tarefaIds) ? req.body.tarefaIds : [])
-          .map((id: any) => String(id || "").trim())
-          .filter(Boolean),
-      ));
-      const prazo = dataIsoValida(req.body?.prazo);
+      const tarefasRecebidas = Array.isArray(req.body?.tarefas)
+        ? req.body.tarefas
+        : [];
+      const mapaEntradas = new Map<string, string>();
+      for (const item of tarefasRecebidas) {
+        const tarefaId = String(item?.tarefaId || "").trim();
+        const prazo = dataIsoValida(item?.prazo);
+        if (!tarefaId) continue;
+        if (!prazo) {
+          return res.status(400).json({ error: "Cada tarefa selecionada precisa ter um prazo válido." });
+        }
+        mapaEntradas.set(tarefaId, prazo);
+      }
+
+      // Compatibilidade defensiva com a versão imediatamente anterior da tela.
+      if (!mapaEntradas.size && Array.isArray(req.body?.tarefaIds)) {
+        const prazoLegado = dataIsoValida(req.body?.prazo);
+        if (prazoLegado) {
+          for (const id of req.body.tarefaIds) {
+            const tarefaId = String(id || "").trim();
+            if (tarefaId) mapaEntradas.set(tarefaId, prazoLegado);
+          }
+        }
+      }
+
+      const entradas = Array.from(mapaEntradas.entries()).map(([tarefaId, prazo]) => ({ tarefaId, prazo }));
+      const tarefaIds = entradas.map((item) => item.tarefaId);
 
       if (!tarefaIds.length) {
         return res.status(400).json({ error: "Selecione ao menos uma tarefa antes de confirmar." });
       }
       if (tarefaIds.length > 24) {
         return res.status(400).json({ error: "A seleção ultrapassa o limite disponível para as competências registradas." });
-      }
-      if (!prazo) {
-        return res.status(400).json({ error: "Informe um prazo válido para as tarefas selecionadas." });
       }
 
       await connection.beginTransaction(); tx = true;
@@ -1259,14 +1277,19 @@ programaIntegracaoPotencialRouter.post(
       }
 
       const fimOnboarding = await dataFimOnboarding(connection, ctx.processo, ctx.estado);
-      if (prazo < todayIso()) {
-        throw Object.assign(new Error("O prazo escolhido não pode estar no passado."), { statusCode: 409 });
-      }
-      if (prazo > fimOnboarding) {
-        throw Object.assign(
-          new Error("O prazo escolhido ultrapassa o fim do onboarding. Escolha uma data até o encerramento do processo."),
-          { statusCode: 409 },
-        );
+      for (const entrada of entradas) {
+        if (entrada.prazo < todayIso()) {
+          throw Object.assign(
+            new Error("Nenhum prazo escolhido pode estar no passado."),
+            { statusCode: 409 },
+          );
+        }
+        if (entrada.prazo > fimOnboarding) {
+          throw Object.assign(
+            new Error("Um dos prazos escolhidos ultrapassa o fim do onboarding. Revise as datas antes de confirmar."),
+            { statusCode: 409 },
+          );
+        }
       }
 
       const permitidas = new Map<string, {
@@ -1281,15 +1304,15 @@ programaIntegracaoPotencialRouter.post(
         }
       }
 
-      const selecionadas = tarefaIds.map((id) => {
-        const item = permitidas.get(id);
+      const selecionadas = entradas.map((entrada) => {
+        const item = permitidas.get(entrada.tarefaId);
         if (!item) {
           throw Object.assign(
             new Error("Uma das tarefas selecionadas não pertence às competências atualmente registradas para este colaborador. Atualize a tela e revise a seleção."),
             { statusCode: 409 },
           );
         }
-        return item;
+        return { ...item, tarefaId: entrada.tarefaId, prazo: entrada.prazo };
       });
 
       const historico = registrosTarefasCompetencias(ctx.estado);
@@ -1351,7 +1374,7 @@ programaIntegracaoPotencialRouter.post(
           contratoNivelId: sessaoContexto.contratoNivelId,
           titulo: item.tarefa.titulo,
           descricao: descricaoTarefaCompetencia(item.competencia, item.tarefa),
-          prazo,
+          prazo: item.prazo,
           sessionNumber: base + i,
         });
         sessionIds.push(sessionId);
@@ -1361,7 +1384,7 @@ programaIntegracaoPotencialRouter.post(
           competencia: item.competencia,
           titulo: item.tarefa.titulo,
           sessionId,
-          prazo,
+          prazo: item.prazo,
           criadaEm: new Date().toISOString(),
           criadaPorUserId: Number((req as any).authenticatedUser?.id || 0) || null,
         });
@@ -1387,12 +1410,12 @@ programaIntegracaoPotencialRouter.post(
         Number(ctx.processo.id),
         {
           alunoId: ctx.alunoId,
-          prazo,
           itens: novosRegistros.map((item) => ({
             bibliotecaId: item.bibliotecaId,
             competencia: item.competencia,
             titulo: item.titulo,
             sessionId: item.sessionId,
+            prazo: item.prazo,
           })),
           versaoAnterior: Number(pacoteAnterior?.versao || 0) || null,
         },
@@ -1403,7 +1426,12 @@ programaIntegracaoPotencialRouter.post(
         novosRegistros.length,
         novosRegistros.length === 1 ? novosRegistros[0].titulo : undefined,
       );
-      return res.json({ ok: true, criadas: novosRegistros.length, sessionIds, prazo });
+      return res.json({
+        ok: true,
+        criadas: novosRegistros.length,
+        sessionIds,
+        prazos: novosRegistros.map((item) => ({ tarefaId: item.bibliotecaId, prazo: item.prazo })),
+      });
     } catch (error) {
       if (tx) try { await connection.rollback(); } catch {}
       return httpError(res, error, "Não foi possível criar as tarefas baseadas nas competências.");
