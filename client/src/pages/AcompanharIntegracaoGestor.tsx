@@ -150,12 +150,16 @@ interface ColaboradorAcompanhamento {
     cadastradoEm: string;
   }>;
   avisosGestorEquipe?: Array<{
-    papel: 'Anjo' | 'Colaborador';
+    papel: 'Gestor' | 'Anjo' | 'Colaborador';
     ciclo: number;
+    etapa?: string;
+    formKey?: string;
+    cycleValue?: string;
     formulario: string;
+    solicitadoEm?: string | null;
     prazo: string;
     atrasado: boolean;
-    mensagem: string;
+    mensagem?: string;
   }>;
   processoAcoes: {
     total: number;
@@ -2330,7 +2334,7 @@ function KpisOperacionais({ colaborador, visaoGestor = false }: { colaborador: C
     ? {
         rotulo: status.rotulo,
         detalhe: (colaborador.avisosGestorEquipe || []).length > 0
-          ? 'Atenção: há formulários pendentes na sua equipe.'
+          ? 'Atenção: há formulários pendentes na sua equipe ou sob sua responsabilidade.'
           : status.chave === 'atencao'
             ? 'Há um ponto de atenção no processo. Acompanhe as ações sob sua responsabilidade e os indicadores disponíveis.'
             : status.chave === 'acompanhar'
@@ -3608,31 +3612,48 @@ function PendenciasEquipeGestor({ colaborador }: { colaborador: ColaboradorAcomp
         <div className="flex items-start gap-3">
           <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
           <div>
-            <div className="font-black text-amber-950">Atenção: há formulários pendentes na sua equipe.</div>
+            <div className="font-black text-amber-950">Atenção: há formulários pendentes na sua equipe ou sob sua responsabilidade.</div>
             <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
-              Você pode acompanhar quais formulários ainda não foram concluídos, sem acesso ao conteúdo das respostas do colaborador ou do Anjo.
+              Você pode acompanhar os formulários ainda não concluídos. Quando a pendência for sua, o preenchimento fica disponível diretamente aqui; respostas do colaborador ou do Anjo continuam protegidas.
             </p>
           </div>
         </div>
 
         <div className="mt-4 space-y-2">
-          {pendencias.map((p, index) => (
-            <div key={p.papel + '-' + p.ciclo + '-' + index} className="rounded-xl border border-amber-200 bg-white p-3">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    Responsável: {p.papel}
-                    {p.ciclo > 0 ? ' · Alinhamento de ' + diaDoAlinhamento(p.ciclo) + ' dias' : ''}
-                    {p.prazo ? ' · Prazo ' + dataBr(p.prazo) : ''}
+          {pendencias.map((p, index) => {
+            const linkGestor = p.papel === 'Gestor'
+              ? linkPreencherFormulario(colaborador, p as Pendencia)
+              : null;
+            return (
+              <div key={p.papel + '-' + p.ciclo + '-' + index} className="rounded-xl border border-amber-200 bg-white p-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      Responsável: {p.papel}
+                      {p.ciclo > 0 ? ' · Pós ' + p.ciclo + 'º alinhamento' : p.etapa ? ' · ' + p.etapa : ''}
+                      {p.solicitadoEm ? ' · disponível desde ' + dataBr(p.solicitadoEm) : ''}
+                      {p.prazo ? ' · prazo ' + dataBr(p.prazo) : ''}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant={p.atrasado ? 'destructive' : 'secondary'}>
+                      {p.atrasado ? 'Atrasado' : p.papel === 'Gestor' ? 'Disponível' : 'Pendente'}
+                    </Badge>
+                    {linkGestor && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => { window.location.href = linkGestor; }}
+                      >
+                        Preencher formulário
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <Badge variant={p.atrasado ? 'destructive' : 'secondary'}>
-                  {p.atrasado ? 'Atrasado' : 'Pendente'}
-                </Badge>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
