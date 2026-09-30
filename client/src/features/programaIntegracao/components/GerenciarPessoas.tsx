@@ -600,12 +600,28 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
             };
 
             return (
-              <Card key={chavePessoa} className={`hover:shadow-md transition ${acompanhamentoOculto ? 'border-slate-400 bg-slate-50/70' : ''}`}>
+              <Card
+                key={chavePessoa}
+                onClick={(event) => {
+                  const target = event.target as HTMLElement;
+                  if (
+                    operacao ||
+                    target.closest('button, a, input, select, textarea, [role="button"], [role="combobox"], [data-no-card-open]')
+                  ) return;
+                  if (pessoa.id) onAbrirPessoa(pessoa.id);
+                }}
+                className={`cursor-pointer transition hover:border-violet-300 hover:shadow-md ${acompanhamentoOculto ? 'border-slate-400 bg-slate-50/70' : ''}`}
+                title={pessoa.id ? `Abrir processo de ${pessoa.nome}` : undefined}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <CardTitle className="text-base truncate">{pessoa.nome}</CardTitle>
-                      <CardDescription className="text-xs mt-1">{pessoa.cargo || 'Cargo não informado'}</CardDescription>
+                      <CardTitle className="truncate text-lg">
+                        <span className="inline-flex max-w-full rounded-xl border border-violet-200 bg-violet-50 px-2.5 py-1 text-violet-950">
+                          <span className="truncate">{pessoa.nome}</span>
+                        </span>
+                      </CardTitle>
+                      <CardDescription className="mt-1.5 text-xs">{pessoa.cargo || 'Cargo não informado'}</CardDescription>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       {mostrarBotaoVinculoEco && pessoa.id && (
