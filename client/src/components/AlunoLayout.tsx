@@ -9,7 +9,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { BookOpen, Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle, AlertTriangle, Award } from "lucide-react";
+import { BookOpen, Compass, PlayCircle, LogOut, ChevronDown, Megaphone, ClipboardList, ClipboardCheck, Flag, Lock, ExternalLink, TrendingUp, Sparkles, MessageCircle, AlertTriangle, Award } from "lucide-react";
 import RoleSwitcher from "@/components/RoleSwitcher";
 
 /** Data de corte: alunos cadastrados a partir desta data precisam dar aceite antes de acessar o menu */
@@ -57,9 +57,37 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const dicaDaSemana = useDicaDaSemana();
+  const [hasActiveAngelAccess, setHasActiveAngelAccess] = useState(false);
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => { window.location.href = "/"; },
   });
+
+  // Aluno + Anjo mantém integralmente o Portal do Aluno e recebe um acesso
+  // adicional ao Espaço do Anjo somente após confirmação do vínculo ativo.
+  useEffect(() => {
+    let ativo = true;
+    if (!user?.id) {
+      setHasActiveAngelAccess(false);
+      return () => { ativo = false; };
+    }
+
+    fetch("/api/programa-integracao/anjo/status", {
+      cache: "no-store",
+      credentials: "include",
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Falha ao verificar acesso do Anjo.");
+        return response.json();
+      })
+      .then((data) => {
+        if (ativo) setHasActiveAngelAccess(Boolean(data?.hasActiveAssignments));
+      })
+      .catch(() => {
+        if (ativo) setHasActiveAngelAccess(false);
+      });
+
+    return () => { ativo = false; };
+  }, [user?.id]);
 
   // Aviso de prazo de encerramento do programa (turmas específicas, ex: BS3)
   const { data: avisoPrazo } = trpc.aluno.avisoPrazoTurma.useQuery(undefined, {
@@ -147,9 +175,21 @@ export default function AlunoLayout({ children }: { children: ReactNode }) {
       // Não autônomo: esconder itens exclusivos de autônomo
       items = items.filter((item: any) => !item.apenasAutonomo);
     }
+    if (hasActiveAngelAccess) {
+      items = [
+        ...items,
+        {
+          label: "Espaço do Anjo",
+          path: "/anjo/formularios",
+          icon: ClipboardCheck,
+          requiresAceite: false,
+        },
+      ];
+    }
+
     if (!menuBloqueado) return items;
     return items.filter(item => !item.requiresAceite);
-  }, [menuBloqueado, isCandidatoPS, isVeteranSemOnboarding, isAlunoAutonomo]);
+  }, [menuBloqueado, isCandidatoPS, isVeteranSemOnboarding, isAlunoAutonomo, hasActiveAngelAccess]);
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
