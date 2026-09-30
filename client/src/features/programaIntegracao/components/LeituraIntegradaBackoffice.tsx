@@ -5,9 +5,7 @@ import {
   evolucaoPesquisaColaborador,
   evolucaoPorPapel,
 } from '../helpers/evolucaoAcompanhamento';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, CheckCircle2, Sparkles, Target, Users } from 'lucide-react';
+import { Activity, CheckCircle2, ChevronRight, Sparkles, Target, Users } from 'lucide-react';
 
 interface LeituraIntegradaBackofficeProps {
   processo: ProcessoIntegracao;
@@ -130,66 +128,77 @@ export function LeituraIntegradaBackoffice({ processo }: LeituraIntegradaBackoff
     return itens;
   })();
 
+  const percentualGestor = dados.gestorAtual == null ? null : Math.max(0, Math.min(100, (dados.gestorAtual / 5) * 100));
+  const percentualAnjo = dados.anjoAtual == null ? null : Math.max(0, Math.min(100, (dados.anjoAtual / 5) * 100));
+  const classeFaixa = (percentual: number | null) =>
+    percentual == null ? 'pi-score-neutral' : percentual >= 80 ? 'pi-score-ok' : percentual >= 60 ? 'pi-score-alert' : 'pi-score-critical';
+
+  const resumoCompacto = [
+    `Colaborador ${dados.pesquisaAtual == null ? '—' : `${Math.round(dados.pesquisaAtual)}%`}`,
+    `Gestor ${dados.gestorAtual == null ? '—' : dados.gestorAtual.toFixed(2).replace('.', ',')}`,
+    `Anjo ${dados.anjoAtual == null ? '—' : dados.anjoAtual.toFixed(2).replace('.', ',')}`,
+  ].join(' · ');
+
   return (
-    <Card className="overflow-hidden border-violet-200/80">
-      <CardHeader className="border-b bg-gradient-to-r from-violet-50 via-white to-blue-50">
-        <div className="flex items-start gap-3">
-          <span className="rounded-xl bg-violet-700 p-2.5 text-white"><Sparkles className="h-5 w-5" /></span>
-          <div>
-            <CardTitle className="text-lg">Leitura Integrada do acompanhamento</CardTitle>
-            <p className="mt-1 max-w-4xl text-sm leading-relaxed text-muted-foreground">
-              Síntese objetiva do back-office baseada somente nos formulários já registrados. Os instrumentos mantêm suas escalas próprias; esta leitura não faz diagnóstico e não presume causas.
-            </p>
+    <details className="pi-complementary-section">
+      <summary className="pi-complementary-summary-row">
+        <ChevronRight className="pi-complementary-chevron h-4 w-4" />
+        <Sparkles className="h-4 w-4" />
+        <span className="font-medium">Leitura integrada</span>
+        <span className="pi-complementary-summary-text">{resumoCompacto}</span>
+      </summary>
+
+      <div className="pi-complementary-body">
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Síntese objetiva do back-office baseada somente nos formulários já registrados. Os instrumentos mantêm suas escalas próprias; esta leitura não faz diagnóstico e não presume causas.
+        </p>
+
+        <div className="pi-score-grid">
+          <div className={`pi-score-card ${classeFaixa(dados.pesquisaAtual)}`}>
+            <div className="pi-score-label">Colaborador</div>
+            <div className="pi-score-value">{dados.pesquisaAtual == null ? '—' : `${Math.round(dados.pesquisaAtual)}%`}</div>
+            <div className="pi-score-bar"><span style={{ width: `${Math.max(0, Math.min(100, dados.pesquisaAtual ?? 0))}%` }} /></div>
+            <div className="pi-score-scale">Pesquisa de Integração · escala 0–100{dados.pesquisaAtualMomento ? ` · ${dia(dados.pesquisaAtualMomento.ciclo)} dias` : ''}</div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4 p-5">
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-blue-700">Colaborador</div>
-            <div className="mt-1 text-2xl font-black">{dados.pesquisaAtual == null ? '—' : `${Math.round(dados.pesquisaAtual)}%`}</div>
-            <div className="mt-1 text-xs text-muted-foreground">Pesquisa de Integração{dados.pesquisaAtualMomento ? ` · ${dia(dados.pesquisaAtualMomento.ciclo)} dias` : ''}</div>
+
+          <div className={`pi-score-card ${classeFaixa(percentualGestor)}`}>
+            <div className="pi-score-label">Gestor</div>
+            <div className="pi-score-value">{dados.gestorAtual == null ? '—' : `${dados.gestorAtual.toFixed(2).replace('.', ',')} / 5`}</div>
+            <div className="pi-score-bar"><span style={{ width: `${percentualGestor ?? 0}%` }} /></div>
+            <div className="pi-score-scale">Avaliação do Programa · escala 1–5{dados.gestorAtualMomento ? ` · ${dia(dados.gestorAtualMomento.ciclo)} dias` : ''}</div>
           </div>
-          <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-teal-700">Gestor</div>
-            <div className="mt-1 text-2xl font-black">{dados.gestorAtual == null ? '—' : `${dados.gestorAtual.toFixed(2).replace('.', ',')} / 5`}</div>
-            <div className="mt-1 text-xs text-muted-foreground">Avaliação do Programa{dados.gestorAtualMomento ? ` · ${dia(dados.gestorAtualMomento.ciclo)} dias` : ''}</div>
-          </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-amber-700">Anjo</div>
-            <div className="mt-1 text-2xl font-black">{dados.anjoAtual == null ? '—' : `${dados.anjoAtual.toFixed(2).replace('.', ',')} / 5`}</div>
-            <div className="mt-1 text-xs text-muted-foreground">Avaliação do Programa{dados.anjoAtualMomento ? ` · ${dia(dados.anjoAtualMomento.ciclo)} dias` : ''}</div>
+
+          <div className={`pi-score-card ${classeFaixa(percentualAnjo)}`}>
+            <div className="pi-score-label">Anjo</div>
+            <div className="pi-score-value">{dados.anjoAtual == null ? '—' : `${dados.anjoAtual.toFixed(2).replace('.', ',')} / 5`}</div>
+            <div className="pi-score-bar"><span style={{ width: `${percentualAnjo ?? 0}%` }} /></div>
+            <div className="pi-score-scale">Avaliação do Programa · escala 1–5{dados.anjoAtualMomento ? ` · ${dia(dados.anjoAtualMomento.ciclo)} dias` : ''}</div>
           </div>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
-          <div className="rounded-xl border bg-slate-50/70 p-4">
-            <div className="flex items-center gap-2 font-semibold"><Activity className="h-4 w-4 text-blue-700" /> Trajetória do colaborador</div>
+          <div className="pi-insight-card">
+            <div className="flex items-center gap-2 font-semibold"><Activity className="h-4 w-4" /> Trajetória do colaborador</div>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{textoTrajetoria}</p>
           </div>
-          <div className="rounded-xl border bg-slate-50/70 p-4">
-            <div className="flex items-center gap-2 font-semibold"><Users className="h-4 w-4 text-teal-700" /> {comparacao.titulo}</div>
+          <div className="pi-insight-card">
+            <div className="flex items-center gap-2 font-semibold"><Users className="h-4 w-4" /> {comparacao.titulo}</div>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{comparacao.texto}</p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-4">
-          <div className="flex items-center gap-2 font-semibold"><Target className="h-4 w-4 text-violet-700" /> Para o próximo alinhamento</div>
+        <div className="pi-insight-card pi-insight-card-accent">
+          <div className="flex items-center gap-2 font-semibold"><Target className="h-4 w-4" /> Para o próximo alinhamento</div>
           <div className="mt-3 space-y-2">
             {proximosPassos.map((item) => (
-              <div key={item} className="flex gap-2 text-sm leading-relaxed text-slate-700">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-violet-700" /><span>{item}</span>
+              <div key={item} className="flex gap-2 text-sm leading-relaxed">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{item}</span>
               </div>
             ))}
           </div>
         </div>
-
-        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <Badge variant="outline">Colaborador: leitura normalizada 0–100</Badge>
-          <Badge variant="outline">Gestor e Anjo: escala original 1–5</Badge>
-          <Badge variant="outline">Diferença relevante Gestor × Anjo: ≥ 3 pontos</Badge>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </details>
   );
 }
