@@ -93,7 +93,8 @@ export function AlinhamentoPainelReal({
     : estadoRascunho.realizado === 'true' && /^\d{4}-\d{2}-\d{2}$/.test(estadoRascunho.data)
       ? estadoRascunho.data
       : '';
-  const statusAgendamentoPrimeiro = dataRealizadaExibicao
+  const alinhamentoRealizadoExibicao = Boolean(dataRealizadaExibicao || estadoRascunho.realizado === 'true');
+  const statusAgendamentoPrimeiro = alinhamentoRealizadoExibicao
     ? 'Realizado'
     : estado.agendado === 'aguardando'
       ? 'Aguardando'
