@@ -2013,7 +2013,12 @@ body:has(.programa-integracao-v4) [data-slot="select-content"] {
   --texto-inverso:var(--pi-paper);
 }
 
-.programa-integracao-v4.pi-detail-page :is(a,button,summary,input,textarea,select):focus-visible {
+.programa-integracao-v4 .pi-detail-header :is(a,button,summary,input,textarea,select):focus-visible,
+.programa-integracao-v4 .pi-detail-nav :is(a,button,summary,input,textarea,select):focus-visible,
+.programa-integracao-v4 .pi-data-section :is(a,button,summary,input,textarea,select):focus-visible,
+.programa-integracao-v4 .pi-detail-section-anchor :is(a,button,summary,input,textarea,select):focus-visible,
+.programa-integracao-v4 .pi-moments-section :is(a,button,summary,input,textarea,select):focus-visible,
+.programa-integracao-v4 .pi-complementaries :is(a,button,summary,input,textarea,select):focus-visible {
   outline:none;
   box-shadow:var(--foco);
   border-radius:var(--raio-sm);
@@ -3255,5 +3260,16 @@ body:has(.programa-integracao-v4) [data-slot="select-content"] {
   .programa-integracao-v4 .pi-other-response-row {
     align-items:flex-start;
     flex-direction:column;
+  }
+}
+
+/* Preserva a Jornada e evita rolagem horizontal na navegação em telas estreitas. */
+@media (max-width:760px) {
+  .programa-integracao-v4 .pi-detail-nav {
+    align-items:flex-start;
+  }
+  .programa-integracao-v4 .pi-detail-nav-links {
+    flex-wrap:wrap;
+    overflow-x:visible;
   }
 }
