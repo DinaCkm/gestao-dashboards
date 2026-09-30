@@ -265,11 +265,11 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
   };
 
   return (
-    <Card>
+    <Card className="pi-registros-card">
       <CardHeader className="pb-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <CardTitle className="text-lg">Registros da Integração</CardTitle>
+            <CardTitle className="text-lg">Registros da integração</CardTitle>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
               Consulte e edite os registros já existentes do processo. Tipo, título, data, origem, alinhamento e
               descrição podem ser alterados pelo Administrador. Exclusões são preservadas para restauração.
@@ -286,7 +286,7 @@ export function RegistrosIntegracaoPainel({ legacyId }: RegistrosIntegracaoPaine
               {recolhido ? <Maximize2 className="mr-2 h-4 w-4" /> : <Minimize2 className="mr-2 h-4 w-4" />}
               {recolhido ? 'Maximizar' : 'Minimizar'}
             </Button>
-            <Button type="button" variant="outline" onClick={iniciarNovo}>
+            <Button type="button" onClick={iniciarNovo} className="pi-detail-primary-action">
               <Upload className="mr-2 h-4 w-4" /> Novo registro
             </Button>
           </div>

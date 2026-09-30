@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { GraduationCap, Link2, Loader2, Search, UserPlus, RefreshCw } from "lucide-react";
@@ -202,19 +201,23 @@ export default function VinculoAnjoEcoLider({
   };
 
   return (
-    <Card className="md:col-span-2 xl:col-span-4">
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">Colaborador Anjo · acesso EcoLíder</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
-              O nome e o e-mail acima continuam sendo os dados históricos do processo. Aqui você apenas vincula o usuário que terá acesso ao Espaço do Anjo.
-            </p>
-          </div>
-          {loading ? <Badge variant="outline">Consultando...</Badge> : vinculo?.anjoUserId ? <Badge className="bg-emerald-600">Usuário vinculado</Badge> : <Badge variant="secondary">Nenhum usuário vinculado</Badge>}
+    <div className="pi-anjo-access">
+      <div className="pi-anjo-access-head">
+        <div>
+          <p className="pi-anjo-access-title">Acesso EcoLíder do Anjo</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            O nome e o e-mail acima continuam sendo os dados históricos. Aqui você só vincula quem acessa o Espaço do Anjo.
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        <span className="pi-anjo-access-status">
+          {loading
+            ? "Consultando..."
+            : vinculo?.anjoUserId
+              ? (vinculo.userName || "Usuário vinculado")
+              : "Nenhum usuário vinculado"}
+        </span>
+      </div>
+      <div className="space-y-4">
         {!processoAtivo && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             Este processo está encerrado. O vínculo histórico do Anjo permanece visível, mas novos vínculos ou novos acessos não podem ser criados.
@@ -342,7 +345,7 @@ export default function VinculoAnjoEcoLider({
             )}
           </>
         ) : null}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

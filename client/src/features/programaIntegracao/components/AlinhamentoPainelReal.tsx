@@ -88,6 +88,19 @@ export function AlinhamentoPainelReal({
   }, [processo, statusEdicao]);
 
   const estadoRascunho = estadoAlinhamentoAtual(rascunho, numero);
+  const dataRealizadaExibicao = /^\d{4}-\d{2}-\d{2}$/.test(estadoRascunho.realizado)
+    ? estadoRascunho.realizado
+    : estadoRascunho.realizado === 'true' && /^\d{4}-\d{2}-\d{2}$/.test(estadoRascunho.data)
+      ? estadoRascunho.data
+      : '';
+  const alinhamentoRealizadoExibicao = Boolean(dataRealizadaExibicao || estadoRascunho.realizado === 'true');
+  const statusAgendamentoPrimeiro = alinhamentoRealizadoExibicao
+    ? 'Realizado'
+    : estado.agendado === 'aguardando'
+      ? 'Aguardando'
+      : estado.agendado === 'sim' || Boolean(estado.data || estado.hora || estado.link)
+        ? 'Agendado'
+        : 'Ainda não agendado';
   const fichaEmail = fichaAcaoAtual(processo, `ag${numero}-01`);
   const fichaEmailRascunho = fichaAcaoAtual(rascunho, `ag${numero}-01`);
 
@@ -211,7 +224,7 @@ export function AlinhamentoPainelReal({
                   ? 'border-blue-300 bg-blue-50 text-blue-800'
                   : 'border-slate-300 bg-slate-50 text-slate-700'}
               >
-                {estado.agendado === 'aguardando' ? 'Aguardando' : 'Ainda não agendado'}
+                {statusAgendamentoPrimeiro}
               </Badge>
               <span className="text-xs text-muted-foreground">
                 Atualizado automaticamente pela etapa “Gerar Link do Meet e Enviar o Convite”.
@@ -314,13 +327,13 @@ export function AlinhamentoPainelReal({
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="date"
-              value={estadoRascunho.realizado}
+              value={dataRealizadaExibicao}
               disabled={statusEdicao === 'saving'}
               onChange={(e) => mudarCampo('realizado', e.currentTarget.value)}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm disabled:opacity-60"
             />
             <span className={estadoRascunho.realizado ? 'text-xs font-medium text-emerald-700' : 'text-xs text-muted-foreground'}>
-              {estadoRascunho.realizado ? `realizada em ${formatarData(estadoRascunho.realizado)}` : 'marque a data quando acontecer'}
+              {dataRealizadaExibicao ? `realizada em ${formatarData(dataRealizadaExibicao)}` : 'marque a data quando acontecer'}
             </span>
           </div>
         ),

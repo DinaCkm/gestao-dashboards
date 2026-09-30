@@ -5,20 +5,16 @@ import {
   dataResposta,
   nomeFormularioResposta,
 } from '../helpers/respostaItemHelpers';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ChevronRight, TrendingDown } from 'lucide-react';
 
 interface RespostasProcessoAgrupadasProps {
   processo: ProcessoIntegracao;
 }
 
-const GRUPOS = [
-  [0, 'Outros — cadastro e chegada'],
-  [1, '1º alinhamento'],
-  [2, '2º alinhamento'],
-  [3, '3º alinhamento'],
-  [4, '4º alinhamento'],
-] as const;
+type ColunaMatriz = 'colaborador' | 'gestor' | 'anjo';
+
+const CICLOS = [1, 2, 3, 4] as const;
 
 function tituloResposta(resposta: RespostaFormulario): string {
   if (resposta.form === 'pesquisa') {
@@ -33,102 +29,194 @@ function tituloResposta(resposta: RespostaFormulario): string {
   return nomeFormularioResposta(resposta);
 }
 
-function pesoResposta(resposta: RespostaFormulario): string {
-  const ordemForm: Record<string, number> = { controle: 1, bem: 2, pesquisa: 3, aval: 4, pdi: 5 };
-  const papel = resposta.papel === 'Gestor' ? 1 : resposta.papel === 'Anjo' ? 2 : 3;
-  return `${String(ordemForm[resposta.form] || 9).padStart(2, '0')}-${papel}-${resposta.rid || ''}`;
+function chaveResposta(resposta: RespostaFormulario): string {
+  return resposta.rid || `${resposta.form}-${resposta.ciclo || 0}-${resposta.papel || ''}-${resposta.quando || resposta.em || resposta.submittedAt || ''}`;
+}
+
+function mediaResposta(resposta: RespostaFormulario | null): number | null {
+  if (!resposta || resposta.media == null) return null;
+  const valor = Number(resposta.media);
+  return Number.isFinite(valor) ? valor : null;
+}
+
+function classeNota(valor: number | null): string {
+  if (valor == null) return 'pi-matrix-score-neutral';
+  if (valor >= 4) return 'pi-matrix-score-ok';
+  if (valor >= 3) return 'pi-matrix-score-alert';
+  return 'pi-matrix-score-critical';
+}
+
+function apenasData(resposta: RespostaFormulario | null): string {
+  if (!resposta) return '';
+  const valor = dataResposta(resposta);
+  return valor.split(',')[0]?.trim() || valor;
+}
+
+function correspondeColuna(resposta: RespostaFormulario, ciclo: number, coluna: ColunaMatriz): boolean {
+  if (Number(resposta.ciclo || 0) !== ciclo) return false;
+  if (coluna === 'colaborador') return resposta.form === 'pesquisa';
+  if (coluna === 'gestor') return resposta.form === 'aval' && resposta.papel === 'Gestor';
+  return resposta.form === 'aval' && resposta.papel === 'Anjo';
+}
+
+function ultimaCorrespondente(
+  respostas: RespostaFormulario[],
+  ciclo: number,
+  coluna: ColunaMatriz,
+): RespostaFormulario | null {
+  let encontrada: RespostaFormulario | null = null;
+  respostas.forEach((resposta) => {
+    if (correspondeColuna(resposta, ciclo, coluna)) encontrada = resposta;
+  });
+  return encontrada;
 }
 
 export function RespostasProcessoAgrupadas({ processo }: RespostasProcessoAgrupadasProps) {
-  const [abertas, setAbertas] = useState<Record<string, boolean>>({});
   const respostas = processo.resp || [];
+  const [selecionada, setSelecionada] = useState<string>('');
 
-  const grupos = useMemo(() => {
-    const saida: Record<number, RespostaFormulario[]> = { 0: [], 1: [], 2: [], 3: [], 4: [] };
-    respostas.forEach((resposta) => {
-      const ciclo = Number(resposta.ciclo || 0);
-      const chave = ciclo >= 1 && ciclo <= 4 ? ciclo : 0;
-      saida[chave].push(resposta);
+  const matriz = useMemo(() => CICLOS.map((ciclo) => ({
+    ciclo,
+    colaborador: ultimaCorrespondente(respostas, ciclo, 'colaborador'),
+    gestor: ultimaCorrespondente(respostas, ciclo, 'gestor'),
+    anjo: ultimaCorrespondente(respostas, ciclo, 'anjo'),
+  })), [respostas]);
+
+  const chavesMatriz = useMemo(() => {
+    const chaves = new Set<string>();
+    matriz.forEach((linha) => {
+      [linha.colaborador, linha.gestor, linha.anjo].forEach((resposta) => {
+        if (resposta) chaves.add(chaveResposta(resposta));
+      });
     });
-    Object.values(saida).forEach((lista) => lista.sort((a, b) => pesoResposta(a).localeCompare(pesoResposta(b))));
-    return saida;
-  }, [respostas]);
+    return chaves;
+  }, [matriz]);
+
+  const outras = useMemo(
+    () => respostas.filter((resposta) => !chavesMatriz.has(chaveResposta(resposta))),
+    [respostas, chavesMatriz],
+  );
+
+  const respostaSelecionada = useMemo(
+    () => respostas.find((resposta) => chaveResposta(resposta) === selecionada) || null,
+    [respostas, selecionada],
+  );
+
+  const ultimaResposta = respostas.length ? respostas[respostas.length - 1] : null;
+  const resumo = respostas.length
+    ? `${respostas.length} resposta${respostas.length === 1 ? '' : 's'} · última em ${apenasData(ultimaResposta)}`
+    : 'nenhuma resposta registrada';
+
+  const renderCelula = (
+    resposta: RespostaFormulario | null,
+    anterior: RespostaFormulario | null,
+  ) => {
+    if (!resposta) return <span className="pi-matrix-score pi-matrix-score-neutral">—</span>;
+    const atual = mediaResposta(resposta);
+    const anteriorValor = mediaResposta(anterior);
+    const caiu = atual != null && anteriorValor != null && atual < anteriorValor;
+    return (
+      <button
+        type="button"
+        className={`pi-matrix-score ${classeNota(atual)}`}
+        onClick={() => setSelecionada(chaveResposta(resposta))}
+        title="Ver resposta"
+      >
+        <span>{atual == null ? '—' : atual.toFixed(1).replace('.', ',')}</span>
+        {caiu && <TrendingDown className="h-3.5 w-3.5" aria-label="nota menor que no alinhamento anterior" />}
+      </button>
+    );
+  };
 
   return (
-    <details className="rounded-lg border bg-background">
-      <summary className="cursor-pointer px-4 py-3 font-semibold">
-        Respostas dos formulários
-        <span className="ml-2 text-xs font-normal text-muted-foreground">
-          {respostas.length ? `${respostas.length} resposta${respostas.length === 1 ? '' : 's'} registrada${respostas.length === 1 ? '' : 's'}` : 'nada registrado ainda'}
-        </span>
+    <details className="pi-complementary-section">
+      <summary className="pi-complementary-summary-row">
+        <ChevronRight className="pi-complementary-chevron h-4 w-4" />
+        <span className="font-medium">Respostas dos formulários</span>
+        <span className="pi-complementary-summary-text">{resumo}</span>
       </summary>
 
-      <div className="border-t">
-        {!respostas.length && (
-          <div className="p-5 text-sm text-muted-foreground">
+      <div className="pi-complementary-body">
+        {!respostas.length ? (
+          <div className="text-sm text-muted-foreground">
             Nenhuma resposta registrada ainda. Use “Registrar respostas” no menu do Programa de Integração para importar o que veio dos formulários.
           </div>
-        )}
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="pi-response-matrix">
+                <thead>
+                  <tr>
+                    <th>Alinhamento</th>
+                    <th>Colaborador</th>
+                    <th>Gestor</th>
+                    <th>Anjo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {matriz.map((linha, indice) => {
+                    const anterior = indice > 0 ? matriz[indice - 1] : null;
+                    const dataLinha = apenasData(linha.colaborador || linha.gestor || linha.anjo);
+                    return (
+                      <tr key={linha.ciclo}>
+                        <td>
+                          <strong>{linha.ciclo}º</strong>
+                          {dataLinha && <span className="ml-1 text-xs text-muted-foreground">· {dataLinha}</span>}
+                        </td>
+                        <td>{renderCelula(linha.colaborador, anterior?.colaborador || null)}</td>
+                        <td>{renderCelula(linha.gestor, anterior?.gestor || null)}</td>
+                        <td>{renderCelula(linha.anjo, anterior?.anjo || null)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-        {GRUPOS.map(([ciclo, rotulo]) => {
-          const lista = grupos[ciclo];
-          if (!lista.length) return null;
-          return (
-            <section key={ciclo} className="border-b last:border-b-0">
-              <div className="flex items-center gap-2 bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                <span>{rotulo}</span>
-                <span className="font-mono normal-case tracking-normal">{lista.length} resposta{lista.length === 1 ? '' : 's'}</span>
-              </div>
-
-              <div className="divide-y">
-                {lista.map((resposta) => {
-                  const chave = resposta.rid || `${resposta.form}-${resposta.ciclo}-${resposta.papel}-${resposta.quando}`;
-                  const aberta = Boolean(abertas[chave]);
-                  const campos = camposResposta(resposta);
+            {outras.length > 0 && (
+              <div className="pi-other-responses">
+                {outras.map((resposta) => {
+                  const chave = chaveResposta(resposta);
                   return (
-                    <div key={chave} className={aberta ? 'bg-muted/20 p-4' : 'p-4'}>
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div className="min-w-0">
-                          <p className="font-semibold">{tituloResposta(resposta)}</p>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            {resposta.papel && <Badge variant="outline">{resposta.papel}</Badge>}
-                            {resposta.media != null && <Badge variant="outline">média {Number(resposta.media).toFixed(1).replace('.', ',')}</Badge>}
-                            {resposta.alertas?.length > 0 && <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">{resposta.alertas.length} ponto{resposta.alertas.length === 1 ? '' : 's'} de atenção</Badge>}
-                            {resposta.avaliador && <span>por {resposta.avaliador}</span>}
-                            {resposta.source === 'publico' && <Badge variant="outline" className="border-dashed">via link público</Badge>}
-                            {resposta.respondentEmail && <span>{resposta.respondentEmail}</span>}
-                            <span className="font-mono">{dataResposta(resposta)}</span>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setAbertas((atual) => ({ ...atual, [chave]: !aberta }))}
-                        >
-                          {aberta ? 'Ocultar' : 'Ver resposta'}
-                        </Button>
+                    <div key={chave} className="pi-other-response-row">
+                      <div className="min-w-0">
+                        <p className="font-medium">{tituloResposta(resposta)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {resposta.avaliador ? `${resposta.avaliador} · ` : ''}{dataResposta(resposta)}
+                        </p>
                       </div>
-
-                      {aberta && (
-                        <div className="mt-3 overflow-hidden rounded-md border bg-background">
-                          {campos.length ? campos.map((campo, indice) => (
-                            <div key={`${campo.rotulo}-${indice}`} className="grid gap-1 border-b px-3 py-2 text-xs last:border-b-0 md:grid-cols-[minmax(150px,0.8fr)_minmax(0,1.2fr)] md:gap-4">
-                              <span className="font-medium text-muted-foreground break-words">{campo.rotulo}</span>
-                              <span className="whitespace-pre-wrap break-words">{campo.valor}</span>
-                            </div>
-                          )) : (
-                            <div className="px-3 py-4 text-sm text-muted-foreground">A resposta está registrada, mas não há campos detalhados disponíveis neste registro.</div>
-                          )}
-                        </div>
-                      )}
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setSelecionada(chave)}>
+                        Ver resposta
+                      </Button>
                     </div>
                   );
                 })}
               </div>
-            </section>
-          );
-        })}
+            )}
+
+            {respostaSelecionada && (
+              <div className="pi-response-detail">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{tituloResposta(respostaSelecionada)}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{dataResposta(respostaSelecionada)}</p>
+                  </div>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setSelecionada('')}>Fechar</Button>
+                </div>
+                <div className="mt-3 overflow-hidden rounded-lg border">
+                  {camposResposta(respostaSelecionada).length ? camposResposta(respostaSelecionada).map((campo, indice) => (
+                    <div key={`${campo.rotulo}-${indice}`} className="grid gap-1 border-b px-3 py-2 text-xs last:border-b-0 md:grid-cols-[minmax(150px,0.8fr)_minmax(0,1.2fr)] md:gap-4">
+                      <span className="font-medium text-muted-foreground break-words">{campo.rotulo}</span>
+                      <span className="whitespace-pre-wrap break-words">{campo.valor}</span>
+                    </div>
+                  )) : (
+                    <div className="px-3 py-4 text-sm text-muted-foreground">A resposta está registrada, mas não há campos detalhados disponíveis neste registro.</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </details>
   );
