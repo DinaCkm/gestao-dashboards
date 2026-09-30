@@ -3673,20 +3673,35 @@ function FormulariosDoGestor({ colaborador }: { colaborador: ColaboradorAcompanh
             </div>
           ))}
 
-          {pendencias.map((p,i)=>(
-            <div key={'pendente-' + i} className="rounded-xl border bg-slate-50 p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
-                  <div className="mt-1 text-xs text-slate-500">
-                    {p.ciclo===0?(p.etapa||'Pré-integração'):'Alinhamento de '+diaDoAlinhamento(p.ciclo)+' dias'}
-                    {p.prazo ? ' · prazo ' + dataBr(p.prazo) : ''}
+          {pendencias.map((p,i)=>{
+            const link = linkPreencherFormulario(colaborador, p);
+            return (
+              <div key={'pendente-' + i} className="rounded-xl border bg-slate-50 p-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">{p.formulario}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {p.ciclo===0?(p.etapa||'Pré-integração'):'Pós '+p.ciclo+'º alinhamento'}
+                      {p.solicitadoEm ? ' · disponível desde ' + dataBr(p.solicitadoEm) : ''}
+                      {p.prazo ? ' · prazo ' + dataBr(p.prazo) : ''}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Disponível'}</Badge>
+                    {link && (
+                      <Button
+                        size="sm"
+                        type="button"
+                        onClick={() => { window.location.href = link; }}
+                      >
+                        Preencher formulário
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <Badge variant={p.atrasado?'destructive':'secondary'}>{p.atrasado?'Atrasado':'Pendente'}</Badge>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {!respondidos.length && !pendencias.length && (
             <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">

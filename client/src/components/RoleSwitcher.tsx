@@ -8,7 +8,7 @@ import { toast } from "sonner";
  * Botão de alternância de papel para gerentes que também são alunos.
  * Mostra o papel atual e permite trocar para o outro.
  */
-export default function RoleSwitcher() {
+export default function RoleSwitcher({ compact = false }: { compact?: boolean }) {
   const { activeRole, toggleRole, isManagerAluno } = useRole();
   const [, setLocation] = useLocation();
 
@@ -44,7 +44,8 @@ export default function RoleSwitcher() {
       size="sm"
       onClick={handleSwitch}
       className={`
-        gap-2 font-medium transition-all duration-300 border-2
+        font-medium transition-all duration-300 border-2
+        ${compact ? "h-9 w-9 p-0 gap-0" : "gap-2"}
         ${isAluno
           ? "border-blue-500/50 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 hover:border-blue-500"
           : "border-amber-500/50 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 hover:border-amber-500"
@@ -52,8 +53,8 @@ export default function RoleSwitcher() {
       `}
       title={`Trocar para modo ${isAluno ? "Gerente" : "Aluno"}`}
     >
-      <ArrowLeftRight className="h-3.5 w-3.5" />
-      {isAluno ? (
+      <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" />
+      {!compact && (isAluno ? (
         <>
           <Building2 className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Visão Gerencial</span>
@@ -63,7 +64,7 @@ export default function RoleSwitcher() {
           <GraduationCap className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Visão Aluno</span>
         </>
-      )}
+      ))}
     </Button>
   );
 }

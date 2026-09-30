@@ -150,7 +150,11 @@ export default function AnjoFormularios() {
                         <CardTitle className="text-lg">{item.colaborador}</CardTitle>
                         <p className="mt-1 text-xs text-muted-foreground">{item.cargo || "Cargo não informado"}{item.unidade ? ` · ${item.unidade}` : ""}</p>
                       </div>
-                      {item.status === "respondido" ? <Badge className="bg-emerald-600">Respondido</Badge> : item.status === "pendente" ? <Badge variant="secondary">Pendente</Badge> : <Badge variant="outline">Aguardando liberação</Badge>}
+                      {item.status === "respondido"
+                        ? <Badge className="bg-emerald-600">Respondido</Badge>
+                        : item.status === "pendente"
+                          ? <Badge variant={item.atrasado ? "destructive" : "secondary"}>{item.atrasado ? "Atrasado" : "Disponível"}</Badge>
+                          : <Badge variant="outline">Aguardando liberação</Badge>}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -160,7 +164,18 @@ export default function AnjoFormularios() {
                     </div>
                     {item.status === "aguardando_liberacao" && <p className="text-sm text-muted-foreground">{item.bloqueioMotivo}</p>}
                     {item.status === "respondido" && <p className="text-sm text-muted-foreground">Resposta registrada em {formatarData(item.respondidoEm)}.</p>}
-                    {item.status === "pendente" && <Button type="button" onClick={() => { window.location.href = item.rotaPublica; }}>Responder formulário</Button>}
+                    {item.status === "pendente" && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          Disponível{item.solicitadoEm ? ` desde ${formatarData(item.solicitadoEm)}` : ""}
+                          {item.prazo ? ` · prazo ${formatarData(item.prazo)}` : ""}.
+                          {!item.atrasado ? " Você ainda está dentro do prazo." : ""}
+                        </p>
+                        <Button type="button" onClick={() => { window.location.href = item.rotaPublica; }}>
+                          Responder formulário
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

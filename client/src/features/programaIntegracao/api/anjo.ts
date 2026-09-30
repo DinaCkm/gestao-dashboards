@@ -16,7 +16,9 @@ export type AnjoFormulario = {
   itemId: string;
   nome: string;
   status: "aguardando_liberacao" | "pendente" | "respondido";
-  alinhamentoRealizado: boolean;
+  solicitadoEm: string | null;
+  prazo: string | null;
+  atrasado: boolean;
   bloqueioMotivo: string | null;
   respondidoEm: string | null;
   rotaPublica: string;
