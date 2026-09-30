@@ -27,6 +27,23 @@ function dataPtBr(value: string) {
   return new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR');
 }
 
+function hojeIso() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+function adicionarDiasIso(value: string, dias: number) {
+  const data = new Date(`${value}T12:00:00`);
+  data.setDate(data.getDate() + dias);
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, '0');
+  const dia = String(data.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
 export function PdiIntegracaoPainel({ processo }: Props) {
   const legacyId = String(processo.id || '');
   const [ctx, setCtx] = useState<ContextoAvaliacaoPotencial | null>(null);
@@ -35,7 +52,7 @@ export function PdiIntegracaoPainel({ processo }: Props) {
   const [mostrarGestor, setMostrarGestor] = useState(false);
   const [mostrarCompetencias, setMostrarCompetencias] = useState(false);
   const [selecionadas, setSelecionadas] = useState<string[]>([]);
-  const [prazoCompetencias, setPrazoCompetencias] = useState('');
+  const [prazosCompetencias, setPrazosCompetencias] = useState<Record<string, string>>({});
 
   const carregar = useCallback(async () => {
     if (!legacyId) return;
@@ -54,11 +71,6 @@ export function PdiIntegracaoPainel({ processo }: Props) {
   const previewCompetencias = ctx?.tarefasCompetenciasPreview || null;
   const previewGestor = ctx?.tarefasGestorPreview || null;
 
-  useEffect(() => {
-    const sugerido = previewCompetencias?.prazoSugerido || '';
-    if (sugerido && !prazoCompetencias) setPrazoCompetencias(sugerido);
-  }, [previewCompetencias?.prazoSugerido, prazoCompetencias]);
-
   const idsDisponiveis = useMemo(() => {
     const ids = new Set<string>();
     for (const competencia of previewCompetencias?.competencias || []) {
@@ -71,6 +83,13 @@ export function PdiIntegracaoPainel({ processo }: Props) {
 
   useEffect(() => {
     setSelecionadas((atuais) => atuais.filter((id) => idsDisponiveis.has(id)));
+    setPrazosCompetencias((atuais) => {
+      const filtrados: Record<string, string> = {};
+      for (const [id, prazo] of Object.entries(atuais)) {
+        if (idsDisponiveis.has(id)) filtrados[id] = prazo;
+      }
+      return filtrados;
+    });
   }, [idsDisponiveis]);
 
   const executar = async (nome: string, fn: () => Promise<any>, sucesso?: string) => {
@@ -90,9 +109,30 @@ export function PdiIntegracaoPainel({ processo }: Props) {
   };
 
   const alternarSelecao = (id: string) => {
-    setSelecionadas((atuais) =>
-      atuais.includes(id) ? atuais.filter((item) => item !== id) : [...atuais, id],
-    );
+    if (selecionadas.includes(id)) {
+      setSelecionadas((atuais) => atuais.filter((item) => item !== id));
+      setPrazosCompetencias((atuais) => {
+        const copia = { ...atuais };
+        delete copia[id];
+        return copia;
+      });
+      return;
+    }
+
+    const ultimoId = selecionadas[selecionadas.length - 1];
+    const prazoAnterior = ultimoId ? prazosCompetencias[ultimoId] : '';
+    let sugerido = prazoAnterior
+      ? adicionarDiasIso(prazoAnterior, 15)
+      : adicionarDiasIso(hojeIso(), 15);
+    const limite = previewCompetencias?.prazoSugerido || '';
+
+    if (limite && sugerido > limite) {
+      sugerido = '';
+      toast.warning('O próximo prazo com intervalo de 15 dias ultrapassaria o fim do onboarding. Ajuste os prazos anteriores ou informe manualmente uma data válida.');
+    }
+
+    setSelecionadas((atuais) => [...atuais, id]);
+    setPrazosCompetencias((atuais) => ({ ...atuais, [id]: sugerido }));
   };
 
   const criarSelecionadas = async () => {
@@ -100,21 +140,34 @@ export function PdiIntegracaoPainel({ processo }: Props) {
       toast.error('Selecione ao menos uma tarefa.');
       return;
     }
-    if (!prazoCompetencias) {
-      toast.error('Informe o prazo das tarefas selecionadas.');
+
+    const tarefasComPrazo = selecionadas.map((tarefaId) => ({
+      tarefaId,
+      prazo: String(prazosCompetencias[tarefaId] || '').trim(),
+    }));
+    const semPrazo = tarefasComPrazo.filter((item) => !item.prazo);
+    if (semPrazo.length) {
+      toast.error('Informe o prazo de cada tarefa selecionada antes de confirmar.');
       return;
     }
+
+    const resumoPrazos = tarefasComPrazo
+      .map((item, indice) => `${indice + 1}. ${dataPtBr(item.prazo)}`)
+      .join('\n');
     const confirmou = window.confirm(
-      `Criar ${selecionadas.length} tarefa(s) no PDI de ${ctx?.vinculo.aluno?.nome || processo.nome}, com prazo em ${dataPtBr(prazoCompetencias)}?\n\nSomente as tarefas marcadas serão inseridas.`,
+      `Criar ${selecionadas.length} tarefa(s) no PDI de ${ctx?.vinculo.aluno?.nome || processo.nome}?\n\nPrazos individuais:\n${resumoPrazos}\n\nSomente as tarefas marcadas serão inseridas.`,
     );
     if (!confirmou) return;
 
     const resultado = await executar(
       'criar-competencias',
-      () => criarTarefasCompetenciasIntegracao(legacyId, selecionadas, prazoCompetencias),
+      () => criarTarefasCompetenciasIntegracao(legacyId, tarefasComPrazo),
       `${selecionadas.length} tarefa(s) baseada(s) nas competências criada(s) no PDI.`,
     );
-    if (resultado) setSelecionadas([]);
+    if (resultado) {
+      setSelecionadas([]);
+      setPrazosCompetencias({});
+    }
   };
 
   const reverterCompetencias = async () => {
@@ -333,6 +386,30 @@ export function PdiIntegracaoPainel({ processo }: Props) {
                               {tarefa.criada && tarefa.prazo && (
                                 <p className="mt-3 text-xs font-medium text-emerald-700">Prazo registrado: {dataPtBr(tarefa.prazo)}</p>
                               )}
+                              {!tarefa.criada && selecionadas.includes(tarefa.id) && (
+                                <div className="mt-4 max-w-xs space-y-1.5 rounded-lg border border-violet-200 bg-white p-3">
+                                  <label className="text-xs font-semibold text-violet-900" htmlFor={`prazo-${tarefa.id}`}>
+                                    Prazo desta tarefa
+                                  </label>
+                                  <input
+                                    id={`prazo-${tarefa.id}`}
+                                    type="date"
+                                    value={prazosCompetencias[tarefa.id] || ''}
+                                    min={hojeIso()}
+                                    max={previewCompetencias.prazoSugerido || undefined}
+                                    disabled={Boolean(acao)}
+                                    onChange={(event) => setPrazosCompetencias((atuais) => ({
+                                      ...atuais,
+                                      [tarefa.id]: event.target.value,
+                                    }))}
+                                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                    onClick={(event) => event.stopPropagation()}
+                                  />
+                                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                                    Sugestão automática: 15 dias após o prazo da última tarefa selecionada. Você pode ajustar antes de salvar.
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </label>
@@ -343,21 +420,14 @@ export function PdiIntegracaoPainel({ processo }: Props) {
               ))}
             </div>
 
-            <div className="grid gap-3 rounded-lg border bg-white p-4 md:grid-cols-[minmax(220px,320px)_1fr] md:items-end">
-              <label className="space-y-1 text-sm">
-                <span className="font-semibold">Prazo das tarefas selecionadas</span>
-                <input
-                  type="date"
-                  value={prazoCompetencias}
-                  max={previewCompetencias.prazoSugerido || undefined}
-                  disabled={Boolean(acao)}
-                  onChange={(event) => setPrazoCompetencias(event.target.value)}
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                />
-              </label>
-              <div className="text-xs text-muted-foreground">
-                O sistema sugere o fim do onboarding ({dataPtBr(previewCompetencias.prazoSugerido || '')}), mas você pode escolher uma data anterior antes de salvar.
-              </div>
+            <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-4 text-xs leading-relaxed text-muted-foreground">
+              <p className="font-semibold text-violet-900">Prazos individuais</p>
+              <p className="mt-1">
+                Cada tarefa selecionada recebe seu próprio prazo. Ao marcar uma nova tarefa, o sistema sugere uma data com 15 dias de intervalo em relação à última tarefa selecionada. Você pode ajustar cada data antes de salvar.
+              </p>
+              <p className="mt-1">
+                Limite do processo: {dataPtBr(previewCompetencias.prazoSugerido || '')}.
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
@@ -382,7 +452,7 @@ export function PdiIntegracaoPainel({ processo }: Props) {
                 )}
                 <Button
                   type="button"
-                  disabled={!ctx?.vinculo.seguro || !previewCompetencias.disponivel || !selecionadas.length || !prazoCompetencias || Boolean(acao)}
+                  disabled={!ctx?.vinculo.seguro || !previewCompetencias.disponivel || !selecionadas.length || selecionadas.some((id) => !prazosCompetencias[id]) || Boolean(acao)}
                   onClick={() => void criarSelecionadas()}
                 >
                   <PlusCircle className="mr-1 h-4 w-4" />
