@@ -8,10 +8,15 @@ import {
   deveMostrarRotuloCurtoEmail,
 } from '../helpers/emailAcaoHelpers';
 import { modeloPadraoEmailIntegracao } from '../helpers/emailModelosIntegracao';
-import { montarPreviewEmailIntegracao } from '../helpers/emailMontagemHelpers';
+import {
+  montarPreviewEmailIntegracao,
+  emailMarkdownParaHtmlRico,
+} from '../helpers/emailMontagemHelpers';
 import { fichaAcaoAtual } from '../helpers/itemStateHelpers';
 import { gerarDocumentoAtaRelatorio } from '../helpers/atasRelatoriosHelpers';
 import { EmailPreviewDialog } from './EmailPreviewDialog';
+import { enviarEmailManualIntegracao } from '../api/client';
+import { emailTemTutorial } from '../helpers/tutorialPrimeiroAcesso';
 
 interface EmailActionButtonsProps {
   processo: ProcessoIntegracao;
@@ -43,8 +48,9 @@ function hojeBr(): string {
 
 /**
  * Espelha `botoesMail(it,id,s)` + `abrirMail(k,id)` do HTML histórico.
- * O componente não envia e-mail: gera a prévia, permite copiar/abrir no cliente
- * de e-mail e usa a própria situação da ação para registrar “enviado”.
+ * O componente gera a prévia e permite envio somente por ação explícita do
+ * administrador. E-mails que exigem anexos continuam sendo abertos no cliente
+ * de e-mail para conferência/anexação manual.
  */
 export function EmailActionButtons({
   processo,
@@ -76,6 +82,50 @@ export function EmailActionButtons({
   const relN = chaveAberta ? relatorioDaChave(chaveAberta) : null;
   const ugpAlinhamento = chaveAberta ? (/^m_pos([1-4])_ugp$/.exec(chaveAberta)?.[1] || '') : '';
   const ugpNumero = ugpAlinhamento ? Number(ugpAlinhamento) as 1 | 2 | 3 | 4 : null;
+  const requerAnexoManual = Boolean(
+    preview && (
+      String(preview.email.anexo || '').trim() ||
+      (chaveAberta && emailTemTutorial(chaveAberta))
+    ),
+  );
+  const motivoEnvioManualIndisponivel = !preview
+    ? 'Abra a prévia do e-mail antes de enviar.'
+    : preview.faltandoDados
+      ? 'Complete os campos marcados como PREENCHA AQUI antes de enviar.'
+      : !String(preview.email.para || '').trim()
+        ? 'Informe ao menos um destinatário antes de enviar.'
+        : requerAnexoManual
+          ? 'Este e-mail prevê anexo. Use “Abrir no e-mail” para anexar os arquivos e enviar com segurança.'
+          : '';
+  const envioManualDisponivel = Boolean(preview && !motivoEnvioManualIndisponivel);
+
+  const enviarEmailAtual = async () => {
+    if (!preview || !chaveAberta || !envioManualDisponivel) {
+      throw new Error(motivoEnvioManualIndisponivel || 'Este e-mail não está pronto para envio.');
+    }
+
+    await enviarEmailManualIntegracao({
+      legacyId: processoId,
+      chave: chaveAberta,
+      para: preview.email.para,
+      cc: preview.email.cc || '',
+      assunto: preview.email.assunto,
+      html: emailMarkdownParaHtmlRico(preview.email.corpo),
+      texto: preview.textoSimples,
+      anexo: preview.email.anexo || '',
+    });
+
+    if (!enviado && onAlternarEnviado) {
+      try {
+        await onAlternarEnviado(processoId, item.id);
+        onAbrirFicha?.();
+      } catch {
+        throw new Error(
+          'O e-mail foi enviado, mas não foi possível marcar a etapa como enviada. Não reenvie; atualize a ficha e faça apenas a marcação.',
+        );
+      }
+    }
+  };
 
   const baixarAssessmentAtual = () => {
     if (!processoId) return;
@@ -141,6 +191,9 @@ export function EmailActionButtons({
         preview={preview}
         nomePessoa={processo.nome}
         enviado={enviado}
+        onEnviarEmail={enviarEmailAtual}
+        envioManualDisponivel={envioManualDisponivel}
+        motivoEnvioManualIndisponivel={motivoEnvioManualIndisponivel || undefined}
         onAlternarEnviado={onAlternarEnviado ? async () => {
           await onAlternarEnviado(processoId, item.id);
         } : undefined}
