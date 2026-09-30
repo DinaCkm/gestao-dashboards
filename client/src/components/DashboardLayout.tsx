@@ -380,21 +380,27 @@ function DashboardLayoutContent({
   const isMobile = useIsMobile();
   const [anjoAccess, setAnjoAccess] = useState<AnjoStatusResponse | null>(null);
   const [anjoAccessResolved, setAnjoAccessResolved] = useState(false);
+  const anjoUserId = (user as any)?.id ?? null;
+  const anjoUserRole = user?.role ?? null;
 
   useEffect(() => {
     let ativo = true;
-    if (!user || user.role === "admin" || user.role === "admin2") {
+    if (!anjoUserId || anjoUserRole === "admin" || anjoUserRole === "admin2") {
       setAnjoAccess(null);
       setAnjoAccessResolved(true);
       return () => { ativo = false; };
     }
+
+    // A consulta do acesso de Anjo depende apenas da identidade/papel.
+    // Refetches de auth.me podem recriar o objeto user sem alterar esses valores;
+    // não devemos reabrir o estado de carregamento e desmontar a página nesses casos.
     setAnjoAccessResolved(false);
     carregarStatusAnjo()
       .then((status) => { if (ativo) setAnjoAccess(status); })
       .catch(() => { if (ativo) setAnjoAccess(null); })
       .finally(() => { if (ativo) setAnjoAccessResolved(true); });
     return () => { ativo = false; };
-  }, [user]);
+  }, [anjoUserId, anjoUserRole]);
 
   const hasActiveAngelAccess = Boolean(anjoAccess?.hasActiveAssignments);
   const isPureAngel = Boolean(anjoAccess?.pureAngel);
