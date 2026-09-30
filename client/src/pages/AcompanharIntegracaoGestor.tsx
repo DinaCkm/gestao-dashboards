@@ -3804,6 +3804,70 @@ function CarteiraGestor({
   );
 }
 
+function tarefasPdiCriticas(colaborador: ColaboradorAcompanhamento) {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const limite = new Date(hoje);
+  limite.setDate(limite.getDate() + 3);
+
+  return (colaborador.pdi.itens || [])
+    .filter((item) => {
+      if (item.concluida || !item.prazo) return false;
+      const prazo = new Date(`${String(item.prazo).slice(0, 10)}T12:00:00`);
+      if (Number.isNaN(prazo.getTime())) return false;
+      prazo.setHours(0, 0, 0, 0);
+      return prazo <= limite;
+    })
+    .sort((a, b) => String(a.prazo || '').localeCompare(String(b.prazo || '')));
+}
+
+function AlertaPdiGestor({ colaborador }: { colaborador: ColaboradorAcompanhamento }) {
+  const tarefas = tarefasPdiCriticas(colaborador);
+  if (!tarefas.length) return null;
+
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  return (
+    <Card className="rounded-2xl border border-amber-200 bg-amber-50/70 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
+      <CardContent className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-amber-100 p-2 text-amber-700"><AlertTriangle className="h-5 w-5" /></span>
+          <div>
+            <div className="font-black text-amber-950">PDI — atenção ao prazo</div>
+            <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
+              Há tarefa(s) pendente(s) do PDI com prazo próximo ou vencido.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {tarefas.map((item) => {
+            const prazo = new Date(`${String(item.prazo).slice(0, 10)}T12:00:00`);
+            prazo.setHours(0, 0, 0, 0);
+            const dias = Math.round((prazo.getTime() - hoje.getTime()) / 86400000);
+            const situacao = dias < 0
+              ? `Vencida há ${Math.abs(dias)} ${Math.abs(dias) === 1 ? 'dia' : 'dias'}`
+              : dias === 0
+                ? 'Vence hoje'
+                : dias === 1
+                  ? 'Vence amanhã'
+                  : `Vence em ${dias} dias`;
+            return (
+              <div key={String(item.id) + '-' + String(item.prazo)} className="rounded-xl border border-amber-200 bg-white p-3">
+                <div className="text-sm font-semibold text-slate-900">{item.titulo}</div>
+                <div className="mt-1 text-xs text-slate-600">
+                  Prazo: {dataBr(String(item.prazo || ''))} · <span className="font-semibold text-amber-800">{situacao}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function GestorDetalheSimples({ colaborador, onVoltar }: { colaborador:ColaboradorAcompanhamento; onVoltar:()=>void }) {
   return (
     <div className="space-y-4">
@@ -3817,6 +3881,7 @@ function GestorDetalheSimples({ colaborador, onVoltar }: { colaborador:Colaborad
       </Card>
 
       <KpisOperacionais colaborador={colaborador} visaoGestor />
+      <AlertaPdiGestor colaborador={colaborador}/>
       <PendenciasEquipeGestor colaborador={colaborador}/>
       <FormulariosDoGestor colaborador={colaborador}/>
       <EvolucaoBloco titulo="Minha percepção sobre o colaborador" respostas={colaborador.respostas} papel="Gestor"/>
