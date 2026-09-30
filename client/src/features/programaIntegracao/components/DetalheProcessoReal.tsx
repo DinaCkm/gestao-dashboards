@@ -46,7 +46,6 @@ import { LeituraIntegradaBackoffice } from './LeituraIntegradaBackoffice';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
@@ -80,6 +79,13 @@ const statusClasses = {
   ok: 'border-emerald-300 bg-emerald-50 text-emerald-800',
   off: 'border-slate-300 bg-slate-50 text-slate-700',
 } as const;
+
+function classeStatusDetalhe(key: keyof typeof statusClasses): string {
+  if (key === 'ok') return 'pi-status-ok';
+  if (key === 'late') return 'pi-status-critical';
+  if (key === 'act' || key === 'wait') return 'pi-status-alert';
+  return 'pi-status-neutral';
+}
 
 function statusAcaoDisponiveis(itemId: string, atual?: StatusAcaoLegado): Array<[StatusAcaoLegado, string]> {
   const base: Array<[StatusAcaoLegado, string]> = [
@@ -900,7 +906,7 @@ export function DetalheProcessoReal({
               <div key={alinhamento.n} className="pi-moment-date-card">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-semibold">{alinhamento.n}º alinhamento</span>
-                  <Badge variant="outline" className={statusClasses[alinhamento.estado.k]}>{alinhamento.estado.l}</Badge>
+                  <span className={`pi-status-chip ${classeStatusDetalhe(alinhamento.estado.k)}`}>{alinhamento.estado.l}</span>
                 </div>
                 <p>
                   Previsto: {alinhamento.dataMarco ? formatarData(alinhamento.dataMarco) : '—'}
