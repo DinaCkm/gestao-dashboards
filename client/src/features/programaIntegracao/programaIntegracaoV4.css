@@ -692,6 +692,7 @@ body:has(.programa-integracao-v4) [data-slot="select-content"] {
   --detail-fundo-pagina:#e9e6f4;
   --detail-fundo-suave:#f6f5f9;
   --detail-card:#ffffff;
+  --detail-on-roxo:#ffffff;
   --detail-dirty-bg:#fffcf5;
   --detail-shadow-1:0 1px 2px rgba(40,20,80,.06),0 1px 3px rgba(40,20,80,.04);
   --detail-shadow-2:0 4px 12px rgba(40,20,80,.10),0 2px 4px rgba(40,20,80,.06);
@@ -722,6 +723,7 @@ body:has(.programa-integracao-v4) [data-slot="select-content"] {
   --detail-fundo-pagina:var(--pi-paper);
   --detail-fundo-suave:var(--pi-sunk);
   --detail-card:var(--pi-surface);
+  --detail-on-roxo:#ffffff;
   --detail-dirty-bg:var(--pi-surface-2);
   --detail-shadow-1:var(--pi-shadow);
   --detail-shadow-2:var(--pi-shadow-2);
@@ -870,7 +872,7 @@ body:has(.programa-integracao-v4) [data-slot="select-content"] {
 .programa-integracao-v4 .pi-detail-primary-action {
   background:var(--detail-roxo) !important;
   border-color:var(--detail-roxo) !important;
-  color:var(--detail-card) !important;
+  color:var(--detail-on-roxo) !important;
   transition:
     background var(--detail-transition),
     border-color var(--detail-transition),
@@ -1064,7 +1066,7 @@ body:has(.programa-integracao-v4) [data-slot="select-content"] {
 
 .programa-integracao-v4 .pi-detail-nav button.is-active {
   background:var(--detail-roxo);
-  color:var(--detail-card);
+  color:var(--detail-on-roxo);
 }
 
 .programa-integracao-v4 .pi-detail-nav button.pi-detail-nav-primary:not(.is-active) {
@@ -1153,7 +1155,7 @@ body:has(.programa-integracao-v4) [data-slot="select-content"] {
   place-items:center;
   border-radius:10px;
   background:var(--detail-roxo);
-  color:var(--detail-card);
+  color:var(--detail-on-roxo);
 }
 
 .programa-integracao-v4 .pi-data-summary-title {
@@ -1512,7 +1514,7 @@ body:has(.programa-integracao-v4) [data-slot="select-content"] {
 .programa-integracao-v4 .pi-stepper .is-done .pi-step-bubble {
   border-color:var(--detail-verde);
   background:var(--detail-verde);
-  color:var(--detail-card);
+  color:var(--detail-on-roxo);
 }
 
 .programa-integracao-v4 .pi-stepper .is-current .pi-step-bubble {
