@@ -19,6 +19,8 @@ import {
   Send,
   ShieldCheck,
   Hourglass,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -229,11 +231,72 @@ function SecaoEncontros({ sessoes }: { sessoes: any[] }) {
   );
 }
 
+function TextoBasicoSeguro({ texto }: { texto: string }) {
+  const partes = String(texto || "").split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {partes.map((parte, indice) =>
+        /^\*\*[^*]+\*\*$/.test(parte)
+          ? <strong key={indice}>{parte.slice(2, -2)}</strong>
+          : <span key={indice}>{parte}</span>
+      )}
+    </>
+  );
+}
+
+function DescricaoTarefaDetalhada({ texto }: { texto: string }) {
+  const linhas = String(texto || "").replace(/\r\n/g, "\n").split("\n");
+  return (
+    <div className="space-y-1 text-sm leading-relaxed text-slate-700">
+      {linhas.map((linha, indice) => {
+        const limpa = linha.trim();
+        if (!limpa) return <div key={indice} className="h-2" aria-hidden="true" />;
+
+        if (/^Competência de desenvolvimento:/i.test(limpa)) {
+          const [rotulo, ...restante] = limpa.split(":");
+          return (
+            <p key={indice}>
+              <span className="font-semibold text-slate-900">{rotulo}:</span>
+              {restante.length > 0 && <> <TextoBasicoSeguro texto={restante.join(":").trim()} /></>}
+            </p>
+          );
+        }
+
+        if (/^(Como fazer\?|Como comprovar\?)$/i.test(limpa)) {
+          return (
+            <p key={indice} className="pt-2 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              {limpa}
+            </p>
+          );
+        }
+
+        if (/^[-•]\s+/.test(limpa)) {
+          return (
+            <div key={indice} className="flex gap-2 pl-1">
+              <span aria-hidden="true">•</span>
+              <span className="min-w-0 whitespace-pre-wrap">
+                <TextoBasicoSeguro texto={limpa.replace(/^[-•]\s+/, "")} />
+              </span>
+            </div>
+          );
+        }
+
+        return (
+          <p key={indice} className="whitespace-pre-wrap">
+            <TextoBasicoSeguro texto={linha} />
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 // ============================================================
 // Seção Tarefas — com formulário de envio de evidência
 // ============================================================
 function SecaoTarefas({ tarefas, onEvidenciaEnviada }: { tarefas: any[]; onEvidenciaEnviada: () => void }) {
   const [tarefaSelecionada, setTarefaSelecionada] = useState<any | null>(null);
+  const [tarefasAbertas, setTarefasAbertas] = useState<string[]>([]);
   const [link, setLink] = useState("");
   const [relato, setRelato] = useState("");
 
@@ -297,75 +360,114 @@ function SecaoTarefas({ tarefas, onEvidenciaEnviada }: { tarefas: any[]; onEvide
         </Card>
       ) : (
         <div className="space-y-3">
-          {tarefas.map((t) => (
-            <Card key={t.id}>
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-start justify-between gap-4">
-                  <p className="font-medium text-sm flex-1">
-                    {t.customTaskTitle || `Tarefa — Encontro #${t.sessionNumber}`}
-                  </p>
-                  <div className="shrink-0">
-                    <StatusTarefa status={t.taskStatus} validatedAt={t.validatedAt} />
+          {tarefas.map((t) => {
+            const tarefaId = String(t.id);
+            const aberta = tarefasAbertas.includes(tarefaId);
+            return (
+              <Card key={t.id}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm">
+                        {t.customTaskTitle || `Tarefa — Encontro #${t.sessionNumber}`}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                      <StatusTarefa status={t.taskStatus} validatedAt={t.validatedAt} />
+                      {t.customTaskDescription && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 px-2 text-xs"
+                          aria-expanded={aberta}
+                          onClick={() => setTarefasAbertas((atuais) =>
+                            atuais.includes(tarefaId)
+                              ? atuais.filter((id) => id !== tarefaId)
+                              : [...atuais, tarefaId]
+                          )}
+                        >
+                          {aberta ? (
+                            <><ChevronUp className="mr-1 h-4 w-4" /> Ocultar detalhes</>
+                          ) : (
+                            <><ChevronDown className="mr-1 h-4 w-4" /> Ver detalhes</>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {t.customTaskDescription && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">{t.customTaskDescription}</p>
-                )}
+                  {t.customTaskDescription && !aberta && (
+                    <p className="line-clamp-2 whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
+                      {t.customTaskDescription}
+                    </p>
+                  )}
 
-                <div className="flex flex-wrap items-center gap-3">
-                  {t.taskDeadline && (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Prazo: {fmtData(t.taskDeadline)}
-                    </span>
+                  {t.customTaskDescription && aberta && (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Detalhes da tarefa
+                      </p>
+                      <DescricaoTarefaDetalhada texto={t.customTaskDescription} />
+                    </div>
                   )}
-                  {t.evidenceLink && (
-                    <a href={t.evidenceLink} target="_blank" rel="noopener noreferrer"
-                      className="text-xs text-blue-600 underline flex items-center gap-1">
-                      Ver comprovação enviada
-                    </a>
-                  )}
-                  {t.relatoAluno && (
-                    <span className="text-xs text-muted-foreground">
-                      <span className="font-medium">Relato:</span> {t.relatoAluno}
-                    </span>
-                  )}
-                </div>
 
-                {/* Comentários do mentor */}
-                {t.comentarios && t.comentarios.length > 0 && (
-                  <div className="space-y-1.5 border-t pt-2 mt-1">
-                    <p className="text-xs font-medium text-muted-foreground">Comentários da mentora:</p>
-                    {t.comentarios.map((c: any) => (
-                      <div key={c.id} className="rounded-md bg-blue-50 border border-blue-100 p-2.5">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-blue-800">{c.authorName}</span>
-                          <span className="text-xs text-muted-foreground">{fmtData(c.createdAt)}</span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {t.taskDeadline && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Prazo: {fmtData(t.taskDeadline)}
+                      </span>
+                    )}
+                    {t.evidenceLink && (
+                      <a href={t.evidenceLink} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-600 underline flex items-center gap-1">
+                        Ver comprovação enviada
+                      </a>
+                    )}
+                  </div>
+
+                  {aberta && t.relatoAluno && (
+                    <div className="rounded-md border bg-white p-3 text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground">Relato enviado</p>
+                      <p className="mt-1 whitespace-pre-wrap">{t.relatoAluno}</p>
+                    </div>
+                  )}
+
+                  {/* Comentários do mentor */}
+                  {aberta && t.comentarios && t.comentarios.length > 0 && (
+                    <div className="space-y-1.5 border-t pt-3 mt-1">
+                      <p className="text-xs font-medium text-muted-foreground">Comentários da mentora:</p>
+                      {t.comentarios.map((c: any) => (
+                        <div key={c.id} className="rounded-md bg-blue-50 border border-blue-100 p-2.5">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-medium text-blue-800">{c.authorName}</span>
+                            <span className="text-xs text-muted-foreground">{fmtData(c.createdAt)}</span>
+                          </div>
+                          <p className="text-xs text-blue-900 whitespace-pre-wrap">{c.comment}</p>
                         </div>
-                        <p className="text-xs text-blue-900 whitespace-pre-wrap">{c.comment}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
 
-                {/* Botão enviar evidência — só para tarefas não entregues */}
-                {t.taskStatus === "nao_entregue" && (
-                  <div className="pt-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-[#0A1E3E] border-[#0A1E3E] hover:bg-[#0A1E3E] hover:text-white"
-                      onClick={() => { setTarefaSelecionada(t); setLink(""); setRelato(""); }}
-                    >
-                      <Send className="h-3.5 w-3.5 mr-1.5" />
-                      Enviar comprovação
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  {/* Botão enviar evidência — só para tarefas não entregues */}
+                  {t.taskStatus === "nao_entregue" && (
+                    <div className="pt-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-[#0A1E3E] border-[#0A1E3E] hover:bg-[#0A1E3E] hover:text-white"
+                        onClick={() => { setTarefaSelecionada(t); setLink(""); setRelato(""); }}
+                      >
+                        <Send className="h-3.5 w-3.5 mr-1.5" />
+                        Enviar comprovação
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

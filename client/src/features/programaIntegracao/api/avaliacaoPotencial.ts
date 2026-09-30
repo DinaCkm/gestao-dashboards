@@ -149,14 +149,13 @@ export async function reverterTarefasGestorIntegracao(legacyId: string) {
 
 export async function criarTarefasCompetenciasIntegracao(
   legacyId: string,
-  tarefaIds: string[],
-  prazo: string,
+  tarefas: Array<{ tarefaId: string; prazo: string }>,
 ) {
-  return api<{ ok: true; criadas: number; sessionIds: number[]; prazo: string }>(
+  return api<{ ok: true; criadas: number; sessionIds: number[]; prazos: Array<{ tarefaId: string; prazo: string }> }>(
     `${BASE}/${encodeURIComponent(legacyId)}/tarefas-competencias/criar`,
     {
       method: 'POST',
-      body: JSON.stringify({ tarefaIds, prazo }),
+      body: JSON.stringify({ tarefas }),
     },
   );
 }
