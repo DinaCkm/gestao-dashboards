@@ -12,6 +12,7 @@ import { parseManagerIntegracaoPermissions } from "./managerIntegracaoPermission
 import mysql from "mysql2/promise";
 import { sdk } from "./_core/sdk";
 import { storageGet, storageGetDownload } from "./storage";
+import { sendEmail } from "./emailService";
 import {
   PROGRAMA_INTEGRACAO_ESCALAS,
   PROGRAMA_INTEGRACAO_QUESTION_INDEX,
@@ -2781,6 +2782,149 @@ async function findProcess(connection: any, data: any) {
   return { status: candidatos.some((c:any) => c.nameScore >= SIM_MIN || c.sinais.length) ? "ambiguo" : "nenhum", candidatos: candidatos.slice(0,5) };
 }
 
+function escapeEmailHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function papelOperacionalFormulario(formKey: ProgramaIntegracaoFormKey, role: unknown) {
+  const papelInformado = String(role || "").trim();
+  if (papelInformado) return papelInformado;
+  if (formKey === "controle") return "UGP";
+  if (formKey === "bem") return "Gestor";
+  if (formKey === "pesquisa") return "Colaborador";
+  if (formKey === "pdi") return "CKM / Consultoria";
+  return "Não identificado";
+}
+
+function motivoOperacionalPendencia(motivo: unknown) {
+  const chave = String(motivo || "").trim();
+  if (chave === "registro_falhou") return "A resposta precisa de revisão manual antes da vinculação (ex.: duplicidade ou bloqueio do registro automático).";
+  if (chave === "ambiguo") return "Há mais de uma correspondência possível e a vinculação precisa ser confirmada manualmente.";
+  if (chave === "nenhum") return "Não foi localizado com segurança um processo de integração correspondente.";
+  return "A resposta não pôde ser vinculada automaticamente e precisa de revisão.";
+}
+
+async function empresaSeguraDaPendencia(connection: any, processoDbId?: number | null) {
+  if (!processoDbId) return "Não identificada automaticamente";
+  try {
+    const [rows] = (await connection.execute(
+      `SELECT pr.name AS empresa
+       FROM programa_integracao_processos pi
+       LEFT JOIN alunos a ON a.id=pi.alunoId
+       LEFT JOIN programs pr ON pr.id=a.programId
+       WHERE pi.id=?
+       LIMIT 1`,
+      [processoDbId],
+    )) as any;
+    return String(rows?.[0]?.empresa || "").trim() || "Não identificada automaticamente";
+  } catch {
+    return "Não identificada automaticamente";
+  }
+}
+
+async function avisarRelacionamentoRespostaPendente(
+  connection: any,
+  saved: { id: number; protocolo: string; legacyRid: string },
+  formKey: ProgramaIntegracaoFormKey,
+  data: any,
+  motivo: string | null,
+  processoDbId?: number | null,
+) {
+  try {
+    const [jaEnviadoRows] = (await connection.execute(
+      `SELECT id
+       FROM programa_integracao_auditoria
+       WHERE respostaId=? AND acao='resposta_pendente_email_enviado'
+       LIMIT 1`,
+      [saved.id],
+    )) as any;
+    if (jaEnviadoRows?.[0]?.id) return;
+
+    const empresa = await empresaSeguraDaPendencia(connection, processoDbId);
+    const unidade = String(data?.unidade || "").trim() || "Não informada";
+    const colaborador = String(data?.nomeColaborador || "").trim() || "Não identificado";
+    const respondente = String(data?.respondentName || data?.nomeColaborador || "").trim() || "Não identificado";
+    const papel = papelOperacionalFormulario(formKey, data?.role);
+    const formulario = FORM_NAMES[formKey];
+    const motivoTexto = motivoOperacionalPendencia(motivo);
+    const recebidoEm = new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date());
+    const reviewUrl = "https://ecolider.ecodobem.com/programa-integracao?tab=respostas";
+    const subject = "Programa de Integração — resposta de formulário requer revisão";
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;color:#1f2937;line-height:1.55;max-width:680px">
+        <h2 style="margin:0 0 16px;color:#111827">Resposta de formulário requer revisão</h2>
+        <p>Uma resposta do Programa de Integração foi recebida, mas não pôde ser vinculada automaticamente com segurança.</p>
+        <table role="presentation" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;max-width:640px">
+          <tr><td style="font-weight:700;width:190px">Colaborador</td><td>${escapeEmailHtml(colaborador)}</td></tr>
+          <tr><td style="font-weight:700">Empresa</td><td>${escapeEmailHtml(empresa)}</td></tr>
+          <tr><td style="font-weight:700">Unidade</td><td>${escapeEmailHtml(unidade)}</td></tr>
+          <tr><td style="font-weight:700">Formulário</td><td>${escapeEmailHtml(formulario)}</td></tr>
+          <tr><td style="font-weight:700">Quem respondeu</td><td>${escapeEmailHtml(respondente)}</td></tr>
+          <tr><td style="font-weight:700">Papel</td><td>${escapeEmailHtml(papel)}</td></tr>
+          <tr><td style="font-weight:700">Recebido em</td><td>${escapeEmailHtml(recebidoEm)}</td></tr>
+          <tr><td style="font-weight:700">Protocolo</td><td>${escapeEmailHtml(saved.protocolo)}</td></tr>
+          <tr><td style="font-weight:700">Motivo</td><td>${escapeEmailHtml(motivoTexto)}</td></tr>
+        </table>
+        <p style="margin-top:20px">Acesse <a href="${reviewUrl}">Programa de Integração → Respostas Recebidas</a> para revisar e vincular a resposta.</p>
+        <p style="font-size:12px;color:#6b7280;margin-top:24px">Por proteção de dados, este aviso não contém as respostas preenchidas no formulário.</p>
+      </div>`;
+
+    const text = [
+      "Programa de Integração — resposta de formulário requer revisão",
+      "",
+      `Colaborador: ${colaborador}`,
+      `Empresa: ${empresa}`,
+      `Unidade: ${unidade}`,
+      `Formulário: ${formulario}`,
+      `Quem respondeu: ${respondente}`,
+      `Papel: ${papel}`,
+      `Recebido em: ${recebidoEm}`,
+      `Protocolo: ${saved.protocolo}`,
+      `Motivo: ${motivoTexto}`,
+      "",
+      `Revisar em: ${reviewUrl}`,
+      "",
+      "Este aviso não contém as respostas preenchidas no formulário.",
+    ].join("\n");
+
+    const envio = await sendEmail({
+      to: "relacionamento@ckmtalents.net",
+      subject,
+      html,
+      text,
+    });
+    if (!envio.success) {
+      console.warn(`[ProgramaIntegracao] Aviso de resposta pendente não enviado (${saved.protocolo}): ${envio.error || "erro desconhecido"}`);
+      return;
+    }
+
+    await connection.execute(
+      `INSERT INTO programa_integracao_auditoria (processoId,respostaId,userId,acao,detalhe,metadata)
+       VALUES (?,?,?,?,?,?)`,
+      [
+        processoDbId || null,
+        saved.id,
+        null,
+        "resposta_pendente_email_enviado",
+        "Aviso operacional enviado para relacionamento@ckmtalents.net.",
+        JSON.stringify({ protocolo: saved.protocolo, messageId: envio.messageId || null }),
+      ],
+    );
+  } catch (error) {
+    console.error("[ProgramaIntegracao] Falha não bloqueante ao avisar resposta pendente:", error);
+  }
+}
+
 async function insertResponse(connection: any, data: any, formKey: ProgramaIntegracaoFormKey, version: number, match: any, statusVinculo: "vinculada"|"pendente", motivo: string | null) {
   const cycle = Number(data.cycle || 0), role = String(data.role || ""), answers = data.answers && typeof data.answers === "object" ? data.answers : {};
   const itemId = statusVinculo === "vinculada" ? itemIdDoFormulario(formKey, cycle, role) : null;
@@ -2864,6 +3008,7 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
 
       if (duplicate && dupPolicy === "bloquear") {
         const saved = await insertResponse(connection, data, formKey, effectiveFormVersion, { candidatos: match.candidatos }, "pendente", "registro_falhou");
+        await avisarRelacionamentoRespostaPendente(connection, saved, formKey, data, "registro_falhou", processoId);
         return res.json({ ok:true, pendente:true, protocolo:saved.protocolo, motivo:"duplicado" });
       }
 
@@ -2889,6 +3034,7 @@ programaIntegracaoRouter.post("/api/public/programa-integracao/forms/:slug/respo
     }
 
     const saved = await insertResponse(connection, data, formKey, effectiveFormVersion, match, "pendente", match.status || "ambiguo");
+    await avisarRelacionamentoRespostaPendente(connection, saved, formKey, data, match.status || "ambiguo");
     return res.json({ ok:true, pendente:true, protocolo:saved.protocolo });
   } catch (error) {
     if (transactionStarted) {
