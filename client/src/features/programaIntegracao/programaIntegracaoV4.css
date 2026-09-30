@@ -7,7 +7,7 @@
  */
 .programa-integracao-v4,
 .programa-integracao-public-v4 {
-  --pi-paper:#F7F8FC;
+  --pi-paper:#ECE8F4;
   --pi-surface:#FFFFFF;
   --pi-surface-2:#F8F8FC;
   --pi-sunk:#EFF1F7;
@@ -171,6 +171,24 @@
 }
 .programa-integracao-v4 [data-slot="card-content"] {
   padding:13px 14px;
+}
+
+/* Gerenciar Pessoas: cards com hierarquia visual própria, sem alterar
+   o comportamento dos demais cards do Programa de Integração. */
+.programa-integracao-v4 .pi-person-card [data-slot="card-header"] {
+  padding:16px 16px 8px;
+  border-bottom:0;
+  background:transparent;
+}
+.programa-integracao-v4 .pi-person-card [data-slot="card-content"] {
+  padding:10px 16px 16px;
+}
+.programa-integracao-v4 .pi-person-card {
+  border-color:#DED7EA;
+  box-shadow:0 1px 2px rgba(60,42,88,.06),0 8px 20px -16px rgba(60,42,88,.28);
+}
+.dark .programa-integracao-v4 .pi-person-card {
+  border-color:var(--pi-line);
 }
 .programa-integracao-v4 [data-slot="button"] {
   min-height:30px;
