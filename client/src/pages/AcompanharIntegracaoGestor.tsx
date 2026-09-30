@@ -2003,9 +2003,7 @@ function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] 
   if (colaborador.jornadaCompliance.total > 0 && colaborador.jornadaCompliance.concluidas === 0) {
     alertas.push('Esse colaborador não iniciou a Jornada Compliance.');
   }
-  if (
-    colaborador.pdi.total > 0 &&
-    colaborador.pdi.concluidas === 0 &&
+  const temTarefaPdiComPrazoCritico = colaborador.pdi.total > 0 &&
     (colaborador.pdi.itens || []).some((item) => {
       if (item.concluida || !item.prazo) return false;
       const hoje = new Date();
@@ -2016,9 +2014,10 @@ function alertasDoColaborador(colaborador: ColaboradorAcompanhamento): string[] 
       if (Number.isNaN(prazo.getTime())) return false;
       prazo.setHours(0, 0, 0, 0);
       return prazo <= limite;
-    })
-  ) {
-    alertas.push('Esse colaborador ainda não realizou nenhuma das tarefas registradas no PDI.');
+    });
+
+  if (temTarefaPdiComPrazoCritico) {
+    alertas.push('Há tarefa pendente do PDI vencida, com prazo para hoje ou para os próximos 3 dias.');
   }
   return alertas;
 }
