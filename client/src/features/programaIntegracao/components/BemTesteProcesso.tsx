@@ -279,7 +279,7 @@ export function BemTesteProcesso({ processo, config, onSalvarProcesso }: BemTest
           </div>
 
           <div className="mt-4 space-y-4">
-            {blocoFormulario('qualidades', 'Qualidades / competências consideradas necessárias pelo gestor', bem.qualidades, bem.qualidades ? 'entra no briefing da mentora' : undefined)}
+            {blocoFormulario('qualidades', 'Qualidades / competências consideradas necessárias pelo gestor', bem.qualidades, bem.manualQualidades, bem.qualidades ? 'entra no briefing da mentora' : undefined)}
             {blocoFormulario('atividades', 'Atividades / funções esperadas', bem.atividades, bem.manualAtividades)}
             {blocoFormulario('obs', 'Outras observações do Bem Acolhido', bem.obs, bem.manualObs)}
           </div>
