@@ -1437,11 +1437,15 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       const avisosGestorEquipe = acessoUgpRh
         ? []
         : formulariosPendentes
-            .filter((p) => p.papel === "Anjo" || p.papel === "Colaborador")
+            .filter((p) => p.papel === "Gestor" || p.papel === "Anjo" || p.papel === "Colaborador")
             .map((p) => ({
               papel: p.papel,
               ciclo: Number(p.ciclo || 0),
+              etapa: p.etapa ? String(p.etapa) : "",
+              formKey: String(p.formKey || ""),
+              cycleValue: String(p.cycleValue || ""),
               formulario: String(p.formulario || ""),
+              solicitadoEm: p.solicitadoEm ? String(p.solicitadoEm) : null,
               prazo: String(p.prazo || ""),
               atrasado: Boolean(p.atrasado),
             }));
