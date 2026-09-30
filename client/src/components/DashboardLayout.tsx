@@ -715,7 +715,7 @@ function DashboardLayoutContent({
                 <img
                   src="/eco_do_bem_logo_horizontal.png"
                   alt="B.E.M."
-                  className="h-7 object-contain"
+                  className="h-7 w-7 object-contain object-left"
                 />
               )}
               </div>
