@@ -39,6 +39,7 @@ import { RespostasProcessoAgrupadas } from './RespostasProcessoAgrupadas';
 import { ObservacoesAcao } from './ObservacoesAcao';
 import { CompetenciasMentoraAcao } from './CompetenciasMentoraAcao';
 import { AvaliacaoPotencialPainel } from './AvaliacaoPotencialPainel';
+import { PdiIntegracaoPainel } from './PdiIntegracaoPainel';
 import { ControlesEspeciaisAcao } from './ControlesEspeciaisAcao';
 import { RegistrosIntegracaoPainel } from './RegistrosIntegracaoPainel';
 import { LeituraIntegradaBackoffice } from './LeituraIntegradaBackoffice';
@@ -976,6 +977,12 @@ export function DetalheProcessoReal({
                               {item.id === 'pos1-02' && (
                                 <div className="mt-4">
                                   <AvaliacaoPotencialPainel processo={processo} />
+                                </div>
+                              )}
+
+                              {item.id === 'pos1-03' && (
+                                <div className="mt-4">
+                                  <PdiIntegracaoPainel processo={processo} />
                                 </div>
                               )}
 
