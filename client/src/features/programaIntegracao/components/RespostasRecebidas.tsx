@@ -35,6 +35,21 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: value.length > 10 ? 'short' : undefined }).format(date);
 }
 
+function timestampRecebimento(resposta: { submittedAt?: string; em?: string }) {
+  const value = String(resposta.submittedAt || resposta.em || '').trim();
+  if (!value) return 0;
+  const date = new Date(value.length <= 10 ? `${value}T12:00:00` : value);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
+function desempateResposta(a: { processoNome?: string; ciclo?: number; form?: string }, b: { processoNome?: string; ciclo?: number; form?: string }) {
+  const byName = String(a.processoNome || '').localeCompare(String(b.processoNome || ''), 'pt-BR');
+  if (byName) return byName;
+  const byCycle = Number(a.ciclo || 0) - Number(b.ciclo || 0);
+  if (byCycle) return byCycle;
+  return String(a.form || '').localeCompare(String(b.form || ''));
+}
+
 function initialEdit(resposta: RespostaComProcesso): EditBuffer {
   const valores: Record<number, string> = {};
   (resposta.c || []).forEach(([index, value]) => { valores[index] = value; });
@@ -52,6 +67,7 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
   const [processoFiltro, setProcessoFiltro] = useState('todos');
   const [formFiltro, setFormFiltro] = useState<'todos' | FormImportKey>('todos');
   const [cicloFiltro, setCicloFiltro] = useState('todos');
+  const [ordemRecebimento, setOrdemRecebimento] = useState<'recentes' | 'antigas'>('recentes');
   const [detalhe, setDetalhe] = useState<RespostaComProcesso | null>(null);
   const [editando, setEditando] = useState<RespostaComProcesso | null>(null);
   const [edit, setEdit] = useState<EditBuffer | null>(null);
@@ -74,13 +90,7 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
         });
       });
     });
-    return all.sort((a, b) => {
-      const byName = a.processoNome.localeCompare(b.processoNome, 'pt-BR');
-      if (byName) return byName;
-      const byCycle = Number(a.ciclo || 0) - Number(b.ciclo || 0);
-      if (byCycle) return byCycle;
-      return a.form.localeCompare(b.form);
-    });
+    return all;
   }, [processos]);
 
   const carregarExcluidas = async () => {
@@ -101,12 +111,21 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
 
   const listaAtual = visao === 'ativas' ? respostas : excluidas;
 
-  const filtradas = useMemo(() => listaAtual.filter((r) => {
-    if (processoFiltro !== 'todos' && r.processoIdLocal !== processoFiltro) return false;
-    if (formFiltro !== 'todos' && r.form !== formFiltro) return false;
-    if (cicloFiltro !== 'todos' && Number(r.ciclo || 0) !== Number(cicloFiltro)) return false;
-    return true;
-  }), [listaAtual, processoFiltro, formFiltro, cicloFiltro]);
+  const filtradas = useMemo(() => {
+    const lista = listaAtual.filter((r) => {
+      if (processoFiltro !== 'todos' && r.processoIdLocal !== processoFiltro) return false;
+      if (formFiltro !== 'todos' && r.form !== formFiltro) return false;
+      if (cicloFiltro !== 'todos' && Number(r.ciclo || 0) !== Number(cicloFiltro)) return false;
+      return true;
+    });
+
+    return lista.sort((a, b) => {
+      const dataA = timestampRecebimento(a);
+      const dataB = timestampRecebimento(b);
+      const porData = ordemRecebimento === 'recentes' ? dataB - dataA : dataA - dataB;
+      return porData || desempateResposta(a, b);
+    });
+  }, [listaAtual, processoFiltro, formFiltro, cicloFiltro, ordemRecebimento]);
 
   const abrirEdicao = (resposta: RespostaComProcesso) => {
     setErroEdicao('');
@@ -211,7 +230,7 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
 
       <Card>
         <CardHeader><CardTitle>Filtros</CardTitle></CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
+        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <select className="h-10 rounded-md border bg-background px-3 text-sm" value={processoFiltro} onChange={(e) => setProcessoFiltro(e.target.value)}>
             <option value="todos">Todos os processos</option>
             {processos.map((p) => <option key={p.id} value={p.id}>{p.nome || p.id} ({p.resp?.length || 0})</option>)}
@@ -224,6 +243,15 @@ export function RespostasRecebidas({ processos, onProcessoClick, onSaved }: Resp
             <option value="todos">Todos os momentos</option>
             <option value="0">Cadastro e chegada</option>
             {[1,2,3,4].map((n) => <option key={n} value={n}>{n}º alinhamento</option>)}
+          </select>
+          <select
+            className="h-10 rounded-md border bg-background px-3 text-sm"
+            value={ordemRecebimento}
+            onChange={(e) => setOrdemRecebimento(e.target.value as 'recentes' | 'antigas')}
+            aria-label="Ordenar respostas por data de recebimento"
+          >
+            <option value="recentes">Recebimento: mais recentes primeiro</option>
+            <option value="antigas">Recebimento: mais antigas primeiro</option>
           </select>
         </CardContent>
       </Card>
