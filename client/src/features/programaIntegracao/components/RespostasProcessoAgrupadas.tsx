@@ -143,7 +143,7 @@ export function RespostasProcessoAgrupadas({ processo }: RespostasProcessoAgrupa
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="pi-response-matrix-wrap">
               <table className="pi-response-matrix">
                 <thead>
                   <tr>
