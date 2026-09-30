@@ -45,6 +45,7 @@ import { RegistrosIntegracaoPainel } from './RegistrosIntegracaoPainel';
 import { LeituraIntegradaBackoffice } from './LeituraIntegradaBackoffice';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -54,7 +55,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ChevronDown, PanelRightOpen } from 'lucide-react';
+import { BarChart3, BriefcaseBusiness, CalendarDays, Check, ChevronDown, ChevronRight, ClipboardList, FileText, Flag, HeartHandshake, LockKeyhole, NotebookPen, PanelRightOpen, Route, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 
 import VinculoAnjoEcoLider from "./VinculoAnjoEcoLider";
@@ -144,6 +145,10 @@ export function DetalheProcessoReal({
   const [excluindoRespostaRid, setExcluindoRespostaRid] = useState<string | null>(null);
   const [ecoAndamento, setEcoAndamento] = useState<EcoLiderAndamento | null>(null);
   const [ecoAndamentoCarregando, setEcoAndamentoCarregando] = useState(false);
+  const [secaoAtiva, setSecaoAtiva] = useState('visao-geral');
+  const [navFixada, setNavFixada] = useState(false);
+  const [dadosAberto, setDadosAberto] = useState(true);
+  const navSentinelaRef = useRef<HTMLDivElement | null>(null);
   const deepLinkAplicadoRef = useRef(false);
   const itemDeepLink = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -182,6 +187,11 @@ export function DetalheProcessoReal({
       },
     ];
   }, [etapasTodas, processo.situacao]);
+
+  const indiceMomentoAtual = useMemo(() => {
+    const indice = momentosIntegracao.findIndex((momento) => momento.statusKey !== 'ok');
+    return indice >= 0 ? indice : momentosIntegracao.length - 1;
+  }, [momentosIntegracao]);
 
   useEffect(() => {
     if (!itemDeepLink || deepLinkAplicadoRef.current) return;
@@ -248,6 +258,31 @@ export function DetalheProcessoReal({
     Object.values(timersFeedbackRef.current).forEach((timer) => window.clearTimeout(timer));
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof IntersectionObserver === 'undefined') return;
+    const secoes = ['visao-geral', 'dados', 'registros', 'jornada', 'complementares']
+      .map((id) => document.getElementById(id))
+      .filter((elemento): elemento is HTMLElement => Boolean(elemento));
+    const observer = new IntersectionObserver((entradas) => {
+      const visiveis = entradas.filter((entrada) => entrada.isIntersecting);
+      if (!visiveis.length) return;
+      visiveis.sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top));
+      const id = (visiveis[0].target as HTMLElement).id;
+      if (id) setSecaoAtiva(id);
+    }, { rootMargin: '-84px 0px -68% 0px', threshold: [0, 0.05, 0.2] });
+    secoes.forEach((secao) => observer.observe(secao));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined' || !navSentinelaRef.current) return;
+    const observer = new IntersectionObserver(([entrada]) => {
+      setNavFixada(!entrada.isIntersecting);
+    }, { threshold: 0 });
+    observer.observe(navSentinelaRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   const salvar = async (proximo: ProcessoIntegracao) => onSalvarProcesso(proximo);
 
   const limparFeedbackDepois = (itemId: string) => {
@@ -262,6 +297,20 @@ export function DetalheProcessoReal({
       });
       delete timersFeedbackRef.current[itemId];
     }, 3500);
+  };
+
+  const navegarParaSecao = (id: string) => {
+    if (id === 'dados') setDadosAberto(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
+  const aplicarFiltroIndicador = (valor: FiltroDetalheProcesso) => {
+    setFiltro(valor);
+    window.requestAnimationFrame(() => {
+      document.getElementById('jornada')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const alterarStatusItem = async (itemId: string, valor: StatusAcaoLegado) => {
@@ -441,6 +490,29 @@ export function DetalheProcessoReal({
     }
   };
 
+  const camposEditaveisDados: Array<keyof ProcessoIntegracao> = [
+    'nome', 'cpf', 'email', 'emailCorporativo', 'tel', 'nasc', 'cargo', 'unidade',
+    'tipo', 'part', 'inicio', 'ugp', 'horarios', 'gestor', 'gestorEmail', 'gestorTel',
+    'anjo', 'anjoEmail', 'pendencias', 'notas', 'consideracoes',
+  ];
+
+  const quantidadeDadosAlterados = camposEditaveisDados.reduce((total, campo) => (
+    String(rascunhoProcesso[campo] ?? '') !== String(processo[campo] ?? '') ? total + 1 : total
+  ), 0);
+
+  const campoDadosAlterado = (campo: keyof ProcessoIntegracao) =>
+    String(rascunhoProcesso[campo] ?? '') !== String(processo[campo] ?? '');
+
+  const descartarDadosProcesso = () => {
+    setRascunhoProcesso(processo);
+    setDadosAlterados(false);
+    setDadosSalvos(false);
+  };
+
+  useEffect(() => {
+    if (dadosAlterados && quantidadeDadosAlterados === 0) setDadosAlterados(false);
+  }, [dadosAlterados, quantidadeDadosAlterados]);
+
   const processoComEcoAtual = async (): Promise<ProcessoIntegracao> => {
     const alunoId = Number((processo.teste as any)?.ecoAlunoId || 0);
     if (!alunoId) return processo;
@@ -505,16 +577,16 @@ export function DetalheProcessoReal({
     label: string,
     type: React.HTMLInputTypeAttribute = 'text',
     placeholder = '',
+    extraClass = '',
   ) => (
-    <label className="space-y-1 text-xs">
-      <span className="font-medium text-muted-foreground">{label}</span>
+    <label className={`pi-field ${campoDadosAlterado(campo) ? 'pi-field-dirty' : ''} ${extraClass}`.trim()}>
+      <span>{label}</span>
       <input
         type={type}
         value={String(rascunhoProcesso[campo] ?? '')}
         placeholder={placeholder}
         disabled={saving}
         onChange={(e) => alterarDadoProcesso(campo, e.currentTarget.value)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
       />
     </label>
   );
@@ -523,15 +595,15 @@ export function DetalheProcessoReal({
     campo: keyof ProcessoIntegracao,
     label: string,
     placeholder = '',
+    extraClass = '',
   ) => (
-    <label className="space-y-1 text-xs">
-      <span className="font-medium text-muted-foreground">{label}</span>
+    <label className={`pi-field ${campoDadosAlterado(campo) ? 'pi-field-dirty' : ''} ${extraClass}`.trim()}>
+      <span>{label}</span>
       <textarea
         value={String(rascunhoProcesso[campo] ?? '')}
         placeholder={placeholder}
         disabled={saving}
         onChange={(e) => alterarDadoProcesso(campo, e.currentTarget.value)}
-        className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
       />
     </label>
   );
