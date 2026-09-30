@@ -18,6 +18,22 @@ export type ProgramaIntegracaoConfigSection =
   | 'formConfig'
   | 'formTextos';
 
+export interface EnvioEmailManualIntegracaoPayload {
+  legacyId: string;
+  chave: string;
+  para: string;
+  cc?: string;
+  assunto: string;
+  html: string;
+  texto: string;
+  anexo?: string;
+}
+
+export interface EnvioEmailManualIntegracaoResposta {
+  ok: true;
+  messageId?: string | null;
+}
+
 const CAMPOS_TEXTO_CONFIRMACAO_PROCESSO: Array<keyof ProcessoIntegracao> = [
   'nome', 'cpf', 'nasc', 'email', 'emailCorporativo', 'tel', 'cargo', 'unidade',
   'tipo', 'inicio', 'part', 'situacao', 'gestor', 'gestorEmail', 'gestorTel',
@@ -122,6 +138,36 @@ export async function fetchBootstrap(): Promise<BootstrapResponse> {
     throw new Error(`Failed to fetch bootstrap: ${response.status}`);
   }
   
+  return response.json();
+}
+
+
+/**
+ * Envia um e-mail do Programa de Integração somente por ação explícita do
+ * administrador. O servidor valida destinatários, campos pendentes e anexos
+ * antes de chamar o SMTP.
+ */
+export async function enviarEmailManualIntegracao(
+  payload: EnvioEmailManualIntegracaoPayload,
+): Promise<EnvioEmailManualIntegracaoResposta> {
+  exigirConexaoParaAlterar();
+  const response = await fetch(`${API_BASE}/emails/enviar-manual`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    let mensagem = `Não foi possível enviar o e-mail: ${response.status}`;
+    try {
+      const body = await response.json();
+      if (body?.error) mensagem = String(body.error);
+    } catch {
+      // Mantém a mensagem baseada no status quando a resposta não for JSON.
+    }
+    throw new Error(mensagem);
+  }
+
   return response.json();
 }
 
