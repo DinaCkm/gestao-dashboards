@@ -25,9 +25,9 @@ const catalogo: CompetenciaTarefasBiblioteca[] = COMPETENCIAS_TAREFAS.map((item)
 }));
 
 if (
-  catalogo.length !== 99
+  catalogo.length !== 101
   || catalogo.some((item) => item.tarefas.length !== 6)
-  || catalogo.reduce((total, item) => total + item.tarefas.length, 0) !== 594
+  || catalogo.reduce((total, item) => total + item.tarefas.length, 0) !== 606
 ) {
   throw new Error("Catálogo de tarefas por competência inválido.");
 }
