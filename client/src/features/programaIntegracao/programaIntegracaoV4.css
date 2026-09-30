@@ -7,7 +7,7 @@
  */
 .programa-integracao-v4,
 .programa-integracao-public-v4 {
-  --pi-paper:#ECE8F4;
+  --pi-paper:#F7F8FC;
   --pi-surface:#FFFFFF;
   --pi-surface-2:#F8F8FC;
   --pi-sunk:#EFF1F7;
@@ -90,9 +90,13 @@
 
 
 .programa-integracao-v4 {
+  --pi-paper:#ECE8F4;
   min-height:calc(100vh - 56px);
   background:var(--pi-paper);
   border-radius:12px 0 0 0;
+}
+.dark .programa-integracao-v4 {
+  --pi-paper:#171722;
 }
 
 .programa-integracao-v4 h1,
