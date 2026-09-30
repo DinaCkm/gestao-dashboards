@@ -52,6 +52,37 @@ export interface SugestaoDesenvolvimento {
   sessionId?: number | null;
 }
 
+export interface TarefaCompetenciaPreview {
+  id: string;
+  titulo: string;
+  comoFazer: string;
+  comprovacao: string;
+  criada: boolean;
+  sessionId: number | null;
+  prazo: string;
+}
+
+export interface CompetenciaTarefasPreview {
+  nome: string;
+  correspondencia: boolean;
+  numero: number | null;
+  tarefas: TarefaCompetenciaPreview[];
+}
+
+export interface TarefasCompetenciasPreview {
+  disponivel: boolean;
+  prazoSugerido: string | null;
+  bloqueio: string;
+  competencias: CompetenciaTarefasPreview[];
+  criadasAtivas: Array<{
+    bibliotecaId: string;
+    competencia: string;
+    titulo: string;
+    sessionId: number;
+    prazo: string;
+  }>;
+}
+
 export interface ContextoAvaliacaoPotencial {
   ok: true;
   colaborador: { nome: string; cargo: string; unidade: string };
@@ -78,8 +109,9 @@ export interface ContextoAvaliacaoPotencial {
     prazo: string | null;
     faltantes: string[];
     bloqueio: string;
-    itens: Array<{ titulo: string; descricao: string }>;
+    itens: Array<{ titulo: string; descricao: string; prazo?: string | null }>;
   };
+  tarefasCompetenciasPreview: TarefasCompetenciasPreview;
 }
 
 export async function buscarContextoAvaliacaoPotencial(legacyId: string) {
@@ -113,6 +145,33 @@ export async function criarTarefasGestorIntegracao(legacyId: string) {
 
 export async function reverterTarefasGestorIntegracao(legacyId: string) {
   return api<{ ok: true; revertidas: number }>(`${BASE}/${encodeURIComponent(legacyId)}/tarefas-gestor/reverter`, { method: 'POST' });
+}
+
+export async function criarTarefasCompetenciasIntegracao(
+  legacyId: string,
+  tarefaIds: string[],
+  prazo: string,
+) {
+  return api<{ ok: true; criadas: number; sessionIds: number[]; prazo: string }>(
+    `${BASE}/${encodeURIComponent(legacyId)}/tarefas-competencias/criar`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ tarefaIds, prazo }),
+    },
+  );
+}
+
+export async function reverterTarefasCompetenciasIntegracao(
+  legacyId: string,
+  tarefaIds?: string[],
+) {
+  return api<{ ok: true; revertidas: number }>(
+    `${BASE}/${encodeURIComponent(legacyId)}/tarefas-competencias/reverter`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ tarefaIds: tarefaIds || [] }),
+    },
+  );
 }
 
 export async function gerarSugestoesDesenvolvimento(legacyId: string) {
