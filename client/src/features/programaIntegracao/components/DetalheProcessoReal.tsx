@@ -609,118 +609,224 @@ export function DetalheProcessoReal({
   );
 
   return (
-    <div className="space-y-6">
-      <div className="sticky top-16 z-30 md:top-2">
-        <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-violet-200 bg-background/95 px-3 py-2.5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85">
-          <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full border border-violet-200 bg-violet-50 text-sm font-bold text-violet-800">
-            {iniciais(rascunhoProcesso.nome)}
+    <div className="pi-detail-process">
+      <section id="visao-geral" className="pi-detail-header">
+        <div className="pi-detail-header-top">
+          <div className="pi-detail-avatar" aria-hidden="true">{iniciais(rascunhoProcesso.nome)}</div>
+
+          <div className="pi-detail-identity">
+            <div className="pi-detail-name-row">
+              <h2 className="pi-detail-name">{rascunhoProcesso.nome}</h2>
+              <span className={`pi-status-chip ${processo.situacao === 'encerrado' ? 'pi-status-neutral' : 'pi-status-ok'}`}>
+                {processo.situacao === 'encerrado' ? 'Encerrado' : 'Ativo'}
+              </span>
+            </div>
+            <p className="pi-detail-role">
+              {rascunhoProcesso.cargo || 'Cargo não informado'}
+              {rascunhoProcesso.unidade ? ` · ${rascunhoProcesso.unidade}` : ''}
+            </p>
           </div>
-          <div className="min-w-0">
-            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-600">Editando</div>
-            <div className="truncate text-base font-bold text-foreground md:text-lg">{rascunhoProcesso.nome}</div>
-          </div>
-          <div className="ml-auto hidden min-w-0 text-right text-xs text-muted-foreground sm:block">
-            <div className="max-w-[280px] truncate">{rascunhoProcesso.cargo || 'Cargo não informado'}</div>
-            {rascunhoProcesso.unidade && <div className="max-w-[280px] truncate">{rascunhoProcesso.unidade}</div>}
+
+          <div className="pi-detail-header-actions">
+            <Button type="button" size="sm" onClick={gerarAgenda} className="pi-detail-primary-action">
+              <FileText className="h-4 w-4" />
+              Agenda em PDF
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" size="sm" variant="outline" className="pi-detail-secondary-action">
+                  Relatórios
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="pi-detail-report-menu">
+                <DropdownMenuItem onSelect={() => void gerarRelatorio()}>
+                  <FileText className="h-4 w-4" />
+                  Relatório
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={gerarEvolucao}
+                  disabled={!relatorioEvolucaoDisponivel}
+                  title={relatorioEvolucaoDisponivel
+                    ? 'Gerar evolução com base nos formulários do gestor já preenchidos'
+                    : 'Disponível após o primeiro formulário do gestor'}
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Relatório de Evolução
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void gerarCheckpoint()}>
+                  <Flag className="h-4 w-4" />
+                  Checkpoint
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => abrirCobranca()}>
+                  <ClipboardList className="h-4 w-4" />
+                  {resumo.formulariosVencidos ? `Cobrar formulários (${resumo.formulariosVencidos})` : 'Formulários em dia'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-      </div>
 
-      <Card>
-        <CardContent className="pt-6 space-y-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-full border bg-muted font-semibold">
-                {iniciais(rascunhoProcesso.nome)}
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-2xl font-bold truncate">{rascunhoProcesso.nome}</h2>
-                <p className="text-sm text-muted-foreground">{rascunhoProcesso.cargo || 'Cargo não informado'}{rascunhoProcesso.unidade ? ` · ${rascunhoProcesso.unidade}` : ''}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Início {processo.inicio ? formatarData(processo.inicio) : '—'} · {dia != null && dia > 0 ? `dia ${dia} de 150` : 'jornada ainda não iniciada'}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <Button type="button" size="sm" onClick={gerarAgenda}>Agenda em PDF</Button>
-              <Button type="button" size="sm" variant="secondary" onClick={() => void gerarRelatorio()}>Relatório</Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={gerarEvolucao}
-                disabled={!relatorioEvolucaoDisponivel}
-                title={relatorioEvolucaoDisponivel
-                  ? 'Gerar evolução com base nos formulários do gestor já preenchidos'
-                  : 'Disponível após o primeiro formulário do gestor'}
-              >
-                Relatório de Evolução
-              </Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => void gerarCheckpoint()}>Checkpoint</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => abrirCobranca()}>
-                {resumo.formulariosVencidos ? `Cobrar formulários (${resumo.formulariosVencidos})` : 'Formulários em dia'}
-              </Button>
-              <Badge variant="outline">{processo.situacao === 'encerrado' ? 'Encerrado' : 'Ativo'}</Badge>
-            </div>
+        <div className="pi-detail-meta">
+          <span><CalendarDays className="h-4 w-4" /> Início {processo.inicio ? formatarData(processo.inicio) : '—'}</span>
+          {dia != null && dia > 150 && (
+            <span className="pi-status-chip pi-status-alert">
+              Dia {dia} · {dia - 150} {dia - 150 === 1 ? 'dia' : 'dias'} após o previsto
+            </span>
+          )}
+          <span className="pi-detail-meta-progress">
+            {resumo.feitas}/{resumo.total} tarefas · <strong>{resumo.percentualFeitas}%</strong>
+          </span>
+        </div>
+
+        <div className="pi-detail-progress" aria-label={`Progresso geral ${resumo.percentualFeitas}%`}>
+          <span className="pi-detail-progress-done" style={{ width: `${resumo.percentualFeitas}%` }} />
+          <span className="pi-detail-progress-off" style={{ width: `${resumo.percentualForaEscopo}%` }} />
+        </div>
+
+        <div className="pi-detail-indicators">
+          <button type="button" className="pi-detail-indicator" onClick={() => aplicarFiltroIndicador('aberto')}>
+            <span>Em aberto</span><strong>{resumo.abertas}</strong>
+          </button>
+          <button type="button" className="pi-detail-indicator" onClick={() => aplicarFiltroIndicador('ckm')}>
+            <span>Depende da CKM</span><strong>{resumo.ckmAbertas}</strong>
+          </button>
+          <button type="button" className="pi-detail-indicator" onClick={() => aplicarFiltroIndicador('eles')}>
+            <span>Depende deles</span><strong>{resumo.elesAbertas}</strong>
+          </button>
+          <button type="button" className="pi-detail-indicator" onClick={() => aplicarFiltroIndicador('form')}>
+            <span>Formulários abertos</span><strong>{resumo.formulariosAbertos}</strong>
+          </button>
+          <div className="pi-detail-indicator pi-detail-indicator-static" title="Não existe um filtro exclusivo de formulários vencidos na Jornada.">
+            <span>Formulários vencidos</span>
+            <strong className={resumo.formulariosVencidos > 0 ? 'pi-critical-number' : ''}>{resumo.formulariosVencidos}</strong>
           </div>
+        </div>
+      </section>
 
-          <div>
-            <div className="mb-1 flex items-center justify-between text-xs">
-              <span>Progresso geral</span>
-              <span>{resumo.feitas}/{resumo.total} feitas · {resumo.percentualFeitas}%</span>
-            </div>
-            <div className="flex h-3 overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-primary" style={{ width: `${resumo.percentualFeitas}%` }} />
-              <div className="h-full bg-muted-foreground/30" style={{ width: `${resumo.percentualForaEscopo}%` }} />
-            </div>
-          </div>
+      <div ref={navSentinelaRef} className="pi-detail-nav-sentinel" aria-hidden="true" />
+      <nav className={`pi-detail-nav ${navFixada ? 'pi-detail-nav-stuck' : ''}`} aria-label="Seções do processo">
+        <div className="pi-detail-nav-links">
+          <button type="button" className={secaoAtiva === 'visao-geral' ? 'is-active' : ''} onClick={() => navegarParaSecao('visao-geral')}>Visão geral</button>
+          <button type="button" className={`pi-detail-nav-primary ${secaoAtiva === 'dados' ? 'is-active' : ''}`} onClick={() => navegarParaSecao('dados')}>Dados do processo</button>
+          <button type="button" className={secaoAtiva === 'registros' ? 'is-active' : ''} onClick={() => navegarParaSecao('registros')}>Registros</button>
+          <button type="button" className={secaoAtiva === 'jornada' ? 'is-active' : ''} onClick={() => navegarParaSecao('jornada')}>Jornada</button>
+          <span className="pi-detail-nav-divider" aria-hidden="true" />
+          <button type="button" className={`pi-detail-nav-secondary ${secaoAtiva === 'complementares' ? 'is-active' : ''}`} onClick={() => navegarParaSecao('complementares')}>Complementares</button>
+        </div>
+        <div className="pi-detail-nav-person" title={rascunhoProcesso.nome}>
+          <span className="pi-detail-nav-avatar">{iniciais(rascunhoProcesso.nome)}</span>
+          <span>{rascunhoProcesso.nome}</span>
+        </div>
+      </nav>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5 text-sm">
-            <div><p className="text-xs text-muted-foreground">Em aberto</p><p className="font-semibold">{resumo.abertas}</p></div>
-            <div><p className="text-xs text-muted-foreground">CKM</p><p className="font-semibold">{resumo.ckmAbertas}</p></div>
-            <div><p className="text-xs text-muted-foreground">Eles</p><p className="font-semibold">{resumo.elesAbertas}</p></div>
-            <div><p className="text-xs text-muted-foreground">Formulários abertos</p><p className="font-semibold">{resumo.formulariosAbertos}</p></div>
-            <div><p className="text-xs text-muted-foreground">Formulários vencidos</p><p className="font-semibold">{resumo.formulariosVencidos}</p></div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <LeituraIntegradaBackoffice processo={processo} />
-
-      <details className="rounded-lg border bg-background">
-        <summary className="cursor-pointer px-4 py-3 font-semibold">
-          Dados do processo <span className="ml-2 text-xs font-normal text-muted-foreground">as datas e os e-mails usados no acompanhamento vêm daqui</span>
+      <details
+        id="dados"
+        className="pi-data-section"
+        open={dadosAberto}
+        onToggle={(event) => setDadosAberto(event.currentTarget.open)}
+      >
+        <summary className="pi-data-summary">
+          <span className="pi-data-summary-icon"><Route className="h-5 w-5" /></span>
+          <span className="pi-data-summary-title">
+            <strong>Dados do processo</strong>
+            <small>As datas e os e-mails usados no acompanhamento vêm daqui</small>
+          </span>
+          <ChevronRight className="pi-details-chevron h-5 w-5" />
         </summary>
-        <div className="border-t p-4 space-y-4">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {campoTexto('nome', 'Colaborador', 'text', 'Nome completo')}
-            {campoTexto('email', 'E-mail pessoal', 'email')}
-            {campoTexto('emailCorporativo', 'E-mail corporativo', 'email')}
-            {campoTexto('cargo', 'Cargo')}
-            {campoTexto('unidade', 'Área / Unidade')}
-            {campoTexto('cpf', 'CPF')}
-            {campoTexto('nasc', 'Data de nascimento', 'date')}
-            {campoTexto('tel', 'Telefone')}
-            {campoTexto('part', 'Participação', 'text', 'Presencial')}
-            <label className="space-y-1 text-xs">
-              <span className="font-medium text-muted-foreground">Tipo</span>
-              <select
-                value={rascunhoProcesso.tipo || 'Onboarding'}
-                disabled={saving}
-                onChange={(e) => alterarDadoProcesso('tipo', e.currentTarget.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:cursor-wait disabled:opacity-60"
-              >
-                <option value="Onboarding">Onboarding</option>
-                <option value="Crossboarding">Crossboarding</option>
-              </select>
-            </label>
-            {campoTexto('inicio', '1º dia na unidade', 'date')}
-            {campoTexto('gestor', 'Gestor receptor')}
-            {campoTexto('gestorEmail', 'E-mail do gestor', 'email')}
-            {campoTexto('gestorTel', 'Telefone / WhatsApp do gestor')}
-            {campoTexto('anjo', 'Anjo')}
-            {campoTexto('anjoEmail', 'E-mail do Anjo', 'email')}
-            {campoTexto('ugp', 'Destinatário na UGP', 'text', 'nome ou e-mail')}
+
+        <div className="pi-data-body">
+          <section className="pi-data-block pi-data-block-wide">
+            <div className="pi-data-block-title">
+              <span><UserRound className="h-4 w-4" /></span>
+              <h3>Colaborador</h3>
+            </div>
+            <div className="pi-fields-grid">
+              {campoTexto('nome', 'Nome', 'text', 'Nome completo')}
+              {campoTexto('cpf', 'CPF')}
+              {campoTexto('email', 'E-mail pessoal', 'email')}
+              {campoTexto('emailCorporativo', 'E-mail corporativo', 'email')}
+              {campoTexto('tel', 'Telefone')}
+              {campoTexto('nasc', 'Data de nascimento', 'date')}
+              {campoTexto('cargo', 'Cargo')}
+              {campoTexto('unidade', 'Área / Unidade')}
+            </div>
+          </section>
+
+          <section className="pi-data-block pi-data-block-wide">
+            <div className="pi-data-block-title">
+              <span><Route className="h-4 w-4" /></span>
+              <h3>Processo</h3>
+            </div>
+            <div className="pi-fields-grid">
+              <label className={`pi-field ${campoDadosAlterado('tipo') ? 'pi-field-dirty' : ''}`}>
+                <span>Tipo</span>
+                <select
+                  value={rascunhoProcesso.tipo || 'Onboarding'}
+                  disabled={saving}
+                  onChange={(e) => alterarDadoProcesso('tipo', e.currentTarget.value)}
+                >
+                  <option value="Onboarding">Onboarding</option>
+                  <option value="Crossboarding">Crossboarding</option>
+                </select>
+              </label>
+              {campoTexto('part', 'Participação', 'text', 'Presencial')}
+              {campoTexto('inicio', '1º dia na unidade', 'date')}
+              {campoTexto('ugp', 'Destinatário na UGP', 'text', 'nome ou e-mail')}
+
+              <div className="pi-field">
+                <span>Status do PDI</span>
+                <div className="pi-read-value">
+                  <LockKeyhole className="h-4 w-4" />
+                  <span>{ecoAndamentoCarregando
+                    ? 'Consultando ECO Líderes...'
+                    : ecoAndamento?.pdi.statusTexto
+                      || (Number((processo.teste as any)?.ecoAlunoId || 0)
+                        ? 'Andamento do PDI indisponível no momento.'
+                        : 'Vincule este aluno ao ECO Líderes em Preparação da mentora.')}</span>
+                </div>
+              </div>
+
+              <div className="pi-field">
+                <span>Jornada Compliance</span>
+                <div className="pi-read-value">
+                  <LockKeyhole className="h-4 w-4" />
+                  <span>{ecoAndamentoCarregando
+                    ? 'Consultando ECO Líderes...'
+                    : ecoAndamento?.jornadaCompliance.statusTexto
+                      || (Number((processo.teste as any)?.ecoAlunoId || 0)
+                        ? 'Andamento da Jornada Compliance indisponível no momento.'
+                        : 'Vincule este aluno ao ECO Líderes em Preparação da mentora.')}</span>
+                </div>
+              </div>
+
+              {campoLongo('horarios', 'Horários sugeridos (um por linha)', '09h00\n14h00', 'pi-field-wide')}
+            </div>
+          </section>
+
+          <section className="pi-data-block">
+            <div className="pi-data-block-title">
+              <span><BriefcaseBusiness className="h-4 w-4" /></span>
+              <h3>Gestor</h3>
+            </div>
+            <div className="pi-fields-grid">
+              {campoTexto('gestor', 'Gestor receptor')}
+              {campoTexto('gestorEmail', 'E-mail do gestor', 'email')}
+              {campoTexto('gestorTel', 'Telefone / WhatsApp do gestor')}
+            </div>
+          </section>
+
+          <section className="pi-data-block">
+            <div className="pi-data-block-title">
+              <span><HeartHandshake className="h-4 w-4" /></span>
+              <h3>Anjo</h3>
+            </div>
+            <div className="pi-fields-grid">
+              {campoTexto('anjo', 'Anjo')}
+              {campoTexto('anjoEmail', 'E-mail do Anjo', 'email')}
+            </div>
             {rascunhoProcesso.id && (
               <VinculoAnjoEcoLider
                 legacyId={String(rascunhoProcesso.id)}
@@ -729,120 +835,84 @@ export function DetalheProcessoReal({
                 situacao={rascunhoProcesso.situacao || ''}
               />
             )}
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {campoLongo('horarios', 'Horários sugeridos (um por linha)', '09h00\n14h00')}
-            <div className="space-y-1 text-xs">
-              <span className="font-medium text-muted-foreground">Status do PDI</span>
-              <div className="min-h-24 rounded-md border border-input bg-muted/20 px-3 py-2 text-sm">
-                {ecoAndamentoCarregando
-                  ? 'Consultando ECO Líderes...'
-                  : ecoAndamento?.pdi.statusTexto
-                    || (Number((processo.teste as any)?.ecoAlunoId || 0)
-                      ? 'Andamento do PDI indisponível no momento.'
-                      : 'Vincule este aluno ao ECO Líderes em Preparação da mentora.')}
-              </div>
-            </div>
-            {campoLongo('pendencias', 'Pendências extras (somadas às calculadas)')}
-            <div className="space-y-1 text-xs">
-              <span className="font-medium text-muted-foreground">Jornada Compliance</span>
-              <div className="min-h-24 rounded-md border border-input bg-muted/20 px-3 py-2 text-sm">
-                {ecoAndamentoCarregando
-                  ? 'Consultando ECO Líderes...'
-                  : ecoAndamento?.jornadaCompliance.statusTexto
-                    || (Number((processo.teste as any)?.ecoAlunoId || 0)
-                      ? 'Andamento da Jornada Compliance indisponível no momento.'
-                      : 'Vincule este aluno ao ECO Líderes em Preparação da mentora.')}
+          </section>
 
-              </div>
+          <section className="pi-data-block pi-data-block-wide">
+            <div className="pi-data-block-title">
+              <span><NotebookPen className="h-4 w-4" /></span>
+              <h3>Anotações</h3>
             </div>
-            {campoLongo('consideracoes', 'Considerações da CKM para a UGP')}
-            {campoLongo('notas', 'Anotações internas')}
-          </div>
-          <div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm">
-              {saving ? (
-                <span className="font-medium text-amber-700">Salvando e conferindo as alterações no servidor...</span>
-              ) : dadosAlterados ? (
-                <span className="font-medium text-amber-700">Há alterações não salvas.</span>
-              ) : dadosSalvos ? (
-                <span className="font-medium text-emerald-700">✓ Alterações salvas e conferidas no servidor.</span>
-              ) : (
-                <span className="text-muted-foreground">Edite os dados e clique em “Salvar alterações”.</span>
-              )}
+            <div className="pi-fields-grid">
+              {campoLongo('pendencias', 'Pendências extras (somadas às calculadas)')}
+              {campoLongo('notas', 'Anotações internas')}
+              {campoLongo('consideracoes', 'Considerações da CKM para a UGP', '', 'pi-field-wide')}
             </div>
-            <Button
-              type="button"
-              onClick={() => void salvarDadosProcesso()}
-              disabled={saving || !dadosAlterados}
-              className="shrink-0"
-            >
+          </section>
+        </div>
+
+        {quantidadeDadosAlterados > 0 && (
+          <div className="pi-unsaved-bar" role="status" aria-live="polite">
+            <span>{quantidadeDadosAlterados} alteração{quantidadeDadosAlterados === 1 ? '' : 'ões'} não salva{quantidadeDadosAlterados === 1 ? '' : 's'}</span>
+            <Button type="button" variant="ghost" onClick={descartarDadosProcesso} disabled={saving}>Descartar</Button>
+            <Button type="button" className="pi-detail-primary-action" onClick={() => void salvarDadosProcesso()} disabled={saving}>
               {saving ? 'Salvando...' : 'Salvar alterações'}
             </Button>
           </div>
-        </div>
+        )}
+
+        {dadosSalvos && !dadosAlterados && (
+          <p className="pi-data-saved">Alterações salvas e conferidas no servidor.</p>
+        )}
       </details>
 
-      {processo.id && <RegistrosIntegracaoPainel legacyId={String(processo.id)} />}
+      <section id="registros" className="pi-detail-section-anchor">
+        {processo.id && <RegistrosIntegracaoPainel legacyId={String(processo.id)} />}
+      </section>
 
-      <div id="integracao-bem-teste" className="scroll-mt-6">
-        <BemTesteProcesso processo={processo} config={config} onSalvarProcesso={salvar} />
-      </div>
-      <RespostasProcessoAgrupadas processo={processo} />
-
-      <Card className="overflow-hidden">
-        <CardContent className="pt-5">
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Momentos da Integração</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Visão rápida dos grandes marcos do processo. Os detalhes e as ações continuam na jornada abaixo.
-            </p>
+      <section id="momentos" className="pi-moments-section">
+        <div className="pi-moments-head">
+          <div>
+            <h2>Momentos da integração</h2>
+            <p>Visão rápida dos grandes marcos do processo. Clique em um marco para ir até a Jornada.</p>
           </div>
-          <div className="overflow-x-auto pb-1">
-            <div className="grid min-w-[880px] grid-cols-7 gap-2">
-              {momentosIntegracao.map((momento, index) => (
-                <div key={momento.id} className="relative">
-                  {index < momentosIntegracao.length - 1 && (
-                    <div className="absolute left-[58%] top-4 h-px w-[88%] bg-border" aria-hidden="true" />
-                  )}
-                  <div className="relative z-10 rounded-xl border bg-background p-3">
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                      <span className={`grid h-8 w-8 place-items-center rounded-full border text-xs font-bold ${statusClasses[momento.statusKey as keyof typeof statusClasses]}`}>
-                        {index + 1}
-                      </span>
-                      <Badge variant="outline" className={statusClasses[momento.statusKey as keyof typeof statusClasses]}>
-                        {momento.status}
-                      </Badge>
-                    </div>
-                    <div className="text-sm font-semibold leading-tight">{momento.titulo}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">{momento.apoio}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <details className="mt-4 rounded-lg border bg-muted/10">
-            <summary className="cursor-pointer px-3 py-2 text-xs font-semibold text-muted-foreground">
-              Ver datas dos alinhamentos
-            </summary>
-            <div className="grid gap-2 border-t p-3 md:grid-cols-2 xl:grid-cols-4">
-              {alinhamentos.map((alinhamento) => (
-                <div key={alinhamento.n} className="rounded-lg border bg-background p-3 text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold">{alinhamento.n}º alinhamento</span>
-                    <Badge variant="outline" className={statusClasses[alinhamento.estado.k]}>{alinhamento.estado.l}</Badge>
-                  </div>
-                  <p className="mt-2 text-muted-foreground">
-                    Previsto: {alinhamento.dataMarco ? formatarData(alinhamento.dataMarco) : '—'}
-                    {alinhamento.dataEfetiva ? ` · realizado: ${formatarData(alinhamento.dataEfetiva)}` : ''}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </details>
-        </CardContent>
-      </Card>
+        </div>
 
+        <ol className="pi-stepper">
+          {momentosIntegracao.map((momento, index) => {
+            const concluido = momento.statusKey === 'ok';
+            const atual = !concluido && index === indiceMomentoAtual;
+            return (
+              <li key={momento.id} className={concluido ? 'is-done' : atual ? 'is-current' : ''}>
+                <button type="button" onClick={() => navegarParaSecao('jornada')} title={momento.status}>
+                  <span className="pi-step-bubble">{concluido ? <Check className="h-4 w-4" /> : index + 1}</span>
+                  <span className="pi-step-name">{momento.titulo}</span>
+                  <span className="pi-step-day">{momento.apoio}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+
+        <details className="pi-moments-dates">
+          <summary>Ver datas dos alinhamentos</summary>
+          <div className="pi-moments-date-grid">
+            {alinhamentos.map((alinhamento) => (
+              <div key={alinhamento.n} className="pi-moment-date-card">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{alinhamento.n}º alinhamento</span>
+                  <Badge variant="outline" className={statusClasses[alinhamento.estado.k]}>{alinhamento.estado.l}</Badge>
+                </div>
+                <p>
+                  Previsto: {alinhamento.dataMarco ? formatarData(alinhamento.dataMarco) : '—'}
+                  {alinhamento.dataEfetiva ? ` · realizado: ${formatarData(alinhamento.dataEfetiva)}` : ''}
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
+      </section>
+
+      <div id="jornada" className="pi-detail-jornada-anchor">
       <div className="flex flex-wrap gap-2">
         {FILTROS_DETALHE_PROCESSO.map(([valor, label]) => (
           <Button key={valor || 'todos'} type="button" size="sm" variant={filtro === valor ? 'default' : 'outline'} onClick={() => setFiltro(valor)}>
@@ -1114,6 +1184,16 @@ export function DetalheProcessoReal({
           );
         })}
       </div>
+      </div>
+
+      <section id="complementares" className="pi-complementaries">
+        <p className="pi-complementaries-title">Informações complementares</p>
+        <LeituraIntegradaBackoffice processo={processo} />
+        <RespostasProcessoAgrupadas processo={processo} />
+        <div id="integracao-bem-teste">
+          <BemTesteProcesso processo={processo} config={config} onSalvarProcesso={salvar} />
+        </div>
+      </section>
 
       <Dialog
         open={Boolean(painelMentora)}
