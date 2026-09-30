@@ -73,22 +73,21 @@ export default function ProgramaIntegracaoDetalhe() {
 
   return (
     <DashboardLayout>
-      <div className="programa-integracao-v4 space-y-5 p-4 md:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="programa-integracao-v4 pi-detail-page space-y-3 p-4 md:p-6">
+        <div className="pi-detail-page-head flex flex-wrap items-start justify-between gap-3">
           <div>
             <Button type="button" variant="ghost" size="sm" onClick={() => setLocation('/programa-integracao')}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Programa de Integração
             </Button>
-            <h1 className="mt-2 text-2xl font-bold">Detalhe do processo de integração</h1>
+            <h1 className="mt-1 text-2xl font-bold">Detalhe do processo de integração</h1>
+            <p className="mt-1 text-xs text-muted-foreground">Alterações de situação e data são salvas automaticamente.</p>
           </div>
-          <div className="min-h-5">
+          <div className="min-h-5 pt-1">
             {saving ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Salvando e conferindo...</div>
             ) : savedAt ? (
               <div className="flex items-center gap-2 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Salvo e conferido no servidor</div>
-            ) : (
-              <div className="text-xs text-muted-foreground">Alterações de situação e data são salvas automaticamente.</div>
-            )}
+            ) : null}
           </div>
         </div>
 
