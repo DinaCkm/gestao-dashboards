@@ -402,6 +402,17 @@ function DashboardLayoutContent({
   const isAdmin = user?.role === "admin" || user?.role === "admin2";
   const isFullAdmin = user?.role === "admin"; // admin completo (acessa Parametrização)
   const isAdmin2 = user?.role === "admin2"; // admin nível 2 (sem Parametrização)
+  // Fail-closed também para o acesso de Anjo: enquanto a consulta assíncrona
+  // não terminar, nenhuma navegação comum fica disponível ou clicável.
+  const waitingAngelAccess = Boolean(user && !isAdmin && !anjoAccessResolved);
+  const locationBaseAnjo = location.split("?")[0];
+  const pureAngelRouteBlocked = Boolean(
+    anjoAccessResolved &&
+    isPureAngel &&
+    locationBaseAnjo !== "/anjo" &&
+    locationBaseAnjo !== "/anjo/formularios" &&
+    locationBaseAnjo !== "/anjo/orientacoes"
+  );
 
   // Permissões de páginas do admin logado (vazio = acesso total)
   const { data: adminPagePerms } = trpc.admin.getPermissions.useQuery(
@@ -509,7 +520,7 @@ function DashboardLayoutContent({
   // Para não-admin, filtrar itens do menu
   const filteredOtherItems = useMemo(() => {
     const userRole = user?.role || "user";
-    if (isPureAngel) return [];
+    if (isPureAngel || waitingAngelAccess) return [];
     if (waitingManagerPermissions && userRole === 'manager') return [];
     return otherMenuItems.filter(item => {
       if (!item.roles.includes(userRole as "admin" | "manager" | "user")) return false;
@@ -546,7 +557,7 @@ function DashboardLayoutContent({
       }
       return true;
     });
-  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms, waitingManagerPermissions, isPureAngel]);
+  }, [user?.role, hasConsultorId, consultorRole, hasManagerRestrictions, isSpecialManager, managerPagePerms, waitingManagerPermissions, isPureAngel, waitingAngelAccess]);
 
   useEffect(() => {
     if (!hasManagerRestrictions || user?.role !== 'manager') return;
@@ -895,7 +906,12 @@ function DashboardLayoutContent({
                   </SidebarGroup>
                 )}
                 <SidebarMenu className="px-2 py-1 pb-2">
-                  {waitingManagerPermissions && user?.role === 'manager' ? (
+                  {waitingAngelAccess ? (
+                    <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Carregando seus acessos...</span>
+                    </div>
+                  ) : waitingManagerPermissions && user?.role === 'manager' ? (
                     <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       <span>Carregando acessos...</span>
@@ -932,14 +948,17 @@ function DashboardLayoutContent({
           {/* ===== FOOTER ===== */}
           <SidebarFooter className="p-3 border-t border-sidebar-border">
             <div className="mb-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-              <div className="flex items-center gap-2 justify-between">
-                <RoleSwitcher />
-                {anjoAccessResolved && !isPureAngel && <NotificationBell />}
+              <div className={isCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-2 justify-between"}>
+                {!waitingAngelAccess && <RoleSwitcher compact={isCollapsed} />}
+                {!waitingAngelAccess && anjoAccessResolved && !isPureAngel && <NotificationBell />}
               </div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-sidebar-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button
+                  disabled={waitingAngelAccess}
+                  className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-sidebar-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-60"
+                >
                   <Avatar className="h-9 w-9 border border-primary/30 shrink-0">
                     <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-primary/20 to-secondary/20">
                       {user?.name?.charAt(0).toUpperCase()}
@@ -1005,7 +1024,7 @@ function DashboardLayoutContent({
       </div>
 
       {/* Banner de impersonação - aparece quando admin está visualizando como aluno */}
-      {!isPureAngel && <ImpersonationBanner />}
+      {!waitingAngelAccess && !isPureAngel && <ImpersonationBanner />}
       <SidebarInset className="gradient-bg">
         {isMobile && (
           <div className="flex border-b border-border h-14 items-center justify-between bg-background/80 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
@@ -1020,14 +1039,19 @@ function DashboardLayoutContent({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {anjoAccessResolved && !isPureAngel && <NotificationBell />}
-              <RoleSwitcher />
+              {!waitingAngelAccess && anjoAccessResolved && !isPureAngel && <NotificationBell />}
+              {!waitingAngelAccess && <RoleSwitcher />}
             </div>
           </div>
         )}
         <main className="flex-1 p-4 md:p-6">
           {/* Proteção de rota por permissões do admin */}
-          {waitingManagerPermissions && user?.role === 'manager' ? (
+          {waitingAngelAccess || pureAngelRouteBlocked ? (
+            <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground gap-2" role="status">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>{waitingAngelAccess ? "Carregando seus acessos..." : "Redirecionando para seu espaço autorizado..."}</span>
+            </div>
+          ) : waitingManagerPermissions && user?.role === 'manager' ? (
             <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground gap-2">
               <Loader2 className="h-5 w-5 animate-spin" />
               <span>Carregando seus acessos...</span>
