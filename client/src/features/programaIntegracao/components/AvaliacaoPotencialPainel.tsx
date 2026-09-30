@@ -4,15 +4,12 @@ import {
   alterarVinculoAvaliacaoPotencial,
   buscarContextoAvaliacaoPotencial,
   confirmarVinculoAvaliacaoPotencial,
-  criarTarefasGestorIntegracao,
-  reverterTarefasGestorIntegracao,
   type ContextoAvaliacaoPotencial,
 } from '../api/avaliacaoPotencial';
 import { buscarPerfilEcoLider, type EcoLiderAluno } from '../api/ecoLider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Download, PlusCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Download, RefreshCw, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Props {
@@ -28,7 +25,6 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
   const [ctx, setCtx] = useState<ContextoAvaliacaoPotencial | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [acao, setAcao] = useState('');
-  const [mostrarPreviewTarefas, setMostrarPreviewTarefas] = useState(false);
   const [alterandoVinculo, setAlterandoVinculo] = useState(false);
   const [alunosEco, setAlunosEco] = useState<EcoLiderAluno[]>([]);
   const [alunoSelecionado, setAlunoSelecionado] = useState('');
@@ -142,7 +138,6 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
     return <div className="rounded-xl border bg-muted/20 p-4 text-sm text-muted-foreground">Carregando dados da Avaliação de Potencial...</div>;
   }
 
-  const previewTarefas = ctx?.tarefasGestorPreview || null;
   const fonteMentora = Boolean(ctx?.fontes.competenciasMentora?.length || ctx?.fontes.observacoesMentora?.length);
 
   return (
@@ -276,117 +271,7 @@ export function AvaliacaoPotencialPainel({ processo }: Props) {
         </Button>
       </div>
 
-      {(!ctx?.tarefasPadrao || ctx.tarefasPadrao.revertidasEm) && (
-        <div className="flex flex-col gap-3 rounded-lg border border-sky-200 bg-sky-50/30 p-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold">Tarefas do PDI</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              A criação das tarefas continua preservada em um bloco separado do Relatório Assessment.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!ctx?.vinculo.seguro || Boolean(acao)}
-            onClick={() => setMostrarPreviewTarefas((valor) => !valor)}
-          >
-            <PlusCircle className="mr-1 h-4 w-4" /> {mostrarPreviewTarefas ? 'Ocultar prévia das tarefas' : 'Revisar Tarefas do Gestor'}
-          </Button>
-        </div>
-      )}
 
-      {mostrarPreviewTarefas && previewTarefas && (
-        <Card className="border-sky-200 bg-sky-50/30">
-          <CardContent className="space-y-4 p-4">
-            <div>
-              <p className="font-semibold">Prévia das tarefas que serão inseridas no PDI</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Esta revisão não cria nenhuma tarefa. Confira o conteúdo abaixo e só confirme se estiver correto.
-              </p>
-            </div>
-
-            {previewTarefas.faltantes.length > 0 && (
-              <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                <p className="font-semibold">Informações ainda necessárias no Bem Acolhido:</p>
-                <ul className="mt-1 list-disc pl-5">
-                  {previewTarefas.faltantes.map((item) => <li key={item}>{item}</li>)}
-                </ul>
-              </div>
-            )}
-
-            {previewTarefas.bloqueio && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                {previewTarefas.bloqueio}
-              </div>
-            )}
-
-            {previewTarefas.prazo && (
-              <p className="text-sm">
-                <span className="font-semibold">Prazo previsto:</span>{' '}
-                {new Date(`${previewTarefas.prazo}T12:00:00`).toLocaleDateString('pt-BR')}
-              </p>
-            )}
-
-            <div className="space-y-3">
-              {previewTarefas.itens.map((item, indice) => (
-                <div key={item.titulo} className="rounded-lg border bg-background p-3">
-                  <div className="flex items-start gap-2">
-                    <Badge variant="outline">{indice + 1}</Badge>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold">{item.titulo}</p>
-                      <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
-                        {item.descricao || 'Sem conteúdo suficiente para esta tarefa.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {!ctx?.tarefasPadrao || ctx.tarefasPadrao.revertidasEm ? (
-              <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={Boolean(acao)}
-                  onClick={() => setMostrarPreviewTarefas(false)}
-                >
-                  Voltar sem criar
-                </Button>
-                <Button
-                  type="button"
-                  disabled={!ctx?.vinculo.seguro || !previewTarefas.disponivel || Boolean(acao)}
-                  onClick={() => void executar('tarefas-gestor', () => criarTarefasGestorIntegracao(legacyId), '4 ações criadas com sucesso.')}
-                >
-                  <PlusCircle className="mr-1 h-4 w-4" /> {acao === 'tarefas-gestor' ? 'Criando...' : 'Confirmar e criar as 4 tarefas'}
-                </Button>
-              </div>
-            ) : (
-              <p className="border-t pt-3 text-xs font-medium text-emerald-700">
-                Estas tarefas já foram criadas para este colaborador.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {ctx?.tarefasPadrao && !ctx.tarefasPadrao.revertidasEm && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 p-3">
-          <p className="flex-1 text-xs font-medium text-emerald-700">As quatro tarefas padrão já possuem registro de criação para este colaborador.</p>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={Boolean(acao)}
-            onClick={() => void executar('reverter-tarefas-gestor', () => reverterTarefasGestorIntegracao(legacyId), 'Criação das quatro tarefas revertida com segurança.')}
-          >
-            Reverter criação das 4 tarefas
-          </Button>
-        </div>
-      )}
-      {ctx?.tarefasPadrao?.revertidasEm && (
-        <p className="text-xs font-medium text-amber-700">A criação anterior das quatro tarefas foi revertida. Elas podem ser criadas novamente, se necessário.</p>
-      )}
 
     </div>
   );

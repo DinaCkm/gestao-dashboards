@@ -3,6 +3,7 @@ import { Router, type NextFunction, type Request, type Response } from "express"
 import { assertNivelPermiteNovasAtribuicoes, createNotification, getAllUsers, getContratoNivelVigenteByAluno, getMentoringSessionsByAluno, getMentoringSessionsByAlunoAndNivel, getRawConnection } from "./db";
 import { sdk } from "./_core/sdk";
 import { recomendacoesConsultoria } from "@shared/competenciasConsultoria";
+import { buscarTarefasDaCompetencia } from "./programaIntegracaoCompetenciaTasks";
 
 export const programaIntegracaoPotencialRouter = Router();
 
@@ -164,6 +165,16 @@ function bloquearAlteracaoVinculoComDerivados(estado: Record<string, any>) {
     throw Object.assign(
       new Error("Este vínculo já possui as quatro tarefas padrão criadas. Reverta essas tarefas com segurança antes de alterar o aluno vinculado."),
       { statusCode: 409, code: "VINCULO_COM_TAREFAS_ATIVAS" },
+    );
+  }
+
+  const tarefasCompetencias = Array.isArray(teste?.tarefasCompetencias?.itens)
+    ? teste.tarefasCompetencias.itens
+    : [];
+  if (tarefasCompetencias.some((item: any) => Number(item?.sessionId || 0) > 0 && !item?.revertidaEm)) {
+    throw Object.assign(
+      new Error("Este vínculo possui tarefas baseadas nas competências da consultora. Reverta essas tarefas com segurança antes de alterar o aluno vinculado."),
+      { statusCode: 409, code: "VINCULO_COM_TAREFAS_COMPETENCIAS_ATIVAS" },
     );
   }
 
@@ -566,6 +577,115 @@ async function dataFimOnboarding(connection: any, processo: any, estado: Record<
   return fim;
 }
 
+function registrosTarefasCompetencias(estado: Record<string, any>): any[] {
+  const itens = estado?.teste?.tarefasCompetencias?.itens;
+  return Array.isArray(itens) ? itens : [];
+}
+
+function descricaoTarefaCompetencia(
+  competencia: string,
+  tarefa: { comoFazer: string; comprovacao: string },
+) {
+  return [
+    `Competência de desenvolvimento: ${competencia}`,
+    `Como fazer?\n${String(tarefa.comoFazer || "").trim()}`,
+    `Como comprovar?\n${String(tarefa.comprovacao || "").trim()}`,
+  ].join("\n\n");
+}
+
+async function idsSessoesAtivas(
+  connection: any,
+  alunoId: number,
+  ids: number[],
+): Promise<Set<number>> {
+  const unicos = Array.from(new Set(ids.filter((id) => id > 0)));
+  if (!unicos.length) return new Set<number>();
+  const placeholders = unicos.map(() => "?").join(",");
+  const [rows] = (await connection.execute(
+    `SELECT id FROM mentoring_sessions
+     WHERE id IN (${placeholders}) AND alunoId=? AND COALESCE(cancelada,0)=0`,
+    [...unicos, alunoId],
+  )) as any;
+  return new Set<number>((rows || []).map((row: any) => Number(row.id || 0)).filter((id: number) => id > 0));
+}
+
+async function montarPreviewTarefasCompetencias(
+  connection: any,
+  ctx: Awaited<ReturnType<typeof contexto>>,
+) {
+  let prazoSugerido: string | null = null;
+  let bloqueio = "";
+  try {
+    prazoSugerido = await dataFimOnboarding(connection, ctx.processo, ctx.estado);
+    if (prazoSugerido < todayIso()) {
+      bloqueio = "O prazo final do onboarding já passou. Nenhuma tarefa baseada em competências será criada.";
+    }
+  } catch (error: any) {
+    bloqueio = String(error?.message || "Não foi possível calcular o prazo final do onboarding.");
+  }
+
+  const historico = registrosTarefasCompetencias(ctx.estado);
+  const sessionIdsHistorico = historico
+    .filter((item: any) => !item?.revertidaEm)
+    .map((item: any) => Number(item?.sessionId || 0))
+    .filter((id: number) => id > 0);
+  const sessoesAtivas = ctx.alunoId
+    ? await idsSessoesAtivas(connection, ctx.alunoId, sessionIdsHistorico)
+    : new Set<number>();
+
+  const criadasPorBiblioteca = new Map<string, any>();
+  for (const item of historico) {
+    const sessionId = Number(item?.sessionId || 0);
+    const bibliotecaId = String(item?.bibliotecaId || "");
+    if (!bibliotecaId || item?.revertidaEm || !sessoesAtivas.has(sessionId)) continue;
+    criadasPorBiblioteca.set(bibliotecaId, item);
+  }
+
+  const competencias = ctx.mentora.competencias.map((nome: string) => {
+    const biblioteca = buscarTarefasDaCompetencia(nome);
+    if (!biblioteca) {
+      return {
+        nome,
+        correspondencia: false,
+        numero: null,
+        tarefas: [],
+      };
+    }
+    return {
+      nome,
+      correspondencia: true,
+      numero: biblioteca.numero,
+      tarefas: biblioteca.tarefas.map((tarefa) => {
+        const criada = criadasPorBiblioteca.get(tarefa.id);
+        return {
+          ...tarefa,
+          criada: Boolean(criada),
+          sessionId: criada ? Number(criada.sessionId || 0) || null : null,
+          prazo: criada ? String(criada.prazo || "") : "",
+        };
+      }),
+    };
+  });
+
+  const temDisponivel = competencias.some((competencia: any) =>
+    competencia.correspondencia && competencia.tarefas.some((tarefa: any) => !tarefa.criada),
+  );
+
+  return {
+    disponivel: Boolean(ctx.vinculo.seguro) && Boolean(prazoSugerido) && !bloqueio && temDisponivel,
+    prazoSugerido,
+    bloqueio,
+    competencias,
+    criadasAtivas: Array.from(criadasPorBiblioteca.values()).map((item: any) => ({
+      bibliotecaId: String(item.bibliotecaId || ""),
+      competencia: String(item.competencia || ""),
+      titulo: String(item.titulo || ""),
+      sessionId: Number(item.sessionId || 0),
+      prazo: String(item.prazo || ""),
+    })),
+  };
+}
+
 async function montarPreviewTarefasGestor(
   connection: any,
   ctx: Awaited<ReturnType<typeof contexto>>,
@@ -787,6 +907,7 @@ programaIntegracaoPotencialRouter.get(
         sugestoes: teste.sugestoesDesenvolvimento || null,
         tarefasPadrao: teste.tarefasIntegracaoPadrao || null,
         tarefasGestorPreview: await montarPreviewTarefasGestor(connection, ctx),
+        tarefasCompetenciasPreview: await montarPreviewTarefasCompetencias(connection, ctx),
       });
     } catch (error) {
       return httpError(res, error, "Não foi possível carregar o contexto da Avaliação de Potencial.");
@@ -1098,6 +1219,288 @@ programaIntegracaoPotencialRouter.post(
     } catch (error) {
       if (tx) try { await connection.rollback(); } catch {}
       return httpError(res, error, "Não foi possível criar as tarefas do gestor.");
+    }
+  },
+);
+
+programaIntegracaoPotencialRouter.post(
+  "/api/programa-integracao/processos/:legacyId/tarefas-competencias/criar",
+  requireAdmin,
+  async (req, res) => {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    let tx = false;
+    try {
+      const legacyId = sanitizeLegacyId(req.params.legacyId);
+      const tarefaIds = Array.from(new Set(
+        (Array.isArray(req.body?.tarefaIds) ? req.body.tarefaIds : [])
+          .map((id: any) => String(id || "").trim())
+          .filter(Boolean),
+      ));
+      const prazo = dataIsoValida(req.body?.prazo);
+
+      if (!tarefaIds.length) {
+        return res.status(400).json({ error: "Selecione ao menos uma tarefa antes de confirmar." });
+      }
+      if (tarefaIds.length > 24) {
+        return res.status(400).json({ error: "A seleção ultrapassa o limite disponível para as competências registradas." });
+      }
+      if (!prazo) {
+        return res.status(400).json({ error: "Informe um prazo válido para as tarefas selecionadas." });
+      }
+
+      await connection.beginTransaction(); tx = true;
+      const ctx = await contexto(connection, legacyId, true);
+      requireContextoSeguro(ctx, { mentora: true });
+      if (!ctx.mentora.competencias.length) {
+        throw Object.assign(
+          new Error("Registre ao menos uma competência indicada pela consultora antes de criar tarefas baseadas nas competências."),
+          { statusCode: 409, code: "COMPETENCIAS_MENTORA_AUSENTES" },
+        );
+      }
+
+      const fimOnboarding = await dataFimOnboarding(connection, ctx.processo, ctx.estado);
+      if (prazo < todayIso()) {
+        throw Object.assign(new Error("O prazo escolhido não pode estar no passado."), { statusCode: 409 });
+      }
+      if (prazo > fimOnboarding) {
+        throw Object.assign(
+          new Error("O prazo escolhido ultrapassa o fim do onboarding. Escolha uma data até o encerramento do processo."),
+          { statusCode: 409 },
+        );
+      }
+
+      const permitidas = new Map<string, {
+        competencia: string;
+        tarefa: { id: string; titulo: string; comoFazer: string; comprovacao: string };
+      }>();
+      for (const competencia of ctx.mentora.competencias) {
+        const biblioteca = buscarTarefasDaCompetencia(competencia);
+        if (!biblioteca) continue;
+        for (const tarefa of biblioteca.tarefas) {
+          permitidas.set(tarefa.id, { competencia, tarefa });
+        }
+      }
+
+      const selecionadas = tarefaIds.map((id) => {
+        const item = permitidas.get(id);
+        if (!item) {
+          throw Object.assign(
+            new Error("Uma das tarefas selecionadas não pertence às competências atualmente registradas para este colaborador. Atualize a tela e revise a seleção."),
+            { statusCode: 409 },
+          );
+        }
+        return item;
+      });
+
+      const historico = registrosTarefasCompetencias(ctx.estado);
+      const idsHistoricoAtivo = historico
+        .filter((item: any) => !item?.revertidaEm)
+        .map((item: any) => Number(item?.sessionId || 0))
+        .filter((id: number) => id > 0);
+      const sessoesAtivas = await idsSessoesAtivas(connection, ctx.alunoId, idsHistoricoAtivo);
+      const bibliotecasAtivas = new Set(
+        historico
+          .filter((item: any) => !item?.revertidaEm && sessoesAtivas.has(Number(item?.sessionId || 0)))
+          .map((item: any) => String(item?.bibliotecaId || "")),
+      );
+      const jaCriadas = tarefaIds.filter((id) => bibliotecasAtivas.has(id));
+      if (jaCriadas.length) {
+        throw Object.assign(
+          new Error("Uma ou mais tarefas selecionadas já estão ativas para este colaborador. Atualize a tela; nenhuma duplicação foi criada."),
+          { statusCode: 409, code: "TAREFA_COMPETENCIA_JA_CRIADA" },
+        );
+      }
+
+      const titulos = selecionadas.map((item) => item.tarefa.titulo);
+      if (titulos.length) {
+        const placeholders = titulos.map(() => "?").join(",");
+        const [possiveisDuplicadas] = (await connection.execute(
+          `SELECT id,customTaskTitle,customTaskDescription
+           FROM mentoring_sessions
+           WHERE alunoId=? AND COALESCE(cancelada,0)=0
+             AND customTaskTitle IN (${placeholders})`,
+          [ctx.alunoId, ...titulos],
+        )) as any;
+        const duplicadaExata = (possiveisDuplicadas || []).some((row: any) =>
+          selecionadas.some((item) =>
+            String(row.customTaskTitle || "") === item.tarefa.titulo
+            && String(row.customTaskDescription || "") === descricaoTarefaCompetencia(item.competencia, item.tarefa),
+          ),
+        );
+        if (duplicadaExata) {
+          throw Object.assign(
+            new Error("Uma das tarefas selecionadas já existe no PDI deste aluno. Nenhuma duplicação foi criada."),
+            { statusCode: 409, code: "TAREFA_COMPETENCIA_DUPLICADA_NO_PDI" },
+          );
+        }
+      }
+
+      const trilhaId = Number(ctx.aluno.trilhaId || 0) || null;
+      const consultorId = await consultorParaAluno(connection, ctx.aluno);
+      const sessaoContexto = await contextoNovaTarefa(ctx.alunoId);
+      const base = sessaoContexto.proximoNumero;
+      const novosRegistros: any[] = [];
+      const sessionIds: number[] = [];
+
+      for (let i = 0; i < selecionadas.length; i += 1) {
+        const item = selecionadas[i];
+        const sessionId = await inserirTarefa(connection, {
+          aluno: ctx.aluno,
+          consultorId,
+          trilhaId,
+          contratoNivelId: sessaoContexto.contratoNivelId,
+          titulo: item.tarefa.titulo,
+          descricao: descricaoTarefaCompetencia(item.competencia, item.tarefa),
+          prazo,
+          sessionNumber: base + i,
+        });
+        sessionIds.push(sessionId);
+        novosRegistros.push({
+          id: randomUUID(),
+          bibliotecaId: item.tarefa.id,
+          competencia: item.competencia,
+          titulo: item.tarefa.titulo,
+          sessionId,
+          prazo,
+          criadaEm: new Date().toISOString(),
+          criadaPorUserId: Number((req as any).authenticatedUser?.id || 0) || null,
+        });
+      }
+
+      ctx.estado.teste = ctx.estado.teste || {};
+      const pacoteAnterior = ctx.estado.teste.tarefasCompetencias || {};
+      ctx.estado.teste.tarefasCompetencias = {
+        versao: 1,
+        alunoId: ctx.alunoId,
+        atualizadaEm: new Date().toISOString(),
+        itens: [...historico, ...novosRegistros],
+      };
+      await connection.execute(
+        "UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?",
+        [JSON.stringify(ctx.estado), Number(ctx.processo.id)],
+      );
+      await audit(
+        connection,
+        req,
+        "tarefas_competencias_criadas",
+        "Tarefas selecionadas a partir das competências da consultora foram inseridas no PDI do aluno ECO vinculado.",
+        Number(ctx.processo.id),
+        {
+          alunoId: ctx.alunoId,
+          prazo,
+          itens: novosRegistros.map((item) => ({
+            bibliotecaId: item.bibliotecaId,
+            competencia: item.competencia,
+            titulo: item.titulo,
+            sessionId: item.sessionId,
+          })),
+          versaoAnterior: Number(pacoteAnterior?.versao || 0) || null,
+        },
+      );
+      await connection.commit(); tx = false;
+      await notificarAlunoSobreTarefas(
+        ctx.alunoId,
+        novosRegistros.length,
+        novosRegistros.length === 1 ? novosRegistros[0].titulo : undefined,
+      );
+      return res.json({ ok: true, criadas: novosRegistros.length, sessionIds, prazo });
+    } catch (error) {
+      if (tx) try { await connection.rollback(); } catch {}
+      return httpError(res, error, "Não foi possível criar as tarefas baseadas nas competências.");
+    }
+  },
+);
+
+programaIntegracaoPotencialRouter.post(
+  "/api/programa-integracao/processos/:legacyId/tarefas-competencias/reverter",
+  requireAdmin,
+  async (req, res) => {
+    const connection = await getConnectionOr503(res); if (!connection) return;
+    let tx = false;
+    try {
+      const legacyId = sanitizeLegacyId(req.params.legacyId);
+      const filtroIds = Array.from(new Set(
+        (Array.isArray(req.body?.tarefaIds) ? req.body.tarefaIds : [])
+          .map((id: any) => String(id || "").trim())
+          .filter(Boolean),
+      ));
+
+      await connection.beginTransaction(); tx = true;
+      const ctx = await contexto(connection, legacyId, true);
+      requireContextoSeguro(ctx);
+      const historico = registrosTarefasCompetencias(ctx.estado);
+      if (!historico.length) {
+        throw Object.assign(new Error("Não existem tarefas baseadas em competências registradas para reversão."), { statusCode: 409 });
+      }
+
+      const candidatos = historico.filter((item: any) =>
+        !item?.revertidaEm
+        && Number(item?.sessionId || 0) > 0
+        && (!filtroIds.length || filtroIds.includes(String(item?.bibliotecaId || ""))),
+      );
+      if (!candidatos.length) {
+        throw Object.assign(new Error("Nenhuma das tarefas selecionadas possui uma inserção ativa para reverter."), { statusCode: 409 });
+      }
+
+      const ids = candidatos.map((item: any) => Number(item.sessionId));
+      const placeholders = ids.map(() => "?").join(",");
+      const [rows] = (await connection.execute(
+        `SELECT id,alunoId,evidenceLink,evidenceImageUrl,submittedAt,validatedAt,cancelada
+         FROM mentoring_sessions
+         WHERE id IN (${placeholders})
+         FOR UPDATE`,
+        ids,
+      )) as any;
+      if ((rows || []).length !== ids.length || rows.some((row: any) => Number(row.alunoId) !== ctx.alunoId || Number(row.cancelada || 0) === 1)) {
+        throw Object.assign(new Error("As tarefas registradas não correspondem integralmente às tarefas ativas deste aluno. Nenhum registro foi alterado."), { statusCode: 409 });
+      }
+      if (rows.some((row: any) => row.evidenceLink || row.evidenceImageUrl || row.submittedAt || row.validatedAt)) {
+        throw Object.assign(new Error("Uma ou mais tarefas já possuem evidência, entrega ou validação. A reversão automática foi bloqueada para preservar o histórico."), { statusCode: 409 });
+      }
+
+      await connection.execute(
+        `UPDATE mentoring_sessions SET cancelada=1 WHERE id IN (${placeholders}) AND alunoId=?`,
+        [...ids, ctx.alunoId],
+      );
+
+      const revertidaEm = new Date().toISOString();
+      const userId = Number((req as any).authenticatedUser?.id || 0) || null;
+      const idsSet = new Set(ids);
+      for (const item of historico) {
+        if (!item?.revertidaEm && idsSet.has(Number(item?.sessionId || 0))) {
+          item.revertidaEm = revertidaEm;
+          item.revertidaPorUserId = userId;
+        }
+      }
+      ctx.estado.teste.tarefasCompetencias = {
+        ...(ctx.estado.teste.tarefasCompetencias || {}),
+        atualizadaEm: revertidaEm,
+        itens: historico,
+      };
+      await connection.execute(
+        "UPDATE programa_integracao_processos SET estado=?,updatedAt=CURRENT_TIMESTAMP WHERE id=?",
+        [JSON.stringify(ctx.estado), Number(ctx.processo.id)],
+      );
+      await audit(
+        connection,
+        req,
+        "tarefas_competencias_revertidas",
+        "Tarefas baseadas nas competências foram canceladas de forma reversível.",
+        Number(ctx.processo.id),
+        {
+          alunoId: ctx.alunoId,
+          itens: candidatos.map((item: any) => ({
+            bibliotecaId: String(item.bibliotecaId || ""),
+            competencia: String(item.competencia || ""),
+            sessionId: Number(item.sessionId || 0),
+          })),
+        },
+      );
+      await connection.commit(); tx = false;
+      return res.json({ ok: true, revertidas: ids.length });
+    } catch (error) {
+      if (tx) try { await connection.rollback(); } catch {}
+      return httpError(res, error, "Não foi possível reverter as tarefas baseadas nas competências.");
     }
   },
 );
