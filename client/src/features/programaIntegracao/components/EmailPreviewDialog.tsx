@@ -25,6 +25,9 @@ interface EmailPreviewDialogProps {
   preview: EmailPreviewIntegracao | null;
   nomePessoa: string;
   enviado: boolean;
+  onEnviarEmail?: () => Promise<void> | void;
+  envioManualDisponivel?: boolean;
+  motivoEnvioManualIndisponivel?: string;
   onAlternarEnviado?: () => Promise<void> | void;
   onMarcadoEnviado?: () => void;
   onEditarModelo?: () => void;
@@ -97,6 +100,9 @@ export function EmailPreviewDialog({
   preview,
   nomePessoa,
   enviado,
+  onEnviarEmail,
+  envioManualDisponivel = false,
+  motivoEnvioManualIndisponivel,
   onAlternarEnviado,
   onMarcadoEnviado,
   onEditarModelo,
@@ -107,11 +113,13 @@ export function EmailPreviewDialog({
   numeroAlinhamentoDocumentos,
 }: EmailPreviewDialogProps) {
   const [copiado, setCopiado] = React.useState<'rico' | 'texto' | null>(null);
+  const [enviandoEmail, setEnviandoEmail] = React.useState(false);
   const [alternandoEnviado, setAlternandoEnviado] = React.useState(false);
 
   React.useEffect(() => {
     if (!open) return;
     setCopiado(null);
+    setEnviandoEmail(false);
     setAlternandoEnviado(false);
   }, [open, preview?.email.assunto]);
 
@@ -136,6 +144,19 @@ export function EmailPreviewDialog({
       toast.success('Texto simples copiado.');
     } catch {
       toast.error('Selecione o texto e copie com Ctrl+C.');
+    }
+  };
+
+  const handleEnviarEmail = async () => {
+    if (!onEnviarEmail || !envioManualDisponivel || enviandoEmail) return;
+    try {
+      setEnviandoEmail(true);
+      await onEnviarEmail();
+      toast.success('E-mail enviado com sucesso.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Não foi possível enviar o e-mail.');
+    } finally {
+      setEnviandoEmail(false);
     }
   };
 
@@ -204,6 +225,16 @@ export function EmailPreviewDialog({
 
         <div className="shrink-0 border-t border-[#D7D1CD] bg-[#F8F8FC] px-3 py-3 sm:px-5">
           <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            <Button
+              type="button"
+              size="sm"
+              disabled={!envioManualDisponivel || !onEnviarEmail || enviandoEmail}
+              onClick={handleEnviarEmail}
+              title={motivoEnvioManualIndisponivel || 'Enviar este e-mail agora'}
+              className="border-[#152232] bg-[#152232] font-semibold text-white hover:bg-[#233348] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {enviandoEmail ? 'Enviando…' : 'Enviar e-mail'}
+            </Button>
             <Button
               type="button"
               size="sm"
@@ -314,6 +345,11 @@ export function EmailPreviewDialog({
               >
                 Editar modelo
               </Button>
+            )}
+            {!envioManualDisponivel && motivoEnvioManualIndisponivel && (
+              <span className="text-xs text-[#8E6008] sm:basis-full">
+                {motivoEnvioManualIndisponivel}
+              </span>
             )}
             <span className="hidden text-xs text-[#98A0AB] sm:ml-auto sm:inline">Confira antes de enviar.</span>
           </div>
