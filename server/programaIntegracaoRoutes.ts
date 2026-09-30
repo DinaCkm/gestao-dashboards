@@ -1507,6 +1507,17 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
             total: Number(pdiCompleto?.total || 0),
             concluidas: Number(pdiCompleto?.concluidas || 0),
             percentual: pdiCompleto?.percentual == null ? null : Number(pdiCompleto.percentual),
+            // Para o Gestor, expõe somente o mínimo operacional necessário
+            // para acompanhar prazo do PDI. Descrição, evidências e demais
+            // detalhes permanecem restritos à UGP/RH.
+            itens: Array.isArray(pdiCompleto?.itens)
+              ? pdiCompleto.itens.map((item: any) => ({
+                  id: Number(item.id || 0),
+                  titulo: String(item.titulo || "Tarefa do PDI"),
+                  prazo: item.prazo ? String(item.prazo).slice(0, 10) : null,
+                  concluida: Boolean(item.concluida),
+                }))
+              : [],
           };
       const statusAcompanhamento = statusAcompanhamentoSeguro({
         respostas,
