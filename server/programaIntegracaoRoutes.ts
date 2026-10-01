@@ -1055,10 +1055,19 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           ? "gestor"
           : "all"
       : String(configEfetiva.mode || "gestor");
+    const integracaoAccessLevel = adminView
+      ? acessoConfiguradoSelecionado
+        ? String(configEfetiva.accessLevel || "gestor")
+        : gestorProcessoSelecionado
+          ? "gestor"
+          : "ugp"
+      : String(configEfetiva.accessLevel || "gestor");
 
     const scopeAll = integracaoMode === "all";
-    const scopeUgpRestrita = integracaoMode === "ugp_restrita";
-    const demoOnly = scopeUgpRestrita && Boolean(configEfetiva.demoOnly);
+    const scopeManual = integracaoMode === "manual";
+    const acessoUgpRh = integracaoAccessLevel === "ugp";
+    const restrictedUgp = acessoUgpRh && scopeManual;
+    const demoOnly = restrictedUgp && Boolean(configEfetiva.demoOnly);
     const manualProcessIds = new Set<number>(
       Array.isArray(configEfetiva.processIds)
         ? configEfetiva.processIds
@@ -1107,12 +1116,6 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const gestorSelecionadoPublico = gestorSelecionado ? gestorPublico(gestorSelecionado) : null;
     const adminVisualizandoPerfil = adminView && Boolean(gestorSelecionado);
     const adminGlobal = adminView && !acessoConfiguradoSelecionado;
-
-    const acessoUgpRh = adminView
-      ? acessoConfiguradoSelecionado
-        ? (scopeAll || scopeUgpRestrita)
-        : !gestorProcessoSelecionado
-      : (scopeAll || scopeUgpRestrita);
 
     const precisaResolverEmpresa = !adminView || Boolean(acessoConfiguradoSelecionado);
     const alunosEmpresa = precisaResolverEmpresa
@@ -1165,7 +1168,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
       alunoEmpresaPorProcesso.set(Number(row.id), alunoEmpresa);
 
       if (scopeAll) return true; // Todos, porém somente da empresa configurada.
-      if (integracaoMode === "manual" || scopeUgpRestrita) {
+      if (scopeManual) {
         if (!manualProcessIds.has(Number(row.id))) return false;
         if (demoOnly) {
           const estadoEscopo = asJson<Record<string, any>>(row.estado, {});
@@ -1189,9 +1192,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
           ? (adminVisualizandoPerfil && !acessoUgpRh ? "gestor" : "all")
           : (scopeAll ? "all" : "gestor"),
         accessLevel: acessoUgpRh ? "ugp" : "gestor",
-        restrictedUgp: scopeUgpRestrita,
+        restrictedUgp,
         demoOnly,
-        authorizedCount: scopeUgpRestrita ? permitidos.length : null,
+        authorizedCount: scopeManual ? permitidos.length : null,
         adminView,
         gestoresDisponiveis: adminView ? gestoresDisponiveisPublicos : [],
         gestorSelecionado: gestorSelecionadoPublico,
@@ -1664,9 +1667,9 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         ? (adminVisualizandoPerfil && !acessoUgpRh ? "gestor" : "all")
         : (scopeAll ? "all" : "gestor"),
       accessLevel: acessoUgpRh ? "ugp" : "gestor",
-      restrictedUgp: scopeUgpRestrita,
+      restrictedUgp,
       demoOnly,
-      authorizedCount: scopeUgpRestrita ? permitidos.length : null,
+      authorizedCount: scopeManual ? permitidos.length : null,
       adminView,
       gestoresDisponiveis: adminView ? gestoresDisponiveisPublicos : [],
       gestorSelecionado: gestorSelecionadoPublico,
