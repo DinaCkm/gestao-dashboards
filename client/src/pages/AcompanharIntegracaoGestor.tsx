@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip as UiTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Activity, AlertTriangle, ArrowDownRight, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, Brain, Camera, CheckCircle2, ChevronRight, ClipboardList, Download, Eye, FileText, Filter, Handshake, Info, LayoutDashboard, ListChecks, Maximize2, MessageSquareText, Minimize2, Network, Paperclip, RefreshCw, Route, Search, Sparkles, Target, UserCheck, Users } from 'lucide-react';
@@ -2659,6 +2660,25 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
     if (valor >= 25) return {backgroundColor:'#EA580C',color:'#FFFFFF'};
     return {backgroundColor:'#DC2626',color:'#FFFFFF'};
   };
+
+  const explicacoesDimensoes: Record<string, { titulo: string; texto: string }> = {
+    culturaPertencimento: {
+      titulo: 'Cultura e pertencimento',
+      texto: 'Demonstra o quanto o colaborador se identifica com a cultura da organização, sente-se pertencente, percebe um ambiente de trabalho positivo, sente orgulho de fazer parte da empresa e compreende a importância de seu trabalho para os objetivos organizacionais.',
+    },
+    anjoColegas: {
+      titulo: 'Anjo e colegas',
+      texto: 'Mostra como o colaborador percebe o apoio recebido durante sua integração, considerando a atuação do Anjo, o relacionamento, a confiança, a colaboração e a construção de vínculos com os colegas.',
+    },
+    gestao: {
+      titulo: 'Gestão',
+      texto: 'Apresenta a percepção do colaborador sobre sua relação com a liderança, considerando a clareza das orientações, a transparência da comunicação e o incentivo do gestor ao seu desenvolvimento.',
+    },
+    trabalhoDesenvolvimento: {
+      titulo: 'Trabalho e desenvolvimento',
+      texto: 'Indica como o colaborador está percebendo sua adaptação às atividades e seu desenvolvimento profissional, considerando satisfação com o trabalho, carga de atividades, aplicação do conhecimento técnico, busca de apoio, capacidade de propor melhorias, cooperação com a equipe e avanço em seu plano de desenvolvimento.',
+    },
+  };
   return (
     <div className="space-y-4">
       <div className={`rounded-2xl border p-4 shadow-sm ${parecer.classes}`}>
@@ -2689,19 +2709,43 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
 
       <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-[0_1px_2px_rgba(16,24,40,.05)]">
         <div className="border-b px-5 py-4">
-          <div className="font-bold text-slate-950">Heatmap da trajetória</div>
-          <div className="mt-1 text-sm leading-relaxed text-slate-600">
-            Mostra, em uma única tabela, como cada dimensão da <b>Pesquisa de Integração respondida pelo próprio colaborador</b> evoluiu nos alinhamentos de 15, 45, 75 e 150 dias.
-            Ele serve para localizar rapidamente estabilidade, melhora ou queda por tema — sem substituir a leitura das respostas detalhadas.
+          <div className="font-bold text-slate-950">Heatmap da Trajetória</div>
+          <div className="mt-2 space-y-2 text-sm leading-relaxed text-slate-600">
+            <p>
+              O Heatmap da Trajetória permite acompanhar como o próprio colaborador está percebendo sua experiência de integração ao longo do tempo.
+            </p>
+            <p>
+              A leitura é construída a partir das Pesquisas de Integração respondidas pelo colaborador nos diferentes momentos da jornada — 15, 45, 75 e 150 dias — permitindo identificar mudanças de percepção, avanços e pontos que merecem atenção.
+            </p>
           </div>
-          <details className="mt-3 rounded-xl bg-[#FAFAFD] px-4 py-3 text-sm text-slate-700">
-            <summary className="cursor-pointer font-semibold text-violet-700">Como os valores são calculados e como ler as cores?</summary>
-            <div className="mt-3 space-y-2 leading-relaxed">
+          <details className="mt-4 rounded-xl border border-violet-100 bg-[#FAFAFD] px-4 py-3 text-sm text-slate-700">
+            <summary className="cursor-pointer font-semibold text-violet-700">
+              Como os valores são calculados, como ler as cores e considerações?
+            </summary>
+            <div className="mt-4 space-y-3 leading-relaxed">
               <p><b>Fonte:</b> Pesquisa de Integração do Colaborador. As respostas originais usam escala de 1 a 5; a opção 0 (“sem opinião”) não entra na média.</p>
               <p><b>Cálculo:</b> as perguntas são agrupadas em quatro dimensões. O sistema calcula a média das respostas válidas de cada grupo e multiplica por 20 para apresentar o resultado de 0 a 100. Ex.: média 4,0 = 80%.</p>
               <p><b>Exceção:</b> a pergunta sobre sobrecarga é invertida para que, em todas as dimensões, um percentual maior mantenha o mesmo sentido de percepção mais favorável.</p>
               <p><b>Cores:</b> o número dentro da célula é sempre o resultado real; a cor apenas identifica a faixa em que ele se encontra. <b>90 a 100</b> = verde; <b>70 a 89</b> = azul; <b>60 a 69</b> = azul-claro; <b>50 a 59</b> = amarelo; <b>25 a 49</b> = laranja; <b>0 a 24</b> = vermelho. Quando não houver resposta naquele alinhamento, a célula permanece cinza.</p>
               <p><b>Variação:</b> compara os dois alinhamentos mais recentes disponíveis daquela dimensão. ↑ indica aumento, ↓ redução e → estabilidade.</p>
+
+              <div className="mt-5 rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                <h4 className="font-bold text-slate-950">O mais importante é observar a trajetória</h4>
+                <div className="mt-2 space-y-3 text-slate-700">
+                  <p>
+                    O objetivo do Heatmap não é avaliar o colaborador de forma isolada ou classificá-lo como “bom” ou “ruim”.
+                  </p>
+                  <p>
+                    Seu principal valor está em permitir que o RH acompanhe <b>como essas percepções evoluem durante o processo de integração</b>.
+                  </p>
+                  <p>
+                    Por exemplo, um colaborador pode iniciar sua trajetória com uma percepção elevada de pertencimento e apresentar uma queda aos 45 dias. Essa mudança não significa, por si só, que existe um problema. Ela funciona como um <b>sinal para investigação e acompanhamento</b>, permitindo que RH, gestor e demais responsáveis compreendam o contexto e atuem preventivamente quando necessário.
+                  </p>
+                  <p>
+                    Assim, o Heatmap transforma as respostas da Pesquisa de Integração em uma visão visual e longitudinal da experiência do colaborador, ajudando a organização a identificar <b>onde a integração está funcionando bem e onde pode ser necessário oferecer maior suporte</b>.
+                  </p>
+                </div>
+              </div>
             </div>
           </details>
         </div>
@@ -2721,7 +2765,8 @@ function TrajetoriaHeatmap({ colaborador }: { colaborador: ColaboradorAcompanham
                       ? 'border-rose-200 bg-rose-50 text-rose-800'
                       : 'border-slate-200 bg-slate-50 text-slate-700';
                 const variacaoTexto = delta == null ? '—' : delta > 2 ? '↑ ' + Math.round(delta) : delta < -2 ? '↓ ' + Math.abs(Math.round(delta)) : '→ estável';
-                return <tr key={grupo.chave} className="border-t transition-colors hover:bg-[#F7F5FF]"><td className="px-4 py-3 font-semibold text-slate-800">{grupo.nome}</td>{vals.map((v,i)=><td key={i} className="px-3 py-3 text-center"><UiTooltip><TooltipTrigger asChild><div className="mx-auto rounded-xl px-3 py-2 font-bold tabular-nums" style={heatStyle(v)}>{v==null?'—':Math.round(v)}</div></TooltipTrigger><TooltipContent className="text-xs">{v==null?'Sem resposta neste alinhamento':Math.round(v)+'% · alinhamento de '+[15,45,75,150][i]+' dias · '+quantidadeValidasPesquisa(colaborador.respostas,i+1,grupo.indices)+' resposta(s) válida(s)'}</TooltipContent></UiTooltip></td>)}<td className="px-4 py-3 text-center"><span className={'inline-flex rounded-full border px-2.5 py-1 text-xs font-bold '+variacaoClasses}>{variacaoTexto}</span></td></tr>;
+                const explicacao = explicacoesDimensoes[grupo.chave];
+                return <tr key={grupo.chave} className="border-t transition-colors hover:bg-[#F7F5FF]"><td className="px-4 py-3 font-semibold text-slate-800"><Popover><PopoverTrigger asChild><button type="button" className="group inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-violet-50 hover:text-violet-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" aria-label={`Abrir explicação sobre ${explicacao?.titulo || grupo.nome}`}><span>{grupo.nome}</span><span className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700"><Info className="h-3 w-3" /> clique</span></button></PopoverTrigger><PopoverContent align="start" className="w-[360px] max-w-[calc(100vw-32px)] rounded-xl border-violet-200 p-4 shadow-lg"><div className="font-bold text-slate-950">{explicacao?.titulo || grupo.nome}</div><p className="mt-2 text-sm leading-relaxed text-slate-600">{explicacao?.texto}</p><p className="mt-3 text-[11px] text-slate-400">Clique fora desta janela ou novamente na dimensão para fechar.</p></PopoverContent></Popover></td>{vals.map((v,i)=><td key={i} className="px-3 py-3 text-center"><UiTooltip><TooltipTrigger asChild><div className="mx-auto rounded-xl px-3 py-2 font-bold tabular-nums" style={heatStyle(v)}>{v==null?'—':Math.round(v)}</div></TooltipTrigger><TooltipContent className="text-xs">{v==null?'Sem resposta neste alinhamento':Math.round(v)+'% · alinhamento de '+[15,45,75,150][i]+' dias · '+quantidadeValidasPesquisa(colaborador.respostas,i+1,grupo.indices)+' resposta(s) válida(s)'}</TooltipContent></UiTooltip></td>)}<td className="px-4 py-3 text-center"><span className={'inline-flex rounded-full border px-2.5 py-1 text-xs font-bold '+variacaoClasses}>{variacaoTexto}</span></td></tr>;
               })}
             </tbody>
           </table>
