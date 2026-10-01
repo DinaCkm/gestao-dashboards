@@ -88,9 +88,11 @@ import {
   type ContratoNivelComDatas,
 } from "./contrato-niveis.service";
 import {
+  INTEGRACAO_UGP_RESPONSIBLE,
   mergeGeneralManagerPermissionsPreservingIntegracao,
   parseManagerIntegracaoPermissions,
   replaceIntegracaoPermissions,
+  type IntegracaoAccessLevel,
   type IntegracaoManagerMode,
 } from "./managerIntegracaoPermissions";
 
@@ -154,8 +156,10 @@ export async function ensureDemoUgpLoginFixture() {
     userId: criado.userId,
     enabled: true,
     programId: Number(program.id),
+    accessLevel: "ugp",
     mode: "all",
     processIds: [],
+    ugpResponsible: false,
   });
   if (!integracao.success) {
     throw new Error(`[DemoIntegracao] Não foi possível configurar o escopo inicial da UGP fictícia: ${integracao.message || "erro desconhecido"}`);
@@ -15531,6 +15535,49 @@ export async function getManagerIntegracaoConfig(userId: number) {
   return parseManagerIntegracaoPermissions(permissions);
 }
 
+export async function getIntegracaoUgpResponsible(programId: number): Promise<{
+  responsavel: { id: number; name: string; email: string } | null;
+  duplicidade: boolean;
+}> {
+  const db = await getDb();
+  if (!db || !Number.isInteger(programId) || programId <= 0) {
+    return { responsavel: null, duplicidade: false };
+  }
+
+  const [rows] = await db.execute(sql.raw(`
+    SELECT u.id,u.name,u.email,app.permissions
+    FROM users u
+    INNER JOIN admin_page_permissions app ON app.userId=u.id
+    WHERE u.role='manager' AND u.isActive=1
+    ORDER BY u.name ASC,u.id ASC
+  `)) as any;
+
+  const encontrados = (rows || []).filter((row: any) => {
+    let permissions: string[] = [];
+    try {
+      permissions = Array.isArray(row.permissions)
+        ? row.permissions
+        : JSON.parse(String(row.permissions || "[]"));
+      if (!Array.isArray(permissions)) permissions = [];
+    } catch {
+      permissions = [];
+    }
+    const config = parseManagerIntegracaoPermissions(permissions);
+    return config.enabled &&
+      config.accessLevel === "ugp" &&
+      config.ugpResponsible &&
+      Number(config.programId || 0) === programId;
+  });
+
+  const primeiro = encontrados[0];
+  return {
+    responsavel: primeiro
+      ? { id: Number(primeiro.id), name: String(primeiro.name || ""), email: String(primeiro.email || "") }
+      : null,
+    duplicidade: encontrados.length > 1,
+  };
+}
+
 export async function setManagerGeneralPermissionsPreservingIntegracao(
   userId: number,
   permissions: string[],
@@ -15582,10 +15629,19 @@ export async function setManagerIntegracaoConfig(data: {
   userId: number;
   enabled: boolean;
   programId: number | null;
+  accessLevel: IntegracaoAccessLevel;
   mode: IntegracaoManagerMode;
   processIds?: number[];
   demoOnly?: boolean;
-}): Promise<{ success: boolean; message?: string }> {
+  ugpResponsible?: boolean;
+  replaceUgpResponsible?: boolean;
+}): Promise<{
+  success: boolean;
+  message?: string;
+  requiresUgpReplacementConfirmation?: boolean;
+  currentUgpResponsible?: { id: number; name: string; email: string } | null;
+  replacedUgpResponsible?: { id: number; name: string; email: string } | null;
+}> {
   if (!process.env.DATABASE_URL) {
     return { success: false, message: "Banco de dados não disponível" };
   }
@@ -15619,6 +15675,10 @@ export async function setManagerIntegracaoConfig(data: {
         await raw.rollback();
         return { success: false, message: "A empresa selecionada não existe ou está inativa." };
       }
+      if (data.ugpResponsible && data.accessLevel !== "ugp") {
+        await raw.rollback();
+        return { success: false, message: "A UGP/RH responsável oficial precisa ter nível de acesso UGP/RH." };
+      }
     }
 
     const [permissionRows]: any = await raw.execute(
@@ -15637,12 +15697,84 @@ export async function setManagerIntegracaoConfig(data: {
       currentPermissions = [];
     }
 
+    let replacedUgpResponsible: { id: number; name: string; email: string } | null = null;
+
+    if (data.enabled && data.ugpResponsible) {
+      const [otherRows]: any = await raw.execute(
+        `SELECT u.id,u.name,u.email,app.permissions
+         FROM users u
+         INNER JOIN admin_page_permissions app ON app.userId=u.id
+         WHERE u.role='manager' AND u.isActive=1 AND u.id<>?
+         FOR UPDATE`,
+        [data.userId],
+      );
+
+      const conflitos = (otherRows || []).filter((row: any) => {
+        let permissions: string[] = [];
+        try {
+          permissions = Array.isArray(row.permissions)
+            ? row.permissions
+            : JSON.parse(String(row.permissions || "[]"));
+          if (!Array.isArray(permissions)) permissions = [];
+        } catch {
+          permissions = [];
+        }
+        const config = parseManagerIntegracaoPermissions(permissions);
+        return config.enabled &&
+          config.ugpResponsible &&
+          Number(config.programId || 0) === Number(data.programId || 0);
+      });
+
+      if (conflitos.length && !data.replaceUgpResponsible) {
+        const atual = conflitos[0];
+        await raw.rollback();
+        return {
+          success: false,
+          message: `A empresa já possui UGP/RH responsável: ${String(atual.name || "usuário cadastrado")}.`,
+          requiresUgpReplacementConfirmation: true,
+          currentUgpResponsible: {
+            id: Number(atual.id),
+            name: String(atual.name || ""),
+            email: String(atual.email || ""),
+          },
+        };
+      }
+
+      if (conflitos.length && data.replaceUgpResponsible) {
+        for (const atual of conflitos) {
+          let permissions: string[] = [];
+          try {
+            permissions = Array.isArray(atual.permissions)
+              ? atual.permissions
+              : JSON.parse(String(atual.permissions || "[]"));
+            if (!Array.isArray(permissions)) permissions = [];
+          } catch {
+            permissions = [];
+          }
+          const preservadas = permissions.filter((permission) => permission !== INTEGRACAO_UGP_RESPONSIBLE);
+          await raw.execute(
+            `UPDATE admin_page_permissions SET permissions=?,updatedAt=CURRENT_TIMESTAMP WHERE userId=?`,
+            [JSON.stringify(preservadas), Number(atual.id)],
+          );
+          if (!replacedUgpResponsible) {
+            replacedUgpResponsible = {
+              id: Number(atual.id),
+              name: String(atual.name || ""),
+              email: String(atual.email || ""),
+            };
+          }
+        }
+      }
+    }
+
     const nextPermissions = replaceIntegracaoPermissions(currentPermissions, {
       enabled: data.enabled,
       programId: data.programId,
+      accessLevel: data.accessLevel,
       mode: data.mode,
       processIds: data.processIds,
       demoOnly: data.demoOnly,
+      ugpResponsible: data.ugpResponsible,
     });
 
     const isSpecialManager = nextPermissions.includes("scope:manager:special");
@@ -15665,8 +15797,11 @@ export async function setManagerIntegracaoConfig(data: {
     await raw.commit();
     return {
       success: true,
+      replacedUgpResponsible,
       message: data.enabled
-        ? "Configuração do Programa de Integração atualizada com sucesso."
+        ? replacedUgpResponsible
+          ? `Programa de Integração atualizado. A responsabilidade UGP/RH foi transferida de ${replacedUgpResponsible.name || "outro usuário"}.`
+          : "Configuração do Programa de Integração atualizada com sucesso."
         : "Acesso ao Programa de Integração removido sem alterar os demais acessos do gerente.",
     };
   } catch (error: any) {

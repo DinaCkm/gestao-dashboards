@@ -1,20 +1,26 @@
-export type IntegracaoManagerMode = "gestor" | "all" | "manual" | "ugp_restrita";
+export type IntegracaoAccessLevel = "gestor" | "ugp";
+export type IntegracaoManagerMode = "gestor" | "all" | "manual";
 
 export type ManagerIntegracaoConfig = {
   enabled: boolean;
   programId: number | null;
+  accessLevel: IntegracaoAccessLevel;
   mode: IntegracaoManagerMode;
   processIds: number[];
   legacyScopeAll: boolean;
+  legacyUgpRestrita: boolean;
   demoOnly: boolean;
+  ugpResponsible: boolean;
 };
 
-const INTEGRACAO_ROUTE_PERMISSION = "/gestor/integracao";
+export const INTEGRACAO_ROUTE_PERMISSION = "/gestor/integracao";
 const INTEGRACAO_SCOPE_PREFIX = "scope:integracao:";
 const INTEGRACAO_PROGRAM_PREFIX = "scope:integracao:program:";
+const INTEGRACAO_ACCESS_PREFIX = "scope:integracao:access:";
 const INTEGRACAO_MODE_PREFIX = "scope:integracao:mode:";
 const INTEGRACAO_PROCESS_PREFIX = "scope:integracao:process:";
 const INTEGRACAO_DEMO_ONLY = "scope:integracao:demo-only";
+export const INTEGRACAO_UGP_RESPONSIBLE = "scope:integracao:ugp-responsavel";
 
 function positiveInt(value: unknown): number | null {
   const n = Number(value);
@@ -34,6 +40,7 @@ export function parseManagerIntegracaoPermissions(permissions: string[]): Manage
   const enabled = safePermissions.includes(INTEGRACAO_ROUTE_PERMISSION);
   const legacyScopeAll = safePermissions.includes("scope:integracao:all");
   const demoOnly = safePermissions.includes(INTEGRACAO_DEMO_ONLY);
+  const ugpResponsible = safePermissions.includes(INTEGRACAO_UGP_RESPONSIBLE);
 
   const programToken = safePermissions.find((permission) => permission.startsWith(INTEGRACAO_PROGRAM_PREFIX));
   const programId = programToken
@@ -42,11 +49,23 @@ export function parseManagerIntegracaoPermissions(permissions: string[]): Manage
 
   const modeToken = safePermissions.find((permission) => permission.startsWith(INTEGRACAO_MODE_PREFIX));
   const rawMode = modeToken?.slice(INTEGRACAO_MODE_PREFIX.length);
+  const legacyUgpRestrita = rawMode === "ugp_restrita";
   const mode: IntegracaoManagerMode =
-    rawMode === "manual" || rawMode === "all" || rawMode === "gestor" || rawMode === "ugp_restrita"
+    rawMode === "manual" || rawMode === "all" || rawMode === "gestor"
       ? rawMode
-      : legacyScopeAll
-        ? "all"
+      : legacyUgpRestrita
+        ? "manual"
+        : legacyScopeAll
+          ? "all"
+          : "gestor";
+
+  const accessToken = safePermissions.find((permission) => permission.startsWith(INTEGRACAO_ACCESS_PREFIX));
+  const rawAccess = accessToken?.slice(INTEGRACAO_ACCESS_PREFIX.length);
+  const accessLevel: IntegracaoAccessLevel =
+    rawAccess === "ugp" || rawAccess === "gestor"
+      ? rawAccess
+      : (legacyUgpRestrita || legacyScopeAll || mode === "all")
+        ? "ugp"
         : "gestor";
 
   const processIds = Array.from(new Set(
@@ -59,19 +78,24 @@ export function parseManagerIntegracaoPermissions(permissions: string[]): Manage
   return {
     enabled,
     programId,
+    accessLevel,
     mode,
     processIds,
     legacyScopeAll,
+    legacyUgpRestrita,
     demoOnly,
+    ugpResponsible,
   };
 }
 
 export function buildManagerIntegracaoPermissions(config: {
   enabled: boolean;
   programId: number | null;
+  accessLevel: IntegracaoAccessLevel;
   mode: IntegracaoManagerMode;
   processIds?: number[];
   demoOnly?: boolean;
+  ugpResponsible?: boolean;
 }): string[] {
   if (!config.enabled) return [];
 
@@ -79,19 +103,23 @@ export function buildManagerIntegracaoPermissions(config: {
   if (!programId) {
     throw new Error("Empresa do Programa de Integração é obrigatória quando o acesso estiver habilitado.");
   }
+  if (config.ugpResponsible && config.accessLevel !== "ugp") {
+    throw new Error("O responsável UGP/RH oficial precisa ter nível de acesso UGP/RH.");
+  }
 
   const permissions = [
     INTEGRACAO_ROUTE_PERMISSION,
     `${INTEGRACAO_PROGRAM_PREFIX}${programId}`,
+    `${INTEGRACAO_ACCESS_PREFIX}${config.accessLevel}`,
     `${INTEGRACAO_MODE_PREFIX}${config.mode}`,
   ];
 
-  // Compatibilidade temporária com a lógica antiga, que ainda reconhece este token.
+  // Compatibilidade temporária com leituras antigas ainda existentes fora deste módulo.
   if (config.mode === "all") permissions.push("scope:integracao:all");
-
   if (config.demoOnly) permissions.push(INTEGRACAO_DEMO_ONLY);
+  if (config.ugpResponsible) permissions.push(INTEGRACAO_UGP_RESPONSIBLE);
 
-  if (config.mode === "manual" || config.mode === "ugp_restrita") {
+  if (config.mode === "manual") {
     const processIds = Array.from(new Set(
       (config.processIds || [])
         .map(positiveInt)
@@ -111,9 +139,11 @@ export function replaceIntegracaoPermissions(
   config: {
     enabled: boolean;
     programId: number | null;
+    accessLevel: IntegracaoAccessLevel;
     mode: IntegracaoManagerMode;
     processIds?: number[];
     demoOnly?: boolean;
+    ugpResponsible?: boolean;
   },
 ): string[] {
   const preserved = (currentPermissions || []).filter((permission) => !isIntegracaoPermissionToken(permission));

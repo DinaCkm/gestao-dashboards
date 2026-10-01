@@ -53,7 +53,8 @@ interface GestorDisponivel {
   email: string;
   colaboradores: number;
   origem?: 'processo' | 'configurado';
-  modo?: 'gestor' | 'all' | 'manual' | 'ugp_restrita' | string;
+  modo?: 'gestor' | 'all' | 'manual' | string;
+  nivelAcesso?: 'gestor' | 'ugp';
   empresaId?: number | null;
   empresaNome?: string;
 }
@@ -4054,7 +4055,7 @@ export default function AcompanharIntegracaoGestor() {
                       {(dados.gestoresDisponiveis || []).map((g) => (
                         <SelectItem key={g.key} value={g.key}>
                           {g.origem === 'configurado'
-                            ? `${g.nome} — ${g.modo === 'ugp_restrita' ? 'UGP/RH restrita' : g.modo === 'all' ? 'UGP/RH' : 'Gestor'}${g.empresaNome ? ` — ${g.empresaNome}` : ''}`
+                            ? `${g.nome} — ${g.nivelAcesso === 'ugp' ? 'UGP/RH' : 'Gestor'} · ${g.modo === 'all' ? 'todos da empresa' : g.modo === 'manual' ? 'seleção manual' : 'somente seus colaboradores'}${g.empresaNome ? ` — ${g.empresaNome}` : ''}`
                             : `${g.nome} — ${g.colaboradores} colaborador(es)`}
                         </SelectItem>
                       ))}

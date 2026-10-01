@@ -3122,7 +3122,9 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
 
   const [integracaoEnabled, setIntegracaoEnabled] = useState(false);
   const [integracaoProgramId, setIntegracaoProgramId] = useState("");
-  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual" | "ugp_restrita">("gestor");
+  const [integracaoAccessLevel, setIntegracaoAccessLevel] = useState<"gestor" | "ugp">("gestor");
+  const [integracaoMode, setIntegracaoMode] = useState<"gestor" | "all" | "manual">("gestor");
+  const [integracaoUgpResponsible, setIntegracaoUgpResponsible] = useState(false);
   const [integracaoDemoOnly, setIntegracaoDemoOnly] = useState(false);
   const [integracaoProcessIds, setIntegracaoProcessIds] = useState<number[]>([]);
   const [integracaoProcessos, setIntegracaoProcessos] = useState<any[]>([]);
@@ -3161,6 +3163,11 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
     { userId: permissaoOpenId || 0 },
     { enabled: !!permissaoOpenId }
   );
+  const { data: integracaoUgpResponsavelAtual, refetch: refetchIntegracaoUgpResponsavelAtual } =
+    trpc.admin.getManagerIntegracaoUgpResponsible.useQuery(
+      { programId: parseInt(integracaoProgramId || "0") },
+      { enabled: !!permissaoOpenId && !!integracaoProgramId }
+    );
 
   const gerenteSelecionadoConfig = permissaoOpenId
     ? gerentesEmpresa.find((g: any) => Number(g.id) === permissaoOpenId)
@@ -3187,7 +3194,9 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
           ? String(gerenteSelecionado.programId)
           : ""
     );
-    setIntegracaoMode((integracaoConfig.mode || "gestor") as "gestor" | "all" | "manual" | "ugp_restrita");
+    setIntegracaoAccessLevel((integracaoConfig.accessLevel || "gestor") as "gestor" | "ugp");
+    setIntegracaoMode((integracaoConfig.mode || "gestor") as "gestor" | "all" | "manual");
+    setIntegracaoUgpResponsible(Boolean(integracaoConfig.ugpResponsible));
     setIntegracaoDemoOnly(Boolean(integracaoConfig.demoOnly));
     setIntegracaoProcessIds(Array.isArray(integracaoConfig.processIds) ? integracaoConfig.processIds : []);
     setIntegracaoBusca("");
@@ -3195,7 +3204,7 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
   }, [permissaoOpenId, integracaoConfig, gerentesEmpresa]);
 
   useEffect(() => {
-    if (!permissaoOpenId || !integracaoEnabled || !["manual", "ugp_restrita"].includes(integracaoMode) || !integracaoProgramId) {
+    if (!permissaoOpenId || !integracaoEnabled || integracaoMode !== "manual" || !integracaoProgramId) {
       setIntegracaoProcessos([]);
       setIntegracaoProcessosErro("");
       setIntegracaoProcessosLoading(false);
@@ -3264,7 +3273,11 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
     onSuccess: async (data) => {
       if (data.success) {
         toast.success(data.message || "Programa de Integração atualizado.");
-        await Promise.all([refetchIntegracaoConfig(), refetchPermissoesGerente()]);
+        await Promise.all([
+          refetchIntegracaoConfig(),
+          refetchPermissoesGerente(),
+          refetchIntegracaoUgpResponsavelAtual(),
+        ]);
       } else {
         toast.error(data.message || "Não foi possível atualizar o Programa de Integração.");
       }
@@ -4161,32 +4174,62 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Quem este gerente pode acompanhar?</Label>
+                    <Label>Nível de acesso dentro da Integração</Label>
+                    <Select
+                      value={integracaoAccessLevel}
+                      onValueChange={(value) => {
+                        const nivel = value as "gestor" | "ugp";
+                        setIntegracaoAccessLevel(nivel);
+                        if (nivel === "gestor") {
+                          setIntegracaoUgpResponsible(false);
+                          setIntegracaoDemoOnly(false);
+                        }
+                      }}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContentNoPortal>
+                        <SelectItem value="gestor">Gestor — visão gerencial do colaborador</SelectItem>
+                        <SelectItem value="ugp">UGP/RH — visão ampliada de acompanhamento</SelectItem>
+                      </SelectContentNoPortal>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      O nível define quais informações o usuário pode ver. Ele não define quais colaboradores aparecem.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Quais colaboradores este usuário pode visualizar?</Label>
                     <Select
                       value={integracaoMode}
                       onValueChange={(value) => {
-                        setIntegracaoMode(value as "gestor" | "all" | "manual" | "ugp_restrita");
-                        if (value !== "manual" && value !== "ugp_restrita") setIntegracaoProcessIds([]);
-                        if (value !== "ugp_restrita") setIntegracaoDemoOnly(false);
+                        setIntegracaoMode(value as "gestor" | "all" | "manual");
+                        if (value !== "manual") {
+                          setIntegracaoProcessIds([]);
+                          setIntegracaoDemoOnly(false);
+                        }
                       }}
                     >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContentNoPortal>
                         <SelectItem value="gestor">Somente colaboradores em que é gestor(a)</SelectItem>
                         <SelectItem value="all">Todos os colaboradores ativos desta empresa</SelectItem>
-                          <SelectItem value="manual">Selecionar colaboradores manualmente</SelectItem>
-                        <SelectItem value="ugp_restrita">UGP/RH restrita — colaboradores selecionados</SelectItem>
+                        <SelectItem value="manual">Selecionar colaboradores manualmente</SelectItem>
                       </SelectContentNoPortal>
                     </Select>
+                    {integracaoAccessLevel === "ugp" && integracaoMode === "gestor" && (
+                      <p className="text-xs text-amber-700">
+                        Este usuário terá nível UGP/RH, mas verá somente pessoas em que também esteja cadastrado como gestor direto.
+                      </p>
+                    )}
                   </div>
 
-                  {(integracaoMode === "manual" || integracaoMode === "ugp_restrita") && (
+                  {integracaoMode === "manual" && (
                     <div className="space-y-3 rounded-lg border bg-muted/10 p-3">
-                      {integracaoMode === "ugp_restrita" && (
+                      {integracaoAccessLevel === "ugp" && (
                         <div className="space-y-2 rounded-md border border-violet-200 bg-violet-50/70 p-3">
-                          <p className="text-sm font-medium text-violet-950">Visão UGP/RH restrita</p>
+                          <p className="text-sm font-medium text-violet-950">UGP/RH com seleção manual</p>
                           <p className="text-xs text-violet-800">
-                            O usuário verá o mesmo conteúdo de leitura da UGP/RH, mas somente dos colaboradores marcados abaixo.
+                            O usuário mantém o nível de leitura UGP/RH, mas verá somente os colaboradores marcados abaixo.
                           </p>
                           <label className="flex items-start gap-2 text-xs text-violet-900">
                             <Checkbox
@@ -4280,6 +4323,44 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       )}
                     </div>
                   )}
+
+                  {integracaoAccessLevel === "ugp" && (
+                    <div className="space-y-3 rounded-lg border border-violet-200 bg-violet-50/40 p-3">
+                      <div>
+                        <p className="text-sm font-semibold text-violet-950">Responsabilidade UGP/RH da empresa</p>
+                        <p className="mt-1 text-xs text-violet-800">
+                          Esta definição é independente de quantos colaboradores o usuário pode visualizar.
+                        </p>
+                      </div>
+
+                      <label className="flex items-start gap-3">
+                        <Checkbox
+                          checked={integracaoUgpResponsible}
+                          onCheckedChange={(checked) => setIntegracaoUgpResponsible(Boolean(checked))}
+                        />
+                        <span>
+                          <span className="block text-sm font-medium">Este usuário é a UGP/RH responsável oficial desta empresa</span>
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            O responsável oficial será usado como referência da UGP dos colaboradores vinculados a esta empresa.
+                          </span>
+                        </span>
+                      </label>
+
+                      {integracaoUgpResponsavelAtual?.responsavel && (
+                        <div className="rounded-md border bg-background px-3 py-2 text-xs">
+                          UGP/RH oficial atual: <strong>{integracaoUgpResponsavelAtual.responsavel.name}</strong>
+                          {integracaoUgpResponsavelAtual.responsavel.email ? ` · ${integracaoUgpResponsavelAtual.responsavel.email}` : ""}
+                          {Number(integracaoUgpResponsavelAtual.responsavel.id) === Number(permissaoOpenId) ? " · este usuário" : ""}
+                        </div>
+                      )}
+
+                      {integracaoUgpResponsible && integracaoMode === "manual" && (
+                        <p className="text-xs font-medium text-amber-700">
+                          Atenção: restringir a visualização a pessoas selecionadas não retira a responsabilidade UGP/RH. Este usuário continuará sendo a UGP oficial da empresa inteira.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -4293,21 +4374,63 @@ function GerentesEmpresaTab({ gerentesEmpresa, empresas, loading, onPromote, onC
                       toast.error("Selecione a empresa acompanhada no Programa de Integração.");
                       return;
                     }
-                    if (integracaoEnabled && (integracaoMode === "manual" || integracaoMode === "ugp_restrita") && integracaoProcessIds.length === 0) {
+                    if (integracaoEnabled && integracaoMode === "manual" && integracaoProcessIds.length === 0) {
                       toast.error("Selecione pelo menos um colaborador para este escopo.");
+                      return;
+                    }
+                    if (integracaoEnabled && integracaoUgpResponsible && integracaoAccessLevel !== "ugp") {
+                      toast.error("A UGP/RH responsável oficial precisa ter nível de acesso UGP/RH.");
                       return;
                     }
                     if (!integracaoEnabled && editEspecial && editPermissions.length === 0) {
                       toast.error("Antes de remover a Integração, libere ao menos uma área geral ou desmarque Gerente Especial.");
                       return;
                     }
+
+                    if (!integracaoEnabled && integracaoConfig?.ugpResponsible) {
+                      const confirmarRemocao = window.confirm(
+                        "Este usuário é a UGP/RH responsável oficial da empresa. Ao remover o acesso à Integração, a empresa ficará sem UGP/RH oficial até que outra pessoa seja definida. Deseja continuar?"
+                      );
+                      if (!confirmarRemocao) return;
+                    }
+
+                    if (
+                      integracaoEnabled &&
+                      integracaoUgpResponsible &&
+                      integracaoConfig?.ugpResponsible &&
+                      integracaoConfig.programId &&
+                      Number(integracaoConfig.programId) !== Number(integracaoProgramId)
+                    ) {
+                      const confirmarTrocaEmpresa = window.confirm(
+                        "Este usuário é UGP/RH oficial da empresa anterior. Ao trocar a empresa, a responsabilidade acompanhará a nova empresa e a anterior ficará sem responsável oficial. Deseja continuar?"
+                      );
+                      if (!confirmarTrocaEmpresa) return;
+                    }
+
+                    const responsavelAtual = integracaoUgpResponsavelAtual?.responsavel;
+                    let substituirResponsavel = false;
+                    if (
+                      integracaoEnabled &&
+                      integracaoUgpResponsible &&
+                      responsavelAtual &&
+                      Number(responsavelAtual.id) !== Number(permissaoOpenId)
+                    ) {
+                      substituirResponsavel = window.confirm(
+                        `A empresa já tem ${responsavelAtual.name || "outro usuário"} como UGP/RH responsável oficial. Deseja transferir somente a responsabilidade UGP/RH para este usuário? O acesso do responsável anterior será preservado.`
+                      );
+                      if (!substituirResponsavel) return;
+                    }
+
                     salvarIntegracaoGerente.mutate({
                       userId: permissaoOpenId,
                       enabled: integracaoEnabled,
                       programId: integracaoEnabled ? parseInt(integracaoProgramId) : null,
+                      accessLevel: integracaoAccessLevel,
                       mode: integracaoMode,
-                      processIds: (integracaoMode === "manual" || integracaoMode === "ugp_restrita") ? integracaoProcessIds : [],
-                      demoOnly: integracaoMode === "ugp_restrita" ? integracaoDemoOnly : false,
+                      processIds: integracaoMode === "manual" ? integracaoProcessIds : [],
+                      demoOnly: integracaoAccessLevel === "ugp" && integracaoMode === "manual" ? integracaoDemoOnly : false,
+                      ugpResponsible: integracaoEnabled && integracaoAccessLevel === "ugp" ? integracaoUgpResponsible : false,
+                      replaceUgpResponsible: substituirResponsavel,
                     });
                   }}
                 >
