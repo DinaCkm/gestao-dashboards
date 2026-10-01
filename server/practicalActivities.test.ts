@@ -230,6 +230,64 @@ describe("Módulo Atividades Práticas", () => {
     });
   });
 
+  describe("Permissões - practicalActivities.updateActivity", () => {
+    it("deve bloquear mentor de editar atividade", async () => {
+      const ctx = createMentorContext();
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.practicalActivities.updateActivity({
+          sessionId: 1,
+          customTaskTitle: "Título ajustado",
+          customTaskDescription: "Descrição ajustada",
+          taskDeadline: "2026-12-01",
+        })
+      ).rejects.toThrow("Somente administradores podem editar atividades práticas");
+    });
+
+    it("deve bloquear aluno de editar atividade", async () => {
+      const ctx = createUserContext();
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.practicalActivities.updateActivity({
+          sessionId: 1,
+          customTaskTitle: "Título ajustado",
+          customTaskDescription: null,
+          taskDeadline: null,
+        })
+      ).rejects.toThrow("Somente administradores podem editar atividades práticas");
+    });
+
+    it("admin deve receber NOT_FOUND para atividade inexistente", async () => {
+      const ctx = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.practicalActivities.updateActivity({
+          sessionId: 999999,
+          customTaskTitle: "Título ajustado",
+          customTaskDescription: "Descrição ajustada",
+          taskDeadline: "2026-12-01",
+        })
+      ).rejects.toThrow("Atividade não encontrada");
+    });
+
+    it("deve rejeitar prazo em formato inválido", async () => {
+      const ctx = createAdminContext();
+      const caller = appRouter.createCaller(ctx);
+
+      await expect(
+        caller.practicalActivities.updateActivity({
+          sessionId: 1,
+          customTaskTitle: "Título ajustado",
+          customTaskDescription: null,
+          taskDeadline: "01/12/2026" as any,
+        })
+      ).rejects.toThrow();
+    });
+  });
+
   describe("Permissões - practicalActivities.submissionDetail", () => {
     it("aluno (role=user) NÃO deve acessar submissionDetail", async () => {
       const ctx = createUserContext();
