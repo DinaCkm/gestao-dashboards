@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -36,6 +38,7 @@ import {
 import { gerarAcompanhamentoIntegracaoPdf } from '@/features/programaIntegracao/helpers/acompanhamentoIntegracaoPdf';
 import { gerarDocumentoAtaRelatorio } from '@/features/programaIntegracao/helpers/atasRelatoriosHelpers';
 import { FormulariosEvolucaoUgp } from '@/features/programaIntegracao/components/FormulariosEvolucaoUgp';
+import { toast } from 'sonner';
 
 interface Pendencia {
   ciclo: number;
@@ -46,6 +49,16 @@ interface Pendencia {
   formulario: string;
   prazo: string;
   atrasado: boolean;
+  solicitadoEm?: string | null;
+  chaveCobranca?: string;
+  respondenteNome?: string;
+  respondenteEmail?: string;
+  gestorEmail?: string;
+  ultimaCobranca?: {
+    cobradoEm: string;
+    cobradoPorNome: string;
+    cobradoPorUserId?: number | null;
+  } | null;
 }
 
 interface GestorDisponivel {
@@ -108,6 +121,7 @@ interface PerfilAssessment {
 
 interface ColaboradorAcompanhamento {
   id: string;
+  processoDbId?: number | null;
   nome: string;
   cargo: string;
   unidade: string;
@@ -208,6 +222,7 @@ interface AcompanhamentoResponse {
   gestoresDisponiveis?: GestorDisponivel[];
   gestorSelecionado?: GestorDisponivel | null;
   atualizadoEm: string;
+  usuarioAtualNome?: string;
   colaboradores: ColaboradorAcompanhamento[];
 }
 
