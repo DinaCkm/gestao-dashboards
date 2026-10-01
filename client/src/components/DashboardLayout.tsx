@@ -587,14 +587,14 @@ function DashboardLayoutContent({
     const base = location.split("?")[0];
     const permitido = base === "/anjo" || base === "/anjo/formularios" || base === "/anjo/orientacoes";
     if (!permitido) {
-      setLocation(hasActiveAngelAccess ? "/anjo/formularios" : "/anjo");
+      setLocation(hasActiveAngelAccess ? "/anjo/orientacoes" : "/anjo");
     }
   }, [anjoAccessResolved, isPureAngel, hasActiveAngelAccess, location, setLocation]);
 
   // Encontrar label ativo para mobile header
   const activeLabel = useMemo(() => {
     if (location === "/anjo/formularios") return "Acompanhar Integração";
-    if (location === "/anjo/orientacoes") return "Orientações do Anjo";
+    if (location === "/anjo/orientacoes") return "Cartilha do Anjo";
     if (location === "/anjo") return "Espaço do Anjo";
     if (location === "/") return "Painel Admin";
     if (isAdmin) {
@@ -905,13 +905,13 @@ function DashboardLayoutContent({
                     <SidebarGroupLabel>Espaço do Anjo</SidebarGroupLabel>
                     <SidebarMenu>
                       <SidebarMenuItem>
-                        <SidebarMenuButton isActive={location === "/anjo/formularios"} onClick={() => setLocation("/anjo/formularios")} tooltip="Acompanhar Integração">
-                          <ClipboardCheck className="h-4 w-4" /><span>Acompanhar Integração</span>
+                        <SidebarMenuButton isActive={location === "/anjo/orientacoes"} onClick={() => setLocation("/anjo/orientacoes")} tooltip="Cartilha do Anjo">
+                          <BookOpen className="h-4 w-4" /><span>Cartilha do Anjo</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       <SidebarMenuItem>
-                        <SidebarMenuButton isActive={location === "/anjo/orientacoes"} onClick={() => setLocation("/anjo/orientacoes")} tooltip="Orientações do Anjo">
-                          <BookOpen className="h-4 w-4" /><span>Orientações do Anjo</span>
+                        <SidebarMenuButton isActive={location === "/anjo/formularios"} onClick={() => setLocation("/anjo/formularios")} tooltip="Acompanhar Integração">
+                          <ClipboardCheck className="h-4 w-4" /><span>Acompanhar Integração</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     </SidebarMenu>

@@ -60,6 +60,7 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
   const [operacao, setOperacao] = useState<string | null>(null);
   const [statusEco, setStatusEco] = useState<Record<string, EcoLiderAndamento>>({});
   const [statusEcoCarregando, setStatusEcoCarregando] = useState(false);
+  const [statusAcompanhamento, setStatusAcompanhamento] = useState<Record<string, { chave: 'em_dia' | 'acompanhar' | 'atencao'; rotulo: string }>>({});
   const [alunosEco, setAlunosEco] = useState<EcoLiderAluno[]>([]);
   const [resolucaoEco, setResolucaoEco] = useState<Record<string, EcoLiderResolucaoItem>>({});
   const [resolvendoEco, setResolvendoEco] = useState(false);
@@ -98,6 +99,34 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
     () => processos.map((processo) => processo.id).filter((id): id is string => Boolean(id)),
     [processos],
   );
+
+  useEffect(() => {
+    let cancelado = false;
+    fetch('/api/programa-integracao/gestor/acompanhamento', {
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Não foi possível carregar o status consolidado.');
+        return res.json();
+      })
+      .then((dados) => {
+        if (cancelado) return;
+        const mapa: Record<string, { chave: 'em_dia' | 'acompanhar' | 'atencao'; rotulo: string }> = {};
+        for (const colaborador of Array.isArray(dados?.colaboradores) ? dados.colaboradores : []) {
+          const id = String(colaborador?.id || '');
+          const status = colaborador?.statusAcompanhamento;
+          if (!id || !status?.chave) continue;
+          mapa[id] = { chave: status.chave, rotulo: String(status.rotulo || '') };
+        }
+        setStatusAcompanhamento(mapa);
+      })
+      .catch(() => {
+        if (!cancelado) setStatusAcompanhamento({});
+      });
+    return () => { cancelado = true; };
+  }, [processos]);
 
   useEffect(() => {
     let cancelado = false;
@@ -548,8 +577,16 @@ export function GerenciarPessoas({ processos, feriados = [], onAbrirPessoa, onAb
           pessoasFiltradas.map((pessoa, indice) => {
             const status = calcularStatusGeral(pessoa);
             const progresso = calcularProgresso(pessoa);
-            const sinal = statusVisualPessoaIntegracao(pessoa, feriados);
+            const sinalOperacional = statusVisualPessoaIntegracao(pessoa, feriados);
             const chavePessoa = pessoa.id || pessoa.nome;
+            const statusConsolidado = pessoa.id ? statusAcompanhamento[String(pessoa.id)] : undefined;
+            const sinal = statusConsolidado
+              ? statusConsolidado.chave === 'atencao'
+                ? { sinal: 'vermelho' as const, label: statusConsolidado.rotulo || 'Atenção', detalhe: 'Há pendências ou sinais que exigem atenção no acompanhamento.' }
+                : statusConsolidado.chave === 'acompanhar'
+                  ? { sinal: 'azul' as const, label: statusConsolidado.rotulo || 'Acompanhar', detalhe: 'Há pendências ou sinais que precisam de acompanhamento.' }
+                  : { sinal: 'verde' as const, label: statusConsolidado.rotulo || 'Em dia', detalhe: 'Nenhum ponto objetivo de atenção identificado no acompanhamento.' }
+              : sinalOperacional;
             const SinalIcon = sinal.sinal === 'vermelho'
               ? CircleAlert
               : sinal.sinal === 'azul'
