@@ -911,10 +911,13 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
     const integracaoConfigSessao = (req as any).integracaoConfig || {
       enabled: true,
       programId: null,
+      accessLevel: "ugp",
       mode: "all",
       processIds: [],
       legacyScopeAll: false,
+      legacyUgpRestrita: false,
       demoOnly: false,
+      ugpResponsible: false,
     };
     const adminView = user.role === "admin";
     const gestorViewKey = adminView ? String(req.query.gestor || "").trim() : "";
