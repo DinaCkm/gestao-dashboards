@@ -1384,7 +1384,7 @@ programaIntegracaoRouter.get("/api/programa-integracao/gestor/acompanhamento", r
         perfilDemoId > 0 &&
         (
           adminGlobal ||
-          (acessoUgpRh && Number(testeDemo?.empresaProgramId || 0) === empresaId)
+          Number(testeDemo?.empresaProgramId || 0) === empresaId
         );
 
       if (demoFullEcoAutorizado) {
