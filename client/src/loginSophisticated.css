@@ -264,3 +264,9 @@
     margin: 16px;
   }
 }
+
+/* Proteção visual simples somente no login normal: CPF e ID ficam mascarados durante a digitação. */
+#login-cpf,
+#login-id {
+  -webkit-text-security: disc;
+}
