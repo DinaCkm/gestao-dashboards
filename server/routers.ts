@@ -8245,7 +8245,7 @@ Total de registros: ${files.reduce((sum, f) => sum + (f.rowCount || 0), 0)}`
           taskName: session.customTaskTitle || task?.nome || '',
           taskCompetencia: task?.competencia || '',
           taskResumo: session.customTaskDescription || task?.resumo || '',
-          taskOQueFazer: task?.oQueFazer || session.customTaskDescription || '',
+          taskOQueFazer: session.customTaskDescription || task?.oQueFazer || '',
           customTaskTitle: session.customTaskTitle,
           customTaskDescription: session.customTaskDescription,
           taskDeadline: session.taskDeadline,
@@ -10857,7 +10857,7 @@ Erros: ${errors.slice(0, 3).join('; ')}` : ''}`,
             
             // Determinar descrição: customTaskDescription > biblioteca resumo
             const taskResumo = s.customTaskDescription || task?.resumo || '';
-            const taskOQueFazer = task?.oQueFazer || s.customTaskDescription || '';
+            const taskOQueFazer = s.customTaskDescription || task?.oQueFazer || '';
             const taskOQueGanha = task?.oQueGanha || '';
             const taskCompetencia = task?.competencia || '';
             
