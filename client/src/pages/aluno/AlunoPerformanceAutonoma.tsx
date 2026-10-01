@@ -616,9 +616,9 @@ export default function AlunoPerformanceAutonoma() {
     <AlunoLayout>
       <div className="space-y-6 p-2">
         {/* Header */}
-        <div className="rounded-xl bg-gradient-to-br from-[#0A1E3E] to-[#1a3a6e] p-6 text-white">
-          <h1 className="text-2xl font-bold">{data.alunoNome || "Aluno"}</h1>
-          <p className="text-white/70 text-sm mt-1">Acompanhamento da sua jornada de desenvolvimento</p>
+        <div className="rounded-xl border border-white/10 bg-gradient-to-br from-[#071A33] via-[#0D2F57] to-[#174B7A] p-6 text-white shadow-lg">
+          <h1 className="text-2xl font-extrabold tracking-tight text-white drop-shadow-sm">{data.alunoNome || "Aluno"}</h1>
+          <p className="mt-1 text-sm font-medium text-slate-100">Acompanhamento da sua jornada de desenvolvimento</p>
         </div>
 
         {/* Indicadores de Performance */}
