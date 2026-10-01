@@ -496,6 +496,10 @@ function DashboardLayoutContent({
       ? "bg-gradient-to-b from-[#3B0764] via-[#4C1D95] to-[#1D4ED8]"
       : "";
 
+  const sidebarRoleContrast = (isAngelWorkspace || isPureAngel || isGerente)
+    ? "text-white [&_.text-sidebar-foreground]:!text-white [&_.text-foreground]:!text-white [&_.text-muted-foreground]:!text-white/75 [&_[data-sidebar=menu-button]]:!text-white/90 [&_[data-sidebar=menu-button]:hover]:!bg-white/10 [&_[data-sidebar=menu-button][data-active=true]]:!bg-white/15 [&_[data-sidebar=menu-button][data-active=true]]:!text-white [&_[data-sidebar=menu-button]_svg]:!text-white/80 [&_[data-sidebar=menu-button][data-active=true]_svg]:!text-white [&_[data-sidebar=footer]]:!border-white/15 [&_[data-sidebar=header]]:!border-white/15"
+    : "";
+
   // Badge de revisões pendentes para admin e mentor
   const isMentorOrAdmin = isAdmin || consultorRole === 'mentor';
   const { data: revisoesPendentes } = trpc.onboarding.contarRevisoesPendentes.useQuery(undefined, {
@@ -707,7 +711,7 @@ function DashboardLayoutContent({
           className="border-r-0 bg-sidebar"
           disableTransition={isResizing}
         >
-          <div className={`flex h-full w-full flex-col ${sidebarRoleGradient}`}>
+          <div className={`flex h-full w-full flex-col ${sidebarRoleGradient} ${sidebarRoleContrast}`}>
           {/* ===== HEADER ===== */}
           <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
             <div className="flex items-center gap-3 px-2 transition-all w-full justify-between">
